@@ -29,13 +29,10 @@
 require_once 'PEAR.php';
 require_once 'Logger.php';
 require_once 'RecordFactory.php';
-require_once 'RecordSplitter.php';
+require_once 'FileSplitter.php';
 require_once 'HarvestOaiPmh.php';
 require_once 'XslTransformation.php';
 require_once 'MetadataUtils.php';
-require_once 'MarcRecord.php';
-require_once 'LidoRecord.php';
-require_once 'DcRecord.php';
 
 /**
  * RecordManager Class
@@ -47,7 +44,6 @@ class RecordManager
 {
     public $verbose = false;
     public $quiet = false;
-    public $pretransformation = '';
     public $harvestFromDate = null;
     public $harvestUntilDate = null;
 
@@ -65,7 +61,9 @@ class RecordManager
     protected $_dedup = false;
     protected $_normalizationXSLT = null;
     protected $_solrTransformationXSLT = null;
-
+    protected $_recordSplitter = null; 
+    protected $_pretransformation = '';
+    
     public function __construct($console = false)
     {
         global $configArray;
@@ -90,14 +88,18 @@ class RecordManager
     public function loadFromFile($source, $file)
     {
         $this->_loadSourceSettings($source);
+        if (!$this->_recordXPath) {
+            $this->_log->log('loadFromFile', 'recordXPath not defined', Logger::FATAL);
+            die("recordXPath not defined\n");
+        }
         $data = file_get_contents($file);
         if ($data === false) {
             throw new Exception("Could not read file '$file'");
         }
-        $this->loadRecords($data);
+        return $this->_loadRecords($data);
     }
 
-    public function exportRecords($file, $deletedFile, $fromDate, $skipRecords = 0, $singleId = '')
+    public function exportRecords($file, $deletedFile, $fromDate, $skipRecords = 0, $sourceId = '', $singleId = '')
     {
         if ($file == '-') {
             $file = 'php://stdout';
@@ -141,6 +143,9 @@ class RecordManager
                 $deduped = 0;
                 $deleted = 0;
                 $this->_log->log('exportRecords', "Exporting $total records from $source...");
+                if ($skipRecords) {
+                	$this->_log->log('exportRecords', "(1 per each $skipRecords records)");
+                }
                 foreach ($records as $record) {
                     if ($record['deleted']) {
                         file_put_contents($deletedFile, "{$record['_id']}\n", FILE_APPEND);
@@ -151,11 +156,11 @@ class RecordManager
                             continue;
                         }
                         $metadataRecord = RecordFactory::createRecord($record['format'], $record['normalized_data'] ? $record['normalized_data'] : $record['original_data'], $record['oai_id']);
-                        if ($record['dedup_key']) {
+                        if (isset($record['dedup_key']) && $record['dedup_key']) {
                             ++$deduped;
                         }
                         $metadataRecord->setIDPrefix($this->_idPrefix . '.');
-                        $metadataRecord->addDedupKeyToMetadata($record['dedup_key'] ? $record['dedup_key'] : $record['_id']);
+                        $metadataRecord->addDedupKeyToMetadata((isset($record['dedup_key']) && $record['dedup_key']) ? $record['dedup_key'] : $record['_id']);
                         file_put_contents($file, $metadataRecord->toXML() . "\n", FILE_APPEND);
                     }
                     if ($count % 1000 == 0) {
@@ -499,7 +504,7 @@ class RecordManager
         }
     }
 
-    public function storeRecord($oaiID, $deleted, $data)
+    public function storeRecord($oaiID, $deleted, $recordData)
     {
         if ($deleted) {
             $record = $this->_db->record->findOne(array('oai_id' => $oaiID));
@@ -508,53 +513,71 @@ class RecordManager
             return;
         }
 
-        if (isset($this->_normalizationXSLT)) {
-            $metadataRecord = RecordFactory::createRecord($this->_format, $this->_normalizationXSLT->transform($data, array('oai_id' => $oaiID)), $oaiID);
-            $normalizedData = $metadataRecord->serialize();
-            $originalData = RecordFactory::createRecord($this->_format, $data, $oaiID)->serialize();
+        $dataArray = Array();
+        if ($this->_recordSplitter) {
+            $doc = new DOMDocument();
+            $doc->loadXML($recordData);
+            $records = simplexml_import_dom($this->_recordSplitter->transformToDoc($doc));
+            foreach ($records as $record) {
+                echo "RECORD: " . $record->saveXML() . "\n\n";
+                $dataArray[] = $record->saveXML();
+            }
+        } else {
+            $dataArray = array($recordData);
         }
-        else {
-            $metadataRecord = RecordFactory::createRecord($this->_format, $data, $oaiID);
-            $originalData = $metadataRecord->serialize();
-            $normalizedData = $originalData;
+        
+        $count = 0;
+        foreach ($dataArray as $data) {
+            if (isset($this->_normalizationXSLT)) {
+                $metadataRecord = RecordFactory::createRecord($this->_format, $this->_normalizationXSLT->transform($data, array('oai_id' => $oaiID)), $oaiID);
+                $normalizedData = $metadataRecord->serialize();
+                $originalData = RecordFactory::createRecord($this->_format, $data, $oaiID)->serialize();
+            }
+            else {
+                $metadataRecord = RecordFactory::createRecord($this->_format, $data, $oaiID);
+                $originalData = $metadataRecord->serialize();
+                $normalizedData = $originalData;
+            }
+    
+            $hostID = $metadataRecord->getHostRecordID();
+            if ($hostID) {
+                $hostID = $this->_idPrefix . '.' . $hostID;
+            }
+            $id = $metadataRecord->getID();
+            if (!$id) {
+                throw new Exception("Empty ID returned for record $oaiID");
+            }
+            $dbRecord = array();
+            $dbRecord['source_id'] = $this->_sourceId;
+            $dbRecord['oai_id'] = $oaiID;
+            $dbRecord['deleted'] = false;
+            $dbRecord['_id'] = $this->_idPrefix . '.' . $id;
+            $dbRecord['host_record_id'] = $hostID;
+            $dbRecord['format'] = $this->_format;
+            $dbRecord['original_data'] = $data;
+            $dbRecord['normalized_data'] = ($data !== $normalizedData) ? $normalizedData : '';
+            // TODO: don't update created
+            $dbRecord['created'] = $dbRecord['updated'] = new MongoDate();
+            $dbRecord['update_needed'] = $this->_dedup ? true : false;
+            $this->_updateDedupCandidateKeys($dbRecord, $metadataRecord);
+            $this->_db->record->save($dbRecord);
+            ++$count;
         }
-
-        $hostID = $metadataRecord->getHostRecordID();
-        if ($hostID) {
-            $hostID = $this->_idPrefix . '.' . $hostID;
-        }
-        $id = $metadataRecord->getID();
-        if (!$id) {
-            throw new Exception("Empty ID returned for record $oaiID");
-        }
-        $dbRecord = array();
-        $dbRecord['source_id'] = $this->_sourceId;
-        $dbRecord['oai_id'] = $oaiID;
-        $dbRecord['deleted'] = false;
-        $dbRecord['_id'] = $this->_idPrefix . '.' . $id;
-        $dbRecord['host_record_id'] = $hostID;
-        $dbRecord['format'] = $this->_format;
-        $dbRecord['original_data'] = $data;
-        $dbRecord['normalized_data'] = ($data !== $normalizedData) ? $normalizedData : '';
-        $dbRecord['created'] = $dbRecord['updated'] = new MongoDate();
-        $dbRecord['update_needed'] = $this->_dedup ? true : false;
-        $this->_updateDedupCandidateKeys($dbRecord, $metadataRecord);
-        $this->_db->record->save($dbRecord);
+        return $count;
     }
 
     protected function _loadRecords($data)
     {
-        if ($this->pretransformation) {
+        if ($this->_pretransformation) {
             $data = $this->_pretransform($data);
         }
-        $splitter = new RecordSplitter($data, $this->_recordXPath);
+        $splitter = new FileSplitter($data, $this->_recordXPath);
         $count = 0;
 
         while (!$splitter->getEOF())
         {
             $data = $splitter->getNextRecord();
-            $this->storeRecord('', false, $data);
-            ++$count;
+            $count += $this->storeRecord('', false, $data);
         }
         $this->_log->log('loadRecords', "$count records loaded");
         return $count;
@@ -782,7 +805,7 @@ class RecordManager
         if (!isset($this->_pre_xslt))
         {
             $style = new DOMDocument();
-            $style->load($this->pretransformation);
+            $style->load($this->_basePath . '/transformations/' . $this->_pretransformation);
             $this->_pre_xslt = new XSLTProcessor();
             $this->_pre_xslt->importStylesheet($style);
             $this->_pre_xslt->setParameter('', 'source_id', $this->_sourceId);
@@ -852,10 +875,21 @@ class RecordManager
         $this->_recordXPath = isset($settings['recordXPath']) ? $settings['recordXPath'] : '';
         $this->_dedup = isset($settings['dedup']) ? $settings['dedup'] : false;
         $this->_componentParts = isset($settings['componentParts']) && $settings['componentParts'] ? $settings['componentParts'] : 'as_is';
-
+        $this->_pretransformation = isset($settings['preTransformation']) ? $settings['preTransformation'] : '';
+        
         $params = array('source_id' => $this->_sourceId, 'institution' => $this->_institution, 'format' => $this->_format, 'id_prefix' => $this->_idPrefix);
         $this->_normalizationXSLT = isset($settings['normalization']) && $settings['normalization'] ? new XslTransformation($this->_basePath . '/transformations', $settings['normalization'], $params) : null;
         $this->_solrTransformationXSLT = isset($settings['solrTransformation']) && $settings['solrTransformation'] ? new XslTransformation($this->_basePath . '/transformations', $settings['solrTransformation'], $params) : null;
+        
+        if (isset($settings['recordSplitter'])) {
+            $style = new DOMDocument();
+            $xslFile = $this->_basePath . '/transformations/' . $settings['recordSplitter'];
+            if ($style->load($xslFile) === false) {
+                throw new Exception("Could not load $xslFile");
+            }
+            $this->_recordSplitter = new XSLTProcessor();
+            $this->_recordSplitter->importStylesheet($style);
+        }
     }
 }
 

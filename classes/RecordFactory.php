@@ -55,11 +55,6 @@ class RecordFactory
         }
 
         $path = "{$class}.php";
-        if (!file_exists($path)) {
-            $class = strtoupper($format) . 'Record';
-            $path = "{$class}.php";
-        }
-
         include_once($path);
         if (class_exists($class)) {
             $obj = new $class($data, $oaiID);

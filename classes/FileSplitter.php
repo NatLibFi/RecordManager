@@ -1,6 +1,6 @@
 <?php
 /**
- * XML Record Splitter
+ * XML File Splitter
  *
  * PHP version 5
  *
@@ -26,12 +26,12 @@
  */
 
 /**
- * RecordSplitter
+ * FileSplitter
  *
- * This class split XML to multiple records using an xpath expression
+ * This class splits XML to multiple records using an xpath expression
  *
  */
-class RecordSplitter
+class FileSplitter
 {
     private $_xmlDoc;
     private $_recordNodes;
@@ -57,6 +57,9 @@ class RecordSplitter
     {
         if ($this->_currentPos < $this->_recordCount)
         {
+            if ($this->_recordNodes->item($this->_currentPos)->nodeType == XML_DOCUMENT_NODE) {
+                return $this->_recordNodes->item($this->_currentPos++)->saveXML();
+            }
             $new = new DomDocument;
             $new->appendChild($new->importNode($this->_recordNodes->item($this->_currentPos++), true));
             return $new->saveXML();

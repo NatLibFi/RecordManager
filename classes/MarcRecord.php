@@ -70,7 +70,9 @@ class MarcRecord extends BaseRecord
         $record = $xml->record[0];
 
         if (isset($this->_fields['000'])) {
-            $record->addChild('leader', $this->_fields['000']);
+        	// Voyager is often missing the last '0' of the leader...
+        	$leader = str_pad(substr($this->_fields['000'], 0, 24), 24);
+            $record->addChild('leader', $leader);
         }
         	
         foreach ($this->_fields as $tag => $fields) {
@@ -667,15 +669,6 @@ class MarcRecord extends BaseRecord
             }
         }
         return '';
-    }
-
-    public function merge($dbId, $dedupKey, $metadataArray)
-    {
-        $this->_fields['994'][] = '  ' . MARCRecord::SUBFIELD_INDICATOR . 'a' . $dbId;
-        foreach ($metadataArray as $metadata) {
-            echo "Other: " . $metadata['id'] . " - this: ". $dbId . "\n";
-            $this->_fields['994'][] = '  ' . MARCRecord::SUBFIELD_INDICATOR . 'a' . $metadata['id'];
-        }
     }
 
     public function addDedupKeyToMetadata($dedupKey)

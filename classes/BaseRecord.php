@@ -207,5 +207,16 @@ abstract class BaseRecord
     {
         return '';
     }
+    
+    /**
+     * Dedup: Add the dedup key to a suitable field in the metadata.
+     * Used when exporting records to a file.
+     *
+     * @param string $dedupKey
+     * @access public
+     */
+    public function addDedupKeyToMetadata($dedupKey)
+    {
+    }
 }
 

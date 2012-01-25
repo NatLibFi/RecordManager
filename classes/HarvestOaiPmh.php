@@ -70,7 +70,7 @@ class HarvestOaiPmh
     private $_childPid = null;       // Child process id for record processing
     private $_resumptionToken = '';  // Override the first harvest request
     private $_transformation = null; // Transformation applied to the OAI-PMH responses before processing
-
+    
     // As we harvest records, we want to track the most recent date encountered
     // so we can set a start point for the next harvest.
     private $_trackedEndDate = 0;
