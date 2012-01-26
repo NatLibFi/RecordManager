@@ -24,4 +24,23 @@ pear install HTTP_Request
 
 - Create indexes with dbscripts/mongo.js
 
-mongo 
+mongo recman dbscripts/mongo.js
+
+- Copy conf/datasources.ini.sample to conf/datasources.ini and modify the settings to suit your needs.
+
+- Start using the system by executing e.g. 
+
+php harvest.php --source=datasource_id
+
+or 
+
+php import.php --file=filename --source=datasource_id
+
+- Deduplicate harvested records:
+
+php manage.php --func=deduplicate
+
+- Update Solr index:
+
+php manage.php --func=updatesolr
+
