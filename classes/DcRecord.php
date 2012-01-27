@@ -48,8 +48,9 @@ class DcRecord extends BaseRecord
     {
         $this->_doc = simplexml_load_string($data);
         if (empty($this->_doc->recordID)) {
-            $idArr = explode(':', $oaiID);
-            $this->_doc->addChild('recordID', $idArr[2]);
+            $p = strpos($oaiID, ':');
+            $p = strpos($oaiID, ':', $p + 1);
+            $this->_doc->addChild('recordID', substr($oaiID, $p + 1));
         }
     }
 
