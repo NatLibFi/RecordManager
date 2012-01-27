@@ -125,11 +125,6 @@ class EadRecord extends BaseRecord
         $data['title'] .= ' ' . $data['title_sub'];
         $data['title_full'] = $data['title'];
         
-        $data['url'] = Array();
-        foreach ($doc->c->did->daogrp->daoloc as $loc) {
-            $data['url'][] = (string)$loc->attributes()->daodesc;
-        }
-        
         switch ($doc->c->level) {
             case 'collection':
                 break;

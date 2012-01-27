@@ -129,31 +129,6 @@
         <xsl:value-of select="concat($fa-id, $el-id)"/>
     </xsl:template>
     
-    <!-- Inherit title -->
-    <!-- <xsl:template match="unittitle">
-        <xsl:comment>ancestor=<xsl:value-of select="count(ancestor::*[did/unittitle])"/></xsl:comment>
-        <xsl:copy>
-            <xsl:apply-templates select="@*"/>
-            <xsl:for-each select="ancestor::*[did/unittitle]">
-                <xsl:value-of select="did/unittitle"/>
-                <xsl:text>.- </xsl:text>
-            </xsl:for-each>
-            <xsl:copy-of select="node()"/>
-        </xsl:copy>
-    </xsl:template> -->
-    
-    <xsl:template match="daoloc">
-        <xsl:element name="{name()}" namespace="{namespace-uri()}">
-            <xsl:attribute name="href"><xsl:value-of select="@*"/></xsl:attribute>
-      <xsl:attribute name="daodesc"><xsl:value-of select="normalize-space(.)"/></xsl:attribute>
-        </xsl:element>
-    </xsl:template>
-    <xsl:template match="daodesc[preceding-sibling::daoloc[1]]">
-    </xsl:template>
-    
-    <xsl:template match="@encodinganalog">
-    </xsl:template>
-    
     <xsl:template match="*" mode="copy">
         <xsl:element name="{name()}" namespace="{namespace-uri()}">
             <xsl:apply-templates select="@*|node()" />
