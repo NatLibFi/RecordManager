@@ -75,11 +75,11 @@
 					<xsl:variable name="fieldName" select="php:function('LidoRousku::mapEventType', string(eventType/term))"/>
 					<xsl:if test="$fieldName">
 						<xsl:if test="eventActor/actorInRole/actor/nameActorSet/appellationValue">								
-							<field name="event_{$fieldName}_actor"><xsl:if test="eventActor/actorInRole/roleActor/term"></xsl:if><xsl:value-of select="eventActor/actorInRole/actor/nameActorSet/appellationValue"/></field>
+							<field name="event_{$fieldName}_actor_str"><xsl:if test="eventActor/actorInRole/roleActor/term"></xsl:if><xsl:value-of select="eventActor/actorInRole/actor/nameActorSet/appellationValue"/></field>
 						</xsl:if>
 						
 						<xsl:if test="eventDate/displayDate">
-							<field name="event_{$fieldName}_displaydate"><xsl:value-of select="eventDate/displayDate"/></field>
+							<field name="event_{$fieldName}_displaydate_str"><xsl:value-of select="eventDate/displayDate"/></field>
 						</xsl:if>
 						
 						<xsl:choose>
@@ -87,14 +87,14 @@
 							<xsl:variable name="earliest" select="php:function('LidoRousku::normalizeRangeStart', string(eventDate/date/earliestDate))"/>
 							<xsl:variable name="latest" select="php:function('LidoRousku::normalizeRangeEnd', string(eventDate/date/latestDate))"/>
 							<xsl:if test="$latest and $earliest">
-								<field name="event_{$fieldName}_date"><xsl:value-of select="$earliest"/>,<xsl:value-of select="$latest"/></field>
+								<field name="event_{$fieldName}_daterange"><xsl:value-of select="$earliest"/>,<xsl:value-of select="$latest"/></field>
 							</xsl:if>
 						</xsl:when>
 						<xsl:otherwise>
 							<xsl:if test="eventDate/displayDate">
 								<xsl:variable name="normalizeDateResult" select="php:function('LidoRousku::normalizeDate', string(eventDate/displayDate))"/>
 								<xsl:if test="$normalizeDateResult">
-									<field name="event_{$fieldName}_date"><xsl:value-of select="php:function('LidoRousku::normalizeDate', string(eventDate/displayDate))"/></field>
+									<field name="event_{$fieldName}_daterange"><xsl:value-of select="php:function('LidoRousku::normalizeDate', string(eventDate/displayDate))"/></field>
 								</xsl:if>
 							</xsl:if>
 						</xsl:otherwise>
@@ -112,27 +112,27 @@
 										
 										<xsl:variable name="city" select="php:function('LidoGeocode::getKunta', $geoCodeResult)"/>
 										<xsl:if test="$city">
-											<field name="event_{$fieldName}_place_city"><xsl:value-of select="$city"/></field>
+											<field name="event_{$fieldName}_place_city_txtF"><xsl:value-of select="$city"/></field>
 										</xsl:if>
 										
 										<xsl:variable name="state" select="php:function('LidoGeocode::getMaakunta', $geoCodeResult)"/>
 										<xsl:if test="$state">
-											<field name="event_{$fieldName}_place_state"><xsl:value-of select="$state"/></field>
+											<field name="event_{$fieldName}_place_state_txtF"><xsl:value-of select="$state"/></field>
 										</xsl:if>
 										
 										<xsl:variable name="country" select="php:function('LidoGeocode::getMaa', $geoCodeResult)"/>
 										<xsl:if test="$country">
-											<field name="event_{$fieldName}_place_country"><xsl:value-of select="$country"/></field>
+											<field name="event_{$fieldName}_place_country_txtF"><xsl:value-of select="$country"/></field>
 										</xsl:if>
-										<field name="event_{$fieldName}_place_notfound">false</field>
+										<field name="event_{$fieldName}_place_notfound_boolean">false</field>
 									</xsl:when>
 									<xsl:otherwise>
-										<field name="event_{$fieldName}_place_notfound">true</field>
+										<field name="event_{$fieldName}_place_notfound_boolean">true</field>
 									</xsl:otherwise>
 								</xsl:choose>
 							</xsl:if>
 							
-							<field name="event_{$fieldName}_displayplace"><xsl:value-of select="eventPlace/displayPlace"/></field>
+							<field name="event_{$fieldName}_displayplace_str"><xsl:value-of select="eventPlace/displayPlace"/></field>
 						</xsl:if>
 						
 					</xsl:if>
