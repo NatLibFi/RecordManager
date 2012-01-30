@@ -97,7 +97,21 @@ class RecordManager
         if ($data === false) {
             throw new Exception("Could not read file '$file'");
         }
-        return $this->_loadRecords($data);
+        
+        if ($this->_pretransformation) {
+            $data = $this->_pretransform($data);
+        }
+        $splitter = new FileSplitter($data, $this->_recordXPath);
+        $count = 0;
+        
+        while (!$splitter->getEOF())
+        {
+            $data = $splitter->getNextRecord();
+            $count += $this->storeRecord('', false, $data);
+        }
+        
+        $this->_log->log('loadFromFile', "$count records loaded");
+        return $count;
     }
 
     public function exportRecords($file, $deletedFile, $fromDate, $skipRecords = 0, $sourceId = '', $singleId = '')
@@ -568,17 +582,7 @@ class RecordManager
 
     protected function _loadRecords($data)
     {
-        if ($this->_pretransformation) {
-            $data = $this->_pretransform($data);
-        }
-        $splitter = new FileSplitter($data, $this->_recordXPath);
-        $count = 0;
-
-        while (!$splitter->getEOF())
-        {
-            $data = $splitter->getNextRecord();
-            $count += $this->storeRecord('', false, $data);
-        }
+        $this->_log->log('loadRecords', "loading records");
         $this->_log->log('loadRecords', "$count records loaded");
         return $count;
     }
