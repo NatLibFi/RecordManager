@@ -1,0 +1,109 @@
+; datasources.ini -- Settings for data sources.
+;
+; For every data source, create a section like this containing the OAI-PMH and other settings:
+;
+; [institution_code]
+; institution = MyInstitution
+; format = dc
+; dedup = true
+; url = http://oai.myuniversity.edu/
+; set = my_optional_set
+; metadataPrefix = oai_dc
+; idSearch[] = "/oai:myuniversity.edu:/"
+; idReplace[] = "myprefix-"
+; injectDate = false
+; injectId = false
+; injectSetName = false
+; injectSetSpec = false
+; dateGranularity = auto
+; harvestedIdLog = harvest.log
+; verbose = false
+; solrTransformation = conf/oai_dc.properties
+;
+; The section_name may be passed to harvest_oai.php as a parameter to harvest only
+; records from that source.  This is also the directory name that records will be
+; harvested into (a subdirectory of "harvest" under VUFIND_HOME).
+;
+; url is the base URL for the OAI-PMH source.
+;
+; set is the identifier of a set to harvest (normally found in the <setSpec> tag of
+; an OAI-PMH ListSets response).  Omit this setting to harvest all records.
+;
+; metadataPrefix is the metadata format to harvest (oai_dc will be used by default
+; if the value is omitted).
+;
+; idPrefix is the OAI-specific prefix attached to ID values.  If you provide the
+; value here, it will be automatically stripped for you when generating filenames,
+; injecting IDs and tracking deleted records.  If you omit the setting, full
+; OAI ids will be retained. [DEPRECATED -- use idSearch and idReplace instead]
+;
+; idSearch[] and idReplace[] may be used to manipulate IDs with regular expressions.
+; This is useful for adding or removing prefixes and swapping out problematic
+; characters.  You may use multiple pairs of search and replace settings to perform
+; multiple manipulations.
+;
+; injectDate may be set to an XML tag name in order to inject the datestamp of
+; the record into the harvested metadata (enclosed in the specified tag).  If
+; omitted or set to false, no datestamp-related changes will be made to the
+; harvested metadata.
+;
+; injectId may be set to an XML tag name in order to inject the ID of the record
+; into the harvested metadata (enclosed in the specified tag).  If omitted or set
+; to false, no ID-related changes will be made to the harvested metadata.
+;
+; injectSetName may be set to an XML tag name in order to inject the setName value
+; of the record into the harvested metadata (enclosed in the specified tag).  If
+; omitted or set to false, no setName-related changes will be made to the harvested
+; metadata.
+;
+; injectSetSpec may be set to an XML tag name in order to inject the setSpec value
+; of the record into the harvested metadata (enclosed in the specified tag).  If
+; omitted or set to false, no setSpec-related changes will be made to the harvested
+; metadata.
+;
+; dateGranularity is the granularity used by the server for representing dates.
+; This may be "YYYY-MM-DDThh:mm:ssZ," "YYYY-MM-DD" or "auto" (to query the server
+; for details).  The default is "auto."
+;
+; harvestedIdLog is a filename (inside your harvest directory) for a text file
+; listing all non-deleted harvested records encountered.  If you omit this setting,
+; no log file will be generated.  Subsequent harvests will append to the file if
+; it already exists.
+;
+; verbose may be set to true in order to display more detailed output while
+; harvesting; this may be useful for troubleshooting purposes, but it defaults to
+; false.
+
+; RecordManager settings:
+; institution			The institution code mapped to the source (required)
+; recordXPath           xpath expression used when loading records from a file to identify a single record (optional, e.g. //record)
+; format				Record format in RecordManager
+; oaipmhTransformation  Transformation to be applied to the OAI-PMH responses (e.g. to strip namespaces, optional)
+; preTransformation     Transformation to be applied to files to be imported (e.g. to strip namespaces, optional)
+; recordSplitter        Transformation used to split records in import or OAI-PMH harvest (optional, e.g. to split EAD records to multiple records)
+; normalization			XSL Transformation to be applied to each record (optional)
+; dedup                 Whether to deduplicate records in this set (optional, true or false, default false)
+; solrTransformation	XSL Transformation for solr updates (required for formats whose driver doesn't provide toSolrArray method)
+; componentParts        How to handle component parts:
+;                         as_is                No special handling (default)
+;                         merge_all            Merge all component parts to their host records
+;                         merge_non_articles   Merge to host record unless article (including e-journal articles)
+;                         merge_non_earticles  Merge to host record unless e-journal article
+; idPrefix              Prefix to be used with the record ID's. Prefixes are always added so that ID's are unique, e.g. ID 1234 becomes prefix.1234 (optional, section name is used if not provided).                         
+
+; SAMPLE CONFIGURATION FOR OPEN JOURNAL SYSTEMS
+;[OJS]
+;institution=SampleInstitution
+;format=dc 
+;url = http://ojs.myuniversity.edu/oai
+;metadataPrefix = oai_dc
+;idSearch[] = "/^oai:myuniversity.edu:/"
+;idReplace[] = "ojs-"
+;idSearch[] = "/\//"
+;idReplace[] = "-"
+;injectId = "identifier"
+;injectDate = "datestamp"
+;institution = MyInst
+;format = dc
+;solrTransformation = conf/oai_dc.properties
+

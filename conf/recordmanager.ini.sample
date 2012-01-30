@@ -17,6 +17,6 @@ username =
 password =
 
 [Log]
-log_file        = /usr/local/RecordManager/recman.log
+log_file        = /var/log/recman.log
 log_level       = 4
 error_email     = 
