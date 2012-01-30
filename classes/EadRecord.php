@@ -121,9 +121,26 @@ class EadRecord extends BaseRecord
         $data['author'] = (string)$doc->c->did->origination->corpname;
 
         $data['title_sort'] = $data['title'] = $data['title_short'] = (string)$doc->c->did->unittitle;
-        $data['title_sub'] = (string)$doc->c->did->unitdate;
-        $data['title'] .= ' ' . $data['title_sub'];
         $data['title_full'] = $data['title'];
+        
+        $unitdate = (string)$doc->c->did->unitdate;
+        if ($unitdate && $unitdate != '-') {
+            $dates = explode('-', $unitdate);
+            if (isset($dates[1])) {
+                if ($dates[0]) {
+                    $unitdate = $dates[0] . '-01-01T00:00:00Z,' . $dates[1] . '-12-31T23:59:59Z';
+                } else {
+                    $unitdate = '0000-01-01T00:00:00Z,' . $dates[1] . '-12-31T23:59:59Z';
+                }
+            } else {
+                if (strpos($unitdate, '-') > 0) {
+                    $unitdate = $dates[0] . '-01-01T00:00:00Z,9999-12-31T23:59:59Z';
+                } else {
+                    $unitdate = $dates[0] . '-01-01T00:00:00Z';
+                }
+            }
+            $data['unit_daterange'] = $unitdate; 
+        }
         
         switch ($doc->c->level) {
             case 'collection':

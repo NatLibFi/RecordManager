@@ -87,6 +87,7 @@ class RecordManager
 
     public function loadFromFile($source, $file)
     {
+        $this->_log->log('loadFromFile', "Loading records from '$file' into '$source'");
         $this->_loadSourceSettings($source);
         if (!$this->_recordXPath) {
             $this->_log->log('loadFromFile', 'recordXPath not defined', Logger::FATAL);
@@ -519,7 +520,6 @@ class RecordManager
             $doc->loadXML($recordData);
             $records = simplexml_import_dom($this->_recordSplitter->transformToDoc($doc));
             foreach ($records as $record) {
-                echo "RECORD: " . $record->saveXML() . "\n\n";
                 $dataArray[] = $record->saveXML();
             }
         } else {
