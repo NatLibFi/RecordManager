@@ -99,15 +99,31 @@ class RecordManager
         }
         
         if ($this->_pretransformation) {
+            if ($this->verbose) {
+                echo "Executing pretransformation...\n";
+            }
             $data = $this->_pretransform($data);
+        }
+        
+        if ($this->verbose) {
+            echo "Creating FileSplitter...\n";
         }
         $splitter = new FileSplitter($data, $this->_recordXPath);
         $count = 0;
         
+        if ($this->verbose) {
+            echo "Storing records...\n";
+        }
         while (!$splitter->getEOF())
         {
             $data = $splitter->getNextRecord();
+            if ($this->verbose) {
+                echo "Storing a record...\n";
+            }
             $count += $this->storeRecord('', false, $data);
+            if ($this->verbose) {
+                echo "Stored records: $count...\n";
+            }
         }
         
         $this->_log->log('loadFromFile', "$count records loaded");
@@ -259,9 +275,9 @@ class RecordManager
                             if ($this->_componentParts == 'merge_non_articles' || $this->_componentParts == 'merge_non_earticles') {
                                 $format = $metadataRecord->getFormat();
                                 $merge = false;
-                                if ($format != 'eJournal Article' && $format != 'Journal Article') {
+                                if ($format != 'eJournalArticle' && $format != 'JournalArticle') {
                                     $merge = true;
-                                } elseif ($format == 'Journal Article' && $this->_componentParts == 'merge_non_earticles') {
+                                } elseif ($format == 'JournalArticle' && $this->_componentParts == 'merge_non_earticles') {
                                     $merge = true;
                                 }
                                 if ($merge) {
@@ -270,6 +286,7 @@ class RecordManager
                                     if ($this->verbose) {
                                         echo "Skipping component part {$record['_id']}\n";
                                     }
+                                    continue;
                                 }
                             }
                         }
@@ -280,9 +297,9 @@ class RecordManager
                             $merge = false;
                             if ($this->_componentParts == 'merge_all') {
                                 $merge = true;
-                            } elseif ($format != 'eJournal' && $format != 'Journal') {
+                            } elseif ($format != 'eJournal' && $format != 'Journal' && $format != 'Serial') {
                                 $merge = true;
-                            } elseif ($format == 'Journal' && $this->_componentParts == 'merge_non_earticles') {
+                            } elseif (($format == 'Journal' || $format == 'Serial') && $this->_componentParts == 'merge_non_earticles') {
                                 $merge = true;
                             }
                             if ($merge) {
@@ -305,6 +322,9 @@ class RecordManager
                         $data['host_id'] = $record['host_record_id'];
                         $data['institution'] = $this->_institution;
                         $data['collection'] = $record['source_id'];
+                        if (isset($data['building']) && $data['building']) {
+                            $data['building'] = $record['source_id'] . '.' . $data['building'];
+                        }
                         $data['dedup_key'] = isset($record['dedup_key']) && $record['dedup_key'] ? $record['dedup_key'] : $record['_id'];
                         $data['first_indexed'] = $this->_formatTimestamp($record['created']->sec);
                         $data['last_indexed'] = $this->_formatTimestamp($record['updated']->sec);
@@ -530,16 +550,33 @@ class RecordManager
 
         $dataArray = Array();
         if ($this->_recordSplitter) {
+            if ($this->verbose) {
+                echo "Splitting records...\n";
+            }
             $doc = new DOMDocument();
             $doc->loadXML($recordData);
-            $records = simplexml_import_dom($this->_recordSplitter->transformToDoc($doc));
+            if ($this->verbose) {
+                echo "XML Doc Created...\n";
+            }
+            $transformedDoc = $this->_recordSplitter->transformToDoc($doc);
+            if ($this->verbose) {
+                echo "XML Transformation Done...\n";
+            }
+            $records = simplexml_import_dom($transformedDoc);
+            if ($this->verbose) {
+                echo "Creating record array...\n";
+            }
             foreach ($records as $record) {
                 $dataArray[] = $record->saveXML();
             }
         } else {
             $dataArray = array($recordData);
         }
-        
+
+        if ($this->verbose) {
+            echo "Storing array of " . count($dataArray) . " records...\n";
+        }
+                
         $count = 0;
         foreach ($dataArray as $data) {
             if (isset($this->_normalizationXSLT)) {

@@ -126,7 +126,7 @@ class EadRecord extends BaseRecord
         $unitdate = (string)$doc->c->did->unitdate;
         if ($unitdate && $unitdate != '-') {
             $dates = explode('-', $unitdate);
-            if (isset($dates[1])) {
+            if (isset($dates[1]) && $dates[1]) {
                 if ($dates[0]) {
                     $unitdate = $dates[0] . '-01-01T00:00:00Z,' . $dates[1] . '-12-31T23:59:59Z';
                 } else {

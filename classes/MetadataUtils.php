@@ -186,5 +186,11 @@ class MetadataUtils
         $str = preg_replace('/[\s\/:;\,=\(]+$/', '', $str);
         return $str;
     }
+    
+    static public function array_iunique($array) 
+    {
+        return array_intersect_key($array,
+            array_unique(array_map('mb_strtolower', $array)));
+    } 
 }
 

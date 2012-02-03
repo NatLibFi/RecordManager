@@ -139,19 +139,17 @@ class MarcRecord extends BaseRecord
         }
         	
         // allfields
-        $allFields = '';
+        $allFields = array();
+        $subfieldFilter = array('650' => array('2'));
         foreach ($this->_fields as $tag => $fields) {
             if (($tag >= 100 && $tag < 900) || $tag == 979) {
                 foreach ($fields as $field) {
-                    if ($allFields) {
-                        $allFields .= ' ';
-                    }
-                    $allFields .= $this->_getAllSubfields($field);
+                    $allFields[] = $this->_getAllSubfields($field, isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : null);
                 }
             }
         }
         //echo "allFields: $allFields\n";
-        $data['allfields'] = $allFields;
+        $data['allfields'] = implode(' ', MetadataUtils::array_iunique($allFields));
         	
         // language
         $languages = array(substr($this->_getField('008'), 35, 3));
@@ -166,7 +164,12 @@ class MarcRecord extends BaseRecord
         $data['author_fuller'] = $this->_getFieldSubfields('100q');
         $data['author-letter'] = $this->_getFieldSubfields('100a', true);
 
-        $data['author2'] = $this->_getFieldsSubfields('110ab:111ab:700abcd:710ab:711ab:979c', false, true); // 979c = component part author
+        $data['author2'] = MetadataUtils::array_iunique($this->_getFieldsSubfields('110ab:111ab:700abcd:710ab:711ab:979c', false, true)); // 979c = component part author
+        $key = array_search(mb_strtolower($data['author']), array_map('mb_strtolower', $data['author2']));
+        if ($key !== false) {
+            unset($data['author2'][$key]);
+        }
+        $data['author2'] = array_values($data['author2']);
         $data['author2-role'] = $this->_getFieldsSubfields('700e:710e');
         $data['author_additional'] = $this->_getFieldsSubfields('505r');
         	
@@ -174,7 +177,7 @@ class MarcRecord extends BaseRecord
         $data['title_sub'] = $this->_getFieldSubfields('245b', true);
         $data['title_short'] = $this->_getFieldSubfields('245a', true);
         $data['title_full'] = $this->_getFieldSubfields('245');
-        $data['title_alt'] = $this->_getFieldsSubfields('130adfgklnpst:240a:246a:730adfgklnpst:740a:979b', false, true); // 979c = component part title
+        $data['title_alt'] = array_values(MetadataUtils::array_iunique($this->_getFieldsSubfields('130adfgklnpst:240a:246a:730adfgklnpst:740a:979b', false, true))); // 979c = component part title
         $data['title_old'] = $this->_getFieldsSubfields('780ast');
         $data['title_new'] = $this->_getFieldsSubfields('785ast');
         $data['title_sort'] = $this->getTitle(true);
@@ -219,14 +222,15 @@ class MarcRecord extends BaseRecord
     {
         $count = 0;
         $this->_fields['979'] = array();
+        // TODO: sort by record id
         foreach ($componentParts as $componentPart) {
             $marc = new MARCRecord($componentPart['normalized_data'] ? $componentPart['normalized_data'] : $componentPart['original_data'], '');
-            $title = $marc->_getFieldSubfields('245ab');
-            $uniTitle = $marc->_getFieldSubfields('240a');
+            $title = $marc->_getFieldSubfields('245abnp');
+            $uniTitle = $marc->_getFieldSubfields('240anp');
             if ($uniTitle) {
                 $title .= " [$uniTitle]";
             }
-            $author = $marc->_getFieldSubfields('100a');
+            $author = $marc->_getFieldSubfields('100ae');
             $id = $this->_idPrefix . $marc->getID();
 
             $comp = MARCRecord::SUBFIELD_INDICATOR . "a$id";
@@ -937,11 +941,15 @@ class MarcRecord extends BaseRecord
     }
 
     // String of subfields
-    protected function _getAllSubfields($field)
+    protected function _getAllSubfields($field, $filter = null)
     {
         $subfields = '';
         $p = strpos($field, MARCRecord::SUBFIELD_INDICATOR);
         while ($p !== false) {
+            if (isset($filter) && in_array(substr($field, $p + 1, 1), $filter)) {
+                $p = strpos($field, MARCRecord::SUBFIELD_INDICATOR, $p + 1);
+                continue;
+            }
             $data = substr($field, $p + 2);
             $p2 = strpos($data, MARCRecord::SUBFIELD_INDICATOR);
             if ($p2 !== false) {
