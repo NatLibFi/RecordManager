@@ -32,7 +32,7 @@ function main($argv)
     $params = parseArgs($argv);
     if (!isset($params['func']))
     {
-        echo "Usage: manage --func=... --transformation=... [...]\n\n";
+        echo "Usage: manage --func=... [...]\n\n";
         echo "Parameters:\n\n";
         echo "--func             renormalize|deduplicate|updatesolr\n";
         echo "--source           Source ID to process\n";
