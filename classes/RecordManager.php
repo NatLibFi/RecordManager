@@ -81,7 +81,7 @@ class RecordManager
         $this->_basePath = $basePath;
 
         $mongo = new Mongo($configArray['Mongo']['url']);
-        $this->_db = $mongo->selectDB($configArray['Mongo']['collection']);
+        $this->_db = $mongo->selectDB($configArray['Mongo']['database']);
         MongoCursor::$timeout = 240000;
     }
 
@@ -515,7 +515,7 @@ class RecordManager
                 if ($repository && $repository != '*' && $source != $repository) {
                     continue;
                 }
-                if (empty($source) || empty($settings)) {
+                if (empty($source) || empty($settings) || !isset($settings['url'])) {
                     continue;
                 }
                 $this->_log->log('harvest', "Harvesting from {$source}...");

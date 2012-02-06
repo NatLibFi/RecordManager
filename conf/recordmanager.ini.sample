@@ -7,7 +7,7 @@ timezone        = "Europe/Helsinki"
 [Mongo]
 ; database = mongodb://${username}:${password}@localhost
 url = mongodb://localhost
-collection = recman
+database = recman
 
 [Solr]
 ; Note that RecordManager requires that the json update method be available
