@@ -38,7 +38,7 @@ abstract class BaseRecord
      * Constructor
      *
      * @param string $data    Metadata
-     * @param string $oaiID   Record ID received from OAI-PMH
+     * @param string $oaiID   Record ID received from OAI-PMH (or empty string for file import)
      * @access public
      */
     public abstract function __construct($data, $oaiID);
@@ -68,7 +68,7 @@ abstract class BaseRecord
     public abstract function toXML();
 
     /**
-     * Set the ID prefix into all the ID fields (ID, host ID etc.)
+     * Set the ID prefix into all the ID fields (ID, host ID and any other fields that reference other records by ID)
      *
      * @param  string $prefix The prefix (e.g. "source.")
      * @return void
@@ -88,7 +88,7 @@ abstract class BaseRecord
     }
 
     /**
-     * Return fields to be indexed in Solr
+     * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
      * @return array
      * @access public
