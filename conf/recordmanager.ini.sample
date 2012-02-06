@@ -1,5 +1,4 @@
 [Site]
-locale          = fi_FI
 ; Find valid timezone values here:
 ;   http://www.php.net/manual/en/timezones.php
 timezone        = "Europe/Helsinki"
