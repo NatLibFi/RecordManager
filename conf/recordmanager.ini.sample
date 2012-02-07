@@ -4,14 +4,14 @@
 timezone        = "Europe/Helsinki"
 
 [Mongo]
-; database = mongodb://${username}:${password}@localhost
+; url = mongodb://{username}:{password}@localhost
 url = mongodb://localhost
 database = recman
 
 [Solr]
 ; Note that RecordManager requires that the json update method be available
 update_url = http://localhost:8080/solr/biblio/update/json
-max_commit_interval = 20000
+max_commit_interval = 100000
 username =
 password =
 
