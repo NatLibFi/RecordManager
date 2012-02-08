@@ -622,7 +622,7 @@ class HarvestOaiPmh
     private function _message($msg, $verbose = false, $level = Logger::INFO)
     {
         if ($this->_verbose) {
-            echo $msg;
+            echo "$msg\n";
         }
         $this->_log->log('harvestOaiPmh', $msg, $level);
     }
