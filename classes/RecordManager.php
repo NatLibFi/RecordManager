@@ -323,7 +323,9 @@ class RecordManager
                         $data['institution'] = $this->_institution;
                         $data['collection'] = $record['source_id'];
                         if (isset($data['building']) && $data['building']) {
-                            $data['building'] = $record['source_id'] . '.' . $data['building'];
+                            foreach ($data['building'] as $key => $value) {
+                                $data['building'][$key] = $record['source_id'] . ".$value";
+                            }
                         }
                         $data['dedup_key'] = isset($record['dedup_key']) && $record['dedup_key'] ? $record['dedup_key'] : $record['_id'];
                         $data['first_indexed'] = $this->_formatTimestamp($record['created']->sec);
@@ -542,9 +544,12 @@ class RecordManager
     public function storeRecord($oaiID, $deleted, $recordData)
     {
         if ($deleted) {
-            $record = $this->_db->record->findOne(array('oai_id' => $oaiID));
-            $record['deleted'] = true;
-            $this->_db->record->save($record);
+            // A single OAI-PMH record may have been split to multiple records
+            $records = $this->_db->record->find(array('oai_id' => $oaiID));
+            foreach ($records as $record) {
+                $record['deleted'] = true;
+                $this->_db->record->save($record);
+            }
             return;
         }
 
@@ -598,17 +603,23 @@ class RecordManager
             if (!$id) {
                 throw new Exception("Empty ID returned for record $oaiID");
             }
-            $dbRecord = array();
+            $id = $this->_idPrefix . '.' . $id;
+            $dbRecord = $this->_db->record->findOne(array('_id' => $id));
+            if ($dbRecord) {
+                $dbRecord['updated'] = new MongoDate();
+            } else {
+                $dbRecord = array();
+                $dbRecord['_id'] = $id;
+                $dbRecord['created'] = $dbRecord['updated'] = new MongoDate();
+            }
             $dbRecord['source_id'] = $this->_sourceId;
             $dbRecord['oai_id'] = $oaiID;
             $dbRecord['deleted'] = false;
-            $dbRecord['_id'] = $this->_idPrefix . '.' . $id;
             $dbRecord['host_record_id'] = $hostID;
             $dbRecord['format'] = $this->_format;
             $dbRecord['original_data'] = $data;
             $dbRecord['normalized_data'] = ($data !== $normalizedData) ? $normalizedData : '';
             // TODO: don't update created
-            $dbRecord['created'] = $dbRecord['updated'] = new MongoDate();
             $dbRecord['update_needed'] = $this->_dedup ? true : false;
             $this->_updateDedupCandidateKeys($dbRecord, $metadataRecord);
             $this->_db->record->save($dbRecord);

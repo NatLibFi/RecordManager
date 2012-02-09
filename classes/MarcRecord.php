@@ -108,7 +108,7 @@ class MarcRecord extends BaseRecord
         $data = parent::toSolrArray();
         	
         // building
-        $data['building'] = $this->_getFieldsSubfields('852bc');
+        $data['building'] = $this->_getFieldsSubfields('852b');
         	
         // long_lat
         $field = $this->_getField('034');
