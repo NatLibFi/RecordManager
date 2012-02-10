@@ -89,7 +89,8 @@
 ;                         merge_all            Merge all component parts to their host records
 ;                         merge_non_articles   Merge to host record unless article (including e-journal articles)
 ;                         merge_non_earticles  Merge to host record unless e-journal article
-; idPrefix              Prefix to be used with the record ID's. Prefixes are always added so that ID's are unique, e.g. ID 1234 becomes prefix.1234 (optional, section name is used if not provided).                         
+; idPrefix              Prefix to be used with the record ID's. Prefixes are always added so that ID's are unique, e.g. ID 1234 becomes prefix.1234 (optional, section name is used if not provided).
+; indexMergedParts      Whether to index merged component parts also separately with hidden_component_boolean field set to true. Defaults to true.                          
 
 ; SAMPLE CONFIGURATION FOR OPEN JOURNAL SYSTEMS
 ;[OJS]

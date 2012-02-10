@@ -221,7 +221,7 @@ class MarcRecord extends BaseRecord
     public function mergeComponentParts($componentParts)
     {
         $count = 0;
-        $this->_fields['979'] = array();
+        $parts = array();
         // TODO: sort by record id
         foreach ($componentParts as $componentPart) {
             $marc = new MARCRecord($componentPart['normalized_data'] ? $componentPart['normalized_data'] : $componentPart['original_data'], '');
@@ -240,9 +240,15 @@ class MarcRecord extends BaseRecord
             if ($author) {
                 $comp .= MARCRecord::SUBFIELD_INDICATOR . "c$author";
             }
-            $this->_fields['979'][] = $comp;
+            $key = $marc->getID();
+            if (preg_match('/(\d+)$/', $key, $matches)) {
+                $key = $matches[1];
+            }
+            $parts[$key] = $comp;
             ++$count;
         }
+        ksort($parts);
+        $this->_fields['979'] = array_values($parts);
         return $count;
     }
 

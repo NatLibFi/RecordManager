@@ -63,6 +63,7 @@ class RecordManager
     protected $_solrTransformationXSLT = null;
     protected $_recordSplitter = null; 
     protected $_pretransformation = '';
+    protected $_indexMergedParts = true;
     
     public function __construct($console = false)
     {
@@ -271,26 +272,22 @@ class RecordManager
                         }
                         $metadataRecord = RecordFactory::createRecord($record['format'], $record['normalized_data'] ? $record['normalized_data'] : $record['original_data'], $record['oai_id']);
 
+                        $hiddenComponent = false;
                         if ($record['host_record_id']) {
                             if ($this->_componentParts == 'merge_non_articles' || $this->_componentParts == 'merge_non_earticles') {
                                 $format = $metadataRecord->getFormat();
-                                $merge = false;
                                 if ($format != 'eJournalArticle' && $format != 'JournalArticle') {
-                                    $merge = true;
+                                    $hiddenComponent = true;
                                 } elseif ($format == 'JournalArticle' && $this->_componentParts == 'merge_non_earticles') {
-                                    $merge = true;
-                                }
-                                if ($merge) {
-                                    // This component part is to be merged, delete from index if it exists standalone
-                                    $this->_solrRequest(json_encode(array('delete' => array('id' => $record['_id']))));
-                                    if ($this->verbose) {
-                                        echo "Skipping component part {$record['_id']}\n";
-                                    }
-                                    continue;
+                                    $hiddenComponent = true;
                                 }
                             }
                         }
 
+                        if ($hiddenComponent && !$this->_indexMergedParts) {
+                            continue;
+                        }
+                        
                         $components = null;
                         if (!$record['host_record_id'] && $this->_componentParts != 'as_is') {
                             $format = $metadataRecord->getFormat();
@@ -308,6 +305,7 @@ class RecordManager
                             }
                         }
 
+                        
                         $metadataRecord->setIDPrefix($this->_idPrefix . '.');
                         if (isset($components)) {
                             $mergedComponents += $metadataRecord->mergeComponentParts($components);
@@ -333,6 +331,9 @@ class RecordManager
                         $data['recordtype'] = $record['format'];
                         if (!isset($data['fullrecord'])) {
                             $data['fullrecord'] = $metadataRecord->toXML();
+                        }
+                        if ($hiddenComponent) {
+                            $data['hidden_component_boolean'] = true;
                         }
 
                         foreach ($data as $key => $value) {
@@ -816,7 +817,7 @@ class RecordManager
         if ($matchRecord) {
             $this->_markDuplicates($record, $matchRecord);
             return true;
-        } elseif ($record['dedup_key']) {
+        } elseif (isset($record['dedup_key'])) {
             $record['dedup_key'] = null;
             $record['updated'] = new MongoDate();
             $this->_db->record->save($record);
@@ -826,7 +827,7 @@ class RecordManager
 
     protected function _markDuplicates($rec1, $rec2)
     {
-        if ($rec1['dedup_key'] != '' && $rec1['dedup_key'] == $rec2['dedup_key']) {
+        if (isset($rec1['dedup_key']) && isset($rec1['dedup_key']) && $rec1['dedup_key'] != '' && $rec1['dedup_key'] == $rec2['dedup_key']) {
             // Already marked, no need to do it again...
             return;
         }
@@ -928,6 +929,7 @@ class RecordManager
         $this->_dedup = isset($settings['dedup']) ? $settings['dedup'] : false;
         $this->_componentParts = isset($settings['componentParts']) && $settings['componentParts'] ? $settings['componentParts'] : 'as_is';
         $this->_pretransformation = isset($settings['preTransformation']) ? $settings['preTransformation'] : '';
+        $this->_indexMergedParts = isset($settings['indexMergedParts']) ? $settings['indexMergedParts'] : true;
         
         $params = array('source_id' => $this->_sourceId, 'institution' => $this->_institution, 'format' => $this->_format, 'id_prefix' => $this->_idPrefix);
         $this->_normalizationXSLT = isset($settings['normalization']) && $settings['normalization'] ? new XslTransformation($this->_basePath . '/transformations', $settings['normalization'], $params) : null;
