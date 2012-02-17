@@ -71,10 +71,14 @@ class Logger
         $msg = date('Y-m-d H:i:s') . ' [' . getmypid() . '] [' . $this->_logLevelToStr($level) . "] [$context] $msg\n";
         if ($this->logFile) {
             if (filesize($this->logFile) > $this->maxFileSize * 1024 * 1024) {
-                unlink($this->logFile . '.' . $this->maxFileHistory);
+                if (file_exists($this->logFile . '.' . $this->maxFileHistory)) {
+                    unlink($this->logFile . '.' . $this->maxFileHistory);
+                }
                 for ($i = $this->maxFileHistory - 1; $i >= 0; $i--)
                 {
-                    rename($this->logFile . '.' . $this->maxFileHistory, $this->logFile . '.' . ($this->maxFileHistory + 1));
+                    if (file_exists($this->logFile . '.' . $i)) {
+                        rename($this->logFile . '.' . $i, $this->logFile . '.' . ($i + 1));
+                    }
                 }
                 rename($this->logFile, $this->logFile . '.0');
             }
