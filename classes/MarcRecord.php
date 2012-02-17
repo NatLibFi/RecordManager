@@ -164,7 +164,7 @@ class MarcRecord extends BaseRecord
         $data['author_fuller'] = $this->_getFieldSubfields('100q');
         $data['author-letter'] = $this->_getFieldSubfields('100a', true);
 
-        $data['author2'] = MetadataUtils::array_iunique($this->_getFieldsSubfields('110ab:111ab:700abcd:710ab:711ab:979c', false, true)); // 979c = component part author
+        $data['author2'] = MetadataUtils::array_iunique($this->_getFieldsSubfields('110ab:111ab:700abcd:710ab:711ab:979c:979d', false, true)); // 979cd = component part authors
         $key = array_search(mb_strtolower($data['author']), array_map('mb_strtolower', $data['author2']));
         if ($key !== false) {
             unset($data['author2'][$key]);
@@ -231,6 +231,7 @@ class MarcRecord extends BaseRecord
                 $title .= " [$uniTitle]";
             }
             $author = $marc->_getFieldSubfields('100ae');
+            $additionalAuthors = $marc->_getFieldsSubfields('700ae:710ae');
             $id = $this->_idPrefix . $marc->getID();
 
             $comp = MARCRecord::SUBFIELD_INDICATOR . "a$id";
@@ -240,6 +241,10 @@ class MarcRecord extends BaseRecord
             if ($author) {
                 $comp .= MARCRecord::SUBFIELD_INDICATOR . "c$author";
             }
+            foreach ($additionalAuthors as $addAuthor) {
+                $comp .= MARCRecord::SUBFIELD_INDICATOR . "d$addAuthor";
+            }
+            
             $key = $marc->getID();
             if (preg_match('/(\d+)$/', $key, $matches)) {
                 $key = $matches[1];
