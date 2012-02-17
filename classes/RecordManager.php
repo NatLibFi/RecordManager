@@ -83,7 +83,7 @@ class RecordManager
 
         $mongo = new Mongo($configArray['Mongo']['url']);
         $this->_db = $mongo->selectDB($configArray['Mongo']['database']);
-        MongoCursor::$timeout = 240000;
+        MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout']) ? $configArray['Mongo']['cursor_timeout'] : 300000;
     }
 
     public function loadFromFile($source, $file)
