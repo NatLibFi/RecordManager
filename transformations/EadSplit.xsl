@@ -62,6 +62,11 @@
                     </xsl:otherwise>
                 </xsl:choose>
                 <add-data>
+                    <xsl:if test="ancestor::*[did][1]">
+	                    <xsl:apply-templates select="/ead/archdesc[1]" mode="absolute-parent">
+	                        <xsl:with-param name="fa-id" select="concat($fa-id, $id-sep)"/>
+	                    </xsl:apply-templates>
+	                </xsl:if>
                     <xsl:apply-templates select="ancestor::*[did][1]" mode="parent">
                         <xsl:with-param name="fa-id" select="concat($fa-id, $id-sep)"/>
                     </xsl:apply-templates>
@@ -77,6 +82,19 @@
         </xsl:if>
     </xsl:template>
     
+    <xsl:template match="*" mode="absolute-parent">
+        <xsl:param name="fa-id" select="''"/>
+        <absolute-parent xmlns:ead="urn:isbn:1-931666-22-9">
+            <xsl:attribute name="id">
+                <xsl:call-template name="build-item-id">
+                    <xsl:with-param name="el" select="."/>
+                    <xsl:with-param name="fa-id" select="$fa-id"/>
+                </xsl:call-template>
+            </xsl:attribute>
+            <xsl:copy-of select="@*"/>
+            <xsl:apply-templates select="did/unitid|did/unittitle|did/unitdate"/>
+        </absolute-parent>
+    </xsl:template>
     <xsl:template match="*" mode="parent">
         <xsl:param name="fa-id" select="''"/>
         <parent xmlns:ead="urn:isbn:1-931666-22-9">

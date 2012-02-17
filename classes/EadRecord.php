@@ -97,6 +97,9 @@ class EadRecord extends BaseRecord
         foreach ($this->_doc->{'add-data'}->{'parent'} as $parent) {
             $parent->attributes()->{'id'} = $prefix . $parent->attributes()->{'id'}; 
         }
+        foreach ($this->_doc->{'add-data'}->{'absolute-parent'} as $parent) {
+            $parent->attributes()->{'id'} = $prefix . $parent->attributes()->{'id'}; 
+        }
     }
 
     /**
@@ -151,6 +154,19 @@ class EadRecord extends BaseRecord
                 $data['series'] = (string)$doc->{'add-data'}->parent->unittitle;
                 break;
         }
+        
+        if ($this->_doc->{'add-data'}->{'absolute-parent'}) {
+            $data['hierarchy_top_id'] = (string)$this->_doc->{'add-data'}->{'absolute-parent'}->attributes()->{'id'};
+            $data['hierarchy_top_title'] = (string)$this->_doc->{'add-data'}->{'absolute-parent'}->unittitle;
+        }
+        if ($this->_doc->{'add-data'}->{'parent'}) {
+            $data['hierarchy_parent_id'] = (string)$this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'};
+            $data['hierarchy_parent_title'] = (string)$this->_doc->{'add-data'}->{'parent'}->unittitle;
+        } else {
+            $data['is_hierarchy_top_id'] = $data['hierarchy_top_id'] = $this->getID();
+            $data['is_hierarchy_top_title'] = $data['hierarchy_top_title'] = (string)$doc->c->did->unittitle;
+        }
+        
         return $data;
     }
 
