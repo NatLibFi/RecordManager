@@ -607,7 +607,11 @@ class RecordManager
             $id = $this->_idPrefix . '.' . $id;
             $dbRecord = $this->_db->record->findOne(array('_id' => $id));
             if ($dbRecord) {
-                $dbRecord['updated'] = new MongoDate();
+                if (!isset($dbRecord['created'])) {
+                    $dbRecord['created'] = $dbRecord['updated'] = new MongoDate();
+                } else {
+                    $dbRecord['updated'] = new MongoDate();
+                }
             } else {
                 $dbRecord = array();
                 $dbRecord['_id'] = $id;
