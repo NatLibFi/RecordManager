@@ -501,8 +501,8 @@ class HarvestOaiPmh
         foreach ($records as $record) {
             // Die if the record is missing its header:
             if (empty($record->header)) {
-                $this->_message("Record header missing", false, Logger::FATAL);
-                die("Unexpected missing record header.\n");
+                $this->_message("Record header missing", false, Logger::ERROR);
+                continue;
             }
 
             // Get the ID of the current record:
