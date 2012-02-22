@@ -80,6 +80,9 @@ class EadSplitter
                 $this->appendXML($record, $child);
             }
             if ($record->getName() != 'archdesc') {
+                $record->did->unitid->attributes()->identifier = $this->_archiveId . '_' . 
+                    $record->did->unitid->attributes()->identifier; 
+                
                 $addData = $record->addChild('add-data');
                 
                 $absolute = $addData->addChild('archive');
@@ -91,8 +94,12 @@ class EadSplitter
                 
                 $parentDid = $original->xpath('parent::*/did | parent::*/parent::*/did');
                 $parentDid = $parentDid[0];
+                $parentID = (string)$parentDid->unitid->attributes()->identifier;
+                if ($parentID != $this->_archiveId) {
+                    $parentID = $this->_archiveId . '_' . $parentID;
+                }
                 $parent = $addData->addChild('parent');
-                $parent->addAttribute('id', $parentDid->unitid->attributes()->identifier);
+                $parent->addAttribute('id', $parentID);
                 $parent->addAttribute('title', $parentDid->unittitle);
             }
             return $record->asXML();
