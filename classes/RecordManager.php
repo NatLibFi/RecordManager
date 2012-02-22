@@ -945,7 +945,6 @@ class RecordManager
             $this->_log->log('_solrRequest', "Solr server request failed: $code: " . $request->getResponseBody(), Logger::FATAL);
             die("Solr server request failed: $code: " . $request->getResponseBody() . "\n");
         }
-        //error_log("Solr Response: \n"  . $request->getResponseBody());
     }
 
     protected function _getRecordData(&$record, $normalized)
