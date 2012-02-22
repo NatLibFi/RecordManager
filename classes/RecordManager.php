@@ -372,6 +372,7 @@ class RecordManager
                 if (!empty($delList)) {
                     $this->_solrRequest(json_encode(array('delete' => $delList)));
                 }
+                $this->_log->log('updateSolrIndex', "Committing final changes...");
                 $this->_solrRequest('{ "commit": {} }');
 
                 if (isset($lastIndexingDate)) {
