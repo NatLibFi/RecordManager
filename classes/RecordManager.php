@@ -187,7 +187,7 @@ class RecordManager
                         if ($skipRecords > 0 && $count % $skipRecords != 0) {
                             continue;
                         }
-                        $metadataRecord = RecordFactory::createRecord($record['format'], $record['normalized_data'] ? $record['normalized_data'] : $record['original_data'], $record['oai_id']);
+                        $metadataRecord = RecordFactory::createRecord($record['format'], $this->_getRecordData($record, true), $record['oai_id']);
                         if (isset($record['dedup_key']) && $record['dedup_key']) {
                             ++$deduped;
                         }
@@ -270,7 +270,7 @@ class RecordManager
                             }
                             continue;
                         }
-                        $metadataRecord = RecordFactory::createRecord($record['format'], $record['normalized_data'] ? $record['normalized_data'] : $record['original_data'], $record['oai_id']);
+                        $metadataRecord = RecordFactory::createRecord($record['format'], $this->_getRecordData($record, true), $record['oai_id']);
 
                         $hiddenComponent = false;
                         if ($record['host_record_id']) {
@@ -408,22 +408,26 @@ class RecordManager
         $this->_log->log('renormalize', "Processing $total records...");
         $starttime = microtime(true);
         foreach ($records as $record) {
+            $originalData = $this->_getRecordData($record, false);
+            $normalizedData = $originalData;
             if (isset($this->_normalizationXSLT)) {
-                $record['normalized_data'] = $this->_normalizationXSLT->transform($record['original_data'], array('oai_id' => $record['oai_id']));
+                $normalizedData = $this->_normalizationXSLT->transform($originalData, array('oai_id' => $record['oai_id']));
             }
-            if ($record['normalized_data'] == $record['original_data']) {
+            
+            $metadataRecord = RecordFactory::createRecord($record['format'], $normalizedData, $record['oai_id']);
+            $this->_updateDedupCandidateKeys($record, $metadataRecord);
+            
+            if ($normalizedData == $originalData) {
                 $record['normalized_data'] = '';
+            } else {
+                $record['normalized_data'] = new MongoBinData($normalizedData);
             }
-            $metadataRecord = RecordFactory::createRecord($record['format'], $record['normalized_data'] ? $record['normalized_data'] : $record['original_data'], $record['oai_id']);
             $record['dedup_key'] = '';
             $record['update_needed'] = $this->_dedup ? true : false;
-            $this->_updateDedupCandidateKeys($record, $metadataRecord);
             $record['updated'] = new MongoDate();
             try {
                 $this->_db->record->save($record);
             } catch (Exception $e) {
-                var_dump($record);
-                echo "\n\n" . $metadataRecord->getTitle(true) . "\n\n";
                 die("Save failed: " . $e->getMessage() . "\n");
             }
             ++$count;
@@ -542,6 +546,22 @@ class RecordManager
         }
     }
 
+    public function dumpRecord($recordID)
+    {
+        if (!$recordID) {
+            die("dump: record id must be specified\n");
+        }
+        $records = $this->_db->record->find(array('_id' => $recordID));
+        foreach ($records as $record) {
+            $record['original_data'] = $this->_getRecordData($record, false);
+            $record['normalized_data'] = $this->_getRecordData($record, true);
+            if ($record['original_data'] == $record['normalized_data']) {
+                $record['normalized_data'] = '';
+            }
+            print_r($record);
+        }
+    }
+    
     public function storeRecord($oaiID, $deleted, $recordData)
     {
         if ($deleted) {
@@ -559,21 +579,30 @@ class RecordManager
             if ($this->verbose) {
                 echo "Splitting records...\n";
             }
-            $doc = new DOMDocument();
-            $doc->loadXML($recordData);
-            if ($this->verbose) {
-                echo "XML Doc Created...\n";
-            }
-            $transformedDoc = $this->_recordSplitter->transformToDoc($doc);
-            if ($this->verbose) {
-                echo "XML Transformation Done...\n";
-            }
-            $records = simplexml_import_dom($transformedDoc);
-            if ($this->verbose) {
-                echo "Creating record array...\n";
-            }
-            foreach ($records as $record) {
-                $dataArray[] = $record->saveXML();
+            if (is_string($this->_recordSplitter)) {
+                require_once $this->_recordSplitter;
+                $className = substr($this->_recordSplitter, 0, -4);
+                $splitter = new $className($recordData);
+                while (!$splitter->getEOF()) {
+                    $dataArray[] = $splitter->getNextRecord();
+                }
+            } else {
+                $doc = new DOMDocument();
+                $doc->loadXML($recordData);
+                if ($this->verbose) {
+                    echo "XML Doc Created...\n";
+                }
+                $transformedDoc = $this->_recordSplitter->transformToDoc($doc);
+                if ($this->verbose) {
+                    echo "XML Transformation Done...\n";
+                }
+                $records = simplexml_import_dom($transformedDoc);
+                if ($this->verbose) {
+                    echo "Creating record array...\n";
+                }
+                foreach ($records as $record) {
+                    $dataArray[] = $record->saveXML();
+                }
             }
         } else {
             $dataArray = array($recordData);
@@ -617,13 +646,22 @@ class RecordManager
                 $dbRecord['_id'] = $id;
                 $dbRecord['created'] = $dbRecord['updated'] = new MongoDate();
             }
+            if ($normalizedData) {
+                if ($data == $normalizedData) {
+                    $normalizedData = '';
+                };
+            }
+            $data = gzdeflate($data);
+            if ($normalizedData) {
+                $normalizedData = gzdeflate($normalizedData);
+            }
             $dbRecord['source_id'] = $this->_sourceId;
             $dbRecord['oai_id'] = $oaiID;
             $dbRecord['deleted'] = false;
             $dbRecord['host_record_id'] = $hostID;
             $dbRecord['format'] = $this->_format;
-            $dbRecord['original_data'] = $data;
-            $dbRecord['normalized_data'] = ($data !== $normalizedData) ? $normalizedData : '';
+            $dbRecord['original_data'] = new MongoBinData($data);
+            $dbRecord['normalized_data'] = $normalizedData ? new MongoBinData($normalizedData) : '';
             // TODO: don't update created
             $dbRecord['update_needed'] = $this->_dedup ? true : false;
             $this->_updateDedupCandidateKeys($dbRecord, $metadataRecord);
@@ -910,6 +948,16 @@ class RecordManager
         //error_log("Solr Response: \n"  . $request->getResponseBody());
     }
 
+    protected function _getRecordData(&$record, $normalized)
+    {
+        if ($normalized) {
+            $data = $record['normalized_data'] ? $record['normalized_data'] : $record['original_data'];
+        } else {
+            $data = $record['original_data'];
+        }
+        return is_string($data) ? $data : gzinflate($data->bin);
+    }
+    
     protected function _loadSourceSettings($source)
     {
         if (!isset($this->_dataSourceSettings[$source])) {
@@ -940,13 +988,17 @@ class RecordManager
         $this->_solrTransformationXSLT = isset($settings['solrTransformation']) && $settings['solrTransformation'] ? new XslTransformation($this->_basePath . '/transformations', $settings['solrTransformation'], $params) : null;
         
         if (isset($settings['recordSplitter'])) {
-            $style = new DOMDocument();
-            $xslFile = $this->_basePath . '/transformations/' . $settings['recordSplitter'];
-            if ($style->load($xslFile) === false) {
-                throw new Exception("Could not load $xslFile");
+            if (substr($settings['recordSplitter'], -4) == '.php') {
+                $this->_recordSplitter = $settings['recordSplitter']; 
+            } else {
+                $style = new DOMDocument();
+                $xslFile = $this->_basePath . '/transformations/' . $settings['recordSplitter'];
+                if ($style->load($xslFile) === false) {
+                    throw new Exception("Could not load $xslFile");
+                }
+                $this->_recordSplitter = new XSLTProcessor();
+                $this->_recordSplitter->importStylesheet($style);
             }
-            $this->_recordSplitter = new XSLTProcessor();
-            $this->_recordSplitter->importStylesheet($style);
         }
     }
 }

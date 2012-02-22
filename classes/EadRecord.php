@@ -56,7 +56,7 @@ class EadRecord extends BaseRecord
      */
     public function getID()
     {
-        return (string) $this->_doc->attributes()->{'id'};
+        return (string)$this->_doc->did->unitid->attributes()->{'identifier'};
     }
 
     /**
@@ -90,15 +90,10 @@ class EadRecord extends BaseRecord
      */
     public function setIDPrefix($prefix)
     {
-        $this->_doc->attributes()->{'id'} = $prefix . $this->_doc->attributes()->{'id'};
-        foreach ($this->_doc->{'add-data'}->{'children'} as $child) {
-            $child->attributes()->{'id'} = $prefix . $child->attributes()->{'id'}; 
-        }
-        foreach ($this->_doc->{'add-data'}->{'parent'} as $parent) {
-            $parent->attributes()->{'id'} = $prefix . $parent->attributes()->{'id'}; 
-        }
-        foreach ($this->_doc->{'add-data'}->{'absolute-parent'} as $parent) {
-            $parent->attributes()->{'id'} = $prefix . $parent->attributes()->{'id'}; 
+        $this->_doc->did->unitid->attributes()->{'identifier'} = $prefix . $this->_doc->did->unitid->attributes()->{'identifier'};
+        if ($this->_doc->{'add-data'}) {
+            $this->_doc->{'add-data'}->{'archive'}->attributes()->{'id'} = $prefix . $this->_doc->{'add-data'}->{'archive'}->attributes()->{'id'}; 
+            $this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'} = $prefix . $this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'}; 
         }
     }
 
@@ -120,13 +115,20 @@ class EadRecord extends BaseRecord
         $data['allfields'] = $this->_getAllFields($doc);
         	
         // language
-        $data['format'] = (string)$doc->c->attributes()->level;
-        $data['author'] = (string)$doc->c->did->origination->corpname;
+        $data['format'] = (string)$doc->attributes()->level;
+        if ($doc->did->origination) {
+            $data['author'] = (string)$doc->did->origination->corpname;
+        }
 
-        $data['title_sort'] = $data['title'] = $data['title_short'] = (string)$doc->c->did->unittitle;
-        $data['title_full'] = $data['title'];
-        
-        $unitdate = (string)$doc->c->did->unitdate;
+        $data['title'] = $data['title_short'] = (string)$doc->did->unittitle;
+        if (in_array($data['format'], array('series', 'item'))) {
+            $data['title_sub'] = (string)$doc->did->unitid;
+        } else {
+            $data['title_sub'] = '';
+        }
+        $data['title_full'] = $data['title_sort'] = $data['title'] . ($data['title_sub'] ? ' (' . $data['title_sub'] . ')' : '');
+                
+        $unitdate = (string)$doc->did->unitdate;
         if ($unitdate && $unitdate != '-') {
             $dates = explode('-', $unitdate);
             if (isset($dates[1]) && $dates[1]) {
@@ -145,41 +147,34 @@ class EadRecord extends BaseRecord
             $data['unit_daterange'] = $unitdate; 
         }
         
-        switch ($doc->c->level) {
+        switch ($doc->level) {
             case 'collection':
                 break;
             case 'series':
                 break;
             case 'item': 
-                $data['series'] = (string)$doc->{'add-data'}->parent->unittitle;
+                $data['series'] = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
                 break;
         }
         
-        if ($this->_doc->{'add-data'}->{'absolute-parent'}) {
-            $data['hierarchy_top_id'] = (string)$this->_doc->{'add-data'}->{'absolute-parent'}->attributes()->{'id'};
-            $data['hierarchy_top_title'] = (string)$this->_doc->{'add-data'}->{'absolute-parent'}->unittitle;
+        if ($this->_doc->{'add-data'}->{'archive'}) {
+            $data['hierarchy_top_id'] = (string)$this->_doc->{'add-data'}->archive->attributes()->{'id'};
+            $data['hierarchy_top_title'] = (string)$this->_doc->{'add-data'}->archive->attributes()->title;
+            if ($this->_doc->{'add-data'}->archive->attributes()->subtitle) {
+                $data['hierarchy_top_title'] .= ' : ' . (string)$this->_doc->{'add-data'}->archive->attributes()->subtitle; 
+            }
         }
         if ($this->_doc->{'add-data'}->{'parent'}) {
             $data['hierarchy_parent_id'] = (string)$this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'};
-            $data['hierarchy_parent_title'] = (string)$this->_doc->{'add-data'}->{'parent'}->unittitle;
+            $data['hierarchy_parent_title'] = (string)$this->_doc->{'add-data'}->{'parent'}->attributes()->title;
         } else {
             $data['is_hierarchy_top_id'] = $data['hierarchy_top_id'] = $this->getID();
-            $data['is_hierarchy_top_title'] = $data['hierarchy_top_title'] = (string)$doc->c->did->unittitle;
+            $data['is_hierarchy_top_title'] = $data['hierarchy_top_title'] = (string)$doc->did->unittitle;
         }
         
         return $data;
     }
 
-    // TODO: this is temporary, will be replaced by proper ID's for the hierarchy
-    public function getHostRecordID()
-    {
-        if ($this->_doc->{'add-data'}->{'parent'}) {
-            return (string)$this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'}; 
-        }
-        return '';
-    }
-
-    
     protected function _getAllFields($xml)
     {
         $allFields = '';

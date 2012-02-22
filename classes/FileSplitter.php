@@ -33,10 +33,10 @@
  */
 class FileSplitter
 {
-    private $_xmlDoc;
-    private $_recordNodes;
-    private $_recordCount;
-    private $_currentPos;
+    protected $_xmlDoc;
+    protected $_recordNodes;
+    protected $_recordCount;
+    protected $_currentPos;
 
     function __construct($data, $recordXPath)
     {

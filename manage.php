@@ -34,11 +34,11 @@ function main($argv)
     {
         echo "Usage: manage --func=... [...]\n\n";
         echo "Parameters:\n\n";
-        echo "--func             renormalize|deduplicate|updatesolr\n";
+        echo "--func             renormalize|deduplicate|updatesolr|dump\n";
         echo "--source           Source ID to process\n";
         echo "--all              Process all records regardless of their state (deduplicate)\n";
         echo "--from             Override the date from which to run the update (updatesolr)\n";
-        echo "--single           Process only the given record id (deduplicate, updatesolr)\n";
+        echo "--single           Process only the given record id (deduplicate, updatesolr, dump)\n";
         echo "--verbose          Enable verbose output for debugging\n\n";
         exit(1);
     }
@@ -54,6 +54,7 @@ function main($argv)
         case 'renormalize': $manager->renormalize($source, $single); break;
         case 'deduplicate': $manager->deduplicate($source, isset($params['all']) ? true : false, $single); break;
         case 'updatesolr': $manager->updateSolrIndex(isset($params['from']) ? $params['from'] : null, $source, $single); break;
+        case 'dump': $manager->dumpRecord($single); break;
         default: echo 'Unknown func: ' . $params['func'] . "\n"; exit(1);
     }
 }

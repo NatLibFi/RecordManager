@@ -519,9 +519,8 @@ class HarvestOaiPmh
                     $this->_message("No metadata found for record $id", false, Logger::ERROR);
                     continue;
                 }
-                call_user_func($this->_callback, $id, false, trim($recordNode[0]->asXML()));
                 $harvestedIds[] = $id;
-                $this->_normalRecords++;
+                $this->_normalRecords += call_user_func($this->_callback, $id, false, trim($recordNode[0]->asXML()));
             }
 
             // If the current record's date is newer than the previous end date,
