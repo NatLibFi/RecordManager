@@ -687,7 +687,7 @@ class RecordManager
 
     protected function _dedupRecord($record)
     {
-        $origRecord = RecordFactory::createRecord($record['format'], $record['normalized_data'] ? $record['normalized_data'] : $record['original_data'], $record['oai_id']);
+        $origRecord = RecordFactory::createRecord($record['format'], $this->_getRecordData($record, true), $record['oai_id']);
         $key = MetadataUtils::createTitleKey($origRecord->getTitle(true));
         $keyArray = array($key);
         $ISBNArray = array_unique($origRecord->getISBNs());
@@ -750,7 +750,7 @@ class RecordManager
                             break;
                         }
 
-                        $cRecord = RecordFactory::createRecord($candidate['format'], $candidate['normalized_data'] ? $candidate['normalized_data'] : $candidate['original_data'], $record['oai_id']);
+                        $cRecord = RecordFactory::createRecord($candidate['format'], $this->_getRecordData($candidate, true), $record['oai_id']);
                         if ($this->verbose) {
                             echo "Candidate:\n" . ($candidate['normalized_data'] ? $candidate['normalized_data'] : $candidate['original_data']) . "\n";
                         }
@@ -870,7 +870,7 @@ class RecordManager
 
     protected function _markDuplicates($rec1, $rec2)
     {
-        if (isset($rec1['dedup_key']) && isset($rec1['dedup_key']) && $rec1['dedup_key'] != '' && $rec1['dedup_key'] == $rec2['dedup_key']) {
+        if (isset($rec1['dedup_key']) && isset($rec2['dedup_key']) && $rec1['dedup_key'] != '' && $rec1['dedup_key'] == $rec2['dedup_key']) {
             // Already marked, no need to do it again...
             return;
         }
