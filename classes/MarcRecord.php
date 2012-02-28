@@ -181,6 +181,10 @@ class MarcRecord extends BaseRecord
         $data['title_old'] = $this->_getFieldsSubfields('780ast');
         $data['title_new'] = $this->_getFieldsSubfields('785ast');
         $data['title_sort'] = $this->getTitle(true);
+        if (!$data['title_short']) {
+            $data['title_short'] = $this->_getFieldSubfields('240anp', true);
+            $data['title_full'] = $this->_getFieldSubfields('240');
+        }
 
         $data['series'] = $this->_getFieldsSubfields('440ap:800abcdfpqt:830ap');
         	
