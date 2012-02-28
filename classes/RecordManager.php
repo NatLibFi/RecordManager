@@ -262,19 +262,13 @@ class RecordManager
                         $this->_solrRequest(json_encode(array('delete' => array('id' => $record['_id']))));
                         ++$deleted;
                     } else {
-                        if ($this->_componentParts == 'merge_all' && $record['host_record_id']) {
-                            // This component part is to be merged, delete from index if it exists standalone
-                            $this->_solrRequest(json_encode(array('delete' => array('id' => $record['_id']))));
-                            if ($this->verbose) {
-                                echo "Skipping component part {$record['_id']}\n";
-                            }
-                            continue;
-                        }
                         $metadataRecord = RecordFactory::createRecord($record['format'], $this->_getRecordData($record, true), $record['oai_id']);
 
                         $hiddenComponent = false;
                         if ($record['host_record_id']) {
-                            if ($this->_componentParts == 'merge_non_articles' || $this->_componentParts == 'merge_non_earticles') {
+                            if ($this->_componentParts == 'merge_all') {
+                                $hiddenComponent = true;
+                            } elseif ($this->_componentParts == 'merge_non_articles' || $this->_componentParts == 'merge_non_earticles') {
                                 $format = $metadataRecord->getFormat();
                                 if ($format != 'eJournalArticle' && $format != 'JournalArticle') {
                                     $hiddenComponent = true;
@@ -652,7 +646,7 @@ class RecordManager
                     $normalizedData = '';
                 };
             }
-            $data = gzdeflate($data);
+            $originalData = gzdeflate($originalData);
             if ($normalizedData) {
                 $normalizedData = gzdeflate($normalizedData);
             }
@@ -661,7 +655,7 @@ class RecordManager
             $dbRecord['deleted'] = false;
             $dbRecord['host_record_id'] = $hostID;
             $dbRecord['format'] = $this->_format;
-            $dbRecord['original_data'] = new MongoBinData($data);
+            $dbRecord['original_data'] = new MongoBinData($originalData);
             $dbRecord['normalized_data'] = $normalizedData ? new MongoBinData($normalizedData) : '';
             // TODO: don't update created
             $dbRecord['update_needed'] = $this->_dedup ? true : false;
