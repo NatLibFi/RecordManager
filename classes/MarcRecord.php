@@ -226,9 +226,13 @@ class MarcRecord extends BaseRecord
     {
         $count = 0;
         $parts = array();
-        // TODO: sort by record id
         foreach ($componentParts as $componentPart) {
-            $marc = new MARCRecord($componentPart['normalized_data'] ? $componentPart['normalized_data'] : $componentPart['original_data'], '');
+            // TODO: this is ugly, but temporary.. 
+            $data = $componentPart['normalized_data'] ? $componentPart['normalized_data'] : $componentPart['original_data'];
+            if (!is_string($data)) {
+                $data = gzinflate($data->bin);
+            }
+            $marc = new MARCRecord($data, '');
             $title = $marc->_getFieldSubfields('245abnp');
             $uniTitle = $marc->_getFieldSubfields('240anp');
             if ($uniTitle) {
@@ -920,7 +924,11 @@ class MarcRecord extends BaseRecord
             $tag = substr($fieldspec, 0, 3);
             $subfields = substr($fieldspec, 3);
             foreach ($this->_getFields($tag) as $field) {
-                $fieldContents = $this->_getSubfields($field, $subfields);
+                if ($subfields) {
+                    $fieldContents = $this->_getSubfields($field, $subfields);
+                } else {
+                    $fieldContents = $this->_getAllSubfields($field);
+                }
                 if ($fieldContents) {
                     if ($stripTrailingPunctuation) {
                         $fieldContents = MetadataUtils::stripTrailingPunctuation($fieldContents);
