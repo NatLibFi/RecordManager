@@ -477,8 +477,6 @@ class RecordManager
                         if ($this->verbose)
                         echo '.';
                     }
-                    $record['update_needed'] = false;
-                    $this->_db->record->save($record);
                     if (microtime(true) - $startRecordTime > 0.7) {
                         if ($this->verbose) {
                             echo "\n";
@@ -854,40 +852,35 @@ class RecordManager
         if ($matchRecord) {
             $this->_markDuplicates($record, $matchRecord);
             return true;
-        } elseif (isset($record['dedup_key'])) {
+        } else {
             $record['dedup_key'] = null;
             $record['updated'] = new MongoDate();
+            $record['update_needed'] = false;
             $this->_db->record->save($record);
-        }
+        } 
         return false;
     }
 
     protected function _markDuplicates($rec1, $rec2)
     {
-        if (isset($rec1['dedup_key']) && isset($rec2['dedup_key']) && $rec1['dedup_key'] != '' && $rec1['dedup_key'] == $rec2['dedup_key']) {
-            // Already marked, no need to do it again...
-            return;
-        }
         if (isset($rec1['dedup_key']) && $rec1['dedup_key'] != '') {
             $rec2['dedup_key'] = $rec1['dedup_key'];
-            $rec2['updated'] = new MongoDate();
-            $this->_db->record->save($rec2);
         }
         elseif (isset($rec2['dedup_key']) && $rec2['dedup_key'] != '') {
             $rec1['dedup_key'] = $rec2['dedup_key'];
-            $rec1['updated'] = new MongoDate();
-            $this->_db->record->save($rec1);
         }
         else
         {
             $key = 'dedup' . uniqid();
             $rec1['dedup_key'] = $key;
-            $rec1['updated'] = new MongoDate();
-            $this->_db->record->save($rec1);
             $rec2['dedup_key'] = $key;
-            $rec2['updated'] = new MongoDate();
-            $this->_db->record->save($rec2);
         }
+        $rec1['updated'] = new MongoDate();
+        $rec1['update_needed'] = false;            
+        $this->_db->record->save($rec1);
+        $rec2['updated'] = new MongoDate();
+        $rec2['update_needed'] = false;
+        $this->_db->record->save($rec2);
     }
 
     protected function _pretransform($data)
