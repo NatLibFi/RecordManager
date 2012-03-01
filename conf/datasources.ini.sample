@@ -18,7 +18,7 @@
 ; dateGranularity = auto
 ; harvestedIdLog = harvest.log
 ; verbose = false
-; solrTransformation = conf/oai_dc.properties
+; solrTransformation = oai_dc.properties
 ;
 ; The section_name may be passed to harvest_oai.php as a parameter to harvest only
 ; records from that source.  This is also the directory name that records will be
@@ -106,5 +106,5 @@
 ;injectDate = "datestamp"
 ;institution = MyInst
 ;format = dc
-;solrTransformation = conf/oai_dc.properties
+;solrTransformation = oai_dc.properties
 
