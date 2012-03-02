@@ -203,21 +203,21 @@ class MarcRecord extends BaseRecord
         $data['callnumber-a'] = $this->_getFirstFieldSubfields('080a:084a:050a');
         $data['callnumber-first-code'] = substr($this->_getFirstFieldSubfields('080a:084a:050a'), 0, 1);
 
-        $data['topic'] = $this->_getFieldsSubfields('600:610:611:630:650');
-        $data['genre'] = $this->_getFieldsSubfields('655');
-        $data['geographic'] = $this->_getFieldsSubfields('651');
-        $data['era'] = $this->_getFieldsSubfields('648');
+        $data['topic'] = $this->_getFieldsSubfields('600abcdefghjklmnopqrstuvxyz:610abcdefghklmnoprstuvxyz:611acdefghjklnpqstuvxyz:630adefghklmnoprstvxyz:650abcdevxyz');
+        $data['genre'] = $this->_getFieldsSubfields('655abcvxyz');
+        $data['geographic'] = $this->_getFieldsSubfields('651aevxyz');
+        $data['era'] = $this->_getFieldsSubfields('648avxyz');
 
-        $data['topic_facet'] = $this->_getFieldsSubfields('600x:610x:611x:630x:648x:650a:650x:651x:655x');
-        $data['genre_facet'] = $this->_getFieldsSubfields('600v:610v:611v:630v:648v:650v:651v:655a:655v');
-        $data['geographic_facet'] = $this->_getFieldsSubfields('600z:610z:611z:630z:648z:650z:651a:651z:655z');
-        $data['era_facet'] = $this->_getFieldsSubfields('600d:610y:611y:630y:648a:648y:650y:651y:655y');
+        $data['topic_facet'] = $this->_getFieldsSubfields('600x:610x:611x:630x:648x:650a:650x:651x:655x', false, false, true);
+        $data['genre_facet'] = $this->_getFieldsSubfields('600v:610v:611v:630v:648v:650v:651v:655a:655v', false, false, true);
+        $data['geographic_facet'] = $this->_getFieldsSubfields('600z:610z:611z:630z:648z:650z:651a:651z:655z', false, false, true);
+        $data['era_facet'] = $this->_getFieldsSubfields('600d:610y:611y:630y:648a:648y:650y:651y:655y', false, false, true);
 
         $data['url'] = $this->_getFieldsSubfields('856u');
 
         $data['illustrated'] = $this->_getIllustrated();
 
-        // TODO: Do we need dewey fields or OCLC numbers?
+        // TODO: dewey fields and OCLC numbers
         	
         return $data;
     }
@@ -257,7 +257,7 @@ class MarcRecord extends BaseRecord
             if (preg_match('/(\d+)$/', $key, $matches)) {
                 $key = $matches[1];
             }
-            $parts[$key] = $comp;
+            $parts[$key] = "  $comp";
             ++$count;
         }
         ksort($parts);
@@ -885,19 +885,24 @@ class MarcRecord extends BaseRecord
         return $data;
     }
 
-    protected function _getSubfields($field, $subfields)
+    protected function _getSubfieldsArray($field, $subfields)
     {
-        $data = '';
+        $data = array();
+        $subfieldArray = explode(MARCRecord::SUBFIELD_INDICATOR, $field);
         foreach (str_split($subfields) as $code) {
-            $subfield = $this->_getSubfield($field, $code);
-            if ($subfield) {
-                if ($data) {
-                    $data .= ' ';
+            foreach ($subfieldArray as $subfield) {
+                if (substr($subfield, 0, 1) == $code) {
+                    $data[] = substr($subfield, 1);
                 }
-                $data .= $subfield;
             }
         }
         return $data;
+    }
+    
+    protected function _getSubfields($field, $subfields)
+    {
+        $data = $this->_getSubfieldsArray($field, $subfields);
+        return implode(' ', $data);
     }
 
     // Space-separated subfields
@@ -917,7 +922,7 @@ class MarcRecord extends BaseRecord
     }
 
     // Array of fields with space-separated subfields
-    protected function _getFieldsSubfields($fieldspecs, $firstOnly = false, $stripTrailingPunctuation = false)
+    protected function _getFieldsSubfields($fieldspecs, $firstOnly = false, $stripTrailingPunctuation = false, $splitSubfields = false)
     {
         $data = array();
         foreach (explode(':', $fieldspecs) as $fieldspec) {
@@ -925,20 +930,29 @@ class MarcRecord extends BaseRecord
             $subfields = substr($fieldspec, 3);
             foreach ($this->_getFields($tag) as $field) {
                 if ($subfields) {
-                    $fieldContents = $this->_getSubfields($field, $subfields);
+                    if ($splitSubfields) {
+                        foreach (str_split($subfields) as $code) {
+                            $data = array_merge($data, $this->_getSubfieldsArray($field, $code));
+                        }
+                    } else {
+                        $fieldContents = $this->_getSubfields($field, $subfields);
+                        if ($fieldContents) {
+                            $data[] = $fieldContents;
+                        }
+                    }
                 } else {
                     $fieldContents = $this->_getAllSubfields($field);
+                    if ($fieldContents) {
+                        $data[] = $fieldContents;
+                    }
                 }
-                if ($fieldContents) {
-                    if ($stripTrailingPunctuation) {
-                        $fieldContents = MetadataUtils::stripTrailingPunctuation($fieldContents);
-                    }
-                    $data[] = $fieldContents;
-                    if ($firstOnly) {
-                        break 2;
-                    }
+                if ($firstOnly) {
+                    break 2;
                 }
             }
+        }
+        if ($stripTrailingPunctuation) {
+            array_map(array('MetadataUtils', 'stripTrailingPunctuation'), $data);
         }
         return $data;
     }
