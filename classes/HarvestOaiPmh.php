@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * OAI-PMH Harvesting Class
  *
@@ -513,16 +513,24 @@ class HarvestOaiPmh
             if (strtolower($attribs['status']) == 'deleted') {
                 call_user_func($this->_callback, $id, true, null);
                 $this->_deletedRecords++;
-            } else {
+            } else { 
                 $recordNode = $record->metadata->children();
                 if (empty($recordNode)) {
-                    $this->_message("No metadata found for record $id", false, Logger::ERROR);
-                    continue;
+					// Attempt to guess the right namespace
+					foreach($record->metadata->getNamespaces(true) as $prefix => $namespace) {
+						if(!empty($prefix) && $prefix != 'xsi' && $prefix != 'xml') {
+							$recordNode = $record->metadata->children($namespace);	
+							break;
+						}
+					}
+					if(empty($recordNode)) {
+						$this->_message("No metadata found for record $id", false, Logger::ERROR);
+						continue;
+					}
                 }
                 $harvestedIds[] = $id;
                 $this->_normalRecords += call_user_func($this->_callback, $id, false, trim($recordNode[0]->asXML()));
             }
-
             // If the current record's date is newer than the previous end date,
             // remember it for future reference:
             $date = $this->normalizeDate($record->header->datestamp);
