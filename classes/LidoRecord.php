@@ -56,7 +56,10 @@ class LidoRecord extends BaseRecord
      */
     public function getID()
     {
-        return $this->_doc->lido->lidoRecID;
+		$id = $this->_doc->lido->lidoRecID;
+		if(empty($id)) 
+			$id = $this->_doc->children('http://www.lido-schema.org')->lido->lidoRecID;
+		return $id;
     }
 
     /**

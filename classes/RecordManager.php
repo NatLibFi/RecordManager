@@ -80,8 +80,12 @@ class RecordManager
         $basePath = substr($basePath, 0, strrpos($basePath, DIRECTORY_SEPARATOR));
         $this->_dataSourceSettings = parse_ini_file("$basePath/conf/datasources.ini", true);
         $this->_basePath = $basePath;
-
-        $mongo = new Mongo($configArray['Mongo']['url']);
+		try {
+			$mongo = new Mongo($configArray['Mongo']['url']);
+		}
+		catch (Exception $e) {
+			die("Connecting to MongoDB failed: ". $e->getMessage() . "\nEnsure that the server is running and connectable with the supplied credentials.");
+		}
         $this->_db = $mongo->selectDB($configArray['Mongo']['database']);
         MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout']) ? $configArray['Mongo']['cursor_timeout'] : 300000;
     }
