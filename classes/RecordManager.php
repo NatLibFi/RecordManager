@@ -207,7 +207,7 @@ class RecordManager
         file_put_contents($file, "</collection>\n", FILE_APPEND);
     }
 
-    public function updateSolrIndex($fromDate = null, $sourceId = '', $singleId = '')
+    public function updateSolrIndex($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false)
     {
         global $configArray;
         $commitInterval = isset($configArray['Solr']['max_commit_interval']) ? $configArray['Solr']['max_commit_interval'] : 50000;
@@ -256,7 +256,11 @@ class RecordManager
                 $bufferLen = 0;
                 $buffered = 0;
                 $delList = array();;
-                $this->_log->log('updateSolrIndex', "Indexing $total records (max commit interval $commitInterval records) from $source...");
+                if ($noCommit) {
+                    $this->_log->log('updateSolrIndex', "Indexing $total records (with no forced commits) from $source...");
+                } else {
+                    $this->_log->log('updateSolrIndex', "Indexing $total records (max commit interval $commitInterval records) from $source...");
+                }
                 foreach ($records as $record) {
                     if ($record['deleted']) {
                         $this->_solrRequest(json_encode(array('delete' => array('id' => $record['_id']))));
@@ -356,7 +360,7 @@ class RecordManager
                     if (++$count % 1000 == 0) {
                         $this->_log->log('updateSolrIndex', "$count records (of which $deleted deleted) with $mergedComponents merged parts indexed from $source");
                     }
-                    if ($count % $commitInterval == 0) {
+                    if (!$noCommit && $count % $commitInterval == 0) {
                         $this->_solrRequest('{ "commit": {} }');
                     }
                 }
@@ -366,8 +370,10 @@ class RecordManager
                 if (!empty($delList)) {
                     $this->_solrRequest(json_encode(array('delete' => $delList)));
                 }
-                $this->_log->log('updateSolrIndex', "Committing final changes...");
-                $this->_solrRequest('{ "commit": {} }');
+                if (!$noCommit) {
+                    $this->_log->log('updateSolrIndex', "Committing final changes...");
+                    $this->_solrRequest('{ "commit": {} }');
+                }
 
                 if (isset($lastIndexingDate)) {
                     $state = array('_id' => "Last Index Update $source", 'value' => $lastIndexingDate);
@@ -686,12 +692,6 @@ class RecordManager
 
         $matchRecord = null;
         foreach (array('ISBN' => $ISBNArray, 'key' => $keyArray) as $type => $array) {
-            //			$minWords = $type == 'ISBN' ? 1 : min(array(count($array), 2));
-            //			for ($words = min(array(count($array), 10)); $words >= $minWords  ; $words--) {
-            //				$keyPart = implode(' ', array_slice($array, 0, $words));
-            //				if (strlen($keyPart) < RecordManager::MINIMUM_DEDUP_CANDIDATE_KEY_LENGTH)
-            //					break;
-
             foreach ($array as $keyPart) {
                 if (!$keyPart || isset($this->_tooManyCandidatesKeys[$keyPart])) {
                     continue;
@@ -852,12 +852,11 @@ class RecordManager
         if ($matchRecord) {
             $this->_markDuplicates($record, $matchRecord);
             return true;
-        } else {
-            $record['dedup_key'] = null;
-            $record['updated'] = new MongoDate();
-            $record['update_needed'] = false;
-            $this->_db->record->save($record);
         } 
+        $record['dedup_key'] = null;
+        $record['updated'] = new MongoDate();
+        $record['update_needed'] = false;
+        $this->_db->record->save($record);
         return false;
     }
 

@@ -39,6 +39,7 @@ function main($argv)
         echo "--all              Process all records regardless of their state (deduplicate)\n";
         echo "--from             Override the date from which to run the update (updatesolr)\n";
         echo "--single           Process only the given record id (deduplicate, updatesolr, dump)\n";
+        echo "--nocommit         Don't ask Solr to commit the changes (updatesolr)\n";
         echo "--verbose          Enable verbose output for debugging\n\n";
         exit(1);
     }
@@ -48,12 +49,13 @@ function main($argv)
 
     $source = isset($params['source']) ? $params['source'] : '';
     $single = isset($params['single']) ? $params['single'] : '';
-
+    $noCommit = isset($params['nocommit']) ? $params['nocommit'] : false;
+    
     switch ($params['func'])
     {
         case 'renormalize': $manager->renormalize($source, $single); break;
         case 'deduplicate': $manager->deduplicate($source, isset($params['all']) ? true : false, $single); break;
-        case 'updatesolr': $manager->updateSolrIndex(isset($params['from']) ? $params['from'] : null, $source, $single); break;
+        case 'updatesolr': $manager->updateSolrIndex(isset($params['from']) ? $params['from'] : null, $source, $single, $noCommit); break;
         case 'dump': $manager->dumpRecord($single); break;
         default: echo 'Unknown func: ' . $params['func'] . "\n"; exit(1);
     }
