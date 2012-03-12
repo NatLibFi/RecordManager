@@ -168,8 +168,8 @@ class EadRecord extends BaseRecord
             $data['hierarchy_parent_id'] = (string)$this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'};
             $data['hierarchy_parent_title'] = (string)$this->_doc->{'add-data'}->{'parent'}->attributes()->title;
         } else {
-            $data['is_hierarchy_top_id'] = $data['hierarchy_top_id'] = $this->getID();
-            $data['is_hierarchy_top_title'] = $data['hierarchy_top_title'] = (string)$doc->did->unittitle;
+            $data['is_hierarchy_id'] = $data['hierarchy_top_id'] = $this->getID();
+            $data['is_hierarchy_title'] = $data['hierarchy_top_title'] = (string)$doc->did->unittitle;
         }
         
         return $data;
