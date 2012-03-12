@@ -370,10 +370,6 @@ class RecordManager
                 if (!empty($delList)) {
                     $this->_solrRequest(json_encode(array('delete' => $delList)));
                 }
-                if (!$noCommit) {
-                    $this->_log->log('updateSolrIndex', "Committing final changes...");
-                    $this->_solrRequest('{ "commit": {} }');
-                }
 
                 if (isset($lastIndexingDate)) {
                     $state = array('_id' => "Last Index Update $source", 'value' => $lastIndexingDate);
@@ -384,6 +380,10 @@ class RecordManager
             } catch (Exception $e) {
                 $this->_log->log('updateSolrIndex', 'Exception: ' . $e->getMessage(), Logger::FATAL);
             }
+        }
+        if (!$noCommit) {
+            $this->_log->log('updateSolrIndex', "Final commit...");
+            $this->_solrRequest('{ "commit": {} }');
         }
     }
 
