@@ -63,6 +63,13 @@ class Logger
         }
     }
 
+    /**
+     * Write a message to the log
+     * 
+     * @param string  $context Context of the log message (e.g. current function)
+     * @param string  $msg     Actual message 
+     * @param int     $level   Message level used to filter logged messages. Default is INFO (3)
+     */
     public function log($context, $msg, $level = Logger::INFO)
     {
         if ($this->logLevel < $level) {
@@ -70,7 +77,7 @@ class Logger
         }
         $msg = date('Y-m-d H:i:s') . ' [' . getmypid() . '] [' . $this->_logLevelToStr($level) . "] [$context] $msg\n";
         if ($this->logFile) {
-            if (filesize($this->logFile) > $this->maxFileSize * 1024 * 1024) {
+            if (file_exists($this->logFile) && filesize($this->logFile) > $this->maxFileSize * 1024 * 1024) {
                 if (file_exists($this->logFile . '.' . $this->maxFileHistory)) {
                     unlink($this->logFile . '.' . $this->maxFileHistory);
                 }
