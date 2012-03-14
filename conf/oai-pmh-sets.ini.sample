@@ -1,0 +1,6 @@
+; Each section name corresponds to a set id
+[raita]
+; Display name of the set
+name = Journals Collection
+; Record fields that need to match for the record to belong to this set 
+source_id = OJS

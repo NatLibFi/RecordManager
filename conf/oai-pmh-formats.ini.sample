@@ -1,0 +1,15 @@
+[marc21]
+format = marc
+schema = http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd 
+namespace = http://www.loc.gov/MARC21/slim
+
+[oai_dc]
+format = dc
+schema = http://www.openarchives.org/OAI/2.0/oai_dc.xsd
+namespace = http://www.openarchives.org/OAI/2.0/oai_dc/
+
+[ese]
+format = ese
+schema = http://www.europeana.eu/schemas/ese/ESE-V3.4.xsd
+namespace = http://www.europeana.eu/schemas/ese/
+

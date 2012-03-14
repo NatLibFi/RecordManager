@@ -15,6 +15,14 @@ max_commit_interval = 1000000
 username =
 password =
 
+[OAI-PMH]
+repository_name = OAI-PMH Repository
+base_url = http://base.address
+admin_email = nobody@localhost
+result_limit = 1000
+format_definitions = oai-pmh-formats.ini
+set_definitions = oai-pmh-sets.ini
+
 [Log]
 log_file        = /var/log/recman.log
 log_level       = 4

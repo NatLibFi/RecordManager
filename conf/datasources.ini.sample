@@ -19,6 +19,7 @@
 ; harvestedIdLog = harvest.log
 ; verbose = false
 ; solrTransformation = oai_dc.properties
+; transformation_to_ese = dc2ese.properties
 ;
 ; The section_name may be passed to harvest_oai.php as a parameter to harvest only
 ; records from that source.  This is also the directory name that records will be
@@ -31,11 +32,6 @@
 ;
 ; metadataPrefix is the metadata format to harvest (oai_dc will be used by default
 ; if the value is omitted).
-;
-; idPrefix is the OAI-specific prefix attached to ID values.  If you provide the
-; value here, it will be automatically stripped for you when generating filenames,
-; injecting IDs and tracking deleted records.  If you omit the setting, full
-; OAI ids will be retained. [DEPRECATED -- use idSearch and idReplace instead]
 ;
 ; idSearch[] and idReplace[] may be used to manipulate IDs with regular expressions.
 ; This is useful for adding or removing prefixes and swapping out problematic
@@ -90,7 +86,12 @@
 ;                         merge_non_articles   Merge to host record unless article (including e-journal articles)
 ;                         merge_non_earticles  Merge to host record unless e-journal article
 ; idPrefix              Prefix to be used with the record ID's. Prefixes are always added so that ID's are unique, e.g. ID 1234 becomes prefix.1234 (optional, section name is used if not provided).
-; indexMergedParts      Whether to index merged component parts also separately with hidden_component_boolean field set to true. Defaults to true.                          
+; indexMergedParts      Whether to index merged component parts also separately with hidden_component_boolean field set to true. Defaults to true.
+
+; OAI-PMH Provider Specific settings:
+; transformation_to_{fmt}
+;                       XSL Transformation used to convert records from the original format to the requested format. E.g. if records are stored in MARC format, 
+;                       transformation_to_ese=marc2ese.properties could be used to transform the MARC records to ESE format.                            
 
 ; SAMPLE CONFIGURATION FOR OPEN JOURNAL SYSTEMS
 ;[OJS]
