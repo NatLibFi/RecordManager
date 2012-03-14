@@ -720,10 +720,11 @@ class RecordManager
                     // Go through the candidates, try to match
                     $matchRecord = null;
                     foreach ($candidates as $candidate) {
-                        if ($candidate['source_id'] == $this->_sourceId)
-                        continue;
-                        // Verify the candidate has not been deduped with this source yet
-                        if (isset($candidate['dedup_key']) && $candidate['dedup_key']) {
+                        if ($candidate['source_id'] == $this->_sourceId) {
+                            continue;
+                        }
+                        // Verify the candidate has not been deduped with another record from this source yet
+                        if (isset($candidate['dedup_key']) && $candidate['dedup_key'] && (!isset($record['dedup_key']) || $candidate['dedup_key'] != $record['dedup_key'])) {
                             if ($this->_db->record->find(array('dedup_key' => $candidate['dedup_key'], 'source_id' => $this->_sourceId))->hasNext()) {
                                 if ($this->verbose) {
                                     echo "Candidate {$candidate['_id']} already deduplicated\n";
@@ -744,7 +745,7 @@ class RecordManager
 
                         $cRecord = RecordFactory::createRecord($candidate['format'], $this->_getRecordData($candidate, true), $record['oai_id']);
                         if ($this->verbose) {
-                            echo "Candidate:\n" . ($candidate['normalized_data'] ? $candidate['normalized_data'] : $candidate['original_data']) . "\n";
+                            echo 'Candidate ' . $candidate['_id'] . ":\n" . $this->_getRecordData($candidate, true) . "\n";
                         }
                         	
                         // Check for common ISBN
@@ -762,7 +763,7 @@ class RecordManager
                             }
                             	
                             $matchRecord = $candidate;
-                            break 2;
+                            break 3;
                         }
 
                         if ($origRecord->getFormat() != $cRecord->getFormat()) {
@@ -842,7 +843,7 @@ class RecordManager
                             }
                             // We have a match!
                             $matchRecord = $candidate;
-                            break 2;
+                            break 3;
                         }
                     }
                 }
