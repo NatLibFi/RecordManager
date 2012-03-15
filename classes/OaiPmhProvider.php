@@ -70,10 +70,11 @@ class OaiPmhProvider
     public function launch()
     {
         $this->_verb = $this->_getParam('verb');
+        $this->_printPrefix();
         if (!$this->_checkParameters()) {
+            $this->_printSuffix();
             die();
         }
-        $this->_printPrefix();
         switch ($this->_verb) {
             case 'GetRecord':
                 $this->_getRecord();
@@ -126,7 +127,7 @@ EOF;
         $name = htmlentities($configArray['OAI-PMH']['repository_name']);
         $base = htmlentities($configArray['OAI-PMH']['base_url']);
         $admin = htmlentities($configArray['OAI-PMH']['admin_email']);
-        $earliestDate = $this->_oaiDate($this->_getEarliestDateStamp());
+        $earliestDate = $this->_toOaiDate($this->_getEarliestDateStamp());
         
         print <<<EOF
 <Identify>
@@ -135,7 +136,7 @@ EOF;
   <protocolVersion>2.0</protocolVersion>
   <adminEmail>$admin</adminEmail>
   <earliestDatestamp>$earliestDate</earliestDatestamp>
-  <deletedRecord>transient</deletedRecord>
+  <deletedRecord>persistent</deletedRecord>
   <granularity>YYYY-MM-DDThh:mm:ssZ</granularity>
 <!--  <compression>deflate</compression> -->
 </Identify>       
@@ -177,22 +178,30 @@ EOF;
             }
         }
         if ($from && $until) {
-            $queryParams['updated'] = array('$gte' => new MongoDate(strtotime($from)), '$lte' => new MongoDate(strtotime($until)));
+            $queryParams['updated'] = array('$gte' => new MongoDate($this->_fromOaiDate($from, '00:00:00')), 
+              '$lte' => new MongoDate($this->_fromOaiDate($until, '23:59:59')));
         } elseif ($from) {
-            $queryParams['updated'] = array('$gte' => new MongoDate(strtotime($from)));
+            $queryParams['updated'] = array('$gte' => new MongoDate($this->_fromOaiDate($from, '00:00:00')));
         } elseif ($until) {
-            $queryParams['updated'] = array('$lte' => new MongoDate(strtotime($until)));
+            $queryParams['updated'] = array('$lte' => new MongoDate($this->_fromOaiDate($until, '23:59:59')));
         }
-        
-        print <<<EOF
-  <ListRecords>
-
-EOF;
-                
+                        
         $records = $this->_db->record->find($queryParams)->sort(array('updated' => 1));
         if ($position) {
             $records = $records->skip($position);
         }
+        
+        if (!$records->hasNext()) {
+            $this->_error('noRecordsMatch', '');
+            $this->_printSuffix();
+            die();
+        }
+        
+        print <<<EOF
+          <ListRecords>
+        
+EOF;
+        
         $maxRecords = $configArray['OAI-PMH']['result_limit'];
         $count = 0;
         foreach ($records as $record) {
@@ -322,7 +331,7 @@ EOF;
         global $configArray;
         header('Content-Type: text/xml');
         header("Cache-Control: no-cache, must-revalidate");
-        $date = $this->_oaiDate();
+        $date = $this->_toOaiDate();
         $base = htmlentities($configArray['OAI-PMH']['base_url']);
         $arguments = '';
         foreach (explode('&', $_SERVER['QUERY_STRING']) as $param) {
@@ -346,8 +355,18 @@ EOF;
     {
         print "</OAI-PMH>\n";
     }
-    	
-    protected function _oaiDate($date = null) 
+
+    protected function _fromOaiDate($datestr, $timePartForShortDate)
+    {
+        if (strstr($datestr, 'T') === false) {
+            $datestr .= ' ' + $timePartForShortDate + '+0000';
+        } else {
+            $datestr = substr($datestr, 0, strlen($datestr) - 1) . '+0000';
+        }
+        return strtotime($datestr);
+    }
+    
+    protected function _toOaiDate($date = null) 
     {
         if (!isset($date)) {
             $date = time();
@@ -400,7 +419,7 @@ EOF;
             $checkArray[$keyValue[0]] = 1;
         }
         
-        $paramCount = count($_GET);
+        $paramCount = count($_GET) - 1;
         switch ($this->_verb) {
             case 'GetRecord':
                 if ($paramCount != 2 || !$this->_getParam('identifier') || !$this->_getParam('metadataPrefix')) {
@@ -450,6 +469,7 @@ EOF;
                 break;
             default:
                 $this->_error('badVerb', 'Invalid verb');
+                $this->_printSuffix();
                 die();
         }
         return true;
