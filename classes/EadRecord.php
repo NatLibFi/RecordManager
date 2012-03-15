@@ -90,7 +90,9 @@ class EadRecord extends BaseRecord
      */
     public function setIDPrefix($prefix)
     {
-        $this->_doc->did->unitid->attributes()->{'identifier'} = $prefix . $this->_doc->did->unitid->attributes()->{'identifier'};
+        if ($this->_doc->did->unitid) {
+            $this->_doc->did->unitid->attributes()->{'identifier'} = $prefix . $this->_doc->did->unitid->attributes()->{'identifier'};
+        }
         if ($this->_doc->{'add-data'}) {
             $this->_doc->{'add-data'}->{'archive'}->attributes()->{'id'} = $prefix . $this->_doc->{'add-data'}->{'archive'}->attributes()->{'id'}; 
             $this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'} = $prefix . $this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'}; 
