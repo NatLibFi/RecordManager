@@ -64,10 +64,15 @@ class RecordManager
     protected $_recordSplitter = null; 
     protected $_pretransformation = '';
     protected $_indexMergedParts = true;
+
+    protected $_uniqIdPrefix = '';
+    protected $_uniqIdCounter = 0;
     
     public function __construct($console = false)
     {
         global $configArray;
+
+        $this->_uniqIdPrefix = uniqid();
 
         date_default_timezone_set($configArray['Site']['timezone']);
 
@@ -723,11 +728,20 @@ class RecordManager
                         if ($candidate['source_id'] == $this->_sourceId) {
                             continue;
                         }
-                        // Verify the candidate has not been deduped with another record from this source yet
+                        // Verify the candidate has not been deduped with this source yet
                         if (isset($candidate['dedup_key']) && $candidate['dedup_key'] && (!isset($record['dedup_key']) || $candidate['dedup_key'] != $record['dedup_key'])) {
                             if ($this->_db->record->find(array('dedup_key' => $candidate['dedup_key'], 'source_id' => $this->_sourceId))->hasNext()) {
                                 if ($this->verbose) {
                                     echo "Candidate {$candidate['_id']} already deduplicated\n";
+                                }
+                                continue;
+                            }
+                        }
+                        // And vice versa
+                        if (isset($record['dedup_key']) && $record['dedup_key'] && (!isset($candidate['dedup_key']) || $record['dedup_key'] != $candidate['dedup_key'])) {
+                            if ($this->_db->record->find(array('dedup_key' => $record['dedup_key'], 'source_id' => $candidate['source_id']))->hasNext()) {
+                                if ($this->verbose) {
+                                    echo "Record {$record['_id']} already deduplicated with source of candidate {$candidate['_id']}\n";
                                 }
                                 continue;
                             }
@@ -863,15 +877,15 @@ class RecordManager
 
     protected function _markDuplicates($rec1, $rec2)
     {
-        if (isset($rec1['dedup_key']) && $rec1['dedup_key'] != '') {
+        if (isset($rec1['dedup_key']) && $rec1['dedup_key']) {
             $rec2['dedup_key'] = $rec1['dedup_key'];
         }
-        elseif (isset($rec2['dedup_key']) && $rec2['dedup_key'] != '') {
+        elseif (isset($rec2['dedup_key']) && $rec2['dedup_key']) {
             $rec1['dedup_key'] = $rec2['dedup_key'];
         }
         else
         {
-            $key = 'dedup' . uniqid();
+            $key = 'dedup' . $this->_uniqIdPrefix . (++$this->_uniqIdCounter);
             $rec1['dedup_key'] = $key;
             $rec2['dedup_key'] = $key;
         }
