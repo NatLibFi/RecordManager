@@ -446,7 +446,7 @@ EOF;
         switch ($this->_verb) {
             case 'GetRecord':
                 if ($paramCount != 2 || !$this->_getParam('identifier') || !$this->_getParam('metadataPrefix')) {
-                    $this->_error('badArgument', 'Missing or extraneous arguments' . $paramCount);
+                    $this->_error('badArgument', 'Missing or extraneous arguments');
                     return false;
                 }
                 break;
