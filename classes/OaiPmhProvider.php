@@ -36,6 +36,11 @@ require_once 'XslTransformation.php';
  */
 class OaiPmhProvider
 {
+    const DT_EMPTY = 0;
+    const DT_INVALID = 1;
+    const DT_SHORT = 2;
+    const DT_LONG = 3;
+    
     protected $_verb = '';
     protected $_log = null;
     protected $_db = null;
@@ -110,6 +115,7 @@ class OaiPmhProvider
         $record = $this->_db->record->findOne(array('oai_id' => $id));
         if (!$record) {
             $this->_error('idDoesNotExist', 'The value of the identifier argument is unknown or illegal in this repository.');
+            $this->_printSuffix();
             die();
         }
         $xml = $this->_createRecord($record, $prefix, true);
@@ -150,6 +156,11 @@ EOF;
         $resumptionToken = $this->_getParam('resumptionToken');
         if ($resumptionToken) {
             $params = explode('|', $resumptionToken);
+            if (count($params) != 5) { 
+                $this->_error('badResumptionToken', '');
+                $this->_printSuffix();
+                die();
+            }
             $set = $params[0];
             $metadataPrefix = $params[1];
             $from = $params[2];
@@ -178,12 +189,12 @@ EOF;
             }
         }
         if ($from && $until) {
-            $queryParams['updated'] = array('$gte' => new MongoDate($this->_fromOaiDate($from, '00:00:00')), 
-              '$lte' => new MongoDate($this->_fromOaiDate($until, '23:59:59')));
+            $queryParams['updated'] = array('$gte' => new MongoDate($this->_fromOaiDate($from, '00:00:00'), 0), 
+              '$lte' => new MongoDate($this->_fromOaiDate($until, '23:59:59'), 999999));
         } elseif ($from) {
-            $queryParams['updated'] = array('$gte' => new MongoDate($this->_fromOaiDate($from, '00:00:00')));
+            $queryParams['updated'] = array('$gte' => new MongoDate($this->_fromOaiDate($from, '00:00:00'), 0));
         } elseif ($until) {
-            $queryParams['updated'] = array('$lte' => new MongoDate($this->_fromOaiDate($until, '23:59:59')));
+            $queryParams['updated'] = array('$lte' => new MongoDate($this->_fromOaiDate($until, '23:59:59'), 999999));
         }
                         
         $records = $this->_db->record->find($queryParams)->sort(array('updated' => 1));
@@ -213,10 +224,9 @@ EOF;
           if (++$count >= $maxRecords) {
               if ($records->hasNext()) {
                   // More records available, create resumptionToken
-                  $cursor = $count + $position;
-                  $token = htmlentities(implode('|', array($set, $metadataPrefix, $from, $until, $cursor)));
+                  $token = htmlentities(implode('|', array($set, $metadataPrefix, $from, $until, $count + $position)));
                   print <<<EOF
-    <resumptionToken cursor="$cursor">$token</resumptionToken>
+    <resumptionToken cursor="$position">$token</resumptionToken>
 
 EOF;
               }
@@ -241,6 +251,7 @@ EOF;
             $record = $this->_db->record->findOne(array('oai_id' => $id));
             if (!$record) {
                 $this->_error('idDoesNotExist', 'The value of the identifier argument is unknown or illegal in this repository.');
+                $this->_printSuffix();
                 die();
             }
             $source = $record['source_id'];
@@ -334,9 +345,11 @@ EOF;
         $date = $this->_toOaiDate();
         $base = htmlentities($configArray['OAI-PMH']['base_url']);
         $arguments = '';
-        foreach (explode('&', $_SERVER['QUERY_STRING']) as $param) {
+        foreach ($this->_getRequestParameters() as $param) {
             $keyValue = explode('=', $param, 2);
-            $arguments .= ' ' . $keyValue[0] . '="' . htmlentities($keyValue[1]) . '"';
+            if (isset($keyValue[1])) { 
+                $arguments .= ' ' . $keyValue[0] . '="' . htmlentities($keyValue[1]) . '"';
+            }
         }
             
         print <<<EOF
@@ -358,8 +371,8 @@ EOF;
 
     protected function _fromOaiDate($datestr, $timePartForShortDate)
     {
-        if (strstr($datestr, 'T') === false) {
-            $datestr .= ' ' + $timePartForShortDate + '+0000';
+        if ($this->_getOaiDateType($datestr) === OaiPmhProvider::DT_SHORT) {
+            $datestr .= ' ' . $timePartForShortDate . '+0000';
         } else {
             $datestr = substr($datestr, 0, strlen($datestr) - 1) . '+0000';
         }
@@ -376,7 +389,7 @@ EOF;
     
     protected function _getParam($param)
     {
-        return isset($_GET[$param]) ? $_GET[$param] : ''; 
+        return isset($_REQUEST[$param]) ? $_REQUEST[$param] : ''; 
     }
     
     protected function _getEarliestDateStamp()
@@ -406,9 +419,19 @@ EOF;
         return $sets;
     }
     
+    protected function _getRequestParameters()
+    {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $params = file_get_contents("php://input");
+        } else {
+            $params = $_SERVER['QUERY_STRING'];
+        }
+        return explode('&', $params);
+    }
+    
     protected function _checkParameters()
     {
-        $paramArray = explode('&', $_SERVER['QUERY_STRING']);
+        $paramArray = $this->_getRequestParameters();
         $checkArray = array();
         foreach ($paramArray as $param) {
             $keyValue = explode('=', $param, 2);
@@ -418,12 +441,12 @@ EOF;
             }
             $checkArray[$keyValue[0]] = 1;
         }
-        
-        $paramCount = count($_GET) - 1;
+        // Check for missing or unknown parameters
+        $paramCount = count($paramArray) - 1;
         switch ($this->_verb) {
             case 'GetRecord':
                 if ($paramCount != 2 || !$this->_getParam('identifier') || !$this->_getParam('metadataPrefix')) {
-                    $this->_error('badArgument', 'Missing or extraneous arguments');
+                    $this->_error('badArgument', 'Missing or extraneous arguments' . $paramCount);
                     return false;
                 }
                 break;
@@ -465,6 +488,7 @@ EOF;
                     return false;
                 } elseif ($this->_getParam('resumptionToken')) {
                     $this->_error('badResumptionToken', '');
+                    return false;
                 }
                 break;
             default:
@@ -472,7 +496,35 @@ EOF;
                 $this->_printSuffix();
                 die();
         }
+        
+        // Check dates
+        $fromType = $this->_getOaiDateType($this->_getParam('from'));
+        $untilType = $this->_getOaiDateType($this->_getParam('until'));
+        
+        if ($fromType == OaiPmhProvider::DT_INVALID || $untilType == OaiPmhProvider::DT_INVALID) {
+            $this->_error('badArgument', 'Invalid date format');
+            return false;
+        }
+        if ($fromType != OaiPmhProvider::DT_EMPTY && $untilType != OaiPmhProvider::DT_EMPTY && $fromType != $untilType) {
+            $this->_error('badArgument', 'Incompatible date formats');
+            return false;
+        }
+        
         return true;
+    }
+
+    protected function _getOaiDateType($date)
+    {
+        if (!$date) {
+            return OaiPmhProvider::DT_EMPTY;
+        }
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) {
+            return OaiPmhProvider::DT_SHORT;
+        }
+        if (preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/', $date)) {
+            return OaiPmhProvider::DT_LONG;
+        }
+        return OaiPmhProvider::DT_INVALID;
     }
     
     protected function _log($message, $level = Logger::INFO)
@@ -532,7 +584,7 @@ EOF;
         }
         
         $id = htmlentities($record['oai_id']);
-        $date = $this->_oaiDate($record['updated']->sec);
+        $date = $this->_toOaiDate($record['updated']->sec);
         $source = htmlentities($record['source_id']);
         $status = $record['deleted'] ? ' status="deleted"' : '';
         return <<<EOF
