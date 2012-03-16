@@ -389,6 +389,7 @@ class RecordManager
         if (!$noCommit) {
             $this->_log->log('updateSolrIndex', "Final commit...");
             $this->_solrRequest('{ "commit": {} }');
+            $this->_log->log('updateSolrIndex', "Commit complete");
         }
     }
 
@@ -737,15 +738,6 @@ class RecordManager
                                 continue;
                             }
                         }
-                        // And vice versa
-                        if (isset($record['dedup_key']) && $record['dedup_key'] && (!isset($candidate['dedup_key']) || $record['dedup_key'] != $candidate['dedup_key'])) {
-                            if ($this->_db->record->find(array('dedup_key' => $record['dedup_key'], 'source_id' => $candidate['source_id']))->hasNext()) {
-                                if ($this->verbose) {
-                                    echo "Record {$record['_id']} already deduplicated with source of candidate {$candidate['_id']}\n";
-                                }
-                                continue;
-                            }
-                        }
 
                         if (++$processed > 1000) {
                             // Too many candidates, give up..
@@ -780,6 +772,21 @@ class RecordManager
                             break 3;
                         }
 
+                        $origISSNs = $origRecord->getISSNs();
+                        $cISSNs = $cRecord->getISSNs();
+                        $commonISSNs = array_intersect($origISSNs, $cISSNs);
+                        if (!empty($origISSNs) && !empty($cISSNs) && empty($commonISSNs)) {
+                            // Both have ISSNs but none match
+                            if ($this->verbose) {
+                                echo "++ISSN mismatch:\n";
+                                print_r($origISSNs);
+                                print_r($cISSNs);
+                                echo $origRecord->getFullTitle() . "\n";
+                                echo $cRecord->getFullTitle() . "\n";
+                            }
+                            continue;
+                        }
+                        
                         if ($origRecord->getFormat() != $cRecord->getFormat()) {
                             if ($this->verbose) {
                                 echo "--Format mismatch: " . $origRecord->getFormat() . ' != ' . $cRecord->getFormat() . "\n";
@@ -877,10 +884,7 @@ class RecordManager
 
     protected function _markDuplicates($rec1, $rec2)
     {
-        if (isset($rec1['dedup_key']) && $rec1['dedup_key']) {
-            $rec2['dedup_key'] = $rec1['dedup_key'];
-        }
-        elseif (isset($rec2['dedup_key']) && $rec2['dedup_key']) {
+        if (isset($rec2['dedup_key']) && $rec2['dedup_key']) {
             $rec1['dedup_key'] = $rec2['dedup_key'];
         }
         else

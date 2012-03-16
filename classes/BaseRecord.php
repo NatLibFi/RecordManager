@@ -154,6 +154,17 @@ abstract class BaseRecord
     }
 
     /**
+    * Dedup: Return ISSNs
+    *
+    * @return array
+    * @access public
+    */
+    public function getISSNs()
+    {
+        return array();
+    }
+    
+    /**
      * Dedup: Return series ISSN
      *
      * @return string

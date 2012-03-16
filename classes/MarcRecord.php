@@ -382,6 +382,22 @@ class MarcRecord extends BaseRecord
         return $arr;
     }
 
+    public function getISSNs()
+    {
+        $arr = array();
+        $fields = $this->_getFields('022');
+        foreach ($fields as $field)
+        {
+            $issn = $this->_getSubfield($field, 'a');
+            $issn = str_replace('-', '', $issn);
+            if ($issn) {
+                $arr[] = $issn;
+            }
+        }
+    
+        return $arr;
+    }
+    
     public function getSeriesISSN()
     {
         $field = $this->_getField('490');
