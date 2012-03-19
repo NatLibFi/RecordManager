@@ -31,6 +31,7 @@ require_once 'Logger.php';
 require_once 'RecordFactory.php';
 require_once 'FileSplitter.php';
 require_once 'HarvestOaiPmh.php';
+require_once 'HarvestMetaLib.php';
 require_once 'XslTransformation.php';
 require_once 'MetadataUtils.php';
 
@@ -418,16 +419,20 @@ class RecordManager
             $originalData = $this->_getRecordData($record, false);
             $normalizedData = $originalData;
             if (isset($this->_normalizationXSLT)) {
-                $normalizedData = $this->_normalizationXSLT->transform($originalData, array('oai_id' => $record['oai_id']));
+                $origMetadataRecord = RecordFactory::createRecord($record['format'], $originalData, $record['oai_id']);
+                $normalizedData = $this->_normalizationXSLT->transform($origMetadataRecord->toXML(), array('oai_id' => $record['oai_id']));
             }
-            
+
             $metadataRecord = RecordFactory::createRecord($record['format'], $normalizedData, $record['oai_id']);
-            $this->_updateDedupCandidateKeys($record, $metadataRecord);
+            $normalizedData = $metadataRecord->serialize();
+            if ($this->_dedup) {
+                $this->_updateDedupCandidateKeys($record, $metadataRecord);
+            }
             
             if ($normalizedData == $originalData) {
                 $record['normalized_data'] = '';
             } else {
-                $record['normalized_data'] = new MongoBinData($normalizedData);
+                $record['normalized_data'] = new MongoBinData(gzdeflate($normalizedData));
             }
             $record['dedup_key'] = '';
             $record['update_needed'] = $this->_dedup ? true : false;
@@ -454,7 +459,7 @@ class RecordManager
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
                     continue;
                 }
-                if (empty($source) || empty($settings)) {
+                if (empty($source) || empty($settings) || !isset($settings['dedup']) || !$settings['dedup']) {
                     continue;
                 }
 
@@ -537,13 +542,65 @@ class RecordManager
                 if ($this->verbose) {
                     $settings['verbose'] = true;
                 }
+                
+                if ($settings['type'] == 'metalib') {
+                    // MetaLib doesn't handle deleted records, so we'll just fetch everything and compare with what we have
+                    $this->_log->log('harvest', "Fetching records from MetaLib...");
+                    $harvest = new HarvestMetaLib($this->_log, $this->_db, $source, $this->_basePath, $settings);
+                    $harvestedRecords = $harvest->launch();
 
-                $harvest = new HarvestOAIPMH($this->_log, $this->_db, $source, $this->_basePath, $settings, $startResumptionToken);
-                if (isset($harvestFromDate))
-                $harvest->setStartDate($harvestFromDate);
-                if (isset($harvestUntilDate))
-                $harvest->setEndDate($harvestUntilDate);
-                $harvest->launch(array($this, 'storeRecord'));
+                    $this->_log->log('harvest', "Processing MetaLib records...");
+                    // Create keyed array
+                    $records = array();
+                    foreach ($harvestedRecords as $record) {
+                        $marc = RecordFactory::createRecord('marc', $record, '');
+                        $id = $marc->getID();
+                        $records["$source.$id"] = $record;
+                    }
+                    
+                    $this->_log->log('harvest', "Merging results with the records in database...");
+                    $deleted = 0;
+                    $unchanged = 0;
+                    $changed = 0;
+                    $added = 0; 
+                    $dbRecords = $this->_db->record->find(array('deleted' => false, 'source_id' => $source));
+                    foreach ($dbRecords as $dbRecord) {
+                        $id = $dbRecord['_id'];
+                        if (!isset($records[$id])) {
+                            // Record not in harvested records, mark deleted
+                            $this->storeRecord($id, true, '');
+                            unset($records[$id]);
+                            ++$deleted;
+                            continue;
+                        }
+                        // Check if the record has changed
+                        $dbMarc = RecordFactory::createRecord('marc', $this->_getRecordData($dbRecord, false), '');
+                        $marc = RecordFactory::createRecord('marc', $records[$id], '');
+                        if ($marc->serialize() != $this->_getRecordData($dbRecord, false)) {
+                            // Record changed, update...
+                            $this->storeRecord($id, false, $records[$id]);
+                            ++$changed;
+                        } else {
+                            ++$unchanged;
+                        }
+                        unset($records[$id]);
+                    }
+                    $this->_log->log('harvest', "Adding new records...");
+                    foreach ($records as $id => $record) {
+                        $this->storeRecord($id, false, $record);
+                        ++$added;
+                    }
+                    $this->_log->log('harvest', "$added new, $changed changed, $unchanged unchanged and $deleted deleted records processed");
+                } else {
+                    $harvest = new HarvestOAIPMH($this->_log, $this->_db, $source, $this->_basePath, $settings, $startResumptionToken);
+                    if (isset($harvestFromDate)) {
+                        $harvest->setStartDate($harvestFromDate);
+                    }
+                    if (isset($harvestUntilDate)) {
+                        $harvest->setEndDate($harvestUntilDate);
+                    }
+                    $harvest->launch(array($this, 'storeRecord'));
+                }
                 $this->_log->log('harvest', "Harvesting from {$source} completed");
             } catch (Exception $e) {
                 $this->_log->log('harvest', 'Exception: ' . $e->getMessage(), Logger::FATAL);
@@ -668,8 +725,12 @@ class RecordManager
             $dbRecord['original_data'] = new MongoBinData($originalData);
             $dbRecord['normalized_data'] = $normalizedData ? new MongoBinData($normalizedData) : '';
             // TODO: don't update created
-            $dbRecord['update_needed'] = $this->_dedup ? true : false;
-            $this->_updateDedupCandidateKeys($dbRecord, $metadataRecord);
+            if ($this->_dedup) {
+                $this->_updateDedupCandidateKeys($dbRecord, $metadataRecord);
+                $dbRecord['update_needed'] = true;
+            } else {
+                $dbRecord['update_needed'] = false;
+            }
             $this->_db->record->save($dbRecord);
             ++$count;
         }

@@ -34,7 +34,7 @@ require 'HTTP/Request.php';
 /**
  * HarvestOaiPmh Class
  *
- * This class harvests records via OAI-PMH using settings from oai.ini.
+ * This class harvests records via OAI-PMH using settings from datasources.ini.
  *
  * @category DataManagement
  * @package  RecordManager
@@ -44,15 +44,15 @@ require 'HTTP/Request.php';
  */
 class HarvestOaiPmh
 {
-    private $_log;
-    private $_db;
+    private $_log;                   // Logger
+    private $_db;                    // Mongo database
     private $_baseURL;               // URL to harvest from
-    private $_set = null;            // Target set to harvest (null for all records)
+    private $_set = null;            // Set to harvest (null for all records)
     private $_metadata = 'oai_dc';   // Metadata type to harvest
     private $_idPrefix = '';         // OAI prefix to strip from ID values
     private $_idSearch = array();    // Regular expression searches
     private $_idReplace = array();   // Replacements for regular expression matches
-    private $_target;                // Target ID
+    private $_source;                // Source ID
     private $_lastHarvestFile;       // File for tracking last harvest date
     private $_startDate = null;      // Harvest start date (null for all records)
     private $_endDate = null; 		 // Harvest end date (null for all records)
@@ -63,7 +63,7 @@ class HarvestOaiPmh
     private $_injectDate = false;    // Tag to use for injecting datestamp
     private $_setNames = array();    // Associative array of setSpec => setName
     private $_harvestedIdLog = false;// Filename for logging harvested IDs.
-    private $_verbose = false;       // Should we display debug output?
+    private $_verbose = false;       // Whether to display debug output
     private $_normalRecords = 0;     // Harvested normal record count
     private $_deletedRecords = 0;    // Harvested deleted record count
     private $_debugLog = '';         // File where to dump OAI requests and responses for debugging
@@ -78,12 +78,16 @@ class HarvestOaiPmh
     /**
      * Constructor.
      *
-     * @param string $target   Target directory for harvest.
-     * @param array  $settings OAI-PMH settings from oai.ini.
+     * @param object $logger   The Logger object used for logging messages.
+     * @param object $db       Mongo database handle.
+     * @param string $source   The data source to be harvested.
+     * @param string $basePath RecordManager main directory location 
+     * @param array  $settings Settings from datasources.ini.
+     * @param string $startResumptionToken Optional override for the initial harvest command (to resume interrupted harvesting)
      *
      * @access public
      */
-    public function __construct($logger, $db, $target, $basePath, $settings, $startResumptionToken = '')
+    public function __construct($logger, $db, $source, $basePath, $settings, $startResumptionToken = '')
     {
         $this->_log = $logger;
         $this->_db = $db;
@@ -92,14 +96,14 @@ class HarvestOaiPmh
         set_time_limit(0);
 
         // Check if we have a start date
-        $this->_target = $target;
+        $this->_source = $source;
         $this->_loadLastHarvestedDate();
 
        	$this->_resumptionToken = $startResumptionToken;
 
         // Set up base URL:
         if (empty($settings['url'])) {
-            die("Missing base URL for {$target}.\n");
+            die("Missing base URL for {$source}.\n");
         }
         $this->_baseURL = $settings['url'];
         if (isset($settings['set'])) {
@@ -184,6 +188,7 @@ class HarvestOaiPmh
     /**
      * Harvest all available documents.
      *
+     * @param  function reference $callback  Function to be called to store a harvested record
      * @return void
      * @access public
      */
@@ -225,7 +230,7 @@ class HarvestOaiPmh
      */
     private function _loadLastHarvestedDate()
     {
-        $state = $this->_db->state->findOne(array('_id' => "Last Harvest Date {$this->_target}"));
+        $state = $this->_db->state->findOne(array('_id' => "Last Harvest Date {$this->_source}"));
         if (isset($state)) {
             $this->setStartDate($state['value']);
             $this->_message('Incremental harvest from timestamp ' . $state['value']);
@@ -263,7 +268,7 @@ class HarvestOaiPmh
      */
     private function _saveLastHarvestedDate($date)
     {
-        $state = array('_id' => "Last Harvest Date {$this->_target}", 'value' => $date);
+        $state = array('_id' => "Last Harvest Date {$this->_source}", 'value' => $date);
         $this->_db->state->save($state);
     }
 
@@ -317,12 +322,12 @@ class HarvestOaiPmh
         }
         if (PEAR::isError($result)) {
             $this->_message("Request '$url' failed (" . $result->getMessage() . ")", false, Logger::FATAL);
-            die($result->getMessage() . "\n");
+            throw new Exception($result->getMessage());
         }
         $code = $request->getResponseCode();
         if ($code >= 300) {
             $this->_message("Request '$url' failed: $code", false, Logger::FATAL);
-            die("Request failed: $code\n");
+            throw new Exception("Request failed: $code");
         }
 
         // If we got this far, there was no error -- send back response.

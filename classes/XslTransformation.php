@@ -87,7 +87,9 @@ class XslTransformation
     public function transform($data, $params = null)
     {
         $doc = new DOMDocument();
-        $doc->loadXML($data);
+        if ($doc->loadXML($data) === false) {
+            throw new Exception("Invalid XML: $data");
+        }
         if (isset($params)) {
             foreach ($params as $key => $value) {
                 $this->_xslt->setParameter('', $key, $value);

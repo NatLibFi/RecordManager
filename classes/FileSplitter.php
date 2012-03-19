@@ -38,10 +38,20 @@ class FileSplitter
     protected $_recordCount;
     protected $_currentPos;
 
+    /**
+     * Construct the splitter
+     * 
+     * @param mixed  $data         XML string or DOM document
+     * @param string $recordXPath  XPath used to find the records
+     */
     function __construct($data, $recordXPath)
     {
-        $this->_xmlDoc = new DOMDocument();
-        $this->_xmlDoc->loadXML($data);
+        if (is_string($data)) {
+            $this->_xmlDoc = new DOMDocument();
+            $this->_xmlDoc->loadXML($data);
+        } else {
+            $this->_xmlDoc = $data;
+        }
         $xpath = new DOMXpath($this->_xmlDoc);
         $this->_recordNodes = $xpath->query($recordXPath);
         $this->_recordCount = $this->_recordNodes->length;
