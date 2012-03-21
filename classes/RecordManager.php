@@ -53,6 +53,7 @@ class RecordManager
     protected $_db = null;
     protected $_dataSourceSettings = null;
 
+    protected $_harvestType = '';
     protected $_format = '';
     protected $_idPrefix = '';
     protected $_sourceId = '';
@@ -543,7 +544,7 @@ class RecordManager
                     $settings['verbose'] = true;
                 }
                 
-                if ($settings['type'] == 'metalib') {
+                if ($this->_harvestType == 'metalib') {
                     // MetaLib doesn't handle deleted records, so we'll just fetch everything and compare with what we have
                     $this->_log->log('harvest', "Fetching records from MetaLib...");
                     $harvest = new HarvestMetaLib($this->_log, $this->_db, $source, $this->_basePath, $settings);
@@ -1048,6 +1049,7 @@ class RecordManager
         $this->_componentParts = isset($settings['componentParts']) && $settings['componentParts'] ? $settings['componentParts'] : 'as_is';
         $this->_pretransformation = isset($settings['preTransformation']) ? $settings['preTransformation'] : '';
         $this->_indexMergedParts = isset($settings['indexMergedParts']) ? $settings['indexMergedParts'] : true;
+        $this->_harvestType = isset($settings['type']) ? $settings['type'] : '';
         
         $params = array('source_id' => $this->_sourceId, 'institution' => $this->_institution, 'format' => $this->_format, 'id_prefix' => $this->_idPrefix);
         $this->_normalizationXSLT = isset($settings['normalization']) && $settings['normalization'] ? new XslTransformation($this->_basePath . '/transformations', $settings['normalization'], $params) : null;
