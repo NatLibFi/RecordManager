@@ -70,6 +70,12 @@ class RecordManager
     protected $_uniqIdPrefix = '';
     protected $_uniqIdCounter = 0;
     
+    /**
+     * Constructor
+     * 
+     * @param boolean $console 	Specify whether RecordManager is executed on the console, 
+     * 						   	so log output is also output to the console.
+     */
     public function __construct($console = false)
     {
         global $configArray;
@@ -93,6 +99,14 @@ class RecordManager
         MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout']) ? $configArray['Mongo']['cursor_timeout'] : 300000;
     }
 
+    /**
+     * Load records into the database from a file
+     * 
+     * @param string $source  	Source id
+     * @param string $file    	File name containing the records
+     * @throws Exception
+     * @return int   			Number of records loaded
+     */
     public function loadFromFile($source, $file)
     {
         $this->_log->log('loadFromFile', "Loading records from '$file' into '$source'");
@@ -138,6 +152,16 @@ class RecordManager
         return $count;
     }
 
+    /**
+     * Export records from the database to a file
+     * 
+     * @param string $file			File name where to write exported records
+     * @param string $deletedFile	File name where to write ID's of deleted records
+     * @param string $fromDate		Starting date (e.g. 2011-12-24)
+     * @param int    $skipRecords   Export only one per each $skipRecords records for a sample set
+     * @param string $sourceId      Source ID to export, or empty or * for all
+     * @param string $singleId		Export only a record with the given ID
+     */
     public function exportRecords($file, $deletedFile, $fromDate, $skipRecords = 0, $sourceId = '', $singleId = '')
     {
         if ($file == '-') {
@@ -214,6 +238,14 @@ class RecordManager
         file_put_contents($file, "</collection>\n", FILE_APPEND);
     }
 
+    /**
+     * Send updates to a Solr index (e.g. VuFind)
+     * 
+     * @param string $fromDate Starting date for updates (if empty, last update date stored in the database is used)
+     * @param string $sourceId Source ID to update, or empty or * for all sources
+     * @param string $singleId Export only a record with the given ID
+     * @param bool   $noCommit If true, changes are not explicitly committed
+     */
     public function updateSolrIndex($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false)
     {
         global $configArray;
@@ -395,6 +427,12 @@ class RecordManager
         }
     }
 
+    /**
+     * Renormaliza records in a data source
+     *
+     * @param string $source	Source ID to renormalize
+     * @param string $singleId	Renormalize only a single record with the given ID
+     */
     public function renormalize($source, $singleId)
     {
         if (!$source) {
@@ -453,6 +491,13 @@ class RecordManager
         $this->_log->log('renormalize', "Completed with $count records processed");
     }
 
+    /**
+     * Find duplicate records and give them dedup keys
+     * 
+     * @param string $sourceId		Source ID to process, or empty or * for all sources where dedup is enabled
+     * @param string $allRecords    If true, process all records regardless of their status (otherwise only freshly imported or updated records are processed)
+     * @param string $singleId		Process only a record with the given ID
+     */
     public function deduplicate($sourceId, $allRecords = false, $singleId = '')
     {
         foreach ($this->_dataSourceSettings as $source => $settings) {
@@ -518,6 +563,15 @@ class RecordManager
         }
     }
 
+    /**
+     * Harvest records from a data source
+     * 
+     * @param string $repository			Source ID to harvest
+     * @param string $harvestFromDate		Override start date (otherwise harvesting is done from the previous harvest date)
+     * @param string $harvestUntilDate		Override end date (otherwise current date is used)
+     * @param string $startResumptionToken	Override OAI-PMH resumptionToken to resume interrupted harvesting process (note 
+     * 										that tokens may have a limited lifetime)  
+     */
     public function harvest($repository = '', $harvestFromDate = null, $harvestUntilDate = null, $startResumptionToken = '')
     {
         global $configArray;
@@ -609,6 +663,11 @@ class RecordManager
         }
     }
 
+    /**
+     * Dump a single record to console
+     * 
+     * @param string $recordID 	ID of the record to be dumped
+     */
     public function dumpRecord($recordID)
     {
         if (!$recordID) {
@@ -625,16 +684,27 @@ class RecordManager
         }
     }
     
+    /**
+     * Save a record into the database. Used by e.g. OAI-PMH harvesting.
+     * 
+     * @param string $oaiID			ID of the record as received from OAI-PMH
+     * @param bool   $deleted		Whether the record is to be deleted
+     * @param string $recordData	Record metadata
+     * @throws Exception
+     * @return number				Number of records processed (can be > 1 for split records)
+     */
     public function storeRecord($oaiID, $deleted, $recordData)
     {
         if ($deleted) {
             // A single OAI-PMH record may have been split to multiple records
             $records = $this->_db->record->find(array('oai_id' => $oaiID));
+            $count = 0;
             foreach ($records as $record) {
                 $record['deleted'] = true;
                 $this->_db->record->save($record);
+                ++$count;
             }
-            return;
+            return $count;
         }
 
         $dataArray = Array();
@@ -738,19 +808,24 @@ class RecordManager
         return $count;
     }
 
-    protected function _loadRecords($data)
-    {
-        $this->_log->log('loadRecords', "loading records");
-        $this->_log->log('loadRecords', "$count records loaded");
-        return $count;
-    }
-
+    /**
+     * Update dedup candidate keys for the given record
+     * 
+     * @param object $record			Database record
+     * @param object $metadataRecord	Metadata record for the used format
+     */
     protected function _updateDedupCandidateKeys(&$record, $metadataRecord)
     {
         $record['title_keys'] = array(MetadataUtils::createTitleKey($metadataRecord->getTitle(true)));
         $record['isbn_keys'] = array_unique($metadataRecord->getISBNs());
     }
 
+    /**
+     * Find a single duplicate for the given record and set a dedup key for them
+     * 
+     * @param object $record 	Database record
+     * @return boolean			Whether a duplicate was found
+     */
     protected function _dedupRecord($record)
     {
         $origRecord = RecordFactory::createRecord($record['format'], $this->_getRecordData($record, true), $record['oai_id']);
@@ -944,6 +1019,12 @@ class RecordManager
         return false;
     }
 
+    /**
+     * Mark two records as duplicates
+     * 
+     * @param object $rec1	The record for which a duplicate was searched
+     * @param object $rec2	The found duplicate
+     */
     protected function _markDuplicates($rec1, $rec2)
     {
         if (isset($rec2['dedup_key']) && $rec2['dedup_key']) {
@@ -963,6 +1044,12 @@ class RecordManager
         $this->_db->record->save($rec2);
     }
 
+    /**
+     * Execute a pretransformation on data before it is split into records and loaded. Used when loading from a file.
+     * 
+     * @param string $data	The original data
+     * @return string		Transformed data
+     */
     protected function _pretransform($data)
     {
         if (!isset($this->_pre_xslt))
@@ -981,6 +1068,12 @@ class RecordManager
         return $this->_pre_xslt->transformToXml($doc);
     }
 
+    /**
+     * Create a timestamp string from the given unix timestamp
+     * 
+     * @param int 		$timestamp 	Unix timestamp
+     * @return string				Formatted string
+     */
     protected function _formatTimestamp($timestamp)
     {
         $date = new DateTime('', new DateTimeZone('UTC'));
@@ -988,6 +1081,11 @@ class RecordManager
         return $date->format('Y-m-d') . 'T' . $date->format('H:i:s') . 'Z';
     }
 
+    /**
+     * Make a JSON request to the Solr server
+     * 
+     * @param string $body	The JSON request
+     */
     protected function _solrRequest($body)
     {
         global $configArray;
@@ -1015,6 +1113,13 @@ class RecordManager
         }
     }
 
+    /**
+     * Get record metadata from a database record
+     * 
+     * @param object $record		Database record
+     * @param bool   $normalized	Whether to return the original (false) or normalized (true) record
+     * @return string				Metadata as a string
+     */
     protected function _getRecordData(&$record, $normalized)
     {
         if ($normalized) {
@@ -1025,6 +1130,12 @@ class RecordManager
         return is_string($data) ? $data : gzinflate($data->bin);
     }
     
+    /**
+     * Load the data source settings and setup some functions
+     *
+     * @param string $source	Source ID 
+     * @throws Exception
+     */
     protected function _loadSourceSettings($source)
     {
         if (!isset($this->_dataSourceSettings[$source])) {
