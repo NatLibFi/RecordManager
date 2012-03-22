@@ -10,8 +10,15 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
      </xsl:template>
      
      <xsl:template match="*">
+         <xsl:if test="local-name(..) = 'record' and count(following-sibling::*) = 0">
+<datafield tag="977">
+  <subfield code="a">Database</subfield>
+</datafield>
+         </xsl:if>    
          <xsl:if test="(local-name() != 'datafield' and local-name() != 'controlfield') or @tag = 'PXY' or (string(number(@tag)) != 'NaN')">
              <xsl:choose>
+                <xsl:when test="local-name() = 'datafield' and @tag = '591'">
+                </xsl:when>
                 <xsl:when test="local-name() = 'datafield' and @tag = '856' and @ind1 = '4'">
                     <xsl:if test="@ind2 = '1'">
 <datafield tag="856">

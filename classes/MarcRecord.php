@@ -417,6 +417,11 @@ class MarcRecord extends BaseRecord
     // Format is from a predefined list
     public function getFormat()
     {
+        // Custom predefined type in 977a
+        $field977a = $this->_getField('977a');
+        if ($field977a) {
+            return $field977a;
+        }
         $field008 = $this->_getField('008');
         // check the 007 - this is a repeating field
         $fields = $this->_getFields('007');
