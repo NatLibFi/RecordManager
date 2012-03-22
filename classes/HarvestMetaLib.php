@@ -67,7 +67,7 @@ class HarvestMetaLib
     
         // Set up base URL:
         if (empty($settings['url'])) {
-            die("Missing base URL for {$target}.\n");
+            throw new Exception("Missing base URL for {$source}");
         }
         $this->_baseURL = $settings['url'];
         if (isset($settings['verbose'])) {

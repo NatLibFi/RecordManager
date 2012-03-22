@@ -113,7 +113,7 @@ class RecordManager
         $this->_loadSourceSettings($source);
         if (!$this->_recordXPath) {
             $this->_log->log('loadFromFile', 'recordXPath not defined', Logger::FATAL);
-            die("recordXPath not defined\n");
+            throw new Exception('recordXPath not defined');
         }
         $data = file_get_contents($file);
         if ($data === false) {
@@ -436,7 +436,7 @@ class RecordManager
     public function renormalize($source, $singleId)
     {
         if (!$source) {
-            die('Source must be specified');
+            throw new Exception('Source must be specified');
         }
         $this->_loadSourceSettings($source);
         $this->_log->log('renormalize', "Creating record list for '$source'...");
@@ -476,11 +476,7 @@ class RecordManager
             $record['dedup_key'] = '';
             $record['update_needed'] = $this->_dedup ? true : false;
             $record['updated'] = new MongoDate();
-            try {
-                $this->_db->record->save($record);
-            } catch (Exception $e) {
-                die("Save failed: " . $e->getMessage() . "\n");
-            }
+            $this->_db->record->save($record);
             ++$count;
             if ($count % 1000 == 0) {
                 $avg = round(1000 / (microtime(true) - $starttime));
@@ -578,7 +574,7 @@ class RecordManager
 
         if (empty($this->_dataSourceSettings)) {
             $this->_log->log('harvest', "Please add data source settings to datasources.ini", Logger::FATAL);
-            die("Please add data source settings to datasources.ini\n");
+            throw new Exception("Data source settings missing in datasources.ini");
         }
 
         // Loop through all the sources and perform harvests
@@ -671,7 +667,7 @@ class RecordManager
     public function dumpRecord($recordID)
     {
         if (!$recordID) {
-            die("dump: record id must be specified\n");
+            throw new Exception('dump: record id must be specified');
         }
         $records = $this->_db->record->find(array('_id' => $recordID));
         foreach ($records as $record) {
@@ -1101,7 +1097,7 @@ class RecordManager
         $request->setBody($body);
         $result = $request->sendRequest();
         if (PEAR::isError($result)) {
-            die('Solr server request failed: ' . $result->getMessage());
+            throw new Exception('Solr server request failed: ' . $result->getMessage());
         }
         $code = $request->getResponseCode();
         if ($code >= 300) {
@@ -1109,7 +1105,7 @@ class RecordManager
             echo $body;
             echo "\n-----\n";
             $this->_log->log('_solrRequest', "Solr server request failed: $code: " . $request->getResponseBody(), Logger::FATAL);
-            die("Solr server request failed: $code: " . $request->getResponseBody() . "\n");
+            throw new Exception("Solr server request failed: $code: " . $request->getResponseBody() . "\n");
         }
     }
 

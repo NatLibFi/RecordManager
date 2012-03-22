@@ -103,7 +103,7 @@ class HarvestOaiPmh
 
         // Set up base URL:
         if (empty($settings['url'])) {
-            die("Missing base URL for {$source}.\n");
+            throw new Exception("Missing base URL for {$source}");
         }
         $this->_baseURL = $settings['url'];
         if (isset($settings['set'])) {
@@ -273,7 +273,7 @@ class HarvestOaiPmh
     }
 
     /**
-     * Make an OAI-PMH request.  Die if there is an error; return a SimpleXML object
+     * Make an OAI-PMH request.  Throw an exception if there is an error; return a SimpleXML object
      * on success.
      *
      * @param string $verb   OAI-PMH verb to execute.
@@ -302,7 +302,7 @@ class HarvestOaiPmh
             file_put_contents($this->_debugLog, "Request:\n$url\n", FILE_APPEND);
         }
 
-        // Perform request and die on error:
+        // Perform request and throw an exception on error:
         for ($try = 1; $try <= 5; $try++) {
             $result = $request->sendRequest();
             if ($try < 5) {
@@ -385,15 +385,15 @@ class HarvestOaiPmh
                 $errors .= 'Error ' . $error->code . ' at ' . $error->line . ':' . $error->column . ': ' . $error->message;
             }
             $this->_message("Could not parse XML response: $errors\nXML:\n$xml", false, Logger::FATAL);
-            die("Problem loading XML\n");
+            throw new Exception("Failed to parse XML response");
         }
         libxml_use_internal_errors($saveUseErrors);
 
-        // Detect errors and die if one is found:
+        // Detect errors and throw an exception if one is found:
         if ($result->error) {
             $attribs = $result->error->attributes();
             $this->_message("OAI-PMH server returned error {$attribs['code']} ({$result->error})", false, Logger::FATAL);
-            die(
+            throw new Exception(
                 "OAI-PMH error -- code: {$attribs['code']}, " .
                 "value: {$result->error}\n"
             );
@@ -504,7 +504,7 @@ class HarvestOaiPmh
 
         // Loop through the records:
         foreach ($records as $record) {
-            // Die if the record is missing its header:
+            // Bypass the record if the record is missing its header:
             if (empty($record->header)) {
                 $this->_message("Record header missing", false, Logger::ERROR);
                 continue;
@@ -540,7 +540,7 @@ class HarvestOaiPmh
             $file = fopen($this->_basePath . $this->_harvestedIdLog, 'a');
             if ($file === false) {
                 $this->_message("Could not open {$this->_harvestedIdLog}", false, Logger::FATAL);
-                die ("Problem opening {$this->_harvestedIdLog}.\n");
+                throw new Exception("Problem opening {$this->_harvestedIdLog}");
             }
             fputs($file, implode("\n", $harvestedIds));
             fclose($file);
