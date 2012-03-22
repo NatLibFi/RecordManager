@@ -1,5 +1,7 @@
 <xsl:stylesheet version="1.0" 
 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+xmlns:marc="http://www.loc.gov/MARC21/slim"
+exclude-result-prefixes="marc"
 >
      <xsl:output method="xml" indent="no"/>
     
@@ -10,6 +12,9 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
      </xsl:template>
      
      <xsl:template match="*">
+         <xsl:if test="local-name(..) = 'record' and count(preceding-sibling::*) = 0">
+<leader>     nai a22     ua 4500</leader>
+         </xsl:if>
          <xsl:if test="local-name(..) = 'record' and count(following-sibling::*) = 0">
 <datafield tag="977">
   <subfield code="a">Database</subfield>
@@ -39,6 +44,12 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                     </xsl:element>
                 </xsl:otherwise>
              </xsl:choose>
+             <xsl:if test="local-name() = 'controlfield' and @tag = '001'">
+
+<controlfield tag="007">cr||||||||||||</controlfield>
+                 <xsl:variable name="createdate"><xsl:value-of select="substring(concat(//marc:datafield[@tag='CAT'][1]/marc:subfield[@code='c'], '        '), 3, 6)"/></xsl:variable>
+ <controlfield tag="008"><xsl:value-of select="$createdate"/>uuuuuuuuuxx|||||o|||||||||||||||</controlfield>
+             </xsl:if>
          </xsl:if>
      </xsl:template>
      

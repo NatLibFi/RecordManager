@@ -418,7 +418,7 @@ class MarcRecord extends BaseRecord
     public function getFormat()
     {
         // Custom predefined type in 977a
-        $field977a = $this->_getField('977a');
+        $field977a = $this->_getFieldSubfields('977a');
         if ($field977a) {
             return $field977a;
         }
@@ -774,7 +774,7 @@ class MarcRecord extends BaseRecord
                 $tagData = substr($tagData, 0, -1);
                 $len--;
             } else {
-                die("Invalid MARC record (end of field not found): $marc");
+                throw new Exception("Invalid MARC record (end of field not found): $marc");
             }
 
             $this->_fields[$tag][] = $tagData;
