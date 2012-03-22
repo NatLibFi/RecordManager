@@ -1,7 +1,5 @@
 <xsl:stylesheet version="1.0" 
 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-xmlns:marc="http://www.loc.gov/MARC21/slim"
-exclude-result-prefixes="marc"
 >
      <xsl:output method="xml" indent="no"/>
     
@@ -47,7 +45,7 @@ exclude-result-prefixes="marc"
              <xsl:if test="local-name() = 'controlfield' and @tag = '001'">
 
 <controlfield tag="007">cr||||||||||||</controlfield>
-                 <xsl:variable name="createdate"><xsl:value-of select="substring(concat(//marc:datafield[@tag='CAT'][1]/marc:subfield[@code='c'], '        '), 3, 6)"/></xsl:variable>
+                 <xsl:variable name="createdate"><xsl:value-of select="substring(concat(//datafield[@tag='CAT'][1]/subfield[@code='c'], '        '), 3, 6)"/></xsl:variable>
  <controlfield tag="008"><xsl:value-of select="$createdate"/>uuuuuuuuuxx|||||o|||||||||||||||</controlfield>
              </xsl:if>
          </xsl:if>
