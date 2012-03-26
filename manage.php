@@ -34,7 +34,7 @@ function main($argv)
     {
         echo "Usage: manage --func=... [...]\n\n";
         echo "Parameters:\n\n";
-        echo "--func             renormalize|deduplicate|updatesolr|dump|deletesource\n";
+        echo "--func             renormalize|deduplicate|updatesolr|dump|deletesource|deletesolr\n";
         echo "--source           Source ID to process\n";
         echo "--all              Process all records regardless of their state (deduplicate)\n";
         echo "--from             Override the date from which to run the update (updatesolr)\n";
@@ -58,6 +58,7 @@ function main($argv)
         case 'updatesolr': $manager->updateSolrIndex(isset($params['from']) ? $params['from'] : null, $source, $single, $noCommit); break;
         case 'dump': $manager->dumpRecord($single); break;
         case 'deletesource': $manager->deleteRecords($source); break;
+        case 'deletesolr': $manager->deleteSolrRecords($source); break;
         default: echo 'Unknown func: ' . $params['func'] . "\n"; exit(1);
     }
 }

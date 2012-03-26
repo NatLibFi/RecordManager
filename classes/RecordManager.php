@@ -690,6 +690,15 @@ class RecordManager
         $this->_db->state->remove(array('_id' => "Last Harvest Date $sourceId"));
         $this->_log->log('deleteRecords', "Deletion of $sourceId completed");
     }
+
+    public function deleteSolrRecords($sourceId)
+    {
+        $this->_log->log('deleteSolrRecords', "Deleting data source $sourceId from Solr...");
+        $this->_solrRequest('{ "delete": { "query": "id:' . $sourceId . '.*" } }');
+        $this->_log->log('deleteSolrRecords', "Committing changes...");
+        $this->_solrRequest('{ "commit": {} }');
+        $this->_log->log('deleteSolrRecords', "Deletion of $sourceId from Solr completed");
+    }
     
     /**
      * Save a record into the database. Used by e.g. OAI-PMH harvesting.
