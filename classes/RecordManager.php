@@ -680,6 +680,17 @@ class RecordManager
         }
     }
     
+    public function deleteRecords($sourceId)
+    {
+        $params = array();
+        $params['source_id'] = $sourceId;
+        $this->_log->log('deleteRecords', "Deleting records from data source $sourceId...");
+        $this->_db->record->remove($params);
+        $this->_log->log('deleteRecords', "Deleting last harvest date from data source $sourceId...");
+        $this->_db->state->remove(array('_id' => "Last Harvest Date $sourceId"));
+        $this->_log->log('deleteRecords', "Deletion of $sourceId completed");
+    }
+    
     /**
      * Save a record into the database. Used by e.g. OAI-PMH harvesting.
      * 
