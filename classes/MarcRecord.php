@@ -164,36 +164,36 @@ class MarcRecord extends BaseRecord
         $data['author_fuller'] = $this->_getFieldSubfields('100q');
         $data['author-letter'] = $this->_getFieldSubfields('100a', true);
 
-        $data['author2'] = MetadataUtils::array_iunique($this->_getFieldsSubfields('110ab:111ab:700abcd:710ab:711ab:979c:979d', false, true)); // 979cd = component part authors
+        $data['author2'] = MetadataUtils::array_iunique($this->_getFieldsSubfields('+100abcd:*110ab:*111ab:*700abcd:*710ab:*711ab:*979c:*979d', false, true)); // 979cd = component part authors
         $key = array_search(mb_strtolower($data['author']), array_map('mb_strtolower', $data['author2']));
         if ($key !== false) {
             unset($data['author2'][$key]);
         }
         $data['author2'] = array_values($data['author2']);
-        $data['author2-role'] = $this->_getFieldsSubfields('700e:710e');
-        $data['author_additional'] = $this->_getFieldsSubfields('505r');
+        $data['author2-role'] = $this->_getFieldsSubfields('*700e:*710e', true);
+        $data['author_additional'] = $this->_getFieldsSubfields('*505r', true);
         	
         $data['title'] = $data['title_auth'] = $this->getTitle();
         $data['title_sub'] = $this->_getFieldSubfields('245b', true);
         $data['title_short'] = $this->_getFieldSubfields('245a', true);
         $data['title_full'] = $this->_getFieldSubfields('245');
-        $data['title_alt'] = array_values(MetadataUtils::array_iunique($this->_getFieldsSubfields('130adfgklnpst:240a:246a:730adfgklnpst:740a:979b', false, true))); // 979c = component part title
-        $data['title_old'] = $this->_getFieldsSubfields('780ast');
-        $data['title_new'] = $this->_getFieldsSubfields('785ast');
+        $data['title_alt'] = array_values(MetadataUtils::array_iunique($this->_getFieldsSubfields('+245ab:*130adfgklnpst:*240a:*246a:*730adfgklnpst:*740a:*979b', false, true))); // 979c = component part title
+        $data['title_old'] = $this->_getFieldsSubfields('*780ast');
+        $data['title_new'] = $this->_getFieldsSubfields('*785ast');
         $data['title_sort'] = $this->getTitle(true);
         if (!$data['title_short']) {
             $data['title_short'] = $this->_getFieldSubfields('240anp', true);
             $data['title_full'] = $this->_getFieldSubfields('240');
         }
 
-        $data['series'] = $this->_getFieldsSubfields('440ap:800abcdfpqt:830ap');
+        $data['series'] = $this->_getFieldsSubfields('*440ap:*800abcdfpqt:*830ap');
         	
-        $data['publisher'] = $this->_getFieldsSubfields('260b');
+        $data['publisher'] = $this->_getFieldsSubfields('*260b');
         $data['publishDate'] = $data['publishDateSort'] = $this->getPublicationYear();
-        $data['physical'] = $this->_getFieldsSubfields('300abcefg:530abcd');
-        $data['dateSpan'] = $this->_getFieldsSubfields('362a');
+        $data['physical'] = $this->_getFieldsSubfields('*300abcefg:*530abcd');
+        $data['dateSpan'] = $this->_getFieldsSubfields('*362a');
         $data['edition'] = $this->_getFieldSubfields('250a');
-        $data['contents'] = $this->_getFieldsSubfields('505a:505t');
+        $data['contents'] = $this->_getFieldsSubfields('*505a:*505t');
         	
         $data['isbn'] = $this->getISBNs();
         $data['issn'] = $this->_getFieldsSubfields('022a:440x:490x:730x:776x:780x:785x');
@@ -203,10 +203,10 @@ class MarcRecord extends BaseRecord
         $data['callnumber-a'] = $this->_getFirstFieldSubfields('080a:084a:050a');
         $data['callnumber-first-code'] = substr($this->_getFirstFieldSubfields('080a:084a:050a'), 0, 1);
 
-        $data['topic'] = $this->_getFieldsSubfields('600abcdefghjklmnopqrstuvxyz:610abcdefghklmnoprstuvxyz:611acdefghjklnpqstuvxyz:630adefghklmnoprstvxyz:650abcdevxyz');
-        $data['genre'] = $this->_getFieldsSubfields('655abcvxyz');
-        $data['geographic'] = $this->_getFieldsSubfields('651aevxyz');
-        $data['era'] = $this->_getFieldsSubfields('648avxyz');
+        $data['topic'] = $this->_getFieldsSubfields('*600abcdefghjklmnopqrstuvxyz:*610abcdefghklmnoprstuvxyz:*611acdefghjklnpqstuvxyz:*630adefghklmnoprstvxyz:*650abcdevxyz');
+        $data['genre'] = $this->_getFieldsSubfields('*655abcvxyz');
+        $data['geographic'] = $this->_getFieldsSubfields('*651aevxyz');
+        $data['era'] = $this->_getFieldsSubfields('*648avxyz');
 
         $data['topic_facet'] = $this->_getFieldsSubfields('600x:610x:611x:630x:648x:650a:650x:651x:655x', false, false, true);
         $data['genre_facet'] = $this->_getFieldsSubfields('600v:610v:611v:630v:648v:650v:651v:655a:655v', false, false, true);
@@ -942,29 +942,78 @@ class MarcRecord extends BaseRecord
         return $data;
     }
 
-    // Array of fields with space-separated subfields
+    /**
+     * Return an array of fields according to the fieldspecs.
+     * 
+     * Format of fieldspecs: [+*][fieldcode][subfields]:...
+     * 						 + = return only alternate script fields (880 equivalents)
+     * 						 * = return normal and alternate script fields
+     * 
+     * @param string   $fieldspecs
+     * @param boolean  $firstOnly                 Return only first matching field
+     * @param boolean  $stripTrailingPunctuation  Whether to strip trailing punctuation from the results
+     * @param boolean  $splitSubfields		      Whether to split subfields to separate array items
+     * @return array of strings
+     */
     protected function _getFieldsSubfields($fieldspecs, $firstOnly = false, $stripTrailingPunctuation = false, $splitSubfields = false)
     {
         $data = array();
         foreach (explode(':', $fieldspecs) as $fieldspec) {
-            $tag = substr($fieldspec, 0, 3);
-            $subfields = substr($fieldspec, 3);
+            $mark = substr($fieldspec, 0, 1);
+            if ($mark == '+' || $mark == '*') {
+                $tag = substr($fieldspec, 1, 3);
+                $subfields = substr($fieldspec, 4);
+            } else {
+                $tag = substr($fieldspec, 0, 3);
+                $subfields = substr($fieldspec, 3);
+            }
+
+            $idx = 0;
             foreach ($this->_getFields($tag) as $field) {
-                if ($subfields) {
-                    if ($splitSubfields) {
-                        foreach (str_split($subfields) as $code) {
-                            $data = array_merge($data, $this->_getSubfieldsArray($field, $code));
+                if ($mark != '+') {
+                    // Handle normal field
+                    if ($subfields) {
+                        if ($splitSubfields) {
+                            foreach (str_split($subfields) as $code) {
+                                $data = array_merge($data, $this->_getSubfieldsArray($field, $code));
+                            }
+                        } else {
+                            $fieldContents = $this->_getSubfields($field, $subfields);
+                            if ($fieldContents) {
+                                $data[] = $fieldContents;
+                            }
                         }
                     } else {
-                        $fieldContents = $this->_getSubfields($field, $subfields);
+                        $fieldContents = $this->_getAllSubfields($field);
                         if ($fieldContents) {
                             $data[] = $fieldContents;
                         }
                     }
-                } else {
-                    $fieldContents = $this->_getAllSubfields($field);
-                    if ($fieldContents) {
-                        $data[] = $fieldContents;
+                }
+                if (($mark == '+' || $mark == '*') && ($origSub6 = $this->_getSubfield($field, '6'))) {
+                    // Handle alternate script field
+                    $findSub6 = "$tag-" . substr($origSub6, 4, 2);
+                    foreach ($this->_getFields('880') as $field) {
+                        if (strncmp($this->_getSubfield($field, '6'), $findSub6, 6) != 0) {
+                            continue;
+                        }
+                        if ($subfields) {
+                            if ($splitSubfields) {
+                                foreach (str_split($subfields) as $code) {
+                                    $data = array_merge($data, $this->_getSubfieldsArray($field, $code));
+                                }
+                            } else {
+                                $fieldContents = $this->_getSubfields($field, $subfields);
+                                if ($fieldContents) {
+                                    $data[] = $fieldContents;
+                                }
+                            }
+                        } else {
+                            $fieldContents = $this->_getAllSubfields($field);
+                            if ($fieldContents) {
+                                $data[] = $fieldContents;
+                            }
+                        }
                     }
                 }
                 if ($firstOnly) {
