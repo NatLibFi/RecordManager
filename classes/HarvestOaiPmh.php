@@ -29,7 +29,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  */
 
-require 'HTTP/Request.php';
+require_once 'HTTP/Request2.php';
 
 /**
  * HarvestOaiPmh Class
@@ -285,57 +285,54 @@ class HarvestOaiPmh
     private function _sendRequest($verb, $params = array())
     {
         // Set up the request:
-        $request = new HTTP_Request();
-        $request->addHeader('User-Agent', 'RecordManager');
-        $request->setMethod(HTTP_REQUEST_METHOD_GET);
-        $request->setURL($this->_baseURL);
+        $request = new HTTP_Request2($this->_baseURL, HTTP_Request2::METHOD_GET);
+        $request->setHeader('User-Agent', 'RecordManager');
 
         // Load request parameters:
-        $request->addQueryString('verb', $verb);
-        foreach ($params as $key => $value) {
-            $request->addQueryString($key, $value);
-        }
-
         $url = $request->getURL();
-        $this->_message("Sending request: $url", true);
+        $params['verb'] = $verb;
+        $url->setQueryVariables($params);
+        
+        $urlStr = $url->getURL();
+        $this->_message("Sending request: $urlStr", true);
         if ($this->_debugLog) {
-            file_put_contents($this->_debugLog, "Request:\n$url\n", FILE_APPEND);
+            file_put_contents($this->_debugLog, "Request:\n$urlStr\n", FILE_APPEND);
         }
 
         // Perform request and throw an exception on error:
         for ($try = 1; $try <= 5; $try++) {
-            $result = $request->sendRequest();
-            if ($try < 5) {
-                if (PEAR::isError($result)) {
-                    $this->_message("Request '$url' failed (" . $result->getMessage() . "), retrying in 30 seconds...", false, Logger::WARNING);
+            try {
+                $response = $request->send();
+            } catch (Exception $e) {
+                if ($try < 5) {
+                    $this->_message("Request '$urlStr' failed (" . $e->getMessage() . "), retrying in 30 seconds...", false, Logger::WARNING);
                     sleep(30);
                     continue;
                 }
-                $code = $request->getResponseCode() ;
+                throw $e;
+            }
+            if ($try < 5) {
+                $code = $response->getStatus();
                 if ($code >= 300) {
-                    $this->_message("Request '$url' failed ($code), retrying in 30 seconds...", false, Logger::WARNING);
+                    $this->_message("Request '$urlStr' failed ($code), retrying in 30 seconds...", false, Logger::WARNING);
                     sleep(30);
                     continue;
                 }
             }
             break;
         }
-        if (PEAR::isError($result)) {
-            $this->_message("Request '$url' failed (" . $result->getMessage() . ")", false, Logger::FATAL);
-            throw new Exception($result->getMessage());
-        }
-        $code = $request->getResponseCode();
+        $code = $response->getStatus();
         if ($code >= 300) {
-            $this->_message("Request '$url' failed: $code", false, Logger::FATAL);
+            $this->_message("Request '$urlStr' failed: $code", false, Logger::FATAL);
             throw new Exception("Request failed: $code");
         }
 
         // If we got this far, there was no error -- send back response.
-        $response = $request->getResponseBody();
+        $responseStr = $response->getBody();
         if ($this->_debugLog) {
-            file_put_contents($this->_debugLog, "Response:\n$response\n\n", FILE_APPEND);
+            file_put_contents($this->_debugLog, "Response:\n$responseStr\n\n", FILE_APPEND);
         }
-        return $this->_processResponse($response);
+        return $this->_processResponse($responseStr);
     }
 
     /**

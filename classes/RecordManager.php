@@ -27,6 +27,7 @@
  */
 
 require_once 'PEAR.php';
+require_once 'HTTP/Request2.php';
 require_once 'Logger.php';
 require_once 'RecordFactory.php';
 require_once 'FileSplitter.php';
@@ -249,8 +250,12 @@ class RecordManager
     public function updateSolrIndex($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false)
     {
         global $configArray;
+        
         $commitInterval = isset($configArray['Solr']['max_commit_interval']) ? $configArray['Solr']['max_commit_interval'] : 50000;
-        	
+        $maxUpdateRecords = isset($configArray['Solr']['max_update_records']) ? $configArray['Solr']['max_update_records'] : 5000;
+        $maxUpdateSize = isset($configArray['Solr']['max_update_size']) ? $configArray['Solr']['max_update_size'] : 1024;
+        $maxUpdateSize *= 1024;
+        
         foreach ($this->_dataSourceSettings as $source => $settings) {
             try {
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
@@ -300,6 +305,7 @@ class RecordManager
                 } else {
                     $this->_log->log('updateSolrIndex', "Indexing $total records (max commit interval $commitInterval records) from $source...");
                 }
+                $starttime = microtime(true);
                 foreach ($records as $record) {
                     if ($record['deleted']) {
                         $this->_solrRequest(json_encode(array('delete' => array('id' => $record['_id']))));
@@ -341,7 +347,6 @@ class RecordManager
                                 $components = $this->_db->record->find(array('host_record_id' => $record['_id'], 'deleted' => false));
                             }
                         }
-
                         
                         $metadataRecord->setIDPrefix($this->_idPrefix . '.');
                         if (isset($components)) {
@@ -389,18 +394,20 @@ class RecordManager
                         }
                         $buffer .= $jsonData;
                         $bufferLen += strlen($jsonData);
-                        if (++$buffered >= 1000 || $bufferLen > 10000) {
+                        ++$count;
+                        if (++$buffered >= $maxUpdateRecords || $bufferLen > $maxUpdateSize) {
                             $this->_solrRequest("[\n$buffer\n]");
+                            $avg = round($buffered / (microtime(true) - $starttime));
                             $buffer = '';
                             $bufferLen = 0;
                             $buffered = 0;
+                            $this->_log->log('updateSolrIndex', "$count records (of which $deleted deleted) with $mergedComponents merged parts indexed from $source, $avg records/sec");
+                            $starttime = microtime(true);
                         }
-                    }
-                    if (++$count % 1000 == 0) {
-                        $this->_log->log('updateSolrIndex', "$count records (of which $deleted deleted) with $mergedComponents merged parts indexed from $source");
-                    }
-                    if (!$noCommit && $count % $commitInterval == 0) {
-                        $this->_solrRequest('{ "commit": {} }');
+                        if (!$noCommit && $count % $commitInterval == 0) {
+                            $this->_log->log('updateSolrIndex', "Intermediate commit...");
+                            $this->_solrRequest('{ "commit": {} }');
+                        }
                     }
                 }
                 if ($buffered > 0) {
@@ -1106,26 +1113,17 @@ class RecordManager
     {
         global $configArray;
 
-        $request = new HTTP_Request();
-        $request->addHeader('User-Agent', 'RecordManager');
-        $request->setMethod(HTTP_REQUEST_METHOD_POST);
-        $request->setURL($configArray['Solr']['update_url']);
+        $request = new HTTP_Request2($configArray['Solr']['update_url'], HTTP_Request2::METHOD_POST);
+        $request->setHeader('User-Agent', 'RecordManager');
         if (isset($configArray['Solr']['username']) && isset($configArray['Solr']['password'])) {
-            $request->setBasicAuth($configArray['Solr']['username'], $configArray['Solr']['password']);
+            $request->setAuth($configArray['Solr']['username'], $configArray['Solr']['password'], HTTP_Request2::AUTH_BASIC);
         }
-        $request->addHeader('Content-Type', 'application/json');
+        $request->setHeader('Content-Type', 'application/json');
         $request->setBody($body);
-        $result = $request->sendRequest();
-        if (PEAR::isError($result)) {
-            throw new Exception('Solr server request failed: ' . $result->getMessage());
-        }
-        $code = $request->getResponseCode();
+        $response = $request->send();
+        $code = $response->getStatus();
         if ($code >= 300) {
-            echo "Request: \n";
-            echo $body;
-            echo "\n-----\n";
-            $this->_log->log('_solrRequest', "Solr server request failed: $code: " . $request->getResponseBody(), Logger::FATAL);
-            throw new Exception("Solr server request failed: $code: " . $request->getResponseBody() . "\n");
+            throw new Exception("Solr server request failed ($code). Request:\n$body\n\nResponse:\n" . $response->getBody());
         }
     }
 

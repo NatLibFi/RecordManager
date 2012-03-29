@@ -25,6 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  */
 
+require_once 'HTTP/Request2.php';
 require_once 'FileSplitter.php';
 
 /**
@@ -145,33 +146,24 @@ class HarvestMetaLib
      */
     protected function _callXServer($params)
     {
-        $request = new HTTP_Request();
-        $request->addHeader('User-Agent', 'RecordManager');
-        $request->setMethod(HTTP_REQUEST_METHOD_GET);
-        $request->setURL($this->_baseURL);
-
-        // Load request parameters:
-        foreach ($params as $key => $value) {
-            $request->addQueryString($key, $value);
-        }
+        $request = new HTTP_Request2($this->_baseURL, HTTP_Request2::METHOD_GET);
+        $request->setHeader('User-Agent', 'RecordManager');
 
         $url = $request->getURL();
-        $cleanUrl = preg_replace('/user_password=([^&]+)/', 'user_password=***', $url);
+        $url->setQueryVariables($params);
+        
+        $cleanUrl = preg_replace('/user_password=([^&]+)/', 'user_password=***', $url->getURL());
         $this->_message("Sending request: $cleanUrl", true);
 
-        $result = $request->sendRequest();
-        if (PEAR::isError($result)) {
-            $this->_message("Request '$url' failed (" . $result->getMessage() . ")", false, Logger::FATAL);
-            throw new Exception($result->getMessage());
-        }
-        $code = $request->getResponseCode();
+        $response = $request->send();
+        $code = $response->getStatus();
         if ($code >= 300) {
             $this->_message("Request '$url' failed: $code", false, Logger::FATAL);
             throw new Exception("Request failed: $code");
         }
         $this->_message("Request successful", true);
         
-        return $request->getResponseBody();
+        return $response->getBody();
     }
 
     /**
