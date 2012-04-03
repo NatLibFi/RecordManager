@@ -37,6 +37,7 @@ function main($argv)
         echo "--func             renormalize|deduplicate|updatesolr|dump|deletesource|deletesolr\n";
         echo "--source           Source ID to process\n";
         echo "--all              Process all records regardless of their state (deduplicate)\n";
+        echo "                   or date (updatesolr)\n";
         echo "--from             Override the date from which to run the update (updatesolr)\n";
         echo "--single           Process only the given record id (deduplicate, updatesolr, dump)\n";
         echo "--nocommit         Don't ask Solr to commit the changes (updatesolr)\n";
@@ -55,7 +56,10 @@ function main($argv)
     {
         case 'renormalize': $manager->renormalize($source, $single); break;
         case 'deduplicate': $manager->deduplicate($source, isset($params['all']) ? true : false, $single); break;
-        case 'updatesolr': $manager->updateSolrIndex(isset($params['from']) ? $params['from'] : null, $source, $single, $noCommit); break;
+        case 'updatesolr': 
+            $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
+            $manager->updateSolrIndex($date, $source, $single, $noCommit); 
+            break;
         case 'dump': $manager->dumpRecord($single); break;
         case 'deletesource': $manager->deleteRecords($source); break;
         case 'deletesolr': $manager->deleteSolrRecords($source); break;

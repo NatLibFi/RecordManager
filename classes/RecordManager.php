@@ -242,10 +242,11 @@ class RecordManager
     /**
      * Send updates to a Solr index (e.g. VuFind)
      * 
-     * @param string $fromDate Starting date for updates (if empty, last update date stored in the database is used)
-     * @param string $sourceId Source ID to update, or empty or * for all sources
-     * @param string $singleId Export only a record with the given ID
-     * @param bool   $noCommit If true, changes are not explicitly committed
+     * @param string|null  	$fromDate Starting date for updates (if empty string, last update date stored in the 
+     * 						database is used and if null, all records are processed)
+     * @param string		$sourceId Source ID to update, or empty or * for all sources
+     * @param string 		$singleId Export only a record with the given ID
+     * @param bool  		$noCommit If true, changes are not explicitly committed
      */
     public function updateSolrIndex($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false)
     {
@@ -271,6 +272,8 @@ class RecordManager
                     $state = $this->_db->state->findOne(array('_id' => "Last Index Update $source"));
                     if (isset($state)) {
                         $fromDate = date('Y-m-d H:i:s', $state['value']->sec);
+                    } else {
+                        $fromDate = '';
                     }
                 }
                 $this->_log->log('updateSolrIndex', "Creating record list (from " . ($fromDate ? $fromDate : 'the beginning') . ", source $source)...");
