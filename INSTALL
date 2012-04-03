@@ -14,9 +14,9 @@ Installation notes on CentOS 6:
 - Add the extension=mongo.so line to /etc/php.d/mongo.ini
 
 
-- Required Pear modules: HTTP_Request
+- Required Pear modules: HTTP_Request2
 
-    pear install HTTP_Request
+    pear install HTTP_Request2
 
 
 - Install MongoDB from 10gen repositories (see http://www.mongodb.org/display/DOCS/CentOS+and+Fedora+Packages)
