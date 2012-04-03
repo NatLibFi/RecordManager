@@ -192,5 +192,20 @@ class MetadataUtils
         return array_intersect_key($array,
             array_unique(array_map('mb_strtolower', $array)));
     } 
+    
+    /**
+     * Try to find the important numeric part from a record ID to sort by 
+     * 
+     * @param  string $id
+     * @return string sort key
+     */
+    static public function createIdSortKey($id) 
+    {
+        if (preg_match('/(\d+)$/', $id, $matches)) {
+            return $matches[1];
+        }
+        return $id;
+    }
+    
 }
 

@@ -360,8 +360,12 @@ class RecordManager
 
                         $data['id'] = $record['_id'];
                         $data['host_id'] = $record['host_record_id'];
-                        $data['institution'] = $this->_institution;
-                        $data['collection'] = $record['source_id'];
+                        if (!isset($data['institution'])) {
+                            $data['institution'] = $this->_institution;
+                        }
+                        if (!isset($data['collection'])) {
+                            $data['collection'] = $record['source_id'];
+                        }
                         if (isset($data['building']) && $data['building']) {
                             foreach ($data['building'] as $key => $value) {
                                 $data['building'][$key] = $record['source_id'] . ".$value";
@@ -437,61 +441,70 @@ class RecordManager
     /**
      * Renormaliza records in a data source
      *
-     * @param string $source	Source ID to renormalize
+     * @param string $sourceId	Source ID to renormalize
      * @param string $singleId	Renormalize only a single record with the given ID
      */
-    public function renormalize($source, $singleId)
+    public function renormalize($sourceId, $singleId)
     {
-        if (!$source) {
-            throw new Exception('Source must be specified');
-        }
-        $this->_loadSourceSettings($source);
-        $this->_log->log('renormalize', "Creating record list for '$source'...");
-
-        $params = array('deleted' => false);
-        if ($singleId) {
-            $params['_id'] = $singleId;
-            $params['source_id'] = $source;
-        } else {
-            $params['source_id'] = $source;
-        }
-        $records = $this->_db->record->find($params);
-        $total = $records->count();
-        $count = 0;
-
-        $this->_log->log('renormalize', "Processing $total records...");
-        $starttime = microtime(true);
-        foreach ($records as $record) {
-            $originalData = $this->_getRecordData($record, false);
-            $normalizedData = $originalData;
-            if (isset($this->_normalizationXSLT)) {
-                $origMetadataRecord = RecordFactory::createRecord($record['format'], $originalData, $record['oai_id']);
-                $normalizedData = $this->_normalizationXSLT->transform($origMetadataRecord->toXML(), array('oai_id' => $record['oai_id']));
+        foreach ($this->_dataSourceSettings as $source => $settings) {
+            if ($sourceId && $sourceId != '*' && $source != $sourceId) {
+                continue;
             }
-
-            $metadataRecord = RecordFactory::createRecord($record['format'], $normalizedData, $record['oai_id']);
-            $normalizedData = $metadataRecord->serialize();
-            if ($this->_dedup) {
-                $this->_updateDedupCandidateKeys($record, $metadataRecord);
+            if (empty($source) || empty($settings)) {
+                continue;
             }
-            
-            if ($normalizedData == $originalData) {
-                $record['normalized_data'] = '';
+            $this->_loadSourceSettings($source);
+            $this->_log->log('renormalize', "Creating record list for '$source'...");
+    
+            $params = array('deleted' => false);
+            if ($singleId) {
+                $params['_id'] = $singleId;
+                $params['source_id'] = $source;
             } else {
-                $record['normalized_data'] = new MongoBinData(gzdeflate($normalizedData));
+                $params['source_id'] = $source;
             }
-            $record['dedup_key'] = '';
-            $record['update_needed'] = $this->_dedup ? true : false;
-            $record['updated'] = new MongoDate();
-            $this->_db->record->save($record);
-            ++$count;
-            if ($count % 1000 == 0) {
-                $avg = round(1000 / (microtime(true) - $starttime));
-                $this->_log->log('renormalize', "$count records processed, $avg records/sec");
-                $starttime = microtime(true);
+            $records = $this->_db->record->find($params);
+            $total = $records->count();
+            $count = 0;
+    
+            $this->_log->log('renormalize', "Processing $total records from '$source'...");
+            $starttime = microtime(true);
+            foreach ($records as $record) {
+                $originalData = $this->_getRecordData($record, false);
+                $normalizedData = $originalData;
+                if (isset($this->_normalizationXSLT)) {
+                    $origMetadataRecord = RecordFactory::createRecord($record['format'], $originalData, $record['oai_id']);
+                    $normalizedData = $this->_normalizationXSLT->transform($origMetadataRecord->toXML(), array('oai_id' => $record['oai_id']));
+                }
+    
+                $metadataRecord = RecordFactory::createRecord($record['format'], $normalizedData, $record['oai_id']);
+                $normalizedData = $metadataRecord->serialize();
+                if ($this->_dedup && !$record['host_record_id']) {
+                    $this->_updateDedupCandidateKeys($record, $metadataRecord);
+                    $record['update_needed'] = true;
+                } else {
+                    $record['title_keys'] = null;                
+                    $record['isbn_keys'] = null;                
+                    $record['update_needed'] = false;
+                }
+                
+                if ($normalizedData == $originalData) {
+                    $record['normalized_data'] = '';
+                } else {
+                    $record['normalized_data'] = new MongoBinData(gzdeflate($normalizedData));
+                }
+                $record['dedup_key'] = '';
+                $record['updated'] = new MongoDate();
+                $this->_db->record->save($record);
+                ++$count;
+                if ($count % 1000 == 0) {
+                    $avg = round(1000 / (microtime(true) - $starttime));
+                    $this->_log->log('renormalize', "$count records processed from '$source', $avg records/sec");
+                    $starttime = microtime(true);
+                }
             }
+            $this->_log->log('renormalize', "Completed with $count records processed from '$source'");
         }
-        $this->_log->log('renormalize', "Completed with $count records processed");
     }
 
     /**
@@ -513,9 +526,9 @@ class RecordManager
                 }
 
                 $this->_loadSourceSettings($source);
-                $this->_log->log('deduplicate', "Creating record list for '$source'...");
+                $this->_log->log('deduplicate', "Creating record list for '$source'" . ($allRecords ? ' (all records)' : '') . '...');
 
-                $params = array('deleted' => false);
+                $params = array('deleted' => false, 'host_record_id' => '');
                 if ($singleId) {
                     $params['_id'] = $singleId;
                     $params['source_id'] = $source;
@@ -818,11 +831,12 @@ class RecordManager
             $dbRecord['format'] = $this->_format;
             $dbRecord['original_data'] = new MongoBinData($originalData);
             $dbRecord['normalized_data'] = $normalizedData ? new MongoBinData($normalizedData) : '';
-            // TODO: don't update created
-            if ($this->_dedup) {
+            if ($this->_dedup && !$hostID) {
                 $this->_updateDedupCandidateKeys($dbRecord, $metadataRecord);
                 $dbRecord['update_needed'] = true;
             } else {
+                $record['title_keys'] = null;                
+                $record['isbn_keys'] = null;                
                 $dbRecord['update_needed'] = false;
             }
             $this->_db->record->save($dbRecord);
@@ -846,11 +860,16 @@ class RecordManager
     /**
      * Find a single duplicate for the given record and set a dedup key for them
      * 
-     * @param object $record 	Database record
-     * @return boolean			Whether a duplicate was found
+     * @param object $record		Database record
+     * 
+     * @return boolean				Whether a duplicate was found
      */
     protected function _dedupRecord($record)
     {
+        if ($this->verbose) {
+            echo 'Original ' . $record['_id'] . ":\n" . $this->_getRecordData($record, true) . "\n";
+        }
+        
         $origRecord = RecordFactory::createRecord($record['format'], $this->_getRecordData($record, true), $record['oai_id']);
         $key = MetadataUtils::createTitleKey($origRecord->getTitle(true));
         $keyArray = array($key);
@@ -868,13 +887,14 @@ class RecordManager
                 if ($this->verbose) {
                     echo "Search: '$keyPart'\n";
                 }
+                $params = array('source_id' => array('$ne' => $this->_sourceId), 'host_record_id' => '');
                 if ($type == 'ISBN') {
-                    $candidates = $this->_db->record->find(array('isbn_keys' => $keyPart, 'source_id' => array('$ne' => $this->_sourceId)));
+                    $params['isbn_keys'] = $keyPart;
                 }
                 else {
-                    $candidates = $this->_db->record->find(array('title_keys' => $keyPart, 'source_id' => array('$ne' => $this->_sourceId)));
+                    $params['title_keys'] = $keyPart;
                 }
-                //echo "Search done\n";
+                $candidates = $this->_db->record->find($params);
                 $processed = 0;
                 if ($candidates->hasNext()) {
                     // We have candidates
@@ -909,120 +929,7 @@ class RecordManager
                             break;
                         }
 
-                        $cRecord = RecordFactory::createRecord($candidate['format'], $this->_getRecordData($candidate, true), $record['oai_id']);
-                        if ($this->verbose) {
-                            echo 'Candidate ' . $candidate['_id'] . ":\n" . $this->_getRecordData($candidate, true) . "\n";
-                        }
-                        	
-                        // Check for common ISBN
-                        $origISBNs = $origRecord->getISBNs();
-                        $cISBNs = $cRecord->getISBNs();
-                        $isect = array_intersect($origISBNs, $cISBNs);
-                        if (!empty($isect)) {
-                            // Shared ISBN -> match
-                            if ($this->verbose) {
-                                echo "++ISBN match:\n";
-                                print_r($origISBNs);
-                                print_r($cISBNs);
-                                echo $origRecord->getFullTitle() . "\n";
-                                echo $cRecord->getFullTitle() . "\n";
-                            }
-                            	
-                            $matchRecord = $candidate;
-                            break 3;
-                        }
-
-                        $origISSNs = $origRecord->getISSNs();
-                        $cISSNs = $cRecord->getISSNs();
-                        $commonISSNs = array_intersect($origISSNs, $cISSNs);
-                        if (!empty($origISSNs) && !empty($cISSNs) && empty($commonISSNs)) {
-                            // Both have ISSNs but none match
-                            if ($this->verbose) {
-                                echo "++ISSN mismatch:\n";
-                                print_r($origISSNs);
-                                print_r($cISSNs);
-                                echo $origRecord->getFullTitle() . "\n";
-                                echo $cRecord->getFullTitle() . "\n";
-                            }
-                            continue;
-                        }
-                        
-                        if ($origRecord->getFormat() != $cRecord->getFormat()) {
-                            if ($this->verbose) {
-                                echo "--Format mismatch: " . $origRecord->getFormat() . ' != ' . $cRecord->getFormat() . "\n";
-                            }
-                            continue;
-                        }
-                        $origYear = $origRecord->getPublicationYear();
-                        $cYear = $cRecord->getPublicationYear();
-                        if ($origYear && $cYear && $origYear != $cYear) {
-                            if ($this->verbose) {
-                                echo "--Year mismatch: $origYear != $cYear\n";
-                            }
-                            continue;
-                        }
-                        $pages = $origRecord->getPageCount();
-                        $cPages = $cRecord->getPageCount();
-                        if ($pages && $cPages && abs($pages-$cPages) > 10) {
-                            if ($this->verbose) {
-                                echo "--Pages mismatch ($pages != $cPages)\n";
-                            }
-                            continue;
-                        }
-
-                        if ($origRecord->getSeriesISSN() != $cRecord->getSeriesISSN()) {
-                            continue;
-                        }
-                        if ($origRecord->getSeriesNumbering() != $cRecord->getSeriesNumbering()) {
-                            continue;
-                        }
-
-                        $origTitle = MetadataUtils::normalize($origRecord->getTitle(true));
-                        $cTitle = MetadataUtils::normalize($cRecord->getTitle(true));
-                        if (!$origTitle || !$cTitle) {
-                            // No title match without title...
-                            if ($this->verbose) {
-                                echo "No title - no further matching\n";
-                            }
-                            continue;
-                        }
-                        $lev = levenshtein(substr($origTitle, 0, 255), substr($cTitle, 0, 255));
-                        $lev = $lev / strlen($origTitle) * 100;
-                        if ($this->verbose) {
-                            echo "Title lev: $lev\n";
-                        }
-
-                        if ($lev < 10) {
-                            $origAuthor = MetadataUtils::normalize($origRecord->getMainAuthor());
-                            $cAuthor = MetadataUtils::normalize($cRecord->getMainAuthor());
-                            $authorLev = 0;
-                            if ($origAuthor && $cAuthor) {
-                                if (!MetadataUtils::authorMatch($origAuthor, $cAuthor)) {
-                                    $authorLev = levenshtein(substr($origAuthor, 0, 255), substr($cAuthor, 0, 255));
-                                    $authorLev = $authorLev / mb_strlen($origAuthor) * 100;
-                                    if ($authorLev > 20) {
-                                        if ($this->verbose) {
-                                            echo "\nAuthor lev discard (lev: $lev, authorLev: $authorLev):\n";
-                                            echo $origRecord->getFullTitle() . "\n";
-                                            echo "   $origAuthor - $origTitle\n";
-                                            echo $cRecord->getFullTitle() . "\n";
-                                            echo "   $cAuthor - $cTitle\n";
-                                        }
-                                        continue;
-                                    }
-                                }
-                            }
-                            	
-                            if ($this->verbose) {
-                                echo "\nTitle match (lev: $lev, authorLev: $authorLev):\n";
-                                echo $origRecord->getFullTitle() . "\n";
-                                echo "   $origAuthor - $origTitle.\n";
-                                echo $cRecord->getFullTitle() . "\n";
-                                echo "   $cAuthor - $cTitle.\n";
-                                //echo $record->getNormalizedData() . "\n--\n";
-                                //echo $dbRecord->getNormalizedData() . "\n\n";
-                            }
-                            // We have a match!
+                        if ($this->_matchRecords($record, $origRecord, $candidate)) {
                             $matchRecord = $candidate;
                             break 3;
                         }
@@ -1042,6 +949,123 @@ class RecordManager
         return false;
     }
 
+    protected function _matchRecords($record, $origRecord, $candidate)
+    {
+        $cRecord = RecordFactory::createRecord($candidate['format'], $this->_getRecordData($candidate, true), $record['oai_id']);
+        if ($this->verbose) {
+            echo 'Candidate ' . $candidate['_id'] . ":\n" . $this->_getRecordData($candidate, true) . "\n";
+        }
+         
+        // Check for common ISBN
+        $origISBNs = $origRecord->getISBNs();
+        $cISBNs = $cRecord->getISBNs();
+        $isect = array_intersect($origISBNs, $cISBNs);
+        if (!empty($isect)) {
+            // Shared ISBN -> match
+            if ($this->verbose) {
+                echo "++ISBN match:\n";
+                print_r($origISBNs);
+                print_r($cISBNs);
+                echo $origRecord->getFullTitle() . "\n";
+                echo $cRecord->getFullTitle() . "\n";
+            }
+            return true; 
+        }
+        
+        $origISSNs = $origRecord->getISSNs();
+        $cISSNs = $cRecord->getISSNs();
+        $commonISSNs = array_intersect($origISSNs, $cISSNs);
+        if (!empty($origISSNs) && !empty($cISSNs) && empty($commonISSNs)) {
+            // Both have ISSNs but none match
+            if ($this->verbose) {
+                echo "++ISSN mismatch:\n";
+                print_r($origISSNs);
+                print_r($cISSNs);
+                echo $origRecord->getFullTitle() . "\n";
+                echo $cRecord->getFullTitle() . "\n";
+            }
+            return false;
+        }
+        
+        if ($origRecord->getFormat() != $cRecord->getFormat()) {
+            if ($this->verbose) {
+                echo "--Format mismatch: " . $origRecord->getFormat() . ' != ' . $cRecord->getFormat() . "\n";
+            }
+            return false;
+        }
+        $origYear = $origRecord->getPublicationYear();
+        $cYear = $cRecord->getPublicationYear();
+        if ($origYear && $cYear && $origYear != $cYear) {
+            if ($this->verbose) {
+                echo "--Year mismatch: $origYear != $cYear\n";
+            }
+            return false;
+        }
+        $pages = $origRecord->getPageCount();
+        $cPages = $cRecord->getPageCount();
+        if ($pages && $cPages && abs($pages-$cPages) > 10) {
+            if ($this->verbose) {
+                echo "--Pages mismatch ($pages != $cPages)\n";
+            }
+            return false;
+        }
+        
+        if ($origRecord->getSeriesISSN() != $cRecord->getSeriesISSN()) {
+            return false;
+        }
+        if ($origRecord->getSeriesNumbering() != $cRecord->getSeriesNumbering()) {
+            return false;
+        }
+        
+        $origTitle = MetadataUtils::normalize($origRecord->getTitle(true));
+        $cTitle = MetadataUtils::normalize($cRecord->getTitle(true));
+        if (!$origTitle || !$cTitle) {
+            // No title match without title...
+            if ($this->verbose) {
+                echo "No title - no further matching\n";
+            }
+            return false;
+        }
+        $lev = levenshtein(substr($origTitle, 0, 255), substr($cTitle, 0, 255));
+        $lev = $lev / strlen($origTitle) * 100;
+        if ($this->verbose) {
+            echo "Title lev: $lev\n";
+        }
+        if ($lev >= 10) {
+            return false;
+        }
+        
+        $origAuthor = MetadataUtils::normalize($origRecord->getMainAuthor());
+        $cAuthor = MetadataUtils::normalize($cRecord->getMainAuthor());
+        $authorLev = 0;
+        if ($origAuthor && $cAuthor) {
+            if (!MetadataUtils::authorMatch($origAuthor, $cAuthor)) {
+                $authorLev = levenshtein(substr($origAuthor, 0, 255), substr($cAuthor, 0, 255));
+                $authorLev = $authorLev / mb_strlen($origAuthor) * 100;
+                if ($authorLev > 20) {
+                    if ($this->verbose) {
+                        echo "\nAuthor lev discard (lev: $lev, authorLev: $authorLev):\n";
+                        echo $origRecord->getFullTitle() . "\n";
+                        echo "   $origAuthor - $origTitle\n";
+                        echo $cRecord->getFullTitle() . "\n";
+                        echo "   $cAuthor - $cTitle\n";
+                    }
+                    return false;
+                }
+            }
+        }
+                 
+        if ($this->verbose) {
+            echo "\nTitle match (lev: $lev, authorLev: $authorLev):\n";
+            echo $origRecord->getFullTitle() . "\n";
+            echo "   $origAuthor - $origTitle.\n";
+            echo $cRecord->getFullTitle() . "\n";
+            echo "   $cAuthor - $cTitle.\n";
+        }
+        // We have a match!
+        return true;
+    }
+    
     /**
      * Mark two records as duplicates
      * 
@@ -1065,6 +1089,81 @@ class RecordManager
         $rec2['updated'] = new MongoDate();
         $rec2['update_needed'] = false;
         $this->_db->record->save($rec2);
+        
+        if (!isset($rec1['host_record_id']) || !$rec1['host_record_id']) {
+            $this->_dedupComponentParts($rec1);
+        }
+    }
+    
+    /**
+     * Deduplicate component parts of a record
+     * 
+     * Component part deduplication is special. It will only go through
+     * component parts of other records deduplicated with the host record
+     * and stops when it finds a set of component parts that match.
+     * 
+     * @param mongo record $hostRecord
+     */
+    protected function _dedupComponentParts($hostRecord)
+    {
+        assert('$hostRecord["dedup_key"]');
+        if ($this->verbose) {
+            echo "Deduplicating component parts...\n";
+        }
+        $components1iter = $this->_db->record->find(array('host_record_id' => $hostRecord['_id']));
+        if (!$components1iter->hasNext()) {
+            return;
+        }
+        $components1 = array();
+        foreach ($components1iter as $component1) {
+            $components1[MetadataUtils::createIdSortKey($component1['_id'])] = $component1;
+        }
+        ksort($components1);
+        
+        // Go through all other records with same dedup key and see if their component parts match
+        $otherRecords = $this->_db->record->find(array('deleted' => false, 'dedup_key' => $hostRecord['dedup_key']));
+        foreach ($otherRecords as $otherRecord) {
+            if ($otherRecord['source_id'] == $hostRecord['source_id']) {
+                continue;
+            }
+            $components2iter = $this->_db->record->find(array('host_record_id' => $otherRecord['_id']));
+            $components2 = array();
+            foreach ($components2iter as $component2) {
+                $components2[MetadataUtils::createIdSortKey($component2['_id'])] = $component2;
+            }
+            ksort($components2);
+            $components2 = array_values($components2);
+            $allMatch = true;
+            $idx = -1;
+            foreach ($components1 as $component1) {
+                if (++$idx >= count($components2)) {
+                    $allMatch = false;
+                    break;
+                }
+                $component2 = $components2[$idx];
+                if ($this->verbose) {
+                    echo "Comparing {$component1['_id']} with {$component2['_id']}\n";
+                }
+                if ($this->verbose) {
+                    echo 'Original ' . $component1['_id'] . ":\n" . $this->_getRecordData($component1, true) . "\n";
+                }
+                $metadataComponent1 = RecordFactory::createRecord($component1['format'], $this->_getRecordData($component1, true), $component1['oai_id']);
+                if (!$this->_matchRecords($component1, $metadataComponent1, $component2)) {
+                    $allMatch = false;
+                    break;
+                }
+            }
+            if ($allMatch) {
+                if ($this->verbose) {
+                    echo "All component parts match between {$hostRecord['_id']} and {$otherRecord['_id']}\n";
+                }
+                foreach ($components1 as $component1) {
+                    $component2 = $components2[$idx];
+                    $this->_markDuplicates($component1, $component2);
+                }
+                break;
+            }
+        }
     }
 
     /**

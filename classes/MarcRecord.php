@@ -253,10 +253,7 @@ class MarcRecord extends BaseRecord
                 $comp .= MARCRecord::SUBFIELD_INDICATOR . "d$addAuthor";
             }
             
-            $key = $marc->getID();
-            if (preg_match('/(\d+)$/', $key, $matches)) {
-                $key = $matches[1];
-            }
+            $key = MetadataUtils::createIdSortKey($marc->getID());
             $parts[$key] = "  $comp";
             ++$count;
         }
