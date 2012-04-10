@@ -48,7 +48,13 @@ class RecordFactory
      */
     static function createRecord($format, $data, $oaiID)
     {
-        $class = ucwords($format) . 'Record';
+        global $configArray;
+        
+        if (isset($configArray['Record Classes'][$format])) {
+            $class = $configArray['Record Classes'][$format];
+        } else {
+            $class = ucwords($format) . 'Record';
+        }
         if (class_exists($class)) {
             $obj = new $class($data, $oaiID);
             return $obj;

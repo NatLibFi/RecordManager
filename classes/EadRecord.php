@@ -94,8 +94,12 @@ class EadRecord extends BaseRecord
             $this->_doc->did->unitid->attributes()->{'identifier'} = $prefix . $this->_doc->did->unitid->attributes()->{'identifier'};
         }
         if ($this->_doc->{'add-data'}) {
-            $this->_doc->{'add-data'}->{'archive'}->attributes()->{'id'} = $prefix . $this->_doc->{'add-data'}->{'archive'}->attributes()->{'id'}; 
-            $this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'} = $prefix . $this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'}; 
+            if ($this->_doc->{'add-data'}->{'archive'}) {
+                $this->_doc->{'add-data'}->{'archive'}->attributes()->{'id'} = $prefix . $this->_doc->{'add-data'}->{'archive'}->attributes()->{'id'};
+            } 
+            if ($this->_doc->{'add-data'}->{'parent'}) {
+                $this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'} = $prefix . $this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'};
+            } 
         }
     }
 
@@ -129,26 +133,7 @@ class EadRecord extends BaseRecord
             $data['title_sub'] = '';
         }
         $data['title_full'] = $data['title_sort'] = $data['title'] . ($data['title_sub'] ? ' (' . $data['title_sub'] . ')' : '');
-                
-        $unitdate = (string)$doc->did->unitdate;
-        if ($unitdate && $unitdate != '-') {
-            $dates = explode('-', $unitdate);
-            if (isset($dates[1]) && $dates[1]) {
-                if ($dates[0]) {
-                    $unitdate = $dates[0] . '-01-01T00:00:00Z,' . $dates[1] . '-12-31T23:59:59Z';
-                } else {
-                    $unitdate = '0000-01-01T00:00:00Z,' . $dates[1] . '-12-31T23:59:59Z';
-                }
-            } else {
-                if (strpos($unitdate, '-') > 0) {
-                    $unitdate = $dates[0] . '-01-01T00:00:00Z,9999-12-31T23:59:59Z';
-                } else {
-                    $unitdate = $dates[0] . '-01-01T00:00:00Z';
-                }
-            }
-            $data['unit_daterange'] = $unitdate; 
-        }
-        
+
         switch ($doc->level) {
             case 'collection':
                 break;

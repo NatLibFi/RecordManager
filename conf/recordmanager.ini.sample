@@ -27,6 +27,9 @@ set_definitions = oai-pmh-sets.ini
 marc21 = marc
 oai_dc = dc
 
+[Record Classes]
+; ead = NdlEadRecord
+
 [Log]
 log_file        = /var/log/recman.log
 log_level       = 4
