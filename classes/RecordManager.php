@@ -1215,7 +1215,8 @@ class RecordManager
     {
         global $configArray;
 
-        $request = new HTTP_Request2($configArray['Solr']['update_url'], HTTP_Request2::METHOD_POST);
+        $request = new HTTP_Request2($configArray['Solr']['update_url'], HTTP_Request2::METHOD_POST, 
+            array('ssl_verify_peer' => false));
         $request->setHeader('User-Agent', 'RecordManager');
         if (isset($configArray['Solr']['username']) && isset($configArray['Solr']['password'])) {
             $request->setAuth($configArray['Solr']['username'], $configArray['Solr']['password'], HTTP_Request2::AUTH_BASIC);

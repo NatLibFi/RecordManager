@@ -146,7 +146,8 @@ class HarvestMetaLib
      */
     protected function _callXServer($params)
     {
-        $request = new HTTP_Request2($this->_baseURL, HTTP_Request2::METHOD_GET);
+        $request = new HTTP_Request2($this->_baseURL, HTTP_Request2::METHOD_GET, 
+            array('ssl_verify_peer' => false));
         $request->setHeader('User-Agent', 'RecordManager');
 
         $url = $request->getURL();

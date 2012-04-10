@@ -285,7 +285,8 @@ class HarvestOaiPmh
     private function _sendRequest($verb, $params = array())
     {
         // Set up the request:
-        $request = new HTTP_Request2($this->_baseURL, HTTP_Request2::METHOD_GET);
+        $request = new HTTP_Request2($this->_baseURL, HTTP_Request2::METHOD_GET, 
+            array('ssl_verify_peer' => false));
         $request->setHeader('User-Agent', 'RecordManager');
 
         // Load request parameters:
