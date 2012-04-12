@@ -70,6 +70,7 @@ class RecordManager
 
     protected $_uniqIdPrefix = '';
     protected $_uniqIdCounter = 0;
+    protected $_counts = false;
     
     /**
      * Constructor
@@ -88,6 +89,10 @@ class RecordManager
         $this->_log = new Logger();
         if ($console) {
             $this->_log->logToConsole = true;
+        }
+        
+        if (isset($configArray['Mongo']['counts']) && $configArray['Mongo']['counts']) {
+            $this->_counts = true;
         }
 
         $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
@@ -202,7 +207,7 @@ class RecordManager
                     $params['update_needed'] = false;
                 }
                 $records = $this->_db->record->find($params);
-                $total = $records->count();
+                $total = $this->_counts ? $records->count() : 'the';
                 $count = 0;
                 $deduped = 0;
                 $deleted = 0;
@@ -256,6 +261,7 @@ class RecordManager
         $maxUpdateRecords = isset($configArray['Solr']['max_update_records']) ? $configArray['Solr']['max_update_records'] : 5000;
         $maxUpdateSize = isset($configArray['Solr']['max_update_size']) ? $configArray['Solr']['max_update_size'] : 1024;
         $maxUpdateSize *= 1024;
+        $compressedFields = isset($configArray['Solr']['compressed_fields']) ? explode(',', $configArray['Solr']['compressed_fields']) : array();
         
         foreach ($this->_dataSourceSettings as $source => $settings) {
             try {
@@ -294,7 +300,7 @@ class RecordManager
                 $records = $this->_db->record->find($params);
                 $records->immortal(true);
 
-                $total = $records->count();
+                $total = $this->_counts ? $records->count() : 'the';
                 $count = 0;
                 $deduped = 0;
                 $mergedComponents = 0;
@@ -334,8 +340,12 @@ class RecordManager
                             continue;
                         }
                         
+                        $hasComponentParts = false;
                         $components = null;
                         if (!$record['host_record_id'] && $this->_componentParts != 'as_is') {
+                            // Fetch all component parts for merging
+                            $components = $this->_db->record->find(array('host_record_id' => $record['_id'], 'deleted' => false));
+                            $hasComponentParts = $components->hasNext();
                             $format = $metadataRecord->getFormat();
                             $merge = false;
                             if ($this->_componentParts == 'merge_all') {
@@ -345,9 +355,8 @@ class RecordManager
                             } elseif (($format == 'Journal' || $format == 'Serial') && $this->_componentParts == 'merge_non_earticles') {
                                 $merge = true;
                             }
-                            if ($merge) {
-                                // Fetch all component parts for merging
-                                $components = $this->_db->record->find(array('host_record_id' => $record['_id'], 'deleted' => false));
+                            if (!$merge) {
+                                unset($components);
                             }
                         }
                         
@@ -362,7 +371,27 @@ class RecordManager
                         }
 
                         $data['id'] = $record['_id'];
-                        $data['host_id'] = $record['host_record_id'];
+                        
+                        // Record links between host records and component parts
+                        if ($record['host_record_id'] && !isset($data['hierarchy_parent_id'])) {
+                            $hostRecord = $this->_db->record->findOne(array('_id' => $record['host_record_id']));
+                            if (!$hostRecord) {
+                                $this->_log->log('updateSolrIndex', 'Host record ' . $record['host_record_id'] . ' not found for record ' . $record['_id'], Logger::ERROR);
+                            } else {
+                                $data['hierarchy_parent_id'] = $hostRecord['_id'];
+                                $hostMetadataRecord = RecordFactory::createRecord($hostRecord['format'], $this->_getRecordData($hostRecord, true), $hostRecord['oai_id']);
+                                $data['container_title'] = $data['hierarchy_parent_title'] = $hostMetadataRecord->getTitle();
+                            }
+                            $data['container_volume'] = $metadataRecord->getVolume();
+                            $data['container_issue'] = $metadataRecord->getIssue();
+                            $data['container_start_page'] = $metadataRecord->getStartPage();
+                            $data['container_reference'] = $metadataRecord->getContainerReference();
+                        }
+                        if ($hasComponentParts) {
+                            $data['is_hierarchy_id'] = $record['_id'];
+                            $data['is_hierarchy_title'] = $metadataRecord->getTitle();
+                        }
+                        
                         if (!isset($data['institution'])) {
                             $data['institution'] = $this->_institution;
                         }
@@ -381,6 +410,12 @@ class RecordManager
                         if (!isset($data['fullrecord'])) {
                             $data['fullrecord'] = $metadataRecord->toXML();
                         }
+                        foreach ($compressedFields as $compressedField) {
+                            if (isset($data[$compressedField])) {
+                                $data[$compressedField] = base64_encode(gzdeflate($data[$compressedField]));
+                            }
+                        }
+                            
                         if ($hiddenComponent) {
                             $data['hidden_component_boolean'] = true;
                         }
@@ -467,7 +502,7 @@ class RecordManager
                 $params['source_id'] = $source;
             }
             $records = $this->_db->record->find($params);
-            $total = $records->count();
+            $total = $this->_counts ? $records->count() : 'the';
             $count = 0;
     
             $this->_log->log('renormalize', "Processing $total records from '$source'...");
@@ -542,7 +577,7 @@ class RecordManager
                     }
                 }
                 $records = $this->_db->record->find($params);
-                $total = $records->count();
+                $total = $this->_counts ? $records->count() : 'the';
                 $count = 0;
                 $deduped = 0;
                 $starttime = microtime(true);
@@ -703,6 +738,10 @@ class RecordManager
         }
     }
     
+    /**
+     * Delete records of a single data source from the Mongo database
+     * @param string $sourceId
+     */
     public function deleteRecords($sourceId)
     {
         $params = array();
@@ -714,6 +753,10 @@ class RecordManager
         $this->_log->log('deleteRecords', "Deletion of $sourceId completed");
     }
 
+    /**
+     * Delete records of a single data source from the Solr index
+     * @param string $sourceId
+     */
     public function deleteSolrRecords($sourceId)
     {
         $this->_log->log('deleteSolrRecords', "Deleting data source $sourceId from Solr...");
@@ -721,6 +764,16 @@ class RecordManager
         $this->_log->log('deleteSolrRecords', "Committing changes...");
         $this->_solrRequest('{ "commit": {} }');
         $this->_log->log('deleteSolrRecords', "Deletion of $sourceId from Solr completed");
+    }
+    
+    /**
+     * Optimize the Solr index
+     */
+    public function optimizeSolr()
+    {
+        $this->_log->log('optimizeSolr', 'Optimizing Solr index');
+        $this->_solrRequest('{ "optimize": {} }');
+        $this->_log->log('optimizeSolr', 'Solr optimization completed');
     }
     
     /**

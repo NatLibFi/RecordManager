@@ -176,6 +176,17 @@ class MetadataUtils
     }
 
     /**
+     * Check whether the string contains trailing punctuation characters
+     *
+     * @param string $str
+     * @return string
+     */
+    static public function hasTrailingPunctuation($str)
+    {
+        return preg_match('/[\/:;\,=\(]+\s*$/', $str);
+    }
+
+    /**
      * Strip trailing spaces and punctuation characters from a string
      *
      * @param string $str
@@ -187,6 +198,12 @@ class MetadataUtils
         return $str;
     }
     
+    /**
+     * Case-insensitive array_unique
+     * 
+     * @param array $array
+     * @return array
+     */
     static public function array_iunique($array) 
     {
         return array_intersect_key($array,

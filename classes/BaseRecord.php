@@ -109,6 +109,46 @@ abstract class BaseRecord
     }
 
     /**
+     * Component parts: get the volume that contains this component part
+     * 
+     * @return string
+     */
+    public function getVolume()
+    {
+        return '';
+    }
+
+    /**
+     * Component parts: get the issue that contains this component part
+     * 
+     * @return string
+     */
+    public function getIssue()
+    {
+        return '';
+    }
+    
+    /**
+     * Component parts: get the start page of this component part in the host record
+     * 
+     * @return string
+     */
+    public function getStartPage()
+    {
+        return '';
+    }
+    
+    /**
+     * Component parts: get the reference to the part in the container
+     *
+     * @return string
+     */
+    public function getContainerReference()
+    {
+        return '';
+    }
+    
+    /**
      * Dedup: Return full title (for debugging purposes only)
      *
      * @return string

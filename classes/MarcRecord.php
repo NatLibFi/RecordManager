@@ -196,9 +196,24 @@ class MarcRecord extends BaseRecord
         $data['contents'] = $this->_getFieldsSubfields('*505a:*505t');
         	
         $data['isbn'] = $this->getISBNs();
-        $data['issn'] = $this->_getFieldsSubfields('022a:440x:490x:730x:776x:780x:785x');
+        foreach ($this->_getFieldsSubfields('773z') as $isbn) {
+            $isbn = str_replace('-', '', $isbn);
+            if (!preg_match('{([0-9]{9,12}[0-9xX])}', $isbn, $matches)) {
+                continue;
+            };
+            $isbn = $matches[1];
+            if (strlen($isbn) == 10) {
+                $isbn = MetadataUtils::isbn10to13($isbn);
+            }
+            if ($isbn) {
+                $data['isbn'][] = $isbn;
+            }
+        }
+        $data['issn'] = $this->_getFieldsSubfields('022a:440x:490x:730x:773x:776x:780x:785x');
+        foreach ($data['issn'] as $key => $value) {
+            $data['issn'][$key] = str_replace('-', '', $value);
+        }
 
-        // TODO: Does this make sense for us at all?
         $data['callnumber'] = strtoupper(str_replace(' ', '', $this->_getFirstFieldSubfields('080ab:084ab:050ab')));
         $data['callnumber-a'] = $this->_getFirstFieldSubfields('080a:084a:050a');
         $data['callnumber-first-code'] = substr($this->_getFirstFieldSubfields('080a:084a:050a'), 0, 1);
@@ -286,13 +301,87 @@ class MarcRecord extends BaseRecord
 
     public function getHostRecordID()
     {
-        //echo "ID: *" . $this->_marcRecord->getField('001')->getData() ."*\n";
         $field = $this->_getField('773');
-        if (!$field)
-        return '';
+        if (!$field) {
+            return '';
+        }
         return $this->_getSubfield($field, 'w');
     }
 
+    /**
+    * Component parts: get the volume that contains this component part
+    *
+    * @return string
+    */
+    public function getVolume()
+    {
+        $field773g = $this->_getFieldSubfields('773g');
+        if (!$field773g) {
+            return '';
+        }
+        
+        // Try to parse the data from different versions of 773g
+        $matches = array();
+        if (preg_match('/(\d*)\s*\((\d{4})\)\s*:\s*(\d*)/', $field773g, $matches)) {
+            return $matches[1];
+        }
+        return '';
+    }
+    
+    /**
+     * Component parts: get the issue that contains this component part
+     *
+     * @return string
+     */
+    public function getIssue()
+    {
+        $field773g = $this->_getFieldSubfields('773g');
+        if (!$field773g) {
+            return '';
+        }
+        
+        // Try to parse the data from different versions of 773g
+        $matches = array();
+        if (preg_match('/(\d*)\s*\((\d{4})\)\s*:\s*(\d*)/', $field773g, $matches)) {
+            return $matches[3];
+        }
+        if (preg_match('/(\d{4})\s*:\s*(\d*)/', $field773g, $matches)) {
+            return $matches[2];
+        }
+        return '';
+    }
+    
+    /**
+     * Component parts: get the start page of this component part in the host record
+     *
+     * @return string
+     */
+    public function getStartPage()
+    {
+        $field773g = $this->_getFieldSubfields('773g');
+        if (!$field773g) {
+            return '';
+        }
+        
+        // Try to parse the data from different versions of 773g
+        $matches = array();
+        if (preg_match('/,\s*\w\.?\s*([\d,\-]+)/', $field773g, $matches)) {
+            $pages = explode('-', $matches[1]);
+            return $pages[0];
+        }
+        return '';
+    }
+    
+    /**
+     * Component parts: get the reference to the part in the container
+     *
+     * @return string
+     */
+    public function getContainerReference()
+    {
+        return $this->_getFieldSubfields('773g');
+    }
+    
     public function getTitle($forFiling = false)
     {
         $field = $this->_getField('245');
@@ -309,14 +398,26 @@ class MarcRecord extends BaseRecord
                 $title = substr($title, $nonfiling);
             }
             $sub_b = $this->_getSubfield($field, 'b');
-            if ($sub_b)
-            $title .= " $sub_b";
+            if ($sub_b) {
+                if (!MetadataUtils::hasTrailingPunctuation($title)) {
+                    $title .= ' :';
+                }
+                $title .= " $sub_b";
+            }
             $sub_n = $this->_getSubfield($field, 'n');
-            if ($sub_n)
-            $title .= " $sub_n";
+            if ($sub_n) {
+                if (!MetadataUtils::hasTrailingPunctuation($title)) {
+                    $title .= '.';
+                }
+                $title .= " $sub_n";
+            }
             $sub_p = $this->_getSubfield($field, 'p');
-            if ($sub_p)
-            $title .= " $sub_p";
+            if ($sub_p) {
+                if (!MetadataUtils::hasTrailingPunctuation($title)) {
+                    $title .= '. ';
+                }
+                $title .= " $sub_p";
+            }
             return MetadataUtils::stripTrailingPunctuation($title);
         }
         return '';
@@ -666,7 +767,7 @@ class MarcRecord extends BaseRecord
                 // Component part in monograph
             case 'A': return $formatCode == 'C' ? 'eBookPart' : 'BookPart';
             // Component part in serial
-            case 'B': return $formatCode == 'C' ? 'eJournalArticle' : 'JournalArticle';
+            case 'B': return $formatCode == 'C' ? 'eArticle' : 'Article';
             // Collection
             case 'C': return 'Collection';
             // Component part in collection (sub unit)

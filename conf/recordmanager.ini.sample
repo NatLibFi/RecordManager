@@ -7,6 +7,7 @@ timezone        = "Europe/Helsinki"
 ; url = mongodb://{username}:{password}@localhost
 url = mongodb://localhost
 database = recman
+counts = true
 
 [Solr]
 ; Note that RecordManager requires that the json update method be available
@@ -14,6 +15,7 @@ update_url = http://localhost:8080/solr/biblio/update/json
 max_commit_interval = 1000000
 username =
 password =
+;compressed_fields = fullrecord
 
 [OAI-PMH]
 repository_name = OAI-PMH Repository
