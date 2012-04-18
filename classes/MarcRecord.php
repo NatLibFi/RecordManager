@@ -846,7 +846,7 @@ class MarcRecord extends BaseRecord
         }
 
         foreach ($xml->datafield as $field) {
-            $fieldData = (string)$field['ind1'] . (string)$field['ind2'];
+            $fieldData = str_pad((string)$field['ind1'], 1) . str_pad((string)$field['ind2'], 1);
             foreach ($field->subfield as $subfield) {
                 $fieldData .= MARCRecord::SUBFIELD_INDICATOR . (string)$subfield['code'] . (string)$subfield;
             }
