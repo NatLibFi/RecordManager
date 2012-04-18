@@ -305,7 +305,7 @@ class MarcRecord extends BaseRecord
         if (!$field) {
             return '';
         }
-        return $this->_getSubfield($field, 'w');
+        return MetadataUtils::stripTrailingPunctuation($this->_getSubfield($field, 'w'));
     }
 
     /**
@@ -1008,11 +1008,9 @@ class MarcRecord extends BaseRecord
     {
         $data = array();
         $subfieldArray = explode(MARCRecord::SUBFIELD_INDICATOR, $field);
-        foreach (str_split($subfields) as $code) {
-            foreach ($subfieldArray as $subfield) {
-                if (substr($subfield, 0, 1) == $code) {
-                    $data[] = substr($subfield, 1);
-                }
+        foreach ($subfieldArray as $subfield) {
+            if (strstr($subfields, substr($subfield, 0, 1))) {
+                $data[] = substr($subfield, 1);
             }
         }
         return $data;
