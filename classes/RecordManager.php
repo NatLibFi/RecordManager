@@ -411,12 +411,7 @@ class RecordManager
                         if (!isset($data['fullrecord'])) {
                             $data['fullrecord'] = $metadataRecord->toXML();
                         }
-                        foreach ($compressedFields as $compressedField) {
-                            if (isset($data[$compressedField])) {
-                                $data[$compressedField] = base64_encode(gzdeflate($data[$compressedField]));
-                            }
-                        }
-                            
+
                         if ($hiddenComponent) {
                             $data['hidden_component_boolean'] = true;
                         }
@@ -426,14 +421,22 @@ class RecordManager
                                 unset($data[$key]);
                             }
                         }
-                        if ($buffered > 0) {
-                            $buffer .= ",\n";
-                        }
-                        $jsonData = json_encode($data);
+
                         if ($this->verbose) {
                             echo "Metadata for record {$record['_id']}: \n";
                             print_r($data);
-                            echo "JSON for record {$record['_id']}: \n$jsonData\n";
+                            echo "JSON for record {$record['_id']}: \n" . json_encode($data) . "\n";
+                        }
+                        
+                        foreach ($compressedFields as $compressedField) {
+                            if (isset($data[$compressedField])) {
+                                $data[$compressedField] = base64_encode(gzdeflate($data[$compressedField]));
+                            }
+                        }
+                        
+                        $jsonData = json_encode($data);
+                        if ($buffered > 0) {
+                            $buffer .= ",\n";
                         }
                         $buffer .= $jsonData;
                         $bufferLen += strlen($jsonData);
