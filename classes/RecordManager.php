@@ -33,6 +33,7 @@ require_once 'RecordFactory.php';
 require_once 'FileSplitter.php';
 require_once 'HarvestOaiPmh.php';
 require_once 'HarvestMetaLib.php';
+require_once 'HarvestSfx.php';
 require_once 'XslTransformation.php';
 require_once 'MetadataUtils.php';
 
@@ -700,6 +701,15 @@ class RecordManager
                         ++$added;
                     }
                     $this->_log->log('harvest', "$added new, $changed changed, $unchanged unchanged and $deleted deleted records processed");
+                } elseif ($this->_harvestType == 'sfx') {
+                    $harvest = new HarvestSfx($this->_log, $this->_db, $source, $this->_basePath, $settings);
+                    if (isset($harvestFromDate)) {
+                        $harvest->setStartDate($harvestFromDate);
+                    }
+                    if (isset($harvestUntilDate)) {
+                        $harvest->setEndDate($harvestUntilDate);
+                    }
+                    $harvest->launch(array($this, 'storeRecord'));
                 } else {
                     $harvest = new HarvestOAIPMH($this->_log, $this->_db, $source, $this->_basePath, $settings, $startResumptionToken);
                     if (isset($harvestFromDate)) {
