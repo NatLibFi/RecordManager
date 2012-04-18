@@ -113,3 +113,42 @@
 ;format = dc
 ;solrTransformation = oai_dc.properties
 
+; Sample Voyager configuration using the OAI-PMH provider by NLF (http://www.exlibrisgroup.org/display/VoyagerCC/OAI-PMH+provider+for+Voyager)
+[voyager]
+url = https://voyager.server/cgi-bin/oai-pmh.cgi
+set = normal
+metadataPrefix = marc21
+institution = SampleInstitution
+format = marc
+componentParts = merge_non_articles
+dedup = true
+
+; Sample DSpace configuration
+[dspace]
+url = http://dspace.server/dspace-oai/request
+metadataPrefix = oai_dc
+institution = SampleInstitution
+format = dc
+set = public
+dedup = true
+
+; Sample MetaLib configuration
+[metalib]
+type = metalib
+url = http://metalib.server/X
+xUser = username
+xPassword = password
+format = marc
+normalization = metalib_ird.properties
+query = "WIN=FINELIB"
+institution = SampleInstitution
+
+; Sample SFX configuration
+[sfx]
+type = sfx
+url = http://sfx.server/export/sfxtst41/
+filePrefix = NDL
+format = marc
+normalization = sfx.properties
+institution = SampleInstitution
+ 
