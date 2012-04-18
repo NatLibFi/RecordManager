@@ -53,7 +53,6 @@ class HarvestOaiPmh
     private $_idSearch = array();    // Regular expression searches
     private $_idReplace = array();   // Replacements for regular expression matches
     private $_source;                // Source ID
-    private $_lastHarvestFile;       // File for tracking last harvest date
     private $_startDate = null;      // Harvest start date (null for all records)
     private $_endDate = null; 		 // Harvest end date (null for all records)
     private $_granularity = 'auto';  // Date granularity
@@ -199,9 +198,15 @@ class HarvestOaiPmh
         $this->_callback = $callback;
 
         if ($this->_resumptionToken) {
+            $this->_message('Incremental harvest from given resumptionToken');
             $token = $this->_getRecordsByToken($this->_resumptionToken);
         } else {
             // Start harvesting at the requested date:
+            if (!empty($this->_startDate)) {
+                $this->_message('Incremental harvest from timestamp ' . $this->_startDate);
+            } else {
+                $this->_message('Initial harvest for all records');
+            }
             $token = $this->_getRecordsByDate();
         }
 
@@ -233,10 +238,6 @@ class HarvestOaiPmh
         $state = $this->_db->state->findOne(array('_id' => "Last Harvest Date {$this->_source}"));
         if (isset($state)) {
             $this->setStartDate($state['value']);
-            $this->_message('Incremental harvest from timestamp ' . $state['value']);
-        }
-        else {
-            $this->_message('No last harvested date stored', false, Logger::WARNING);
         }
     }
 
@@ -353,7 +354,7 @@ class HarvestOaiPmh
     }
 
     /**
-     * Process an OAI-PMH response into a SimpleXML object.  Die if an error is
+     * Process an OAI-PMH response into a SimpleXML object. Throw exception if an error is
      * detected.
      *
      * @param string $xml OAI-PMH response XML.
@@ -375,6 +376,7 @@ class HarvestOaiPmh
             $result = $this->_loadXML($xml);
         }
         if ($result === false || libxml_get_last_error() !== false) {
+            libxml_use_internal_errors($saveUseErrors);
             $errors = '';
             foreach (libxml_get_errors() as $error) {
                 if ($errors) {
@@ -486,7 +488,7 @@ class HarvestOaiPmh
     }
 
     /**
-     * Save harvested records to disk and track the end date.
+     * Save harvested records and track the end date.
      *
      * @param object $records SimpleXML records.
      *
@@ -613,7 +615,7 @@ class HarvestOaiPmh
     }
 
     /**
-     * Display a timestamped message on the console and log it.
+     * Log a message and display on console in verbose mode.
      *
      * @param string $msg Message.
      * @param bool   $verbose Flag telling whether this is considered verbose output
