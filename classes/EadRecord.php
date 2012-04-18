@@ -144,6 +144,7 @@ class EadRecord extends BaseRecord
                 break;
         }
         
+        $data['hierarchytype'] = 'Default';
         if ($this->_doc->{'add-data'}->{'archive'}) {
             $data['hierarchy_top_id'] = (string)$this->_doc->{'add-data'}->archive->attributes()->{'id'};
             $data['hierarchy_top_title'] = (string)$this->_doc->{'add-data'}->archive->attributes()->title;
