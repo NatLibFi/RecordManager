@@ -301,6 +301,10 @@ class MarcRecord extends BaseRecord
 
     public function getHostRecordID()
     {
+        $field = $this->_getField('941');
+        if ($field) {
+            return $this->_getSubfield($field, 'a');
+        }
         $field = $this->_getField('773');
         if (!$field) {
             return '';
