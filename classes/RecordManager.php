@@ -377,7 +377,7 @@ class RecordManager
                         if ($record['host_record_id'] && !isset($data['hierarchy_parent_id'])) {
                             $hostRecord = $this->_db->record->findOne(array('_id' => $record['host_record_id']));
                             if (!$hostRecord) {
-                                $this->_log->log('updateSolrIndex', 'Host record ' . $record['host_record_id'] . ' not found for record ' . $record['_id'], Logger::ERROR);
+                                $this->_log->log('updateSolrIndex', 'Host record ' . $record['host_record_id'] . ' not found for record ' . $record['_id'], Logger::WARNING);
                             } else {
                                 $data['hierarchy_parent_id'] = $hostRecord['_id'];
                                 $hostMetadataRecord = RecordFactory::createRecord($hostRecord['format'], $this->_getRecordData($hostRecord, true), $hostRecord['oai_id']);
@@ -520,8 +520,12 @@ class RecordManager
                 }
     
                 $metadataRecord = RecordFactory::createRecord($record['format'], $normalizedData, $record['oai_id']);
+                $hostID = $metadataRecord->getHostRecordID();
+                if ($hostID) {
+                    $hostID = $this->_idPrefix . '.' . $hostID;
+                }
                 $normalizedData = $metadataRecord->serialize();
-                if ($this->_dedup && !$record['host_record_id']) {
+                if ($this->_dedup && !$hostID) {
                     $this->_updateDedupCandidateKeys($record, $metadataRecord);
                     $record['update_needed'] = true;
                 } else {
@@ -535,6 +539,7 @@ class RecordManager
                 } else {
                     $record['normalized_data'] = new MongoBinData(gzdeflate($normalizedData));
                 }
+                $record['host_record_id'] = $hostID;
                 $record['dedup_key'] = '';
                 $record['updated'] = new MongoDate();
                 $this->_db->record->save($record);
