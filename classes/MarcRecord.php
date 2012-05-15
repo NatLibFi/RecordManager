@@ -66,7 +66,9 @@ class MarcRecord extends BaseRecord
 
     public function toXML()
     {
-        $xml = simplexml_load_string("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n<collection><record></record></collection>");
+        $xml = simplexml_load_string(
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n<collection><record></record></collection>"
+        );
         $record = $xml->record[0];
 
         if (isset($this->_fields['000'])) {
@@ -93,7 +95,10 @@ class MarcRecord extends BaseRecord
                         if ($subfieldData == '') {
                             continue;
                         }
-                        $subfield = $field->addChild('subfield', htmlspecialchars(substr($subfieldData, 1), ENT_NOQUOTES));
+                        $subfield = $field->addChild(
+                            'subfield',
+                            htmlspecialchars(substr($subfieldData, 1), ENT_NOQUOTES)
+                        );
                         $subfield->addAttribute('code', substr($subfieldData, 0, 1));
                     }
                 }
@@ -144,7 +149,10 @@ class MarcRecord extends BaseRecord
         foreach ($this->_fields as $tag => $fields) {
             if (($tag >= 100 && $tag < 900) || $tag == 979) {
                 foreach ($fields as $field) {
-                    $allFields[] = $this->_getAllSubfields($field, isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : null);
+                    $allFields[] = $this->_getAllSubfields(
+                        $field,
+                        isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : null
+                    );
                 }
             }
         }
@@ -164,7 +172,9 @@ class MarcRecord extends BaseRecord
         $data['author_fuller'] = $this->_getFieldSubfields('100q');
         $data['author-letter'] = $this->_getFieldSubfields('100a', true);
 
-        $data['author2'] = MetadataUtils::array_iunique($this->_getFieldsSubfields('+100abcd:*110ab:*111ab:*700abcd:*710ab:*711ab:*979c:*979d', false, true)); // 979cd = component part authors
+        $data['author2'] = MetadataUtils::array_iunique(
+            $this->_getFieldsSubfields('+100abcd:*110ab:*111ab:*700abcd:*710ab:*711ab:*979c:*979d', false, true)
+        ); // 979cd = component part authors
         $key = array_search(mb_strtolower($data['author']), array_map('mb_strtolower', $data['author2']));
         if ($key !== false) {
             unset($data['author2'][$key]);
@@ -177,7 +187,15 @@ class MarcRecord extends BaseRecord
         $data['title_sub'] = $this->_getFieldSubfields('245b', true);
         $data['title_short'] = $this->_getFieldSubfields('245a', true);
         $data['title_full'] = $this->_getFieldSubfields('245');
-        $data['title_alt'] = array_values(MetadataUtils::array_iunique($this->_getFieldsSubfields('+245ab:*130adfgklnpst:*240a:*246a:*730adfgklnpst:*740a:*979b', false, true))); // 979c = component part title
+        $data['title_alt'] = array_values(
+            MetadataUtils::array_iunique(
+                $this->_getFieldsSubfields(
+                    '+245ab:*130adfgklnpst:*240a:*246a:*730adfgklnpst:*740a:*979b:*979e',
+                    false,
+                    true
+                )
+            )
+        ); // 979b and e = component part title and uniform title
         $data['title_old'] = $this->_getFieldsSubfields('*780ast');
         $data['title_new'] = $this->_getFieldsSubfields('*785ast');
         $data['title_sort'] = $this->getTitle(true);
@@ -243,16 +261,15 @@ class MarcRecord extends BaseRecord
         $parts = array();
         foreach ($componentParts as $componentPart) {
             // TODO: this is ugly, but temporary.. 
-            $data = $componentPart['normalized_data'] ? $componentPart['normalized_data'] : $componentPart['original_data'];
+            $data = $componentPart['normalized_data']
+                ? $componentPart['normalized_data']
+                : $componentPart['original_data'];
             if (!is_string($data)) {
                 $data = gzinflate($data->bin);
             }
             $marc = new MARCRecord($data, '');
             $title = $marc->_getFieldSubfields('245abnp');
             $uniTitle = $marc->_getFieldSubfields('240anp');
-            if ($uniTitle) {
-                $title .= " [$uniTitle]";
-            }
             $author = $marc->_getFieldSubfields('100ae');
             $additionalAuthors = $marc->_getFieldsSubfields('700ae:710ae');
             $id = $this->_idPrefix . $marc->getID();
@@ -266,6 +283,9 @@ class MarcRecord extends BaseRecord
             }
             foreach ($additionalAuthors as $addAuthor) {
                 $comp .= MARCRecord::SUBFIELD_INDICATOR . "d$addAuthor";
+            }
+            if ($uniTitle) {
+                $comp .= MARCRecord::SUBFIELD_INDICATOR . "e$uniTitle";
             }
             
             $key = MetadataUtils::createIdSortKey($marc->getID());
@@ -293,7 +313,11 @@ class MarcRecord extends BaseRecord
 
         if (isset($this->_fields['773'])) {
             foreach	($this->_fields['773'] as $key => $field) {
-                $field = preg_replace('/' . MARCRecord::SUBFIELD_INDICATOR . 'w([^' . MARCRecord::SUBFIELD_INDICATOR . ']+)/', MARCRecord::SUBFIELD_INDICATOR . "w$prefix\\1", $field);
+                $field = preg_replace(
+                    '/' . MARCRecord::SUBFIELD_INDICATOR . 'w([^' . MARCRecord::SUBFIELD_INDICATOR . ']+)/',
+                    MARCRecord::SUBFIELD_INDICATOR . "w$prefix\\1",
+                    $field
+                );
                 $this->_fields['773'][$key] = $field;
             }
         }
@@ -392,35 +416,33 @@ class MarcRecord extends BaseRecord
         if (!$field) {
             $field = $this->_getField('240');
         }
-        if ($field)
-        {
+        if ($field) {
             $title = $this->_getSubfield($field, 'a');
-            if ($forFiling)
-            {
+            if ($forFiling) {
                 $nonfiling = $this->_getIndicator($field, 2);
                 if ($nonfiling > 0)
                 $title = substr($title, $nonfiling);
             }
-            $sub_b = $this->_getSubfield($field, 'b');
-            if ($sub_b) {
+            $subB = $this->_getSubfield($field, 'b');
+            if ($subB) {
                 if (!MetadataUtils::hasTrailingPunctuation($title)) {
                     $title .= ' :';
                 }
-                $title .= " $sub_b";
+                $title .= " $subB";
             }
-            $sub_n = $this->_getSubfield($field, 'n');
-            if ($sub_n) {
+            $subN = $this->_getSubfield($field, 'n');
+            if ($subN) {
                 if (!MetadataUtils::hasTrailingPunctuation($title)) {
                     $title .= '.';
                 }
-                $title .= " $sub_n";
+                $title .= " $subN";
             }
-            $sub_p = $this->_getSubfield($field, 'p');
-            if ($sub_p) {
+            $subP = $this->_getSubfield($field, 'p');
+            if ($subP) {
                 if (!MetadataUtils::hasTrailingPunctuation($title)) {
                     $title .= '. ';
                 }
-                $title .= " $sub_p";
+                $title .= " $subP";
             }
             return MetadataUtils::stripTrailingPunctuation($title);
         }
@@ -430,8 +452,7 @@ class MarcRecord extends BaseRecord
     public function getMainAuthor()
     {
         $f100 = $this->_getField('100');
-        if ($f100)
-        {
+        if ($f100) {
             $author = $this->_getSubfield($f100, 'a');
             $order = $this->_getIndicator($f100, 1);
             if ($order == 0 && strpos($author, ',') === false) {
@@ -442,7 +463,7 @@ class MarcRecord extends BaseRecord
             }
             return MetadataUtils::stripTrailingPunctuation($author);
         }
-        /* Not good idea?
+        /* Not a good idea?
          $f110 = $this->_getField('110');
         if ($f110)
         {
@@ -465,8 +486,7 @@ class MarcRecord extends BaseRecord
     {
         $arr = array();
         $fields = $this->_getFields('020');
-        foreach ($fields as $field)
-        {
+        foreach ($fields as $field) {
             $isbn = $this->_getSubfield($field, 'a');
             $isbn = str_replace('-', '', $isbn);
             if (!preg_match('{([0-9]{9,12}[0-9xX])}', $isbn, $matches)) {
@@ -488,8 +508,7 @@ class MarcRecord extends BaseRecord
     {
         $arr = array();
         $fields = $this->_getFields('022');
-        foreach ($fields as $field)
-        {
+        foreach ($fields as $field) {
             $issn = $this->_getSubfield($field, 'a');
             $issn = str_replace('-', '', $issn);
             if ($issn) {
@@ -503,8 +522,9 @@ class MarcRecord extends BaseRecord
     public function getSeriesISSN()
     {
         $field = $this->_getField('490');
-        if (!$field)
-        return '';
+        if (!$field) {
+            return '';
+        }
         return $this->_getSubfield($field, 'x');
     }
 
@@ -529,8 +549,7 @@ class MarcRecord extends BaseRecord
         $fields = $this->_getFields('007');
         $formatCode = '';
         $online = false;
-        foreach ($fields as $field)
-        {
+        foreach ($fields as $field) {
             $contents = $field;
             $formatCode = strtoupper(substr($contents, 0, 1));
             $formatCode2 = strtoupper(substr($contents, 1, 1));
@@ -539,36 +558,27 @@ class MarcRecord extends BaseRecord
                     switch($formatCode2) {
                         case 'D':
                             return 'Atlas';
-                            break;
                         default:
                             return 'Map';
-                        break;
                     }
                     break;
                 case 'C':
                     switch($formatCode2) {
                         case 'A':
                             return 'TapeCartridge';
-                            break;
                         case 'B':
                             return 'ChipCartridge';
-                            break;
                         case 'C':
                             return 'DiscCartridge';
-                            break;
                         case 'F':
                             return 'TapeCassette';
-                            break;
                         case 'H':
                             return 'TapeReel';
-                            break;
                         case 'J':
                             return 'FloppyDisk';
-                            break;
                         case 'M':
                         case 'O':
                             return 'CDROM';
-                            break;
                         case 'R':
                             // Do not return - this will cause anything with an
                             // 856 field to be labeled as "Electronic"
@@ -576,99 +586,73 @@ class MarcRecord extends BaseRecord
                             break;
                         default:
                             return 'Software';
-                        break;
                     }
                     break;
                 case 'D':
                     return 'Globe';
-                    break;
                 case 'F':
                     return 'Braille';
-                    break;
                 case 'G':
                     switch($formatCode2) {
                         case 'C':
                         case 'D':
                             return 'Filmstrip';
-                            break;
                         case 'T':
                             return 'Transparency';
-                            break;
                         default:
                             return 'Slide';
-                        break;
                     }
                     break;
                 case 'H':
                     return 'Microfilm';
-                    break;
                 case 'K':
                     switch($formatCode2) {
                         case 'C':
                             return 'Collage';
-                            break;
                         case 'D':
                             return 'Drawing';
-                            break;
                         case 'E':
                             return 'Painting';
-                            break;
                         case 'F':
                             return 'Print';
-                            break;
                         case 'G':
                             return 'Photonegative';
-                            break;
                         case 'J':
                             return 'Print';
-                            break;
                         case 'L':
                             return 'Drawing';
-                            break;
                         case 'O':
                             return 'FlashCard';
-                            break;
                         case 'N':
                             return 'Chart';
-                            break;
                         default:
                             return 'Photo';
-                        break;
                     }
                     break;
                 case 'M':
                     switch($formatCode2) {
                         case 'F':
                             return 'VideoCassette';
-                            break;
                         case 'R':
                             return 'Filmstrip';
-                            break;
                         default:
                             return 'MotionPicture';
-                        break;
                     }
                     break;
                 case 'O':
                     return 'Kit';
-                    break;
                 case 'Q':
                     return 'MusicalScore';
-                    break;
                 case 'R':
                     return 'SensorImage';
-                    break;
                 case 'S':
                     switch($formatCode2) {
                         case 'D':
                             return 'SoundDisc';
-                            break;
                         case 'S':
                             return 'SoundCassette';
-                            break;
                         default:
                             return 'SoundRecording';
-                        break;
                     }
                     break;
                 case 'V':
@@ -683,19 +667,14 @@ class MarcRecord extends BaseRecord
                     switch($formatCode2) {
                         case 'C':
                             return 'VideoCartridge';
-                            break;
                         case 'D':
                             return 'VideoDisc';
-                            break;
                         case 'F':
                             return 'VideoCassette';
-                            break;
                         case 'R':
                             return 'VideoReel';
-                            break;
                         default:
                             return 'Video';
-                        break;
                     }
                     break;
             }
@@ -709,36 +688,27 @@ class MarcRecord extends BaseRecord
             case 'C':
             case 'D':
                 return 'MusicalScore';
-                break;
             case 'E':
             case 'F':
                 return 'Map';
-                break;
             case 'G':
                 return 'Slide';
-                break;
             case 'I':
                 return 'SoundRecording';
-                break;
             case 'J':
                 return 'MusicRecording';
-                break;
             case 'K':
                 return 'Photo';
                 break;
             case 'M':
                 return 'Electronic';
-                break;
             case 'O':
             case 'P':
                 return 'Kit';
-                break;
             case 'R':
                 return 'PhysicalObject';
-                break;
             case 'T':
                 return 'Manuscript';
-                break;
         }
 
         // check the Leader at position 7
@@ -752,20 +722,17 @@ class MarcRecord extends BaseRecord
                     return 'Book';
                 }
                 break;
-                // Serial
+            // Serial
             case 'S':
                 // Look in 008 to determine what type of Continuing Resource
                 $formatCode = strtoupper(substr($field008, 21, 1));
                 switch ($formatCode) {
                     case 'N':
                         return 'Newspaper';
-                        break;
                     case 'P':
                         return 'Journal';
-                        break;
                     default:
                         return 'Serial';
-                    break;
                 }
                 break;
                 // Component part in monograph
@@ -834,8 +801,7 @@ class MarcRecord extends BaseRecord
             if (strstr($decl, 'encoding') === false) {
                 $marc = $decl .  ' encoding="utf-8"' . substr($marc, strlen($decl));
             }
-        }
-        else {
+        } else {
             $marc = '<?xml version="1.0" encoding="utf-8"?>' . "\n\n$marc";
         }
         $xml = simplexml_load_string($marc);
@@ -924,7 +890,10 @@ class MarcRecord extends BaseRecord
             return '';
         }
 
-        $leader = str_pad($recordLen, 5, '0', STR_PAD_LEFT) . substr($leader, 5, 7) . str_pad($dataStart, 5, '0', STR_PAD_LEFT) . substr($leader, 17);
+        $leader = str_pad($recordLen, 5, '0', STR_PAD_LEFT)
+            . substr($leader, 5, 7)
+            . str_pad($dataStart, 5, '0', STR_PAD_LEFT)
+            . substr($leader, 17);
         return $leader . $directory . $data;
     }
 
@@ -1055,7 +1024,8 @@ class MarcRecord extends BaseRecord
      * @param boolean  $splitSubfields		      Whether to split subfields to separate array items
      * @return array of strings
      */
-    protected function _getFieldsSubfields($fieldspecs, $firstOnly = false, $stripTrailingPunctuation = false, $splitSubfields = false)
+    protected function _getFieldsSubfields($fieldspecs, $firstOnly = false,
+        $stripTrailingPunctuation = false, $splitSubfields = false)
     {
         $data = array();
         foreach (explode(':', $fieldspecs) as $fieldspec) {
