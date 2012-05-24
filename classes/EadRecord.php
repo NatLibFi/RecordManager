@@ -56,7 +56,9 @@ class EadRecord extends BaseRecord
      */
     public function getID()
     {
-        return (string)$this->_doc->did->unitid->attributes()->{'identifier'};
+        return isset($this->_doc->did->unitid->attributes()->{'identifier'}) 
+            ? (string)$this->_doc->did->unitid->attributes()->{'identifier'}
+            : (string)$this->_doc->did->unitid;
     }
 
     /**
