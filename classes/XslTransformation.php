@@ -43,10 +43,7 @@ class XslTransformation
 
         // Register any PHP functions
         if (isset($options['General']['php_function'])) {
-            $functions = is_array($options['General']['php_function']) ? $options['General']['php_function'] : array($options['General']['php_function']);
-            foreach ($functions as $function) {
-                $this->_xslt->registerPHPFunctions($function);
-            }
+            $this->_xslt->registerPHPFunctions($options['General']['php_function']);
         }
 
         // Register any custom classes
