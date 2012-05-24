@@ -262,7 +262,6 @@ class RecordManager
         $maxUpdateRecords = isset($configArray['Solr']['max_update_records']) ? $configArray['Solr']['max_update_records'] : 5000;
         $maxUpdateSize = isset($configArray['Solr']['max_update_size']) ? $configArray['Solr']['max_update_size'] : 1024;
         $maxUpdateSize *= 1024;
-        $compressedFields = isset($configArray['Solr']['compressed_fields']) ? explode(',', $configArray['Solr']['compressed_fields']) : array();
         
         foreach ($this->_dataSourceSettings as $source => $settings) {
             try {
@@ -428,12 +427,6 @@ class RecordManager
                             echo "JSON for record {$record['_id']}: \n" . json_encode($data) . "\n";
                         }
                         
-                        foreach ($compressedFields as $compressedField) {
-                            if (isset($data[$compressedField])) {
-                                $data[$compressedField] = base64_encode(gzdeflate($data[$compressedField]));
-                            }
-                        }
-                        
                         $jsonData = json_encode($data);
                         if ($buffered > 0) {
                             $buffer .= ",\n";
@@ -533,7 +526,7 @@ class RecordManager
                     $record['isbn_keys'] = null;                
                     $record['update_needed'] = false;
                 }
-                
+
                 if ($normalizedData == $originalData) {
                     $record['normalized_data'] = '';
                 } else {
@@ -543,6 +536,17 @@ class RecordManager
                 $record['dedup_key'] = '';
                 $record['updated'] = new MongoDate();
                 $this->_db->record->save($record);
+                
+                if ($this->verbose) {
+                    echo "Metadata for record {$record['_id']}: \n";
+                    $record['normalized_data'] = $this->_getRecordData($record, false);
+                    $record['original_data'] = $this->_getRecordData($record, true);
+                    if ($record['normalized_data'] === $record['original_data']) {
+                        $record['normalized_data'] = '';
+                    }
+                    print_r($record);
+                }
+                                
                 ++$count;
                 if ($count % 1000 == 0) {
                     $avg = round(1000 / (microtime(true) - $starttime));
