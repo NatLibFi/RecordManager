@@ -77,6 +77,16 @@ abstract class BaseRecord
     public abstract function setIDPrefix($prefix);
 
     /**
+     * Return whether the record is a component part 
+     * 
+     * @return boolean
+     */
+    public function getIsComponentPart()
+    {
+        return false;
+    }
+    
+    /**
      * Return host record ID for component part
      *
      * @return string
@@ -139,6 +149,16 @@ abstract class BaseRecord
     }
     
     /**
+     * Component parts: get the container title
+     *
+     * @return string
+     */
+    public function getContainerTitle()
+    {
+        return '';
+    }
+    
+    /**
      * Component parts: get the reference to the part in the container
      *
      * @return string
@@ -147,7 +167,7 @@ abstract class BaseRecord
     {
         return '';
     }
-    
+
     /**
      * Dedup: Return full title (for debugging purposes only)
      *
@@ -162,7 +182,8 @@ abstract class BaseRecord
     /**
      * Dedup: Return record title
      *
-     * @param bool $forFiling Whether the title is to be used in filing (e.g. sorting, non-filing characters should be removed)
+     * @param bool $forFiling Whether the title is to be used in filing 
+     *                        (e.g. sorting, non-filing characters should be removed)
      * @return string
      * @access public
      */

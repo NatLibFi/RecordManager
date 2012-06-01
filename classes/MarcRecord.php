@@ -172,9 +172,17 @@ class MarcRecord extends BaseRecord
         $data['author_fuller'] = $this->_getFieldSubfields('100q');
         $data['author-letter'] = $this->_getFieldSubfields('100a', true);
 
-        $data['author2'] = MetadataUtils::array_iunique(
-            $this->_getFieldsSubfields('+100abcd:*110ab:*111ab:*700abcd:*710ab:*711ab:*979c:*979d', false, true)
-        ); // 979cd = component part authors
+        $data['author2'] = $this->_getFieldsSubfields(
+            '+100abcd:*110ab:*111ab:*700abcd:*710ab:*711ab', 
+            false, 
+            true
+        );
+        // 979cd = component part authors
+        foreach ($this->_getFieldsSubfields('*979c:*979d', false, true, true) as $field) {
+            $data['author2'][] = $field;
+        }
+        $data['author2'] = MetadataUtils::array_iunique($data['author2']);
+        
         $key = array_search(mb_strtolower($data['author']), array_map('mb_strtolower', $data['author2']));
         if ($key !== false) {
             unset($data['author2'][$key]);
@@ -206,12 +214,12 @@ class MarcRecord extends BaseRecord
 
         $data['series'] = $this->_getFieldsSubfields('*440ap:*800abcdfpqt:*830ap');
         	
-        $data['publisher'] = $this->_getFieldsSubfields('*260b');
+        $data['publisher'] = $this->_getFieldsSubfields('*260b', false, true);
         $data['publishDate'] = $data['publishDateSort'] = $this->getPublicationYear();
         $data['physical'] = $this->_getFieldsSubfields('*300abcefg:*530abcd');
         $data['dateSpan'] = $this->_getFieldsSubfields('*362a');
-        $data['edition'] = $this->_getFieldSubfields('250a');
-        $data['contents'] = $this->_getFieldsSubfields('*505a:*505t');
+        $data['edition'] = $this->_getFieldSubfields('250a', false, true);
+        $data['contents'] = $this->_getFieldsSubfields('*505a:*505t', false, true);
         	
         $data['isbn'] = $this->getISBNs();
         foreach ($this->_getFieldsSubfields('773z') as $isbn) {
@@ -323,6 +331,23 @@ class MarcRecord extends BaseRecord
         }
     }
 
+    /**
+     * Return whether the record is a component part
+     *
+     * @return boolean
+     */
+    public function getIsComponentPart()
+    {
+        // We could look at the bibliographic level, but we need 773 to do anything useful anyway..
+        return isset($this->_fields['773']);
+    }
+    
+    /**
+     * Return host record ID for component part
+     *
+     * @return string
+     * @access public
+     */
     public function getHostRecordID()
     {
         $field = $this->_getField('941');
@@ -401,7 +426,17 @@ class MarcRecord extends BaseRecord
     }
     
     /**
-     * Component parts: get the reference to the part in the container
+     * Component parts: get the container title
+     *
+     * @return string
+     */
+    public function getContainerTitle()
+    {
+        return $this->_getFieldSubfields('773t');
+    }
+
+    /**
+     * Component parts: get the free-form reference to the part in the container
      *
      * @return string
      */
@@ -410,6 +445,14 @@ class MarcRecord extends BaseRecord
         return $this->_getFieldSubfields('773g');
     }
     
+    /**
+     * Dedup: Return record title
+     *
+     * @param bool $forFiling Whether the title is to be used in filing 
+     *                        (e.g. sorting, non-filing characters should be removed)
+     * @return string
+     * @access public
+     */
     public function getTitle($forFiling = false)
     {
         $field = $this->_getField('245');
@@ -449,6 +492,12 @@ class MarcRecord extends BaseRecord
         return '';
     }
 
+    /**
+     * Dedup: Return main author (format: Last, First)
+     *
+     * @return string
+     * @access public
+     */
     public function getMainAuthor()
     {
         $f100 = $this->_getField('100');
@@ -1021,7 +1070,7 @@ class MarcRecord extends BaseRecord
      * @param string   $fieldspecs
      * @param boolean  $firstOnly                 Return only first matching field
      * @param boolean  $stripTrailingPunctuation  Whether to strip trailing punctuation from the results
-     * @param boolean  $splitSubfields		      Whether to split subfields to separate array items
+     * @param boolean  $splitSubfields		        Whether to split subfields to separate array items
      * @return array of strings
      */
     protected function _getFieldsSubfields($fieldspecs, $firstOnly = false,
@@ -1092,7 +1141,7 @@ class MarcRecord extends BaseRecord
             }
         }
         if ($stripTrailingPunctuation) {
-            array_map(array('MetadataUtils', 'stripTrailingPunctuation'), $data);
+            return array_map(array('MetadataUtils', 'stripTrailingPunctuation'), $data);
         }
         return $data;
     }

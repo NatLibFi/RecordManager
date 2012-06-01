@@ -373,10 +373,14 @@ class RecordManager
                         $data['id'] = $record['_id'];
                         
                         // Record links between host records and component parts
-                        if ($record['host_record_id'] && !isset($data['hierarchy_parent_id'])) {
-                            $hostRecord = $this->_db->record->findOne(array('_id' => $record['host_record_id']));
+                        if ($metadataRecord->getIsComponentPart()) {
+                            $hostRecord = null;
+                            if ($record['host_record_id']) {
+                                $hostRecord = $this->_db->record->findOne(array('_id' => $record['host_record_id']));
+                            }
                             if (!$hostRecord) {
                                 $this->_log->log('updateSolrIndex', 'Host record ' . $record['host_record_id'] . ' not found for record ' . $record['_id'], Logger::WARNING);
+                                $data['container_title'] = $metadataRecord->getContainerTitle();
                             } else {
                                 $data['hierarchy_parent_id'] = $hostRecord['_id'];
                                 $hostMetadataRecord = RecordFactory::createRecord($hostRecord['format'], $this->_getRecordData($hostRecord, true), $hostRecord['oai_id']);
@@ -769,9 +773,9 @@ class RecordManager
         $params = array();
         $params['source_id'] = $sourceId;
         $this->_log->log('deleteRecords', "Deleting records from data source $sourceId...");
-        $this->_db->record->remove($params);
+        $this->_db->record->remove($params, array('safe' => true, 'timeout' => 3000000));
         $this->_log->log('deleteRecords', "Deleting last harvest date from data source $sourceId...");
-        $this->_db->state->remove(array('_id' => "Last Harvest Date $sourceId"));
+        $this->_db->state->remove(array('_id' => "Last Harvest Date $sourceId"), array('safe' => true));
         $this->_log->log('deleteRecords', "Deletion of $sourceId completed");
     }
 
