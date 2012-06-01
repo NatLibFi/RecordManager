@@ -82,7 +82,8 @@ class HarvestOaiPmh
      * @param string $source   The data source to be harvested.
      * @param string $basePath RecordManager main directory location 
      * @param array  $settings Settings from datasources.ini.
-     * @param string $startResumptionToken Optional override for the initial harvest command (to resume interrupted harvesting)
+     * @param string $startResumptionToken Optional override for the initial
+     *                         harvest command (to resume interrupted harvesting)
      *
      * @access public
      */
@@ -150,8 +151,8 @@ class HarvestOaiPmh
         }
         if (isset($settings['oaipmhTransformation'])) {
             $style = new DOMDocument();
-            if ($style->load($basePath . '/transformations/' . $settings['oaipmhTransformation']) === false) {
-                throw new Exception('Could not load ' . $basePath . '/transformations/' . $settings['oaipmhTransformation']);
+            if ($style->load("$basePath/transformations/". $settings['oaipmhTransformation']) === false) {
+                throw new Exception("Could not load $basePath/transformations/" . $settings['oaipmhTransformation']);
             }
             $this->_transformation = new XSLTProcessor();
             $this->_transformation->importStylesheet($style);
@@ -223,7 +224,10 @@ class HarvestOaiPmh
 
     public function progressReport()
     {
-        $this->_message('Harvested ' . $this->_normalRecords . ' normal records and ' . $this->_deletedRecords . ' deleted records');
+        $this->_message(
+            'Harvested ' . $this->_normalRecords
+            . ' normal records and ' . $this->_deletedRecords . ' deleted records'
+        );
     }
 
     /**
@@ -286,8 +290,11 @@ class HarvestOaiPmh
     private function _sendRequest($verb, $params = array())
     {
         // Set up the request:
-        $request = new HTTP_Request2($this->_baseURL, HTTP_Request2::METHOD_GET, 
-            array('ssl_verify_peer' => false));
+        $request = new HTTP_Request2(
+            $this->_baseURL, 
+            HTTP_Request2::METHOD_GET, 
+            array('ssl_verify_peer' => false)
+        );       
         $request->setHeader('User-Agent', 'RecordManager');
 
         // Load request parameters:
@@ -307,7 +314,11 @@ class HarvestOaiPmh
                 $response = $request->send();
             } catch (Exception $e) {
                 if ($try < 5) {
-                    $this->_message("Request '$urlStr' failed (" . $e->getMessage() . "), retrying in 30 seconds...", false, Logger::WARNING);
+                    $this->_message(
+                        "Request '$urlStr' failed (" . $e->getMessage() . "), retrying in 30 seconds...", 
+                        false, 
+                        Logger::WARNING
+                    );
                     sleep(30);
                     continue;
                 }
@@ -316,7 +327,11 @@ class HarvestOaiPmh
             if ($try < 5) {
                 $code = $response->getStatus();
                 if ($code >= 300) {
-                    $this->_message("Request '$urlStr' failed ($code), retrying in 30 seconds...", false, Logger::WARNING);
+                    $this->_message(
+                        "Request '$urlStr' failed ($code), retrying in 30 seconds...",
+                        false,
+                        Logger::WARNING
+                    );
                     sleep(30);
                     continue;
                 }
@@ -370,8 +385,8 @@ class HarvestOaiPmh
         $result = $this->_loadXML($xml);
         if ($result === false || libxml_get_last_error() !== false) {
             // Assuming it's a character encoding issue, this might help...
-            $this->_message("Invalid XML received, trying encoding fix...", false, Logger::WARNING);
-            $xml = iconv("UTF-8","UTF-8//IGNORE", $xml);
+            $this->_message('Invalid XML received, trying encoding fix...', false, Logger::WARNING);
+            $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
             libxml_clear_errors();
             $result = $this->_loadXML($xml);
         }
@@ -382,7 +397,8 @@ class HarvestOaiPmh
                 if ($errors) {
                     $errors .= '; ';
                 }
-                $errors .= 'Error ' . $error->code . ' at ' . $error->line . ':' . $error->column . ': ' . $error->message;
+                $errors .= 'Error ' . $error->code . ' at '
+                    . $error->line . ':' . $error->column . ': ' . $error->message;
             }
             $this->_message("Could not parse XML response: $errors\nXML:\n$xml", false, Logger::FATAL);
             throw new Exception("Failed to parse XML response");
@@ -392,7 +408,11 @@ class HarvestOaiPmh
         // Detect errors and throw an exception if one is found:
         if ($result->error) {
             $attribs = $result->error->attributes();
-            $this->_message("OAI-PMH server returned error {$attribs['code']} ({$result->error})", false, Logger::FATAL);
+            $this->_message(
+                "OAI-PMH server returned error {$attribs['code']} ({$result->error})", 
+                false,
+                Logger::FATAL
+            );
             throw new Exception(
                 "OAI-PMH error -- code: {$attribs['code']}, " .
                 "value: {$result->error}\n"
@@ -545,7 +565,6 @@ class HarvestOaiPmh
             fputs($file, implode("\n", $harvestedIds));
             fclose($file);
         }
-        $this->_message('Records processed', true);
     }
 
     /**
