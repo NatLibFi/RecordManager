@@ -15,6 +15,7 @@ update_url = http://localhost:8080/solr/biblio/update/json
 max_commit_interval = 1000000
 username =
 password =
+;hierarchical_facets[] = building
 
 [OAI-PMH]
 repository_name = OAI-PMH Repository

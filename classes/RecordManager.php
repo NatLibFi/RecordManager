@@ -300,6 +300,19 @@ class RecordManager
                 $records = $this->_db->record->find($params);
                 $records->immortal(true);
 
+                // Special case: building hierarchy
+                $buildingHierarchy = isset($configArray['Solr']['hierarchical_facets']) 
+                    && in_array('building', $configArray['Solr']['hierarchical_facets']);
+                
+                // Load mapping files
+                $mappingFiles = array();
+                foreach ($settings as $key => $value) {
+                    if (substr($key, -8, 8) == '_mapping') {
+                        $field = substr($key, 0, -8);
+                        $mappingFiles[$field] = parse_ini_file($this->_basePath . '/mappings/' . $value);
+                    }
+                }
+                
                 $total = $this->_counts ? $records->count() : 'the';
                 $count = 0;
                 $deduped = 0;
@@ -402,9 +415,42 @@ class RecordManager
                         if (!isset($data['collection'])) {
                             $data['collection'] = $record['source_id'];
                         }
-                        if (isset($data['building']) && $data['building']) {
-                            foreach ($data['building'] as $key => $value) {
-                                $data['building'][$key] = $record['source_id'] . ".$value";
+
+                        // Map field values according to any mapping files
+                        foreach ($mappingFiles as $field => $map) {
+                            if (isset($data[$field])) {
+                                if (is_array($data[$field])) {
+                                    foreach ($data[$field] as &$value) {
+                                        if (isset($map[$value])) {
+                                            $value = $map[$value];
+                                        }
+                                    }
+                                    $data[$field] = array_unique($data[$field]);
+                                } else {
+                                    if (isset($map[$data[$field]])) {
+                                        $data[$field] = $map[$data[$field]];
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // Special case: Hierarchical facet support for building (institution/location)
+                        if ($buildingHierarchy) {
+                            if (isset($data['building']) && $data['building']) {
+                                $building = array('0/' . $this->_institution);
+                                foreach ($data['building'] as $datavalue) {
+                                    $values = explode('/', $datavalue);
+                                    $hierarchyString = $this->_institution;
+                                    for ($i = 0; $i < count($values); $i++) {
+                                        $hierarchyString .= '/' . $values[$i];
+                                        $building[] = ($i + 1) . "/$hierarchyString";
+                                    }
+                                }
+                                $data['building'] = $building;
+                            } else {
+                                $data['building'] = array(
+                                    '0/' . $this->_institution
+                                );
                             }
                         }
                         $data['dedup_key'] = isset($record['dedup_key']) && $record['dedup_key'] ? $record['dedup_key'] : $record['_id'];

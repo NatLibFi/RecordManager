@@ -91,6 +91,7 @@
 ;                         merge_non_earticles  Merge to host record unless e-journal article
 ; idPrefix              Prefix to be used with the record ID's. Prefixes are always added so that ID's are unique, e.g. ID 1234 becomes prefix.1234 (optional, section name is used if not provided).
 ; indexMergedParts      Whether to index merged component parts also separately with hidden_component_boolean field set to true. Defaults to true.
+; {field}_mapping       A mapping file (.ini-style) to be used to map values of {field} when updating Solr index. Useful for e.g. mapping multiple location codes to one. 
 
 ; OAI-PMH Provider Specific settings:
 ; transformation_to_{fmt}
@@ -122,6 +123,7 @@ institution = SampleInstitution
 format = marc
 componentParts = merge_non_articles
 dedup = true
+building_mapping = voyager_locations.map
 
 ; Sample DSpace configuration
 [dspace]
