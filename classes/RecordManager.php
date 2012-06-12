@@ -263,6 +263,10 @@ class RecordManager
         $maxUpdateSize = isset($configArray['Solr']['max_update_size']) ? $configArray['Solr']['max_update_size'] : 1024;
         $maxUpdateSize *= 1024;
         
+        if (isset($fromDate)) {
+            $mongoFromDate = new MongoDate(strtotime($fromDate));
+        }
+        
         foreach ($this->_dataSourceSettings as $source => $settings) {
             try {
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
@@ -277,12 +281,13 @@ class RecordManager
                 if (!isset($fromDate)) {
                     $state = $this->_db->state->findOne(array('_id' => "Last Index Update $source"));
                     if (isset($state)) {
-                        $fromDate = date('Y-m-d H:i:s', $state['value']->sec);
+                        $mongoFromDate = $state['value'];
                     } else {
-                        $fromDate = '';
+                        unset($mongoFromDate);
                     }
                 }
-                $this->_log->log('updateSolrIndex', "Creating record list (from " . ($fromDate ? $fromDate : 'the beginning') . ", source $source)...");
+                $from = isset($mongoFromDate) ? date('Y-m-d H:i:s', $mongoFromDate->sec) : 'the beginning';
+                $this->_log->log('updateSolrIndex', "Creating record list (from $from), source $source)...");
                 // Take the last indexing date now and store it when done
                 $lastIndexingDate = new MongoDate();
                 $params = array();
@@ -292,8 +297,8 @@ class RecordManager
                     $lastIndexingDate = null;
                 } else {
                     $params['source_id'] = $source;
-                    if ($fromDate) {
-                        $params['updated'] = array('$gte' => new MongoDate(strtotime($fromDate)));
+                    if (isset($mongoFromDate)) {
+                        $params['updated'] = array('$gte' => $mongoFromDate);
                     }
                     $params['update_needed'] = false;
                 }
@@ -390,12 +395,12 @@ class RecordManager
                             $hostRecord = null;
                             if ($record['host_record_id']) {
                                 $hostRecord = $this->_db->record->findOne(array('_id' => $record['host_record_id']));
+                                $data['hierarchy_parent_id'] = $record['host_record_id'];
                             }
                             if (!$hostRecord) {
                                 $this->_log->log('updateSolrIndex', 'Host record ' . $record['host_record_id'] . ' not found for record ' . $record['_id'], Logger::WARNING);
                                 $data['container_title'] = $metadataRecord->getContainerTitle();
                             } else {
-                                $data['hierarchy_parent_id'] = $hostRecord['_id'];
                                 $hostMetadataRecord = RecordFactory::createRecord($hostRecord['format'], $this->_getRecordData($hostRecord, true), $hostRecord['oai_id']);
                                 $data['container_title'] = $data['hierarchy_parent_title'] = $hostMetadataRecord->getTitle();
                             }
@@ -466,7 +471,8 @@ class RecordManager
                         }
 
                         foreach ($data as $key => $value) {
-                            if (is_null($value)) {
+                            // Checking only for empty() won't work as 0 is empty too
+                            if (empty($value) && $value !== 0 && $value !== 0.0 && $value !== '0') {
                                 unset($data[$key]);
                             }
                         }
