@@ -34,7 +34,7 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 					<xsl:when test=".='p'"><type>FloppyDisk</type></xsl:when>
 					<xsl:when test=".='s'"><type>Software</type></xsl:when>
 					<xsl:when test=".='q'"><type>PhysicalObject</type></xsl:when>
-					<xsl:when test=".='r'"><type>Kit</type></xsl:when>
+					<xsl:when test=".='r'"><type>BoardGame</type></xsl:when>
 					<xsl:when test=".='w'"><type>DVDAudio</type></xsl:when>
 					<xsl:when test=".='x'"><type>Electronic</type></xsl:when>
 					<xsl:when test=".='z'"><type>eBook</type></xsl:when>
