@@ -263,7 +263,7 @@ class RecordManager
         $maxUpdateSize = isset($configArray['Solr']['max_update_size']) ? $configArray['Solr']['max_update_size'] : 1024;
         $maxUpdateSize *= 1024;
         
-        if (isset($fromDate)) {
+        if (isset($fromDate) && $fromDate) {
             $mongoFromDate = new MongoDate(strtotime($fromDate));
         }
         
@@ -458,6 +458,22 @@ class RecordManager
                                 );
                             }
                         }
+                        
+                        if (!isset($data['allfields'])) {
+                            $all = array();
+                            foreach ($data as $key => $field) {
+                                if (in_array($key, array('fullrecord', 'thumbnail', 'id', 'recordtype'))) {
+                                    continue;
+                                }
+                                if (is_array($field)) {
+                                    $all[] = implode(' ', $field);
+                                } else {
+                                    $all[] = $field;
+                                }
+                            }
+                            $data['allfields'] = implode(' ', MetadataUtils::array_iunique($all));
+                        }
+                        
                         $data['dedup_key'] = isset($record['dedup_key']) && $record['dedup_key'] ? $record['dedup_key'] : $record['_id'];
                         $data['first_indexed'] = $this->_formatTimestamp($record['created']->sec);
                         $data['last_indexed'] = $this->_formatTimestamp($record['updated']->sec);
@@ -786,7 +802,30 @@ class RecordManager
                     if (isset($harvestUntilDate)) {
                         $harvest->setEndDate($harvestUntilDate);
                     }
-                    $harvest->launch(array($this, 'storeRecord'));
+                    $harvest->harvest(array($this, 'storeRecord'));
+                    if (isset($settings['deletions']) && $settings['deletions'] == 'ListIdentifiers') {
+                        // The repository doesn't support reporting deletions, so list all identifiers
+                        // and mark deleted records that were not found
+                        $this->_log->log('harvest', "Processing deletions");
+                        
+                        $this->_log->log('harvest', "Unmarking records");
+                        $this->_db->record->update(
+                            array('source_id' => $this->_sourceId, 'deleted' => false),
+                            array('$unset' => array('mark' => 1)),
+                            array('multiple' => true)
+                        );
+
+                        $this->_log->log('harvest', "Fetching identifiers");
+                        $harvest->listIdentifiers(array($this, 'markRecord'));
+                        
+                        $this->_log->log('harvest', "Marking deleted records");
+                        $result = $this->_db->record->update(
+                            array('source_id' => $this->_sourceId, 'deleted' => false, 'mark' => array('$exists' => false)),
+                            array('$set' => array('deleted' => true, 'updated' => new MongoDate())),
+                            array('safe' => true, 'timeout' => 3000000, 'multiple' => true)
+                        );
+                        $this->_log->log('harvest', $result['n'] . " deleted records");
+                    }
                 }
                 $this->_log->log('harvest', "Harvesting from {$source} completed");
             } catch (Exception $e) {
@@ -871,6 +910,7 @@ class RecordManager
             $count = 0;
             foreach ($records as $record) {
                 $record['deleted'] = true;
+                $record['updated'] = new MongoDate();
                 $this->_db->record->save($record);
                 ++$count;
             }
@@ -979,6 +1019,27 @@ class RecordManager
         return $count;
     }
 
+    /**
+     * Mark a record "seen". Used by OAI-PMH harvesting when deletions are not supported.
+     *
+     * @param string $oaiID			ID of the record as received from OAI-PMH
+     * @param bool   $deleted		Whether the record is to be deleted
+    
+     * @throws Exception
+     */
+    public function markRecord($oaiID, $deleted)
+    {
+        if ($deleted) {
+            // Don't mark deleted records...
+            return;
+        }
+        $this->_db->record->update(
+            array('oai_id' => $oaiID),
+            array('$set' => array('mark' => true)),
+            array('multiple' => true)
+        );
+    }
+    
     /**
      * Update dedup candidate keys for the given record
      * 

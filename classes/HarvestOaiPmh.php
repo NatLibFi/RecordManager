@@ -44,35 +44,35 @@ require_once 'HTTP/Request2.php';
  */
 class HarvestOaiPmh
 {
-    private $_log;                   // Logger
-    private $_db;                    // Mongo database
-    private $_baseURL;               // URL to harvest from
-    private $_set = null;            // Set to harvest (null for all records)
-    private $_metadata = 'oai_dc';   // Metadata type to harvest
-    private $_idPrefix = '';         // OAI prefix to strip from ID values
-    private $_idSearch = array();    // Regular expression searches
-    private $_idReplace = array();   // Replacements for regular expression matches
-    private $_source;                // Source ID
-    private $_startDate = null;      // Harvest start date (null for all records)
-    private $_endDate = null; 		 // Harvest end date (null for all records)
-    private $_granularity = 'auto';  // Date granularity
-    private $_injectId = false;      // Tag to use for injecting IDs into XML
-    private $_injectSetSpec = false; // Tag to use for injecting setSpecs
-    private $_injectSetName = false; // Tag to use for injecting set names
-    private $_injectDate = false;    // Tag to use for injecting datestamp
-    private $_setNames = array();    // Associative array of setSpec => setName
-    private $_harvestedIdLog = false;// Filename for logging harvested IDs.
-    private $_verbose = false;       // Whether to display debug output
-    private $_normalRecords = 0;     // Harvested normal record count
-    private $_deletedRecords = 0;    // Harvested deleted record count
-    private $_debugLog = '';         // File where to dump OAI requests and responses for debugging
-    private $_childPid = null;       // Child process id for record processing
-    private $_resumptionToken = '';  // Override the first harvest request
-    private $_transformation = null; // Transformation applied to the OAI-PMH responses before processing
+    protected $_log;                   // Logger
+    protected $_db;                    // Mongo database
+    protected $_baseURL;               // URL to harvest from
+    protected $_set = null;            // Set to harvest (null for all records)
+    protected $_metadata = 'oai_dc';   // Metadata type to harvest
+    protected $_idPrefix = '';         // OAI prefix to strip from ID values
+    protected $_idSearch = array();    // Regular expression searches
+    protected $_idReplace = array();   // Replacements for regular expression matches
+    protected $_source;                // Source ID
+    protected $_startDate = null;      // Harvest start date (null for all records)
+    protected $_endDate = null; 		 // Harvest end date (null for all records)
+    protected $_granularity = 'auto';  // Date granularity
+    protected $_injectId = false;      // Tag to use for injecting IDs into XML
+    protected $_injectSetSpec = false; // Tag to use for injecting setSpecs
+    protected $_injectSetName = false; // Tag to use for injecting set names
+    protected $_injectDate = false;    // Tag to use for injecting datestamp
+    protected $_setNames = array();    // Associative array of setSpec => setName
+    protected $_harvestedIdLog = false;// Filename for logging harvested IDs.
+    protected $_verbose = false;       // Whether to display debug output
+    protected $_normalRecords = 0;     // Harvested normal record count
+    protected $_deletedRecords = 0;    // Harvested deleted record count
+    protected $_debugLog = '';         // File where to dump OAI requests and responses for debugging
+    protected $_childPid = null;       // Child process id for record processing
+    protected $_resumptionToken = '';  // Override the first harvest request
+    protected $_transformation = null; // Transformation applied to the OAI-PMH responses before processing
     
     // As we harvest records, we want to track the most recent date encountered
     // so we can set a start point for the next harvest.
-    private $_trackedEndDate = 0;
+    protected $_trackedEndDate = 0;
 
     /**
      * Constructor.
@@ -192,7 +192,7 @@ class HarvestOaiPmh
      * @return void
      * @access public
      */
-    public function launch($callback)
+    public function harvest($callback)
     {
         $this->_normalRecords = 0;
         $this->_deletedRecords = 0;
@@ -213,19 +213,60 @@ class HarvestOaiPmh
 
         // Keep harvesting as long as a resumption token is provided:
         while ($token !== false) {
-            $this->progressReport();
+            $this->_harvestProgressReport();
             $token = $this->_getRecordsByToken($token);
         }
-        $this->progressReport();
+        $this->_harvestProgressReport();
         if (isset($this->_childPid)) {
             pcntl_waitpid($this->_childPid, $status);
         }
     }
 
-    public function progressReport()
+    /**
+     * List identifiers of all available documents.
+     *
+     * @param  function reference $callback  Function to be called to process an identifier
+     * @return void
+     * @access public
+     */
+    public function listIdentifiers($callback)
+    {
+        $this->_normalRecords = 0;
+        $this->_deletedRecords = 0;
+        $this->_callback = $callback;
+    
+        if ($this->_resumptionToken) {
+            $this->_message('Incremental listing from given resumptionToken');
+            $token = $this->_getIdentifiersByToken($this->_resumptionToken);
+        } else {
+            $this->_message('Listing all identifiers');
+            $token = $this->_getIdentifiers();
+        }
+    
+        // Keep harvesting as long as a resumption token is provided:
+        while ($token !== false) {
+            $this->_listIdentifiersProgressReport();
+            $token = $this->_getIdentifiersByToken($token);
+        }
+        $this->_listIdentifiersProgressReport();
+        if (isset($this->_childPid)) {
+            pcntl_waitpid($this->_childPid, $status);
+        }
+    }
+    
+    
+    protected function _harvestProgressReport()
     {
         $this->_message(
             'Harvested ' . $this->_normalRecords
+            . ' normal records and ' . $this->_deletedRecords . ' deleted records'
+        );
+    }
+
+    public function _listIdentifiersProgressReport()
+    {
+        $this->_message(
+            'Listed ' . $this->_normalRecords
             . ' normal records and ' . $this->_deletedRecords . ' deleted records'
         );
     }
@@ -235,9 +276,9 @@ class HarvestOaiPmh
      * date if it is available.
      *
      * @return void
-     * @access private
+     * @access protected
      */
-    private function _loadLastHarvestedDate()
+    protected function _loadLastHarvestedDate()
     {
         $state = $this->_db->state->findOne(array('_id' => "Last Harvest Date {$this->_source}"));
         if (isset($state)) {
@@ -269,9 +310,9 @@ class HarvestOaiPmh
      * @param string $date Date to save.
      *
      * @return void
-     * @access private
+     * @access protected
      */
-    private function _saveLastHarvestedDate($date)
+    protected function _saveLastHarvestedDate($date)
     {
         $state = array('_id' => "Last Harvest Date {$this->_source}", 'value' => $date);
         $this->_db->state->save($state);
@@ -285,9 +326,9 @@ class HarvestOaiPmh
      * @param array  $params GET parameters for ListRecords method.
      *
      * @return object        SimpleXML-formatted response.
-     * @access private
+     * @access protected
      */
-    private function _sendRequest($verb, $params = array())
+    protected function _sendRequest($verb, $params = array())
     {
         // Set up the request:
         $request = new HTTP_Request2(
@@ -356,9 +397,11 @@ class HarvestOaiPmh
      *
      * Load XML into simplexml
      * @param string $xml
+     * 
      * @return SimpleXMLElement
+     * @access protected
      */
-    private function _loadXML($xml)
+    protected function _loadXML($xml)
     {
         if ($this->_transformation) {
             $doc = new DOMDocument();
@@ -375,9 +418,9 @@ class HarvestOaiPmh
      * @param string $xml OAI-PMH response XML.
      *
      * @return object     SimpleXML-formatted response.
-     * @access private
+     * @access protected
      */
-    private function _processResponse($xml)
+    protected function _processResponse($xml)
     {
         // Parse the XML:
         $saveUseErrors = libxml_use_internal_errors(true);
@@ -408,15 +451,17 @@ class HarvestOaiPmh
         // Detect errors and throw an exception if one is found:
         if ($result->error) {
             $attribs = $result->error->attributes();
-            $this->_message(
-                "OAI-PMH server returned error {$attribs['code']} ({$result->error})", 
-                false,
-                Logger::FATAL
-            );
-            throw new Exception(
-                "OAI-PMH error -- code: {$attribs['code']}, " .
-                "value: {$result->error}\n"
-            );
+            if ($attribs['code'] != 'noRecordsMatch') {
+                $this->_message(
+                    "OAI-PMH server returned error {$attribs['code']} ({$result->error})", 
+                    false,
+                    Logger::FATAL
+                );
+                throw new Exception(
+                    "OAI-PMH error -- code: {$attribs['code']}, " .
+                    "value: {$result->error}\n"
+                );
+            }
         }
 
         // If we got this far, we have a valid response:
@@ -427,13 +472,15 @@ class HarvestOaiPmh
      * Load date granularity from the server.
      *
      * @return void
-     * @access private
+     * @access protected
      */
-    private function _loadGranularity()
+    protected function _loadGranularity()
     {
         $this->_message('Autodetecting date granularity...');
         $response = $this->_sendRequest('Identify');
+        // @codingStandardsIgnoreStart
         $this->_granularity = (string)$response->Identify->granularity;
+        // @codingStandardsIgnoreEnd
         $this->_message("Date granularity: {$this->_granularity}");
     }
 
@@ -441,9 +488,9 @@ class HarvestOaiPmh
      * Load set list from the server.
      *
      * @return void
-     * @access private
+     * @access protected
      */
-    private function _loadSetNames()
+    protected function _loadSetNames()
     {
         $this->_message('Loading set list... ');
 
@@ -483,15 +530,15 @@ class HarvestOaiPmh
     /**
      * Extract the ID from a record object (support method for _processRecords()).
      *
-     * @param object $record SimpleXML record.
+     * @param object $header SimpleXML record header.
      *
      * @return string        The ID value.
-     * @access private
+     * @access protected
      */
-    private function _extractID($record)
+    protected function _extractID($header)
     {
         // Normalize to string:
-        $id = (string)$record->header->identifier;
+        $id = (string)$header->identifier;
 
         // Strip prefix if found:
         if (substr($id, 0, strlen($this->_idPrefix)) == $this->_idPrefix) {
@@ -513,9 +560,9 @@ class HarvestOaiPmh
      * @param object $records SimpleXML records.
      *
      * @return void
-     * @access private
+     * @access protected
      */
-    private function _processRecords($records)
+    protected function _processRecords($records)
     {
         $this->_message('Processing ' . count($records) . ' records...', true);
 
@@ -531,9 +578,9 @@ class HarvestOaiPmh
             }
 
             // Get the ID of the current record:
-            $id = $this->_extractID($record);
+            $id = $this->_extractID($record->header);
 
-            // Save the current record, either as a deleted or as a regular file:
+            // Save the current record, either as a deleted or as a regular record:
             $attribs = $record->header->attributes();
             if (strtolower($attribs['status']) == 'deleted') {
                 call_user_func($this->_callback, $id, true, null);
@@ -573,9 +620,9 @@ class HarvestOaiPmh
      * @param array $params GET parameters for ListRecords method.
      *
      * @return mixed        Resumption token if provided, false if finished
-     * @access private
+     * @access protected
      */
-    private function _getRecords($params)
+    protected function _getRecords($params)
     {
         // Make the OAI-PMH request:
         $response = $this->_sendRequest('ListRecords', $params);
@@ -603,9 +650,9 @@ class HarvestOaiPmh
      * Harvest records via OAI-PMH using date and set.
      *
      * @return mixed        Resumption token if provided, false if finished
-     * @access private
+     * @access protected
      */
-    private function _getRecordsByDate($date = null, $set = null)
+    protected function _getRecordsByDate($date = null, $set = null)
     {
         $params = array('metadataPrefix' => $this->_metadata);
         if (!empty($this->_startDate)) {
@@ -626,11 +673,84 @@ class HarvestOaiPmh
      * @param string $token Resumption token.
      *
      * @return mixed        Resumption token if provided, false if finished
-     * @access private
+     * @access protected
      */
-    private function _getRecordsByToken($token)
+    protected function _getRecordsByToken($token)
     {
         return $this->_getRecords(array('resumptionToken' => (string)$token));
+    }
+
+    /**
+     * Get identifiers using OAI-PMH.
+     *
+     * @param array $params GET parameters for ListIdentifiers method.
+     *
+     * @return mixed        Resumption token if provided, false if finished
+     * @access protected
+     */
+    protected function _getIdentifiers($params = array())
+    {
+        // Make the OAI-PMH request:
+        if (empty($params)) {
+            $params = array('metadataPrefix' => $this->_metadata);
+        }
+        $response = $this->_sendRequest('ListIdentifiers', $params);
+
+        // Process headers
+        if ($response->ListIdentifiers) {
+            $this->_processIdentifiers($response->ListIdentifiers->header);
+        }
+
+        // If we have a resumption token, keep going; otherwise, we're done -- save
+        // the end date.
+        if (isset($response->ListIdentifiers->resumptionToken)
+            && !empty($response->ListIdentifiers->resumptionToken)
+        ) {
+            return $response->ListIdentifiers->resumptionToken;
+        } 
+        return false;
+    }
+
+    /**
+     * Get identifiers via OAI-PMH using resumption token.
+     *
+     * @param string $token Resumption token.
+     *
+     * @return mixed        Resumption token if provided, false if finished
+     * @access protected
+     */
+    protected function _getIdentifiersByToken($token)
+    {
+        return $this->_getIdentifiers(array('resumptionToken' => (string)$token));
+    }
+
+    /**
+     * Process fetched identifiers.
+     *
+     * @param object $records SimpleXML records.
+     *
+     * @return void
+     * @access protected
+     */
+    protected function _processIdentifiers($headers)
+    {
+        $this->_message('Processing ' . count($headers) . ' identifiers...', true);
+    
+        // Loop through the records:
+        foreach ($headers as $header) {
+            // Get the ID of the current record:
+            $id = $this->_extractID($header);
+    
+            // Process the current header, either as a deleted or as a regular record:
+            $attribs = $header->attributes();
+            if (strtolower($attribs['status']) == 'deleted') {
+                call_user_func($this->_callback, $id, true);
+                $this->_deletedRecords++;
+            } else {
+                call_user_func($this->_callback, $id, false);
+                $this->_normalRecords++;
+            }
+        }
     }
 
     /**
@@ -640,9 +760,9 @@ class HarvestOaiPmh
      * @param bool   $verbose Flag telling whether this is considered verbose output
      *
      * @return void
-     * @access private
+     * @access protected
      */
-    private function _message($msg, $verbose = false, $level = Logger::INFO)
+    protected function _message($msg, $verbose = false, $level = Logger::INFO)
     {
         if ($this->_verbose) {
             echo "$msg\n";
