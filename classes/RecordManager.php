@@ -81,7 +81,7 @@ class RecordManager
      */
     public function __construct($console = false)
     {
-        global $configArray;
+        global $configArray, $mappings;
 
         $this->_uniqIdPrefix = uniqid();
 
@@ -99,6 +99,18 @@ class RecordManager
         $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
         $basePath = substr($basePath, 0, strrpos($basePath, DIRECTORY_SEPARATOR));
         $this->_dataSourceSettings = parse_ini_file("$basePath/conf/datasources.ini", true);
+        
+        // Read in mapping tables
+        if ($handle = opendir("$basePath/mappings")) {
+          while (false !== ($entry = readdir($handle))) {
+              if ($entry != "." && $entry != "..") {
+                $table = basename($entry, ".ini");
+                $mappings[$table] = parse_ini_file("$basePath/mappings/$entry", true);
+              }
+            }
+            closedir($handle);
+        }
+         
         $this->_basePath = $basePath;
 
         $mongo = new Mongo($configArray['Mongo']['url']);

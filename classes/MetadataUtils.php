@@ -243,5 +243,18 @@ class MetadataUtils
     	}
     }
     
+    /**
+     * Map: resolve the given key using the supplied mapping table
+     *
+     * @param string $table
+     * @param string $key
+     * @access public
+     */
+    public function map($table, $key, $lowercase = true) {
+      // Note: "global $mappings" didn't work for some reason so used $GLOBALS
+      $mappings = $GLOBALS['mappings'];
+      if(isset($mappings[$table]))
+        return $mappings[$table][$lowercase ? strtolower($key): $key];
+      return false;
+    }
 }
-
