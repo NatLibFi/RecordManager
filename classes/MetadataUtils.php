@@ -224,5 +224,24 @@ class MetadataUtils
         return $id;
     }
     
+    /**
+     * Validate a date in ISO8601 format.
+     *
+     * @param  string $date
+     */
+    function validateISO8601Date($date)
+    {
+    	if (preg_match('/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/', $date, $parts) == true) {
+    		$time = gmmktime($parts[4], $parts[5], $parts[6], $parts[2], $parts[3], $parts[1]);
+    
+    		$input_time = strtotime($date);
+    		if ($input_time === false) return false;
+    
+    		return $input_time == $time;
+    	} else {
+    		return false;
+    	}
+    }
+    
 }
 
