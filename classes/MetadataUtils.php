@@ -224,5 +224,37 @@ class MetadataUtils
         return $id;
     }
     
+    /**
+     * Validate a date in ISO8601 format.
+     *
+     * @param  string $date
+     */
+    function validateISO8601Date($date)
+    {
+    	if (preg_match('/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/', $date, $parts) == true) {
+    		$time = gmmktime($parts[4], $parts[5], $parts[6], $parts[2], $parts[3], $parts[1]);
+    
+    		$input_time = strtotime($date);
+    		if ($input_time === false) return false;
+    
+    		return $input_time == $time;
+    	} else {
+    		return false;
+    	}
+    }
+    
+    /**
+     * Map: resolve the given key using the supplied mapping table
+     *
+     * @param string $table
+     * @param string $key
+     * @access public
+     */
+    public function map($table, $key, $lowercase = true) {
+      // Note: "global $mappings" didn't work for some reason so used $GLOBALS
+      $mappings = $GLOBALS['mappings'];
+      if(isset($mappings[$table]))
+        return $mappings[$table][$lowercase ? strtolower($key): $key];
+      return false;
+    }
 }
-
