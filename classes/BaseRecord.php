@@ -204,7 +204,7 @@ abstract class BaseRecord
     }
 
     /**
-     * Dedup: Return ISBNs in ISBN-13 format without dashes
+     * Dedup: Return (unique) ISBNs in ISBN-13 format without dashes
      *
      * @return array
      * @access public

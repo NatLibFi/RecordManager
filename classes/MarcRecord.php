@@ -563,7 +563,7 @@ class MarcRecord extends BaseRecord
             }
         }
 
-        return $arr;
+        return array_unique($arr);
     }
 
     public function getISSNs()

@@ -1049,7 +1049,7 @@ class RecordManager
     protected function _updateDedupCandidateKeys(&$record, $metadataRecord)
     {
         $record['title_keys'] = array(MetadataUtils::createTitleKey($metadataRecord->getTitle(true)));
-        $record['isbn_keys'] = array_unique($metadataRecord->getISBNs());
+        $record['isbn_keys'] = $metadataRecord->getISBNs();
     }
 
     /**
@@ -1068,7 +1068,7 @@ class RecordManager
         $origRecord = RecordFactory::createRecord($record['format'], $this->_getRecordData($record, true), $record['oai_id']);
         $key = MetadataUtils::createTitleKey($origRecord->getTitle(true));
         $keyArray = array($key);
-        $ISBNArray = array_unique($origRecord->getISBNs());
+        $ISBNArray = $origRecord->getISBNs();
 
         $matchRecord = null;
         foreach (array('ISBN' => $ISBNArray, 'key' => $keyArray) as $type => $array) {
@@ -1487,6 +1487,8 @@ class RecordManager
                 $this->_recordSplitter = new XSLTProcessor();
                 $this->_recordSplitter->importStylesheet($style);
             }
+        } else {
+            $this->_recordSplitter = null;
         }
     }
 }
