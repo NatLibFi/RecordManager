@@ -34,9 +34,9 @@ function main($argv)
     {
         echo "Usage: harvest --source=... [...]\n\n";
         echo "Parameters:\n\n";
-        echo "--source            repository id ('*' for all)\n";
-        echo "--from              override harvesting start date\n";
-        echo "--until             override harvesting end date\n";
+        echo "--source            Repository id ('*' for all)\n";
+        echo "--from              Override harvesting start date (use - to start from beginning)\n";
+        echo "--until             Override harvesting end date\n";
         echo "--verbose           Enable verbose output\n";
         echo "--override          Override initial resumption token (e.g. to resume failed connection)\n\n";
         exit(1);

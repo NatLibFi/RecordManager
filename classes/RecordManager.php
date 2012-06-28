@@ -459,6 +459,28 @@ class RecordManager
                             }
                         }
                         
+                        // Other hierarchical facets
+                        if (isset($configArray['Solr']['hierarchical_facets'])) {
+                            foreach ($configArray['Solr']['hierarchical_facets'] as $facet) {
+                                if ($facet == 'building' || !isset($data[$facet])) {
+                                    continue;
+                                }
+                                $array = array();
+                                if (!is_array($data[$facet])) {
+                                    $data[$facet] = array($data[$facet]);
+                                }
+                                foreach ($data[$facet] as $datavalue) {
+                                    $values = explode('/', $datavalue);
+                                    $hierarchyString = '';
+                                    for ($i = 0; $i < count($values); $i++) {
+                                        $hierarchyString .= '/' . $values[$i];
+                                        $array[] = ($i) . $hierarchyString;
+                                    }
+                                }
+                                $data[$facet] = $array;
+                            }
+                        }
+                        
                         if (!isset($data['allfields'])) {
                             $all = array();
                             foreach ($data as $key => $field) {
@@ -797,7 +819,7 @@ class RecordManager
                 } else {
                     $harvest = new HarvestOAIPMH($this->_log, $this->_db, $source, $this->_basePath, $settings, $startResumptionToken);
                     if (isset($harvestFromDate)) {
-                        $harvest->setStartDate($harvestFromDate);
+                        $harvest->setStartDate($harvestFromDate == '-' ? null : $harvestFromDate);
                     }
                     if (isset($harvestUntilDate)) {
                         $harvest->setEndDate($harvestUntilDate);
@@ -974,7 +996,10 @@ class RecordManager
             }
             $id = $metadataRecord->getID();
             if (!$id) {
-                throw new Exception("Empty ID returned for record $oaiID");
+                if (!$oaiID) {
+                    throw new Exception("Empty ID returned for record and no OAI ID");
+                }
+                $id = $oaiID;
             }
             $id = $this->_idPrefix . '.' . $id;
             $dbRecord = $this->_db->record->findOne(array('_id' => $id));
