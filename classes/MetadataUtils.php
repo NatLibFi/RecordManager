@@ -242,6 +242,16 @@ class MetadataUtils
             return $inputTime == $time;
         }
         return false;
-    }    
+    }
+
+    /**
+     * Trim whitespace between tags (but not in data)
+     * @param string $xml XML string
+     * @return string     Cleaned string 
+     */
+    static function trimXMLWhitespace($xml)
+    {
+        return preg_replace('~\s*(<([^>]*)>[^<]*</\2>|<[^>]*>)\s*~', '$1', $xml);
+    }
 }
 

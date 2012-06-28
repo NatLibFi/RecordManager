@@ -69,7 +69,7 @@ class EadRecord extends BaseRecord
      */
     public function serialize()
     {
-        return $this->_doc->asXML();
+        return MetadataUtils::trimXMLWhitespace($this->_doc->asXML());
     }
 
     /**
