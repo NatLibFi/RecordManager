@@ -56,14 +56,8 @@ class HarvestOaiPmh
     protected $_startDate = null;      // Harvest start date (null for all records)
     protected $_endDate = null; 		 // Harvest end date (null for all records)
     protected $_granularity = 'auto';  // Date granularity
-    protected $_injectId = false;      // Tag to use for injecting IDs into XML
-    protected $_injectSetSpec = false; // Tag to use for injecting setSpecs
-    protected $_injectSetName = false; // Tag to use for injecting set names
-    protected $_injectDate = false;    // Tag to use for injecting datestamp
-    protected $_setNames = array();    // Associative array of setSpec => setName
     protected $_harvestedIdLog = false;// Filename for logging harvested IDs.
     protected $_verbose = false;       // Whether to display debug output
-    protected $_normalRecords = 0;     // Harvested normal record count
     protected $_deletedRecords = 0;    // Harvested deleted record count
     protected $_debugLog = '';         // File where to dump OAI requests and responses for debugging
     protected $_childPid = null;       // Child process id for record processing
@@ -123,19 +117,6 @@ class HarvestOaiPmh
         }
         if (isset($settings['harvestedIdLog'])) {
             $this->_harvestedIdLog = $settings['harvestedIdLog'];
-        }
-        if (isset($settings['injectId'])) {
-            $this->_injectId = $settings['injectId'];
-        }
-        if (isset($settings['injectSetSpec'])) {
-            $this->_injectSetSpec = $settings['injectSetSpec'];
-        }
-        if (isset($settings['injectSetName'])) {
-            $this->_injectSetName = $settings['injectSetName'];
-            $this->_loadSetNames();
-        }
-        if (isset($settings['injectDate'])) {
-            $this->_injectDate = $settings['injectDate'];
         }
         if (isset($settings['dateGranularity'])) {
             $this->_granularity = $settings['dateGranularity'];
@@ -403,12 +384,14 @@ class HarvestOaiPmh
      */
     protected function _loadXML($xml)
     {
-        if ($this->_transformation) {
-            $doc = new DOMDocument();
-            $doc->loadXML($xml);
-            return simplexml_import_dom($this->_transformation->transformToDoc($doc));
+        $doc = new DOMDocument();
+        if (!$doc->loadXML($xml)) {
+            return false;
         }
-        return simplexml_load_string($xml);
+        if ($this->_transformation) {
+            return $this->_transformation->transformToDoc($doc);
+        }
+        return $doc;
     }
 
     /**
@@ -449,17 +432,19 @@ class HarvestOaiPmh
         libxml_use_internal_errors($saveUseErrors);
 
         // Detect errors and throw an exception if one is found:
-        if ($result->error) {
-            $attribs = $result->error->attributes();
-            if ($attribs['code'] != 'noRecordsMatch') {
+        $error = $this->_getSingleNode($result, 'error');
+        if ($error) {
+            $code = $error->getAttribute('code');
+            if ($code != 'noRecordsMatch') {
+                $value = $result->saveXML($error);
                 $this->_message(
-                    "OAI-PMH server returned error {$attribs['code']} ({$result->error})", 
+                    "OAI-PMH server returned error $code ($value)", 
                     false,
                     Logger::FATAL
                 );
                 throw new Exception(
-                    "OAI-PMH error -- code: {$attribs['code']}, " .
-                    "value: {$result->error}\n"
+                    "OAI-PMH error -- code: $code, " .
+                    "value: $value\n"
                 );
             }
         }
@@ -478,53 +463,8 @@ class HarvestOaiPmh
     {
         $this->_message('Autodetecting date granularity...');
         $response = $this->_sendRequest('Identify');
-        // @codingStandardsIgnoreStart
-        $this->_granularity = (string)$response->Identify->granularity;
-        // @codingStandardsIgnoreEnd
+        $this->_granularity = $this->_getSingleNode($this->_getSingleNode($response, 'Identify'), 'granularity')->nodeValue;
         $this->_message("Date granularity: {$this->_granularity}");
-    }
-
-    /**
-     * Load set list from the server.
-     *
-     * @return void
-     * @access protected
-     */
-    protected function _loadSetNames()
-    {
-        $this->_message('Loading set list... ');
-
-        // On the first pass through the following loop, we want to get the
-        // first page of sets without using a resumption token:
-        $params = array();
-
-        // Grab set information until we have it all (at which point we will
-        // break out of this otherwise-infinite loop):
-        while (true) {
-            // Process current page of results:
-            $response = $this->_sendRequest('ListSets', $params);
-            if (isset($response->ListSets->set)) {
-                foreach ($response->ListSets->set as $current) {
-                    $spec = (string)$current->setSpec;
-                    $name = (string)$current->setName;
-                    if (!empty($spec)) {
-                        $this->_setNames[$spec] = $name;
-                    }
-                }
-            }
-
-            // Is there a resumption token?  If so, continue looping; if not,
-            // we're done!
-            if (isset($response->ListSets->resumptionToken)
-                && !empty($response->ListSets->resumptionToken)
-            ) {
-                $params['resumptionToken']
-                = (string)$response->ListSets->resumptionToken;
-            } else {
-                $this->_message('Found ' . count($this->_setNames) . ' sets');
-                return;
-            }
-        }
     }
 
     /**
@@ -538,7 +478,7 @@ class HarvestOaiPmh
     protected function _extractID($header)
     {
         // Normalize to string:
-        $id = (string)$header->identifier;
+        $id = $this->_getSingleNode($header, 'identifier')->nodeValue;
 
         // Strip prefix if found:
         if (substr($id, 0, strlen($this->_idPrefix)) == $this->_idPrefix) {
@@ -571,33 +511,35 @@ class HarvestOaiPmh
 
         // Loop through the records:
         foreach ($records as $record) {
+            $header = $this->_getSingleNode($record, 'header');
+            
             // Bypass the record if the record is missing its header:
-            if (empty($record->header)) {
+            if ($header === false) {
                 $this->_message("Record header missing", false, Logger::ERROR);
+                echo $this->_xml->saveXML($record) . "\n";
                 continue;
             }
 
             // Get the ID of the current record:
-            $id = $this->_extractID($record->header);
+            $id = $this->_extractID($header);
 
             // Save the current record, either as a deleted or as a regular record:
-            $attribs = $record->header->attributes();
-            if (strtolower($attribs['status']) == 'deleted') {
+            if (strcasecmp($header->getAttribute('status'), 'deleted') == 0) {
                 call_user_func($this->_callback, $id, true, null);
                 $this->_deletedRecords++;
             } else {
-                $recordNode = $record->metadata->children();
-                if (empty($recordNode)) {
+                $recordNode = $this->_getSingleNode($this->_getSingleNode($record, 'metadata'), '*');
+                if ($recordNode === false) {
                     $this->_message("No metadata found for record $id", false, Logger::ERROR);
                     continue;
                 }
                 $harvestedIds[] = $id;
-                $this->_normalRecords += call_user_func($this->_callback, $id, false, trim($recordNode[0]->asXML()));
+                $this->_normalRecords += call_user_func($this->_callback, $id, false, trim($this->_xml->saveXML($recordNode)));
             }
 
             // If the current record's date is newer than the previous end date,
             // remember it for future reference:
-            $date = $this->normalizeDate($record->header->datestamp);
+            $date = $this->normalizeDate($this->_getSingleNode($header, 'datestamp')->nodeValue);
             if ($date && $date > $this->_trackedEndDate) {
                 $this->_trackedEndDate = $date;
             }
@@ -625,20 +567,24 @@ class HarvestOaiPmh
     protected function _getRecords($params)
     {
         // Make the OAI-PMH request:
-        $response = $this->_sendRequest('ListRecords', $params);
+        $this->_xml = $this->_sendRequest('ListRecords', $params);
 
         // Save the records from the response:
-        if ($response->ListRecords->record) {
-            $this->_processRecords($response->ListRecords->record);
-        }
+        $listRecords = $this->_getSingleNode($this->_xml, 'ListRecords');
+        if ($listRecords !== false) {
+            $records = $this->_getImmediateChildrenByTagName($listRecords, 'record');
+            if ($records) {
+                $this->_processRecords($records);
+            }
 
-        // If we have a resumption token, keep going; otherwise, we're done -- save
-        // the end date.
-        if (isset($response->ListRecords->resumptionToken)
-            && !empty($response->ListRecords->resumptionToken)
-        ) {
-            return $response->ListRecords->resumptionToken;
-        } else if ($this->_trackedEndDate > 0) {
+            // If we have a resumption token, keep going; otherwise, we're done -- save
+            // the end date.
+            $token = $this->_getSingleNode($listRecords, 'resumptionToken');
+            if ($token !== false && $token->nodeValue) {
+                return $token->nodeValue;
+            }
+        } 
+        if ($this->_trackedEndDate > 0) {
             $dateFormat = ($this->_granularity == 'YYYY-MM-DD') ?
                 'Y-m-d' : 'Y-m-d\TH:i:s\Z';
             $this->_saveLastHarvestedDate(date($dateFormat, $this->_trackedEndDate));
@@ -694,20 +640,19 @@ class HarvestOaiPmh
         if (empty($params)) {
             $params = array('metadataPrefix' => $this->_metadata);
         }
-        $response = $this->_sendRequest('ListIdentifiers', $params);
-
+        $this->_xml = $this->_sendRequest('ListIdentifiers', $params);
+        
         // Process headers
-        if ($response->ListIdentifiers) {
-            $this->_processIdentifiers($response->ListIdentifiers->header);
+        $listIdentifiers = $this->_getSingleNode($this->_xml, 'ListIdentifiers');
+        if ($listIdentifiers !== false) {
+            $headers = $this->_getImmediateChildrenByTagName($listIdentifiers, 'header');
+            $this->_processIdentifiers($headers);
+            $token = $this->_getSingleNode($listIdentifiers, 'resumptionToken');
+            if ($token !== false && $token->nodeValue) {
+                return $token->nodeValue;
+            }
         }
 
-        // If we have a resumption token, keep going; otherwise, we're done -- save
-        // the end date.
-        if (isset($response->ListIdentifiers->resumptionToken)
-            && !empty($response->ListIdentifiers->resumptionToken)
-        ) {
-            return $response->ListIdentifiers->resumptionToken;
-        } 
         return false;
     }
 
@@ -742,8 +687,7 @@ class HarvestOaiPmh
             $id = $this->_extractID($header);
     
             // Process the current header, either as a deleted or as a regular record:
-            $attribs = $header->attributes();
-            if (strtolower($attribs['status']) == 'deleted') {
+            if (strcasecmp($header->getAttribute('status'), 'deleted') == 0) {
                 call_user_func($this->_callback, $id, true);
                 $this->_deletedRecords++;
             } else {
@@ -769,5 +713,46 @@ class HarvestOaiPmh
         }
         $this->_log->log('harvestOaiPmh', $msg, $level);
     }
+    
+    /**
+     * Get the first XML child node with the given name
+     * 
+     * @param DOMDocument $xml  The XML Document
+     * @param string $nodeName  Node to get
+     * 
+     * @return DOMNode | false  Result node or false if not found
+     * @access protected
+     */
+    protected function _getSingleNode($xml, $nodeName)
+    {
+        $nodes = $xml->getElementsByTagName($nodeName);
+        if ($nodes->length == 0) {
+            return false;
+        }
+        return $nodes->item(0);
+    }
+    
+    /**
+     * Traverse all children and collect those nodes that
+     * have the tagname specified in $tagName. Non-recursive
+     *
+     * @param DOMElement $element
+     * @param string $tagName
+     * 
+     * @return array
+     * @access protected
+     */
+    protected function _getImmediateChildrenByTagName($element, $tagName)
+    {
+        $result = array();
+        foreach ($element->childNodes as $child) {
+            if ($child instanceof DOMElement && $child->tagName == $tagName) {
+                $result[] = $child;
+            }
+        }
+        return $result;
+    }
+    
+    
 }
 
