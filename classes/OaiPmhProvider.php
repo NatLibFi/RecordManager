@@ -547,10 +547,10 @@ EOF;
             $mongodata = $record['normalized_data'] ? $record['normalized_data'] : $record['original_data'];
             $metadataRecord = RecordFactory::createRecord($record['format'], gzinflate($mongodata->bin), $record['oai_id']);
             $metadata = $metadataRecord->toXML();
-            if ($sourceFormat != $format) {
-                $source = $record['source_id'];
-                $datasource = $this->_dataSourceSettings[$source];
-                $key = "transformation_to_{$format}";
+            $key = "transformation_to_{$format}";
+            $source = $record['source_id'];
+            $datasource = $this->_dataSourceSettings[$source];
+            if ($sourceFormat != $format || isset($datasource[$key])) {
                 if (!isset($datasource[$key])) {
                     $this->_error('cannotDisseminateFormat', '', false);
                     return false;
