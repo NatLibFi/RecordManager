@@ -931,11 +931,9 @@ class MarcRecord extends BaseRecord
                 $field .= MARCRecord::END_OF_FIELD;
                 $len = strlen($field);
                 if ($len > 9999) {
-                    error_log("Field too long ($len): '$field', id " . $this->_getField('001'));
-                    break;
+                    return '';
                 }
                 if ($datapos > 99999) {
-                    error_log("Record too long ($datapos), id " . $this->_getField('001'));
                     return '';
                 }
                 $directory .= $tag . str_pad($len, 4, '0', STR_PAD_LEFT) . str_pad($datapos, 5, '0', STR_PAD_LEFT);
@@ -948,7 +946,6 @@ class MarcRecord extends BaseRecord
         $dataStart = strlen($leader) + strlen($directory);
         $recordLen = $dataStart + strlen($data);
         if ($recordLen > 99999) {
-            error_log("Record too long ($recordLen), id " . $this->_getField('001'));
             return '';
         }
 
