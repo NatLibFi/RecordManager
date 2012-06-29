@@ -243,7 +243,7 @@ class DcRecord extends BaseRecord
                 $arr[] = $isbn;
             }
         }
-        return array_unique($arr);
+        return array_values(array_unique($arr));
     }
 
     /**
