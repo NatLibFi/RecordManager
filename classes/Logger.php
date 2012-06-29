@@ -91,15 +91,15 @@ class Logger
             }
             file_put_contents($this->logFile, $msg, FILE_APPEND);
         }
+        if (strlen($msg) > 4096) {
+            // Avoid throwing a large error on the console or in the email
+            $msg = substr($msg, 0, 2048) . "\n\n[... Truncated - See log for full message ...]\n\n" . substr($msg, -2048);
+        }
         if ($level == Logger::FATAL && $this->errorEmail) {
             $email = "RecordManager encountered the following fatal error: " . PHP_EOL . PHP_EOL . $msg;
             mail($this->errorEmail, 'RecordManager Error Report', $email);
         }
         if ($this->logToConsole) {
-            if (strlen($msg) > 4096) {
-                // Avoid throwing a large error on the console
-                $msg = substr($msg, 0, 2048) . "\n\n[... Truncated - See log for full message ...]\n\n" . substr($msg, -2048);
-            }
             file_put_contents('php://stderr', $msg, FILE_APPEND);
         }
     }
