@@ -25,6 +25,8 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  */
 
+//apd_set_pprof_trace('apd');
+
 require_once 'cmdline.php';
 
 function main($argv)

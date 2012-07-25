@@ -1,10 +1,10 @@
 <?php
 /**
- * DcRecord Class
+ * EseRecord Class
  *
  * PHP version 5
  *
- * Copyright (C) Ere Maijala 2011-2012
+ * Copyright (C) Ere Maijala, The National Library of Finland 2011-2012
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -29,12 +29,12 @@ require_once 'BaseRecord.php';
 require_once 'MetadataUtils.php';
 
 /**
- * DcRecord Class
+ * EseRecord Class
  *
- * This is a class for processing Dublin Core records.
+ * This is a class for processing ESE (Europeana) records.
  *
  */
-class DcRecord extends BaseRecord
+class EseRecord extends BaseRecord
 {
     protected $_doc = null;
 
@@ -47,11 +47,6 @@ class DcRecord extends BaseRecord
     public function __construct($data, $oaiID)
     {
         $this->_doc = simplexml_load_string($data);
-        if (empty($this->_doc->recordID)) {
-            $p = strpos($oaiID, ':');
-            $p = strpos($oaiID, ':', $p + 1);
-            $this->_doc->addChild('recordID', substr($oaiID, $p + 1));
-        }
     }
 
     /**
@@ -62,7 +57,7 @@ class DcRecord extends BaseRecord
      */
     public function getID()
     {
-        return $this->_doc->recordID[0];
+        return '';
     }
 
     /**
@@ -96,7 +91,6 @@ class DcRecord extends BaseRecord
      */
     public function setIDPrefix($prefix)
     {
-        $this->_doc->recordID = $prefix . $this->_doc->recordID;
     }
 
     /**

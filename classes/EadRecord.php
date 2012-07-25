@@ -167,19 +167,18 @@ class EadRecord extends BaseRecord
 
     protected function _getAllFields($xml)
     {
-        $allFields = '';
+        $allFields = array();
         foreach ($xml->children() as $tag => $field) {
-            $allFields .= ' ';
             $s = trim((string)$field);
             if ($s) {
-                $allFields .= $s;
+                $allFields[] = $s;
             }
             $s = $this->_getAllFields($field);
             if ($s) {
-                $allFields .= " $s";
+                $allFields[] = "$s";
             }
         }
-        return trim($allFields);
+        return $allFields;
     }
 }
 

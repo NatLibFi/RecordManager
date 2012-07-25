@@ -229,7 +229,7 @@ class MetadataUtils
      *
      * @param string $date
      */
-    static function validateISO8601Date($date)
+    static public function validateISO8601Date($date)
     {
         if (preg_match('/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/', $date, $parts) == true) {
             $time = gmmktime($parts[4], $parts[5], $parts[6], $parts[2], $parts[3], $parts[1]);
@@ -246,12 +246,43 @@ class MetadataUtils
 
     /**
      * Trim whitespace between tags (but not in data)
+     *
      * @param string $xml XML string
      * @return string     Cleaned string 
      */
-    static function trimXMLWhitespace($xml)
+    static public function trimXMLWhitespace($xml)
     {
         return preg_replace('~\s*(<([^>]*)>[^<]*</\2>|<[^>]*>)\s*~', '$1', $xml);
+    }
+    
+    /**
+     * Get record metadata from a database record
+     *
+     * @param object $record		  Database record
+     * @param bool   $normalized	Whether to return the original (false) or normalized (true) record
+     * @return string				      Metadata as a string
+     */
+    static public function getRecordData(&$record, $normalized)
+    {
+        if ($normalized) {
+            $data = $record['normalized_data'] ? $record['normalized_data'] : $record['original_data'];
+        } else {
+            $data = $record['original_data'];
+        }
+        return is_string($data) ? $data : gzinflate($data->bin);
+    }
+
+    /**
+     * Create a timestamp string from the given unix timestamp
+     * 
+     * @param int 		$timestamp 	Unix timestamp
+     * @return string				Formatted string
+     */
+    public static function formatTimestamp($timestamp)
+    {
+        $date = new DateTime('', new DateTimeZone('UTC'));
+        $date->setTimeStamp($timestamp);
+        return $date->format('Y-m-d') . 'T' . $date->format('H:i:s') . 'Z';
     }
 }
 

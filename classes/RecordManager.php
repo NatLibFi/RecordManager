@@ -36,6 +36,7 @@ require_once 'HarvestMetaLib.php';
 require_once 'HarvestSfx.php';
 require_once 'XslTransformation.php';
 require_once 'MetadataUtils.php';
+require_once 'SolrUpdater.php';
 
 /**
  * RecordManager Class
@@ -225,7 +226,7 @@ class RecordManager
                         if ($skipRecords > 0 && $count % $skipRecords != 0) {
                             continue;
                         }
-                        $metadataRecord = RecordFactory::createRecord($record['format'], $this->_getRecordData($record, true), $record['oai_id']);
+                        $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id']);
                         if (isset($record['dedup_key']) && $record['dedup_key']) {
                             ++$deduped;
                         }
@@ -248,323 +249,23 @@ class RecordManager
     /**
      * Send updates to a Solr index (e.g. VuFind)
      * 
-     * @param string|null  	$fromDate Starting date for updates (if empty string, last update date stored in the 
-     * 						database is used and if null, all records are processed)
-     * @param string		$sourceId Source ID to update, or empty or * for all sources
-     * @param string 		$singleId Export only a record with the given ID
-     * @param bool  		$noCommit If true, changes are not explicitly committed
+     * @param string|null	$fromDate   Starting date for updates (if empty 
+     *                                string, last update date stored in the database
+     *                                is used and if null, all records are processed)
+     * @param string		$sourceId     Source ID to update, or empty or * for all 
+     *                                sources (ignored if record merging is enabled)
+     * @param string 		$singleId     Export only a record with the given ID
+     * @param bool  		$noCommit     If true, changes are not explicitly committed
      */
     public function updateSolrIndex($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false)
     {
         global $configArray;
+        $updater = new SolrUpdater($this->_db, $this->_basePath, $this->_dataSourceSettings, $this->_log, $this->verbose);
         
-        $commitInterval = isset($configArray['Solr']['max_commit_interval']) ? $configArray['Solr']['max_commit_interval'] : 50000;
-        $maxUpdateRecords = isset($configArray['Solr']['max_update_records']) ? $configArray['Solr']['max_update_records'] : 5000;
-        $maxUpdateSize = isset($configArray['Solr']['max_update_size']) ? $configArray['Solr']['max_update_size'] : 1024;
-        $maxUpdateSize *= 1024;
-        
-        if (isset($fromDate) && $fromDate) {
-            $mongoFromDate = new MongoDate(strtotime($fromDate));
+        if (isset($configArray['Solr']['merge_records']) && $configArray['Solr']['merge_records']) {
+            return $updater->updateMergedRecords($fromDate, $singleId, $noCommit);
         }
-        
-        foreach ($this->_dataSourceSettings as $source => $settings) {
-            try {
-                if ($sourceId && $sourceId != '*' && $source != $sourceId) {
-                    continue;
-                }
-                if (empty($source) || empty($settings)) {
-                    continue;
-                }
-
-                $this->_loadSourceSettings($source);
-                	
-                if (!isset($fromDate)) {
-                    $state = $this->_db->state->findOne(array('_id' => "Last Index Update $source"));
-                    if (isset($state)) {
-                        $mongoFromDate = $state['value'];
-                    } else {
-                        unset($mongoFromDate);
-                    }
-                }
-                $from = isset($mongoFromDate) ? date('Y-m-d H:i:s', $mongoFromDate->sec) : 'the beginning';
-                $this->_log->log('updateSolrIndex', "Creating record list (from $from), source $source)...");
-                // Take the last indexing date now and store it when done
-                $lastIndexingDate = new MongoDate();
-                $params = array();
-                if ($singleId) {
-                    $params['_id'] = $singleId;
-                    $params['source_id'] = $source;
-                    $lastIndexingDate = null;
-                } else {
-                    $params['source_id'] = $source;
-                    if (isset($mongoFromDate)) {
-                        $params['updated'] = array('$gte' => $mongoFromDate);
-                    }
-                    $params['update_needed'] = false;
-                }
-                $records = $this->_db->record->find($params);
-                $records->immortal(true);
-
-                // Special case: building hierarchy
-                $buildingHierarchy = isset($configArray['Solr']['hierarchical_facets']) 
-                    && in_array('building', $configArray['Solr']['hierarchical_facets']);
-                
-                // Load mapping files
-                $mappingFiles = array();
-                foreach ($settings as $key => $value) {
-                    if (substr($key, -8, 8) == '_mapping') {
-                        $field = substr($key, 0, -8);
-                        $mappingFiles[$field] = parse_ini_file($this->_basePath . '/mappings/' . $value);
-                    }
-                }
-                
-                $total = $this->_counts ? $records->count() : 'the';
-                $count = 0;
-                $deduped = 0;
-                $mergedComponents = 0;
-                $deleted = 0;
-                $buffer = '';
-                $bufferLen = 0;
-                $buffered = 0;
-                $delList = array();;
-                if ($noCommit) {
-                    $this->_log->log('updateSolrIndex', "Indexing $total records (with no forced commits) from $source...");
-                } else {
-                    $this->_log->log('updateSolrIndex', "Indexing $total records (max commit interval $commitInterval records) from $source...");
-                }
-                $starttime = microtime(true);
-                foreach ($records as $record) {
-                    if ($record['deleted']) {
-                        $this->_solrRequest(json_encode(array('delete' => array('id' => $record['_id']))));
-                        ++$deleted;
-                    } else {
-                        $metadataRecord = RecordFactory::createRecord($record['format'], $this->_getRecordData($record, true), $record['oai_id']);
-
-                        $hiddenComponent = false;
-                        if ($record['host_record_id']) {
-                            if ($this->_componentParts == 'merge_all') {
-                                $hiddenComponent = true;
-                            } elseif ($this->_componentParts == 'merge_non_articles' || $this->_componentParts == 'merge_non_earticles') {
-                                $format = $metadataRecord->getFormat();
-                                if ($format != 'eJournalArticle' && $format != 'JournalArticle') {
-                                    $hiddenComponent = true;
-                                } elseif ($format == 'JournalArticle' && $this->_componentParts == 'merge_non_earticles') {
-                                    $hiddenComponent = true;
-                                }
-                            }
-                        }
-
-                        if ($hiddenComponent && !$this->_indexMergedParts) {
-                            continue;
-                        }
-                        
-                        $hasComponentParts = false;
-                        $components = null;
-                        if (!$record['host_record_id'] && $this->_componentParts != 'as_is') {
-                            // Fetch all component parts for merging
-                            $components = $this->_db->record->find(array('host_record_id' => $record['_id'], 'deleted' => false));
-                            $hasComponentParts = $components->hasNext();
-                            $format = $metadataRecord->getFormat();
-                            $merge = false;
-                            if ($this->_componentParts == 'merge_all') {
-                                $merge = true;
-                            } elseif ($format != 'eJournal' && $format != 'Journal' && $format != 'Serial') {
-                                $merge = true;
-                            } elseif (($format == 'Journal' || $format == 'Serial') && $this->_componentParts == 'merge_non_earticles') {
-                                $merge = true;
-                            }
-                            if (!$merge) {
-                                unset($components);
-                            }
-                        }
-                        
-                        $metadataRecord->setIDPrefix($this->_idPrefix . '.');
-                        if (isset($components)) {
-                            $mergedComponents += $metadataRecord->mergeComponentParts($components);
-                        }
-                        if (isset($this->_solrTransformationXSLT)) {
-                            $data = $this->_solrTransformationXSLT->transformToSolrArray($metadataRecord->toXML());
-                        } else {
-                            $data = $metadataRecord->toSolrArray();
-                        }
-
-                        $data['id'] = $record['_id'];
-                        
-                        // Record links between host records and component parts
-                        if ($metadataRecord->getIsComponentPart()) {
-                            $hostRecord = null;
-                            if ($record['host_record_id']) {
-                                $hostRecord = $this->_db->record->findOne(array('_id' => $record['host_record_id']));
-                                $data['hierarchy_parent_id'] = $record['host_record_id'];
-                            }
-                            if (!$hostRecord) {
-                                $this->_log->log('updateSolrIndex', 'Host record ' . $record['host_record_id'] . ' not found for record ' . $record['_id'], Logger::WARNING);
-                                $data['container_title'] = $metadataRecord->getContainerTitle();
-                            } else {
-                                $hostMetadataRecord = RecordFactory::createRecord($hostRecord['format'], $this->_getRecordData($hostRecord, true), $hostRecord['oai_id']);
-                                $data['container_title'] = $data['hierarchy_parent_title'] = $hostMetadataRecord->getTitle();
-                            }
-                            $data['container_volume'] = $metadataRecord->getVolume();
-                            $data['container_issue'] = $metadataRecord->getIssue();
-                            $data['container_start_page'] = $metadataRecord->getStartPage();
-                            $data['container_reference'] = $metadataRecord->getContainerReference();
-                        }
-                        if ($hasComponentParts) {
-                            $data['is_hierarchy_id'] = $record['_id'];
-                            $data['is_hierarchy_title'] = $metadataRecord->getTitle();
-                        }
-                        
-                        if (!isset($data['institution'])) {
-                            $data['institution'] = $this->_institution;
-                        }
-                        if (!isset($data['collection'])) {
-                            $data['collection'] = $record['source_id'];
-                        }
-
-                        // Map field values according to any mapping files
-                        foreach ($mappingFiles as $field => $map) {
-                            if (isset($data[$field])) {
-                                if (is_array($data[$field])) {
-                                    foreach ($data[$field] as &$value) {
-                                        if (isset($map[$value])) {
-                                            $value = $map[$value];
-                                        }
-                                    }
-                                    $data[$field] = array_unique($data[$field]);
-                                } else {
-                                    if (isset($map[$data[$field]])) {
-                                        $data[$field] = $map[$data[$field]];
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // Special case: Hierarchical facet support for building (institution/location)
-                        if ($buildingHierarchy) {
-                            if (isset($data['building']) && $data['building']) {
-                                $building = array('0/' . $this->_institution);
-                                foreach ($data['building'] as $datavalue) {
-                                    $values = explode('/', $datavalue);
-                                    $hierarchyString = $this->_institution;
-                                    for ($i = 0; $i < count($values); $i++) {
-                                        $hierarchyString .= '/' . $values[$i];
-                                        $building[] = ($i + 1) . "/$hierarchyString";
-                                    }
-                                }
-                                $data['building'] = $building;
-                            } else {
-                                $data['building'] = array(
-                                    '0/' . $this->_institution
-                                );
-                            }
-                        }
-                        
-                        // Other hierarchical facets
-                        if (isset($configArray['Solr']['hierarchical_facets'])) {
-                            foreach ($configArray['Solr']['hierarchical_facets'] as $facet) {
-                                if ($facet == 'building' || !isset($data[$facet])) {
-                                    continue;
-                                }
-                                $array = array();
-                                if (!is_array($data[$facet])) {
-                                    $data[$facet] = array($data[$facet]);
-                                }
-                                foreach ($data[$facet] as $datavalue) {
-                                    $values = explode('/', $datavalue);
-                                    $hierarchyString = '';
-                                    for ($i = 0; $i < count($values); $i++) {
-                                        $hierarchyString .= '/' . $values[$i];
-                                        $array[] = ($i) . $hierarchyString;
-                                    }
-                                }
-                                $data[$facet] = $array;
-                            }
-                        }
-                        
-                        if (!isset($data['allfields'])) {
-                            $all = array();
-                            foreach ($data as $key => $field) {
-                                if (in_array($key, array('fullrecord', 'thumbnail', 'id', 'recordtype'))) {
-                                    continue;
-                                }
-                                if (is_array($field)) {
-                                    $all[] = implode(' ', $field);
-                                } else {
-                                    $all[] = $field;
-                                }
-                            }
-                            $data['allfields'] = implode(' ', MetadataUtils::array_iunique($all));
-                        }
-                        
-                        $data['dedup_key'] = isset($record['dedup_key']) && $record['dedup_key'] ? $record['dedup_key'] : $record['_id'];
-                        $data['first_indexed'] = $this->_formatTimestamp($record['created']->sec);
-                        $data['last_indexed'] = $this->_formatTimestamp($record['updated']->sec);
-                        $data['recordtype'] = $record['format'];
-                        if (!isset($data['fullrecord'])) {
-                            $data['fullrecord'] = $metadataRecord->toXML();
-                        }
-
-                        if ($hiddenComponent) {
-                            $data['hidden_component_boolean'] = true;
-                        }
-
-                        foreach ($data as $key => $value) {
-                            // Checking only for empty() won't work as 0 is empty too
-                            if (empty($value) && $value !== 0 && $value !== 0.0 && $value !== '0') {
-                                unset($data[$key]);
-                            }
-                        }
-
-                        if ($this->verbose) {
-                            echo "Metadata for record {$record['_id']}: \n";
-                            print_r($data);
-                            echo "JSON for record {$record['_id']}: \n" . json_encode($data) . "\n";
-                        }
-                        
-                        $jsonData = json_encode($data);
-                        if ($buffered > 0) {
-                            $buffer .= ",\n";
-                        }
-                        $buffer .= $jsonData;
-                        $bufferLen += strlen($jsonData);
-                        ++$count;
-                        if (++$buffered >= $maxUpdateRecords || $bufferLen > $maxUpdateSize) {
-                            $this->_solrRequest("[\n$buffer\n]");
-                            $avg = round($buffered / (microtime(true) - $starttime));
-                            $buffer = '';
-                            $bufferLen = 0;
-                            $buffered = 0;
-                            $this->_log->log('updateSolrIndex', "$count records (of which $deleted deleted) with $mergedComponents merged parts indexed from $source, $avg records/sec");
-                            $starttime = microtime(true);
-                        }
-                        if (!$noCommit && $count % $commitInterval == 0) {
-                            $this->_log->log('updateSolrIndex', "Intermediate commit...");
-                            $this->_solrRequest('{ "commit": {} }');
-                        }
-                    }
-                }
-                if ($buffered > 0) {
-                    $this->_solrRequest("[\n$buffer\n]");
-                }
-                if (!empty($delList)) {
-                    $this->_solrRequest(json_encode(array('delete' => $delList)));
-                }
-
-                if (isset($lastIndexingDate)) {
-                    $state = array('_id' => "Last Index Update $source", 'value' => $lastIndexingDate);
-                    $this->_db->state->save($state);
-                }
-
-                $this->_log->log('updateSolrIndex', "Completed with $count records (of which $deleted deleted) with $mergedComponents merged parts indexed from $source");
-            } catch (Exception $e) {
-                $this->_log->log('updateSolrIndex', 'Exception: ' . $e->getMessage(), Logger::FATAL);
-            }
-        }
-        if (!$noCommit) {
-            $this->_log->log('updateSolrIndex', "Final commit...");
-            $this->_solrRequest('{ "commit": {} }');
-            $this->_log->log('updateSolrIndex', "Commit complete");
-        }
+        return $updater->updateIndividualRecords($fromDate, $sourceId, $singleId, $noCommit);
     }
 
     /**
@@ -599,7 +300,7 @@ class RecordManager
             $this->_log->log('renormalize', "Processing $total records from '$source'...");
             $starttime = microtime(true);
             foreach ($records as $record) {
-                $originalData = $this->_getRecordData($record, false);
+                $originalData = MetadataUtils::getRecordData($record, false);
                 $normalizedData = $originalData;
                 if (isset($this->_normalizationXSLT)) {
                     $origMetadataRecord = RecordFactory::createRecord($record['format'], $originalData, $record['oai_id']);
@@ -619,6 +320,7 @@ class RecordManager
                     $record['title_keys'] = null;                
                     $record['isbn_keys'] = null;                
                     $record['update_needed'] = false;
+                    $record['dedup_key'] = null;
                 }
 
                 if ($normalizedData == $originalData) {
@@ -627,14 +329,13 @@ class RecordManager
                     $record['normalized_data'] = new MongoBinData(gzdeflate($normalizedData));
                 }
                 $record['host_record_id'] = $hostID;
-                $record['dedup_key'] = '';
                 $record['updated'] = new MongoDate();
                 $this->_db->record->save($record);
                 
                 if ($this->verbose) {
                     echo "Metadata for record {$record['_id']}: \n";
-                    $record['normalized_data'] = $this->_getRecordData($record, false);
-                    $record['original_data'] = $this->_getRecordData($record, true);
+                    $record['normalized_data'] = MetadataUtils::getRecordData($record, false);
+                    $record['original_data'] = MetadataUtils::getRecordData($record, true);
                     if ($record['normalized_data'] === $record['original_data']) {
                         $record['normalized_data'] = '';
                     }
@@ -790,9 +491,9 @@ class RecordManager
                             continue;
                         }
                         // Check if the record has changed
-                        $dbMarc = RecordFactory::createRecord('marc', $this->_getRecordData($dbRecord, false), '');
+                        $dbMarc = RecordFactory::createRecord('marc', MetadataUtils::getRecordData($dbRecord, false), '');
                         $marc = RecordFactory::createRecord('marc', $records[$id], '');
-                        if ($marc->serialize() != $this->_getRecordData($dbRecord, false)) {
+                        if ($marc->serialize() != MetadataUtils::getRecordData($dbRecord, false)) {
                             // Record changed, update...
                             $this->storeRecord($id, false, $records[$id]);
                             ++$changed;
@@ -868,8 +569,8 @@ class RecordManager
         }
         $records = $this->_db->record->find(array('_id' => $recordID));
         foreach ($records as $record) {
-            $record['original_data'] = $this->_getRecordData($record, false);
-            $record['normalized_data'] = $this->_getRecordData($record, true);
+            $record['original_data'] = MetadataUtils::getRecordData($record, false);
+            $record['normalized_data'] = MetadataUtils::getRecordData($record, true);
             if ($record['original_data'] == $record['normalized_data']) {
                 $record['normalized_data'] = '';
             }
@@ -898,10 +599,10 @@ class RecordManager
      */
     public function deleteSolrRecords($sourceId)
     {
+        $updater = new SolrUpdater($this->_db, $this->_basePath, $this->_dataSourceSettings, $this->_log, $this->verbose);
+        
         $this->_log->log('deleteSolrRecords', "Deleting data source $sourceId from Solr...");
-        $this->_solrRequest('{ "delete": { "query": "id:' . $sourceId . '.*" } }');
-        $this->_log->log('deleteSolrRecords', "Committing changes...");
-        $this->_solrRequest('{ "commit": {} }');
+        $updater->deleteDataSource($sourceId);
         $this->_log->log('deleteSolrRecords', "Deletion of $sourceId from Solr completed");
     }
     
@@ -910,8 +611,10 @@ class RecordManager
      */
     public function optimizeSolr()
     {
+        $updater = new SolrUpdater($this->_db, $this->_basePath, $this->_dataSourceSettings, $this->_log, $this->verbose);
+        
         $this->_log->log('optimizeSolr', 'Optimizing Solr index');
-        $this->_solrRequest('{ "optimize": {} }');
+        $updater->optimizeIndex();
         $this->_log->log('optimizeSolr', 'Solr optimization completed');
     }
     
@@ -1025,6 +728,7 @@ class RecordManager
             }
             $dbRecord['source_id'] = $this->_sourceId;
             $dbRecord['oai_id'] = $oaiID;
+            $dbRecord['key'] =  new MongoId();
             $dbRecord['deleted'] = false;
             $dbRecord['host_record_id'] = $hostID;
             $dbRecord['format'] = $this->_format;
@@ -1087,10 +791,10 @@ class RecordManager
     protected function _dedupRecord($record)
     {
         if ($this->verbose) {
-            echo 'Original ' . $record['_id'] . ":\n" . $this->_getRecordData($record, true) . "\n";
+            echo 'Original ' . $record['_id'] . ":\n" . MetadataUtils::getRecordData($record, true) . "\n";
         }
         
-        $origRecord = RecordFactory::createRecord($record['format'], $this->_getRecordData($record, true), $record['oai_id']);
+        $origRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id']);
         $key = MetadataUtils::createTitleKey($origRecord->getTitle(true));
         $keyArray = array($key);
         $ISBNArray = $origRecord->getISBNs();
@@ -1171,9 +875,9 @@ class RecordManager
 
     protected function _matchRecords($record, $origRecord, $candidate)
     {
-        $cRecord = RecordFactory::createRecord($candidate['format'], $this->_getRecordData($candidate, true), $record['oai_id']);
+        $cRecord = RecordFactory::createRecord($candidate['format'], MetadataUtils::getRecordData($candidate, true), $record['oai_id']);
         if ($this->verbose) {
-            echo 'Candidate ' . $candidate['_id'] . ":\n" . $this->_getRecordData($candidate, true) . "\n";
+            echo 'Candidate ' . $candidate['_id'] . ":\n" . MetadataUtils::getRecordData($candidate, true) . "\n";
         }
          
         // Check for common ISBN
@@ -1299,9 +1003,8 @@ class RecordManager
         }
         else
         {
-            $key = 'dedup' . $this->_uniqIdPrefix . (++$this->_uniqIdCounter);
-            $rec1['dedup_key'] = $key;
-            $rec2['dedup_key'] = $key;
+            $rec1['dedup_key'] = $rec1['key'];
+            $rec2['dedup_key'] = $rec1['key'];
         }
         $rec1['updated'] = new MongoDate();
         $rec1['update_needed'] = false;            
@@ -1365,9 +1068,9 @@ class RecordManager
                     echo "Comparing {$component1['_id']} with {$component2['_id']}\n";
                 }
                 if ($this->verbose) {
-                    echo 'Original ' . $component1['_id'] . ":\n" . $this->_getRecordData($component1, true) . "\n";
+                    echo 'Original ' . $component1['_id'] . ":\n" . MetadataUtils::getRecordData($component1, true) . "\n";
                 }
-                $metadataComponent1 = RecordFactory::createRecord($component1['format'], $this->_getRecordData($component1, true), $component1['oai_id']);
+                $metadataComponent1 = RecordFactory::createRecord($component1['format'], MetadataUtils::getRecordData($component1, true), $component1['oai_id']);
                 if (!$this->_matchRecords($component1, $metadataComponent1, $component2)) {
                     $allMatch = false;
                     break;
@@ -1394,76 +1097,21 @@ class RecordManager
      */
     protected function _pretransform($data)
     {
-        if (!isset($this->_pre_xslt))
-        {
+        if (!isset($this->_preXSLT)) {
             $style = new DOMDocument();
             $style->load($this->_basePath . '/transformations/' . $this->_pretransformation);
-            $this->_pre_xslt = new XSLTProcessor();
-            $this->_pre_xslt->importStylesheet($style);
-            $this->_pre_xslt->setParameter('', 'source_id', $this->_sourceId);
-            $this->_pre_xslt->setParameter('', 'institution', $this->_institution);
-            $this->_pre_xslt->setParameter('', 'format', $this->_format);
-            $this->_pre_xslt->setParameter('', 'id_prefix', $this->_idPrefix);
+            $this->_preXSLT = new XSLTProcessor();
+            $this->_preXSLT->importStylesheet($style);
+            $this->_preXSLT->setParameter('', 'source_id', $this->_sourceId);
+            $this->_preXSLT->setParameter('', 'institution', $this->_institution);
+            $this->_preXSLT->setParameter('', 'format', $this->_format);
+            $this->_preXSLT->setParameter('', 'id_prefix', $this->_idPrefix);
         }
         $doc = new DOMDocument();
         $doc->loadXML($data);
-        return $this->_pre_xslt->transformToXml($doc);
+        return $this->_preXSLT->transformToXml($doc);
     }
 
-    /**
-     * Create a timestamp string from the given unix timestamp
-     * 
-     * @param int 		$timestamp 	Unix timestamp
-     * @return string				Formatted string
-     */
-    protected function _formatTimestamp($timestamp)
-    {
-        $date = new DateTime('', new DateTimeZone('UTC'));
-        $date->setTimeStamp($timestamp);
-        return $date->format('Y-m-d') . 'T' . $date->format('H:i:s') . 'Z';
-    }
-
-    /**
-     * Make a JSON request to the Solr server
-     * 
-     * @param string $body	The JSON request
-     */
-    protected function _solrRequest($body)
-    {
-        global $configArray;
-
-        $request = new HTTP_Request2($configArray['Solr']['update_url'], HTTP_Request2::METHOD_POST, 
-            array('ssl_verify_peer' => false));
-        $request->setHeader('User-Agent', 'RecordManager');
-        if (isset($configArray['Solr']['username']) && isset($configArray['Solr']['password'])) {
-            $request->setAuth($configArray['Solr']['username'], $configArray['Solr']['password'], HTTP_Request2::AUTH_BASIC);
-        }
-        $request->setHeader('Content-Type', 'application/json');
-        $request->setBody($body);
-        $response = $request->send();
-        $code = $response->getStatus();
-        if ($code >= 300) {
-            throw new Exception("Solr server request failed ($code). Request:\n$body\n\nResponse:\n" . $response->getBody());
-        }
-    }
-
-    /**
-     * Get record metadata from a database record
-     * 
-     * @param object $record		Database record
-     * @param bool   $normalized	Whether to return the original (false) or normalized (true) record
-     * @return string				Metadata as a string
-     */
-    protected function _getRecordData(&$record, $normalized)
-    {
-        if ($normalized) {
-            $data = $record['normalized_data'] ? $record['normalized_data'] : $record['original_data'];
-        } else {
-            $data = $record['original_data'];
-        }
-        return is_string($data) ? $data : gzinflate($data->bin);
-    }
-    
     /**
      * Load the data source settings and setup some functions
      *

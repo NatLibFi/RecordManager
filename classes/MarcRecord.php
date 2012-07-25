@@ -170,7 +170,7 @@ class MarcRecord extends BaseRecord
             }
         }
         //echo "allFields: $allFields\n";
-        $data['allfields'] = implode(' ', MetadataUtils::array_iunique($allFields));
+        $data['allfields'] = MetadataUtils::array_iunique($allFields);
         	
         // language
         $languages = array(substr($this->_getField('008'), 35, 3));
@@ -281,13 +281,7 @@ class MarcRecord extends BaseRecord
         $count = 0;
         $parts = array();
         foreach ($componentParts as $componentPart) {
-            // TODO: this is ugly, but temporary.. 
-            $data = $componentPart['normalized_data']
-                ? $componentPart['normalized_data']
-                : $componentPart['original_data'];
-            if (!is_string($data)) {
-                $data = gzinflate($data->bin);
-            }
+            $data = MetadataUtils::getRecordData($componentPart, true);
             $marc = new MARCRecord($data, '');
             $title = $marc->_getFieldSubfields('245abnp');
             $uniTitle = $marc->_getFieldSubfields('240anp');
@@ -1016,8 +1010,8 @@ class MarcRecord extends BaseRecord
     protected function _getIndicator($field, $indicator)
     {
         switch ($indicator) {
-            case 1: return substr($field, 0, 1);
-            case 2: return substr($field, 1, 1);
+            case 1: return $field[0];
+            case 2: return $field[1];
             default: die("Invalid indicator '$indicator' requested\n");
         }
     }
@@ -1028,10 +1022,11 @@ class MarcRecord extends BaseRecord
         if ($p === false) {
             return '';
         }
-        $data = substr($field, $p + 2);
-        $p = strpos($data, MARCRecord::SUBFIELD_INDICATOR);
-        if ($p !== false) {
-            $data = substr($data, 0, $p);
+        $p2 = strpos($field, MARCRecord::SUBFIELD_INDICATOR, $p + 2);
+        if ($p2 !== false) {
+            $data = substr($field, $p + 2, $p2 - $p - 2);
+        } else {
+            $data = substr($field, $p + 2);
         }
         return $data;
     }
@@ -1039,9 +1034,12 @@ class MarcRecord extends BaseRecord
     protected function _getSubfieldsArray($field, $subfields)
     {
         $data = array();
+        if (!$field) {
+            return $data;
+        }
         $subfieldArray = explode(MARCRecord::SUBFIELD_INDICATOR, $field);
         foreach ($subfieldArray as $subfield) {
-            if (strstr($subfields, substr($subfield, 0, 1))) {
+            if (strstr($subfields, $subfield[0])) {
                 $data[] = substr($subfield, 1);
             }
         }
@@ -1088,12 +1086,12 @@ class MarcRecord extends BaseRecord
     {
         $data = array();
         foreach (explode(':', $fieldspecs) as $fieldspec) {
-            $mark = substr($fieldspec, 0, 1);
+            $mark = $fieldspec[0];
             if ($mark == '+' || $mark == '*') {
-                $tag = substr($fieldspec, 1, 3);
+                $tag = $fieldspec[1] . $fieldspec[2] . $fieldspec[3]; //substr($fieldspec, 1, 3);
                 $subfields = substr($fieldspec, 4);
             } else {
-                $tag = substr($fieldspec, 0, 3);
+                $tag = $fieldspec[0] . $fieldspec[1] . $fieldspec[2]; //substr($fieldspec, 0, 3);
                 $subfields = substr($fieldspec, 3);
             }
 

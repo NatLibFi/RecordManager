@@ -66,9 +66,7 @@ class XslTransformation
 
         // Load parameters
         if (isset($params)) {
-            foreach ($params as $key => $value) {
-                $this->_xslt->setParameter('', $key, $value);
-            }
+            $this->_xslt->setParameter('', $params);
         }
         if (isset($options['Parameters'])) {
             $this->_xslt->setParameter('', $options['Parameters']);
@@ -88,9 +86,7 @@ class XslTransformation
             throw new Exception("Invalid XML: $data");
         }
         if (isset($params)) {
-            foreach ($params as $key => $value) {
-                $this->_xslt->setParameter('', $key, $value);
-            }
+            $this->_xslt->setParameter('', $params);
         }
         $result = $this->_xslt->transformToXml($doc);
         if (isset($params)) {
@@ -101,8 +97,11 @@ class XslTransformation
         return $result;
     }
 
-    public function transformToSolrArray($data)
+    public function transformToSolrArray($data, $params = null)
     {
+        if (isset($params)) {
+            $this->_xslt->setParameter('', $params);
+        }
         $doc = new DOMDocument();
         $doc->loadXML($data);
         $transformedDoc = $this->_xslt->transformToDoc($doc);

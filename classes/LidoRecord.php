@@ -223,7 +223,7 @@ class LidoRecord extends BaseRecord
             $data['identifier'],
             empty($data['culture']) ? '' : implode($separator, $data['culture']),
         );
-        $data['allfields'] = implode($separator, $allfields);
+        $data['allfields'] = $allfields;
         
         return $data;
     }
