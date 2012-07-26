@@ -320,7 +320,7 @@ class RecordManager
                     $record['title_keys'] = null;                
                     $record['isbn_keys'] = null;                
                     $record['update_needed'] = false;
-                    $record['dedup_key'] = null;
+                    unset($record['dedup_key']);
                 }
 
                 if ($normalizedData == $originalData) {
@@ -866,7 +866,7 @@ class RecordManager
             $this->_markDuplicates($record, $matchRecord);
             return true;
         } 
-        $record['dedup_key'] = null;
+        unset($record['dedup_key']);
         $record['updated'] = new MongoDate();
         $record['update_needed'] = false;
         $this->_db->record->save($record);
