@@ -239,16 +239,16 @@ class HarvestOaiPmh
     protected function _harvestProgressReport()
     {
         $this->_message(
-            'Harvested ' . $this->_normalRecords
-            . ' normal records and ' . $this->_deletedRecords . ' deleted records'
+            'Harvested ' . $this->_normalRecords . ' normal records and '
+            . $this->_deletedRecords . ' deleted records from ' . $this->_source
         );
     }
 
     public function _listIdentifiersProgressReport()
     {
         $this->_message(
-            'Listed ' . $this->_normalRecords
-            . ' normal records and ' . $this->_deletedRecords . ' deleted records'
+            'Listed ' . $this->_normalRecords . ' normal records and '
+            . $this->_deletedRecords . ' deleted records from ' . $this->_source
         );
     }
 
