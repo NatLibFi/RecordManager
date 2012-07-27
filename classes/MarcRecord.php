@@ -41,6 +41,13 @@ class MarcRecord extends BaseRecord
     const END_OF_RECORD = "\x1D";
     const LEADER_LEN = 24;
 
+    /** MARC is stored in a multidimensional array:
+     *  [001] - "12345"
+     *  [245] - i1: '0'
+     *          i2: '1'
+     *          [s] - c: "a", v: "Title"
+     *                c: "p", v: "Part"
+     */
     protected $_fields;
     protected $_idPrefix = '';
 
@@ -48,7 +55,29 @@ class MarcRecord extends BaseRecord
     {
         $firstChar = substr($data, 0, 1);
         if ($firstChar === '{') {
-            $this->_fields = json_decode($data, true);
+            $fields = json_decode($data, true);
+            if (!isset($fields['v'])) {
+                // Old format, convert...
+                $this->_fields = array();
+                foreach ($fields as $tag => $field) {
+                    foreach ($field as $data) {
+                        if (strstr($data, MarcRecord::SUBFIELD_INDICATOR)) {
+                            $newField = array(
+                                'i1' => $data[0],
+                                'i2' => $data[1]
+                            );
+                            foreach (explode(MarcRecord::SUBFIELD_INDICATOR, substr($data, 3)) as $subfield) {
+                                $newField['s'][] = array('c' => $subfield[0], 'v' => substr($subfield, 1));
+                            }
+                            $this->_fields[$tag][] = $newField;
+                        } else {
+                            $this->_fields[$tag][] = $data;
+                        }
+                    }
+                }
+            } else {
+                $this->_fields = $fields['f'];
+            } 
         } elseif ($firstChar === '<') {
             $this->_parseXML($data);
         } else {
@@ -61,7 +90,7 @@ class MarcRecord extends BaseRecord
 
     public function serialize()
     {
-        return json_encode($this->_fields);
+        return json_encode(array('v' => 2, 'f' => $this->_fields));
     }
 
     public function toXML()
@@ -82,24 +111,23 @@ class MarcRecord extends BaseRecord
                 continue;
             }
             foreach ($fields as $data) {
-                if (is_numeric($tag) && $tag < 10) {
+                if (!is_array($data)) {
                     $field = $record->addChild('controlfield', htmlspecialchars($data, ENT_NOQUOTES));
                     $field->addAttribute('tag', $tag);
                 } else {
                     $field = $record->addChild('datafield');
                     $field->addAttribute('tag', $tag);
-                    $field->addAttribute('ind1', substr($data, 0, 1));
-                    $field->addAttribute('ind2', substr($data, 1, 1));
-                    $subfields = explode(MARCRecord::SUBFIELD_INDICATOR, substr($data, 2));
-                    foreach ($subfields as $subfieldData) {
+                    $field->addAttribute('ind1', $data['i1']);
+                    $field->addAttribute('ind2', $data['i2']);
+                    foreach ($data['s'] as $subfieldData) {
                         if ($subfieldData == '') {
                             continue;
                         }
                         $subfield = $field->addChild(
                             'subfield',
-                            htmlspecialchars(substr($subfieldData, 1), ENT_NOQUOTES)
+                            htmlspecialchars($subfieldData['v'], ENT_NOQUOTES)
                         );
-                        $subfield->addAttribute('code', substr($subfieldData, 0, 1));
+                        $subfield->addAttribute('code', $subfieldData['c']);
                     }
                 }
             }
@@ -289,22 +317,22 @@ class MarcRecord extends BaseRecord
             $additionalAuthors = $marc->_getFieldsSubfields('700ae:710ae');
             $id = $this->_idPrefix . $marc->getID();
 
-            $comp = MARCRecord::SUBFIELD_INDICATOR . "a$id";
-            if ($title) {
-                $comp .= MARCRecord::SUBFIELD_INDICATOR . "b$title";
-            }
-            if ($author) {
-                $comp .= MARCRecord::SUBFIELD_INDICATOR . "c$author";
-            }
+            $newField = array(
+                'i1' => ' ',
+                'i2' => ' ',
+                's' => array(
+                    array('c' => 'a', 'v' => $id),
+                    array('c' => 'b', 'v' => $title),
+                    array('c' => 'c', 'v' => $author),
+                    array('c' => 'e', 'v' => $uniTitle),
+                )
+            );
             foreach ($additionalAuthors as $addAuthor) {
-                $comp .= MARCRecord::SUBFIELD_INDICATOR . "d$addAuthor";
-            }
-            if ($uniTitle) {
-                $comp .= MARCRecord::SUBFIELD_INDICATOR . "e$uniTitle";
+                $newField['s'][] = array('c' => 'd', 'v' => $addAuthor);
             }
             
             $key = MetadataUtils::createIdSortKey($marc->getID());
-            $parts[$key] = "  $comp";
+            $parts[$key] = $newField;
             ++$count;
         }
         ksort($parts);
@@ -327,13 +355,12 @@ class MarcRecord extends BaseRecord
         $this->_setField('001', array($id));
 
         if (isset($this->_fields['773'])) {
-            foreach	($this->_fields['773'] as $key => $field) {
-                $field = preg_replace(
-                    '/' . MARCRecord::SUBFIELD_INDICATOR . 'w([^' . MARCRecord::SUBFIELD_INDICATOR . ']+)/',
-                    MARCRecord::SUBFIELD_INDICATOR . "w$prefix\\1",
-                    $field
-                );
-                $this->_fields['773'][$key] = $field;
+            foreach	($this->_fields['773'] as &$field) {
+                foreach ($field['s'] as &$subfield) {
+                    if ($subfield['c'] == 'w') {
+                        $subfield['v'] = $prefix . $subfield['v'];
+                    }
+                }
             }
         }
     }
@@ -843,7 +870,13 @@ class MarcRecord extends BaseRecord
     public function addDedupKeyToMetadata($dedupKey)
     {
         if ($dedupKey) {
-            $this->_fields['995'] = array('  ' . MARCRecord::SUBFIELD_INDICATOR . 'a' . $dedupKey);
+            $this->_fields['995'] = array(
+                'i1' => ' ',
+                'i2' => ' ',
+                's' => array(
+                    array('c' => 'a', 'v' => $dedupKey)    
+                )
+            );
         } else {
             $this->_fields['995'] = array();
         }
@@ -865,18 +898,21 @@ class MarcRecord extends BaseRecord
             throw new Exception('MarcRecord: failed to parse from XML');
         }
 
-        $this->_fields['000'] = isset($xml->leader) ? $xml->leader[0] : '';
+        $this->_fields['000'] = isset($xml->leader) ? (string)$xml->leader[0] : '';
 
         foreach ($xml->controlfield as $field) {
             $this->_fields[(string)$field['tag']][] = (string)$field;
         }
 
         foreach ($xml->datafield as $field) {
-            $fieldData = str_pad((string)$field['ind1'], 1) . str_pad((string)$field['ind2'], 1);
+            $newField = array(
+                'i1' => str_pad((string)$field['ind1'], 1), 
+                'i2' => str_pad((string)$field['ind2'], 1)
+            );
             foreach ($field->subfield as $subfield) {
-                $fieldData .= MARCRecord::SUBFIELD_INDICATOR . (string)$subfield['code'] . (string)$subfield;
+                $newField['s'][] = array('c' => (string)$subfield['code'], 'v' => (string)$subfield);
             }
-            $this->_fields[(string)$field['tag']][] = $fieldData;
+            $this->_fields[(string)$field['tag']][] = $newField;
         }
     }
 
@@ -900,8 +936,20 @@ class MarcRecord extends BaseRecord
             } else {
                 throw new Exception("Invalid MARC record (end of field not found): $marc");
             }
-
-            $this->_fields[$tag][] = $tagData;
+            
+            if (strstr($tagData, MARCRecord::SUBFIELD_INDICATOR)) {
+                $newField = array(
+                    'i1' => $tagData[0],
+                    'i2' => $tagData[1]
+                );                
+                $subfields = explode(MARCRecord::SUBFIELD_INDICATOR, substr($tagData, 3));
+                foreach ($subfields as $subfield) {
+                    $newField['s'][] = array('c' => $subfield[0], 'v' => substr($subfield, 1));
+                }
+            } else {
+                $this->_fields[$tag][] = $tagData;
+            }
+            
             $offset += 12;
         }
     }
@@ -922,8 +970,17 @@ class MarcRecord extends BaseRecord
                 continue;
             }
             foreach ($fields as $field) {
-                $field .= MARCRecord::END_OF_FIELD;
-                $len = strlen($field);
+                $fieldStr = '';
+                if (is_array($field)) {
+                    $fieldStr = $field['i1'] . $field['i2'];
+                    foreach ($field['s'] as $subfield) {
+                        $fieldStr .= MARCRecord::SUBFIELD_INDICATOR . $subfield['c'] . $subfield['v'];
+                    }
+                } else {
+                    $fieldStr = $field;
+                }
+                $fieldStr .= MARCRecord::END_OF_FIELD;
+                $len = strlen($fieldStr);
                 if ($len > 9999) {
                     return '';
                 }
@@ -932,7 +989,7 @@ class MarcRecord extends BaseRecord
                 }
                 $directory .= $tag . str_pad($len, 4, '0', STR_PAD_LEFT) . str_pad($datapos, 5, '0', STR_PAD_LEFT);
                 $datapos += $len;
-                $data .= $field;
+                $data .= $fieldStr;
             }
         }
         $directory .= MARCRecord::END_OF_FIELD;
@@ -1010,45 +1067,42 @@ class MarcRecord extends BaseRecord
     protected function _getIndicator($field, $indicator)
     {
         switch ($indicator) {
-            case 1: return $field[0];
-            case 2: return $field[1];
+            case 1: return $field['i1'];
+            case 2: return $field['i2'];
             default: die("Invalid indicator '$indicator' requested\n");
         }
     }
 
-    protected function _getSubfield($field, $subfield)
+    protected function _getSubfield($field, $code)
     {
-        $p = strpos($field, MARCRecord::SUBFIELD_INDICATOR . $subfield);
-        if ($p === false) {
+        if (!$field) {
             return '';
         }
-        $p2 = strpos($field, MARCRecord::SUBFIELD_INDICATOR, $p + 2);
-        if ($p2 !== false) {
-            $data = substr($field, $p + 2, $p2 - $p - 2);
-        } else {
-            $data = substr($field, $p + 2);
+        foreach ($field['s'] as $subfield) {
+            if ($subfield['c'] == $code) {
+                return $subfield['v'];
+            }
         }
-        return $data;
+        return '';
     }
 
-    protected function _getSubfieldsArray($field, $subfields)
+    protected function _getSubfieldsArray($field, $codes)
     {
         $data = array();
         if (!$field) {
             return $data;
         }
-        $subfieldArray = explode(MARCRecord::SUBFIELD_INDICATOR, $field);
-        foreach ($subfieldArray as $subfield) {
-            if (strstr($subfields, $subfield[0])) {
-                $data[] = substr($subfield, 1);
+        foreach ($field['s'] as $subfield) {
+            if (strstr($codes, $subfield['c'])) {
+                $data[] = $subfield['v'];
             }
         }
         return $data;
     }
     
-    protected function _getSubfields($field, $subfields)
+    protected function _getSubfields($field, $codes)
     {
-        $data = $this->_getSubfieldsArray($field, $subfields);
+        $data = $this->_getSubfieldsArray($field, $codes);
         return implode(' ', $data);
     }
 
@@ -1056,9 +1110,9 @@ class MarcRecord extends BaseRecord
     protected function _getFieldSubfields($fieldspec, $stripTrailingPunctuation = false)
     {
         $tag = substr($fieldspec, 0, 3);
-        $subfields = substr($fieldspec, 3);
-        if ($subfields) {
-            $data = $this->_getSubfields($this->_getField($tag), $subfields);
+        $codes = substr($fieldspec, 3);
+        if ($codes) {
+            $data = $this->_getSubfields($this->_getField($tag), $codes);
         } else {
             $data = $this->_getAllSubfields($this->_getField($tag));
         }
@@ -1088,24 +1142,24 @@ class MarcRecord extends BaseRecord
         foreach (explode(':', $fieldspecs) as $fieldspec) {
             $mark = $fieldspec[0];
             if ($mark == '+' || $mark == '*') {
-                $tag = $fieldspec[1] . $fieldspec[2] . $fieldspec[3]; //substr($fieldspec, 1, 3);
-                $subfields = substr($fieldspec, 4);
+                $tag = $fieldspec[1] . $fieldspec[2] . $fieldspec[3];
+                $codes = substr($fieldspec, 4);
             } else {
-                $tag = $fieldspec[0] . $fieldspec[1] . $fieldspec[2]; //substr($fieldspec, 0, 3);
-                $subfields = substr($fieldspec, 3);
+                $tag = $fieldspec[0] . $fieldspec[1] . $fieldspec[2];
+                $codes = substr($fieldspec, 3);
             }
 
             $idx = 0;
             foreach ($this->_getFields($tag) as $field) {
                 if ($mark != '+') {
                     // Handle normal field
-                    if ($subfields) {
+                    if ($codes) {
                         if ($splitSubfields) {
-                            foreach (str_split($subfields) as $code) {
+                            foreach (str_split($codes) as $code) {
                                 $data = array_merge($data, $this->_getSubfieldsArray($field, $code));
                             }
                         } else {
-                            $fieldContents = $this->_getSubfields($field, $subfields);
+                            $fieldContents = $this->_getSubfields($field, $codes);
                             if ($fieldContents) {
                                 $data[] = $fieldContents;
                             }
@@ -1124,13 +1178,13 @@ class MarcRecord extends BaseRecord
                         if (strncmp($this->_getSubfield($field, '6'), $findSub6, 6) != 0) {
                             continue;
                         }
-                        if ($subfields) {
+                        if ($codes) {
                             if ($splitSubfields) {
-                                foreach (str_split($subfields) as $code) {
+                                foreach (str_split($codes) as $code) {
                                     $data = array_merge($data, $this->_getSubfieldsArray($field, $code));
                                 }
                             } else {
-                                $fieldContents = $this->_getSubfields($field, $subfields);
+                                $fieldContents = $this->_getSubfields($field, $codes);
                                 if ($fieldContents) {
                                     $data[] = $fieldContents;
                                 }
@@ -1180,23 +1234,18 @@ class MarcRecord extends BaseRecord
     // String of subfields
     protected function _getAllSubfields($field, $filter = null)
     {
+        if (!$field) {
+            return '';
+        }
         $subfields = '';
-        $p = strpos($field, MARCRecord::SUBFIELD_INDICATOR);
-        while ($p !== false) {
-            if (isset($filter) && in_array(substr($field, $p + 1, 1), $filter)) {
-                $p = strpos($field, MARCRecord::SUBFIELD_INDICATOR, $p + 1);
+        foreach ($field['s'] as $subfield) {
+            if (isset($filter) && in_array($subfield['c'], $filter)) {
                 continue;
-            }
-            $data = substr($field, $p + 2);
-            $p2 = strpos($data, MARCRecord::SUBFIELD_INDICATOR);
-            if ($p2 !== false) {
-                $data = substr($data, 0, $p2);
             }
             if ($subfields) {
                 $subfields .= ' ';
             }
-            $subfields .= $data;
-            $p = strpos($field, MARCRecord::SUBFIELD_INDICATOR, $p + 1);
+            $subfields .= $subfield['v'];
         }
         return $subfields;
     }
