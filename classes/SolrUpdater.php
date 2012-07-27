@@ -204,7 +204,7 @@ class SolrUpdater
      * @param string 		$singleId     Export only a record with the given ID
      * @param bool  		$noCommit     If true, changes are not explicitly committed
      */
-    public function updateMergedRecords($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false)
+    public function updateMergedRecords($fromDate = null, $singleId = '', $noCommit = false)
     {
         try {
             if (isset($fromDate) && $fromDate) {
@@ -272,6 +272,13 @@ class SolrUpdater
                     }
                     $merged = $this->_mergeRecords($merged, $data);
                     $data['merged_child_boolean'] = true;
+                    
+                    if ($this->_verbose) {
+                        echo "Metadata for record {$record['_id']}: \n";
+                        print_r($record);
+                        echo "JSON for record {$record['_id']}: \n" . json_encode($data) . "\n";
+                    }
+                    
                     ++$count;
                     $res = $this->_bufferedUpdate($data, $count, $noCommit);
                     if ($res) {
@@ -285,6 +292,11 @@ class SolrUpdater
                 }
                 $merged['id'] = (string)$key;
                 $merged['merged_boolean'] = true;
+                
+                if ($this->_verbose) {
+                    echo "JSON for merged record {$merged['id']}: \n" . json_encode($merged) . "\n";
+                }
+                
                 ++$count;
                 $res = $this->_bufferedUpdate($merged, $count, $noCommit);
                 if ($res) {
