@@ -718,7 +718,7 @@ class RecordManager
                 $dbRecord['created'] = $dbRecord['updated'] = new MongoDate();
             }
             if ($normalizedData) {
-                if ($data == $normalizedData) {
+                if ($originalData == $normalizedData) {
                     $normalizedData = '';
                 };
             }

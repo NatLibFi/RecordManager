@@ -1075,7 +1075,7 @@ class MarcRecord extends BaseRecord
 
     protected function _getSubfield($field, $code)
     {
-        if (!$field) {
+        if (!$field || !isset($field['s'])) {
             return '';
         }
         foreach ($field['s'] as $subfield) {
@@ -1089,7 +1089,7 @@ class MarcRecord extends BaseRecord
     protected function _getSubfieldsArray($field, $codes)
     {
         $data = array();
-        if (!$field) {
+        if (!$field || !isset($field['s'])) {
             return $data;
         }
         foreach ($field['s'] as $subfield) {
@@ -1234,7 +1234,7 @@ class MarcRecord extends BaseRecord
     // String of subfields
     protected function _getAllSubfields($field, $filter = null)
     {
-        if (!$field) {
+        if (!$field || !isset($field['s'])) {
             return '';
         }
         $subfields = '';

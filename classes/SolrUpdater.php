@@ -381,7 +381,7 @@ class SolrUpdater
     public function deleteDataSource($sourceId)
     {
         $this->_solrRequest('{ "delete": { "query": "id:' . $sourceId . '.*" } }');
-        $this->_solrRequest('{ "commit": {} }');
+        $this->_solrRequest('{ "commit": {} }', 4 * 60 * 60);
     }
 
     /**
@@ -389,7 +389,7 @@ class SolrUpdater
      */
     public function optimizeIndex()
     {
-        $this->_solrRequest('{ "optimize": {} }');
+        $this->_solrRequest('{ "optimize": {} }', 4 * 60 * 60);
     }
     
     /**
@@ -595,19 +595,17 @@ class SolrUpdater
             'physical', 'publisher', 'publishDate', 'contents', 'url', 'ctrlnum',
             'author2', 'author_additional', 'title_alt', 'title_old', 'title_new', 
             'dateSpan', 'series', 'series2', 'topic', 'genre', 'geographic', 
-            'era', 'long_lat', 'hierachy_top_id', 'hierarchy_top_title',
-            'hierarchy_parent_id', 'hierarchy_parent_title', 'hierarchy_sequence',
-            'is_hierarchy_id', 'is_hierarchy_title');
+            'era', 'long_lat');
         
         $checkedFields = array('title_auth', 'title', 'title_short', 'title_full', 'title_sort', 'author');
         
         if (empty($merged)) {
             $merged = $add;
             unset($merged['id']);
-            $merged['local_ids'] = array($add['id']);
+            $merged['local_ids_str_mv'] = array($add['id']);
             unset($merged['fullrecord']);
         } else {
-            $merged['local_ids'][] = $add['id'];
+            $merged['local_ids_str_mv'][] = $add['id'];
         } 
         foreach ($add as $key => $value) {
             if (substr($key, -3, 3) == '_mv' || in_array($key, $mergedFields)) {
@@ -648,12 +646,15 @@ class SolrUpdater
      * 
      * @param string $body	The JSON request
      */
-    protected function _solrRequest($body)
+    protected function _solrRequest($body, $timeout = null)
     {
         global $configArray;
 
         $request = new HTTP_Request2($configArray['Solr']['update_url'], HTTP_Request2::METHOD_POST, 
             array('ssl_verify_peer' => false));
+        if (isset($timeout)) {
+            $request->setConfig('timeout', $timeout);
+        }
         $request->setHeader('User-Agent', 'RecordManager');
         if (isset($configArray['Solr']['username']) && isset($configArray['Solr']['password'])) {
             $request->setAuth($configArray['Solr']['username'], $configArray['Solr']['password'], HTTP_Request2::AUTH_BASIC);

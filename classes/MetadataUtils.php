@@ -121,16 +121,8 @@ class MetadataUtils
         /*'ö'=>'o',*/ 'ø'=>'o', 'ù'=>'u', 'ú'=>'u', 'û'=>'u', 'ü'=>'u', 'ý'=>'y', 'ý'=>'y', 'þ'=>'b', 'ÿ'=>'y' );
         $str = strtr($str, $unwanted_array);
         $str = utf8_decode($str);
-        $str = preg_replace('/[\x00-\x1F]/', '', $str);
-        $str = preg_replace('/[\x21-\x2F]/', '', $str);
-        $str = preg_replace('/[\x7B-\xC3]/', '', $str);
-        $str = preg_replace('/[\xC6-\xD5]/', '', $str);
-        $str = preg_replace('/[\xD7-\xE3]/', '', $str);
-        $str = preg_replace('/[\xE6-\xF5]/', '', $str);
-        $str = preg_replace('/[\xF7-\xFF]/', '', $str);
-
-        $str = str_replace('  ', ' ', $str);
-        $str = strtolower(trim($str));
+        $str = preg_replace('/[\x00-\x20\x21-\x2F\x3A-\x40\x7B-\xC3\xC6-\xD5\xD7-\xE3\xE6-\xF5\xF7-\xFF]/', '', $str);
+        $str = mb_strtolower(trim($str));
         return utf8_encode($str);
     }
 
