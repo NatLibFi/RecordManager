@@ -30,8 +30,7 @@ require_once 'cmdline.php';
 function main($argv)
 {
     $params = parseArgs($argv);
-    if (!isset($params['source']))
-    {
+    if (!isset($params['source'])) {
         echo "Usage: harvest --source=... [...]\n\n";
         echo "Parameters:\n\n";
         echo "--source            Repository id ('*' for all)\n";
@@ -44,7 +43,12 @@ function main($argv)
 
     $manager = new RecordManager(true);
     $manager->verbose = isset($params['verbose']) ? $params['verbose'] : false;
-    $manager->harvest($params['source'], isset($params['from']) ? $params['from'] : null, isset($params['until']) ? $params['until'] : null, isset($params['override']) ? $params['override'] : '');
+    $manager->harvest(
+        $params['source'], 
+        isset($params['from']) ? $params['from'] : null, 
+        isset($params['until']) ? $params['until'] : null, 
+        isset($params['override']) ? $params['override'] : ''
+    );
 }
 
 main($argv);

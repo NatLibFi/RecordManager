@@ -48,7 +48,14 @@ function main($argv)
     $manager->verbose = isset($params['verbose']) ? $params['verbose'] : false;
     $manager->quiet = isset($params['quiet']) ? $params['quiet'] : false;
 
-    $manager->exportRecords($params['file'], $params['deleted'], $params['from'], isset($params['skip']) ? $params['skip'] : 0, isset($params['source']) ? $params['source'] : '', isset($params['single']) ? $params['single'] : '');
+    $manager->exportRecords(
+        $params['file'], 
+        $params['deleted'], 
+        $params['from'], 
+        isset($params['skip']) ? $params['skip'] : 0, 
+        isset($params['source']) ? $params['source'] : '', 
+        isset($params['single']) ? $params['single'] : ''
+    );
 }
 
 main($argv);

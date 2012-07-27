@@ -25,15 +25,12 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  */
 
-//apd_set_pprof_trace('apd');
-
 require_once 'cmdline.php';
 
 function main($argv)
 {
     $params = parseArgs($argv);
-    if (!isset($params['func']))
-    {
+    if (!isset($params['func'])) {
         echo "Usage: manage --func=... [...]\n\n";
         echo "Parameters:\n\n";
         echo "--func             renormalize|deduplicate|updatesolr|dump|deletesource|deletesolr|optimizesolr\n";
@@ -56,17 +53,31 @@ function main($argv)
     
     switch ($params['func'])
     {
-        case 'renormalize': $manager->renormalize($source, $single); break;
-        case 'deduplicate': $manager->deduplicate($source, isset($params['all']) ? true : false, $single); break;
+        case 'renormalize': 
+            $manager->renormalize($source, $single); 
+            break;
+        case 'deduplicate': 
+            $manager->deduplicate($source, isset($params['all']) ? true : false, $single); 
+            break;
         case 'updatesolr': 
             $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
             $manager->updateSolrIndex($date, $source, $single, $noCommit); 
             break;
-        case 'dump': $manager->dumpRecord($single); break;
-        case 'deletesource': $manager->deleteRecords($source); break;
-        case 'deletesolr': $manager->deleteSolrRecords($source); break;
-        case 'optimizesolr': $manager->optimizeSolr(); break;
-        default: echo 'Unknown func: ' . $params['func'] . "\n"; exit(1);
+        case 'dump': 
+            $manager->dumpRecord($single);
+            break;
+        case 'deletesource':
+            $manager->deleteRecords($source);
+            break;
+        case 'deletesolr':
+            $manager->deleteSolrRecords($source);
+            break;
+        case 'optimizesolr':
+            $manager->optimizeSolr();
+            break;
+        default: 
+            echo 'Unknown func: ' . $params['func'] . "\n"; 
+            exit(1);
     }
 }
 
