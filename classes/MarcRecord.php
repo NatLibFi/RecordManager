@@ -119,15 +119,17 @@ class MarcRecord extends BaseRecord
                     $field->addAttribute('tag', $tag);
                     $field->addAttribute('ind1', $data['i1']);
                     $field->addAttribute('ind2', $data['i2']);
-                    foreach ($data['s'] as $subfieldData) {
-                        if ($subfieldData == '') {
-                            continue;
+                    if (isset($data['s'])) {
+                        foreach ($data['s'] as $subfieldData) {
+                            if ($subfieldData == '') {
+                                continue;
+                            }
+                            $subfield = $field->addChild(
+                                'subfield',
+                                htmlspecialchars($subfieldData['v'], ENT_NOQUOTES)
+                            );
+                            $subfield->addAttribute('code', $subfieldData['c']);
                         }
-                        $subfield = $field->addChild(
-                            'subfield',
-                            htmlspecialchars($subfieldData['v'], ENT_NOQUOTES)
-                        );
-                        $subfield->addAttribute('code', $subfieldData['c']);
                     }
                 }
             }
@@ -973,8 +975,10 @@ class MarcRecord extends BaseRecord
                 $fieldStr = '';
                 if (is_array($field)) {
                     $fieldStr = $field['i1'] . $field['i2'];
-                    foreach ($field['s'] as $subfield) {
-                        $fieldStr .= MARCRecord::SUBFIELD_INDICATOR . $subfield['c'] . $subfield['v'];
+                    if (isset($field['s'])) {
+                        foreach ($field['s'] as $subfield) {
+                            $fieldStr .= MARCRecord::SUBFIELD_INDICATOR . $subfield['c'] . $subfield['v'];
+                        }
                     }
                 } else {
                     $fieldStr = $field;

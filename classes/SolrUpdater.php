@@ -106,6 +106,7 @@ class SolrUpdater
             $mongoFromDate = new MongoDate(strtotime($fromDate));
         }
 
+        $needCommit = false;
         foreach ($this->_settings as $source => $settings) {
             try {
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
@@ -124,7 +125,7 @@ class SolrUpdater
                     }
                 }
                 $from = isset($mongoFromDate) ? date('Y-m-d H:i:s', $mongoFromDate->sec) : 'the beginning';
-                $this->_log->log('updateIndividualRecords', "Creating record list (from $from), source $source)...");
+                $this->_log->log('updateIndividualRecords', "Creating record list (from $from), source '$source')...");
                 // Take the last indexing date now and store it when done
                 $lastIndexingDate = new MongoDate();
                 $params = array();
@@ -147,9 +148,9 @@ class SolrUpdater
                 $mergedComponents = 0;
                 $deleted = 0;
                 if ($noCommit) {
-                    $this->_log->log('updateIndividualRecords', "Indexing $total records (with no forced commits) from $source...");
+                    $this->_log->log('updateIndividualRecords', "Indexing $total records (with no forced commits) from '$source'...");
                 } else {
-                    $this->_log->log('updateIndividualRecords', "Indexing $total records (max commit interval {$this->_commitInterval} records) from $source...");
+                    $this->_log->log('updateIndividualRecords', "Indexing $total records (max commit interval {$this->_commitInterval} records) from '$source'...");
                 }
                 $starttime = microtime(true);
                 $this->_initBufferedUpdate();
@@ -172,7 +173,7 @@ class SolrUpdater
                         ++$count;                       
                         $res = $this->_bufferedUpdate($data, $count, $noCommit);
                         if ($res) {
-                            $this->_log->log('updateIndividualRecords', "$count records (of which $deleted deleted) with $mergedComponents merged parts indexed from $source, $res records/sec");
+                            $this->_log->log('updateIndividualRecords', "$count records (of which $deleted deleted) with $mergedComponents merged parts indexed from '$source', $res records/sec");
                         }
                     }
                 }
@@ -182,13 +183,13 @@ class SolrUpdater
                     $state = array('_id' => "Last Index Update $source", 'value' => $lastIndexingDate);
                     $this->_db->state->save($state);
                 }
-
-                $this->_log->log('updateIndividualRecords', "Completed with $count records (of which $deleted deleted) with $mergedComponents merged parts indexed from $source");
+                $needCommit = $count > 0;
+                $this->_log->log('updateIndividualRecords', "Completed with $count records (of which $deleted deleted) with $mergedComponents merged parts indexed from '$source'");
             } catch (Exception $e) {
                 $this->_log->log('updateIndividualRecords', 'Exception: ' . $e->getMessage(), Logger::FATAL);
             }
         }
-        if (!$noCommit) {
+        if (!$noCommit && $needCommit) {
             $this->_log->log('updateIndividualRecords', "Final commit...");
             $this->_solrRequest('{ "commit": {} }');
             $this->_log->log('updateIndividualRecords', "Commit complete");
@@ -207,6 +208,8 @@ class SolrUpdater
     public function updateMergedRecords($fromDate = null, $singleId = '', $noCommit = false)
     {
         try {
+            $needCommit = false;
+            
             if (isset($fromDate) && $fromDate) {
                 $mongoFromDate = new MongoDate(strtotime($fromDate));
             }
@@ -241,7 +244,8 @@ class SolrUpdater
                     'distinct' => 'record',
                     'key' => 'dedup_key',
                     'query' => $params
-                )
+                ),
+                array('timeout' => 3000000)
             );
     
             $total = $this->_counts ? count($keys['values']) : 'the';
@@ -304,6 +308,7 @@ class SolrUpdater
                 }
             }
             $this->_flushUpdateBuffer();
+            $needCommit = $count > 0;
             $this->_log->log('updateMergedRecords', "Total $count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed");
     
             $this->_log->log('updateMergedRecords', "Creating individual record list (from $from)...");
@@ -360,10 +365,12 @@ class SolrUpdater
                 $state = array('_id' => "Last Index Update", 'value' => $lastIndexingDate);
                 $this->_db->state->save($state);
             }
-    
+            if ($count > 0) {
+                $needCommit = true;
+            }
             $this->_log->log('updateMergedRecords', "Total $count individual records (of which $deleted deleted) with $mergedComponents merged parts indexed");
             
-            if (!$noCommit) {
+            if (!$noCommit && $needCommit) {
                 $this->_log->log('updateMergedRecords', "Final commit...");
                 $this->_solrRequest('{ "commit": {} }');
                 $this->_log->log('updateMergedRecords', "Commit complete");
@@ -466,10 +473,14 @@ class SolrUpdater
                 $data['hierarchy_parent_id'] = $record['host_record_id'];
             }
             if (!$hostRecord) {
-                $this->_log->log('_createSolrArray', 'Host record ' . $record['host_record_id'] . ' not found for record ' . $record['_id'], Logger::WARNING);
+                $this->_log->log('createSolrArray', "Host record '" . $record['host_record_id'] . "' not found for record '" . $record['_id'] . "'", Logger::WARNING);
                 $data['container_title'] = $metadataRecord->getContainerTitle();
             } else {
-                $hostMetadataRecord = RecordFactory::createRecord($hostRecord['format'], MetadataUtils::getRecordData($hostRecord, true), $hostRecord['oai_id']);
+                $hostMetadataRecord = RecordFactory::createRecord(
+                    $hostRecord['format'],
+                    MetadataUtils::getRecordData($hostRecord, true),
+                    $hostRecord['oai_id']
+                );
                 $data['container_title'] = $data['hierarchy_parent_title'] = $hostMetadataRecord->getTitle();
             }
             $data['container_volume'] = $metadataRecord->getVolume();
@@ -564,7 +575,8 @@ class SolrUpdater
             $data['allfields'] = MetadataUtils::array_iunique($all);
         }
         
-        $data['dedup_key'] = isset($record['dedup_key']) && $record['dedup_key'] ? (string)$record['dedup_key'] : $record['_id'];
+        $data['dedup_key'] = isset($record['dedup_key']) && $record['dedup_key']
+            ? (string)$record['dedup_key'] : $record['_id'];
         $data['first_indexed'] = MetadataUtils::formatTimestamp($record['created']->sec);
         $data['last_indexed'] = MetadataUtils::formatTimestamp($record['updated']->sec);
         $data['recordtype'] = $record['format'];
@@ -650,14 +662,21 @@ class SolrUpdater
     {
         global $configArray;
 
-        $request = new HTTP_Request2($configArray['Solr']['update_url'], HTTP_Request2::METHOD_POST, 
-            array('ssl_verify_peer' => false));
+        $request = new HTTP_Request2(
+            $configArray['Solr']['update_url'],
+            HTTP_Request2::METHOD_POST, 
+            array('ssl_verify_peer' => false)
+        );
         if (isset($timeout)) {
             $request->setConfig('timeout', $timeout);
         }
         $request->setHeader('User-Agent', 'RecordManager');
         if (isset($configArray['Solr']['username']) && isset($configArray['Solr']['password'])) {
-            $request->setAuth($configArray['Solr']['username'], $configArray['Solr']['password'], HTTP_Request2::AUTH_BASIC);
+            $request->setAuth(
+                $configArray['Solr']['username'],
+                $configArray['Solr']['password'],
+                HTTP_Request2::AUTH_BASIC
+            );
         }
         $request->setHeader('Content-Type', 'application/json');
         $request->setBody($body);

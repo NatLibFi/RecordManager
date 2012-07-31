@@ -195,7 +195,7 @@ class RecordManager
 
                 $this->_loadSourceSettings($source);
 
-                $this->_log->log('exportRecords', "Creating record list (from " . ($fromDate ? $fromDate : 'the beginning') . ", source $source)...");
+                $this->_log->log('exportRecords', "Creating record list (from " . ($fromDate ? $fromDate : 'the beginning') . ", source '$source')...");
 
                 $params = array();
                 if ($singleId) {
@@ -213,7 +213,7 @@ class RecordManager
                 $count = 0;
                 $deduped = 0;
                 $deleted = 0;
-                $this->_log->log('exportRecords', "Exporting $total records from $source...");
+                $this->_log->log('exportRecords', "Exporting $total records from '$source'...");
                 if ($skipRecords) {
                 	$this->_log->log('exportRecords', "(1 per each $skipRecords records)");
                 }
@@ -235,10 +235,10 @@ class RecordManager
                         file_put_contents($file, $metadataRecord->toXML() . "\n", FILE_APPEND);
                     }
                     if ($count % 1000 == 0) {
-                        $this->_log->log('exportRecords', "$deleted deleted, $count normal (of which $deduped deduped) records exported from $source");
+                        $this->_log->log('exportRecords', "$deleted deleted, $count normal (of which $deduped deduped) records exported from '$source'");
                     }
                 }
-                $this->_log->log('exportRecords', "Completed with $deleted deleted, $count normal (of which $deduped deduped) records exported from $source");
+                $this->_log->log('exportRecords', "Completed with $deleted deleted, $count normal (of which $deduped deduped) records exported from '$source'");
             } catch (Exception $e) {
                 $this->_log->log('exportRecords', 'Exception: ' . $e->getMessage(), Logger::FATAL);
             }
@@ -294,6 +294,7 @@ class RecordManager
                 $params['source_id'] = $source;
             }
             $records = $this->_db->record->find($params);
+            $records->immortal(true);
             $total = $this->_counts ? $records->count() : 'the';
             $count = 0;
     
@@ -385,6 +386,7 @@ class RecordManager
                     }
                 }
                 $records = $this->_db->record->find($params);
+                $records->immortal(true);
                 $total = $this->_counts ? $records->count() : 'the';
                 $count = 0;
                 $deduped = 0;
@@ -452,7 +454,7 @@ class RecordManager
                 if (empty($source) || empty($settings) || !isset($settings['url'])) {
                     continue;
                 }
-                $this->_log->log('harvest', "Harvesting from {$source}...");
+                $this->_log->log('harvest', "Harvesting from '{$source}'...");
 
                 $this->_loadSourceSettings($source);
 
@@ -550,7 +552,7 @@ class RecordManager
                         $this->_log->log('harvest', $result['n'] . " deleted records");
                     }
                 }
-                $this->_log->log('harvest', "Harvesting from {$source} completed");
+                $this->_log->log('harvest', "Harvesting from '{$source}' completed");
             } catch (Exception $e) {
                 $this->_log->log('harvest', 'Exception: ' . $e->getMessage(), Logger::FATAL);
             }
@@ -586,9 +588,9 @@ class RecordManager
     {
         $params = array();
         $params['source_id'] = $sourceId;
-        $this->_log->log('deleteRecords', "Deleting records from data source $sourceId...");
+        $this->_log->log('deleteRecords', "Deleting records from data source '$sourceId'...");
         $this->_db->record->remove($params, array('safe' => true, 'timeout' => 3000000));
-        $this->_log->log('deleteRecords', "Deleting last harvest date from data source $sourceId...");
+        $this->_log->log('deleteRecords', "Deleting last harvest date from data source '$sourceId'...");
         $this->_db->state->remove(array('_id' => "Last Harvest Date $sourceId"), array('safe' => true));
         $this->_log->log('deleteRecords', "Deletion of $sourceId completed");
     }
@@ -601,9 +603,9 @@ class RecordManager
     {
         $updater = new SolrUpdater($this->_db, $this->_basePath, $this->_dataSourceSettings, $this->_log, $this->verbose);
         
-        $this->_log->log('deleteSolrRecords', "Deleting data source $sourceId from Solr...");
+        $this->_log->log('deleteSolrRecords', "Deleting data source '$sourceId' from Solr...");
         $updater->deleteDataSource($sourceId);
-        $this->_log->log('deleteSolrRecords', "Deletion of $sourceId from Solr completed");
+        $this->_log->log('deleteSolrRecords', "Deletion of '$sourceId' from Solr completed");
     }
     
     /**
@@ -800,7 +802,7 @@ class RecordManager
         $ISBNArray = $origRecord->getISBNs();
 
         $matchRecord = null;
-        foreach (array('ISBN' => $ISBNArray, 'key' => $keyArray) as $type => $array) {
+        foreach (array('isbn_keys' => $ISBNArray, 'title_keys' => $keyArray) as $type => $array) {
             foreach ($array as $keyPart) {
                 if (!$keyPart || isset($this->_tooManyCandidatesKeys[$keyPart])) {
                     continue;
@@ -811,14 +813,11 @@ class RecordManager
                 if ($this->verbose) {
                     echo "Search: '$keyPart'\n";
                 }
-                $params = array('source_id' => array('$ne' => $this->_sourceId), 'host_record_id' => '');
-                if ($type == 'ISBN') {
-                    $params['isbn_keys'] = $keyPart;
-                }
-                else {
-                    $params['title_keys'] = $keyPart;
-                }
-                $candidates = $this->_db->record->find($params);
+                $params = array();
+                $params[$type] = $keyPart;
+                $params['source_id'] = array('$ne' => $this->_sourceId);
+                $params['host_record_id'] = '';
+                $candidates = $this->_db->record->find($params)->hint(array($type => 1));
                 $processed = 0;
                 if ($candidates->hasNext()) {
                     // We have candidates
@@ -830,9 +829,6 @@ class RecordManager
                     // Go through the candidates, try to match
                     $matchRecord = null;
                     foreach ($candidates as $candidate) {
-                        if ($candidate['source_id'] == $this->_sourceId) {
-                            continue;
-                        }
                         // Verify the candidate has not been deduped with this source yet
                         if (isset($candidate['dedup_key']) && $candidate['dedup_key'] && (!isset($record['dedup_key']) || $candidate['dedup_key'] != $record['dedup_key'])) {
                             if ($this->_db->record->find(array('dedup_key' => $candidate['dedup_key'], 'source_id' => $this->_sourceId))->hasNext()) {
