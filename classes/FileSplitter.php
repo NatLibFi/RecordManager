@@ -23,6 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 /**
@@ -30,51 +31,64 @@
  *
  * This class splits XML to multiple records using an xpath expression
  *
+ * @category DataManagement
+ * @package  RecordManager
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 class FileSplitter
 {
-    protected $_xmlDoc;
-    protected $_recordNodes;
-    protected $_recordCount;
-    protected $_currentPos;
+    protected $xmlDoc;
+    protected $recordNodes;
+    protected $recordCount;
+    protected $currentPos;
 
     /**
      * Construct the splitter
      * 
-     * @param mixed  $data         XML string or DOM document
-     * @param string $recordXPath  XPath used to find the records
+     * @param mixed  $data        XML string or DOM document
+     * @param string $recordXPath XPath used to find the records
      */
     function __construct($data, $recordXPath)
     {
         if (is_string($data)) {
-            $this->_xmlDoc = new DOMDocument();
-            $this->_xmlDoc->loadXML($data);
+            $this->xmlDoc = new DOMDocument();
+            $this->xmlDoc->loadXML($data);
         } else {
-            $this->_xmlDoc = $data;
+            $this->xmlDoc = $data;
         }
-        $xpath = new DOMXpath($this->_xmlDoc);
-        $this->_recordNodes = $xpath->query($recordXPath);
-        $this->_recordCount = $this->_recordNodes->length;
-        $this->_currentPos = 0;
+        $xpath = new DOMXpath($this->xmlDoc);
+        $this->recordNodes = $xpath->query($recordXPath);
+        $this->recordCount = $this->recordNodes->length;
+        $this->currentPos = 0;
     }
 
+    /**
+     * Check whether EOF has been encountered
+     * 
+     * @return boolean
+     */
     public function getEOF()
     {
-        return $this->_currentPos >= $this->_recordCount;
+        return $this->currentPos >= $this->recordCount;
     }
 
+    /**
+     * Get next record
+     * 
+     * @return string|boolean
+     */
     public function getNextRecord()
     {
-        if ($this->_currentPos < $this->_recordCount)
-        {
-            if ($this->_recordNodes->item($this->_currentPos)->nodeType == XML_DOCUMENT_NODE) {
-                return $this->_recordNodes->item($this->_currentPos++)->saveXML();
+        if ($this->currentPos < $this->recordCount) {
+            if ($this->recordNodes->item($this->currentPos)->nodeType == XML_DOCUMENT_NODE) {
+                return $this->recordNodes->item($this->currentPos++)->saveXML();
             }
             $new = new DomDocument;
-            $new->appendChild($new->importNode($this->_recordNodes->item($this->_currentPos++), true));
+            $new->appendChild($new->importNode($this->recordNodes->item($this->currentPos++), true));
             return $new->saveXML();
         }
         return false;
     }
 }
-

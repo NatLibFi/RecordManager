@@ -23,7 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 /**
@@ -31,6 +31,11 @@
  *
  * This is a factory class to build records for accessing metadata.
  *
+ * @category DataManagement
+ * @package  RecordManager
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 class RecordFactory
 {
@@ -39,12 +44,11 @@ class RecordFactory
      *
      * This constructs a metadata record driver for the specified format.
      *
-     * @param string $format  Metadata format
-     * @param string $data    Metadata
-     * @param string $oaiID   Record ID received from OAI-PMH
+     * @param string $format Metadata format
+     * @param string $data   Metadata
+     * @param string $oaiID  Record ID received from OAI-PMH
      *
      * @return object       The record driver for handling the record.
-     * @access public
      */
     static function createRecord($format, $data, $oaiID)
     {
@@ -61,7 +65,7 @@ class RecordFactory
         }
 
         $path = "{$class}.php";
-        include_once($path);
+        include_once $path;
         if (class_exists($class)) {
             $obj = new $class($data, $oaiID);
             return $obj;

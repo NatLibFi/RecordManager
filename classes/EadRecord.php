@@ -23,6 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 require_once 'BaseRecord.php';
@@ -32,20 +33,27 @@ require_once 'BaseRecord.php';
  *
  * This is a class for processing EAD records.
  *
+ * @category DataManagement
+ * @package  RecordManager
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 class EadRecord extends BaseRecord
 {
-    protected $_doc = null;
+    protected $doc = null;
 
     /**
      * Constructor
      *
-     * @param string $data Record metadata
+     * @param string $data  Record metadata
+     * @param string $oaiID Record ID in OAI-PMH
+     * 
      * @access public
      */
     public function __construct($data, $oaiID)
     {
-        $this->_doc = simplexml_load_string($data);
+        $this->doc = simplexml_load_string($data);
     }
 
     /**
@@ -56,9 +64,9 @@ class EadRecord extends BaseRecord
      */
     public function getID()
     {
-        return isset($this->_doc->did->unitid->attributes()->{'identifier'}) 
-            ? (string)$this->_doc->did->unitid->attributes()->{'identifier'}
-            : (string)$this->_doc->did->unitid;
+        return isset($this->doc->did->unitid->attributes()->{'identifier'}) 
+            ? (string)$this->doc->did->unitid->attributes()->{'identifier'}
+            : (string)$this->doc->did->unitid;
     }
 
     /**
@@ -69,7 +77,7 @@ class EadRecord extends BaseRecord
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->_doc->asXML());
+        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -80,27 +88,28 @@ class EadRecord extends BaseRecord
      */
     public function toXML()
     {
-        return $this->_doc->asXML();
+        return $this->doc->asXML();
     }
 
     /**
      * Set the ID prefix into all the ID fields (ID, host ID etc.)
      *
-     * @param  string $prefix (e.g. "source.")
+     * @param string $prefix (e.g. "source.")
+     * 
      * @return void
      * @access public
      */
     public function setIDPrefix($prefix)
     {
-        if ($this->_doc->did->unitid) {
-            $this->_doc->did->unitid->attributes()->{'identifier'} = $prefix . $this->_doc->did->unitid->attributes()->{'identifier'};
+        if ($this->doc->did->unitid) {
+            $this->doc->did->unitid->attributes()->{'identifier'} = $prefix . $this->doc->did->unitid->attributes()->{'identifier'};
         }
-        if ($this->_doc->{'add-data'}) {
-            if ($this->_doc->{'add-data'}->{'archive'}) {
-                $this->_doc->{'add-data'}->{'archive'}->attributes()->{'id'} = $prefix . $this->_doc->{'add-data'}->{'archive'}->attributes()->{'id'};
+        if ($this->doc->{'add-data'}) {
+            if ($this->doc->{'add-data'}->{'archive'}) {
+                $this->doc->{'add-data'}->{'archive'}->attributes()->{'id'} = $prefix . $this->doc->{'add-data'}->{'archive'}->attributes()->{'id'};
             } 
-            if ($this->_doc->{'add-data'}->{'parent'}) {
-                $this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'} = $prefix . $this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'};
+            if ($this->doc->{'add-data'}->{'parent'}) {
+                $this->doc->{'add-data'}->{'parent'}->attributes()->{'id'} = $prefix . $this->doc->{'add-data'}->{'parent'}->attributes()->{'id'};
             } 
         }
     }
@@ -108,20 +117,20 @@ class EadRecord extends BaseRecord
     /**
      * Return fields to be indexed in Solr
      *
-     * @return array
+     * @return string[]
      * @access public
      */
     public function toSolrArray()
     {
         $data = array();
         
-        $doc = $this->_doc;
-        $data['ctrlnum'] = (string)$this->_doc->attributes()->{'id'};
+        $doc = $this->doc;
+        $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
         $data['fullrecord'] = str_replace("\t", ' ', $doc->asXML());
-        	
+          
         // allfields
-        $data['allfields'] = $this->_getAllFields($doc);
-        	
+        $data['allfields'] = $this->getAllFields($doc);
+          
         // language
         $data['format'] = (string)$doc->attributes()->level;
         if ($doc->did->origination) {
@@ -137,26 +146,26 @@ class EadRecord extends BaseRecord
         $data['title_full'] = $data['title_sort'] = $data['title'] . ($data['title_sub'] ? ' (' . $data['title_sub'] . ')' : '');
 
         switch ($doc->level) {
-            case 'collection':
-                break;
-            case 'series':
-                break;
-            case 'item': 
-                $data['series'] = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
-                break;
+        case 'collection':
+            break;
+        case 'series':
+            break;
+        case 'item': 
+            $data['series'] = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
+            break;
         }
         
         $data['hierarchytype'] = 'Default';
-        if ($this->_doc->{'add-data'}->{'archive'}) {
-            $data['hierarchy_top_id'] = (string)$this->_doc->{'add-data'}->archive->attributes()->{'id'};
-            $data['hierarchy_top_title'] = (string)$this->_doc->{'add-data'}->archive->attributes()->title;
-            if ($this->_doc->{'add-data'}->archive->attributes()->subtitle) {
-                $data['hierarchy_top_title'] .= ' : ' . (string)$this->_doc->{'add-data'}->archive->attributes()->subtitle; 
+        if ($this->doc->{'add-data'}->{'archive'}) {
+            $data['hierarchy_top_id'] = (string)$this->doc->{'add-data'}->archive->attributes()->{'id'};
+            $data['hierarchy_top_title'] = (string)$this->doc->{'add-data'}->archive->attributes()->title;
+            if ($this->doc->{'add-data'}->archive->attributes()->subtitle) {
+                $data['hierarchy_top_title'] .= ' : ' . (string)$this->doc->{'add-data'}->archive->attributes()->subtitle; 
             }
         }
-        if ($this->_doc->{'add-data'}->{'parent'}) {
-            $data['hierarchy_parent_id'] = (string)$this->_doc->{'add-data'}->{'parent'}->attributes()->{'id'};
-            $data['hierarchy_parent_title'] = (string)$this->_doc->{'add-data'}->{'parent'}->attributes()->title;
+        if ($this->doc->{'add-data'}->{'parent'}) {
+            $data['hierarchy_parent_id'] = (string)$this->doc->{'add-data'}->{'parent'}->attributes()->{'id'};
+            $data['hierarchy_parent_title'] = (string)$this->doc->{'add-data'}->{'parent'}->attributes()->title;
         } else {
             $data['is_hierarchy_id'] = $data['hierarchy_top_id'] = $this->getID();
             $data['is_hierarchy_title'] = $data['hierarchy_top_title'] = (string)$doc->did->unittitle;
@@ -165,7 +174,14 @@ class EadRecord extends BaseRecord
         return $data;
     }
 
-    protected function _getAllFields($xml)
+    /**
+     * Get all XML fields
+     * 
+     * @param SimpleXMLDocument $xml The XML document
+     * 
+     * @return string[]
+     */
+    protected function getAllFields($xml)
     {
         $allFields = array();
         foreach ($xml->children() as $tag => $field) {
@@ -173,7 +189,7 @@ class EadRecord extends BaseRecord
             if ($s) {
                 $allFields[] = $s;
             }
-            $s = $this->_getAllFields($field);
+            $s = $this->getAllFields($field);
             if ($s) {
                 $allFields[] = "$s";
             }

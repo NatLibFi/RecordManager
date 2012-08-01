@@ -23,6 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 require_once 'BaseRecord.php';
@@ -33,31 +34,47 @@ require_once 'MetadataUtils.php';
  *
  * This is a class for updating the Solr index.
  *
+ * @category DataManagement
+ * @package  RecordManager
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 class SolrUpdater
 {
-    protected $_db;
-    protected $_log;
-    protected $_settings;
-    protected $_buildingHierarchy;
-    protected $_verbose;
+    protected $db;
+    protected $log;
+    protected $settings;
+    protected $buildingHierarchy;
+    protected $verbose;
 
+    /**
+     * Constructor 
+     * 
+     * @param MongoDB $db                 Database connection
+     * @param string  $basePath           RecordManager main directory 
+     * @param array   $dataSourceSettings Data source settings
+     * @param object  $log                Logger
+     * @param boolean $verbose            Whether to output verbose messages
+     * 
+     * @throws Exception
+     */
     public function __construct($db, $basePath, $dataSourceSettings, $log, $verbose)
     {
         global $configArray;
         
-        $this->_db = $db;
-        $this->_basePath = $basePath;
-        $this->_log = $log;
-        $this->_verbose = $verbose;
-        $this->_counts = isset($configArray['Mongo']['counts']) && $configArray['Mongo']['counts'];
+        $this->db = $db;
+        $this->basePath = $basePath;
+        $this->log = $log;
+        $this->verbose = $verbose;
+        $this->counts = isset($configArray['Mongo']['counts']) && $configArray['Mongo']['counts'];
         
         // Special case: building hierarchy
-        $this->_buildingHierarchy = isset($configArray['Solr']['hierarchical_facets'])
+        $this->buildingHierarchy = isset($configArray['Solr']['hierarchical_facets'])
             && in_array('building', $configArray['Solr']['hierarchical_facets']);
 
         // Load settings and mapping files
-        $this->_settings = array();
+        $this->settings = array();
         foreach ($dataSourceSettings as $source => $settings) {
             if (!isset($settings['institution'])) {
                 throw new Exception("Error: institution not set for $source\n");
@@ -65,40 +82,42 @@ class SolrUpdater
             if (!isset($settings['format'])) {
                 throw new Exception("Error: format not set for $source\n");
             }
-            $this->_settings[$source] = $settings;
-            $this->_settings[$source]['idPrefix'] = isset($settings['idPrefix']) && $settings['idPrefix'] ? $settings['idPrefix'] : $source;
-            $this->_settings[$source]['componentParts'] = isset($settings['componentParts']) && $settings['componentParts'] ? $settings['componentParts'] : 'as_is';
-            $this->_settings[$source]['indexMergedParts'] = isset($settings['indexMergedParts']) ? $settings['indexMergedParts'] : true;
-            $this->_settings[$source]['solrTransformationXSLT'] = isset($settings['solrTransformation']) && $settings['solrTransformation'] ? new XslTransformation($this->_basePath . '/transformations', $settings['solrTransformation']) : null;
-            $this->_settings[$source]['mappingFiles'] = array();
+            $this->settings[$source] = $settings;
+            $this->settings[$source]['idPrefix'] = isset($settings['idPrefix']) && $settings['idPrefix'] ? $settings['idPrefix'] : $source;
+            $this->settings[$source]['componentParts'] = isset($settings['componentParts']) && $settings['componentParts'] ? $settings['componentParts'] : 'as_is';
+            $this->settings[$source]['indexMergedParts'] = isset($settings['indexMergedParts']) ? $settings['indexMergedParts'] : true;
+            $this->settings[$source]['solrTransformationXSLT'] = isset($settings['solrTransformation']) && $settings['solrTransformation'] ? new XslTransformation($this->basePath . '/transformations', $settings['solrTransformation']) : null;
+            $this->settings[$source]['mappingFiles'] = array();
             
             foreach ($settings as $key => $value) {
                 if (substr($key, -8, 8) == '_mapping') {
                     $field = substr($key, 0, -8);
-                    $this->_settings[$source]['mappingFiles'][$field] = parse_ini_file($this->_basePath . '/mappings/' . $value);
+                    $this->settings[$source]['mappingFiles'][$field] = parse_ini_file($this->basePath . '/mappings/' . $value);
                 }
             }
         }
 
-        $this->_commitInterval = isset($configArray['Solr']['max_commit_interval'])
+        $this->commitInterval = isset($configArray['Solr']['max_commit_interval'])
             ? $configArray['Solr']['max_commit_interval'] : 50000;
-        $this->_maxUpdateRecords = isset($configArray['Solr']['max_update_records'])
+        $this->maxUpdateRecords = isset($configArray['Solr']['max_update_records'])
             ? $configArray['Solr']['max_update_records'] : 5000;
-        $this->_maxUpdateSize = isset($configArray['Solr']['max_update_size'])
+        $this->maxUpdateSize = isset($configArray['Solr']['max_update_size'])
             ? $configArray['Solr']['max_update_size'] : 1024;
-        $this->_maxUpdateSize *= 1024;
+        $this->maxUpdateSize *= 1024;
     }
 
     /**
      * Update Solr index (individual records)
      * 
-     * @param string|null	$fromDate   Starting date for updates (if empty 
-     *                                string, last update date stored in the database
-     *                                is used and if null, all records are processed)
-     * @param string		$sourceId     Source ID to update, or empty or * for all 
-     *                                sources (ignored if record merging is enabled)
-     * @param string 		$singleId     Export only a record with the given ID
-     * @param bool  		$noCommit     If true, changes are not explicitly committed
+     * @param string|null $fromDate Starting date for updates (if empty 
+     *                              string, last update date stored in the database
+     *                              is used and if null, all records are processed)
+     * @param string      $sourceId Source ID to update, or empty or * for all 
+     *                              sources (ignored if record merging is enabled)
+     * @param string      $singleId Export only a record with the given ID
+     * @param bool        $noCommit If true, changes are not explicitly committed
+     * 
+     * @return void
      */
     public function updateIndividualRecords($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false)
     {
@@ -107,7 +126,7 @@ class SolrUpdater
         }
 
         $needCommit = false;
-        foreach ($this->_settings as $source => $settings) {
+        foreach ($this->settings as $source => $settings) {
             try {
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
                     continue;
@@ -117,7 +136,7 @@ class SolrUpdater
                 }
 
                 if (!isset($fromDate)) {
-                    $state = $this->_db->state->findOne(array('_id' => "Last Index Update $source"));
+                    $state = $this->db->state->findOne(array('_id' => "Last Index Update $source"));
                     if (isset($state)) {
                         $mongoFromDate = $state['value'];
                     } else {
@@ -125,7 +144,7 @@ class SolrUpdater
                     }
                 }
                 $from = isset($mongoFromDate) ? date('Y-m-d H:i:s', $mongoFromDate->sec) : 'the beginning';
-                $this->_log->log('updateIndividualRecords', "Creating record list (from $from), source '$source')...");
+                $this->log->log('updateIndividualRecords', "Creating record list (from $from), source '$source')...");
                 // Take the last indexing date now and store it when done
                 $lastIndexingDate = new MongoDate();
                 $params = array();
@@ -140,70 +159,72 @@ class SolrUpdater
                     }
                     $params['update_needed'] = false;
                 }
-                $records = $this->_db->record->find($params);
+                $records = $this->db->record->find($params);
                 $records->immortal(true);
 
-                $total = $this->_counts ? $records->count() : 'the';
+                $total = $this->counts ? $records->count() : 'the';
                 $count = 0;
                 $mergedComponents = 0;
                 $deleted = 0;
                 if ($noCommit) {
-                    $this->_log->log('updateIndividualRecords', "Indexing $total records (with no forced commits) from '$source'...");
+                    $this->log->log('updateIndividualRecords', "Indexing $total records (with no forced commits) from '$source'...");
                 } else {
-                    $this->_log->log('updateIndividualRecords', "Indexing $total records (max commit interval {$this->_commitInterval} records) from '$source'...");
+                    $this->log->log('updateIndividualRecords', "Indexing $total records (max commit interval {$this->commitInterval} records) from '$source'...");
                 }
                 $starttime = microtime(true);
-                $this->_initBufferedUpdate();
+                $this->initBufferedUpdate();
                 foreach ($records as $record) {
                     if ($record['deleted']) {
-                        $this->_solrRequest(json_encode(array('delete' => array('id' => (string)$record['key']))));
+                        $this->solrRequest(json_encode(array('delete' => array('id' => (string)$record['key']))));
                         ++$deleted;
                     } else {
-                        $data = $this->_createSolrArray($record, $mergedComponents);
+                        $data = $this->createSolrArray($record, $mergedComponents);
                         if ($data === false) {
                             continue;
                         }
 
-                        if ($this->_verbose) {
+                        if ($this->verbose) {
                             echo "Metadata for record {$record['_id']}: \n";
                             print_r($data);
                             echo "JSON for record {$record['_id']}: \n" . json_encode($data) . "\n";
                         }
 
                         ++$count;                       
-                        $res = $this->_bufferedUpdate($data, $count, $noCommit);
+                        $res = $this->bufferedUpdate($data, $count, $noCommit);
                         if ($res) {
-                            $this->_log->log('updateIndividualRecords', "$count records (of which $deleted deleted) with $mergedComponents merged parts indexed from '$source', $res records/sec");
+                            $this->log->log('updateIndividualRecords', "$count records (of which $deleted deleted) with $mergedComponents merged parts indexed from '$source', $res records/sec");
                         }
                     }
                 }
-                $this->_flushUpdateBuffer();
+                $this->flushUpdateBuffer();
 
                 if (isset($lastIndexingDate)) {
                     $state = array('_id' => "Last Index Update $source", 'value' => $lastIndexingDate);
-                    $this->_db->state->save($state);
+                    $this->db->state->save($state);
                 }
                 $needCommit = $count > 0;
-                $this->_log->log('updateIndividualRecords', "Completed with $count records (of which $deleted deleted) with $mergedComponents merged parts indexed from '$source'");
+                $this->log->log('updateIndividualRecords', "Completed with $count records (of which $deleted deleted) with $mergedComponents merged parts indexed from '$source'");
             } catch (Exception $e) {
-                $this->_log->log('updateIndividualRecords', 'Exception: ' . $e->getMessage(), Logger::FATAL);
+                $this->log->log('updateIndividualRecords', 'Exception: ' . $e->getMessage(), Logger::FATAL);
             }
         }
         if (!$noCommit && $needCommit) {
-            $this->_log->log('updateIndividualRecords', "Final commit...");
-            $this->_solrRequest('{ "commit": {} }');
-            $this->_log->log('updateIndividualRecords', "Commit complete");
+            $this->log->log('updateIndividualRecords', "Final commit...");
+            $this->solrRequest('{ "commit": {} }');
+            $this->log->log('updateIndividualRecords', "Commit complete");
         }
     }
     
     /**
      * Update Solr index (merged records)
      * 
-     * @param string|null	$fromDate   Starting date for updates (if empty 
-     *                                string, last update date stored in the database
-     *                                is used and if null, all records are processed)
-     * @param string 		$singleId     Export only a record with the given ID
-     * @param bool  		$noCommit     If true, changes are not explicitly committed
+     * @param string|null $fromDate Starting date for updates (if empty 
+     *                              string, last update date stored in the database
+     *                              is used and if null, all records are processed)
+     * @param string      $singleId Export only a record with the given ID
+     * @param bool        $noCommit If true, changes are not explicitly committed
+     * 
+     * @return void
      */
     public function updateMergedRecords($fromDate = null, $singleId = '', $noCommit = false)
     {
@@ -215,7 +236,7 @@ class SolrUpdater
             }
     
             if (!isset($fromDate)) {
-                $state = $this->_db->state->findOne(array('_id' => 'Last Index Update'));
+                $state = $this->db->state->findOne(array('_id' => 'Last Index Update'));
                 if (isset($state)) {
                     $mongoFromDate = $state['value'];
                 } else {
@@ -223,10 +244,10 @@ class SolrUpdater
                 }
             }
             $from = isset($mongoFromDate) ? date('Y-m-d H:i:s', $mongoFromDate->sec) : 'the beginning';
-            $this->_log->log('updateMergedRecords', "Creating merged record list (from $from)...");
+            $this->log->log('updateMergedRecords', "Creating merged record list (from $from)...");
             // Take the last indexing date now and store it when done
             $lastIndexingDate = new MongoDate();
-            $this->_initBufferedUpdate();
+            $this->initBufferedUpdate();
     
             // Process deduped records
             $params = array();
@@ -239,7 +260,7 @@ class SolrUpdater
                 }
                 $params['update_needed'] = false;
             }
-            $keys = $this->_db->command(
+            $keys = $this->db->command(
                 array(
                     'distinct' => 'record',
                     'key' => 'dedup_key',
@@ -248,70 +269,70 @@ class SolrUpdater
                 array('timeout' => 3000000)
             );
     
-            $total = $this->_counts ? count($keys['values']) : 'the';
+            $total = $this->counts ? count($keys['values']) : 'the';
             $count = 0;
             $mergedComponents = 0;
             $deleted = 0;
-            $this->_initBufferedUpdate();
+            $this->initBufferedUpdate();
             if ($noCommit) {
-                $this->_log->log('updateMergedRecords', "Indexing $total merged records (with no forced commits)...");
+                $this->log->log('updateMergedRecords', "Indexing $total merged records (with no forced commits)...");
             } else {
-                $this->_log->log('updateMergedRecords', "Indexing $total merged records (max commit interval {$this->_commitInterval} records)...");
+                $this->log->log('updateMergedRecords', "Indexing $total merged records (max commit interval {$this->commitInterval} records)...");
             }
             $starttime = microtime(true);
             foreach ($keys['values'] as $key) {
                 if (empty($key)) {
                     continue;
                 }
-                $records = $this->_db->record->find(array('dedup_key' => $key));
+                $records = $this->db->record->find(array('dedup_key' => $key));
                 $merged = array();
                 foreach ($records as $record) {
                     if ($record['deleted']) {
-                        $this->_solrRequest(json_encode(array('delete' => array('id' => $record['_id']))));
+                        $this->solrRequest(json_encode(array('delete' => array('id' => $record['_id']))));
                         continue;
                     }
-                    $data = $this->_createSolrArray($record, $mergedComponents);
+                    $data = $this->createSolrArray($record, $mergedComponents);
                     if ($data === false) {
                         continue;
                     }
-                    $merged = $this->_mergeRecords($merged, $data);
+                    $merged = $this->mergeRecords($merged, $data);
                     $data['merged_child_boolean'] = true;
                     
-                    if ($this->_verbose) {
+                    if ($this->verbose) {
                         echo "Metadata for record {$record['_id']}: \n";
                         print_r($record);
                         echo "JSON for record {$record['_id']}: \n" . json_encode($data) . "\n";
                     }
                     
                     ++$count;
-                    $res = $this->_bufferedUpdate($data, $count, $noCommit);
+                    $res = $this->bufferedUpdate($data, $count, $noCommit);
                     if ($res) {
-                        $this->_log->log('updateMergedRecords', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $res records/sec");
+                        $this->log->log('updateMergedRecords', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $res records/sec");
                     }
                 }
                 if (empty($merged)) {
-                    $this->_solrRequest(json_encode(array('delete' => array('id' => (string)$key))));
+                    $this->solrRequest(json_encode(array('delete' => array('id' => (string)$key))));
                     ++$deleted;
                     continue;
                 }
                 $merged['id'] = (string)$key;
                 $merged['merged_boolean'] = true;
                 
-                if ($this->_verbose) {
+                if ($this->verbose) {
                     echo "JSON for merged record {$merged['id']}: \n" . json_encode($merged) . "\n";
                 }
                 
                 ++$count;
-                $res = $this->_bufferedUpdate($merged, $count, $noCommit);
+                $res = $this->bufferedUpdate($merged, $count, $noCommit);
                 if ($res) {
-                    $this->_log->log('updateMergedRecords', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $res records/sec");
+                    $this->log->log('updateMergedRecords', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $res records/sec");
                 }
             }
-            $this->_flushUpdateBuffer();
+            $this->flushUpdateBuffer();
             $needCommit = $count > 0;
-            $this->_log->log('updateMergedRecords', "Total $count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed");
+            $this->log->log('updateMergedRecords', "Total $count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed");
     
-            $this->_log->log('updateMergedRecords', "Creating individual record list (from $from)...");
+            $this->log->log('updateMergedRecords', "Creating individual record list (from $from)...");
             $params = array('dedup_key' => array('$exists' => false));
             if ($singleId) {
                 $params['_id'] = $singleId;
@@ -322,93 +343,101 @@ class SolrUpdater
                 }
                 $params['update_needed'] = false;
             }
-            $records = $this->_db->record->find($params);
+            $records = $this->db->record->find($params);
             $records->immortal(true);
     
-            $total = $this->_counts ? $records->count() : 'the';
+            $total = $this->counts ? $records->count() : 'the';
             $count = 0;
             $mergedComponents = 0;
             $deleted = 0;
             if ($noCommit) {
-                $this->_log->log('updateMergedRecords', "Indexing $total individual records (with no forced commits)...");
+                $this->log->log('updateMergedRecords', "Indexing $total individual records (with no forced commits)...");
             } else {
-                $this->_log->log('updateMergedRecords', "Indexing $total individual records (max commit interval {$this->_commitInterval} records)...");
+                $this->log->log('updateMergedRecords', "Indexing $total individual records (max commit interval {$this->commitInterval} records)...");
             }
             $starttime = microtime(true);
-            $this->_initBufferedUpdate();
+            $this->initBufferedUpdate();
             foreach ($records as $record) {
                 if ($record['deleted']) {
-                    $this->_solrRequest(json_encode(array('delete' => array('id' => (string)$record['key']))));
+                    $this->solrRequest(json_encode(array('delete' => array('id' => (string)$record['key']))));
                     ++$deleted;
                 } else {
-                    $data = $this->_createSolrArray($record, $mergedComponents);
+                    $data = $this->createSolrArray($record, $mergedComponents);
                     if ($data === false) {
                         continue;
                     }
                     
-                    if ($this->_verbose) {
+                    if ($this->verbose) {
                         echo "Metadata for record {$record['_id']}: \n";
                         print_r($data);
                         echo "JSON for record {$record['_id']}: \n" . json_encode($data) . "\n";
                     }
     
                     ++$count;                       
-                    $res = $this->_bufferedUpdate($data, $count, $noCommit);
+                    $res = $this->bufferedUpdate($data, $count, $noCommit);
                     if ($res) {
-                        $this->_log->log('updateMergedRecords', "$count individual records (of which $deleted deleted) with $mergedComponents merged parts indexed, $res records/sec");
+                        $this->log->log('updateMergedRecords', "$count individual records (of which $deleted deleted) with $mergedComponents merged parts indexed, $res records/sec");
                     }
                 }
             }
-            $this->_flushUpdateBuffer();
+            $this->flushUpdateBuffer();
     
             if (isset($lastIndexingDate)) {
                 $state = array('_id' => "Last Index Update", 'value' => $lastIndexingDate);
-                $this->_db->state->save($state);
+                $this->db->state->save($state);
             }
             if ($count > 0) {
                 $needCommit = true;
             }
-            $this->_log->log('updateMergedRecords', "Total $count individual records (of which $deleted deleted) with $mergedComponents merged parts indexed");
+            $this->log->log('updateMergedRecords', "Total $count individual records (of which $deleted deleted) with $mergedComponents merged parts indexed");
             
             if (!$noCommit && $needCommit) {
-                $this->_log->log('updateMergedRecords', "Final commit...");
-                $this->_solrRequest('{ "commit": {} }');
-                $this->_log->log('updateMergedRecords', "Commit complete");
+                $this->log->log('updateMergedRecords', "Final commit...");
+                $this->solrRequest('{ "commit": {} }');
+                $this->log->log('updateMergedRecords', "Commit complete");
             }
         } catch (Exception $e) {
-            $this->_log->log('updateMergedRecords', 'Exception: ' . $e->getMessage(), Logger::FATAL);
+            $this->log->log('updateMergedRecords', 'Exception: ' . $e->getMessage(), Logger::FATAL);
         }
     }
     
     /**
      * Delete all records belonging to the given source from the index
      * 
-     * @param string $sourceId
+     * @param string $sourceId Source ID
+     * 
+     * @return void
      */
     public function deleteDataSource($sourceId)
     {
-        $this->_solrRequest('{ "delete": { "query": "id:' . $sourceId . '.*" } }');
-        $this->_solrRequest('{ "commit": {} }', 4 * 60 * 60);
+        $this->solrRequest('{ "delete": { "query": "id:' . $sourceId . '.*" } }');
+        $this->solrRequest('{ "commit": {} }', 4 * 60 * 60);
     }
 
     /**
      * Optimize the Solr index
+     * 
+     * @return void
      */
     public function optimizeIndex()
     {
-        $this->_solrRequest('{ "optimize": {} }', 4 * 60 * 60);
+        $this->solrRequest('{ "optimize": {} }', 4 * 60 * 60);
     }
     
     /**
      * Create Solr array for the given record
-     * @param MongoRecord $record
+     * 
+     * @param object  $record            Mongo record
+     * @param integer &$mergedComponents Number of component parts merged to the record
+     * 
+     * @return string[]
      */
-    protected function _createSolrArray($record, &$mergedComponents)
+    protected function createSolrArray($record, &$mergedComponents)
     {
         $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id']);
         
         $source = $record['source_id'];
-        $settings = $this->_settings[$source];
+        $settings = $this->settings[$source];
         $hiddenComponent = false;
         if ($record['host_record_id']) {
             if ($settings['componentParts'] == 'merge_all') {
@@ -431,7 +460,7 @@ class SolrUpdater
         $components = null;
         if (!$record['host_record_id'] && $settings['componentParts'] != 'as_is') {
             // Fetch all component parts for merging
-            $components = $this->_db->record->find(array('host_record_id' => $record['_id'], 'deleted' => false));
+            $components = $this->db->record->find(array('host_record_id' => $record['_id'], 'deleted' => false));
             $hasComponentParts = $components->hasNext();
             $format = $metadataRecord->getFormat();
             $merge = false;
@@ -469,11 +498,11 @@ class SolrUpdater
         if ($metadataRecord->getIsComponentPart()) {
             $hostRecord = null;
             if ($record['host_record_id']) {
-                $hostRecord = $this->_db->record->findOne(array('_id' => $record['host_record_id']));
+                $hostRecord = $this->db->record->findOne(array('_id' => $record['host_record_id']));
                 $data['hierarchy_parent_id'] = $record['host_record_id'];
             }
             if (!$hostRecord) {
-                $this->_log->log('createSolrArray', "Host record '" . $record['host_record_id'] . "' not found for record '" . $record['_id'] . "'", Logger::WARNING);
+                $this->log->log('createSolrArray', "Host record '" . $record['host_record_id'] . "' not found for record '" . $record['_id'] . "'", Logger::WARNING);
                 $data['container_title'] = $metadataRecord->getContainerTitle();
             } else {
                 $hostMetadataRecord = RecordFactory::createRecord(
@@ -519,7 +548,7 @@ class SolrUpdater
         }
         
         // Special case: Hierarchical facet support for building (institution/location)
-        if ($this->_buildingHierarchy) {
+        if ($this->buildingHierarchy) {
             if (isset($data['building']) && $data['building']) {
                 $building = array('0/' . $settings['institution']);
                 foreach ($data['building'] as $datavalue) {
@@ -601,7 +630,15 @@ class SolrUpdater
         return $data;
     }
     
-    protected function _mergeRecords($merged, $add)
+    /**
+     * Merge two Solr records
+     * 
+     * @param string[] $merged Merged (base) record
+     * @param string[] $add    Record to merge into $merged
+     * 
+     * @return string[] Resulting merged record
+     */
+    protected function mergeRecords($merged, $add)
     {
         $mergedFields = array('institution', 'collection', 'building', 'language', 
             'physical', 'publisher', 'publishDate', 'contents', 'url', 'ctrlnum',
@@ -656,9 +693,12 @@ class SolrUpdater
     /**
      * Make a JSON request to the Solr server
      * 
-     * @param string $body	The JSON request
+     * @param string       $body    The JSON request
+     * @param integer|null $timeout If specified, the HTTP call timeout in seconds
+     * 
+     * @return void
      */
-    protected function _solrRequest($body, $timeout = null)
+    protected function solrRequest($body, $timeout = null)
     {
         global $configArray;
 
@@ -689,26 +729,28 @@ class SolrUpdater
 
     /**
      * Initialize the record update buffer
+     * 
+     * @return void
      */
-    protected function _initBufferedUpdate()
+    protected function initBufferedUpdate()
     {
-        $this->_buffer = '';
-        $this->_bufferLen = 0;
-        $this->_buffered = 0;
-        $this->_bufferStartTime = microtime(true);
+        $this->buffer = '';
+        $this->bufferLen = 0;
+        $this->buffered = 0;
+        $this->bufferStartTime = microtime(true);
     }
 
     /**
      * Update Solr index in a batch
      * 
-     * @param array $data      Record metadata
-     * @param int   $count     Number of records processed so far
-     * @param bool  $noCommit  Whether to not do any explicit commits
+     * @param array $data     Record metadata
+     * @param int   $count    Number of records processed so far
+     * @param bool  $noCommit Whether to not do any explicit commits
      * 
      * @return false|int       False when buffering, records/sec when the
      *                         batch has been sent to Solr 
      */
-    protected function _bufferedUpdate($data, $count, $noCommit)
+    protected function bufferedUpdate($data, $count, $noCommit)
     {
         $result = false;
         
@@ -716,30 +758,35 @@ class SolrUpdater
             $data['allfields'] = implode(' ', $data['allfields']);
         }
         $jsonData = json_encode($data);
-        if ($this->_buffered > 0) {
-            $this->_buffer .= ",\n";
+        if ($this->buffered > 0) {
+            $this->buffer .= ",\n";
         }
-        $this->_buffer .= $jsonData;
-        $this->_bufferLen += strlen($jsonData);
-        if (++$this->_buffered >= $this->_maxUpdateRecords || $this->_bufferLen > $this->_maxUpdateSize) {
-            $this->_solrRequest("[\n{$this->_buffer}\n]");
-            $result = round($this->_buffered / (microtime(true) - $this->_bufferStartTime));
-            $this->_buffer = '';
-            $this->_bufferLen = 0;
-            $this->_buffered = 0;
-            $this->_bufferStartTime = microtime(true);
+        $this->buffer .= $jsonData;
+        $this->bufferLen += strlen($jsonData);
+        if (++$this->buffered >= $this->maxUpdateRecords || $this->bufferLen > $this->maxUpdateSize) {
+            $this->solrRequest("[\n{$this->buffer}\n]");
+            $result = round($this->buffered / (microtime(true) - $this->bufferStartTime));
+            $this->buffer = '';
+            $this->bufferLen = 0;
+            $this->buffered = 0;
+            $this->bufferStartTime = microtime(true);
         }
-        if (!$noCommit && $count % $this->_commitInterval == 0) {
-            $this->_log->log('bufferedUpdate', "Intermediate commit...");
-            $this->_solrRequest('{ "commit": {} }');
+        if (!$noCommit && $count % $this->commitInterval == 0) {
+            $this->log->log('bufferedUpdate', "Intermediate commit...");
+            $this->solrRequest('{ "commit": {} }');
         }
         return $result;
     }
     
-    protected function _flushUpdateBuffer()
+    /**
+     * Flush the buffered updates to Solr
+     * 
+     * @return void
+     */
+    protected function flushUpdateBuffer()
     {
-        if ($this->_buffered > 0) {
-            $this->_solrRequest("[\n{$this->_buffer}\n]");
+        if ($this->buffered > 0) {
+            $this->solrRequest("[\n{$this->buffer}\n]");
         }
     }
 }

@@ -112,25 +112,25 @@
                     
                     <xsl:if test="eventPlace/displayPlace">
                         <xsl:if test="$geoCoding">
-                            <xsl:variable name="geoCodeResult" select="php:function('LidoGeocode::_geoCode', string(eventPlace/displayPlace))"/>
+                            <xsl:variable name="geoCodeResult" select="php:function('LidoGeocode::geoCode', string(eventPlace/displayPlace))"/>
                                 <xsl:choose>
                                 <xsl:when test="$geoCodeResult">
-                                    <xsl:variable name="koordinaatit" select="php:function('LidoGeocode::getKoordinaatit', $geoCodeResult)"/>
+                                    <xsl:variable name="koordinaatit" select="php:function('LidoGeocode::getCoordinates', $geoCodeResult)"/>
                                     <xsl:if test="$koordinaatit">
                                         <field name="event_{$fieldName}_place_coords"><xsl:value-of select="$koordinaatit"/></field>
                                     </xsl:if>
                                     
-                                    <xsl:variable name="city" select="php:function('LidoGeocode::getKunta', $geoCodeResult)"/>
+                                    <xsl:variable name="city" select="php:function('LidoGeocode::getMunicipality', $geoCodeResult)"/>
                                     <xsl:if test="$city">
                                         <field name="event_{$fieldName}_place_city_txtF"><xsl:value-of select="$city"/></field>
                                     </xsl:if>
                                     
-                                    <xsl:variable name="state" select="php:function('LidoGeocode::getMaakunta', $geoCodeResult)"/>
+                                    <xsl:variable name="state" select="php:function('LidoGeocode::getCounty', $geoCodeResult)"/>
                                     <xsl:if test="$state">
                                         <field name="event_{$fieldName}_place_state_txtF"><xsl:value-of select="$state"/></field>
                                     </xsl:if>
                                     
-                                    <xsl:variable name="country" select="php:function('LidoGeocode::getMaa', $geoCodeResult)"/>
+                                    <xsl:variable name="country" select="php:function('LidoGeocode::getCountry', $geoCodeResult)"/>
                                     <xsl:if test="$country">
                                         <field name="event_{$fieldName}_place_country_txtF"><xsl:value-of select="$country"/></field>
                                     </xsl:if>

@@ -23,6 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 require_once 'BaseRecord.php';
@@ -32,23 +33,30 @@ require_once 'BaseRecord.php';
  *
  * This is a class for processing LIDO records.
  *
+ * @category DataManagement
+ * @package  RecordManager
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 class LidoRecord extends BaseRecord
 {
-    protected $_doc = null;
+    protected $doc = null;
     
-    protected $_earliestYear;
-    protected $_latestYear;
+    protected $earliestYear;
+    protected $latestYear;
 
     /**
      * Constructor
      *
-     * @param string $data Record metadata
+     * @param string $data  Record metadata
+     * @param string $oaiID Record ID in OAI-PMH
+     * 
      * @access public
      */
     public function __construct($data, $oaiID)
     {
-        $this->_doc = simplexml_load_string($data);
+        $this->doc = simplexml_load_string($data);
     }
     
     /**
@@ -59,7 +67,7 @@ class LidoRecord extends BaseRecord
      */
     public function getID()
     {
-        return $this->_doc->lido->lidoRecID;
+        return $this->doc->lido->lidoRecID;
     }
 
     /**
@@ -70,7 +78,7 @@ class LidoRecord extends BaseRecord
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->_doc->asXML());
+        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -81,31 +89,32 @@ class LidoRecord extends BaseRecord
      */
     public function toXML()
     {
-        return $this->_doc->asXML();
+        return $this->doc->asXML();
     }
 
     /**
      * Set the ID prefix into all the ID fields (ID, host ID etc.)
      *
-     * @param  string $prefix (e.g. "source.")
+     * @param string $prefix (e.g. "source.")
+     * 
      * @return void
      * @access public
      */
     public function setIDPrefix($prefix)
     {
-        $this->_doc->lido->lidoRecID = $prefix . $this->_doc->lido->lidoRecID;
+        $this->doc->lido->lidoRecID = $prefix . $this->doc->lido->lidoRecID;
     }
 
     /**
      * Return fields to be indexed in Solr
      *
-     * @return array
+     * @return string[]
      * @access public
      */
     public function toSolrArray()
     {
         $data = array();
-        $doc = $this->_doc;
+        $doc = $this->doc;
 
         // Use Finnish title if applicable, should other language versions be indexed as well?
         $data['title'] = $this->getTitle('fi');
@@ -117,7 +126,7 @@ class LidoRecord extends BaseRecord
         
         $categoryTerm = $this->getCategoryTerm();
         if ($categoryTerm == 'Man-Made Object') {
-          $rawType = $this->getClassification('pääluokka');
+            $rawType = $this->getClassification('pääluokka');
         }
         
         // END OF TUUSULA FIX
@@ -144,7 +153,7 @@ class LidoRecord extends BaseRecord
         // TODO: this is not the only kind of actor in LIDO, is this what's wanted here?
         $data['author'] = $this->getActor('valmistus');
         
-        $subjects = $this->_getSubjects();
+        $subjects = $this->getSubjects();
         if(empty($subjects)) $subjects = array();
         $classifications = $this->getClassifications();
         if(empty($classifications)) $classifications = array();
@@ -168,7 +177,7 @@ class LidoRecord extends BaseRecord
         
         // END OF TUUSULA FIX
         
-        $materials = $this->_getMaterials();
+        $materials = $this->getMaterials();
         if (!empty($materials)) {
             $data['material'] = array();
             // sometimes there are multiple materials in one element
@@ -198,9 +207,9 @@ class LidoRecord extends BaseRecord
         $data['rights'] = $this->getRights();
         $data['unit_daterange'] = $this->getDateRange('valmistus');
         
-        if (!empty($this->_earliestYear) && !empty($this->_latestYear)) {
+        if (!empty($this->earliestYear) && !empty($this->latestYear)) {
             // For demo purposes only... uniform distribution
-            $data['publishDate'] = rand(intval($this->_earliestYear), intval($this->_latestYear));
+            $data['publishDate'] = rand(intval($this->earliestYear), intval($this->latestYear));
         }
         
         $data['collection'] = $this->getCollection();
@@ -238,7 +247,7 @@ class LidoRecord extends BaseRecord
      */
     public function getMeasurements()
     {
-        return $this->_extractArray('lido/descriptiveMetadata/objectIdentificationWrap/objectMeasurementsWrap/objectMeasurementsSet/displayObjectMeasurements');
+        return $this->extractArray('lido/descriptiveMetadata/objectIdentificationWrap/objectMeasurementsWrap/objectMeasurementsSet/displayObjectMeasurements');
     }
     
     /**
@@ -276,7 +285,7 @@ class LidoRecord extends BaseRecord
      */
     public function getRightsHolderLegalBodyName() 
     {
-      return $this->extractFirst('lido/administrativeMetadata/rightsWorkWrap/rightsWorkSet/rightsHolder/legalBodyName/appellationValue');
+        return $this->extractFirst('lido/administrativeMetadata/rightsWorkWrap/rightsWorkSet/rightsHolder/legalBodyName/appellationValue');
     }
     
     /**
@@ -306,12 +315,12 @@ class LidoRecord extends BaseRecord
      * Return all the cultures associated with an object.
      *
      * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#eventComplexType
-     * @return array
+     * @return string[]
      * @access public
      */
     public function getCulture()
     {
-        return $this->_extractArray('lido/descriptiveMetadata/eventWrap/eventSet/event/culture/term');
+        return $this->extractArray('lido/descriptiveMetadata/eventWrap/eventSet/event/culture/term');
     }
     
     /**
@@ -329,37 +338,36 @@ class LidoRecord extends BaseRecord
     /**
      * Return the classification of the specified type or the first classification if none specified.
      *
+     * @param string $type Classification
+     * 
      * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
-     * @param $type string
      * @return string
      * @access public
      */
     public function getClassification($type = null)
     {
-      if ($type != null) {
-          return $this->extractFirst("lido/descriptiveMetadata/objectClassificationWrap/classificationWrap/classification[@type='$type']/term");
-      }
-      return $this->extractFirst('lido/descriptiveMetadata/objectClassificationWrap/classificationWrap/classification/term');
+        if ($type != null) {
+            return $this->extractFirst("lido/descriptiveMetadata/objectClassificationWrap/classificationWrap/classification[@type='$type']/term");
+        }
+        return $this->extractFirst('lido/descriptiveMetadata/objectClassificationWrap/classificationWrap/classification/term');
     }
     
     /**
      * Return the classifications
      *
      * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
-     * @param $type string
      * @return string
      * @access public
      */
     public function getClassifications()
     {
-        return $this->_extractArray('lido/descriptiveMetadata/objectClassificationWrap/classificationWrap/classification/term');
+        return $this->extractArray('lido/descriptiveMetadata/objectClassificationWrap/classificationWrap/classification/term');
     }
     
     /**
      * Return the term part of the category
      *
      * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
-     * @param $type string
      * @return string
      * @access public
      */
@@ -371,18 +379,20 @@ class LidoRecord extends BaseRecord
     /**
      * Dedup: Return record title
      *
-     * @param bool $forFiling Whether the title is to be used in filing (e.g. sorting, non-filing characters should be removed)
+     * @param bool   $forFiling Whether the title is to be used in filing (e.g. sorting, non-filing characters should be removed)
+     * @param string $lang      Language
+     * 
      * @return string
      * @access public
      */
     public function getTitle($forFiling = false, $lang = null)
     {
         if ($lang != null) {
-            $titles = $this->_extractArray("lido/descriptiveMetadata/objectIdentificationWrap/titleWrap/titleSet/appellationValue[@lang='$lang']");
+            $titles = $this->extractArray("lido/descriptiveMetadata/objectIdentificationWrap/titleWrap/titleSet/appellationValue[@lang='$lang']");
         }
         // Fallback to use any title in case none found with the specified language (the language info just might not be there)
         if (empty($titles)) {
-            $titles = $this->_extractArray('lido/descriptiveMetadata/objectIdentificationWrap/titleWrap/titleSet/appellationValue');
+            $titles = $this->extractArray('lido/descriptiveMetadata/objectIdentificationWrap/titleWrap/titleSet/appellationValue');
         }
         
         $num = count($titles);
@@ -398,18 +408,19 @@ class LidoRecord extends BaseRecord
     /**
      * Return URLs associated with object
      *
-     * @return array
+     * @return string[]
      * @access public
      */
     public function getURLs()
     {
-        return $this->_extractArray('lido/administrativeMetadata/resourceWrap/resourceSet/resourceRepresentation/linkResource');
+        return $this->extractArray('lido/administrativeMetadata/resourceWrap/resourceSet/resourceRepresentation/linkResource');
     }
     
     /**
      * Return name of first actor associated with specified event
      *
      * @param string $event Which event to use (omit to scan all events)
+     * 
      * @return string
      * @access public
      */
@@ -427,8 +438,9 @@ class LidoRecord extends BaseRecord
     /**
      * Return the date range associated with specified event
      *
-     * @param string $event Which event to use (omit to scan all events)
+     * @param string $event     Which event to use (omit to scan all events)
      * @param string $delimiter Delimiter between the dates
+     * 
      * @return string
      * @access public
      */
@@ -450,8 +462,9 @@ class LidoRecord extends BaseRecord
     /**
      * Return the date range associated with specified event
      *
-     * @param string $event Which event to use (omit to scan all events)
+     * @param string $event     Which event to use (omit to scan all events)
      * @param string $delimiter Delimiter between the dates
+     *
      * @return string
      * @access public
      */
@@ -473,6 +486,7 @@ class LidoRecord extends BaseRecord
      * Return the place associated with specified event
      *
      * @param string $event Which event to use (omit to scan all events)
+     * 
      * @return string
      * @access public
      */
@@ -493,8 +507,9 @@ class LidoRecord extends BaseRecord
     /**
      * Return the date range associated with specified event
      *
-     * @param string $event Which event to use (omit to scan all events)
+     * @param string $event     Which event to use (omit to scan all events)
      * @param string $delimiter Delimiter between the dates
+     * 
      * @return string
      * @access public
      */
@@ -517,8 +532,9 @@ class LidoRecord extends BaseRecord
      * TODO: complicated normalization like this should preferably reside within its own, separate component
      * which should allow modification of the algorithm by methods other than hard-coding rules into source.
      *
-     * @param string $input
-     * @param string $delimiter
+     * @param string $input     Date range
+     * @param string $delimiter Date delimiter
+     * 
      * @return string Two ISO 8601 dates separated with the supplied delimiter on success, and null on failure.
      */
     public function parseDateRange($input, $delimiter = ',')
@@ -526,28 +542,27 @@ class LidoRecord extends BaseRecord
         $input = trim(strtolower($input));    
          
         switch($input) {
-            case 'kivikausi':
-            case 'kivikauisi':
-            case 'kiviakausi':
-                $this->_earliestYear = '-8600';
-                $this->_latestYear = '-1500';
-                return '-8600-01-01T00:00:00Z,-1501-12-31T23:59:59Z';
-            case 'pronssikausi':
-                $this->_earliestYear = '-1500';
-                $this->_latestYear = '-500';
-                return '-1500-01-01T00:00:00Z,-501-12-31T23:59:59Z';
-            case 'rautakausi':
-                $this->_earliestYear = '-500';
-                $this->_latestYear = '1300';
-                return '-500-01-01T00:00:00Z,1299-12-31T23:59:59Z';
-            case 'keskiaika':
-                $this->_earliestYear = '1300';
-                $this->_latestYear = '1550';
-                return '1300-01-01T00:00:00Z,1550-12-31T23:59:59Z';
-            case 'ajoittamaton':
-            case 'tuntematon':
-                return null;
-            default:
+        case 'kivikausi':
+        case 'kivikauisi':
+        case 'kiviakausi':
+            $this->earliestYear = '-8600';
+            $this->latestYear = '-1500';
+            return '-8600-01-01T00:00:00Z,-1501-12-31T23:59:59Z';
+        case 'pronssikausi':
+            $this->earliestYear = '-1500';
+            $this->latestYear = '-500';
+            return '-1500-01-01T00:00:00Z,-501-12-31T23:59:59Z';
+        case 'rautakausi':
+            $this->earliestYear = '-500';
+            $this->latestYear = '1300';
+            return '-500-01-01T00:00:00Z,1299-12-31T23:59:59Z';
+        case 'keskiaika':
+            $this->earliestYear = '1300';
+            $this->latestYear = '1550';
+            return '1300-01-01T00:00:00Z,1550-12-31T23:59:59Z';
+        case 'ajoittamaton':
+        case 'tuntematon':
+            return null;
         }
         
         $k = array(
@@ -685,8 +700,8 @@ class LidoRecord extends BaseRecord
             return null;
         }
         
-        $this->_earliestYear = $startDate;
-        $this->_latestYear = $startDate;
+        $this->earliestYear = $startDate;
+        $this->latestYear = $startDate;
         
         if (!MetadataUtils::validateISO8601Date($startDate) || !MetadataUtils::validateISO8601Date($endDate)) {
             return null;
@@ -730,12 +745,12 @@ class LidoRecord extends BaseRecord
     /**
      * Return the languages used in the metadata (from 'lang' attributes used in descriptiveMetadata elements)
      *
-     * @return array
+     * @return string[]
      * @access public
      */
     public function getLanguage() 
     {
-        $wraps = $this->_doc->xpath('lido/descriptiveMetadata');
+        $wraps = $this->doc->xpath('lido/descriptiveMetadata');
         if (!count($wraps)) {
             return null;
         }
@@ -758,7 +773,7 @@ class LidoRecord extends BaseRecord
      * @return string
      * @access public
      */
-    protected function _getSubjects()
+    protected function getSubjects()
     {
         $xpath = 'lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/subject'
         // REMOVE THIS ONCE TUUSULA IS FIXED
@@ -769,7 +784,7 @@ class LidoRecord extends BaseRecord
         // END OF TUUSULA FIX
         . '/subjectConcept/term';
     
-        return $this->_extractArray($xpath);
+        return $this->extractArray($xpath);
     }
     
     /**
@@ -779,17 +794,17 @@ class LidoRecord extends BaseRecord
      * retrieved in case of failure.
      *
      * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#materialsTechSetComplexType
-     * @return array
+     * @return string[]
      * @access public
      */
-    protected function _getMaterials()
+    protected function getMaterials()
     {
         // First try out if the materials are individually listed
         $xpath = 'lido/descriptiveMetadata/eventWrap/'
         . "eventSet/event[eventType/term='valmistus']/"
         . 'eventMaterialsTech/materialsTech/termMaterialsTech/term';
     
-        $materials = $this->_extractArray($xpath);
+        $materials = $this->extractArray($xpath);
     
         if (!empty($materials)) {
             return $materials;
@@ -807,12 +822,13 @@ class LidoRecord extends BaseRecord
      * Utility method that returns an array of strings matching given XPath selector.
      *
      * @param string $xpath XPath expression
-     * @return array
+     * 
+     * @return string[]
      * @access public
      */
-    protected function _extractArray($xpath)
+    protected function extractArray($xpath)
     {
-        $elements = $this->_doc->xpath($xpath);
+        $elements = $this->doc->xpath($xpath);
         if (!$elements || !count($elements)) {
             return null;
         }
@@ -830,12 +846,13 @@ class LidoRecord extends BaseRecord
      * Utility method that returns the first string matching given XPath selector.
      *
      * @param string $xpath XPath expression
+     * 
      * @return string
      * @access public
      */
     protected function extractFirst($xpath)
     {
-        $elements = $this->_doc->xpath($xpath);
+        $elements = $this->doc->xpath($xpath);
         if (!$elements || !count($elements) || empty($elements[0])) {
             return null;
         }

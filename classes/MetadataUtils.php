@@ -23,7 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 /**
@@ -31,20 +31,25 @@
  *
  * This class contains a collection of static helper functions for metadata processing
  *
+ * @category DataManagement
+ * @package  RecordManager
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 class MetadataUtils
 {
     /**
      * Convert ISBN-10 (without dashes) to ISBN-13
      *
-     * @param string $isbn
-     * @return boolean|string
-     * @access public
+     * @param string $isbn ISBN
+     * 
+     * @return boolean|string Resulting ISBN or false for invalid string
      */
     static public function isbn10to13($isbn)
     {
         if (!preg_match('{^([0-9]{9})[0-9xX]$}', $isbn, $matches)) {
-            # number is not 10 digits
+            // number is not 10 digits
             return false;
         }
 
@@ -59,9 +64,9 @@ class MetadataUtils
     /**
      * Convert coordinates in [EWSN]DDDMMSS format to decimal
      *
-     * @param string $value
-     * @return number
-     * @access public
+     * @param string $value Coordinates
+     * 
+     * @return float
      */
     static public function coordinateToDecimal($value)
     {
@@ -81,9 +86,9 @@ class MetadataUtils
     /**
      * Create a normalized title key for dedup
      *
-     * @param string $title
+     * @param string $title Title
+     * 
      * @return string
-     * @access public
      */
     static public function createTitleKey($title)
     {
@@ -108,16 +113,16 @@ class MetadataUtils
     /**
      * Normalize a string for comparison
      *
-     * @param string $str
+     * @param string $str String to be normalized
+     * 
      * @return string
-     * @access public
      */
     static public function normalize($str)
     {
         $unwanted_array = array('Š'=>'S', 'š'=>'s', 'Ž'=>'Z', 'ž'=>'z', 'À'=>'A', 'Á'=>'A', 'Â'=>'A', 'Ã'=>'A', /*'Ä'=>'A', 'Å'=>'A',*/ 'Æ'=>'A', 'Ç'=>'C', 'È'=>'E', 'É'=>'E',
-			                    'Ê'=>'E', 'Ë'=>'E', 'Ì'=>'I', 'Í'=>'I', 'Î'=>'I', 'Ï'=>'I', 'Ñ'=>'N', 'Ò'=>'O', 'Ó'=>'O', 'Ô'=>'O', 'Õ'=>'O', /*'Ö'=>'O',*/ 'Ø'=>'O', 'Ù'=>'U',
-			                    'Ú'=>'U', 'Û'=>'U', 'Ü'=>'U', 'Ý'=>'Y', 'Þ'=>'B', 'ß'=>'Ss', 'à'=>'a', 'á'=>'a', 'â'=>'a', 'ã'=>'a', /*'ä'=>'a', 'å'=>'a',*/ 'æ'=>'a', 'ç'=>'c',
-			                    'è'=>'e', 'é'=>'e', 'ê'=>'e', 'ë'=>'e', 'ì'=>'i', 'í'=>'i', 'î'=>'i', 'ï'=>'i', 'ð'=>'o', 'ñ'=>'n', 'ò'=>'o', 'ó'=>'o', 'ô'=>'o', 'õ'=>'o',
+                          'Ê'=>'E', 'Ë'=>'E', 'Ì'=>'I', 'Í'=>'I', 'Î'=>'I', 'Ï'=>'I', 'Ñ'=>'N', 'Ò'=>'O', 'Ó'=>'O', 'Ô'=>'O', 'Õ'=>'O', /*'Ö'=>'O',*/ 'Ø'=>'O', 'Ù'=>'U',
+                          'Ú'=>'U', 'Û'=>'U', 'Ü'=>'U', 'Ý'=>'Y', 'Þ'=>'B', 'ß'=>'Ss', 'à'=>'a', 'á'=>'a', 'â'=>'a', 'ã'=>'a', /*'ä'=>'a', 'å'=>'a',*/ 'æ'=>'a', 'ç'=>'c',
+                          'è'=>'e', 'é'=>'e', 'ê'=>'e', 'ë'=>'e', 'ì'=>'i', 'í'=>'i', 'î'=>'i', 'ï'=>'i', 'ð'=>'o', 'ñ'=>'n', 'ò'=>'o', 'ó'=>'o', 'ô'=>'o', 'õ'=>'o',
         /*'ö'=>'o',*/ 'ø'=>'o', 'ù'=>'u', 'ú'=>'u', 'û'=>'u', 'ü'=>'u', 'ý'=>'y', 'ý'=>'y', 'þ'=>'b', 'ÿ'=>'y' );
         $str = strtr($str, $unwanted_array);
         $str = utf8_decode($str);
@@ -129,10 +134,10 @@ class MetadataUtils
     /**
      * Try to match two authors with at least last name and initial letter of first name
      *
-     * @param string $a1  LastName FirstName
-     * @param string $a2  LastName FirstName
+     * @param string $a1 LastName FirstName
+     * @param string $a2 LastName FirstName
+     * 
      * @return bool
-     * @access public
      */
     static public function authorMatch($a1, $a2)
     {
@@ -170,18 +175,20 @@ class MetadataUtils
     /**
      * Check whether the string contains trailing punctuation characters
      *
-     * @param string $str
-     * @return string
+     * @param string $str String to check
+     * 
+     * @return boolean
      */
     static public function hasTrailingPunctuation($str)
     {
-        return preg_match('/[\/:;\,=\(]+\s*$/', $str);
+        return preg_match('/[\/:;\,=\(]+\s*$/', $str) > 0;
     }
 
     /**
      * Strip trailing spaces and punctuation characters from a string
      *
-     * @param string $str
+     * @param string $str String to strip
+     * 
      * @return string
      */
     static public function stripTrailingPunctuation($str)
@@ -193,20 +200,23 @@ class MetadataUtils
     /**
      * Case-insensitive array_unique
      * 
-     * @param array $array
+     * @param array $array Array
+     * 
      * @return array
      */
+    // @codingStandardsIgnoreStart
     static public function array_iunique($array) 
     {
-        return array_intersect_key($array,
-            array_unique(array_map('mb_strtolower', $array)));
+        return array_intersect_key($array, array_unique(array_map('mb_strtolower', $array)));
     } 
+    // @codingStandardsIgnoreEnd
     
     /**
      * Try to find the important numeric part from a record ID to sort by 
      * 
-     * @param  string $id
-     * @return string sort key
+     * @param string $id Record ID
+     * 
+     * @return string Sort key
      */
     static public function createIdSortKey($id) 
     {
@@ -219,7 +229,9 @@ class MetadataUtils
     /**
      * Validate a date in ISO8601 format.
      *
-     * @param string $date
+     * @param string $date Date to validate
+     * 
+     * @return boolean
      */
     static public function validateISO8601Date($date)
     {
@@ -240,7 +252,8 @@ class MetadataUtils
      * Trim whitespace between tags (but not in data)
      *
      * @param string $xml XML string
-     * @return string     Cleaned string 
+     * 
+     * @return string Cleaned string 
      */
     static public function trimXMLWhitespace($xml)
     {
@@ -250,9 +263,10 @@ class MetadataUtils
     /**
      * Get record metadata from a database record
      *
-     * @param object $record		  Database record
-     * @param bool   $normalized	Whether to return the original (false) or normalized (true) record
-     * @return string				      Metadata as a string
+     * @param object &$record    Database record
+     * @param bool   $normalized Whether to return the original (false) or normalized (true) record
+     * 
+     * @return string Metadata as a string
      */
     static public function getRecordData(&$record, $normalized)
     {
@@ -267,9 +281,10 @@ class MetadataUtils
     /**
      * Create a timestamp string from the given unix timestamp
      * 
-     * @param int 		$timestamp 	Unix timestamp
-     * @return string				Formatted string
-     */
+     * @param int $timestamp Unix timestamp
+     * 
+     * @return string Formatted string
+     */    
     public static function formatTimestamp($timestamp)
     {
         $date = new DateTime('', new DateTimeZone('UTC'));

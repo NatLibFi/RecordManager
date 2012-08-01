@@ -23,6 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 /**
@@ -30,6 +31,12 @@
  *
  * This class provides a logging facility for RecordManager with the ability
  * to report fatal errors by email.
+ *
+ * @category DataManagement
+ * @package  RecordManager
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 class Logger
 {
@@ -46,6 +53,9 @@ class Logger
     public $logToConsole = false;
     public $errorEmail = '';
 
+    /**
+     * Constructor
+     */
     public function __construct()
     {
         global $configArray;
@@ -66,23 +76,24 @@ class Logger
     /**
      * Write a message to the log
      * 
-     * @param string  $context Context of the log message (e.g. current function)
-     * @param string  $msg     Actual message 
-     * @param int     $level   Message level used to filter logged messages. Default is INFO (3)
+     * @param string $context Context of the log message (e.g. current function)
+     * @param string $msg     Actual message 
+     * @param int    $level   Message level used to filter logged messages. Default is INFO (3)
+     * 
+     * @return void
      */
     public function log($context, $msg, $level = Logger::INFO)
     {
         if ($this->logLevel < $level) {
             return;
         }
-        $msg = date('Y-m-d H:i:s') . ' [' . getmypid() . '] [' . $this->_logLevelToStr($level) . "] [$context] $msg\n";
+        $msg = date('Y-m-d H:i:s') . ' [' . getmypid() . '] [' . $this->logLevelToStr($level) . "] [$context] $msg\n";
         if ($this->logFile) {
             if (file_exists($this->logFile) && filesize($this->logFile) > $this->maxFileSize * 1024 * 1024) {
                 if (file_exists($this->logFile . '.' . $this->maxFileHistory)) {
                     unlink($this->logFile . '.' . $this->maxFileHistory);
                 }
-                for ($i = $this->maxFileHistory - 1; $i >= 0; $i--)
-                {
+                for ($i = $this->maxFileHistory - 1; $i >= 0; $i--) {
                     if (file_exists($this->logFile . '.' . $i)) {
                         rename($this->logFile . '.' . $i, $this->logFile . '.' . ($i + 1));
                     }
@@ -104,14 +115,21 @@ class Logger
         }
     }
 
-    private function _logLevelToStr($level)
+    /**
+     * Convert log level to string
+     * 
+     * @param level $level Level to convert
+     * 
+     * @return string
+     */
+    protected function logLevelToStr($level)
     {
         switch ($level) {
-            case Logger::FATAL: return 'FATAL';
-            case Logger::ERROR: return 'ERROR';
-            case Logger::WARNING: return 'WARNING';
-            case Logger::INFO: return 'INFO';
-            case Logger::DEBUG: return 'DEBUG';
+        case Logger::FATAL: return 'FATAL';
+        case Logger::ERROR: return 'ERROR';
+        case Logger::WARNING: return 'WARNING';
+        case Logger::INFO: return 'INFO';
+        case Logger::DEBUG: return 'DEBUG';
         }
         return '???';
     }

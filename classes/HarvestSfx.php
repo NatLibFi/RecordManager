@@ -27,6 +27,7 @@
  * @author   Demian Katz <demian.katz@villanova.edu>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 require_once 'HTTP/Request2.php';
@@ -41,24 +42,25 @@ require_once 'HTTP/Request2.php';
  * @author   Demian Katz <demian.katz@villanova.edu>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 class HarvestSfx
 {
-    protected $_log;                   // Logger
-    protected $_db;                    // Mongo database
-    protected $_baseURL;               // URL to harvest from
-    protected $_filePrefix = '';       // File name prefix
-    protected $_source;                // Source ID
-    protected $_startDate = null;      // Harvest start date (null for all records)
-    protected $_endDate = null; 		 // Harvest end date (null for all records)
-    protected $_verbose = false;       // Whether to display debug output
-    protected $_normalRecords = 0;     // Harvested normal record count
-    protected $_deletedRecords = 0;    // Harvested deleted record count
-    protected $_childPid = null;       // Child process id for record processing
+    protected $log;                   // Logger
+    protected $db;                    // Mongo database
+    protected $baseURL;               // URL to harvest from
+    protected $filePrefix = '';       // File name prefix
+    protected $source;                // Source ID
+    protected $startDate = null;      // Harvest start date (null for all records)
+    protected $endDate = null;      // Harvest end date (null for all records)
+    protected $verbose = false;       // Whether to display debug output
+    protected $normalRecords = 0;     // Harvested normal record count
+    protected $deletedRecords = 0;    // Harvested deleted record count
+    protected $childPid = null;       // Child process id for record processing
     
     // As we harvest records, we want to track the most recent date encountered
     // so we can set a start point for the next harvest.
-    protected $_trackedEndDate = '';
+    protected $trackedEndDate = '';
 
     /**
      * Constructor.
@@ -73,31 +75,31 @@ class HarvestSfx
      */
     public function __construct($logger, $db, $source, $basePath, $settings)
     {
-        $this->_log = $logger;
-        $this->_db = $db;
+        $this->log = $logger;
+        $this->db = $db;
          
         // Check if we have a start date
-        $this->_source = $source;
-        $this->_loadLastHarvestedDate();
+        $this->source = $source;
+        $this->loadLastHarvestedDate();
 
         // Set up base URL:
         if (empty($settings['url'])) {
             throw new Exception("Missing base URL for {$source}");
         }
-        $this->_baseURL = $settings['url'];
+        $this->baseURL = $settings['url'];
         if (isset($settings['filePrefix'])) {
-            $this->_filePrefix = $settings['filePrefix'];
+            $this->filePrefix = $settings['filePrefix'];
         }
         if (isset($settings['verbose'])) {
-            $this->_verbose = $settings['verbose'];
+            $this->verbose = $settings['verbose'];
         }
         
         $style = new DOMDocument();
         if ($style->load($basePath . '/transformations/strip_namespaces.xsl') === false) {
             throw new Exception('Could not load ' . $basePath . '/transformations/strip_namespaces.xsl');
         }
-        $this->_transformation = new XSLTProcessor();
-        $this->_transformation->importStylesheet($style);
+        $this->transformation = new XSLTProcessor();
+        $this->transformation->importStylesheet($style);
     }
 
     /**
@@ -110,7 +112,7 @@ class HarvestSfx
      */
     public function setStartDate($date)
     {
-        $this->_startDate = $date;
+        $this->startDate = $date;
     }
 
     /**
@@ -123,40 +125,41 @@ class HarvestSfx
      */
     public function setEndDate($date)
     {
-        $this->_endDate = $date;
+        $this->endDate = $date;
     }
 
     /**
      * Harvest all available documents.
      *
-     * @param  function reference $callback  Function to be called to store a harvested record
+     * @param functionref $callback Function to be called to store a harvested record
+     * 
      * @return void
      * @access public
      */
     public function launch($callback)
     {
-        $this->_normalRecords = 0;
-        $this->_deletedRecords = 0;
-        $this->_callback = $callback;
+        $this->normalRecords = 0;
+        $this->deletedRecords = 0;
+        $this->callback = $callback;
 
-        if (isset($this->_startDate)) {
-            $this->_message('Incremental harvest from timestamp ' . $this->_startDate);
+        if (isset($this->startDate)) {
+            $this->message('Incremental harvest from timestamp ' . $this->startDate);
         } else {
-            $this->_message('Initial harvest for all records');
+            $this->message('Initial harvest for all records');
         }
-        $fileList = $this->_retrieveFileList();
-        $this->_message('Files to harvest: ' . count($fileList));
+        $fileList = $this->retrieveFileList();
+        $this->message('Files to harvest: ' . count($fileList));
         foreach ($fileList as $file) {
-            $data = $this->_retrieveFile($file);
-            $xml = $this->_parseResponse($data);
-            $this->_processRecords($xml->record);
-            $this->_message('Harvested ' . $this->_normalRecords . ' normal records and ' . $this->_deletedRecords . ' deleted records');
+            $data = $this->retrieveFile($file);
+            $xml = $this->parseResponse($data);
+            $this->processRecords($xml->record);
+            $this->message('Harvested ' . $this->normalRecords . ' normal records and ' . $this->deletedRecords . ' deleted records');
         }
-        if (isset($this->_childPid)) {
-            pcntl_waitpid($this->_childPid, $status);
+        if (isset($this->childPid)) {
+            pcntl_waitpid($this->childPid, $status);
         }
-        if ($this->_trackedEndDate > 0) {
-            $this->_saveLastHarvestedDate();
+        if ($this->trackedEndDate > 0) {
+            $this->saveLastHarvestedDate();
         }
     }
 
@@ -167,9 +170,9 @@ class HarvestSfx
      * @return void
      * @access protected
      */
-    protected function _loadLastHarvestedDate()
+    protected function loadLastHarvestedDate()
     {
-        $state = $this->_db->state->findOne(array('_id' => "Last Harvest Date {$this->_source}"));
+        $state = $this->db->state->findOne(array('_id' => "Last Harvest Date {$this->source}"));
         if (isset($state)) {
             $this->setStartDate($state['value']);
         }
@@ -181,26 +184,30 @@ class HarvestSfx
      * @return void
      * @access protected
      */
-    protected function _saveLastHarvestedDate()
+    protected function saveLastHarvestedDate()
     {
-        $state = array('_id' => "Last Harvest Date {$this->_source}", 'value' => $this->_trackedEndDate);
-        $this->_db->state->save($state);
+        $state = array('_id' => "Last Harvest Date {$this->source}", 'value' => $this->trackedEndDate);
+        $this->db->state->save($state);
     }
 
     /**
      * Retrieve list of files to be harvested, filter by date
      * 
      * @throws Exception
+     * @return string[]
      */
-    protected function _retrieveFileList()
+    protected function retrieveFileList()
     {
-        $request = new HTTP_Request2($this->_baseURL, HTTP_Request2::METHOD_GET, 
-            array('ssl_verify_peer' => false));
+        $request = new HTTP_Request2(
+            $this->baseURL,
+            HTTP_Request2::METHOD_GET, 
+            array('ssl_verify_peer' => false)
+        );
         $request->setHeader('User-Agent', 'RecordManager');
 
         $url = $request->getURL();
         $urlStr = $url->getURL();
-        $this->_message("Sending request: $urlStr", true);
+        $this->message("Sending request: $urlStr", true);
 
         // Perform request and throw an exception on error:
         for ($try = 1; $try <= 5; $try++) {
@@ -208,7 +215,7 @@ class HarvestSfx
                 $response = $request->send();
             } catch (Exception $e) {
                 if ($try < 5) {
-                    $this->_message("Request '$urlStr' failed (" . $e->getMessage() . "), retrying in 30 seconds...", false, Logger::WARNING);
+                    $this->message("Request '$urlStr' failed (" . $e->getMessage() . "), retrying in 30 seconds...", false, Logger::WARNING);
                     sleep(30);
                     continue;
                 }
@@ -217,7 +224,7 @@ class HarvestSfx
             if ($try < 5) {
                 $code = $response->getStatus();
                 if ($code >= 300) {
-                    $this->_message("Request '$urlStr' failed ($code), retrying in 30 seconds...", false, Logger::WARNING);
+                    $this->message("Request '$urlStr' failed ($code), retrying in 30 seconds...", false, Logger::WARNING);
                     sleep(30);
                     continue;
                 }
@@ -226,14 +233,14 @@ class HarvestSfx
         }
         $code = $response->getStatus();
         if ($code >= 300) {
-            $this->_message("Request '$urlStr' failed: $code", false, Logger::FATAL);
+            $this->message("Request '$urlStr' failed: $code", false, Logger::FATAL);
             throw new Exception("Request failed: $code");
         }
 
         $responseStr = $response->getBody();
         
         $matches = array();
-        preg_match_all("/href=\"({$this->_filePrefix}.*?)\"/", $responseStr, $matches, PREG_SET_ORDER);
+        preg_match_all("/href=\"({$this->filePrefix}.*?)\"/", $responseStr, $matches, PREG_SET_ORDER);
         $files = array();
         foreach ($matches as $match) {
             $filename = $match[1];
@@ -243,10 +250,10 @@ class HarvestSfx
             }
             $date = $dateparts[1] . '-' . $dateparts[2] . '-' . $dateparts[3] . 'T' . 
                     $dateparts[4] . ':' . $dateparts[5] . ':' . $dateparts[6];
-            if ($date > $this->_startDate && (!$this->_endDate || $date <= $this->_endDate)) {
+            if ($date > $this->startDate && (!$this->endDate || $date <= $this->endDate)) {
                 $files[] = $filename;
-                if (!$this->_trackedEndDate || $this->_trackedEndDate < $date) {
-                    $this->_trackedEndDate = $date;
+                if (!$this->trackedEndDate || $this->trackedEndDate < $date) {
+                    $this->trackedEndDate = $date;
                 }
             }
         }
@@ -256,20 +263,23 @@ class HarvestSfx
     /**
      * Fetch a file to be harvested
      * 
-     * @param string $filename
+     * @param string $filename File to retrieve
      * 
      * @return string xml
      * @throws Exception
      */
-    protected function _retrieveFile($filename)
+    protected function retrieveFile($filename)
     {
-        $request = new HTTP_Request2($this->_baseURL . $filename, HTTP_Request2::METHOD_GET,
-                array('ssl_verify_peer' => false));
+        $request = new HTTP_Request2(
+            $this->baseURL . $filename,
+            HTTP_Request2::METHOD_GET,
+            array('ssl_verify_peer' => false)
+        );
         $request->setHeader('User-Agent', 'RecordManager');
     
         $url = $request->getURL();
         $urlStr = $url->getURL();
-        $this->_message("Sending request: $urlStr", true);
+        $this->message("Sending request: $urlStr", true);
     
         // Perform request and throw an exception on error:
         for ($try = 1; $try <= 5; $try++) {
@@ -277,7 +287,7 @@ class HarvestSfx
                 $response = $request->send();
             } catch (Exception $e) {
                 if ($try < 5) {
-                    $this->_message("Request '$urlStr' failed (" . $e->getMessage() . "), retrying in 30 seconds...", false, Logger::WARNING);
+                    $this->message("Request '$urlStr' failed (" . $e->getMessage() . "), retrying in 30 seconds...", false, Logger::WARNING);
                     sleep(30);
                     continue;
                 }
@@ -286,7 +296,7 @@ class HarvestSfx
             if ($try < 5) {
                 $code = $response->getStatus();
                 if ($code >= 300) {
-                    $this->_message("Request '$urlStr' failed ($code), retrying in 30 seconds...", false, Logger::WARNING);
+                    $this->message("Request '$urlStr' failed ($code), retrying in 30 seconds...", false, Logger::WARNING);
                     sleep(30);
                     continue;
                 }
@@ -295,7 +305,7 @@ class HarvestSfx
         }
         $code = $response->getStatus();
         if ($code >= 300) {
-            $this->_message("Request '$urlStr' failed: $code", false, Logger::FATAL);
+            $this->message("Request '$urlStr' failed: $code", false, Logger::FATAL);
             throw new Exception("Request failed: $code");
         }
     
@@ -311,7 +321,7 @@ class HarvestSfx
      * @return object     SimpleXML-formatted response.
      * @access protected
      */
-    protected function _parseResponse($xml)
+    protected function parseResponse($xml)
     {
         // Parse the XML:
         $saveUseErrors = libxml_use_internal_errors(true);
@@ -321,10 +331,10 @@ class HarvestSfx
         $result = simplexml_load_string($xml);
         if ($result === false || libxml_get_last_error() !== false) {
             // Assuming it's a character encoding issue, this might help...
-            $this->_message("Invalid XML received, trying encoding fix...", false, Logger::WARNING);
-            $xml = iconv("UTF-8","UTF-8//IGNORE", $xml);
+            $this->message('Invalid XML received, trying encoding fix...', false, Logger::WARNING);
+            $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
             libxml_clear_errors();
-            $result = $this->_loadXML($xml);
+            $result = $this->loadXML($xml);
         }
         if ($result === false || libxml_get_last_error() !== false) {
             libxml_use_internal_errors($saveUseErrors);
@@ -335,7 +345,7 @@ class HarvestSfx
                 }
                 $errors .= 'Error ' . $error->code . ' at ' . $error->line . ':' . $error->column . ': ' . $error->message;
             }
-            $this->_message("Could not parse XML response: $errors\nXML:\n$xml", false, Logger::FATAL);
+            $this->message("Could not parse XML response: $errors\nXML:\n$xml", false, Logger::FATAL);
             throw new Exception("Failed to parse XML response");
         }
         libxml_use_internal_errors($saveUseErrors);
@@ -352,34 +362,35 @@ class HarvestSfx
      * @return void
      * @access protected
      */
-    protected function _processRecords($records)
+    protected function processRecords($records)
     {
-        $this->_message('Processing ' . count($records) . ' records...', true);
+        $this->message('Processing ' . count($records) . ' records...', true);
 
         $count = 0;
         foreach ($records as $record) {
-            $id = $this->_extractID($record);
-            if ($this->_isDeleted($record)) {
-                call_user_func($this->_callback, $id, true, null);
-                $this->_deletedRecords++;
+            $id = $this->extractID($record);
+            if ($this->isDeleted($record)) {
+                call_user_func($this->callback, $id, true, null);
+                $this->deletedRecords++;
             } else {
                 $record->addChild('controlfield', $id)->addAttribute('tag', '001');
-                $this->_normalRecords += call_user_func($this->_callback, "sfx:{$this->_source}:$id", false, $record->asXML());
+                $this->normalRecords += call_user_func($this->callback, "sfx:{$this->source}:$id", false, $record->asXML());
             }
             if (++$count % 1000 == 0) {
-                $this->_message("$count records processed", true);
+                $this->message("$count records processed", true);
             }
         }
-        $this->_message('All records processed', true);
+        $this->message('All records processed', true);
     }
 
     /**
      * Check if the record is deleted
      * 
-     * @param SimpleXMLElement $record
+     * @param SimpleXMLElement $record Record
+     * 
      * @return bool
      */
-    protected function _isDeleted($record)
+    protected function isDeleted($record)
     {
         $status = substr($record->leader, 5, 1);
         return $status == 'd';
@@ -388,12 +399,12 @@ class HarvestSfx
     /**
      * Extract record ID
      * 
-     * @param SimpleXMLElement $record
+     * @param SimpleXMLElement $record Record
      * 
      * @return string ID 
      * @throws Exception
      */
-    protected function _extractID($record)
+    protected function extractID($record)
     {
         $nodes = $record->xpath("datafield[@tag='090']/subfield[@code='a']");
         if (empty($nodes)) {
@@ -405,18 +416,19 @@ class HarvestSfx
     /**
      * Log a message and display on console in verbose mode.
      *
-     * @param string $msg Message.
+     * @param string $msg     Message
      * @param bool   $verbose Flag telling whether this is considered verbose output
+     * @param level  $level   Logging level
      *
      * @return void
      * @access protected
      */
-    protected function _message($msg, $verbose = false, $level = Logger::INFO)
+    protected function message($msg, $verbose = false, $level = Logger::INFO)
     {
-        if ($this->_verbose) {
+        if ($this->verbose) {
             echo "$msg\n";
         }
-        $this->_log->log('harvestSfx', $msg, $level);
+        $this->log->log('harvestSfx', $msg, $level);
     }
 }
 

@@ -23,55 +23,71 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 /**
-* EadRecord Class
-*
-* This is a class for splitting EAD records.
-*
+ * EadRecord Class
+ *
+ * This is a class for splitting EAD records.
+ *
+ * @category DataManagement
+ * @package  RecordManager
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
 */
 class EadSplitter
 {
-    protected $_doc = null;
-    protected $_recordNodes;
-    protected $_recordCount;
-    protected $_currentPos;
+    protected $doc = null;
+    protected $recordNodes;
+    protected $recordCount;
+    protected $currentPos;
     
-    protected $_agency = '';
-    protected $_archiveId = '';
-    protected $_archiveTitle = '';
-    protected $_archiveSubTitle = '';
+    protected $agency = '';
+    protected $archiveId = '';
+    protected $archiveTitle = '';
+    protected $archiveSubTitle = '';
     
     /**
     * Constructor
     *
     * @param string $data EAD XML
+    * 
     * @access public
     */
     public function __construct($data)
     {
-        $this->_doc = simplexml_load_string($data);
-        $this->_recordNodes = $this->_doc->xpath('archdesc | archdesc/dsc//*[@level]');
-        $this->_recordCount = count($this->_recordNodes);
-        $this->_currentPos = 0;
+        $this->doc = simplexml_load_string($data);
+        $this->recordNodes = $this->doc->xpath('archdesc | archdesc/dsc//*[@level]');
+        $this->recordCount = count($this->recordNodes);
+        $this->currentPos = 0;
         
-        $this->_agency = (string)$this->_doc->eadheader->eadid->attributes()->mainagencycode;
-        $this->_archiveId = (string)$this->_doc->eadheader->eadid->attributes()->identifier;
-        $this->_archiveTitle = (string)$this->_doc->eadheader->filedesc->titlestmt->titleproper;
-        $this->_archiveSubTitle = (string)$this->_doc->eadheader->filedesc->titlestmt->subtitle;
+        $this->agency = (string)$this->doc->eadheader->eadid->attributes()->mainagencycode;
+        $this->archiveId = (string)$this->doc->eadheader->eadid->attributes()->identifier;
+        $this->archiveTitle = (string)$this->doc->eadheader->filedesc->titlestmt->titleproper;
+        $this->archiveSubTitle = (string)$this->doc->eadheader->filedesc->titlestmt->subtitle;
     }
     
+    /**
+     * Check whether EOF has been encountered
+     * 
+     * @return boolean
+     */
     public function getEOF()
     {
-        return $this->_currentPos >= $this->_recordCount;
+        return $this->currentPos >= $this->recordCount;
     }
     
+    /**
+     * Get next record
+     * 
+     * @return string XML
+     */
     public function getNextRecord()
     {
-        if ($this->_currentPos < $this->_recordCount)
-        {
-            $original = $this->_recordNodes[$this->_currentPos++];
+        if ($this->currentPos < $this->recordCount) {
+            $original = $this->recordNodes[$this->currentPos++];
             $record = simplexml_load_string('<' . $original->getName() . '/>');
             foreach ($original->attributes() as $key => $value) {
                 $record->addAttribute($key, $value);
@@ -80,23 +96,23 @@ class EadSplitter
                 $this->appendXML($record, $child);
             }
             if ($record->getName() != 'archdesc') {
-                $record->did->unitid->attributes()->identifier = $this->_archiveId . '_' . 
+                $record->did->unitid->attributes()->identifier = $this->archiveId . '_' . 
                     $record->did->unitid->attributes()->identifier; 
                 
                 $addData = $record->addChild('add-data');
                 
                 $absolute = $addData->addChild('archive');
-                $absolute->addAttribute('id', $this->_archiveId);
-                $absolute->addAttribute('title', $this->_archiveTitle);
-                if ($this->_archiveSubTitle) {
-                    $absolute->addAttribute('subtitle', $this->_archiveSubTitle);
+                $absolute->addAttribute('id', $this->archiveId);
+                $absolute->addAttribute('title', $this->archiveTitle);
+                if ($this->archiveSubTitle) {
+                    $absolute->addAttribute('subtitle', $this->archiveSubTitle);
                 }
                 
                 $parentDid = $original->xpath('parent::*/did | parent::*/parent::*/did');
                 $parentDid = $parentDid[0];
                 $parentID = (string)$parentDid->unitid->attributes()->identifier;
-                if ($parentID != $this->_archiveId) {
-                    $parentID = $this->_archiveId . '_' . $parentID;
+                if ($parentID != $this->archiveId) {
+                    $parentID = $this->archiveId . '_' . $parentID;
                 }
                 $parent = $addData->addChild('parent');
                 $parent->addAttribute('id', $parentID);
@@ -110,8 +126,10 @@ class EadSplitter
     /**
      * Recursively append a node to simplexml, filtering out c, c01, c02 etc.
      * 
-     * @param SimpleXMLElement  $simplexml    Node to append to
-     * @param SimpleXMLElement  $append       Node to be appended
+     * @param SimpleXMLElement &$simplexml Node to append to
+     * @param SimpleXMLElement $append     Node to be appended
+     * 
+     * @return void
      */
     protected function appendXML(&$simplexml, $append)
     {
@@ -124,10 +142,10 @@ class EadSplitter
             $data = (string)$append;
             $data = str_replace('&', '&amp;', $data);
             $xml = $simplexml->addChild($name, $data);
-            foreach($append->attributes() as $key => $value) {
+            foreach ($append->attributes() as $key => $value) {
                 $xml->addAttribute($key, $value);
             }
-            foreach($append->children() as $child) {
+            foreach ($append->children() as $child) {
                 $this->appendXML($xml, $child);
             }
         }

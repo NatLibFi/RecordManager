@@ -23,6 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 require_once 'HTTP/Request2.php';
@@ -33,18 +34,23 @@ require_once 'FileSplitter.php';
  *
  * This class harvests IRD records from MetaLib via X-Server using settings from datasources.ini. 
  *
+ * @category DataManagement
+ * @package  RecordManager
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 class HarvestMetaLib
 {
-    protected $_log;                   // Logger
-    protected $_db;                    // Mongo database
-    protected $_basePath;              // RecordManager base directory
-    protected $_baseURL;               // URL to harvest from
-    protected $_username = '';         // MetaLib X-Server user name
-    protected $_password = '';         // MetaLib X-Server password
-    protected $_verbose = false;       // Whether to display debug output
-    protected $_query = '';            // Query used to find the IRD's (e.g. WIN=INSTITUTE, see 
-                                     // locate_command in http://www.exlibrisgroup.org/display/MetaLibOI/source_locate)
+    protected $log;                   // Logger
+    protected $db;                    // Mongo database
+    protected $basePath;              // RecordManager base directory
+    protected $baseURL;               // URL to harvest from
+    protected $username = '';         // MetaLib X-Server user name
+    protected $password = '';         // MetaLib X-Server password
+    protected $verbose = false;       // Whether to display debug output
+    protected $query = '';            // Query used to find the IRD's (e.g. WIN=INSTITUTE, see 
+                                      // locate_command in http://www.exlibrisgroup.org/display/MetaLibOI/source_locate)
         
     /**
     * Constructor.
@@ -59,9 +65,9 @@ class HarvestMetaLib
     */
     public function __construct($logger, $db, $source, $basePath, $settings)
     {
-        $this->_log = $logger;
-        $this->_db = $db;
-        $this->_basePath = $basePath;
+        $this->log = $logger;
+        $this->db = $db;
+        $this->basePath = $basePath;
          
         // Don't time out during harvest
         set_time_limit(0);
@@ -70,28 +76,30 @@ class HarvestMetaLib
         if (empty($settings['url'])) {
             throw new Exception("Missing base URL for {$source}");
         }
-        $this->_baseURL = $settings['url'];
+        $this->baseURL = $settings['url'];
         if (isset($settings['verbose'])) {
-            $this->_verbose = $settings['verbose'];
+            $this->verbose = $settings['verbose'];
         }
-        $this->_username = $settings['xUser'];
-        $this->_password = $settings['xPassword'];
-        $this->_query = $settings['query'];
+        $this->username = $settings['xUser'];
+        $this->password = $settings['xPassword'];
+        $this->query = $settings['query'];
     }
     
     /**
      * Harvest all available documents.
      *
-     * @return array  Array of MARCXML records
+     * @return string[] Array of MARCXML records
      * @access public
      */
     public function launch()
     {
-        $xml = $this->_callXServer(array(
-            'op' => 'login_request',
-            'user_name' => $this->_username,
-            'user_password' => $this->_password
-        ));
+        $xml = $this->callXServer(
+            array(
+                'op' => 'login_request',
+                'user_name' => $this->username,
+                'user_password' => $this->password
+            )
+        );
         $doc = simplexml_load_string($xml);
         if (isset($doc->login_response->local_error)) {
             $this->_message("X-Server login failed: \n" . $xml, false, Logger::FATAL);
@@ -102,17 +110,19 @@ class HarvestMetaLib
             throw new Exception("X-Server login response missing auth information");
         }
         if ((string)$doc->login_response->auth != 'Y') {
-            $this->_message("X-Server login failed for '{$this->_username}'", false, Logger::FATAL);
+            $this->_message("X-Server login failed for '{$this->username}'", false, Logger::FATAL);
             throw new Exception("X-Server login failed");
         }
         $session = (string)$doc->login_response->session_id;
         
-        $xml = $this->_callXServer(array(
-            'op' => 'source_locate_request',
-            'session_id' => $session, 
-        	'locate_command' => $this->_query,
-            'source_full_info_flag' => 'Y'
-        ));
+        $xml = $this->callXServer(
+            array(
+                'op' => 'source_locate_request',
+                'session_id' => $session, 
+                'locate_command' => $this->query,
+                'source_full_info_flag' => 'Y'
+            )
+        );
         
         $doc = simplexml_load_string($xml);
         if (isset($doc->source_locate_response->local_error)) {
@@ -121,8 +131,8 @@ class HarvestMetaLib
         }
     
         $style = new DOMDocument();
-        if ($style->load($this->_basePath . '/transformations/strip_namespaces.xsl') === false) {
-            throw new Exception('Could not load ' . $this->_basePath . '/transformations/strip_namespaces.xsl');
+        if ($style->load($this->basePath . '/transformations/strip_namespaces.xsl') === false) {
+            throw new Exception('Could not load ' . $this->basePath . '/transformations/strip_namespaces.xsl');
         }
         $transformation = new XSLTProcessor();
         $transformation->importStylesheet($style);
@@ -140,14 +150,18 @@ class HarvestMetaLib
     /**
      * Call MetaLib X-Server
      *
-     * @param  array  $params  URL Parameters 
+     * @param array $params URL Parameters 
+     * 
      * @return string XML
      * @access public
      */
-    protected function _callXServer($params)
+    protected function callXServer($params)
     {
-        $request = new HTTP_Request2($this->_baseURL, HTTP_Request2::METHOD_GET, 
-            array('ssl_verify_peer' => false));
+        $request = new HTTP_Request2(
+            $this->baseURL, 
+            HTTP_Request2::METHOD_GET, 
+            array('ssl_verify_peer' => false)
+        );
         $request->setHeader('User-Agent', 'RecordManager');
 
         $url = $request->getURL();
@@ -170,14 +184,15 @@ class HarvestMetaLib
     /**
      * Log a message
      *
-     * @param string $msg Message.
+     * @param string $msg     Message
      * @param bool   $verbose Flag telling whether this is considered verbose output
+     * @param level  $level   Logging level
      *
      * @return void
      * @access private
      */
     private function _message($msg, $verbose = false, $level = Logger::INFO)
     {
-        $this->_log->log('harvestMetaLib', $msg, $level);
+        $this->log->log('harvestMetaLib', $msg, $level);
     }
 }

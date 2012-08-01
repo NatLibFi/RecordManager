@@ -23,10 +23,18 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 require_once 'cmdline.php';
 
+/**
+ * Main function 
+ * 
+ * @param string[] $argv Program parameters
+ * 
+ * @return void
+ */
 function main($argv)
 {
     $params = parseArgs($argv);
@@ -53,31 +61,31 @@ function main($argv)
     
     switch ($params['func'])
     {
-        case 'renormalize': 
-            $manager->renormalize($source, $single); 
-            break;
-        case 'deduplicate': 
-            $manager->deduplicate($source, isset($params['all']) ? true : false, $single); 
-            break;
-        case 'updatesolr': 
-            $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
-            $manager->updateSolrIndex($date, $source, $single, $noCommit); 
-            break;
-        case 'dump': 
-            $manager->dumpRecord($single);
-            break;
-        case 'deletesource':
-            $manager->deleteRecords($source);
-            break;
-        case 'deletesolr':
-            $manager->deleteSolrRecords($source);
-            break;
-        case 'optimizesolr':
-            $manager->optimizeSolr();
-            break;
-        default: 
-            echo 'Unknown func: ' . $params['func'] . "\n"; 
-            exit(1);
+    case 'renormalize': 
+        $manager->renormalize($source, $single); 
+        break;
+    case 'deduplicate': 
+        $manager->deduplicate($source, isset($params['all']) ? true : false, $single); 
+        break;
+    case 'updatesolr': 
+        $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
+        $manager->updateSolrIndex($date, $source, $single, $noCommit); 
+        break;
+    case 'dump': 
+        $manager->dumpRecord($single);
+        break;
+    case 'deletesource':
+        $manager->deleteRecords($source);
+        break;
+    case 'deletesolr':
+        $manager->deleteSolrRecords($source);
+        break;
+    case 'optimizesolr':
+        $manager->optimizeSolr();
+        break;
+    default: 
+        echo 'Unknown func: ' . $params['func'] . "\n"; 
+        exit(1);
     }
 }
 

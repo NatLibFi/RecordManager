@@ -23,6 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 require_once 'BaseRecord.php';
@@ -33,24 +34,31 @@ require_once 'MetadataUtils.php';
  *
  * This is a class for processing Dublin Core records.
  *
+ * @category DataManagement
+ * @package  RecordManager
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 class DcRecord extends BaseRecord
 {
-    protected $_doc = null;
+    protected $doc = null;
 
     /**
      * Constructor
      *
-     * @param string $data Record metadata
+     * @param string $data  Record metadata
+     * @param string $oaiID Record ID in OAI-PMH
+     * 
      * @access public
      */
     public function __construct($data, $oaiID)
     {
-        $this->_doc = simplexml_load_string($data);
-        if (empty($this->_doc->recordID)) {
+        $this->doc = simplexml_load_string($data);
+        if (empty($this->doc->recordID)) {
             $p = strpos($oaiID, ':');
             $p = strpos($oaiID, ':', $p + 1);
-            $this->_doc->addChild('recordID', substr($oaiID, $p + 1));
+            $this->doc->addChild('recordID', substr($oaiID, $p + 1));
         }
     }
 
@@ -62,7 +70,7 @@ class DcRecord extends BaseRecord
      */
     public function getID()
     {
-        return $this->_doc->recordID[0];
+        return $this->doc->recordID[0];
     }
 
     /**
@@ -73,7 +81,7 @@ class DcRecord extends BaseRecord
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->_doc->asXML());
+        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -84,48 +92,49 @@ class DcRecord extends BaseRecord
      */
     public function toXML()
     {
-        return $this->_doc->asXML();
+        return $this->doc->asXML();
     }
 
     /**
      * Set the ID prefix into all the ID fields (ID, host ID etc.)
      *
-     * @param  string $prefix (e.g. "source.")
+     * @param string $prefix (e.g. "source.")
+     * 
      * @return void
      * @access public
      */
     public function setIDPrefix($prefix)
     {
-        $this->_doc->recordID = $prefix . $this->_doc->recordID;
+        $this->doc->recordID = $prefix . $this->doc->recordID;
     }
 
     /**
      * Return fields to be indexed in Solr
      *
-     * @return array
+     * @return string[]
      * @access public
      */
     public function toSolrArray()
     {
         $data = array();
 
-        $doc = $this->_doc;
+        $doc = $this->doc;
         $data['ctrlnum'] = (string)$doc->recordID;
         $data['fullrecord'] = $doc->asXML();
-        	
+          
         // allfields
         $allFields = array();
         foreach ($doc->children() as $tag => $field) {
             $allFields[] = $field;
         }
         $data['allfields'] = $allFields;
-        	
+          
         // language
         $data['language'] = explode(' ', $doc->language);
 
         $data['format'] = (string)$doc->type;
         $data['author'] = (string)$doc->creator;
-        $data['author2'] = $this->_getValues('contributor');
+        $data['author2'] = $this->getValues('contributor');
 
         $data['title'] = $data['title_full'] = (string)$doc->title;
         $titleParts = explode(' : ', $data['title']);
@@ -142,14 +151,14 @@ class DcRecord extends BaseRecord
 
         $data['isbn'] = $this->getISBNs();
 
-        $data['topic'] = $data['topic_facet'] = $this->_getValues('subject');
+        $data['topic'] = $data['topic_facet'] = $this->getValues('subject');
 
-        foreach ($this->_getValues('identifier') as $identifier) {
+        foreach ($this->getValues('identifier') as $identifier) {
             if (preg_match('/^https?/', $identifier)) {
                 $data['url'] = $identifier;
             }
         }
-        foreach ($this->_getValues('description') as $description) {
+        foreach ($this->getValues('description') as $description) {
             if (preg_match('/^https?/', $description)) {
                 $data['url'] = $description;
             }
@@ -159,11 +168,11 @@ class DcRecord extends BaseRecord
         TODO: Can we handle any of the following fields?
 
         $data['series'] = $this->_getFieldsSubfields('440ap:800abcdfpqt:830ap');
-        	
+          
         $data['physical'] = $this->_getFieldsSubfields('300abcefg:530abcd');
         $data['edition'] = $this->_getFieldSubfields('250a');
         $data['contents'] = $this->_getFieldsSubfields('505a:505t');
-        	
+          
         $data['issn'] = $this->_getFieldsSubfields('022a:440x:490x:730x:776x:780x:785x');
 
         $data['callnumber'] = strtoupper(str_replace(' ', '', $this->_getFirstFieldSubfields('080ab:084ab:050ab')));
@@ -191,20 +200,21 @@ class DcRecord extends BaseRecord
      */
     public function getFullTitle()
     {
-        return (string)$this->_doc->title;
+        return (string)$this->doc->title;
     }
 
     /**
      * Dedup: Return record title
      *
      * @param bool $forFiling Whether the title is to be used in filing (e.g. sorting, non-filing characters should be removed)
+     * 
      * @return string
      * @access public
      */
     public function getTitle($forFiling = false)
     {
         // TODO: strip common articles when $forFiling = true?
-        return (string)$this->_doc->title;
+        return (string)$this->doc->title;
     }
 
     /**
@@ -215,19 +225,19 @@ class DcRecord extends BaseRecord
      */
     public function getMainAuthor()
     {
-        return (string)$this->_doc->creator;
+        return (string)$this->doc->creator;
     }
 
     /**
      * Dedup: Return ISBNs in ISBN-13 format without dashes
      *
-     * @return array
+     * @return string[]
      * @access public
      */
     public function getISBNs()
     {
         $arr = array();
-        foreach ($this->_doc->identifier as $identifier) {
+        foreach ($this->doc->identifier as $identifier) {
             $identifier = str_replace('-', '', $identifier);
             if (!preg_match('{([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
                 continue;
@@ -273,7 +283,7 @@ class DcRecord extends BaseRecord
      */
     public function getFormat()
     {
-        return $this->_doc->type ? (string)$this->_doc->type : 'Unknown';
+        return $this->doc->type ? (string)$this->doc->type : 'Unknown';
     }
 
     /**
@@ -284,7 +294,7 @@ class DcRecord extends BaseRecord
      */
     public function getPublicationYear()
     {
-        foreach ($this->_doc->date as $date) {
+        foreach ($this->doc->date as $date) {
             if (preg_match('{^(\d{4})$}', $date)) {
                 return (string)$date;
             }
@@ -302,10 +312,17 @@ class DcRecord extends BaseRecord
         return '';
     }
 
-    protected function _getValues($tag)
+    /**
+     * Get all values for a tag
+     * 
+     * @param string $tag XML tag to get 
+     * 
+     * @return multitype:string
+     */
+    protected function getValues($tag)
     {
         $values = array();
-        foreach ($this->_doc->{$tag} as $value) {
+        foreach ($this->doc->{$tag} as $value) {
             $values[] = (string)$value;
         }
         return $values;

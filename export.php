@@ -23,10 +23,18 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 require_once 'cmdline.php';
 
+/**
+ * Main function 
+ * 
+ * @param string[] $argv Program parameters
+ * 
+ * @return void
+ */
 function main($argv)
 {
     $params = parseArgs($argv);

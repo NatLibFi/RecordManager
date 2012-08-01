@@ -23,6 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 require_once 'EadRecord.php';
@@ -32,9 +33,20 @@ require_once 'MetadataUtils.php';
  * NdlEadRecord Class
  *
  * EadRecord with NDL specific functionality
+ * 
+ * @category DataManagement
+ * @package  RecordManager
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 class NdlEadRecord extends EadRecord
 {
+    /**
+     * Return fields to be indexed in Solr (an alternative to an XSL transformation)
+     *
+     * @return string[]
+     */
     public function toSolrArray()
     {
         $data = parent::toSolrArray();

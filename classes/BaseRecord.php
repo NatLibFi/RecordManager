@@ -23,7 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 
 /**
@@ -31,15 +31,19 @@
  *
  * This is an abstract base class for processing records.
  *
+ * @category DataManagement
+ * @package  RecordManager
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
  */
 abstract class BaseRecord
 {
     /**
      * Constructor
      *
-     * @param string $data    Metadata
-     * @param string $oaiID   Record ID received from OAI-PMH (or empty string for file import)
-     * @access public
+     * @param string $data  Metadata
+     * @param string $oaiID Record ID received from OAI-PMH (or empty string for file import)
      */
     public abstract function __construct($data, $oaiID);
 
@@ -47,7 +51,6 @@ abstract class BaseRecord
      * Return record ID (local)
      *
      * @return string
-     * @access public
      */
     public abstract function getID();
 
@@ -55,7 +58,6 @@ abstract class BaseRecord
      * Serialize the record for storing in the database
      *
      * @return string
-     * @access public
      */
     public abstract function serialize();
 
@@ -63,16 +65,15 @@ abstract class BaseRecord
      * Serialize the record into XML for export
      *
      * @return string
-     * @access public
      */
     public abstract function toXML();
 
     /**
      * Set the ID prefix into all the ID fields (ID, host ID and any other fields that reference other records by ID)
      *
-     * @param  string $prefix The prefix (e.g. "source.")
+     * @param string $prefix The prefix (e.g. "source.")
+     * 
      * @return void
-     * @access public
      */
     public abstract function setIDPrefix($prefix);
 
@@ -90,7 +91,6 @@ abstract class BaseRecord
      * Return host record ID for component part
      *
      * @return string
-     * @access public
      */
     public function getHostRecordID()
     {
@@ -100,8 +100,7 @@ abstract class BaseRecord
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
-     * @return array
-     * @access public
+     * @return string[]
      */
     public function toSolrArray()
     {
@@ -111,8 +110,9 @@ abstract class BaseRecord
     /**
      * Merge component parts to this record
      *
-     * @param MongoCollection $componentParts
-     * @access public
+     * @param MongoCollection $componentParts Component parts to be merged
+     * 
+     * @return void
      */
     public function mergeComponentParts($componentParts)
     {
@@ -172,7 +172,6 @@ abstract class BaseRecord
      * Dedup: Return full title (for debugging purposes only)
      *
      * @return string
-     * @access public
      */
     public function getFullTitle()
     {
@@ -184,8 +183,8 @@ abstract class BaseRecord
      *
      * @param bool $forFiling Whether the title is to be used in filing 
      *                        (e.g. sorting, non-filing characters should be removed)
+     *                        
      * @return string
-     * @access public
      */
     public function getTitle($forFiling = false)
     {
@@ -196,7 +195,6 @@ abstract class BaseRecord
      * Dedup: Return main author (format: Last, First)
      *
      * @return string
-     * @access public
      */
     public function getMainAuthor()
     {
@@ -206,8 +204,7 @@ abstract class BaseRecord
     /**
      * Dedup: Return (unique) ISBNs in ISBN-13 format without dashes
      *
-     * @return array
-     * @access public
+     * @return string[]
      */
     public function getISBNs()
     {
@@ -217,8 +214,7 @@ abstract class BaseRecord
     /**
     * Dedup: Return ISSNs
     *
-    * @return array
-    * @access public
+    * @return string[]
     */
     public function getISSNs()
     {
@@ -229,7 +225,6 @@ abstract class BaseRecord
      * Dedup: Return series ISSN
      *
      * @return string
-     * @access public
      */
     public function getSeriesISSN()
     {
@@ -240,7 +235,6 @@ abstract class BaseRecord
      * Dedup: Return series numbering
      *
      * @return string
-     * @access public
      */
     public function getSeriesNumbering()
     {
@@ -251,7 +245,6 @@ abstract class BaseRecord
      * Dedup: Return format from predefined values
      *
      * @return string
-     * @access public
      */
     public function getFormat()
     {
@@ -262,7 +255,6 @@ abstract class BaseRecord
      * Dedup: Return publication year (four digits only)
      *
      * @return string
-     * @access public
      */
     public function getPublicationYear()
     {
@@ -273,7 +265,6 @@ abstract class BaseRecord
      * Dedup: Return page count (number only)
      *
      * @return string
-     * @access public
      */
     public function getPageCount()
     {
@@ -284,8 +275,9 @@ abstract class BaseRecord
      * Dedup: Add the dedup key to a suitable field in the metadata.
      * Used when exporting records to a file.
      *
-     * @param string $dedupKey
-     * @access public
+     * @param string $dedupKey Dedup key to be added
+     * 
+     * @return void
      */
     public function addDedupKeyToMetadata($dedupKey)
     {
