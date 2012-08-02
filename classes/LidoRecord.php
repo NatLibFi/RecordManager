@@ -115,35 +115,17 @@ class LidoRecord extends BaseRecord
     {
         $data = array();
         $doc = $this->doc;
-
-        // Use Finnish title if applicable, should other language versions be indexed as well?
-        $data['title'] = $this->getTitle('fi');
+        $lang = $this->getDefaultLanguage();
+       
+        $data['title'] = $this->getTitle($lang);
+        if ($lang != 'en') {
+            $data['title_alt'] = $this->getTitle('en');
+        }
         $data['description'] = $this->getDescription();
         
-        $rawType = $this->getObjectWorkType();
+        $data['format'] = $this->getObjectWorkType();
         
-        // REMOVE THIS ONCE TUUSULA IS FIXED
-        
-        $categoryTerm = $this->getCategoryTerm();
-        if ($categoryTerm == 'Man-Made Object') {
-            $rawType = $this->getClassification('pääluokka');
-        }
-        
-        // END OF TUUSULA FIX
-        
-        $data['format'] = $rawType;
-        
-        $rawInstitution = $this->getLegalBodyName();
-        
-        // REMOVE THIS ONCE KANTAPUU IS FIXED
-         
-        if ($rawInstitution == 'Kantapuu') {
-            $rawInstitution = $this->getRightsHolderLegalBodyName();
-        }
-        
-        // END OF KANTAPUU FIX
-        
-        $data['institution'] = $rawInstitution;
+        $data['institution'] = $this->getLegalBodyName();
         
         // Don't confuse the system if we didn't find a match and don't want to override
         if (empty($data['institution'])) {
@@ -154,50 +136,19 @@ class LidoRecord extends BaseRecord
         $data['author'] = $this->getActor('valmistus');
         
         $subjects = $this->getSubjects();
-        if(empty($subjects)) $subjects = array();
+        if (empty($subjects)) {
+            $subjects = array();
+        }
         $classifications = $this->getClassifications();
-        if(empty($classifications)) $classifications = array();
+        if (empty($classifications)) {
+            $classifications = array();
+        }
         
         // TODO: should the classifications reside in their own field instead of in the topic field?
-        $subjects = array_merge($subjects, $classifications);
-        $data['topic'] = array();
-        
-        // REMOVE THIS ONCE TUUSULA IS FIXED
-        // sometimes there are multiple subjects in one element
-        // seperated with commas like "foo, bar, baz" (Tuusula)
-        if (is_array($subjects)) {
-            foreach ($subjects as $subject) {
-                $exploded = explode(',', $subject);
-                foreach ($exploded as $explodedSubject) {
-                    $data['topic'][] = trim($explodedSubject);
-                }
-            }
-        }
+        $data['topic'] = array_merge($subjects, $classifications);
         $data['topic_facet'] = $data['topic'];
         
-        // END OF TUUSULA FIX
-        
-        $materials = $this->getMaterials();
-        if (!empty($materials)) {
-            $data['material'] = array();
-            // sometimes there are multiple materials in one element
-            // seperated with semicolons like "foo; bar; baz" (Musketti)
-            // or with commas (Kantapuu)
-            // TODO: have this fixed at the data source
-            if (!is_array($materials)) {
-                $materials = array($materials);
-            }
-            
-            foreach ($materials as $material) {
-                $exploded = explode(';', str_replace(',', ';', $material));
-                
-                foreach ($exploded as $explodedMaterial) {
-                    $data['material'][] = trim($explodedMaterial);
-                }
-            }
-        } else {
-            $data['material'] = null;
-        }
+        $data['material'] = $this->getMaterials();
         
         // This is just the display measurements! There's also the more granular form, 
         // which could be useful for some interesting things eg. sorting by size 
@@ -214,166 +165,14 @@ class LidoRecord extends BaseRecord
         
         $data['collection'] = $this->getCollection();
         
-        $data['url'] = $this->getUrls();
-        if (count($data['url'])) {
-            $data['thumbnail'] = $data['url'][0];
+        $urls = $this->getUrls();
+        if (!empty($urls)) {
+            $data['thumbnail'] = $urls[0];
         }
-        unset($data['url']);
         
-        $separator = ' ';
-        $allfields = array(
-            $data['title'], 
-            $data['description'], 
-            $data['format'], 
-            $data['author'],
-            empty($data['topic']) ? '' : implode($separator, $data['topic']),
-            is_array($data['material']) ? implode($separator, $data['material']) : $data['material'],
-            empty($data['measurements']) ? '' : implode($separator, $data['measurements']),
-            $data['identifier'],
-            empty($data['culture']) ? '' : implode($separator, $data['culture']),
-        );
-        $data['allfields'] = $allfields;
+        $data['allfields'] = $this->getAllFields($data);
         
         return $data;
-    }
-    
-    /**
-     * Return the object measurements. Only the display element is used currently 
-     * until processing more granular data is needed. 
-     *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectMeasurementsSetComplexType
-     * @return string
-     * @access public
-     */
-    public function getMeasurements()
-    {
-        return $this->extractArray('lido/descriptiveMetadata/objectIdentificationWrap/objectMeasurementsWrap/objectMeasurementsSet/displayObjectMeasurements');
-    }
-    
-    /**
-     * Return the object identifier. This is "an unambiguous numeric or alphanumeric 
-     * identification number, assigned to the object by the institution of custody."
-     * (usually differs from a technical database id)
-     * 
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#repositorySetComplexType
-     * @return string
-     * @access public
-     */
-    public function getIdentifier()
-    {
-        return $this->extractFirst('lido/descriptiveMetadata/objectIdentificationWrap/repositoryWrap/repositorySet/workID');
-    }
-
-    /**
-     * Return the legal body name.
-     *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#legalBodyRefComplexType
-     * @return string
-     * @access public
-     */
-    public function getLegalBodyName() 
-    {
-        return $this->extractFirst('lido/descriptiveMetadata/objectIdentificationWrap/repositoryWrap/repositorySet/repositoryName/legalBodyName/appellationValue');
-    }
-    
-    /**
-     * Return the rights holder legal body name.
-     *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#legalBodyRefComplexType
-     * @return string
-     * @access public
-     */
-    public function getRightsHolderLegalBodyName() 
-    {
-        return $this->extractFirst('lido/administrativeMetadata/rightsWorkWrap/rightsWorkSet/rightsHolder/legalBodyName/appellationValue');
-    }
-    
-    /**
-     * Return the object description.
-     *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#descriptiveNoteComplexType
-     * @return string
-     * @access public
-     */
-    public function getDescription()
-    {
-        $description = $this->extractFirst('lido/descriptiveMetadata/objectIdentificationWrap/objectDescriptionWrap/objectDescriptionSet/descriptiveNoteValue');
-        
-        if (!empty($description)) {
-            return $description;
-        }
-        
-        // REMOVE THIS ONCE TUUSULA IS FIXED
-        
-        // Quick and dirty way to get description when it's in the subject wrap (Tuusula)
-        return $this->extractFirst("lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/displaySubject[@label='aihe']");
-
-        // END OF TUUSULA FIX
-    }
-    
-    /**
-     * Return all the cultures associated with an object.
-     *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#eventComplexType
-     * @return string[]
-     * @access public
-     */
-    public function getCulture()
-    {
-        return $this->extractArray('lido/descriptiveMetadata/eventWrap/eventSet/event/culture/term');
-    }
-    
-    /**
-     * Return the object type.
-     *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectWorkTypeWrap
-     * @return string
-     * @access public
-     */
-    public function getObjectWorkType()
-    {
-        return $this->extractFirst('lido/descriptiveMetadata/objectClassificationWrap/objectWorkTypeWrap/objectWorkType/term');
-    }
-    
-    /**
-     * Return the classification of the specified type or the first classification if none specified.
-     *
-     * @param string $type Classification
-     * 
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
-     * @return string
-     * @access public
-     */
-    public function getClassification($type = null)
-    {
-        if ($type != null) {
-            return $this->extractFirst("lido/descriptiveMetadata/objectClassificationWrap/classificationWrap/classification[@type='$type']/term");
-        }
-        return $this->extractFirst('lido/descriptiveMetadata/objectClassificationWrap/classificationWrap/classification/term');
-    }
-    
-    /**
-     * Return the classifications
-     *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
-     * @return string
-     * @access public
-     */
-    public function getClassifications()
-    {
-        return $this->extractArray('lido/descriptiveMetadata/objectClassificationWrap/classificationWrap/classification/term');
-    }
-    
-    /**
-     * Return the term part of the category
-     *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
-     * @return string
-     * @access public
-     */
-    public function getCategoryTerm()
-    {
-        return $this->extractFirst('lido/category/term');
     }
     
     /**
@@ -383,7 +182,6 @@ class LidoRecord extends BaseRecord
      * @param string $lang      Language
      * 
      * @return string
-     * @access public
      */
     public function getTitle($forFiling = false, $lang = null)
     {
@@ -406,12 +204,141 @@ class LidoRecord extends BaseRecord
     }
     
     /**
+     * Return the object measurements. Only the display element is used currently 
+     * until processing more granular data is needed. 
+     *
+     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectMeasurementsSetComplexType
+     * @return string
+     */
+    protected function getMeasurements()
+    {
+        return $this->extractArray('lido/descriptiveMetadata/objectIdentificationWrap/objectMeasurementsWrap/objectMeasurementsSet/displayObjectMeasurements');
+    }
+    
+    /**
+     * Return the object identifier. This is "an unambiguous numeric or alphanumeric 
+     * identification number, assigned to the object by the institution of custody."
+     * (usually differs from a technical database id)
+     * 
+     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#repositorySetComplexType
+     * @return string
+     */
+    protected function getIdentifier()
+    {
+        return $this->extractFirst('lido/descriptiveMetadata/objectIdentificationWrap/repositoryWrap/repositorySet/workID');
+    }
+
+    /**
+     * Return the legal body name.
+     *
+     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#legalBodyRefComplexType
+     * @return string
+     */
+    protected function getLegalBodyName() 
+    {
+        return $this->extractFirst('lido/descriptiveMetadata/objectIdentificationWrap/repositoryWrap/repositorySet/repositoryName/legalBodyName/appellationValue');
+    }
+    
+    /**
+     * Return the rights holder legal body name.
+     *
+     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#legalBodyRefComplexType
+     * @return string
+     */
+    protected function getRightsHolderLegalBodyName() 
+    {
+        return $this->extractFirst('lido/administrativeMetadata/rightsWorkWrap/rightsWorkSet/rightsHolder/legalBodyName/appellationValue');
+    }
+    
+    /**
+     * Return the object description.
+     *
+     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#descriptiveNoteComplexType
+     * @return string
+     */
+    protected function getDescription()
+    {
+        $description = $this->extractFirst('lido/descriptiveMetadata/objectIdentificationWrap/objectDescriptionWrap/objectDescriptionSet/descriptiveNoteValue');
+        
+        if (!empty($description)) {
+            return $description;
+        }
+        
+        // REMOVE THIS ONCE TUUSULA IS FIXED
+        
+        // Quick and dirty way to get description when it's in the subject wrap (Tuusula)
+        return $this->extractFirst("lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/displaySubject[@label='aihe']");
+
+        // END OF TUUSULA FIX
+    }
+    
+    /**
+     * Return all the cultures associated with an object.
+     *
+     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#eventComplexType
+     * @return string[]
+     */
+    protected function getCulture()
+    {
+        return $this->extractArray('lido/descriptiveMetadata/eventWrap/eventSet/event/culture/term');
+    }
+    
+    /**
+     * Return the object type.
+     *
+     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectWorkTypeWrap
+     * @return string
+     */
+    protected function getObjectWorkType()
+    {
+        return $this->extractFirst('lido/descriptiveMetadata/objectClassificationWrap/objectWorkTypeWrap/objectWorkType/term');
+    }
+    
+    /**
+     * Return the classification of the specified type or the first classification if none specified.
+     *
+     * @param string $type Classification
+     * 
+     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
+     * @return string
+     */
+    protected function getClassification($type = null)
+    {
+        if ($type != null) {
+            return $this->extractFirst("lido/descriptiveMetadata/objectClassificationWrap/classificationWrap/classification[@type='$type']/term");
+        }
+        return $this->extractFirst('lido/descriptiveMetadata/objectClassificationWrap/classificationWrap/classification/term');
+    }
+    
+    /**
+     * Return the classifications
+     *
+     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
+     * @return string
+     */
+    protected function getClassifications()
+    {
+        return $this->extractArray('lido/descriptiveMetadata/objectClassificationWrap/classificationWrap/classification/term');
+    }
+    
+    /**
+     * Return the term part of the category
+     *
+     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
+     * @return string
+     * @access public
+     */
+    protected function getCategoryTerm()
+    {
+        return $this->extractFirst('lido/category/term');
+    }
+    
+    /**
      * Return URLs associated with object
      *
      * @return string[]
-     * @access public
      */
-    public function getURLs()
+    protected function getURLs()
     {
         return $this->extractArray('lido/administrativeMetadata/resourceWrap/resourceSet/resourceRepresentation/linkResource');
     }
@@ -422,9 +349,8 @@ class LidoRecord extends BaseRecord
      * @param string $event Which event to use (omit to scan all events)
      * 
      * @return string
-     * @access public
      */
-    public function getActor($event = null)
+    protected function getActor($event = null)
     {
         $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
         if (!empty($event)) {
@@ -442,9 +368,8 @@ class LidoRecord extends BaseRecord
      * @param string $delimiter Delimiter between the dates
      * 
      * @return string
-     * @access public
      */
-    public function getDateRange($event = null, $delimiter = ',')
+    protected function getDateRange($event = null, $delimiter = ',')
     {
         $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
         if (!empty($event)) {
@@ -466,9 +391,8 @@ class LidoRecord extends BaseRecord
      * @param string $delimiter Delimiter between the dates
      *
      * @return string
-     * @access public
      */
-    public function getPeriod($event = null, $delimiter = ',')
+    protected function getPeriod($event = null, $delimiter = ',')
     {
         $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
         if (!empty($event)) {
@@ -488,9 +412,8 @@ class LidoRecord extends BaseRecord
      * @param string $event Which event to use (omit to scan all events)
      * 
      * @return string
-     * @access public
      */
-    public function getDisplayPlace($event = null)
+    protected function getDisplayPlace($event = null)
     {
         $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
         if (!empty($event)) {
@@ -511,9 +434,8 @@ class LidoRecord extends BaseRecord
      * @param string $delimiter Delimiter between the dates
      * 
      * @return string
-     * @access public
      */
-    public function getDisplayDate($event = null, $delimiter = ',')
+    protected function getDisplayDate($event = null, $delimiter = ',')
     {
         $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
         if (!empty($event)) {
@@ -537,7 +459,7 @@ class LidoRecord extends BaseRecord
      * 
      * @return string Two ISO 8601 dates separated with the supplied delimiter on success, and null on failure.
      */
-    public function parseDateRange($input, $delimiter = ',')
+    protected function parseDateRange($input, $delimiter = ',')
     {
         $input = trim(strtolower($input));    
          
@@ -717,7 +639,7 @@ class LidoRecord extends BaseRecord
      * @return string
      * @access public
      */
-    public function getCollection() 
+    protected function getCollection() 
     {
         return $this->extractFirst(
             'lido/descriptiveMetadata/objectRelationWrap/'
@@ -731,9 +653,8 @@ class LidoRecord extends BaseRecord
      *
      * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#rightsComplexType
      * @return string
-     * @access public
      */
-    public function getRights() 
+    protected function getRights() 
     {
         return $this->extractFirst(
             'lido/administrativeMetadata/resourceWrap/'
@@ -746,9 +667,8 @@ class LidoRecord extends BaseRecord
      * Return the languages used in the metadata (from 'lang' attributes used in descriptiveMetadata elements)
      *
      * @return string[]
-     * @access public
      */
-    public function getLanguage() 
+    protected function getLanguage() 
     {
         $wraps = $this->doc->xpath('lido/descriptiveMetadata');
         if (!count($wraps)) {
@@ -858,6 +778,42 @@ class LidoRecord extends BaseRecord
         }
          
         return (string)$elements[0];
+    }
+
+    /**
+     * Get allfields contents for Solr from the Solr data array
+     * 
+     * @param string[] $data Solr data array
+     * 
+     * @return string
+     */
+    protected function getAllFields($data)
+    {
+        $fields = array(
+            'title', 'description', 'format', 'author', 'topic', 
+            'material', 'measurements', 'identifier', 'culture'
+        );
+        $allfields = array();
+        foreach ($fields as $key) {
+            if (isset($data[$key]) && !empty($data[$key])) {
+                if (is_array($data[$key])) {
+                    $allfields[] = implode(' ', MetadataUtils::array_iunique($data[$key]));
+                } else {
+                    $allfields[] = $data[$key];
+                }
+            }
+        }       
+        return $allfields;
+    }
+    
+    /**
+     * Get the default language used when building the Solr array
+     * 
+     * @return string
+     */
+    protected function getDefaultLanguage()
+    {
+        return 'en';
     }
 }    
 
