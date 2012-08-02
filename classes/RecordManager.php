@@ -341,8 +341,8 @@ class RecordManager
                 
                 if ($this->verbose) {
                     echo "Metadata for record {$record['_id']}: \n";
-                    $record['normalized_data'] = MetadataUtils::getRecordData($record, false);
-                    $record['original_data'] = MetadataUtils::getRecordData($record, true);
+                    $record['normalized_data'] = MetadataUtils::getRecordData($record, true);
+                    $record['original_data'] = MetadataUtils::getRecordData($record, false);
                     if ($record['normalized_data'] === $record['original_data']) {
                         $record['normalized_data'] = '';
                     }
@@ -538,28 +538,47 @@ class RecordManager
                         $harvest->setEndDate($harvestUntilDate);
                     }
                     $harvest->harvest(array($this, 'storeRecord'));
-                    if (isset($settings['deletions']) && $settings['deletions'] == 'ListIdentifiers') {
+                    if (isset($settings['deletions']) && strncmp($settings['deletions'], 'ListIdentifiers', 15) == 0) {
                         // The repository doesn't support reporting deletions, so list all identifiers
                         // and mark deleted records that were not found
-                        $this->log->log('harvest', "Processing deletions");
+                        $processDeletions = true;
+                        $interval = null;
+                        $deletions = explode(':', $settings['deletions']);
+                        if (isset($deletions[1])) {
+                            $state = $this->db->state->findOne(array('_id' => "Last Deletion Processing Time $source"));
+                            if (isset($state)) {
+                                $interval = round((time() - $state['value']) / 3600 / 24);
+                                if ($interval < $deletions[1]) {
+                                    $this->log->log('harvest', "Not processing deletions, $interval days since last time");    
+                                    $processDeletions = false;
+                                } 
+                            }
+                        }
                         
-                        $this->log->log('harvest', "Unmarking records");
-                        $this->db->record->update(
-                            array('source_id' => $this->sourceId, 'deleted' => false),
-                            array('$unset' => array('mark' => 1)),
-                            array('multiple' => true)
-                        );
-
-                        $this->log->log('harvest', "Fetching identifiers");
-                        $harvest->listIdentifiers(array($this, 'markRecord'));
-                        
-                        $this->log->log('harvest', "Marking deleted records");
-                        $result = $this->db->record->update(
-                            array('source_id' => $this->sourceId, 'deleted' => false, 'mark' => array('$exists' => false)),
-                            array('$set' => array('deleted' => true, 'updated' => new MongoDate())),
-                            array('safe' => true, 'timeout' => 3000000, 'multiple' => true)
-                        );
-                        $this->log->log('harvest', $result['n'] . " deleted records");
+                        if ($processDeletions) {
+                            $this->log->log('harvest', 'Processing deletions' . (isset($interval) ? " ($interval days since last time)" : ''));
+                            
+                            $this->log->log('harvest', 'Unmarking records');
+                            $this->db->record->update(
+                                array('source_id' => $this->sourceId, 'deleted' => false),
+                                array('$unset' => array('mark' => 1)),
+                                array('multiple' => true)
+                            );
+    
+                            $this->log->log('harvest', "Fetching identifiers");
+                            $harvest->listIdentifiers(array($this, 'markRecord'));
+                            
+                            $this->log->log('harvest', "Marking deleted records");
+                            $result = $this->db->record->update(
+                                array('source_id' => $this->sourceId, 'deleted' => false, 'mark' => array('$exists' => false)),
+                                array('$set' => array('deleted' => true, 'updated' => new MongoDate())),
+                                array('safe' => true, 'timeout' => 3000000, 'multiple' => true)
+                            );
+                            $state = array('_id' => "Last Deletion Processing Time $source", 'value' => time());
+                            $this->db->state->save($state);
+                            
+                            $this->log->log('harvest', $result['n'] . " deleted records");
+                        }
                     }
                 }
                 $this->log->log('harvest', "Harvesting from '{$source}' completed");

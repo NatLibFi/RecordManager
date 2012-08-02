@@ -264,9 +264,9 @@ class SolrUpdater
                 array(
                     'distinct' => 'record',
                     'key' => 'dedup_key',
-                    'query' => $params
-                ),
-                array('timeout' => 3000000)
+                    'query' => $params,
+                    'timeout' => 3000000
+                )
             );
     
             $total = $this->counts ? count($keys['values']) : 'the';
@@ -434,6 +434,8 @@ class SolrUpdater
      */
     protected function createSolrArray($record, &$mergedComponents)
     {
+        global $configArray;
+        
         $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id']);
         
         $source = $record['source_id'];
@@ -603,6 +605,7 @@ class SolrUpdater
             }
             $data['allfields'] = MetadataUtils::array_iunique($all);
         }
+        
         
         $data['dedup_key'] = isset($record['dedup_key']) && $record['dedup_key']
             ? (string)$record['dedup_key'] : $record['_id'];
