@@ -50,7 +50,7 @@ class NdlEadRecord extends EadRecord
     public function toSolrArray()
     {
         $data = parent::toSolrArray();
-        $doc = $this->_doc;
+        $doc = $this->doc;
         
         $unitdate = (string)$doc->did->unitdate;
         if ($unitdate && $unitdate != '-') {
