@@ -124,20 +124,25 @@ class HarvestMetaLib
             )
         );
         
-        $doc = simplexml_load_string($xml);
-        if (isset($doc->source_locate_response->local_error)) {
-            $this->_message("X-Server source locate request failed: \n" . $xml, false, Logger::FATAL);
-            throw new Exception("X-Server source locate request failed");
-        }
-    
         $style = new DOMDocument();
         if ($style->load($this->basePath . '/transformations/strip_namespaces.xsl') === false) {
             throw new Exception('Could not load ' . $this->basePath . '/transformations/strip_namespaces.xsl');
         }
+        $doc = new DOMDocument();
+        if (!$doc->loadXML($xml)) {
+            $this->_message("Failed to parse X-Server source locate response: \n" . $xml, false, Logger::FATAL);
+            throw new Exception("Failed to parse X-Server source locate response");
+        }
+        $responseNode = $doc->getElementsByTagName('source_locate_response');
+        if ($responseNode->length > 0) {
+            $responseNode = $responseNode->item(0)->getElementsByTagName('local_error');
+            if ($responseNode->length > 0) {
+                $this->_message("X-Server source locate request failed: \n" . $xml, false, Logger::FATAL);
+                throw new Exception("X-Server source locate request failed");
+            }
+        }
         $transformation = new XSLTProcessor();
         $transformation->importStylesheet($style);
-        $doc = new DOMDocument();
-        $doc->loadXML($xml);
         $splitter = new FileSplitter($transformation->transformToDoc($doc), '//source_locate_response/source_full_info/record');
         
         $records = array();
