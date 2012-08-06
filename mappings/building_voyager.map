@@ -3,3 +3,9 @@
 1002 = 100
 1003 = 100
 
+; Map branch library locations into one
+1101 = 110
+1102 = 110
+
+; Map all other locations to a third one
+##default = 120 
