@@ -267,7 +267,7 @@ class RecordManager
         $updater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
         
         if (isset($configArray['Solr']['merge_records']) && $configArray['Solr']['merge_records']) {
-            return $updater->updateMergedRecords($fromDate, $singleId, $noCommit);
+            return $updater->updateMergedRecords($fromDate, $sourceId, $singleId, $noCommit);
         }
         return $updater->updateIndividualRecords($fromDate, $sourceId, $singleId, $noCommit);
     }

@@ -47,6 +47,7 @@ class SolrUpdater
     protected $settings;
     protected $buildingHierarchy;
     protected $verbose;
+    protected $counts;
 
     /**
      * Constructor 
@@ -92,7 +93,7 @@ class SolrUpdater
             foreach ($settings as $key => $value) {
                 if (substr($key, -8, 8) == '_mapping') {
                     $field = substr($key, 0, -8);
-                    $this->settings[$source]['mappingFiles'][$field] = parse_ini_file($this->basePath . '/mappings/' . $value);
+                    $this->settings[$source]['mappingFiles'][$field] = $this->readMappingFile($this->basePath . '/mappings/' . $value);
                 }
             }
         }
@@ -113,7 +114,7 @@ class SolrUpdater
      *                              string, last update date stored in the database
      *                              is used and if null, all records are processed)
      * @param string      $sourceId Source ID to update, or empty or * for all 
-     *                              sources (ignored if record merging is enabled)
+     *                              source
      * @param string      $singleId Export only a record with the given ID
      * @param bool        $noCommit If true, changes are not explicitly committed
      * 
@@ -221,15 +222,25 @@ class SolrUpdater
      * @param string|null $fromDate Starting date for updates (if empty 
      *                              string, last update date stored in the database
      *                              is used and if null, all records are processed)
+     * @param string      $sourceId Source ID to update, or empty or * for all 
+     *                              source
      * @param string      $singleId Export only a record with the given ID
      * @param bool        $noCommit If true, changes are not explicitly committed
      * 
      * @return void
      */
-    public function updateMergedRecords($fromDate = null, $singleId = '', $noCommit = false)
+    public function updateMergedRecords($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false)
     {
         try {
             $needCommit = false;
+
+            // Drop too old m/r collections
+            foreach ($this->db->listCollections() as $collection) {
+                if (strstr($collection, 'mr_record_') && time() - substr($collection, strrpos($collection, '_') + 1) > 60 * 60 * 24) {
+                    $this->log->log('updateMergedRecords', "Cleanup: dropping old m/r collection $collection");
+                    $this->db->dropCollection($collection);
+                }
+            }
             
             if (isset($fromDate) && $fromDate) {
                 $mongoFromDate = new MongoDate(strtotime($fromDate));
@@ -258,18 +269,36 @@ class SolrUpdater
                 if (isset($mongoFromDate)) {
                     $params['updated'] = array('$gte' => $mongoFromDate);
                 }
+                if ($sourceId) {
+                    $params['source_id'] = $sourceId;
+                }
                 $params['update_needed'] = false;
+                $params['dedup_key'] = array('$exists' => 1);
             }
-            $keys = $this->db->command(
+            
+            $map = new MongoCode("function() { emit(this.dedup_key, 1); }");
+            $reduce = new MongoCode("function(k, vals) { return 1; }");
+            $collectionName = 'mr_record_' . time();
+            $mr = $this->db->command(
                 array(
-                    'distinct' => 'record',
-                    'key' => 'dedup_key',
+                    'mapreduce' => 'record', 
+                    'map' => $map,
+                    'reduce' => $reduce,
+                    'out' => array('replace' => $collectionName),
                     'query' => $params,
+                ),
+                array(
                     'timeout' => 3000000
                 )
             );
-    
-            $total = $this->counts ? count($keys['values']) : 'the';
+            if (!$mr['ok']) {
+                $this->log->log('updateMergedRecords', "Mongo map/reduce failed: " . $mr['assertion'], Logger::FATAL);
+                return; 
+            }
+            $total = $mr['counts']['output'];
+            
+            $keys = $this->db->{$collectionName}->find();
+            $keys->immortal(true);
             $count = 0;
             $mergedComponents = 0;
             $deleted = 0;
@@ -280,11 +309,10 @@ class SolrUpdater
                 $this->log->log('updateMergedRecords', "Indexing $total merged records (max commit interval {$this->commitInterval} records)...");
             }
             $starttime = microtime(true);
-            foreach ($keys['values'] as $key) {
-                if (empty($key)) {
-                    continue;
-                }
-                $records = $this->db->record->find(array('dedup_key' => $key));
+            $prevKey = ''; 
+            foreach ($keys as $key) {
+                ++$count;
+                $records = $this->db->record->find(array('dedup_key' => $key['_id']));
                 $merged = array();
                 foreach ($records as $record) {
                     if ($record['deleted']) {
@@ -304,7 +332,6 @@ class SolrUpdater
                         echo "JSON for record {$record['_id']}: \n" . json_encode($data) . "\n";
                     }
                     
-                    ++$count;
                     $res = $this->bufferedUpdate($data, $count, $noCommit);
                     if ($res) {
                         $this->log->log('updateMergedRecords', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $res records/sec");
@@ -328,6 +355,7 @@ class SolrUpdater
                     $this->log->log('updateMergedRecords', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $res records/sec");
                 }
             }
+            $this->db->dropCollection($collectionName);
             $this->flushUpdateBuffer();
             $needCommit = $count > 0;
             $this->log->log('updateMergedRecords', "Total $count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed");
@@ -340,6 +368,9 @@ class SolrUpdater
             } else {
                 if (isset($mongoFromDate)) {
                     $params['updated'] = array('$gte' => $mongoFromDate);
+                }
+                if ($sourceId) {
+                    $params['source_id'] = $sourceId;
                 }
                 $params['update_needed'] = false;
             }
@@ -538,12 +569,16 @@ class SolrUpdater
                     foreach ($data[$field] as &$value) {
                         if (isset($map[$value])) {
                             $value = $map[$value];
+                        } elseif (isset($map['##default'])) {
+                            $value = $map['##default'];
                         }
                     }
                     $data[$field] = array_unique($data[$field]);
                 } else {
                     if (isset($map[$data[$field]])) {
                         $data[$field] = $map[$data[$field]];
+                    } elseif (isset($map['##default'])) {
+                        $data[$field] = $map['##default'];
                     }
                 }
             }
@@ -791,5 +826,42 @@ class SolrUpdater
         if ($this->buffered > 0) {
             $this->solrRequest("[\n{$this->buffer}\n]");
         }
+    }
+    
+    /**
+     * Read a mapping file (two strings separated by ' = ' per line)
+     * 
+     * @param string $filename Mapping file name
+     * 
+     * @throws Exception
+     * @return string[string] Mappings
+     */
+    protected function readMappingFile($filename)
+    {
+        $mappings = array();
+        $handle = fopen($filename, 'r');
+        if (!$handle) {
+            throw new Exception("Could not open mapping file '$filename'");
+        }
+        $lineno = 0;
+        while (($line = fgets($handle))) {
+            ++$lineno;
+            $line = rtrim($line);
+            if (!$line || $line[0] == ';') {
+                continue;
+            }
+            $values = explode(' = ', $line, 2);
+            if (!isset($values[1])) {
+                if (strstr($line, ' =') === false) {
+                    fclose($handle);
+                    throw new Exception("Unable to parse mapping file '$filename' line (no ' = ' found): ($lineno) $line");
+                }
+                $mappings[$values[0]] = '';
+            } else {
+                $mappings[$values[0]] = $values[1];
+            }
+        }
+        fclose($handle);
+        return $mappings;
     }
 }
