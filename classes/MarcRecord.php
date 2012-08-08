@@ -788,7 +788,7 @@ class MarcRecord extends BaseRecord
                 case 'J':
                     return 'Print';
                 case 'L':
-                    return 'Drawing';
+                    return 'TechnicalDrawing';
                 case 'O':
                     return 'FlashCard';
                 case 'N':
@@ -906,7 +906,7 @@ class MarcRecord extends BaseRecord
             
         case 'A':
             // Component part in monograph
-            return $formatCode == 'C' ? 'eBookPart' : 'BookPart';
+            return $formatCode == 'C' ? 'eBookSection' : 'BookSection';
         case 'B':
             // Component part in serial 
             return $formatCode == 'C' ? 'eArticle' : 'Article';
@@ -915,7 +915,7 @@ class MarcRecord extends BaseRecord
             return 'Collection';
         case 'D':
             // Component part in collection (sub unit) 
-            return 'Subunit';
+            return 'SubUnit';
         case 'I':
             // Integrating resource 
             return 'ContinuouslyUpdatedResource';
