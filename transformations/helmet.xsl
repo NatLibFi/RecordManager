@@ -38,7 +38,7 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 					<xsl:when test=".='w'"><type>DVDAudio</type></xsl:when>
 					<xsl:when test=".='x'"><type>Electronic</type></xsl:when>
 					<xsl:when test=".='z'"><type>eBook</type></xsl:when>
-					<xsl:otherwise><type>Unknown</type></xsl:otherwise>
+					<xsl:otherwise><type>Other</type></xsl:otherwise>
 			   </xsl:choose>
 	     	</xsl:when>
 	      	<xsl:otherwise>

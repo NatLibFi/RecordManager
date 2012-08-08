@@ -264,6 +264,7 @@ class SolrUpdater
             $params = array();
             if ($singleId) {
                 $params['_id'] = $singleId;
+                $params['dedup_key'] = array('$exists' => 1);
                 $lastIndexingDate = null;
             } else {
                 if (isset($mongoFromDate)) {
@@ -295,8 +296,6 @@ class SolrUpdater
                 $this->log->log('updateMergedRecords', "Mongo map/reduce failed: " . $mr['assertion'], Logger::FATAL);
                 return; 
             }
-            $total = $mr['counts']['output'];
-            
             $keys = $this->db->{$collectionName}->find();
             $keys->immortal(true);
             $count = 0;
@@ -304,14 +303,13 @@ class SolrUpdater
             $deleted = 0;
             $this->initBufferedUpdate();
             if ($noCommit) {
-                $this->log->log('updateMergedRecords', "Indexing $total merged records (with no forced commits)...");
+                $this->log->log('updateMergedRecords', "Indexing the merged records (with no forced commits)...");
             } else {
-                $this->log->log('updateMergedRecords', "Indexing $total merged records (max commit interval {$this->commitInterval} records)...");
+                $this->log->log('updateMergedRecords', "Indexing the merged records (max commit interval {$this->commitInterval} records)...");
             }
             $starttime = microtime(true);
             $prevKey = ''; 
             foreach ($keys as $key) {
-                ++$count;
                 $records = $this->db->record->find(array('dedup_key' => $key['_id']));
                 $merged = array();
                 foreach ($records as $record) {
@@ -332,17 +330,19 @@ class SolrUpdater
                         echo "JSON for record {$record['_id']}: \n" . json_encode($data) . "\n";
                     }
                     
+                    ++$count;
                     $res = $this->bufferedUpdate($data, $count, $noCommit);
                     if ($res) {
                         $this->log->log('updateMergedRecords', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $res records/sec");
                     }
                 }
+                $mergedId = (string)$key['_id']; 
                 if (empty($merged)) {
-                    $this->solrRequest(json_encode(array('delete' => array('id' => (string)$key))));
+                    $this->solrRequest(json_encode(array('delete' => array('id' => $mergedId))));
                     ++$deleted;
                     continue;
                 }
-                $merged['id'] = (string)$key;
+                $merged['id'] = $mergedId;
                 $merged['merged_boolean'] = true;
                 
                 if ($this->verbose) {
@@ -364,6 +364,7 @@ class SolrUpdater
             $params = array('dedup_key' => array('$exists' => false));
             if ($singleId) {
                 $params['_id'] = $singleId;
+                $params['dedup_key'] = array('$exists' => 0);
                 $lastIndexingDate = null;
             } else {
                 if (isset($mongoFromDate)) {
@@ -372,6 +373,7 @@ class SolrUpdater
                 if ($sourceId) {
                     $params['source_id'] = $sourceId;
                 }
+                $params['dedup_key'] = array('$exists' => 0);
                 $params['update_needed'] = false;
             }
             $records = $this->db->record->find($params);
@@ -453,6 +455,57 @@ class SolrUpdater
     public function optimizeIndex()
     {
         $this->solrRequest('{ "optimize": {} }', 4 * 60 * 60);
+    }
+    
+    /**
+     * Count distinct values in the specified field (that would be added to the Solr index)
+     * 
+     * @param string $field Field name
+     * 
+     * @return void
+     */
+    public function countValues($field)
+    {
+        $this->log->log('countValues', "Creating record list...");
+        $records = $this->db->record->find(array('deleted' => false))->skip(2100000);
+        $records->immortal(true);
+        $this->log->log('countValues', "Counting values...");
+        $values = array();
+        $count = 0;
+        foreach ($records as $record) {
+            $source = $record['source_id'];
+            $settings = $this->settings[$source];
+            $mergedComponents = 0;
+            $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id']);
+            if (isset($settings['solrTransformationXSLT'])) {
+                $params = array(
+                    'source_id' => $source,
+                    'institution' => $settings['institution'],
+                    'format' => $settings['format'],
+                    'id_prefix' => $settings['idPrefix']
+                );
+                $data = $settings['solrTransformationXSLT']->transformToSolrArray($metadataRecord->toXML(), $params);
+            } else {
+                $data = $metadataRecord->toSolrArray();
+            }
+            if (isset($data[$field])) {
+                foreach (is_array($data[$field]) ? $data[$field] : array($data[$field]) as $value) {
+                    if (!isset($values[$value])) {
+                        $values[$value] = 1;
+                    } else {
+                        ++$values[$value];
+                    }
+                }
+            }
+            ++$count;                       
+            if ($count % 1000 == 0) {
+                $this->log->log('countValues', "$count records processed");
+            }
+        }
+        arsort($values, SORT_NUMERIC);
+        foreach ($values as $key => $value) {
+            echo "$key: $value\n";
+        }
     }
     
     /**

@@ -1,0 +1,5 @@
+collection = ArchiveMaterial/Collection
+series = ArchiveMaterial/Series
+fonds = ArchiveMaterial/Fonds
+item = ArchiveMaterial/Item
+##default = ArchiveMaterial/Other

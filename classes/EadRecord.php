@@ -126,41 +126,50 @@ class EadRecord extends BaseRecord
         
         $doc = $this->doc;
         $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
-        $data['fullrecord'] = str_replace("\t", ' ', $doc->asXML());
-          
-        // allfields
+        $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($doc->asXML());
         $data['allfields'] = $this->getAllFields($doc);
           
-        // language
-        $data['format'] = (string)$doc->attributes()->level;
         if ($doc->did->origination) {
             $data['author'] = (string)$doc->did->origination->corpname;
         }
 
-        $data['title'] = $data['title_short'] = (string)$doc->did->unittitle;
-        if (in_array($data['format'], array('series', 'item'))) {
-            $data['title_sub'] = (string)$doc->did->unitid;
-        } else {
-            $data['title_sub'] = '';
-        }
-        $data['title_full'] = $data['title_sort'] = $data['title'] . ($data['title_sub'] ? ' (' . $data['title_sub'] . ')' : '');
-
-        switch ($doc->level) {
+        $data['format'] = (string)$doc->attributes()->level;
+        switch ($data['format']) {
         case 'collection':
             break;
         case 'series':
+            $data['title_sub'] = (string)$doc->did->unitid;
+            break;
+        case 'fonds':
             break;
         case 'item': 
+            $data['title_sub'] = (string)$doc->did->unitid;
             $data['series'] = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
             break;
+        default:
+            echo "No proper handling for level '" . $data['format'] . "', document:\n" . $doc->asXML() . "\n";
+            break;
         }
+        if ($doc->did->unitdate) {
+            if (isset($data['title_sub']) && $data['title_sub']) {
+                $data['title_sub'] .= '; ' . (string)$doc->did->unitdate;
+            } else {
+                $data['title_sub'] = (string)$doc->did->unitdate;
+            }
+        }
+        $data['title'] = $data['title_short'] = (string)$doc->did->unittitle;
+        $data['title_full'] = $data['title_sort'] = $data['title'] . (isset($data['title_sub']) && $data['title_sub'] ? ' (' . $data['title_sub'] . ')' : '');
         
         $data['hierarchytype'] = 'Default';
-        if ($this->doc->{'add-data'}->{'archive'}) {
-            $data['hierarchy_top_id'] = (string)$this->doc->{'add-data'}->archive->attributes()->{'id'};
-            $data['hierarchy_top_title'] = (string)$this->doc->{'add-data'}->archive->attributes()->title;
-            if ($this->doc->{'add-data'}->archive->attributes()->subtitle) {
-                $data['hierarchy_top_title'] .= ' : ' . (string)$this->doc->{'add-data'}->archive->attributes()->subtitle; 
+        if ($this->doc->{'add-data'}->archive) {
+            $archiveAttr = $this->doc->{'add-data'}->archive->attributes();
+            $data['hierarchy_top_id'] = (string)$archiveAttr->{'id'};
+            $data['hierarchy_top_title'] = (string)$archiveAttr->title;
+            if ($archiveAttr->subtitle) {
+                $data['hierarchy_top_title'] .= ' : ' . (string)$archiveAttr->subtitle; 
+            }
+            if ($archiveAttr->sequence) {
+                $data['hierarchy_sequence'] = (string)$archiveAttr->sequence;
             }
         }
         if ($this->doc->{'add-data'}->{'parent'}) {

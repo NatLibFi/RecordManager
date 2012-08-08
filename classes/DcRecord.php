@@ -125,7 +125,7 @@ class DcRecord extends BaseRecord
         // allfields
         $allFields = array();
         foreach ($doc->children() as $tag => $field) {
-            $allFields[] = $field;
+            $allFields[] = (string)$field;
         }
         $data['allfields'] = $allFields;
           

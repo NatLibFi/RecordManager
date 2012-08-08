@@ -104,6 +104,7 @@ class EadSplitter
                 $absolute = $addData->addChild('archive');
                 $absolute->addAttribute('id', $this->archiveId);
                 $absolute->addAttribute('title', $this->archiveTitle);
+                $absolute->addAttribute('sequence', str_pad($this->currentPos, 7, '0', STR_PAD_LEFT));
                 if ($this->archiveSubTitle) {
                     $absolute->addAttribute('subtitle', $this->archiveSubTitle);
                 }

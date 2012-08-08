@@ -41,13 +41,14 @@ function main($argv)
     if (!isset($params['func'])) {
         echo "Usage: manage --func=... [...]\n\n";
         echo "Parameters:\n\n";
-        echo "--func             renormalize|deduplicate|updatesolr|dump|deletesource|deletesolr|optimizesolr\n";
+        echo "--func             renormalize|deduplicate|updatesolr|dump|deletesource|deletesolr|optimizesolr|count\n";
         echo "--source           Source ID to process\n";
         echo "--all              Process all records regardless of their state (deduplicate)\n";
         echo "                   or date (updatesolr)\n";
         echo "--from             Override the date from which to run the update (updatesolr)\n";
         echo "--single           Process only the given record id (deduplicate, updatesolr, dump)\n";
         echo "--nocommit         Don't ask Solr to commit the changes (updatesolr)\n";
+        echo "--field            Field to analyze (count)\n";
         echo "--verbose          Enable verbose output for debugging\n\n";
         exit(1);
     }
@@ -82,6 +83,9 @@ function main($argv)
         break;
     case 'optimizesolr':
         $manager->optimizeSolr();
+        break;
+    case 'count':
+        $manager->countValues(isset($params['field']) ? $params['field'] : null);
         break;
     default: 
         echo 'Unknown func: ' . $params['func'] . "\n"; 

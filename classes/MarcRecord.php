@@ -214,7 +214,7 @@ class MarcRecord extends BaseRecord
             // In case the record exceeds 99999 bytes...
             $data['fullrecord'] = $this->toXML();
         }
-          
+        
         // allfields
         $allFields = array();
         $subfieldFilter = array('650' => array('2'));
@@ -240,6 +240,7 @@ class MarcRecord extends BaseRecord
         }
           
         $data['format'] = $this->getFormat();
+        
         $data['author'] = $this->getFieldSubfields('100abcd', true);
         $data['author_fuller'] = $this->getFieldSubfields('100q');
         $data['author-letter'] = $this->getFieldSubfields('100a', true);
@@ -1104,7 +1105,7 @@ class MarcRecord extends BaseRecord
                 $fieldStr = '';
                 if (is_array($field)) {
                     $fieldStr = $field['i1'] . $field['i2'];
-                    if (isset($field['s'])) {
+                    if (isset($field['s']) && is_array($field['s'])) {
                         foreach ($field['s'] as $subfield) {
                             $fieldStr .= MARCRecord::SUBFIELD_INDICATOR . $subfield['c'] . $subfield['v'];
                         }
@@ -1243,7 +1244,7 @@ class MarcRecord extends BaseRecord
      */
     protected function getSubfield($field, $code)
     {
-        if (!$field || !isset($field['s'])) {
+        if (!$field || !isset($field['s']) || !is_array($field['s'])) {
             return '';
         }
         foreach ($field['s'] as $subfield) {
@@ -1265,7 +1266,7 @@ class MarcRecord extends BaseRecord
     protected function getSubfieldsArray($field, $codes)
     {
         $data = array();
-        if (!$field || !isset($field['s'])) {
+        if (!$field || !isset($field['s']) || !is_array($field['s'])) {
             return $data;
         }
         foreach ($field['s'] as $subfield) {
@@ -1452,9 +1453,10 @@ class MarcRecord extends BaseRecord
      */
     protected function getAllSubfields($field, $filter = null)
     {
-        if (!$field || !isset($field['s'])) {
+        if (!$field || !isset($field['s']) || !is_array($field['s'])) {
             return '';
         }
+        
         $subfields = '';
         foreach ($field['s'] as $subfield) {
             if (isset($filter) && in_array($subfield['c'], $filter)) {

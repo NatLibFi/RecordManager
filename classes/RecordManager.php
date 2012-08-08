@@ -790,6 +790,23 @@ class RecordManager
     }
 
     /**
+     * Count distinct values in the specified field (that would be added to the Solr index)
+     * 
+     * @param string $field Field name
+     * 
+     * @return void
+     */
+    public function countValues($field)
+    {
+       if (!$field) {
+           echo "Field must be specified\n";
+           exit;
+       }
+       $updater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
+       $updater->countValues($field);
+    }
+    
+    /**
      * Mark a record "seen". Used by OAI-PMH harvesting when deletions are not supported.
      *
      * @param string $oaiID   ID of the record as received from OAI-PMH
