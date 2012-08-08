@@ -793,25 +793,27 @@ class SolrUpdater
     {
         global $configArray;
 
-        $request = new HTTP_Request2(
-            $configArray['Solr']['update_url'],
-            HTTP_Request2::METHOD_POST, 
-            array('ssl_verify_peer' => false)
-        );
-        if (isset($timeout)) {
-            $request->setConfig('timeout', $timeout);
-        }
-        $request->setHeader('User-Agent', 'RecordManager');
-        if (isset($configArray['Solr']['username']) && isset($configArray['Solr']['password'])) {
-            $request->setAuth(
-                $configArray['Solr']['username'],
-                $configArray['Solr']['password'],
-                HTTP_Request2::AUTH_BASIC
+        if (!isset($this->request)) {
+            $this->request = new HTTP_Request2(
+                $configArray['Solr']['update_url'],
+                HTTP_Request2::METHOD_POST, 
+                array('ssl_verify_peer' => false)
             );
+            if (isset($timeout)) {
+                $this->request->setConfig('timeout', $timeout);
+            }
+            $this->request->setHeader('User-Agent', 'RecordManager');
+            if (isset($configArray['Solr']['username']) && isset($configArray['Solr']['password'])) {
+                $this->request->setAuth(
+                    $configArray['Solr']['username'],
+                    $configArray['Solr']['password'],
+                    HTTP_Request2::AUTH_BASIC
+                );
+            }
         }
-        $request->setHeader('Content-Type', 'application/json');
-        $request->setBody($body);
-        $response = $request->send();
+        $this->request->setHeader('Content-Type', 'application/json');
+        $this->request->setBody($body);
+        $response = $this->request->send();
         $code = $response->getStatus();
         if ($code >= 300) {
             throw new Exception("Solr server request failed ($code). Request:\n$body\n\nResponse:\n" . $response->getBody());
