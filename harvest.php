@@ -55,7 +55,7 @@ function main($argv)
         $params['source'], 
         isset($params['from']) ? $params['from'] : null, 
         isset($params['until']) ? $params['until'] : null, 
-        isset($params['override']) ? $params['override'] : ''
+        isset($params['override']) ? urldecode($params['override']) : ''
     );
 }
 
