@@ -37,6 +37,7 @@ require_once 'HarvestSfx.php';
 require_once 'XslTransformation.php';
 require_once 'MetadataUtils.php';
 require_once 'SolrUpdater.php';
+require_once 'PerformanceCounter.php';
 
 /**
  * RecordManager Class
@@ -92,6 +93,8 @@ class RecordManager
         if ($console) {
             $this->log->logToConsole = true;
         }
+        // Store logger in the config array so that others can access it easily
+        $configArray['Log']['logger'] = $this->log;
         
         if (isset($configArray['Mongo']['counts']) && $configArray['Mongo']['counts']) {
             $this->counts = true;
@@ -305,7 +308,7 @@ class RecordManager
             $count = 0;
     
             $this->log->log('renormalize', "Processing $total records from '$source'...");
-            $starttime = microtime(true);
+            $pc = new PerformanceCounter();
             foreach ($records as $record) {
                 $originalData = MetadataUtils::getRecordData($record, false);
                 $normalizedData = $originalData;
@@ -324,8 +327,9 @@ class RecordManager
                     $this->updateDedupCandidateKeys($record, $metadataRecord);
                     $record['update_needed'] = true;
                 } else {
-                    $record['title_keys'] = null;                
-                    $record['isbn_keys'] = null;                
+                    unset($record['title_keys']);                
+                    unset($record['isbn_keys']);                
+                    unset($record['id_keys']);                
                     $record['update_needed'] = false;
                     unset($record['dedup_key']);
                 }
@@ -351,9 +355,9 @@ class RecordManager
                                 
                 ++$count;
                 if ($count % 1000 == 0) {
-                    $avg = round(1000 / (microtime(true) - $starttime));
+                    $pc->add($count);
+                    $avg = $pc->getSpeed();
                     $this->log->log('renormalize', "$count records processed from '$source', $avg records/sec");
-                    $starttime = microtime(true);
                 }
             }
             $this->log->log('renormalize', "Completed with $count records processed from '$source'");
@@ -398,7 +402,7 @@ class RecordManager
                 $total = $this->counts ? $records->count() : 'the';
                 $count = 0;
                 $deduped = 0;
-                $starttime = microtime(true);
+                $pc = new PerformanceCounter();
                 $this->tooManyCandidatesKeys = array();
                 $this->log->log('deduplicate', "Processing $total records for '$source'...");
                 foreach ($records as $record) {
@@ -420,7 +424,8 @@ class RecordManager
                     }
                     ++$count;
                     if ($count % 1000 == 0) {
-                        $avg = round(1000 / (microtime(true) - $starttime));
+                        $pc->add($count);
+                        $avg = $pc->getSpeed();
                         if ($this->verbose) {
                             echo "\n";
                         }
@@ -638,10 +643,23 @@ class RecordManager
      */
     public function deleteSolrRecords($sourceId)
     {
-        $updater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
+        global $configArray;
         
-        $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' from Solr...");
-        $updater->deleteDataSource($sourceId);
+        $updater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
+        if (isset($configArray['Solr']['merge_records']) && $configArray['Solr']['merge_records']) {
+            $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' from Solr via update for merged records...");
+            $this->log->log('deleteSolrRecords', "Marking records deleted...");
+            $this->db->record->update(
+                array('source_id' => $sourceId),
+                array('$set' => array('deleted' => true, 'updated' => new MongoDate())),
+                array('multiple' => true)
+            );
+            $this->log->log('deleteSolrRecords', "Updating Solr index...");
+            return $updater->updateMergedRecords(null, $sourceId);
+        } else {
+            $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' directly from Solr...");
+            $updater->deleteDataSource($sourceId);
+        }
         $this->log->log('deleteSolrRecords', "Deletion of '$sourceId' from Solr completed");
     }
     
@@ -677,6 +695,7 @@ class RecordManager
             $count = 0;
             foreach ($records as $record) {
                 $record['deleted'] = true;
+                unset($record['dedup_key']);
                 $record['updated'] = new MongoDate();
                 $this->db->record->save($record);
                 ++$count;
@@ -779,8 +798,9 @@ class RecordManager
                 $this->updateDedupCandidateKeys($dbRecord, $metadataRecord);
                 $dbRecord['update_needed'] = true;
             } else {
-                $record['title_keys'] = null;                
-                $record['isbn_keys'] = null;                
+                unset($dbRecord['title_keys']);
+                unset($dbRecord['isbn_keys']);
+                unset($dbRecord['id_keys']);
                 $dbRecord['update_needed'] = false;
             }
             $this->db->record->save($dbRecord);
@@ -798,12 +818,12 @@ class RecordManager
      */
     public function countValues($field)
     {
-       if (!$field) {
-           echo "Field must be specified\n";
-           exit;
-       }
-       $updater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
-       $updater->countValues($field);
+        if (!$field) {
+            echo "Field must be specified\n";
+            exit;
+        }
+        $updater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
+        $updater->countValues($field);
     }
     
     /**
@@ -839,7 +859,17 @@ class RecordManager
     protected function updateDedupCandidateKeys(&$record, $metadataRecord)
     {
         $record['title_keys'] = array(MetadataUtils::createTitleKey($metadataRecord->getTitle(true)));
+        if (empty($record['title_keys'])) {
+            unset($record['title_keys']);
+        }
         $record['isbn_keys'] = $metadataRecord->getISBNs();
+        if (empty($record['isbn_keys'])) {
+            unset($record['isbn_keys']);
+        }
+        $record['id_keys'] = $metadataRecord->getUniqueIDs();
+        if (empty($record['id_keys'])) {
+            unset($record['id_keys']);
+        }
     }
 
     /**
@@ -859,9 +889,10 @@ class RecordManager
         $key = MetadataUtils::createTitleKey($origRecord->getTitle(true));
         $keyArray = array($key);
         $ISBNArray = $origRecord->getISBNs();
-
+        $IDArray = $origRecord->getUniqueIDs();
+        
         $matchRecord = null;
-        foreach (array('isbn_keys' => $ISBNArray, 'title_keys' => $keyArray) as $type => $array) {
+        foreach (array('isbn_keys' => $ISBNArray, 'id_keys' => $IDArray, 'title_keys' => $keyArray) as $type => $array) {
             foreach ($array as $keyPart) {
                 if (!$keyPart || isset($this->tooManyCandidatesKeys[$keyPart])) {
                     continue;
@@ -920,11 +951,23 @@ class RecordManager
         if ($matchRecord) {
             $this->markDuplicates($record, $matchRecord);
             return true;
-        } 
-        unset($record['dedup_key']);
-        $record['updated'] = new MongoDate();
-        $record['update_needed'] = false;
-        $this->db->record->save($record);
+        }
+        if (isset($record['dedup_key']) || $record['update_needed']) {
+            if (isset($record['dedup_key'])) {
+                // Unmark any other record if it would be left alone otherwise
+                $others = $this->db->record->find(array('dedup_key' => $record['dedup_key'], '_id' => array('$ne' => $record['_id'])));
+                $other = $others->getNext();
+                if ($other && !$others->hasNext()) {
+                    unset($other['dedup_key']);
+                    $other['updated'] = new MongoDate();
+                    $this->db->record->save($other);
+                }
+            }
+            unset($record['dedup_key']);
+            $record['updated'] = new MongoDate();
+            $record['update_needed'] = false;
+            $this->db->record->save($record);
+        }
         return false;
     }
 
@@ -941,7 +984,7 @@ class RecordManager
     {
         $cRecord = RecordFactory::createRecord($candidate['format'], MetadataUtils::getRecordData($candidate, true), $record['oai_id']);
         if ($this->verbose) {
-            echo 'Candidate ' . $candidate['_id'] . ":\n" . MetadataUtils::getRecordData($candidate, true) . "\n";
+            echo "\nCandidate " . $candidate['_id'] . ":\n" . MetadataUtils::getRecordData($candidate, true) . "\n";
         }
          
         // Check for common ISBN
@@ -954,6 +997,22 @@ class RecordManager
                 echo "++ISBN match:\n";
                 print_r($origISBNs);
                 print_r($cISBNs);
+                echo $origRecord->getFullTitle() . "\n";
+                echo $cRecord->getFullTitle() . "\n";
+            }
+            return true; 
+        }
+        
+        // Check for other common ID (e.g. NBN)
+        $origIDs = $origRecord->getUniqueIDs();
+        $cIDs = $cRecord->getUniqueIDs();
+        $isect = array_intersect($origIDs, $cIDs);
+        if (!empty($isect)) {
+            // Shared ID -> match
+            if ($this->verbose) {
+                echo "++ID match:\n";
+                print_r($origIDs);
+                print_r($cIDs);
                 echo $origRecord->getFullTitle() . "\n";
                 echo $cRecord->getFullTitle() . "\n";
             }
@@ -1016,10 +1075,10 @@ class RecordManager
         }
         $lev = levenshtein(substr($origTitle, 0, 255), substr($cTitle, 0, 255));
         $lev = $lev / strlen($origTitle) * 100;
-        if ($this->verbose) {
-            echo "Title lev: $lev\n";
-        }
         if ($lev >= 10) {
+            if ($this->verbose) {
+                echo "--Title lev discard: $lev\nOriginal:  $origTitle\nCandidate: $cTitle\n";
+            }
             return false;
         }
         
@@ -1032,11 +1091,7 @@ class RecordManager
                 $authorLev = $authorLev / mb_strlen($origAuthor) * 100;
                 if ($authorLev > 20) {
                     if ($this->verbose) {
-                        echo "\nAuthor lev discard (lev: $lev, authorLev: $authorLev):\n";
-                        echo $origRecord->getFullTitle() . "\n";
-                        echo "   $origAuthor - $origTitle\n";
-                        echo $cRecord->getFullTitle() . "\n";
-                        echo "   $cAuthor - $cTitle\n";
+                        echo "\nAuthor lev discard (lev: $lev, authorLev: $authorLev):\nOriginal:  $origAuthor\nCandidate: $cAuthor\n";
                     }
                     return false;
                 }
@@ -1071,7 +1126,7 @@ class RecordManager
             $rec2['dedup_key'] = $rec1['key'];
         }
         $rec1['updated'] = new MongoDate();
-        $rec1['update_needed'] = false;            
+        $rec1['update_needed'] = false;
         $this->db->record->save($rec1);
         $rec2['updated'] = new MongoDate();
         $rec2['update_needed'] = false;
@@ -1081,7 +1136,7 @@ class RecordManager
             $this->dedupComponentParts($rec1);
         }
     }
-    
+        
     /**
      * Deduplicate component parts of a record
      * 

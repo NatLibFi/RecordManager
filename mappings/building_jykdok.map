@@ -1,4 +1,4 @@
-; Pääkirjasto / lainattavat
+; PÃ¤Ã¤kirjasto / lainattavat
 1002 = 100/1
 1003 = 100/1
 101 = 100/1
@@ -13,7 +13,7 @@
 125 = 100/1
 127 = 100/1
 
-; Pääkirjasto / ei-lainattavat
+; PÃ¤Ã¤kirjasto / ei-lainattavat
 100 = 100/2
 102 = 100/2
 1020 = 100/2
@@ -58,7 +58,7 @@
 657 = 600/2
 659 = 600/2
 
-; Ylistönrinteen kirjasto / lainattavat
+; YlistÃ¶nrinteen kirjasto / lainattavat
 811 = 800/1
 812 = 800/1
 821 = 800/1
@@ -66,7 +66,7 @@
 830 = 800/1
 901 = 800/1
 
-; Ylistönrinteen kirjasto / ei-lainattavat
+; YlistÃ¶nrinteen kirjasto / ei-lainattavat
 800 = 800/2
 810 = 800/2
 820 = 800/2

@@ -202,6 +202,16 @@ abstract class BaseRecord
     }
 
     /**
+     * Dedup: Return unique IDs (control numbers)
+     *
+     * @return string[]
+     */
+    public function getUniqueIDs()
+    {
+        return array();
+    }
+
+    /**
      * Dedup: Return (unique) ISBNs in ISBN-13 format without dashes
      *
      * @return string[]

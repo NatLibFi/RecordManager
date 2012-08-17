@@ -32,6 +32,7 @@ MotionPicture = Video/MotionPicture
 MusicRecording = Sound/MusicRecording
 MusicalScore = MusicalScore
 Newspaper = Journal/Newspaper
+Other = Other/Other
 Painting = WorkOfArt/Painting
 Photo = Image/Photo
 Photonegative = Image/Photonegative

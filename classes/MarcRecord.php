@@ -28,6 +28,7 @@
 
 require_once 'BaseRecord.php';
 require_once 'MetadataUtils.php';
+require_once 'Logger.php';
 
 /**
  * MarcRecord Class
@@ -174,35 +175,43 @@ class MarcRecord extends BaseRecord
         // building
         $data['building'] = array();
         foreach ($this->getFields('852') as $field) {
-            $location = $this->getSubfield($field, 'a');
-            $sub = $this->getSubfield($field, 'b');
-            if ($location && $sub) {
-                $location .= "/$sub";
-            } else {
-                $location .= $sub;
-            }
+            $location = $this->getSubfield($field, 'b');
             if ($location) {
                 $data['building'][] = $location;
             }
-            $this->getFieldsSubfields('852b');
         }
           
         // long_lat
         $field = $this->getField('034');
         if ($field) {
-            $west = MetadataUtils::coordinateToDecimal($this->getSubfield($field, 'd'));
-            $east = MetadataUtils::coordinateToDecimal($this->getSubfield($field, 'e'));
-            $north = MetadataUtils::coordinateToDecimal($this->getSubfield($field, 'f'));
-            $south = MetadataUtils::coordinateToDecimal($this->getSubfield($field, 'g'));
+            $westOrig = $this->getSubfield($field, 'd');
+            $eastOrig = $this->getSubfield($field, 'e');
+            $northOrig = $this->getSubfield($field, 'f');
+            $southOrig = $this->getSubfield($field, 'g');
+            $west = MetadataUtils::coordinateToDecimal($westOrig);
+            $east = MetadataUtils::coordinateToDecimal($eastOrig);
+            $north = MetadataUtils::coordinateToDecimal($northOrig);
+            $south = MetadataUtils::coordinateToDecimal($southOrig);
 
             if (!is_nan($west) && !is_nan($north)) {
                 if (!is_nan($east)) {
-                    $west = ($west + $east) / 2;
+                    $longitude = ($west + $east) / 2;
+                } else {
+                    $longitude = $west;
                 }
+                    
                 if (!is_nan($south)) {
-                    $north = ($north + $south) / 2;
+                    $latitude = ($north + $south) / 2;
+                } else {
+                    $latitude = $north;
                 }
-                $data['long_lat'] = $west . ',' . $north;
+                if (($longitude < -180 || $longitude > 180) || ($latitude < -90 || $latitude > 90)) {
+                    global $configArray;
+                    $log = $configArray['Log']['logger'];
+                    $log->log('MarcRecord', "Discarding invalid coordinates $longitude,$latitude decoded from w=$westOrig, e=$eastOrig, n=$northOrig, s=$southOrig", Logger::WARNING);
+                } else {
+                    $data['long_lat'] = $west . ',' . $north;
+                }
             }
         }
 
@@ -265,7 +274,7 @@ class MarcRecord extends BaseRecord
         $data['author_additional'] = $this->getFieldsSubfields('*505r', true);
           
         $data['title'] = $data['title_auth'] = $this->getTitle();
-        $data['title_sub'] = $this->getFieldSubfields('245b', true);
+        $data['title_sub'] = $this->getFieldSubfields('245bnp', true);
         $data['title_short'] = $this->getFieldSubfields('245a', true);
         $data['title_full'] = $this->getFieldSubfields('245');
         $data['title_alt'] = array_values(
@@ -541,6 +550,7 @@ class MarcRecord extends BaseRecord
      */
     public function getTitle($forFiling = false)
     {
+        $punctuation = array('b' => ' : ', 'n' => '. ', 'p' => '. ');
         $field = $this->getField('245');
         if (!$field) {
             $field = $this->getField('240');
@@ -552,26 +562,16 @@ class MarcRecord extends BaseRecord
                 if ($nonfiling > 0)
                 $title = substr($title, $nonfiling);
             }
-            $subB = $this->getSubfield($field, 'b');
-            if ($subB) {
-                if (!MetadataUtils::hasTrailingPunctuation($title)) {
-                    $title .= ' :';
+            foreach ($field['s'] as $subfield) {
+                if (!in_array($subfield['c'], array('b', 'n', 'p'))) {
+                    continue;
                 }
-                $title .= " $subB";
-            }
-            $subN = $this->getSubfield($field, 'n');
-            if ($subN) {
                 if (!MetadataUtils::hasTrailingPunctuation($title)) {
-                    $title .= '.';
+                    $title .= $punctuation[$subfield['c']];
+                } else {
+                    $title .= ' ';
                 }
-                $title .= " $subN";
-            }
-            $subP = $this->getSubfield($field, 'p');
-            if ($subP) {
-                if (!MetadataUtils::hasTrailingPunctuation($title)) {
-                    $title .= '. ';
-                }
-                $title .= " $subP";
+                $title .= $subfield['v'];
             }
             return MetadataUtils::stripTrailingPunctuation($title);
         }
@@ -617,10 +617,65 @@ class MarcRecord extends BaseRecord
      */
     public function getFullTitle()
     {
-        $f245 = $this->getField('245');
-        return $f245;
+        return $this->getFieldSubfields('245');
     }
 
+    /**
+     * Dedup: Return unique IDs (control numbers)
+     *
+     * @return string[]
+     */
+    public function getUniqueIDs()
+    {
+        $arr = array();
+        $nbn = $this->getField('015');
+        if ($nbn) {
+            $nr = MetadataUtils::normalize(strtok(MetadataUtils:: $this->getSubfield($nbn, 'a'), ' '));
+            $src = $this->getSubfield($nbn, '2');
+            if ($src && $nr) {
+                $arr[] = "($src)$nr";
+            }
+        }
+        $nba = $this->getField('016');
+        if ($nba) {
+            $nr = MetadataUtils::normalize(strtok($this->getSubfield($nba, 'a'), ' '));
+            $src = $this->getSubfield($nba, '2');
+            if ($src && $nr) {
+                $arr[] = "($src)$nr";
+            }
+        }
+        $id = $this->getField('024');
+        if ($id) {
+            $nr = MetadataUtils::normalize(strtok($this->getSubfield($id, 'a'), ' '));
+            switch ($this->getIndicator($id, 1)) {
+            case '0':
+                $src = 'istc';
+                break;
+            case '1':
+                $src = 'upc';
+                break;
+            case '2':
+                $src = 'ismn';
+                break;
+            case '3':
+                $src = 'ian';
+                break;
+            case '4':
+                $src = 'sici';
+                break;
+            case '7':
+                $src = $this->getSubfield($id, '2');
+                break;
+            default:
+                $src = '';
+            }
+            if ($src && $nr) {
+                $arr[] = "($src)$nr";
+            }
+        }
+        return $arr;
+    }
+    
     /**
      * Dedup: Return (unique) ISBNs in ISBN-13 format without dashes
      *
@@ -753,7 +808,7 @@ class MarcRecord extends BaseRecord
                     $online = true;
                     break;
                 default:
-                    return 'Software';
+                    return 'Electronic';
                 }
                 break;
             case 'D':
@@ -814,9 +869,10 @@ class MarcRecord extends BaseRecord
             case 'R':
                 return 'SensorImage';
             case 'S':
+                $soundTech = strtoupper(substr($contents, 14, 1));
                 switch($formatCode2) {
                 case 'D':
-                    return 'SoundDisc';
+                    return $soundTech == 'd' ? 'CD' : 'SoundDisc';
                 case 'S':
                     return 'SoundCassette';
                 default:
@@ -920,7 +976,7 @@ class MarcRecord extends BaseRecord
             // Integrating resource 
             return 'ContinuouslyUpdatedResource';
         }
-        return '';
+        return 'Other';
     }
 
     /**

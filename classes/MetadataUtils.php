@@ -181,7 +181,7 @@ class MetadataUtils
      */
     static public function hasTrailingPunctuation($str)
     {
-        return preg_match('/[\/:;\,=\(]+\s*$/', $str) > 0;
+        return preg_match('/[\/:;\,=\(\.]+\s*$/', $str) > 0;
     }
 
     /**

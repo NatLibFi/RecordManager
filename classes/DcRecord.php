@@ -137,7 +137,7 @@ class DcRecord extends BaseRecord
         $data['author2'] = $this->getValues('contributor');
 
         $data['title'] = $data['title_full'] = (string)$doc->title;
-        $titleParts = explode(' : ', $data['title']);
+        $titleParts = explode(' : ', $data['title'], 2);
         if (!empty($titleParts)) {
             $data['title_short'] = $titleParts[0];
             if (isset($titleParts[1])) {
@@ -283,7 +283,7 @@ class DcRecord extends BaseRecord
      */
     public function getFormat()
     {
-        return $this->doc->type ? (string)$this->doc->type : 'Unknown';
+        return $this->doc->type ? (string)$this->doc->type : 'Other';
     }
 
     /**
