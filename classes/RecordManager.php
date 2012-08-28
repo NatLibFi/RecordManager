@@ -1201,8 +1201,9 @@ class RecordManager
                 if ($this->verbose) {
                     echo "All component parts match between {$hostRecord['_id']} and {$otherRecord['_id']}\n";
                 }
+                $idx = -1;
                 foreach ($components1 as $component1) {
-                    $component2 = $components2[$idx];
+                    $component2 = $components2[++$idx];
                     $this->markDuplicates($component1, $component2);
                 }
                 break;
