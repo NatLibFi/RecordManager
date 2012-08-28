@@ -51,7 +51,7 @@ class NdlMarcRecord extends MarcRecord
     {
         $data = parent::toSolrArray();
         if (isset($data['long_lat'])) {
-            $data['location_coords'] = $data['long_lat']; 
+            $data['location_coords'] = implode(',', array_reverse(explode(',', $data['long_lat']))); 
         }
         return $data;
     }

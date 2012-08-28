@@ -210,7 +210,7 @@ class MarcRecord extends BaseRecord
                     $log = $configArray['Log']['logger'];
                     $log->log('MarcRecord', "Discarding invalid coordinates $longitude,$latitude decoded from w=$westOrig, e=$eastOrig, n=$northOrig, s=$southOrig", Logger::WARNING);
                 } else {
-                    $data['long_lat'] = $west . ',' . $north;
+                    $data['long_lat'] = "$longitude,$latitude";
                 }
             }
         }
@@ -226,9 +226,9 @@ class MarcRecord extends BaseRecord
         
         // allfields
         $allFields = array();
-        $subfieldFilter = array('650' => array('2'));
+        $subfieldFilter = array('650' => array('2'), '979' => array('a'));
         foreach ($this->fields as $tag => $fields) {
-            if (($tag >= 100 && $tag < 900) || $tag == 979) {
+            if (($tag >= 100 && $tag < 900 && $tag != 852) || $tag == 979) {
                 foreach ($fields as $field) {
                     $allFields[] = $this->getAllSubfields(
                         $field,
@@ -244,8 +244,9 @@ class MarcRecord extends BaseRecord
         $languages = array(substr($this->getField('008'), 35, 3));
         $languages += $this->getFieldsSubfields('041a:041d:041h:041j');
         foreach ($languages as $language) {
-            if (preg_match('/^\w{3}$/', $language))
-            $data['language'][] = $language;
+            if (preg_match('/^\w{3}$/', $language) && $language != 'zxx') {
+                $data['language'][] = $language;
+            }
         }
           
         $data['format'] = $this->getFormat();
@@ -326,15 +327,15 @@ class MarcRecord extends BaseRecord
         $data['callnumber-a'] = $this->getFirstFieldSubfields('080a:084a:050a');
         $data['callnumber-first-code'] = substr($this->getFirstFieldSubfields('080a:084a:050a'), 0, 1);
 
-        $data['topic'] = $this->getFieldsSubfields('*600abcdefghjklmnopqrstuvxyz:*610abcdefghklmnoprstuvxyz:*611acdefghjklnpqstuvxyz:*630adefghklmnoprstvxyz:*650abcdevxyz');
-        $data['genre'] = $this->getFieldsSubfields('*655abcvxyz');
-        $data['geographic'] = $this->getFieldsSubfields('*651aevxyz');
+        $data['topic'] = $this->getFieldsSubfields('*600abcdefghjklmnopqrstuvxyz:*610abcdefghklmnoprstuvxyz:*611acdefghjklnpqstuvxyz:*630adefghklmnoprstvxyz:*650abcdevxyz', false, true);
+        $data['genre'] = $this->getFieldsSubfields('*655abcvxyz', false, true);
+        $data['geographic'] = $this->getFieldsSubfields('*651aevxyz', false, true);
         $data['era'] = $this->getFieldsSubfields('*648avxyz');
 
-        $data['topic_facet'] = $this->getFieldsSubfields('600x:610x:611x:630x:648x:650a:650x:651x:655x', false, false, true);
-        $data['genre_facet'] = $this->getFieldsSubfields('600v:610v:611v:630v:648v:650v:651v:655a:655v', false, false, true);
-        $data['geographic_facet'] = $this->getFieldsSubfields('600z:610z:611z:630z:648z:650z:651a:651z:655z', false, false, true);
-        $data['era_facet'] = $this->getFieldsSubfields('600d:610y:611y:630y:648a:648y:650y:651y:655y', false, false, true);
+        $data['topic_facet'] = $this->getFieldsSubfields('600x:610x:611x:630x:648x:650a:650x:651x:655x', false, true, true);
+        $data['genre_facet'] = $this->getFieldsSubfields('600v:610v:611v:630v:648v:650v:651v:655a:655v', false, true, true);
+        $data['geographic_facet'] = $this->getFieldsSubfields('600z:610z:611z:630z:648z:650z:651a:651z:655z', false, true, true);
+        $data['era_facet'] = $this->getFieldsSubfields('600d:610y:611y:630y:648a:648y:650y:651y:655y', false, true, true);
 
         $data['url'] = $this->getFieldsSubfields('856u');
 
