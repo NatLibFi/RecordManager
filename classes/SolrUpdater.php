@@ -678,7 +678,7 @@ class SolrUpdater
                             $value = $map['##default'];
                         }
                     }
-                    $data[$field] = array_unique($data[$field]);
+                    $data[$field] = array_values(array_unique($data[$field]));
                 } else {
                     if (isset($map[$data[$field]])) {
                         $data[$field] = $map[$data[$field]];
@@ -708,7 +708,7 @@ class SolrUpdater
                 );
             }
         }
-        
+
         // Other hierarchical facets
         if (isset($configArray['Solr']['hierarchical_facets'])) {
             foreach ($configArray['Solr']['hierarchical_facets'] as $facet) {
@@ -746,7 +746,6 @@ class SolrUpdater
             $data['allfields'] = MetadataUtils::array_iunique($all);
         }
         
-        
         $data['dedup_key'] = isset($record['dedup_key']) && $record['dedup_key']
             ? (string)$record['dedup_key'] : $record['_id'];
         $data['first_indexed'] = MetadataUtils::formatTimestamp($record['created']->sec);
@@ -763,13 +762,14 @@ class SolrUpdater
             $data['hidden_component_boolean'] = true;
         }
         
-        foreach ($data as $key => $value) {
-            // Checking only for empty() won't work as 0 is empty too
-            if (empty($value) && $value !== 0 && $value !== 0.0 && $value !== '0') {
-                unset($data[$key]);
+        $data = array_filter(
+            $data, 
+            function($value) 
+            { 
+                return !(empty($value) && $value !== 0 && $value !== 0.0 && $value !== '0'); 
             }
-        }
-
+        );        
+        
         return $data;
     }
     
