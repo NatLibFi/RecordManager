@@ -118,13 +118,23 @@ class QdcRecord extends BaseRecord
         // allfields
         $allFields = array();
         foreach ($doc->children() as $tag => $field) {
-            $allFields[] = $field;
+            $allFields[] = (string)$field;
         }
         $data['allfields'] = $allFields;
           
         // language
-        $data['language'] = explode(' ', $doc->language);
-
+        $data['language'] = array_values(
+            array_filter(
+                explode(
+                    ' ', 
+                    (string)$doc->language
+                ),
+                function($value) {
+                    return preg_match('/^[a-z]{2,3}$/', $value) && $value != 'zxx';
+                }
+            )
+        );
+                
         $data['format'] = (string)$doc->type;
         $data['author'] = (string)$doc->creator;
         $data['author2'] = $this->getValues('contributor');
@@ -226,19 +236,22 @@ class QdcRecord extends BaseRecord
     public function getISBNs()
     {
         $arr = array();
-        foreach ($this->doc->identifier as $identifier) {
-            $identifier = str_replace('-', '', $identifier);
-            if (!preg_match('{([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
-                continue;
-            }
-            $isbn = $matches[1];
-            if (strlen($isbn) == 10) {
-                $isbn = MetadataUtils::isbn10to13($isbn);
-            }
-            if ($isbn) {
-                $arr[] = $isbn;
+        foreach (array($this->doc->identifier, $this->doc->isFormatOf) as $field) {
+            foreach ($field as $identifier) {
+                $identifier = str_replace('-', '', $identifier);
+                if (!preg_match('{^([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
+                    continue;
+                }
+                $isbn = $matches[1];
+                if (strlen($isbn) == 10) {
+                    $isbn = MetadataUtils::isbn10to13($isbn);
+                }
+                if ($isbn) {
+                    $arr[] = $isbn;
+                }
             }
         }
+        
         return array_unique($arr);
     }
 

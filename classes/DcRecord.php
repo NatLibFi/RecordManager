@@ -130,8 +130,18 @@ class DcRecord extends BaseRecord
         $data['allfields'] = $allFields;
           
         // language
-        $data['language'] = explode(' ', $doc->language);
-
+        $data['language'] = array_values(
+            array_filter(
+                explode(
+                    ' ', 
+                    (string)$doc->language
+                ),
+                function($value) {
+                    return preg_match('/^[a-z]{2,3}$/', $value) && $value != 'zxx';
+                }
+            )
+        );
+        
         $data['format'] = (string)$doc->type;
         $data['author'] = (string)$doc->creator;
         $data['author2'] = $this->getValues('contributor');
