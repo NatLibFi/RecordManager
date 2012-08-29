@@ -328,7 +328,7 @@ class SolrUpdater
                     $children[] = array('mongo' => $record, 'solr' => $data);
                 }
                 
-                if (count($children) < 2) {
+                if (count($children) == 1) {
                     // A dedup key exists for a single record. This shouldn't happen, but try to manage
                     $child = $children[0];
                     $this->log->log('updateMergedRecords', "Found a single record with a dedup key: {$child['solr']['id']}", Logger::WARNING);
