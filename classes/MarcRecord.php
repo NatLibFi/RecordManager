@@ -208,7 +208,7 @@ class MarcRecord extends BaseRecord
                 if (($longitude < -180 || $longitude > 180) || ($latitude < -90 || $latitude > 90)) {
                     global $configArray;
                     $log = $configArray['Log']['logger'];
-                    $log->log('MarcRecord', "Discarding invalid coordinates $longitude,$latitude decoded from w=$westOrig, e=$eastOrig, n=$northOrig, s=$southOrig", Logger::WARNING);
+                    $log->log('MarcRecord', "Discarding invalid coordinates $longitude,$latitude decoded from w=$westOrig, e=$eastOrig, n=$northOrig, s=$southOrig, record " . $this->getID(), Logger::WARNING);
                 } else {
                     $data['long_lat'] = "$longitude,$latitude";
                 }
@@ -226,13 +226,15 @@ class MarcRecord extends BaseRecord
         
         // allfields
         $allFields = array();
-        $subfieldFilter = array('650' => array('2'), '979' => array('a'));
+        $subfieldFilter = array('650' => array('2'), '856' => array('q'), '979' => array('a'));
         foreach ($this->fields as $tag => $fields) {
             if (($tag >= 100 && $tag < 900 && $tag != 852) || $tag == 979) {
                 foreach ($fields as $field) {
-                    $allFields[] = $this->getAllSubfields(
-                        $field,
-                        isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : null
+                    $allFields[] = MetadataUtils::stripTrailingPunctuation(
+                        $this->getAllSubfields(
+                            $field,
+                            isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : null
+                        )
                     );
                 }
             }
@@ -251,15 +253,11 @@ class MarcRecord extends BaseRecord
           
         $data['format'] = $this->getFormat();
         
-        $data['author'] = $this->getFieldSubfields('100abcd', true);
+        $data['author'] = $this->getFieldSubfields('100abcd');
         $data['author_fuller'] = $this->getFieldSubfields('100q');
-        $data['author-letter'] = $this->getFieldSubfields('100a', true);
+        $data['author-letter'] = $this->getFieldSubfields('100a');
 
-        $data['author2'] = $this->getFieldsSubfields(
-            '+100abcd:*110ab:*111ab:*700abcd:*710ab:*711ab', 
-            false, 
-            true
-        );
+        $data['author2'] = $this->getFieldsSubfields('+100abcd:*110ab:*111ab:*700abcd:*710ab:*711ab');
         // 979cd = component part authors
         foreach ($this->getFieldsSubfields('*979c:*979d', false, true, true) as $field) {
             $data['author2'][] = $field;
@@ -275,23 +273,19 @@ class MarcRecord extends BaseRecord
         $data['author_additional'] = $this->getFieldsSubfields('*505r', true);
           
         $data['title'] = $data['title_auth'] = $this->getTitle();
-        $data['title_sub'] = $this->getFieldSubfields('245bnp', true);
-        $data['title_short'] = $this->getFieldSubfields('245a', true);
+        $data['title_sub'] = $this->getFieldSubfields('245bnp');
+        $data['title_short'] = $this->getFieldSubfields('245a');
         $data['title_full'] = $this->getFieldSubfields('245');
         $data['title_alt'] = array_values(
             MetadataUtils::array_iunique(
-                $this->getFieldsSubfields(
-                    '+245ab:*130adfgklnpst:*240a:*246a:*730adfgklnpst:*740a:*979b:*979e',
-                    false,
-                    true
-                )
+                $this->getFieldsSubfields('+245ab:*130adfgklnpst:*240a:*246a:*730adfgklnpst:*740a:*979b:*979e')
             )
         ); // 979b and e = component part title and uniform title
         $data['title_old'] = $this->getFieldsSubfields('*780ast');
         $data['title_new'] = $this->getFieldsSubfields('*785ast');
         $data['title_sort'] = $this->getTitle(true);
         if (!$data['title_short']) {
-            $data['title_short'] = $this->getFieldSubfields('240anp', true);
+            $data['title_short'] = $this->getFieldSubfields('240anp');
             $data['title_full'] = $this->getFieldSubfields('240');
         }
 
@@ -301,8 +295,8 @@ class MarcRecord extends BaseRecord
         $data['publishDate'] = $data['publishDateSort'] = $this->getPublicationYear();
         $data['physical'] = $this->getFieldsSubfields('*300abcefg:*530abcd');
         $data['dateSpan'] = $this->getFieldsSubfields('*362a');
-        $data['edition'] = $this->getFieldSubfields('250a', false, true);
-        $data['contents'] = $this->getFieldsSubfields('*505a:*505t', false, true);
+        $data['edition'] = $this->getFieldSubfields('250a');
+        $data['contents'] = $this->getFieldsSubfields('*505a:*505t');
           
         $data['isbn'] = $this->getISBNs();
         foreach ($this->getFieldsSubfields('773z') as $isbn) {
@@ -327,15 +321,15 @@ class MarcRecord extends BaseRecord
         $data['callnumber-a'] = $this->getFirstFieldSubfields('080a:084a:050a');
         $data['callnumber-first-code'] = substr($this->getFirstFieldSubfields('080a:084a:050a'), 0, 1);
 
-        $data['topic'] = $this->getFieldsSubfields('*600abcdefghjklmnopqrstuvxyz:*610abcdefghklmnoprstuvxyz:*611acdefghjklnpqstuvxyz:*630adefghklmnoprstvxyz:*650abcdevxyz', false, true);
-        $data['genre'] = $this->getFieldsSubfields('*655abcvxyz', false, true);
-        $data['geographic'] = $this->getFieldsSubfields('*651aevxyz', false, true);
+        $data['topic'] = $this->getFieldsSubfields('*600abcdefghjklmnopqrstuvxyz:*610abcdefghklmnoprstuvxyz:*611acdefghjklnpqstuvxyz:*630adefghklmnoprstvxyz:*650abcdevxyz');
+        $data['genre'] = $this->getFieldsSubfields('*655abcvxyz');
+        $data['geographic'] = $this->getFieldsSubfields('*651aevxyz');
         $data['era'] = $this->getFieldsSubfields('*648avxyz');
 
         $data['topic_facet'] = $this->getFieldsSubfields('600x:610x:611x:630x:648x:650a:650x:651x:655x', false, true, true);
         $data['genre_facet'] = $this->getFieldsSubfields('600v:610v:611v:630v:648v:650v:651v:655a:655v', false, true, true);
         $data['geographic_facet'] = $this->getFieldsSubfields('600z:610z:611z:630z:648z:650z:651a:651z:655z', false, true, true);
-        $data['era_facet'] = $this->getFieldsSubfields('600d:610y:611y:630y:648a:648y:650y:651y:655y', false, true, true);
+        $data['era_facet'] = $this->getFieldsSubfields('630y:648a:648y:650y:651y:655y', false, true, true);
 
         $data['url'] = $this->getFieldsSubfields('856u');
 
@@ -1360,7 +1354,7 @@ class MarcRecord extends BaseRecord
      * 
      * @return string Concatenated subfields (space-separated)
      */
-    protected function getFieldSubfields($fieldspec, $stripTrailingPunctuation = false)
+    protected function getFieldSubfields($fieldspec, $stripTrailingPunctuation = true)
     {
         $tag = substr($fieldspec, 0, 3);
         $codes = substr($fieldspec, 3);
@@ -1389,7 +1383,7 @@ class MarcRecord extends BaseRecord
      * 
      * @return string[] Subfields
      */
-    protected function getFieldsSubfields($fieldspecs, $firstOnly = false, $stripTrailingPunctuation = false, $splitSubfields = false)
+    protected function getFieldsSubfields($fieldspecs, $firstOnly = false, $stripTrailingPunctuation = true, $splitSubfields = false)
     {
         $data = array();
         foreach (explode(':', $fieldspecs) as $fieldspec) {

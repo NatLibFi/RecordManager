@@ -1,6 +1,6 @@
 <?php
 /**
- * NdlMarcRecord Class
+ * NdlDcRecord Class
  *
  * PHP version 5
  *
@@ -26,13 +26,13 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 
-require_once 'MarcRecord.php';
+require_once 'DcRecord.php';
 require_once 'MetadataUtils.php';
 
 /**
- * NdlMarcRecord Class
+ * NdlDcRecord Class
  *
- * MarcRecord with NDL specific functionality
+ * DcRecord with NDL specific functionality
  * 
  * @category DataManagement
  * @package  RecordManager
@@ -40,7 +40,7 @@ require_once 'MetadataUtils.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class NdlMarcRecord extends MarcRecord
+class NdlDcRecord extends DcRecord
 {
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
@@ -50,9 +50,6 @@ class NdlMarcRecord extends MarcRecord
     public function toSolrArray()
     {
         $data = parent::toSolrArray();
-        if (isset($data['long_lat'])) {
-            $data['location_coords'] = implode(',', array_reverse(explode(',', $data['long_lat']))); 
-        }
         if (isset($data['publishDate'])) {
             $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate']);
         }

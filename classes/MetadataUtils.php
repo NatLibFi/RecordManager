@@ -181,7 +181,11 @@ class MetadataUtils
      */
     static public function hasTrailingPunctuation($str)
     {
-        return preg_match('/[\/:;\,=\(\.]+\s*$/', $str) > 0;
+        $punctuation = preg_match('/[\/:;\,=\(]+\s*$/', $str) > 0;
+        if (!$punctuation) {
+            $punctuation = substr($str, -1) == '.' && !substr($str, -3, 1) != ' '; 
+        }
+        return $punctuation;
     }
 
     /**
@@ -194,6 +198,13 @@ class MetadataUtils
     static public function stripTrailingPunctuation($str)
     {
         $str = preg_replace('/[\s\/:;\,=\(]+$/', '', $str);
+        // Don't replace an initial letter (e.g. string "Smith, A.") followed by period
+        $thirdLast = substr($str, -3, 1);
+        if (substr($str, -1) == '.' && $thirdLast != ' '  && $thirdLast != ' ') {
+            if (!in_array(substr($str, -4), array('nid.', 'sid.', 'kuv.', 'ill.', 'säv.', 'col.'))) {
+                $str = substr($str, 0, -1);
+            }
+        }
         return $str;
     }
     
@@ -290,6 +301,21 @@ class MetadataUtils
         $date = new DateTime('', new DateTimeZone('UTC'));
         $date->setTimeStamp($timestamp);
         return $date->format('Y-m-d') . 'T' . $date->format('H:i:s') . 'Z';
+    }
+    
+    /**
+     * Extract year from a date string
+     * 
+     * @param string $str Date string
+     * 
+     * @return string Year
+     */
+    public static function extractYear($str)
+    {
+        $matches = array();
+        if (preg_match('/(\-?\d{4})/', $str, $matches)) {
+            return $matches[1];
+        }
     }
 }
 

@@ -69,6 +69,7 @@ class NdlEadRecord extends EadRecord
                 }
             }
             $data['unit_daterange'] = $unitdate; 
+            $data['main_date_str'] = MetadataUtils::extractYear($dates[0]);
         }
 
         return $data;

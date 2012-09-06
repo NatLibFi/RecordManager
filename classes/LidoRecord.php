@@ -157,6 +157,7 @@ class LidoRecord extends BaseRecord
         $data['culture'] = $this->getCulture();
         $data['rights'] = $this->getRights();
         $data['unit_daterange'] = $this->getDateRange('valmistus');
+        $data['era_facet'] = $this->getDisplayDate('valmistus');
         
         if (!empty($this->earliestYear) && !empty($this->latestYear)) {
             // For demo purposes only... uniform distribution

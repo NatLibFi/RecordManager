@@ -104,6 +104,11 @@ class NdlLidoRecord extends LidoRecord
             $data['material'] = $materials;
         }
         
+        $daterange = explode(',', $this->getDateRange('valmistus'));
+        if ($daterange) {
+            $data['main_date_str'] = MetadataUtils::extractYear($daterange[0]);
+        }
+        
         $data['allfields'] = $this->getAllFields($data);
         
         return $data;

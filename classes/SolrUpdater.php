@@ -49,7 +49,13 @@ class SolrUpdater
     protected $buildingHierarchy;
     protected $verbose;
     protected $counts;
-
+    protected $journalFormats;
+    protected $eJournalFormats;
+    protected $allJournalFormats;
+    protected $articleFormats;
+    protected $eArticleFormats;
+    protected $allArticleFormats;
+    
     /**
      * Constructor 
      * 
@@ -70,6 +76,26 @@ class SolrUpdater
         $this->log = $log;
         $this->verbose = $verbose;
         $this->counts = isset($configArray['Mongo']['counts']) && $configArray['Mongo']['counts'];
+        
+        $this->journalFormats = isset($configArray['Solr']['journal_formats'])
+            ? $configArray['Solr']['journal_formats'] 
+            : array('Journal', 'Serial', 'Newspaper'); 
+
+        $this->eJournalFormats = isset($configArray['Solr']['ejournal_formats'])
+            ? $configArray['Solr']['journal_formats'] 
+            : array('eJournal');
+
+        $this->allJournalFormats = array_merge($this->journalFormats, $this->eJournalFormats);
+
+        $this->articleFormats = isset($configArray['Solr']['article_formats'])
+            ? $configArray['Solr']['article_formats'] 
+            : array('Article'); 
+
+        $this->eArticleFormats = isset($configArray['Solr']['earticle_formats'])
+            ? $configArray['Solr']['earticle_formats'] 
+            : array('eArticle');
+
+        $this->allArticleFormats = array_merge($this->articleFormats, $this->eArticleFormats);
         
         // Special case: building hierarchy
         $this->buildingHierarchy = isset($configArray['Solr']['hierarchical_facets'])
@@ -582,9 +608,9 @@ class SolrUpdater
                 $hiddenComponent = true;
             } elseif ($settings['componentParts'] == 'merge_non_articles' || $settings['componentParts'] == 'merge_non_earticles') {
                 $format = $metadataRecord->getFormat();
-                if ($format != 'eJournalArticle' && $format != 'JournalArticle') {
+                if (!in_array($format, $this->allArticleFormats)) {
                     $hiddenComponent = true;
-                } elseif ($format == 'JournalArticle' && $settings['componentParts'] == 'merge_non_earticles') {
+                } elseif (in_array($format, $this->articleFormats)) {
                     $hiddenComponent = true;
                 }
             }
@@ -604,9 +630,9 @@ class SolrUpdater
             $merge = false;
             if ($settings['componentParts'] == 'merge_all') {
                 $merge = true;
-            } elseif ($format != 'eJournal' && $format != 'Journal' && $format != 'Serial') {
+            } elseif (!in_array($format, $this->allJournalFormats)) {
                 $merge = true;
-            } elseif (($format == 'Journal' || $format == 'Serial') && $settings['componentParts'] == 'merge_non_earticles') {
+            } elseif (in_array($format, $this->journalFormats) && $settings['componentParts'] == 'merge_non_earticles') {
                 $merge = true;
             }
             if (!$merge) {
@@ -760,6 +786,12 @@ class SolrUpdater
         
         if ($hiddenComponent) {
             $data['hidden_component_boolean'] = true;
+        }
+        
+        foreach ($data as &$values) {
+            if (is_array($values)) {
+                $values = array_values(array_unique($values));
+            }
         }
         
         $data = array_filter(

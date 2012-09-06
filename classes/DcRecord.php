@@ -125,7 +125,7 @@ class DcRecord extends BaseRecord
         // allfields
         $allFields = array();
         foreach ($doc->children() as $tag => $field) {
-            $allFields[] = (string)$field;
+            $allFields[] = MetadataUtils::stripTrailingPunctuation((string)$field);
         }
         $data['allfields'] = $allFields;
           
@@ -143,10 +143,10 @@ class DcRecord extends BaseRecord
         );
         
         $data['format'] = (string)$doc->type;
-        $data['author'] = (string)$doc->creator;
+        $data['author'] = MetadataUtils::stripTrailingPunctuation((string)$doc->creator);
         $data['author2'] = $this->getValues('contributor');
 
-        $data['title'] = $data['title_full'] = (string)$doc->title;
+        $data['title'] = $data['title_full'] = MetadataUtils::stripTrailingPunctuation((string)$doc->title);
         $titleParts = explode(' : ', $data['title'], 2);
         if (!empty($titleParts)) {
             $data['title_short'] = $titleParts[0];
@@ -156,7 +156,7 @@ class DcRecord extends BaseRecord
         }
         $data['title_sort'] = $this->getTitle(true);
 
-        $data['publisher'] = (string)$doc->publisher;
+        $data['publisher'] = MetadataUtils::stripTrailingPunctuation((string)$doc->publisher);
         $data['publishDate'] = $this->getPublicationYear();
 
         $data['isbn'] = $this->getISBNs();
@@ -333,7 +333,7 @@ class DcRecord extends BaseRecord
     {
         $values = array();
         foreach ($this->doc->{$tag} as $value) {
-            $values[] = (string)$value;
+            $values[] = MetadataUtils::stripTrailingPunctuation((string)$value);
         }
         return $values;
     }
