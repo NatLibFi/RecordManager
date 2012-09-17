@@ -76,6 +76,7 @@ class RecordManager
     protected $pretransformation = '';
     protected $indexMergedParts = true;
     protected $counts = false;
+    protected $compressedRecords = false;
     
     /**
      * Constructor
@@ -99,7 +100,10 @@ class RecordManager
         if (isset($configArray['Mongo']['counts']) && $configArray['Mongo']['counts']) {
             $this->counts = true;
         }
-
+        if (isset($configArray['Mongo']['compressed_records']) && $configArray['Mongo']['compressed_records']) {
+            $this->compressedRecords = true;
+        }
+        
         $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
         $basePath = substr($basePath, 0, strrpos($basePath, DIRECTORY_SEPARATOR));
         $this->dataSourceSettings = parse_ini_file("$basePath/conf/datasources.ini", true);
@@ -235,7 +239,6 @@ class RecordManager
                         if (isset($record['dedup_key']) && $record['dedup_key']) {
                             ++$deduped;
                         }
-                        $metadataRecord->setIDPrefix($this->idPrefix . '.');
                         $metadataRecord->addDedupKeyToMetadata((isset($record['dedup_key']) && $record['dedup_key']) ? $record['dedup_key'] : $record['_id']);
                         file_put_contents($file, $metadataRecord->toXML() . "\n", FILE_APPEND);
                     }
@@ -334,10 +337,11 @@ class RecordManager
                     unset($record['dedup_key']);
                 }
 
+                $record['original_data'] = $this->compressedRecords ? new MongoBinData(gzdeflate($originalData)) : $originalData;
                 if ($normalizedData == $originalData) {
                     $record['normalized_data'] = '';
                 } else {
-                    $record['normalized_data'] = new MongoBinData(gzdeflate($normalizedData));
+                    $record['normalized_data'] = $this->compressedRecords ? new MongoBinData(gzdeflate($normalizedData)) : $normalizedData;
                 }
                 $record['host_record_id'] = $hostID;
                 $record['updated'] = new MongoDate();
@@ -782,35 +786,37 @@ class RecordManager
             $id = $this->idPrefix . '.' . $id;
             $dbRecord = $this->db->record->findOne(array('_id' => $id));
             if ($dbRecord) {
-                if (!isset($dbRecord['created'])) {
-                    $dbRecord['created'] = $dbRecord['updated'] = new MongoDate();
-                } else {
-                    $dbRecord['updated'] = new MongoDate();
-                }
+                $dbRecord['updated'] = new MongoDate();
             } else {
                 $dbRecord = array();
+                $dbRecord['source_id'] = $this->sourceId;
                 $dbRecord['_id'] = $id;
                 $dbRecord['created'] = $dbRecord['updated'] = new MongoDate();
+                $dbRecord['key'] =  new MongoId();
             }
             if ($normalizedData) {
                 if ($originalData == $normalizedData) {
                     $normalizedData = '';
                 };
             }
-            $originalData = gzdeflate($originalData);
-            if ($normalizedData) {
-                $normalizedData = gzdeflate($normalizedData);
+            if ($this->compressedRecords) {
+                $originalData = new MongoBinData(gzdeflate($originalData));
+                if ($normalizedData) {
+                    $normalizedData = MongoBinData(gzdeflate($normalizedData));
+                }
             }
-            $dbRecord['source_id'] = $this->sourceId;
             $dbRecord['oai_id'] = $oaiID;
-            $dbRecord['key'] =  new MongoId();
             $dbRecord['deleted'] = false;
             $dbRecord['host_record_id'] = $hostID;
             $dbRecord['format'] = $this->format;
-            $dbRecord['original_data'] = new MongoBinData($originalData);
-            $dbRecord['normalized_data'] = $normalizedData ? new MongoBinData($normalizedData) : '';
+            $dbRecord['original_data'] = $originalData;
+            $dbRecord['normalized_data'] = $normalizedData;
             if ($this->dedup && !$hostID) {
                 $this->updateDedupCandidateKeys($dbRecord, $metadataRecord);
+                if (isset($dbRecord['dedup_key'])) {
+                    $this->unmarkSingleDuplicate($dbRecord['dedup_key'], $dbRecord['_id']);
+                }
+                unset($dbRecord['dedup_key']);
                 $dbRecord['update_needed'] = true;
             } else {
                 unset($dbRecord['title_keys']);
@@ -827,18 +833,19 @@ class RecordManager
     /**
      * Count distinct values in the specified field (that would be added to the Solr index)
      * 
-     * @param string $field Field name
+     * @param string $sourceId Source ID
+     * @param string $field    Field name
      * 
      * @return void
      */
-    public function countValues($field)
+    public function countValues($sourceId, $field)
     {
         if (!$field) {
             echo "Field must be specified\n";
             exit;
         }
         $updater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
-        $updater->countValues($field);
+        $updater->countValues($sourceId, $field);
     }
     
     /**
@@ -1129,12 +1136,20 @@ class RecordManager
     protected function markDuplicates($rec1, $rec2)
     {
         if (isset($rec2['dedup_key']) && $rec2['dedup_key']) {
+            if (isset($rec1['dedup_key']) && $rec1['dedup_key'] != $rec2['dedup_key']) {
+                $this->changeDedupKeys($rec1['dedup_key'], $rec2['dedup_key']);
+            }
             $rec1['dedup_key'] = $rec2['dedup_key'];
         } else {
+            if (isset($rec1['dedup_key']) && $rec1['dedup_key'] != $rec1['key']) {
+                $this->changeDedupKeys($rec1['dedup_key'], $rec1['key']);
+            }
             $rec1['dedup_key'] = $rec1['key'];
             $rec2['dedup_key'] = $rec1['key'];
         }
-        $this->log->log('DEDUP*', "Marking {$rec1['_id']} as duplicate with {$rec2['_id']} with dedup key {$rec2['dedup_key']}", Logger::WARNING);
+        if ($this->verbose) {
+            echo "Marking {$rec1['_id']} as duplicate with {$rec2['_id']} with dedup key {$rec2['dedup_key']}\n";
+        }
         
         $rec1['updated'] = new MongoDate();
         $rec1['update_needed'] = false;
@@ -1162,11 +1177,31 @@ class RecordManager
         $records = $this->db->record->find(array('dedup_key' => $dedupKey, '_id' => array('$ne' => $oldDuplicateId)));
         $record = $records->getNext();
         if ($record && !$records->hasNext()) {
-            $this->log->log('DEDUP*', "Unmarking {$record['_id']} with dedup key $dedupKey, $oldDuplicateId going away", Logger::WARNING);
+            if ($this->verbose) {
+                echo "Unmarking {$record['_id']} with dedup key $dedupKey, $oldDuplicateId going away\n";
+            }
             unset($record['dedup_key']);
             $record['updated'] = new MongoDate();
             $this->db->record->save($record);
         }
+    }
+
+    /**
+     * Change all dedup keys from a value to another. Used when two records
+     * are marked duplicates and keys change as a result. 
+     *
+     * @param ObjectId $oldDedupKey Old dedup key     
+     * @param ObjectId $newDedupKey New dedup key     
+     * 
+     * @return void
+     */
+    protected function changeDedupKeys($oldDedupKey, $newDedupKey)
+    {
+        $this->db->record->update(
+            array('dedup_key' => $oldDedupKey),
+            array('$set' => array('dedup_key' => $newDedupKey)),
+            array('multiple' => true)
+        );
     }
     
     /**

@@ -68,36 +68,36 @@ class MarcRecord extends BaseRecord
      */
     public function __construct($data, $oaiID)
     {
-        $firstChar = substr($data, 0, 1);
-        if ($firstChar === '{') {
-            $fields = json_decode($data, true);
-            if (!isset($fields['v'])) {
-                // Old format, convert...
-                $this->fields = array();
-                foreach ($fields as $tag => $field) {
-                    foreach ($field as $data) {
-                        if (strstr($data, MarcRecord::SUBFIELD_INDICATOR)) {
-                            $newField = array(
-                                'i1' => $data[0],
-                                'i2' => $data[1]
-                            );
-                            foreach (explode(MarcRecord::SUBFIELD_INDICATOR, substr($data, 3)) as $subfield) {
-                                $newField['s'][] = array('c' => $subfield[0], 'v' => substr($subfield, 1));
+            $firstChar = substr($data, 0, 1);
+            if ($firstChar === '{') {
+                $fields = json_decode($data, true);
+                if (!isset($fields['v'])) {
+                    // Old format, convert...
+                    $this->fields = array();
+                    foreach ($fields as $tag => $field) {
+                        foreach ($field as $data) {
+                            if (strstr($data, MarcRecord::SUBFIELD_INDICATOR)) {
+                                $newField = array(
+                                    'i1' => $data[0],
+                                    'i2' => $data[1]
+                                );
+                                foreach (explode(MarcRecord::SUBFIELD_INDICATOR, substr($data, 3)) as $subfield) {
+                                    $newField['s'][] = array('c' => $subfield[0], 'v' => substr($subfield, 1));
+                                }
+                                $this->fields[$tag][] = $newField;
+                            } else {
+                                $this->fields[$tag][] = $data;
                             }
-                            $this->fields[$tag][] = $newField;
-                        } else {
-                            $this->fields[$tag][] = $data;
                         }
                     }
-                }
+                } else {
+                    $this->fields = $fields['f'];
+                } 
+            } elseif ($firstChar === '<') {
+                $this->parseXML($data);
             } else {
-                $this->fields = $fields['f'];
-            } 
-        } elseif ($firstChar === '<') {
-            $this->parseXML($data);
-        } else {
-            $this->parseISO2709($data);
-        }
+                $this->parseISO2709($data);
+            }
         if (isset($this->fields['000']) && is_array($this->fields['000'])) {
             $this->fields['000'] = $this->fields['000'][0];
         }
@@ -392,32 +392,6 @@ class MarcRecord extends BaseRecord
     {
         //echo "ID: *" . $this->marcRecord->getField('001')->getData() ."*\n";
         return $this->getField('001');
-    }
-
-    /**
-     * Set the ID prefix into all the ID fields (ID, host ID and any other fields that reference other records by ID)
-     *
-     * @param string $prefix The prefix (e.g. "source.")
-     * 
-     * @return void
-     */
-    public function setIDPrefix($prefix)
-    {
-        $this->idPrefix = $prefix;
-        //echo "ID: *" . $this->marcRecord->getField('001')->getData() ."*\n";
-        $id = $this->getField('001');
-        $id = "$prefix$id";
-        $this->setField('001', array($id));
-
-        if (isset($this->fields['773'])) {
-            foreach ($this->fields['773'] as &$field) {
-                foreach ($field['s'] as &$subfield) {
-                    if ($subfield['c'] == 'w') {
-                        $subfield['v'] = $prefix . $subfield['v'];
-                    }
-                }
-            }
-        }
     }
 
     /**
@@ -757,11 +731,6 @@ class MarcRecord extends BaseRecord
      */
     public function getFormat()
     {
-        // Custom predefined type in 977a
-        $field977a = $this->getFieldSubfields('977a');
-        if ($field977a) {
-            return $field977a;
-        }
         $field008 = $this->getField('008');
         // check the 007 - this is a repeating field
         $fields = $this->getFields('007');

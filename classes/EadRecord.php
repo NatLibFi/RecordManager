@@ -92,29 +92,6 @@ class EadRecord extends BaseRecord
     }
 
     /**
-     * Set the ID prefix into all the ID fields (ID, host ID etc.)
-     *
-     * @param string $prefix (e.g. "source.")
-     * 
-     * @return void
-     * @access public
-     */
-    public function setIDPrefix($prefix)
-    {
-        if ($this->doc->did->unitid) {
-            $this->doc->did->unitid->attributes()->{'identifier'} = $prefix . $this->doc->did->unitid->attributes()->{'identifier'};
-        }
-        if ($this->doc->{'add-data'}) {
-            if ($this->doc->{'add-data'}->{'archive'}) {
-                $this->doc->{'add-data'}->{'archive'}->attributes()->{'id'} = $prefix . $this->doc->{'add-data'}->{'archive'}->attributes()->{'id'};
-            } 
-            if ($this->doc->{'add-data'}->{'parent'}) {
-                $this->doc->{'add-data'}->{'parent'}->attributes()->{'id'} = $prefix . $this->doc->{'add-data'}->{'parent'}->attributes()->{'id'};
-            } 
-        }
-    }
-
-    /**
      * Return fields to be indexed in Solr
      *
      * @return string[]

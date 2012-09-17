@@ -93,19 +93,6 @@ class LidoRecord extends BaseRecord
     }
 
     /**
-     * Set the ID prefix into all the ID fields (ID, host ID etc.)
-     *
-     * @param string $prefix (e.g. "source.")
-     * 
-     * @return void
-     * @access public
-     */
-    public function setIDPrefix($prefix)
-    {
-        $this->doc->lido->lidoRecID = $prefix . $this->doc->lido->lidoRecID;
-    }
-
-    /**
      * Return fields to be indexed in Solr
      *
      * @return string[]

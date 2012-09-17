@@ -8,6 +8,7 @@ timezone        = "Europe/Helsinki"
 url = mongodb://localhost
 database = recman
 counts = true
+compress_records = true
 
 [Solr]
 ; Note that RecordManager requires that the json update method be available

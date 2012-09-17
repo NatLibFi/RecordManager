@@ -286,7 +286,7 @@ class MetadataUtils
         } else {
             $data = $record['original_data'];
         }
-        return is_string($data) ? $data : gzinflate($data->bin);
+        return is_object($data) ? gzinflate($data->bin) : $data;
     }
 
     /**

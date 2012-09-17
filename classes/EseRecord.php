@@ -91,18 +91,6 @@ class EseRecord extends BaseRecord
     }
 
     /**
-     * Set the ID prefix into all the ID fields (ID, host ID etc.)
-     *
-     * @param string $prefix (e.g. "source.")
-     * 
-     * @return void
-     * @access public
-     */
-    public function setIDPrefix($prefix)
-    {
-    }
-
-    /**
      * Return fields to be indexed in Solr
      *
      * @return string[]

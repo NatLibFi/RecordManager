@@ -58,4 +58,20 @@ class NdlMarcRecord extends MarcRecord
         }
         return $data;
     }
+    
+    /**
+     * Dedup: Return format from predefined values
+     *
+     * @return string
+     * @access public
+     */
+    public function getFormat()
+    {
+        // Custom predefined type in 977a
+        $field977a = $this->getFieldSubfields('977a');
+        if ($field977a) {
+            return $field977a;
+        }
+        return parent::getFormat();
+    }
 }

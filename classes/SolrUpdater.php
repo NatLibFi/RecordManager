@@ -337,6 +337,9 @@ class SolrUpdater
             }
             $pc = new PerformanceCounter();
             foreach ($keys as $key) {
+                if (empty($key['_id'])) {
+                    continue;
+                }
                 $records = $this->db->record->find(array('dedup_key' => $key['_id']));
                 $children = array();
                 $merged = array();
@@ -500,7 +503,7 @@ class SolrUpdater
                 $this->log->log('updateMergedRecords', "Commit complete");
             }
         } catch (Exception $e) {
-            $this->log->log('updateMergedRecords', 'Exception: ' . $e->getMessage(), Logger::FATAL);
+            $this->log->log('updateMergedRecords', 'Exception: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine(), Logger::FATAL);
         }
     }
     
@@ -530,14 +533,19 @@ class SolrUpdater
     /**
      * Count distinct values in the specified field (that would be added to the Solr index)
      * 
-     * @param string $field Field name
+     * @param string $sourceId Source ID
+     * @param string $field    Field name
      * 
      * @return void
      */
-    public function countValues($field)
+    public function countValues($sourceId, $field)
     {
         $this->log->log('countValues', "Creating record list...");
-        $records = $this->db->record->find(array('deleted' => false));
+        $params = array('deleted' => false);
+        if ($sourceId) {
+            $params['source_id'] = $sourceId;
+        }
+        $records = $this->db->record->find($params);
         $records->immortal(true);
         $this->log->log('countValues', "Counting values...");
         $values = array();
@@ -574,6 +582,14 @@ class SolrUpdater
             ++$count;                       
             if ($count % 1000 == 0) {
                 $this->log->log('countValues', "$count records processed");
+                if ($this->verbose) {
+                    echo "Current list:\n";
+                    arsort($values, SORT_NUMERIC);
+                    foreach ($values as $key => $value) {
+                        echo "$key: $value\n";
+                    }
+                    echo "\n";
+                }
             }
         }
         arsort($values, SORT_NUMERIC);
@@ -623,7 +639,7 @@ class SolrUpdater
         $hasComponentParts = false;
         $components = null;
         if (!$record['host_record_id']) {
-            // Fetch info whether component parts exists and need to be merged
+            // Fetch info whether component parts exist and need to be merged
             $components = $this->db->record->find(array('host_record_id' => $record['_id'], 'deleted' => false));
             $hasComponentParts = $components->hasNext();
             $format = $metadataRecord->getFormat();
@@ -640,7 +656,6 @@ class SolrUpdater
             }
         }
         
-        $metadataRecord->setIDPrefix($settings['idPrefix'] . '.');
         if (isset($components)) {
             $mergedComponents += $metadataRecord->mergeComponentParts($components);
         }

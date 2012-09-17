@@ -85,7 +85,7 @@ function main($argv)
         $manager->optimizeSolr();
         break;
     case 'count':
-        $manager->countValues(isset($params['field']) ? $params['field'] : null);
+        $manager->countValues($source, isset($params['field']) ? $params['field'] : null);
         break;
     default: 
         echo 'Unknown func: ' . $params['func'] . "\n"; 

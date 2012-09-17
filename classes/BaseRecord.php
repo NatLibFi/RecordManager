@@ -69,15 +69,6 @@ abstract class BaseRecord
     public abstract function toXML();
 
     /**
-     * Set the ID prefix into all the ID fields (ID, host ID and any other fields that reference other records by ID)
-     *
-     * @param string $prefix The prefix (e.g. "source.")
-     * 
-     * @return void
-     */
-    public abstract function setIDPrefix($prefix);
-
-    /**
      * Return whether the record is a component part 
      * 
      * @return boolean
