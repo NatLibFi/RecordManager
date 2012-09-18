@@ -42,8 +42,9 @@ function main($argv)
         echo "Usage: harvest --source=... [...]\n\n";
         echo "Parameters:\n\n";
         echo "--source            Repository id ('*' for all)\n";
-        echo "--from              Override harvesting start date (use - to start from beginning)\n";
+        echo "--from              Override harvesting start date\n";
         echo "--until             Override harvesting end date\n";
+        echo "--all               Harvest from beginning (overrides --from)\n";
         echo "--verbose           Enable verbose output\n";
         echo "--override          Override initial resumption token (e.g. to resume failed connection)\n\n";
         exit(1);
@@ -51,9 +52,13 @@ function main($argv)
 
     $manager = new RecordManager(true);
     $manager->verbose = isset($params['verbose']) ? $params['verbose'] : false;
+    $from = isset($params['from']) ? $params['from'] : null;
+    if (isset($params['all'])) {
+        $from = '-';
+    }
     $manager->harvest(
         $params['source'], 
-        isset($params['from']) ? $params['from'] : null, 
+        $from, 
         isset($params['until']) ? $params['until'] : null, 
         isset($params['override']) ? urldecode($params['override']) : ''
     );
