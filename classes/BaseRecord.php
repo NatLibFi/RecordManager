@@ -42,18 +42,30 @@ abstract class BaseRecord
     /**
      * Constructor
      *
-     * @param string $data  Metadata
-     * @param string $oaiID Record ID received from OAI-PMH (or empty string for file import)
+     * @param string $data   Metadata
+     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for file import)
+     * @param string $source Source ID
      */
-    public abstract function __construct($data, $oaiID);
+    public abstract function __construct($data, $oaiID, $source);
 
     /**
-     * Return record ID (local)
+     * Return record ID (unique in the data source)
      *
      * @return string
      */
     public abstract function getID();
 
+    /**
+     * Return record linking ID (typically same as ID) used for links
+     * between records in the data source
+     *
+     * @return string
+     */
+    public function getLinkingID()
+    {
+        return $this->getID();
+    }
+    
     /**
      * Serialize the record for storing in the database
      *
@@ -68,6 +80,15 @@ abstract class BaseRecord
      */
     public abstract function toXML();
 
+    /**
+     * Normalize the record (optional)
+     *
+     * @return void
+     */
+    public function normalize()
+    {
+    }
+    
     /**
      * Return whether the record is a component part 
      * 

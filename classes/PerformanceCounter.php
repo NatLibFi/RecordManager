@@ -70,7 +70,7 @@ class PerformanceCounter
     public function add($count)
     {
         $this->counts[] = array('t' => microtime(true), 'c' => $count);
-        if (count($this->counts) > 30) {
+        if (count($this->counts) > 10) {
             array_shift($this->counts);
         }
     }
@@ -87,15 +87,20 @@ class PerformanceCounter
         }
         $total = 0;
         $prev = $this->counts[0];
-        for ($i = 1; $i < count($this->counts); $i++) {
+        $items = count($this->counts);
+        for ($i = 1; $i < $items; $i++) {
             $count = $this->counts[$i]; 
             $sum = $count['c'] - $prev['c'];
             $time = $count['t'] - $prev['t'];
             if ($time > 0) {
-                $total += round($sum / $time);
+                if ($i == $items - 1) {
+                    $total += 5 * round($sum / $time);
+                } else {
+                    $total += round($sum / $time);
+                }
             }
             $prev = $count;
         }
-        return round($total / (count($this->counts) - 1));
+        return round($total / (count($this->counts) - 1 + 4));
     }
 }

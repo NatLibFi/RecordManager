@@ -37,3 +37,6 @@ oai_dc = dc
 log_file        = /var/log/recman.log
 log_level       = 4
 error_email     = 
+
+[Local]
+; Put here locally defined settings for e.g. custom record classes

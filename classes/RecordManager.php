@@ -76,7 +76,7 @@ class RecordManager
     protected $pretransformation = '';
     protected $indexMergedParts = true;
     protected $counts = false;
-    protected $compressedRecords = false;
+    protected $compressedRecords = true;
     
     /**
      * Constructor
@@ -87,21 +87,22 @@ class RecordManager
     public function __construct($console = false)
     {
         global $configArray;
-
+        global $logger;
+        
         date_default_timezone_set($configArray['Site']['timezone']);
 
         $this->log = new Logger();
         if ($console) {
             $this->log->logToConsole = true;
         }
-        // Store logger in the config array so that others can access it easily
-        $configArray['Log']['logger'] = $this->log;
+        // Store logger in a global so that others can access it easily
+        $logger = $this->log;
         
         if (isset($configArray['Mongo']['counts']) && $configArray['Mongo']['counts']) {
             $this->counts = true;
         }
-        if (isset($configArray['Mongo']['compressed_records']) && $configArray['Mongo']['compressed_records']) {
-            $this->compressedRecords = true;
+        if (isset($configArray['Mongo']['compressed_records']) && !$configArray['Mongo']['compressed_records']) {
+            $this->compressedRecords = false;
         }
         
         $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
@@ -235,7 +236,7 @@ class RecordManager
                         if ($skipRecords > 0 && $count % $skipRecords != 0) {
                             continue;
                         }
-                        $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id']);
+                        $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
                         if (isset($record['dedup_key']) && $record['dedup_key']) {
                             ++$deduped;
                         }
@@ -316,15 +317,13 @@ class RecordManager
                 $originalData = MetadataUtils::getRecordData($record, false);
                 $normalizedData = $originalData;
                 if (isset($this->normalizationXSLT)) {
-                    $origMetadataRecord = RecordFactory::createRecord($record['format'], $originalData, $record['oai_id']);
+                    $origMetadataRecord = RecordFactory::createRecord($record['format'], $originalData, $record['oai_id'], $record['source_id']);
                     $normalizedData = $this->normalizationXSLT->transform($origMetadataRecord->toXML(), array('oai_id' => $record['oai_id']));
                 }
     
-                $metadataRecord = RecordFactory::createRecord($record['format'], $normalizedData, $record['oai_id']);
+                $metadataRecord = RecordFactory::createRecord($record['format'], $normalizedData, $record['oai_id'], $record['source_id']);
+                $metadataRecord->normalize();
                 $hostID = $metadataRecord->getHostRecordID();
-                if ($hostID) {
-                    $hostID = $this->idPrefix . '.' . $hostID;
-                }
                 $normalizedData = $metadataRecord->serialize();
                 if ($this->dedup && !$hostID) {
                     $this->updateDedupCandidateKeys($record, $metadataRecord);
@@ -343,6 +342,7 @@ class RecordManager
                 } else {
                     $record['normalized_data'] = $this->compressedRecords ? new MongoBinData(gzdeflate($normalizedData)) : $normalizedData;
                 }
+                $record['linking_id'] = $metadataRecord->getLinkingID();
                 $record['host_record_id'] = $hostID;
                 $record['updated'] = new MongoDate();
                 $this->db->record->save($record);
@@ -436,7 +436,7 @@ class RecordManager
                         if ($this->verbose) {
                             echo "\n";
                         }
-                        $this->log->log('deduplicate', "Candidate search for " . $record['_id'] . " took " . (microtime(true) - $startRecordTime));
+                        $this->log->log('deduplicate', 'Candidate search for ' . $record['_id'] . ' took ' . (microtime(true) - $startRecordTime));
                     }
                     ++$count;
                     if ($count % 1000 == 0) {
@@ -503,7 +503,7 @@ class RecordManager
                     // Create keyed array
                     $records = array();
                     foreach ($harvestedRecords as $record) {
-                        $marc = RecordFactory::createRecord('marc', $record, '');
+                        $marc = RecordFactory::createRecord('marc', $record, '', $source);
                         $id = $marc->getID();
                         $records["$source.$id"] = $record;
                     }
@@ -524,8 +524,8 @@ class RecordManager
                             continue;
                         }
                         // Check if the record has changed
-                        $dbMarc = RecordFactory::createRecord('marc', MetadataUtils::getRecordData($dbRecord, false), '');
-                        $marc = RecordFactory::createRecord('marc', $records[$id], '');
+                        $dbMarc = RecordFactory::createRecord('marc', MetadataUtils::getRecordData($dbRecord, false), '', $source);
+                        $marc = RecordFactory::createRecord('marc', $records[$id], '', $source);
                         if ($marc->serialize() != MetadataUtils::getRecordData($dbRecord, false)) {
                             // Record changed, update...
                             $this->storeRecord($id, false, $records[$id]);
@@ -643,8 +643,31 @@ class RecordManager
     {
         $params = array();
         $params['source_id'] = $sourceId;
-        $this->log->log('deleteRecords', "Deleting records from data source '$sourceId'...");
-        $this->db->record->remove($params, array('safe' => true, 'timeout' => 3000000));
+        $this->log->log('deleteRecords', "Creating record list for '$sourceId'...");
+
+        $params = array('deleted' => false, 'source_id' => $source);
+        $records = $this->db->record->find($params);
+        $records->immortal(true);
+        $total = $this->counts ? $records->count() : 'the';
+        $count = 0;
+
+        $this->log->log('renormalize', "Deleting $total records from '$sourceId'...");
+        $pc = new PerformanceCounter();
+        foreach ($records as $record) {
+            if (isset($record['dedup_key'])) {
+                $this->unmarkSingleDuplicate($record['dedup_key'], $record['_id']);
+            }
+            $this->db->record->remove(array('_id' => $record['_id']));
+
+            ++$count;
+            if ($count % 1000 == 0) {
+                $pc->add($count);
+                $avg = $pc->getSpeed();
+                $this->log->log('deleteRecords', "$count records deleted from '$sourceId', $avg records/sec");
+            }
+        }
+        $this->log->log('deleteRecords', "Completed with $count records deleted from '$sourceId'");
+
         $this->log->log('deleteRecords', "Deleting last harvest date from data source '$sourceId'...");
         $this->db->state->remove(array('_id' => "Last Harvest Date $sourceId"), array('safe' => true));
         $this->log->log('deleteRecords', "Deletion of $sourceId completed");
@@ -663,19 +686,11 @@ class RecordManager
         
         $updater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
         if (isset($configArray['Solr']['merge_records']) && $configArray['Solr']['merge_records']) {
-            $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' from Solr via update for merged records...");
-            $this->log->log('deleteSolrRecords', "Marking records deleted...");
-            $this->db->record->update(
-                array('source_id' => $sourceId),
-                array('$set' => array('deleted' => true, 'updated' => new MongoDate())),
-                array('multiple' => true)
-            );
-            $this->log->log('deleteSolrRecords', "Updating Solr index...");
-            return $updater->updateMergedRecords(null, $sourceId);
-        } else {
-            $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' directly from Solr...");
-            $updater->deleteDataSource($sourceId);
-        }
+            $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' from merged records via Solr update for merged records...");
+            $updater->updateMergedRecords(null, $sourceId, '', false, true);
+        } 
+        $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' directly from Solr...");
+        $updater->deleteDataSource($sourceId);
         $this->log->log('deleteSolrRecords', "Deletion of '$sourceId' from Solr completed");
     }
     
@@ -707,7 +722,7 @@ class RecordManager
     {
         if ($deleted) {
             // A single OAI-PMH record may have been split to multiple records
-            $records = $this->db->record->find(array('oai_id' => $oaiID));
+            $records = $this->db->record->find(array('source_id' => $this->sourceId, 'oai_id' => $oaiID));
             $count = 0;
             foreach ($records as $record) {
                 if (isset($record['dedup_key'])) {
@@ -763,19 +778,18 @@ class RecordManager
         $count = 0;
         foreach ($dataArray as $data) {
             if (isset($this->normalizationXSLT)) {
-                $metadataRecord = RecordFactory::createRecord($this->format, $this->normalizationXSLT->transform($data, array('oai_id' => $oaiID)), $oaiID);
+                $metadataRecord = RecordFactory::createRecord($this->format, $this->normalizationXSLT->transform($data, array('oai_id' => $oaiID)), $oaiID, $this->sourceId);
+                $metadataRecord->normalize();
                 $normalizedData = $metadataRecord->serialize();
-                $originalData = RecordFactory::createRecord($this->format, $data, $oaiID)->serialize();
+                $originalData = RecordFactory::createRecord($this->format, $data, $oaiID, $this->sourceId)->serialize();
             } else {
-                $metadataRecord = RecordFactory::createRecord($this->format, $data, $oaiID);
+                $metadataRecord = RecordFactory::createRecord($this->format, $data, $oaiID, $this->sourceId);
                 $originalData = $metadataRecord->serialize();
-                $normalizedData = $originalData;
+                $metadataRecord->normalize();
+                $normalizedData = $metadataRecord->serialize();
             }
     
             $hostID = $metadataRecord->getHostRecordID();
-            if ($hostID) {
-                $hostID = $this->idPrefix . '.' . $hostID;
-            }
             $id = $metadataRecord->getID();
             if (!$id) {
                 if (!$oaiID) {
@@ -794,6 +808,7 @@ class RecordManager
                 $dbRecord['created'] = $dbRecord['updated'] = new MongoDate();
                 $dbRecord['key'] =  new MongoId();
             }
+            $dbRecord['date'] = $dbRecord['updated'];
             if ($normalizedData) {
                 if ($originalData == $normalizedData) {
                     $normalizedData = '';
@@ -802,11 +817,12 @@ class RecordManager
             if ($this->compressedRecords) {
                 $originalData = new MongoBinData(gzdeflate($originalData));
                 if ($normalizedData) {
-                    $normalizedData = MongoBinData(gzdeflate($normalizedData));
+                    $normalizedData = new MongoBinData(gzdeflate($normalizedData));
                 }
             }
             $dbRecord['oai_id'] = $oaiID;
             $dbRecord['deleted'] = false;
+            $dbRecord['linking_id'] = $metadataRecord->getLinkingID();
             $dbRecord['host_record_id'] = $hostID;
             $dbRecord['format'] = $this->format;
             $dbRecord['original_data'] = $originalData;
@@ -864,7 +880,7 @@ class RecordManager
             return;
         }
         $this->db->record->update(
-            array('oai_id' => $oaiID),
+            array('source_id' => $this->sourceId, 'oai_id' => $oaiID),
             array('$set' => array('mark' => true)),
             array('multiple' => true)
         );
@@ -907,7 +923,7 @@ class RecordManager
             echo 'Original ' . $record['_id'] . ":\n" . MetadataUtils::getRecordData($record, true) . "\n";
         }
         
-        $origRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id']);
+        $origRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
         $key = MetadataUtils::createTitleKey($origRecord->getTitle(true));
         $keyArray = array($key);
         $ISBNArray = $origRecord->getISBNs();
@@ -998,7 +1014,7 @@ class RecordManager
      */
     protected function matchRecords($record, $origRecord, $candidate)
     {
-        $cRecord = RecordFactory::createRecord($candidate['format'], MetadataUtils::getRecordData($candidate, true), $record['oai_id']);
+        $cRecord = RecordFactory::createRecord($candidate['format'], MetadataUtils::getRecordData($candidate, true), $candidate['oai_id'], $candidate['source_id']);
         if ($this->verbose) {
             echo "\nCandidate " . $candidate['_id'] . ":\n" . MetadataUtils::getRecordData($candidate, true) . "\n";
         }
@@ -1221,7 +1237,7 @@ class RecordManager
         if ($this->verbose) {
             echo "Deduplicating component parts...\n";
         }
-        $components1iter = $this->db->record->find(array('host_record_id' => $hostRecord['_id']));
+        $components1iter = $this->db->record->find(array('host_record_id' => $hostRecord['linking_id']));
         if (!$components1iter->hasNext()) {
             return;
         }
@@ -1237,7 +1253,7 @@ class RecordManager
             if ($otherRecord['source_id'] == $hostRecord['source_id']) {
                 continue;
             }
-            $components2iter = $this->db->record->find(array('host_record_id' => $otherRecord['_id']));
+            $components2iter = $this->db->record->find(array('host_record_id' => $otherRecord['linking_id']));
             $components2 = array();
             foreach ($components2iter as $component2) {
                 $components2[MetadataUtils::createIdSortKey($component2['_id'])] = $component2;
@@ -1258,7 +1274,7 @@ class RecordManager
                 if ($this->verbose) {
                     echo 'Original ' . $component1['_id'] . ":\n" . MetadataUtils::getRecordData($component1, true) . "\n";
                 }
-                $metadataComponent1 = RecordFactory::createRecord($component1['format'], MetadataUtils::getRecordData($component1, true), $component1['oai_id']);
+                $metadataComponent1 = RecordFactory::createRecord($component1['format'], MetadataUtils::getRecordData($component1, true), $component1['oai_id'], $component1['source_id']);
                 if (!$this->matchRecords($component1, $metadataComponent1, $component2)) {
                     $allMatch = false;
                     break;

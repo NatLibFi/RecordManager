@@ -668,7 +668,7 @@ EOF;
         $metadata = '';
         if ($includeMetadata) {
             $mongodata = $record['normalized_data'] ? $record['normalized_data'] : $record['original_data'];
-            $metadataRecord = RecordFactory::createRecord($record['format'], gzinflate($mongodata->bin), $record['oai_id']);
+            $metadataRecord = RecordFactory::createRecord($record['format'], gzinflate($mongodata->bin), $record['oai_id'], $record['source_id']);
             $metadata = $metadataRecord->toXML();
             $key = "transformation_to_{$format}";
             $source = $record['source_id'];

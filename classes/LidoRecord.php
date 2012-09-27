@@ -49,12 +49,11 @@ class LidoRecord extends BaseRecord
     /**
      * Constructor
      *
-     * @param string $data  Record metadata
-     * @param string $oaiID Record ID in OAI-PMH
-     * 
-     * @access public
+     * @param string $data   Metadata
+     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for file import)
+     * @param string $source Source ID
      */
-    public function __construct($data, $oaiID)
+    public function __construct($data, $oaiID, $source)
     {
         $this->doc = simplexml_load_string($data);
     }

@@ -6,3 +6,4 @@ db.record.ensureIndex({oai_id: 1});
 db.record.ensureIndex({host_record_id: 1});
 db.record.ensureIndex({source_id: 1});
 db.record.ensureIndex({updated: 1});
+db.record.ensureIndex({linking_id: 1});

@@ -47,10 +47,11 @@ class RecordFactory
      * @param string $format Metadata format
      * @param string $data   Metadata
      * @param string $oaiID  Record ID received from OAI-PMH
+     * @param string $source Record source
      *
      * @return object       The record driver for handling the record.
      */
-    static function createRecord($format, $data, $oaiID)
+    static function createRecord($format, $data, $oaiID, $source)
     {
         global $configArray;
         
@@ -60,14 +61,14 @@ class RecordFactory
             $class = ucwords($format) . 'Record';
         }
         if (class_exists($class)) {
-            $obj = new $class($data, $oaiID);
+            $obj = new $class($data, $oaiID, $source);
             return $obj;
         }
 
         $path = "{$class}.php";
         include_once $path;
         if (class_exists($class)) {
-            $obj = new $class($data, $oaiID);
+            $obj = new $class($data, $oaiID, $source);
             return $obj;
         }
 

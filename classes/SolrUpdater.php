@@ -254,22 +254,17 @@ class SolrUpdater
      *                              source
      * @param string      $singleId Export only a record with the given ID
      * @param bool        $noCommit If true, changes are not explicitly committed
+     * @param bool        $delete   If true, records in the given $sourceId are all deleted
      * 
      * @return void
      */
-    public function updateMergedRecords($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false)
+    public function updateMergedRecords($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false, $delete = false)
     {
+        global $configArray;
+        
         try {
             $needCommit = false;
 
-            // Drop too old m/r collections
-            foreach ($this->db->listCollections() as $collection) {
-                if (strstr($collection, 'mr_record_') && time() - substr($collection, strrpos($collection, '_') + 1) > 7 * 60 * 60 * 24) {
-                    $this->log->log('updateMergedRecords', "Cleanup: dropping old m/r collection $collection");
-                    $this->db->dropCollection($collection);
-                }
-            }
-            
             if (isset($fromDate) && $fromDate) {
                 $mongoFromDate = new MongoDate(strtotime($fromDate));
             }
@@ -283,7 +278,6 @@ class SolrUpdater
                 }
             }
             $from = isset($mongoFromDate) ? date('Y-m-d H:i:s', $mongoFromDate->sec) : 'the beginning';
-            $this->log->log('updateMergedRecords', "Creating merged record list (from $from)...");
             // Take the last indexing date now and store it when done
             $lastIndexingDate = new MongoDate();
             $this->initBufferedUpdate();
@@ -301,28 +295,62 @@ class SolrUpdater
                 if ($sourceId) {
                     $params['source_id'] = $sourceId;
                 }
-                $params['update_needed'] = false;
+                if (!$delete) {
+                    $params['update_needed'] = false;
+                }
                 $params['dedup_key'] = array('$exists' => true);
             }
             
             $map = new MongoCode("function() { emit(this.dedup_key, 1); }");
             $reduce = new MongoCode("function(k, vals) { return vals.length; }");
-            $collectionName = 'mr_record_' . time();
-            $mr = $this->db->command(
-                array(
-                    'mapreduce' => 'record', 
-                    'map' => $map,
-                    'reduce' => $reduce,
-                    'out' => array('replace' => $collectionName),
-                    'query' => $params,
-                ),
-                array(
-                    'timeout' => 3000000
-                )
-            );
-            if (!$mr['ok']) {
-                $this->log->log('updateMergedRecords', "Mongo map/reduce failed: " . $mr['assertion'], Logger::FATAL);
-                return; 
+            $collectionName = 'mr_record_' . md5(json_encode($params));
+            if (isset($fromDate)) {
+                $collectionName .= "_$fromDate";
+            }
+            $record = $this->db->record->find()->sort(array('updated' => -1))->getNext();
+            $lastRecordTime = $record['updated']->sec;
+            $collectionName .= "_$lastRecordTime"; 
+            
+            // Check if we already have a suitable collection and drop too old collections
+            $collectionExists = false;
+            foreach ($this->db->listCollections() as $collection) {
+                $collection = explode('.', $collection, 2);
+                if ($collection[0] != $configArray['Mongo']['database']) {
+                    continue;
+                }
+                $collection = end($collection);
+                if ($collection == $collectionName) {
+                    $collectionExists = true;
+                } else {
+                    $collTime = end(explode('_', $collection));
+                    if (strncmp($collection, 'mr_record_', 10) == 0 && $collTime != $lastRecordTime) {
+                        $this->log->log('updateMergedRecords', "Cleanup: dropping old m/r collection $collection");
+                        $this->db->dropCollection($collection);
+                    }
+                }
+            }
+            
+            if (!$collectionExists) {            
+                $this->log->log('updateMergedRecords', "Creating merged record list $collectionName (from $from)...");
+                
+                $mr = $this->db->command(
+                    array(
+                        'mapreduce' => 'record', 
+                        'map' => $map,
+                        'reduce' => $reduce,
+                        'out' => array('replace' => $collectionName),
+                        'query' => $params,
+                    ),
+                    array(
+                        'timeout' => 3000000
+                    )
+                );
+                if (!$mr['ok']) {
+                    $this->log->log('updateMergedRecords', "Mongo map/reduce failed: " . $mr['assertion'], Logger::FATAL);
+                    return; 
+                }
+            } else {
+                $this->log->log('updateMergedRecords', "Using existing merged record list $collectionName...");
             }
             $keys = $this->db->{$collectionName}->find();
             $keys->immortal(true);
@@ -344,9 +372,10 @@ class SolrUpdater
                 $children = array();
                 $merged = array();
                 foreach ($records as $record) {
-                    if ($record['deleted']) {
+                    if ($record['deleted'] || ($sourceId && $delete && $record['source_id'] == $sourceId)) {
                         $this->bufferedDelete($record['_id']);
                         ++$count;
+                        ++$deleted;
                         continue;
                     }
                     $data = $this->createSolrArray($record, $mergedComponents);
@@ -358,9 +387,11 @@ class SolrUpdater
                 }
                 
                 if (count($children) == 1) {
-                    // A dedup key exists for a single record. This shouldn't happen, but try to manage
+                    // A dedup key exists for a single record. This should only happen when a data source is being deleted...
                     $child = $children[0];
-                    $this->log->log('updateMergedRecords', "Found a single record with a dedup key: {$child['solr']['id']}", Logger::WARNING);
+                    if (!$delete) {
+                        $this->log->log('updateMergedRecords', "Found a single record with a dedup key: {$child['solr']['id']}", Logger::WARNING);
+                    }
                     if ($this->verbose) {
                         echo "Original deduplicated but single record {$child['solr']['id']}:\n";
                         print_r($child['solr']);
@@ -418,7 +449,6 @@ class SolrUpdater
                     }
                 }
             }
-            $this->db->dropCollection($collectionName);
             $this->flushUpdateBuffer();
             $needCommit = $count > 0;
             $this->log->log('updateMergedRecords', "Total $count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed");
@@ -558,7 +588,7 @@ class SolrUpdater
             }
             $settings = $this->settings[$source];
             $mergedComponents = 0;
-            $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id']);
+            $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
             if (isset($settings['solrTransformationXSLT'])) {
                 $params = array(
                     'source_id' => $source,
@@ -610,7 +640,7 @@ class SolrUpdater
     {
         global $configArray;
         
-        $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id']);
+        $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
         
         $source = $record['source_id'];
         if (!isset($this->settings[$source])) {
@@ -640,7 +670,7 @@ class SolrUpdater
         $components = null;
         if (!$record['host_record_id']) {
             // Fetch info whether component parts exist and need to be merged
-            $components = $this->db->record->find(array('host_record_id' => $record['_id'], 'deleted' => false));
+            $components = $this->db->record->find(array('source_id' => $record['source_id'], 'host_record_id' => $record['linking_id'], 'deleted' => false));
             $hasComponentParts = $components->hasNext();
             $format = $metadataRecord->getFormat();
             $merge = false;
@@ -677,17 +707,18 @@ class SolrUpdater
         if ($metadataRecord->getIsComponentPart()) {
             $hostRecord = null;
             if ($record['host_record_id']) {
-                $hostRecord = $this->db->record->findOne(array('_id' => $record['host_record_id']));
-                $data['hierarchy_parent_id'] = $record['host_record_id'];
+                $hostRecord = $this->db->record->findOne(array('source_id' => $record['source_id'], 'linking_id' => $record['host_record_id']));
             }
             if (!$hostRecord) {
                 $this->log->log('createSolrArray', "Host record '" . $record['host_record_id'] . "' not found for record '" . $record['_id'] . "'", Logger::WARNING);
                 $data['container_title'] = $metadataRecord->getContainerTitle();
             } else {
+                $data['hierarchy_parent_id'] = $hostRecord['_id'];
                 $hostMetadataRecord = RecordFactory::createRecord(
                     $hostRecord['format'],
                     MetadataUtils::getRecordData($hostRecord, true),
-                    $hostRecord['oai_id']
+                    $hostRecord['oai_id'], 
+                    $hostRecord['source_id']
                 );
                 $data['container_title'] = $data['hierarchy_parent_title'] = $hostMetadataRecord->getTitle();
             }
@@ -790,7 +821,7 @@ class SolrUpdater
         $data['dedup_key'] = isset($record['dedup_key']) && $record['dedup_key']
             ? (string)$record['dedup_key'] : $record['_id'];
         $data['first_indexed'] = MetadataUtils::formatTimestamp($record['created']->sec);
-        $data['last_indexed'] = MetadataUtils::formatTimestamp($record['updated']->sec);
+        $data['last_indexed'] = MetadataUtils::formatTimestamp($record['date']->sec);
         $data['recordtype'] = $record['format'];
         if (!isset($data['fullrecord'])) {
             $data['fullrecord'] = $metadataRecord->toXML();
