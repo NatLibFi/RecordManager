@@ -645,7 +645,7 @@ class RecordManager
         $params['source_id'] = $sourceId;
         $this->log->log('deleteRecords', "Creating record list for '$sourceId'...");
 
-        $params = array('deleted' => false, 'source_id' => $source);
+        $params = array('deleted' => false, 'source_id' => $sourceId);
         $records = $this->db->record->find($params);
         $records->immortal(true);
         $total = $this->counts ? $records->count() : 'the';
@@ -1117,7 +1117,13 @@ class RecordManager
         $origAuthor = MetadataUtils::normalize($origRecord->getMainAuthor());
         $cAuthor = MetadataUtils::normalize($cRecord->getMainAuthor());
         $authorLev = 0;
-        if ($origAuthor && $cAuthor) {
+        if ($origAuthor || $cAuthor) {
+            if (!$origAuthor || !$cAuthor) {
+                if ($this->verbose) {
+                    echo "\nAuthor discard:\nOriginal:  $origAuthor\nCandidate: $cAuthor\n";
+                }
+                return false;
+            }
             if (!MetadataUtils::authorMatch($origAuthor, $cAuthor)) {
                 $authorLev = levenshtein(substr($origAuthor, 0, 255), substr($cAuthor, 0, 255));
                 $authorLev = $authorLev / mb_strlen($origAuthor) * 100;
@@ -1129,7 +1135,7 @@ class RecordManager
                 }
             }
         }
-                 
+
         if ($this->verbose) {
             echo "\nTitle match (lev: $lev, authorLev: $authorLev):\n";
             echo $origRecord->getFullTitle() . "\n";
