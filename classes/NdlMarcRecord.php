@@ -109,6 +109,7 @@ class NdlMarcRecord extends MarcRecord
                 }
             }
         }
+        $data['author'] = $this->getFieldSubfields('100abcde');
         
         return $data;
     }
