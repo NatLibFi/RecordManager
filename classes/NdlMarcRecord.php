@@ -96,10 +96,12 @@ class NdlMarcRecord extends MarcRecord
                         } else {
                             // Try to cope with weird coordinate order
                             if ($north > $south) {
-                                $data['location_geo'] = "$west $south $east $north";
-                            } else {
-                                $data['location_geo'] = "$west $north $east $south";
+                                list($north, $south) = array($south, $north);
                             }
+                            if ($west > $east) {
+                                list($west, $east) = array($east, $west);
+                            }
+                            $data['location_geo'] = "$west $north $east $south";
                         }
                     } else {
                         $data['location_geo'] = "$west $north";
