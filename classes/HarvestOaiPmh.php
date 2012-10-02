@@ -61,7 +61,6 @@ class HarvestOaiPmh
     protected $verbose = false;       // Whether to display debug output
     protected $deletedRecords = 0;    // Harvested deleted record count
     protected $debugLog = '';         // File where to dump OAI requests and responses for debugging
-    protected $childPid = null;       // Child process id for record processing
     protected $resumptionToken = '';  // Override the first harvest request
     protected $transformation = null; // Transformation applied to the OAI-PMH responses before processing
     protected $serverDate = null;     // Date received from server via Identify command. Used to set the last harvest date
@@ -200,9 +199,6 @@ class HarvestOaiPmh
             $token = $this->getRecordsByToken($token);
         }
         $this->harvestProgressReport();
-        if (isset($this->childPid)) {
-            pcntl_waitpid($this->childPid, $status);
-        }
     }
 
     /**
@@ -233,9 +229,6 @@ class HarvestOaiPmh
             $token = $this->getIdentifiersByToken($token);
         }
         $this->listIdentifiersProgressReport();
-        if (isset($this->childPid)) {
-            pcntl_waitpid($this->childPid, $status);
-        }
     }
     
     /**

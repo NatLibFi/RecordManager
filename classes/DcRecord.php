@@ -160,31 +160,6 @@ class DcRecord extends BaseRecord
             }
         }
 
-        /*
-        TODO: Can we handle any of the following fields?
-
-        $data['series'] = $this->_getFieldsSubfields('440ap:800abcdfpqt:830ap');
-          
-        $data['physical'] = $this->_getFieldsSubfields('300abcefg:530abcd');
-        $data['edition'] = $this->_getFieldSubfields('250a');
-        $data['contents'] = $this->_getFieldsSubfields('505a:505t');
-          
-        $data['issn'] = $this->_getFieldsSubfields('022a:440x:490x:730x:776x:780x:785x');
-
-        $data['callnumber'] = strtoupper(str_replace(' ', '', $this->_getFirstFieldSubfields('080ab:084ab:050ab')));
-        $data['callnumber-a'] = $this->_getFirstFieldSubfields('080a:084a:050a');
-        $data['callnumber-first-code'] = substr($this->_getFirstFieldSubfields('080a:084a:050a'), 0, 1);
-
-        $data['genre'] = $this->_getFieldsSubfields('655');
-        $data['geographic'] = $this->_getFieldsSubfields('651');
-        $data['era'] = $this->_getFieldsSubfields('648');
-
-        $data['genre_facet'] = $this->_getFieldsSubfields('600v:610v:611v:630v:648v:650v:651v:655a:655v');
-        $data['geographic_facet'] = $this->_getFieldsSubfields('600z:610z:611z:630z:648z:650z:651a:651z:655z');
-        $data['era_facet'] = $this->_getFieldsSubfields('600d:610y:611y:630y:648a:648y:650y:651y:655y');
-
-        $data['illustrated'] = $this->_getIllustrated();
-        */
         return $data;
     }
 
