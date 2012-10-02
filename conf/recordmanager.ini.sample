@@ -13,10 +13,12 @@ compress_records = true
 [Solr]
 ; Note that RecordManager requires that the json update method be available
 update_url = http://localhost:8080/solr/biblio/update/json
+;background_update = true
 max_commit_interval = 1000000
 username =
 password =
 ;hierarchical_facets[] = building
+;merge_records = true
 
 [OAI-PMH]
 repository_name = OAI-PMH Repository
@@ -31,7 +33,7 @@ marc21 = marc
 oai_dc = dc
 
 [Record Classes]
-; ead = NdlEadRecord
+;ead = NdlEadRecord
 
 [Log]
 log_file        = /var/log/recman.log

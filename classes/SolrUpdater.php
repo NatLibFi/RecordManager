@@ -55,6 +55,7 @@ class SolrUpdater
     protected $articleFormats;
     protected $eArticleFormats;
     protected $allArticleFormats;
+    protected $httpPid = null;
     
     /**
      * Constructor 
@@ -240,6 +241,7 @@ class SolrUpdater
         if (!$noCommit && $needCommit) {
             $this->log->log('updateIndividualRecords', "Final commit...");
             $this->solrRequest('{ "commit": {} }');
+            $this->waitForHttpChild();
             $this->log->log('updateIndividualRecords', "Commit complete");
         }
     }
@@ -530,6 +532,7 @@ class SolrUpdater
             if (!$noCommit && $needCommit) {
                 $this->log->log('updateMergedRecords', "Final commit...");
                 $this->solrRequest('{ "commit": {} }');
+                $this->waitForHttpChild();
                 $this->log->log('updateMergedRecords', "Commit complete");
             }
         } catch (Exception $e) {
@@ -558,6 +561,7 @@ class SolrUpdater
     public function optimizeIndex()
     {
         $this->solrRequest('{ "optimize": {} }', 4 * 60 * 60);
+        $this->waitForHttpChild();        
     }
     
     /**
@@ -941,15 +945,50 @@ class SolrUpdater
                 );
             }
         }
+        if (isset($configArray['Solr']['background_update']) && $configArray['Solr']['background_update']) {
+            $this->waitForHttpChild();
+            $pid = pcntl_fork();
+            if ($pid == -1) {
+                throw new Exception("Could not fork background update child");
+            } elseif ($pid) {
+                $this->httpPid = $pid;
+                return;
+            }
+        }
         $this->request->setHeader('Content-Type', 'application/json');
         $this->request->setBody($body);
         $response = $this->request->send();
         $code = $response->getStatus();
         if ($code >= 300) {
-            throw new Exception("Solr server request failed ($code). Request:\n$body\n\nResponse:\n" . $response->getBody());
+            if (isset($configArray['Solr']['background_update']) && $configArray['Solr']['background_update']) {
+                $this->log->log('solrRequest', "Solr server request failed ($code). Request:\n$body\n\nResponse:\n" . $response->getBody(), Logger::FATAL);
+            } else {
+                throw new Exception("Solr server request failed ($code). Request:\n$body\n\nResponse:\n" . $response->getBody());
+            }
+        }
+        if (isset($configArray['Solr']['background_update']) && $configArray['Solr']['background_update']) {
+            // Don't let PHP cleanup e.g. the Mongo connection
+            posix_kill(getmypid(), SIGKILL);
         }
     }
 
+    /**
+     * Wait for http request to complete
+     * 
+     * @throws Exception
+     * @return void
+     */
+    protected function waitForHttpChild() 
+    {
+        if (isset($this->httpPid)) {
+            pcntl_waitpid($this->httpPid, $status);
+            if (pcntl_wexitstatus($status) != 0) {
+                throw new Exception("Aborting due to failed HTTP request");
+            }
+            $this->httpPid = null;
+        }
+    }
+    
     /**
      * Initialize the record update buffer
      * 
@@ -995,6 +1034,7 @@ class SolrUpdater
         if (!$noCommit && $count % $this->commitInterval == 0) {
             $this->log->log('bufferedUpdate', "Intermediate commit...");
             $this->solrRequest('{ "commit": {} }');
+            $this->waitForHttpChild();
         }
         return $result;
     }
@@ -1029,6 +1069,7 @@ class SolrUpdater
             $this->solrRequest("{" . implode(',', $this->bufferedDeletions) . "}");
             $this->bufferedDeletions = array();
         }
+        $this->waitForHttpChild();
     }
     
     /**
