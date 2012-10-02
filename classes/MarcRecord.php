@@ -268,7 +268,7 @@ class MarcRecord extends BaseRecord
         if ($key !== false) {
             unset($data['author2'][$key]);
         }
-        $data['author2'] = array_values($data['author2']);
+        $data['author2'] = array_filter(array_values($data['author2']));
         $data['author2-role'] = $this->getFieldsSubfields('*700e:*710e', true);
         $data['author_additional'] = $this->getFieldsSubfields('*505r', true);
           
