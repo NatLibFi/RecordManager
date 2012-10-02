@@ -317,5 +317,23 @@ class MetadataUtils
             return $matches[1];
         }
     }
+    
+    /**
+     * Convert first character of string to upper case (mb aware)
+     * 
+     * @param string|string[] $str String to be converted
+     * 
+     * @return string|string[] Converted string
+     */
+    public static function ucFirst($str)
+    {
+        if (is_array($str)) {
+            foreach ($str as &$s) {
+                $s = mb_strtoupper(mb_substr($s, 0, 1)) . mb_substr($s, 1);
+            }
+            return $str;
+        }
+        return mb_strtoupper(mb_substr($str, 0, 1)) . mb_substr($str, 1);
+    }
 }
 

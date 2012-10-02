@@ -327,7 +327,7 @@ class MarcRecord extends BaseRecord
         $data['era'] = $this->getFieldsSubfields('*648avxyz');
 
         $data['topic_facet'] = $this->getFieldsSubfields('600x:610x:611x:630x:648x:650a:650x:651x:655x', false, true, true);
-        $data['genre_facet'] = $this->getFieldsSubfields('600v:610v:611v:630v:648v:650v:651v:655a:655v', false, true, true);
+        $data['genre_facet'] = MetadataUtils::ucFirst($this->getFieldsSubfields('600v:610v:611v:630v:648v:650v:651v:655a:655v', false, true, true));
         $data['geographic_facet'] = $this->getFieldsSubfields('600z:610z:611z:630z:648z:650z:651a:651z:655z', false, true, true);
         $data['era_facet'] = $this->getFieldsSubfields('630y:648a:648y:650y:651y:655y', false, true, true);
 
