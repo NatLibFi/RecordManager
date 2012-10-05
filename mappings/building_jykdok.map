@@ -39,6 +39,12 @@
 129 = 100/2
 130 = 100/2
 
+; Online-aineistot
+190 = 190
+
+; Ebrary
+191 = 191
+
 ; Mattilanniemen kirjasto / lainattavat
 601 = 600/1
 605 = 600/1
@@ -82,3 +88,4 @@
 ; Kokkolan yliopistokeskus / ei-lainattavat
 6000 = 6000/2
 
+##default = 9999
