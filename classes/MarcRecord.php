@@ -228,12 +228,14 @@ class MarcRecord extends BaseRecord
         $allFields = array();
         $subfieldFilter = array('650' => array('2'), '856' => array('q'), '979' => array('a'));
         foreach ($this->fields as $tag => $fields) {
-            if (($tag >= 100 && $tag < 900 && $tag != 852) || $tag == 979) {
+            if (($tag >= 100 && $tag < 841) || $tag == 856 || $tag == 979) {
                 foreach ($fields as $field) {
-                    $allFields[] = MetadataUtils::stripTrailingPunctuation(
-                        $this->getAllSubfields(
-                            $field,
-                            isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : null
+                    $allFields[] = MetadataUtils::stripLeadingPunctuation(
+                        MetadataUtils::stripTrailingPunctuation(
+                            $this->getAllSubfields(
+                                $field,
+                                isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : null
+                            )
                         )
                     );
                 }
