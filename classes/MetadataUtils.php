@@ -181,7 +181,15 @@ class MetadataUtils
      */
     static public function hasTrailingPunctuation($str)
     {
-        $punctuation = preg_match('/[\/:;\,=\(]+\s*$/', $str) > 0;
+        $i = strlen($str) - 1;
+        if ($i < 0) {
+            return false;
+        }
+        while ($i > 0 && $str[$i] == ' ') {
+            --$i;
+        } 
+        $c = $str[$i];
+        $punctuation = strstr('/:;,=([', $c) !== false;
         if (!$punctuation) {
             $punctuation = substr($str, -1) == '.' && !substr($str, -3, 1) != ' '; 
         }
@@ -197,16 +205,49 @@ class MetadataUtils
      */
     static public function stripTrailingPunctuation($str)
     {
-        $str = preg_replace('/[\s\/:;\,=\(]+$/', '', $str);
+        global $configArray;
+        
+        $i = $j = strlen($str) - 1;
+        if ($i < 0) {
+            return $str;
+        }
+        while ($i > 0 && strstr(' /:;,=([', $str[$i]) !== false) {
+            --$i;
+        }
+        if ($i < $j) {
+            $str = substr($str, 0, $i + 1);
+        }
         // Don't replace an initial letter (e.g. string "Smith, A.") followed by period
         $thirdLast = substr($str, -3, 1);
-        if (substr($str, -1) == '.' && $thirdLast != ' '  && $thirdLast != ' ') {
-            if (!in_array(substr($str, -4), array('nid.', 'sid.', 'kuv.', 'ill.', 'säv.', 'col.'))) {
+        if (substr($str, -1) == '.' && $thirdLast != ' ') {
+            $lastWord = end(explode(' ', $str));
+            if (!isset($configArray['Site']['abbreviations']) || !in_array($lastWord, $configArray['Site']['abbreviations'])) {
                 $str = substr($str, 0, -1);
             }
         }
         return $str;
     }
+    
+    /**
+     * Strip leading spaces and punctuation characters from a string
+     *
+     * @param string $str String to strip
+     * 
+     * @return string
+     */
+    static public function stripLeadingPunctuation($str)
+    {
+        $i = 0;
+        $len = strlen($str);
+        while ($i < $len - 1 && strstr(' /:;,=([', $str[$i]) !== false) {
+            ++$i;
+        }
+        if ($i > 0) {
+            $str = substr($str, $i);
+        }
+        return $str;
+    }
+    
     
     /**
      * Case-insensitive array_unique
