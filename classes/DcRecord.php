@@ -157,6 +157,10 @@ class DcRecord extends BaseRecord
         foreach ($this->getValues('description') as $description) {
             if (preg_match('/^https?/', $description)) {
                 $data['url'] = $description;
+            } elseif (preg_match('/^\d+\.\d+$/', $description)) {
+                // Classification, put somewhere?
+            } else {
+                $data['contents'][] = $description; 
             }
         }
 
