@@ -57,6 +57,17 @@ class SolrUpdater
     protected $allArticleFormats;
     protected $httpPid = null;
     
+    protected $commitInterval;
+    protected $maxUpdateRecords;
+    protected $maxUpdateSize;
+    
+    protected $mergedFields = array('institution', 'collection', 'building', 'language', 
+        'physical', 'publisher', 'publishDate', 'contents', 'url', 'ctrlnum',
+        'author2', 'author_additional', 'title_alt', 'title_old', 'title_new', 
+        'dateSpan', 'series', 'series2', 'topic', 'genre', 'geographic', 
+        'era', 'long_lat');
+        
+    
     /**
      * Constructor 
      * 
@@ -370,6 +381,7 @@ class SolrUpdater
                 if (empty($key['_id'])) {
                     continue;
                 }
+
                 $records = $this->db->record->find(array('dedup_key' => $key['_id']));
                 $children = array();
                 $merged = array();
@@ -426,6 +438,14 @@ class SolrUpdater
                             $this->log->log('updateMergedRecords', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $avg records/sec");
                         }
                     }
+                    
+                    // Remove duplicate fields from the merged record
+                    foreach ($this->mergedFields as $field) {
+                        if (isset($merged[$field])) {
+                            $merged[$field] = array_values(MetadataUtils::array_iunique($merged[$field]));
+                        }
+                    }
+                    $merged['allfields'] = array_values(MetadataUtils::array_iunique($merged['allfields']));
                     
                     $mergedId = (string)$key['_id']; 
                     if (empty($merged)) {
@@ -730,6 +750,13 @@ class SolrUpdater
             $data['container_issue'] = $metadataRecord->getIssue();
             $data['container_start_page'] = $metadataRecord->getStartPage();
             $data['container_reference'] = $metadataRecord->getContainerReference();
+        } else {
+            // Add prefixes to hierarchy linking fields
+            foreach (array('hierarchy_top_id', 'hierarchy_parent_id', 'is_hierarchy_id') as $field) {
+                if (isset($data[$field]) && $data[$field]) {
+                    $data[$field] = $record['source_id'] . '.' . $data[$field];    
+                }
+            }
         }
         if ($hasComponentParts) {
             $data['is_hierarchy_id'] = $record['_id'];
@@ -865,12 +892,6 @@ class SolrUpdater
      */
     protected function mergeRecords($merged, $add)
     {
-        $mergedFields = array('institution', 'collection', 'building', 'language', 
-            'physical', 'publisher', 'publishDate', 'contents', 'url', 'ctrlnum',
-            'author2', 'author_additional', 'title_alt', 'title_old', 'title_new', 
-            'dateSpan', 'series', 'series2', 'topic', 'genre', 'geographic', 
-            'era', 'long_lat');
-        
         $checkedFields = array('title_auth', 'title', 'title_short', 'title_full', 'title_sort', 'author');
         
         if (empty($merged)) {
@@ -882,7 +903,7 @@ class SolrUpdater
             $merged['local_ids_str_mv'][] = $add['id'];
         } 
         foreach ($add as $key => $value) {
-            if (substr($key, -3, 3) == '_mv' || in_array($key, $mergedFields)) {
+            if (substr($key, -3, 3) == '_mv' || in_array($key, $this->mergedFields)) {
                 if (!isset($merged[$key])) {
                     $merged[$key] = $value;
                 }
@@ -892,7 +913,7 @@ class SolrUpdater
                 if (!is_array($value)) {
                     $value = array($value);
                 }
-                $merged[$key] = array_values(MetadataUtils::array_iunique(array_merge($merged[$key], $value)));
+                $merged[$key] = array_values(array_merge($merged[$key], $value));
             } elseif (in_array($key, $checkedFields)) {
                 if (!isset($merged[$key])) {
                     $merged[$key] = $value;
@@ -901,14 +922,7 @@ class SolrUpdater
                 if (!isset($merged['allfields'])) {
                     $merged['allfields'] = array();
                 }
-                $merged['allfields'] = array_values(
-                    MetadataUtils::array_iunique(
-                        array_merge(
-                            $merged['allfields'], 
-                            $add['allfields']
-                        )
-                    )
-                );
+                $merged['allfields'] = array_values(array_merge($merged['allfields'], $add['allfields']));
             }
         }
         
@@ -945,7 +959,8 @@ class SolrUpdater
                 );
             }
         }
-        if (isset($configArray['Solr']['background_update']) && $configArray['Solr']['background_update']) {
+        $background = isset($configArray['Solr']['background_update']) && $configArray['Solr']['background_update'];
+        if ($background) {
             $this->waitForHttpChild();
             $pid = pcntl_fork();
             if ($pid == -1) {
@@ -960,13 +975,16 @@ class SolrUpdater
         $response = $this->request->send();
         $code = $response->getStatus();
         if ($code >= 300) {
-            if (isset($configArray['Solr']['background_update']) && $configArray['Solr']['background_update']) {
+            if ($background) {
                 $this->log->log('solrRequest', "Solr server request failed ($code). Request:\n$body\n\nResponse:\n" . $response->getBody(), Logger::FATAL);
+                // Kill parent and self
+                posix_kill(posix_getppid(), SIGQUIT);
+                posix_kill(getmypid(), SIGKILL);
             } else {
                 throw new Exception("Solr server request failed ($code). Request:\n$body\n\nResponse:\n" . $response->getBody());
             }
         }
-        if (isset($configArray['Solr']['background_update']) && $configArray['Solr']['background_update']) {
+        if (isset($background)) {
             // Don't let PHP cleanup e.g. the Mongo connection
             posix_kill(getmypid(), SIGKILL);
         }
