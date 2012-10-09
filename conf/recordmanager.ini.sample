@@ -2,6 +2,9 @@
 ; Find valid timezone values here:
 ;   http://www.php.net/manual/en/timezones.php
 timezone        = "Europe/Helsinki"
+; Abbreviations that need to be considered before removing trailing period
+abbreviations[] = "ill."
+abbreviations[] = "col."
 
 [Mongo]
 ; url = mongodb://{username}:{password}@localhost
