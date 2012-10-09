@@ -390,7 +390,7 @@ class HarvestOaiPmh
     protected function loadXML($xml)
     {
         $doc = new DOMDocument();
-        if (!$doc->loadXML($xml)) {
+        if (!$doc->loadXML($xml, LIBXML_PARSEHUGE)) {
             return false;
         }
         if ($this->transformation) {
@@ -422,7 +422,6 @@ class HarvestOaiPmh
             $result = $this->loadXML($xml);
         }
         if ($result === false || libxml_get_last_error() !== false) {
-            libxml_use_internal_errors($saveUseErrors);
             $errors = '';
             foreach (libxml_get_errors() as $error) {
                 if ($errors) {
@@ -431,6 +430,7 @@ class HarvestOaiPmh
                 $errors .= 'Error ' . $error->code . ' at '
                     . $error->line . ':' . $error->column . ': ' . $error->message;
             }
+            libxml_use_internal_errors($saveUseErrors);
             $this->message("Could not parse XML response: $errors\nXML:\n$xml", false, Logger::FATAL);
             throw new Exception("Failed to parse XML response");
         }
