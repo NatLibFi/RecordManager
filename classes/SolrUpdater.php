@@ -772,7 +772,7 @@ class SolrUpdater
         
         // Map field values according to any mapping files
         foreach ($settings['mappingFiles'] as $field => $map) {
-            if (isset($data[$field])) {
+            if (isset($data[$field]) && !empty($data[$field])) {
                 if (is_array($data[$field])) {
                     foreach ($data[$field] as &$value) {
                         if (isset($map[$value])) {
@@ -789,6 +789,10 @@ class SolrUpdater
                         $data[$field] = $map['##default'];
                     }
                 }
+            } elseif (isset($map['##empty'])) {
+                $data[$field] = $map['##empty'];
+            } elseif (isset($map['##emptyarray'])) {
+                $data[$field] = array($map['##emptyarray']);
             }
         }
         
