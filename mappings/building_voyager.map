@@ -9,3 +9,6 @@
 
 ; Map all other locations to a third one
 ##default = 120 
+
+; Map records with no location to their own
+##emptyarray = 130
