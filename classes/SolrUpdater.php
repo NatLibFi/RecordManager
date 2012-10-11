@@ -734,7 +734,9 @@ class SolrUpdater
                 $hostRecord = $this->db->record->findOne(array('source_id' => $record['source_id'], 'linking_id' => $record['host_record_id']));
             }
             if (!$hostRecord) {
-                $this->log->log('createSolrArray', "Host record '" . $record['host_record_id'] . "' not found for record '" . $record['_id'] . "'", Logger::WARNING);
+                if ($record['host_record_id']) {
+                    $this->log->log('createSolrArray', "Host record '" . $record['host_record_id'] . "' not found for record '" . $record['_id'] . "'", Logger::WARNING);
+                }
                 $data['container_title'] = $metadataRecord->getContainerTitle();
             } else {
                 $data['hierarchy_parent_id'] = $hostRecord['_id'];
