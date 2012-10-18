@@ -255,11 +255,11 @@ class MarcRecord extends BaseRecord
           
         $data['format'] = $this->getFormat();
         
-        $data['author'] = $this->getFieldSubfields('100abcd');
+        $data['author'] = $this->getFieldSubfields('100abcde');
         $data['author_fuller'] = $this->getFieldSubfields('100q');
         $data['author-letter'] = $this->getFieldSubfields('100a');
 
-        $data['author2'] = $this->getFieldsSubfields('+100abcd:*110ab:*111ab:*700abcd:*710ab:*711ab');
+        $data['author2'] = $this->getFieldsSubfields('+100abcd:*110ab:*111ab:*700abcde:*710ab:*711ab');
         // 979cd = component part authors
         foreach ($this->getFieldsSubfields('*979c:*979d', false, true, true) as $field) {
             $data['author2'][] = $field;
