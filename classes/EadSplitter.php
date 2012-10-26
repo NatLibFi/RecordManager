@@ -48,6 +48,7 @@ class EadSplitter
     protected $archiveId = '';
     protected $archiveTitle = '';
     protected $archiveSubTitle = '';
+    protected $repository = '';
     
     /**
     * Constructor
@@ -67,6 +68,7 @@ class EadSplitter
         $this->archiveId = (string)$this->doc->eadheader->eadid->attributes()->identifier;
         $this->archiveTitle = (string)$this->doc->eadheader->filedesc->titlestmt->titleproper;
         $this->archiveSubTitle = (string)$this->doc->eadheader->filedesc->titlestmt->subtitle;
+        $this->repository = (string)$this->doc->archdesc->did->repository;
     }
     
     /**
@@ -102,6 +104,7 @@ class EadSplitter
                 $addData = $record->addChild('add-data');
                 
                 $absolute = $addData->addChild('archive');
+                $absolute->addAttribute('repository', $this->repository);
                 $absolute->addAttribute('id', $this->archiveId);
                 $absolute->addAttribute('title', $this->archiveTitle);
                 $absolute->addAttribute('sequence', str_pad($this->currentPos, 7, '0', STR_PAD_LEFT));

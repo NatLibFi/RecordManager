@@ -42,6 +42,7 @@ require_once 'BaseRecord.php';
 class EadRecord extends BaseRecord
 {
     protected $doc = null;
+    protected $source = '';
 
     /**
      * Constructor
@@ -52,6 +53,7 @@ class EadRecord extends BaseRecord
      */
     public function __construct($data, $oaiID, $source)
     {
+        $this->source = $source;
         $this->doc = simplexml_load_string($data);
     }
 
@@ -111,16 +113,22 @@ class EadRecord extends BaseRecord
 
         $data['format'] = (string)$doc->attributes()->level;
         switch ($data['format']) {
+        case 'fonds':
+            if (isset($doc->did)) {
+                $data['institution'] = (string)$doc->did->repository;
+            }
+            break;
         case 'collection':
+            $data['institution'] = (string)$doc->{'add-data'}->archive->attributes()->repository;
             break;
         case 'series':
             $data['title_sub'] = (string)$doc->did->unitid;
-            break;
-        case 'fonds':
+            $data['institution'] = (string)$doc->{'add-data'}->archive->attributes()->repository;
             break;
         case 'item': 
             $data['title_sub'] = (string)$doc->did->unitid;
             $data['series'] = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
+            $data['institution'] = (string)$doc->{'add-data'}->archive->attributes()->repository;
             break;
         default:
             echo "No proper handling for level '" . $data['format'] . "', document:\n" . $doc->asXML() . "\n";
@@ -154,7 +162,7 @@ class EadRecord extends BaseRecord
         } else {
             $data['is_hierarchy_id'] = $data['hierarchy_top_id'] = $this->getID();
             $data['is_hierarchy_title'] = $data['hierarchy_top_title'] = (string)$doc->did->unittitle;
-        }
+        }        
         
         return $data;
     }
