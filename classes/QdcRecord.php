@@ -260,6 +260,11 @@ class QdcRecord extends BaseRecord
                 return (string)$date;
             }
         }
+        foreach ($this->doc->issued as $date) {
+            if (preg_match('{^(\d{4})$}', $date)) {
+                return (string)$date;
+            }
+        }
     }
 
     /**
