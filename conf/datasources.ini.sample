@@ -1,4 +1,4 @@
-; datasources.ini -- OAI-PMH harvest settings.
+; datasources.ini -- Data source settings
 ;
 ; For every OAI-PMH source you would like to harvest, create a section like this:
 ;

@@ -801,19 +801,29 @@ class SolrUpdater
         // Special case: Hierarchical facet support for building (institution/location)
         if ($this->buildingHierarchy) {
             if (isset($data['building']) && $data['building']) {
-                $building = array('0/' . $settings['institution']);
+                $useInstitution = !isset($settings['noInstitutionInBuilding']) || !$settings['noInstitutionInBuilding']; 
+                if ($useInstitution) {
+                    $building = array('0/' . $data['institution']);
+                }
                 foreach ($data['building'] as $datavalue) {
                     $values = explode('/', $datavalue);
-                    $hierarchyString = $settings['institution'];
+                    $hierarchyString = $useInstitution ? $data['institution'] : '';
                     for ($i = 0; $i < count($values); $i++) {
-                        $hierarchyString .= '/' . $values[$i];
-                        $building[] = ($i + 1) . "/$hierarchyString";
+                        if ($hierarchyString) {
+                            $hierarchyString .= '/';
+                        }
+                        $hierarchyString .= $values[$i];
+                        $level = $i;
+                        if ($useInstitution) {
+                            ++$level;
+                        }
+                        $building[] = "$level/$hierarchyString";
                     }
                 }
                 $data['building'] = $building;
             } else {
                 $data['building'] = array(
-                    '0/' . $settings['institution']
+                    '0/' . $data['institution']
                 );
             }
         }
