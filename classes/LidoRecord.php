@@ -103,7 +103,7 @@ class LidoRecord extends BaseRecord
         $doc = $this->doc;
         $lang = $this->getDefaultLanguage();
        
-        $data['title'] = $this->getTitle($lang);
+        $data['title'] = $data['title_short'] = $data['title_full'] = $this->getTitle($lang);
         if ($lang != 'en') {
             $data['title_alt'] = $this->getTitle('en');
         }
