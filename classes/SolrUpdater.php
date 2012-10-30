@@ -571,6 +571,7 @@ class SolrUpdater
     {
         $this->solrRequest('{ "delete": { "query": "id:' . $sourceId . '.*" } }');
         $this->solrRequest('{ "commit": {} }', 4 * 60 * 60);
+        $this->waitForHttpChild();
     }
 
     /**
@@ -800,38 +801,40 @@ class SolrUpdater
         
         // Special case: Hierarchical facet support for building (institution/location)
         if ($this->buildingHierarchy) {
-            if (isset($data['building']) && $data['building']) {
-                $useInstitution = !isset($settings['noInstitutionInBuilding']) || !$settings['noInstitutionInBuilding']; 
-                if ($useInstitution) {
-                    $building = array('0/' . $data['institution']);
-                }
-                foreach ($data['building'] as $datavalue) {
-                    $values = explode('/', $datavalue);
-                    $hierarchyString = $useInstitution ? $data['institution'] : '';
-                    for ($i = 0; $i < count($values); $i++) {
-                        if ($hierarchyString) {
-                            $hierarchyString .= '/';
+            $useInstitution = isset($settings['institutionInBuilding']) ? $settings['institutionInBuilding'] : 'institution';
+            switch ($useInstitution) {
+            case 'driver':
+                $institutionCode = $data['institution'];
+                break;
+            case 'none':
+                $institutionCode = '';
+                break;
+            case 'source':
+                $institutionCode = $source;
+                break;
+            default:
+                $institutionCode = $settings['institution'];
+                break;
+            }
+            if ($institutionCode) {
+                if (isset($data['building']) && $data['building']) {
+                    if (is_array($data['building'])) {
+                        foreach ($data['building'] as &$building) {
+                            $building = "$institutionCode/$building";
                         }
-                        $hierarchyString .= $values[$i];
-                        $level = $i;
-                        if ($useInstitution) {
-                            ++$level;
-                        }
-                        $building[] = "$level/$hierarchyString";
+                    } else {
+                        $data['building'] = $institutionCode . '/' . $data['building'];
                     }
+                } else {
+                    $data['building'] = array($institutionCode);
                 }
-                $data['building'] = $building;
-            } else {
-                $data['building'] = array(
-                    '0/' . $data['institution']
-                );
             }
         }
 
-        // Other hierarchical facets
+        // Hierarchical facets
         if (isset($configArray['Solr']['hierarchical_facets'])) {
             foreach ($configArray['Solr']['hierarchical_facets'] as $facet) {
-                if ($facet == 'building' || !isset($data[$facet])) {
+                if (!isset($data[$facet])) {
                     continue;
                 }
                 $array = array();
