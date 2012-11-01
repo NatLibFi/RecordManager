@@ -65,7 +65,7 @@ class EadSplitter
         $this->currentPos = 0;
         
         $this->agency = (string)$this->doc->eadheader->eadid->attributes()->mainagencycode;
-        $this->archiveId = (string)$this->doc->eadheader->eadid->attributes()->identifier;
+        $this->archiveId = (string)($this->doc->eadheader->eadid->attributes()->identifier ? $this->doc->eadheader->eadid->attributes()->identifier : $this->doc->eadheader->eadid);
         $this->archiveTitle = (string)$this->doc->eadheader->filedesc->titlestmt->titleproper;
         $this->archiveSubTitle = (string)$this->doc->eadheader->filedesc->titlestmt->subtitle;
         $this->repository = (string)$this->doc->archdesc->did->repository;
@@ -97,22 +97,31 @@ class EadSplitter
             foreach ($original->children() as $child) {
                 $this->appendXML($record, $child);
             }
-            if ($record->getName() != 'archdesc') {
-                $record->did->unitid->attributes()->identifier = $this->archiveId . '_' . 
-                    $record->did->unitid->attributes()->identifier; 
-                
-                $addData = $record->addChild('add-data');
-                
-                $absolute = $addData->addChild('archive');
-                $absolute->addAttribute('repository', $this->repository);
-                $absolute->addAttribute('id', $this->archiveId);
-                $absolute->addAttribute('title', $this->archiveTitle);
-                $absolute->addAttribute('sequence', str_pad($this->currentPos, 7, '0', STR_PAD_LEFT));
-                if ($this->archiveSubTitle) {
-                    $absolute->addAttribute('subtitle', $this->archiveSubTitle);
-                }
-                
-                $parentDid = $original->xpath('parent::*/did | parent::*/parent::*/did');
+            if ($record->did->unitid) {
+                $record->did->unitid->attributes()->identifier = $this->archiveId . '_' .
+                    $record->did->unitid->attributes()->identifier;
+            } else {
+                // Create ID for the unit
+                $did = $record->did ? $record->did : $record->addChild('did');
+                $did->addChild('unitid')->addAttribute('identifier', $this->archiveId . '_' . $this->currentPos);
+                // Also store it in the original data for children
+                $did = $original->did ? $original->did : $original->addChild('did');
+                $did->addChild('unitid')->addAttribute('identifier', $this->archiveId . '_' . $this->currentPos);
+            } 
+            
+            $addData = $record->addChild('add-data');
+            
+            $absolute = $addData->addChild('archive');
+            $absolute->addAttribute('repository', $this->repository);
+            $absolute->addAttribute('id', $this->archiveId);
+            $absolute->addAttribute('title', $this->archiveTitle);
+            $absolute->addAttribute('sequence', str_pad($this->currentPos, 7, '0', STR_PAD_LEFT));
+            if ($this->archiveSubTitle) {
+                $absolute->addAttribute('subtitle', $this->archiveSubTitle);
+            }
+            
+            $parentDid = $original->xpath('parent::*/did | parent::*/parent::*/did');
+            if ($parentDid) {
                 $parentDid = $parentDid[0];
                 $parentID = (string)$parentDid->unitid->attributes()->identifier;
                 if ($parentID != $this->archiveId) {

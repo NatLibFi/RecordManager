@@ -126,6 +126,7 @@ class EadRecord extends BaseRecord
             $data['institution'] = (string)$doc->{'add-data'}->archive->attributes()->repository;
             break;
         case 'item': 
+        case 'file': 
             $data['title_sub'] = (string)$doc->did->unitid;
             $data['series'] = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
             $data['institution'] = (string)$doc->{'add-data'}->archive->attributes()->repository;
