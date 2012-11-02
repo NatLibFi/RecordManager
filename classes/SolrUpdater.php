@@ -868,8 +868,6 @@ class SolrUpdater
             $data['allfields'] = MetadataUtils::array_iunique($all);
         }
         
-        $data['dedup_key'] = isset($record['dedup_key']) && $record['dedup_key']
-            ? (string)$record['dedup_key'] : $record['_id'];
         $data['first_indexed'] = MetadataUtils::formatTimestamp($record['created']->sec);
         $data['last_indexed'] = MetadataUtils::formatTimestamp($record['date']->sec);
         $data['recordtype'] = $record['format'];
@@ -1003,7 +1001,7 @@ class SolrUpdater
                 throw new Exception("Solr server request failed ($code). Request:\n$body\n\nResponse:\n" . $response->getBody());
             }
         }
-        if (isset($background)) {
+        if ($background) {
             // Don't let PHP cleanup e.g. the Mongo connection
             posix_kill(getmypid(), SIGKILL);
         }
