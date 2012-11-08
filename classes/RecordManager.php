@@ -651,7 +651,7 @@ class RecordManager
         $total = $this->counts ? $records->count() : 'the';
         $count = 0;
 
-        $this->log->log('renormalize', "Deleting $total records from '$sourceId'...");
+        $this->log->log('deleteRecords', "Deleting $total records from '$sourceId'...");
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
             if (isset($record['dedup_key'])) {
