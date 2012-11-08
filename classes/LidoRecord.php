@@ -250,13 +250,6 @@ class LidoRecord extends BaseRecord
         if (!empty($description)) {
             return $description;
         }
-        
-        // REMOVE THIS ONCE TUUSULA IS FIXED
-        
-        // Quick and dirty way to get description when it's in the subject wrap (Tuusula)
-        return $this->extractFirst("lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/displaySubject[@label='aihe']");
-
-        // END OF TUUSULA FIX
     }
     
     /**
@@ -682,14 +675,7 @@ class LidoRecord extends BaseRecord
      */
     protected function getSubjects()
     {
-        $xpath = 'lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/subject'
-        // REMOVE THIS ONCE TUUSULA IS FIXED
-        // In the term fields there are Iconclass identifiers, which are unfit for human consumption
-        // Also the description of the object is in the subject wrap. It's kind of debated whether
-        // it should be here or in the description so can't blame Muusa for that. Anyway cutting it out.
-        . "[not(@type) or (@type != 'iconclass' and @type != 'aihe')]"
-        // END OF TUUSULA FIX
-        . '/subjectConcept/term';
+        $xpath = 'lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/subject/subjectConcept/term';
     
         return $this->extractArray($xpath);
     }

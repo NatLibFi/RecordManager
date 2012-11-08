@@ -54,7 +54,7 @@ class NdlLidoRecord extends LidoRecord
 
         // REMOVE THIS ONCE TUUSULA IS FIXED
         $categoryTerm = $this->getCategoryTerm();
-        if ($data['institution'] == 'Tuusula' && $categoryTerm == 'Man-Made Object') {
+        if ($data['institution'] == 'Tuusulan taidemuseo' && $categoryTerm == 'Man-Made Object') {
             $data['format'] = $this->getClassification('pääluokka');
         }
         // END OF TUUSULA FIX
@@ -69,19 +69,19 @@ class NdlLidoRecord extends LidoRecord
         }
         // END OF KANTAPUU FIX
         
+        $data['building'] = $data['institution'];
+        
         // REMOVE THIS ONCE TUUSULA IS FIXED
         // sometimes there are multiple subjects in one element
         // seperated with commas like "foo, bar, baz" (Tuusula)
-        if (is_array($data['topic'])) {
-            $topic = array();
-            foreach ($data['topic'] as $subject) {
-                $exploded = explode(',', $subject);
-                foreach ($exploded as $explodedSubject) {
-                    $topic[] = trim($explodedSubject);
-                }
+        $topic = array();
+        foreach ($data['topic'] as $subject) {
+            $exploded = explode(',', $subject);
+            foreach ($exploded as $explodedSubject) {
+                $topic[] = trim($explodedSubject);
             }
-            $data['topic'] = $data['topic_facet'] = $topic;
         }
+        $data['topic'] = $data['topic_facet'] = $topic;
         // END OF TUUSULA FIX
         
         if (!empty($data['material'])) {
@@ -127,14 +127,41 @@ class NdlLidoRecord extends LidoRecord
             return $description;
         }
         
-        // REMOVE THIS ONCE TUUSULA IS FIXED
-                    
-        // Quick and dirty way to get description when it's in the subject wrap (Tuusula)
-        return $this->extractFirst("lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/displaySubject[@label='aihe']");
-        
-        // END OF TUUSULA FIX
+        if ($this->getLegalBodyName() == 'Tuusulan taidemuseo') {
+            // REMOVE THIS ONCE TUUSULA IS FIXED
+                        
+            // Quick and dirty way to get description when it's in the subject wrap (Tuusula)
+            return $this->extractFirst("lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/displaySubject[@label='aihe']");
+            
+            // END OF TUUSULA FIX
+        }
+        return '';
     }
     
+    /**
+     * Return subjects associated with object.
+     *
+     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#subjectComplexType
+     * @return string
+     * @access public
+     */
+    protected function getSubjects()
+    {
+        if ($this->getLegalBodyName() == 'Tuusulan taidemuseo') {
+            $xpath = 'lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/subject'
+            // REMOVE THIS ONCE TUUSULA IS FIXED
+            // In the term fields there are Iconclass identifiers, which are unfit for human consumption
+            // Also the description of the object is in the subject wrap. It's kind of debated whether
+            // it should be here or in the description so can't blame Muusa for that. Anyway cutting it out.
+            . "[not(@type) or (@type != 'iconclass' and @type != 'aihe')]"
+            // END OF TUUSULA FIX
+            . '/subjectConcept/term';
+        } else {
+            $xpath = 'lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/subject/subjectConcept/term';
+        }
+
+        return $this->extractArray($xpath);
+    }
     
     /**
      * Get the default language used when building the Solr array
