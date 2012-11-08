@@ -85,22 +85,13 @@ class PerformanceCounter
         if (count($this->counts) < 2) {
             return 0;
         }
-        $total = 0;
-        $prev = $this->counts[0];
-        $items = count($this->counts);
-        for ($i = 1; $i < $items; $i++) {
-            $count = $this->counts[$i]; 
-            $sum = $count['c'] - $prev['c'];
-            $time = $count['t'] - $prev['t'];
-            if ($time > 0) {
-                if ($i == $items - 1) {
-                    $total += 5 * round($sum / $time);
-                } else {
-                    $total += round($sum / $time);
-                }
-            }
-            $prev = $count;
+        $first = $this->counts[0];
+        $last = end($this->counts);
+        $count = $last['c'] - $first['c'];
+        $time = $last['t'] - $first['t'];
+        if ($time > 0) {
+            return round($count / $time);
         }
-        return round($total / (count($this->counts) - 1 + 4));
+        return 0;
     }
 }
