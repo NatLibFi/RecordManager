@@ -440,14 +440,14 @@ class SolrUpdater
                     }
                     
                     // Remove duplicate fields from the merged record
-                    foreach ($this->mergedFields as $field) {
-                        if (isset($merged[$field])) {
-                            $merged[$field] = array_values(MetadataUtils::array_iunique($merged[$field]));
+                    foreach ($merged as $fieldkey => $value) {
+                        if (substr($fieldkey, -3, 3) == '_mv' || in_array($fieldkey, $this->mergedFields)) {
+                            $merged[$fieldkey] = array_values(MetadataUtils::array_iunique($merged[$fieldkey]));
                         }
                     }
                     $merged['allfields'] = array_values(MetadataUtils::array_iunique($merged['allfields']));
                     
-                    $mergedId = (string)$key['_id']; 
+                    $mergedId = (string)$key['_id'];
                     if (empty($merged)) {
                         $this->bufferedDelete($mergedId);
                         ++$deleted;
@@ -670,7 +670,7 @@ class SolrUpdater
         $source = $record['source_id'];
         if (!isset($this->settings[$source])) {
             $this->log->log('createSolrArray', "No settings found for data source '$source'", Logger::FATAL);
-            throw new Exception('createSolrArray', "No settings found for data source '$source'");
+            throw new Exception("No settings found for data source '$source'");
         }
         $settings = $this->settings[$source];
         $hiddenComponent = false;
