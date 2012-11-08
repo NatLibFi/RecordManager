@@ -732,7 +732,6 @@ class MarcRecord extends BaseRecord
      */
     public function getFormat()
     {
-        $field008 = $this->getField('008');
         // check the 007 - this is a repeating field
         $fields = $this->getFields('007');
         $formatCode = '';
@@ -903,9 +902,9 @@ class MarcRecord extends BaseRecord
         // check the Leader at position 7
         $leaderBit = substr($leader, 7, 1);
         switch (strtoupper($leaderBit)) {
-            // Monograph
+        // Monograph
         case 'M':
-            if ($formatCode == 'C') {
+            if ($online) {
                 return 'eBook';
             } else {
                 return 'Book';
@@ -914,23 +913,24 @@ class MarcRecord extends BaseRecord
         // Serial
         case 'S':
             // Look in 008 to determine what type of Continuing Resource
+            $field008 = $this->getField('008');
             $formatCode = strtoupper(substr($field008, 21, 1));
             switch ($formatCode) {
             case 'N':
-                return 'Newspaper';
+                return $online ? 'eNewspaper' : 'Newspaper';
             case 'P':
-                return 'Journal';
+                return $online ? 'eJournal' : 'Journal';
             default:
-                return 'Serial';
+                return $online ? 'eSerial' : 'Serial';
             }
             break;
             
         case 'A':
             // Component part in monograph
-            return $formatCode == 'C' ? 'eBookSection' : 'BookSection';
+            return $online ? 'eBookSection' : 'BookSection';
         case 'B':
             // Component part in serial 
-            return $formatCode == 'C' ? 'eArticle' : 'Article';
+            return $online ? 'eArticle' : 'Article';
         case 'C':
             // Collection
             return 'Collection';
