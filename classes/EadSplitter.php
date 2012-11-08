@@ -68,7 +68,6 @@ class EadSplitter
         $this->archiveId = (string)($this->doc->eadheader->eadid->attributes()->identifier ? $this->doc->eadheader->eadid->attributes()->identifier : $this->doc->eadheader->eadid);
         $this->archiveTitle = (string)$this->doc->eadheader->filedesc->titlestmt->titleproper;
         $this->archiveSubTitle = (string)$this->doc->eadheader->filedesc->titlestmt->subtitle;
-        $this->repository = (string)$this->doc->archdesc->did->repository;
     }
     
     /**
@@ -95,7 +94,7 @@ class EadSplitter
                 $record->addAttribute($key, $value);
             }
             foreach ($original->children() as $child) {
-                $this->appendXML($record, $child);
+                $this->appendXMLFiltered($record, $child);
             }
             if ($record->did->unitid) {
                 $record->did->unitid->attributes()->identifier = $this->archiveId . '_' .
@@ -110,14 +109,32 @@ class EadSplitter
             } 
             
             $addData = $record->addChild('add-data');
-            
+
             $absolute = $addData->addChild('archive');
-            $absolute->addAttribute('repository', $this->repository);
             $absolute->addAttribute('id', $this->archiveId);
             $absolute->addAttribute('title', $this->archiveTitle);
             $absolute->addAttribute('sequence', str_pad($this->currentPos, 7, '0', STR_PAD_LEFT));
             if ($this->archiveSubTitle) {
                 $absolute->addAttribute('subtitle', $this->archiveSubTitle);
+            }
+            
+            $ancestorDid = $original->xpath('ancestor::*/did');
+            if ($ancestorDid) {
+                // Append any ancestor did's
+                foreach ($ancestorDid as $did) {
+                    $this->appendXML($record, $did);
+                }
+            }
+            
+            if ($this->doc->archdesc->bibliography) {
+                foreach ($this->doc->archdesc->bibliography as $elem) {
+                    $this->appendXML($record, $elem);
+                }
+            }
+            if ($this->doc->archdesc->accessrestrict) {
+                foreach ($this->doc->archdesc->accessrestrict as $elem) {
+                    $this->appendXML($record, $elem);
+                }
             }
             
             $parentDid = $original->xpath('parent::*/did | parent::*/parent::*/did');
@@ -131,11 +148,43 @@ class EadSplitter
                 $parent->addAttribute('id', $parentID);
                 $parent->addAttribute('title', $parentDid->unittitle);
             }
+            
             return $record->asXML();
         }
         return false;
     }
     
+    /**
+     * Recursively append a node to simplexml, merge elements with same name
+     * 
+     * @param SimpleXMLElement &$simplexml Node to append to
+     * @param SimpleXMLElement $append     Node to be appended
+     * 
+     * @return void
+     */
+    protected function appendXML(&$simplexml, $append)
+    {
+        if ($append) {
+            $name = $append->getName();
+            // addChild doesn't encode & ...  
+            $data = (string)$append;
+            $data = str_replace('&', '&amp;', $data);
+            if ($simplexml->{$name}) {
+                $xml = $simplexml->{$name};
+            } else {
+                $xml = $simplexml->addChild($name, $data);
+                foreach ($append->attributes() as $key => $value) {
+                    if (!$xml->attributes()->{$key}) {
+                        $xml->addAttribute($key, $value);
+                    }
+                }
+            }
+            foreach ($append->children() as $child) {
+                $this->appendXML($xml, $child);
+            }
+        }
+    }
+
     /**
      * Recursively append a node to simplexml, filtering out c, c01, c02 etc.
      * 
@@ -144,7 +193,7 @@ class EadSplitter
      * 
      * @return void
      */
-    protected function appendXML(&$simplexml, $append)
+    protected function appendXMLFiltered(&$simplexml, $append)
     {
         if ($append) {
             $name = $append->getName();
@@ -159,8 +208,9 @@ class EadSplitter
                 $xml->addAttribute($key, $value);
             }
             foreach ($append->children() as $child) {
-                $this->appendXML($xml, $child);
+                $this->appendXMLFiltered($xml, $child);
             }
         }
     }    
+    
 }

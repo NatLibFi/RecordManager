@@ -106,33 +106,35 @@ class EadRecord extends BaseRecord
         $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
         $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($doc->asXML());
         $data['allfields'] = $this->getAllFields($doc);
+        if ($doc->scopecontent) {
+            $data['description'] = $doc->scopecontent->p ? (string)$doc->scopecontent->p : (string)$doc->scopecontent;
+        }
           
         if ($doc->did->origination) {
             $data['author'] = (string)$doc->did->origination->corpname;
         }
 
         $data['format'] = (string)$doc->attributes()->level;
+        if (isset($doc->did)) {
+            $data['institution'] = (string)$doc->did->repository;
+        }
+        
         switch ($data['format']) {
         case 'fonds':
-            if (isset($doc->did)) {
-                $data['institution'] = (string)$doc->did->repository;
-            }
             break;
         case 'collection':
-            $data['institution'] = (string)$doc->{'add-data'}->archive->attributes()->repository;
             break;
         case 'series':
             $data['title_sub'] = (string)$doc->did->unitid;
-            $data['institution'] = (string)$doc->{'add-data'}->archive->attributes()->repository;
             break;
         case 'item': 
         case 'file': 
             $data['title_sub'] = (string)$doc->did->unitid;
             $data['series'] = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
-            $data['institution'] = (string)$doc->{'add-data'}->archive->attributes()->repository;
             break;
         default:
-            echo "No proper handling for level '" . $data['format'] . "', document:\n" . $doc->asXML() . "\n";
+            global $logger;
+            $logger->log('EadRecord', "No proper handling for level '" . $data['format'] . "', record {$this->source}." . $this->getID(), Logger::WARNING);
             break;
         }
         if ($doc->did->unitdate) {
