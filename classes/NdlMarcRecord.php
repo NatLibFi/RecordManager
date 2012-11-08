@@ -111,6 +111,25 @@ class NdlMarcRecord extends MarcRecord
         }
         $data['author'] = $this->getFieldSubfields('100abcde');
         
+        foreach ($this->getFieldsSubfields('080ab') as $classification) {
+            $data['classification_str_mv'][] = 'udk ' . strtolower(str_replace(' ', '', $classification));
+        }
+        foreach ($this->getFieldsSubfields('050ab') as $classification) {
+            $data['classification_str_mv'][] = 'dlc ' . strtolower(str_replace(' ', '', $classification));
+        }
+        foreach ($this->getFields('084') as $field) {
+            $source = $this->getSubfield($field, '2');
+            $classification = $this->getSubfields($field, 'ab');
+            if ($source) {
+                $data['classification_str_mv'][] = "$source " . strtolower(str_replace(' ', '', $classification));
+            }     
+        }
+        if (isset($data['classification_str_mv'])) {
+            foreach ($data['classification_str_mv'] as $classification) {
+                $data['allfields'][] = $classification;
+            }
+        }
+        
         return $data;
     }
     
