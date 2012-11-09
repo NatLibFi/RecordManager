@@ -119,52 +119,56 @@ class RecordManager
      * Load records into the database from a file
      * 
      * @param string $source Source id
-     * @param string $file   File name containing the records
+     * @param string $file   Wildcard pattern of files containing the records
      * 
      * @throws Exception
      * @return int Number of records loaded
      */
-    public function loadFromFile($source, $file)
+    public function loadFromFile($source, $files)
     {
-        $this->log->log('loadFromFile', "Loading records from '$file' into '$source'");
         $this->loadSourceSettings($source);
         if (!$this->recordXPath) {
             $this->log->log('loadFromFile', 'recordXPath not defined', Logger::FATAL);
             throw new Exception('recordXPath not defined');
         }
-        $data = file_get_contents($file);
-        if ($data === false) {
-            throw new Exception("Could not read file '$file'");
-        }
-        
-        if ($this->pretransformation) {
-            if ($this->verbose) {
-                echo "Executing pretransformation...\n";
+        foreach (glob($files) as $file) {
+            $this->log->log('loadFromFile', "Loading records from '$file' into '$source'");
+            $data = file_get_contents($file);
+            if ($data === false) {
+                throw new Exception("Could not read file '$file'");
             }
-            $data = $this->pretransform($data);
-        }
-        
-        if ($this->verbose) {
-            echo "Creating FileSplitter...\n";
-        }
-        $splitter = new FileSplitter($data, $this->recordXPath);
-        $count = 0;
-        
-        if ($this->verbose) {
-            echo "Storing records...\n";
-        }
-        while (!$splitter->getEOF()) {
-            $data = $splitter->getNextRecord();
-            if ($this->verbose) {
-                echo "Storing a record...\n";
+            
+            if ($this->pretransformation) {
+                if ($this->verbose) {
+                    echo "Executing pretransformation...\n";
+                }
+                $data = $this->pretransform($data);
             }
-            $count += $this->storeRecord('', false, $data);
+            
             if ($this->verbose) {
-                echo "Stored records: $count...\n";
+                echo "Creating FileSplitter...\n";
             }
+            $splitter = new FileSplitter($data, $this->recordXPath, $this->oaiIDXPath);
+            $count = 0;
+            
+            if ($this->verbose) {
+                echo "Storing records...\n";
+            }
+            while (!$splitter->getEOF()) {
+                $oaiID = '';
+                $data = $splitter->getNextRecord($oaiID);
+                if ($this->verbose) {
+                    echo "Storing a record...\n";
+                }
+                $count += $this->storeRecord($oaiID, false, $data);
+                if ($this->verbose) {
+                    echo "Stored records: $count...\n";
+                }
+            }
+            $this->log->log('loadFromFile', "$count records loaded");
         }
         
-        $this->log->log('loadFromFile', "$count records loaded");
+        $this->log->log('loadFromFile', "Total $count records loaded");
         return $count;
     }
 
@@ -1352,6 +1356,7 @@ class RecordManager
         $this->idPrefix = isset($settings['idPrefix']) && $settings['idPrefix'] ? $settings['idPrefix'] : $source;
         $this->institution = $settings['institution'];
         $this->recordXPath = isset($settings['recordXPath']) ? $settings['recordXPath'] : '';
+        $this->oaiIDXPath = isset($settings['oaiIDXPath']) ? $settings['oaiIDXPath'] : '';
         $this->dedup = isset($settings['dedup']) ? $settings['dedup'] : false;
         $this->componentParts = isset($settings['componentParts']) && $settings['componentParts'] ? $settings['componentParts'] : 'as_is';
         $this->pretransformation = isset($settings['preTransformation']) ? $settings['preTransformation'] : '';

@@ -43,14 +43,17 @@ class FileSplitter
     protected $recordNodes;
     protected $recordCount;
     protected $currentPos;
+    protected $xpath;
+    protected $oaiIDXpath;
 
     /**
      * Construct the splitter
      * 
      * @param mixed  $data        XML string or DOM document
      * @param string $recordXPath XPath used to find the records
+     * @param string $oaiIDXPath  XPath used to find the records' oaiID's (relative to record)
      */
-    function __construct($data, $recordXPath)
+    function __construct($data, $recordXPath, $oaiIDXPath)
     {
         if (is_string($data)) {
             $this->xmlDoc = new DOMDocument();
@@ -58,10 +61,11 @@ class FileSplitter
         } else {
             $this->xmlDoc = $data;
         }
-        $xpath = new DOMXpath($this->xmlDoc);
-        $this->recordNodes = $xpath->query($recordXPath);
+        $this->xpath = new DOMXpath($this->xmlDoc);
+        $this->recordNodes = $this->xpath->query($recordXPath);
         $this->recordCount = $this->recordNodes->length;
         $this->currentPos = 0;
+        $this->oaiIDXpath = $oaiIDXPath;
     }
 
     /**
@@ -77,17 +81,27 @@ class FileSplitter
     /**
      * Get next record
      * 
+     * @param string &$oaiID OAI Identifier (if XPath specified in constructor)
+     * 
      * @return string|boolean
      */
-    public function getNextRecord()
+    public function getNextRecord(&$oaiID)
     {
         if ($this->currentPos < $this->recordCount) {
-            if ($this->recordNodes->item($this->currentPos)->nodeType == XML_DOCUMENT_NODE) {
-                return $this->recordNodes->item($this->currentPos++)->saveXML();
+            $node = $this->recordNodes->item($this->currentPos++);
+            if ($this->oaiIDXpath) {
+                $xNodes = $this->xpath->query($this->oaiIDXpath, $node);
+                if ($xNodes->length == 0 || !$xNodes->item(0)->nodeValue) {
+                    die("No OAI ID found with XPath '{$this->oaiIDXpath}' starting at element: '{$node->nodeName}'\n");
+                }
+                $oaiID = $xNodes->item(0)->nodeValue;
             }
-            $new = new DomDocument;
-            $new->appendChild($new->importNode($this->recordNodes->item($this->currentPos++), true));
-            return $new->saveXML();
+            if ($node->nodeType !== XML_DOCUMENT_NODE) {
+                $childNode = $node;
+                $node = new DomDocument;
+                $node->appendChild($node->importNode($childNode, true));
+            }
+            return $node->saveXML();
         }
         return false;
     }

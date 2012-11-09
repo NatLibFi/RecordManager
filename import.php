@@ -41,7 +41,7 @@ function main($argv)
     if (!isset($params['file']) || !isset($params['source'])) {
         echo "Usage: import --file=... --source=... [...]\n\n";
         echo "Parameters:\n\n";
-        echo "--file              The file of records\n";
+        echo "--file              The file or wildcard pattern of files of records\n";
         echo "--source            Source ID\n";
         echo "--verbose           Enable verbose output\n\n";
         exit(1);
@@ -50,13 +50,7 @@ function main($argv)
     $manager = new RecordManager(true);
     $manager->verbose = isset($params['verbose']) ? $params['verbose'] : false;
 
-    $files = glob($params['file'], GLOB_NOSORT);
-    $count = 0;
-    foreach ($files as $file) {
-        echo "Processing '$file'\n";
-        $count += $manager->loadFromFile($params['source'], $file);
-        echo "Total records processed: $count\n";
-    }
+    $manager->loadFromFile($params['source'], $params['file']);
 }
 
 main($argv);
