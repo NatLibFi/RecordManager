@@ -65,8 +65,11 @@ class EadRecord extends BaseRecord
      */
     public function getID()
     {
-        return isset($this->doc->did->unitid->attributes()->{'identifier'}) 
-            ? (string)$this->doc->did->unitid->attributes()->{'identifier'}
+        if (isset($this->doc->{'add-data'}->attributes()->identifier)) {
+            return (string)$this->doc->{'add-data'}->attributes()->identifier;
+        }
+        return isset($this->doc->did->unitid->attributes()->identifier) 
+            ? (string)$this->doc->did->unitid->attributes()->identifier
             : (string)$this->doc->did->unitid;
     }
 
@@ -106,12 +109,45 @@ class EadRecord extends BaseRecord
         $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
         $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($doc->asXML());
         $data['allfields'] = $this->getAllFields($doc);
+
         if ($doc->scopecontent) {
             $data['description'] = $doc->scopecontent->p ? (string)$doc->scopecontent->p : (string)$doc->scopecontent;
         }
-          
+
+        $authors = array();
+        if (isset($doc->controlaccess->persname)) {
+            foreach ($doc->controlaccess->persname as $name) {
+                if (trim((string)$name) !== '-') {
+                    $authors[] = (string)$name;
+                }
+            }
+        }
+        if (isset($doc->controlaccess->corpname)) {
+            foreach ($doc->controlaccess->corpname as $name) {
+                $authors[] = (string)$name;
+            }
+        }
+        if ($authors) {
+            $data['author'] = array_shift($authors);
+        }
+        if ($authors) {
+            $data['author2'] = $authors;
+        }
+
         if ($doc->did->origination) {
-            $data['author'] = (string)$doc->did->origination->corpname;
+            $data['author_additional'] = (string)$doc->did->origination->corpname;
+        }
+
+        if (isset($doc->controlaccess->geogname)) {
+            foreach ($doc->controlaccess->geogname as $name) {
+                $data['geographic'][] = (string)$name;
+            }
+        }
+
+        if (isset($doc->controlaccess->subject)) {
+            foreach ($doc->controlaccess->subject as $name) {
+                $data['topic'][] = (string)$name;
+            }
         }
 
         $data['format'] = (string)$doc->attributes()->level;
@@ -119,12 +155,15 @@ class EadRecord extends BaseRecord
             $data['institution'] = (string)$doc->did->repository;
         }
         
+        $data['title_sub'] = '';
+        
         switch ($data['format']) {
         case 'fonds':
             break;
         case 'collection':
             break;
         case 'series':
+        case 'subseries':
             $data['title_sub'] = (string)$doc->did->unitid;
             break;
         case 'item': 
@@ -137,15 +176,10 @@ class EadRecord extends BaseRecord
             $logger->log('EadRecord', "No proper handling for level '" . $data['format'] . "', record {$this->source}." . $this->getID(), Logger::WARNING);
             break;
         }
-        if ($doc->did->unitdate) {
-            if (isset($data['title_sub']) && $data['title_sub']) {
-                $data['title_sub'] .= '; ' . (string)$doc->did->unitdate;
-            } else {
-                $data['title_sub'] = (string)$doc->did->unitdate;
-            }
-        }
-        $data['title'] = $data['title_short'] = (string)$doc->did->unittitle;
-        $data['title_full'] = $data['title_sort'] = $data['title'] . (isset($data['title_sub']) && $data['title_sub'] ? ' (' . $data['title_sub'] . ')' : '');
+
+        $data['title_short'] = (string)$doc->did->unittitle;
+        $data['title'] = ($data['title_sub'] ? $data['title_sub'] . ' ' : '') . $data['title_short'];
+        $data['title_full'] = $data['title_sort'] = $data['title'];
         
         $data['hierarchytype'] = 'Default';
         if ($this->doc->{'add-data'}->archive) {
@@ -187,7 +221,7 @@ class EadRecord extends BaseRecord
             }
             $s = $this->getAllFields($field);
             if ($s) {
-                $allFields[] = "$s";
+                $allFields = array_merge($allFields, $s);
             }
         }
         return $allFields;

@@ -96,20 +96,20 @@ class EadSplitter
             foreach ($original->children() as $child) {
                 $this->appendXMLFiltered($record, $child);
             }
-            if ($record->did->unitid) {
-                $record->did->unitid->attributes()->identifier = $this->archiveId . '_' .
-                    $record->did->unitid->attributes()->identifier;
-            } else {
-                // Create ID for the unit
-                $did = $record->did ? $record->did : $record->addChild('did');
-                $did->addChild('unitid')->addAttribute('identifier', $this->archiveId . '_' . $this->currentPos);
-                // Also store it in the original data for children
-                $did = $original->did ? $original->did : $original->addChild('did');
-                $did->addChild('unitid')->addAttribute('identifier', $this->archiveId . '_' . $this->currentPos);
-            } 
             
             $addData = $record->addChild('add-data');
 
+            if ($record->getName() != 'archdesc') {
+                if ($record->did->unitid) {
+                    $addData->addAttribute('identifier', $this->archiveId . '_' . $record->did->unitid->attributes()->identifier);
+                } else {
+                    // Create ID for the unit
+                    $addData->addAttribute('identifier', $this->archiveId . '_' . $this->currentPos);
+                    // Also store it in original record for the children
+                    $original->addChild('add-data')->addAttribute('identifier', $this->archiveId . '_' . $this->currentPos);
+                }
+            } 
+            
             $absolute = $addData->addChild('archive');
             $absolute->addAttribute('id', $this->archiveId);
             $absolute->addAttribute('title', $this->archiveTitle);
@@ -140,13 +140,22 @@ class EadSplitter
             $parentDid = $original->xpath('parent::*/did | parent::*/parent::*/did');
             if ($parentDid) {
                 $parentDid = $parentDid[0];
-                $parentID = (string)$parentDid->unitid->attributes()->identifier;
+                // If parent has add-data, take the generated ID from it
+                if (isset($original->{'add-data'})) {
+                    $parentID = (string)$original->{'add-data'}->attributes()->identifier;
+                } else {
+                    $parentID = (string)$parentDid->unitid->attributes()->identifier;
+                }
                 if ($parentID != $this->archiveId) {
                     $parentID = $this->archiveId . '_' . $parentID;
                 }
+                $parentTitle = (string)$parentDid->unittitle;
+                if ((string)$parentDid->unitid && in_array((string)$record->attributes()->level, array('series', 'subseries', 'item', 'file'))) {
+                    $parentTitle = (string)$parentDid->unitid . ' ' . $parentTitle;
+                }
                 $parent = $addData->addChild('parent');
                 $parent->addAttribute('id', $parentID);
-                $parent->addAttribute('title', $parentDid->unittitle);
+                $parent->addAttribute('title', $parentTitle);
             }
             
             return $record->asXML();

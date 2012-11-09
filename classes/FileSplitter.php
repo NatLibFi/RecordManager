@@ -57,7 +57,7 @@ class FileSplitter
     {
         if (is_string($data)) {
             $this->xmlDoc = new DOMDocument();
-            $this->xmlDoc->loadXML($data);
+            $this->xmlDoc->loadXML($data, LIBXML_PARSEHUGE);
         } else {
             $this->xmlDoc = $data;
         }

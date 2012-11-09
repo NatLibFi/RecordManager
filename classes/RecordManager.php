@@ -778,8 +778,12 @@ class RecordManager
         if ($this->verbose) {
             echo "Storing array of " . count($dataArray) . " records...\n";
         }
+        
+        // Store start time so that we can mark deleted any child records not present anymore  
+        $startTime = new MongoDate();
                 
         $count = 0;
+        $mainID = '';
         foreach ($dataArray as $data) {
             if (isset($this->normalizationXSLT)) {
                 $metadataRecord = RecordFactory::createRecord($this->format, $this->normalizationXSLT->transform($data, array('oai_id' => $oaiID)), $oaiID, $this->sourceId);
@@ -827,6 +831,9 @@ class RecordManager
             $dbRecord['oai_id'] = $oaiID;
             $dbRecord['deleted'] = false;
             $dbRecord['linking_id'] = $metadataRecord->getLinkingID();
+            if ($mainID) {
+                $dbRecord['main_id'] = $mainID;
+            }
             $dbRecord['host_record_id'] = $hostID;
             $dbRecord['format'] = $this->format;
             $dbRecord['original_data'] = $originalData;
@@ -846,7 +853,24 @@ class RecordManager
             }
             $this->db->record->save($dbRecord);
             ++$count;
+            if (!$mainID) {
+                $mainID = $id;
+            }
         }
+        
+        if ($count > 1 && $mainID) {
+            // We processed a hierarchical record. Mark deleted any children that were not updated.
+            $this->db->record->update(
+                array(
+                    'source_id' => $this->sourceId,
+                    'main_id' => $mainID,
+                    'updated' => array('$lt' => $startTime)
+                ),
+                array('$set' => array('deleted' => true, 'updated' => $startTime)),
+                array('multiple' => true)
+            );
+        }
+        
         return $count;
     }
 
@@ -1324,7 +1348,7 @@ class RecordManager
             $this->preXSLT->setParameter('', 'id_prefix', $this->idPrefix);
         }
         $doc = new DOMDocument();
-        $doc->loadXML($data);
+        $doc->loadXML($data, LIBXML_PARSEHUGE);
         return $this->preXSLT->transformToXml($doc);
     }
 
