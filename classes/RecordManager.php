@@ -119,7 +119,7 @@ class RecordManager
      * Load records into the database from a file
      * 
      * @param string $source Source id
-     * @param string $file   Wildcard pattern of files containing the records
+     * @param string $files  Wildcard pattern of files containing the records
      * 
      * @throws Exception
      * @return int Number of records loaded
