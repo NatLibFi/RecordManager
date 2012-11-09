@@ -131,6 +131,7 @@ class RecordManager
             $this->log->log('loadFromFile', 'recordXPath not defined', Logger::FATAL);
             throw new Exception('recordXPath not defined');
         }
+        $count = 0;
         foreach (glob($files) as $file) {
             $this->log->log('loadFromFile', "Loading records from '$file' into '$source'");
             $data = file_get_contents($file);
@@ -149,7 +150,6 @@ class RecordManager
                 echo "Creating FileSplitter...\n";
             }
             $splitter = new FileSplitter($data, $this->recordXPath, $this->oaiIDXPath);
-            $count = 0;
             
             if ($this->verbose) {
                 echo "Storing records...\n";
