@@ -8,12 +8,7 @@
 ; metadataPrefix = oai_dc
 ; idSearch[] = "/oai:myuniversity.edu:/"
 ; idReplace[] = "myprefix-"
-; injectDate = false
-; injectId = false
-; injectSetName = false
-; injectSetSpec = false
 ; dateGranularity = auto
-; harvestedIdLog = harvest.log
 ; verbose = false
 ; deletions = ListIdentifiers
 ;
@@ -30,33 +25,9 @@
 ; characters.  You may use multiple pairs of search and replace settings to perform
 ; multiple manipulations.
 ;
-; injectDate may be set to an XML tag name in order to inject the datestamp of
-; the record into the harvested metadata (enclosed in the specified tag).  If
-; omitted or set to false, no datestamp-related changes will be made to the
-; harvested metadata.
-;
-; injectId may be set to an XML tag name in order to inject the ID of the record
-; into the harvested metadata (enclosed in the specified tag).  If omitted or set
-; to false, no ID-related changes will be made to the harvested metadata.
-;
-; injectSetName may be set to an XML tag name in order to inject the setName value
-; of the record into the harvested metadata (enclosed in the specified tag).  If
-; omitted or set to false, no setName-related changes will be made to the harvested
-; metadata.
-;
-; injectSetSpec may be set to an XML tag name in order to inject the setSpec value
-; of the record into the harvested metadata (enclosed in the specified tag).  If
-; omitted or set to false, no setSpec-related changes will be made to the harvested
-; metadata.
-;
 ; dateGranularity is the granularity used by the server for representing dates.
 ; This may be "YYYY-MM-DDThh:mm:ssZ," "YYYY-MM-DD" or "auto" (to query the server
 ; for details).  The default is "auto."
-;
-; harvestedIdLog is a filename (inside your harvest directory) for a text file
-; listing all non-deleted harvested records encountered.  If you omit this setting,
-; no log file will be generated.  Subsequent harvests will append to the file if
-; it already exists.
 ;
 ; verbose may be set to true in order to display more detailed output while
 ; harvesting; this may be useful for troubleshooting purposes, but it defaults to
@@ -65,7 +36,9 @@
 ; deletions = ListIdentifiers indicates that the OAI-PMH provider does not support
 ; deletions. In this case ListIdentifiers method is used to list the existing
 ; record identifiers and mark deleted record that no longer exist.
-
+;
+; debugLog may be pointed to a file where all the OAI-PMH requests and responses are written.
+;
 ; To harvest MetaLib IRD's using MetaLib X-Server, create a section like this:
 ;
 ; [section_name]
@@ -78,7 +51,7 @@
 ; query = "WIN=INSTITUTE"
 ; verbose = false
 ; institution = MyInst
-
+;
 ; RecordManager settings:
 ; institution           The institution code mapped to the source (required)
 ; recordXPath           xpath expression used when loading records from a file to identify a single record (optional, e.g. //record)
@@ -145,7 +118,7 @@ set = public
 dedup = true
 
 ; Sample EAD configuration
-[narc]
+[arc]
 institution = MyInst
 url = http://oai-pmh.ead-server/request
 metadataPrefix = ead
@@ -153,8 +126,9 @@ recordSplitter = EadSplitter.php
 format = ead
 preTransformation = strip_namespaces.xsl
 oaipmhTransformation = strip_namespaces.xsl
-recordXPath = /
 format_mapping = ead_level_to_format.map
+recordXPath = //ead
+oaiIDXPath = ../../header/identifier
 
 ; Sample MetaLib configuration
 [metalib]
