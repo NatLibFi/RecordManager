@@ -72,6 +72,16 @@ class NdlMarcRecord extends MarcRecord
             $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate']);
         }
         
+        // language override
+        $data['language'] = array();
+        $languages = array(substr($this->getField('008'), 35, 3));
+        $languages += $this->getFieldsSubfields('041a');
+        foreach ($languages as $language) {
+            if (preg_match('/^\w{3}$/', $language) && $language != 'zxx' && $language != 'und') {
+                $data['language'][] = $language;
+            }
+        }
+        
         // Location coordinates
         $field = $this->getField('034');
         if ($field) {
