@@ -482,7 +482,7 @@ class MarcRecord extends BaseRecord
         
         // Try to parse the data from different versions of 773g
         $matches = array();
-        if (preg_match('/,\s*\w\.?\s*([\d,\-]+)/', $field773g, $matches)) {
+        if (preg_match('/,\s*\w\.?\s*([\d,\-]+)/', $field773g, $matches) || preg_match('/^\w\.?\s*([\d,\-]+)/', $field773g, $matches)) {
             $pages = explode('-', $matches[1]);
             return $pages[0];
         }
