@@ -140,6 +140,13 @@ class NdlMarcRecord extends MarcRecord
             }
         }
         
+        // Ebrary location
+        foreach ($this->getFieldsSubfields('035a') as $field) {
+            if (strncmp($field, 'ebr', 3) == 0 && is_numeric(substr($field, 3))) {
+                $data['building'][] = 'Ebrary';
+            }
+        }
+        
         return $data;
     }
     
