@@ -53,6 +53,20 @@ class NdlDcRecord extends DcRecord
         if (isset($data['publishDate'])) {
             $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate']);
         }
+        
+        // language, take only first
+        $data['language'] = array_shift(
+            array_filter(
+                explode(
+                    ' ', 
+                    (string)$this->doc->language
+                ),
+                function($value) {
+                    return preg_match('/^[a-z]{2,3}$/', $value) && $value != 'zxx' && $value != 'und';
+                }
+            )
+        );
+        
         return $data;
     }
 }

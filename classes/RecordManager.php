@@ -843,7 +843,6 @@ class RecordManager
                 if (isset($dbRecord['dedup_key'])) {
                     $this->unmarkSingleDuplicate($dbRecord['dedup_key'], $dbRecord['_id']);
                 }
-                unset($dbRecord['dedup_key']);
                 $dbRecord['update_needed'] = true;
             } else {
                 unset($dbRecord['title_keys']);

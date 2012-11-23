@@ -47,10 +47,11 @@ class QdcRecord extends BaseRecord
     /**
      * Constructor
      *
-     * @param string $data  Record metadata
-     * @param string $oaiID Record ID in OAI-PMH
+     * @param string $data   Record metadata
+     * @param string $oaiID  Record ID in OAI-PMH
+     * @param string $source Source ID
      */
-    public function __construct($data, $oaiID)
+    public function __construct($data, $oaiID, $source)
     {
         $this->doc = simplexml_load_string($data);
         if (empty($this->doc->recordID)) {

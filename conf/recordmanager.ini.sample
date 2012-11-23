@@ -15,6 +15,7 @@ compress_records = true
 
 [Solr]
 ; Note that RecordManager requires that the json update method be available
+; In Solr 4 the same update url is used for all formats, so remove /json 
 update_url = http://localhost:8080/solr/biblio/update/json
 ;background_update = true
 max_commit_interval = 1000000

@@ -314,8 +314,6 @@ class SolrUpdater
                 $params['dedup_key'] = array('$exists' => true);
             }
             
-            $map = new MongoCode("function() { emit(this.dedup_key, 1); }");
-            $reduce = new MongoCode("function(k, vals) { return vals.length; }");
             $collectionName = 'mr_record_' . md5(json_encode($params));
             if (isset($fromDate)) {
                 $collectionName .= "_$fromDate";
@@ -346,6 +344,8 @@ class SolrUpdater
             if (!$collectionExists) {            
                 $this->log->log('updateMergedRecords', "Creating merged record list $collectionName (from $from)...");
                 
+                $map = new MongoCode("function() { emit(this.dedup_key, 1); }");
+                $reduce = new MongoCode("function(k, vals) { return vals.length; }");
                 $mr = $this->db->command(
                     array(
                         'mapreduce' => 'record', 
@@ -400,7 +400,10 @@ class SolrUpdater
                     $children[] = array('mongo' => $record, 'solr' => $data);
                 }
                 
-                if (count($children) == 1) {
+                if (count($children) == 0) {
+                    $this->log->log('updateMergedRecords', "Found no records with a dedup key: {$child['solr']['id']}", Logger::WARNING);
+                    
+                } elseif (count($children) == 1) {
                     // A dedup key exists for a single record. This should only happen when a data source is being deleted...
                     $child = $children[0];
                     if (!$delete) {
@@ -422,20 +425,24 @@ class SolrUpdater
                     }
                 } else {
                     foreach ($children as $child) {
-                        $child = $child['solr'];
-                        $child['merged_child_boolean'] = true;
+                        $child['solr']['merged_child_boolean'] = true;
                     
                         if ($this->verbose) {
-                            echo "Original deduplicated record {$child['id']}:\n";
-                            print_r($child);
+                            echo "Original deduplicated record {$child['solr']['id']}:\n";
+                            print_r($child['solr']);
                         }
                     
                         ++$count;
-                        $res = $this->bufferedUpdate($child, $count, $noCommit);
+                        $res = $this->bufferedUpdate($child['solr'], $count, $noCommit);
                         if ($res) {
                             $pc->add($count);
                             $avg = $pc->getSpeed(); 
                             $this->log->log('updateMergedRecords', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $avg records/sec");
+                        }
+                        // Delete any merged record with the key of this record if
+                        // it's not the current dedup_key
+                        if ($child['mongo']['dedup_key'] != $child['mongo']['key']) {
+                            $this->bufferedDelete((string)$child['mongo']['key']);
                         }
                     }
                     
@@ -445,7 +452,11 @@ class SolrUpdater
                             $merged[$fieldkey] = array_values(MetadataUtils::array_iunique($merged[$fieldkey]));
                         }
                     }
-                    $merged['allfields'] = array_values(MetadataUtils::array_iunique($merged['allfields']));
+                    if (isset($merged['allfields'])) {
+                        $merged['allfields'] = array_values(MetadataUtils::array_iunique($merged['allfields']));
+                    } else {
+                        $this->log->log('updateMergedRecords', "allfields missing in merged record for dedup key {$key['_id']}", Logger::WARNING);
+                    }
                     
                     $mergedId = (string)$key['_id'];
                     if (empty($merged)) {
@@ -695,19 +706,23 @@ class SolrUpdater
         $components = null;
         if (!$record['host_record_id']) {
             // Fetch info whether component parts exist and need to be merged
-            $components = $this->db->record->find(array('source_id' => $record['source_id'], 'host_record_id' => $record['linking_id'], 'deleted' => false));
-            $hasComponentParts = $components->hasNext();
-            $format = $metadataRecord->getFormat();
-            $merge = false;
-            if ($settings['componentParts'] == 'merge_all') {
-                $merge = true;
-            } elseif (!in_array($format, $this->allJournalFormats)) {
-                $merge = true;
-            } elseif (in_array($format, $this->journalFormats) && $settings['componentParts'] == 'merge_non_earticles') {
-                $merge = true;
-            }
-            if (!$merge) {
-                unset($components);
+            if (!$record['linking_id']) {
+                $this->log->log('createSolrArray', "linking_id missing for record '{$record['_id']}'", Logger::ERROR);
+            } else {
+                $components = $this->db->record->find(array('source_id' => $record['source_id'], 'host_record_id' => $record['linking_id'], 'deleted' => false));
+                $hasComponentParts = $components->hasNext();
+                $format = $metadataRecord->getFormat();
+                $merge = false;
+                if ($settings['componentParts'] == 'merge_all') {
+                    $merge = true;
+                } elseif (!in_array($format, $this->allJournalFormats)) {
+                    $merge = true;
+                } elseif (in_array($format, $this->journalFormats) && $settings['componentParts'] == 'merge_non_earticles') {
+                    $merge = true;
+                }
+                if (!$merge) {
+                    unset($components);
+                }
             }
         }
         
