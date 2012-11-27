@@ -343,11 +343,11 @@ class RecordManager
                     unset($record['dedup_key']);
                 }
 
-                $record['original_data'] = $this->compressedRecords ? new MongoBinData(gzdeflate($originalData)) : $originalData;
+                $record['original_data'] = $this->compressedRecords ? new MongoBinData(gzdeflate($originalData), 2) : $originalData;
                 if ($normalizedData == $originalData) {
                     $record['normalized_data'] = '';
                 } else {
-                    $record['normalized_data'] = $this->compressedRecords ? new MongoBinData(gzdeflate($normalizedData)) : $normalizedData;
+                    $record['normalized_data'] = $this->compressedRecords ? new MongoBinData(gzdeflate($normalizedData), 2) : $normalizedData;
                 }
                 $record['linking_id'] = $metadataRecord->getLinkingID();
                 $record['host_record_id'] = $hostID;
