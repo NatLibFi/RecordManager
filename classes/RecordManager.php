@@ -89,6 +89,9 @@ class RecordManager
         global $configArray;
         global $logger;
         
+        mb_language('uni');
+        mb_internal_encoding('UTF-8');
+        
         date_default_timezone_set($configArray['Site']['timezone']);
 
         $this->log = new Logger();
@@ -823,9 +826,9 @@ class RecordManager
                 };
             }
             if ($this->compressedRecords) {
-                $originalData = new MongoBinData(gzdeflate($originalData));
+                $originalData = new MongoBinData(gzdeflate($originalData), 2);
                 if ($normalizedData) {
-                    $normalizedData = new MongoBinData(gzdeflate($normalizedData));
+                    $normalizedData = new MongoBinData(gzdeflate($normalizedData), 2);
                 }
             }
             $dbRecord['oai_id'] = $oaiID;
