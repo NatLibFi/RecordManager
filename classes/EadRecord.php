@@ -166,14 +166,9 @@ class EadRecord extends BaseRecord
         case 'subseries':
             $data['title_sub'] = (string)$doc->did->unitid;
             break;
-        case 'item': 
-        case 'file': 
+        default:
             $data['title_sub'] = (string)$doc->did->unitid;
             $data['series'] = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
-            break;
-        default:
-            global $logger;
-            $logger->log('EadRecord', "No proper handling for level '" . $data['format'] . "', record {$this->source}." . $this->getID(), Logger::WARNING);
             break;
         }
 
