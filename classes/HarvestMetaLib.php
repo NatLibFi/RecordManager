@@ -143,11 +143,12 @@ class HarvestMetaLib
         }
         $transformation = new XSLTProcessor();
         $transformation->importStylesheet($style);
-        $splitter = new FileSplitter($transformation->transformToDoc($doc), '//source_locate_response/source_full_info/record');
+        $splitter = new FileSplitter($transformation->transformToDoc($doc), '//source_locate_response/source_full_info/record', '');
         
         $records = array();
         while (!$splitter->getEOF()) {
-            $records[] = $splitter->getNextRecord();
+            $oaiID = '';
+            $records[] = $splitter->getNextRecord($oaiID);
         }
         return $records;
     }
