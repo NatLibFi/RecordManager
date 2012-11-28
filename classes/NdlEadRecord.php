@@ -72,6 +72,11 @@ class NdlEadRecord extends EadRecord
             $data['main_date_str'] = MetadataUtils::extractYear($dates[0]);
         }
 
+        // Single-valued sequence for sorting
+        if (isset($data['hierarchy_sequence'])) {
+            $data['hierarchy_sequence_str'] = $data['hierarchy_sequence'];
+        }
+        
         return $data;
     }
 }
