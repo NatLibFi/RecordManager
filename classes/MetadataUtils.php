@@ -248,7 +248,6 @@ class MetadataUtils
         return $str;
     }
     
-    
     /**
      * Case-insensitive array_unique
      * 
@@ -257,9 +256,14 @@ class MetadataUtils
      * @return array
      */
     // @codingStandardsIgnoreStart
+
+    static protected function comp_normalize($s1) {
+        return iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $s1);
+    }    
+    
     static public function array_iunique($array) 
     {
-        return array_intersect_key($array, array_unique(array_map('mb_strtolower', $array)));
+        return array_intersect_key($array, array_unique(array_map(array('MetadataUtils', 'comp_normalize'), $array)));
     } 
     // @codingStandardsIgnoreEnd
     
@@ -377,4 +381,3 @@ class MetadataUtils
         return mb_strtoupper(mb_substr($str, 0, 1)) . mb_substr($str, 1);
     }
 }
-
