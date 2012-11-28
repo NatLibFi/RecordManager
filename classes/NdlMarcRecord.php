@@ -43,6 +43,31 @@ require_once 'MetadataUtils.php';
 class NdlMarcRecord extends MarcRecord
 {
     /**
+     * Normalize the record (optional)
+     *
+     * @return void
+     */
+    public function normalize()
+    {
+        if (isset($this->fields['653']) && strncmp($this->source, 'metalib', 7) == 0) {
+            // Split MetaLib subjects
+            foreach ($this->fields['653'] as &$field) {
+                $subfields = array();
+                foreach ($field['s'] as $subfield) {
+                    if ($subfield['c'] == 'a') {
+                        foreach (explode('; ', $subfield['v']) as $value) {
+                            $subfields[] = array('c' => 'a', 'v' => $value);
+                        }
+                    } else {
+                        $subfields[] = $subfield;
+                    }
+                }
+                $field['s'] = $subfields;
+            }
+        }
+    }
+    
+    /**
      * Return record linking ID (typically same as ID) used for links
      * between records in the data source
      *
@@ -145,6 +170,12 @@ class NdlMarcRecord extends MarcRecord
             if (strncmp($field, 'ebr', 3) == 0 && is_numeric(substr($field, 3))) {
                 $data['building'][] = 'Ebrary';
             }
+        }
+        
+        // Topics
+        if (strncmp($this->source, 'metalib', 7) == 0) {
+            $data['topic'] += $this->getFieldsSubfields('*653a');
+            $data['topic_facet'] += $this->getFieldsSubfields('*653a');
         }
         
         return $data;
