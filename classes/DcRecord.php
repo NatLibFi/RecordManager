@@ -43,7 +43,7 @@ require_once 'MetadataUtils.php';
 class DcRecord extends BaseRecord
 {
     protected $doc = null;
-
+    
     /**
      * Constructor
      *
@@ -53,6 +53,8 @@ class DcRecord extends BaseRecord
      */
     public function __construct($data, $oaiID, $source)
     {
+        parent::__construct($data, $oaiID, $source);
+        
         $this->doc = simplexml_load_string($data);
         if (empty($this->doc->recordID)) {
             $p = strpos($oaiID, ':');

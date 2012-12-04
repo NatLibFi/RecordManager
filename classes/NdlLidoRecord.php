@@ -111,6 +111,8 @@ class NdlLidoRecord extends LidoRecord
         
         $data['allfields'] = $this->getAllFields($data);
         
+        $data['source_str_mv'] = $this->source;
+        
         return $data;
     }
 

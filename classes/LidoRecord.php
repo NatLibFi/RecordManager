@@ -55,6 +55,8 @@ class LidoRecord extends BaseRecord
      */
     public function __construct($data, $oaiID, $source)
     {
+        parent::__construct($data, $oaiID, $source);
+        
         $this->doc = simplexml_load_string($data);
     }
     
@@ -118,7 +120,6 @@ class LidoRecord extends BaseRecord
             unset($data['institution']);
         }
         
-        // TODO: this is not the only kind of actor in LIDO, is this what's wanted here?
         $data['author'] = $this->getActor('valmistus');
         
         $subjects = $this->getSubjects();
@@ -144,6 +145,7 @@ class LidoRecord extends BaseRecord
         $data['rights'] = $this->getRights();
         $data['unit_daterange'] = $this->getDateRange('valmistus');
         $data['era_facet'] = $this->getDisplayDate('valmistus');
+        $data['geographic_facet'][] = $this->getDisplayPlace('käyttö');
         
         if (!empty($this->earliestYear) && !empty($this->latestYear)) {
             // For demo purposes only... uniform distribution

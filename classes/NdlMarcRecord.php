@@ -178,6 +178,8 @@ class NdlMarcRecord extends MarcRecord
             $data['topic_facet'] += $this->getFieldsSubfields('*653a');
         }
         
+        $data['source_str_mv'] = $this->source;
+        
         return $data;
     }
     

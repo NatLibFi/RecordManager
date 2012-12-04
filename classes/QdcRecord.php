@@ -53,6 +53,8 @@ class QdcRecord extends BaseRecord
      */
     public function __construct($data, $oaiID, $source)
     {
+        parent::__construct($data, $oaiID, $source);
+        
         $this->doc = simplexml_load_string($data);
         if (empty($this->doc->recordID)) {
             $p = strpos($oaiID, ':');

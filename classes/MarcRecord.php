@@ -68,7 +68,8 @@ class MarcRecord extends BaseRecord
      */
     public function __construct($data, $oaiID, $source)
     {
-        $this->source = $source;
+        parent::__construct($data, $oaiID, $source);
+
         $firstChar = substr($data, 0, 1);
         if ($firstChar === '{') {
             $fields = json_decode($data, true);

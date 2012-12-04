@@ -77,6 +77,8 @@ class NdlEadRecord extends EadRecord
             $data['hierarchy_sequence_str'] = $data['hierarchy_sequence'];
         }
         
+        $data['source_str_mv'] = isset($data['institution']) ? $data['institution'] : $this->source;
+        
         return $data;
     }
 }

@@ -23,6 +23,7 @@ username =
 password =
 ;hierarchical_facets[] = building
 ;merge_records = true
+;merged_fields = institution,collection,my_local_field_str_mv
 
 [OAI-PMH]
 repository_name = OAI-PMH Repository

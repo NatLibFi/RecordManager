@@ -42,7 +42,6 @@ require_once 'BaseRecord.php';
 class EadRecord extends BaseRecord
 {
     protected $doc = null;
-    protected $source = '';
 
     /**
      * Constructor
@@ -53,7 +52,8 @@ class EadRecord extends BaseRecord
      */
     public function __construct($data, $oaiID, $source)
     {
-        $this->source = $source;
+        parent::__construct($data, $oaiID, $source);
+        
         $this->doc = simplexml_load_string($data);
     }
 

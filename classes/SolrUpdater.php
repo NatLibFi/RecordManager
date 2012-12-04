@@ -113,6 +113,10 @@ class SolrUpdater
         $this->buildingHierarchy = isset($configArray['Solr']['hierarchical_facets'])
             && in_array('building', $configArray['Solr']['hierarchical_facets']);
 
+        if (isset($configArray['Solr']['merged_fields'])) {
+            $this->mergedFields = explode(',', $configArray['Solr']['merged_fields']);
+        }
+        
         // Load settings and mapping files
         $this->settings = array();
         foreach ($dataSourceSettings as $source => $settings) {
@@ -486,6 +490,10 @@ class SolrUpdater
             $needCommit = $count > 0;
             $this->log->log('updateMergedRecords', "Total $count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed");
 
+            if ($delete) {
+                return;
+            }
+            
             $this->log->log('updateMergedRecords', "Creating individual record list (from $from)...");
             $params = array();
             if ($singleId) {
@@ -784,9 +792,6 @@ class SolrUpdater
         if (!isset($data['institution'])) {
             $data['institution'] = $settings['institution'];
         }
-        if (!isset($data['collection'])) {
-            $data['collection'] = $record['source_id'];
-        }
         
         // Map field values according to any mapping files
         foreach ($settings['mappingFiles'] as $field => $map) {
@@ -895,6 +900,37 @@ class SolrUpdater
         
         if ($hiddenComponent) {
             $data['hidden_component_boolean'] = true;
+        }
+        
+        if (isset($configArray['Solr']['geocoding']) && isset($data['geographic_facet']) && $data['geographic_facet']) {
+            $geoField = $configArray['Solr']['geocoding'];
+            if (!isset($data[$geoField]) || !$data[$geoField]) {
+                foreach ($data['geographic_facet'] as $place) {
+                    $places[] = $place;
+                    $places += explode(',', $place);
+                    foreach ($places as $place) {
+                        if (!$place) {
+                            continue;
+                        }
+                        $place = mb_strtoupper(trim(str_replace('?', '', $place)));
+                        $locations = $this->db->location->find(array('place' => $place))->sort(array('importance' => 1));
+                        $definite = false;
+                        foreach ($locations as $location) {
+                            if ($definite && ($location['importance'] == '' || $location['importance'] > 0)) {
+                                break;
+                            }
+                            $this->log->log('createSolrArray', "Location $place: {$location['lat']},{$location['lon']}", Logger::INFO);
+                            $data[$geoField][] = "{$location['lon']} {$location['lat']}";
+                            if ($location['importance'] === 0) {
+                                $definite = true;
+                            }
+                        }
+                        if ($definite) {
+                            break;
+                        }
+                    }
+                } 
+            }  
         }
         
         foreach ($data as &$values) {

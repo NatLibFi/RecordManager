@@ -694,7 +694,7 @@ class RecordManager
         $updater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
         if (isset($configArray['Solr']['merge_records']) && $configArray['Solr']['merge_records']) {
             $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' from merged records via Solr update for merged records...");
-            $updater->updateMergedRecords(null, $sourceId, '', false, true);
+            $updater->updateMergedRecords('', $sourceId, '', false, true);
         } 
         $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' directly from Solr...");
         $updater->deleteDataSource($sourceId);

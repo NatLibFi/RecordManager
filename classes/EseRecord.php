@@ -53,6 +53,8 @@ class EseRecord extends BaseRecord
      */
     public function __construct($data, $oaiID, $source)
     {
+        parent::__construct($data, $oaiID, $source);
+        
         $this->doc = simplexml_load_string($data);
     }
 

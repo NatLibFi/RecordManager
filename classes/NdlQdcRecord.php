@@ -53,6 +53,9 @@ class NdlQdcRecord extends QdcRecord
         if (isset($data['publishDate'])) {
             $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate']);
         }
+        
+        $data['source_str_mv'] = $this->source;
+        
         return $data;
     }
 }

@@ -37,8 +37,11 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-abstract class BaseRecord
+class BaseRecord
 {
+    // Record source ID
+    protected $source;
+    
     /**
      * Constructor
      *
@@ -46,14 +49,20 @@ abstract class BaseRecord
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for file import)
      * @param string $source Source ID
      */
-    public abstract function __construct($data, $oaiID, $source);
+    public function __construct($data, $oaiID, $source)
+    {
+        $this->source = $source;
+    }
 
     /**
      * Return record ID (unique in the data source)
      *
      * @return string
      */
-    public abstract function getID();
+    public function getID()
+    {
+        die('unimplemented');
+    }
 
     /**
      * Return record linking ID (typically same as ID) used for links
@@ -71,15 +80,21 @@ abstract class BaseRecord
      *
      * @return string
      */
-    public abstract function serialize();
-
+    public function serialize()
+    {
+        die('unimplemented');
+    }
+    
     /**
      * Serialize the record into XML for export
      *
      * @return string
      */
-    public abstract function toXML();
-
+    public function toXML()
+    {
+        die('unimplemented');
+    }
+    
     /**
      * Normalize the record (optional)
      *
