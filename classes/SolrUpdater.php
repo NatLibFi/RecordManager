@@ -832,6 +832,9 @@ class SolrUpdater
             case 'source':
                 $institutionCode = $source;
                 break;
+            case 'institution/source':
+                $institutionCode = $settings['institution'] . '/' . $source;
+                break;
             default:
                 $institutionCode = $settings['institution'];
                 break;
@@ -909,13 +912,16 @@ class SolrUpdater
                     $places[] = $place;
                     $places += explode(',', $place);
                     foreach ($places as $place) {
+                        $place = mb_strtoupper(trim(str_replace('?', '', $place)));
                         if (!$place) {
                             continue;
                         }
-                        $place = mb_strtoupper(trim(str_replace('?', '', $place)));
                         $locations = $this->db->location->find(array('place' => $place))->sort(array('importance' => 1));
                         $definite = false;
                         foreach ($locations as $location) {
+                            if (empty($location['lat']) || empty($location['lon'])) {
+                                continue;
+                            }
                             if ($definite && ($location['importance'] == '' || $location['importance'] > 0)) {
                                 break;
                             }
