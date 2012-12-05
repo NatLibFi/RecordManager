@@ -33,10 +33,6 @@ result_limit = 1000
 format_definitions = oai-pmh-formats.ini
 set_definitions = oai-pmh-sets.ini
 
-[OAI-PMH Format Mappings]
-marc21 = marc
-oai_dc = dc
-
 [Record Classes]
 ;ead = NdlEadRecord
 

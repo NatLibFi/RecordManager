@@ -662,8 +662,8 @@ EOF;
         global $basePath;
         
         $sourceFormat = $record['format'];
-        if (isset($configArray['OAI-PMH Format Mappings'][$format])) {
-            $format = $configArray['OAI-PMH Format Mappings'][$format];
+        if (isset($this->formats[$format])) {
+            $format = $this->formats[$format]['format'];
         }
         $metadata = '';
         if ($includeMetadata) {
@@ -685,9 +685,9 @@ EOF;
                 $params = array('source_id' => $source, 'institution' => $datasource['institution'], 'format' => $record['format']);
                 $metadata = $this->transformations[$transformationKey]->transform($metadata, $params);
             }
-            $prolog = '<?xml version="1.0"?>';
-            if (strncmp($metadata, $prolog, 21) == 0) {
-                $metadata = substr($metadata, 22);
+            if (strncmp($metadata, '<?xml', 5) == 0) {
+                $end = strpos($metadata, '>');
+                $metadata = substr($metadata, $end + 1);
             }
             $metadata = <<<EOF
       <metadata>
