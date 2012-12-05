@@ -78,6 +78,11 @@ class NdlEadRecord extends EadRecord
         }
         
         $data['source_str_mv'] = isset($data['institution']) ? $data['institution'] : $this->source;
+
+        // Digitized?
+        if ($doc->did->daogrp) {
+            $data['format'] = 'digitized_' . $data['format'];
+        }
         
         return $data;
     }
