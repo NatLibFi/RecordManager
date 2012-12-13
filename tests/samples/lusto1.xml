@@ -1,0 +1,139 @@
+﻿<?xml version="1.0"?>
+<lidoWrap schemaLocation="http://www.lido-schema.org http://www.lido-schema.org/schema/v1.0/lido-v1.0.xsd">
+    <lido>
+        <lidoRecID type="NDL">lusto.M011-149921</lidoRecID>
+        <descriptiveMetadata lang="fi">
+            <objectClassificationWrap>
+                <objectWorkTypeWrap>
+                    <objectWorkType>
+                        <term>Esine</term>
+                    </objectWorkType>
+                </objectWorkTypeWrap>
+            </objectClassificationWrap>
+            <objectIdentificationWrap>
+                <titleWrap>
+                    <titleSet>
+                        <appellationValue>Taimilaatikko</appellationValue>
+                    </titleSet>
+                    <titleSet>
+                        <appellationValue>Kylkikantoteline valjaineen</appellationValue>
+                    </titleSet>
+                </titleWrap>
+                <repositoryWrap>
+                    <repositorySet>
+                        <repositoryName>
+                            <legalBodyName>
+                                <appellationValue>Kantapuu</appellationValue>
+                            </legalBodyName>
+                            <legalBodyWeblink>http://www.kantapuu.fi</legalBodyWeblink>
+                        </repositoryName>
+                        <workID>E01025:3</workID>
+                    </repositorySet>
+                </repositoryWrap>
+                <objectDescriptionWrap>
+                    <objectDescriptionSet>
+                        <descriptiveNoteValue>Kylkikantotelinettä käytetään istutettaessa taimia suoraan kasvatuslaatikosta.</descriptiveNoteValue>
+                    </objectDescriptionSet>
+                </objectDescriptionWrap>
+                <objectMeasurementsWrap>
+                    <objectMeasurementsSet>
+                        <displayObjectMeasurements>pituus 65 cm, leveys 55 cm, korkeus enimmillään 26 cm</displayObjectMeasurements>
+                    </objectMeasurementsSet>
+                </objectMeasurementsWrap>
+            </objectIdentificationWrap>
+            <eventWrap>
+                <eventSet>
+                    <event>
+                        <eventID type="" />
+                        <eventType>
+                            <term>valmistus</term>
+                        </eventType>
+                        <eventActor>
+                            <actorInRole>
+                                <actor>
+                                    <actorID type="" />
+                                    <nameActorSet>
+                                        <appellationValue>Tehdaspuu Oy</appellationValue>
+                                    </nameActorSet>
+                                </actor>
+                                <roleActor>
+                                    <term>valmistaja</term>
+                                </roleActor>
+                            </actorInRole>
+                        </eventActor>
+                        <eventDate>
+                            <displayDate>1980-1990-luku ?</displayDate>
+                        </eventDate>
+                        <eventPlace>
+                            <displayPlace>Suomi</displayPlace>
+                        </eventPlace>
+                        <eventMethod>
+                            <term>tehdasvalmisteinen</term>
+                        </eventMethod>
+                        <eventMaterialsTech>
+                            <displayMaterialsTech>muovi</displayMaterialsTech>
+                        </eventMaterialsTech>
+                    </event>
+                </eventSet>
+            </eventWrap>
+            <objectRelationWrap>
+                <subjectWrap>
+                    <subjectSet>
+                        <subject>
+                            <subjectConcept>
+                                <term>istutus</term>
+                                <term>kantovälineet</term>
+                                <term>metsänhoito</term>
+                                <term>metsänviljely</term>
+                                <term>metsätalous</term>
+                            </subjectConcept>
+                        </subject>
+                    </subjectSet>
+                </subjectWrap>
+                <relatedWorksWrap>
+                    <relatedWorkSet>
+                        <relatedWork>
+                            <displayObject>Työväenmuseo Werstas, Puusepistä pellettiin 17.2. - 21.11.2009</displayObject>
+                        </relatedWork>
+                        <relatedWorkRelType>
+                            <term>julkaisut ja näyttelyt</term>
+                        </relatedWorkRelType>
+                    </relatedWorkSet>
+                </relatedWorksWrap>
+            </objectRelationWrap>
+        </descriptiveMetadata>
+        <administrativeMetadata lang="fi">
+            <rightsWorkWrap>
+                <rightsWorkSet>
+                    <rightsHolder>
+                        <legalBodyName>
+                            <appellationValue>Lusto - Suomen Metsämuseo</appellationValue>
+                        </legalBodyName>
+                    </rightsHolder>
+                </rightsWorkSet>
+            </rightsWorkWrap>
+            <recordWrap>
+                <recordID type="local">149921</recordID>
+                <recordType>
+                    <term lang="en">item</term>
+                </recordType>
+                <recordSource>
+                    <legalBodyName>
+                        <appellationValue>Kantapuu</appellationValue>
+                    </legalBodyName>
+                    <legalBodyWeblink>http://www.kantapuu.fi</legalBodyWeblink>
+                </recordSource>
+            </recordWrap>
+            <resourceWrap>
+                <resourceSet>
+                    <resourceRepresentation>
+                        <linkResource>http://www.kantapuu.fi/fi/viewimage.php?objimg=true&amp;id=151051&amp;imgres=lres</linkResource>
+                    </resourceRepresentation>
+                    <resourceRepresentation>
+                        <linkResource>http://www.kantapuu.fi/fi/viewimage.php?objimg=true&amp;id=242929&amp;imgres=lres</linkResource>
+                    </resourceRepresentation>
+                </resourceSet>
+            </resourceWrap>
+        </administrativeMetadata>
+    </lido>
+</lidoWrap>
