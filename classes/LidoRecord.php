@@ -115,52 +115,59 @@ class LidoRecord extends BaseRecord
         
         $data['institution'] = $this->getLegalBodyName();
         
-        // Don't confuse the system if we didn't find a match and don't want to override
-        if (empty($data['institution'])) {
-            unset($data['institution']);
+        // Kantapuu oai provides just the consortium name as the legal body name, 
+        // so getting the actual institution name from the rightsholder information
+        if($data['institution'] == "Kantapuu") {
+          $data['institution'] == $this->getRightsHolderLegalBodyName();
         }
         
         $data['author'] = $this->getActor('valmistus');
         
-        $subjects = $this->getSubjects();
-        if (empty($subjects)) {
-            $subjects = array();
-        }
-        $classifications = $this->getClassifications();
-        if (empty($classifications)) {
-            $classifications = array();
-        }
-        
-        // TODO: should the classifications reside in their own field instead of in the topic field?
-        $data['topic'] = array_merge($subjects, $classifications);
-        $data['topic_facet'] = $data['topic'];
-        
+        $data['artist_str_mv'] = $this->getActor('valmistus', 'taiteilija');
+        $data['photographer_str_mv'] = $this->getActor('valmistus', 'valokuvaaja');
+        $data['finder_str_mv'] = $this->getActor('löytyminen', 'löytäjä');
+        $data['manufacturer_str_mv'] = $this->getActor('valmistus', 'valmistaja');
+        $data['designer_str_mv'] = $this->getActor('suunnittelu', 'suunnittelija');
+
+        $data['classification_str_mv'] = $this->getClassifications();
+        $data['topic'] = $data['topic_facet'] = $this->getSubjects();
         $data['material'] = $this->getMaterials();
         
         // This is just the display measurements! There's also the more granular form, 
         // which could be useful for some interesting things eg. sorting by size 
         $data['measurements'] = $this->getMeasurements();
+        
         $data['identifier'] = $this->getIdentifier();
         $data['culture'] = $this->getCulture();
         $data['rights'] = $this->getRights();
-        $data['unit_daterange'] = $this->getDateRange('valmistus');
-        $data['era_facet'] = $this->getDisplayDate('valmistus');
-        $data['geographic_facet'][] = $this->getDisplayPlace('käyttö');
+        $data['exhibition_str_mv'] = $this->getExhibitionNames();
         
-        if (!empty($this->earliestYear) && !empty($this->latestYear)) {
-            // For demo purposes only... uniform distribution
-            $data['publishDate'] = rand(intval($this->earliestYear), intval($this->latestYear));
-        }
+        $data['unit_daterange'] = 
+        $data['creation_daterange'] = $this->getDateRange("valmistus");
+        $data['use_daterange'] = $this->getDateRange("käyttö");
+        $data['finding_daterange'] = $this->getDateRange("löytyminen");
+        
+        // Can't put a date range into publishdate, so.. using the lower bound of the range instead.
+        // (Should really discard publishDate alltogether for a date range based index field)
+        if (!empty($this->earliestYear))
+            $data['publishDate'] = $this->earliestYear;
         
         $data['collection'] = $this->getCollection();
         
         $urls = $this->getUrls();
-        if (!empty($urls)) {
+        if (count($urls))
+            // thumbnail field is not multivalued so can only store first image url
             $data['thumbnail'] = $urls[0];
-        }
-        
+                
         $data['allfields'] = $this->getAllFields($data);
         
+        // Some fields not seperately indexed but searchable
+        $data['allfields'][] = $this->getDisplayPlace("valmistus");
+        $data['allfields'][] = $this->getDisplayPlace("käyttö");
+        $data['allfields'][] = $this->getDisplayPlace("löytyminen");
+        $data['allfields'][] = $this->getEventMethod("valmistus");
+        $data['allfields'][] = $this->getRecordSourceOrganization();
+          
         return $data;
     }
     
@@ -247,11 +254,21 @@ class LidoRecord extends BaseRecord
      */
     protected function getDescription()
     {
-        $description = $this->extractFirst('lido/descriptiveMetadata/objectIdentificationWrap/objectDescriptionWrap/objectDescriptionSet/descriptiveNoteValue');
+        // The description can be either in the description or in the subject wrap.
+        // First try the Description Wrap
+        $description = $this->extractArray("lido/descriptiveMetadata/objectIdentificationWrap/objectDescriptionWrap/objectDescriptionSet[not(@type) or (@type!='provenienssi' and @type!='aihe')]/descriptiveNoteValue");
         
-        if (!empty($description)) {
-            return $description;
+        if(empty($description)) {
+            // It wasn't found from the description wrap so it's either in the subject wrap or doesn't exist
+            $description = $this->extractArray("lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/displaySubject[@label='aihe']");
+            
+            // Record does not have description
+            if(empty($description)) {
+                return null;
+            }
         }
+        
+        return implode(' ', $description);
     }
     
     /**
@@ -314,6 +331,66 @@ class LidoRecord extends BaseRecord
     {
         return $this->extractFirst('lido/category/term');
     }
+
+    /**
+     * Return the organization name in the recordSource element
+     *
+     * @return array
+     * @access public
+     */
+    public function getRecordSourceOrganization() {
+        return $this->extractFirst("lido/administrativeMetadata/recordWrap/recordSource/legalBodyName/appellationValue");
+    }
+    
+    /**
+     * Return all the exhibition names this record belongs to
+     *
+     * @return array
+     * @access public
+     */
+    public function getExhibitionNames() {
+        return $this->extractArray("lido/descriptiveMetadata/eventWrap/eventSet/event[eventType/term='näyttely']/eventName/appellationValue");
+    }
+    
+    /**
+     * Return the name(s) of events with specified type
+     *
+     * @param string $event Which event to use (omit to scan all events)
+     * @param string $delimiter Delimiter between the dates
+     * @return string
+     * @access public
+     */
+    public function getEventName($event = null, $delimiter = ',')
+    {
+        $xpath = "lido/descriptiveMetadata/eventWrap/eventSet/event";
+        if (!empty($event))
+            $xpath .= "[eventType/term='$event']";
+    
+        $name = $this->extractFirst($xpath . "/eventName/appellationValue");
+        if(!empty($name))
+            return $name;
+        return null;
+    }
+    
+    /**
+     * Return the date range associated with specified event
+     *
+     * @param string $event Which event to use (omit to scan all events)
+     * @param string $delimiter Delimiter between the dates
+     * @return string
+     * @access public
+     */
+    public function getEventMethod($event = null, $delimiter = ',')
+    {
+        $xpath = "lido/descriptiveMetadata/eventWrap/eventSet/event";
+        if (!empty($event))
+            $xpath .= "[eventType/term='$event']";
+    
+        $date = $this->extractFirst($xpath . "/eventMethod/term");
+        if(!empty($date))
+            return $date;
+        return null;
+    }
     
     /**
      * Return URLs associated with object
@@ -329,16 +406,42 @@ class LidoRecord extends BaseRecord
      * Return name of first actor associated with specified event
      *
      * @param string $event Which event to use (omit to scan all events)
+     * @param string $role Which role to use (omit to scan all roles)
      * 
      * @return string
+     * @access public
      */
-    protected function getActor($event = null)
+    protected function getActor($event = null, $role = null)
     {
-        $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
+        $xpath = "lido/descriptiveMetadata/eventWrap/eventSet/event";
+        
         if (!empty($event)) {
-            $xpath .= "[eventType/term='$event']";
+          if (!is_array($event))
+            $event = array($event);
+          $xpath .= "[";
+          foreach($event as $i => $thisEvent) {
+            if ($i) {
+                $xpath .= " or";
+            }
+            $xpath .= "eventType/term='$thisEvent'";
+          }
+          $xpath .= "]";
         }
-        $xpath .= '/eventActor/actorInRole/actor/nameActorSet/appellationValue';
+        
+        $xpath .= "/eventActor/actorInRole";
+        
+        if (!empty($role)) {
+          if (!is_array($role))
+            $role = array($role);
+          $xpath .= "[";
+          foreach($role as $i => $thisRole) {
+            if ($i) $xpath .= " or";
+            $xpath .= "roleActor/term='$thisRole'";
+          }
+          $xpath .= "]";
+        }
+        
+        $xpath .= "/actor/nameActorSet/appellationValue";
         
         return $this->extractFirst($xpath);
     }
@@ -677,8 +780,12 @@ class LidoRecord extends BaseRecord
      */
     protected function getSubjects()
     {
-        $xpath = 'lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/subject/subjectConcept/term';
-    
+        // get list of subjects.
+        // subject-elements with type "aihe" and "iconclass" don't contain (human readable) terms and can be ignored
+        $xpath = 'lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/subject'
+        . "[not(@type) or (@type != 'iconclass' and @type != 'aihe')]"
+        . '/subjectConcept/term';
+
         return $this->extractArray($xpath);
     }
     
@@ -766,7 +873,8 @@ class LidoRecord extends BaseRecord
     {
         $fields = array(
             'title', 'description', 'format', 'author', 'topic', 
-            'material', 'measurements', 'identifier', 'culture'
+            'material', 'measurements', 'identifier', 'culture', 'classification_str_mv',
+            'artist_str_mv', 'photographer_str_mv', 'finder_str_mv', 'manufacturer_str_mv', 'designer_str_mv'
         );
         $allfields = array();
         foreach ($fields as $key) {

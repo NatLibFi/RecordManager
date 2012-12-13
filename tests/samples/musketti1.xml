@@ -1,0 +1,200 @@
+﻿<?xml version="1.0"?>
+<lidoWrap>
+    <lido>
+        <lidoRecID type="ITEM">musketti_www.M012:S3168:23</lidoRecID>
+        <descriptiveMetadata lang="fi">
+            <objectClassificationWrap>
+                <objectWorkTypeWrap>
+                    <objectWorkType>
+                        <term lang="fi">esine</term>
+                    </objectWorkType>
+                </objectWorkTypeWrap>
+                <classificationWrap>
+                    <classification type="OCM">
+                        <conceptID type="OCM">252</conceptID>
+                        <term label="pääluokka" lang="fi">ruokatalous ja elintarviketeollisuus</term>
+                        <term label="alaluokka" lang="fi">ruoan valmistus</term>
+                    </classification>
+                    <classification type="OCM">
+                        <conceptID type="OCM">415</conceptID>
+                        <term label="pääluokka" lang="fi">työkalut ja välineet</term>
+                        <term label="alaluokka" lang="fi">astiat ja välineet</term>
+                    </classification>
+                    <classification>
+                        <term label="yleisnimi" lang="fi">kahvipannu</term>
+                    </classification>
+                </classificationWrap>
+            </objectClassificationWrap>
+            <objectIdentificationWrap>
+                <titleWrap>
+                    <titleSet>
+                        <appellationValue label="yleisnimi">kahvipannu</appellationValue>
+                    </titleSet>
+                </titleWrap>
+                <repositoryWrap>
+                    <repositorySet>
+                        <repositoryName>
+                            <legalBodyName>
+                                <appellationValue>Suomen kansallismuseo/KM</appellationValue>
+                            </legalBodyName>
+                        </repositoryName>
+                        <workID>S3168:23</workID>
+                    </repositorySet>
+                </repositoryWrap>
+                <objectDescriptionWrap>
+                    <objectDescriptionSet>
+                        <descriptiveNoteValue>Kuparinen, mustunut ja kolhiintunut poromiesten käyttämä kahvipannu.</descriptiveNoteValue>
+                    </objectDescriptionSet>
+                </objectDescriptionWrap>
+                <objectMeasurementsWrap>
+                    <objectMeasurementsSet>
+                        <displayObjectMeasurements>korkeus, suurin 12.50, halkaisija 13 cm</displayObjectMeasurements>
+                        <objectMeasurements>
+                            <measurementsSet>
+                                <measurementType>korkeus, suurin</measurementType>
+                                <measurementUnit />
+                                <measurementValue>12.50</measurementValue>
+                            </measurementsSet>
+                            <measurementsSet>
+                                <measurementType>halkaisija</measurementType>
+                                <measurementUnit>cm</measurementUnit>
+                                <measurementValue>13.00</measurementValue>
+                            </measurementsSet>
+                        </objectMeasurements>
+                    </objectMeasurementsSet>
+                </objectMeasurementsWrap>
+            </objectIdentificationWrap>
+            <eventWrap>
+                <eventSet>
+                    <event>
+                        <eventType>
+                            <term>käyttö</term>
+                        </eventType>
+                        <culture>
+                            <term>saamelaiset</term>
+                        </culture>
+                        <eventDescriptionSet>
+                            <descriptiveNoteValue>poromiesten käyttämä</descriptiveNoteValue>
+                        </eventDescriptionSet>
+                    </event>
+                </eventSet>
+                <eventSet>
+                    <event>
+                        <eventType>
+                            <term>valmistus</term>
+                        </eventType>
+                        <eventName>
+                            <appellationValue>valmistus</appellationValue>
+                        </eventName>
+                        <culture>
+                            <term>saamelaiset</term>
+                        </culture>
+                        <eventPlace>
+                            <displayPlace>Utsjoki, Lappi</displayPlace>
+                        </eventPlace>
+                        <eventMethod>
+                            <term>teollinen tuote</term>
+                        </eventMethod>
+                        <eventMaterialsTech>
+                            <materialsTech>
+                                <termMaterialsTech>
+                                    <term>metalli</term>
+                                </termMaterialsTech>
+                                <termMaterialsTech>
+                                    <term>kupari</term>
+                                </termMaterialsTech>
+                            </materialsTech>
+                        </eventMaterialsTech>
+                    </event>
+                </eventSet>
+            </eventWrap>
+            <objectRelationWrap>
+                <subjectWrap>
+                    <subjectSet>
+                        <displaySubject>Kuparinen, mustunut ja kolhiintunut poromiesten käyttämä kahvipannu.</displaySubject>
+                        <subject>
+                            <subjectConcept>
+                                <term label="Museoalan asiasanasto">taloustarvikkeet</term>
+                            </subjectConcept>
+                            <subjectConcept>
+                                <term label="Yleinen suomalainen asiasanasto">nautintoaineet</term>
+                            </subjectConcept>
+                            <subjectConcept>
+                                <term label="Yleinen suomalainen asiasanasto">kahvi</term>
+                            </subjectConcept>
+                            <subjectConcept>
+                                <term label="Museoalan asiasanasto">suomalais-ugrilaiset kansat</term>
+                            </subjectConcept>
+                            <subjectConcept>
+                                <term label="Museoalan asiasanasto">saamelaiset</term>
+                            </subjectConcept>
+                            <subjectConcept>
+                                <term label="Museoalan asiasanasto">porolappalaiset</term>
+                            </subjectConcept>
+                            <subjectConcept>
+                                <term label="Museoalan asiasanasto">pannut</term>
+                            </subjectConcept>
+                            <subjectConcept>
+                                <term label="Museoalan asiasanasto">kahvipannut</term>
+                            </subjectConcept>
+                        </subject>
+                    </subjectSet>
+                </subjectWrap>
+                <relatedWorksWrap>
+                    <relatedWorkSet>
+                        <relatedWork>
+                            <displayObject>Seurasaaren ulkomuseon kokoelmat</displayObject>
+                        </relatedWork>
+                        <relatedWorkRelType>
+                            <term>Kokoelma</term>
+                        </relatedWorkRelType>
+                    </relatedWorkSet>
+                </relatedWorksWrap>
+            </objectRelationWrap>
+        </descriptiveMetadata>
+        <administrativeMetadata lang="fi">
+            <recordWrap>
+                <recordID type="ITEM">S3168:23</recordID>
+                <recordType>
+                    <conceptID type="ITEM">S3168:23</conceptID>
+                </recordType>
+                <recordSource>
+                    <legalBodyID type="ITEM">S3168:23</legalBodyID>
+                    <legalBodyName>
+                        <appellationValue>Museovirasto/MV</appellationValue>
+                    </legalBodyName>
+                    <legalBodyWeblink>www.NBA.fi</legalBodyWeblink>
+                </recordSource>
+                <recordRights>
+                    <rightsType>
+                        <conceptID type="omistus">Undefined rights</conceptID>
+                    </rightsType>
+                    <rightsHolder>
+                        <legalBodyName>
+                            <appellationValue>Museovirasto/MV</appellationValue>
+                        </legalBodyName>
+                    </rightsHolder>
+                </recordRights>
+            </recordWrap>
+            <resourceWrap>
+                <resourceSet>
+                    <resourceRepresentation>
+                        <linkResource>http://muisti.nba.fi/m/S3168_23/sa009218.jpg</linkResource>
+                    </resourceRepresentation>
+                    <rightsResource>
+                        <rightsType>
+                            <conceptID type="omistus">Undefined rights</conceptID>
+                        </rightsType>
+                        <rightsHolder>
+                            <legalBodyName>
+                                <appellationValue>Museovirasto/MV</appellationValue>
+                            </legalBodyName>
+                            <legalBodyWeblink>www.NBA.fi</legalBodyWeblink>
+                        </rightsHolder>
+                        <creditLine />
+                    </rightsResource>
+                </resourceSet>
+            </resourceWrap>
+        </administrativeMetadata>
+    </lido>
+</lidoWrap>
