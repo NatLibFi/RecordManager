@@ -52,11 +52,11 @@ class HarvestSfx
     protected $filePrefix = '';       // File name prefix
     protected $source;                // Source ID
     protected $startDate = null;      // Harvest start date (null for all records)
-    protected $endDate = null;      // Harvest end date (null for all records)
+    protected $endDate = null;        // Harvest end date (null for all records)
     protected $verbose = false;       // Whether to display debug output
     protected $normalRecords = 0;     // Harvested normal record count
+    protected $unchangedRecords = 0;  // Harvested unchanged record count
     protected $deletedRecords = 0;    // Harvested deleted record count
-    protected $childPid = null;       // Child process id for record processing
     
     // As we harvest records, we want to track the most recent date encountered
     // so we can set a start point for the next harvest.
@@ -138,8 +138,6 @@ class HarvestSfx
      */
     public function launch($callback)
     {
-        $this->normalRecords = 0;
-        $this->deletedRecords = 0;
         $this->callback = $callback;
 
         if (isset($this->startDate)) {
@@ -151,12 +149,50 @@ class HarvestSfx
         $this->message('Files to harvest: ' . count($fileList));
         foreach ($fileList as $file) {
             $data = $this->retrieveFile($file);
-            $xml = $this->parseResponse($data);
-            $this->processRecords($xml->record);
-            $this->message('Harvested ' . $this->normalRecords . ' normal records and ' . $this->deletedRecords . ' deleted records');
-        }
-        if (isset($this->childPid)) {
-            pcntl_waitpid($this->childPid, $status);
+
+            $this->message('Processing the records...', true);
+            
+            $xml = new XMLReader();
+            $saveUseErrors = libxml_use_internal_errors(true);
+            libxml_clear_errors();
+            $data = str_replace('<collection xmlns="http://www.loc.gov/MARC21/slim">', '<collection>', $data);
+            $result = $xml->XML($data);
+            if ($result === false || libxml_get_last_error() !== false) {
+                // Assuming it's a character encoding issue, this might help...
+                $this->message('Invalid XML received, trying encoding fix...', false, Logger::WARNING);
+                $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
+                libxml_clear_errors();
+                $result = $xml->XML($data);
+            }
+            if ($result === false || libxml_get_last_error() !== false) {
+                libxml_use_internal_errors($saveUseErrors);
+                $errors = '';
+                foreach (libxml_get_errors() as $error) {
+                    if ($errors) {
+                        $errors .= '; ';
+                    }
+                    $errors .= 'Error ' . $error->code . ' at ' . $error->line . ':' . $error->column . ': ' . $error->message;
+                }
+                $this->message("Could not parse XML response: $errors\n", false, Logger::FATAL);
+                throw new Exception("Failed to parse XML response");
+            }
+            libxml_use_internal_errors($saveUseErrors);
+            $data = null;
+                
+            while ($xml->read() && $xml->name !== 'record');
+            $this->normalRecords = 0;
+            $this->unchangedRecords = 0;
+            $this->deletedRecords = 0;
+            $count = 0;
+            $doc = new DOMDocument;
+            while ($xml->name == 'record') {
+                $this->processRecord(simplexml_import_dom($doc->importNode($xml->expand(), true)));
+                if (++$count % 1000 == 0) {
+                    $this->message("$count records processed", true);
+                }
+                $xml->next('record');
+            }            
+            $this->message('Harvested ' . $this->normalRecords . ' updated, ' . $this->unchangedRecords . ' unchanged and ' . $this->deletedRecords . ' deleted records');
         }
         if ($this->trackedEndDate > 0) {
             $this->saveLastHarvestedDate();
@@ -311,76 +347,27 @@ class HarvestSfx
     
         return $response->getBody();
     }
-    
-    /**
-     * Process a response into a SimpleXML object. Throw exception if an error is
-     * detected.
-     *
-     * @param string $xml Export XML.
-     *
-     * @return object     SimpleXML-formatted response.
-     * @access protected
-     */
-    protected function parseResponse($xml)
-    {
-        // Parse the XML:
-        $saveUseErrors = libxml_use_internal_errors(true);
-        libxml_clear_errors();
-        
-        $xml = str_replace('<collection xmlns="http://www.loc.gov/MARC21/slim">', '<collection>', $xml);
-        $result = simplexml_load_string($xml);
-        if ($result === false || libxml_get_last_error() !== false) {
-            // Assuming it's a character encoding issue, this might help...
-            $this->message('Invalid XML received, trying encoding fix...', false, Logger::WARNING);
-            $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
-            libxml_clear_errors();
-            $result = $this->loadXML($xml);
-        }
-        if ($result === false || libxml_get_last_error() !== false) {
-            libxml_use_internal_errors($saveUseErrors);
-            $errors = '';
-            foreach (libxml_get_errors() as $error) {
-                if ($errors) {
-                    $errors .= '; ';
-                }
-                $errors .= 'Error ' . $error->code . ' at ' . $error->line . ':' . $error->column . ': ' . $error->message;
-            }
-            $this->message("Could not parse XML response: $errors\nXML:\n$xml", false, Logger::FATAL);
-            throw new Exception("Failed to parse XML response");
-        }
-        libxml_use_internal_errors($saveUseErrors);
-
-        // If we got this far, we have a valid response:
-        return $result;
-    }
 
     /**
-     * Save harvested records.
+     * Save a harvested record.
      *
-     * @param object $records SimpleXML records.
+     * @param object $record SimpleXML record.
      *
      * @return void
      * @access protected
      */
-    protected function processRecords($records)
+    protected function processRecord($record)
     {
-        $this->message('Processing ' . count($records) . ' records...', true);
-
-        $count = 0;
-        foreach ($records as $record) {
-            $id = $this->extractID($record);
-            if ($this->isDeleted($record)) {
-                call_user_func($this->callback, $id, true, null);
-                $this->deletedRecords++;
-            } else {
-                $record->addChild('controlfield', $id)->addAttribute('tag', '001');
-                $this->normalRecords += call_user_func($this->callback, "sfx:{$this->source}:$id", false, $record->asXML());
-            }
-            if (++$count % 1000 == 0) {
-                $this->message("$count records processed", true);
-            }
+        $id = $this->extractID($record);
+        if ($this->isDeleted($record)) {
+            call_user_func($this->callback, $id, true, null);
+            $this->deletedRecords++;
+        } elseif ($this->isModified($record)) {
+            $record->addChild('controlfield', $id)->addAttribute('tag', '001');
+            $this->normalRecords += call_user_func($this->callback, "sfx:{$this->source}:$id", false, $record->asXML());
+        } else {
+            $this->unchangedRecords++;
         }
-        $this->message('All records processed', true);
     }
 
     /**
@@ -394,6 +381,19 @@ class HarvestSfx
     {
         $status = substr($record->leader, 5, 1);
         return $status == 'd';
+    }
+    
+    /**
+     * Check if the record is modified
+     * 
+     * @param SimpleXMLElement $record Record
+     * 
+     * @return bool
+     */
+    protected function isModified($record)
+    {
+        $status = substr($record->leader, 5, 1);
+        return $status != '-';
     }
     
     /**
