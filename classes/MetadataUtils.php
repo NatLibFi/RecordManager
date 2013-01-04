@@ -39,6 +39,8 @@
  */
 class MetadataUtils
 {
+    static $fullTitlePrefixes = null;
+    
     /**
      * Convert ISBN-10 (without dashes) to ISBN-13
      *
@@ -92,6 +94,24 @@ class MetadataUtils
      */
     static public function createTitleKey($title)
     {
+        global $configArray;
+        global $basePath;
+        
+        if (isset($configArray['Site']['full_title_prefixes']) && !isset(MetadataUtils::$fullTitlePrefixes)) {
+            MetadataUtils::$fullTitlePrefixes = array_map(array('MetadataUtils', 'normalize'), file("$basePath/conf/{$configArray['Site']['full_title_prefixes']}",  FILE_IGNORE_NEW_LINES));
+        }
+        
+        $full = false;
+        if (isset(MetadataUtils::$fullTitlePrefixes)) {
+            $normalTitle = MetadataUtils::normalize($title);
+            foreach (MetadataUtils::$fullTitlePrefixes as $prefix) {
+                if (strncmp($normalTitle, $prefix, strlen($prefix)) === 0) {
+                    $full = true;
+                    break;
+                }
+            }
+        }
+        
         $words = explode(' ', $title);
         $longWords = 0;
         $key = '';
@@ -103,9 +123,12 @@ class MetadataUtils
                 ++$longWords;
             }
             $keyLen += $wordLen; // significant chars
-            if ($longWords > 2 || $keyLen > 25) {
+            if (!$full && ($longWords > 3 || $keyLen > 35)) {
+                break;
+            } elseif ($full && $keyLen > 100) {
                 break;
             }
+            
         }
         return MetadataUtils::normalize($key);
     }

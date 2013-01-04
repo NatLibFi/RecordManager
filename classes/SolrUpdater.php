@@ -673,6 +673,36 @@ class SolrUpdater
     }
     
     /**
+     * Map source format to Solr format
+     *  
+     * @param string $source Source ID
+     * @param string $format Format
+     * 
+     * @return string Mapped format string
+     */
+    public function mapFormat($source, $format)
+    {
+        $settings = $this->settings[$source];
+        
+        if (isset($settings['mappingFiles'][$source]['format'])) {
+            $map = $settings['mappingFiles'][$source]['format'];
+            if (!empty($format)) {
+                if (isset($map[$format])) {
+                    return $map[$data[$field]];
+                } 
+                if (isset($map['##default'])) {
+                    return $map['##default'];
+                }
+            } elseif (isset($map['##empty'])) {
+                return $map['##empty'];
+            } elseif (isset($map['##emptyarray'])) {
+                return $map['##emptyarray'];
+            }
+        }
+        return $format;
+    }
+    
+    /**
      * Create Solr array for the given record
      * 
      * @param object  $record            Mongo record
@@ -899,6 +929,12 @@ class SolrUpdater
         }
         if (!is_array($data['format'])) {
             $data['format'] = array($data['format']);
+        }
+        
+        if (isset($configArray['Solr']['format_in_allfields']) && $configArray['Solr']['format_in_allfields']) {
+            foreach ($data['format'] as $format) {
+                $data['allfields'][] = MetadataUtils::normalize($format);
+            }
         }
         
         if ($hiddenComponent) {
