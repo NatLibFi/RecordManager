@@ -197,6 +197,14 @@ class NdlMarcRecord extends MarcRecord
         if ($field977a) {
             return $field977a;
         }
+        
+        // Dissertations and Thesis
+        if (isset($this->fields['502'])) {
+            return 'Dissertation';
+        }
+        if (isset($this->fields['509'])) {
+            return 'ProGradu';
+        }
         return parent::getFormat();
     }
 }
