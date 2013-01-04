@@ -146,12 +146,6 @@ class LidoRecord extends BaseRecord
         $data['unit_daterange'] = $this->getDateRange('valmistus');
         $data['era_facet'] = $this->getDisplayDate('valmistus');
         $data['geographic_facet'][] = $this->getDisplayPlace('käyttö');
-        
-        if (!empty($this->earliestYear) && !empty($this->latestYear)) {
-            // For demo purposes only... uniform distribution
-            $data['publishDate'] = rand(intval($this->earliestYear), intval($this->latestYear));
-        }
-        
         $data['collection'] = $this->getCollection();
         
         $urls = $this->getUrls();
@@ -188,7 +182,7 @@ class LidoRecord extends BaseRecord
         } elseif ($num == 1) {
             return $titles[0];
         } else {
-            return implode(': ', $titles);
+            return implode('; ', $titles);
         }
     }
     
