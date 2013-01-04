@@ -8,3 +8,4 @@ db.record.ensureIndex({source_id: 1});
 db.record.ensureIndex({updated: 1});
 db.record.ensureIndex({linking_id: 1});
 db.record.ensureIndex({main_id: 1}, {sparse: true});
+// Only for OAI-PMH provider: db.record.ensureIndex({source_id: 1, updated: 1});
