@@ -65,7 +65,7 @@ class NdlEadRecord extends EadRecord
                 if (strpos($unitdate, '-') > 0) {
                     $unitdate = $dates[0] . '-01-01T00:00:00Z,9999-12-31T23:59:59Z';
                 } else {
-                    $unitdate = $dates[0] . '-01-01T00:00:00Z';
+                    $unitdate = $dates[0] . '-01-01T00:00:00Z,' . $dates[0] . '-12-31T23:59:59Z';
                 }
             }
             $data['unit_daterange'] = $unitdate; 

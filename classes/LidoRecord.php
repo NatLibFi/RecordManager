@@ -127,14 +127,10 @@ class LidoRecord extends BaseRecord
         $data['identifier'] = $this->getIdentifier();
         $data['culture'] = $this->getCulture();
         $data['rights'] = $this->getRights();
-        
-        $data['unit_daterange'] = $this->getDateRange("valmistus");
-        
-        // Can't put a date range into publishdate, so.. using the lower bound of the range instead.
-        // (Should really discard publishDate alltogether for a date range based index field)
-        if (!empty($this->earliestYear))
-            $data['publishDate'] = $this->earliestYear;
-        
+
+        $data['unit_daterange'] = $this->getDateRange('valmistus');
+        $data['era_facet'] = $this->getDisplayDate('valmistus');
+        $data['geographic_facet'][] = $this->getDisplayPlace('käyttö');
         $data['collection'] = $this->getRelatedWorkDisplayObject(array('Kokoelma', 'kuuluu kokoelmaan', 'kokoelma'));
         
         $urls = $this->getUrls();
@@ -171,7 +167,7 @@ class LidoRecord extends BaseRecord
         } elseif ($num == 1) {
             return $titles[0];
         } else {
-            return implode(': ', $titles);
+            return implode('; ', $titles);
         }
     }
     

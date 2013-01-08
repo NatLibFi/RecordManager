@@ -5,6 +5,10 @@ timezone        = "Europe/Helsinki"
 ; Abbreviations that need to be considered before removing trailing period
 abbreviations[] = "ill."
 abbreviations[] = "col."
+; A file that contains title prefixes. If a title starts with a listed title prefix, 
+; it will not be shortened in title_keys (for deduplication). Add frequently found 
+; titles, such as "poems" to the list 
+;full_title_prefixes = full-title-prefixes.lst
 
 [Mongo]
 ; url = mongodb://{username}:{password}@localhost
@@ -24,6 +28,7 @@ password =
 ;hierarchical_facets[] = building
 ;merge_records = true
 ;merged_fields = institution,collection,my_local_field_str_mv
+;format_in_allfields = true
 
 [OAI-PMH]
 repository_name = OAI-PMH Repository

@@ -89,9 +89,6 @@ class RecordManager
         global $configArray;
         global $logger;
         
-        mb_language('uni');
-        mb_internal_encoding('UTF-8');
-        
         date_default_timezone_set($configArray['Site']['timezone']);
 
         $this->log = new Logger();
@@ -386,6 +383,9 @@ class RecordManager
      */
     public function deduplicate($sourceId, $allRecords = false, $singleId = '')
     {
+        // Used for format mapping
+        $this->solrUpdater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
+        
         if ($allRecords) {
             foreach ($this->dataSourceSettings as $source => $settings) {
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
@@ -953,24 +953,23 @@ class RecordManager
             echo 'Original ' . $record['_id'] . ":\n" . MetadataUtils::getRecordData($record, true) . "\n";
         }
         
-        $origRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
-        $key = MetadataUtils::createTitleKey($origRecord->getTitle(true));
-        $keyArray = array($key);
-        $ISBNArray = $origRecord->getISBNs();
-        $IDArray = $origRecord->getUniqueIDs();
+        $keyArray = isset($record['title_keys']) ? $record['title_keys'] : array();
+        $ISBNArray = isset($record['isbn_keys']) ? $record['isbn_keys'] : array();
+        $IDArray = isset($record['id_keys']) ? $record['id_keys'] : array();
         
+        $origRecord = null;
         $matchRecord = null;
+        $startTime = microtime(true);
         foreach (array('isbn_keys' => $ISBNArray, 'id_keys' => $IDArray, 'title_keys' => $keyArray) as $type => $array) {
             foreach ($array as $keyPart) {
-                if (!$keyPart || isset($this->tooManyCandidatesKeys[$keyPart])) {
+                if (!$keyPart) {
                     continue;
                 }
                   
-                $startTime = microtime(true);
-
                 if ($this->verbose) {
                     echo "Search: '$keyPart'\n";
                 }
+                // TODO: add previously used keys here as excluding params to avoid testing records multiple times
                 $params = array();
                 $params[$type] = $keyPart;
                 $params['source_id'] = array('$ne' => $this->sourceId);
@@ -978,41 +977,42 @@ class RecordManager
                 $params['deleted'] = false;
                 $candidates = $this->db->record->find($params)->hint(array($type => 1));
                 $processed = 0;
-                if ($candidates->hasNext()) {
-                    // We have candidates
-                    if ($this->verbose) {
-                        echo "Found candidates\n";
-                    }
-                    //echo "Found " . $candidates->count() . " candidates for '$keyPart'\n";
-
-                    // Go through the candidates, try to match
-                    $matchRecord = null;
-                    foreach ($candidates as $candidate) {
-                        // Verify the candidate has not been deduped with this source yet
-                        if (isset($candidate['dedup_key']) && $candidate['dedup_key'] && (!isset($record['dedup_key']) || $candidate['dedup_key'] != $record['dedup_key'])) {
-                            if ($this->db->record->find(array('dedup_key' => $candidate['dedup_key'], 'source_id' => $this->sourceId))->hasNext()) {
-                                if ($this->verbose) {
-                                    echo "Candidate {$candidate['_id']} already deduplicated\n";
-                                }
-                                continue;
+                // Go through the candidates, try to match
+                $matchRecord = null;
+                foreach ($candidates as $candidate) {
+                    // Verify the candidate has not been deduped with this source yet
+                    if (isset($candidate['dedup_key']) && $candidate['dedup_key'] && (!isset($record['dedup_key']) || $candidate['dedup_key'] != $record['dedup_key'])) {
+                        if ($this->db->record->find(array('dedup_key' => $candidate['dedup_key'], 'source_id' => $this->sourceId))->hasNext()) {
+                            if ($this->verbose) {
+                                echo "Candidate {$candidate['_id']} already deduplicated\n";
                             }
-                        }
-
-                        if (++$processed > 1000) {
-                            // Too many candidates, give up..
-                            $this->log->log('dedupRecord', "Too many candidates for record " . $record['_id'] . " with key '$keyPart'", Logger::DEBUG);
-                            $this->tooManyCandidatesKeys[$keyPart] = 1;
-                            if (count($this->tooManyCandidatesKeys) > 20000) {
-                                array_shift($this->tooManyCandidatesKeys);
-                            }
-                            break;
-                        }
-
-                        if ($this->matchRecords($record, $origRecord, $candidate)) {
-                            $matchRecord = $candidate;
-                            break 3;
+                            continue;
                         }
                     }
+
+                    if (++$processed > 1000 || microtime(true) - $startTime > 5 || (isset($this->tooManyCandidatesKeys["$type=$keyPart"]) && $processed > 100)) {
+                        // Too many candidates, give up..
+                        $this->log->log('dedupRecord', "Too many candidates for record " . $record['_id'] . " with key '$keyPart'", Logger::DEBUG);
+                        if (count($this->tooManyCandidatesKeys) > 2000) {
+                            array_shift($this->tooManyCandidatesKeys);
+                        }
+                        $this->tooManyCandidatesKeys["$type=$keyPart"] = 1;
+                        break;
+                    }
+
+                    if (!isset($origRecord)) {
+                        $origRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
+                    }
+                    if ($this->matchRecords($record, $origRecord, $candidate)) {
+                        if ($this->verbose && ($processed > 300 || microtime(true) - $startTime > 0.7)) {
+                            echo "Found match $type=$keyPart with candidate $processed in " . (microtime(true) - $startTime) . "\n";
+                        }
+                        $matchRecord = $candidate;
+                        break 3;
+                    }
+                }
+                if ($this->verbose && ($processed > 300 || microtime(true) - $startTime > 0.7)) {
+                    echo "No match $type=$keyPart with $processed candidates in " . (microtime(true) - $startTime) . "\n";
                 }
             }
         }
@@ -1096,9 +1096,11 @@ class RecordManager
             return false;
         }
         
-        if ($origRecord->getFormat() != $cRecord->getFormat()) {
+        $origFormat = $origRecord->getFormat();
+        $cFormat = $cRecord->getFormat();
+        if ($origFormat != $cFormat && $this->solrUpdater->mapFormat($record['source_id'], $origFormat) != $this->solrUpdater->mapFormat($candidate['source_id'], $cFormat)) {
             if ($this->verbose) {
-                echo "--Format mismatch: " . $origRecord->getFormat() . ' != ' . $cRecord->getFormat() . "\n";
+                echo "--Format mismatch: $origFormat != $cFormat\n";
             }
             return false;
         }
