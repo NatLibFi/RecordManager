@@ -3,12 +3,12 @@ require_once('RecordDriverTest.php');
 
 class LidoRecordDriverTest extends RecordDriverTest
 {
-	protected $driver = 'Lido';
+	protected $driver = 'NdlLido';
 
     public function testMusketti1()
     {
         $fields = $this->processSample('musketti1.xml');
-        
+         
         $this->assertContains('metalli', $fields['material']);
         $this->assertContains('kupari', $fields['material']);
         
@@ -156,6 +156,23 @@ class LidoRecordDriverTest extends RecordDriverTest
     	 
     	$this->assertEquals('Halonen, Pekka', $fields['author']);
     	$this->assertEquals('1930-01-01T00:00:00Z,1930-12-31T23:59:59Z', $fields['unit_daterange']);
+    }
+    
+    public function testDesign1()
+    {
+        $fields = $this->processSample('design1.xml');
+         
+        $this->assertContains('Kuva', $fields['format']);
+    
+        $this->assertRegExp('/aterimet/', $fields['title']);
+        $this->assertRegExp('/lusikka, haarukka, veitsi/', $fields['title']);
+        $this->assertRegExp('/Triennale/', $fields['title']);
+        
+        $this->assertEquals('45106', $fields['identifier']);
+        
+        $this->assertContains('ruostumaton teräs', $fields['material']);
+         
+        $this->assertEquals('Designmuseo', $fields['institution']);
     }
 }
 
