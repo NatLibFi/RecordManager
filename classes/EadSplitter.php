@@ -121,7 +121,7 @@ class EadSplitter
             $ancestorDid = $original->xpath('ancestor::*/did');
             if ($ancestorDid) {
                 // Append any ancestor did's
-                foreach ($ancestorDid as $did) {
+                foreach (array_reverse($ancestorDid) as $did) {
                     $this->appendXML($record, $did);
                 }
             }
