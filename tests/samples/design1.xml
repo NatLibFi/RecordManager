@@ -1,0 +1,142 @@
+<lidoWrap xsi:schemaLocation="http://www.lido-schema.org http://www.lido-schema.org/schema/v1.0/lido-v1.0.xsd" xmlns:lido="http://www.lido-schema.org" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <lido>
+    <lidoRecID lido:type="NDL">M016-116854</lidoRecID>
+    <category>
+      <conceptID lido:type="URI">http://www.cidoc-crm.org/crm-concepts/E22</conceptID>
+      <term>Man-Made Object</term>
+    </category>
+    <descriptiveMetadata xml:lang="fi">
+      <objectClassificationWrap>
+        <objectWorkTypeWrap>
+          <objectWorkType>
+            <term lido:label="Kohdetyyppi">Kuva</term>
+          </objectWorkType>
+        </objectWorkTypeWrap>
+      </objectClassificationWrap>
+      <objectIdentificationWrap>
+        <titleWrap>
+          <titleSet>
+            <appellationValue lido:label="Aihe">aterimet</appellationValue>
+          </titleSet>
+          <titleSet>
+            <appellationValue lido:label="Erityisnimi">lusikka, haarukka, veitsi</appellationValue>
+          </titleSet>
+          <titleSet>
+            <appellationValue lido:label="Malli">Triennale</appellationValue>
+          </titleSet>
+        </titleWrap>
+        <repositoryWrap>
+          <repositorySet>
+            <repositoryName>
+              <legalBodyName>
+                <appellationValue lido:label="Museo/Osasto/Haltija">Designmuseo</appellationValue>
+              </legalBodyName>
+              <legalBodyWeblink lido:label="Www-osoite">http://www.designmuseo.fi</legalBodyWeblink>
+            </repositoryName>
+            <workID lido:label="Kuvanumero">45106</workID>
+          </repositorySet>
+        </repositoryWrap>
+      </objectIdentificationWrap>
+      <eventWrap>
+        <eventSet>
+          <event>
+            <eventType>
+              <term>suunnittelu</term>
+              <term xml:lang="en">Designing</term>
+            </eventType>
+            <eventActor>
+              <actorInRole>
+                <actor>
+                  <nameActorSet>
+                    <appellationValue lido:label="Suunnittelija">Gardberg Bertel</appellationValue>
+                  </nameActorSet>
+                </actor>
+                <roleActor>
+                  <term>suunnittelija</term>
+                  <term xml:lang="en">designer</term>
+                </roleActor>
+              </actorInRole>
+            </eventActor>
+          </event>
+        </eventSet>
+        <eventSet>
+          <event>
+            <eventType>
+              <term>valmistus</term>
+              <term xml:lang="en">Creation</term>
+            </eventType>
+            <eventActor>
+              <actorInRole>
+                <actor>
+                  <nameActorSet>
+                    <appellationValue lido:label="Valmistaja">Hackman  Sorsakoski</appellationValue>
+                  </nameActorSet>
+                </actor>
+                <roleActor>
+                  <term>valmistaja</term>
+                  <term xml:lang="en">manufacturer</term>
+                </roleActor>
+              </actorInRole>
+            </eventActor>
+            <eventMaterialsTech>
+              <displayMaterialsTech lido:label="Materiaali">ruostumaton teräs</displayMaterialsTech>
+            </eventMaterialsTech>
+          </event>
+        </eventSet>
+        <eventSet>
+          <event>
+            <eventType>
+              <term>tuotanto</term>
+              <term xml:lang="en">Production</term>
+            </eventType>
+            <eventMethod>
+              <term lido:label="Tuotantotapa">Sarja</term>
+            </eventMethod>
+          </event>
+        </eventSet>
+        <eventSet>
+          <event>
+            <eventType>
+              <term>kuvaus</term>
+              <term xml:lang="en">Photographing</term>
+            </eventType>
+            <eventActor>
+              <actorInRole>
+                <actor>
+                  <nameActorSet>
+                    <appellationValue lido:label="Kuvaaja">Pietinen</appellationValue>
+                  </nameActorSet>
+                </actor>
+                <roleActor>
+                  <term>kuvaaja</term>
+                  <term xml:lang="en">photographer</term>
+                </roleActor>
+              </actorInRole>
+            </eventActor>
+          </event>
+        </eventSet>
+      </eventWrap>
+    </descriptiveMetadata>
+    <administrativeMetadata xml:lang="fi">
+      <recordWrap>
+        <recordID lido:type="local" lido:label="Sisäinen ID-numero">116854</recordID>
+        <recordType>
+          <term>item</term>
+        </recordType>
+        <recordSource>
+          <legalBodyWeblink lido:label="Www-osoite">http://www.designmuseo.fi</legalBodyWeblink>
+        </recordSource>
+        <recordInfoSet>
+          <recordMetadataDate lido:label="Aikaleima">15.11.2011 14:49:00</recordMetadataDate>
+        </recordInfoSet>
+      </recordWrap>
+      <resourceWrap>
+        <resourceSet>
+          <resourceRepresentation>
+            <linkResource lido:label="Linkki kuvaan">http://oai-pmh.memoron.fi/designmuseo/Kuva.aspx?id=116854&amp;guid=WcfxRcyJpLM8LlMK271bPjhlctLMqxuqaIf5SoqKF%2fFIRWZ1Y2hBcmFjOHY%3d</linkResource>
+          </resourceRepresentation>
+        </resourceSet>
+      </resourceWrap>
+    </administrativeMetadata>
+  </lido>
+</lidoWrap>
