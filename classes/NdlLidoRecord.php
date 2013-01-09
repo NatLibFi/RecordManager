@@ -52,22 +52,11 @@ class NdlLidoRecord extends LidoRecord
         $data = parent::toSolrArray();
         $doc = $this->doc;
 
-        // REMOVE THIS ONCE TUUSULA IS FIXED
-        $categoryTerm = $this->getCategoryTerm();
-        if ($data['institution'] == 'Tuusulan taidemuseo' && $categoryTerm == 'Man-Made Object') {
-            $data['format'] = $this->getClassification('pääluokka');
+        // Kantapuu oai provides just the consortium name as the legal body name,
+        // so getting the actual institution name from the rightsholder information
+        if ($data['institution'] == "Kantapuu") {
+            $data['institution'] == $this->getRightsHolderLegalBodyName();
         }
-        // END OF TUUSULA FIX
-
-        
-        // REMOVE THIS ONCE KANTAPUU IS FIXED
-        if ($data['institution'] == 'Kantapuu') {
-            $data['institution'] = $this->getRightsHolderLegalBodyName();
-            if (empty($data['institution'])) {
-                unset($data['institution']);
-            }
-        }
-        // END OF KANTAPUU FIX
         
         $data['building'] = $data['institution'];
         
@@ -75,45 +64,95 @@ class NdlLidoRecord extends LidoRecord
         // sometimes there are multiple subjects in one element
         // seperated with commas like "foo, bar, baz" (Tuusula)
         $topic = array();
-        foreach ($data['topic'] as $subject) {
-            $exploded = explode(',', $subject);
-            foreach ($exploded as $explodedSubject) {
-                $topic[] = trim($explodedSubject);
-            }
+        if (isset($data['topic']) && is_array($data['topic'])) {
+            foreach ($data['topic'] as $subject) {
+                $exploded = explode(',', $subject);
+                foreach ($exploded as $explodedSubject) {
+                    $topic[] = trim($explodedSubject);
+                }
+        }
         }
         $data['topic'] = $data['topic_facet'] = $topic;
         // END OF TUUSULA FIX
         
-        if (!empty($data['material'])) {
-            $materials = array();
-            // sometimes there are multiple materials in one element
-            // seperated with semicolons like "foo; bar; baz" (Musketti)
-            // or with commas (Kantapuu)
-            // TODO: have this fixed at the data source
-            if (!is_array($data['material'])) {
-                $data['material'] = array($data['material']);
-            }
-            
-            foreach ($data['material'] as $material) {
-                $exploded = explode(';', str_replace(',', ';', $material));
-                
-                foreach ($exploded as $explodedMaterial) {
-                    $materials = trim($explodedMaterial);
-                }
-            }
-            $data['material'] = $materials;
-        }
+        $data['artist_str_mv'] = $this->getActor('valmistus', 'taiteilija');
+        $data['photographer_str_mv'] = $this->getActor('valmistus', 'valokuvaaja');
+        $data['finder_str_mv'] = $this->getActor('löytyminen', 'löytäjä');
+        $data['manufacturer_str_mv'] = $this->getActor('valmistus', 'valmistaja');
+        $data['designer_str_mv'] = $this->getActor('suunnittelu', 'suunnittelija');
+        $data['classification_str_mv'] = $this->getClassifications();
+        $data['exhibition_str_mv'] = $this->getEventNames('näyttely');
         
         $daterange = explode(',', $this->getDateRange('valmistus'));
         if ($daterange) {
             $data['main_date_str'] = MetadataUtils::extractYear($daterange[0]);
         }
+        $data['creation_daterange'] = $this->getDateRange("valmistus");
+        $data['use_daterange'] = $this->getDateRange("käyttö");
+        $data['finding_daterange'] = $this->getDateRange("löytyminen");
+        $data['source_str_mv'] = $this->source;
         
         $data['allfields'] = $this->getAllFields($data);
         
-        $data['source_str_mv'] = $this->source;
-        
         return $data;
+    }
+    
+    protected function getAllFields($data) {
+        $allfields = parent::getAllFields($data, array(
+                'title', 'description', 'format', 'author', 'topic',
+                'material', 'measurements', 'identifier', 'culture', 'classification_str_mv',
+                'artist_str_mv', 'photographer_str_mv', 'finder_str_mv', 'manufacturer_str_mv', 'designer_str_mv'
+        ));
+        
+        // Some fields not seperately indexed but searchable
+        $allfields[] = $this->getDisplayPlace("valmistus");
+        $allfields[] = $this->getDisplayPlace("käyttö");
+        $allfields[] = $this->getDisplayPlace("löytyminen");
+        $allfields[] = $this->getEventMethod("valmistus");
+        $allfields[] = $this->getRecordSourceOrganization();
+        
+        return $allfields;
+    }
+    
+    /**
+     * Return materials associated with the object. Materials are contained inside events, and the
+     * 'valmistus' (creation) event contains all the materials of the object.
+     * Either the individual materials are retrieved, or the display materials element is
+     * retrieved in case of failure.
+     *
+     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#materialsTechSetComplexType
+     * @return string[]
+     * @access public
+     */
+    protected function getEventMaterials($eventType)
+    {
+        $materials = parent::getEventMaterials($eventType);
+        
+        if (!empty($materials)) {
+            return $materials;
+        }
+    
+        // If there are no individually listed, straightforwardly indexable materials
+        // we can use the displayMaterialsTech field, which is usually meant for display only.
+        // However, it's possible to extract the different materials from the display field
+        // Some CMS have only one field for materials so this is the only way to index their materials
+        
+        $xpath = 'lido/descriptiveMetadata/eventWrap/'
+                . "eventSet/event[eventType/term='" . $eventType . "']/"
+                        . 'eventMaterialsTech/displayMaterialsTech';
+    
+
+        $material = $this->extractFirst($xpath);
+        if (empty($material)) {
+            return array();
+        }
+        
+        $exploded = explode(';', str_replace(',', ';', $material));
+        $materials = array();
+        foreach ($exploded as $explodedMaterial) {
+            $materials[] = trim($explodedMaterial);
+        }
+        return $materials;
     }
 
     /**
@@ -124,20 +163,19 @@ class NdlLidoRecord extends LidoRecord
      */
     protected function getDescription()
     {
-        $description = parent::getDescription();
-        if (!isset($description)) {
-            return $description;
-        }
+        // Exception: Don't extract descriptions with type attribute "provenienssi"
+        $descriptionWrapDescriptions = $this->extractArray("lido/descriptiveMetadata/objectIdentificationWrap/objectDescriptionWrap/objectDescriptionSet[not(@type) or (@type!='provenienssi')]/descriptiveNoteValue");
         
-        if ($this->getLegalBodyName() == 'Tuusulan taidemuseo') {
-            // REMOVE THIS ONCE TUUSULA IS FIXED
-                        
-            // Quick and dirty way to get description when it's in the subject wrap (Tuusula)
-            return $this->extractFirst("lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/displaySubject[@label='aihe']");
-            
-            // END OF TUUSULA FIX
+        // Also read in "description of subject" which contains data suitable for this field
+        $subjectDescriptions = $this->extractArray("lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/displaySubject[@label='aihe']");
+        
+        if (empty($descriptionWrapDescriptions)) {
+            $descriptionWrapDescriptions = array();
         }
-        return '';
+        if (empty($subjectDescriptions)) {
+            $subjectDescriptions = array();
+        }
+        return implode(' ', array_merge($descriptionWrapDescriptions, $subjectDescriptions));
     }
     
     /**
@@ -147,22 +185,10 @@ class NdlLidoRecord extends LidoRecord
      * @return string
      * @access public
      */
-    protected function getSubjects()
+    protected function getSubjectTerms()
     {
-        if ($this->getLegalBodyName() == 'Tuusulan taidemuseo') {
-            $xpath = 'lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/subject'
-            // REMOVE THIS ONCE TUUSULA IS FIXED
-            // In the term fields there are Iconclass identifiers, which are unfit for human consumption
-            // Also the description of the object is in the subject wrap. It's kind of debated whether
-            // it should be here or in the description so can't blame Muusa for that. Anyway cutting it out.
-            . "[not(@type) or (@type != 'iconclass' and @type != 'aihe')]"
-            // END OF TUUSULA FIX
-            . '/subjectConcept/term';
-        } else {
-            $xpath = 'lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/subject/subjectConcept/term';
-        }
-
-        return $this->extractArray($xpath);
+        // Exclude 'aihe' and 'iconclass' because these don't contain (human readable) terms
+        return parent::getSubjectTerms(array('aihe', 'iconclass'));
     }
     
     /**
@@ -173,6 +199,191 @@ class NdlLidoRecord extends LidoRecord
     protected function getDefaultLanguage()
     {
         return 'fi';
+    }
+    
+
+    /**
+     * Attempt to parse a string (in finnish) into a normalized date range.
+     * TODO: complicated normalization like this should preferably reside within its own, separate component
+     * which should allow modification of the algorithm by methods other than hard-coding rules into source.
+     *
+     * @param string $input     Date range
+     * @param string $delimiter Date delimiter
+     *
+     * @return string Two ISO 8601 dates separated with the supplied delimiter on success, and null on failure.
+     */
+    protected function parseDateRange($input, $delimiter = ',')
+    {
+        $input = trim(strtolower($input));
+         
+        switch($input) {
+            case 'kivikausi':
+            case 'kivikauisi':
+            case 'kiviakausi':
+                $this->earliestYear = '-8600';
+                $this->latestYear = '-1500';
+                return '-8600-01-01T00:00:00Z,-1501-12-31T23:59:59Z';
+            case 'pronssikausi':
+                $this->earliestYear = '-1500';
+                $this->latestYear = '-500';
+                return '-1500-01-01T00:00:00Z,-501-12-31T23:59:59Z';
+            case 'rautakausi':
+                $this->earliestYear = '-500';
+                $this->latestYear = '1300';
+                return '-500-01-01T00:00:00Z,1299-12-31T23:59:59Z';
+            case 'keskiaika':
+                $this->earliestYear = '1300';
+                $this->latestYear = '1550';
+                return '1300-01-01T00:00:00Z,1550-12-31T23:59:59Z';
+            case 'ajoittamaton':
+            case 'tuntematon':
+                return null;
+        }
+    
+        $k = array(
+                'tammikuu' => '01',
+                'helmikuu' => '02',
+                'maaliskuu' => '03',
+                'huhtikuu' => '04',
+                'toukokuu' => '05',
+                'kesäkuu' => '06',
+                'heinäkuu' => '07',
+                'elokuu' => '08',
+                'syyskuu' => '09',
+                'lokakuu' => '10',
+                'marraskuu' => '11',
+                'joulukuu' => '12'
+        );
+         
+        if (preg_match('/(\d\d\d\d) ?- (\d\d\d\d)/', $input, $matches) > 0) {
+            $startDate = $matches[1];
+            $endDate = $matches[2];
+        } elseif (preg_match('/(\d?\d?\d\d) ?(-|~) ?(\d?\d?\d\d) ?(-luku)?(\(?\?\)?)?/', $input, $matches) > 0) {
+            // 1940-1960-luku
+            // 1930 - 1970-luku
+            // 30-40-luku
+            $startDate = $matches[1];
+            $endDate = $matches[3];
+             
+            if (isset($matches[4])) {
+                $luku = $matches[4];
+                if ($endDate % 10 == 0) {
+                    $endDate+=9;
+                }
+            }
+             
+            if (isset($matches[5])) {
+                $epavarma = $matches[5];
+                $startDate -= 2;
+                $endDate += 2;
+            }
+        } elseif (preg_match('/(\d?\d?\d\d) ?-luvun (loppupuoli|loppu|lopulta|loppupuolelta)/', $input, $matches) > 0) {
+            $year = $matches[1];
+             
+            if ($year % 100 == 0) {
+                // Century
+                $startDate = $year + 70;
+                $endDate = $year + 99;
+            } elseif ($year % 10 == 0) {
+                // Decade
+                $startDate = $year + 7;
+                $endDate = $year + 9;
+            }
+        } elseif (preg_match('/(\d?\d?\d\d) (tammikuu|helmikuu|maaliskuu|huhtikuu|toukokuu|kesäkuu|heinäkuu|elokuu|syyskuu|lokakuu|marraskuu|joulukuu)/', $input, $matches) > 0) {
+            $year = $matches[1];
+            $month = $k[$matches[2]];
+            $startDate = $year . $month . '01';
+            $endDate = $year . $month . '31';
+            $noprocess = true;
+        } elseif (preg_match('/(\d\d?).(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
+            $year = $matches[3];
+            $month =  sprintf('%02d', $matches[2]);
+            $day = sprintf('%02d', $matches[1]);
+            $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+            $noprocess = true;
+        } elseif (preg_match('/(\d?\d?\d\d) ?-luvun (alkupuolelta|alkupuoli|alku|alusta)/', $input, $matches) > 0) {
+            $year = $matches[1];
+             
+            if ($year % 100 == 0) {
+                // Century
+                $startDate = $year;
+                $endDate = $year + 29;
+            } elseif ($year % 10 == 0) {
+                // Decade
+                $startDate = $year;
+                $endDate = $year + 3;
+            }
+        } elseif (preg_match('/(\d?\d?\d\d) ?-(luvun|luku) (alkupuolelta|alkupuoli|alku|alusta)/', $input, $matches) > 0) {
+            $year = $matches[1];
+             
+            if ($year % 100 == 0) {
+                // Century
+                $startDate = $year;
+                $endDate = $year + 29;
+            } elseif ($year % 10 == 0) {
+                // Decade
+                $startDate = $year;
+                $endDate = $year + 3;
+            }
+        } elseif (preg_match('/(\d?\d?\d\d) ?-(luku|luvulta)/', $input, $matches) > 0) {
+            $year = $matches[1];
+            $startDate = $year;
+             
+            if ($year % 100 == 0) {
+                $endDate = $year + 99;
+            } elseif ($year % 10 == 0) {
+                $endDate = $year + 9;
+            } else {
+                $endDate = $year;
+            }
+        } elseif (preg_match('/(\d?\d?\d\d) jälkeen/', $input, $matches) > 0) {
+            $year = $matches[1];
+             
+            $startDate = $year;
+            $endDate = $year + 9;
+        } elseif (preg_match('/(\d?\d?\d\d) ?\?/', $input, $matches) > 0) {
+            $year = $matches[1];
+             
+            $startDate = $year-3;
+            $endDate = $year+3;
+        } elseif (preg_match('/(\d?\d?\d\d)/', $input, $matches) > 0) {
+            $year = $matches[1];
+             
+            $startDate = $year;
+            $endDate = $year;
+        } else {
+            return null;
+        }
+         
+        if (strlen($startDate) == 2) {
+            $startDate = 1900 + $startDate;
+        }
+        if (strlen($endDate) == 2) {
+            $endDate = 1900 + $endDate;
+        }
+         
+         
+        if (empty($noprocess)) {
+            $startDate = $startDate . '-01-01T00:00:00Z';
+            $endDate = $endDate . '-12-31T23:59:59Z';
+        }
+    
+        // Trying to index dates into the future? I don't think so...
+        $yearNow = date('Y');
+        if ($startDate > $yearNow || $endDate > $yearNow) {
+            return null;
+        }
+    
+        $this->earliestYear = $startDate;
+        $this->latestYear = $startDate;
+    
+        if (!MetadataUtils::validateISO8601Date($startDate) || !MetadataUtils::validateISO8601Date($endDate)) {
+            return null;
+        }
+    
+         
+        return $startDate . $delimiter . $endDate;
     }
 }
 
