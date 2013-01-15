@@ -873,7 +873,10 @@ class SolrUpdater
                 if (isset($data['building']) && $data['building']) {
                     if (is_array($data['building'])) {
                         foreach ($data['building'] as &$building) {
-                            $building = "$institutionCode/$building";
+                            // Allow also empty values that might result from mapping tables
+                            if ($building !== '') {
+                                $building = "$institutionCode/$building";
+                            }
                         }
                     } else {
                         $data['building'] = $institutionCode . '/' . $data['building'];
@@ -895,6 +898,9 @@ class SolrUpdater
                     $data[$facet] = array($data[$facet]);
                 }
                 foreach ($data[$facet] as $datavalue) {
+                    if ($datavalue === '') {
+                        continue;
+                    }
                     $values = explode('/', $datavalue);
                     $hierarchyString = '';
                     for ($i = 0; $i < count($values); $i++) {
@@ -1228,6 +1234,7 @@ class SolrUpdater
                     fclose($handle);
                     throw new Exception("Unable to parse mapping file '$filename' line (no ' = ' found): ($lineno) $line");
                 }
+                $values = explode(' =', $line, 2);
                 $mappings[$values[0]] = '';
             } else {
                 $mappings[$values[0]] = $values[1];
