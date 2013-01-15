@@ -48,7 +48,7 @@ class Logger
 
     public $logLevel = 0;
     public $logFile = '';
-    public $maxFileSize = 10; // 10 MEGS
+    public $maxFileSize = 0;
     public $maxFileHistory = 5;
     public $logToConsole = false;
     public $errorEmail = '';
@@ -89,7 +89,7 @@ class Logger
         }
         $msg = date('Y-m-d H:i:s') . ' [' . getmypid() . '] [' . $this->logLevelToStr($level) . "] [$context] $msg\n";
         if ($this->logFile) {
-            if (file_exists($this->logFile) && filesize($this->logFile) > $this->maxFileSize * 1024 * 1024) {
+            if ($this->maxFileSize && file_exists($this->logFile) && filesize($this->logFile) > $this->maxFileSize * 1024 * 1024) {
                 if (file_exists($this->logFile . '.' . $this->maxFileHistory)) {
                     unlink($this->logFile . '.' . $this->maxFileHistory);
                 }
