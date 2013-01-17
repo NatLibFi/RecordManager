@@ -533,7 +533,7 @@ class RecordManager
                         // Check if the record has changed
                         $dbMarc = RecordFactory::createRecord('marc', MetadataUtils::getRecordData($dbRecord, false), '', $source);
                         $marc = RecordFactory::createRecord('marc', $records[$id], '', $source);
-                        if ($marc->serialize() != MetadataUtils::getRecordData($dbRecord, false)) {
+                        if ((isset($harvestFromDate) && $harvestFromDate == '-') || $marc->serialize() != MetadataUtils::getRecordData($dbRecord, false)) {
                             // Record changed, update...
                             $this->storeRecord($id, false, $records[$id]);
                             ++$changed;
