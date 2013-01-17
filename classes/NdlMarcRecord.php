@@ -51,19 +51,32 @@ class NdlMarcRecord extends MarcRecord
     {
         if (isset($this->fields['653']) && strncmp($this->source, 'metalib', 7) == 0) {
             // Split MetaLib subjects
+            $fields = array();
             foreach ($this->fields['653'] as &$field) {
-                $subfields = array();
                 foreach ($field['s'] as $subfield) {
                     if ($subfield['c'] == 'a') {
                         foreach (explode('; ', $subfield['v']) as $value) {
-                            $subfields[] = array('c' => 'a', 'v' => $value);
+                            $fields[] = array(
+                                'i1' => $field['i1'], 
+                                'i2' => $field['i2'],
+                                's' => array(
+                                    array(
+                                        'c' => 'a',
+                                        'v' => $value
+                                    )
+                                 )
+                            );
                         }
                     } else {
-                        $subfields[] = $subfield;
+                        $fields[] = array(
+                            'i1' => $field['i1'], 
+                            'i2' => $field['i2'],
+                            's' => array($subfield)
+                        );
                     }
                 }
-                $field['s'] = $subfields;
             }
+            $this->fields['653'] = $fields;
         }
     }
     
