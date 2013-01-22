@@ -42,7 +42,7 @@ function main($argv)
         echo "Usage: manage --func=... [...]\n\n";
         echo "Parameters:\n\n";
         echo "--func             renormalize|deduplicate|updatesolr|dump|deletesource|deletesolr|optimizesolr|count\n";
-        echo "--source           Source ID to process\n";
+        echo "--source           Source ID to process (separate multiple sources with commas)\n";
         echo "--all              Process all records regardless of their state (deduplicate)\n";
         echo "                   or date (updatesolr)\n";
         echo "--from             Override the date from which to run the update (updatesolr)\n";
@@ -56,40 +56,42 @@ function main($argv)
     $manager = new RecordManager(true);
     $manager->verbose = isset($params['verbose']) ? $params['verbose'] : false;
 
-    $source = isset($params['source']) ? $params['source'] : '';
+    $sources = isset($params['source']) ? $params['source'] : '';
     $single = isset($params['single']) ? $params['single'] : '';
     $noCommit = isset($params['nocommit']) ? $params['nocommit'] : false;
     
-    switch ($params['func'])
-    {
-    case 'renormalize': 
-        $manager->renormalize($source, $single); 
-        break;
-    case 'deduplicate': 
-        $manager->deduplicate($source, isset($params['all']) ? true : false, $single); 
-        break;
-    case 'updatesolr': 
-        $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
-        $manager->updateSolrIndex($date, $source, $single, $noCommit); 
-        break;
-    case 'dump': 
-        $manager->dumpRecord($single);
-        break;
-    case 'deletesource':
-        $manager->deleteRecords($source);
-        break;
-    case 'deletesolr':
-        $manager->deleteSolrRecords($source);
-        break;
-    case 'optimizesolr':
-        $manager->optimizeSolr();
-        break;
-    case 'count':
-        $manager->countValues($source, isset($params['field']) ? $params['field'] : null);
-        break;
-    default: 
-        echo 'Unknown func: ' . $params['func'] . "\n"; 
-        exit(1);
+    foreach (explode(',', $sources) as $source) {
+        switch ($params['func'])
+        {
+        case 'renormalize': 
+            $manager->renormalize($source, $single); 
+            break;
+        case 'deduplicate': 
+            $manager->deduplicate($source, isset($params['all']) ? true : false, $single); 
+            break;
+        case 'updatesolr': 
+            $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
+            $manager->updateSolrIndex($date, $source, $single, $noCommit); 
+            break;
+        case 'dump': 
+            $manager->dumpRecord($single);
+            break;
+        case 'deletesource':
+            $manager->deleteRecords($source);
+            break;
+        case 'deletesolr':
+            $manager->deleteSolrRecords($source);
+            break;
+        case 'optimizesolr':
+            $manager->optimizeSolr();
+            break;
+        case 'count':
+            $manager->countValues($source, isset($params['field']) ? $params['field'] : null);
+            break;
+        default: 
+            echo 'Unknown func: ' . $params['func'] . "\n"; 
+            exit(1);
+        }
     }
 }
 

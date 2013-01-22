@@ -41,7 +41,7 @@ function main($argv)
     if (!isset($params['source'])) {
         echo "Usage: harvest --source=... [...]\n\n";
         echo "Parameters:\n\n";
-        echo "--source            Repository id ('*' for all)\n";
+        echo "--source            Repository id ('*' for all, separate multiple sources with commas)\n";
         echo "--from              Override harvesting start date\n";
         echo "--until             Override harvesting end date\n";
         echo "--all               Harvest from beginning (overrides --from)\n";
@@ -56,12 +56,14 @@ function main($argv)
     if (isset($params['all'])) {
         $from = '-';
     }
-    $manager->harvest(
-        $params['source'], 
-        $from, 
-        isset($params['until']) ? $params['until'] : null, 
-        isset($params['override']) ? urldecode($params['override']) : ''
-    );
+    foreach (explode(',', $params['source']) as $source) {
+        $manager->harvest(
+            $source, 
+            $from, 
+            isset($params['until']) ? $params['until'] : null, 
+            isset($params['override']) ? urldecode($params['override']) : ''
+        );
+    }
 }
 
 main($argv);
