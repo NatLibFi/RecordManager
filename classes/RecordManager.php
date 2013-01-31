@@ -1275,6 +1275,10 @@ class RecordManager
         if ($this->verbose) {
             echo "Deduplicating component parts...\n";
         }
+        if (!$hostRecord['linking_id']) {
+            $this->log->log('dedupComponentParts', 'Linking ID missing from record ' . $hostRecord['_id'], Logger::ERROR);
+            return;
+        }
         $components1iter = $this->db->record->find(array('host_record_id' => $hostRecord['linking_id']));
         if (!$components1iter->hasNext()) {
             return;
