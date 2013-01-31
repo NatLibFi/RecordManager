@@ -113,10 +113,10 @@ class DcRecord extends BaseRecord
         // allfields
         $allFields = array();
         foreach ($doc->children() as $tag => $field) {
-            $allFields[] = MetadataUtils::stripTrailingPunctuation((string)$field);
+            $allFields[] = MetadataUtils::stripTrailingPunctuation(trim((string)$field));
         }
         $data['allfields'] = $allFields;
-          
+
         // language
         $data['language'] = array_values(
             array_filter(
@@ -124,7 +124,7 @@ class DcRecord extends BaseRecord
                     ' ', 
                     (string)$doc->language
                 ),
-                function($value) {
+                function ($value) {
                     return preg_match('/^[a-z]{2,3}$/', $value) && $value != 'zxx' && $value != 'und';
                 }
             )
@@ -134,7 +134,7 @@ class DcRecord extends BaseRecord
         $data['author'] = MetadataUtils::stripTrailingPunctuation((string)$doc->creator);
         $data['author2'] = $this->getValues('contributor');
 
-        $data['title'] = $data['title_full'] = MetadataUtils::stripTrailingPunctuation((string)$doc->title);
+        $data['title'] = $data['title_full'] = MetadataUtils::stripTrailingPunctuation(trim((string)$doc->title));
         $titleParts = explode(' : ', $data['title'], 2);
         if (!empty($titleParts)) {
             $data['title_short'] = $titleParts[0];
@@ -190,8 +190,23 @@ class DcRecord extends BaseRecord
      */
     public function getTitle($forFiling = false)
     {
-        // TODO: strip common articles when $forFiling = true?
-        return (string)$this->doc->title;
+        global $configArray;
+        
+        $title = trim((string)$this->doc->title);
+        $title = MetadataUtils::stripTrailingPunctuation($title);
+        if ($forFiling) {
+            $title = MetadataUtils::stripLeadingPunctuation($title, '/:;,=(["\'');
+            if (isset($configArray['Site']['articles'])) {
+                foreach ($configArray['Site']['articles'] as $article) {
+                    $len = strlen($article);
+                    if (strncasecmp($article, $title, $len) == 0) {
+                        $title = substr($title, $len);
+                        break;
+                    }    
+                }
+            }
+        }
+        return $title;
     }
 
     /**

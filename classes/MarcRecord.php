@@ -367,12 +367,18 @@ class MarcRecord extends BaseRecord
                 'i1' => ' ',
                 'i2' => ' ',
                 's' => array(
-                    array('c' => 'a', 'v' => $id),
-                    array('c' => 'b', 'v' => $title),
-                    array('c' => 'c', 'v' => $author),
-                    array('c' => 'e', 'v' => $uniTitle),
-                )
+                    array('c' => 'a', 'v' => $id)
+                 )
             );
+            if ($title) {
+                $newField['s'][] = array('c' => 'b', 'v' => $title);
+            }
+            if ($author) {
+                $newField['s'][] = array('c' => 'c', 'v' => $author);
+            }
+            if ($uniTitle) {
+                $newField['s'][] = array('c' => 'e', 'v' => $uniTitle);
+            }
             foreach ($additionalAuthors as $addAuthor) {
                 $newField['s'][] = array('c' => 'd', 'v' => $addAuthor);
             }
@@ -530,8 +536,9 @@ class MarcRecord extends BaseRecord
             $title = $this->getSubfield($field, 'a');
             if ($forFiling) {
                 $nonfiling = $this->getIndicator($field, 2);
-                if ($nonfiling > 0)
-                $title = substr($title, $nonfiling);
+                if ($nonfiling > 0) {
+                    $title = substr($title, $nonfiling);
+                }
             }
             foreach ($field['s'] as $subfield) {
                 if (!in_array($subfield['c'], array('b', 'n', 'p'))) {
@@ -544,7 +551,11 @@ class MarcRecord extends BaseRecord
                 }
                 $title .= $subfield['v'];
             }
-            return MetadataUtils::stripTrailingPunctuation($title);
+            $title = MetadataUtils::stripTrailingPunctuation($title);
+            if ($forFiling) {
+                $title = MetadataUtils::stripLeadingPunctuation($title, ' /:;,=(["\'');
+            }
+            return $title;
         }
         return '';
     }
