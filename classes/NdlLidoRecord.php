@@ -74,7 +74,7 @@ class NdlLidoRecord extends LidoRecord
             $data['institution'] == $this->getRightsHolderLegalBodyName();
         }
         
-        $data['building'] = $data['institution'];
+        $data['building'] = reset(explode('/', $data['institution']));
         
         // REMOVE THIS ONCE TUUSULA IS FIXED
         // sometimes there are multiple subjects in one element
