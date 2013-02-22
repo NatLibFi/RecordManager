@@ -32,6 +32,8 @@
 require_once 'classes/Preview.php';
 
 $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
+$configArray = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
+
 $preview = new Preview($basePath);
 $fields = $preview->preview($_REQUEST['data'], $_REQUEST['format'], $_REQUEST['source']);
 
