@@ -127,7 +127,7 @@ class QdcRecord extends BaseRecord
         );
                 
         $data['format'] = (string)$doc->type;
-        $data['author'] = (string)$doc->creator;
+        $data['author'] = MetadataUtils::stripTrailingPunctuation((string)$doc->creator);
         $data['author2'] = $this->getValues('contributor');
 
         $data['title'] = $data['title_full'] = (string)$doc->title;
@@ -155,6 +155,10 @@ class QdcRecord extends BaseRecord
         foreach ($this->getValues('description') as $description) {
             if (preg_match('/^https?/', $description)) {
                 $data['url'] = $description;
+            } elseif (preg_match('/^\d+\.\d+$/', $description)) {
+                // Classification, put somewhere?
+            } else {
+                $data['contents'][] = $description; 
             }
         }
 
@@ -180,8 +184,24 @@ class QdcRecord extends BaseRecord
      */
     public function getTitle($forFiling = false)
     {
-        // TODO: strip common articles when $forFiling = true?
-        return (string)$this->doc->title;
+        global $configArray;
+        
+        $title = trim((string)$this->doc->title);
+        $title = MetadataUtils::stripTrailingPunctuation($title);
+        if ($forFiling) {
+            $title = MetadataUtils::stripLeadingPunctuation($title, ' /:;.,=(["\'');
+            if (isset($configArray['Site']['articles'])) {
+                foreach ($configArray['Site']['articles'] as $article) {
+                    $len = strlen($article);
+                    if (strncasecmp($article, $title, $len) == 0) {
+                        $title = substr($title, $len);
+                        break;
+                    }    
+                }
+            }
+            $title = mb_strtolower($title, 'UTF-8');
+        }
+        return $title;
     }
 
     /**

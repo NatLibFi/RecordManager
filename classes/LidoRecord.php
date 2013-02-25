@@ -111,10 +111,11 @@ class LidoRecord extends BaseRecord
         $doc = $this->doc;
         $lang = $this->getDefaultLanguage();
        
-        $data['title'] = $data['title_short'] = $data['title_full'] = $this->getTitle($lang);
+        $data['title'] = $data['title_short'] = $data['title_full'] = $this->getTitle(false, $lang);
         if ($lang != 'en') {
-            $data['title_alt'] = $this->getTitle('en');
+            $data['title_alt'] = $this->getTitle(false, 'en');
         }
+        $data['title_sort'] = $this->getTitle(true, $lang);
         $data['description'] = $this->getDescription();
         
         $data['format'] = $this->getObjectWorkType();
@@ -167,14 +168,14 @@ class LidoRecord extends BaseRecord
             $titles = $this->extractArray('lido/descriptiveMetadata/objectIdentificationWrap/titleWrap/titleSet/appellationValue');
         }
         
-        $num = count($titles);
-        if (empty($num)) {
+        if (empty($titles)) {
             return null;
-        } elseif ($num == 1) {
-            return $titles[0];
-        } else {
-            return implode('; ', $titles);
+        } 
+        $title = implode('; ', $titles);
+        if ($forFiling) {
+            $title = MetadataUtils::stripLeadingPunctuation($title, ' /:;,=(["\'');
         }
+        return $title;
     }
     
     /**

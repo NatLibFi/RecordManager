@@ -195,7 +195,7 @@ class DcRecord extends BaseRecord
         $title = trim((string)$this->doc->title);
         $title = MetadataUtils::stripTrailingPunctuation($title);
         if ($forFiling) {
-            $title = MetadataUtils::stripLeadingPunctuation($title, '/:;,=(["\'');
+            $title = MetadataUtils::stripLeadingPunctuation($title, ' /:;.,=(["\'');
             if (isset($configArray['Site']['articles'])) {
                 foreach ($configArray['Site']['articles'] as $article) {
                     $len = strlen($article);
@@ -205,6 +205,7 @@ class DcRecord extends BaseRecord
                     }    
                 }
             }
+            $title = mb_strtolower($title, 'UTF-8');
         }
         return $title;
     }

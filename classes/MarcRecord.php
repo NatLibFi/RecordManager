@@ -528,34 +528,36 @@ class MarcRecord extends BaseRecord
     public function getTitle($forFiling = false)
     {
         $punctuation = array('b' => ' : ', 'n' => '. ', 'p' => '. ');
-        $field = $this->getField('245');
-        if (!$field) {
-            $field = $this->getField('240');
-        }
-        if ($field) {
-            $title = $this->getSubfield($field, 'a');
-            if ($forFiling) {
-                $nonfiling = $this->getIndicator($field, 2);
-                if ($nonfiling > 0) {
-                    $title = substr($title, $nonfiling);
+        foreach (array('245', '240') as $fieldCode) {
+            $field = $this->getField($fieldCode);
+            if ($field) {
+                $title = $this->getSubfield($field, 'a');
+                if ($forFiling) {
+                    $nonfiling = $this->getIndicator($field, 2);
+                    if ($nonfiling > 0) {
+                        $title = substr($title, $nonfiling);
+                    }
+                }
+                foreach ($field['s'] as $subfield) {
+                    if (!in_array($subfield['c'], array('b', 'n', 'p'))) {
+                        continue;
+                    }
+                    if (!MetadataUtils::hasTrailingPunctuation($title)) {
+                        $title .= $punctuation[$subfield['c']];
+                    } else {
+                        $title .= ' ';
+                    }
+                    $title .= $subfield['v'];
+                }
+                $title = MetadataUtils::stripTrailingPunctuation($title);
+                if ($forFiling) {
+                    $title = MetadataUtils::stripLeadingPunctuation($title, ' /:;.,=(["\'');
+                    $title = mb_strtolower($title, 'UTF-8');
+                }
+                if (!empty($title)) {
+                    return $title;
                 }
             }
-            foreach ($field['s'] as $subfield) {
-                if (!in_array($subfield['c'], array('b', 'n', 'p'))) {
-                    continue;
-                }
-                if (!MetadataUtils::hasTrailingPunctuation($title)) {
-                    $title .= $punctuation[$subfield['c']];
-                } else {
-                    $title .= ' ';
-                }
-                $title .= $subfield['v'];
-            }
-            $title = MetadataUtils::stripTrailingPunctuation($title);
-            if ($forFiling) {
-                $title = MetadataUtils::stripLeadingPunctuation($title, ' /:;,=(["\'');
-            }
-            return $title;
         }
         return '';
     }

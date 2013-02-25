@@ -175,6 +175,7 @@ class EadRecord extends BaseRecord
         $data['title_short'] = (string)$doc->did->unittitle;
         $data['title'] = ($data['title_sub'] ? $data['title_sub'] . ' ' : '') . $data['title_short'];
         $data['title_full'] = $data['title_sort'] = $data['title'];
+        $data['title_sort'] = mb_strtolower(MetadataUtils::stripLeadingPunctuation($data['title_sort'], ' /:;.,=(["\''), 'UTF-8');
         
         $data['hierarchytype'] = 'Default';
         if ($this->doc->{'add-data'}->archive) {
