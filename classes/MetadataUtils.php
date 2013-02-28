@@ -247,11 +247,11 @@ class MetadataUtils
      * Strip leading spaces and punctuation characters from a string
      *
      * @param string $str         String to strip
-     * @param string $punctuation String of punctuation characters 
+     * @param string $punctuation String of punctuation characters
      * 
      * @return string
      */
-    static public function stripLeadingPunctuation($str, $punctuation = ' /:;,=([')
+    static public function stripLeadingPunctuation($str, $punctuation = " \#!?/:;.,=(['\"")
     {
         return ltrim($str, $punctuation);
     }

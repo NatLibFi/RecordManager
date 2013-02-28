@@ -173,7 +173,7 @@ class LidoRecord extends BaseRecord
         } 
         $title = implode('; ', $titles);
         if ($forFiling) {
-            $title = MetadataUtils::stripLeadingPunctuation($title, ' /:;,=(["\'');
+            $title = MetadataUtils::stripLeadingPunctuation($title);
         }
         return $title;
     }

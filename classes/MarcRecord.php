@@ -551,7 +551,7 @@ class MarcRecord extends BaseRecord
                 }
                 $title = MetadataUtils::stripTrailingPunctuation($title);
                 if ($forFiling) {
-                    $title = MetadataUtils::stripLeadingPunctuation($title, ' /:;.,=(["\'');
+                    $title = MetadataUtils::stripLeadingPunctuation($title);
                     $title = mb_strtolower($title, 'UTF-8');
                 }
                 if (!empty($title)) {
