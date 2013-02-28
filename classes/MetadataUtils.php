@@ -230,16 +230,8 @@ class MetadataUtils
     {
         global $configArray;
         
-        $i = $j = strlen($str) - 1;
-        if ($i < 0) {
-            return $str;
-        }
-        while ($i > 0 && strstr(' /:;,=([', $str[$i]) !== false) {
-            --$i;
-        }
-        if ($i < $j) {
-            $str = substr($str, 0, $i + 1);
-        }
+        $str = rtrim($str, ' /:;,=([');
+
         // Don't replace an initial letter (e.g. string "Smith, A.") followed by period
         $thirdLast = substr($str, -3, 1);
         if (substr($str, -1) == '.' && $thirdLast != ' ') {
@@ -261,15 +253,7 @@ class MetadataUtils
      */
     static public function stripLeadingPunctuation($str, $punctuation = ' /:;,=([')
     {
-        $i = 0;
-        $len = strlen($str);
-        while ($i < $len - 1 && strstr($punctuation, $str[$i]) !== false) {
-            ++$i;
-        }
-        if ($i > 0) {
-            $str = substr($str, $i);
-        }
-        return $str;
+        return ltrim($str, $punctuation);
     }
     
     /**

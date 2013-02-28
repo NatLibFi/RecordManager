@@ -199,6 +199,8 @@ class QdcRecord extends BaseRecord
                     }    
                 }
             }
+            // Again, just in case stripping the article affected this
+            $title = MetadataUtils::stripLeadingPunctuation($title, ' /:;.,=(["\'');
             $title = mb_strtolower($title, 'UTF-8');
         }
         return $title;
