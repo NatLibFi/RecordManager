@@ -71,10 +71,10 @@ class NdlLidoRecord extends LidoRecord
         // Kantapuu oai provides just the consortium name as the legal body name,
         // so getting the actual institution name from the rightsholder information
         if ($data['institution'] == 'Kantapuu') {
-            $data['institution'] == $this->getRightsHolderLegalBodyName();
+            $data['institution'] = $this->getRightsHolderLegalBodyName();
+        } else {
+            $data['building'] = reset(explode('/', $data['institution']));
         }
-        
-        $data['building'] = reset(explode('/', $data['institution']));
         
         // REMOVE THIS ONCE TUUSULA IS FIXED
         // sometimes there are multiple subjects in one element
