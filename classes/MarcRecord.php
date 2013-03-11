@@ -361,6 +361,7 @@ class MarcRecord extends BaseRecord
             $uniTitle = $marc->getFieldSubfields('240anp');
             $author = $marc->getFieldSubfields('100ae');
             $additionalAuthors = $marc->getFieldsSubfields('700ae:710ae');
+            $duration = $marc->getFieldsSubfields('306a');
             $id = $componentPart['_id'];
 
             $newField = array(
@@ -381,6 +382,9 @@ class MarcRecord extends BaseRecord
             }
             foreach ($additionalAuthors as $addAuthor) {
                 $newField['s'][] = array('c' => 'd', 'v' => $addAuthor);
+            }
+            if ($duration) {
+                $newField['s'][] = array('c' => 'f', 'v' => reset($duration));
             }
             
             $key = MetadataUtils::createIdSortKey($id);
@@ -1299,6 +1303,10 @@ class MarcRecord extends BaseRecord
      */
     protected function getSubfieldsArray($field, $codes)
     {
+        if (!$codes) {
+            echo "RECORD " . $this->source . '.' . $this->getID() . ": no codes:\n";
+            print_r(debug_backtrace());
+        }
         $data = array();
         if (!$field || !isset($field['s']) || !is_array($field['s'])) {
             return $data;
