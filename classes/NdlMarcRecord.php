@@ -59,12 +59,7 @@ class NdlMarcRecord extends MarcRecord
                             $fields[] = array(
                                 'i1' => $field['i1'], 
                                 'i2' => $field['i2'],
-                                's' => array(
-                                    array(
-                                        'c' => 'a',
-                                        'v' => $value
-                                    )
-                                 )
+                                's' => array(array('a' => $value))
                             );
                         }
                     } else {
@@ -78,6 +73,14 @@ class NdlMarcRecord extends MarcRecord
             }
             $this->fields['653'] = $fields;
         }
+        // Kyyti enumeration from 362 to title
+        if ($this->source == 'kyyti' && isset($this->fields['245']) && isset($this->fields['362'])) {
+            $enum = $this->getFieldSubfields('362a');
+            if ($enum) {
+                $this->fields['245'][0]['s'][] = array('n' => $enum);
+            } 
+        }
+        
     }
     
     /**

@@ -388,4 +388,27 @@ class MetadataUtils
         }
         return mb_strtoupper(mb_substr($str, 0, 1)) . mb_substr($str, 1);
     }
+    
+    /**
+     * Normalize string to one of the UNICODE normalization forms
+     * 
+     * @param string $str String to normalize
+     * 
+     * @return string Normalized string
+     */
+    public static function normalizeUnicode($str)
+    {
+        global $configArray;
+        
+        if (!isset($configArray['Solr']['unicode_normalization_form'])) {
+            return $str;
+        } 
+        switch ($configArray['Solr']['unicode_normalization_form']) {
+        case 'NFC': return Normalizer::normalize($str, Normalizer::FORM_C);
+        case 'NFD': return Normalizer::normalize($str, Normalizer::FORM_D);
+        case 'NFKC': return Normalizer::normalize($str, Normalizer::FORM_KC);
+        case 'NFKD': return Normalizer::normalize($str, Normalizer::FORM_KD);
+        }
+        return $str;
+    }
 }

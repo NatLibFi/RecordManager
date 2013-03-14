@@ -35,6 +35,7 @@ password =
 ;merge_records = true
 ;merged_fields = institution,collection,my_local_field_str_mv
 ;format_in_allfields = true
+unicode_normalization_form = NFKC
 
 [OAI-PMH]
 repository_name = OAI-PMH Repository

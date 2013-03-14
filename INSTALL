@@ -1,8 +1,8 @@
 Installation notes on CentOS 6:
 
-- Requires PHP packages: php php-pear php-xml php-xsl php-devel php-mbstring
+- Requires PHP packages: php php-pear php-xml php-xsl php-devel php-mbstring php-intl
 
-    yum install php php-pear php-xml php-devel php-mbstring
+    yum install php php-pear php-xml php-devel php-mbstring php-intl
 
 
 - Required pecl modules: mongo

@@ -116,7 +116,7 @@ class SolrUpdater
         if (isset($configArray['Solr']['merged_fields'])) {
             $this->mergedFields = explode(',', $configArray['Solr']['merged_fields']);
         }
-        
+
         // Load settings and mapping files
         $this->settings = array();
         foreach ($dataSourceSettings as $source => $settings) {
@@ -984,6 +984,15 @@ class SolrUpdater
         foreach ($data as &$values) {
             if (is_array($values)) {
                 $values = array_values(array_unique($values));
+                $values = array_map(
+                    function($value)
+                    {
+                        return MetadataUtils::normalizeUnicode($value);
+                    },
+                    $values
+                );
+            } else {
+                $values = MetadataUtils::normalizeUnicode($values);
             }
         }
         
