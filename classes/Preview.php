@@ -47,22 +47,29 @@ require_once 'XslTransformation.php';
  */
 class Preview extends SolrUpdater
 {
+    protected $format = '';
+    protected $source = '';
+    
     /**
      * Constructor
      * 
-     * @param string $basePath RecordManager main directory 
+     * @param string $basePath RecordManager main directory
+     * @param string $format   Record driver format (optional)
+     * @param string $source   The data source id to use (optional)
      */
-    public function __construct($basePath) 
+    public function __construct($basePath, $format, $source) 
     {
+        $this->format = $format;
+        $this->source = $source; 
         $log = new Logger();
         $sources = parse_ini_file("$basePath/conf/datasources.ini", true);
         if (empty($sources['_preview'])) {
             $sources['_preview'] = array(
-                    'institution' => "_preview",
-                    'componentParts' => null,
-                    'format' => "_preview",
-                    'preTransformation' => 'strip_namespaces.xsl'
-                );
+                'institution' => '_preview',
+                'componentParts' => null,
+                'format' => $this->format ? $this->format : '_preview',
+                'preTransformation' => 'strip_namespaces.xsl'
+            );
         }
         parent::__construct(null, $basePath, $sources, $log, false);
     }
@@ -71,29 +78,27 @@ class Preview extends SolrUpdater
      * Creates a preview of the given metadata and returns it
      * 
      * @param string $metadata The metadata to process
-     * @param string $format   Record driver format
-     * @param string $source   The data source id to use (optional)
      * 
      * @return array
      */
-    public function preview($metadata, $format, $source) 
+    public function preview($metadata) 
     {
-        if (empty($source)) {
-            $source = "_preview";
+        if (!$this->source) {
+            $this->source = "_preview";
         }
         
         /* Process data source preTransformation XSL if present
            TODO: duplicates code from RecordManager, refactor? */
-        $settings = $this->settings[$source];
+        $settings = $this->settings[$this->source];
         if (isset($settings['preTransformation']) && $settings['preTransformation']) {
             $style = new DOMDocument();
             $style->load($this->basePath . '/transformations/' . $settings['preTransformation']);
             $xslt = new XSLTProcessor();
             $xslt->importStylesheet($style);
-            $xslt->setParameter('', 'source_id', $source);
+            $xslt->setParameter('', 'source_id', $this->source);
             $xslt->setParameter('', 'institution', $settings['institution']);
-            $xslt->setParameter('', 'format', $format);
-            $xslt->setParameter('', 'id_prefix', isset($settings['idPrefix']) && $settings['idPrefix'] ? $settings['idPrefix'] : $source);
+            $xslt->setParameter('', 'format', $this->format);
+            $xslt->setParameter('', 'id_prefix', isset($settings['idPrefix']) && $settings['idPrefix'] ? $settings['idPrefix'] : $this->source);
 
             $doc = new DOMDocument();
             $doc->loadXML($metadata);
@@ -101,9 +106,9 @@ class Preview extends SolrUpdater
         }
         
         $record = array(
-            'format' => $format,
+            'format' => $this->format,
             'normalized_data' => $metadata,
-            'source_id' => $source,
+            'source_id' => $this->source,
             'host_record_id' => "_preview",
             'oai_id' => "_preview",
             '_id' => "_preview",
