@@ -784,7 +784,7 @@ class SolrUpdater
         // Record links between host records and component parts
         if ($metadataRecord->getIsComponentPart()) {
             $hostRecord = null;
-            if ($record['host_record_id']) {
+            if ($record['host_record_id'] && $this->db) {
                 $hostRecord = $this->db->record->findOne(array('source_id' => $record['source_id'], 'linking_id' => $record['host_record_id']));
             }
             if (!$hostRecord) {
@@ -886,7 +886,6 @@ class SolrUpdater
                 }
             }
         }
-
         // Hierarchical facets
         if (isset($configArray['Solr']['hierarchical_facets'])) {
             foreach ($configArray['Solr']['hierarchical_facets'] as $facet) {
@@ -981,7 +980,7 @@ class SolrUpdater
             }  
         }
         
-        foreach ($data as &$values) {
+        foreach ($data as $key => &$values) {
             if (is_array($values)) {
                 $values = array_values(array_unique($values));
                 $values = array_map(
@@ -991,7 +990,7 @@ class SolrUpdater
                     },
                     $values
                 );
-            } else {
+            } elseif ($key != 'fullrecord') {
                 $values = MetadataUtils::normalizeUnicode($values);
             }
         }
@@ -1101,12 +1100,12 @@ class SolrUpdater
         $code = $response->getStatus();
         if ($code >= 300) {
             if ($background) {
-                $this->log->log('solrRequest', "Solr server request failed ($code). Request:\n$body\n\nResponse:\n" . $response->getBody(), Logger::FATAL);
+                $this->log->log('solrRequest', "Solr server request failed ($code). URL:\n" . $configArray['Solr']['update_url'] . "\nRequest:\n$body\n\nResponse:\n" . $response->getBody(), Logger::FATAL);
                 // Kill parent and self
                 posix_kill(posix_getppid(), SIGQUIT);
                 posix_kill(getmypid(), SIGKILL);
             } else {
-                throw new Exception("Solr server request failed ($code). Request:\n$body\n\nResponse:\n" . $response->getBody());
+                throw new Exception("Solr server request failed ($code). URL:\n" . $configArray['Solr']['update_url'] . "\nRequest:\n$body\n\nResponse:\n" . $response->getBody());
             }
         }
         if ($background) {
