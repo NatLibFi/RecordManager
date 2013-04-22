@@ -110,7 +110,7 @@ class NdlMarcRecord extends MarcRecord
     {
         $data = parent::toSolrArray();
         if (isset($data['publishDate'])) {
-            $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate']);
+            $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate'][0]);
         }
         
         // language override
@@ -172,7 +172,7 @@ class NdlMarcRecord extends MarcRecord
             $source = $this->getSubfield($field, '2');
             $classification = $this->getSubfields($field, 'ab');
             if ($source) {
-                $data['classification_str_mv'][] = "$source " . strtolower(str_replace(' ', '', $classification));
+                $data['classification_str_mv'][] = "$source " . mb_strtolower(str_replace(' ', '', $classification));
             }     
         }
         if (isset($data['classification_str_mv'])) {
