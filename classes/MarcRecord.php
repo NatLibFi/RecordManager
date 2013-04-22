@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) Ere Maijala 2011-2012
+ * Copyright (C) The National Library of Finland 2011-2013
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -326,7 +326,8 @@ class MarcRecord extends BaseRecord
         $data['series'] = $this->getFieldsSubfields('*440ap:*800abcdfpqt:*830ap');
           
         $data['publisher'] = $this->getFieldsSubfields('*260b', false, true);
-        $data['publishDate'] = $data['publishDateSort'] = $this->getPublicationYear();
+        $data['publishDateSort'] = $this->getPublicationYear();
+        $data['publishDate'] = array($data['publishDateSort']);
         $data['physical'] = $this->getFieldsSubfields('*300abcefg:*530abcd');
         $data['dateSpan'] = $this->getFieldsSubfields('*362a');
         $data['edition'] = $this->getFieldSubfields('250a');
@@ -390,7 +391,7 @@ class MarcRecord extends BaseRecord
             $marc = new MARCRecord($data, '', $this->source);
             $title = $marc->getFieldSubfields('245abnp');
             $uniTitle = $marc->getFieldSubfields('240anp');
-            $author = $marc->getFieldSubfields('100ae');
+            $authors = $marc->getFieldsSubfields('100ae:110ae');
             $additionalAuthors = $marc->getFieldsSubfields('700ae:710ae');
             $duration = $marc->getFieldsSubfields('306a');
             $id = $componentPart['_id'];
@@ -405,14 +406,17 @@ class MarcRecord extends BaseRecord
             if ($title) {
                 $newField['s'][] = array('b' => $title);
             }
-            if ($author) {
-                $newField['s'][] = array('c' => $author);
-            }
-            if ($uniTitle) {
-                $newField['s'][] = array('e' => $uniTitle);
+            if ($authors) {
+                $newField['s'][] = array('c' => array_shift($authors));
+                foreach ($authors as $author) {
+                    $newField['s'][] = array('d' => $author);
+                }
             }
             foreach ($additionalAuthors as $addAuthor) {
                 $newField['s'][] = array('d' => $addAuthor);
+            }
+            if ($uniTitle) {
+                $newField['s'][] = array('e' => $uniTitle);
             }
             if ($duration) {
                 $newField['s'][] = array('f' => reset($duration));
@@ -1144,6 +1148,7 @@ class MarcRecord extends BaseRecord
                 foreach ($subfields as $subfield) {
                     $newField['s'][] = array($subfield[0] => substr($subfield, 1));
                 }
+                $this->fields[$tag][] = $newField;
             } else {
                 $this->fields[$tag][] = $tagData;
             }
@@ -1181,9 +1186,7 @@ class MarcRecord extends BaseRecord
                     if (isset($field['s']) && is_array($field['s'])) {
                         foreach ($field['s'] as $subfield) {
                             $subfieldCode = key($subfield);
-                            // Additional normalization here so that we don't break ISO2709 directory in SolrUpdater
-                            $subfieldValue = MetadataUtils::normalizeUnicode(current($subfield));
-                            $fieldStr .= MARCRecord::SUBFIELD_INDICATOR . $subfieldCode . $subfieldValue;
+                            $fieldStr .= MARCRecord::SUBFIELD_INDICATOR . $subfieldCode . current($subfield);
                         }
                     }
                 } else {
@@ -1342,20 +1345,16 @@ class MarcRecord extends BaseRecord
      */
     protected function getSubfieldsArray($field, $codes)
     {
-        if (!$codes) {
-            echo "RECORD " . $this->source . '.' . $this->getID() . ": no codes:\n";
-            print_r(debug_backtrace());
-        }
         $data = array();
         if (!$field || !isset($field['s']) || !is_array($field['s'])) {
             return $data;
         }
         foreach ($field['s'] as $subfield) {
-            if (key($subfield) == '') {
-                echo "RECORD " . $this->source . '.' . $this->getID() . ": no subfield code:\n";
-                print_r(debug_backtrace());
+            $code = key($subfield);
+            if ($code === 0) {
+                $code = '0';
             }
-            if (strstr($codes, key($subfield))) {
+            if (strstr($codes, $code)) {
                 $data[] = current($subfield);
             }
         }
