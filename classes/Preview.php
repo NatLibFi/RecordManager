@@ -71,6 +71,13 @@ class Preview extends SolrUpdater
                 'preTransformation' => 'strip_namespaces.xsl'
             );
         }
+        if (empty($sources['_marc_preview'])) {
+            $sources['_marc_preview'] = array(
+                'institution' => '_preview',
+                'componentParts' => null,
+                'format' => $this->format ? $this->format : 'marc'
+            );
+        }
         parent::__construct(null, $basePath, $sources, $log, false);
     }
 
@@ -107,15 +114,32 @@ class Preview extends SolrUpdater
         
         $record = array(
             'format' => $this->format,
+            'original_data' => $metadata,
             'normalized_data' => $metadata,
             'source_id' => $this->source,
-            'host_record_id' => "_preview",
-            'oai_id' => "_preview",
-            '_id' => "_preview",
+            'host_record_id' => '',
+            'linking_id' => '',
+            'oai_id' => '_preview',
+            '_id' => '_preview',
             'created' => new MongoDate(),
             'date' => new MongoDate()
         );
 
-        return $this->createSolrArray($record, $dummy = array());
+        // Normalize the record
+        $this->normalizationXSLT = isset($settings['normalization']) && $settings['normalization'] ?  : null;
+        if (isset($settings['normalization'])) {
+            $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
+            $basePath = substr($basePath, 0, strrpos($basePath, DIRECTORY_SEPARATOR));
+            $params = array('source_id' => $this->source, 'institution' => 'Preview', 'format' => $this->format, 'id_prefix' => '');
+            $normalizationXSLT = new XslTransformation($basePath . '/transformations', $settings['normalization'], $params);
+            $origMetadataRecord = RecordFactory::createRecord($record['format'], $metadata, $record['oai_id'], $record['source_id']);
+            $record['normalized_data'] = $normalizationXSLT->transform($metadata, array('oai_id' => $record['oai_id']));
+        }
+
+        $metadataRecord = RecordFactory::createRecord($record['format'], $record['normalized_data'], $record['oai_id'], $record['source_id']);
+        $metadataRecord->normalize();
+        $record['normalized_data'] = $metadataRecord->serialize();
+        
+        return $this->createSolrArray($record, $componentParts);
     }
 }
