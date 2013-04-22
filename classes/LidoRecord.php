@@ -112,8 +112,11 @@ class LidoRecord extends BaseRecord
         $lang = $this->getDefaultLanguage();
        
         $data['title'] = $data['title_short'] = $data['title_full'] = $this->getTitle(false, $lang);
-        if ($lang != 'en') {
-            $data['title_alt'] = $this->getTitle(false, 'en');
+        $allTitles = $this->getTitle(false);
+        foreach (explode('; ', $allTitles) as $title) {
+            if ($title != $data['title']) {
+                $data['title_alt'][] = $title;
+            }
         }
         $data['title_sort'] = $this->getTitle(true, $lang);
         $data['description'] = $this->getDescription();
@@ -697,7 +700,7 @@ class LidoRecord extends BaseRecord
      * @return string
      */
     protected function getAllFields($data, $fields = array(
-            'title', 'description', 'format', 'author', 'topic', 
+            'title', 'title_alt', 'description', 'format', 'author', 'topic', 
             'material', 'measurements', 'identifier', 'culture')
     ) {
         $allfields = array();
