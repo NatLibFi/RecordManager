@@ -47,65 +47,64 @@ require_once 'XslTransformation.php';
  */
 class Preview extends SolrUpdater
 {
-    protected $format = '';
-    protected $source = '';
-    
     /**
      * Constructor
      * 
-     * @param string $basePath RecordManager main directory
-     * @param string $format   Record driver format (optional)
-     * @param string $source   The data source id to use (optional)
+     * @param MongoDB $db                 Database connection
+     * @param string  $basePath           RecordManager main directory 
+     * @param array   $dataSourceSettings Data source settings
+     * @param object  $log                Logger
+     * @param boolean $verbose            Whether to output verbose messages
+     * 
+     * @throws Exception
      */
-    public function __construct($basePath, $format, $source) 
+    public function __construct($db, $basePath, $dataSourceSettings, $log, $verbose)
     {
-        $this->format = $format;
-        $this->source = $source; 
-        $log = new Logger();
-        $sources = parse_ini_file("$basePath/conf/datasources.ini", true);
-        if (empty($sources['_preview'])) {
-            $sources['_preview'] = array(
+        if (empty($dataSourceSettings['_preview'])) {
+            $dataSourceSettings['_preview'] = array(
                 'institution' => '_preview',
                 'componentParts' => null,
-                'format' => $this->format ? $this->format : '_preview',
+                'format' => '_preview',
                 'preTransformation' => 'strip_namespaces.xsl'
             );
         }
-        if (empty($sources['_marc_preview'])) {
-            $sources['_marc_preview'] = array(
+        if (empty($dataSourceSettings['_marc_preview'])) {
+            $dataSourceSettings['_marc_preview'] = array(
                 'institution' => '_preview',
                 'componentParts' => null,
-                'format' => $this->format ? $this->format : 'marc'
+                'format' => 'marc'
             );
         }
-        parent::__construct(null, $basePath, $sources, $log, false);
+        parent::__construct($db, $basePath, $dataSourceSettings, $log, $verbose);
     }
 
     /**
      * Creates a preview of the given metadata and returns it
      * 
      * @param string $metadata The metadata to process
+     * @param string $format   Metadata format
+     * @param string $source   Source identifier
      * 
      * @return array
      */
-    public function preview($metadata) 
+    public function preview($metadata, $format, $source) 
     {
-        if (!$this->source) {
-            $this->source = "_preview";
+        if (!$source) {
+            $source = "_preview";
         }
         
         /* Process data source preTransformation XSL if present
            TODO: duplicates code from RecordManager, refactor? */
-        $settings = $this->settings[$this->source];
+        $settings = $this->settings[$source];
         if (isset($settings['preTransformation']) && $settings['preTransformation']) {
             $style = new DOMDocument();
             $style->load($this->basePath . '/transformations/' . $settings['preTransformation']);
             $xslt = new XSLTProcessor();
             $xslt->importStylesheet($style);
-            $xslt->setParameter('', 'source_id', $this->source);
+            $xslt->setParameter('', 'source_id', $source);
             $xslt->setParameter('', 'institution', $settings['institution']);
-            $xslt->setParameter('', 'format', $this->format);
-            $xslt->setParameter('', 'id_prefix', isset($settings['idPrefix']) && $settings['idPrefix'] ? $settings['idPrefix'] : $this->source);
+            $xslt->setParameter('', 'format', $format);
+            $xslt->setParameter('', 'id_prefix', isset($settings['idPrefix']) && $settings['idPrefix'] ? $settings['idPrefix'] : $source);
 
             $doc = new DOMDocument();
             $doc->loadXML($metadata);
@@ -113,10 +112,10 @@ class Preview extends SolrUpdater
         }
         
         $record = array(
-            'format' => $this->format,
+            'format' => $format,
             'original_data' => $metadata,
             'normalized_data' => $metadata,
-            'source_id' => $this->source,
+            'source_id' => $source,
             'host_record_id' => '',
             'linking_id' => '',
             'oai_id' => '_preview',
@@ -130,7 +129,7 @@ class Preview extends SolrUpdater
         if (isset($settings['normalization'])) {
             $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
             $basePath = substr($basePath, 0, strrpos($basePath, DIRECTORY_SEPARATOR));
-            $params = array('source_id' => $this->source, 'institution' => 'Preview', 'format' => $this->format, 'id_prefix' => '');
+            $params = array('source_id' => $this->source, 'institution' => 'Preview', 'format' => $format, 'id_prefix' => '');
             $normalizationXSLT = new XslTransformation($basePath . '/transformations', $settings['normalization'], $params);
             $origMetadataRecord = RecordFactory::createRecord($record['format'], $metadata, $record['oai_id'], $record['source_id']);
             $record['normalized_data'] = $normalizationXSLT->transform($metadata, array('oai_id' => $record['oai_id']));

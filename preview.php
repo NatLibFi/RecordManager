@@ -44,7 +44,16 @@ if (!preg_match('/^[\w_]*$/', $format) || !preg_match('/^[\w_]*$/', $source)) {
 $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
 $configArray = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
 
-$preview = new Preview($basePath, $format, $source);
+date_default_timezone_set($configArray['Site']['timezone']);
+
+$mongo = new Mongo($configArray['Mongo']['url']);
+$db = $mongo->selectDB($configArray['Mongo']['database']);
+MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout']) ? $configArray['Mongo']['cursor_timeout'] : 300000;
+
+$log = new Logger();
+$dataSourceSettings = parse_ini_file("$basePath/conf/datasources.ini", true);
+        
+$preview = new Preview($db, $basePath, $dataSourceSettings, $log, false);
 $fields = $preview->preview($_REQUEST['data'], $format, $source);
 
 header('Content-Type: application/json');
