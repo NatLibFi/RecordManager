@@ -125,7 +125,7 @@ class NdlLidoRecord extends LidoRecord
         $allfields = parent::getAllFields(
             $data, 
             array(
-                'title', 'description', 'format', 'author', 'topic',
+                'title', 'title_alt',  'description', 'format', 'author', 'topic',
                 'material', 'measurements', 'identifier', 'culture', 'classification_str_mv',
                 'artist_str_mv', 'photographer_str_mv', 'finder_str_mv', 'manufacturer_str_mv', 'designer_str_mv'
             )
