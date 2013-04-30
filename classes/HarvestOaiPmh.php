@@ -521,6 +521,21 @@ class HarvestOaiPmh
                     $this->message("No metadata found for record $id", false, Logger::ERROR);
                     continue;
                 }
+                // Add namespaces to the record element
+                $xpath = new DOMXPath($this->_xml);
+                foreach ($xpath->query('namespace::*', $recordNode) as $node) {
+                    // Bypass default xml namespace
+                    if ($node->nodeValue == 'http://www.w3.org/XML/1998/namespace') {
+                        continue;
+                    }
+                    // Check whether the attribute already exists
+                    if ($recordNode->getAttributeNode($node->nodeName) !== false) {
+                        continue;
+                    }
+                    $attr = $this->_xml->createAttribute($node->nodeName);
+                    $attr->value = $node->nodeValue;
+                    $recordNode->appendChild($attr);
+                }                
                 $this->_normalRecords += call_user_func($this->_callback, $id, false, trim($this->_xml->saveXML($recordNode)));
             }
         }
