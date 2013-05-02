@@ -886,7 +886,7 @@ class MarcRecord extends BaseRecord
             case 'R':
                 return 'SensorImage';
             case 'S':
-                $soundTech = strtoupper(substr($contents, 14, 1));
+                $soundTech = strtoupper(substr($contents, 13, 1));
                 switch($formatCode2) {
                 case 'D':
                     return $soundTech == 'D' ? 'CD' : 'SoundDisc';
