@@ -41,7 +41,7 @@ function main($argv)
     if (!isset($params['func'])) {
         echo "Usage: manage --func=... [...]\n\n";
         echo "Parameters:\n\n";
-        echo "--func             renormalize|deduplicate|updatesolr|dump|deletesource|deletesolr|optimizesolr|count\n";
+        echo "--func             renormalize|deduplicate|updatesolr|dump|deletesource|deletesolr|optimizesolr|count|updategeocoding|resimplifygeocoding\n";
         echo "--source           Source ID to process (separate multiple sources with commas)\n";
         echo "--all              Process all records regardless of their state (deduplicate)\n";
         echo "                   or date (updatesolr)\n";
@@ -49,6 +49,7 @@ function main($argv)
         echo "--single           Process only the given record id (deduplicate, updatesolr, dump)\n";
         echo "--nocommit         Don't ask Solr to commit the changes (updatesolr)\n";
         echo "--field            Field to analyze (count)\n";
+        echo "--file             File containing places to geocode (updategeocoding)\n";
         echo "--verbose          Enable verbose output for debugging\n\n";
         exit(1);
     }
@@ -87,6 +88,12 @@ function main($argv)
             break;
         case 'count':
             $manager->countValues($source, isset($params['field']) ? $params['field'] : null);
+            break;
+        case 'updategeocoding':
+            $manager->updateGeocodingTable(isset($params['file']) ? $params['file'] : null);
+            break;
+        case 'resimplifygeocoding':
+            $manager->resimplifyGeocodingTable();
             break;
         default: 
             echo 'Unknown func: ' . $params['func'] . "\n"; 

@@ -946,36 +946,38 @@ class SolrUpdater
             $data['hidden_component_boolean'] = true;
         }
         
-        if (isset($configArray['Solr']['geocoding']) && isset($data['geographic_facet']) && $data['geographic_facet']) {
-            $geoField = $configArray['Solr']['geocoding'];
+        if (isset($configArray['Geocoding']['solr_field']) && isset($data['geographic_facet']) && $data['geographic_facet']) {
+            $geoField = $configArray['Geocoding']['solr_field'];
+            $importantThreshold = isset($configArray['Geocoding']['important_threshold']) ? $configArray['Geocoding']['important_threshold'] : 0.9;
+            // Geocode only if not already done
             if (!isset($data[$geoField]) || !$data[$geoField]) {
-                foreach ($data['geographic_facet'] as $place) {
-                    $places[] = $place;
-                    $places += explode(',', $place);
-                    foreach ($places as $place) {
-                        $place = mb_strtoupper(trim(str_replace('?', '', $place)));
-                        if (!$place) {
-                            continue;
-                        }
-                        $locations = $this->db->location->find(array('place' => $place))->sort(array('importance' => 1));
-                        $definite = false;
-                        foreach ($locations as $location) {
-                            if (empty($location['lat']) || empty($location['lon'])) {
+                try {
+                    foreach ($data['geographic_facet'] as $place) {
+                        $places[] = $place;
+                        $places += explode(',', $place);
+                        $haveImportant = false;
+                        foreach ($places as $place) {
+                            $place = MetadataUtils::normalize(str_replace('?', '', $place));
+                            if (!$place) {
                                 continue;
                             }
-                            if ($definite && ($location['importance'] == '' || $location['importance'] > 0)) {
-                                break;
+                            $locations = $this->db->location->find(array('place' => $place))->sort(array('importance' => -1));
+                            foreach ($locations as $location) {
+                                if (empty($location['location']) || $location['location'] == 'POLYGON EMPTY') {
+                                    continue;
+                                }
+                                if ($haveImportant && $location['importance'] < $importantThreshold) {
+                                    break;
+                                }
+                                if ($location['importance'] >= $importantThreshold) {
+                                    $haveImportant = true;
+                                }
+                                $data[$geoField][] = "{$location['location']}";
                             }
-                            $this->log->log('createSolrArray', "Location $place: {$location['lat']},{$location['lon']}", Logger::INFO);
-                            $data[$geoField][] = "{$location['lon']} {$location['lat']}";
-                            if ($location['importance'] === 0) {
-                                $definite = true;
-                            }
-                        }
-                        if ($definite) {
-                            break;
                         }
                     }
+                } catch(Exception $e) {
+                    $this->log->log('createSolrArray', "Geocoding record '" . $data['id'] . "' failed: Exception: " . $e->getMessage(), Logger::ERROR);
                 } 
             }  
         }
