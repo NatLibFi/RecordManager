@@ -147,9 +147,9 @@ EOF;
     protected function identify()
     {
         global $configArray;
-        $name = htmlentities($configArray['OAI-PMH']['repository_name']);
-        $base = htmlentities($configArray['OAI-PMH']['base_url']);
-        $admin = htmlentities($configArray['OAI-PMH']['admin_email']);
+        $name = $this->escape($configArray['OAI-PMH']['repository_name']);
+        $base = $this->escape($configArray['OAI-PMH']['base_url']);
+        $admin = $this->escape($configArray['OAI-PMH']['admin_email']);
         $earliestDate = $this->toOaiDate($this->getEarliestDateStamp());
         
         print <<<EOF
@@ -251,7 +251,7 @@ EOF;
             if (++$count >= $maxRecords) {
                 if ($records->hasNext()) {
                     // More records available, create resumptionToken
-                    $token = htmlentities(implode('|', array($set, $metadataPrefix, $from, $until, $count + $position)));
+                    $token = $this->escape(implode('|', array($set, $metadataPrefix, $from, $until, $count + $position)));
                     print <<<EOF
     <resumptionToken cursor="$position">$token</resumptionToken>
 
@@ -315,7 +315,7 @@ EOF;
         foreach ($formats as $key => $dummy) {
             foreach ($this->formats as $id => $settings) {
                 if ($settings['format'] == $key) {
-                    $prefix = htmlentities($id);
+                    $prefix = $this->escape($id);
                     $schema = $settings['schema'];  
                     $namespace = $settings['namespace'];  
                 
@@ -350,8 +350,8 @@ EOF;
 EOF;
 
         foreach ($this->sets as $id => $set) {
-            $id = htmlentities($id);
-            $name = htmlentities($set['name']);
+            $id = $this->escape($id);
+            $name = $this->escape($set['name']);
      
             print <<<EOF
     <set>
@@ -376,8 +376,8 @@ EOF;
      */
     protected function error($code, $message)
     {
-        $code = htmlentities($code);
-        $message = htmlentities($message);
+        $code = $this->escape($code);
+        $message = $this->escape($message);
         print "  <error code=\"$code\">$message</error>\n";
         $this->log("$code - $message", Logger::ERROR);
     }
@@ -393,12 +393,12 @@ EOF;
         header('Content-Type: text/xml');
         header("Cache-Control: no-cache, must-revalidate");
         $date = $this->toOaiDate();
-        $base = htmlentities($configArray['OAI-PMH']['base_url']);
+        $base = $this->escape($configArray['OAI-PMH']['base_url']);
         $arguments = '';
         foreach ($this->getRequestParameters() as $param) {
             $keyValue = explode('=', $param, 2);
             if (isset($keyValue[1])) { 
-                $arguments .= ' ' . $keyValue[0] . '="' . htmlentities($keyValue[1]) . '"';
+                $arguments .= ' ' . $keyValue[0] . '="' . $this->escape($keyValue[1]) . '"';
             }
         }
             
@@ -699,16 +699,16 @@ EOF;
         
         $setSpecs = '';
         foreach ($this->getRecordSets($record) as $id) {
-            $id = htmlentities($id);
+            $id = $this->escape($id);
             $setSpecs .= <<<EOF
         <setSpec>$id</setSpec>
 
 EOF;
         }
         
-        $id = htmlentities($record['oai_id']);
+        $id = $this->escape($record['oai_id']);
         $date = $this->toOaiDate($record['updated']->sec);
-        $source = htmlentities($record['source_id']);
+        $source = $this->escape($record['source_id']);
         $status = $record['deleted'] ? ' status="deleted"' : '';
         return <<<EOF
     <record>
@@ -719,6 +719,22 @@ $setSpecs      </header>
 $metadata    </record>
 
 EOF;
+    }
+    
+    /**
+     * Escape special characters for XML
+     * 
+     * @param string $str String to escape
+     * 
+     * @return string Escaped string
+     */
+    protected function escape($str)
+    {
+        $str = str_replace('&', '&amp;', $str);
+        $str = str_replace('"', '&quot;', $str);
+        $str = str_replace('<', '&lt;', $str);
+        $str = str_replace('>', '&gt;', $str);
+        return $str;
     }
 }
 
