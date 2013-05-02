@@ -51,7 +51,7 @@ set_definitions = oai-pmh-sets.ini
 [Geocoding]
 // Please see http://wiki.openstreetmap.org/wiki/Nominatim_usage_policy before using Nominatim
 geocoder = NominatimGeocoder
-// Milliseconds to wait between requests (set to at least 1000 when using OpenStreetMap's servers 
+// Milliseconds to wait between requests (set to at least 1000 when using OpenStreetMap's servers) 
 delay = 1500
 ;url = "http://nominatim.openstreetmap.org/search"
 ;email = "your@address"
@@ -59,6 +59,9 @@ delay = 1500
 // Polygon simplification tolerance. GEOS and its PHP extension must be installed for simplification to be available
 // (see https://github.com/phayes/geoPHP/wiki/GEOS) 
 ;simplification_tolerance = 0.001
+// Maximum number of polygon elements
+;simplification_max_length = 1000
+
 // Solr field that contains the geocoding data
 solr_field = location_geo
 // Threshold governing whether a location is considered important. If such a location is found, locations with lower importance
