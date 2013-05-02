@@ -889,7 +889,7 @@ class MarcRecord extends BaseRecord
                 $soundTech = strtoupper(substr($contents, 14, 1));
                 switch($formatCode2) {
                 case 'D':
-                    return $soundTech == 'd' ? 'CD' : 'SoundDisc';
+                    return $soundTech == 'D' ? 'CD' : 'SoundDisc';
                 case 'S':
                     return 'SoundCassette';
                 default:
