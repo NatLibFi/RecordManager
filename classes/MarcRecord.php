@@ -323,7 +323,7 @@ class MarcRecord extends BaseRecord
             $data['title_full'] = $this->getFieldSubfields('240');
         }
 
-        $data['series'] = $this->getFieldsSubfields('*440ap:*800abcdfpqt:*830ap');
+        $data['series'] = $this->getFieldsSubfields('*440ap:490a:*800abcdfpqt:*830ap');
           
         $data['publisher'] = $this->getFieldsSubfields('*260b', false, true);
         $data['publishDateSort'] = $this->getPublicationYear();
@@ -332,7 +332,7 @@ class MarcRecord extends BaseRecord
         $data['dateSpan'] = $this->getFieldsSubfields('*362a');
         $data['edition'] = $this->getFieldSubfields('250a');
         $data['contents'] = $this->getFieldsSubfields('*505a:*505t');
-          
+
         $data['isbn'] = $this->getISBNs();
         foreach ($this->getFieldsSubfields('773z') as $isbn) {
             $isbn = str_replace('-', '', $isbn);
