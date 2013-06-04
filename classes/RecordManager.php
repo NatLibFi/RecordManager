@@ -436,14 +436,15 @@ class RecordManager
                         }
                         ++$deduped;
                     } else {
-                        if ($this->verbose)
-                        echo '.';
+                        if ($this->verbose) {
+                            echo '.';
+                        }
                     }
                     if (microtime(true) - $startRecordTime > 0.7) {
                         if ($this->verbose) {
                             echo "\n";
                         }
-                        $this->log->log('deduplicate', 'Candidate search for ' . $record['_id'] . ' took ' . (microtime(true) - $startRecordTime));
+                        $this->log->log('deduplicate', 'Deduplication of ' . $record['_id'] . ' took ' . (microtime(true) - $startRecordTime));
                     }
                     ++$count;
                     if ($count % 1000 == 0) {
@@ -989,6 +990,7 @@ class RecordManager
      */
     protected function dedupRecord($record)
     {
+        $startTime = microtime(true);
         if ($this->verbose) {
             echo 'Original ' . $record['_id'] . ":\n" . MetadataUtils::getRecordData($record, true) . "\n";
         }
@@ -999,7 +1001,7 @@ class RecordManager
         
         $origRecord = null;
         $matchRecord = null;
-        $startTime = microtime(true);
+        $candidateCount = 0;
         foreach (array('isbn_keys' => $ISBNArray, 'id_keys' => $IDArray, 'title_keys' => $keyArray) as $type => $array) {
             foreach ($array as $keyPart) {
                 if (!$keyPart) {
@@ -1020,6 +1022,7 @@ class RecordManager
                 // Go through the candidates, try to match
                 $matchRecord = null;
                 foreach ($candidates as $candidate) {
+                    ++$candidateCount;
                     // Verify the candidate has not been deduped with this source yet
                     if (isset($candidate['dedup_key']) && $candidate['dedup_key'] && (!isset($record['dedup_key']) || $candidate['dedup_key'] != $record['dedup_key'])) {
                         if ($this->db->record->find(array('dedup_key' => $candidate['dedup_key'], 'source_id' => $this->sourceId))->hasNext()) {
@@ -1030,7 +1033,7 @@ class RecordManager
                         }
                     }
 
-                    if (++$processed > 1000 || microtime(true) - $startTime > 5 || (isset($this->tooManyCandidatesKeys["$type=$keyPart"]) && $processed > 100)) {
+                    if (++$processed > 1000 || (isset($this->tooManyCandidatesKeys["$type=$keyPart"]) && $processed > 100)) {
                         // Too many candidates, give up..
                         $this->log->log('dedupRecord', "Too many candidates for record " . $record['_id'] . " with key '$keyPart'", Logger::DEBUG);
                         if (count($this->tooManyCandidatesKeys) > 2000) {
@@ -1057,8 +1060,17 @@ class RecordManager
             }
         }
 
+        if ($this->verbose && microtime(true) - $startTime > 0.2) {
+            echo "Candidate search among $candidateCount records (" . ($matchRecord ? 'success' : 'failure') . ") completed in " . (microtime(true) - $startTime) . "\n";           
+        }
+        
         if ($matchRecord) {
             $this->markDuplicates($record, $matchRecord);
+            
+            if ($this->verbose && microtime(true) - $startTime > 0.2) {
+                echo "DedupRecord among $candidateCount records (" . ($matchRecord ? 'success' : 'failure') . ") completed in " . (microtime(true) - $startTime) . "\n";           
+            }
+            
             return true;
         }
         if (isset($record['dedup_key']) || $record['update_needed']) {
@@ -1070,6 +1082,11 @@ class RecordManager
             $record['update_needed'] = false;
             $this->db->record->save($record);
         }
+        
+        if ($this->verbose && microtime(true) - $startTime > 0.2) {
+            echo "DedupRecord among $candidateCount records (" . ($matchRecord ? 'success' : 'failure') . ") completed in " . (microtime(true) - $startTime) . "\n";           
+        }
+        
         return false;
     }
 
@@ -1253,7 +1270,10 @@ class RecordManager
         $this->db->record->save($rec2);
         
         if (!isset($rec1['host_record_id']) || !$rec1['host_record_id']) {
-            $this->dedupComponentParts($rec1);
+            $count = $this->dedupComponentParts($rec1);
+            if ($count > 0) {
+                echo "Deduplicated $count component parts for {$rec1['_id']}\n";
+            }
         }
     }
 
@@ -1307,7 +1327,7 @@ class RecordManager
      * 
      * @param object $hostRecord Mongo record for the host record
      * 
-     * @return void
+     * @return integer Number of component parts deduplicated
      */
     protected function dedupComponentParts($hostRecord)
     {
@@ -1317,11 +1337,11 @@ class RecordManager
         }
         if (!$hostRecord['linking_id']) {
             $this->log->log('dedupComponentParts', 'Linking ID missing from record ' . $hostRecord['_id'], Logger::ERROR);
-            return;
+            return 0;
         }
         $components1iter = $this->db->record->find(array('host_record_id' => $hostRecord['linking_id']));
         if (!$components1iter->hasNext()) {
-            return;
+            return 0;
         }
         $components1 = array();
         foreach ($components1iter as $component1) {
@@ -1330,6 +1350,7 @@ class RecordManager
         ksort($components1);
         
         // Go through all other records with same dedup key and see if their component parts match
+        $marked = 0;
         $otherRecords = $this->db->record->find(array('deleted' => false, 'dedup_key' => $hostRecord['dedup_key']));
         foreach ($otherRecords as $otherRecord) {
             if ($otherRecord['source_id'] == $hostRecord['source_id']) {
@@ -1342,38 +1363,45 @@ class RecordManager
             }
             ksort($components2);
             $components2 = array_values($components2);
-            $allMatch = true;
-            $idx = -1;
-            foreach ($components1 as $component1) {
-                if (++$idx >= count($components2)) {
-                    $allMatch = false;
-                    break;
-                }
-                $component2 = $components2[$idx];
-                if ($this->verbose) {
-                    echo "Comparing {$component1['_id']} with {$component2['_id']}\n";
-                }
-                if ($this->verbose) {
-                    echo 'Original ' . $component1['_id'] . ":\n" . MetadataUtils::getRecordData($component1, true) . "\n";
-                }
-                $metadataComponent1 = RecordFactory::createRecord($component1['format'], MetadataUtils::getRecordData($component1, true), $component1['oai_id'], $component1['source_id']);
-                if (!$this->matchRecords($component1, $metadataComponent1, $component2)) {
-                    $allMatch = false;
-                    break;
+            
+            if (count($components1) != count($components2)) {
+                $allMatch = false;
+            } else {
+                $allMatch = true;
+                $idx = -1;
+                foreach ($components1 as $component1) {
+                    $component2 = $components2[++$idx];
+                    if ($this->verbose) {
+                        echo "Comparing {$component1['_id']} with {$component2['_id']}\n";
+                    }
+                    if ($this->verbose) {
+                        echo 'Original ' . $component1['_id'] . ":\n" . MetadataUtils::getRecordData($component1, true) . "\n";
+                    }
+                    $metadataComponent1 = RecordFactory::createRecord($component1['format'], MetadataUtils::getRecordData($component1, true), $component1['oai_id'], $component1['source_id']);
+                    if (!$this->matchRecords($component1, $metadataComponent1, $component2)) {
+                        $allMatch = false;
+                        break;
+                    }
                 }
             }
             if ($allMatch) {
                 if ($this->verbose) {
-                    echo "All component parts match between {$hostRecord['_id']} and {$otherRecord['_id']}\n";
+                    echo microtime(true) . " All component parts match between {$hostRecord['_id']} and {$otherRecord['_id']}\n";
                 }
                 $idx = -1;
                 foreach ($components1 as $component1) {
                     $component2 = $components2[++$idx];
                     $this->markDuplicates($component1, $component2);
+                    ++$marked;
                 }
                 break;
+            } else {
+                if ($this->verbose) {
+                    echo microtime(true) . " Not all component parts match between {$hostRecord['_id']} and {$otherRecord['_id']}\n";
+                }
             }
         }
+        return $marked;
     }
 
     /**
