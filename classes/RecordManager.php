@@ -275,7 +275,7 @@ class RecordManager
     public function updateSolrIndex($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false)
     {
         global $configArray;
-        $updater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
+        $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
         
         if (isset($configArray['Solr']['merge_records']) && $configArray['Solr']['merge_records']) {
             return $updater->updateMergedRecords($fromDate, $sourceId, $singleId, $noCommit);
@@ -384,7 +384,7 @@ class RecordManager
     public function deduplicate($sourceId, $allRecords = false, $singleId = '')
     {
         // Used for format mapping
-        $this->solrUpdater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
+        $this->solrUpdater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
         
         if ($allRecords) {
             foreach ($this->dataSourceSettings as $source => $settings) {
@@ -692,7 +692,7 @@ class RecordManager
     {
         global $configArray;
         
-        $updater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
+        $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
         if (isset($configArray['Solr']['merge_records']) && $configArray['Solr']['merge_records']) {
             $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' from merged records via Solr update for merged records...");
             $updater->updateMergedRecords('', $sourceId, '', false, true);
@@ -709,7 +709,7 @@ class RecordManager
      */
     public function optimizeSolr()
     {
-        $updater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
+        $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
         
         $this->log->log('optimizeSolr', 'Optimizing Solr index');
         $updater->optimizeIndex();
@@ -891,7 +891,7 @@ class RecordManager
             echo "Field must be specified\n";
             exit;
         }
-        $updater = new SolrUpdater($this->db, $this->basePath, $this->dataSourceSettings, $this->log, $this->verbose);
+        $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
         $updater->countValues($sourceId, $field);
     }
     

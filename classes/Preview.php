@@ -50,32 +50,31 @@ class Preview extends SolrUpdater
     /**
      * Constructor
      * 
-     * @param MongoDB $db                 Database connection
-     * @param string  $basePath           RecordManager main directory 
-     * @param array   $dataSourceSettings Data source settings
-     * @param object  $log                Logger
-     * @param boolean $verbose            Whether to output verbose messages
+     * @param MongoDB $db       Database connection
+     * @param string  $basePath RecordManager main directory 
+     * @param object  $log      Logger
+     * @param boolean $verbose  Whether to output verbose messages
      * 
      * @throws Exception
      */
-    public function __construct($db, $basePath, $dataSourceSettings, $log, $verbose)
+    public function __construct($db, $basePath, $log, $verbose)
     {
-        if (empty($dataSourceSettings['_preview'])) {
-            $dataSourceSettings['_preview'] = array(
+        parent::__construct($db, $basePath, $log, $verbose);
+        if (empty($this->settings['_preview'])) {
+            $this->settings['_preview'] = array(
                 'institution' => '_preview',
                 'componentParts' => null,
                 'format' => '_preview',
                 'preTransformation' => 'strip_namespaces.xsl'
             );
         }
-        if (empty($dataSourceSettings['_marc_preview'])) {
-            $dataSourceSettings['_marc_preview'] = array(
+        if (empty($this->settings['_marc_preview'])) {
+            $this->settings['_marc_preview'] = array(
                 'institution' => '_preview',
                 'componentParts' => null,
                 'format' => 'marc'
             );
         }
-        parent::__construct($db, $basePath, $dataSourceSettings, $log, $verbose);
     }
 
     /**

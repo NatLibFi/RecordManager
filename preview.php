@@ -51,9 +51,8 @@ $db = $mongo->selectDB($configArray['Mongo']['database']);
 MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout']) ? $configArray['Mongo']['cursor_timeout'] : 300000;
 
 $log = new Logger();
-$dataSourceSettings = parse_ini_file("$basePath/conf/datasources.ini", true);
         
-$preview = new Preview($db, $basePath, $dataSourceSettings, $log, false);
+$preview = new Preview($db, $basePath, $log, false);
 $fields = $preview->preview($_REQUEST['data'], $format, $source);
 
 header('Content-Type: application/json');

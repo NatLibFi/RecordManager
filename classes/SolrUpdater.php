@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) Ere Maijala, The National Library of Finland 2012
+ * Copyright (C) The National Library of Finland 2012-2013
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -71,15 +71,14 @@ class SolrUpdater
     /**
      * Constructor 
      * 
-     * @param MongoDB $db                 Database connection
-     * @param string  $basePath           RecordManager main directory 
-     * @param array   $dataSourceSettings Data source settings
-     * @param object  $log                Logger
-     * @param boolean $verbose            Whether to output verbose messages
+     * @param MongoDB $db       Database connection
+     * @param string  $basePath RecordManager main directory 
+     * @param object  $log      Logger
+     * @param boolean $verbose  Whether to output verbose messages
      * 
      * @throws Exception
      */
-    public function __construct($db, $basePath, $dataSourceSettings, $log, $verbose)
+    public function __construct($db, $basePath, $log, $verbose)
     {
         global $configArray;
         
@@ -117,30 +116,6 @@ class SolrUpdater
             $this->mergedFields = explode(',', $configArray['Solr']['merged_fields']);
         }
 
-        // Load settings and mapping files
-        $this->settings = array();
-        foreach ($dataSourceSettings as $source => $settings) {
-            if (!isset($settings['institution'])) {
-                throw new Exception("Error: institution not set for $source\n");
-            }
-            if (!isset($settings['format'])) {
-                throw new Exception("Error: format not set for $source\n");
-            }
-            $this->settings[$source] = $settings;
-            $this->settings[$source]['idPrefix'] = isset($settings['idPrefix']) && $settings['idPrefix'] ? $settings['idPrefix'] : $source;
-            $this->settings[$source]['componentParts'] = isset($settings['componentParts']) && $settings['componentParts'] ? $settings['componentParts'] : 'as_is';
-            $this->settings[$source]['indexMergedParts'] = isset($settings['indexMergedParts']) ? $settings['indexMergedParts'] : true;
-            $this->settings[$source]['solrTransformationXSLT'] = isset($settings['solrTransformation']) && $settings['solrTransformation'] ? new XslTransformation($this->basePath . '/transformations', $settings['solrTransformation']) : null;
-            $this->settings[$source]['mappingFiles'] = array();
-            
-            foreach ($settings as $key => $value) {
-                if (substr($key, -8, 8) == '_mapping') {
-                    $field = substr($key, 0, -8);
-                    $this->settings[$source]['mappingFiles'][$field] = $this->readMappingFile($this->basePath . '/mappings/' . $value);
-                }
-            }
-        }
-
         $this->commitInterval = isset($configArray['Solr']['max_commit_interval'])
             ? $configArray['Solr']['max_commit_interval'] : 50000;
         $this->maxUpdateRecords = isset($configArray['Solr']['max_update_records'])
@@ -148,6 +123,9 @@ class SolrUpdater
         $this->maxUpdateSize = isset($configArray['Solr']['max_update_size'])
             ? $configArray['Solr']['max_update_size'] : 1024;
         $this->maxUpdateSize *= 1024;
+        
+        // Load settings and mapping files
+        $this->loadDatasources();
     }
 
     /**
@@ -338,7 +316,7 @@ class SolrUpdater
                     $collectionExists = true;
                 } else {
                     $collTime = end(explode('_', $collection));
-                    if (strncmp($collection, 'mr_record_', 10) == 0 && $collTime != $lastRecordTime) {
+                    if (strncmp($collection, 'mr_record_', 10) == 0 && $collTime != $lastRecordTime && $collTime > time() - 60 * 60 * 24 * 7) {
                         $this->log->log('updateMergedRecords', "Cleanup: dropping old m/r collection $collection");
                         $this->db->dropCollection($collection);
                     }
@@ -627,8 +605,12 @@ class SolrUpdater
         foreach ($records as $record) {
             $source = $record['source_id'];
             if (!isset($this->settings[$source])) {
-                $this->log->log('countValues', "No settings found for data source '$source'", Logger::FATAL);
-                throw new Exception('countValues', "No settings found for data source '$source'");
+                // Try to reload data source settings as they might have been updated during a long run
+                $this->loadDatasources();
+                if (!isset($this->settings[$source])) {
+                    $this->log->log('countValues', "No settings found for data source '$source'", Logger::FATAL);
+                    throw new Exception('countValues', "No settings found for data source '$source'");
+                }
             }
             $settings = $this->settings[$source];
             $mergedComponents = 0;
@@ -703,6 +685,38 @@ class SolrUpdater
     }
     
     /**
+     * Load data source settings
+     * 
+     * @return void
+     */
+    protected function loadDatasources()
+    {
+        $dataSourceSettings = parse_ini_file("{$this->basePath}/conf/datasources.ini", true);
+        $this->settings = array();
+        foreach ($dataSourceSettings as $source => $settings) {
+            if (!isset($settings['institution'])) {
+                throw new Exception("Error: institution not set for $source\n");
+            }
+            if (!isset($settings['format'])) {
+                throw new Exception("Error: format not set for $source\n");
+            }
+            $this->settings[$source] = $settings;
+            $this->settings[$source]['idPrefix'] = isset($settings['idPrefix']) && $settings['idPrefix'] ? $settings['idPrefix'] : $source;
+            $this->settings[$source]['componentParts'] = isset($settings['componentParts']) && $settings['componentParts'] ? $settings['componentParts'] : 'as_is';
+            $this->settings[$source]['indexMergedParts'] = isset($settings['indexMergedParts']) ? $settings['indexMergedParts'] : true;
+            $this->settings[$source]['solrTransformationXSLT'] = isset($settings['solrTransformation']) && $settings['solrTransformation'] ? new XslTransformation($this->basePath . '/transformations', $settings['solrTransformation']) : null;
+            $this->settings[$source]['mappingFiles'] = array();
+            
+            foreach ($settings as $key => $value) {
+                if (substr($key, -8, 8) == '_mapping') {
+                    $field = substr($key, 0, -8);
+                    $this->settings[$source]['mappingFiles'][$field] = $this->readMappingFile($this->basePath . '/mappings/' . $value);
+                }
+            }
+        }
+    }
+    
+    /**
      * Create Solr array for the given record
      * 
      * @param object  $record            Mongo record
@@ -718,8 +732,12 @@ class SolrUpdater
         
         $source = $record['source_id'];
         if (!isset($this->settings[$source])) {
-            $this->log->log('createSolrArray', "No settings found for data source '$source'", Logger::FATAL);
-            throw new Exception("No settings found for data source '$source'");
+            // Try to reload data source settings as they might have been updated during a long run
+            $this->loadDatasources();
+            if (!isset($this->settings[$source])) {
+                $this->log->log('createSolrArray', "No settings found for data source '$source'", Logger::FATAL);
+                throw new Exception("No settings found for data source '$source'");
+            }
         }
         $settings = $this->settings[$source];
         $hiddenComponent = false;
