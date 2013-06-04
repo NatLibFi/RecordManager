@@ -60,8 +60,8 @@ function pearHandleError($error)
  * parseArgs Command Line Interface (CLI) utility function.
  * 
  * @param string[] $argv Arguments
+ * 
  * @return string[] Parsed keys and values 
- *
  * @usage               $args = parseArgs($_SERVER['argv']);
  * @author              Patrick Fisher <patrick@pwfisher.com>
  * @source              https://github.com/pwfisher/CommandLine.php
