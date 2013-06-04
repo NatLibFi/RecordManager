@@ -18,7 +18,7 @@ xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
   <subfield code="a">Database</subfield>
 </datafield>
          </xsl:if>    
-         <xsl:if test="(local-name() != 'datafield' and local-name() != 'controlfield') or @tag = 'PXY' or (string(number(@tag)) != 'NaN')">
+         <xsl:if test="(local-name() != 'datafield' and local-name() != 'controlfield') or @tag = 'TAR' or @tag = 'PXY' or (string(number(@tag)) != 'NaN')">
              <xsl:choose>
                 <xsl:when test="local-name() = 'datafield' and @tag = '591'">
                 </xsl:when>
