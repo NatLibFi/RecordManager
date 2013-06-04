@@ -54,8 +54,8 @@ class NdlMarcRecord extends MarcRecord
             $fields = array();
             foreach ($this->fields['653'] as &$field) {
                 foreach ($field['s'] as $subfield) {
-                    if ($subfield['c'] == 'a') {
-                        foreach (explode('; ', $subfield['v']) as $value) {
+                    if (key($subfield) == 'a') {
+                        foreach (explode('; ', current($subfield)) as $value) {
                             $fields[] = array(
                                 'i1' => $field['i1'], 
                                 'i2' => $field['i2'],
