@@ -904,7 +904,7 @@ class SolrUpdater
                     $hierarchyString = '';
                     for ($i = 0; $i < count($values); $i++) {
                         $hierarchyString .= '/' . $values[$i];
-                        $array[] = ($i) . $hierarchyString;
+                        $array[] = ($i) . $hierarchyString . '/';
                     }
                 }
                 $data[$facet] = $array;
