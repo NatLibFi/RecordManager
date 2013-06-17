@@ -233,9 +233,13 @@ class MetadataUtils
         $str = rtrim($str, ' /:;,=([');
 
         // Don't replace an initial letter (e.g. string "Smith, A.") followed by period
-        $thirdLast = substr($str, -3, 1);
-        if (substr($str, -1) == '.' && $thirdLast != ' ') {
-            $lastWord = end(explode(' ', $str));
+        if (substr($str, -1) == '.' && substr($str, -3, 1) != ' ') {
+            $p = strrpos($str, ' ');
+            if ($p > 0) {
+                $lastWord = substr($str, $p + 1);
+            } else {
+                $lastWord = $str;
+            }
             if (!isset($configArray['Site']['abbreviations']) || !in_array($lastWord, $configArray['Site']['abbreviations'])) {
                 $str = substr($str, 0, -1);
             }
@@ -266,7 +270,14 @@ class MetadataUtils
     // @codingStandardsIgnoreStart
     static public function array_iunique($array) 
     {
-        return array_intersect_key($array, array_unique(array_map('mb_strtolower', $array)));
+        // This one handles UTF-8 properly, but mb_strtolower is SLOW 
+        $map = array();
+        foreach ($array as $key => $value) {
+            $mb = preg_match('/[\x80-\xFF]/', $value); //mb_detect_encoding($value, 'ASCII', true);
+            $map[$key] = $mb ? mb_strtolower($value, 'UTF-8') : strtolower($value);
+        }
+        return array_intersect_key($array, array_unique($map));
+        //return array_intersect_key($array, array_unique(array_map('strtolower', $array)));
     } 
     // @codingStandardsIgnoreEnd
     
