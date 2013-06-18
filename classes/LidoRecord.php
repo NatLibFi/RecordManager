@@ -707,7 +707,7 @@ class LidoRecord extends BaseRecord
         foreach ($fields as $key) {
             if (isset($data[$key]) && !empty($data[$key])) {
                 if (is_array($data[$key])) {
-                    $allfields[] = implode(' ', MetadataUtils::array_iunique($data[$key]));
+                    $allfields[] = implode(' ', array_unique($data[$key]));
                 } else {
                     $allfields[] = $data[$key];
                 }

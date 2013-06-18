@@ -274,7 +274,7 @@ class MarcRecord extends BaseRecord
                 }
             }
         }
-        $data['allfields'] = MetadataUtils::array_iunique($allFields);
+        $data['allfields'] = array_values(array_unique($allFields));
           
         // language
         $languages = array(substr($this->getField('008'), 35, 3));
@@ -296,9 +296,9 @@ class MarcRecord extends BaseRecord
         foreach ($this->getFieldsSubfields('*979c:*979d', false, true, true) as $field) {
             $data['author2'][] = $field;
         }
-        $data['author2'] = MetadataUtils::array_iunique($data['author2']);
+        $data['author2'] = array_values(array_unique($data['author2']));
         
-        $key = array_search(mb_strtolower($data['author']), array_map('mb_strtolower', $data['author2']));
+        $key = array_search($data['author'], $data['author2']);
         if ($key !== false) {
             unset($data['author2'][$key]);
         }
@@ -311,7 +311,7 @@ class MarcRecord extends BaseRecord
         $data['title_short'] = $this->getFieldSubfields('245a');
         $data['title_full'] = $this->getFieldSubfields('245abcfghknps');
         $data['title_alt'] = array_values(
-            MetadataUtils::array_iunique(
+            array_unique(
                 $this->getFieldsSubfields('+245ab:*130adfgklnpst:*240a:*246a:*730adfgklnpst:*740a:*979b:*979e')
             )
         ); // 979b and e = component part title and uniform title
@@ -1435,9 +1435,7 @@ class MarcRecord extends BaseRecord
                     // Handle normal field
                     if ($codes) {
                         if ($splitSubfields) {
-                            foreach (str_split($codes) as $code) {
-                                $data = array_merge($data, $this->getSubfieldsArray($field, $code));
-                            }
+                            $data = array_merge($data, $this->getSubfieldsArray($field, $codes));
                         } else {
                             $fieldContents = $this->getSubfields($field, $codes);
                             if ($fieldContents) {
@@ -1460,9 +1458,7 @@ class MarcRecord extends BaseRecord
                         }
                         if ($codes) {
                             if ($splitSubfields) {
-                                foreach (str_split($codes) as $code) {
-                                    $data = array_merge($data, $this->getSubfieldsArray($field, $code));
-                                }
+                                $data = array_merge($data, $this->getSubfieldsArray($field, $codes));
                             } else {
                                 $fieldContents = $this->getSubfields($field, $codes);
                                 if ($fieldContents) {
@@ -1483,7 +1479,9 @@ class MarcRecord extends BaseRecord
             }
         }
         if ($stripTrailingPunctuation) {
-            return array_map(array('MetadataUtils', 'stripTrailingPunctuation'), $data);
+            foreach ($data as &$item) {
+                $item = MetadataUtils::stripTrailingPunctuation($item);
+            }
         }
         return $data;
     }
