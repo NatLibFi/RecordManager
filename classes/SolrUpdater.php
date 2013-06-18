@@ -245,8 +245,8 @@ class SolrUpdater
      * @param string|null $fromDate Starting date for updates (if empty 
      *                              string, last update date stored in the database
      *                              is used and if null, all records are processed)
-     * @param string      $sourceId Source ID to update, or empty or * for all 
-     *                              source
+     * @param string      $sourceId Comma-separated list of source IDs to update, 
+     *                              or empty or * for all sources 
      * @param string      $singleId Export only a record with the given ID
      * @param bool        $noCommit If true, changes are not explicitly committed
      * @param bool        $delete   If true, records in the given $sourceId are all deleted
@@ -288,7 +288,16 @@ class SolrUpdater
                     $params['updated'] = array('$gte' => $mongoFromDate);
                 }
                 if ($sourceId) {
-                    $params['source_id'] = $sourceId;
+                    $sources = explode(',', $sourceId);
+                    if (count($sources) == 1) {
+                        $params['source_id'] = $sourceId;
+                    } else {
+                        $sourceParams = array();
+                        foreach ($sources as $source) {
+                            $sourceParams[] = array('source_id' => $source);
+                        }
+                        $params['$or'] = $sourceParams;
+                    }
                 }
                 if (!$delete) {
                     $params['update_needed'] = false;
@@ -483,7 +492,16 @@ class SolrUpdater
                     $params['updated'] = array('$gte' => $mongoFromDate);
                 }
                 if ($sourceId) {
-                    $params['source_id'] = $sourceId;
+                    $sources = explode(',', $sourceId);
+                    if (count($sources) == 1) {
+                        $params['source_id'] = $sourceId;
+                    } else {
+                        $sourceParams = array();
+                        foreach ($sources as $source) {
+                            $sourceParams[] = array('source_id' => $source);
+                        }
+                        $params['$or'] = $sourceParams;
+                    }
                 }
                 $params['dedup_key'] = array('$exists' => false);
                 $params['update_needed'] = false;
@@ -1083,6 +1101,7 @@ class SolrUpdater
      */
     protected function solrRequest($body, $timeout = null)
     {
+        return;
         global $configArray;
 
         if (!isset($this->request)) {

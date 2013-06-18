@@ -60,44 +60,46 @@ function main($argv)
     $sources = isset($params['source']) ? $params['source'] : '';
     $single = isset($params['single']) ? $params['single'] : '';
     $noCommit = isset($params['nocommit']) ? $params['nocommit'] : false;
-    
-    foreach (explode(',', $sources) as $source) {
-        switch ($params['func'])
-        {
-        case 'renormalize': 
-            $manager->renormalize($source, $single); 
-            break;
-        case 'deduplicate': 
-            $manager->deduplicate($source, isset($params['all']) ? true : false, $single); 
-            break;
-        case 'updatesolr': 
-            $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
-            $manager->updateSolrIndex($date, $source, $single, $noCommit); 
-            break;
-        case 'dump': 
-            $manager->dumpRecord($single);
-            break;
-        case 'deletesource':
-            $manager->deleteRecords($source);
-            break;
-        case 'deletesolr':
-            $manager->deleteSolrRecords($source);
-            break;
-        case 'optimizesolr':
-            $manager->optimizeSolr();
-            break;
-        case 'count':
-            $manager->countValues($source, isset($params['field']) ? $params['field'] : null);
-            break;
-        case 'updategeocoding':
-            $manager->updateGeocodingTable(isset($params['file']) ? $params['file'] : null);
-            break;
-        case 'resimplifygeocoding':
-            $manager->resimplifyGeocodingTable();
-            break;
-        default: 
-            echo 'Unknown func: ' . $params['func'] . "\n"; 
-            exit(1);
+
+    // Solr update can handle multiple sources at once
+    if ($params['func'] == 'updatesolr') {
+        $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
+        $manager->updateSolrIndex($date, $sources, $single, $noCommit); 
+    } else {
+        foreach (explode(',', $sources) as $source) {
+            switch ($params['func'])
+            {
+            case 'renormalize': 
+                $manager->renormalize($source, $single); 
+                break;
+            case 'deduplicate': 
+                $manager->deduplicate($source, isset($params['all']) ? true : false, $single); 
+                break;
+            case 'dump': 
+                $manager->dumpRecord($single);
+                break;
+            case 'deletesource':
+                $manager->deleteRecords($source);
+                break;
+            case 'deletesolr':
+                $manager->deleteSolrRecords($source);
+                break;
+            case 'optimizesolr':
+                $manager->optimizeSolr();
+                break;
+            case 'count':
+                $manager->countValues($source, isset($params['field']) ? $params['field'] : null);
+                break;
+            case 'updategeocoding':
+                $manager->updateGeocodingTable(isset($params['file']) ? $params['file'] : null);
+                break;
+            case 'resimplifygeocoding':
+                $manager->resimplifyGeocodingTable();
+                break;
+            default: 
+                echo 'Unknown func: ' . $params['func'] . "\n"; 
+                exit(1);
+            }
         }
     }
 }
