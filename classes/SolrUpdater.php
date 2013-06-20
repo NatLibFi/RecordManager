@@ -1101,7 +1101,6 @@ class SolrUpdater
      */
     protected function solrRequest($body, $timeout = null)
     {
-        return;
         global $configArray;
 
         if (!isset($this->request)) {
