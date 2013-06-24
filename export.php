@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) Ere Maijala 2011-2012.
+ * Copyright (C) The National Library of Finland 2011-2013.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -48,7 +48,8 @@ function main($argv)
         echo "--quiet             Quiet, no output apart from the data\n";
         echo "--skip              Skip x records to export only a \"representative\" subset\n";
         echo "--source            Export only the given source\n";
-        echo "--single            Export single record with the given id\n\n";
+        echo "--single            Export single record with the given id\n";
+        echo "--xpath             Export only records matching the XPath expression\n\n";
         exit(1);
     }
 
@@ -62,7 +63,8 @@ function main($argv)
         $params['from'], 
         isset($params['skip']) ? $params['skip'] : 0, 
         isset($params['source']) ? $params['source'] : '', 
-        isset($params['single']) ? $params['single'] : ''
+        isset($params['single']) ? $params['single'] : '',
+        isset($params['xpath']) ? $params['xpath'] : ''
     );
 }
 

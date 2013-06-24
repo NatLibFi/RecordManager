@@ -181,10 +181,11 @@ class RecordManager
      * @param int    $skipRecords Export only one per each $skipRecords records for a sample set
      * @param string $sourceId    Source ID to export, or empty or * for all
      * @param string $singleId    Export only a record with the given ID
+     * @param string $xpath       Optional XPath expression to limit the export with
      * 
      * @return void
      */
-    public function exportRecords($file, $deletedFile, $fromDate, $skipRecords = 0, $sourceId = '', $singleId = '')
+    public function exportRecords($file, $deletedFile, $fromDate, $skipRecords = 0, $sourceId = '', $singleId = '', $xpath = '')
     {
         if ($file == '-') {
             $file = 'php://stdout';
@@ -232,6 +233,17 @@ class RecordManager
                     $this->log->log('exportRecords', "(1 per each $skipRecords records)");
                 }
                 foreach ($records as $record) {
+                    $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
+                    $xml = $metadataRecord->toXML();
+                    if ($xpath) {
+                        $xpathResult = simplexml_load_string($xml)->xpath($xpath);
+                        if ($xpathResult === false) {
+                            throw new Exception("Failed to evaluate XPath expression '$xpath'");
+                        }
+                        if (!$xpathResult) {
+                            continue;
+                        }
+                    }
                     if ($record['deleted']) {
                         file_put_contents($deletedFile, "{$record['_id']}\n", FILE_APPEND);
                         ++$deleted;
@@ -240,12 +252,11 @@ class RecordManager
                         if ($skipRecords > 0 && $count % $skipRecords != 0) {
                             continue;
                         }
-                        $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
                         if (isset($record['dedup_key']) && $record['dedup_key']) {
                             ++$deduped;
                         }
                         $metadataRecord->addDedupKeyToMetadata((isset($record['dedup_key']) && $record['dedup_key']) ? $record['dedup_key'] : $record['_id']);
-                        file_put_contents($file, $metadataRecord->toXML() . "\n", FILE_APPEND);
+                        file_put_contents($file, $xml . "\n", FILE_APPEND);
                     }
                     if ($count % 1000 == 0) {
                         $this->log->log('exportRecords', "$deleted deleted, $count normal (of which $deduped deduped) records exported from '$source'");
