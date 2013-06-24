@@ -194,9 +194,26 @@ class NdlMarcRecord extends MarcRecord
             $data['topic_facet'] += $this->getFieldsSubfields('*653a');
         }
         
+        // Original Study Number
+        $data['ctrlnum'] = array_merge($data['ctrlnum'], $this->getFieldsSubfields('036', 'a'));
+        
         // Source
         $data['source_str_mv'] = $this->source;
-                
+
+        // ISSN
+        $data['issn'] = $this->getFieldsSubfields('022a');
+        foreach ($data['issn'] as &$value) {
+            $value = str_replace('-', '', $value);
+        }
+        $data['other_issn_str_mv'] = $this->getFieldsSubfields('440x:490x:730x:776x');
+        foreach ($data['other_issn_str_mv'] as &$value) {
+            $value = str_replace('-', '', $value);
+        }
+        $data['linking_issn_str_mv'] = $this->getFieldsSubfields('022l');
+        foreach ($data['linking_issn_str_mv'] as &$value) {
+            $value = str_replace('-', '', $value);
+        }
+        
         return $data;
     }
     

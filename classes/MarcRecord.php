@@ -259,7 +259,12 @@ class MarcRecord extends BaseRecord
         
         // allfields
         $allFields = array();
-        $subfieldFilter = array('650' => array('2', '6', '8'), '856' => array('6', '8', 'q'), '979' => array('a'));
+        $subfieldFilter = array(
+            '650' => array('2', '6', '8'), 
+            '773' => array('6', '7', '8', 'w'), 
+            '856' => array('6', '8', 'q'), 
+            '979' => array('a')
+        );
         foreach ($this->fields as $tag => $fields) {
             if (($tag >= 100 && $tag < 841) || $tag == 856 || $tag == 979) {
                 foreach ($fields as $field) {
@@ -326,6 +331,15 @@ class MarcRecord extends BaseRecord
         $data['series'] = $this->getFieldsSubfields('*440ap:490a:*800abcdfpqt:*830ap');
           
         $data['publisher'] = $this->getFieldsSubfields('*260b', false, true);
+        if (!$data['publisher']) {
+            $fields = $this->getFields('264');
+            foreach ($fields as $field) {
+                if ($this->getIndicator($field, 2) == '1') {
+                    $data['publisher'] = metadataUtils::stripTrailingPunctuation($this->getSubfield($field, 'b'));
+                    break;
+                }
+            }
+        }
         $data['publishDateSort'] = $this->getPublicationYear();
         $data['publishDate'] = array($data['publishDateSort']);
         $data['physical'] = $this->getFieldsSubfields('*300abcefg:*530abcd');
@@ -348,8 +362,8 @@ class MarcRecord extends BaseRecord
             }
         }
         $data['issn'] = $this->getFieldsSubfields('022a:440x:490x:730x:773x:776x:780x:785x');
-        foreach ($data['issn'] as $key => $value) {
-            $data['issn'][$key] = str_replace('-', '', $value);
+        foreach ($data['issn'] as &$value) {
+            $value = str_replace('-', '', $value);
         }
 
         $data['callnumber'] = strtoupper(str_replace(' ', '', $this->getFirstFieldSubfields('080ab:084ab:050ab')));
@@ -391,6 +405,7 @@ class MarcRecord extends BaseRecord
             $marc = new MARCRecord($data, '', $this->source);
             $title = $marc->getFieldSubfields('245abnp');
             $uniTitle = $marc->getFieldSubfields('240anp');
+            $additionalTitles = $marc->getFieldsSubfields('740a');
             $authors = $marc->getFieldsSubfields('100ae:110ae');
             $additionalAuthors = $marc->getFieldsSubfields('700ae:710ae');
             $duration = $marc->getFieldsSubfields('306a');
@@ -421,7 +436,10 @@ class MarcRecord extends BaseRecord
             if ($duration) {
                 $newField['s'][] = array('f' => reset($duration));
             }
-            
+            foreach ($additionalTitles as $addTitle) {
+                $newField['s'][] = array('g' => $addTitle);
+            }
+                        
             $key = MetadataUtils::createIdSortKey($id);
             $parts[$key] = $newField;
             ++$count;
@@ -1011,6 +1029,17 @@ class MarcRecord extends BaseRecord
             $matches = array();
             if ($year && preg_match('/(\d{4})/', $year, $matches)) {
                 return $matches[1];
+            }
+        }
+        $fields = $this->getFields('264');
+        foreach ($fields as $field) {
+            if ($this->getIndicator($field, 2) == '1') {
+                $year = $this->getSubfield($field, 'c');
+                $matches = array();
+                if ($year && preg_match('/(\d{4})/', $year, $matches)) {
+                    echo "264 year: $year\n";
+                    return $matches[1];
+                }
             }
         }
         $field008 = $this->getField('008');
