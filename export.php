@@ -38,11 +38,11 @@ require_once 'cmdline.php';
 function main($argv)
 {
     $params = parseArgs($argv);
-    if (!isset($params['file']) || !isset($params['deleted']) || !isset($params['from'])) {
-        echo "Usage: export --file=... --deleted=... --from=... [...]\n\n";
+    if (!isset($params['file'])) {
+        echo "Usage: export --file=... [...]\n\n";
         echo "Parameters:\n\n";
         echo "--file              The file for records\n";
-        echo "--deleted           The file for deleted record ID's\n";
+        echo "--deleted           The file for deleted record IDs\n";
         echo "--from              From date where to start the export\n";
         echo "--verbose           Enable verbose output\n";
         echo "--quiet             Quiet, no output apart from the data\n";
@@ -59,8 +59,8 @@ function main($argv)
 
     $manager->exportRecords(
         $params['file'], 
-        $params['deleted'], 
-        $params['from'], 
+        isset($params['deleted']) ? $params['deleted'] : '', 
+        isset($params['from']) ? $params['from'] : '', 
         isset($params['skip']) ? $params['skip'] : 0, 
         isset($params['source']) ? $params['source'] : '', 
         isset($params['single']) ? $params['single'] : '',

@@ -194,7 +194,7 @@ class RecordManager
         if (file_exists($file)) {
             unlink($file);
         }
-        if (file_exists($deletedFile)) {
+        if ($deletedFile && file_exists($deletedFile)) {
             unlink($deletedFile);
         }
         file_put_contents($file, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n<collection>\n", FILE_APPEND);
@@ -245,7 +245,9 @@ class RecordManager
                         }
                     }
                     if ($record['deleted']) {
-                        file_put_contents($deletedFile, "{$record['_id']}\n", FILE_APPEND);
+                        if ($deletedFile) {
+                            file_put_contents($deletedFile, "{$record['_id']}\n", FILE_APPEND);
+                        }
                         ++$deleted;
                     } else {
                         ++$count;
