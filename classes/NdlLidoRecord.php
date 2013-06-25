@@ -195,6 +195,11 @@ class NdlLidoRecord extends LidoRecord
         // Exception: Don't extract descriptions with type attribute "provenienssi"
         $descriptionWrapDescriptions = $this->extractArray("lido/descriptiveMetadata/objectIdentificationWrap/objectDescriptionWrap/objectDescriptionSet[not(@type) or (@type!='provenienssi')]/descriptiveNoteValue");
         
+        if ($descriptionWrapDescriptions && $this->getTitle() == implode('; ', $descriptionWrapDescriptions)) {
+            // We have the description already in the title, don't repeat
+            $descriptionWrapDescriptions = array();
+        }
+        
         // Also read in "description of subject" which contains data suitable for this field
         $subjectDescriptions = $this->extractArray("lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/displaySubject[@label='aihe']");
         

@@ -146,6 +146,19 @@ class BaseRecord
     }
 
     /**
+     * Return record title
+     *
+     * @param bool $forFiling Whether the title is to be used in filing 
+     *                        (e.g. sorting, non-filing characters should be removed)
+     *                        
+     * @return string
+     */
+    public function getTitle($forFiling = false)
+    {
+        return '';
+    }
+
+    /**
      * Component parts: get the volume that contains this component part
      * 
      * @return string
@@ -201,19 +214,6 @@ class BaseRecord
      * @return string
      */
     public function getFullTitle()
-    {
-        return '';
-    }
-
-    /**
-     * Dedup: Return record title
-     *
-     * @param bool $forFiling Whether the title is to be used in filing 
-     *                        (e.g. sorting, non-filing characters should be removed)
-     *                        
-     * @return string
-     */
-    public function getTitle($forFiling = false)
     {
         return '';
     }

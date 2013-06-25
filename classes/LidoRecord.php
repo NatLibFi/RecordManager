@@ -154,7 +154,7 @@ class LidoRecord extends BaseRecord
     }
     
     /**
-     * Dedup: Return record title
+     * Return record title
      *
      * @param bool   $forFiling Whether the title is to be used in filing (e.g. sorting, non-filing characters should be removed)
      * @param string $lang      Language
@@ -174,7 +174,20 @@ class LidoRecord extends BaseRecord
         if (empty($titles)) {
             return null;
         } 
-        $title = implode('; ', $titles);
+        $title = implode('; ', array_unique($titles));
+        
+        // Use description if title is the same as the work type
+        // From LIDO specs:
+        // "For objects from natural, technical, cultural history e.g. the object
+        // name given here and the object type, recorded in the object / work
+        // type element are often identical."
+        if (strcasecmp($this->getObjectWorkType(), $title) == 0) {
+            $descriptionWrapDescriptions = $this->extractArray("lido/descriptiveMetadata/objectIdentificationWrap/objectDescriptionWrap/objectDescriptionSet[not(@type) or (@type!='provenienssi')]/descriptiveNoteValue");
+            if ($descriptionWrapDescriptions) {
+                $title = implode('; ', $descriptionWrapDescriptions);
+            }
+        }
+        
         if ($forFiling) {
             $title = MetadataUtils::stripLeadingPunctuation($title);
         }
@@ -239,6 +252,11 @@ class LidoRecord extends BaseRecord
         $description = $this->extractArray('lido/descriptiveMetadata/objectIdentificationWrap/objectDescriptionWrap/objectDescriptionSet/descriptiveNoteValue');
         
         if (empty($description)) {
+            return null;
+        }
+        
+        if ($this->getTitle() == implode('; ', $description)) {
+            // We have the description already in the title, don't repeat
             return null;
         }
         
