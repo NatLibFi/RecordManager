@@ -521,10 +521,11 @@ class SolrUpdater
             $pc->reset();
             $this->initBufferedUpdate();
             foreach ($records as $record) {
+                $dedupSource = $this->settings[$record['source_id']]['dedup'];
                 if ($record['deleted']) {
                     $this->bufferedDelete((string)$record['_id']);
                     // Delete also any obsolete merged record having this key
-                    if (!$this->db->record->findOne(array('dedup_key' => $record['key'], '_id' => array('$ne' => $record['_id'])), array())) {
+                    if ($dedupSource && !$this->db->record->findOne(array('dedup_key' => $record['key'], '_id' => array('$ne' => $record['_id'])), array())) {
                         $this->bufferedDelete((string)$record['key']);
                     }
                     ++$count;
@@ -542,7 +543,7 @@ class SolrUpdater
     
                     ++$count;                       
                     // Delete any obsolete merged record having this key
-                    if (!$this->db->record->findOne(array('dedup_key' => $record['key'], '_id' => array('$ne' => $record['_id'])), array())) {
+                    if ($dedupSource && !$this->db->record->findOne(array('dedup_key' => $record['key'], '_id' => array('$ne' => $record['_id'])), array())) {
                         $this->bufferedDelete((string)$record['key']);
                     }
                     $res = $this->bufferedUpdate($data, $count, $noCommit);
@@ -724,6 +725,9 @@ class SolrUpdater
             $this->settings[$source]['indexMergedParts'] = isset($settings['indexMergedParts']) ? $settings['indexMergedParts'] : true;
             $this->settings[$source]['solrTransformationXSLT'] = isset($settings['solrTransformation']) && $settings['solrTransformation'] ? new XslTransformation($this->basePath . '/transformations', $settings['solrTransformation']) : null;
             $this->settings[$source]['mappingFiles'] = array();
+            if (!isset($this->settings[$source]['dedup'])) {
+                $this->settings[$source]['dedup'] = false;
+            }
             
             foreach ($settings as $key => $value) {
                 if (substr($key, -8, 8) == '_mapping') {
