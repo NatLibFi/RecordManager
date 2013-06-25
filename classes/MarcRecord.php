@@ -1037,7 +1037,6 @@ class MarcRecord extends BaseRecord
                 $year = $this->getSubfield($field, 'c');
                 $matches = array();
                 if ($year && preg_match('/(\d{4})/', $year, $matches)) {
-                    echo "264 year: $year\n";
                     return $matches[1];
                 }
             }
