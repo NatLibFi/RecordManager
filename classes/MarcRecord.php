@@ -283,7 +283,7 @@ class MarcRecord extends BaseRecord
           
         // language
         $languages = array(substr($this->getField('008'), 35, 3));
-        $languages += $this->getFieldsSubfields('041a:041d:041h:041j');
+        $languages += $this->getFieldsSubfields('041a:041d:041h:041j', false, true, true);
         foreach ($languages as $language) {
             if (preg_match('/^\w{3}$/', $language) && $language != 'zxx' && $language != 'und') {
                 $data['language'][] = $language;

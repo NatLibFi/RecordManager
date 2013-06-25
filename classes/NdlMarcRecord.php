@@ -116,7 +116,7 @@ class NdlMarcRecord extends MarcRecord
         // language override
         $data['language'] = array();
         $languages = array(substr($this->getField('008'), 35, 3));
-        $languages += $this->getFieldsSubfields('041a');
+        $languages += $this->getFieldsSubfields('041a', false, true, true);
         foreach ($languages as $language) {
             if (preg_match('/^\w{3}$/', $language) && $language != 'zxx' && $language != 'und') {
                 $data['language'][] = $language;
