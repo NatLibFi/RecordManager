@@ -312,7 +312,7 @@ class SolrUpdater
             $record = $this->db->record->find()->sort(array('updated' => -1))->getNext();
             $lastRecordTime = $record['updated']->sec;
             $collectionName .= "_$lastRecordTime"; 
-            
+           
             // Check if we already have a suitable collection and drop too old collections
             $collectionExists = false;
             foreach ($this->db->listCollections() as $collection) {
@@ -408,6 +408,7 @@ class SolrUpdater
                     $this->bufferedDelete((string)$child['mongo']['dedup_key']);
                     
                     ++$count;
+                    
                     $res = $this->bufferedUpdate($child['solr'], $count, $noCommit);
                     if ($res) {
                         $pc->add($count);
@@ -480,7 +481,7 @@ class SolrUpdater
             if ($delete) {
                 return;
             }
-            
+           
             $this->log->log('updateMergedRecords', "Creating individual record list (from $from)...");
             $params = array();
             if ($singleId) {
@@ -525,7 +526,9 @@ class SolrUpdater
                 if ($record['deleted']) {
                     $this->bufferedDelete((string)$record['_id']);
                     // Delete also any obsolete merged record having this key
-                    if ($dedupSource && !$this->db->record->findOne(array('dedup_key' => $record['key'], '_id' => array('$ne' => $record['_id'])), array())) {
+                    // See http://blog.serverdensity.com/checking-if-a-document-exists-mongodb-slow-findone-vs-find/
+                    // for an explanation on why limit()->count().
+                    if ($dedupSource && $this->db->record->find(array('dedup_key' => $record['key'], '_id' => array('$ne' => $record['_id'])))->limit(1)->count() == 0) {
                         $this->bufferedDelete((string)$record['key']);
                     }
                     ++$count;
@@ -541,9 +544,12 @@ class SolrUpdater
                         print_r($data);
                     }
     
-                    ++$count;                       
+                    ++$count;                    
+                    
                     // Delete any obsolete merged record having this key
-                    if ($dedupSource && !$this->db->record->findOne(array('dedup_key' => $record['key'], '_id' => array('$ne' => $record['_id'])), array())) {
+                    // See http://blog.serverdensity.com/checking-if-a-document-exists-mongodb-slow-findone-vs-find/
+                    // for an explanation on why limit()->count().
+                    if ($dedupSource && $this->db->record->find(array('dedup_key' => $record['key'], '_id' => array('$ne' => $record['_id'])))->limit(1)->count() == 0) {
                         $this->bufferedDelete((string)$record['key']);
                     }
                     $res = $this->bufferedUpdate($data, $count, $noCommit);
