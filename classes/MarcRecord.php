@@ -381,11 +381,12 @@ class MarcRecord extends BaseRecord
             )
         );
         $data['title_sort'] = $this->getTitle(true);
+        
         if (!$data['title_short']) {
             $data['title_short'] = $this->getFieldSubfields('240', array('a', 'n', 'p'));
             $data['title_full'] = $this->getFieldSubfields('240');
         }
-
+        
         $data['series'] = $this->getFieldsSubfields(
             array(
                 array(MarcRecord::GET_BOTH, '440', array('a')),
@@ -1620,18 +1621,23 @@ class MarcRecord extends BaseRecord
      */
     protected function getFieldSubfields($tag, $codes = null, $stripTrailingPunctuation = true)
     {
-        if (!isset($this->fields[$tag]) || !isset($this->fields[$tag]['s'])) {
+        if (!isset($this->fields[$tag])) {
             return '';
         }
         $subfields = '';
-        foreach ($this->fields[$tag]['s'] as $subfield) {
-            if ($codes && !in_array(key($subfield), $codes)) {
+        foreach ($this->fields[$tag] as $field) {
+            if (!isset($field['s'])) {
                 continue;
             }
-            if ($subfields) {
-                $subfields .= ' ';
+            foreach ($field['s'] as $subfield) {
+                if ($codes && !in_array(key($subfield), $codes)) {
+                    continue;
+                }
+                if ($subfields) {
+                    $subfields .= ' ';
+                }
+                $subfields .= current($subfield);
             }
-            $subfields .= current($subfield);
         }
         if ($stripTrailingPunctuation) {
             $subfields = MetadataUtils::stripTrailingPunctuation($subfields);
