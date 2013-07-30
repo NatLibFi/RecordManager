@@ -730,15 +730,22 @@ class SolrUpdater
             $this->settings[$source]['componentParts'] = isset($settings['componentParts']) && $settings['componentParts'] ? $settings['componentParts'] : 'as_is';
             $this->settings[$source]['indexMergedParts'] = isset($settings['indexMergedParts']) ? $settings['indexMergedParts'] : true;
             $this->settings[$source]['solrTransformationXSLT'] = isset($settings['solrTransformation']) && $settings['solrTransformation'] ? new XslTransformation($this->basePath . '/transformations', $settings['solrTransformation']) : null;
-            $this->settings[$source]['mappingFiles'] = array();
             if (!isset($this->settings[$source]['dedup'])) {
                 $this->settings[$source]['dedup'] = false;
             }
+            $this->settings[$source]['mappingFiles'] = array();
             
             foreach ($settings as $key => $value) {
                 if (substr($key, -8, 8) == '_mapping') {
                     $field = substr($key, 0, -8);
                     $this->settings[$source]['mappingFiles'][$field] = $this->readMappingFile($this->basePath . '/mappings/' . $value);
+                }
+            }
+            $this->settings[$source]['extraFields'] = array();
+            if (isset($settings['extrafields'])) {
+                foreach ($settings['extrafields'] as $extraField) {
+                    list($field, $value) = explode(':', $extraField, 2);
+                    $this->settings[$source]['extraFields'][] = array($field => $value);
                 }
             }
         }
@@ -867,6 +874,19 @@ class SolrUpdater
         
         if (!isset($data['institution'])) {
             $data['institution'] = $settings['institution'];
+        }
+        
+        foreach ($settings['extraFields'] as $extraField) {
+            $fieldName = key($extraField);
+            $fieldValue = current($extraField);
+            if (isset($data[$fieldName])) {
+                if (!is_array($data[$fieldName])) {
+                    $data[$fieldName] = array($data[$fieldName]);
+                }
+                $data[$fieldName][] = $fieldValue;
+            } else {
+                $data[$fieldName] = $fieldValue;
+            }
         }
         
         // Map field values according to any mapping files
