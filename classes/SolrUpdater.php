@@ -1164,7 +1164,47 @@ class SolrUpdater
         }
         $this->request->setHeader('Content-Type', 'application/json');
         $this->request->setBody($body);
-        $response = $this->request->send();
+
+        for ($try = 1; $try <= 5; $try++) {
+            try {
+                $response = $this->request->send();
+            } catch (Exception $e) {
+                if ($try < 5) {
+                    $this->log->log(
+                        'solrRequest',
+                        'Solr server request failed (' . $e->getMessage() . '), retrying in 60 seconds...', 
+                        Logger::WARNING
+                    );
+                    sleep(60);
+                    continue;
+                }
+                if ($background) {
+                    $this->log->log(
+                        'solrRequest', 
+                        'Solr server request failed (' . $e->getMessage() . "). URL:\n" . $configArray['Solr']['update_url'] . "\nRequest:\n$body",
+                        Logger::FATAL
+                    );
+                    // Kill parent and self
+                    posix_kill(posix_getppid(), SIGQUIT);
+                    posix_kill(getmypid(), SIGKILL);
+                } else {
+                    throw $e;
+                }
+            }
+            if ($try < 5) {
+                $code = $response->getStatus();
+                if ($code >= 300) {
+                    $this->log->log(
+                        'solrRequest',
+                        "Solr server request failed ($code), retrying in 60 seconds...",
+                        Logger::WARNING
+                    );
+                    sleep(60);
+                    continue;
+                }
+            }
+            break;
+        }
         $code = $response->getStatus();
         if ($code >= 300) {
             if ($background) {
