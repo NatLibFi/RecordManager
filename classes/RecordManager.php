@@ -1024,21 +1024,35 @@ class RecordManager
                 if ($this->verbose) {
                     echo "Search: '$keyPart'\n";
                 }
-                // TODO: add previously used keys here as excluding params to avoid testing records multiple times
-                $params = array();
-                $params[$type] = $keyPart;
-                $params['source_id'] = array('$ne' => $this->sourceId);
-                $params['host_record_id'] = '';
-                $params['deleted'] = false;
-                $candidates = $this->db->record->find($params)->hint(array($type => 1));
+                $candidates = $this->db->record->find(array($type => $keyPart));
                 $processed = 0;
                 // Go through the candidates, try to match
                 $matchRecord = null;
                 foreach ($candidates as $candidate) {
+                    // Don't dedup with this source or deleted. It's faster to check here than in find!
+                    if ($candidate['deleted'] || $candidate['source_id'] == $this->sourceId) {
+                        continue;
+                    }
+                    // Don't bother with id or title dedup if ISBN dedup already failed
+                    if ($type != 'isbn_keys') {
+                        if (isset($candidate['isbn_keys'])) {
+                            $sameKeys = array_intersect($ISBNArray, $candidate['isbn_keys']);
+                            if ($sameKeys) {
+                                continue;
+                            }
+                        }
+                        if ($type != 'id_keys' && isset($candidate['id_keys'])) {
+                            $sameKeys = array_intersect($IDArray, $candidate['id_keys']);
+                            if ($sameKeys) {
+                                continue;
+                            }
+                        }
+                    }
+                    
                     ++$candidateCount;
                     // Verify the candidate has not been deduped with this source yet
                     if (isset($candidate['dedup_key']) && $candidate['dedup_key'] && (!isset($record['dedup_key']) || $candidate['dedup_key'] != $record['dedup_key'])) {
-                        if ($this->db->record->find(array('dedup_key' => $candidate['dedup_key'], 'source_id' => $this->sourceId))->hasNext()) {
+                        if ($this->db->record->find(array('dedup_key' => $candidate['dedup_key'], 'source_id' => $this->sourceId))->limit(1)->count() > 0) {
                             if ($this->verbose) {
                                 echo "Candidate {$candidate['_id']} already deduplicated\n";
                             }
@@ -1353,18 +1367,18 @@ class RecordManager
             return 0;
         }
         $components1iter = $this->db->record->find(array('host_record_id' => $hostRecord['linking_id']));
-        if (!$components1iter->hasNext()) {
-            return 0;
-        }
         $components1 = array();
         foreach ($components1iter as $component1) {
             $components1[MetadataUtils::createIdSortKey($component1['_id'])] = $component1;
+        }
+        if (!$components1) {
+            return 0;
         }
         ksort($components1);
         
         // Go through all other records with same dedup key and see if their component parts match
         $marked = 0;
-        $otherRecords = $this->db->record->find(array('deleted' => false, 'dedup_key' => $hostRecord['dedup_key']));
+        $otherRecords = $this->db->record->find(array('dedup_key' => $hostRecord['dedup_key'], 'deleted' => false));
         foreach ($otherRecords as $otherRecord) {
             if ($otherRecord['source_id'] == $hostRecord['source_id']) {
                 continue;
