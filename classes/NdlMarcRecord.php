@@ -184,7 +184,9 @@ class NdlMarcRecord extends MarcRecord
         // Ebrary location
         foreach ($this->getFieldsSubfields(array(array(MarcRecord::GET_NORMAL, '035', array('a')))) as $field) {
             if (strncmp($field, 'ebr', 3) == 0 && is_numeric(substr($field, 3))) {
-                $data['building'][] = 'Ebrary';
+                if (!isset($data['building']) || !in_array('EbraryDynamic', $data['building'])) {
+                    $data['building'][] = 'EbraryDynamic';
+                }
             }
         }
         
