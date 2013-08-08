@@ -18,7 +18,9 @@ articles[] = 'Le ';
 
 [Mongo]
 ; url = mongodb://{username}:{password}@localhost
-url = mongodb://localhost
+;url = mongodb://localhost
+; Use a unix socket like below, if possible. It can be an order of magnitude faster than TCP/IP. 
+url = mongodb:///tmp/mongodb-27017.sock
 database = recman
 counts = true
 compress_records = true
