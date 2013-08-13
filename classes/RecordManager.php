@@ -26,6 +26,8 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 
+declare(ticks = 1);
+
 require_once 'PEAR.php';
 require_once 'HTTP/Request2.php';
 require_once 'Logger.php';
@@ -115,6 +117,19 @@ class RecordManager
         MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout']) ? $configArray['Mongo']['cursor_timeout'] : 300000;
     }
 
+    /**
+     * Catch the SIGINT signal and signal the main thread to terminate
+     *
+     * @param int $signal Signal ID
+     *
+     * @return void
+     */
+    public function sigIntHandler($signal)
+    {
+        $this->terminate = true;
+        echo "Termination requested\n";
+    }
+    
     /**
      * Load records into the database from a file
      * 
@@ -254,10 +269,10 @@ class RecordManager
                         if ($skipRecords > 0 && $count % $skipRecords != 0) {
                             continue;
                         }
-                        if (isset($record['dedup_key']) && $record['dedup_key']) {
+                        if (isset($record['dedup_id'])) {
                             ++$deduped;
                         }
-                        $metadataRecord->addDedupKeyToMetadata((isset($record['dedup_key']) && $record['dedup_key']) ? $record['dedup_key'] : $record['_id']);
+                        $metadataRecord->addDedupKeyToMetadata((isset($record['dedup_id'])) ? $record['dedup_id'] : $record['_id']);
                         file_put_contents($file, $xml . "\n", FILE_APPEND);
                     }
                     if ($count % 1000 == 0) {
@@ -323,7 +338,7 @@ class RecordManager
             } else {
                 $params['source_id'] = $source;
             }
-            $records = $this->db->record->find($params);
+            $records = $this->db->record->find($params)->batchSize(5000);
             $records->immortal(true);
             $total = $this->counts ? $records->count() : 'the';
             $count = 0;
@@ -349,8 +364,8 @@ class RecordManager
                     unset($record['title_keys']);                
                     unset($record['isbn_keys']);                
                     unset($record['id_keys']);                
+                    unset($record['dedup_id']);
                     $record['update_needed'] = false;
-                    unset($record['dedup_key']);
                 }
 
                 $record['original_data'] = $this->compressedRecords ? new MongoBinData(gzdeflate($originalData), 2) : $originalData;
@@ -360,7 +375,11 @@ class RecordManager
                     $record['normalized_data'] = $this->compressedRecords ? new MongoBinData(gzdeflate($normalizedData), 2) : $normalizedData;
                 }
                 $record['linking_id'] = $metadataRecord->getLinkingID();
-                $record['host_record_id'] = $hostID;
+                if ($hostID) {
+                    $record['host_record_id'] = $hostID;
+                } else {
+                    unset($record['host_record_id']);
+                }
                 $record['updated'] = new MongoDate();
                 $this->db->record->save($record);
                 
@@ -399,6 +418,14 @@ class RecordManager
         // Used for format mapping
         $this->solrUpdater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
         
+        // Install a signal handler so that we can exit cleanly if interrupted
+        if (function_exists('pcntl_signal')) {
+            pcntl_signal(SIGINT, array($this, 'sigIntHandler'));
+            $this->log->log('deduplicate', 'Interrupt handler set');
+        } else {
+            $this->log->log('deduplicate', 'Could not set an interrupt handler -- pcntl not available');
+        }
+        
         if ($allRecords) {
             foreach ($this->dataSourceSettings as $source => $settings) {
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
@@ -409,7 +436,7 @@ class RecordManager
                 }
                 $this->log->log('deduplicate', "Marking all records for processing in '$source'...");
                 $this->db->record->update(
-                    array('source_id' => $source, 'host_record_id' => '', 'deleted' => false),
+                    array('source_id' => $source, 'host_record_id' => array('$exists' => false), 'deleted' => false),
                     array('$set' => array('update_needed' => true)),
                     array('multiple' => true, 'safe' => true, 'timeout' => 3000000)
                 );
@@ -427,13 +454,13 @@ class RecordManager
                 $this->loadSourceSettings($source);
                 $this->log->log('deduplicate', "Creating record list for '$source'" . ($allRecords ? ' (all records)' : '') . '...');
 
-                $params = array('deleted' => false, 'host_record_id' => '', 'source_id' => $source);
+                $params = array('deleted' => false, 'source_id' => $source);
                 if ($singleId) {
                     $params['_id'] = $singleId;
                 } else {
                     $params['update_needed'] = true;
                 }
-                $records = $this->db->record->find($params);
+                $records = $this->db->record->find($params)->batchSize(5000);
                 $records->immortal(true);
                 $total = $this->counts ? $records->count() : 'the';
                 $count = 0;
@@ -442,6 +469,10 @@ class RecordManager
                 $this->tooManyCandidatesKeys = array();
                 $this->log->log('deduplicate', "Processing $total records for '$source'...");
                 foreach ($records as $record) {
+                    if (isset($this->terminate)) {
+                        $this->log->log('deduplicate', 'Termination upon request');
+                        exit(1);
+                    }
                     $startRecordTime = microtime(true);
                     if ($this->dedupRecord($record)) {
                         if ($this->verbose) {
@@ -654,6 +685,49 @@ class RecordManager
     }
     
     /**
+     * Mark deleted records of a single data source
+     * 
+     * @param string $sourceId Source ID
+     * 
+     * @return void
+     */
+    public function markDeleted($sourceId)
+    {
+        $params = array();
+        $params['source_id'] = $sourceId;
+        $this->log->log('markDeleted', "Creating record list for '$sourceId'...");
+
+        $params = array('deleted' => false, 'source_id' => $sourceId);
+        $records = $this->db->record->find($params);
+        $records->immortal(true);
+        $total = $this->counts ? $records->count() : 'the';
+        $count = 0;
+
+        $this->log->log('markDeleted', "Marking deleted $total records from '$sourceId'...");
+        $pc = new PerformanceCounter();
+        foreach ($records as $record) {
+            if (isset($record['dedup_id'])) {
+                $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
+            }
+            $record['deleted'] = true;
+            $record['updated'] = new MongoDate();
+            $this->db->record->save($record);
+
+            ++$count;
+            if ($count % 1000 == 0) {
+                $pc->add($count);
+                $avg = $pc->getSpeed();
+                $this->log->log('markDeleted', "$count records marked deleted from '$sourceId', $avg records/sec");
+            }
+        }
+        $this->log->log('markDeleted', "Completed with $count records marked deleted from '$sourceId'");
+
+        $this->log->log('markDeleted', "Deleting last harvest date from data source '$sourceId'...");
+        $this->db->state->remove(array('_id' => "Last Harvest Date $sourceId"), array('safe' => true));
+        $this->log->log('markDeleted', "Marking of $sourceId completed");
+    }
+
+    /**
      * Delete records of a single data source from the Mongo database
      * 
      * @param string $sourceId Source ID
@@ -675,8 +749,8 @@ class RecordManager
         $this->log->log('deleteRecords', "Deleting $total records from '$sourceId'...");
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
-            if (isset($record['dedup_key'])) {
-                $this->unmarkSingleDuplicate($record['dedup_key'], $record['_id']);
+            if (isset($record['dedup_id'])) {
+                $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
             }
             $this->db->record->remove(array('_id' => $record['_id']));
 
@@ -746,11 +820,11 @@ class RecordManager
             $records = $this->db->record->find(array('source_id' => $this->sourceId, 'oai_id' => $oaiID));
             $count = 0;
             foreach ($records as $record) {
-                if (isset($record['dedup_key'])) {
-                    $this->unmarkSingleDuplicate($record['dedup_key'], $record['_id']);
+                if (isset($record['dedup_id'])) {
+                    $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
                 }
                 $record['deleted'] = true;
-                unset($record['dedup_key']);
+                unset($record['dedup_id']);
                 $record['updated'] = new MongoDate();
                 $this->db->record->save($record);
                 ++$count;
@@ -831,7 +905,6 @@ class RecordManager
                 $dbRecord['source_id'] = $this->sourceId;
                 $dbRecord['_id'] = $id;
                 $dbRecord['created'] = $dbRecord['updated'] = new MongoDate();
-                $dbRecord['key'] =  new MongoId();
             }
             $dbRecord['date'] = $dbRecord['updated'];
             if ($normalizedData) {
@@ -851,15 +924,20 @@ class RecordManager
             if ($mainID) {
                 $dbRecord['main_id'] = $mainID;
             }
-            $dbRecord['host_record_id'] = $hostID;
+            if ($hostID) {
+                $dbRecord['host_record_id'] = $hostID;
+            } else {
+                unset($dbRecord['host_record_id']);
+            }
             $dbRecord['format'] = $this->format;
             $dbRecord['original_data'] = $originalData;
             $dbRecord['normalized_data'] = $normalizedData;
             if ($this->dedup && !$hostID) {
                 $this->updateDedupCandidateKeys($dbRecord, $metadataRecord);
-                if (isset($dbRecord['dedup_key'])) {
-                    $this->unmarkSingleDuplicate($dbRecord['dedup_key'], $dbRecord['_id']);
+                if (isset($dbRecord['dedup_id'])) {
+                    $this->removeFromDedupRecord($dbRecord['dedup_id'], $dbRecord['_id']);
                 }
+                unset($dbRecord['dedup_id']);
                 $dbRecord['update_needed'] = true;
             } else {
                 unset($dbRecord['title_keys']);
@@ -1048,11 +1126,10 @@ class RecordManager
                             }
                         }
                     }
-                    
                     ++$candidateCount;
                     // Verify the candidate has not been deduped with this source yet
-                    if (isset($candidate['dedup_key']) && $candidate['dedup_key'] && (!isset($record['dedup_key']) || $candidate['dedup_key'] != $record['dedup_key'])) {
-                        if ($this->db->record->find(array('dedup_key' => $candidate['dedup_key'], 'source_id' => $this->sourceId))->limit(1)->count() > 0) {
+                    if (isset($candidate['dedup_id']) && (!isset($record['dedup_id']) || $candidate['dedup_id'] != $record['dedup_id'])) {
+                        if ($this->db->record->find(array('dedup_id' => $candidate['dedup_id'], 'source_id' => $this->sourceId))->limit(1)->count() > 0) {
                             if ($this->verbose) {
                                 echo "Candidate {$candidate['_id']} already deduplicated\n";
                             }
@@ -1100,11 +1177,11 @@ class RecordManager
             
             return true;
         }
-        if (isset($record['dedup_key']) || $record['update_needed']) {
-            if (isset($record['dedup_key'])) {
-                $this->unmarkSingleDuplicate($record['dedup_key'], $record['_id']);
+        if (isset($record['dedup_id']) || $record['update_needed']) {
+            if (isset($record['dedup_id'])) {
+                $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
             }
-            unset($record['dedup_key']);
+            unset($record['dedup_id']);
             $record['updated'] = new MongoDate();
             $record['update_needed'] = false;
             $this->db->record->save($record);
@@ -1273,76 +1350,112 @@ class RecordManager
      */
     protected function markDuplicates($rec1, $rec2)
     {
-        if (isset($rec2['dedup_key']) && $rec2['dedup_key']) {
-            if (isset($rec1['dedup_key']) && $rec1['dedup_key'] != $rec2['dedup_key']) {
-                $this->changeDedupKeys($rec1['dedup_key'], $rec2['dedup_key']);
+        $setValues = array('updated' => new MongoDate(), 'update_needed' => false);
+        if (isset($rec2['dedup_id']) && $rec2['dedup_id']) {
+            $this->addToDedupRecord($rec2['dedup_id'], $rec1['_id']);
+            if (isset($rec1['dedup_id']) && $rec1['dedup_id'] != $rec2['dedup_id']) {
+                $this->removeFromDedupRecord($rec1['dedup_id'], $rec1['_id']);
             }
-            $rec1['dedup_key'] = $rec2['dedup_key'];
+            $setValues['dedup_id'] = $rec1['dedup_id'] = $rec2['dedup_id']; 
         } else {
-            if (isset($rec1['dedup_key']) && $rec1['dedup_key'] != $rec1['key']) {
-                $this->changeDedupKeys($rec1['dedup_key'], $rec1['key']);
+            if (isset($rec1['dedup_id']) && $rec1['dedup_id']) {
+                $this->addToDedupRecord($rec1['dedup_id'], $rec2['_id']);
+                $setValues['dedup_id'] = $rec2['dedup_id'] = $rec1['dedup_id'];
+            } else {
+                $setValues['dedup_id'] = $rec1['dedup_id'] = $rec2['dedup_id'] = $this->createDedupRecord($rec1['_id'], $rec2['_id']);                
             }
-            $rec1['dedup_key'] = $rec1['key'];
-            $rec2['dedup_key'] = $rec1['key'];
         }
         if ($this->verbose) {
-            echo "Marking {$rec1['_id']} as duplicate with {$rec2['_id']} with dedup key {$rec2['dedup_key']}\n";
+            echo "Marking {$rec1['_id']} as duplicate with {$rec2['_id']} with dedup id {$rec2['dedup_id']}\n";
         }
         
-        $rec1['updated'] = new MongoDate();
-        $rec1['update_needed'] = false;
-        $this->db->record->save($rec1);
-        $rec2['updated'] = new MongoDate();
-        $rec2['update_needed'] = false;
-        $this->db->record->save($rec2);
-        
-        if (!isset($rec1['host_record_id']) || !$rec1['host_record_id']) {
+        if (!isset($rec1['host_record_id'])) {
             $count = $this->dedupComponentParts($rec1);
-            if ($count > 0) {
+            if ($this->verbose && $count > 0) {
                 echo "Deduplicated $count component parts for {$rec1['_id']}\n";
             }
         }
+        
+        $this->db->record->update(
+            array('_id' => array('$in' => array($rec1['_id'], $rec2['_id']))),
+            array('$set' => $setValues),
+            array('multiple' => true)
+        );
     }
 
     /**
-     * Unset dedup key of any other record than $oldDuplicateId if it 
-     * would be left alone when $oldDuplicateId gos away from the dedup group
-     *
-     * @param ObjectId $dedupKey       Dedup key     
-     * @param string   $oldDuplicateId Record being removed from the dedup group
+     * Create a new dedup record
+     * 
+     * @param string $id1 ID of first record
+     * @param string $id2 ID of second record
+     * 
+     * @return MongoId ID of the dedup record
+     */
+    protected function createDedupRecord($id1, $id2)
+    {
+        $record = array(
+            '_id' => new MongoId(),
+            'changed' => new MongoDate(),
+            'deleted' => false,
+            'ids' => array(
+                $id1,
+                $id2
+             )
+        );
+        $this->db->dedup->insert($record);
+        return $record['_id'];
+    }
+    
+    /**
+     * Add another record to an existing dedup record
+     * 
+     * @param string $dedupId ID of the dedup record 
+     * @param string $id      Record ID to add
      * 
      * @return void
      */
-    protected function unmarkSingleDuplicate($dedupKey, $oldDuplicateId)
+    protected function addToDedupRecord($dedupId, $id)
     {
-        $records = $this->db->record->find(array('dedup_key' => $dedupKey, '_id' => array('$ne' => $oldDuplicateId)));
-        $record = $records->getNext();
-        if ($record && !$records->hasNext()) {
-            if ($this->verbose) {
-                echo "Unmarking {$record['_id']} with dedup key $dedupKey, $oldDuplicateId going away\n";
-            }
-            unset($record['dedup_key']);
-            $record['updated'] = new MongoDate();
-            $this->db->record->save($record);
+        $record = $this->db->dedup->findOne(array('_id' => $dedupId));
+        if (!$record) {
+            $this->log->log('addToDedupRecord', "Found dangling reference to dedup record $dedupId", Logger::ERROR);
+            return;
+        }
+        if (!in_array($id, $record['ids'])) {
+            $record['changed'] = new MongoDate();
+            $record['ids'][] = $id;
+            $this->db->dedup->save($record);
         }
     }
 
     /**
-     * Change all dedup keys from a value to another. Used when two records
-     * are marked duplicates and keys change as a result. 
-     *
-     * @param ObjectId $oldDedupKey Old dedup key     
-     * @param ObjectId $newDedupKey New dedup key     
+     * Remove a record from a dedup record
      * 
+     * @param string $dedupId ID of the dedup record 
+     * @param string $id      Record ID to remove
+     *
      * @return void
      */
-    protected function changeDedupKeys($oldDedupKey, $newDedupKey)
+    protected function removeFromDedupRecord($dedupId, $id)
     {
-        $this->db->record->update(
-            array('dedup_key' => $oldDedupKey),
-            array('$set' => array('dedup_key' => $newDedupKey)),
-            array('multiple' => true)
-        );
+        $record = $this->db->dedup->findOne(array('_id' => $dedupId));
+        assert($record);
+        if (in_array($id, $record['ids'])) {
+            $record['ids'] = array_values(array_diff($record['ids'], array($id)));
+            
+            // If there is only one record remaining, remove dedup_id from it too
+            if (count($record['ids']) == 1) {
+                $otherId = reset($record['ids']);
+                $otherRecord = $this->db->record->findOne(array('_id' => $otherId));
+                unset($otherRecord['dedup_id']);
+                $otherRecord['changed'] = new MongoDate();
+                $this->db->record->save($otherRecord);
+                $record['ids'] = array();   
+                $record['deleted'] = true;
+            }
+            $record['changed'] = new MongoDate();
+            $this->db->dedup->save($record);
+        }
     }
     
     /**
@@ -1358,7 +1471,6 @@ class RecordManager
      */
     protected function dedupComponentParts($hostRecord)
     {
-        assert('$hostRecord["dedup_key"]');
         if ($this->verbose) {
             echo "Deduplicating component parts...\n";
         }
@@ -1366,32 +1478,20 @@ class RecordManager
             $this->log->log('dedupComponentParts', 'Linking ID missing from record ' . $hostRecord['_id'], Logger::ERROR);
             return 0;
         }
-        $components1iter = $this->db->record->find(array('host_record_id' => $hostRecord['linking_id']));
-        $components1 = array();
-        foreach ($components1iter as $component1) {
-            $components1[MetadataUtils::createIdSortKey($component1['_id'])] = $component1;
-        }
-        if (!$components1) {
-            return 0;
-        }
-        ksort($components1);
+        $components1 = $this->getComponentPartsSorted($hostRecord['source_id'], $hostRecord['linking_id']);
+        $component1count = count($components1);
         
-        // Go through all other records with same dedup key and see if their component parts match
+        // Go through all other records with same dedup id and see if their component parts match
         $marked = 0;
-        $otherRecords = $this->db->record->find(array('dedup_key' => $hostRecord['dedup_key'], 'deleted' => false));
+        $otherRecords = $this->db->record->find(array('dedup_id' => $hostRecord['dedup_id'], 'deleted' => false));
         foreach ($otherRecords as $otherRecord) {
             if ($otherRecord['source_id'] == $hostRecord['source_id']) {
                 continue;
             }
-            $components2iter = $this->db->record->find(array('host_record_id' => $otherRecord['linking_id']));
-            $components2 = array();
-            foreach ($components2iter as $component2) {
-                $components2[MetadataUtils::createIdSortKey($component2['_id'])] = $component2;
-            }
-            ksort($components2);
-            $components2 = array_values($components2);
+            $components2 = $this->getComponentPartsSorted($otherRecord['source_id'], $otherRecord['linking_id']);
+            $component2count = count($components2);
             
-            if (count($components1) != count($components2)) {
+            if ($component1count != $component2count) {
                 $allMatch = false;
             } else {
                 $allMatch = true;
@@ -1411,6 +1511,7 @@ class RecordManager
                     }
                 }
             }
+
             if ($allMatch) {
                 if ($this->verbose) {
                     echo microtime(true) . " All component parts match between {$hostRecord['_id']} and {$otherRecord['_id']}\n";
@@ -1431,6 +1532,25 @@ class RecordManager
         return $marked;
     }
 
+    /**
+     * Get component parts in a sorted array
+     * 
+     * @param string $sourceId     Source ID
+     * @param string $hostRecordId Host record ID (doesn't include source id)
+     * 
+     * @return array Array of component parts
+     */
+    protected function getComponentPartsSorted($sourceId, $hostRecordId)
+    {
+        $componentsIter = $this->db->record->find(array('source_id' => $sourceId, 'host_record_id' => $hostRecordId));
+        $components = array();
+        foreach ($componentsIter as $component) {
+            $components[MetadataUtils::createIdSortKey($component['_id'])] = $component;
+        }
+        ksort($components);
+        return array_values($components);        
+    }
+    
     /**
      * Execute a pretransformation on data before it is split into records and loaded. Used when loading from a file.
      * 

@@ -115,7 +115,6 @@ class Preview extends SolrUpdater
             'original_data' => $metadata,
             'normalized_data' => $metadata,
             'source_id' => $source,
-            'host_record_id' => '',
             'linking_id' => '',
             'oai_id' => '_preview',
             '_id' => '_preview',

@@ -1,11 +1,12 @@
-db.record.ensureIndex({dedup_key: 1}, {sparse: true});
+db.record.ensureIndex({dedup_id: 1}, {sparse: true});
 db.record.ensureIndex({title_keys: 1}, {sparse: true});
 db.record.ensureIndex({isbn_keys: 1}, {sparse: true});
 db.record.ensureIndex({id_keys: 1}, {sparse: true});
 db.record.ensureIndex({oai_id: 1});
-db.record.ensureIndex({host_record_id: 1});
+db.record.ensureIndex({host_record_id: 1}, {sparse: true});
 db.record.ensureIndex({updated: 1});
 db.record.ensureIndex({linking_id: 1});
 db.record.ensureIndex({main_id: 1}, {sparse: true});
 db.record.ensureIndex({source_id: 1, update_needed: 1});
+db.dedup.ensureIndex({updated: 1});
 // Only for OAI-PMH provider: db.record.ensureIndex({source_id: 1, updated: 1});
