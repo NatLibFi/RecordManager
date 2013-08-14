@@ -351,6 +351,7 @@ class SolrUpdater
                 );
                 if (!$mr['ok']) {
                     $this->log->log('updateMergedRecords', "Mongo map/reduce failed: " . print_r($mr, true), Logger::FATAL);
+                    $this->db->dropCollection($collectionName);
                     return; 
                 }
                 
@@ -364,13 +365,15 @@ class SolrUpdater
                         $dedupParams['updated'] = array('$gte' => $mongoFromDate);
                     }
                 }
+                $map = new MongoCode("function() { emit(this._id, 1); }");
+                $reduce = new MongoCode("function(k, vals) { return vals.length; }");
                 $mr = $this->db->command(
                     array(
                         'mapreduce' => 'dedup', 
                         'map' => $map,
                         'reduce' => $reduce,
                         'out' => array('merge' => $collectionName),
-                        'query' => $dedupParams,
+                        'query' => $dedupParams ? $dedupParams : null,
                     ),
                     array(
                         'timeout' => 3000000
@@ -378,6 +381,7 @@ class SolrUpdater
                 );
                 if (!$mr['ok']) {
                     $this->log->log('updateMergedRecords', "Mongo map/reduce failed: " . print_r($mr, true), Logger::FATAL);
+                    $this->db->dropCollection($collectionName);
                     return; 
                 }
             } else {
