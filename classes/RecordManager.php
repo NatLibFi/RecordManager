@@ -249,8 +249,8 @@ class RecordManager
                 }
                 foreach ($records as $record) {
                     $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
-                    $xml = $metadataRecord->toXML();
                     if ($xpath) {
+                        $xml = $metadataRecord->toXML();
                         $xpathResult = simplexml_load_string($xml)->xpath($xpath);
                         if ($xpathResult === false) {
                             throw new Exception("Failed to evaluate XPath expression '$xpath'");
@@ -273,6 +273,8 @@ class RecordManager
                             ++$deduped;
                         }
                         $metadataRecord->addDedupKeyToMetadata((isset($record['dedup_id'])) ? $record['dedup_id'] : $record['_id']);
+                        $xml = $metadataRecord->toXML();
+                        $xml = preg_replace('/^<\?xml.*?\?>[\n\r]*/', '', $xml);
                         file_put_contents($file, $xml . "\n", FILE_APPEND);
                     }
                     if ($count % 1000 == 0) {
