@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) Ere Maijala 2011-2012
+ * Copyright (C) The National Library of Finland 2011-2013
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -129,6 +129,7 @@ class EadRecord extends BaseRecord
         }
         if ($authors) {
             $data['author'] = array_shift($authors);
+            $data['author-letter'] = $data['author'];
         }
         if ($authors) {
             $data['author2'] = $authors;

@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) Ere Maijala 2011-2012.
+ * Copyright (C) The National Library of Finland 2011-2013.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -318,6 +318,30 @@ class MetadataUtils
         return false;
     }
 
+    /**
+     * Convert a textual date range to numeric (days since 1970-01-01)
+     * 
+     * @param string|array $range Start and end date (separated by a comma if string)
+     * 
+     * @return string Start and end date in numeric format
+     */
+    static public function convertDateRange($range)
+    {
+        $oldTZ = date_default_timezone_get();
+        try {
+            date_default_timezone_set('UTC');
+            if (is_string($range)) {
+                $range = explode(',', $range, 2);
+            }
+            $start = floor(strtotime($range[0]) / 86400);
+            $end = floor(strtotime($range[1]) / 86400);
+        } catch (Exception $e) {
+        } 
+        date_default_timezone_set($oldTZ);
+        
+        return max(array($start, -4371587)) . ' ' . min(array($end, 2932896));
+    }
+    
     /**
      * Trim whitespace between tags (but not in data)
      *

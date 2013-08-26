@@ -4,8 +4,8 @@
  *
  * PHP version 5
  *
- * Copyright (C) Ere Maijala, The National Library of Finland 2012
  * Copyright (C) Eero Heikkinen, The National Board of Antiquities 2013
+ * Copyright (C) The National Library of Finland 2012-2013
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,

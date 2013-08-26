@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) Ere Maijala, The National Library of Finland 2012
+ * Copyright (C) The National Library of Finland 2012-2013
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -241,12 +241,11 @@ class NdlLidoRecord extends LidoRecord
      * TODO: complicated normalization like this should preferably reside within its own, separate component
      * which should allow modification of the algorithm by methods other than hard-coding rules into source.
      *
-     * @param string $input     Date range
-     * @param string $delimiter Date delimiter
+     * @param string $input Date range
      *
      * @return string Two ISO 8601 dates separated with the supplied delimiter on success, and null on failure.
      */
-    protected function parseDateRange($input, $delimiter = ',')
+    protected function parseDateRange($input)
     {
         $input = trim(strtolower($input));
          
@@ -415,6 +414,6 @@ class NdlLidoRecord extends LidoRecord
             return null;
         }
          
-        return $startDate . $delimiter . $endDate;
+        return "$startDate,$endDate";
     }
 }

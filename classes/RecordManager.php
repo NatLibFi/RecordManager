@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) Ere Maijala 2011-2012.
+ * Copyright (C) The National Library of Finland 2011-2013.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -156,28 +156,28 @@ class RecordManager
             
             if ($this->pretransformation) {
                 if ($this->verbose) {
-                    echo "Executing pretransformation...\n";
+                    echo "Executing pretransformation\n";
                 }
                 $data = $this->pretransform($data);
             }
             
             if ($this->verbose) {
-                echo "Creating FileSplitter...\n";
+                echo "Creating FileSplitter\n";
             }
             $splitter = new FileSplitter($data, $this->recordXPath, $this->oaiIDXPath);
             
             if ($this->verbose) {
-                echo "Storing records...\n";
+                echo "Storing records\n";
             }
             while (!$splitter->getEOF()) {
                 $oaiID = '';
                 $data = $splitter->getNextRecord($oaiID);
                 if ($this->verbose) {
-                    echo "Storing a record...\n";
+                    echo "Storing a record\n";
                 }
                 $count += $this->storeRecord($oaiID, false, $data);
                 if ($this->verbose) {
-                    echo "Stored records: $count...\n";
+                    echo "Stored records: $count\n";
                 }
             }
             $this->log->log('loadFromFile', "$count records loaded");
@@ -225,7 +225,7 @@ class RecordManager
 
                 $this->loadSourceSettings($source);
 
-                $this->log->log('exportRecords', "Creating record list (from " . ($fromDate ? $fromDate : 'the beginning') . ", source '$source')...");
+                $this->log->log('exportRecords', "Creating record list (from " . ($fromDate ? $fromDate : 'the beginning') . ", source '$source')");
 
                 $params = array();
                 if ($singleId) {
@@ -243,7 +243,7 @@ class RecordManager
                 $count = 0;
                 $deduped = 0;
                 $deleted = 0;
-                $this->log->log('exportRecords', "Exporting $total records from '$source'...");
+                $this->log->log('exportRecords', "Exporting $total records from '$source'");
                 if ($skipRecords) {
                     $this->log->log('exportRecords', "(1 per each $skipRecords records)");
                 }
@@ -331,7 +331,7 @@ class RecordManager
                 continue;
             }
             $this->loadSourceSettings($source);
-            $this->log->log('renormalize', "Creating record list for '$source'...");
+            $this->log->log('renormalize', "Creating record list for '$source'");
     
             $params = array('deleted' => false);
             if ($singleId) {
@@ -345,7 +345,7 @@ class RecordManager
             $total = $this->counts ? $records->count() : 'the';
             $count = 0;
     
-            $this->log->log('renormalize', "Processing $total records from '$source'...");
+            $this->log->log('renormalize', "Processing $total records from '$source'");
             $pc = new PerformanceCounter();
             foreach ($records as $record) {
                 $originalData = MetadataUtils::getRecordData($record, false);
@@ -436,7 +436,7 @@ class RecordManager
                 if (empty($source) || empty($settings) || !isset($settings['dedup']) || !$settings['dedup']) {
                     continue;
                 }
-                $this->log->log('deduplicate', "Marking all records for processing in '$source'...");
+                $this->log->log('deduplicate', "Marking all records for processing in '$source'");
                 $this->db->record->update(
                     array('source_id' => $source, 'host_record_id' => array('$exists' => false), 'deleted' => false),
                     array('$set' => array('update_needed' => true)),
@@ -454,7 +454,7 @@ class RecordManager
                 }
 
                 $this->loadSourceSettings($source);
-                $this->log->log('deduplicate', "Creating record list for '$source'" . ($allRecords ? ' (all records)' : '') . '...');
+                $this->log->log('deduplicate', "Creating record list for '$source'" . ($allRecords ? ' (all records)' : '') . '');
 
                 $params = array('deleted' => false, 'source_id' => $source);
                 if ($singleId) {
@@ -469,7 +469,7 @@ class RecordManager
                 $deduped = 0;
                 $pc = new PerformanceCounter();
                 $this->tooManyCandidatesKeys = array();
-                $this->log->log('deduplicate', "Processing $total records for '$source'...");
+                $this->log->log('deduplicate', "Processing $total records for '$source'");
                 foreach ($records as $record) {
                     if (isset($this->terminate)) {
                         $this->log->log('deduplicate', 'Termination upon request');
@@ -549,11 +549,11 @@ class RecordManager
                 
                 if ($this->harvestType == 'metalib') {
                     // MetaLib doesn't handle deleted records, so we'll just fetch everything and compare with what we have
-                    $this->log->log('harvest', "Fetching records from MetaLib...");
+                    $this->log->log('harvest', "Fetching records from MetaLib");
                     $harvest = new HarvestMetaLib($this->log, $this->db, $source, $this->basePath, $settings);
                     $harvestedRecords = $harvest->launch();
 
-                    $this->log->log('harvest', "Processing MetaLib records...");
+                    $this->log->log('harvest', "Processing MetaLib records");
                     // Create keyed array
                     $records = array();
                     foreach ($harvestedRecords as $record) {
@@ -562,7 +562,7 @@ class RecordManager
                         $records["$source.$id"] = $record;
                     }
                     
-                    $this->log->log('harvest', "Merging results with the records in database...");
+                    $this->log->log('harvest', "Merging results with the records in database");
                     $deleted = 0;
                     $unchanged = 0;
                     $changed = 0;
@@ -589,7 +589,7 @@ class RecordManager
                         }
                         unset($records[$id]);
                     }
-                    $this->log->log('harvest', "Adding new records...");
+                    $this->log->log('harvest', "Adding new records");
                     foreach ($records as $id => $record) {
                         $this->storeRecord($id, false, $record);
                         ++$added;
@@ -697,7 +697,7 @@ class RecordManager
     {
         $params = array();
         $params['source_id'] = $sourceId;
-        $this->log->log('markDeleted', "Creating record list for '$sourceId'...");
+        $this->log->log('markDeleted', "Creating record list for '$sourceId'");
 
         $params = array('deleted' => false, 'source_id' => $sourceId);
         $records = $this->db->record->find($params);
@@ -705,7 +705,7 @@ class RecordManager
         $total = $this->counts ? $records->count() : 'the';
         $count = 0;
 
-        $this->log->log('markDeleted', "Marking deleted $total records from '$sourceId'...");
+        $this->log->log('markDeleted', "Marking deleted $total records from '$sourceId'");
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
             if (isset($record['dedup_id'])) {
@@ -724,7 +724,7 @@ class RecordManager
         }
         $this->log->log('markDeleted', "Completed with $count records marked deleted from '$sourceId'");
 
-        $this->log->log('markDeleted', "Deleting last harvest date from data source '$sourceId'...");
+        $this->log->log('markDeleted', "Deleting last harvest date from data source '$sourceId'");
         $this->db->state->remove(array('_id' => "Last Harvest Date $sourceId"), array('safe' => true));
         $this->log->log('markDeleted', "Marking of $sourceId completed");
     }
@@ -740,7 +740,7 @@ class RecordManager
     {
         $params = array();
         $params['source_id'] = $sourceId;
-        $this->log->log('deleteRecords', "Creating record list for '$sourceId'...");
+        $this->log->log('deleteRecords', "Creating record list for '$sourceId'");
 
         $params = array('deleted' => false, 'source_id' => $sourceId);
         $records = $this->db->record->find($params);
@@ -748,7 +748,7 @@ class RecordManager
         $total = $this->counts ? $records->count() : 'the';
         $count = 0;
 
-        $this->log->log('deleteRecords', "Deleting $total records from '$sourceId'...");
+        $this->log->log('deleteRecords', "Deleting $total records from '$sourceId'");
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
             if (isset($record['dedup_id'])) {
@@ -765,7 +765,7 @@ class RecordManager
         }
         $this->log->log('deleteRecords', "Completed with $count records deleted from '$sourceId'");
 
-        $this->log->log('deleteRecords', "Deleting last harvest date from data source '$sourceId'...");
+        $this->log->log('deleteRecords', "Deleting last harvest date from data source '$sourceId'");
         $this->db->state->remove(array('_id' => "Last Harvest Date $sourceId"), array('safe' => true));
         $this->log->log('deleteRecords', "Deletion of $sourceId completed");
     }
@@ -783,10 +783,10 @@ class RecordManager
         
         $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
         if (isset($configArray['Solr']['merge_records']) && $configArray['Solr']['merge_records']) {
-            $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' from merged records via Solr update for merged records...");
+            $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' from merged records via Solr update for merged records");
             $updater->updateMergedRecords('', $sourceId, '', false, true);
         } 
-        $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' directly from Solr...");
+        $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' directly from Solr");
         $updater->deleteDataSource($sourceId);
         $this->log->log('deleteSolrRecords', "Deletion of '$sourceId' from Solr completed");
     }
@@ -837,7 +837,7 @@ class RecordManager
         $dataArray = Array();
         if ($this->recordSplitter) {
             if ($this->verbose) {
-                echo "Splitting records...\n";
+                echo "Splitting records\n";
             }
             if (is_string($this->recordSplitter)) {
                 include_once $this->recordSplitter;
@@ -850,15 +850,15 @@ class RecordManager
                 $doc = new DOMDocument();
                 $doc->loadXML($recordData);
                 if ($this->verbose) {
-                    echo "XML Doc Created...\n";
+                    echo "XML Doc Created\n";
                 }
                 $transformedDoc = $this->recordSplitter->transformToDoc($doc);
                 if ($this->verbose) {
-                    echo "XML Transformation Done...\n";
+                    echo "XML Transformation Done\n";
                 }
                 $records = simplexml_import_dom($transformedDoc);
                 if ($this->verbose) {
-                    echo "Creating record array...\n";
+                    echo "Creating record array\n";
                 }
                 foreach ($records as $record) {
                     $dataArray[] = $record->saveXML();
@@ -869,7 +869,7 @@ class RecordManager
         }
 
         if ($this->verbose) {
-            echo "Storing array of " . count($dataArray) . " records...\n";
+            echo "Storing array of " . count($dataArray) . " records\n";
         }
         
         // Store start time so that we can mark deleted any child records not present anymore  
@@ -1474,7 +1474,7 @@ class RecordManager
     protected function dedupComponentParts($hostRecord)
     {
         if ($this->verbose) {
-            echo "Deduplicating component parts...\n";
+            echo "Deduplicating component parts\n";
         }
         if (!$hostRecord['linking_id']) {
             $this->log->log('dedupComponentParts', 'Linking ID missing from record ' . $hostRecord['_id'], Logger::ERROR);

@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) Ere Maijala, The National Library of Finland 2012
+ * Copyright (C) The National Library of Finland 2012-2013
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -112,6 +112,10 @@ class NdlMarcRecord extends MarcRecord
         if (isset($data['publishDate'])) {
             $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate'][0]);
         }
+        $data['publication_sdaterange'] = $this->getPublicationDateRange();
+        if ($data['publication_sdaterange']) {
+            $data['search_sdaterange_mv'][] = $data['publication_sdaterange'];
+        }
         
         // language override
         $data['language'] = array();
@@ -160,7 +164,6 @@ class NdlMarcRecord extends MarcRecord
                 }
             }
         }
-        $data['author'] = $this->getFieldSubfields('100abcde');
         
         foreach ($this->getFieldsSubfields(array(array(MarcRecord::GET_NORMAL, '080', array('a', 'b')))) as $classification) {
             $data['classification_str_mv'][] = 'udk ' . strtolower(str_replace(' ', '', $classification));
@@ -249,4 +252,82 @@ class NdlMarcRecord extends MarcRecord
         }
         return parent::getFormat();
     }
+    
+    /**
+     * Return publication year/date range
+     *
+     * @return string
+     * @access protected
+     */
+    public function getPublicationDateRange()
+    {
+        $field008 = $this->getField('008');
+        if ($field008) {
+            switch (substr($field008, 6, 1)) {
+            case 'c': 
+            case 'u': 
+                $year = substr($field008, 7, 4);
+                $startDate = "$year-01-01T00:00:00Z";
+                $endDate = '9999-12-31T23:59:59Z';
+                break;
+            case 'd': 
+            case 'i': 
+            case 'k': 
+            case 'm': 
+            case 'q': 
+                $year1 = substr($field008, 7, 4);
+                $year2 = substr($field008, 11, 4);
+                $startDate = "$year1-01-01T00:00:00Z";
+                $endDate = "$year2-12-31T23:59:59Z";
+                break;                    
+            case 'e': 
+                $year = substr($field008, 7, 4);
+                $mon = substr($field008, 11, 2);
+                $day = substr($field008, 13, 2);
+                $startDate = "$year-$mon-{$day}T00:00:00Z";
+                $endDate = "$year-$mon-{$day}T23:59:59Z";
+                break;                    
+            case 's': 
+            case 't': 
+                $year = substr($field008, 7, 4);
+                $startDate = "$year-01-01T00:00:00Z";
+                $endDate = "$year-12-31T23:59:59Z";
+                break;                    
+            }
+        }
+        if (isset($startDate) && isset($endDate) && MetadataUtils::validateISO8601Date($startDate) && MetadataUtils::validateISO8601Date($endDate)) {
+            return MetadataUtils::convertDateRange(array($startDate, $endDate));
+        }
+        
+        $field = $this->getField('260');
+        if ($field) {
+            $year = $this->getSubfield($field, 'c');
+            $matches = array();
+            if ($year && preg_match('/(\d{4})/', $year, $matches)) {
+                $startDate = "{$matches[1]}-01-01T00:00:00Z";
+                $endDate = "{$matches[1]}-12-31T23:59:59Z";
+            }
+        }
+        if (isset($startDate) && isset($endDate) && MetadataUtils::validateISO8601Date($startDate) && MetadataUtils::validateISO8601Date($endDate)) {
+            return MetadataUtils::convertDateRange(array($startDate, $endDate));
+        }
+        
+        $fields = $this->getFields('264');
+        foreach ($fields as $field) {
+            if ($this->getIndicator($field, 2) == '1') {
+                $year = $this->getSubfield($field, 'c');
+                $matches = array();
+                if ($year && preg_match('/(\d{4})/', $year, $matches)) {
+                    $startDate = "{$matches[1]}-01-01T00:00:00Z";
+                    $endDate = "{$matches[1]}-12-31T23:59:59Z";
+                }
+            }
+        }
+        if (isset($startDate) && isset($endDate) && MetadataUtils::validateISO8601Date($startDate) && MetadataUtils::validateISO8601Date($endDate)) {
+            return MetadataUtils::convertDateRange(array($startDate, $endDate));
+        }
+        
+        return '';
+    }
+    
 }

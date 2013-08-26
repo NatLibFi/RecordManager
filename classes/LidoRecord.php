@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) Ere Maijala 2011-2012
+ * Copyright (C) The National Library of Finland 2011-2013
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -126,6 +126,7 @@ class LidoRecord extends BaseRecord
         $data['institution'] = $this->getLegalBodyName();
         
         $data['author'] = $this->getActor($this->mainEvent);
+        $data['author-letter'] = $data['author'];
         
         $data['topic'] = $data['topic_facet'] = $this->getSubjectTerms();
         $data['material'] = $this->getEventMaterials($this->mainEvent);
@@ -739,5 +740,70 @@ class LidoRecord extends BaseRecord
     protected function getDefaultLanguage()
     {
         return 'en';
+    }
+    
+    /**
+     * Attempt to parse a string (in finnish) into a normalized date range.
+     * TODO: complicated normalization like this should preferably reside within its own, separate component
+     * which should allow modification of the algorithm by methods other than hard-coding rules into source.
+     *
+     * @param string $input Date range
+     *
+     * @return string Two ISO 8601 dates separated with the supplied delimiter on success, and null on failure.
+     */
+    protected function parseDateRange($input)
+    {
+        $input = trim(strtolower($input));
+         
+        if (preg_match('/(\d\d\d\d) ?- (\d\d\d\d)/', $input, $matches) > 0) {
+            $startDate = $matches[1];
+            $endDate = $matches[2];
+        } elseif (preg_match('/(\d\d?).(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
+            $year = $matches[3];
+            $month =  sprintf('%02d', $matches[2]);
+            $day = sprintf('%02d', $matches[1]);
+            $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+            $noprocess = true;
+        } elseif (preg_match('/(\d?\d?\d\d) ?\?/', $input, $matches) > 0) {
+            $year = $matches[1];
+             
+            $startDate = $year-3;
+            $endDate = $year+3;
+        } elseif (preg_match('/(\d?\d?\d\d)/', $input, $matches) > 0) {
+            $year = $matches[1];
+             
+            $startDate = $year;
+            $endDate = $year;
+        } else {
+            return null;
+        }
+         
+        if (strlen($startDate) == 2) {
+            $startDate = 1900 + $startDate;
+        }
+        if (strlen($endDate) == 2) {
+            $endDate = 1900 + $endDate;
+        }
+         
+        if (empty($noprocess)) {
+            $startDate = $startDate . '-01-01T00:00:00Z';
+            $endDate = $endDate . '-12-31T23:59:59Z';
+        }
+    
+        // Trying to index dates into the future? I don't think so...
+        $yearNow = date('Y');
+        if ($startDate > $yearNow || $endDate > $yearNow) {
+            return null;
+        }
+    
+        $this->earliestYear = $startDate;
+        $this->latestYear = $startDate;
+    
+        if (!MetadataUtils::validateISO8601Date($startDate) || !MetadataUtils::validateISO8601Date($endDate)) {
+            return null;
+        }
+         
+        return "$startDate,$endDate";
     }
 }    
