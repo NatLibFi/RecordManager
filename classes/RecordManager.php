@@ -1454,6 +1454,8 @@ class RecordManager
                 $this->db->record->save($otherRecord);
                 $record['ids'] = array();   
                 $record['deleted'] = true;
+            } elseif (count($record['ids']) == 0) {
+                $record['deleted'] = true;
             }
             $record['changed'] = new MongoDate();
             $this->db->dedup->save($record);
