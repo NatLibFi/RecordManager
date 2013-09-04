@@ -428,10 +428,12 @@ class HarvestOaiPmh
                     $errors .= '; ';
                 }
                 $errors .= 'Error ' . $error->code . ' at '
-                    . $error->line . ':' . $error->column . ': ' . $error->message;
+                    . $error->line . ':' . $error->column . ': ' . str_replace(array("\n", "\r"), '', $error->message);
             }
             libxml_use_internal_errors($saveUseErrors);
-            $this->message("Could not parse XML response: $errors\nXML:\n$xml", false, Logger::FATAL);
+            $tempfile = tempnam(sys_get_temp_dir(), 'oai-pmh-error-') . '.xml';
+            file_put_contents($tempfile, $xml);
+            $this->message("Could not parse XML response: $errors. XML stored in $tempfile", false, Logger::FATAL);
             throw new Exception("Failed to parse XML response");
         }
         libxml_use_internal_errors($saveUseErrors);
@@ -516,9 +518,14 @@ class HarvestOaiPmh
                 call_user_func($this->_callback, $id, true, null);
                 $this->deletedRecords++;
             } else {
-                $recordNode = $this->getSingleNode($this->getSingleNode($record, 'metadata'), '*');
+                $recordMetadata = $this->getSingleNode($record, 'metadata');
+                if ($recordMetadata === false) {
+                    $this->message("No metadata tag found for record $id", false, Logger::ERROR);
+                    continue;
+                }
+                $recordNode = $this->getSingleNode($recordMetadata, '*');
                 if ($recordNode === false) {
-                    $this->message("No metadata found for record $id", false, Logger::ERROR);
+                    $this->message("No metadata fields found for record $id", false, Logger::ERROR);
                     continue;
                 }
                 // Add namespaces to the record element
