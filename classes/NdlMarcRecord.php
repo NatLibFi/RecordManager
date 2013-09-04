@@ -248,7 +248,37 @@ class NdlMarcRecord extends MarcRecord
             return 'Dissertation';
         }
         if (isset($this->fields['509'])) {
-            return 'ProGradu';
+            $field509a = $this->getFieldSubfields('509a');
+            switch (strtolower($field509a)) {
+            case 'kandidaatintyö':
+            case 'kandidatarbete':
+                return 'BachelorsThesis';
+            case 'pro gradu -työ':
+            case 'pro gradu':
+                return 'ProGradu';
+            case 'laudaturtyö':
+            case 'laudaturavh':
+                return 'LaudaturThesis';
+            case 'lisensiaatintyö':
+            case 'lic.avh.':
+                return 'LicentiateThesis';
+            case 'diplomityö':
+            case 'diplomarbete':
+                return 'MastersThesis';
+            case 'erikoistyö':
+            case 'vicenot.ex.':
+                return 'Thesis';
+            case 'lopputyö':
+            case 'rättsnot.ex.':
+                return 'Thesis';
+            case 'amk-opinnäytetyö':
+            case 'yh-examensarbete':
+                return 'BachelorsThesis';
+            case 'ylempi amk-opinnäytetyö':
+            case 'högre yh-examensarbete':
+                return 'MastersThesis';
+            }
+            return 'Thesis';
         }
         return parent::getFormat();
     }
@@ -259,13 +289,12 @@ class NdlMarcRecord extends MarcRecord
      * @return string
      * @access protected
      */
-    public function getPublicationDateRange()
+    protected function getPublicationDateRange()
     {
         $field008 = $this->getField('008');
         if ($field008) {
             switch (substr($field008, 6, 1)) {
             case 'c': 
-            case 'u': 
                 $year = substr($field008, 7, 4);
                 $startDate = "$year-01-01T00:00:00Z";
                 $endDate = '9999-12-31T23:59:59Z';
@@ -289,6 +318,7 @@ class NdlMarcRecord extends MarcRecord
                 break;                    
             case 's': 
             case 't': 
+            case 'u': 
                 $year = substr($field008, 7, 4);
                 $startDate = "$year-01-01T00:00:00Z";
                 $endDate = "$year-12-31T23:59:59Z";
