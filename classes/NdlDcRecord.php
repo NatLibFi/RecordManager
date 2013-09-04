@@ -50,8 +50,14 @@ class NdlDcRecord extends DcRecord
     public function toSolrArray()
     {
         $data = parent::toSolrArray();
+        
         if (isset($data['publishDate'])) {
             $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate']);
+        }
+        
+        $data['publication_sdaterange'] = $this->getPublicationDateRange();
+        if ($data['publication_sdaterange']) {
+            $data['search_sdaterange_mv'][] = $data['publication_sdaterange'];
         }
         
         // language, take only first
@@ -71,4 +77,21 @@ class NdlDcRecord extends DcRecord
         
         return $data;
     }
+
+    /**
+     * Return publication year/date range
+     *
+     * @return string
+     * @access protected
+     */
+    protected function getPublicationDateRange()
+    {
+        $year = $this->getPublicationYear();
+        if ($year) {
+            $startDate = "$year-01-01T00:00:00Z";
+            $endDate = "$year-12-31T23:59:59Z";
+            return MetadataUtils::convertDateRange(array($startDate, $endDate));
+        }
+        return '';
+    }   
 }
