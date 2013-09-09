@@ -232,6 +232,15 @@ class NdlMarcRecord extends MarcRecord
             $value = str_replace('-', '', $value);
         }
         
+        $fields = $this->getFields('856');
+        foreach ($fields as $field) {
+            $ind2 = $this->getIndicator($field, 2);
+            if ($ind2 == '0' || $ind2 == '1') {
+                $data['online_boolean'] = true;
+                break;
+            }
+        }
+        
         return $data;
     }
     
