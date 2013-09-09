@@ -75,7 +75,7 @@ class NdlMarcRecord extends MarcRecord
         }
         // Kyyti enumeration from 362 to title
         if ($this->source == 'kyyti' && isset($this->fields['245']) && isset($this->fields['362'])) {
-            $enum = $this->getFieldSubfields('362a');
+            $enum = $this->getFieldSubfields('362', array('a'));
             if ($enum) {
                 $this->fields['245'][0]['s'][] = array('n' => $enum);
             } 
@@ -238,7 +238,7 @@ class NdlMarcRecord extends MarcRecord
     public function getFormat()
     {
         // Custom predefined type in 977a
-        $field977a = $this->getFieldSubfields('977a');
+        $field977a = $this->getFieldSubfields('977', array('a'));
         if ($field977a) {
             return $field977a;
         }
@@ -248,7 +248,7 @@ class NdlMarcRecord extends MarcRecord
             return 'Dissertation';
         }
         if (isset($this->fields['509'])) {
-            $field509a = $this->getFieldSubfields('509a');
+            $field509a = $this->getFieldSubfields('509', array('a'));
             switch (strtolower($field509a)) {
             case 'kandidaatintyö':
             case 'kandidatarbete':
