@@ -107,6 +107,9 @@ class NdlLidoRecord extends LidoRecord
         $data['use_daterange'] = $this->getDateRange('käyttö');
         $data['finding_daterange'] = $this->getDateRange('löytyminen');
         $data['source_str_mv'] = $this->source;
+        if ($this->getURLs()) {
+            $data['online_boolean'] = true;
+        }
         
         $data['allfields'] = $this->getAllFields($data);
         
