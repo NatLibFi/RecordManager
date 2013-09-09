@@ -292,7 +292,8 @@ class MarcRecord extends BaseRecord
                 array(MarcRecord::GET_NORMAL, '041', array('a')),
                 array(MarcRecord::GET_NORMAL, '041', array('d')),
                 array(MarcRecord::GET_NORMAL, '041', array('h')),
-                array(MarcRecord::GET_NORMAL, '041', array('j'))
+                array(MarcRecord::GET_NORMAL, '041', array('j')),
+                array(MarcRecord::GET_NORMAL, '979', array('h')) // 979h = component part language
             ), 
             false, true, true
         );
@@ -616,6 +617,16 @@ class MarcRecord extends BaseRecord
                     array(MarcRecord::GET_NORMAL, '306', array('a'))
                 )
             );
+            $languages = array(substr($marc->getField('008'), 35, 3));
+            $languages += $marc->getFieldsSubfields(
+                array(
+                    array(MarcRecord::GET_NORMAL, '041', array('a')),
+                    array(MarcRecord::GET_NORMAL, '041', array('d')),
+                    array(MarcRecord::GET_NORMAL, '041', array('h')),
+                    array(MarcRecord::GET_NORMAL, '041', array('j'))
+                ), 
+                false, true, true
+            );
             $id = $componentPart['_id'];
 
             $newField = array(
@@ -646,7 +657,12 @@ class MarcRecord extends BaseRecord
             foreach ($additionalTitles as $addTitle) {
                 $newField['s'][] = array('g' => $addTitle);
             }
-                        
+            foreach ($languages as $language) {
+                if (preg_match('/^\w{3}$/', $language) && $language != 'zxx' && $language != 'und') {
+                    $newField['s'][] = array('h' => $language);
+                }
+            }
+            
             $key = MetadataUtils::createIdSortKey($id);
             $parts[$key] = $newField;
             ++$count;

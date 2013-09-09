@@ -120,7 +120,13 @@ class NdlMarcRecord extends MarcRecord
         // language override
         $data['language'] = array();
         $languages = array(substr($this->getField('008'), 35, 3));
-        $languages += $this->getFieldsSubfields(array(array(MarcRecord::GET_NORMAL, '041', array('a'))), false, true, true);
+        $languages += $this->getFieldsSubfields(
+            array(
+                array(MarcRecord::GET_NORMAL, '041', array('a')),
+                array(MarcRecord::GET_NORMAL, '979', array('h')) // 979h = component part language
+            ), 
+            false, true, true
+        );
         foreach ($languages as $language) {
             if (preg_match('/^\w{3}$/', $language) && $language != 'zxx' && $language != 'und') {
                 $data['language'][] = $language;
