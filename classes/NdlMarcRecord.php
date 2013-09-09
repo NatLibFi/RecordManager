@@ -133,6 +133,39 @@ class NdlMarcRecord extends MarcRecord
             }
         }
         
+        // 979cd = component part authors
+        foreach ($this->getFieldsSubfields(
+            array(
+                array(MarcRecord::GET_BOTH, '979', array('c')),
+                array(MarcRecord::GET_BOTH, '979', array('d'))
+            ),
+            false, true, true
+        ) as $field) {
+            $data['author2'][] = $field;
+        }
+        $key = array_search($data['author'], $data['author2']);
+        if ($key !== false) {
+            unset($data['author2'][$key]);
+        }
+        $data['author2'] = array_filter(array_values($data['author2']));
+        
+        $data['title_alt'] = array_values(
+            array_unique(
+                $this->getFieldsSubfields(
+                    array(
+                        array(MarcRecord::GET_ALT, '245', array('a', 'b')),
+                        array(MarcRecord::GET_BOTH, '130', array('a', 'd', 'f', 'g', 'k', 'l', 'n', 'p', 's', 't')),
+                        array(MarcRecord::GET_BOTH, '240', array('a')),
+                        array(MarcRecord::GET_BOTH, '246', array('g')),
+                        array(MarcRecord::GET_BOTH, '730', array('a', 'd', 'f', 'g', 'k', 'l', 'n', 'p', 's', 't')),
+                        array(MarcRecord::GET_BOTH, '740', array('a')),
+                        array(MarcRecord::GET_BOTH, '979', array('b')),
+                        array(MarcRecord::GET_BOTH, '979', array('e')),
+                    )
+                )
+            )
+        ); // 979b and e = component part title and uniform title
+        
         // Location coordinates
         $field = $this->getField('034');
         if ($field) {
@@ -244,6 +277,99 @@ class NdlMarcRecord extends MarcRecord
         return $data;
     }
     
+    /**
+     * Merge component parts to this record
+     *
+     * @param MongoCollection $componentParts Component parts to be merged
+     * 
+     * @return void
+     */
+    public function mergeComponentParts($componentParts)
+    {
+        $count = 0;
+        $parts = array();
+        foreach ($componentParts as $componentPart) {
+            $data = MetadataUtils::getRecordData($componentPart, true);
+            $marc = new MARCRecord($data, '', $this->source);
+            $title = $marc->getFieldSubfields('245', array('a', 'b', 'n', 'p'));
+            $uniTitle = $marc->getFieldSubfields('240', array('a', 'n', 'p'));
+            $additionalTitles = $marc->getFieldsSubfields(
+                array(
+                    array(MarcRecord::GET_NORMAL, '740', array('a'))
+                )
+            );
+            $authors = $marc->getFieldsSubfields(
+                array(
+                    array(MarcRecord::GET_NORMAL, '100', array('a', 'e')),
+                    array(MarcRecord::GET_NORMAL, '110', array('a', 'e'))
+                )
+            );
+            $additionalAuthors = $marc->getFieldsSubfields(
+                array(
+                    array(MarcRecord::GET_NORMAL, '700', array('a', 'e')),
+                    array(MarcRecord::GET_NORMAL, '710', array('a', 'e'))
+                )
+            );
+            $duration = $marc->getFieldsSubfields(
+                array(
+                    array(MarcRecord::GET_NORMAL, '306', array('a'))
+                )
+            );
+            $languages = array(substr($marc->getField('008'), 35, 3));
+            $languages += $marc->getFieldsSubfields(
+                array(
+                    array(MarcRecord::GET_NORMAL, '041', array('a')),
+                    array(MarcRecord::GET_NORMAL, '041', array('d')),
+                    array(MarcRecord::GET_NORMAL, '041', array('h')),
+                    array(MarcRecord::GET_NORMAL, '041', array('j'))
+                ), 
+                false, true, true
+            );
+            $id = $componentPart['_id'];
+
+            $newField = array(
+                'i1' => ' ',
+                'i2' => ' ',
+                's' => array(
+                    array('a' => $id)
+                 )
+            );
+            if ($title) {
+                $newField['s'][] = array('b' => $title);
+            }
+            if ($authors) {
+                $newField['s'][] = array('c' => array_shift($authors));
+                foreach ($authors as $author) {
+                    $newField['s'][] = array('d' => $author);
+                }
+            }
+            foreach ($additionalAuthors as $addAuthor) {
+                $newField['s'][] = array('d' => $addAuthor);
+            }
+            if ($uniTitle) {
+                $newField['s'][] = array('e' => $uniTitle);
+            }
+            if ($duration) {
+                $newField['s'][] = array('f' => reset($duration));
+            }
+            foreach ($additionalTitles as $addTitle) {
+                $newField['s'][] = array('g' => $addTitle);
+            }
+            foreach ($languages as $language) {
+                if (preg_match('/^\w{3}$/', $language) && $language != 'zxx' && $language != 'und') {
+                    $newField['s'][] = array('h' => $language);
+                }
+            }
+            
+            $key = MetadataUtils::createIdSortKey($id);
+            $parts[$key] = $newField;
+            ++$count;
+        }
+        ksort($parts);
+        $this->fields['979'] = array_values($parts);
+        return $count;
+    }
+
     /**
      * Dedup: Return format from predefined values
      *
@@ -375,4 +501,34 @@ class NdlMarcRecord extends MarcRecord
         return '';
     }
     
+    /**
+     * Get an array of all fields relevant to allfields search
+     * 
+     * @return string[]
+     */
+    protected function getAllFields()
+    {
+        $allFields = array();
+        $subfieldFilter = array(
+            '650' => array('2', '6', '8'), 
+            '773' => array('6', '7', '8', 'w'), 
+            '856' => array('6', '8', 'q'), 
+            '979' => array('a')
+        );
+        foreach ($this->fields as $tag => $fields) {
+            if (($tag >= 100 && $tag < 841) || $tag == 856 || $tag == 979) {
+                foreach ($fields as $field) {
+                    $allFields[] = MetadataUtils::stripLeadingPunctuation(
+                        MetadataUtils::stripTrailingPunctuation(
+                            $this->getAllSubfields(
+                                $field,
+                                isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : array('6', '8')
+                            )
+                        )
+                    );
+                }
+            }
+        }
+        return array_values(array_unique($allFields));
+    }
 }
