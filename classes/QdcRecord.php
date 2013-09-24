@@ -190,15 +190,7 @@ class QdcRecord extends BaseRecord
         $title = MetadataUtils::stripTrailingPunctuation($title);
         if ($forFiling) {
             $title = MetadataUtils::stripLeadingPunctuation($title);
-            if (isset($configArray['Site']['articles'])) {
-                foreach ($configArray['Site']['articles'] as $article) {
-                    $len = strlen($article);
-                    if (strncasecmp($article, $title, $len) == 0) {
-                        $title = substr($title, $len);
-                        break;
-                    }    
-                }
-            }
+            $title = MetadataUtils::stripLeadingArticle($title);
             // Again, just in case stripping the article affected this
             $title = MetadataUtils::stripLeadingPunctuation($title);
             $title = mb_strtolower($title, 'UTF-8');

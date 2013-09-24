@@ -41,7 +41,7 @@ function main($argv)
     if (!isset($params['func'])) {
         echo "Usage: manage --func=... [...]\n\n";
         echo "Parameters:\n\n";
-        echo "--func             renormalize|deduplicate|updatesolr|dump|markdeleted|deletesource|deletesolr|optimizesolr|count|updategeocoding|resimplifygeocoding\n";
+        echo "--func             renormalize|deduplicate|updatesolr|dump|markdeleted|deletesource|deletesolr|optimizesolr|count|updategeocoding|resimplifygeocoding|checkdedup\n";
         echo "--source           Source ID to process (separate multiple sources with commas)\n";
         echo "--all              Process all records regardless of their state (deduplicate)\n";
         echo "                   or date (updatesolr)\n";
@@ -98,6 +98,9 @@ function main($argv)
                 break;
             case 'resimplifygeocoding':
                 $manager->resimplifyGeocodingTable();
+                break;
+            case 'checkdedup':
+                $manager->checkDedupRecords();
                 break;
             default: 
                 echo 'Unknown func: ' . $params['func'] . "\n"; 

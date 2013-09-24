@@ -40,6 +40,8 @@
 class MetadataUtils
 {
     static $fullTitlePrefixes = null;
+    static $abbreviations = null;
+    static $articles = null;
     
     /**
      * Convert ISBN-10 (without dashes) to ISBN-13
@@ -96,10 +98,6 @@ class MetadataUtils
     {
         global $configArray;
         global $basePath;
-        
-        if (isset($configArray['Site']['full_title_prefixes']) && !isset(MetadataUtils::$fullTitlePrefixes)) {
-            MetadataUtils::$fullTitlePrefixes = array_map(array('MetadataUtils', 'normalize'), file("$basePath/conf/{$configArray['Site']['full_title_prefixes']}",  FILE_IGNORE_NEW_LINES));
-        }
         
         $full = false;
         if (isset(MetadataUtils::$fullTitlePrefixes)) {
@@ -240,7 +238,7 @@ class MetadataUtils
             } else {
                 $lastWord = $str;
             }
-            if (!isset($configArray['Site']['abbreviations']) || !in_array($lastWord, $configArray['Site']['abbreviations'])) {
+            if (!in_array($lastWord, MetadataUtils::$abbreviations)) {
                 $str = substr($str, 0, -1);
             }
         }
@@ -258,6 +256,25 @@ class MetadataUtils
     static public function stripLeadingPunctuation($str, $punctuation = " \#!?/:;.,=(['\"")
     {
         return ltrim($str, $punctuation);
+    }
+    
+    /**
+     * Strip leading article from a title
+     * 
+     * @param string $str Title string
+     * 
+     * @return string Modified title string
+     */
+    static public function stripLeadingArticle($str)
+    {
+        foreach (MetadataUtils::$articles as $article) {
+            $len = strlen($article);
+            if (strncasecmp($article, $str, $len) == 0) {
+                $title = substr($str, $len);
+                break;
+            }    
+        }
+        return $str;
     }
     
     /**

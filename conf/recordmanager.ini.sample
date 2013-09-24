@@ -3,18 +3,13 @@
 ;   http://www.php.net/manual/en/timezones.php
 timezone        = "Europe/Helsinki"
 ; Abbreviations that need to be considered before removing trailing period
-abbreviations[] = "ill."
-abbreviations[] = "col."
+abbreviations = abbreviations.lst
 ; A file that contains title prefixes. If a title starts with a listed title prefix, 
 ; it will not be shortened in title_keys (for deduplication). Add frequently found 
 ; titles, such as "visual approach chart" to the list 
 ;full_title_prefixes = full-title-prefixes.lst
 ; Articles that should be removed from the beginning of a title for sorting
-articles[] = 'The ';
-articles[] = 'A ';
-articles[] = 'An ';
-articles[] = 'El ';
-articles[] = 'Le ';
+articles = articles.lst
 
 [Mongo]
 ; url = mongodb://{username}:{password}@localhost

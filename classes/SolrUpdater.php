@@ -407,6 +407,10 @@ class SolrUpdater
                 }
 
                 $dedupRecord = $this->db->dedup->findOne(array('_id' => $key['_id']));
+                if (empty($dedupRecord)) {
+                    $this->log->log('updateMergedRecords', "Dedup record with id {$key['_id']} missing", Logger::ERROR);
+                    continue;
+                }
                 if ($dedupRecord['deleted']) {
                     $this->bufferedDelete($dedupRecord['_id']);
                     ++$count;
