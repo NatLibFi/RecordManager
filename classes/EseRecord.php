@@ -172,8 +172,15 @@ class EseRecord extends BaseRecord
      */
     public function getTitle($forFiling = false)
     {
-        // TODO: strip common articles when $forFiling = true?
-        return (string)$this->doc->title;
+        $title = trim((string)$this->doc->title);
+        if ($forFiling) {
+            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = MetadataUtils::stripLeadingArticle($title);
+            // Again, just in case stripping the article affected this
+            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = mb_strtolower($title, 'UTF-8');
+        }
+        return $title;
     }
 
     /**
