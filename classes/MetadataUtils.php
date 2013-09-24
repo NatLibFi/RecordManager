@@ -270,7 +270,7 @@ class MetadataUtils
         foreach (MetadataUtils::$articles as $article) {
             $len = strlen($article);
             if (strncasecmp($article, $str, $len) == 0) {
-                $title = substr($str, $len);
+                $str = substr($str, $len);
                 break;
             }    
         }
