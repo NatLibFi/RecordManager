@@ -1,0 +1,11 @@
+ = Other/Text
+Text = Other/Text
+Master's thesis = Thesis/Masters
+Sound = Sound/SoundRecording
+Image = Image/Image
+Bachelor's thesis = Thesis/Bachelors
+Doctoral thesis (article-based) = Thesis/Doctoral
+Doctoral dissertation = Thesis/Doctoral
+Series = Other/Series
+Pro Gradu = Thesis/Gradu
+##default = Other/Text
