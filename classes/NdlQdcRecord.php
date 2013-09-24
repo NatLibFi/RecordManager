@@ -50,6 +50,18 @@ class NdlQdcRecord extends QdcRecord
     public function toSolrArray()
     {
         $data = parent::toSolrArray();
+        
+        // Nonstandard author fields
+        $authors = $this->getValues('author');
+        if ($authors) {
+            $data['author'] = array_shift($authors);
+            if (isset($data['author2'])) {
+                $data['author2'] = array_merge($authors, $data['author2']);
+            } else {
+                $data['author2'] = $authors;
+            }
+        }
+                
         if (isset($data['publishDate'])) {
             $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate']);
         }
