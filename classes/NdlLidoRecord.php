@@ -107,6 +107,8 @@ class NdlLidoRecord extends LidoRecord
         $data['use_daterange'] = $this->getDateRange('käyttö');
         $data['finding_daterange'] = $this->getDateRange('löytyminen');
         $data['source_str_mv'] = $this->source;
+        $data['search_daterange'] = $data['creation_daterange'];
+        
         if ($this->getURLs()) {
             $data['online_boolean'] = true;
         }
@@ -396,7 +398,8 @@ class NdlLidoRecord extends LidoRecord
             $startDate = 1900 + $startDate;
         }
         if (strlen($endDate) == 2) {
-            $endDate = 1900 + $endDate;
+            $century = substr($startDate, 0, 2) . '00';
+            $endDate = $century + $endDate;
         }
          
         if (empty($noprocess)) {
