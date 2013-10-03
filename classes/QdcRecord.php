@@ -127,8 +127,16 @@ class QdcRecord extends BaseRecord
         );
                 
         $data['format'] = (string)$doc->type;
-        $data['author'] = MetadataUtils::stripTrailingPunctuation((string)$doc->creator);
-        $data['author2'] = $this->getValues('contributor');
+        $authors = $this->getValues('creator');
+        if ($authors) {
+            $data['author'] = MetadataUtils::stripTrailingPunctuation(array_shift($authors));
+            foreach ($authors as $author) {
+                $data['author2'][] = MetadataUtils::stripTrailingPunctuation($author);
+            }
+        }
+        foreach ($this->getValues('contributor') as $contributor) {
+            $data['author2'][] = MetadataUtils::stripTrailingPunctuation($contributor);
+        }
 
         $data['title'] = $data['title_full'] = (string)$doc->title;
         $titleParts = explode(' : ', $data['title']);
