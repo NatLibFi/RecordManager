@@ -461,7 +461,27 @@ class LidoRecord extends BaseRecord
         if (!empty($event)) {
             $xpath .= "[eventType/term='$event']";
         }
-         
+
+        $startDate = $this->extractFirst($xpath . '/eventDate/date/earliestDate');
+        $endDate = $this->extractFirst($xpath . '/eventDate/date/latestDate');
+        if (!empty($startDate) && !empty($endDate)) {
+            if (strlen($startDate) == 4) {
+                $startDate = $startDate . '-01-01T00:00:00Z';
+            } else if (strlen($startDate) == 7) {
+                $startDate = $startDate . '-01T00:00:00Z';
+            } else if (strlen($startDate) == 10) {
+                $startDate = $startDate . 'T00:00:00Z';
+            }
+            if (strlen($endDate) == 4) {
+                $endDate = $endDate . '-12-31T23:59:59Z';
+            } else if (strlen($endDate) == 7) {
+                $endDate = $endDate . '-31T23:59:59Z';
+            } else if (strlen($endDate) == 10) {
+                $endDate = $endDate . 'T23:59:59Z';
+            }
+            return "$startDate,$endDate";            
+        }
+        
         $date = $this->extractFirst($xpath . '/eventDate/displayDate');
         if (empty($date)) {
             $date = $this->extractFirst($xpath . '/periodName/term');
@@ -783,7 +803,8 @@ class LidoRecord extends BaseRecord
             $startDate = 1900 + $startDate;
         }
         if (strlen($endDate) == 2) {
-            $endDate = 1900 + $endDate;
+            $century = substr($startDate, 0, 2) . '00';
+            $endDate = $century + $endDate;
         }
          
         if (empty($noprocess)) {
