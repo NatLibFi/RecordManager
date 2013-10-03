@@ -367,8 +367,8 @@ class HarvestOaiPmh
         }
         $code = $response->getStatus();
         if ($code >= 300) {
-            $this->message("Request '$urlStr' failed: $code", false, Logger::FATAL);
-            throw new Exception("Request failed: $code");
+            $this->message("{$this->source}: Request '$urlStr' failed: $code", false, Logger::FATAL);
+            throw new Exception("{$this->source}: Request failed: $code");
         }
 
         // If we got this far, there was no error -- send back response.
@@ -433,8 +433,8 @@ class HarvestOaiPmh
             libxml_use_internal_errors($saveUseErrors);
             $tempfile = tempnam(sys_get_temp_dir(), 'oai-pmh-error-') . '.xml';
             file_put_contents($tempfile, $xml);
-            $this->message("Could not parse XML response: $errors. XML stored in $tempfile", false, Logger::FATAL);
-            throw new Exception("Failed to parse XML response");
+            $this->message("{$this->source}: Could not parse XML response: $errors. XML stored in $tempfile", false, Logger::FATAL);
+            throw new Exception("{$this->source}: Failed to parse XML response");
         }
         libxml_use_internal_errors($saveUseErrors);
 
@@ -445,12 +445,12 @@ class HarvestOaiPmh
             if ($code != 'noRecordsMatch') {
                 $value = $result->saveXML($error);
                 $this->message(
-                    "OAI-PMH server returned error $code ($value)", 
+                    "{$this->source}: OAI-PMH server returned error $code ($value)", 
                     false,
                     Logger::FATAL
                 );
                 throw new Exception(
-                    "OAI-PMH error -- code: $code, " .
+                    "{$this->source}: OAI-PMH error -- code: $code, " .
                     "value: $value\n"
                 );
             }
