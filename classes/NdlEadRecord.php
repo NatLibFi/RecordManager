@@ -52,24 +52,10 @@ class NdlEadRecord extends EadRecord
         $data = parent::toSolrArray();
         $doc = $this->doc;
         
-        $unitdate = (string)$doc->did->unitdate;
-        if ($unitdate && $unitdate != '-') {
-            $dates = explode('-', $unitdate);
-            if (isset($dates[1]) && $dates[1]) {
-                if ($dates[0]) {
-                    $unitdate = $dates[0] . '-01-01T00:00:00Z,' . $dates[1] . '-12-31T23:59:59Z';
-                } else {
-                    $unitdate = '0000-01-01T00:00:00Z,' . $dates[1] . '-12-31T23:59:59Z';
-                }
-            } else {
-                if (strpos($unitdate, '-') > 0) {
-                    $unitdate = $dates[0] . '-01-01T00:00:00Z,9999-12-31T23:59:59Z';
-                } else {
-                    $unitdate = $dates[0] . '-01-01T00:00:00Z,' . $dates[0] . '-12-31T23:59:59Z';
-                }
-            }
-            $data['unit_daterange'] = $unitdate; 
-            $data['main_date_str'] = MetadataUtils::extractYear($dates[0]);
+        $unitDateRange = $this->parseDateRange((string)$doc->did->unitdate);
+        $data['search_sdaterange_mv'] = $data['unit_sdaterange'] = MetadataUtils::convertDateRange($unitDateRange);
+        if ($unitDateRange) {
+            $data['main_date_str'] = MetadataUtils::extractYear($unitDateRange[0]);
         }
 
         // Single-valued sequence for sorting
@@ -93,6 +79,76 @@ class NdlEadRecord extends EadRecord
         }
         
         return $data;
+    }
+    
+    /**
+     * Parse date range string
+     * 
+     * @param string $input Date range
+     * 
+     * @return NULL|string
+     */
+    protected function parseDateRange($input)
+    {
+        if (!$input || $input == '-') {
+            return null;
+        }
+
+        if (preg_match('/(\d\d\d\d) ?- ?(\d\d\d\d)/', $input, $matches) > 0) {
+            $startDate = $matches[1] . '-01-01T00:00:00Z';
+            $endDate = $matches[2] . '-12-31T00:00:00Z';
+        } elseif (preg_match('/(\d\d?).(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
+            $startYear = $matches[3];
+            $startMonth = sprintf('%02d', $matches[2]);
+            $startDay = sprintf('%02d', $matches[1]);
+            $startDate = $startYear . '-' . $startMonth . '-' .  $startDay . 'T00:00:00Z';
+            $endYear = $matches[6];
+            $endMonth =  sprintf('%02d', $matches[5]);
+            $endDay = sprintf('%02d', $matches[4]);
+            $endDate = $endYear . '-' . $endMonth . '-' .  $endDay . 'T23:59:59Z';
+        } elseif (preg_match('/(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
+            $startYear = $matches[2];
+            $startMonth = sprintf('%02d', $matches[1]);
+            $startDay = '01';
+            $startDate = $startYear . '-' . $startMonth . '-' .  $startDay . 'T00:00:00Z';
+            $endYear = $matches[4];
+            $endMonth =  sprintf('%02d', $matches[3]);
+            $endDate = $endYear . '-' . $endMonth . '-01';
+            try {
+                $d = new DateTime($endDate);
+            } catch (Exception $e) {
+                global $logger;
+                $logger->log('NdlEadRecord', "Failed to parse date $endDate, record {$this->source}." . $this->getID(), Logger::ERROR);
+                return null;
+            }
+            $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
+        } elseif (preg_match('/(\d\d\d\d)-(\d\d?)-(\d\d?)/', $input, $matches) > 0) {
+            $year = $matches[1];
+            $month =  sprintf('%02d', $matches[2]);
+            $day = sprintf('%02d', $matches[3]);
+            $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+        } elseif (preg_match('/(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
+            $year = $matches[2];
+            $month =  sprintf('%02d', $matches[1]);
+            $startDate = $year . '-' . $month . '-01' . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-01';
+            try {
+                $d = new DateTime($endDate);
+            } catch (Exception $e) {
+                global $logger;
+                $logger->log('NdlEadRecord', "Failed to parse date $endDate, record {$this->source}." . $this->getID(), Logger::ERROR);
+                return null;
+            }
+            $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
+        } elseif (preg_match('/(\d\d\d\d)/', $input, $matches) > 0) {
+            $year = $matches[1];
+            $startDate = $year . '-01-01T00:00:00Z';
+            $endDate = $year . '-12-31T23:59:59Z';
+        } else {
+            return null;
+        }
+        return array($startDate, $endDate);
     }
 }
 
