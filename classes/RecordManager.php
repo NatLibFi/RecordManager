@@ -112,7 +112,8 @@ class RecordManager
         $this->dataSourceSettings = parse_ini_file("$basePath/conf/datasources.ini", true);
         $this->basePath = $basePath;
 
-        $mongo = new Mongo($configArray['Mongo']['url']);
+        $timeout = isset($configArray['Mongo']['connect_timeout']) ? $configArray['Mongo']['connect_timeout'] : 300000;
+        $mongo = new Mongo($configArray['Mongo']['url'], array('connectTimeoutMS' => $timeout));
         $this->db = $mongo->selectDB($configArray['Mongo']['database']);
         MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout']) ? $configArray['Mongo']['cursor_timeout'] : 300000;
         
