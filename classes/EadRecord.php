@@ -169,7 +169,9 @@ class EadRecord extends BaseRecord
             break;
         default:
             $data['title_sub'] = (string)$doc->did->unitid;
-            $data['series'] = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
+            if ($doc->{'add-data'}->parent) {
+                $data['series'] = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
+            }
             break;
         }
 
