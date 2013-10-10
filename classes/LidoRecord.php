@@ -139,7 +139,6 @@ class LidoRecord extends BaseRecord
         $data['culture'] = $this->getCulture();
         $data['rights'] = $this->getRights();
 
-        $data['unit_daterange'] = $this->getDateRange($this->mainEvent);
         $data['era_facet'] = $this->getDisplayDate($this->mainEvent);
         $data['geographic_facet'][] = $this->getDisplayPlace($this->usagePlaceEvent);
         $data['collection'] = $this->getRelatedWorkDisplayObject($this->relatedWorkRelationTypes);
@@ -452,49 +451,6 @@ class LidoRecord extends BaseRecord
      *
      * @param string $event     Which event to use (omit to scan all events)
      * @param string $delimiter Delimiter between the dates
-     * 
-     * @return string
-     */
-    protected function getDateRange($event = null, $delimiter = ',')
-    {
-        $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
-        if (!empty($event)) {
-            $xpath .= "[eventType/term='$event']";
-        }
-
-        $startDate = $this->extractFirst($xpath . '/eventDate/date/earliestDate');
-        $endDate = $this->extractFirst($xpath . '/eventDate/date/latestDate');
-        if (!empty($startDate) && !empty($endDate)) {
-            if (strlen($startDate) == 4) {
-                $startDate = $startDate . '-01-01T00:00:00Z';
-            } else if (strlen($startDate) == 7) {
-                $startDate = $startDate . '-01T00:00:00Z';
-            } else if (strlen($startDate) == 10) {
-                $startDate = $startDate . 'T00:00:00Z';
-            }
-            if (strlen($endDate) == 4) {
-                $endDate = $endDate . '-12-31T23:59:59Z';
-            } else if (strlen($endDate) == 7) {
-                $endDate = $endDate . '-31T23:59:59Z';
-            } else if (strlen($endDate) == 10) {
-                $endDate = $endDate . 'T23:59:59Z';
-            }
-            return "$startDate,$endDate";            
-        }
-        
-        $date = $this->extractFirst($xpath . '/eventDate/displayDate');
-        if (empty($date)) {
-            $date = $this->extractFirst($xpath . '/periodName/term');
-        }    
-        
-        return $this->parseDateRange($date);
-    }
-    
-    /**
-     * Return the date range associated with specified event
-     *
-     * @param string $event     Which event to use (omit to scan all events)
-     * @param string $delimiter Delimiter between the dates
      *
      * @return string
      */
@@ -778,6 +734,13 @@ class LidoRecord extends BaseRecord
         if (preg_match('/(\d\d\d\d) ?- (\d\d\d\d)/', $input, $matches) > 0) {
             $startDate = $matches[1];
             $endDate = $matches[2];
+        } elseif (preg_match('/(\d\d\d\d)-(\d\d?)-(\d\d?)/', $input, $matches) > 0) {
+            $year = $matches[1];
+            $month =  sprintf('%02d', $matches[2]);
+            $day = sprintf('%02d', $matches[3]);
+            $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+            $noprocess = true;
         } elseif (preg_match('/(\d\d?).(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
             $year = $matches[3];
             $month =  sprintf('%02d', $matches[2]);

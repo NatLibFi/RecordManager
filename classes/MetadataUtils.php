@@ -344,6 +344,9 @@ class MetadataUtils
      */
     static public function convertDateRange($range)
     {
+        if (!isset($range)) {
+            return null;
+        }
         $oldTZ = date_default_timezone_get();
         try {
             date_default_timezone_set('UTC');

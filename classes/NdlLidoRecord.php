@@ -70,7 +70,7 @@ class NdlLidoRecord extends LidoRecord
 
         // Kantapuu oai provides just the consortium name as the legal body name,
         // so getting the actual institution name from the rightsholder information
-        if ($data['institution'] == 'Kantapuu') {
+        if ($data['institution'] == 'Kantapuu' || $data['institution'] == 'Akseli') {
             $data['institution'] = $this->getRightsHolderLegalBodyName();
         } else {
             $data['building'] = reset(explode('/', $data['institution']));
@@ -99,15 +99,29 @@ class NdlLidoRecord extends LidoRecord
         $data['classification_str_mv'] = $this->getClassifications();
         $data['exhibition_str_mv'] = $this->getEventNames('näyttely');
         
-        $daterange = explode(',', $this->getDateRange('valmistus'));
+        $daterange = $this->getDateRange('valmistus');
         if ($daterange) {
             $data['main_date_str'] = MetadataUtils::extractYear($daterange[0]);
+            $data['search_sdaterange_mv'][] = $data['creation_sdaterange'] = MetadataUtils::convertDateRange($daterange);
+        } else {
+            $dateSources = array('suunnittelu' => 'design', 'tuotanto' => 'production', 'kuvaus' => 'photography');
+            foreach ($dateSources as $dateSource => $field) {
+                $daterange = $this->getDateRange($dateSource);
+                if ($daterange) {
+                    $data[$field . '_sdaterange'] = MetadataUtils::convertDateRange($daterange);
+                    if (!isset($data['search_sdaterange_mv'])) {
+                        $data['search_sdaterange_mv'][] = $data[$field . '_sdaterange'];
+                    }
+                    if (!isset($data['main_date_str'])) {
+                        $data['main_date_str'] = MetadataUtils::extractYear($daterange[0]);
+                    }
+                }
+            }
         }
-        $data['creation_daterange'] = $this->getDateRange('valmistus');
-        $data['use_daterange'] = $this->getDateRange('käyttö');
-        $data['finding_daterange'] = $this->getDateRange('löytyminen');
+        $data['use_sdaterange'] = MetadataUtils::convertDateRange($this->getDateRange('käyttö'));
+        $data['finding_sdaterange'] = MetadataUtils::convertDateRange($this->getDateRange('löytyminen'));
+        
         $data['source_str_mv'] = $this->source;
-        $data['search_daterange'] = $data['creation_daterange'];
         
         if ($this->getURLs()) {
             $data['online_boolean'] = true;
@@ -240,6 +254,49 @@ class NdlLidoRecord extends LidoRecord
         return 'fi';
     }
     
+    /**
+     * Return the date range associated with specified event
+     *
+     * @param string $event     Which event to use (omit to scan all events)
+     * @param string $delimiter Delimiter between the dates
+     * 
+     * @return string[] Two ISO 8601 dates
+     */
+    protected function getDateRange($event = null, $delimiter = ',')
+    {
+        $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
+        if (!empty($event)) {
+            $xpath .= "[eventType/term='$event']";
+        }
+
+        $startDate = $this->extractFirst($xpath . '/eventDate/date/earliestDate');
+        $endDate = $this->extractFirst($xpath . '/eventDate/date/latestDate');
+        if (!empty($startDate) && !empty($endDate)) {
+            if (strlen($startDate) == 4) {
+                $startDate = $startDate . '-01-01T00:00:00Z';
+            } else if (strlen($startDate) == 7) {
+                $startDate = $startDate . '-01T00:00:00Z';
+            } else if (strlen($startDate) == 10) {
+                $startDate = $startDate . 'T00:00:00Z';
+            }
+            if (strlen($endDate) == 4) {
+                $endDate = $endDate . '-12-31T23:59:59Z';
+            } else if (strlen($endDate) == 7) {
+                $d = new DateTime($endDate . '-01');
+                $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
+            } else if (strlen($endDate) == 10) {
+                $endDate = $endDate . 'T23:59:59Z';
+            }
+            return array($startDate, $endDate);            
+        }
+        
+        $date = $this->extractFirst($xpath . '/eventDate/displayDate');
+        if (empty($date)) {
+            $date = $this->extractFirst($xpath . '/periodName/term');
+        }    
+        
+        return $this->parseDateRange($date);
+    }
 
     /**
      * Attempt to parse a string (in finnish) into a normalized date range.
@@ -248,7 +305,7 @@ class NdlLidoRecord extends LidoRecord
      *
      * @param string $input Date range
      *
-     * @return string Two ISO 8601 dates separated with the supplied delimiter on success, and null on failure.
+     * @return string[] Two ISO 8601 dates
      */
     protected function parseDateRange($input)
     {
@@ -296,6 +353,13 @@ class NdlLidoRecord extends LidoRecord
         if (preg_match('/(\d\d\d\d) ?- (\d\d\d\d)/', $input, $matches) > 0) {
             $startDate = $matches[1];
             $endDate = $matches[2];
+        } elseif (preg_match('/(\d\d\d\d)-(\d\d?)-(\d\d?)/', $input, $matches) > 0) {
+            $year = $matches[1];
+            $month =  sprintf('%02d', $matches[2]);
+            $day = sprintf('%02d', $matches[3]);
+            $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+            $noprocess = true;
         } elseif (preg_match('/(\d?\d?\d\d) ?(-|~) ?(\d?\d?\d\d) ?(-luku)?(\(?\?\)?)?/', $input, $matches) > 0) {
             // 1940-1960-luku
             // 1930 - 1970-luku
@@ -330,8 +394,16 @@ class NdlLidoRecord extends LidoRecord
         } elseif (preg_match('/(\d?\d?\d\d) (tammikuu|helmikuu|maaliskuu|huhtikuu|toukokuu|kesäkuu|heinäkuu|elokuu|syyskuu|lokakuu|marraskuu|joulukuu)/', $input, $matches) > 0) {
             $year = $matches[1];
             $month = $k[$matches[2]];
-            $startDate = $year . $month . '01';
-            $endDate = $year . $month . '31';
+            $startDate = $year . '-' . $month . '-01T00:00:00Z';
+            $endDate = $year . '-' . $month . '-01';
+            try {
+                $d = new DateTime($endDate);
+                $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
+            } catch (Exception $e) {
+                global $logger;
+                $logger->log('NdlLidoRecord', "Failed to parse date $endDate, record {$this->source}." . $this->getID(), Logger::ERROR);
+                return null;
+            }
             $noprocess = true;
         } elseif (preg_match('/(\d\d?).(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
             $year = $matches[3];
@@ -339,6 +411,20 @@ class NdlLidoRecord extends LidoRecord
             $day = sprintf('%02d', $matches[1]);
             $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
             $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+            $noprocess = true;
+        } elseif (preg_match('/(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
+            $year = $matches[2];
+            $month =  sprintf('%02d', $matches[1]);
+            $startDate = $year . '-' . $month . '-01' . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-01';
+            try {
+                $d = new DateTime($endDate);
+                $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
+            } catch (Exception $e) {
+                global $logger;
+                $logger->log('NdlLidoRecord', "Failed to parse date $endDate, record {$this->source}." . $this->getID(), Logger::ERROR);
+                return null;
+            }
             $noprocess = true;
         } elseif (preg_match('/(\d?\d?\d\d) ?-luvun (alkupuolelta|alkupuoli|alku|alusta)/', $input, $matches) > 0) {
             $year = $matches[1];
@@ -420,6 +506,6 @@ class NdlLidoRecord extends LidoRecord
             return null;
         }
          
-        return "$startDate,$endDate";
+        return array($startDate, $endDate);
     }
 }
