@@ -268,9 +268,19 @@ class NdlMarcRecord extends MarcRecord
         $fields = $this->getFields('856');
         foreach ($fields as $field) {
             $ind2 = $this->getIndicator($field, 2);
-            if ($ind2 == '0' || $ind2 == '1') {
+            $sub3 = $this->getSubfield($field, 3);
+            if (($ind2 == '0' || $ind2 == '1') && !$sub3) {
                 $data['online_boolean'] = true;
-                break;
+                $linkText = $this->getSubfield($field, 'y');
+                if (!$linkText) {
+                    $linkText = $this->getSubfield($field, 'z');
+                }
+                $link = array(
+                    'url' => $this->getSubfield($field, 'u'),
+                    'text' => $linkText,
+                    'source' => $this->source
+                ); 
+                $data['online_urls_str_mv'][] = json_encode($link);
             }
         }
         
