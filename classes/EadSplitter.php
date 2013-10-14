@@ -101,7 +101,8 @@ class EadSplitter
 
             if ($record->getName() != 'archdesc') {
                 if ($record->did->unitid) {
-                    $addData->addAttribute('identifier', $this->archiveId . '_' . $record->did->unitid->attributes()->identifier);
+                    $unitid = $record->did->unitid->attributes()->identifier ? (string)$record->did->unitid->attributes()->identifier : (string)$record->did->unitid;
+                    $addData->addAttribute('identifier', $this->archiveId . '_' . $unitid);
                 } else {
                     // Create ID for the unit
                     $addData->addAttribute('identifier', $this->archiveId . '_' . $this->currentPos);
@@ -144,7 +145,7 @@ class EadSplitter
                 if (isset($original->{'add-data'})) {
                     $parentID = (string)$original->{'add-data'}->attributes()->identifier;
                 } else {
-                    $parentID = (string)$parentDid->unitid->attributes()->identifier;
+                    $parentID = $parentDid->unitid->attributes()->identifier ? (string)$parentDid->unitid->attributes()->identifier : (string)$parentDid->unitid;
                 }
                 if ($parentID != $this->archiveId) {
                     $parentID = $this->archiveId . '_' . $parentID;
