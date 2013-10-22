@@ -531,10 +531,11 @@ class RecordManager
      * @param string $harvestUntilDate     Override end date (otherwise current date is used)
      * @param string $startResumptionToken Override OAI-PMH resumptionToken to resume interrupted harvesting process (note 
      *                                     that tokens may have a limited lifetime)
+     * @param string $exclude              Source ID's to exclude whe using '*' for repository                                    
      *                                     
      * @return void
      */
-    public function harvest($repository = '', $harvestFromDate = null, $harvestUntilDate = null, $startResumptionToken = '')
+    public function harvest($repository = '', $harvestFromDate = null, $harvestUntilDate = null, $startResumptionToken = '', $exclude = null)
     {
         global $configArray;
 
@@ -543,10 +544,15 @@ class RecordManager
             throw new Exception("Data source settings missing in datasources.ini");
         }
 
+        $excludedSources = isset($exclude) ? explode(',', $exclude) : array();
+        
         // Loop through all the sources and perform harvests
         foreach ($this->dataSourceSettings as $source => $settings) {
             try {
                 if ($repository && $repository != '*' && $source != $repository) {
+                    continue;
+                }
+                if ((!$repository || $repository == '*') && in_array($source, $excludedSources)) {
                     continue;
                 }
                 if (empty($source) || empty($settings) || !isset($settings['url'])) {
