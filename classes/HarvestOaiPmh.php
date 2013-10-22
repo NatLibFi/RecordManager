@@ -133,7 +133,7 @@ class HarvestOaiPmh
         $this->message('Identifying server');
         $response = $this->sendRequest('Identify');
         if ($this->granularity == 'auto') {
-            $this->granularity = $this->getSingleNode($this->getSingleNode($response, 'Identify'), 'granularity')->nodeValue;
+            $this->granularity = trim($this->getSingleNode($this->getSingleNode($response, 'Identify'), 'granularity')->nodeValue);
             $this->message("Detected date granularity: {$this->granularity}");
         }
         $this->serverDate = $this->normalizeDate($this->getSingleNode($response, 'responseDate')->nodeValue);
