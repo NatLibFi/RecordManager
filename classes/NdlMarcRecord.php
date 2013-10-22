@@ -270,6 +270,12 @@ class NdlMarcRecord extends MarcRecord
             $ind2 = $this->getIndicator($field, 2);
             $sub3 = $this->getSubfield($field, 3);
             if (($ind2 == '0' || $ind2 == '1') && !$sub3) {
+                $url = $this->getSubfield($field, 'u');
+                if (!$url) {
+                    global $logger;
+                    $logger->log('NdlMarcRecord', "Missing URL (subfield u) in 856 field, record {$this->source}." . $this->getID(), Logger::WARNING);
+                    continue;
+                }
                 $data['online_boolean'] = true;
                 $linkText = $this->getSubfield($field, 'y');
                 if (!$linkText) {
