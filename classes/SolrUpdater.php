@@ -362,7 +362,8 @@ class SolrUpdater
                 
                 $records = $this->db->record->find($params, array('dedup_id' => 1));
                 $prevId = null;
-                $collection = $this->db->selectCollection($collectionName);
+                $collection = $this->db->selectCollection($collectionName . '_tmp');
+                $collection->drop();
                 $count = 0;
                 $batch = array();
                 foreach ($records as $record) {
@@ -377,7 +378,7 @@ class SolrUpdater
                         if (++$count % 1000 == 0) {
                             $collection->batchInsert($batch);
                             $batch = array();
-                            $this->log->log('updateMergedRecords', "$count id's added to merged records list");
+                            $this->log->log('updateMergedRecords', "$count IDs added to merged records list");
                         }
                     }
                     $prevId = $id;
@@ -385,7 +386,7 @@ class SolrUpdater
                 if ($batch) {
                     $collection->batchInsert($batch);
                 }
-                $this->log->log('updateMergedRecords', "$count id's added to merged records list");
+                $this->log->log('updateMergedRecords', "$count IDs added to merged records list");
                 
                 // Add dedup records by date (those that were not added by record date)
                 if (!isset($mongoFromDate)) {
@@ -414,7 +415,7 @@ class SolrUpdater
                             if (++$count % 1000 == 0) {
                                 $collection->batchInsert($batch);
                                 $batch = array();
-                                $this->log->log('updateMergedRecords', "$count id's added to merged records list");
+                                $this->log->log('updateMergedRecords', "$count IDs added to merged records list");
                             }
                         }
                         $prevId = $id;
@@ -422,8 +423,14 @@ class SolrUpdater
                     if ($batch) {
                         $collection->batchInsert($batch);
                     }
-                    $this->log->log('updateMergedRecords', "$count id's added to merged records list");
+                    $this->log->log('updateMergedRecords', "$count IDs added to merged records list");
                 }
+                $this->db->command(
+                    array(
+                        'renameCollection' => $collectionName . '_tmp',
+                        'to' => $collectionName
+                    )
+                );
             } else {
                 $this->log->log('updateMergedRecords', "Using existing merged record list $collectionName");
             }
