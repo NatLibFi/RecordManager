@@ -378,7 +378,7 @@ class SolrUpdater
                         if (++$count % 1000 == 0) {
                             $collection->batchInsert($batch);
                             $batch = array();
-                            $this->log->log('updateMergedRecords', "$count IDs added to merged records list");
+                            $this->log->log('updateMergedRecords', "$count IDs added to merged record list");
                         }
                     }
                     $prevId = $id;
@@ -386,7 +386,7 @@ class SolrUpdater
                 if ($batch) {
                     $collection->batchInsert($batch);
                 }
-                $this->log->log('updateMergedRecords', "$count IDs added to merged records list");
+                $this->log->log('updateMergedRecords', "$count IDs added to merged record list");
                 
                 // Add dedup records by date (those that were not added by record date)
                 if (!isset($mongoFromDate)) {
@@ -415,7 +415,7 @@ class SolrUpdater
                             if (++$count % 1000 == 0) {
                                 $collection->batchInsert($batch);
                                 $batch = array();
-                                $this->log->log('updateMergedRecords', "$count IDs added to merged records list");
+                                $this->log->log('updateMergedRecords', "$count IDs added to merged record list");
                             }
                         }
                         $prevId = $id;
@@ -423,14 +423,19 @@ class SolrUpdater
                     if ($batch) {
                         $collection->batchInsert($batch);
                     }
-                    $this->log->log('updateMergedRecords', "$count IDs added to merged records list");
+                    $this->log->log('updateMergedRecords', "$count IDs added to merged record list");
                 }
-                $this->db->command(
+                $mongo = new Mongo($configArray['Mongo']['url']);
+                $dbName = $configArray['Mongo']['database'];
+                $res = $mongo->admin->command(
                     array(
-                        'renameCollection' => $collectionName . '_tmp',
-                        'to' => $collectionName
+                        'renameCollection' => $dbName . '.' . $collectionName . '_tmp',
+                        'to' => $dbName . '.' . $collectionName
                     )
                 );
+                if (!$res['ok']) {
+                    throw new Exception("Renaming collection failed: " . print_r($res, true));
+                }
             } else {
                 $this->log->log('updateMergedRecords', "Using existing merged record list $collectionName");
             }
