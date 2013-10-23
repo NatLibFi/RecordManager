@@ -531,20 +531,27 @@ class NdlMarcRecord extends MarcRecord
             '856' => array('6', '8', 'q'), 
             '979' => array('a')
         );
+        $allFields = array();
         foreach ($this->fields as $tag => $fields) {
-            if (($tag >= 100 && $tag < 841) || $tag == 856 || $tag == 979) {
+            if (($tag >= 100 && $tag < 841) || $tag == 856 || $tag == 880 || $tag == 979) {
                 foreach ($fields as $field) {
-                    $allFields[] = MetadataUtils::stripLeadingPunctuation(
-                        MetadataUtils::stripTrailingPunctuation(
-                            $this->getAllSubfields(
-                                $field,
-                                isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : array('6', '8')
-                            )
+                    $allFields = array_merge(
+                        $allFields, $this->getAllSubfields(
+                            $field,
+                            isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : array('6', '8')
                         )
                     );
                 }
             }
         }
+        $allFields = array_map(
+            function($str) {
+                return MetadataUtils::stripLeadingPunctuation(
+                    MetadataUtils::stripTrailingPunctuation($str)
+                );
+            },
+            $allFields
+        );
         return array_values(array_unique($allFields));
     }
 }

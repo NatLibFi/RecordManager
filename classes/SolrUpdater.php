@@ -26,6 +26,8 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 
+declare(ticks = 1);
+
 require_once 'BaseRecord.php';
 require_once 'MetadataUtils.php';
 require_once 'PerformanceCounter.php';
@@ -56,6 +58,7 @@ class SolrUpdater
     protected $eArticleFormats;
     protected $allArticleFormats;
     protected $httpPid = null;
+    protected $terminate;
     
     protected $commitInterval;
     protected $maxUpdateRecords;
@@ -128,6 +131,19 @@ class SolrUpdater
         $this->loadDatasources();
     }
 
+    /**
+     * Catch the SIGINT signal and signal the main thread to terminate
+     *
+     * @param int $signal Signal ID
+     *
+     * @return void
+     */
+    public function sigIntHandler($signal)
+    {
+        $this->terminate = true;
+        echo "Termination requested\n";
+    }
+    
     /**
      * Update Solr index (individual records)
      * 
@@ -257,6 +273,15 @@ class SolrUpdater
     {
         global $configArray;
         
+        // Install a signal handler so that we can exit cleanly if interrupted
+        unset($this->terminate);
+        if (function_exists('pcntl_signal')) {
+            pcntl_signal(SIGINT, array($this, 'sigIntHandler'));
+            $this->log->log('updateMergedRecords', 'Interrupt handler set');
+        } else {
+            $this->log->log('updateMergedRecords', 'Could not set an interrupt handler -- pcntl not available');
+        }
+        
         try {
             $needCommit = false;
 
@@ -335,25 +360,32 @@ class SolrUpdater
             if (!$collectionExists) {            
                 $this->log->log('updateMergedRecords', "Creating merged record list $collectionName (from $from, stage 1/2)");
                 
-                $map = new MongoCode("function() { emit(this.dedup_id, 1); }");
-                $reduce = new MongoCode("function(k, vals) { return vals.length; }");
-                $mr = $this->db->command(
-                    array(
-                        'mapreduce' => 'record', 
-                        'map' => $map,
-                        'reduce' => $reduce,
-                        'out' => array('replace' => $collectionName),
-                        'query' => $params,
-                    ),
-                    array(
-                        'timeout' => 3000000
-                    )
-                );
-                if (!$mr['ok']) {
-                    $this->log->log('updateMergedRecords', "Mongo map/reduce failed: " . print_r($mr, true), Logger::FATAL);
-                    $this->db->dropCollection($collectionName);
-                    return; 
+                $records = $this->db->record->find($params, array('dedup_id' => 1));
+                $prevId = null;
+                $collection = $this->db->selectCollection($collectionName);
+                $count = 0;
+                $batch = array();
+                foreach ($records as $record) {
+                    if (isset($this->terminate)) {
+                        $this->log->log('updateMergedRecords', 'Termination upon request');
+                        $collection->drop();
+                        exit(1);
+                    }
+                    $id = $record['dedup_id'];
+                    if (!isset($prevId) || $prevId != $id) {
+                        $batch[] = array('_id' => $id);
+                        if (++$count % 1000 == 0) {
+                            $collection->batchInsert($batch);
+                            $batch = array();
+                            $this->log->log('updateMergedRecords', "$count id's added to merged records list");
+                        }
+                    }
+                    $prevId = $id;
                 }
+                if ($batch) {
+                    $collection->batchInsert($batch);
+                }
+                $this->log->log('updateMergedRecords', "$count id's added to merged records list");
                 
                 // Add dedup records by date (those that were not added by record date)
                 if (!isset($mongoFromDate)) {
@@ -366,29 +398,37 @@ class SolrUpdater
                     } else {
                         $dedupParams['changed'] = array('$gte' => $mongoFromDate);
                     }
-                    $map = new MongoCode("function() { emit(this._id, 1); }");
-                    $reduce = new MongoCode("function(k, vals) { return vals.length; }");
-                    $mr = $this->db->command(
-                        array(
-                            'mapreduce' => 'dedup', 
-                            'map' => $map,
-                            'reduce' => $reduce,
-                            'out' => array('merge' => $collectionName),
-                            'query' => $dedupParams ? $dedupParams : null,
-                        ),
-                        array(
-                            'timeout' => 3000000
-                        )
-                    );
-                    if (!$mr['ok']) {
-                        $this->log->log('updateMergedRecords', "Mongo map/reduce failed: " . print_r($mr, true), Logger::FATAL);
-                        $this->db->dropCollection($collectionName);
-                        return; 
+                    
+                    $records = $this->db->dedup->find($dedupParams, array('_id' => 1));
+                    $count = 0;
+                    $batch = array();
+                    foreach ($records as $record) {
+                        if (isset($this->terminate)) {
+                            $this->log->log('updateMergedRecords', 'Termination upon request');
+                            $collection->drop();
+                            exit(1);
+                        }
+                        $id = $record['_id'];
+                        if (!isset($prevId) || $prevId != $id) {
+                            $batch[] = array('_id' => $id);
+                            if (++$count % 1000 == 0) {
+                                $collection->batchInsert($batch);
+                                $batch = array();
+                                $this->log->log('updateMergedRecords', "$count id's added to merged records list");
+                            }
+                        }
+                        $prevId = $id;
                     }
+                    if ($batch) {
+                        $collection->batchInsert($batch);
+                    }
+                    $this->log->log('updateMergedRecords', "$count id's added to merged records list");
                 }
             } else {
                 $this->log->log('updateMergedRecords', "Using existing merged record list $collectionName");
             }
+            pcntl_signal(SIGINT, SIG_DFL);
+            
             $keys = $this->db->{$collectionName}->find();
             $keys->immortal(true);
             $count = 0;
@@ -1011,7 +1051,7 @@ class SolrUpdater
                     continue;
                 }
                 if (is_array($field)) {
-                    $all[] = implode(' ', $field);
+                    $all = array_merge($all, $field);
                 } else {
                     $all[] = $field;
                 }
@@ -1217,7 +1257,7 @@ class SolrUpdater
             try {
                 $response = $this->request->send();
             } catch (Exception $e) {
-                if ($try < 5) {
+                if ($try < 15) {
                     $this->log->log(
                         'solrRequest',
                         'Solr server request failed (' . $e->getMessage() . '), retrying in 60 seconds...', 
@@ -1239,7 +1279,7 @@ class SolrUpdater
                     throw $e;
                 }
             }
-            if ($try < 5) {
+            if ($try < 15) {
                 $code = $response->getStatus();
                 if ($code >= 300) {
                     $this->log->log(
@@ -1313,9 +1353,6 @@ class SolrUpdater
     {
         $result = false;
         
-        if (isset($data['allfields']) && is_array($data['allfields'])) {
-            $data['allfields'] = implode(' ', $data['allfields']);
-        }
         $jsonData = json_encode($data);
         if ($this->buffered > 0) {
             $this->buffer .= ",\n";

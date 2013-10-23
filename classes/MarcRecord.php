@@ -1605,10 +1605,10 @@ class MarcRecord extends BaseRecord
                         }
                     }
                 }
-                if (($type == MarcRecord::GET_ALT || $type == MarcRecord::GET_BOTH) && isset($this->fields['866']) && ($origSub6 = $this->getSubfield($field, '6'))) {
+                if (($type == MarcRecord::GET_ALT || $type == MarcRecord::GET_BOTH) && isset($this->fields['880']) && ($origSub6 = $this->getSubfield($field, '6'))) {
                     // Handle alternate script field
                     $findSub6 = "$tag-" . substr($origSub6, 4, 2);
-                    foreach ($this->fields['866'] as $field) {
+                    foreach ($this->fields['880'] as $field) {
                         if (strncmp($this->getSubfield($field, '6'), $findSub6, 6) != 0) {
                             continue;
                         }
@@ -1713,7 +1713,7 @@ class MarcRecord extends BaseRecord
      * @param array $field  Field
      * @param array $filter Optional filter to exclude subfield
      * 
-     * @return string Concatenated subfields (space-separated)
+     * @return string[] All subfields
      */
     protected function getAllSubfields($field, $filter = null)
     {
@@ -1721,15 +1721,12 @@ class MarcRecord extends BaseRecord
             return '';
         }
         
-        $subfields = '';
+        $subfields = array();
         foreach ($field['s'] as $subfield) {
             if (isset($filter) && in_array(key($subfield), $filter)) {
                 continue;
             }
-            if ($subfields) {
-                $subfields .= ' ';
-            }
-            $subfields .= current($subfield);
+            $subfields[] = current($subfield);
         }
         return $subfields;
     }
@@ -1760,20 +1757,28 @@ class MarcRecord extends BaseRecord
             '773' => array('6', '7', '8', 'w'), 
             '856' => array('6', '8', 'q') 
         );
+        $allFields = array();
         foreach ($this->fields as $tag => $fields) {
-            if (($tag >= 100 && $tag < 841) || $tag == 856) {
+            if (($tag >= 100 && $tag < 841) || $tag == 856 || $tag == 880) {
                 foreach ($fields as $field) {
-                    $allFields[] = MetadataUtils::stripLeadingPunctuation(
-                        MetadataUtils::stripTrailingPunctuation(
-                            $this->getAllSubfields(
-                                $field,
-                                isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : array('6', '8')
-                            )
+                    $allFields = array_merge(
+                        $allFields, 
+                        $this->getAllSubfields(
+                            $field,
+                            isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : array('6', '8')
                         )
                     );
                 }
             }
         }
+        $allFields = array_map(
+            function($str) {
+                return MetadataUtils::stripLeadingPunctuation(
+                    MetadataUtils::stripTrailingPunctuation($str)
+                );
+            },
+            $allFields
+        );
         return array_values(array_unique($allFields));
     }
 }
