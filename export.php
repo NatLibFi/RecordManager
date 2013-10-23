@@ -38,18 +38,27 @@ require_once 'cmdline.php';
 function main($argv)
 {
     $params = parseArgs($argv);
+    applyConfigOverrides($params);
     if (!isset($params['file'])) {
-        echo "Usage: export --file=... [...]\n\n";
-        echo "Parameters:\n\n";
-        echo "--file              The file for records\n";
-        echo "--deleted           The file for deleted record IDs\n";
-        echo "--from              From date where to start the export\n";
-        echo "--verbose           Enable verbose output\n";
-        echo "--quiet             Quiet, no output apart from the data\n";
-        echo "--skip              Skip x records to export only a \"representative\" subset\n";
-        echo "--source            Export only the given source\n";
-        echo "--single            Export single record with the given id\n";
-        echo "--xpath             Export only records matching the XPath expression\n\n";
+        echo <<<EOT
+Usage: $argv[0] --file=... [...]
+
+Parameters:
+
+--file              The file for records
+--deleted           The file for deleted record IDs
+--from              From date where to start the export
+--verbose           Enable verbose output
+--quiet             Quiet, no output apart from the data
+--skip              Skip x records to export only a "representative" subset
+--source            Export only the given source
+--single            Export single record with the given id
+--xpath             Export only records matching the XPath expression
+--config.section.name=value 
+                    Set configuration directive to given value overriding any setting in recordmanager.ini
+
+
+EOT;
         exit(1);
     }
 

@@ -38,22 +38,31 @@ require_once 'cmdline.php';
 function main($argv)
 {
     $params = parseArgs($argv);
+    applyConfigOverrides($params);
     if (!isset($params['func'])) {
-        echo "Usage: manage --func=... [...]\n\n";
-        echo "Parameters:\n\n";
-        echo "--func             renormalize|deduplicate|updatesolr|dump|markdeleted|deletesource|deletesolr|optimizesolr|count|updategeocoding|resimplifygeocoding|checkdedup\n";
-        echo "--source           Source ID to process (separate multiple sources with commas)\n";
-        echo "--all              Process all records regardless of their state (deduplicate)\n";
-        echo "                   or date (updatesolr)\n";
-        echo "--from             Override the date from which to run the update (updatesolr)\n";
-        echo "--single           Process only the given record id (deduplicate, updatesolr, dump)\n";
-        echo "--nocommit         Don't ask Solr to commit the changes (updatesolr)\n";
-        echo "--field            Field to analyze (count)\n";
-        echo "--file             File containing places to geocode (updategeocoding)\n";
-        echo "--verbose          Enable verbose output for debugging\n\n";
+        echo <<<EOT
+Usage: $argv[0] --func=... [...]
+            
+Parameters:
+            
+--func             renormalize|deduplicate|updatesolr|dump|markdeleted|deletesource|deletesolr|optimizesolr|count|updategeocoding|resimplifygeocoding|checkdedup
+--source           Source ID to process (separate multiple sources with commas)
+--all              Process all records regardless of their state (deduplicate)
+                   or date (updatesolr)
+--from             Override the date from which to run the update (updatesolr)
+--single           Process only the given record id (deduplicate, updatesolr, dump)
+--nocommit         Don't ask Solr to commit the changes (updatesolr)
+--field            Field to analyze (count)
+--file             File containing places to geocode (updategeocoding)
+--verbose          Enable verbose output for debugging
+--config.section.name=value 
+                   Set configuration directive to given value overriding any setting in recordmanager.ini
+
+
+EOT;
         exit(1);
     }
-
+    
     $manager = new RecordManager(true);
     $manager->verbose = isset($params['verbose']) ? $params['verbose'] : false;
 

@@ -5,7 +5,7 @@
  * PHP version 5
  *
  * Copyright (C) Patrick Fisher 2009 
- * Copyright (C) The National Library of Finland 2011-2012.
+ * Copyright (C) The National Library of Finland 2011-2013.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -55,6 +55,25 @@ PEAR::setErrorHandling(PEAR_ERROR_CALLBACK, 'pearHandleError');
 function pearHandleError($error)
 {
     echo $error->toString() . "\n";
+}
+
+/**
+ * Apply any configuration overrides defined on command line
+ *
+ * @param array $params Command line parameters
+ * 
+ * @return void
+ */
+function applyConfigOverrides($params)
+{
+    global $configArray;
+    
+    foreach ($params as $key => $value) {
+        $setting = explode('.', $key);
+        if ($setting[0] == 'config') {
+            $configArray[$setting[1]][$setting[2]] = $value;
+        }
+    }
 }
 
 /**

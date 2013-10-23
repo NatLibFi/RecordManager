@@ -38,12 +38,21 @@ require_once 'cmdline.php';
 function main($argv)
 {
     $params = parseArgs($argv);
+    applyConfigOverrides($params);
     if (!isset($params['file']) || !isset($params['source'])) {
-        echo "Usage: import --file=... --source=... [...]\n\n";
-        echo "Parameters:\n\n";
-        echo "--file              The file or wildcard pattern of files of records\n";
-        echo "--source            Source ID\n";
-        echo "--verbose           Enable verbose output\n\n";
+        echo <<<EOT
+Usage: $argv[0] --file=... --source=... [...]
+
+Parameters:
+
+--file              The file or wildcard pattern of files of records
+--source            Source ID
+--verbose           Enable verbose output
+--config.section.name=value 
+                   Set configuration directive to given value overriding any setting in recordmanager.ini
+
+
+EOT;
         exit(1);
     }
 
