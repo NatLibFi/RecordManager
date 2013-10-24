@@ -433,7 +433,7 @@ class SolrUpdater
                         'to' => $dbName . '.' . $collectionName
                     )
                 );
-                if (!$res['ok']) {
+                if (!$res['ok'] && $res['code'] != 10026) {
                     throw new Exception("Renaming collection failed: " . print_r($res, true));
                 }
             } else {
