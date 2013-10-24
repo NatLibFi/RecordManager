@@ -365,6 +365,7 @@ class SolrUpdater
                 $collection = $this->db->selectCollection($collectionName . '_tmp');
                 $collection->drop();
                 $count = 0;
+                $totalMergeCount = 0;
                 $batch = array();
                 foreach ($records as $record) {
                     if (isset($this->terminate)) {
@@ -375,10 +376,12 @@ class SolrUpdater
                     $id = $record['dedup_id'];
                     if (!isset($prevId) || $prevId != $id) {
                         $batch[] = array('_id' => $id);
-                        if (++$count % 1000 == 0) {
-                            $collection->batchInsert($batch);
+                        ++$totalMergeCount;
+                        if (++$count % 10000 == 0) {
+                            // We need continueOnError to ignore duplicate IDs
+                            $collection->batchInsert($batch, array('continueOnError' => true));
                             $batch = array();
-                            $this->log->log('updateMergedRecords', "$count IDs added to merged record list");
+                            $this->log->log('updateMergedRecords', "$count records processed");
                         }
                     }
                     $prevId = $id;
@@ -386,7 +389,7 @@ class SolrUpdater
                 if ($batch) {
                     $collection->batchInsert($batch);
                 }
-                $this->log->log('updateMergedRecords', "$count IDs added to merged record list");
+                $this->log->log('updateMergedRecords', "$count records processed");
                 
                 // Add dedup records by date (those that were not added by record date)
                 if (!isset($mongoFromDate)) {
@@ -412,10 +415,12 @@ class SolrUpdater
                         $id = $record['_id'];
                         if (!isset($prevId) || $prevId != $id) {
                             $batch[] = array('_id' => $id);
-                            if (++$count % 1000 == 0) {
-                                $collection->batchInsert($batch);
+                            ++$totalMergeCount;
+                            if (++$count % 10000 == 0) {
+                                // We need continueOnError to ignore duplicate IDs
+                                $collection->batchInsert($batch, array('continueOnError' => true));
                                 $batch = array();
-                                $this->log->log('updateMergedRecords', "$count IDs added to merged record list");
+                                $this->log->log('updateMergedRecords', "$count merge records processed");
                             }
                         }
                         $prevId = $id;
@@ -423,18 +428,20 @@ class SolrUpdater
                     if ($batch) {
                         $collection->batchInsert($batch);
                     }
-                    $this->log->log('updateMergedRecords', "$count IDs added to merged record list");
+                    $this->log->log('updateMergedRecords', "$count merge records processed");
                 }
-                $mongo = new Mongo($configArray['Mongo']['url']);
-                $dbName = $configArray['Mongo']['database'];
-                $res = $mongo->admin->command(
-                    array(
-                        'renameCollection' => $dbName . '.' . $collectionName . '_tmp',
-                        'to' => $dbName . '.' . $collectionName
-                    )
-                );
-                if (!$res['ok'] && $res['code'] != 10026) {
-                    throw new Exception("Renaming collection failed: " . print_r($res, true));
+                if ($totalMergeCount > 0) {
+                    $mongo = new Mongo($configArray['Mongo']['url']);
+                    $dbName = $configArray['Mongo']['database'];
+                    $res = $mongo->admin->command(
+                        array(
+                            'renameCollection' => $dbName . '.' . $collectionName . '_tmp',
+                            'to' => $dbName . '.' . $collectionName
+                        )
+                    );
+                    if (!$res['ok']) {
+                        throw new Exception("Renaming collection failed: " . print_r($res, true));
+                    }
                 }
             } else {
                 $this->log->log('updateMergedRecords', "Using existing merged record list $collectionName");
