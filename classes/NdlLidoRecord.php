@@ -127,37 +127,9 @@ class NdlLidoRecord extends LidoRecord
             $data['online_boolean'] = true;
         }
         
-        $data['allfields'] = $this->getAllFields($data);
-        
-        return $data;
-    }
-    
-    /**
-     * Get allfields contents for Solr from the Solr data array
-     * 
-     * @param string[] $data Solr data array
-     * 
-     * @return string
-     */
-    protected function getAllFields($data)
-    {
-        $allfields = parent::getAllFields(
-            $data, 
-            array(
-                'title', 'title_alt',  'description', 'format', 'author', 'topic',
-                'material', 'measurements', 'identifier', 'culture', 'classification_str_mv',
-                'artist_str_mv', 'photographer_str_mv', 'finder_str_mv', 'manufacturer_str_mv', 'designer_str_mv'
-            )
-        );
-        
-        // Some fields not separately indexed but searchable
-        $allfields[] = $this->getDisplayPlace('valmistus');
-        $allfields[] = $this->getDisplayPlace('käyttö');
-        $allfields[] = $this->getDisplayPlace('löytyminen');
-        $allfields[] = $this->getEventMethod('valmistus');
         $allfields[] = $this->getRecordSourceOrganization();
         
-        return $allfields;
+        return $data;
     }
     
     /**

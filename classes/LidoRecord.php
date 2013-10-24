@@ -148,7 +148,7 @@ class LidoRecord extends BaseRecord
             // thumbnail field is not multivalued so can only store first image url
             $data['thumbnail'] = $urls[0];
                 
-        $data['allfields'] = $this->getAllFields($data);
+        $data['allfields'] = $this->getAllFields($this->doc);
           
         return $data;
     }
@@ -683,31 +683,33 @@ class LidoRecord extends BaseRecord
     }
 
     /**
-     * Get allfields contents for Solr from the Solr data array
+     * Get all XML fields
      * 
-     * @param string[] $data   Solr data array
-     * @param string[] $fields Fields to include
+     * @param SimpleXMLDocument $xml The XML document
      * 
-     * @return string
+     * @return string[]
      */
-    protected function getAllFields($data, $fields = array(
-            'title', 'title_alt', 'description', 'format', 'author', 'topic', 
-            'material', 'measurements', 'identifier', 'culture')
-    ) {
-        $allfields = array();
-        foreach ($fields as $key) {
-            if (isset($data[$key]) && !empty($data[$key])) {
-                if (is_array($data[$key])) {
-                    $allfields[] = implode(' ', array_unique($data[$key]));
-                } else {
-                    $allfields[] = $data[$key];
-                }
+    protected function getAllFields($xml)
+    {
+        $ignoredFields = array('conceptID', 'eventType', 'legalBodyWeblink', 'linkResource', 'objectMeasurementsWrap', 'recordMetadataDate', 'recordType', 'resourceWrap', 'relatedWorksWrap', 'rightsType', 'roleActor', 'workID');
+        
+        $allFields = array();
+        foreach ($xml->children() as $tag => $field) {
+            if (in_array($tag, $ignoredFields)) {
+                continue;
+            }
+            $s = trim((string)$field);
+            if ($s) {
+                $allFields[] = $s;
+            }
+            $s = $this->getAllFields($field);
+            if ($s) {
+                $allFields = array_merge($allFields, $s);
             }
         }
-        
-        return $allfields;
+        return $allFields;
     }
-    
+        
     /**
      * Get the default language used when building the Solr array
      * 
