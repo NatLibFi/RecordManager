@@ -128,7 +128,7 @@ class NdlEadRecord extends EadRecord
             $day = sprintf('%02d', $matches[3]);
             $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
             $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
-        } elseif (preg_match('/(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
+        } elseif (preg_match('/(\d\d?)\.(\d\d\d\d)/', $input, $matches) > 0) {
             $year = $matches[2];
             $month =  sprintf('%02d', $matches[1]);
             $startDate = $year . '-' . $month . '-01' . 'T00:00:00Z';
@@ -141,6 +141,9 @@ class NdlEadRecord extends EadRecord
                 return null;
             }
             $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
+        } elseif (preg_match('/(\d+) ?- ?(\d+)/', $input, $matches) > 0) {
+            $startDate = $matches[1] . '-01-01T00:00:00Z';
+            $endDate = $matches[2] . '-12-31T00:00:00Z';
         } elseif (preg_match('/(\d\d\d\d)/', $input, $matches) > 0) {
             $year = $matches[1];
             $startDate = $year . '-01-01T00:00:00Z';
