@@ -1272,11 +1272,12 @@ class SolrUpdater
         $this->request->setHeader('Content-Type', 'application/json');
         $this->request->setBody($body);
 
-        for ($try = 1; $try <= 5; $try++) {
+        $maxTries = 15;
+        for ($try = 1; $try <= $maxTries; $try++) {
             try {
                 $response = $this->request->send();
             } catch (Exception $e) {
-                if ($try < 15) {
+                if ($try < $maxTries) {
                     $this->log->log(
                         'solrRequest',
                         'Solr server request failed (' . $e->getMessage() . '), retrying in 60 seconds...', 
@@ -1298,7 +1299,7 @@ class SolrUpdater
                     throw $e;
                 }
             }
-            if ($try < 15) {
+            if ($try < $maxTries) {
                 $code = $response->getStatus();
                 if ($code >= 300) {
                     $this->log->log(
