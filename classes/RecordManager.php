@@ -531,11 +531,13 @@ class RecordManager
      * @param string $harvestUntilDate     Override end date (otherwise current date is used)
      * @param string $startResumptionToken Override OAI-PMH resumptionToken to resume interrupted harvesting process (note 
      *                                     that tokens may have a limited lifetime)
-     * @param string $exclude              Source ID's to exclude whe using '*' for repository                                    
+     * @param string $exclude              Source ID's to exclude whe using '*' for repository
+     * @paeam bool   $reharvest            Whether to consider this a full reharvest where sets may have changed 
+     *                                     (deletes records not received during this harvesting)                                     
      *                                     
      * @return void
      */
-    public function harvest($repository = '', $harvestFromDate = null, $harvestUntilDate = null, $startResumptionToken = '', $exclude = null)
+    public function harvest($repository = '', $harvestFromDate = null, $harvestUntilDate = null, $startResumptionToken = '', $exclude = null, $reharvest = false)
     {
         global $configArray;
 
@@ -558,7 +560,7 @@ class RecordManager
                 if (empty($source) || empty($settings) || !isset($settings['url'])) {
                     continue;
                 }
-                $this->log->log('harvest', "Harvesting from '{$source}'");
+                $this->log->log('harvest', "Harvesting from '{$source}'" . ($reharvest ? ' (full reharvest)' : ''));
 
                 $this->loadSourceSettings($source);
 
@@ -631,7 +633,32 @@ class RecordManager
                     if (isset($harvestUntilDate)) {
                         $harvest->setEndDate($harvestUntilDate);
                     }
+                    
+                    $dateThreshold = new MongoDate();
+                    
                     $harvest->harvest(array($this, 'storeRecord'));
+                    
+                    if ($reharvest) {
+                        $this->log->log('harvest', 'Marking deleted all records not received during the harvesting');
+                        $records = $this->db->record->find(
+                            array(
+                                'source_id' => $this->sourceId,
+                                'deleted' => false,
+                                'updated' => array('$lt' => $dateThreshold)
+                            )
+                        );
+                        $records->immortal(true);
+                        $count = 0;
+                        foreach ($records as $record) {
+                            $this->storeRecord($record['oai_id'], true, '');
+                            if (++$count % 1000 == 0) {
+                                $this->log->log('harvest', "Deleted $count records");
+                                
+                            }   
+                        }
+                        $this->log->log('harvest', "Deleted $count records");
+                    }
+                    
                     if (isset($settings['deletions']) && strncmp($settings['deletions'], 'ListIdentifiers', 15) == 0) {
                         // The repository doesn't support reporting deletions, so list all identifiers
                         // and mark deleted records that were not found
