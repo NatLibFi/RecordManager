@@ -532,7 +532,7 @@ class RecordManager
      * @param string $startResumptionToken Override OAI-PMH resumptionToken to resume interrupted harvesting process (note 
      *                                     that tokens may have a limited lifetime)
      * @param string $exclude              Source ID's to exclude whe using '*' for repository
-     * @paeam bool   $reharvest            Whether to consider this a full reharvest where sets may have changed 
+     * @param bool   $reharvest            Whether to consider this a full reharvest where sets may have changed 
      *                                     (deletes records not received during this harvesting)                                     
      *                                     
      * @return void
