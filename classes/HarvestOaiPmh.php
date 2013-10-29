@@ -64,6 +64,7 @@ class HarvestOaiPmh
     protected $resumptionToken = '';  // Override the first harvest request
     protected $transformation = null; // Transformation applied to the OAI-PMH responses before processing
     protected $serverDate = null;     // Date received from server via Identify command. Used to set the last harvest date
+    protected $ignoreNoRecordsFound = false; // Whether to ignore noRecordsFound error when harvesting (broken sources may report an error even with a valid resumptionToken)  
 
     /**
      * Constructor.
@@ -128,6 +129,9 @@ class HarvestOaiPmh
             }
             $this->transformation = new XSLTProcessor();
             $this->transformation->importStylesheet($style);
+        }
+        if (isset($settings['ignoreNoRecordsFound'])) {
+            $this->ignoreNoRecordsFound = $settings['ignoreNoRecordsFound'];
         }
         
         $this->message('Identifying server');
@@ -442,7 +446,7 @@ class HarvestOaiPmh
         $error = $this->getSingleNode($result, 'error');
         if ($error) {
             $code = $error->getAttribute('code');
-            if ($code != 'noRecordsMatch') {
+            if (!$this->ignoreNoRecordsFound || $code != 'noRecordsMatch') {
                 $value = $result->saveXML($error);
                 $this->message(
                     "{$this->source}: OAI-PMH server returned error $code ($value)", 
