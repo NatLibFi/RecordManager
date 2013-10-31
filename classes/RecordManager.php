@@ -526,14 +526,14 @@ class RecordManager
     /**
      * Harvest records from a data source
      * 
-     * @param string $repository           Source ID to harvest
-     * @param string $harvestFromDate      Override start date (otherwise harvesting is done from the previous harvest date)
-     * @param string $harvestUntilDate     Override end date (otherwise current date is used)
-     * @param string $startResumptionToken Override OAI-PMH resumptionToken to resume interrupted harvesting process (note 
+     * @param string      $repository           Source ID to harvest
+     * @param string      $harvestFromDate      Override start date (otherwise harvesting is done from the previous harvest date)
+     * @param string      $harvestUntilDate     Override end date (otherwise current date is used)
+     * @param string      $startResumptionToken Override OAI-PMH resumptionToken to resume interrupted harvesting process (note 
      *                                     that tokens may have a limited lifetime)
-     * @param string $exclude              Source ID's to exclude whe using '*' for repository
-     * @param bool   $reharvest            Whether to consider this a full reharvest where sets may have changed 
-     *                                     (deletes records not received during this harvesting)                                     
+     * @param string      $exclude              Source ID's to exclude whe using '*' for repository
+     * @param bool|string $reharvest            Whether to consider this a full reharvest where sets may have changed 
+     *                                          (deletes records not received during this harvesting)                                     
      *                                     
      * @return void
      */
@@ -626,6 +626,15 @@ class RecordManager
                     }
                     $harvest->launch(array($this, 'storeRecord'));
                 } else {
+                    if ($reharvest) {
+                        if (is_string($reharvest)) {
+                            $dateThreshold = new MongoDate(strtotime($reharvest));
+                        } else {
+                            $dateThreshold = new MongoDate();
+                        }
+                        $this->log->log('harvest', 'Reharvest date threshold: ' . strftime('%F %T', $dateThreshold->sec));
+                    }
+                    
                     $harvest = new HarvestOAIPMH($this->log, $this->db, $source, $this->basePath, $settings, $startResumptionToken);
                     if (isset($harvestFromDate)) {
                         $harvest->setStartDate($harvestFromDate == '-' ? null : $harvestFromDate);
@@ -633,8 +642,6 @@ class RecordManager
                     if (isset($harvestUntilDate)) {
                         $harvest->setEndDate($harvestUntilDate);
                     }
-                    
-                    $dateThreshold = new MongoDate();
                     
                     $harvest->harvest(array($this, 'storeRecord'));
                     

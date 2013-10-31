@@ -52,7 +52,7 @@ Parameters:
 --all               Harvest from beginning (overrides --from)
 --verbose           Enable verbose output
 --override          Override initial resumption token (e.g. to resume failed connection)
---reharvest         This is a full reharvest, delete all records that were not received during the harvesting (implies --all)
+--reharvest[=date]  This is a full reharvest, delete all records that were not received during the harvesting (or were modified before [date]). Implies --all.
 --config.section.name=value 
                     Set configuration directive to given value overriding any setting in recordmanager.ini
 
@@ -74,7 +74,7 @@ EOT;
             isset($params['until']) ? $params['until'] : null, 
             isset($params['override']) ? urldecode($params['override']) : '',
             isset($params['exclude']) ? $params['exclude'] : null,
-            isset($params['reharvest']) ? true : false
+            isset($params['reharvest']) ? $params['reharvest'] : ''
         );
     }
 }
