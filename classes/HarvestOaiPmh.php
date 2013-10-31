@@ -334,17 +334,18 @@ class HarvestOaiPmh
         $url->setQueryVariables($params);
         
         $urlStr = $url->getURL();
-        $this->message("Sending request: $urlStr", true);
         if ($this->debugLog) {
             file_put_contents($this->debugLog, "Request:\n$urlStr\n", FILE_APPEND);
         }
 
         // Perform request and throw an exception on error:
-        for ($try = 1; $try <= 5; $try++) {
+        $maxTries = 5;
+        for ($try = 1; $try <= $maxTries; $try++) {
+            $this->message("Sending request: $urlStr", true);
             try {
                 $response = $request->send();
             } catch (Exception $e) {
-                if ($try < 5) {
+                if ($try < $maxTries) {
                     $this->message(
                         "Request '$urlStr' failed (" . $e->getMessage() . "), retrying in 30 seconds...", 
                         false, 
@@ -355,7 +356,7 @@ class HarvestOaiPmh
                 }
                 throw $e;
             }
-            if ($try < 5) {
+            if ($try < $maxTries) {
                 $code = $response->getStatus();
                 if ($code >= 300) {
                     $this->message(
