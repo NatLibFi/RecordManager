@@ -64,7 +64,7 @@ class HarvestOaiPmh
     protected $resumptionToken = '';  // Override the first harvest request
     protected $transformation = null; // Transformation applied to the OAI-PMH responses before processing
     protected $serverDate = null;     // Date received from server via Identify command. Used to set the last harvest date
-    protected $ignoreNoRecordsFound = false; // Whether to ignore noRecordsFound error when harvesting (broken sources may report an error even with a valid resumptionToken)  
+    protected $ignoreNoRecordsMatch = false; // Whether to ignore noRecordsMatch error when harvesting (broken sources may report an error even with a valid resumptionToken)  
 
     /**
      * Constructor.
@@ -130,8 +130,8 @@ class HarvestOaiPmh
             $this->transformation = new XSLTProcessor();
             $this->transformation->importStylesheet($style);
         }
-        if (isset($settings['ignoreNoRecordsFound'])) {
-            $this->ignoreNoRecordsFound = $settings['ignoreNoRecordsFound'];
+        if (isset($settings['ignoreNoRecordsMatch'])) {
+            $this->ignoreNoRecordsMatch = $settings['ignoreNoRecordsMatch'];
         }
         
         $this->message('Identifying server');
@@ -381,7 +381,7 @@ class HarvestOaiPmh
         if ($this->debugLog) {
             file_put_contents($this->debugLog, "Response:\n$responseStr\n\n", FILE_APPEND);
         }
-        return $this->processResponse($responseStr);
+        return $this->processResponse($responseStr, isset($params['resumptionToken']));
     }
 
     /**
@@ -408,12 +408,13 @@ class HarvestOaiPmh
      * Process an OAI-PMH response into a SimpleXML object. Throw exception if an error is
      * detected.
      *
-     * @param string $xml OAI-PMH response XML.
+     * @param string $xml        OAI-PMH response XML.
+     * @param bool   $resumption Whether this is a request made with a resumptionToken
      *
      * @return object     SimpleXML-formatted response.
      * @access protected
      */
-    protected function processResponse($xml)
+    protected function processResponse($xml, $resumption)
     {
         // Parse the XML:
         $saveUseErrors = libxml_use_internal_errors(true);
@@ -447,7 +448,7 @@ class HarvestOaiPmh
         $error = $this->getSingleNode($result, 'error');
         if ($error) {
             $code = $error->getAttribute('code');
-            if (!$this->ignoreNoRecordsFound || $code != 'noRecordsMatch') {
+            if (($resumption && !$this->ignoreNoRecordsMatch) || $code != 'noRecordsMatch') {
                 $value = $result->saveXML($error);
                 $this->message(
                     "{$this->source}: OAI-PMH server returned error $code ($value)", 
