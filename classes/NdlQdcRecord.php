@@ -72,6 +72,7 @@ class NdlQdcRecord extends QdcRecord
         }
         
         $data['source_str_mv'] = $this->source;
+        $data['datasource_str_mv'] = $this->source;
         
         return $data;
     }

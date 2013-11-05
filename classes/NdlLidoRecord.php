@@ -122,6 +122,7 @@ class NdlLidoRecord extends LidoRecord
         $data['finding_sdaterange'] = MetadataUtils::convertDateRange($this->getDateRange('löytyminen'));
         
         $data['source_str_mv'] = $this->source;
+        $data['datasource_str_mv'] = $this->source;
         
         if ($this->getURLs()) {
             $data['online_boolean'] = true;

@@ -243,7 +243,8 @@ class NdlMarcRecord extends MarcRecord
         
         // Source
         $data['source_str_mv'] = $this->source;
-
+        $data['datasource_str_mv'] = $this->source;
+        
         // ISSN
         $data['issn'] = $this->getFieldsSubfields(array(array(MarcRecord::GET_NORMAL, '022', array('a'))));
         foreach ($data['issn'] as &$value) {
