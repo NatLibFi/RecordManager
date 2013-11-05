@@ -127,6 +127,8 @@ class NdlLidoRecord extends LidoRecord
             $data['online_boolean'] = true;
         }
         
+        $data['location_geo'] = $this->getEventPlaceCoordinates();
+        
         $allfields[] = $this->getRecordSourceOrganization();
         
         return $data;
@@ -270,6 +272,30 @@ class NdlLidoRecord extends LidoRecord
         return $this->parseDateRange($date);
     }
 
+    /**
+     * Return the event place coordinates associated with specified event
+     *
+     * @param string $event Which event to use (omit to scan all events)
+     * 
+     * @return string
+     */
+    protected function getEventPlaceCoordinates($event = null)
+    {
+        $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
+        if (!empty($event)) {
+            $xpath .= "[eventType/term='$event']";
+        }
+    
+        $coordinates = $this->doc->xpath($xpath . '/eventPlace/place/gml/Point/pos');
+        $results = array();
+        foreach ($coordinates as $coord) {
+            list($lat, $long) = explode(' ', (string)$coord, 2);
+            $results[] = "$long $lat";
+        }
+        return $results;
+    }
+    
+    
     /**
      * Attempt to parse a string (in finnish) into a normalized date range.
      * TODO: complicated normalization like this should preferably reside within its own, separate component
