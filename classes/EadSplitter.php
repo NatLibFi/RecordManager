@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012
+ * Copyright (C) The National Library of Finland 2012-2013
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -65,7 +65,7 @@ class EadSplitter
         $this->currentPos = 0;
         
         $this->agency = (string)$this->doc->eadheader->eadid->attributes()->mainagencycode;
-        $this->archiveId = (string)($this->doc->eadheader->eadid->attributes()->identifier ? $this->doc->eadheader->eadid->attributes()->identifier : $this->doc->eadheader->eadid);
+        $this->archiveId = urlencode((string)($this->doc->eadheader->eadid->attributes()->identifier ? $this->doc->eadheader->eadid->attributes()->identifier : $this->doc->eadheader->eadid));
         $this->archiveTitle = (string)$this->doc->eadheader->filedesc->titlestmt->titleproper;
         $this->archiveSubTitle = (string)$this->doc->eadheader->filedesc->titlestmt->subtitle;
     }
@@ -101,7 +101,7 @@ class EadSplitter
 
             if ($record->getName() != 'archdesc') {
                 if ($record->did->unitid) {
-                    $unitid = $record->did->unitid->attributes()->identifier ? (string)$record->did->unitid->attributes()->identifier : (string)$record->did->unitid;
+                    $unitid = urlencode($record->did->unitid->attributes()->identifier ? (string)$record->did->unitid->attributes()->identifier : (string)$record->did->unitid);
                     $addData->addAttribute('identifier', $this->archiveId . '_' . $unitid);
                 } else {
                     // Create ID for the unit
@@ -145,7 +145,7 @@ class EadSplitter
                 if (isset($original->{'add-data'})) {
                     $parentID = (string)$original->{'add-data'}->attributes()->identifier;
                 } else {
-                    $parentID = $parentDid->unitid->attributes()->identifier ? (string)$parentDid->unitid->attributes()->identifier : (string)$parentDid->unitid;
+                    $parentID = urlencode($parentDid->unitid->attributes()->identifier ? (string)$parentDid->unitid->attributes()->identifier : (string)$parentDid->unitid);
                 }
                 if ($parentID != $this->archiveId) {
                     $parentID = $this->archiveId . '_' . $parentID;
