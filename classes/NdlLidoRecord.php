@@ -291,6 +291,12 @@ class NdlLidoRecord extends LidoRecord
         $results = array();
         foreach ($coordinates as $coord) {
             list($lat, $long) = explode(' ', (string)$coord, 2);
+            if ($lat < -90 || $lat > 90 || $long < -180 || $long > 180) {
+                global $logger;
+                $logger->log('NdlMarcRecord', "Discarding invalid coordinates $lat,$long, record {$this->source}." . $this->getID(), Logger::WARNING);
+                continue;
+            }
+    
             $results[] = "$long $lat";
         }
         return $results;
