@@ -111,7 +111,11 @@ class Logger
             mail($this->errorEmail, 'RecordManager Error Report', $email);
         }
         if ($this->logToConsole) {
-            file_put_contents('php://stderr', $msg, FILE_APPEND);
+            if ($level == Logger::INFO) {
+                echo $msg;
+            } else {
+                file_put_contents('php://stderr', $msg, FILE_APPEND);
+            }
         }
     }
 
