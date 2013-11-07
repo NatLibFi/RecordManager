@@ -316,7 +316,7 @@ class MarcRecord extends BaseRecord
             true
         );
           
-        $data['title'] = $data['title_auth'] = $this->getTitle();
+        $data['title'] = $this->getTitle();
         $data['title_sub'] = $this->getFieldSubfields('245', array('b', 'n', 'p'));
         $data['title_short'] = $this->getFieldSubfields('245', array('a'));
         $data['title_full'] = $this->getFieldSubfields('245', array('a', 'b', 'c', 'f', 'g', 'h', 'k', 'n', 'p', 's'));
@@ -1761,13 +1761,13 @@ class MarcRecord extends BaseRecord
         foreach ($this->fields as $tag => $fields) {
             if (($tag >= 100 && $tag < 841) || $tag == 856 || $tag == 880) {
                 foreach ($fields as $field) {
-                    $allFields = array_merge(
-                        $allFields, 
-                        $this->getAllSubfields(
-                            $field,
-                            isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : array('6', '8')
-                        )
+                    $subfields = $this->getAllSubfields(
+                        $field,
+                        isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : array('6', '8')
                     );
+                    if ($subfields) {
+                        $allFields = array_merge($allFields, $subfields);
+                    }
                 }
             }
         }

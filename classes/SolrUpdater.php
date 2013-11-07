@@ -1191,7 +1191,7 @@ class SolrUpdater
      */
     protected function mergeRecords($merged, $add)
     {
-        $checkedFields = array('title_auth', 'title', 'title_short', 'title_full', 'title_sort', 'author', 'author-letter');
+        $checkedFields = array('title', 'title_short', 'title_full', 'title_sort', 'author', 'author-letter');
         
         if (empty($merged)) {
             $merged = $add;
