@@ -74,10 +74,11 @@
 ;                         institution          Add the institution code (default)
 ;                         source               Add the source id
 ;                         driver               Add whatever the driver returns in the institution field
-;                         none                 Don't add a top level
+;                         "none"               Don't add a top level. Note that due to PHP ini file handling, the quotes are required.
+;                         institution/source   Use institution and source id separated with a slash
 ; extrafields[]         An array of extra fields added to each record from this data source when sending records to Solr.
 ;                       Use format fieldname:contents, e.g.
-;                         extrafields[] = sector:library   
+;                         extrafields[] = sector_str_mv:library   
 
 ; OAI-PMH Provider Specific settings:
 ; transformation_to_{fmt}
