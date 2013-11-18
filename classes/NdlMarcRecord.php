@@ -271,10 +271,16 @@ class NdlMarcRecord extends MarcRecord
             $ind2 = $this->getIndicator($field, 2);
             $sub3 = $this->getSubfield($field, 3);
             if (($ind2 == '0' || $ind2 == '1') && !$sub3) {
-                $url = $this->getSubfield($field, 'u');
+                $url = trim($this->getSubfield($field, 'u'));
                 if (!$url) {
                     global $logger;
                     $logger->log('NdlMarcRecord', "Missing URL (subfield u) in 856 field, record {$this->source}." . $this->getID(), Logger::WARNING);
+                    continue;
+                }
+                // Require at least one dot surrounded by valid characters or a familiar scheme
+                if (!preg_match('/[A-Za-z0-9]\.[A-Za-z0-9]/', $url) && !preg_match('/^(http|ftp)s?:\/\//', $url)) {
+                    global $logger;
+                    $logger->log('NdlMarcRecord', "Invalid URL (subfield u) in 856 field: '$url', record {$this->source}." . $this->getID(), Logger::WARNING);
                     continue;
                 }
                 $data['online_boolean'] = true;
@@ -406,7 +412,7 @@ class NdlMarcRecord extends MarcRecord
             return 'Dissertation';
         }
         if (isset($this->fields['509'])) {
-            $field509a = $this->getFieldSubfields('509', array('a'));
+            $field509a = MetadataUtils::stripTrailingPunctuation($this->getFieldSubfields('509', array('a')));
             switch (strtolower($field509a)) {
             case 'kandidaatintyö':
             case 'kandidatarbete':
@@ -431,10 +437,10 @@ class NdlMarcRecord extends MarcRecord
                 return 'Thesis';
             case 'amk-opinnäytetyö':
             case 'yh-examensarbete':
-                return 'BachelorsThesis';
+                return 'BachelorsThesisPolytechnic';
             case 'ylempi amk-opinnäytetyö':
             case 'högre yh-examensarbete':
-                return 'MastersThesis';
+                return 'MastersThesisPolytechnic';
             }
             return 'Thesis';
         }

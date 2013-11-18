@@ -1,6 +1,7 @@
 Article = Journal/Article
 Atlas = Map/Atlas
 BachelorsThesis = Thesis/Bachelors
+BachelorsThesisPolytechnic = Thesis/BachelorsPolytechnic
 BluRay = Video/BluRay
 BoardGame = Other/BoardGame
 Book = Book/Book
@@ -32,6 +33,7 @@ LicentiateThesis = Thesis/Licentiate
 Manuscript = Other/Manuscript
 Map = Map/Map
 MastersThesis = Thesis/Masters
+MastersThesisPolytechnic = Thesis/MastersPolytechnic
 Microfilm = Other/Microfilm
 MotionPicture = Video/MotionPicture
 MusicRecording = Sound/MusicRecording
