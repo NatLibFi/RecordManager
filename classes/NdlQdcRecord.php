@@ -71,6 +71,21 @@ class NdlQdcRecord extends QdcRecord
             $data['search_sdaterange_mv'][] = $data['publication_sdaterange'];
         }
         
+        foreach ($this->doc->relation as $relation) {
+            $url = (string)$relation;
+            // Require at least one dot surrounded by valid characters or a familiar scheme
+            if (!preg_match('/[A-Za-z0-9]\.[A-Za-z0-9]/', $url) && !preg_match('/^(http|ftp)s?:\/\//', $url)) {
+                continue;
+            }
+            $link = array(
+                'url' => $url,
+                'text' => '',
+                'source' => $this->source
+            ); 
+            $data['online_boolean'] = true;
+            $data['online_urls_str_mv'][] = json_encode($link);            
+        }
+        
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
         
