@@ -442,6 +442,10 @@ class NdlLidoRecord extends LidoRecord
                 // Decade
                 $startDate = $year;
                 $endDate = $year + 3;
+            } else {
+                // Uhh?
+                $startDate = $year;
+                $endDate = $year;
             }
         } elseif (preg_match('/(\d?\d?\d\d) ?-(luvun|luku) (alkupuolelta|alkupuoli|alku|alusta)/', $input, $matches) > 0) {
             $year = $matches[1];
@@ -454,6 +458,10 @@ class NdlLidoRecord extends LidoRecord
                 // Decade
                 $startDate = $year;
                 $endDate = $year + 3;
+            } else {
+                // Uhh?
+                $startDate = $year;
+                $endDate = $year;
             }
         } elseif (preg_match('/(\d?\d?\d\d) ?-(luku|luvulta)/', $input, $matches) > 0) {
             $year = $matches[1];
@@ -484,7 +492,7 @@ class NdlLidoRecord extends LidoRecord
         } else {
             return null;
         }
-         
+
         if (strlen($startDate) == 2) {
             $startDate = 1900 + $startDate;
         }
