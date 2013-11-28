@@ -335,7 +335,7 @@ class HarvestOaiPmh
         
         $urlStr = $url->getURL();
         if ($this->debugLog) {
-            file_put_contents($this->debugLog, "Request:\n$urlStr\n", FILE_APPEND);
+            file_put_contents($this->debugLog, date('Y-m-d H:i:s') . ' [' . getmypid() . "] Request:\n$urlStr\n", FILE_APPEND);
         }
 
         // Perform request and throw an exception on error:
@@ -379,7 +379,7 @@ class HarvestOaiPmh
         // If we got this far, there was no error -- send back response.
         $responseStr = $response->getBody();
         if ($this->debugLog) {
-            file_put_contents($this->debugLog, "Response:\n$responseStr\n\n", FILE_APPEND);
+            file_put_contents($this->debugLog, date('Y-m-d H:i:s') . ' [' . getmypid() . "] Response:\n$responseStr\n\n", FILE_APPEND);
         }
         return $this->processResponse($responseStr, isset($params['resumptionToken']));
     }
