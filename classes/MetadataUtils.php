@@ -307,7 +307,7 @@ class MetadataUtils
      */
     static public function createIdSortKey($id) 
     {
-        if (preg_match('/(\d+)$/', $id, $matches)) {
+        if (preg_match('/^\w*(\d+)$/', $id, $matches)) {
             return $matches[1];
         }
         return $id;

@@ -381,7 +381,7 @@ class NdlMarcRecord extends MarcRecord
             }
             
             $key = MetadataUtils::createIdSortKey($id);
-            $parts[$key] = $newField;
+            $parts["$key $count"] = $newField;
             ++$count;
         }
         ksort($parts);
