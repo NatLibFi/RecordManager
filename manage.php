@@ -54,6 +54,7 @@ Parameters:
 --nocommit         Don't ask Solr to commit the changes (updatesolr)
 --field            Field to analyze (count)
 --file             File containing places to geocode (updategeocoding)
+--force            Force deletesource to proceed even if deduplication is enabled for the source
 --verbose          Enable verbose output for debugging
 --config.section.name=value 
                    Set configuration directive to given value overriding any setting in recordmanager.ini
@@ -88,7 +89,7 @@ EOT;
                 $manager->dumpRecord($single);
                 break;
             case 'deletesource':
-                $manager->deleteRecords($source);
+                $manager->deleteRecords($source, isset($params['force']) ? $params['force'] : false);
                 break;
             case 'markdeleted':
                 $manager->markDeleted($source);
