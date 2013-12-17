@@ -131,6 +131,9 @@ format = ead
 preTransformation = strip_namespaces.xsl
 oaipmhTransformation = strip_namespaces.xsl
 format_mapping = ead_level_to_format.map
+non_inherited_fields[] = physdesc
+prepend_title_with_subtitle = true
+prepend_parent_title_with_unitid = true
 recordXPath = //ead
 oaiIDXPath = ../../header/identifier
 

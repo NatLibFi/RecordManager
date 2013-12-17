@@ -83,9 +83,13 @@ class EadSplitter
     /**
      * Get next record
      * 
+     * @param string[] $nonInheritedFields list of fields within record 
+     *                                     did-element not to be inherited to child nodes.
+     * @param boolean  $prependParentTitleWithUnitId
+     *
      * @return string XML
      */
-    public function getNextRecord()
+    public function getNextRecord($nonInheritedFields = array(), $prependParentTitleWithUnitId)
     {
         if ($this->currentPos < $this->recordCount) {
             $original = $this->recordNodes[$this->currentPos++];
@@ -122,8 +126,8 @@ class EadSplitter
             $ancestorDid = $original->xpath('ancestor::*/did');
             if ($ancestorDid) {
                 // Append any ancestor did's
-                foreach (array_reverse($ancestorDid) as $did) {
-                    $this->appendXML($record, $did);
+                foreach (array_reverse($ancestorDid) as $did) {                    
+                    $this->appendXML($record, $did, $nonInheritedFields);
                 }
             }
             
@@ -151,8 +155,12 @@ class EadSplitter
                     $parentID = $this->archiveId . '_' . $parentID;
                 }
                 $parentTitle = (string)$parentDid->unittitle;
-                if ((string)$parentDid->unitid && in_array((string)$record->attributes()->level, array('series', 'subseries', 'item', 'file'))) {
-                    $parentTitle = (string)$parentDid->unitid . ' ' . $parentTitle;
+                
+
+                if ($prependParentTitleWithUnitId) {
+                    if ((string)$parentDid->unitid && in_array((string)$record->attributes()->level, array('series', 'subseries', 'item', 'file'))) {
+                        $parentTitle = (string)$parentDid->unitid . ' ' . $parentTitle;
+                    }
                 }
                 $parent = $addData->addChild('parent');
                 $parent->addAttribute('id', $parentID);
@@ -169,10 +177,11 @@ class EadSplitter
      * 
      * @param SimpleXMLElement &$simplexml Node to append to
      * @param SimpleXMLElement $append     Node to be appended
+     * @param String[]         $ignore     Node names to be ignored
      * 
      * @return void
      */
-    protected function appendXML(&$simplexml, $append)
+    protected function appendXML(&$simplexml, $append, $ignore = array())
     {
         if ($append) {
             $name = $append->getName();
@@ -190,7 +199,9 @@ class EadSplitter
                 }
             }
             foreach ($append->children() as $child) {
-                $this->appendXML($xml, $child);
+                if (!in_array($child->getName(), $ignore)) {
+                    $this->appendXML($xml, $child);
+                }
             }
         }
     }

@@ -45,11 +45,13 @@ class NdlEadRecord extends EadRecord
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
+     * @param boolean $prependTitleWithSubtitle If true and title_sub differs from title_short, 
+     *                                          title is formed by combining title_sub and title_short
      * @return string[]
      */
-    public function toSolrArray()
+    public function toSolrArray($prependTitleWithSubtitle)
     {
-        $data = parent::toSolrArray();
+        $data = parent::toSolrArray($prependTitleWithSubtitle);
         $doc = $this->doc;
         
         $unitDateRange = $this->parseDateRange((string)$doc->did->unitdate);
@@ -65,10 +67,13 @@ class NdlEadRecord extends EadRecord
         
         $data['source_str_mv'] = isset($data['institution']) ? $data['institution'] : $this->source;
         $data['datasource_str_mv'] = $this->source;
-        
+                
         // Digitized?
         if ($doc->did->daogrp) {
-            $data['format'] = 'digitized_' . $data['format'];
+            if (in_array($data['format'], array('collection', 'series', 'fonds', 'item'))) {
+                $data['format'] = 'digitized_' . $data['format'];
+            }
+
             if ($this->doc->did->daogrp->daoloc) {
                 foreach ($this->doc->did->daogrp->daoloc as $daoloc) {
                     if ($daoloc->attributes()->{'href'}) {

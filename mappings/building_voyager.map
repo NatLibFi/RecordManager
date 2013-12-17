@@ -1,4 +1,4 @@
-; Map multiple main library location codes into one facet location 100
+; Map multiple main library locations into one facet location 100
 1001 = 100
 1002 = 100
 1003 = 100
