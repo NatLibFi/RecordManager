@@ -355,7 +355,15 @@ class NdlLidoRecord extends LidoRecord
                 'joulukuu' => '12'
         );
          
-        if (preg_match('/(\d\d\d\d) ?- (\d\d\d\d)/', $input, $matches) > 0) {
+        if (preg_match('/(\d\d?).(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
+            $startDate = sprintf('%04d-%02d-%02dT00:00:00Z', $matches[3], $matches[2], $matches[1]);
+            $endDate = sprintf('%04d-%02d-%02dT23:59:59Z', $matches[6], $matches[5], $matches[4]);
+            $noprocess = true;
+        } elseif (preg_match('/(\d\d\d\d).(\d\d?).(\d\d?) ?- ?(\d\d\d\d).(\d\d?).(\d\d?)/', $input, $matches) > 0) {
+            $startDate = sprintf('%04d-%02d-%02dT00:00:00Z', $matches[1], $matches[2], $matches[3]);
+            $endDate = sprintf('%04d-%02d-%02dT23:59:59Z', $matches[4], $matches[5], $matches[6]);
+            $noprocess = true;
+        } elseif (preg_match('/(\d\d\d\d) ?- (\d\d\d\d)/', $input, $matches) > 0) {
             $startDate = $matches[1];
             $endDate = $matches[2];
         } elseif (preg_match('/(\d\d\d\d)-(\d\d?)-(\d\d?)/', $input, $matches) > 0) {

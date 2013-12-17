@@ -785,12 +785,25 @@ class RecordManager
     /**
      * Delete records of a single data source from the Mongo database
      * 
-     * @param string $sourceId Source ID
+     * @param string  $sourceId Source ID
+     * @param boolean $force    Force deletion even if dedup is enable for the source
      * 
      * @return void
      */
-    public function deleteRecords($sourceId)
+    public function deleteRecords($sourceId, $force = false)
     {
+        if (isset($this->dataSourceSettings[$sourceId])) {
+            $settings = $this->dataSourceSettings[$sourceId];
+            if (isset($settings['dedup']) && $settings['dedup']) {
+                if ($force) {
+                    $this->log->log('deleteRecords', "Deduplication enabled for '$sourceId' but deletion forced - may lead to orphaned dedup records", Logger::WARNING);
+                } else {
+                    $this->log->log('deleteRecords', "Deduplication enabled for '$sourceId', aborting (use markdeleted instead)", Logger::ERROR);
+                    return;
+                }    
+            }
+        }
+        
         $params = array();
         $params['source_id'] = $sourceId;
         $this->log->log('deleteRecords', "Creating record list for '$sourceId'");
@@ -1542,7 +1555,7 @@ class RecordManager
                 $otherId = reset($record['ids']);
                 $otherRecord = $this->db->record->findOne(array('_id' => $otherId));
                 unset($otherRecord['dedup_id']);
-                $otherRecord['changed'] = new MongoDate();
+                $otherRecord['updated'] = new MongoDate();
                 $this->db->record->save($otherRecord);
                 $record['ids'] = array();   
                 $record['deleted'] = true;
