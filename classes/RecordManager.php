@@ -1537,7 +1537,7 @@ class RecordManager
     /**
      * Remove a record from a dedup record
      * 
-     * @param string $dedupId ID of the dedup record 
+     * @param object $dedupId ObjectID of the dedup record 
      * @param string $id      Record ID to remove
      *
      * @return void
