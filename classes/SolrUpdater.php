@@ -734,7 +734,10 @@ class SolrUpdater
                 );
                 $data = $settings['solrTransformationXSLT']->transformToSolrArray($metadataRecord->toXML(), $params);
             } else {
-                $data = $metadataRecord->toSolrArray();
+                $prependTitleWithSubtitle = isset($settings['prepend_title_with_subtitle']) 
+                                                  ? $settings['prepend_title_with_subtitle']
+                                                  : true;
+                $data = $metadataRecord->toSolrArray($prependTitleWithSubtitle);
             }
             if (isset($data[$field])) {
                 foreach (is_array($data[$field]) ? $data[$field] : array($data[$field]) as $value) {
@@ -827,6 +830,8 @@ class SolrUpdater
                     $this->settings[$source]['mappingFiles'][$field] = $this->readMappingFile($this->basePath . '/mappings/' . $value);
                 }
             }
+            
+
             $this->settings[$source]['extraFields'] = array();
             if (isset($settings['extrafields'])) {
                 foreach ($settings['extrafields'] as $extraField) {
@@ -915,7 +920,10 @@ class SolrUpdater
             );
             $data = $settings['solrTransformationXSLT']->transformToSolrArray($metadataRecord->toXML(), $params);
         } else {
-            $data = $metadataRecord->toSolrArray();
+            $prependTitleWithSubtitle = isset($settings['prepend_title_with_subtitle']) 
+                ? $settings['prepend_title_with_subtitle']
+                : true;
+            $data = $metadataRecord->toSolrArray($prependTitleWithSubtitle);
         }
         
         $data['id'] = $record['_id'];

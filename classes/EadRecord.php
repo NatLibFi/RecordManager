@@ -68,9 +68,9 @@ class EadRecord extends BaseRecord
         if (isset($this->doc->{'add-data'}->attributes()->identifier)) {
             return (string)$this->doc->{'add-data'}->attributes()->identifier;
         }
-        return isset($this->doc->did->unitid->attributes()->identifier) 
-            ? (string)$this->doc->did->unitid->attributes()->identifier
-            : (string)$this->doc->did->unitid;
+        return urlencode(isset($this->doc->did->unitid->attributes()->identifier) 
+                         ? (string)$this->doc->did->unitid->attributes()->identifier
+                         : (string)$this->doc->did->unitid);
     }
 
     /**
@@ -98,10 +98,13 @@ class EadRecord extends BaseRecord
     /**
      * Return fields to be indexed in Solr
      *
+     * @param boolean $prependTitleWithSubtitle If true and title_sub differs from title_short, 
+     *                                          title is formed by combining title_sub and title_short
+     *
      * @return string[]
      * @access public
      */
-    public function toSolrArray()
+    public function toSolrArray($prependTitleWithSubtitle)
     {
         $data = array();
         
@@ -115,18 +118,21 @@ class EadRecord extends BaseRecord
         }
 
         $authors = array();
-        if (isset($doc->controlaccess->persname)) {
-            foreach ($doc->controlaccess->persname as $name) {
+
+        if ($names = $doc->xpath('controlaccess/persname')) {
+            foreach ($names as $name) {
                 if (trim((string)$name) !== '-') {
                     $authors[] = (string)$name;
                 }
-            }
+            }            
         }
-        if (isset($doc->controlaccess->corpname)) {
-            foreach ($doc->controlaccess->corpname as $name) {
+
+        if ($names = $doc->xpath('controlaccess/corpname')) {
+            foreach ($names as $name) {
                 $authors[] = (string)$name;
             }
         }
+
         if ($authors) {
             $data['author'] = array_shift($authors);
             $data['author-letter'] = $data['author'];
@@ -139,23 +145,36 @@ class EadRecord extends BaseRecord
             $data['author_additional'] = (string)$doc->did->origination->corpname;
         }
 
-        if (isset($doc->controlaccess->geogname)) {
-            foreach ($doc->controlaccess->geogname as $name) {
-                $data['geographic'][] = (string)$name;
+        if ($geoNames = $doc->xpath('controlaccess/geogname')) {
+            foreach ($geoNames as $name) {
+                if (trim((string)$name) !== '-') {
+                    $names[] = (string)$name;
+                }
             }
+            $data['geographic'] = $data['geographic_facet'] = $names;
         }
 
-        if (isset($doc->controlaccess->subject)) {
-            foreach ($doc->controlaccess->subject as $name) {
-                $data['topic'][] = (string)$name;
+        if ($subjects = $doc->xpath('controlaccess/subject')) {
+            $topics = array();
+            foreach ($subjects as $subject) {
+                if (trim((string)$subject) !== '-') {
+                    $topics[] = (string)$subject;
+                }
             }
+            $data['topic'] = $data['topic_facet'] = $topics;
         }
 
-        $data['format'] = (string)$doc->attributes()->level;
-        if (isset($doc->did)) {
-            $data['institution'] = (string)$doc->did->repository;
+        $genre = $doc->xpath('controlaccess/genreform');
+        $data['format'] = (string) ($genre ? $genre[0] : $doc->attributes()->level);
+
+        if (isset($doc->did->repository)) {
+            $data['institution'] = 
+                (string) isset($doc->did->repository->corpname) ? 
+                $doc->did->repository->corpname :
+                $doc->did->repository;
         }
         
+
         $data['title_sub'] = '';
         
         switch ($data['format']) {
@@ -176,9 +195,59 @@ class EadRecord extends BaseRecord
         }
 
         $data['title_short'] = (string)$doc->did->unittitle;
-        $data['title'] = ($data['title_sub'] ? $data['title_sub'] . ' ' : '') . $data['title_short'];
+        $data['title'] = '';
+        if ($prependTitleWithSubtitle) {
+            if ($data['title_sub'] && $data['title_sub'] != $data['title_short']) {
+                $data['title'] = $data['title_sub'] . ' ';
+            }
+        }
+        $data['title'] .= $data['title_short'];
         $data['title_full'] = $data['title_sort'] = $data['title'];
         $data['title_sort'] = mb_strtolower(MetadataUtils::stripLeadingPunctuation($data['title_sort']), 'UTF-8');
+
+
+        if (isset($doc->did->unitid)) {
+            $data['identifier'] = $doc->did->unitid;
+        }
+        if (isset($doc->did->dimensions)) {
+            // display measurements
+            $data['measurements'] = $doc->did->dimensions;            
+        }
+        
+        if (isset($doc->did->physdesc)) {
+            $data['material'] = $doc->did->physdesc;            
+        }
+        
+        if (isset($doc->did->accessrestrict->p)) {
+            $data['rights'] = $doc->did->accessrestrict->p;            
+        }
+
+        if ($languages = $doc->did->xpath('langmaterial/language')) {
+            foreach ($languages as $lang) {
+                if (isset($lang->attributes()->langcode)) {
+                    $langCode = trim((string)$lang->attributes()->langcode);
+                    if ($langCode != '') {
+                        $data['language'][] = $langCode;
+                    }
+                }
+            }
+        }
+
+        if ($extents = $doc->did->xpath('physdesc/extent')) {
+            foreach ($extents as $extent) {
+                if (trim((string)$extent) !== '-') {
+                    $data['physical'][] = (string)$extent;
+                }
+            }
+        }
+
+        if ($nodes = $this->doc->did->daogrp->xpath('daoloc[@role="image_thumbnail"]')) {
+            // store first thumbnail
+            $node = $nodes[0];
+            if (isset($node->attributes()->href)) {
+                $data['thumbnail'] = $node->attributes()->href;
+            }
+        }
         
         $data['hierarchytype'] = 'Default';
         if ($this->doc->{'add-data'}->archive) {

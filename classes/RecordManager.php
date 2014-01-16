@@ -79,7 +79,9 @@ class RecordManager
     protected $indexMergedParts = true;
     protected $counts = false;
     protected $compressedRecords = true;
-    
+    protected $nonInheritedFields = array();
+    protected $prependParentTitleWithUnitId = null;
+
     /**
      * Constructor
      * 
@@ -908,7 +910,7 @@ class RecordManager
                 $className = substr($this->recordSplitter, 0, -4);
                 $splitter = new $className($recordData);
                 while (!$splitter->getEOF()) {
-                    $dataArray[] = $splitter->getNextRecord();
+                    $dataArray[] = $splitter->getNextRecord($this->nonInheritedFields, $this->prependParentTitleWithUnitId);
                 }
             } else {
                 $doc = new DOMDocument();
@@ -1716,7 +1718,9 @@ class RecordManager
         $this->pretransformation = isset($settings['preTransformation']) ? $settings['preTransformation'] : '';
         $this->indexMergedParts = isset($settings['indexMergedParts']) ? $settings['indexMergedParts'] : true;
         $this->harvestType = isset($settings['type']) ? $settings['type'] : '';
-        
+        $this->nonInheritedFields = isset($settings['non_inherited_fields']) ? $settings['non_inherited_fields'] : array();
+        $this->prependParentTitleWithUnitId = isset($settings['prepend_parent_title_with_unitid']) ? $settings['prepend_parent_title_with_unitid'] : true;
+
         $params = array('source_id' => $this->sourceId, 'institution' => $this->institution, 'format' => $this->format, 'id_prefix' => $this->idPrefix);
         $this->normalizationXSLT = isset($settings['normalization']) && $settings['normalization'] ? new XslTransformation($this->basePath . '/transformations', $settings['normalization'], $params) : null;
         $this->solrTransformationXSLT = isset($settings['solrTransformation']) && $settings['solrTransformation'] ? new XslTransformation($this->basePath . '/transformations', $settings['solrTransformation'], $params) : null;
