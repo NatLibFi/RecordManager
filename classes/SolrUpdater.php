@@ -366,7 +366,6 @@ class SolrUpdater
                 $collection->drop();
                 $count = 0;
                 $totalMergeCount = 0;
-                $batch = array();
                 foreach ($records as $record) {
                     if (isset($this->terminate)) {
                         $this->log->log('updateMergedRecords', 'Termination upon request');
@@ -375,21 +374,15 @@ class SolrUpdater
                     }
                     $id = $record['dedup_id'];
                     if (!isset($prevId) || $prevId != $id) {
-                        $batch[] = array('_id' => $id);
+                        $collection->insert(array('_id' => $id), array('w' => 0));
                         ++$totalMergeCount;
                         if (++$count % 10000 == 0) {
-                            // We need continueOnError to ignore duplicate IDs
-                            $collection->batchInsert($batch, array('continueOnError' => true));
-                            $batch = array();
-                            $this->log->log('updateMergedRecords', "$count records processed");
+                            $this->log->log('updateMergedRecords', "$count id's processed");
                         }
                     }
                     $prevId = $id;
                 }
-                if ($batch) {
-                    $collection->batchInsert($batch);
-                }
-                $this->log->log('updateMergedRecords', "$count records processed");
+                $this->log->log('updateMergedRecords', "$count id's processed");
                 
                 // Add dedup records by date (those that were not added by record date)
                 if (!isset($mongoFromDate)) {
@@ -405,7 +398,6 @@ class SolrUpdater
                     
                     $records = $this->db->dedup->find($dedupParams, array('_id' => 1));
                     $count = 0;
-                    $batch = array();
                     foreach ($records as $record) {
                         if (isset($this->terminate)) {
                             $this->log->log('updateMergedRecords', 'Termination upon request');
@@ -414,21 +406,15 @@ class SolrUpdater
                         }
                         $id = $record['_id'];
                         if (!isset($prevId) || $prevId != $id) {
-                            $batch[] = array('_id' => $id);
+                            $collection->insert(array('_id' => $id), array('w' => 0));
                             ++$totalMergeCount;
                             if (++$count % 10000 == 0) {
-                                // We need continueOnError to ignore duplicate IDs
-                                $collection->batchInsert($batch, array('continueOnError' => true));
-                                $batch = array();
-                                $this->log->log('updateMergedRecords', "$count merge records processed");
+                                $this->log->log('updateMergedRecords', "$count merge record id's processed");
                             }
                         }
                         $prevId = $id;
                     }
-                    if ($batch) {
-                        $collection->batchInsert($batch);
-                    }
-                    $this->log->log('updateMergedRecords', "$count merge records processed");
+                    $this->log->log('updateMergedRecords', "$count merge record id's processed");
                 }
                 if ($totalMergeCount > 0) {
                     $mongo = new Mongo($configArray['Mongo']['url']);
