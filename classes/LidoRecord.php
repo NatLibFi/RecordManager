@@ -174,7 +174,7 @@ class LidoRecord extends BaseRecord
         if (empty($titles)) {
             return null;
         } 
-        $title = implode('; ', array_unique($titles));
+        $title = implode('; ', array_unique(array_filter($titles)));
         
         // Use description if title is the same as the work type
         // From LIDO specs:
