@@ -910,7 +910,7 @@ class RecordManager
                 $className = substr($this->recordSplitter, 0, -4);
                 $splitter = new $className($recordData);
                 while (!$splitter->getEOF()) {
-                    $dataArray[] = $splitter->getNextRecord($this->nonInheritedFields, $this->prependParentTitleWithUnitId);
+                    $dataArray[] = $splitter->getNextRecord($this->prependParentTitleWithUnitId, $this->nonInheritedFields);
                 }
             } else {
                 $doc = new DOMDocument();
