@@ -83,13 +83,14 @@ class EadSplitter
     /**
      * Get next record
      * 
-     * @param string[] $nonInheritedFields list of fields within record 
-     *                                     did-element not to be inherited to child nodes.
-     * @param boolean  $prependParentTitleWithUnitId
+     * @param boolean  $prependParentTitleWithUnitId if true, parent title is 
+     * prepended with unit id.
+     * @param string[] $nonInheritedFields           list of fields within record 
+     * did-element not to be inherited to child nodes.
      *
      * @return string XML
      */
-    public function getNextRecord($nonInheritedFields = array(), $prependParentTitleWithUnitId)
+    public function getNextRecord($prependParentTitleWithUnitId, $nonInheritedFields = array())
     {
         if ($this->currentPos < $this->recordCount) {
             $original = $this->recordNodes[$this->currentPos++];

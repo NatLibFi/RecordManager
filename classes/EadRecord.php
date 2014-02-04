@@ -68,9 +68,10 @@ class EadRecord extends BaseRecord
         if (isset($this->doc->{'add-data'}->attributes()->identifier)) {
             return (string)$this->doc->{'add-data'}->attributes()->identifier;
         }
-        return urlencode(isset($this->doc->did->unitid->attributes()->identifier) 
-                         ? (string)$this->doc->did->unitid->attributes()->identifier
-                         : (string)$this->doc->did->unitid);
+        $id = isset($this->doc->did->unitid->attributes()->identifier) 
+            ? (string)$this->doc->did->unitid->attributes()->identifier
+            : (string)$this->doc->did->unitid;
+        return urlencode($id);
     }
 
     /**
@@ -168,10 +169,10 @@ class EadRecord extends BaseRecord
         $data['format'] = (string) ($genre ? $genre[0] : $doc->attributes()->level);
 
         if (isset($doc->did->repository)) {
-            $data['institution'] = 
-                (string) isset($doc->did->repository->corpname) ? 
-                $doc->did->repository->corpname :
-                $doc->did->repository;
+            $data['institution'] 
+                = (string) isset($doc->did->repository->corpname) 
+                ? $doc->did->repository->corpname 
+                : $doc->did->repository;
         }
         
 

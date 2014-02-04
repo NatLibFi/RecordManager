@@ -47,6 +47,7 @@ class NdlEadRecord extends EadRecord
      *
      * @param boolean $prependTitleWithSubtitle If true and title_sub differs from title_short, 
      *                                          title is formed by combining title_sub and title_short
+     *
      * @return string[]
      */
     public function toSolrArray($prependTitleWithSubtitle)
