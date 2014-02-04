@@ -64,11 +64,11 @@ class SolrUpdater
     protected $maxUpdateRecords;
     protected $maxUpdateSize;
     
-    protected $mergedFields = array('institution', 'collection', 'building', 'language', 
+    protected $mergedFields = array('institution', 'collection', 'building', 'language',
         'physical', 'publisher', 'publishDate', 'contents', 'url', 'ctrlnum',
         'author2', 'author_additional', 'title_alt', 'title_old', 'title_new', 
         'dateSpan', 'series', 'series2', 'topic', 'genre', 'geographic', 
-        'era', 'long_lat');
+        'era', 'long_lat', 'isbn', 'issn');
         
     
     /**
