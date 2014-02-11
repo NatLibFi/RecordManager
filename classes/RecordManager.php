@@ -111,7 +111,7 @@ class RecordManager
         
         $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
         $basePath = substr($basePath, 0, strrpos($basePath, DIRECTORY_SEPARATOR));
-        $this->dataSourceSettings = parse_ini_file("$basePath/conf/datasources.ini", true);
+        $this->dataSourceSettings = $configArray['dataSourceSettings'] = parse_ini_file("$basePath/conf/datasources.ini", true);
         $this->basePath = $basePath;
 
         $timeout = isset($configArray['Mongo']['connect_timeout']) ? $configArray['Mongo']['connect_timeout'] : 300000;

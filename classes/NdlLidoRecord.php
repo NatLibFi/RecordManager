@@ -45,13 +45,14 @@ class NdlLidoRecord extends LidoRecord
     /**
      * Constructor
      *
-     * @param string $data   Metadata
-     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for file import)
-     * @param string $source Source ID
+     * @param string $data     Metadata
+     * @param string $oaiID    Record ID received from OAI-PMH (or empty string for file import)
+     * @param string $source   Source ID
+     * @param string $idPrefix Record ID prefix
      */
-    public function __construct($data, $oaiID, $source)
+    public function __construct($data, $oaiID, $source, $idPrefix)
     {
-        parent::__construct($data, $oaiID, $source);
+        parent::__construct($data, $oaiID, $source, $idPrefix);
         
         $this->mainEvent = 'valmistus';
         $this->usagePlaceEvent = 'käyttö';

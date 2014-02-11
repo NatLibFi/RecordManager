@@ -43,6 +43,7 @@ if (!preg_match('/^[\w_]*$/', $format) || !preg_match('/^[\w_]*$/', $source)) {
 
 $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
 $configArray = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
+$configArray['dataSourceSettings'] = parse_ini_file($basePath . '/conf/datasources.ini', true);
 
 date_default_timezone_set($configArray['Site']['timezone']);
 

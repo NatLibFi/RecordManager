@@ -42,16 +42,21 @@ class BaseRecord
     // Record source ID
     protected $source;
     
+    // Record ID prefix
+    protected $idPrefix = '';
+    
     /**
      * Constructor
      *
-     * @param string $data   Metadata
-     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for file import)
-     * @param string $source Source ID
+     * @param string $data     Metadata
+     * @param string $oaiID    Record ID received from OAI-PMH (or empty string for file import)
+     * @param string $source   Source ID
+     * @param string $idPrefix Record ID prefix
      */
-    public function __construct($data, $oaiID, $source)
+    public function __construct($data, $oaiID, $source, $idPrefix)
     {
         $this->source = $source;
+        $this->idPrefix = $idPrefix;
     }
 
     /**

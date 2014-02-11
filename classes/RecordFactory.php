@@ -60,15 +60,19 @@ class RecordFactory
         } else {
             $class = ucwords($format) . 'Record';
         }
+        $idPrefix 
+            = isset($configArray['dataSourceSettings'][$source]['idPrefix'])
+            ? $configArray['dataSourceSettings'][$source]['idPrefix']
+            : $source; 
         if (class_exists($class)) {
-            $obj = new $class($data, $oaiID, $source);
+            $obj = new $class($data, $oaiID, $source, $idPrefix);
             return $obj;
         }
 
         $path = "{$class}.php";
         include_once $path;
         if (class_exists($class)) {
-            $obj = new $class($data, $oaiID, $source);
+            $obj = new $class($data, $oaiID, $source, $idPrefix);
             return $obj;
         }
 

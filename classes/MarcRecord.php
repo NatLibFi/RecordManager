@@ -61,19 +61,18 @@ class MarcRecord extends BaseRecord
      *              ]
      */
     protected $fields;
-    protected $idPrefix = '';
-    protected $source;
 
     /**
      * Constructor
      *
-     * @param string $data   Metadata
-     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for file import)
-     * @param string $source Source ID
+     * @param string $data     Metadata
+     * @param string $oaiID    Record ID received from OAI-PMH (or empty string for file import)
+     * @param string $source   Source ID
+     * @param string $idPrefix Record ID prefix
      */
-    public function __construct($data, $oaiID, $source)
+    public function __construct($data, $oaiID, $source, $idPrefix)
     {
-        parent::__construct($data, $oaiID, $source);
+        parent::__construct($data, $oaiID, $source, $idPrefix);
 
         $firstChar = substr($data, 0, 1);
         if ($firstChar === '{') {
@@ -208,6 +207,23 @@ class MarcRecord extends BaseRecord
      */
     public function toSolrArray()
     {
+        // Add source prefix to IDs in link fields
+        $fields = array('760', '762', '765', '767', '770', '772', '773', '774',
+            '775', '776', '777', '780', '785', '786', '787');
+        foreach ($fields as $code) {
+            if (isset($this->fields[$code])) {
+                foreach ($this->fields[$code] as &$marcfield) {
+                    if (isset($marcfield['s'])) {
+                        foreach ($marcfield['s'] as &$marcsubfield) {
+                            if (key($marcsubfield) == 'w') {
+                                $marcsubfield['w'] = $this->idPrefix . '.' . $marcsubfield['w'];
+                            }
+                        }
+                    }    
+                }
+            }
+        }
+        
         $data = parent::toSolrArray();
           
         // building
