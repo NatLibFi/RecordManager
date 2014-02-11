@@ -309,7 +309,7 @@ class NdlMarcRecord extends MarcRecord
         $parts = array();
         foreach ($componentParts as $componentPart) {
             $data = MetadataUtils::getRecordData($componentPart, true);
-            $marc = new MARCRecord($data, '', $this->source);
+            $marc = new MARCRecord($data, '', $this->source, $this->idPrefix);
             $title = $marc->getFieldSubfields('245', array('a', 'b', 'n', 'p'));
             $uniTitle = $marc->getFieldSubfields('240', array('a', 'n', 'p'));
             $additionalTitles = $marc->getFieldsSubfields(
