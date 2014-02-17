@@ -75,6 +75,9 @@ class NdlLidoRecord extends LidoRecord
             $data['institution'] = $this->getRightsHolderLegalBodyName();
         } else {
             $data['building'] = reset(explode('/', $data['institution']));
+            if ($data['collection']) {
+                $data['building'] .= '/' . $data['collection'];
+            }
         }
         
         // REMOVE THIS ONCE TUUSULA IS FIXED
