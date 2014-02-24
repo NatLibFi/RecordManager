@@ -63,6 +63,8 @@ class SolrUpdater
     protected $commitInterval;
     protected $maxUpdateRecords;
     protected $maxUpdateSize;
+    protected $maxUpdateTries;
+    protected $updateRetryWait;
     
     protected $mergedFields = array('institution', 'collection', 'building', 'language',
         'physical', 'publisher', 'publishDate', 'contents', 'url', 'ctrlnum',
@@ -126,6 +128,10 @@ class SolrUpdater
         $this->maxUpdateSize = isset($configArray['Solr']['max_update_size'])
             ? $configArray['Solr']['max_update_size'] : 1024;
         $this->maxUpdateSize *= 1024;
+        $this->maxUpdateTries = isset($configArray['Solr']['max_update_tries'])
+            ? $configArray['Solr']['max_update_tries'] : 15;
+        $this->updateRetryWait = isset($configArray['Solr']['update_retry_wait'])
+            ? $configArray['Solr']['update_retry_wait'] : 60;
         
         // Load settings and mapping files
         $this->loadDatasources();
@@ -1266,7 +1272,7 @@ class SolrUpdater
         $this->request->setHeader('Content-Type', 'application/json');
         $this->request->setBody($body);
 
-        $maxTries = 15;
+        $maxTries = $this->maxUpdateTries;
         for ($try = 1; $try <= $maxTries; $try++) {
             try {
                 $response = $this->request->send();
@@ -1274,10 +1280,10 @@ class SolrUpdater
                 if ($try < $maxTries) {
                     $this->log->log(
                         'solrRequest',
-                        'Solr server request failed (' . $e->getMessage() . '), retrying in 60 seconds...', 
+                        'Solr server request failed (' . $e->getMessage() . "), retrying in {$this->updateRetryWait} seconds...", 
                         Logger::WARNING
                     );
-                    sleep(60);
+                    sleep($this->updateRetryWait);
                     continue;
                 }
                 if ($background) {
@@ -1298,10 +1304,10 @@ class SolrUpdater
                 if ($code >= 300) {
                     $this->log->log(
                         'solrRequest',
-                        "Solr server request failed ($code), retrying in 60 seconds...",
+                        "Solr server request failed ($code), retrying in {$this->updateRetryWait} seconds...",
                         Logger::WARNING
                     );
-                    sleep(60);
+                    sleep($this->updateRetryWait);
                     continue;
                 }
             }

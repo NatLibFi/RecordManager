@@ -41,6 +41,10 @@ password =
 ;merged_fields = institution,collection,my_local_field_str_mv
 ;format_in_allfields = true
 unicode_normalization_form = NFKC
+; Maximum number of tries to send an update to Solr. Default is 15.
+;max_update_tries = 5
+; Wait time between Solr update request attempts in seconds. Default is 60.
+;update_retry_wait = 30
 
 [OAI-PMH]
 repository_name = OAI-PMH Repository
