@@ -67,12 +67,16 @@ class EadRecord extends BaseRecord
      */
     public function getID()
     {
-        if (isset($this->doc->{'add-data'}->attributes()->identifier)) {
+        if (isset($this->doc->{'add-data'}) && isset($this->doc->{'add-data'}->attributes()->identifier)) {
             return (string)$this->doc->{'add-data'}->attributes()->identifier;
         }
+        if (isset($this->doc->did->unitid)) {
         $id = isset($this->doc->did->unitid->attributes()->identifier) 
             ? (string)$this->doc->did->unitid->attributes()->identifier
             : (string)$this->doc->did->unitid;
+        } else {
+            die('No ID found for record: ' . $this->doc->asXML());
+        }
         return urlencode($id);
     }
 
