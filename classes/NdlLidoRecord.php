@@ -367,6 +367,22 @@ class NdlLidoRecord extends LidoRecord
             $startDate = sprintf('%04d-%02d-%02dT00:00:00Z', $matches[1], $matches[2], $matches[3]);
             $endDate = sprintf('%04d-%02d-%02dT23:59:59Z', $matches[4], $matches[5], $matches[6]);
             $noprocess = true;
+        } elseif (preg_match('/(\d\d\d\d)(\d\d?)(\d\d?) ?- ?(\d\d\d\d)(\d\d?)(\d\d?)/', $input, $matches) > 0) {
+            $startDate = sprintf('%04d-%02d-%02dT00:00:00Z', $matches[1], $matches[2], $matches[3]);
+            $endDate = sprintf('%04d-%02d-%02dT23:59:59Z', $matches[4], $matches[5], $matches[6]);
+            $noprocess = true;
+        } elseif (preg_match('/(\d\d\d\d)(\d\d?) ?- ?(\d\d\d\d)(\d\d?)/', $input, $matches) > 0) {
+            $startDate = sprintf('%04d-%02d-01T00:00:00Z', $matches[1], $matches[2]);
+            $endDate = sprintf('%04d-%02d-01', $matches[3], $matches[4]);
+            try {
+                $d = new DateTime($endDate);
+            } catch (Exception $e) {
+                global $logger;
+                $logger->log('NdlLidoRecord', "Failed to parse date $endDate, record {$this->source}." . $this->getID(), Logger::ERROR);
+                return null;
+            }
+            $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
+            $noprocess = true;
         } elseif (preg_match('/(\d\d\d\d) ?- (\d\d\d\d)/', $input, $matches) > 0) {
             $startDate = $matches[1];
             $endDate = $matches[2];
@@ -376,6 +392,27 @@ class NdlLidoRecord extends LidoRecord
             $day = sprintf('%02d', $matches[3]);
             $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
             $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+            $noprocess = true;
+        } elseif (preg_match('/(\d\d\d\d)(\d\d)(\d\d)/', $input, $matches) > 0) {
+            $year = $matches[1];
+            $month =  sprintf('%02d', $matches[2]);
+            $day = sprintf('%02d', $matches[3]);
+            $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+            $noprocess = true;
+        } elseif (preg_match('/(\d\d\d\d)(\d\d)/', $input, $matches) > 0) {
+            $year = $matches[1];
+            $month =  sprintf('%02d', $matches[2]);
+            $startDate = $year . '-' . $month . '-01T00:00:00Z';
+            $endDate = $year . '-' . $month . '-01';
+            try {
+                $d = new DateTime($endDate);
+            } catch (Exception $e) {
+                global $logger;
+                $logger->log('NdlLidoRecord', "Failed to parse date $endDate, record {$this->source}." . $this->getID(), Logger::ERROR);
+                return null;
+            }
+            $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
             $noprocess = true;
         } elseif (preg_match('/(\d?\d?\d\d) ?(-|~) ?(\d?\d?\d\d) ?(-luku)?(\(?\?\)?)?/', $input, $matches) > 0) {
             // 1940-1960-luku
@@ -523,14 +560,14 @@ class NdlLidoRecord extends LidoRecord
         if ($startDate > $yearNow || $endDate > $yearNow) {
             return null;
         }
-    
+        
         $this->earliestYear = $startDate;
         $this->latestYear = $startDate;
     
         if (!MetadataUtils::validateISO8601Date($startDate) || !MetadataUtils::validateISO8601Date($endDate)) {
             return null;
         }
-         
+
         return array($startDate, $endDate);
     }
 }
