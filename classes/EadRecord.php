@@ -71,9 +71,9 @@ class EadRecord extends BaseRecord
             return (string)$this->doc->{'add-data'}->attributes()->identifier;
         }
         if (isset($this->doc->did->unitid)) {
-        $id = isset($this->doc->did->unitid->attributes()->identifier) 
-            ? (string)$this->doc->did->unitid->attributes()->identifier
-            : (string)$this->doc->did->unitid;
+            $id = isset($this->doc->did->unitid->attributes()->identifier) 
+                ? (string)$this->doc->did->unitid->attributes()->identifier
+                : (string)$this->doc->did->unitid;
         } else {
             die('No ID found for record: ' . $this->doc->asXML());
         }
@@ -214,19 +214,19 @@ class EadRecord extends BaseRecord
 
 
         if (isset($doc->did->unitid)) {
-            $data['identifier'] = $doc->did->unitid;
+            $data['identifier'] = (string)$doc->did->unitid;
         }
         if (isset($doc->did->dimensions)) {
             // display measurements
-            $data['measurements'] = $doc->did->dimensions;            
+            $data['measurements'] = (string)$doc->did->dimensions;            
         }
         
         if (isset($doc->did->physdesc)) {
-            $data['material'] = $doc->did->physdesc;            
+            $data['material'] = (string)$doc->did->physdesc;            
         }
         
         if (isset($doc->did->accessrestrict->p)) {
-            $data['rights'] = $doc->did->accessrestrict->p;            
+            $data['rights'] = (string)$doc->did->accessrestrict->p;            
         }
 
         if ($languages = $doc->did->xpath('langmaterial/language')) {
@@ -252,7 +252,7 @@ class EadRecord extends BaseRecord
             // store first thumbnail
             $node = $nodes[0];
             if (isset($node->attributes()->href)) {
-                $data['thumbnail'] = $node->attributes()->href;
+                $data['thumbnail'] = (string)$node->attributes()->href;
             }
         }
         
