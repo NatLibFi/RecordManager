@@ -372,7 +372,7 @@ class HarvestOaiPmh
         }
         $code = $response->getStatus();
         if ($code >= 300) {
-            $this->message("{$this->source}: Request '$urlStr' failed: $code", false, Logger::FATAL);
+            $this->message("Request '$urlStr' failed: $code", false, Logger::FATAL);
             throw new Exception("{$this->source}: Request failed: $code");
         }
 
@@ -422,7 +422,7 @@ class HarvestOaiPmh
         $result = $this->loadXML($xml);
         if ($result === false || libxml_get_last_error() !== false) {
             // Assuming it's a character encoding issue, this might help...
-            $this->message('Invalid XML received, trying encoding fix...', false, Logger::WARNING);
+            $this->message("Invalid XML received, trying encoding fix...", false, Logger::WARNING);
             $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
             libxml_clear_errors();
             $result = $this->loadXML($xml);
@@ -439,7 +439,7 @@ class HarvestOaiPmh
             libxml_use_internal_errors($saveUseErrors);
             $tempfile = tempnam(sys_get_temp_dir(), 'oai-pmh-error-') . '.xml';
             file_put_contents($tempfile, $xml);
-            $this->message("{$this->source}: Could not parse XML response: $errors. XML stored in $tempfile", false, Logger::FATAL);
+            $this->message("Could not parse XML response: $errors. XML stored in $tempfile", false, Logger::FATAL);
             throw new Exception("{$this->source}: Failed to parse XML response");
         }
         libxml_use_internal_errors($saveUseErrors);
@@ -451,7 +451,7 @@ class HarvestOaiPmh
             if (($resumption && !$this->ignoreNoRecordsMatch) || $code != 'noRecordsMatch') {
                 $value = $result->saveXML($error);
                 $this->message(
-                    "{$this->source}: OAI-PMH server returned error $code ($value)", 
+                    "OAI-PMH server returned error $code ($value)", 
                     false,
                     Logger::FATAL
                 );
@@ -704,6 +704,7 @@ class HarvestOaiPmh
      */
     protected function message($msg, $verbose = false, $level = Logger::INFO)
     {
+        $msg = "[{$this->source}] $msg";
         if ($this->verbose) {
             echo "$msg\n";
         }
