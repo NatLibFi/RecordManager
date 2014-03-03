@@ -66,6 +66,13 @@ class NdlLidoRecord extends LidoRecord
      */
     public function toSolrArray()
     {
+        global $configArray;
+        
+        $params = array();
+        if (isset($configArray['dataSourceSettings'][$this->source]['driverParams'])) {
+            $params = $configArray['dataSourceSettings'][$this->source]['driverParams'];
+        }
+        
         $data = parent::toSolrArray();
         $doc = $this->doc;
 
@@ -73,11 +80,17 @@ class NdlLidoRecord extends LidoRecord
         // so getting the actual institution name from the rightsholder information
         if ($data['institution'] == 'Kantapuu' || $data['institution'] == 'Akseli') {
             $data['institution'] = $this->getRightsHolderLegalBodyName();
-        } else {
+        }
+        // Handle sources that contain multiple organisations properly
+        if (in_array('institutionInBuilding', $params)) {
             $data['building'] = reset(explode('/', $data['institution']));
-            if ($data['collection']) {
+        }
+        if ($data['collection'] && in_array('collectionInBuilding', $params)) {
+            if (isset($data['building']) && $data['building']) {
                 $data['building'] .= '/' . $data['collection'];
-            }
+            } else {
+                $data['building'] = $data['collection'];
+            } 
         }
         
         // REMOVE THIS ONCE TUUSULA IS FIXED
