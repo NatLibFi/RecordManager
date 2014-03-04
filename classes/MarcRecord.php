@@ -228,10 +228,12 @@ class MarcRecord extends BaseRecord
           
         // building
         $data['building'] = array();
-        foreach ($this->getFields('852') as $field) {
-            $location = $this->getSubfield($field, 'b');
-            if ($location) {
-                $data['building'][] = $location;
+        if ($this->getDriverParam('holdingsInBuilding', true)) {
+            foreach ($this->getFields('852') as $field) {
+                $location = $this->getSubfield($field, 'b');
+                if ($location) {
+                    $data['building'][] = $location;
+                }
             }
         }
           
@@ -1798,4 +1800,3 @@ class MarcRecord extends BaseRecord
         return array_values(array_unique($allFields));
     }
 }
-

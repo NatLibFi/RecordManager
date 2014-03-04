@@ -66,13 +66,6 @@ class NdlLidoRecord extends LidoRecord
      */
     public function toSolrArray()
     {
-        global $configArray;
-        
-        $params = array();
-        if (isset($configArray['dataSourceSettings'][$this->source]['driverParams'])) {
-            $params = $configArray['dataSourceSettings'][$this->source]['driverParams'];
-        }
-        
         $data = parent::toSolrArray();
         $doc = $this->doc;
 
@@ -82,10 +75,10 @@ class NdlLidoRecord extends LidoRecord
             $data['institution'] = $this->getRightsHolderLegalBodyName();
         }
         // Handle sources that contain multiple organisations properly
-        if (in_array('institutionInBuilding', $params)) {
+        if ($this->getDriverParam('institutionInBuilding', false)) {
             $data['building'] = reset(explode('/', $data['institution']));
         }
-        if ($data['collection'] && in_array('collectionInBuilding', $params)) {
+        if ($data['collection'] && $this->getDriverParam('collectionInBuilding', false)) {
             if (isset($data['building']) && $data['building']) {
                 $data['building'] .= '/' . $data['collection'];
             } else {

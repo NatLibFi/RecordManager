@@ -324,5 +324,30 @@ class BaseRecord
     public function addDedupKeyToMetadata($dedupKey)
     {
     }
+    
+    /**
+     * Return a parameter specified in driverParams[] of datasources.ini
+     * 
+     * @param string $option  Parameter name
+     * @param bool   $default Default value if the parameter is not set
+     * 
+     * @return mixed Value
+     */
+    protected function getDriverParam($parameter, $default = true)
+    {
+        global $configArray;
+        
+        if (!isset($configArray['dataSourceSettings'][$this->source]['driverParams'])) {
+            return $default;
+        }
+        $iniValues = parse_ini_string(
+            implode(
+                PHP_EOL, 
+                $configArray['dataSourceSettings'][$this->source]['driverParams']
+            )
+        );
+        
+        return isset($iniValues[$parameter]) ? $iniValues[$parameter] : $default; 
+    }
 }
 
