@@ -33,7 +33,7 @@ require_once 'MetadataUtils.php';
  * NdlQdcRecord Class
  *
  * QdcRecord with NDL specific functionality
- * 
+ *
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
@@ -50,7 +50,7 @@ class NdlQdcRecord extends QdcRecord
     public function toSolrArray()
     {
         $data = parent::toSolrArray();
-        
+
         // Nonstandard author fields
         $authors = $this->getValues('author');
         if ($authors) {
@@ -61,16 +61,16 @@ class NdlQdcRecord extends QdcRecord
                 $data['author2'] = $authors;
             }
         }
-                
+
         if (isset($data['publishDate'])) {
             $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate']);
         }
-        
+
         $data['publication_sdaterange'] = $this->getPublicationDateRange();
         if ($data['publication_sdaterange']) {
             $data['search_sdaterange_mv'][] = $data['publication_sdaterange'];
         }
-        
+
         foreach ($this->doc->relation as $relation) {
             $url = (string)$relation;
             // Require at least one dot surrounded by valid characters or a familiar scheme
@@ -81,14 +81,24 @@ class NdlQdcRecord extends QdcRecord
                 'url' => $url,
                 'text' => '',
                 'source' => $this->source
-            ); 
+            );
             $data['online_boolean'] = true;
-            $data['online_urls_str_mv'][] = json_encode($link);            
+            $data['online_urls_str_mv'][] = json_encode($link);
         }
-        
+
+        foreach ($this->doc->file as $file) {
+            $link = array(
+                'url' => (string)$file->attributes()->href,
+                'text' => (string)$file->attributes()->name,
+                'source' => $this->source
+            );
+            $data['online_boolean'] = true;
+            $data['online_urls_str_mv'][] = json_encode($link);
+        }
+
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
-        
+
         return $data;
     }
 
@@ -107,5 +117,5 @@ class NdlQdcRecord extends QdcRecord
             return MetadataUtils::convertDateRange(array($startDate, $endDate));
         }
         return '';
-    }   
+    }
 }
