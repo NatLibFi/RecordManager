@@ -11,6 +11,14 @@ abbreviations = abbreviations.lst
 ; Articles that should be removed from the beginning of a title for sorting
 articles = articles.lst
 
+; These settings control the OAI-PMH harvester
+[Harvesting]
+; Number of attempts to fetch data from the OAI-PMH provider. Default is 5.
+; Allows harvesting to continue despite of e.g. temporary network problems.
+;max_tries = 10
+; Wait time between request attempts in seconds. Default is 60.
+;retry_wait = 120
+
 [Mongo]
 ; url = mongodb://{username}:{password}@localhost
 ;url = mongodb://localhost

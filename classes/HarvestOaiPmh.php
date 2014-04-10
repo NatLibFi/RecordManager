@@ -64,7 +64,9 @@ class HarvestOaiPmh
     protected $resumptionToken = '';  // Override the first harvest request
     protected $transformation = null; // Transformation applied to the OAI-PMH responses before processing
     protected $serverDate = null;     // Date received from server via Identify command. Used to set the last harvest date
-    protected $ignoreNoRecordsMatch = false; // Whether to ignore noRecordsMatch error when harvesting (broken sources may report an error even with a valid resumptionToken)  
+    protected $ignoreNoRecordsMatch = false; // Whether to ignore noRecordsMatch error when harvesting (broken sources may report an error even with a valid resumptionToken)
+    protected $maxTries = 5;          // Number of times to attempt a request before bailing out
+    protected $retryWait = 30;        // Seconds to wait between request attempts
 
     /**
      * Constructor.
@@ -72,7 +74,7 @@ class HarvestOaiPmh
      * @param object $logger     The Logger object used for logging messages.
      * @param object $db         Mongo database handle.
      * @param string $source     The data source to be harvested.
-     * @param string $basePath   RecordManager main directory location 
+     * @param string $basePath   RecordManager main directory location
      * @param array  $settings   Settings from datasources.ini.
      * @param string $startToken Optional override for the initial
      *                           harvest command (to resume interrupted harvesting)
@@ -81,9 +83,11 @@ class HarvestOaiPmh
      */
     public function __construct($logger, $db, $source, $basePath, $settings, $startToken = '')
     {
+        global $configArray;
+
         $this->log = $logger;
         $this->db = $db;
-         
+
         // Don't time out during harvest
         set_time_limit(0);
 
@@ -133,7 +137,14 @@ class HarvestOaiPmh
         if (isset($settings['ignoreNoRecordsMatch'])) {
             $this->ignoreNoRecordsMatch = $settings['ignoreNoRecordsMatch'];
         }
-        
+
+        if (isset($configArray['Harvesting']['max_tries'])) {
+            $this->maxTries = $configArray['Harvesting']['max_tries'];
+        }
+        if (isset($configArray['Harvesting']['retry_wait'])) {
+            $this->retryWait = $configArray['Harvesting']['retry_wait'];
+        }
+
         $this->message('Identifying server');
         $response = $this->sendRequest('Identify');
         if ($this->granularity == 'auto') {
@@ -174,7 +185,7 @@ class HarvestOaiPmh
      * Harvest all available documents.
      *
      * @param functionref $callback Function to be called to store a harvested record
-     * 
+     *
      * @return void
      * @access public
      */
@@ -209,7 +220,7 @@ class HarvestOaiPmh
      * List identifiers of all available documents.
      *
      * @param functionref $callback Function to be called to process an identifier
-     * 
+     *
      * @return void
      * @access public
      */
@@ -218,7 +229,7 @@ class HarvestOaiPmh
         $this->_normalRecords = 0;
         $this->deletedRecords = 0;
         $this->_callback = $callback;
-    
+
         if ($this->resumptionToken) {
             $this->message('Incremental listing from given resumptionToken');
             $token = $this->getIdentifiersByToken($this->resumptionToken);
@@ -226,7 +237,7 @@ class HarvestOaiPmh
             $this->message('Listing all identifiers');
             $token = $this->getIdentifiers();
         }
-    
+
         // Keep harvesting as long as a resumption token is provided:
         while ($token !== false) {
             $this->listIdentifiersProgressReport();
@@ -234,10 +245,10 @@ class HarvestOaiPmh
         }
         $this->listIdentifiersProgressReport();
     }
-    
+
     /**
-     * Display harvesting progress 
-     * 
+     * Display harvesting progress
+     *
      * @return void
      */
     protected function harvestProgressReport()
@@ -249,7 +260,7 @@ class HarvestOaiPmh
     }
 
     /**
-     * Display listing progress 
+     * Display listing progress
      *
      * @return void
      */
@@ -322,49 +333,48 @@ class HarvestOaiPmh
     {
         // Set up the request:
         $request = new HTTP_Request2(
-            $this->baseURL, 
-            HTTP_Request2::METHOD_GET, 
+            $this->baseURL,
+            HTTP_Request2::METHOD_GET,
             array('ssl_verify_peer' => false)
-        );       
+        );
         $request->setHeader('User-Agent', 'RecordManager');
 
         // Load request parameters:
         $url = $request->getURL();
         $params['verb'] = $verb;
         $url->setQueryVariables($params);
-        
+
         $urlStr = $url->getURL();
         if ($this->debugLog) {
             file_put_contents($this->debugLog, date('Y-m-d H:i:s') . ' [' . getmypid() . "] Request:\n$urlStr\n", FILE_APPEND);
         }
 
         // Perform request and throw an exception on error:
-        $maxTries = 5;
-        for ($try = 1; $try <= $maxTries; $try++) {
+        for ($try = 1; $try <= $this->maxTries; $try++) {
             $this->message("Sending request: $urlStr", true);
             try {
                 $response = $request->send();
             } catch (Exception $e) {
-                if ($try < $maxTries) {
+                if ($try < $this->maxTries) {
                     $this->message(
-                        "Request '$urlStr' failed (" . $e->getMessage() . "), retrying in 30 seconds...", 
-                        false, 
+                        "Request '$urlStr' failed (" . $e->getMessage() . "), retrying in {$this->retryWait} seconds...",
+                        false,
                         Logger::WARNING
                     );
-                    sleep(30);
+                    sleep($this->retryWait);
                     continue;
                 }
                 throw $e;
             }
-            if ($try < $maxTries) {
+            if ($try < $this->maxTries) {
                 $code = $response->getStatus();
                 if ($code >= 300) {
                     $this->message(
-                        "Request '$urlStr' failed ($code), retrying in 30 seconds...",
+                        "Request '$urlStr' failed ($code), retrying in {$this->retryWait} seconds...",
                         false,
                         Logger::WARNING
                     );
-                    sleep(30);
+                    sleep($this->retryWait);
                     continue;
                 }
             }
@@ -388,7 +398,7 @@ class HarvestOaiPmh
      * Load XML into simplexml
      *
      * @param string $xml XML string
-     * 
+     *
      * @return SimpleXMLElement
      * @access protected
      */
@@ -451,7 +461,7 @@ class HarvestOaiPmh
             if (($resumption && !$this->ignoreNoRecordsMatch) || $code != 'noRecordsMatch') {
                 $value = $result->saveXML($error);
                 $this->message(
-                    "OAI-PMH server returned error $code ($value)", 
+                    "OAI-PMH server returned error $code ($value)",
                     false,
                     Logger::FATAL
                 );
@@ -508,7 +518,7 @@ class HarvestOaiPmh
         // Loop through the records:
         foreach ($records as $record) {
             $header = $this->getSingleNode($record, 'header');
-            
+
             // Bypass the record if the record is missing its header:
             if ($header === false) {
                 $this->message("Record header missing", false, Logger::ERROR);
@@ -548,7 +558,7 @@ class HarvestOaiPmh
                     $attr = $this->_xml->createAttribute($node->nodeName);
                     $attr->value = $node->nodeValue;
                     $recordNode->appendChild($attr);
-                }                
+                }
                 $this->_normalRecords += call_user_func($this->_callback, $id, false, trim($this->_xml->saveXML($recordNode)));
             }
         }
@@ -636,7 +646,7 @@ class HarvestOaiPmh
             $params = array('metadataPrefix' => $this->metadata);
         }
         $this->_xml = $this->sendRequest('ListIdentifiers', $params);
-        
+
         // Process headers
         $listIdentifiers = $this->getSingleNode($this->_xml, 'ListIdentifiers');
         if ($listIdentifiers !== false) {
@@ -675,12 +685,12 @@ class HarvestOaiPmh
     protected function processIdentifiers($headers)
     {
         $this->message('Processing ' . count($headers) . ' identifiers', true);
-    
+
         // Loop through the records:
         foreach ($headers as $header) {
             // Get the ID of the current record:
             $id = $this->extractID($header);
-    
+
             // Process the current header, either as a deleted or as a regular record:
             if (strcasecmp($header->getAttribute('status'), 'deleted') == 0) {
                 call_user_func($this->_callback, $id, true);
@@ -710,13 +720,13 @@ class HarvestOaiPmh
         }
         $this->log->log('harvestOaiPmh', $msg, $level);
     }
-    
+
     /**
      * Get the first XML child node with the given name
-     * 
+     *
      * @param DOMDocument $xml      The XML Document
      * @param string      $nodeName Node to get
-     * 
+     *
      * @return DOMNode | false  Result node or false if not found
      * @access protected
      */
@@ -728,14 +738,14 @@ class HarvestOaiPmh
         }
         return $nodes->item(0);
     }
-    
+
     /**
      * Traverse all children and collect those nodes that
      * have the tagname specified in $tagName. Non-recursive
      *
      * @param DOMElement $element DOM Element
      * @param string     $tagName Tag to get
-     * 
+     *
      * @return string[]
      */
     protected function getImmediateChildrenByTagName($element, $tagName)
