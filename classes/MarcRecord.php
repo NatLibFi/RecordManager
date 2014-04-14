@@ -785,7 +785,7 @@ class MarcRecord extends BaseRecord
         $arr = array();
         $nbn = $this->getField('015');
         if ($nbn) {
-            $nr = MetadataUtils::normalize(strtok(MetadataUtils:: $this->getSubfield($nbn, 'a'), ' '));
+            $nr = MetadataUtils::normalize(strtok($this->getSubfield($nbn, 'a'), ' '));
             $src = $this->getSubfield($nbn, '2');
             if ($src && $nr) {
                 $arr[] = "($src)$nr";
