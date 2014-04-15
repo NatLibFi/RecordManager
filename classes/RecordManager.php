@@ -122,11 +122,13 @@ class RecordManager
         $this->db = $mongo->selectDB($configArray['Mongo']['database']);
         MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout']) ? $configArray['Mongo']['cursor_timeout'] : 300000;
 
+        // Used for format mapping in dedup handler
+        $solrUpdater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
         $dedupClass = isset($configArray['Site']['dedup_handler'])
             ? $configArray['Site']['dedup_handler']
             : 'DedupHandler';
         include_once "$dedupClass.php";
-        $this->dedupHandler = new $dedupClass($this->db, $this->log, $this->verbose);
+        $this->dedupHandler = new $dedupClass($this->db, $this->log, $this->verbose, $solrUpdater);
 
         if (isset($configArray['Site']['full_title_prefixes'])) {
             MetadataUtils::$fullTitlePrefixes = array_map(array('MetadataUtils', 'normalize'), file("$basePath/conf/{$configArray['Site']['full_title_prefixes']}",  FILE_IGNORE_NEW_LINES));
@@ -441,9 +443,6 @@ class RecordManager
      */
     public function deduplicate($sourceId, $allRecords = false, $singleId = '')
     {
-        // Used for format mapping
-        $solrUpdater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
-
         // Install a signal handler so that we can exit cleanly if interrupted
         if (function_exists('pcntl_signal')) {
             pcntl_signal(SIGINT, array($this, 'sigIntHandler'));
@@ -500,7 +499,7 @@ class RecordManager
                         exit(1);
                     }
                     $startRecordTime = microtime(true);
-                    if ($this->dedupHandler->dedupRecord($record, $solrUpdater)) {
+                    if ($this->dedupHandler->dedupRecord($record)) {
                         if ($this->verbose) {
                             echo '+';
                         }

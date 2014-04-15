@@ -54,18 +54,27 @@ class DedupHandler
      */
     protected $verbose = false;
 
+    /*
+     * Used for format mapping
+     *
+     * @val SolrUpdater
+     */
+    protected $solrUpdater = null;
+
     /**
      * Constructor
      *
-     * @param MongoDB $db      Mongo database object
-     * @param Logger  $log     Logger object
-     * @param boolean $verbose Whether verbose output is enabled
+     * @param MongoDB     $db          Mongo database object
+     * @param Logger      $log         Logger object
+     * @param boolean     $verbose     Whether verbose output is enabled
+     * @param SolrUpdater $solrUpdater SolrUpdater instance
      */
-    public function __construct($db, $log, $verbose)
+    public function __construct($db, $log, $verbose, $solrUpdater)
     {
         $this->db = $db;
         $this->log = $log;
         $this->verbose = $verbose;
+        $this->solrUpdater = $solrUpdater;
     }
 
     /**
@@ -136,11 +145,10 @@ class DedupHandler
      * Find a single duplicate for the given record and set a dedup key for them
      *
      * @param MongoRecord $record      Database record
-     * @param SolrUpdater $solrUpdater Solr updater class
      *
      * @return boolean Whether a duplicate was found
      */
-    public function dedupRecord($record, $solrUpdater)
+    public function dedupRecord($record)
     {
         $startTime = microtime(true);
         if ($this->verbose) {
@@ -211,7 +219,7 @@ class DedupHandler
                     if (!isset($origRecord)) {
                         $origRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
                     }
-                    if ($this->matchRecords($record, $origRecord, $candidate, $solrUpdater)) {
+                    if ($this->matchRecords($record, $origRecord, $candidate)) {
                         if ($this->verbose && ($processed > 300 || microtime(true) - $startTime > 0.7)) {
                             echo "Found match $type=$keyPart with candidate $processed in " . (microtime(true) - $startTime) . "\n";
                         }
@@ -308,11 +316,10 @@ class DedupHandler
      * @param MongoRecord $record      Mongo record
      * @param object      $origRecord  Metadata record (from $record)
      * @param MongoRecord $candidate   Candidate Mongo record
-     * @param SolrUpdater $solrUpdater Solr updater class
      *
      * @return boolean
      */
-    protected function matchRecords($record, $origRecord, $candidate, $solrUpdater)
+    protected function matchRecords($record, $origRecord, $candidate)
     {
         $cRecord = RecordFactory::createRecord($candidate['format'], MetadataUtils::getRecordData($candidate, true), $candidate['oai_id'], $candidate['source_id']);
         if ($this->verbose) {
@@ -368,7 +375,7 @@ class DedupHandler
 
         $origFormat = $origRecord->getFormat();
         $cFormat = $cRecord->getFormat();
-        if ($origFormat != $cFormat && $solrUpdater->mapFormat($record['source_id'], $origFormat) != $solrUpdater->mapFormat($candidate['source_id'], $cFormat)) {
+        if ($origFormat != $cFormat && $this->solrUpdater->mapFormat($record['source_id'], $origFormat) != $this->solrUpdater->mapFormat($candidate['source_id'], $cFormat)) {
             if ($this->verbose) {
                 echo "--Format mismatch: $origFormat != $cFormat\n";
             }
