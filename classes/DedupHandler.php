@@ -80,15 +80,28 @@ class DedupHandler
         $results = array();
         foreach ($dedupRecord['ids'] as $id) {
             $record = $this->db->record->findOne(array('_id' => $id));
-            if ($record['deleted'] || !isset($record['dedup_id']) || $record['dedup_id'] != $dedupRecord['_id']) {
+            if ($dedupRecord['deleted']
+                || $record['deleted']
+                || count($dedupRecord['ids']) < 2
+                || !isset($record['dedup_id'])
+                || $record['dedup_id'] != $dedupRecord['_id']
+            ) {
                 $this->removeFromDedupRecord($dedupRecord['_id'], $id);
                 if ($record['deleted']) {
+                    $reason = 'dedup record deleted';
+                } elseif ($record['deleted']) {
                     $reason = 'record deleted';
+                } elseif (count($dedupRecord['ids']) < 2) {
+                    $reason = 'single record in a dedup group';
                 } elseif (!isset($record['dedup_id'])) {
                     $reason = 'record not linked';
                 } else {
                     $reason = 'record linked with another dedup record';
                 }
+                $this->db->record->update(
+                    array('_id' => $id, 'deleted' => false),
+                    array('$set' => array('update_needed' => true))
+                );
                 $results[] = "Removed '$id' from dedup record '{$dedupRecord['_id']}' ($reason)";
             }
         }
@@ -274,23 +287,17 @@ class DedupHandler
             $record['changed'] = new MongoDate();
             $this->db->dedup->save($record);
 
-            // Reprocess remaining records as this change may affect their preferred
-            // dedup group
+            // Mark remaining records to be processed again as this change may affect
+            // their preferred dedup group
             if (!$record['deleted']) {
-                if ($this->verbose) {
-                    echo "Processing other records in dedup group...\n";
-                }
-                $records = $this->db->record->find(
+                $this->db->record->update(
                     array(
-                        '$in' => $record['ids']
-                    )
+                        '_id' => array('$in' => $record['ids']),
+                        'deleted' => false
+                    ),
+                    array('$set' => array('update_needed' => true)),
+                    array('multiple' => true)
                 );
-                foreach ($records as $rec) {
-                    $this->dedupRecord($rec);
-                }
-                if ($this->verbose) {
-                    echo "Done processing other records in dedup group\n";
-                }
             }
         }
     }
