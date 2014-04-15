@@ -57,7 +57,7 @@ class SolrUpdater
     protected $articleFormats;
     protected $eArticleFormats;
     protected $allArticleFormats;
-    protected $httpPid = null;
+    protected $httpPids = array();
     protected $terminate;
 
     protected $commitInterval;
@@ -65,6 +65,7 @@ class SolrUpdater
     protected $maxUpdateSize;
     protected $maxUpdateTries;
     protected $updateRetryWait;
+    protected $backgroundUpdates;
 
     protected $mergedFields = array('institution', 'collection', 'building',
         'language', 'physical', 'publisher', 'publishDate', 'contents', 'url',
@@ -150,6 +151,9 @@ class SolrUpdater
             ? $configArray['Solr']['max_update_tries'] : 15;
         $this->updateRetryWait = isset($configArray['Solr']['update_retry_wait'])
             ? $configArray['Solr']['update_retry_wait'] : 60;
+        $this->backgroundUpdates = isset($configArray['Solr']['background_update'])
+            ? $configArray['Solr']['background_update'] : 0;
+
 
         // Load settings and mapping files
         $this->loadDatasources();
@@ -272,9 +276,10 @@ class SolrUpdater
             }
         }
         if (!$noCommit && $needCommit) {
+            $this->waitForHttpChildren();
             $this->log->log('updateIndividualRecords', "Final commit...");
             $this->solrRequest('{ "commit": {} }');
-            $this->waitForHttpChild();
+            $this->waitForHttpChildren();
             $this->log->log('updateIndividualRecords', "Commit complete");
         }
     }
@@ -468,6 +473,9 @@ class SolrUpdater
                 $this->log->log('updateMergedRecords', "Indexing the merged records (with no forced commits)");
             } else {
                 $this->log->log('updateMergedRecords', "Indexing the merged records (max commit interval {$this->commitInterval} records)");
+            }
+            if ($this->backgroundUpdates) {
+                $this->log->log('updateMergedRecords', "Using {$this->backgroundUpdates} thread(s) for updates");
             }
             $pc = new PerformanceCounter();
             foreach ($keys as $key) {
@@ -667,9 +675,10 @@ class SolrUpdater
             $this->log->log('updateMergedRecords', "Total $count individual records (of which $deleted deleted) with $mergedComponents merged parts indexed");
 
             if (!$noCommit && $needCommit) {
+                $this->waitForHttpChildren();
                 $this->log->log('updateMergedRecords', "Final commit...");
                 $this->solrRequest('{ "commit": {} }');
-                $this->waitForHttpChild();
+                $this->waitForHttpChildren();
                 $this->log->log('updateMergedRecords', "Commit complete");
             }
         } catch (Exception $e) {
@@ -688,7 +697,7 @@ class SolrUpdater
     {
         $this->solrRequest('{ "delete": { "query": "id:' . $sourceId . '.*" } }');
         $this->solrRequest('{ "commit": {} }', 4 * 60 * 60);
-        $this->waitForHttpChild();
+        $this->waitForHttpChildren();
     }
 
     /**
@@ -699,7 +708,7 @@ class SolrUpdater
     public function optimizeIndex()
     {
         $this->solrRequest('{ "optimize": {} }', 4 * 60 * 60);
-        $this->waitForHttpChild();
+        $this->waitForHttpChildren();
     }
 
     /**
@@ -1275,14 +1284,15 @@ class SolrUpdater
                 );
             }
         }
-        $background = isset($configArray['Solr']['background_update']) && $configArray['Solr']['background_update'];
-        if ($background) {
-            $this->waitForHttpChild();
+        if ($this->backgroundUpdates) {
+            if ($this->backgroundUpdates <= count($this->httpPids)) {
+                $this->waitForAHttpChild();
+            }
             $pid = pcntl_fork();
             if ($pid == -1) {
                 throw new Exception("Could not fork background update child");
             } elseif ($pid) {
-                $this->httpPid = $pid;
+                $this->httpPids[] = $pid;
                 return;
             }
         }
@@ -1303,7 +1313,7 @@ class SolrUpdater
                     sleep($this->updateRetryWait);
                     continue;
                 }
-                if ($background) {
+                if ($this->backgroundUpdates) {
                     $this->log->log(
                         'solrRequest',
                         'Solr server request failed (' . $e->getMessage() . "). URL:\n" . $configArray['Solr']['update_url'] . "\nRequest:\n$body",
@@ -1332,7 +1342,7 @@ class SolrUpdater
         }
         $code = $response->getStatus();
         if ($code >= 300) {
-            if ($background) {
+            if ($this->backgroundUpdates) {
                 $this->log->log('solrRequest', "Solr server request failed ($code). URL:\n" . $configArray['Solr']['update_url'] . "\nRequest:\n$body\n\nResponse:\n" . $response->getBody(), Logger::FATAL);
                 // Kill parent and self
                 posix_kill(posix_getppid(), SIGQUIT);
@@ -1341,26 +1351,57 @@ class SolrUpdater
                 throw new Exception("Solr server request failed ($code). URL:\n" . $configArray['Solr']['update_url'] . "\nRequest:\n$body\n\nResponse:\n" . $response->getBody());
             }
         }
-        if ($background) {
+        if ($this->backgroundUpdates) {
             // Don't let PHP cleanup e.g. the Mongo connection
             posix_kill(getmypid(), SIGKILL);
         }
     }
 
     /**
-     * Wait for http request to complete
+     * Wait for all http requests to complete
      *
      * @throws Exception
      * @return void
      */
-    protected function waitForHttpChild()
+    protected function waitForHttpChildren()
     {
-        if (isset($this->httpPid)) {
-            pcntl_waitpid($this->httpPid, $status);
+        foreach ($this->httpPids as $httpPid) {
+            pcntl_waitpid($httpPid, $status);
             if (pcntl_wexitstatus($status) != 0) {
                 throw new Exception("Aborting due to failed HTTP request");
             }
-            $this->httpPid = null;
+        }
+        $this->httpPids = array();
+    }
+
+    /**
+     * Wait for a single http request to complete
+     *
+     * @throws Exception
+     * @return void
+     */
+    protected function waitForAHttpChild()
+    {
+        $startTime = microtime(true);
+        while (1) {
+            foreach ($this->httpPids as $httpPid) {
+                $pid = pcntl_waitpid($httpPid, $status, WNOHANG);
+                if ($pid > 0) {
+                    if (pcntl_wexitstatus($status) != 0) {
+                        throw new Exception("Aborting due to failed HTTP request");
+                    }
+                    $this->httpPids = array_diff($this->httpPids, array($pid));
+                    if ($this->verbose) {
+                        $waitTime = microtime(true) - $startTime;
+                        if ($waitTime > 1) {
+                            echo "Waited " . round(microtime(true) - $startTime, 4) .
+                                " seconds for an HTTP request to complete\n";
+                        }
+                    }
+                    return;
+                }
+            }
+            sleep(10);
         }
     }
 
@@ -1404,9 +1445,10 @@ class SolrUpdater
             $result = true;
         }
         if (!$noCommit && $count % $this->commitInterval == 0) {
+            $this->waitForHttpChildren();
             $this->log->log('bufferedUpdate', "Intermediate commit...");
             $this->solrRequest('{ "commit": {} }');
-            $this->waitForHttpChild();
+            $this->waitForHttpChildren();
             $this->log->log('bufferedUpdate', "Intermediate commit complete");
         }
         return $result;
@@ -1444,7 +1486,7 @@ class SolrUpdater
             $this->solrRequest("{" . implode(',', $this->bufferedDeletions) . "}");
             $this->bufferedDeletions = array();
         }
-        $this->waitForHttpChild();
+        $this->waitForHttpChildren();
     }
 
     /**
