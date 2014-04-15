@@ -29,10 +29,10 @@
 require_once 'cmdline.php';
 
 /**
- * Main function 
- * 
+ * Main function
+ *
  * @param string[] $argv Program parameters
- * 
+ *
  * @return void
  */
 function main($argv)
@@ -42,9 +42,9 @@ function main($argv)
     if (!isset($params['func'])) {
         echo <<<EOT
 Usage: $argv[0] --func=... [...]
-            
+
 Parameters:
-            
+
 --func             renormalize|deduplicate|updatesolr|dump|markdeleted|deletesource|deletesolr|optimizesolr|count|updategeocoding|resimplifygeocoding|checkdedup
 --source           Source ID to process (separate multiple sources with commas)
 --all              Process all records regardless of their state (deduplicate)
@@ -56,16 +56,15 @@ Parameters:
 --file             File containing places to geocode (updategeocoding)
 --force            Force deletesource to proceed even if deduplication is enabled for the source
 --verbose          Enable verbose output for debugging
---config.section.name=value 
+--config.section.name=value
                    Set configuration directive to given value overriding any setting in recordmanager.ini
 
 
 EOT;
         exit(1);
     }
-    
-    $manager = new RecordManager(true);
-    $manager->verbose = isset($params['verbose']) ? $params['verbose'] : false;
+
+    $manager = new RecordManager(true, isset($params['verbose']) ? $params['verbose'] : false);
 
     $sources = isset($params['source']) ? $params['source'] : '';
     $single = isset($params['single']) ? $params['single'] : '';
@@ -74,18 +73,18 @@ EOT;
     // Solr update can handle multiple sources at once
     if ($params['func'] == 'updatesolr') {
         $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
-        $manager->updateSolrIndex($date, $sources, $single, $noCommit); 
+        $manager->updateSolrIndex($date, $sources, $single, $noCommit);
     } else {
         foreach (explode(',', $sources) as $source) {
             switch ($params['func'])
             {
-            case 'renormalize': 
-                $manager->renormalize($source, $single); 
+            case 'renormalize':
+                $manager->renormalize($source, $single);
                 break;
-            case 'deduplicate': 
-                $manager->deduplicate($source, isset($params['all']) ? true : false, $single); 
+            case 'deduplicate':
+                $manager->deduplicate($source, isset($params['all']) ? true : false, $single);
                 break;
-            case 'dump': 
+            case 'dump':
                 $manager->dumpRecord($single);
                 break;
             case 'deletesource':
@@ -112,8 +111,8 @@ EOT;
             case 'checkdedup':
                 $manager->checkDedupRecords();
                 break;
-            default: 
-                echo 'Unknown func: ' . $params['func'] . "\n"; 
+            default:
+                echo 'Unknown func: ' . $params['func'] . "\n";
                 exit(1);
             }
         }

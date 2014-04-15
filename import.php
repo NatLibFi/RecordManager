@@ -29,10 +29,10 @@
 require_once 'cmdline.php';
 
 /**
- * Main function 
- * 
+ * Main function
+ *
  * @param string[] $argv Program parameters
- * 
+ *
  * @return void
  */
 function main($argv)
@@ -48,7 +48,7 @@ Parameters:
 --file              The file or wildcard pattern of files of records
 --source            Source ID
 --verbose           Enable verbose output
---config.section.name=value 
+--config.section.name=value
                    Set configuration directive to given value overriding any setting in recordmanager.ini
 
 
@@ -56,8 +56,7 @@ EOT;
         exit(1);
     }
 
-    $manager = new RecordManager(true);
-    $manager->verbose = isset($params['verbose']) ? $params['verbose'] : false;
+    $manager = new RecordManager(true, isset($params['verbose']) ? $params['verbose'] : false);
 
     $manager->loadFromFile($params['source'], $params['file']);
 }

@@ -29,10 +29,10 @@
 require_once 'cmdline.php';
 
 /**
- * Main function 
- * 
+ * Main function
+ *
  * @param string[] $argv Program parameters
- * 
+ *
  * @return void
  */
 function main($argv)
@@ -54,7 +54,7 @@ Parameters:
 --source            Export only the given source
 --single            Export single record with the given id
 --xpath             Export only records matching the XPath expression
---config.section.name=value 
+--config.section.name=value
                     Set configuration directive to given value overriding any setting in recordmanager.ini
 
 
@@ -62,16 +62,15 @@ EOT;
         exit(1);
     }
 
-    $manager = new RecordManager(true);
-    $manager->verbose = isset($params['verbose']) ? $params['verbose'] : false;
+    $manager = new RecordManager(true, isset($params['verbose']) ? $params['verbose'] : false);
     $manager->quiet = isset($params['quiet']) ? $params['quiet'] : false;
 
     $manager->exportRecords(
-        $params['file'], 
-        isset($params['deleted']) ? $params['deleted'] : '', 
-        isset($params['from']) ? $params['from'] : '', 
-        isset($params['skip']) ? $params['skip'] : 0, 
-        isset($params['source']) ? $params['source'] : '', 
+        $params['file'],
+        isset($params['deleted']) ? $params['deleted'] : '',
+        isset($params['from']) ? $params['from'] : '',
+        isset($params['skip']) ? $params['skip'] : 0,
+        isset($params['source']) ? $params['source'] : '',
         isset($params['single']) ? $params['single'] : '',
         isset($params['xpath']) ? $params['xpath'] : ''
     );

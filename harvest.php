@@ -29,10 +29,10 @@
 require_once 'cmdline.php';
 
 /**
- * Main function 
- * 
+ * Main function
+ *
  * @param string[] $argv Program parameters
- * 
+ *
  * @return void
  */
 function main($argv)
@@ -44,7 +44,7 @@ function main($argv)
 Usage: $argv[0] --source=... [...]
 
 Parameters:
-            
+
 --source            Repository id ('*' for all, separate multiple sources with commas)
 --exclude           Repository id's to exclude when using '*' for source (separate multiple sources with commas)
 --from              Override harvesting start date
@@ -53,7 +53,7 @@ Parameters:
 --verbose           Enable verbose output
 --override          Override initial resumption token (e.g. to resume failed connection)
 --reharvest[=date]  This is a full reharvest, delete all records that were not received during the harvesting (or were modified before [date]). Implies --all.
---config.section.name=value 
+--config.section.name=value
                     Set configuration directive to given value overriding any setting in recordmanager.ini
 
 
@@ -61,17 +61,16 @@ EOT;
         exit(1);
     }
 
-    $manager = new RecordManager(true);
-    $manager->verbose = isset($params['verbose']) ? $params['verbose'] : false;
+    $manager = new RecordManager(true, isset($params['verbose']) ? $params['verbose'] : false);
     $from = isset($params['from']) ? $params['from'] : null;
     if (isset($params['all']) || isset($params['reharvest'])) {
         $from = '-';
     }
     foreach (explode(',', $params['source']) as $source) {
         $manager->harvest(
-            $source, 
-            $from, 
-            isset($params['until']) ? $params['until'] : null, 
+            $source,
+            $from,
+            isset($params['until']) ? $params['until'] : null,
             isset($params['override']) ? urldecode($params['override']) : '',
             isset($params['exclude']) ? $params['exclude'] : null,
             isset($params['reharvest']) ? $params['reharvest'] : ''

@@ -54,15 +54,16 @@ require_once 'PerformanceCounter.php';
  */
 class RecordManager
 {
-    public $verbose = false;
     public $quiet = false;
     public $harvestFromDate = null;
     public $harvestUntilDate = null;
 
+    protected $verbose = false;
     protected $basePath = '';
     protected $log = null;
     protected $db = null;
     protected $dataSourceSettings = null;
+    protected $dedupHandler = null;
 
     protected $harvestType = '';
     protected $format = '';
@@ -74,7 +75,7 @@ class RecordManager
     protected $dedup = false;
     protected $normalizationXSLT = null;
     protected $solrTransformationXSLT = null;
-    protected $recordSplitter = null; 
+    protected $recordSplitter = null;
     protected $pretransformation = '';
     protected $indexMergedParts = true;
     protected $counts = false;
@@ -84,31 +85,33 @@ class RecordManager
 
     /**
      * Constructor
-     * 
-     * @param boolean $console Specify whether RecordManager is executed on the console, 
+     *
+     * @param boolean $console Specify whether RecordManager is executed on the console,
      *                           so log output is also output to the console.
+     * @param boolean $verbose Whether verbose output is enabled
      */
-    public function __construct($console = false)
+    public function __construct($console = false, $verbose = false)
     {
         global $configArray;
         global $logger;
-        
+
         date_default_timezone_set($configArray['Site']['timezone']);
 
         $this->log = new Logger();
         if ($console) {
             $this->log->logToConsole = true;
         }
+        $this->verbose = $verbose;
         // Store logger in a global so that others can access it easily
         $logger = $this->log;
-        
+
         if (isset($configArray['Mongo']['counts']) && $configArray['Mongo']['counts']) {
             $this->counts = true;
         }
         if (isset($configArray['Mongo']['compressed_records']) && !$configArray['Mongo']['compressed_records']) {
             $this->compressedRecords = false;
         }
-        
+
         $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
         $basePath = substr($basePath, 0, strrpos($basePath, DIRECTORY_SEPARATOR));
         $this->dataSourceSettings = $configArray['dataSourceSettings'] = parse_ini_file("$basePath/conf/datasources.ini", true);
@@ -118,17 +121,23 @@ class RecordManager
         $mongo = new Mongo($configArray['Mongo']['url'], array('connectTimeoutMS' => $timeout));
         $this->db = $mongo->selectDB($configArray['Mongo']['database']);
         MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout']) ? $configArray['Mongo']['cursor_timeout'] : 300000;
-        
+
+        $dedupClass = isset($configArray['Site']['dedup_handler'])
+            ? $configArray['Site']['dedup_handler']
+            : 'DedupHandler';
+        include_once "$dedupClass.php";
+        $this->dedupHandler = new $dedupClass($this->db, $this->log, $this->verbose);
+
         if (isset($configArray['Site']['full_title_prefixes'])) {
             MetadataUtils::$fullTitlePrefixes = array_map(array('MetadataUtils', 'normalize'), file("$basePath/conf/{$configArray['Site']['full_title_prefixes']}",  FILE_IGNORE_NEW_LINES));
         }
 
         // Read the abbreviations file
-        MetadataUtils::$abbreviations = isset($configArray['Site']['abbreviations']) 
+        MetadataUtils::$abbreviations = isset($configArray['Site']['abbreviations'])
             ? $this->readListFile($configArray['Site']['abbreviations']) : array();
-        
+
         // Read the artices file
-        MetadataUtils::$articles = isset($configArray['Site']['articles']) 
+        MetadataUtils::$articles = isset($configArray['Site']['articles'])
             ? $this->readListFile($configArray['Site']['articles']) : array();
     }
 
@@ -144,13 +153,13 @@ class RecordManager
         $this->terminate = true;
         echo "Termination requested\n";
     }
-    
+
     /**
      * Load records into the database from a file
-     * 
+     *
      * @param string $source Source id
      * @param string $files  Wildcard pattern of files containing the records
-     * 
+     *
      * @throws Exception
      * @return int Number of records loaded
      */
@@ -168,19 +177,19 @@ class RecordManager
             if ($data === false) {
                 throw new Exception("Could not read file '$file'");
             }
-            
+
             if ($this->pretransformation) {
                 if ($this->verbose) {
                     echo "Executing pretransformation\n";
                 }
                 $data = $this->pretransform($data);
             }
-            
+
             if ($this->verbose) {
                 echo "Creating FileSplitter\n";
             }
             $splitter = new FileSplitter($data, $this->recordXPath, $this->oaiIDXPath);
-            
+
             if ($this->verbose) {
                 echo "Storing records\n";
             }
@@ -197,14 +206,14 @@ class RecordManager
             }
             $this->log->log('loadFromFile', "$count records loaded");
         }
-        
+
         $this->log->log('loadFromFile', "Total $count records loaded");
         return $count;
     }
 
     /**
      * Export records from the database to a file
-     * 
+     *
      * @param string $file        File name where to write exported records
      * @param string $deletedFile File name where to write ID's of deleted records
      * @param string $fromDate    Starting date (e.g. 2011-12-24)
@@ -212,7 +221,7 @@ class RecordManager
      * @param string $sourceId    Source ID to export, or empty or * for all
      * @param string $singleId    Export only a record with the given ID
      * @param string $xpath       Optional XPath expression to limit the export with
-     * 
+     *
      * @return void
      */
     public function exportRecords($file, $deletedFile, $fromDate, $skipRecords = 0, $sourceId = '', $singleId = '', $xpath = '')
@@ -306,22 +315,22 @@ class RecordManager
 
     /**
      * Send updates to a Solr index (e.g. VuFind)
-     * 
-     * @param string|null $fromDate Starting date for updates (if empty 
+     *
+     * @param string|null $fromDate Starting date for updates (if empty
      *                              string, last update date stored in the database
      *                              is used and if null, all records are processed)
-     * @param string      $sourceId Source ID to update, or empty or * for all 
+     * @param string      $sourceId Source ID to update, or empty or * for all
      *                              sources (ignored if record merging is enabled)
      * @param string      $singleId Export only a record with the given ID
      * @param bool        $noCommit If true, changes are not explicitly committed
-     * 
+     *
      * @return void
      */
     public function updateSolrIndex($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false)
     {
         global $configArray;
         $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
-        
+
         if (isset($configArray['Solr']['merge_records']) && $configArray['Solr']['merge_records']) {
             return $updater->updateMergedRecords($fromDate, $sourceId, $singleId, $noCommit);
         }
@@ -333,7 +342,7 @@ class RecordManager
      *
      * @param string $sourceId Source ID to renormalize
      * @param string $singleId Renormalize only a single record with the given ID
-     * 
+     *
      * @return void
      */
     public function renormalize($sourceId, $singleId)
@@ -347,7 +356,7 @@ class RecordManager
             }
             $this->loadSourceSettings($source);
             $this->log->log('renormalize', "Creating record list for '$source'");
-    
+
             $params = array('deleted' => false);
             if ($singleId) {
                 $params['_id'] = $singleId;
@@ -359,7 +368,7 @@ class RecordManager
             $records->immortal(true);
             $total = $this->counts ? $records->count() : 'the';
             $count = 0;
-    
+
             $this->log->log('renormalize', "Processing $total records from '$source'");
             $pc = new PerformanceCounter();
             foreach ($records as $record) {
@@ -369,18 +378,18 @@ class RecordManager
                     $origMetadataRecord = RecordFactory::createRecord($record['format'], $originalData, $record['oai_id'], $record['source_id']);
                     $normalizedData = $this->normalizationXSLT->transform($origMetadataRecord->toXML(), array('oai_id' => $record['oai_id']));
                 }
-    
+
                 $metadataRecord = RecordFactory::createRecord($record['format'], $normalizedData, $record['oai_id'], $record['source_id']);
                 $metadataRecord->normalize();
                 $hostID = $metadataRecord->getHostRecordID();
                 $normalizedData = $metadataRecord->serialize();
                 if ($this->dedup && !$hostID) {
-                    $this->updateDedupCandidateKeys($record, $metadataRecord);
+                    $this->dedupHandler->updateDedupCandidateKeys($record, $metadataRecord);
                     $record['update_needed'] = true;
                 } else {
-                    unset($record['title_keys']);                
-                    unset($record['isbn_keys']);                
-                    unset($record['id_keys']);                
+                    unset($record['title_keys']);
+                    unset($record['isbn_keys']);
+                    unset($record['id_keys']);
                     unset($record['dedup_id']);
                     $record['update_needed'] = false;
                 }
@@ -399,7 +408,7 @@ class RecordManager
                 }
                 $record['updated'] = new MongoDate();
                 $this->db->record->save($record);
-                
+
                 if ($this->verbose) {
                     echo "Metadata for record {$record['_id']}: \n";
                     $record['normalized_data'] = MetadataUtils::getRecordData($record, true);
@@ -409,7 +418,7 @@ class RecordManager
                     }
                     print_r($record);
                 }
-                                
+
                 ++$count;
                 if ($count % 1000 == 0) {
                     $pc->add($count);
@@ -423,18 +432,18 @@ class RecordManager
 
     /**
      * Find duplicate records and give them dedup keys
-     * 
+     *
      * @param string $sourceId   Source ID to process, or empty or * for all sources where dedup is enabled
      * @param string $allRecords If true, process all records regardless of their status (otherwise only freshly imported or updated records are processed)
      * @param string $singleId   Process only a record with the given ID
-     * 
+     *
      * @return void
      */
     public function deduplicate($sourceId, $allRecords = false, $singleId = '')
     {
         // Used for format mapping
-        $this->solrUpdater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
-        
+        $solrUpdater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
+
         // Install a signal handler so that we can exit cleanly if interrupted
         if (function_exists('pcntl_signal')) {
             pcntl_signal(SIGINT, array($this, 'sigIntHandler'));
@@ -442,7 +451,7 @@ class RecordManager
         } else {
             $this->log->log('deduplicate', 'Could not set an interrupt handler -- pcntl not available');
         }
-        
+
         if ($allRecords) {
             foreach ($this->dataSourceSettings as $source => $settings) {
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
@@ -491,7 +500,7 @@ class RecordManager
                         exit(1);
                     }
                     $startRecordTime = microtime(true);
-                    if ($this->dedupRecord($record)) {
+                    if ($this->dedupHandler->dedupRecord($record, $solrUpdater)) {
                         if ($this->verbose) {
                             echo '+';
                         }
@@ -527,16 +536,16 @@ class RecordManager
 
     /**
      * Harvest records from a data source
-     * 
+     *
      * @param string      $repository           Source ID to harvest
      * @param string      $harvestFromDate      Override start date (otherwise harvesting is done from the previous harvest date)
      * @param string      $harvestUntilDate     Override end date (otherwise current date is used)
-     * @param string      $startResumptionToken Override OAI-PMH resumptionToken to resume interrupted harvesting process (note 
+     * @param string      $startResumptionToken Override OAI-PMH resumptionToken to resume interrupted harvesting process (note
      *                                     that tokens may have a limited lifetime)
      * @param string      $exclude              Source ID's to exclude whe using '*' for repository
-     * @param bool|string $reharvest            Whether to consider this a full reharvest where sets may have changed 
-     *                                          (deletes records not received during this harvesting)                                     
-     *                                     
+     * @param bool|string $reharvest            Whether to consider this a full reharvest where sets may have changed
+     *                                          (deletes records not received during this harvesting)
+     *
      * @return void
      */
     public function harvest($repository = '', $harvestFromDate = null, $harvestUntilDate = null, $startResumptionToken = '', $exclude = null, $reharvest = false)
@@ -549,7 +558,7 @@ class RecordManager
         }
 
         $excludedSources = isset($exclude) ? explode(',', $exclude) : array();
-        
+
         // Loop through all the sources and perform harvests
         foreach ($this->dataSourceSettings as $source => $settings) {
             try {
@@ -569,7 +578,7 @@ class RecordManager
                 if ($this->verbose) {
                     $settings['verbose'] = true;
                 }
-                
+
                 if ($this->harvestType == 'metalib') {
                     // MetaLib doesn't handle deleted records, so we'll just fetch everything and compare with what we have
                     $this->log->log('harvest', "Fetching records from MetaLib");
@@ -584,12 +593,12 @@ class RecordManager
                         $id = $marc->getID();
                         $records["$source.$id"] = $record;
                     }
-                    
+
                     $this->log->log('harvest', "Merging results with the records in database");
                     $deleted = 0;
                     $unchanged = 0;
                     $changed = 0;
-                    $added = 0; 
+                    $added = 0;
                     $dbRecords = $this->db->record->find(array('deleted' => false, 'source_id' => $source));
                     foreach ($dbRecords as $dbRecord) {
                         $id = $dbRecord['_id'];
@@ -636,7 +645,7 @@ class RecordManager
                         }
                         $this->log->log('harvest', 'Reharvest date threshold: ' . strftime('%F %T', $dateThreshold->sec));
                     }
-                    
+
                     $harvest = new HarvestOAIPMH($this->log, $this->db, $source, $this->basePath, $settings, $startResumptionToken);
                     if (isset($harvestFromDate)) {
                         $harvest->setStartDate($harvestFromDate == '-' ? null : $harvestFromDate);
@@ -644,9 +653,9 @@ class RecordManager
                     if (isset($harvestUntilDate)) {
                         $harvest->setEndDate($harvestUntilDate);
                     }
-                    
+
                     $harvest->harvest(array($this, 'storeRecord'));
-                    
+
                     if ($reharvest) {
                         $this->log->log('harvest', 'Marking deleted all records not received during the harvesting');
                         $records = $this->db->record->find(
@@ -662,12 +671,12 @@ class RecordManager
                             $this->storeRecord($record['oai_id'], true, '');
                             if (++$count % 1000 == 0) {
                                 $this->log->log('harvest', "Deleted $count records");
-                                
-                            }   
+
+                            }
                         }
                         $this->log->log('harvest', "Deleted $count records");
                     }
-                    
+
                     if (isset($settings['deletions']) && strncmp($settings['deletions'], 'ListIdentifiers', 15) == 0) {
                         // The repository doesn't support reporting deletions, so list all identifiers
                         // and mark deleted records that were not found
@@ -679,25 +688,25 @@ class RecordManager
                             if (isset($state)) {
                                 $interval = round((time() - $state['value']) / 3600 / 24);
                                 if ($interval < $deletions[1]) {
-                                    $this->log->log('harvest', "Not processing deletions, $interval days since last time");    
+                                    $this->log->log('harvest', "Not processing deletions, $interval days since last time");
                                     $processDeletions = false;
-                                } 
+                                }
                             }
                         }
-                        
+
                         if ($processDeletions) {
                             $this->log->log('harvest', 'Processing deletions' . (isset($interval) ? " ($interval days since last time)" : ''));
-                            
+
                             $this->log->log('harvest', 'Unmarking records');
                             $this->db->record->update(
                                 array('source_id' => $this->sourceId, 'deleted' => false),
                                 array('$unset' => array('mark' => 1)),
                                 array('multiple' => true)
                             );
-    
+
                             $this->log->log('harvest', "Fetching identifiers");
                             $harvest->listIdentifiers(array($this, 'markRecord'));
-                            
+
                             $this->log->log('harvest', "Marking deleted records");
                             $result = $this->db->record->update(
                                 array('source_id' => $this->sourceId, 'deleted' => false, 'mark' => array('$exists' => false)),
@@ -706,7 +715,7 @@ class RecordManager
                             );
                             $state = array('_id' => "Last Deletion Processing Time $source", 'value' => time());
                             $this->db->state->save($state);
-                            
+
                             $this->log->log('harvest', $result['n'] . " deleted records");
                         }
                     }
@@ -720,9 +729,9 @@ class RecordManager
 
     /**
      * Dump a single record to console
-     * 
+     *
      * @param string $recordID ID of the record to be dumped
-     * 
+     *
      * @return void
      */
     public function dumpRecord($recordID)
@@ -740,12 +749,12 @@ class RecordManager
             print_r($record);
         }
     }
-    
+
     /**
      * Mark deleted records of a single data source
-     * 
+     *
      * @param string $sourceId Source ID
-     * 
+     *
      * @return void
      */
     public function markDeleted($sourceId)
@@ -762,7 +771,7 @@ class RecordManager
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
             if (isset($record['dedup_id'])) {
-                $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
+                $this->dedupHandler->removeFromDedupRecord($record['dedup_id'], $record['_id']);
             }
             $record['deleted'] = true;
             $record['updated'] = new MongoDate();
@@ -784,10 +793,10 @@ class RecordManager
 
     /**
      * Delete records of a single data source from the Mongo database
-     * 
+     *
      * @param string  $sourceId Source ID
      * @param boolean $force    Force deletion even if dedup is enable for the source
-     * 
+     *
      * @return void
      */
     public function deleteRecords($sourceId, $force = false)
@@ -800,10 +809,10 @@ class RecordManager
                 } else {
                     $this->log->log('deleteRecords', "Deduplication enabled for '$sourceId', aborting (use markdeleted instead)", Logger::ERROR);
                     return;
-                }    
+                }
             }
         }
-        
+
         $params = array();
         $params['source_id'] = $sourceId;
         $this->log->log('deleteRecords', "Creating record list for '$sourceId'");
@@ -818,7 +827,7 @@ class RecordManager
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
             if (isset($record['dedup_id'])) {
-                $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
+                $this->dedupHandler->removeFromDedupRecord($record['dedup_id'], $record['_id']);
             }
             $this->db->record->remove(array('_id' => $record['_id']));
 
@@ -838,46 +847,46 @@ class RecordManager
 
     /**
      * Delete records of a single data source from the Solr index
-     * 
+     *
      * @param string $sourceId Source ID
-     * 
+     *
      * @return void
      */
     public function deleteSolrRecords($sourceId)
     {
         global $configArray;
-        
+
         $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
         if (isset($configArray['Solr']['merge_records']) && $configArray['Solr']['merge_records']) {
             $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' from merged records via Solr update for merged records");
             $updater->updateMergedRecords('', $sourceId, '', false, true);
-        } 
+        }
         $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' directly from Solr");
         $updater->deleteDataSource($sourceId);
         $this->log->log('deleteSolrRecords', "Deletion of '$sourceId' from Solr completed");
     }
-    
+
     /**
      * Optimize the Solr index
-     * 
+     *
      * @return void
      */
     public function optimizeSolr()
     {
         $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
-        
+
         $this->log->log('optimizeSolr', 'Optimizing Solr index');
         $updater->optimizeIndex();
         $this->log->log('optimizeSolr', 'Solr optimization completed');
     }
-    
+
     /**
      * Save a record into the database. Used by e.g. OAI-PMH harvesting.
-     * 
+     *
      * @param string $oaiID      ID of the record as received from OAI-PMH
      * @param bool   $deleted    Whether the record is to be deleted
      * @param string $recordData Record metadata
-     * 
+     *
      * @throws Exception
      * @return integer Number of records processed (can be > 1 for split records)
      */
@@ -889,7 +898,7 @@ class RecordManager
             $count = 0;
             foreach ($records as $record) {
                 if (isset($record['dedup_id'])) {
-                    $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
+                    $this->dedupHandler->removeFromDedupRecord($record['dedup_id'], $record['_id']);
                 }
                 $record['deleted'] = true;
                 unset($record['dedup_id']);
@@ -937,10 +946,10 @@ class RecordManager
         if ($this->verbose) {
             echo "Storing array of " . count($dataArray) . " records\n";
         }
-        
-        // Store start time so that we can mark deleted any child records not present anymore  
+
+        // Store start time so that we can mark deleted any child records not present anymore
         $startTime = new MongoDate();
-                
+
         $count = 0;
         $mainID = '';
         foreach ($dataArray as $data) {
@@ -955,7 +964,7 @@ class RecordManager
                 $metadataRecord->normalize();
                 $normalizedData = $metadataRecord->serialize();
             }
-    
+
             $hostID = $metadataRecord->getHostRecordID();
             $id = $metadataRecord->getID();
             if (!$id) {
@@ -1000,13 +1009,26 @@ class RecordManager
             $dbRecord['format'] = $this->format;
             $dbRecord['original_data'] = $originalData;
             $dbRecord['normalized_data'] = $normalizedData;
-            if ($this->dedup && !$hostID) {
-                $this->updateDedupCandidateKeys($dbRecord, $metadataRecord);
-                if (isset($dbRecord['dedup_id'])) {
-                    $this->removeFromDedupRecord($dbRecord['dedup_id'], $dbRecord['_id']);
+            if ($this->dedup) {
+                // If this is a host record, mark it to be deduplicated.
+                // If this is a component part, mark its host record to be deduplicated.
+                if (!$hostID) {
+                    $this->dedupHandler->updateDedupCandidateKeys($dbRecord, $metadataRecord);
+                    if (isset($dbRecord['dedup_id'])) {
+                        $this->dedupHandler->removeFromDedupRecord($dbRecord['dedup_id'], $dbRecord['_id']);
+                    }
+                    unset($dbRecord['dedup_id']);
+                    $dbRecord['update_needed'] = true;
+                } else {
+                    $this->db->record->update(
+                        array(
+                            '_id' => $hostID
+                        ),
+                        array(
+                            '$set' => array('update_needed' => true)
+                        )
+                    );
                 }
-                unset($dbRecord['dedup_id']);
-                $dbRecord['update_needed'] = true;
             } else {
                 unset($dbRecord['title_keys']);
                 unset($dbRecord['isbn_keys']);
@@ -1019,7 +1041,7 @@ class RecordManager
                 $mainID = $id;
             }
         }
-        
+
         if ($count > 1 && $mainID) {
             // We processed a hierarchical record. Mark deleted any children that were not updated.
             $this->db->record->update(
@@ -1032,16 +1054,16 @@ class RecordManager
                 array('multiple' => true)
             );
         }
-        
+
         return $count;
     }
 
     /**
      * Count distinct values in the specified field (that would be added to the Solr index)
-     * 
+     *
      * @param string $sourceId Source ID
      * @param string $field    Field name
-     * 
+     *
      * @return void
      */
     public function countValues($sourceId, $field)
@@ -1053,13 +1075,13 @@ class RecordManager
         $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
         $updater->countValues($sourceId, $field);
     }
-    
+
     /**
      * Mark a record "seen". Used by OAI-PMH harvesting when deletions are not supported.
      *
      * @param string $oaiID   ID of the record as received from OAI-PMH
      * @param bool   $deleted Whether the record is to be deleted
-     * 
+     *
      * @throws Exception
      * @return void
      */
@@ -1078,72 +1100,64 @@ class RecordManager
 
     /**
      * Update the geocoding table with the geocoder selected in settings.
-     *  
+     *
      * @param unknown $placeFile File containing places to add (one per file)
-     * 
+     *
      * @return void
      */
     public function updateGeocodingTable($placeFile)
     {
         global $configArray;
-        
+
         if (!isset($configArray['Geocoding']) || !isset($configArray['Geocoding']['geocoder'])) {
             throw new Exception('Error: no geocoder defined');
         }
-        
+
         include_once $configArray['Geocoding']['geocoder'] . '.php';
         $geocoder = new $configArray['Geocoding']['geocoder']($this->db, $this->log, $this->verbose);
         $geocoder->init($configArray['Geocoding']);
         $geocoder->geocode($placeFile);
     }
-    
+
     /**
      * Resimplify the geocoding table with current geocoder settings.
-     *  
+     *
      * @return void
      */
     public function resimplifyGeocodingTable()
     {
         global $configArray;
-        
+
         if (!isset($configArray['Geocoding']) || !isset($configArray['Geocoding']['geocoder'])) {
             throw new Exception('Error: no geocoder defined');
         }
-        
+
         include_once $configArray['Geocoding']['geocoder'] . '.php';
         $geocoder = new $configArray['Geocoding']['geocoder']($this->db, $this->log, $this->verbose);
         $geocoder->init($configArray['Geocoding']);
         $geocoder->resimplify();
     }
-    
+
     /**
      * Verify consistency of dedup records links with actual records
-     * 
+     *
      * @return void
      */
     public function checkDedupRecords()
     {
         $this->log->log('checkDedupRecords', "Checking dedup record consistency");
-        
+
         $dedupRecords = $this->db->dedup->find(array('deleted' => false));
         $dedupRecords->immortal(true);
         $count = 0;
         $fixed = 0;
         $pc = new PerformanceCounter();
         foreach ($dedupRecords as $dedupRecord) {
-            foreach ($dedupRecord['ids'] as $id) {
-                $record = $this->db->record->findOne(array('_id' => $id));
-                if ($record['deleted'] || !isset($record['dedup_id']) || $record['dedup_id'] != $dedupRecord['_id']) {
-                    $this->removeFromDedupRecord($dedupRecord['_id'], $id);
-                    if ($record['deleted']) {
-                        $reason = 'record deleted';
-                    } elseif (!isset($record['dedup_id'])) {
-                        $reason = 'record not linked';
-                    } else {
-                        $reason = 'record linked with another dedup record';
-                    }         
-                    $this->log->log('checkDedupRecords', "Removed '$id' from dedup record '{$dedupRecord['_id']}' ($reason)");
-                    ++$fixed;
+            $results = $this->dedupHandler->checkDedupRecord($dedupRecord);
+            if ($results) {
+                $fixed += count($results);
+                foreach ($results as $result) {
+                    $this->log->log('checkDedupRecords', $result);
                 }
             }
             ++$count;
@@ -1155,516 +1169,12 @@ class RecordManager
         }
         $this->log->log('checkDedupRecords', "Completed with $count records checked with $fixed links fixed");
     }
-    
-    /**
-     * Update dedup candidate keys for the given record
-     * 
-     * @param object &$record        Database record
-     * @param object $metadataRecord Metadata record for the used format
-     * 
-     * @return void
-     */
-    protected function updateDedupCandidateKeys(&$record, $metadataRecord)
-    {
-        $record['title_keys'] = array(MetadataUtils::createTitleKey($metadataRecord->getTitle(true)));
-        if (empty($record['title_keys'])) {
-            unset($record['title_keys']);
-        }
-        $record['isbn_keys'] = $metadataRecord->getISBNs();
-        if (empty($record['isbn_keys'])) {
-            unset($record['isbn_keys']);
-        }
-        $record['id_keys'] = $metadataRecord->getUniqueIDs();
-        if (empty($record['id_keys'])) {
-            unset($record['id_keys']);
-        }
-    }
 
-    /**
-     * Find a single duplicate for the given record and set a dedup key for them
-     * 
-     * @param object $record Database record
-     * 
-     * @return boolean Whether a duplicate was found
-     */
-    protected function dedupRecord($record)
-    {
-        $startTime = microtime(true);
-        if ($this->verbose) {
-            echo 'Original ' . $record['_id'] . ":\n" . MetadataUtils::getRecordData($record, true) . "\n";
-        }
-        
-        $keyArray = isset($record['title_keys']) ? $record['title_keys'] : array();
-        $ISBNArray = isset($record['isbn_keys']) ? $record['isbn_keys'] : array();
-        $IDArray = isset($record['id_keys']) ? $record['id_keys'] : array();
-        
-        $origRecord = null;
-        $matchRecord = null;
-        $candidateCount = 0;
-        foreach (array('isbn_keys' => $ISBNArray, 'id_keys' => $IDArray, 'title_keys' => $keyArray) as $type => $array) {
-            foreach ($array as $keyPart) {
-                if (!$keyPart) {
-                    continue;
-                }
-                  
-                if ($this->verbose) {
-                    echo "Search: '$keyPart'\n";
-                }
-                $candidates = $this->db->record->find(array($type => $keyPart));
-                $processed = 0;
-                // Go through the candidates, try to match
-                $matchRecord = null;
-                foreach ($candidates as $candidate) {
-                    // Don't dedup with this source or deleted. It's faster to check here than in find!
-                    if ($candidate['deleted'] || $candidate['source_id'] == $this->sourceId) {
-                        continue;
-                    }
-                    // Don't bother with id or title dedup if ISBN dedup already failed
-                    if ($type != 'isbn_keys') {
-                        if (isset($candidate['isbn_keys'])) {
-                            $sameKeys = array_intersect($ISBNArray, $candidate['isbn_keys']);
-                            if ($sameKeys) {
-                                continue;
-                            }
-                        }
-                        if ($type != 'id_keys' && isset($candidate['id_keys'])) {
-                            $sameKeys = array_intersect($IDArray, $candidate['id_keys']);
-                            if ($sameKeys) {
-                                continue;
-                            }
-                        }
-                    }
-                    ++$candidateCount;
-                    // Verify the candidate has not been deduped with this source yet
-                    if (isset($candidate['dedup_id']) && (!isset($record['dedup_id']) || $candidate['dedup_id'] != $record['dedup_id'])) {
-                        if ($this->db->record->find(array('dedup_id' => $candidate['dedup_id'], 'source_id' => $this->sourceId))->limit(1)->count() > 0) {
-                            if ($this->verbose) {
-                                echo "Candidate {$candidate['_id']} already deduplicated\n";
-                            }
-                            continue;
-                        }
-                    }
-
-                    if (++$processed > 1000 || (isset($this->tooManyCandidatesKeys["$type=$keyPart"]) && $processed > 100)) {
-                        // Too many candidates, give up..
-                        $this->log->log('dedupRecord', "Too many candidates for record " . $record['_id'] . " with key '$keyPart'", Logger::DEBUG);
-                        if (count($this->tooManyCandidatesKeys) > 2000) {
-                            array_shift($this->tooManyCandidatesKeys);
-                        }
-                        $this->tooManyCandidatesKeys["$type=$keyPart"] = 1;
-                        break;
-                    }
-
-                    if (!isset($origRecord)) {
-                        $origRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
-                    }
-                    if ($this->matchRecords($record, $origRecord, $candidate)) {
-                        if ($this->verbose && ($processed > 300 || microtime(true) - $startTime > 0.7)) {
-                            echo "Found match $type=$keyPart with candidate $processed in " . (microtime(true) - $startTime) . "\n";
-                        }
-                        $matchRecord = $candidate;
-                        break 3;
-                    }
-                }
-                if ($this->verbose && ($processed > 300 || microtime(true) - $startTime > 0.7)) {
-                    echo "No match $type=$keyPart with $processed candidates in " . (microtime(true) - $startTime) . "\n";
-                }
-            }
-        }
-
-        if ($this->verbose && microtime(true) - $startTime > 0.2) {
-            echo "Candidate search among $candidateCount records (" . ($matchRecord ? 'success' : 'failure') . ") completed in " . (microtime(true) - $startTime) . "\n";           
-        }
-        
-        if ($matchRecord) {
-            $this->markDuplicates($record, $matchRecord);
-            
-            if ($this->verbose && microtime(true) - $startTime > 0.2) {
-                echo "DedupRecord among $candidateCount records (" . ($matchRecord ? 'success' : 'failure') . ") completed in " . (microtime(true) - $startTime) . "\n";           
-            }
-            
-            return true;
-        }
-        if (isset($record['dedup_id']) || $record['update_needed']) {
-            if (isset($record['dedup_id'])) {
-                $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
-            }
-            unset($record['dedup_id']);
-            $record['updated'] = new MongoDate();
-            $record['update_needed'] = false;
-            $this->db->record->save($record);
-        }
-        
-        if ($this->verbose && microtime(true) - $startTime > 0.2) {
-            echo "DedupRecord among $candidateCount records (" . ($matchRecord ? 'success' : 'failure') . ") completed in " . (microtime(true) - $startTime) . "\n";           
-        }
-        
-        return false;
-    }
-
-    /**
-     * Check if records are duplicate matches
-     * 
-     * @param object $record     Mongo record
-     * @param object $origRecord Metadata record (from Mongo record) 
-     * @param object $candidate  Candidate Mongo record
-     * 
-     * @return boolean
-     */
-    protected function matchRecords($record, $origRecord, $candidate)
-    {
-        $cRecord = RecordFactory::createRecord($candidate['format'], MetadataUtils::getRecordData($candidate, true), $candidate['oai_id'], $candidate['source_id']);
-        if ($this->verbose) {
-            echo "\nCandidate " . $candidate['_id'] . ":\n" . MetadataUtils::getRecordData($candidate, true) . "\n";
-        }
-         
-        // Check for common ISBN
-        $origISBNs = $origRecord->getISBNs();
-        $cISBNs = $cRecord->getISBNs();
-        $isect = array_intersect($origISBNs, $cISBNs);
-        if (!empty($isect)) {
-            // Shared ISBN -> match
-            if ($this->verbose) {
-                echo "++ISBN match:\n";
-                print_r($origISBNs);
-                print_r($cISBNs);
-                echo $origRecord->getFullTitle() . "\n";
-                echo $cRecord->getFullTitle() . "\n";
-            }
-            return true; 
-        }
-        
-        // Check for other common ID (e.g. NBN)
-        $origIDs = $origRecord->getUniqueIDs();
-        $cIDs = $cRecord->getUniqueIDs();
-        $isect = array_intersect($origIDs, $cIDs);
-        if (!empty($isect)) {
-            // Shared ID -> match
-            if ($this->verbose) {
-                echo "++ID match:\n";
-                print_r($origIDs);
-                print_r($cIDs);
-                echo $origRecord->getFullTitle() . "\n";
-                echo $cRecord->getFullTitle() . "\n";
-            }
-            return true; 
-        }
-        
-        $origISSNs = $origRecord->getISSNs();
-        $cISSNs = $cRecord->getISSNs();
-        $commonISSNs = array_intersect($origISSNs, $cISSNs);
-        if (!empty($origISSNs) && !empty($cISSNs) && empty($commonISSNs)) {
-            // Both have ISSNs but none match
-            if ($this->verbose) {
-                echo "++ISSN mismatch:\n";
-                print_r($origISSNs);
-                print_r($cISSNs);
-                echo $origRecord->getFullTitle() . "\n";
-                echo $cRecord->getFullTitle() . "\n";
-            }
-            return false;
-        }
-        
-        $origFormat = $origRecord->getFormat();
-        $cFormat = $cRecord->getFormat();
-        if ($origFormat != $cFormat && $this->solrUpdater->mapFormat($record['source_id'], $origFormat) != $this->solrUpdater->mapFormat($candidate['source_id'], $cFormat)) {
-            if ($this->verbose) {
-                echo "--Format mismatch: $origFormat != $cFormat\n";
-            }
-            return false;
-        }
-        $origYear = $origRecord->getPublicationYear();
-        $cYear = $cRecord->getPublicationYear();
-        if ($origYear && $cYear && $origYear != $cYear) {
-            if ($this->verbose) {
-                echo "--Year mismatch: $origYear != $cYear\n";
-            }
-            return false;
-        }
-        $pages = $origRecord->getPageCount();
-        $cPages = $cRecord->getPageCount();
-        if ($pages && $cPages && abs($pages-$cPages) > 10) {
-            if ($this->verbose) {
-                echo "--Pages mismatch ($pages != $cPages)\n";
-            }
-            return false;
-        }
-        
-        if ($origRecord->getSeriesISSN() != $cRecord->getSeriesISSN()) {
-            return false;
-        }
-        if ($origRecord->getSeriesNumbering() != $cRecord->getSeriesNumbering()) {
-            return false;
-        }
-        
-        $origTitle = MetadataUtils::normalize($origRecord->getTitle(true));
-        $cTitle = MetadataUtils::normalize($cRecord->getTitle(true));
-        if (!$origTitle || !$cTitle) {
-            // No title match without title...
-            if ($this->verbose) {
-                echo "No title - no further matching\n";
-            }
-            return false;
-        }
-        $lev = levenshtein(substr($origTitle, 0, 255), substr($cTitle, 0, 255));
-        $lev = $lev / strlen($origTitle) * 100;
-        if ($lev >= 10) {
-            if ($this->verbose) {
-                echo "--Title lev discard: $lev\nOriginal:  $origTitle\nCandidate: $cTitle\n";
-            }
-            return false;
-        }
-        
-        $origAuthor = MetadataUtils::normalize($origRecord->getMainAuthor());
-        $cAuthor = MetadataUtils::normalize($cRecord->getMainAuthor());
-        $authorLev = 0;
-        if ($origAuthor || $cAuthor) {
-            if (!$origAuthor || !$cAuthor) {
-                if ($this->verbose) {
-                    echo "\nAuthor discard:\nOriginal:  $origAuthor\nCandidate: $cAuthor\n";
-                }
-                return false;
-            }
-            if (!MetadataUtils::authorMatch($origAuthor, $cAuthor)) {
-                $authorLev = levenshtein(substr($origAuthor, 0, 255), substr($cAuthor, 0, 255));
-                $authorLev = $authorLev / mb_strlen($origAuthor) * 100;
-                if ($authorLev > 20) {
-                    if ($this->verbose) {
-                        echo "\nAuthor lev discard (lev: $lev, authorLev: $authorLev):\nOriginal:  $origAuthor\nCandidate: $cAuthor\n";
-                    }
-                    return false;
-                }
-            }
-        }
-
-        if ($this->verbose) {
-            echo "\nTitle match (lev: $lev, authorLev: $authorLev):\n";
-            echo $origRecord->getFullTitle() . "\n";
-            echo "   $origAuthor - $origTitle.\n";
-            echo $cRecord->getFullTitle() . "\n";
-            echo "   $cAuthor - $cTitle.\n";
-        }
-        // We have a match!
-        return true;
-    }
-    
-    /**
-     * Mark two records as duplicates
-     * 
-     * @param object $rec1 Mongo record for which a duplicate was searched
-     * @param object $rec2 Mongo record for the found duplicate
-     * 
-     * @return void
-     */
-    protected function markDuplicates($rec1, $rec2)
-    {
-        $setValues = array('updated' => new MongoDate(), 'update_needed' => false);
-        if (isset($rec2['dedup_id']) && $rec2['dedup_id']) {
-            $this->addToDedupRecord($rec2['dedup_id'], $rec1['_id']);
-            if (isset($rec1['dedup_id']) && $rec1['dedup_id'] != $rec2['dedup_id']) {
-                $this->removeFromDedupRecord($rec1['dedup_id'], $rec1['_id']);
-            }
-            $setValues['dedup_id'] = $rec1['dedup_id'] = $rec2['dedup_id']; 
-        } else {
-            if (isset($rec1['dedup_id']) && $rec1['dedup_id']) {
-                $this->addToDedupRecord($rec1['dedup_id'], $rec2['_id']);
-                $setValues['dedup_id'] = $rec2['dedup_id'] = $rec1['dedup_id'];
-            } else {
-                $setValues['dedup_id'] = $rec1['dedup_id'] = $rec2['dedup_id'] = $this->createDedupRecord($rec1['_id'], $rec2['_id']);                
-            }
-        }
-        if ($this->verbose) {
-            echo "Marking {$rec1['_id']} as duplicate with {$rec2['_id']} with dedup id {$rec2['dedup_id']}\n";
-        }
-        
-        if (!isset($rec1['host_record_id'])) {
-            $count = $this->dedupComponentParts($rec1);
-            if ($this->verbose && $count > 0) {
-                echo "Deduplicated $count component parts for {$rec1['_id']}\n";
-            }
-        }
-        
-        $this->db->record->update(
-            array('_id' => array('$in' => array($rec1['_id'], $rec2['_id']))),
-            array('$set' => $setValues),
-            array('multiple' => true)
-        );
-    }
-
-    /**
-     * Create a new dedup record
-     * 
-     * @param string $id1 ID of first record
-     * @param string $id2 ID of second record
-     * 
-     * @return MongoId ID of the dedup record
-     */
-    protected function createDedupRecord($id1, $id2)
-    {
-        $record = array(
-            '_id' => new MongoId(),
-            'changed' => new MongoDate(),
-            'deleted' => false,
-            'ids' => array(
-                $id1,
-                $id2
-             )
-        );
-        $this->db->dedup->insert($record);
-        return $record['_id'];
-    }
-    
-    /**
-     * Add another record to an existing dedup record
-     * 
-     * @param string $dedupId ID of the dedup record 
-     * @param string $id      Record ID to add
-     * 
-     * @return void
-     */
-    protected function addToDedupRecord($dedupId, $id)
-    {
-        $record = $this->db->dedup->findOne(array('_id' => $dedupId));
-        if (!$record) {
-            $this->log->log('addToDedupRecord', "Found dangling reference to dedup record $dedupId", Logger::ERROR);
-            return;
-        }
-        if (!in_array($id, $record['ids'])) {
-            $record['changed'] = new MongoDate();
-            $record['ids'][] = $id;
-            $this->db->dedup->save($record);
-        }
-    }
-
-    /**
-     * Remove a record from a dedup record
-     * 
-     * @param object $dedupId ObjectID of the dedup record 
-     * @param string $id      Record ID to remove
-     *
-     * @return void
-     */
-    protected function removeFromDedupRecord($dedupId, $id)
-    {
-        $record = $this->db->dedup->findOne(array('_id' => $dedupId));
-        if (in_array($id, $record['ids'])) {
-            $record['ids'] = array_values(array_diff($record['ids'], array($id)));
-            
-            // If there is only one record remaining, remove dedup_id from it too
-            if (count($record['ids']) == 1) {
-                $otherId = reset($record['ids']);
-                $otherRecord = $this->db->record->findOne(array('_id' => $otherId));
-                unset($otherRecord['dedup_id']);
-                $otherRecord['updated'] = new MongoDate();
-                $this->db->record->save($otherRecord);
-                $record['ids'] = array();   
-                $record['deleted'] = true;
-            } elseif (count($record['ids']) == 0) {
-                $record['deleted'] = true;
-            }
-            $record['changed'] = new MongoDate();
-            $this->db->dedup->save($record);
-        }
-    }
-    
-    /**
-     * Deduplicate component parts of a record
-     * 
-     * Component part deduplication is special. It will only go through
-     * component parts of other records deduplicated with the host record
-     * and stops when it finds a set of component parts that match.
-     * 
-     * @param object $hostRecord Mongo record for the host record
-     * 
-     * @return integer Number of component parts deduplicated
-     */
-    protected function dedupComponentParts($hostRecord)
-    {
-        if ($this->verbose) {
-            echo "Deduplicating component parts\n";
-        }
-        if (!$hostRecord['linking_id']) {
-            $this->log->log('dedupComponentParts', 'Linking ID missing from record ' . $hostRecord['_id'], Logger::ERROR);
-            return 0;
-        }
-        $components1 = $this->getComponentPartsSorted($hostRecord['source_id'], $hostRecord['linking_id']);
-        $component1count = count($components1);
-        
-        // Go through all other records with same dedup id and see if their component parts match
-        $marked = 0;
-        $otherRecords = $this->db->record->find(array('dedup_id' => $hostRecord['dedup_id'], 'deleted' => false));
-        foreach ($otherRecords as $otherRecord) {
-            if ($otherRecord['source_id'] == $hostRecord['source_id']) {
-                continue;
-            }
-            $components2 = $this->getComponentPartsSorted($otherRecord['source_id'], $otherRecord['linking_id']);
-            $component2count = count($components2);
-            
-            if ($component1count != $component2count) {
-                $allMatch = false;
-            } else {
-                $allMatch = true;
-                $idx = -1;
-                foreach ($components1 as $component1) {
-                    $component2 = $components2[++$idx];
-                    if ($this->verbose) {
-                        echo "Comparing {$component1['_id']} with {$component2['_id']}\n";
-                    }
-                    if ($this->verbose) {
-                        echo 'Original ' . $component1['_id'] . ":\n" . MetadataUtils::getRecordData($component1, true) . "\n";
-                    }
-                    $metadataComponent1 = RecordFactory::createRecord($component1['format'], MetadataUtils::getRecordData($component1, true), $component1['oai_id'], $component1['source_id']);
-                    if (!$this->matchRecords($component1, $metadataComponent1, $component2)) {
-                        $allMatch = false;
-                        break;
-                    }
-                }
-            }
-
-            if ($allMatch) {
-                if ($this->verbose) {
-                    echo microtime(true) . " All component parts match between {$hostRecord['_id']} and {$otherRecord['_id']}\n";
-                }
-                $idx = -1;
-                foreach ($components1 as $component1) {
-                    $component2 = $components2[++$idx];
-                    $this->markDuplicates($component1, $component2);
-                    ++$marked;
-                }
-                break;
-            } else {
-                if ($this->verbose) {
-                    echo microtime(true) . " Not all component parts match between {$hostRecord['_id']} and {$otherRecord['_id']}\n";
-                }
-            }
-        }
-        return $marked;
-    }
-
-    /**
-     * Get component parts in a sorted array
-     * 
-     * @param string $sourceId     Source ID
-     * @param string $hostRecordId Host record ID (doesn't include source id)
-     * 
-     * @return array Array of component parts
-     */
-    protected function getComponentPartsSorted($sourceId, $hostRecordId)
-    {
-        $componentsIter = $this->db->record->find(array('source_id' => $sourceId, 'host_record_id' => $hostRecordId));
-        $components = array();
-        foreach ($componentsIter as $component) {
-            $components[MetadataUtils::createIdSortKey($component['_id'])] = $component;
-        }
-        ksort($components);
-        return array_values($components);        
-    }
-    
     /**
      * Execute a pretransformation on data before it is split into records and loaded. Used when loading from a file.
-     * 
+     *
      * @param string $data The original data
-     * 
+     *
      * @return string Transformed data
      */
     protected function pretransform($data)
@@ -1688,7 +1198,7 @@ class RecordManager
      * Load the data source settings and setup some functions
      *
      * @param string $source Source ID
-     *  
+     *
      * @throws Exception
      * @return void
      */
@@ -1724,10 +1234,10 @@ class RecordManager
         $params = array('source_id' => $this->sourceId, 'institution' => $this->institution, 'format' => $this->format, 'id_prefix' => $this->idPrefix);
         $this->normalizationXSLT = isset($settings['normalization']) && $settings['normalization'] ? new XslTransformation($this->basePath . '/transformations', $settings['normalization'], $params) : null;
         $this->solrTransformationXSLT = isset($settings['solrTransformation']) && $settings['solrTransformation'] ? new XslTransformation($this->basePath . '/transformations', $settings['solrTransformation'], $params) : null;
-        
+
         if (isset($settings['recordSplitter'])) {
             if (substr($settings['recordSplitter'], -4) == '.php') {
-                $this->recordSplitter = $settings['recordSplitter']; 
+                $this->recordSplitter = $settings['recordSplitter'];
             } else {
                 $style = new DOMDocument();
                 $xslFile = $this->basePath . '/transformations/' . $settings['recordSplitter'];
@@ -1741,31 +1251,31 @@ class RecordManager
             $this->recordSplitter = null;
         }
     }
-    
+
     /**
      * Read a list file into an array
-     * 
+     *
      * @param string $filename List file name
-     * 
+     *
      * @return string[]
      */
     protected static function readListFile($filename)
     {
         global $basePath;
-        
-        $filename = "$basePath/conf/$filename"; 
+
+        $filename = "$basePath/conf/$filename";
         $lines = file($filename, FILE_IGNORE_NEW_LINES);
         if ($lines === false) {
             $this->log->log('readListFile', "Could not open list file '$filename'", Logger::ERROR);
-            return array();                
+            return array();
         }
         array_walk(
-            $lines, 
+            $lines,
             function(&$value) {
                 $value = trim($value, "'");
             }
         );
-        
+
         return $lines;
     }
 }
