@@ -10,6 +10,8 @@ abbreviations = abbreviations.lst
 ;full_title_prefixes = full-title-prefixes.lst
 ; Articles that should be removed from the beginning of a title for sorting
 articles = articles.lst
+; Deduplication handler class
+; dedup_handler = DedupHandler
 
 ; These settings control the OAI-PMH harvester
 [Harvesting]
@@ -47,6 +49,8 @@ password =
 ;hierarchical_facets[] = building
 ;merge_records = true
 ;merged_fields = institution,collection,my_local_field_str_mv
+;single_fields = title,publishDateSort
+;suffixed_merged_fields = my_local_source_specific_field_mv
 ;format_in_allfields = true
 unicode_normalization_form = NFKC
 ; Maximum number of tries to send an update to Solr. Default is 15.
