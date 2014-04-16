@@ -293,7 +293,7 @@ class NdlMarcRecord extends MarcRecord
             }
         }
 
-        $data['holdings_txt_mv']
+        $data['holdings_txtP_mv']
             = $this->getFieldsSubfields(
                 array(
                     array(MarcRecord::GET_NORMAL, '852', array('a', 'b', 'h', 'z'))
