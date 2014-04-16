@@ -33,7 +33,7 @@ require_once 'MetadataUtils.php';
  * NdlMarcRecord Class
  *
  * MarcRecord with NDL specific functionality
- * 
+ *
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
@@ -57,14 +57,14 @@ class NdlMarcRecord extends MarcRecord
                     if (key($subfield) == 'a') {
                         foreach (explode('; ', current($subfield)) as $value) {
                             $fields[] = array(
-                                'i1' => $field['i1'], 
+                                'i1' => $field['i1'],
                                 'i2' => $field['i2'],
                                 's' => array(array('a' => $value))
                             );
                         }
                     } else {
                         $fields[] = array(
-                            'i1' => $field['i1'], 
+                            'i1' => $field['i1'],
                             'i2' => $field['i2'],
                             's' => array($subfield)
                         );
@@ -78,11 +78,11 @@ class NdlMarcRecord extends MarcRecord
             $enum = $this->getFieldSubfields('362', array('a'));
             if ($enum) {
                 $this->fields['245'][0]['s'][] = array('n' => $enum);
-            } 
+            }
         }
-        
+
     }
-    
+
     /**
      * Return record linking ID (typically same as ID) used for links
      * between records in the data source
@@ -116,7 +116,7 @@ class NdlMarcRecord extends MarcRecord
         if ($data['publication_sdaterange']) {
             $data['search_sdaterange_mv'][] = $data['publication_sdaterange'];
         }
-        
+
         // language override
         $data['language'] = array();
         $languages = array(substr($this->getField('008'), 35, 3));
@@ -124,7 +124,7 @@ class NdlMarcRecord extends MarcRecord
             array(
                 array(MarcRecord::GET_NORMAL, '041', array('a')),
                 array(MarcRecord::GET_NORMAL, '979', array('h')) // 979h = component part language
-            ), 
+            ),
             false, true, true
         );
         foreach ($languages as $language) {
@@ -132,7 +132,7 @@ class NdlMarcRecord extends MarcRecord
                 $data['language'][] = $language;
             }
         }
-        
+
         // 979cd = component part authors
         foreach ($this->getFieldsSubfields(
             array(
@@ -148,7 +148,7 @@ class NdlMarcRecord extends MarcRecord
             unset($data['author2'][$key]);
         }
         $data['author2'] = array_filter(array_values($data['author2']));
-        
+
         $data['title_alt'] = array_values(
             array_unique(
                 $this->getFieldsSubfields(
@@ -165,7 +165,7 @@ class NdlMarcRecord extends MarcRecord
                 )
             )
         ); // 979b and e = component part title and uniform title
-        
+
         // Location coordinates
         $field = $this->getField('034');
         if ($field) {
@@ -203,7 +203,7 @@ class NdlMarcRecord extends MarcRecord
                 }
             }
         }
-        
+
         foreach ($this->getFieldsSubfields(array(array(MarcRecord::GET_NORMAL, '080', array('a', 'b')))) as $classification) {
             $data['classification_str_mv'][] = 'udk ' . strtolower(str_replace(' ', '', $classification));
         }
@@ -215,14 +215,14 @@ class NdlMarcRecord extends MarcRecord
             $classification = $this->getSubfields($field, 'ab');
             if ($source) {
                 $data['classification_str_mv'][] = "$source " . mb_strtolower(str_replace(' ', '', $classification));
-            }     
+            }
         }
         if (isset($data['classification_str_mv'])) {
             foreach ($data['classification_str_mv'] as $classification) {
                 $data['allfields'][] = $classification;
             }
         }
-        
+
         // Ebrary location
         foreach ($this->getFieldsSubfields(array(array(MarcRecord::GET_NORMAL, '035', array('a')))) as $field) {
             if (strncmp($field, 'ebr', 3) == 0 && is_numeric(substr($field, 3))) {
@@ -231,20 +231,20 @@ class NdlMarcRecord extends MarcRecord
                 }
             }
         }
-        
+
         // Topics
         if (strncmp($this->source, 'metalib', 7) == 0) {
             $data['topic'] += $this->getFieldsSubfields(array(array(MarcRecord::GET_BOTH, '653', array('a'))));
             $data['topic_facet'] += $this->getFieldsSubfields(array(array(MarcRecord::GET_BOTH, '653', array('a'))));
         }
-        
+
         // Original Study Number
         $data['ctrlnum'] = array_merge($data['ctrlnum'], $this->getFieldsSubfields(array(array(MarcRecord::GET_NORMAL, '036', array('a')))));
-        
+
         // Source
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
-        
+
         // ISSN
         $data['issn'] = $this->getFieldsSubfields(array(array(MarcRecord::GET_NORMAL, '022', array('a'))));
         foreach ($data['issn'] as &$value) {
@@ -265,7 +265,7 @@ class NdlMarcRecord extends MarcRecord
         foreach ($data['linking_issn_str_mv'] as &$value) {
             $value = str_replace('-', '', $value);
         }
-        
+
         $fields = $this->getFields('856');
         foreach ($fields as $field) {
             $ind2 = $this->getIndicator($field, 2);
@@ -288,19 +288,26 @@ class NdlMarcRecord extends MarcRecord
                     'url' => $this->getSubfield($field, 'u'),
                     'text' => $linkText,
                     'source' => $this->source
-                ); 
+                );
                 $data['online_urls_str_mv'][] = json_encode($link);
             }
         }
-        
+
+        $data['holdings_txt_mv']
+            = $this->getFieldsSubfields(
+                array(
+                    array(MarcRecord::GET_NORMAL, '852', array('a', 'b', 'h', 'z'))
+                )
+            );
+
         return $data;
     }
-    
+
     /**
      * Merge component parts to this record
      *
      * @param MongoCollection $componentParts Component parts to be merged
-     * 
+     *
      * @return void
      */
     public function mergeComponentParts($componentParts)
@@ -341,7 +348,7 @@ class NdlMarcRecord extends MarcRecord
                     array(MarcRecord::GET_NORMAL, '041', array('d')),
                     array(MarcRecord::GET_NORMAL, '041', array('h')),
                     array(MarcRecord::GET_NORMAL, '041', array('j'))
-                ), 
+                ),
                 false, true, true
             );
             $id = $componentPart['_id'];
@@ -379,7 +386,7 @@ class NdlMarcRecord extends MarcRecord
                     $newField['s'][] = array('h' => $language);
                 }
             }
-            
+
             $key = MetadataUtils::createIdSortKey($id);
             $parts["$key $count"] = $newField;
             ++$count;
@@ -402,7 +409,7 @@ class NdlMarcRecord extends MarcRecord
         if ($field977a) {
             return $field977a;
         }
-        
+
         // Dissertations and Thesis
         if (isset($this->fields['502'])) {
             return 'Dissertation';
@@ -442,7 +449,7 @@ class NdlMarcRecord extends MarcRecord
         }
         return parent::getFormat();
     }
-    
+
     /**
      * Return publication year/date range
      *
@@ -454,41 +461,41 @@ class NdlMarcRecord extends MarcRecord
         $field008 = $this->getField('008');
         if ($field008) {
             switch (substr($field008, 6, 1)) {
-            case 'c': 
+            case 'c':
                 $year = substr($field008, 7, 4);
                 $startDate = "$year-01-01T00:00:00Z";
                 $endDate = '9999-12-31T23:59:59Z';
                 break;
-            case 'd': 
-            case 'i': 
-            case 'k': 
-            case 'm': 
-            case 'q': 
+            case 'd':
+            case 'i':
+            case 'k':
+            case 'm':
+            case 'q':
                 $year1 = substr($field008, 7, 4);
                 $year2 = substr($field008, 11, 4);
                 $startDate = "$year1-01-01T00:00:00Z";
                 $endDate = "$year2-12-31T23:59:59Z";
-                break;                    
-            case 'e': 
+                break;
+            case 'e':
                 $year = substr($field008, 7, 4);
                 $mon = substr($field008, 11, 2);
                 $day = substr($field008, 13, 2);
                 $startDate = "$year-$mon-{$day}T00:00:00Z";
                 $endDate = "$year-$mon-{$day}T23:59:59Z";
-                break;                    
-            case 's': 
-            case 't': 
-            case 'u': 
+                break;
+            case 's':
+            case 't':
+            case 'u':
                 $year = substr($field008, 7, 4);
                 $startDate = "$year-01-01T00:00:00Z";
                 $endDate = "$year-12-31T23:59:59Z";
-                break;                    
+                break;
             }
         }
         if (isset($startDate) && isset($endDate) && MetadataUtils::validateISO8601Date($startDate) && MetadataUtils::validateISO8601Date($endDate)) {
             return MetadataUtils::convertDateRange(array($startDate, $endDate));
         }
-        
+
         $field = $this->getField('260');
         if ($field) {
             $year = $this->getSubfield($field, 'c');
@@ -501,7 +508,7 @@ class NdlMarcRecord extends MarcRecord
         if (isset($startDate) && isset($endDate) && MetadataUtils::validateISO8601Date($startDate) && MetadataUtils::validateISO8601Date($endDate)) {
             return MetadataUtils::convertDateRange(array($startDate, $endDate));
         }
-        
+
         $fields = $this->getFields('264');
         foreach ($fields as $field) {
             if ($this->getIndicator($field, 2) == '1') {
@@ -516,22 +523,22 @@ class NdlMarcRecord extends MarcRecord
         if (isset($startDate) && isset($endDate) && MetadataUtils::validateISO8601Date($startDate) && MetadataUtils::validateISO8601Date($endDate)) {
             return MetadataUtils::convertDateRange(array($startDate, $endDate));
         }
-        
+
         return '';
     }
-    
+
     /**
      * Get an array of all fields relevant to allfields search
-     * 
+     *
      * @return string[]
      */
     protected function getAllFields()
     {
         $allFields = array();
         $subfieldFilter = array(
-            '650' => array('2', '6', '8'), 
-            '773' => array('6', '7', '8', 'w'), 
-            '856' => array('6', '8', 'q'), 
+            '650' => array('2', '6', '8'),
+            '773' => array('6', '7', '8', 'w'),
+            '856' => array('6', '8', 'q'),
             '979' => array('a')
         );
         $allFields = array();
