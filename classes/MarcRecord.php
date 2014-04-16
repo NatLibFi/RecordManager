@@ -698,7 +698,11 @@ class MarcRecord extends BaseRecord
      */
     public function getTitle($forFiling = false)
     {
-        $punctuation = array('b' => ' : ', 'n' => '. ', 'p' => '. ');
+        $punctuation = array('b' => ' : ', 'n' => '. ', 'p' => '. ', 'c' => ' ');
+        $acceptSubfields = array('b', 'n', 'p');
+        if ($forFiling) {
+            $acceptSubfields[] = 'c';
+        }
         foreach (array('245', '240') as $fieldCode) {
             $field = $this->getField($fieldCode);
             if ($field) {
@@ -710,7 +714,7 @@ class MarcRecord extends BaseRecord
                     }
                 }
                 foreach ($field['s'] as $subfield) {
-                    if (!in_array(key($subfield), array('b', 'n', 'p'))) {
+                    if (!in_array(key($subfield), $acceptSubfields)) {
                         continue;
                     }
                     if (!MetadataUtils::hasTrailingPunctuation($title)) {
