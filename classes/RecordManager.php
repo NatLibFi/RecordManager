@@ -386,8 +386,7 @@ class RecordManager
                 $hostID = $metadataRecord->getHostRecordID();
                 $normalizedData = $metadataRecord->serialize();
                 if ($this->dedup && !$hostID) {
-                    $this->dedupHandler->updateDedupCandidateKeys($record, $metadataRecord);
-                    $record['update_needed'] = true;
+                    $record['update_needed'] = $this->dedupHandler->updateDedupCandidateKeys($record, $metadataRecord);
                 } else {
                     unset($record['title_keys']);
                     unset($record['isbn_keys']);
@@ -491,7 +490,6 @@ class RecordManager
                 $count = 0;
                 $deduped = 0;
                 $pc = new PerformanceCounter();
-                $this->tooManyCandidatesKeys = array();
                 $this->log->log('deduplicate', "Processing $total records for '$source'");
                 foreach ($records as $record) {
                     if (isset($this->terminate)) {
@@ -771,6 +769,7 @@ class RecordManager
         foreach ($records as $record) {
             if (isset($record['dedup_id'])) {
                 $this->dedupHandler->removeFromDedupRecord($record['dedup_id'], $record['_id']);
+                unset($record['dedup_id']);
             }
             $record['deleted'] = true;
             $record['updated'] = new MongoDate();
@@ -898,9 +897,9 @@ class RecordManager
             foreach ($records as $record) {
                 if (isset($record['dedup_id'])) {
                     $this->dedupHandler->removeFromDedupRecord($record['dedup_id'], $record['_id']);
+                    unset($record['dedup_id']);
                 }
                 $record['deleted'] = true;
-                unset($record['dedup_id']);
                 $record['updated'] = new MongoDate();
                 $this->db->record->save($record);
                 ++$count;
@@ -1012,12 +1011,7 @@ class RecordManager
                 // If this is a host record, mark it to be deduplicated.
                 // If this is a component part, mark its host record to be deduplicated.
                 if (!$hostID) {
-                    $this->dedupHandler->updateDedupCandidateKeys($dbRecord, $metadataRecord);
-                    if (isset($dbRecord['dedup_id'])) {
-                        $this->dedupHandler->removeFromDedupRecord($dbRecord['dedup_id'], $dbRecord['_id']);
-                    }
-                    unset($dbRecord['dedup_id']);
-                    $dbRecord['update_needed'] = true;
+                    $dbRecord['update_needed'] = $this->dedupHandler->updateDedupCandidateKeys($dbRecord, $metadataRecord);
                 } else {
                     $this->db->record->update(
                         array(

@@ -54,6 +54,13 @@ class DedupHandler
      */
     protected $verbose = false;
 
+    /**
+     * Array used to track keys that result in too many candidates
+     *
+     * @var array
+     */
+    protected $tooManyCandidatesKeys = array();
+
     /*
      * Used for format mapping
      *
@@ -89,27 +96,33 @@ class DedupHandler
         $results = array();
         foreach ($dedupRecord['ids'] as $id) {
             $record = $this->db->record->findOne(array('_id' => $id));
-            if ($dedupRecord['deleted']
+            if (!$record
+                || $dedupRecord['deleted']
                 || $record['deleted']
                 || count($dedupRecord['ids']) < 2
                 || !isset($record['dedup_id'])
                 || $record['dedup_id'] != $dedupRecord['_id']
             ) {
                 $this->removeFromDedupRecord($dedupRecord['_id'], $id);
-                if ($record['deleted']) {
+                if (!$record) {
+                    $reason = 'record does not exist';
+                } elseif ($dedupRecord['deleted']) {
                     $reason = 'dedup record deleted';
                 } elseif ($record['deleted']) {
                     $reason = 'record deleted';
                 } elseif (count($dedupRecord['ids']) < 2) {
                     $reason = 'single record in a dedup group';
                 } elseif (!isset($record['dedup_id'])) {
-                    $reason = 'record not linked';
+                    $reason = 'record is missing dedup_id';
                 } else {
-                    $reason = 'record linked with another dedup record';
+                    $reason = "record linked with dedup record '{$record['dedup_id']}'";
                 }
                 $this->db->record->update(
                     array('_id' => $id, 'deleted' => false),
-                    array('$set' => array('update_needed' => true))
+                    array(
+                        '$set' => array('update_needed' => true),
+                        '$unset' => array('dedup_id' => 1)
+                    )
                 );
                 $results[] = "Removed '$id' from dedup record '{$dedupRecord['_id']}' ($reason)";
             }
@@ -123,28 +136,46 @@ class DedupHandler
      * @param object &$record        Database record
      * @param object $metadataRecord Metadata record for the used format
      *
-     * @return void
+     * @return boolean Whether anything was changed
      */
     public function updateDedupCandidateKeys(&$record, $metadataRecord)
     {
-        $record['title_keys'] = array(MetadataUtils::createTitleKey($metadataRecord->getTitle(true)));
+        $result = false;
+
+        $keys = array(MetadataUtils::createTitleKey($metadataRecord->getTitle(true)));
+        if (array_diff(isset($record['title_keys']) && is_array($record['title_keys']) ? $record['title_keys'] : array(), $keys)) {
+            $record['title_keys'] = $keys;
+            $result = true;
+        }
         if (empty($record['title_keys'])) {
             unset($record['title_keys']);
         }
-        $record['isbn_keys'] = $metadataRecord->getISBNs();
+
+        $keys = $metadataRecord->getISBNs();
+        if (array_diff(isset($record['isbn_keys']) && is_array($record['isbn_keys']) ? $record['isbn_keys'] : array(), $keys)) {
+            $record['isbn_keys'] = $keys;
+            $result = true;
+        }
         if (empty($record['isbn_keys'])) {
             unset($record['isbn_keys']);
         }
-        $record['id_keys'] = $metadataRecord->getUniqueIDs();
+
+        $keys = $metadataRecord->getUniqueIDs();
+        if (array_diff(isset($record['id_keys']) && is_array($record['id_keys']) ? $record['id_keys'] : array(), $keys)) {
+            $record['id_keys'] = $keys;
+            $result = true;
+        }
         if (empty($record['id_keys'])) {
             unset($record['id_keys']);
         }
+
+        return $result;
     }
 
     /**
      * Find a single duplicate for the given record and set a dedup key for them
      *
-     * @param MongoRecord $record      Database record
+     * @param MongoRecord $record Database record
      *
      * @return boolean Whether a duplicate was found
      */
@@ -249,8 +280,8 @@ class DedupHandler
         if (isset($record['dedup_id']) || $record['update_needed']) {
             if (isset($record['dedup_id'])) {
                 $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
+                unset($record['dedup_id']);
             }
-            unset($record['dedup_id']);
             $record['updated'] = new MongoDate();
             $record['update_needed'] = false;
             $this->db->record->save($record);
@@ -274,19 +305,27 @@ class DedupHandler
     public function removeFromDedupRecord($dedupId, $id)
     {
         $record = $this->db->dedup->findOne(array('_id' => $dedupId));
+        if (!$record) {
+            $this->log->log('removeFromDedupRecord', "Found dangling reference to dedup record $dedupId", Logger::ERROR);
+            return;
+        }
         if (in_array($id, $record['ids'])) {
             $record['ids'] = array_values(array_diff($record['ids'], array($id)));
 
             // If there is only one record remaining, remove dedup_id from it too
             if (count($record['ids']) == 1) {
                 $otherId = reset($record['ids']);
-                $otherRecord = $this->db->record->findOne(array('_id' => $otherId));
-                unset($otherRecord['dedup_id']);
-                $otherRecord['updated'] = new MongoDate();
-                $this->db->record->save($otherRecord);
                 $record['ids'] = array();
                 $record['deleted'] = true;
-            } elseif (count($record['ids']) == 0) {
+
+                $this->db->record->update(
+                    array('_id' => $otherId, 'deleted' => false),
+                    array(
+                        '$set' => array('update_needed' => true),
+                        '$unset' => array('dedup_id' => 1)
+                    )
+                );
+            } elseif (empty($record['ids'])) {
                 // No records remaining => just mark dedup record deleted.
                 // This shouldn't happen since dedup record should always contain
                 // at least two records
@@ -313,9 +352,9 @@ class DedupHandler
     /**
      * Check if records are duplicate matches
      *
-     * @param MongoRecord $record      Mongo record
-     * @param object      $origRecord  Metadata record (from $record)
-     * @param MongoRecord $candidate   Candidate Mongo record
+     * @param MongoRecord $record     Mongo record
+     * @param object      $origRecord Metadata record (from $record)
+     * @param MongoRecord $candidate  Candidate Mongo record
      *
      * @return boolean
      */
@@ -467,14 +506,14 @@ class DedupHandler
     protected function markDuplicates($rec1, $rec2)
     {
         $setValues = array('updated' => new MongoDate(), 'update_needed' => false);
-        if (isset($rec2['dedup_id']) && $rec2['dedup_id']) {
-            $this->addToDedupRecord($rec2['dedup_id'], $rec1['_id']);
+        if (!empty($rec2['dedup_id'])) {
             if (isset($rec1['dedup_id']) && $rec1['dedup_id'] != $rec2['dedup_id']) {
                 $this->removeFromDedupRecord($rec1['dedup_id'], $rec1['_id']);
             }
+            $this->addToDedupRecord($rec2['dedup_id'], $rec1['_id']);
             $setValues['dedup_id'] = $rec1['dedup_id'] = $rec2['dedup_id'];
         } else {
-            if (isset($rec1['dedup_id']) && $rec1['dedup_id']) {
+            if (!empty($rec1['dedup_id'])) {
                 $this->addToDedupRecord($rec1['dedup_id'], $rec2['_id']);
                 $setValues['dedup_id'] = $rec2['dedup_id'] = $rec1['dedup_id'];
             } else {
