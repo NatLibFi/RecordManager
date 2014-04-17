@@ -299,6 +299,12 @@ class NdlMarcRecord extends MarcRecord
                     array(MarcRecord::GET_NORMAL, '852', array('a', 'b', 'h', 'z'))
                 )
             );
+        if (!empty($data['holdings_txtP_mv'])) {
+            $updateFunc = function(&$val, $k, $source) {
+                $val .= " $source";
+            };
+            array_walk($data['holdings_txtP_mv'], $updateFunc, $this->source);
+        }
 
         return $data;
     }
