@@ -1584,7 +1584,21 @@ class MarcRecord extends BaseRecord
             }
             foreach ($this->fields[$tag] as $field) {
                 if (!isset($field['s'])) {
+                    global $logger;
+                    $logger->log(
+                        'MarcRecord', 'Subfields missing in field: ' .
+                        print_r($field, true) . ", record {$this->source}." .
+                        $this->getID(), Logger::WARNING
+                    );
                     continue;
+                }
+                if (!is_array($field['s'])) {
+                    global $logger;
+                    $logger->log(
+                        'MarcRecord', 'Invalid subfields in field: ' .
+                        print_r($field, true) . ", record {$this->source}." .
+                        $this->getID(), Logger::ERROR
+                    );
                 }
                 if ($type != MarcRecord::GET_ALT) {
                     // Handle normal field
@@ -1742,8 +1756,24 @@ class MarcRecord extends BaseRecord
      */
     protected function getAllSubfields($field, $filter = null)
     {
-        if (!$field || !isset($field['s'])) {
+        if (!$field) {
             return '';
+        }
+        if (!isset($field['s'])) {
+            global $logger;
+            $logger->log(
+                'MarcRecord', 'Subfields missing in field: ' .
+                print_r($field, true) . ", record {$this->source}." .
+                $this->getID(), Logger::WARNING
+            );
+        }
+        if (!is_array($field['s'])) {
+            global $logger;
+            $logger->log(
+                'MarcRecord', 'Invalid subfields in field: ' .
+                print_r($field, true) . ", record {$this->source}." .
+                $this->getID(), Logger::ERROR
+            );
         }
 
         $subfields = array();
