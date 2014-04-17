@@ -73,8 +73,6 @@ class SolrUpdater
         'title_new', 'dateSpan', 'series', 'series2', 'topic', 'genre', 'geographic',
         'era', 'long_lat', 'isbn', 'issn');
 
-    protected $suffixedMergedFields = array();
-
     protected $singleFields = array('title', 'title_short', 'title_full',
         'title_sort', 'author', 'author-letter', 'format', 'publishDateSort',
         'callnumber', 'callnumber-a', 'callnumber-first-code', 'illustrated',
@@ -129,11 +127,6 @@ class SolrUpdater
             $this->mergedFields = explode(',', $configArray['Solr']['merged_fields']);
         }
         $this->mergedFields = array_flip($this->mergedFields);
-
-        if (isset($configArray['Solr']['suffixed_merged_fields'])) {
-            $this->suffixedMergedFields = explode(',', $configArray['Solr']['suffixed_merged_fields']);
-        }
-        $this->suffixedMergedFields = array_flip($this->suffixedMergedFields);
 
         if (isset($configArray['Solr']['single_fields'])) {
             $this->singleFields = explode(',', $configArray['Solr']['single_fields']);
@@ -1231,13 +1224,6 @@ class SolrUpdater
                     $merged[$key] = array($merged[$key]);
                 }
                 $values = is_array($value) ? $value : array($value);
-                if (isset($this->suffixedMergedFields[$key])) {
-                    $updateFunc = function(&$val, $k, $add) {
-                        list($prefix) = explode('.', $add['id'], 2);
-                        $val = "$val " . $prefix;
-                    };
-                    array_walk($values, $updateFunc, $add);
-                }
                 $merged[$key] = array_values(array_merge($merged[$key], $values));
             } elseif (isset($this->singleFields[$key])) {
                 if (empty($merged[$key])) {

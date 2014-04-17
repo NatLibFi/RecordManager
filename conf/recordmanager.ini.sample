@@ -50,7 +50,6 @@ password =
 ;merge_records = true
 ;merged_fields = institution,collection,my_local_field_str_mv
 ;single_fields = title,publishDateSort
-;suffixed_merged_fields = my_local_source_specific_field_mv
 ;format_in_allfields = true
 unicode_normalization_form = NFKC
 ; Maximum number of tries to send an update to Solr. Default is 15.
