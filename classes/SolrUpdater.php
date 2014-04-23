@@ -630,7 +630,6 @@ class SolrUpdater
             $pc->reset();
             $this->initBufferedUpdate();
             foreach ($records as $record) {
-                $dedupSource = $this->settings[$record['source_id']]['dedup'];
                 if ($record['deleted']) {
                     $this->bufferedDelete((string)$record['_id']);
                     ++$count;
