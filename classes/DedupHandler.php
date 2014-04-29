@@ -142,8 +142,13 @@ class DedupHandler
     {
         $result = false;
 
-        $keys = array(MetadataUtils::createTitleKey($metadataRecord->getTitle(true)));
-        if (array_diff(isset($record['title_keys']) && is_array($record['title_keys']) ? $record['title_keys'] : array(), $keys)) {
+        $keys = array(MetadataUtils::createTitleKey(
+            $metadataRecord->getTitle(true)
+        ));
+        if (!isset($record['title_keys'])
+            || !is_array($record['title_keys'])
+            || array_diff($record['title_keys'], $keys)
+        ) {
             $record['title_keys'] = $keys;
             $result = true;
         }
@@ -152,7 +157,10 @@ class DedupHandler
         }
 
         $keys = $metadataRecord->getISBNs();
-        if (array_diff(isset($record['isbn_keys']) && is_array($record['isbn_keys']) ? $record['isbn_keys'] : array(), $keys)) {
+        if (!isset($record['isbn_keys'])
+            || !is_array($record['isbn_keys'])
+            || array_diff($record['isbn_keys'], $keys)
+        ) {
             $record['isbn_keys'] = $keys;
             $result = true;
         }
@@ -161,7 +169,10 @@ class DedupHandler
         }
 
         $keys = $metadataRecord->getUniqueIDs();
-        if (array_diff(isset($record['id_keys']) && is_array($record['id_keys']) ? $record['id_keys'] : array(), $keys)) {
+        if (!isset($record['id_keys'])
+            || !is_array($record['id_keys'])
+            || array_diff($record['id_keys'], $keys)
+        ) {
             $record['id_keys'] = $keys;
             $result = true;
         }
