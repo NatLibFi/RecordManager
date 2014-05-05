@@ -271,8 +271,8 @@ class MarcRecord extends BaseRecord
         }
 
         // lccn
-        $data['lccn'] = $this->getFieldSubfields('010', array('a'));
-        $data['ctrlnum'] = $this->getFieldsSubfields(array(array(MarcRecord::GET_NORMAL, '035', array('a'))));
+        $data['lccn'] = $this->getFieldSubfields('010', array('a'=>1));
+        $data['ctrlnum'] = $this->getFieldsSubfields(array(array(MarcRecord::GET_NORMAL, '035', array('a'=>1))));
         $data['fullrecord'] = $this->toISO2709();
         if (!$data['fullrecord']) {
             // In case the record exceeds 99999 bytes...
@@ -284,10 +284,10 @@ class MarcRecord extends BaseRecord
         $languages = array(substr($this->getField('008'), 35, 3));
         $languages += $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_NORMAL, '041', array('a')),
-                array(MarcRecord::GET_NORMAL, '041', array('d')),
-                array(MarcRecord::GET_NORMAL, '041', array('h')),
-                array(MarcRecord::GET_NORMAL, '041', array('j'))
+                array(MarcRecord::GET_NORMAL, '041', array('a'=>1)),
+                array(MarcRecord::GET_NORMAL, '041', array('d'=>1)),
+                array(MarcRecord::GET_NORMAL, '041', array('h'=>1)),
+                array(MarcRecord::GET_NORMAL, '041', array('j'=>1))
             ),
             false, true, true
         );
@@ -300,18 +300,18 @@ class MarcRecord extends BaseRecord
 
         $data['format'] = $this->getFormat();
 
-        $data['author'] = $this->getFieldSubfields('100', array('a', 'b', 'c', 'd', 'e'));
-        $data['author_fuller'] = $this->getFieldSubfields('100', array('q'));
-        $data['author-letter'] = $this->getFieldSubfields('100', array('a'));
+        $data['author'] = $this->getFieldSubfields('100', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1, 'e'=>1));
+        $data['author_fuller'] = $this->getFieldSubfields('100', array('q'=>1));
+        $data['author-letter'] = $this->getFieldSubfields('100', array('a'=>1));
 
         $data['author2'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_ALT, '100', array('a', 'b', 'c', 'd')),
-                array(MarcRecord::GET_BOTH, '110', array('a', 'b')),
-                array(MarcRecord::GET_BOTH, '111', array('a', 'b')),
-                array(MarcRecord::GET_BOTH, '700', array('a', 'b', 'c', 'd', 'e')),
-                array(MarcRecord::GET_BOTH, '710', array('a', 'b')),
-                array(MarcRecord::GET_BOTH, '711', array('a', 'b'))
+                array(MarcRecord::GET_ALT, '100', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1)),
+                array(MarcRecord::GET_BOTH, '110', array('a'=>1, 'b'=>1)),
+                array(MarcRecord::GET_BOTH, '111', array('a'=>1, 'b'=>1)),
+                array(MarcRecord::GET_BOTH, '700', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1, 'e'=>1)),
+                array(MarcRecord::GET_BOTH, '710', array('a'=>1, 'b'=>1)),
+                array(MarcRecord::GET_BOTH, '711', array('a'=>1, 'b'=>1))
             )
         );
 
@@ -322,65 +322,65 @@ class MarcRecord extends BaseRecord
         $data['author2'] = array_filter(array_values($data['author2']));
         $data['author2-role'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_BOTH, '700', array('e')),
-                array(MarcRecord::GET_BOTH, '710', array('e'))
+                array(MarcRecord::GET_BOTH, '700', array('e'=>1)),
+                array(MarcRecord::GET_BOTH, '710', array('e'=>1))
             ),
             true
         );
         $data['author_additional'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_BOTH, '505', array('r'))
+                array(MarcRecord::GET_BOTH, '505', array('r'=>1))
             ),
             true
         );
 
         $data['title'] = $this->getTitle();
-        $data['title_sub'] = $this->getFieldSubfields('245', array('b', 'n', 'p'));
-        $data['title_short'] = $this->getFieldSubfields('245', array('a'));
-        $data['title_full'] = $this->getFieldSubfields('245', array('a', 'b', 'c', 'f', 'g', 'h', 'k', 'n', 'p', 's'));
+        $data['title_sub'] = $this->getFieldSubfields('245', array('b'=>1, 'n'=>1, 'p'=>1));
+        $data['title_short'] = $this->getFieldSubfields('245', array('a'=>1));
+        $data['title_full'] = $this->getFieldSubfields('245', array('a'=>1, 'b'=>1, 'c'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'k'=>1, 'n'=>1, 'p'=>1, 's'=>1));
         $data['title_alt'] = array_values(
             array_unique(
                 $this->getFieldsSubfields(
                     array(
-                        array(MarcRecord::GET_ALT, '245', array('a', 'b')),
-                        array(MarcRecord::GET_BOTH, '130', array('a', 'd', 'f', 'g', 'k', 'l', 'n', 'p', 's', 't')),
-                        array(MarcRecord::GET_BOTH, '240', array('a')),
-                        array(MarcRecord::GET_BOTH, '246', array('g')),
-                        array(MarcRecord::GET_BOTH, '730', array('a', 'd', 'f', 'g', 'k', 'l', 'n', 'p', 's', 't')),
-                        array(MarcRecord::GET_BOTH, '740', array('a'))
+                        array(MarcRecord::GET_ALT, '245', array('a'=>1, 'b'=>1)),
+                        array(MarcRecord::GET_BOTH, '130', array('a'=>1, 'd'=>1, 'f'=>1, 'g'=>1, 'k'=>1, 'l'=>1, 'n'=>1, 'p'=>1, 's'=>1, 't'=>1)),
+                        array(MarcRecord::GET_BOTH, '240', array('a'=>1)),
+                        array(MarcRecord::GET_BOTH, '246', array('g'=>1)),
+                        array(MarcRecord::GET_BOTH, '730', array('a'=>1, 'd'=>1, 'f'=>1, 'g'=>1, 'k'=>1, 'l'=>1, 'n'=>1, 'p'=>1, 's'=>1, 't'=>1)),
+                        array(MarcRecord::GET_BOTH, '740', array('a'=>1))
                     )
                 )
             )
         );
         $data['title_old'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_BOTH, '780', array('a', 's', 't'))
+                array(MarcRecord::GET_BOTH, '780', array('a'=>1, 's'=>1, 't'=>1))
             )
         );
         $data['title_new'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_BOTH, '785', array('a', 's', 't'))
+                array(MarcRecord::GET_BOTH, '785', array('a'=>1, 's'=>1, 't'=>1))
             )
         );
         $data['title_sort'] = $this->getTitle(true);
 
         if (!$data['title_short']) {
-            $data['title_short'] = $this->getFieldSubfields('240', array('a', 'n', 'p'));
+            $data['title_short'] = $this->getFieldSubfields('240', array('a'=>1, 'n'=>1, 'p'=>1));
             $data['title_full'] = $this->getFieldSubfields('240');
         }
 
         $data['series'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_BOTH, '440', array('a')),
-                array(MarcRecord::GET_BOTH, '490', array('a')),
-                array(MarcRecord::GET_BOTH, '800', array('a', 'b', 'c', 'd', 'f', 'p', 'q', 't')),
-                array(MarcRecord::GET_BOTH, '830', array('a', 'p'))
+                array(MarcRecord::GET_BOTH, '440', array('a'=>1)),
+                array(MarcRecord::GET_BOTH, '490', array('a'=>1)),
+                array(MarcRecord::GET_BOTH, '800', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1, 'f'=>1, 'p'=>1, 'q'=>1, 't'=>1)),
+                array(MarcRecord::GET_BOTH, '830', array('a'=>1, 'p'=>1))
             )
         );
 
         $data['publisher'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_BOTH, '260', array('b'))
+                array(MarcRecord::GET_BOTH, '260', array('b'=>1))
             ),
             false, true
         );
@@ -400,23 +400,23 @@ class MarcRecord extends BaseRecord
         }
         $data['physical'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_BOTH, '300', array('a', 'b', 'c', 'e', 'f', 'g')),
-                array(MarcRecord::GET_BOTH, '530', array('a', 'b', 'c', 'd'))
+                array(MarcRecord::GET_BOTH, '300', array('a'=>1, 'b'=>1, 'c'=>1, 'e'=>1, 'f'=>1, 'g'=>1)),
+                array(MarcRecord::GET_BOTH, '530', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1))
             )
         );
-        $data['dateSpan'] = $this->getFieldsSubfields(array(array(MarcRecord::GET_BOTH, '362', array('a'))));
-        $data['edition'] = $this->getFieldSubfields('250', array('a'));
+        $data['dateSpan'] = $this->getFieldsSubfields(array(array(MarcRecord::GET_BOTH, '362', array('a'=>1))));
+        $data['edition'] = $this->getFieldSubfields('250', array('a'=>1));
         $data['contents'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_BOTH, '505', array('a')),
-                array(MarcRecord::GET_BOTH, '505', array('t'))
+                array(MarcRecord::GET_BOTH, '505', array('a'=>1)),
+                array(MarcRecord::GET_BOTH, '505', array('t'=>1))
             )
         );
 
         $data['isbn'] = $this->getISBNs();
         foreach ($this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_NORMAL, '773', array('z'))
+                array(MarcRecord::GET_NORMAL, '773', array('z'=>1))
             )
         ) as $isbn) {
             $isbn = str_replace('-', '', $isbn);
@@ -433,14 +433,14 @@ class MarcRecord extends BaseRecord
         }
         $data['issn'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_NORMAL, '022', array('a')),
-                array(MarcRecord::GET_NORMAL, '440', array('x')),
-                array(MarcRecord::GET_NORMAL, '490', array('x')),
-                array(MarcRecord::GET_NORMAL, '730', array('x')),
-                array(MarcRecord::GET_NORMAL, '773', array('x')),
-                array(MarcRecord::GET_NORMAL, '776', array('x')),
-                array(MarcRecord::GET_NORMAL, '780', array('x')),
-                array(MarcRecord::GET_NORMAL, '785', array('x'))
+                array(MarcRecord::GET_NORMAL, '022', array('a' => 1)),
+                array(MarcRecord::GET_NORMAL, '440', array('x' => 1)),
+                array(MarcRecord::GET_NORMAL, '490', array('x' => 1)),
+                array(MarcRecord::GET_NORMAL, '730', array('x' => 1)),
+                array(MarcRecord::GET_NORMAL, '773', array('x' => 1)),
+                array(MarcRecord::GET_NORMAL, '776', array('x' => 1)),
+                array(MarcRecord::GET_NORMAL, '780', array('x' => 1)),
+                array(MarcRecord::GET_NORMAL, '785', array('x' => 1))
             )
         );
         foreach ($data['issn'] as &$value) {
@@ -453,106 +453,106 @@ class MarcRecord extends BaseRecord
                 '',
                 $this->getFirstFieldSubfields(
                     array(
-                        array(MarcRecord::GET_NORMAL, '080', array('a', 'b')),
-                        array(MarcRecord::GET_NORMAL, '084', array('a', 'b')),
-                        array(MarcRecord::GET_NORMAL, '050', array('a', 'b'))
+                        array(MarcRecord::GET_NORMAL, '080', array('a'=>1, 'b'=>1)),
+                        array(MarcRecord::GET_NORMAL, '084', array('a'=>1, 'b'=>1)),
+                        array(MarcRecord::GET_NORMAL, '050', array('a'=>1, 'b'=>1))
                     )
                 )
             )
         );
         $data['callnumber-a'] = $this->getFirstFieldSubfields(
             array(
-                array(MarcRecord::GET_NORMAL, '080', array('a')),
-                array(MarcRecord::GET_NORMAL, '084', array('a')),
-                array(MarcRecord::GET_NORMAL, '050', array('a'))
+                array(MarcRecord::GET_NORMAL, '080', array('a'=>1)),
+                array(MarcRecord::GET_NORMAL, '084', array('a'=>1)),
+                array(MarcRecord::GET_NORMAL, '050', array('a'=>1))
             )
         );
         $data['callnumber-first-code'] = substr($data['callnumber-a'], 0, 1);
 
         $data['topic'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_BOTH, '600', array('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'x', 'y', 'z')),
-                array(MarcRecord::GET_BOTH, '610', array('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'v', 'x', 'y', 'z')),
-                array(MarcRecord::GET_BOTH, '611', array('a', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'n', 'p', 'q', 's', 't', 'u', 'v', 'x', 'y', 'z')),
-                array(MarcRecord::GET_BOTH, '630', array('a', 'd', 'e', 'f', 'g', 'h', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'v', 'x', 'y', 'z')),
-                array(MarcRecord::GET_BOTH, '650', array('a', 'b', 'c', 'd', 'e', 'v', 'x', 'y', 'z'))
+                array(MarcRecord::GET_BOTH, '600', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1, 'e'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'j'=>1, 'k'=>1, 'l'=>1, 'm'=>1, 'n'=>1, 'o'=>1, 'p'=>1, 'q'=>1, 'r'=>1, 's'=>1, 't'=>1, 'u'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1)),
+                array(MarcRecord::GET_BOTH, '610', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1, 'e'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'k'=>1, 'l'=>1, 'm'=>1, 'n'=>1, 'o'=>1, 'p'=>1, 'r'=>1, 's'=>1, 't'=>1, 'u'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1)),
+                array(MarcRecord::GET_BOTH, '611', array('a'=>1, 'c'=>1, 'd'=>1, 'e'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'j'=>1, 'k'=>1, 'l'=>1, 'n'=>1, 'p'=>1, 'q'=>1, 's'=>1, 't'=>1, 'u'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1)),
+                array(MarcRecord::GET_BOTH, '630', array('a'=>1, 'd'=>1, 'e'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'k'=>1, 'l'=>1, 'm'=>1, 'n'=>1, 'o'=>1, 'p'=>1, 'r'=>1, 's'=>1, 't'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1)),
+                array(MarcRecord::GET_BOTH, '650', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1, 'e'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1))
             )
         );
         $data['genre'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_BOTH, '655', array('a', 'b', 'c', 'v', 'x', 'y', 'z'))
+                array(MarcRecord::GET_BOTH, '655', array('a'=>1, 'b'=>1, 'c'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1))
             )
         );
         $data['geographic'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_BOTH, '651', array('a', 'e', 'v', 'x', 'y', 'z'))
+                array(MarcRecord::GET_BOTH, '651', array('a'=>1, 'e'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1))
             )
         );
         $data['era'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_BOTH, '648', array('a', 'v', 'x', 'y', 'z'))
+                array(MarcRecord::GET_BOTH, '648', array('a'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1))
             )
         );
 
         $data['topic_facet'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_NORMAL, '600', array('x')),
-                array(MarcRecord::GET_NORMAL, '610', array('x')),
-                array(MarcRecord::GET_NORMAL, '611', array('x')),
-                array(MarcRecord::GET_NORMAL, '630', array('x')),
-                array(MarcRecord::GET_NORMAL, '648', array('x')),
-                array(MarcRecord::GET_NORMAL, '650', array('a')),
-                array(MarcRecord::GET_NORMAL, '650', array('x')),
-                array(MarcRecord::GET_NORMAL, '651', array('x')),
-                array(MarcRecord::GET_NORMAL, '655', array('x'))
+                array(MarcRecord::GET_NORMAL, '600', array('x'=>1)),
+                array(MarcRecord::GET_NORMAL, '610', array('x'=>1)),
+                array(MarcRecord::GET_NORMAL, '611', array('x'=>1)),
+                array(MarcRecord::GET_NORMAL, '630', array('x'=>1)),
+                array(MarcRecord::GET_NORMAL, '648', array('x'=>1)),
+                array(MarcRecord::GET_NORMAL, '650', array('a'=>1)),
+                array(MarcRecord::GET_NORMAL, '650', array('x'=>1)),
+                array(MarcRecord::GET_NORMAL, '651', array('x'=>1)),
+                array(MarcRecord::GET_NORMAL, '655', array('x'=>1))
             ),
             false, true, true
         );
         $data['genre_facet'] = MetadataUtils::ucFirst(
             $this->getFieldsSubfields(
                 array(
-                    array(MarcRecord::GET_NORMAL, '600', array('v')),
-                    array(MarcRecord::GET_NORMAL, '610', array('v')),
-                    array(MarcRecord::GET_NORMAL, '611', array('v')),
-                    array(MarcRecord::GET_NORMAL, '630', array('v')),
-                    array(MarcRecord::GET_NORMAL, '648', array('v')),
-                    array(MarcRecord::GET_NORMAL, '650', array('v')),
-                    array(MarcRecord::GET_NORMAL, '651', array('v')),
-                    array(MarcRecord::GET_NORMAL, '655', array('a')),
-                    array(MarcRecord::GET_NORMAL, '655', array('v'))
+                    array(MarcRecord::GET_NORMAL, '600', array('v'=>1)),
+                    array(MarcRecord::GET_NORMAL, '610', array('v'=>1)),
+                    array(MarcRecord::GET_NORMAL, '611', array('v'=>1)),
+                    array(MarcRecord::GET_NORMAL, '630', array('v'=>1)),
+                    array(MarcRecord::GET_NORMAL, '648', array('v'=>1)),
+                    array(MarcRecord::GET_NORMAL, '650', array('v'=>1)),
+                    array(MarcRecord::GET_NORMAL, '651', array('v'=>1)),
+                    array(MarcRecord::GET_NORMAL, '655', array('a'=>1)),
+                    array(MarcRecord::GET_NORMAL, '655', array('v'=>1))
                 ),
                 false, true, true
             )
         );
         $data['geographic_facet'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_NORMAL, '600', array('z')),
-                array(MarcRecord::GET_NORMAL, '610', array('z')),
-                array(MarcRecord::GET_NORMAL, '611', array('z')),
-                array(MarcRecord::GET_NORMAL, '630', array('z')),
-                array(MarcRecord::GET_NORMAL, '648', array('z')),
-                array(MarcRecord::GET_NORMAL, '650', array('z')),
-                array(MarcRecord::GET_NORMAL, '651', array('a')),
-                array(MarcRecord::GET_NORMAL, '651', array('z')),
-                array(MarcRecord::GET_NORMAL, '655', array('z'))
+                array(MarcRecord::GET_NORMAL, '600', array('z'=>1)),
+                array(MarcRecord::GET_NORMAL, '610', array('z'=>1)),
+                array(MarcRecord::GET_NORMAL, '611', array('z'=>1)),
+                array(MarcRecord::GET_NORMAL, '630', array('z'=>1)),
+                array(MarcRecord::GET_NORMAL, '648', array('z'=>1)),
+                array(MarcRecord::GET_NORMAL, '650', array('z'=>1)),
+                array(MarcRecord::GET_NORMAL, '651', array('a'=>1)),
+                array(MarcRecord::GET_NORMAL, '651', array('z'=>1)),
+                array(MarcRecord::GET_NORMAL, '655', array('z'=>1))
             ),
             false, true, true
         );
         $data['era_facet'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_NORMAL, '630', array('y')),
-                array(MarcRecord::GET_NORMAL, '648', array('a')),
-                array(MarcRecord::GET_NORMAL, '648', array('y')),
-                array(MarcRecord::GET_NORMAL, '650', array('y')),
-                array(MarcRecord::GET_NORMAL, '651', array('y')),
-                array(MarcRecord::GET_NORMAL, '655', array('y'))
+                array(MarcRecord::GET_NORMAL, '630', array('y'=>1)),
+                array(MarcRecord::GET_NORMAL, '648', array('a'=>1)),
+                array(MarcRecord::GET_NORMAL, '648', array('y'=>1)),
+                array(MarcRecord::GET_NORMAL, '650', array('y'=>1)),
+                array(MarcRecord::GET_NORMAL, '651', array('y'=>1)),
+                array(MarcRecord::GET_NORMAL, '655', array('y'=>1))
             ),
             false, true, true
         );
 
         $data['url'] = $this->getFieldsSubfields(
             array(
-                array(MarcRecord::GET_NORMAL, '856', array('u'))
+                array(MarcRecord::GET_NORMAL, '856', array('u'=>1))
             )
         );
 
@@ -610,7 +610,7 @@ class MarcRecord extends BaseRecord
     */
     public function getVolume()
     {
-        $field773g = $this->getFieldSubfields('773', array('g'));
+        $field773g = $this->getFieldSubfields('773', array('g'=>1));
         if (!$field773g) {
             return '';
         }
@@ -630,7 +630,7 @@ class MarcRecord extends BaseRecord
      */
     public function getIssue()
     {
-        $field773g = $this->getFieldSubfields('773', array('g'));
+        $field773g = $this->getFieldSubfields('773', array('g'=>1));
         if (!$field773g) {
             return '';
         }
@@ -653,7 +653,7 @@ class MarcRecord extends BaseRecord
      */
     public function getStartPage()
     {
-        $field773g = $this->getFieldSubfields('773', array('g'));
+        $field773g = $this->getFieldSubfields('773', array('g'=>1));
         if (!$field773g) {
             return '';
         }
@@ -674,7 +674,7 @@ class MarcRecord extends BaseRecord
      */
     public function getContainerTitle()
     {
-        return $this->getFieldSubfields('773', array('t'));
+        return $this->getFieldSubfields('773', array('t'=>1));
     }
 
     /**
@@ -684,7 +684,7 @@ class MarcRecord extends BaseRecord
      */
     public function getContainerReference()
     {
-        return $this->getFieldSubfields('773', array('g'));
+        return $this->getFieldSubfields('773', array('g'=>1));
     }
 
     /**
@@ -1484,8 +1484,8 @@ class MarcRecord extends BaseRecord
     /**
      * Get specified subfields
      *
-     * @param array  $field MARC Field
-     * @param string $codes Subfield codes
+     * @param array $field MARC Field
+     * @param array $codes Array with keys of accepted subfield codes
      *
      * @return string[] Subfields
      */
@@ -1497,10 +1497,7 @@ class MarcRecord extends BaseRecord
         }
         foreach ($field['s'] as $subfield) {
             $code = key($subfield);
-            if ($code === 0) {
-                $code = '0';
-            }
-            if (strstr($codes, $code)) {
+            if (isset($codes[(string)$code])) {
                 $data[] = current($subfield);
             }
         }
@@ -1510,8 +1507,8 @@ class MarcRecord extends BaseRecord
     /**
      * Get specified subfields
      *
-     * @param array  $field MARC Field
-     * @param string $codes Subfield codes
+     * @param array $field MARC Field
+     * @param array $codes Array with keys of accepted subfield codes
      *
      * @return string Concatenated subfields (space-separated)
      */
@@ -1525,7 +1522,7 @@ class MarcRecord extends BaseRecord
      * Get field data
      *
      * @param string  $tag                      Field to get
-     * @param array   $codes                    Optional array of accepted subfields
+     * @param array   $codes                    Optional array with keys of accepted subfields
      * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation from the results
      *
      * @return string Concatenated subfields (space-separated)
@@ -1541,7 +1538,7 @@ class MarcRecord extends BaseRecord
                 continue;
             }
             foreach ($field['s'] as $subfield) {
-                if ($codes && !in_array(key($subfield), $codes)) {
+                if ($codes && !isset($codes[(string)key($subfield)])) {
                     continue;
                 }
                 if ($subfields) {
@@ -1609,7 +1606,7 @@ class MarcRecord extends BaseRecord
                                 if ($code === 0) {
                                     $code = '0';
                                 }
-                                if (in_array($code, $codes)) {
+                                if (isset($codes[(string)$code])) {
                                     $data[] = current($subfield);
                                 }
                             }
@@ -1617,10 +1614,7 @@ class MarcRecord extends BaseRecord
                             $fieldContents = '';
                             foreach ($field['s'] as $subfield) {
                                 $code = key($subfield);
-                                if ($code === 0) {
-                                    $code = '0';
-                                }
-                                if (in_array($code, $codes)) {
+                                if (isset($codes[(string)$code])) {
                                     if ($fieldContents) {
                                         $fieldContents .= ' ';
                                     }
@@ -1655,10 +1649,7 @@ class MarcRecord extends BaseRecord
                             if ($splitSubfields) {
                                 foreach ($field['s'] as $subfield) {
                                     $code = key($subfield);
-                                    if ($code === 0) {
-                                        $code = '0';
-                                    }
-                                    if (in_array($code, $codes)) {
+                                    if (isset($codes[(string)$code])) {
                                         $data[] = current($subfield);
                                     }
                                 }
@@ -1669,7 +1660,7 @@ class MarcRecord extends BaseRecord
                                     if ($code === 0) {
                                         $code = '0';
                                     }
-                                    if (in_array($code, $codes)) {
+                                    if (isset($codes[(string)$code])) {
                                         if ($fieldContents) {
                                             $fieldContents .= ' ';
                                         }
@@ -1750,7 +1741,7 @@ class MarcRecord extends BaseRecord
      * Get all subfields of the given field
      *
      * @param array $field  Field
-     * @param array $filter Optional filter to exclude subfield
+     * @param array $filter Optional array with keys of subfields codes to be excluded
      *
      * @return string[] All subfields
      */
@@ -1778,7 +1769,7 @@ class MarcRecord extends BaseRecord
 
         $subfields = array();
         foreach ($field['s'] as $subfield) {
-            if (isset($filter) && in_array(key($subfield), $filter)) {
+            if (isset($filter) && isset($filter[(string)key($subfield)])) {
                 continue;
             }
             $subfields[] = current($subfield);
@@ -1808,9 +1799,9 @@ class MarcRecord extends BaseRecord
     {
         $allFields = array();
         $subfieldFilter = array(
-            '650' => array('2', '6', '8'),
-            '773' => array('6', '7', '8', 'w'),
-            '856' => array('6', '8', 'q')
+            '650' => array('2'=>1, '6'=>1, '8'=>1),
+            '773' => array('6'=>1, '7'=>1, '8'=>1, 'w'=>1),
+            '856' => array('6'=>1, '8'=>1, 'q'=>1)
         );
         $allFields = array();
         foreach ($this->fields as $tag => $fields) {
@@ -1818,7 +1809,7 @@ class MarcRecord extends BaseRecord
                 foreach ($fields as $field) {
                     $subfields = $this->getAllSubfields(
                         $field,
-                        isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : array('6', '8')
+                        isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : array('6'=>1, '8'=>1)
                     );
                     if ($subfields) {
                         $allFields = array_merge($allFields, $subfields);
