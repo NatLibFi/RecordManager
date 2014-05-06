@@ -546,10 +546,10 @@ class NdlMarcRecord extends MarcRecord
     {
         $allFields = array();
         $subfieldFilter = array(
-            '650' => array('2'=>1, '6'=>1, '8'=>1),
-            '773' => array('6'=>1, '7'=>1, '8'=>1, 'w'=>1),
-            '856' => array('6'=>1, '8'=>1, 'q'=>1),
-            '979' => array('a'=>1)
+            '650' => array('0'=>1, '2'=>1, '6'=>1, '8'=>1),
+            '773' => array('0'=>1, '6'=>1, '7'=>1, '8'=>1, 'w'=>1),
+            '856' => array('0'=>1, '6'=>1, '8'=>1, 'q'=>1),
+            '979' => array('0'=>1, 'a'=>1)
         );
         $allFields = array();
         foreach ($this->fields as $tag => $fields) {
@@ -557,7 +557,7 @@ class NdlMarcRecord extends MarcRecord
                 foreach ($fields as $field) {
                     $subfields = $this->getAllSubfields(
                         $field,
-                        isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : array('6'=>1, '8'=>1)
+                        isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag] : array('0'=>1, '6'=>1, '8'=>1)
                     );
                     if ($subfields) {
                         $allFields = array_merge($allFields, $subfields);
