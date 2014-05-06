@@ -33,7 +33,7 @@ require_once 'MetadataUtils.php';
  * NdlEadRecord Class
  *
  * EadRecord with NDL specific functionality
- * 
+ *
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
@@ -45,7 +45,7 @@ class NdlEadRecord extends EadRecord
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
-     * @param boolean $prependTitleWithSubtitle If true and title_sub differs from title_short, 
+     * @param boolean $prependTitleWithSubtitle If true and title_sub differs from title_short,
      *                                          title is formed by combining title_sub and title_short
      *
      * @return string[]
@@ -54,7 +54,7 @@ class NdlEadRecord extends EadRecord
     {
         $data = parent::toSolrArray($prependTitleWithSubtitle);
         $doc = $this->doc;
-        
+
         $unitDateRange = $this->parseDateRange((string)$doc->did->unitdate);
         $data['search_sdaterange_mv'] = $data['unit_sdaterange'] = MetadataUtils::convertDateRange($unitDateRange);
         if ($unitDateRange) {
@@ -65,10 +65,10 @@ class NdlEadRecord extends EadRecord
         if (isset($data['hierarchy_sequence'])) {
             $data['hierarchy_sequence_str'] = $data['hierarchy_sequence'];
         }
-        
+
         $data['source_str_mv'] = isset($data['institution']) ? $data['institution'] : $this->source;
         $data['datasource_str_mv'] = $this->source;
-                
+
         // Digitized?
         if ($doc->did->daogrp) {
             if (in_array($data['format'], array('collection', 'series', 'fonds', 'item'))) {
@@ -84,15 +84,15 @@ class NdlEadRecord extends EadRecord
                 }
             }
         }
-        
+
         return $data;
     }
-    
+
     /**
      * Parse date range string
-     * 
+     *
      * @param string $input Date range
-     * 
+     *
      * @return NULL|string
      */
     protected function parseDateRange($input)
@@ -164,6 +164,13 @@ class NdlEadRecord extends EadRecord
         } else {
             return null;
         }
+
+        if ($endDate < $startDate) {
+            global $logger;
+            $logger->log('NdlEadRecord', "Invalid date range {$startDate}-{$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
+            $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
+        }
+
         return array($startDate, $endDate);
     }
 }

@@ -498,26 +498,10 @@ class NdlMarcRecord extends MarcRecord
                 break;
             }
         }
-        if (isset($startDate) && isset($endDate) && MetadataUtils::validateISO8601Date($startDate) && MetadataUtils::validateISO8601Date($endDate)) {
-            return MetadataUtils::convertDateRange(array($startDate, $endDate));
-        }
 
-        $field = $this->getField('260');
-        if ($field) {
-            $year = $this->getSubfield($field, 'c');
-            $matches = array();
-            if ($year && preg_match('/(\d{4})/', $year, $matches)) {
-                $startDate = "{$matches[1]}-01-01T00:00:00Z";
-                $endDate = "{$matches[1]}-12-31T23:59:59Z";
-            }
-        }
-        if (isset($startDate) && isset($endDate) && MetadataUtils::validateISO8601Date($startDate) && MetadataUtils::validateISO8601Date($endDate)) {
-            return MetadataUtils::convertDateRange(array($startDate, $endDate));
-        }
-
-        $fields = $this->getFields('264');
-        foreach ($fields as $field) {
-            if ($this->getIndicator($field, 2) == '1') {
+        if (!isset($startDate) || !isset($endDate) || !MetadataUtils::validateISO8601Date($startDate) || !MetadataUtils::validateISO8601Date($endDate)) {
+            $field = $this->getField('260');
+            if ($field) {
                 $year = $this->getSubfield($field, 'c');
                 $matches = array();
                 if ($year && preg_match('/(\d{4})/', $year, $matches)) {
@@ -526,7 +510,27 @@ class NdlMarcRecord extends MarcRecord
                 }
             }
         }
+
+        if (!isset($startDate) || !isset($endDate) || !MetadataUtils::validateISO8601Date($startDate) || !MetadataUtils::validateISO8601Date($endDate)) {
+            $fields = $this->getFields('264');
+            foreach ($fields as $field) {
+                if ($this->getIndicator($field, 2) == '1') {
+                    $year = $this->getSubfield($field, 'c');
+                    $matches = array();
+                    if ($year && preg_match('/(\d{4})/', $year, $matches)) {
+                        $startDate = "{$matches[1]}-01-01T00:00:00Z";
+                        $endDate = "{$matches[1]}-12-31T23:59:59Z";
+                        break;
+                    }
+                }
+            }
+        }
         if (isset($startDate) && isset($endDate) && MetadataUtils::validateISO8601Date($startDate) && MetadataUtils::validateISO8601Date($endDate)) {
+            if ($endDate < $startDate) {
+                global $logger;
+                $logger->log('NdlMarcRecord', "Invalid date range {$startDate}-{$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
+                $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
+            }
             return MetadataUtils::convertDateRange(array($startDate, $endDate));
         }
 

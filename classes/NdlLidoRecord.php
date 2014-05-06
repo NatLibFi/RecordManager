@@ -33,7 +33,7 @@ require_once 'MetadataUtils.php';
  * NdlLidoRecord Class
  *
  * LidoRecord with NDL specific functionality
- * 
+ *
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
@@ -53,12 +53,12 @@ class NdlLidoRecord extends LidoRecord
     public function __construct($data, $oaiID, $source, $idPrefix)
     {
         parent::__construct($data, $oaiID, $source, $idPrefix);
-        
+
         $this->mainEvent = 'valmistus';
         $this->usagePlaceEvent = 'käyttö';
         $this->relatedWorkRelationTypes = array('Kokoelma', 'kuuluu kokoelmaan', 'kokoelma');
     }
-    
+
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
@@ -83,9 +83,9 @@ class NdlLidoRecord extends LidoRecord
                 $data['building'] .= '/' . $data['collection'];
             } else {
                 $data['building'] = $data['collection'];
-            } 
+            }
         }
-        
+
         // REMOVE THIS ONCE TUUSULA IS FIXED
         // sometimes there are multiple subjects in one element
         // separated with commas like "foo, bar, baz" (Tuusula)
@@ -100,7 +100,7 @@ class NdlLidoRecord extends LidoRecord
         }
         $data['topic'] = $data['topic_facet'] = $topic;
         // END OF TUUSULA FIX
-        
+
         $data['artist_str_mv'] = $this->getActor('valmistus', 'taiteilija');
         $data['photographer_str_mv'] = $this->getActor('valmistus', 'valokuvaaja');
         $data['finder_str_mv'] = $this->getActor('löytyminen', 'löytäjä');
@@ -108,7 +108,7 @@ class NdlLidoRecord extends LidoRecord
         $data['designer_str_mv'] = $this->getActor('suunnittelu', 'suunnittelija');
         $data['classification_str_mv'] = $this->getClassifications();
         $data['exhibition_str_mv'] = $this->getEventNames('näyttely');
-        
+
         $daterange = $this->getDateRange('valmistus');
         if ($daterange) {
             $data['main_date_str'] = MetadataUtils::extractYear($daterange[0]);
@@ -130,21 +130,21 @@ class NdlLidoRecord extends LidoRecord
         }
         $data['use_sdaterange'] = MetadataUtils::convertDateRange($this->getDateRange('käyttö'));
         $data['finding_sdaterange'] = MetadataUtils::convertDateRange($this->getDateRange('löytyminen'));
-        
+
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
-        
+
         if ($this->getURLs()) {
             $data['online_boolean'] = true;
         }
-        
+
         $data['location_geo'] = $this->getEventPlaceCoordinates();
-        
+
         $allfields[] = $this->getRecordSourceOrganization();
-        
+
         return $data;
     }
-    
+
     /**
      * Return materials associated with the object. Materials are contained inside events, and the
      * 'valmistus' (creation) event contains all the materials of the object.
@@ -160,26 +160,26 @@ class NdlLidoRecord extends LidoRecord
     protected function getEventMaterials($eventType)
     {
         $materials = parent::getEventMaterials($eventType);
-        
+
         if (!empty($materials)) {
             return $materials;
         }
-    
+
         // If there are no individually listed, straightforwardly indexable materials
         // we can use the displayMaterialsTech field, which is usually meant for display only.
         // However, it's possible to extract the different materials from the display field
         // Some CMS have only one field for materials so this is the only way to index their materials
-        
+
         $xpath = 'lido/descriptiveMetadata/eventWrap/'
             . "eventSet/event[eventType/term='$eventType']/"
             . 'eventMaterialsTech/displayMaterialsTech';
-    
+
 
         $material = $this->extractFirst($xpath);
         if (empty($material)) {
             return array();
         }
-        
+
         $exploded = explode(';', str_replace(',', ';', $material));
         $materials = array();
         foreach ($exploded as $explodedMaterial) {
@@ -198,15 +198,15 @@ class NdlLidoRecord extends LidoRecord
     {
         // Exception: Don't extract descriptions with type attribute "provenienssi"
         $descriptionWrapDescriptions = $this->extractArray("lido/descriptiveMetadata/objectIdentificationWrap/objectDescriptionWrap/objectDescriptionSet[not(@type) or (@type!='provenienssi')]/descriptiveNoteValue");
-        
+
         if ($descriptionWrapDescriptions && $this->getTitle() == implode('; ', $descriptionWrapDescriptions)) {
             // We have the description already in the title, don't repeat
             $descriptionWrapDescriptions = array();
         }
-        
+
         // Also read in "description of subject" which contains data suitable for this field
         $subjectDescriptions = $this->extractArray("lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/displaySubject[@label='aihe']");
-        
+
         if (empty($descriptionWrapDescriptions)) {
             $descriptionWrapDescriptions = array();
         }
@@ -215,7 +215,7 @@ class NdlLidoRecord extends LidoRecord
         }
         return implode(' ', array_merge($descriptionWrapDescriptions, $subjectDescriptions));
     }
-    
+
     /**
      * Return subjects associated with object.
      *
@@ -228,23 +228,23 @@ class NdlLidoRecord extends LidoRecord
         // Exclude 'aihe' and 'iconclass' because these don't contain (human readable) terms
         return parent::getSubjectTerms(array('aihe', 'iconclass'));
     }
-    
+
     /**
      * Get the default language used when building the Solr array
-     * 
+     *
      * @return string
      */
     protected function getDefaultLanguage()
     {
         return 'fi';
     }
-    
+
     /**
      * Return the date range associated with specified event
      *
      * @param string $event     Which event to use (omit to scan all events)
      * @param string $delimiter Delimiter between the dates
-     * 
+     *
      * @return string[] Two ISO 8601 dates
      */
     protected function getDateRange($event = null, $delimiter = ',')
@@ -257,6 +257,11 @@ class NdlLidoRecord extends LidoRecord
         $startDate = $this->extractFirst($xpath . '/eventDate/date/earliestDate');
         $endDate = $this->extractFirst($xpath . '/eventDate/date/latestDate');
         if (!empty($startDate) && !empty($endDate)) {
+            if ($endDate < $startDate) {
+                global $logger;
+                $logger->log('NdlLidoRecord', "Invalid date range {$startDate}-{$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
+                $endDate = $startDate;
+            }
             if (strlen($startDate) == 4) {
                 $startDate = $startDate . '-01-01T00:00:00Z';
             } else if (strlen($startDate) == 7) {
@@ -272,14 +277,14 @@ class NdlLidoRecord extends LidoRecord
             } else if (strlen($endDate) == 10) {
                 $endDate = $endDate . 'T23:59:59Z';
             }
-            return array($startDate, $endDate);            
+            return array($startDate, $endDate);
         }
-        
+
         $date = $this->extractFirst($xpath . '/eventDate/displayDate');
         if (empty($date)) {
             $date = $this->extractFirst($xpath . '/periodName/term');
-        }    
-        
+        }
+
         return $this->parseDateRange($date);
     }
 
@@ -287,7 +292,7 @@ class NdlLidoRecord extends LidoRecord
      * Return the event place coordinates associated with specified event
      *
      * @param string $event Which event to use (omit to scan all events)
-     * 
+     *
      * @return string
      */
     protected function getEventPlaceCoordinates($event = null)
@@ -296,23 +301,23 @@ class NdlLidoRecord extends LidoRecord
         if (!empty($event)) {
             $xpath .= "[eventType/term='$event']";
         }
-    
+
         $coordinates = $this->doc->xpath($xpath . '/eventPlace/place/gml/Point/pos');
         $results = array();
         foreach ($coordinates as $coord) {
             list($lat, $long) = explode(' ', (string)$coord, 2);
             if ($lat < -90 || $lat > 90 || $long < -180 || $long > 180) {
                 global $logger;
-                $logger->log('NdlMarcRecord', "Discarding invalid coordinates $lat,$long, record {$this->source}." . $this->getID(), Logger::WARNING);
+                $logger->log('NdlLidoRecord', "Discarding invalid coordinates $lat,$long, record {$this->source}." . $this->getID(), Logger::WARNING);
                 continue;
             }
-    
+
             $results[] = "$long $lat";
         }
         return $results;
     }
-    
-    
+
+
     /**
      * Attempt to parse a string (in finnish) into a normalized date range.
      * TODO: complicated normalization like this should preferably reside within its own, separate component
@@ -325,7 +330,7 @@ class NdlLidoRecord extends LidoRecord
     protected function parseDateRange($input)
     {
         $input = trim(strtolower($input));
-         
+
         switch($input) {
         case 'kivikausi':
         case 'kivikauisi':
@@ -349,7 +354,7 @@ class NdlLidoRecord extends LidoRecord
         case 'tuntematon':
             return null;
         }
-    
+
         $k = array(
                 'tammikuu' => '01',
                 'helmikuu' => '02',
@@ -364,7 +369,7 @@ class NdlLidoRecord extends LidoRecord
                 'marraskuu' => '11',
                 'joulukuu' => '12'
         );
-         
+
         if (preg_match('/(\d\d?).(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
             $startDate = sprintf('%04d-%02d-%02dT00:00:00Z', $matches[3], $matches[2], $matches[1]);
             $endDate = sprintf('%04d-%02d-%02dT23:59:59Z', $matches[6], $matches[5], $matches[4]);
@@ -426,14 +431,14 @@ class NdlLidoRecord extends LidoRecord
             // 30-40-luku
             $startDate = $matches[1];
             $endDate = $matches[3];
-             
+
             if (isset($matches[4])) {
                 $luku = $matches[4];
                 if ($endDate % 10 == 0) {
                     $endDate+=9;
                 }
             }
-             
+
             if (isset($matches[5])) {
                 $epavarma = $matches[5];
                 $startDate -= 2;
@@ -441,7 +446,7 @@ class NdlLidoRecord extends LidoRecord
             }
         } elseif (preg_match('/(\d?\d?\d\d) ?-luvun (loppupuoli|loppu|lopulta|loppupuolelta)/', $input, $matches) > 0) {
             $year = $matches[1];
-             
+
             if ($year % 100 == 0) {
                 // Century
                 $startDate = $year + 70;
@@ -488,7 +493,7 @@ class NdlLidoRecord extends LidoRecord
             $noprocess = true;
         } elseif (preg_match('/(\d?\d?\d\d) ?-luvun (alkupuolelta|alkupuoli|alku|alusta)/', $input, $matches) > 0) {
             $year = $matches[1];
-             
+
             if ($year % 100 == 0) {
                 // Century
                 $startDate = $year;
@@ -504,7 +509,7 @@ class NdlLidoRecord extends LidoRecord
             }
         } elseif (preg_match('/(\d?\d?\d\d) ?-(luvun|luku) (alkupuolelta|alkupuoli|alku|alusta)/', $input, $matches) > 0) {
             $year = $matches[1];
-             
+
             if ($year % 100 == 0) {
                 // Century
                 $startDate = $year;
@@ -521,7 +526,7 @@ class NdlLidoRecord extends LidoRecord
         } elseif (preg_match('/(\d?\d?\d\d) ?-(luku|luvulta)/', $input, $matches) > 0) {
             $year = $matches[1];
             $startDate = $year;
-             
+
             if ($year % 100 == 0) {
                 $endDate = $year + 99;
             } elseif ($year % 10 == 0) {
@@ -531,17 +536,17 @@ class NdlLidoRecord extends LidoRecord
             }
         } elseif (preg_match('/(\d?\d?\d\d) jälkeen/', $input, $matches) > 0) {
             $year = $matches[1];
-             
+
             $startDate = $year;
             $endDate = $year + 9;
         } elseif (preg_match('/(\d?\d?\d\d) ?\?/', $input, $matches) > 0) {
             $year = $matches[1];
-             
+
             $startDate = $year-3;
             $endDate = $year+3;
         } elseif (preg_match('/(\d?\d?\d\d)/', $input, $matches) > 0) {
             $year = $matches[1];
-             
+
             $startDate = $year;
             $endDate = $year;
         } else {
@@ -555,21 +560,28 @@ class NdlLidoRecord extends LidoRecord
             $century = substr($startDate, 0, 2) . '00';
             $endDate = $century + $endDate;
         }
-         
+
         if (empty($noprocess)) {
             $startDate = $startDate . '-01-01T00:00:00Z';
             $endDate = $endDate . '-12-31T23:59:59Z';
         }
-    
+
+        echo "$startDate - $endDate\n";
+        if ($endDate < $startDate) {
+            global $logger;
+            $logger->log('NdlLidoRecord', "Invalid date range {$startDate}-{$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
+            $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
+        }
+
         // Trying to index dates into the future? I don't think so...
         $yearNow = date('Y');
         if ($startDate > $yearNow || $endDate > $yearNow) {
             return null;
         }
-        
+
         $this->earliestYear = $startDate;
         $this->latestYear = $startDate;
-    
+
         if (!MetadataUtils::validateISO8601Date($startDate) || !MetadataUtils::validateISO8601Date($endDate)) {
             return null;
         }
