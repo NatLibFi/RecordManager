@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2012
+ * Copyright (C) The National Library of Finland 2011-2014.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -55,7 +55,7 @@ class EseRecord extends BaseRecord
     public function __construct($data, $oaiID, $source, $idPrefix)
     {
         parent::__construct($data, $oaiID, $source, $idPrefix);
-        
+
         $this->doc = simplexml_load_string($data);
     }
 
@@ -105,14 +105,14 @@ class EseRecord extends BaseRecord
         $doc = $this->doc;
         $data['ctrlnum'] = (string)$doc->recordID;
         $data['fullrecord'] = $doc->asXML();
-          
+
         // allfields
         $allFields = array();
         foreach ($doc->children() as $tag => $field) {
             $allFields[] = $field;
         }
         $data['allfields'] = $allFields;
-          
+
         // language
         $data['language'] = explode(' ', $doc->language);
 
@@ -167,7 +167,7 @@ class EseRecord extends BaseRecord
      * Dedup: Return record title
      *
      * @param bool $forFiling Whether the title is to be used in filing (e.g. sorting, non-filing characters should be removed)
-     * 
+     *
      * @return string
      * @access public
      */
@@ -281,9 +281,9 @@ class EseRecord extends BaseRecord
 
     /**
      * Get values for a tag
-     * 
+     *
      * @param string $tag XML tag
-     * 
+     *
      * @return multitype:string
      */
     protected function getValues($tag)

@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2013
+ * Copyright (C) The National Library of Finland 2012-2014.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -43,18 +43,18 @@ class EadSplitter
     protected $recordNodes;
     protected $recordCount;
     protected $currentPos;
-    
+
     protected $agency = '';
     protected $archiveId = '';
     protected $archiveTitle = '';
     protected $archiveSubTitle = '';
     protected $repository = '';
-    
+
     /**
     * Constructor
     *
     * @param string $data EAD XML
-    * 
+    *
     * @access public
     */
     public function __construct($data)
@@ -63,29 +63,29 @@ class EadSplitter
         $this->recordNodes = $this->doc->xpath('archdesc | archdesc/dsc//*[@level]');
         $this->recordCount = count($this->recordNodes);
         $this->currentPos = 0;
-        
+
         $this->agency = (string)$this->doc->eadheader->eadid->attributes()->mainagencycode;
         $this->archiveId = urlencode((string)($this->doc->eadheader->eadid->attributes()->identifier ? $this->doc->eadheader->eadid->attributes()->identifier : $this->doc->eadheader->eadid));
         $this->archiveTitle = (string)$this->doc->eadheader->filedesc->titlestmt->titleproper;
         $this->archiveSubTitle = (string)$this->doc->eadheader->filedesc->titlestmt->subtitle;
     }
-    
+
     /**
      * Check whether EOF has been encountered
-     * 
+     *
      * @return boolean
      */
     public function getEOF()
     {
         return $this->currentPos >= $this->recordCount;
     }
-    
+
     /**
      * Get next record
-     * 
-     * @param boolean  $prependParentTitleWithUnitId if true, parent title is 
+     *
+     * @param boolean  $prependParentTitleWithUnitId if true, parent title is
      * prepended with unit id.
-     * @param string[] $nonInheritedFields           list of fields within record 
+     * @param string[] $nonInheritedFields           list of fields within record
      * did-element not to be inherited to child nodes.
      *
      * @return string XML
@@ -101,7 +101,7 @@ class EadSplitter
             foreach ($original->children() as $child) {
                 $this->appendXMLFiltered($record, $child);
             }
-            
+
             $addData = $record->addChild('add-data');
 
             if ($record->getName() != 'archdesc') {
@@ -114,8 +114,8 @@ class EadSplitter
                     // Also store it in original record for the children
                     $original->addChild('add-data')->addAttribute('identifier', $this->archiveId . '_' . $this->currentPos);
                 }
-            } 
-            
+            }
+
             $absolute = $addData->addChild('archive');
             $absolute->addAttribute('id', $this->archiveId);
             $absolute->addAttribute('title', $this->archiveTitle);
@@ -123,15 +123,15 @@ class EadSplitter
             if ($this->archiveSubTitle) {
                 $absolute->addAttribute('subtitle', $this->archiveSubTitle);
             }
-            
+
             $ancestorDid = $original->xpath('ancestor::*/did');
             if ($ancestorDid) {
                 // Append any ancestor did's
-                foreach (array_reverse($ancestorDid) as $did) {                    
+                foreach (array_reverse($ancestorDid) as $did) {
                     $this->appendXML($record, $did, $nonInheritedFields);
                 }
             }
-            
+
             if ($this->doc->archdesc->bibliography) {
                 foreach ($this->doc->archdesc->bibliography as $elem) {
                     $this->appendXML($record, $elem);
@@ -142,7 +142,7 @@ class EadSplitter
                     $this->appendXML($record, $elem);
                 }
             }
-            
+
             $parentDid = $original->xpath('parent::*/did | parent::*/parent::*/did');
             if ($parentDid) {
                 $parentDid = $parentDid[0];
@@ -156,7 +156,7 @@ class EadSplitter
                     $parentID = $this->archiveId . '_' . $parentID;
                 }
                 $parentTitle = (string)$parentDid->unittitle;
-                
+
 
                 if ($prependParentTitleWithUnitId) {
                     if ((string)$parentDid->unitid && in_array((string)$record->attributes()->level, array('series', 'subseries', 'item', 'file'))) {
@@ -167,26 +167,26 @@ class EadSplitter
                 $parent->addAttribute('id', $parentID);
                 $parent->addAttribute('title', $parentTitle);
             }
-            
+
             return $record->asXML();
         }
         return false;
     }
-    
+
     /**
      * Recursively append a node to simplexml, merge elements with same name
-     * 
+     *
      * @param SimpleXMLElement &$simplexml Node to append to
      * @param SimpleXMLElement $append     Node to be appended
      * @param String[]         $ignore     Node names to be ignored
-     * 
+     *
      * @return void
      */
     protected function appendXML(&$simplexml, $append, $ignore = array())
     {
         if ($append) {
             $name = $append->getName();
-            // addChild doesn't encode & ...  
+            // addChild doesn't encode & ...
             $data = (string)$append;
             $data = str_replace('&', '&amp;', $data);
             if ($simplexml->{$name}) {
@@ -209,10 +209,10 @@ class EadSplitter
 
     /**
      * Recursively append a node to simplexml, filtering out c, c01, c02 etc.
-     * 
+     *
      * @param SimpleXMLElement &$simplexml Node to append to
      * @param SimpleXMLElement $append     Node to be appended
-     * 
+     *
      * @return void
      */
     protected function appendXMLFiltered(&$simplexml, $append)
@@ -222,7 +222,7 @@ class EadSplitter
             if ($name == 'c' || (substr($name, 0, 1) == 'c' && is_numeric(substr($name, 1)))) {
                 return;
             }
-            // addChild doesn't encode & ...  
+            // addChild doesn't encode & ...
             $data = (string)$append;
             $data = str_replace('&', '&amp;', $data);
             $xml = $simplexml->addChild($name, $data);
@@ -233,6 +233,6 @@ class EadSplitter
                 $this->appendXMLFiltered($xml, $child);
             }
         }
-    }    
-    
+    }
+
 }

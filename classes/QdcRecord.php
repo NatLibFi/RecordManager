@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2012
+ * Copyright (C) The National Library of Finland 2011-2014.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -55,7 +55,7 @@ class QdcRecord extends BaseRecord
     public function __construct($data, $oaiID, $source, $idPrefix)
     {
         parent::__construct($data, $oaiID, $source, $idPrefix);
-        
+
         $this->doc = simplexml_load_string($data);
         if (empty($this->doc->recordID)) {
             $p = strpos($oaiID, ':');
@@ -106,19 +106,19 @@ class QdcRecord extends BaseRecord
         $doc = $this->doc;
         $data['ctrlnum'] = (string)$doc->recordID;
         $data['fullrecord'] = $doc->asXML();
-          
+
         // allfields
         $allFields = array();
         foreach ($doc->children() as $tag => $field) {
             $allFields[] = (string)$field;
         }
         $data['allfields'] = $allFields;
-          
+
         // language
         $data['language'] = array_values(
             array_filter(
                 explode(
-                    ' ', 
+                    ' ',
                     (string)$doc->language
                 ),
                 function($value) {
@@ -126,7 +126,7 @@ class QdcRecord extends BaseRecord
                 }
             )
         );
-                
+
         $data['format'] = (string)$doc->type;
         $authors = $this->getValues('creator');
         if ($authors) {
@@ -167,7 +167,7 @@ class QdcRecord extends BaseRecord
             } elseif (preg_match('/^\d+\.\d+$/', $description)) {
                 // Classification, put somewhere?
             } else {
-                $data['contents'][] = $description; 
+                $data['contents'][] = $description;
             }
         }
 
@@ -188,13 +188,13 @@ class QdcRecord extends BaseRecord
      * Dedup: Return record title
      *
      * @param bool $forFiling Whether the title is to be used in filing (e.g. sorting, non-filing characters should be removed)
-     * 
+     *
      * @return string
      */
     public function getTitle($forFiling = false)
     {
         global $configArray;
-        
+
         $title = trim((string)$this->doc->title);
         $title = MetadataUtils::stripTrailingPunctuation($title);
         if ($forFiling) {
@@ -240,7 +240,7 @@ class QdcRecord extends BaseRecord
                 }
             }
         }
-        
+
         return array_unique($arr);
     }
 
@@ -305,9 +305,9 @@ class QdcRecord extends BaseRecord
 
     /**
      * Get xml field values
-     * 
+     *
      * @param string $tag Field name
-     * 
+     *
      * @return string[]
      */
     protected function getValues($tag)

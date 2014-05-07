@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012.
+ * Copyright (C) The National Library of Finland 2012-2014.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -45,7 +45,7 @@ class OaiPmhProvider
     const DT_INVALID = 1;
     const DT_SHORT = 2;
     const DT_LONG = 3;
-    
+
     protected $verb = '';
     protected $log = null;
     protected $db = null;
@@ -53,7 +53,7 @@ class OaiPmhProvider
     protected $dataSourceSettings = array();
     protected $formats = array();
     protected $sets = array();
-    
+
     /**
      * Constructor
      *
@@ -66,20 +66,20 @@ class OaiPmhProvider
         $this->dataSourceSettings = parse_ini_file("$basePath/conf/datasources.ini", true);
         $this->formats = parse_ini_file("$basePath/conf/{$configArray['OAI-PMH']['format_definitions']}", true);
         $this->sets = parse_ini_file("$basePath/conf/{$configArray['OAI-PMH']['set_definitions']}", true);
-        
+
         date_default_timezone_set($configArray['Site']['timezone']);
-        
+
         $this->log = new Logger();
-        
+
         $mongo = new Mongo($configArray['Mongo']['url']);
         $this->db = $mongo->selectDB($configArray['Mongo']['database']);
         MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout']) ? $configArray['Mongo']['cursor_timeout'] : 300000;
-        
+
     }
 
     /**
      * Process the request
-     * 
+     *
      * @return void
      */
     public function launch()
@@ -113,17 +113,17 @@ class OaiPmhProvider
         }
         $this->printSuffix();
     }
-    
+
     /**
      * GetRecord handler
-     * 
+     *
      * @return void
      */
     protected function getRecord()
     {
         $id = $this->getParam('identifier');
         $prefix = $this->getParam('metadataPrefix');
-        
+
         $record = $this->db->record->findOne(array('oai_id' => $id));
         if (!$record) {
             $this->error('idDoesNotExist', 'The value of the identifier argument is unknown or illegal in this repository.');
@@ -138,10 +138,10 @@ $xml
 
 EOF;
     }
-    
+
     /**
      * Identify handler
-     * 
+     *
      * @return void
      */
     protected function identify()
@@ -151,7 +151,7 @@ EOF;
         $base = $this->escape($configArray['OAI-PMH']['base_url']);
         $admin = $this->escape($configArray['OAI-PMH']['admin_email']);
         $earliestDate = $this->toOaiDate($this->getEarliestDateStamp());
-        
+
         print <<<EOF
 <Identify>
   <repositoryName>$name</repositoryName>
@@ -162,28 +162,28 @@ EOF;
   <deletedRecord>persistent</deletedRecord>
   <granularity>YYYY-MM-DDThh:mm:ssZ</granularity>
 <!--  <compression>deflate</compression> -->
-</Identify>       
+</Identify>
 
 EOF;
     }
-    
+
     /**
      * ListRecords/ListIdentifiers handler
-     * 
+     *
      * @param boolean $verb 'ListRecords' or 'ListIdentifiers'
-     * 
+     *
      * @return void
      */
     protected function listRecords($verb)
     {
         global $configArray;
-        
+
         $includeMetadata = $verb == 'ListRecords';
-        
+
         $resumptionToken = $this->getParam('resumptionToken');
         if ($resumptionToken) {
             $params = explode('|', $resumptionToken);
-            if (count($params) != 5) { 
+            if (count($params) != 5) {
                 $this->error('badResumptionToken', '');
                 $this->printSuffix();
                 die();
@@ -200,7 +200,7 @@ EOF;
             $until = $this->getParam('until');
             $position = 0;
         }
-        
+
         $queryParams = array();
         if ($set) {
             if (!isset($this->sets[$set])) {
@@ -211,35 +211,35 @@ EOF;
             foreach ($this->sets[$set] as $key => $value) {
                 if ($key == 'name') {
                     continue;
-                } 
+                }
                 $queryParams[$key] = $value;
             }
         }
         if ($from && $until) {
-            $queryParams['updated'] = array('$gte' => new MongoDate($this->fromOaiDate($from, '00:00:00'), 0), 
+            $queryParams['updated'] = array('$gte' => new MongoDate($this->fromOaiDate($from, '00:00:00'), 0),
               '$lte' => new MongoDate($this->fromOaiDate($until, '23:59:59'), 999999));
         } elseif ($from) {
             $queryParams['updated'] = array('$gte' => new MongoDate($this->fromOaiDate($from, '00:00:00'), 0));
         } elseif ($until) {
             $queryParams['updated'] = array('$lte' => new MongoDate($this->fromOaiDate($until, '23:59:59'), 999999));
         }
-                        
+
         $records = $this->db->record->find($queryParams)->sort(array('updated' => 1));
         if ($position) {
             $records = $records->skip($position);
         }
-        
+
         if (!$records->hasNext()) {
             $this->error('noRecordsMatch', '');
             $this->printSuffix();
             die();
         }
-        
+
         print <<<EOF
           <$verb>
-        
+
 EOF;
-        
+
         $maxRecords = $configArray['OAI-PMH']['result_limit'];
         $count = 0;
         foreach ($records as $record) {
@@ -265,16 +265,16 @@ EOF;
 
 EOF;
     }
-    
+
     /**
      * ListMetadataFormats handler
-     * 
+     *
      * @return void
      */
     protected function listMetadataFormats()
     {
         global $configArray;
-        
+
         $formats = array();
 
         $id = $this->getParam('identifier');
@@ -288,7 +288,7 @@ EOF;
             }
             $source = $record['source_id'];
         }
-        
+
         // List available formats
         foreach ($this->dataSourceSettings as $key => $datasource) {
             if ($source && $key != $source) {
@@ -304,21 +304,21 @@ EOF;
                 }
             }
         }
-        
+
         print <<<EOF
   <ListMetadataFormats>
 
 EOF;
-        
+
         // Map to OAI-PMH formats
         $xml = '';
         foreach ($formats as $key => $dummy) {
             foreach ($this->formats as $id => $settings) {
                 if ($settings['format'] == $key) {
                     $prefix = $this->escape($id);
-                    $schema = $settings['schema'];  
-                    $namespace = $settings['namespace'];  
-                
+                    $schema = $settings['schema'];
+                    $namespace = $settings['namespace'];
+
                     print <<<EOF
     <metadataFormat>
       <metadataPrefix>$prefix</metadataPrefix>
@@ -336,10 +336,10 @@ EOF;
 
 EOF;
     }
-    
+
     /**
      * ListSets handler
-     * 
+     *
      * @return void
      */
     protected function listSets()
@@ -352,26 +352,26 @@ EOF;
         foreach ($this->sets as $id => $set) {
             $id = $this->escape($id);
             $name = $this->escape($set['name']);
-     
+
             print <<<EOF
     <set>
       <setSpec>$id</setSpec>
       <setName>$name</setName>
-    </set>          
+    </set>
 EOF;
         }
-        
+
         print <<<EOF
   </ListSets>
 EOF;
     }
-    
+
     /**
      * Output and log an error
-     * 
+     *
      * @param string $code    Error code
      * @param string $message Error message
-     * 
+     *
      * @return void
      */
     protected function error($code, $message)
@@ -381,10 +381,10 @@ EOF;
         print "  <error code=\"$code\">$message</error>\n";
         $this->log("$code - $message", Logger::ERROR);
     }
-    
+
     /**
      * Output OAI-PMH response body opening
-     * 
+     *
      * @return void
      */
     protected function printPrefix()
@@ -397,14 +397,14 @@ EOF;
         $arguments = '';
         foreach ($this->getRequestParameters() as $param) {
             $keyValue = explode('=', $param, 2);
-            if (isset($keyValue[1])) { 
+            if (isset($keyValue[1])) {
                 $arguments .= ' ' . $keyValue[0] . '="' . $this->escape($keyValue[1]) . '"';
             }
         }
-            
+
         print <<<EOF
 <?xml version="1.0" encoding="UTF-8"?>
-<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" 
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/
          http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
@@ -413,10 +413,10 @@ EOF;
 
 EOF;
     }
-    
+
     /**
      * Output OAI-PMH response body closing
-     * 
+     *
      * @return void
      */
     protected function printSuffix()
@@ -426,10 +426,10 @@ EOF;
 
     /**
      * Convert OAI-PMH timestamp to PHP time
-     * 
+     *
      * @param string $datestr              OAI-PMH timestamp
      * @param string $timePartForShortDate Time part to use for a date without time
-     * 
+     *
      * @return int A timestamp
      */
     protected function fromOaiDate($datestr, $timePartForShortDate)
@@ -441,37 +441,37 @@ EOF;
         }
         return strtotime($datestr);
     }
-    
+
     /**
      * Convert time to OAI-PMH timestamp
-     * 
+     *
      * @param int|null $date Time to convert or null for current time
-     * 
+     *
      * @return string OAI-PMH timestamp
      */
-    protected function toOaiDate($date = null) 
+    protected function toOaiDate($date = null)
     {
         if (!isset($date)) {
             $date = time();
         }
         return gmdate('Y-m-d\TH:i:s\Z', $date);
     }
-    
+
     /**
      * Return HTTP request parameter
-     * 
+     *
      * @param string $param Parameter name
-     * 
+     *
      * @return string Parameter value or empty string
      */
     protected function getParam($param)
     {
-        return isset($_REQUEST[$param]) ? $_REQUEST[$param] : ''; 
+        return isset($_REQUEST[$param]) ? $_REQUEST[$param] : '';
     }
-    
+
     /**
      * Return the earliest time in the database
-     * 
+     *
      * @return int Time
      */
     protected function getEarliestDateStamp()
@@ -479,12 +479,12 @@ EOF;
         $record = $this->db->record->find()->sort(array('updated' => 1))->limit(1)->getNext();
         return $record['updated']->sec;
     }
-    
+
     /**
      * Get the sets the record belongs to
-     * 
+     *
      * @param object $record Mongo record
-     * 
+     *
      * @return string[]
      */
     protected function getRecordSets($record)
@@ -500,17 +500,17 @@ EOF;
                     $match = false;
                     break;
                 }
-            } 
+            }
             if ($match) {
                 $sets[] = $id;
             }
         }
         return $sets;
     }
-    
+
     /**
      * Get all request parameters
-     * 
+     *
      * @return string[]
      */
     protected function getRequestParameters()
@@ -522,10 +522,10 @@ EOF;
         }
         return explode('&', $params);
     }
-    
+
     /**
      * Verify that the request parameters are valid
-     * 
+     *
      * @return boolean
      */
     protected function checkParameters()
@@ -571,7 +571,7 @@ EOF;
                     if (!in_array($key, array('verb', 'from', 'until', 'set', 'metadataPrefix'))) {
                         $this->error('badArgument', 'Illegal argument');
                         return false;
-                    }    
+                    }
                 }
             }
             break;
@@ -595,11 +595,11 @@ EOF;
             $this->printSuffix();
             die();
         }
-        
+
         // Check dates
         $fromType = $this->getOaiDateType($this->getParam('from'));
         $untilType = $this->getOaiDateType($this->getParam('until'));
-        
+
         if ($fromType == OaiPmhProvider::DT_INVALID || $untilType == OaiPmhProvider::DT_INVALID) {
             $this->error('badArgument', 'Invalid date format');
             return false;
@@ -608,15 +608,15 @@ EOF;
             $this->error('badArgument', 'Incompatible date formats');
             return false;
         }
-        
+
         return true;
     }
 
     /**
      * Get the type of the given timestamp
-     * 
+     *
      * @param string $date OAI-PMH timestamp
-     * 
+     *
      * @return enum Date type
      */
     protected function getOaiDateType($date)
@@ -632,13 +632,13 @@ EOF;
         }
         return OaiPmhProvider::DT_INVALID;
     }
-    
+
     /**
      * Write a message to log
-     * 
+     *
      * @param string $message Message
      * @param enum   $level   Log level for the message
-     * 
+     *
      * @return void
      */
     protected function log($message, $level = Logger::INFO)
@@ -646,21 +646,21 @@ EOF;
         $message = '[' . $_SERVER['REMOTE_ADDR'] . '] ' . $message . ' (request: ' . $_SERVER['QUERY_STRING'] . ')';
         $this->log->log('OaiPmhProvider', $message, $level);
     }
-    
+
     /**
      * Create record XML
-     * 
+     *
      * @param object  $record          Mongo record
      * @param string  $format          Metadata format
      * @param boolean $includeMetadata Whether to include record data (or only header)
-     * 
+     *
      * @return boolean|string
      */
     protected function createRecord($record, $format, $includeMetadata)
     {
         global $configArray;
         global $basePath;
-        
+
         $sourceFormat = $record['format'];
         if (isset($this->formats[$format])) {
             $format = $this->formats[$format]['format'];
@@ -696,7 +696,7 @@ EOF;
 
 EOF;
         }
-        
+
         $setSpecs = '';
         foreach ($this->getRecordSets($record) as $id) {
             $id = $this->escape($id);
@@ -705,7 +705,7 @@ EOF;
 
 EOF;
         }
-        
+
         $id = $this->escape($record['oai_id']);
         $date = $this->toOaiDate($record['updated']->sec);
         $source = $this->escape($record['source_id']);
@@ -720,12 +720,12 @@ $metadata    </record>
 
 EOF;
     }
-    
+
     /**
      * Escape special characters for XML
-     * 
+     *
      * @param string $str String to escape
-     * 
+     *
      * @return string Escaped string
      */
     protected function escape($str)

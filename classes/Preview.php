@@ -4,8 +4,8 @@
  *
  * PHP version 5
  *
- * Copyright (C) Eero Heikkinen, The National Board of Antiquities 2013
- * Copyright (C) The National Library of Finland 2012-2013
+ * Copyright (C) Eero Heikkinen, The National Board of Antiquities 2013.
+ * Copyright (C) The National Library of Finland 2012-2014.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -49,12 +49,12 @@ class Preview extends SolrUpdater
 {
     /**
      * Constructor
-     * 
+     *
      * @param MongoDB $db       Database connection
-     * @param string  $basePath RecordManager main directory 
+     * @param string  $basePath RecordManager main directory
      * @param object  $log      Logger
      * @param boolean $verbose  Whether to output verbose messages
-     * 
+     *
      * @throws Exception
      */
     public function __construct($db, $basePath, $log, $verbose)
@@ -79,19 +79,19 @@ class Preview extends SolrUpdater
 
     /**
      * Creates a preview of the given metadata and returns it
-     * 
+     *
      * @param string $metadata The metadata to process
      * @param string $format   Metadata format
      * @param string $source   Source identifier
-     * 
+     *
      * @return array
      */
-    public function preview($metadata, $format, $source) 
+    public function preview($metadata, $format, $source)
     {
         if (!$source) {
             $source = "_preview";
         }
-        
+
         /* Process data source preTransformation XSL if present
            TODO: duplicates code from RecordManager, refactor? */
         $settings = $this->settings[$source];
@@ -109,7 +109,7 @@ class Preview extends SolrUpdater
             $doc->loadXML($metadata);
             $metadata = $xslt->transformToXml($doc);
         }
-        
+
         $record = array(
             'format' => $format,
             'original_data' => $metadata,
@@ -136,7 +136,7 @@ class Preview extends SolrUpdater
         $metadataRecord = RecordFactory::createRecord($record['format'], $record['normalized_data'], $record['oai_id'], $record['source_id']);
         $metadataRecord->normalize();
         $record['normalized_data'] = $metadataRecord->serialize();
-        
+
         return $this->createSolrArray($record, $componentParts);
     }
 }

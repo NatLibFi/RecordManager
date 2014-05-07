@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2013
+ * Copyright (C) The National Library of Finland 2011-2014.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -47,7 +47,7 @@ class EadRecord extends BaseRecord
      * Constructor
      *
      * @param string $data     Metadata
-     * @param string $oaiID    Record ID received from OAI-PMH 
+     * @param string $oaiID    Record ID received from OAI-PMH
      * (or empty string for file import)
      * @param string $source   Source ID
      * @param string $idPrefix Record ID prefix
@@ -55,7 +55,7 @@ class EadRecord extends BaseRecord
     public function __construct($data, $oaiID, $source, $idPrefix)
     {
         parent::__construct($data, $oaiID, $source, $idPrefix);
-        
+
         $this->doc = simplexml_load_string($data);
     }
 
@@ -71,7 +71,7 @@ class EadRecord extends BaseRecord
             return (string)$this->doc->{'add-data'}->attributes()->identifier;
         }
         if (isset($this->doc->did->unitid)) {
-            $id = isset($this->doc->did->unitid->attributes()->identifier) 
+            $id = isset($this->doc->did->unitid->attributes()->identifier)
                 ? (string)$this->doc->did->unitid->attributes()->identifier
                 : (string)$this->doc->did->unitid;
         } else {
@@ -105,7 +105,7 @@ class EadRecord extends BaseRecord
     /**
      * Return fields to be indexed in Solr
      *
-     * @param boolean $prependTitleWithSubtitle If true and title_sub differs from title_short, 
+     * @param boolean $prependTitleWithSubtitle If true and title_sub differs from title_short,
      *                                          title is formed by combining title_sub and title_short
      *
      * @return string[]
@@ -114,7 +114,7 @@ class EadRecord extends BaseRecord
     public function toSolrArray($prependTitleWithSubtitle)
     {
         $data = array();
-        
+
         $doc = $this->doc;
         $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
         $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($doc->asXML());
@@ -131,7 +131,7 @@ class EadRecord extends BaseRecord
                 if (trim((string)$name) !== '-') {
                     $authors[] = (string)$name;
                 }
-            }            
+            }
         }
 
         if ($names = $doc->xpath('controlaccess/corpname')) {
@@ -175,15 +175,15 @@ class EadRecord extends BaseRecord
         $data['format'] = (string) ($genre ? $genre[0] : $doc->attributes()->level);
 
         if (isset($doc->did->repository)) {
-            $data['institution'] 
-                = (string) isset($doc->did->repository->corpname) 
-                ? $doc->did->repository->corpname 
+            $data['institution']
+                = (string) isset($doc->did->repository->corpname)
+                ? $doc->did->repository->corpname
                 : $doc->did->repository;
         }
-        
+
 
         $data['title_sub'] = '';
-        
+
         switch ($data['format']) {
         case 'fonds':
             break;
@@ -218,15 +218,15 @@ class EadRecord extends BaseRecord
         }
         if (isset($doc->did->dimensions)) {
             // display measurements
-            $data['measurements'] = (string)$doc->did->dimensions;            
+            $data['measurements'] = (string)$doc->did->dimensions;
         }
-        
+
         if (isset($doc->did->physdesc)) {
-            $data['material'] = (string)$doc->did->physdesc;            
+            $data['material'] = (string)$doc->did->physdesc;
         }
-        
+
         if (isset($doc->did->accessrestrict->p)) {
-            $data['rights'] = (string)$doc->did->accessrestrict->p;            
+            $data['rights'] = (string)$doc->did->accessrestrict->p;
         }
 
         if ($languages = $doc->did->xpath('langmaterial/language')) {
@@ -255,14 +255,14 @@ class EadRecord extends BaseRecord
                 $data['thumbnail'] = (string)$node->attributes()->href;
             }
         }
-        
+
         $data['hierarchytype'] = 'Default';
         if ($this->doc->{'add-data'}->archive) {
             $archiveAttr = $this->doc->{'add-data'}->archive->attributes();
             $data['hierarchy_top_id'] = (string)$archiveAttr->{'id'};
             $data['hierarchy_top_title'] = (string)$archiveAttr->title;
             if ($archiveAttr->subtitle) {
-                $data['hierarchy_top_title'] .= ' : ' . (string)$archiveAttr->subtitle; 
+                $data['hierarchy_top_title'] .= ' : ' . (string)$archiveAttr->subtitle;
             }
             if ($archiveAttr->sequence) {
                 $data['hierarchy_sequence'] = (string)$archiveAttr->sequence;
@@ -274,16 +274,16 @@ class EadRecord extends BaseRecord
         } else {
             $data['is_hierarchy_id'] = $data['hierarchy_top_id'] = $this->getID();
             $data['is_hierarchy_title'] = $data['hierarchy_top_title'] = (string)$doc->did->unittitle;
-        }        
-        
+        }
+
         return $data;
     }
 
     /**
      * Get all XML fields
-     * 
+     *
      * @param SimpleXMLDocument $xml The XML document
-     * 
+     *
      * @return string[]
      */
     protected function getAllFields($xml)

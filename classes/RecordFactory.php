@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2012.
+ * Copyright (C) The National Library of Finland 2011-2014.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -54,16 +54,16 @@ class RecordFactory
     static function createRecord($format, $data, $oaiID, $source)
     {
         global $configArray;
-        
+
         if (isset($configArray['Record Classes'][$format])) {
             $class = $configArray['Record Classes'][$format];
         } else {
             $class = ucwords($format) . 'Record';
         }
-        $idPrefix 
+        $idPrefix
             = isset($configArray['dataSourceSettings'][$source]['idPrefix'])
             ? $configArray['dataSourceSettings'][$source]['idPrefix']
-            : $source; 
+            : $source;
         if (class_exists($class)) {
             $obj = new $class($data, $oaiID, $source, $idPrefix);
             return $obj;

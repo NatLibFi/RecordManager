@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2013
+ * Copyright (C) The National Library of Finland 2011-2014.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -43,7 +43,7 @@ require_once 'MetadataUtils.php';
 class DcRecord extends BaseRecord
 {
     protected $doc = null;
-    
+
     /**
      * Constructor
      *
@@ -55,7 +55,7 @@ class DcRecord extends BaseRecord
     public function __construct($data, $oaiID, $source, $idPrefix)
     {
         parent::__construct($data, $oaiID, $source, $idPrefix);
-        
+
         $this->doc = simplexml_load_string($data);
         if (empty($this->doc->recordID)) {
             $p = strpos($oaiID, ':');
@@ -110,7 +110,7 @@ class DcRecord extends BaseRecord
         $doc = $this->doc;
         $data['ctrlnum'] = (string)$doc->recordID;
         $data['fullrecord'] = $doc->asXML();
-          
+
         // allfields
         $allFields = array();
         foreach ($doc->children() as $tag => $field) {
@@ -122,7 +122,7 @@ class DcRecord extends BaseRecord
         $data['language'] = array_values(
             array_filter(
                 explode(
-                    ' ', 
+                    ' ',
                     (string)$doc->language
                 ),
                 function ($value) {
@@ -130,7 +130,7 @@ class DcRecord extends BaseRecord
                 }
             )
         );
-        
+
         $data['format'] = (string)$doc->type;
         $data['author'] = MetadataUtils::stripTrailingPunctuation((string)$doc->creator);
         $data['author-letter'] = $data['author'];
@@ -164,7 +164,7 @@ class DcRecord extends BaseRecord
             } elseif (preg_match('/^\d+\.\d+$/', $description)) {
                 // Classification, put somewhere?
             } else {
-                $data['contents'][] = $description; 
+                $data['contents'][] = $description;
             }
         }
 
@@ -186,19 +186,19 @@ class DcRecord extends BaseRecord
      * Dedup: Return record title
      *
      * @param bool $forFiling Whether the title is to be used in filing (e.g. sorting, non-filing characters should be removed)
-     * 
+     *
      * @return string
      * @access public
      */
     public function getTitle($forFiling = false)
     {
         global $configArray;
-        
+
         $title = trim((string)$this->doc->title);
         $title = MetadataUtils::stripTrailingPunctuation($title);
         if ($forFiling) {
             $title = MetadataUtils::stripLeadingPunctuation($title);
-            $title = MetadataUtils::stripLeadingArticle($title);            
+            $title = MetadataUtils::stripLeadingArticle($title);
             // Again, just in case stripping the article affected this
             $title = MetadataUtils::stripLeadingPunctuation($title);
             $title = mb_strtolower($title, 'UTF-8');
@@ -303,9 +303,9 @@ class DcRecord extends BaseRecord
 
     /**
      * Get all values for a tag
-     * 
-     * @param string $tag XML tag to get 
-     * 
+     *
+     * @param string $tag XML tag to get
+     *
      * @return multitype:string
      */
     protected function getValues($tag)
