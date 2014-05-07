@@ -167,7 +167,7 @@ class NdlEadRecord extends EadRecord
 
         if ($endDate < $startDate) {
             global $logger;
-            $logger->log('NdlEadRecord', "Invalid date range {$startDate}-{$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
+            $logger->log('NdlEadRecord', "Invalid date range {$startDate} - {$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
         }
 

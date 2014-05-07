@@ -528,7 +528,7 @@ class NdlMarcRecord extends MarcRecord
         if (isset($startDate) && isset($endDate) && MetadataUtils::validateISO8601Date($startDate) && MetadataUtils::validateISO8601Date($endDate)) {
             if ($endDate < $startDate) {
                 global $logger;
-                $logger->log('NdlMarcRecord', "Invalid date range {$startDate}-{$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
+                $logger->log('NdlMarcRecord', "Invalid date range {$startDate} - {$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
                 $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
             }
             return MetadataUtils::convertDateRange(array($startDate, $endDate));

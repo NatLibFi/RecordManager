@@ -259,7 +259,7 @@ class NdlLidoRecord extends LidoRecord
         if (!empty($startDate) && !empty($endDate)) {
             if ($endDate < $startDate) {
                 global $logger;
-                $logger->log('NdlLidoRecord', "Invalid date range {$startDate}-{$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
+                $logger->log('NdlLidoRecord', "Invalid date range {$startDate} - {$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
                 $endDate = $startDate;
             }
             if (strlen($startDate) == 4) {
@@ -568,7 +568,7 @@ class NdlLidoRecord extends LidoRecord
 
         if ($endDate < $startDate) {
             global $logger;
-            $logger->log('NdlLidoRecord', "Invalid date range {$startDate}-{$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
+            $logger->log('NdlLidoRecord', "Invalid date range {$startDate} - {$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
         }
 
