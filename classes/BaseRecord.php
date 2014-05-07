@@ -41,10 +41,10 @@ class BaseRecord
 {
     // Record source ID
     protected $source;
-    
+
     // Record ID prefix
     protected $idPrefix = '';
-    
+
     /**
      * Constructor
      *
@@ -79,7 +79,7 @@ class BaseRecord
     {
         return $this->getID();
     }
-    
+
     /**
      * Serialize the record for storing in the database
      *
@@ -89,7 +89,7 @@ class BaseRecord
     {
         die('unimplemented');
     }
-    
+
     /**
      * Serialize the record into XML for export
      *
@@ -99,7 +99,7 @@ class BaseRecord
     {
         die('unimplemented');
     }
-    
+
     /**
      * Normalize the record (optional)
      *
@@ -108,17 +108,17 @@ class BaseRecord
     public function normalize()
     {
     }
-    
+
     /**
-     * Return whether the record is a component part 
-     * 
+     * Return whether the record is a component part
+     *
      * @return boolean
      */
     public function getIsComponentPart()
     {
         return false;
     }
-    
+
     /**
      * Return host record ID for component part
      *
@@ -143,7 +143,7 @@ class BaseRecord
      * Merge component parts to this record
      *
      * @param MongoCollection $componentParts Component parts to be merged
-     * 
+     *
      * @return void
      */
     public function mergeComponentParts($componentParts)
@@ -153,9 +153,9 @@ class BaseRecord
     /**
      * Return record title
      *
-     * @param bool $forFiling Whether the title is to be used in filing 
+     * @param bool $forFiling Whether the title is to be used in filing
      *                        (e.g. sorting, non-filing characters should be removed)
-     *                        
+     *
      * @return string
      */
     public function getTitle($forFiling = false)
@@ -165,7 +165,7 @@ class BaseRecord
 
     /**
      * Component parts: get the volume that contains this component part
-     * 
+     *
      * @return string
      */
     public function getVolume()
@@ -175,24 +175,24 @@ class BaseRecord
 
     /**
      * Component parts: get the issue that contains this component part
-     * 
+     *
      * @return string
      */
     public function getIssue()
     {
         return '';
     }
-    
+
     /**
      * Component parts: get the start page of this component part in the host record
-     * 
+     *
      * @return string
      */
     public function getStartPage()
     {
         return '';
     }
-    
+
     /**
      * Component parts: get the container title
      *
@@ -202,7 +202,7 @@ class BaseRecord
     {
         return '';
     }
-    
+
     /**
      * Component parts: get the reference to the part in the container
      *
@@ -262,7 +262,7 @@ class BaseRecord
     {
         return array();
     }
-    
+
     /**
      * Dedup: Return series ISSN
      *
@@ -312,42 +312,42 @@ class BaseRecord
     {
         return '';
     }
-    
+
     /**
      * Dedup: Add the dedup key to a suitable field in the metadata.
      * Used when exporting records to a file.
      *
      * @param string $dedupKey Dedup key to be added
-     * 
+     *
      * @return void
      */
     public function addDedupKeyToMetadata($dedupKey)
     {
     }
-    
+
     /**
      * Return a parameter specified in driverParams[] of datasources.ini
-     * 
-     * @param string $option  Parameter name
-     * @param bool   $default Default value if the parameter is not set
-     * 
+     *
+     * @param string $parameter Parameter name
+     * @param bool   $default   Default value if the parameter is not set
+     *
      * @return mixed Value
      */
     protected function getDriverParam($parameter, $default = true)
     {
         global $configArray;
-        
+
         if (!isset($configArray['dataSourceSettings'][$this->source]['driverParams'])) {
             return $default;
         }
         $iniValues = parse_ini_string(
             implode(
-                PHP_EOL, 
+                PHP_EOL,
                 $configArray['dataSourceSettings'][$this->source]['driverParams']
             )
         );
-        
-        return isset($iniValues[$parameter]) ? $iniValues[$parameter] : $default; 
+
+        return isset($iniValues[$parameter]) ? $iniValues[$parameter] : $default;
     }
 }
 
