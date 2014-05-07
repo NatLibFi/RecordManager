@@ -566,7 +566,6 @@ class NdlLidoRecord extends LidoRecord
             $endDate = $endDate . '-12-31T23:59:59Z';
         }
 
-        echo "$startDate - $endDate\n";
         if ($endDate < $startDate) {
             global $logger;
             $logger->log('NdlLidoRecord', "Invalid date range {$startDate}-{$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
