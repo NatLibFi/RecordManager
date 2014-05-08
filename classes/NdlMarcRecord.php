@@ -120,18 +120,40 @@ class NdlMarcRecord extends MarcRecord
         // language override
         $data['language'] = array();
         $languages = array(substr($this->getField('008'), 35, 3));
-        $languages += $this->getFieldsSubfields(
-            array(
-                array(MarcRecord::GET_NORMAL, '041', array('a'=>1)),
-                array(MarcRecord::GET_NORMAL, '979', array('h'=>1)) // 979h = component part language
-            ),
-            false, true, true
+        $languages = array_merge(
+            $languages, $this->getFieldsSubfields(
+                array(
+                    array(MarcRecord::GET_NORMAL, '041', array('a'=>1)),
+                    array(MarcRecord::GET_NORMAL, '041', array('d'=>1)),
+                    // 979h = component part language
+                    array(MarcRecord::GET_NORMAL, '979', array('h'=>1))
+                ),
+                false, true, true
+            )
         );
         foreach ($languages as $language) {
             if (preg_match('/^\w{3}$/', $language) && $language != 'zxx' && $language != 'und') {
                 $data['language'][] = $language;
             }
         }
+
+        $data['subtitle_lng_str_mv'] = $this->getFieldsSubfields(
+            array(
+                array(MarcRecord::GET_NORMAL, '041', array('j'=>1)),
+                // 979j = component part subtitle language
+                array(MarcRecord::GET_NORMAL, '979', array('j'=>1))
+            ),
+            false, true, true
+        );
+
+        $data['original_lng_str_mv'] = $this->getFieldsSubfields(
+            array(
+                array(MarcRecord::GET_NORMAL, '041', array('h'=>1)),
+                // 979i = component part original language
+                array(MarcRecord::GET_NORMAL, '979', array('i'=>1))
+            ),
+            false, true, true
+        );
 
         // 979cd = component part authors
         foreach ($this->getFieldsSubfields(
@@ -159,12 +181,14 @@ class NdlMarcRecord extends MarcRecord
                         array(MarcRecord::GET_BOTH, '246', array('g'=>1)),
                         array(MarcRecord::GET_BOTH, '730', array('a'=>1, 'd'=>1, 'f'=>1, 'g'=>1, 'k'=>1, 'l'=>1, 'n'=>1, 'p'=>1, 's'=>1, 't'=>1)),
                         array(MarcRecord::GET_BOTH, '740', array('a'=>1)),
+                        // 979b = component part title
                         array(MarcRecord::GET_BOTH, '979', array('b'=>1)),
+                        // 979e = component part uniform title
                         array(MarcRecord::GET_BOTH, '979', array('e'=>1)),
                     )
                 )
             )
-        ); // 979b and e = component part title and uniform title
+        );
 
         // Location coordinates
         $field = $this->getField('034');
@@ -348,11 +372,25 @@ class NdlMarcRecord extends MarcRecord
                 )
             );
             $languages = array(substr($marc->getField('008'), 35, 3));
-            $languages += $marc->getFieldsSubfields(
+            $languages = array_unique(
+                array_merge(
+                    $languages, $marc->getFieldsSubfields(
+                        array(
+                            array(MarcRecord::GET_NORMAL, '041', array('a'=>1)),
+                            array(MarcRecord::GET_NORMAL, '041', array('d'=>1))
+                        ),
+                        false, true, true
+                    )
+                )
+            );
+            $originalLanguages = $marc->getFieldsSubfields(
                 array(
-                    array(MarcRecord::GET_NORMAL, '041', array('a'=>1)),
-                    array(MarcRecord::GET_NORMAL, '041', array('d'=>1)),
-                    array(MarcRecord::GET_NORMAL, '041', array('h'=>1)),
+                    array(MarcRecord::GET_NORMAL, '041', array('h'=>1))
+                ),
+                false, true, true
+            );
+            $subtitleLanguages = $marc->getFieldsSubfields(
+                array(
                     array(MarcRecord::GET_NORMAL, '041', array('j'=>1))
                 ),
                 false, true, true
@@ -390,6 +428,16 @@ class NdlMarcRecord extends MarcRecord
             foreach ($languages as $language) {
                 if (preg_match('/^\w{3}$/', $language) && $language != 'zxx' && $language != 'und') {
                     $newField['s'][] = array('h' => $language);
+                }
+            }
+            foreach ($originalLanguages as $language) {
+                if (preg_match('/^\w{3}$/', $language) && $language != 'zxx' && $language != 'und') {
+                    $newField['s'][] = array('i' => $language);
+                }
+            }
+            foreach ($subtitleLanguages as $language) {
+                if (preg_match('/^\w{3}$/', $language) && $language != 'zxx' && $language != 'und') {
+                    $newField['s'][] = array('j' => $language);
                 }
             }
 
@@ -549,7 +597,7 @@ class NdlMarcRecord extends MarcRecord
             '650' => array('0'=>1, '2'=>1, '6'=>1, '8'=>1),
             '773' => array('0'=>1, '6'=>1, '7'=>1, '8'=>1, 'w'=>1),
             '856' => array('0'=>1, '6'=>1, '8'=>1, 'q'=>1),
-            '979' => array('0'=>1, 'a'=>1)
+            '979' => array('0'=>1, 'a'=>1, 'f'=>1)
         );
         $allFields = array();
         foreach ($this->fields as $tag => $fields) {
