@@ -26,7 +26,7 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 
-declare(ticks = 1);
+declare(ticks = 100);
 
 require_once 'BaseRecord.php';
 require_once 'MetadataUtils.php';
@@ -66,6 +66,7 @@ class SolrUpdater
     protected $maxUpdateTries;
     protected $updateRetryWait;
     protected $backgroundUpdates;
+    protected $threadedMergedRecordUpdate;
 
     protected $mergedFields = array('institution', 'collection', 'building',
         'language', 'physical', 'publisher', 'publishDate', 'contents', 'url',
@@ -146,6 +147,8 @@ class SolrUpdater
             ? $configArray['Solr']['update_retry_wait'] : 60;
         $this->backgroundUpdates = isset($configArray['Solr']['background_update'])
             ? $configArray['Solr']['background_update'] : 0;
+        $this->threadedMergedRecordUpdate = isset($configArray['Solr']['threaded_merged_record_update'])
+            ? $configArray['Solr']['threaded_merged_record_update'] : false;
 
 
         // Load settings and mapping files
@@ -278,7 +281,299 @@ class SolrUpdater
     }
 
     /**
-     * Update Solr index (merged records)
+     * Process merged (deduplicated) records
+     *
+     * @param MongoDate $mongoFromDate Start date
+     * @param string    $sourceId      Comma-separated list of source IDs to update,
+     *                                 or empty or * for all sources
+     * @param string    $singleId      Export only a record with the given ID
+     * @param bool      $noCommit      If true, changes are not explicitly committed
+     * @param bool      $delete        If true, records in the given $sourceId are
+     *                                 all deleted
+     *
+     * @throws Exception
+     * @return boolean Whether anything was updated
+     */
+    protected function processMerged(
+        $mongoFromDate, $sourceId, $singleId, $noCommit, $delete
+    ) {
+        global $configArray;
+
+        $params = array();
+        if ($singleId) {
+            $params['_id'] = $singleId;
+            $params['dedup_id'] = array('$exists' => true);
+            $lastIndexingDate = null;
+        } else {
+            if (isset($mongoFromDate)) {
+                $params['updated'] = array('$gte' => $mongoFromDate);
+            }
+            if ($sourceId) {
+                $sources = explode(',', $sourceId);
+                if (count($sources) == 1) {
+                    $params['source_id'] = $sourceId;
+                } else {
+                    $sourceParams = array();
+                    foreach ($sources as $source) {
+                        $sourceParams[] = array('source_id' => $source);
+                    }
+                    $params['$or'] = $sourceParams;
+                }
+            }
+            if (!$delete) {
+                $params['update_needed'] = false;
+            }
+            $params['dedup_id'] = array('$exists' => true);
+        }
+
+        $collectionName = 'mr_record_' . md5(json_encode($params));
+        if (isset($fromDate)) {
+            $collectionName .= '_' . date('Ymd', strtotime($fromDate));
+        }
+        $record = $this->db->record->find()->sort(array('updated' => -1))->getNext();
+        $lastRecordTime = $record['updated']->sec;
+        $collectionName .= "_$lastRecordTime";
+
+        // Install a signal handler so that we can exit cleanly if interrupted
+        unset($this->terminate);
+        if (function_exists('pcntl_signal')) {
+            pcntl_signal(SIGINT, array($this, 'sigIntHandler'));
+            $this->log->log('updateRecords', 'Interrupt handler set');
+        } else {
+            $this->log->log('updateRecords', 'Could not set an interrupt handler -- pcntl not available');
+        }
+
+        // Check if we already have a suitable collection and drop too old collections
+        $collectionExists = false;
+        foreach ($this->db->listCollections() as $collection) {
+            $collection = explode('.', $collection, 2);
+            if ($collection[0] != $configArray['Mongo']['database']) {
+                continue;
+            }
+            $collection = end($collection);
+            if ($collection == $collectionName) {
+                $collectionExists = true;
+            } else {
+                $collTime = end(explode('_', $collection));
+                if (strncmp($collection, 'mr_record_', 10) == 0 && $collTime != $lastRecordTime && $collTime > time() - 60 * 60 * 24 * 7) {
+                    $this->log->log('processMerged', "Cleanup: dropping old m/r collection $collection");
+                    $this->db->dropCollection($collection);
+                }
+            }
+        }
+
+        $from = isset($mongoFromDate) ? date('Y-m-d H:i:s', $mongoFromDate->sec) : 'the beginning';
+
+        if (!$collectionExists) {
+            $this->log->log('processMerged', "Creating merged record list $collectionName (from $from, stage 1/2)");
+
+            $records = $this->db->record->find($params, array('dedup_id' => 1));
+            $prevId = null;
+            $collection = $this->db->selectCollection($collectionName . '_tmp');
+            $collection->drop();
+            $count = 0;
+            $totalMergeCount = 0;
+            foreach ($records as $record) {
+                if (isset($this->terminate)) {
+                    $this->log->log('processMerged', 'Termination upon request (merged record list)');
+                    $collection->drop();
+                    exit(1);
+                }
+                $id = $record['dedup_id'];
+                if (!isset($prevId) || $prevId != $id) {
+                    $collection->insert(array('_id' => $id), array('w' => 0));
+                    ++$totalMergeCount;
+                    if (++$count % 10000 == 0) {
+                        $this->log->log('processMerged', "$count id's processed");
+                    }
+                }
+                $prevId = $id;
+            }
+            $this->log->log('processMerged', "$count id's processed");
+
+            // Add dedup records by date (those that were not added by record date)
+            if (!isset($mongoFromDate)) {
+                $this->log->log('processMerged', "No starting date, bypassing stage 2/2");
+            } else {
+                $this->log->log('processMerged', "Creating merged record list $collectionName (from $from, stage 2/2)");
+                $dedupParams = array();
+                if ($singleId) {
+                    $dedupParams['ids'] = $singleId;
+                } else {
+                    $dedupParams['changed'] = array('$gte' => $mongoFromDate);
+                }
+
+                $records = $this->db->dedup->find($dedupParams, array('_id' => 1));
+                $count = 0;
+                foreach ($records as $record) {
+                    if (isset($this->terminate)) {
+                        $this->log->log('processMerged', 'Termination upon request');
+                        $collection->drop();
+                        exit(1);
+                    }
+                    $id = $record['_id'];
+                    if (!isset($prevId) || $prevId != $id) {
+                        $collection->insert(array('_id' => $id), array('w' => 0));
+                        ++$totalMergeCount;
+                        if (++$count % 10000 == 0) {
+                            $this->log->log('processMerged', "$count merge record id's processed");
+                        }
+                    }
+                    $prevId = $id;
+                }
+                $this->log->log('processMerged', "$count merge record id's processed");
+            }
+            if ($totalMergeCount > 0) {
+                $mongo = new Mongo($configArray['Mongo']['url']);
+                $dbName = $configArray['Mongo']['database'];
+                $res = $mongo->admin->command(
+                    array(
+                        'renameCollection' => $dbName . '.' . $collectionName . '_tmp',
+                        'to' => $dbName . '.' . $collectionName
+                    )
+                );
+                if (!$res['ok']) {
+                    throw new Exception("Renaming collection failed: " . print_r($res, true));
+                }
+            }
+        } else {
+            $this->log->log('processMerged', "Using existing merged record list $collectionName");
+        }
+        pcntl_signal(SIGINT, SIG_DFL);
+
+        $keys = $this->db->{$collectionName}->find();
+        $keys->immortal(true);
+        $count = 0;
+        $mergedComponents = 0;
+        $deleted = 0;
+        $this->initBufferedUpdate();
+        if ($noCommit) {
+            $this->log->log('processMerged', "Indexing the merged records (with no forced commits)");
+        } else {
+            $this->log->log('processMerged', "Indexing the merged records (max commit interval {$this->commitInterval} records)");
+        }
+        if ($this->backgroundUpdates) {
+            $this->log->log('processMerged', "Using {$this->backgroundUpdates} thread(s) for updates");
+        }
+        $pc = new PerformanceCounter();
+        foreach ($keys as $key) {
+            if (empty($key['_id'])) {
+                continue;
+            }
+
+            $dedupRecord = $this->db->dedup->findOne(array('_id' => $key['_id']));
+            if (empty($dedupRecord)) {
+                $this->log->log('processMerged', "Dedup record with id {$key['_id']} missing", Logger::ERROR);
+                continue;
+            }
+            if ($dedupRecord['deleted']) {
+                $this->bufferedDelete($dedupRecord['_id']);
+                ++$count;
+                ++$deleted;
+                continue;
+            }
+
+            $children = array();
+            $merged = array();
+            $records = $this->db->record->find(array('_id' => array('$in' => $dedupRecord['ids'])));
+            foreach ($records as $record) {
+                if ($record['deleted'] || ($sourceId && $delete && $record['source_id'] == $sourceId)) {
+                    $this->bufferedDelete($record['_id']);
+                    ++$count;
+                    ++$deleted;
+                    continue;
+                }
+                $data = $this->createSolrArray($record, $mergedComponents);
+                if ($data === false) {
+                    continue;
+                }
+                $merged = $this->mergeRecords($merged, $data);
+                $children[] = array('mongo' => $record, 'solr' => $data);
+            }
+
+            if (count($children) == 0) {
+                $this->log->log('processMerged', "Found no records with dedup id: {$key['_id']}", Logger::INFO);
+                $this->bufferedDelete($dedupRecord['_id']);
+            } elseif (count($children) == 1) {
+                // A dedup key exists for a single record. This should only happen when a data source is being deleted...
+                $child = $children[0];
+                if (!$delete) {
+                    $this->log->log('processMerged', "Found a single record with a dedup id: {$child['solr']['id']}", Logger::WARNING);
+                }
+                if ($this->verbose) {
+                    echo "Original deduplicated but single record {$child['solr']['id']}:\n";
+                    print_r($child['solr']);
+                }
+
+                ++$count;
+
+                $res = $this->bufferedUpdate($child['solr'], $count, $noCommit);
+                if ($res) {
+                    $pc->add($count);
+                    $avg = $pc->getSpeed();
+                    $this->log->log('processMerged', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $avg records/sec");
+                }
+            } else {
+                foreach ($children as $child) {
+                    $child['solr']['merged_child_boolean'] = true;
+
+                    if ($this->verbose) {
+                        echo "Original deduplicated record {$child['solr']['id']}:\n";
+                        print_r($child['solr']);
+                    }
+
+                    ++$count;
+                    $res = $this->bufferedUpdate($child['solr'], $count, $noCommit);
+                    if ($res) {
+                        $pc->add($count);
+                        $avg = $pc->getSpeed();
+                        $this->log->log('processMerged', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $avg records/sec");
+                    }
+                }
+
+                // Remove duplicate fields from the merged record
+                foreach ($merged as $fieldkey => $value) {
+                    if (substr($fieldkey, -3, 3) == '_mv' || isset($this->mergedFields[$fieldkey])) {
+                        $merged[$fieldkey] = array_values(MetadataUtils::array_iunique($merged[$fieldkey]));
+                    }
+                }
+                if (isset($merged['allfields'])) {
+                    $merged['allfields'] = array_values(MetadataUtils::array_iunique($merged['allfields']));
+                } else {
+                    $this->log->log('processMerged', "allfields missing in merged record for dedup key {$key['_id']}", Logger::WARNING);
+                }
+
+                $mergedId = (string)$key['_id'];
+                if (empty($merged)) {
+                    $this->bufferedDelete($mergedId);
+                    ++$deleted;
+                    continue;
+                }
+                $merged['id'] = $mergedId;
+                $merged['recordtype'] = 'merged';
+                $merged['merged_boolean'] = true;
+
+                if ($this->verbose) {
+                    echo "Merged record {$merged['id']}:\n";
+                    print_r($merged);
+                }
+
+                ++$count;
+                $res = $this->bufferedUpdate($merged, $count, $noCommit);
+                if ($res) {
+                    $pc->add($count);
+                    $avg = $pc->getSpeed();
+                    $this->log->log('processMerged', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $avg records/sec");
+                }
+            }
+        }
+        $this->flushUpdateBuffer();
+        $this->log->log('processMerged', "Total $count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed");
+        return $count > 0;
+    }
+
+    /**
+     * Update Solr index (merged records and individual records)
      *
      * @param string|null $fromDate Starting date for updates (if empty
      *                              string, last update date stored in the database
@@ -291,18 +586,9 @@ class SolrUpdater
      *
      * @return void
      */
-    public function updateMergedRecords($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false, $delete = false)
+    public function updateRecords($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false, $delete = false)
     {
         global $configArray;
-
-        // Install a signal handler so that we can exit cleanly if interrupted
-        unset($this->terminate);
-        if (function_exists('pcntl_signal')) {
-            pcntl_signal(SIGINT, array($this, 'sigIntHandler'));
-            $this->log->log('updateMergedRecords', 'Interrupt handler set');
-        } else {
-            $this->log->log('updateMergedRecords', 'Could not set an interrupt handler -- pcntl not available');
-        }
 
         try {
             $needCommit = false;
@@ -322,275 +608,34 @@ class SolrUpdater
             $from = isset($mongoFromDate) ? date('Y-m-d H:i:s', $mongoFromDate->sec) : 'the beginning';
             // Take the last indexing date now and store it when done
             $lastIndexingDate = new MongoDate();
-            $this->initBufferedUpdate();
 
-            // Process deduped records
-            $params = array();
-            if ($singleId) {
-                $params['_id'] = $singleId;
-                $params['dedup_id'] = array('$exists' => true);
-                $lastIndexingDate = null;
-            } else {
-                if (isset($mongoFromDate)) {
-                    $params['updated'] = array('$gte' => $mongoFromDate);
-                }
-                if ($sourceId) {
-                    $sources = explode(',', $sourceId);
-                    if (count($sources) == 1) {
-                        $params['source_id'] = $sourceId;
-                    } else {
-                        $sourceParams = array();
-                        foreach ($sources as $source) {
-                            $sourceParams[] = array('source_id' => $source);
-                        }
-                        $params['$or'] = $sourceParams;
-                    }
-                }
-                if (!$delete) {
-                    $params['update_needed'] = false;
-                }
-                $params['dedup_id'] = array('$exists' => true);
-            }
-
-            $collectionName = 'mr_record_' . md5(json_encode($params));
-            if (isset($fromDate)) {
-                $collectionName .= '_' . date('Ymd', strtotime($fromDate));
-            }
-            $record = $this->db->record->find()->sort(array('updated' => -1))->getNext();
-            $lastRecordTime = $record['updated']->sec;
-            $collectionName .= "_$lastRecordTime";
-
-            // Check if we already have a suitable collection and drop too old collections
-            $collectionExists = false;
-            foreach ($this->db->listCollections() as $collection) {
-                $collection = explode('.', $collection, 2);
-                if ($collection[0] != $configArray['Mongo']['database']) {
-                    continue;
-                }
-                $collection = end($collection);
-                if ($collection == $collectionName) {
-                    $collectionExists = true;
-                } else {
-                    $collTime = end(explode('_', $collection));
-                    if (strncmp($collection, 'mr_record_', 10) == 0 && $collTime != $lastRecordTime && $collTime > time() - 60 * 60 * 24 * 7) {
-                        $this->log->log('updateMergedRecords', "Cleanup: dropping old m/r collection $collection");
-                        $this->db->dropCollection($collection);
-                    }
+            $childPid = null;
+            if (!$delete && $this->threadedMergedRecordUpdate) {
+                $childPid = pcntl_fork();
+                if ($childPid == -1) {
+                    throw new Exception("Could not fork merged record background update child");
                 }
             }
 
-            if (!$collectionExists) {
-                $this->log->log('updateMergedRecords', "Creating merged record list $collectionName (from $from, stage 1/2)");
+            if (!$childPid) {
+                $needCommit = $this->processMerged(
+                    isset($mongoFromDate) ? $mongoFromDate : null,
+                    $sourceId,
+                    $singleId,
+                    $noCommit,
+                    $delete
+                );
 
-                $records = $this->db->record->find($params, array('dedup_id' => 1));
-                $prevId = null;
-                $collection = $this->db->selectCollection($collectionName . '_tmp');
-                $collection->drop();
-                $count = 0;
-                $totalMergeCount = 0;
-                foreach ($records as $record) {
-                    if (isset($this->terminate)) {
-                        $this->log->log('updateMergedRecords', 'Termination upon request');
-                        $collection->drop();
-                        exit(1);
-                    }
-                    $id = $record['dedup_id'];
-                    if (!isset($prevId) || $prevId != $id) {
-                        $collection->insert(array('_id' => $id), array('w' => 0));
-                        ++$totalMergeCount;
-                        if (++$count % 10000 == 0) {
-                            $this->log->log('updateMergedRecords', "$count id's processed");
-                        }
-                    }
-                    $prevId = $id;
-                }
-                $this->log->log('updateMergedRecords', "$count id's processed");
-
-                // Add dedup records by date (those that were not added by record date)
-                if (!isset($mongoFromDate)) {
-                    $this->log->log('updateMergedRecords', "No starting date, bypassing stage 2/2");
-                } else {
-                    $this->log->log('updateMergedRecords', "Creating merged record list $collectionName (from $from, stage 2/2)");
-                    $dedupParams = array();
-                    if ($singleId) {
-                        $dedupParams['ids'] = $singleId;
-                    } else {
-                        $dedupParams['changed'] = array('$gte' => $mongoFromDate);
-                    }
-
-                    $records = $this->db->dedup->find($dedupParams, array('_id' => 1));
-                    $count = 0;
-                    foreach ($records as $record) {
-                        if (isset($this->terminate)) {
-                            $this->log->log('updateMergedRecords', 'Termination upon request');
-                            $collection->drop();
-                            exit(1);
-                        }
-                        $id = $record['_id'];
-                        if (!isset($prevId) || $prevId != $id) {
-                            $collection->insert(array('_id' => $id), array('w' => 0));
-                            ++$totalMergeCount;
-                            if (++$count % 10000 == 0) {
-                                $this->log->log('updateMergedRecords', "$count merge record id's processed");
-                            }
-                        }
-                        $prevId = $id;
-                    }
-                    $this->log->log('updateMergedRecords', "$count merge record id's processed");
-                }
-                if ($totalMergeCount > 0) {
-                    $mongo = new Mongo($configArray['Mongo']['url']);
-                    $dbName = $configArray['Mongo']['database'];
-                    $res = $mongo->admin->command(
-                        array(
-                            'renameCollection' => $dbName . '.' . $collectionName . '_tmp',
-                            'to' => $dbName . '.' . $collectionName
-                        )
-                    );
-                    if (!$res['ok']) {
-                        throw new Exception("Renaming collection failed: " . print_r($res, true));
-                    }
-                }
-            } else {
-                $this->log->log('updateMergedRecords', "Using existing merged record list $collectionName");
-            }
-            pcntl_signal(SIGINT, SIG_DFL);
-
-            $keys = $this->db->{$collectionName}->find();
-            $keys->immortal(true);
-            $count = 0;
-            $mergedComponents = 0;
-            $deleted = 0;
-            $this->initBufferedUpdate();
-            if ($noCommit) {
-                $this->log->log('updateMergedRecords', "Indexing the merged records (with no forced commits)");
-            } else {
-                $this->log->log('updateMergedRecords', "Indexing the merged records (max commit interval {$this->commitInterval} records)");
-            }
-            if ($this->backgroundUpdates) {
-                $this->log->log('updateMergedRecords', "Using {$this->backgroundUpdates} thread(s) for updates");
-            }
-            $pc = new PerformanceCounter();
-            foreach ($keys as $key) {
-                if (empty($key['_id'])) {
-                    continue;
-                }
-
-                $dedupRecord = $this->db->dedup->findOne(array('_id' => $key['_id']));
-                if (empty($dedupRecord)) {
-                    $this->log->log('updateMergedRecords', "Dedup record with id {$key['_id']} missing", Logger::ERROR);
-                    continue;
-                }
-                if ($dedupRecord['deleted']) {
-                    $this->bufferedDelete($dedupRecord['_id']);
-                    ++$count;
-                    ++$deleted;
-                    continue;
-                }
-
-                $children = array();
-                $merged = array();
-                $records = $this->db->record->find(array('_id' => array('$in' => $dedupRecord['ids'])));
-                foreach ($records as $record) {
-                    if ($record['deleted'] || ($sourceId && $delete && $record['source_id'] == $sourceId)) {
-                        $this->bufferedDelete($record['_id']);
-                        ++$count;
-                        ++$deleted;
-                        continue;
-                    }
-                    $data = $this->createSolrArray($record, $mergedComponents);
-                    if ($data === false) {
-                        continue;
-                    }
-                    $merged = $this->mergeRecords($merged, $data);
-                    $children[] = array('mongo' => $record, 'solr' => $data);
-                }
-
-                if (count($children) == 0) {
-                    $this->log->log('updateMergedRecords', "Found no records with dedup id: {$key['_id']}", Logger::INFO);
-                    $this->bufferedDelete($dedupRecord['_id']);
-                } elseif (count($children) == 1) {
-                    // A dedup key exists for a single record. This should only happen when a data source is being deleted...
-                    $child = $children[0];
-                    if (!$delete) {
-                        $this->log->log('updateMergedRecords', "Found a single record with a dedup id: {$child['solr']['id']}", Logger::WARNING);
-                    }
-                    if ($this->verbose) {
-                        echo "Original deduplicated but single record {$child['solr']['id']}:\n";
-                        print_r($child['solr']);
-                    }
-
-                    ++$count;
-
-                    $res = $this->bufferedUpdate($child['solr'], $count, $noCommit);
-                    if ($res) {
-                        $pc->add($count);
-                        $avg = $pc->getSpeed();
-                        $this->log->log('updateMergedRecords', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $avg records/sec");
-                    }
-                } else {
-                    foreach ($children as $child) {
-                        $child['solr']['merged_child_boolean'] = true;
-
-                        if ($this->verbose) {
-                            echo "Original deduplicated record {$child['solr']['id']}:\n";
-                            print_r($child['solr']);
-                        }
-
-                        ++$count;
-                        $res = $this->bufferedUpdate($child['solr'], $count, $noCommit);
-                        if ($res) {
-                            $pc->add($count);
-                            $avg = $pc->getSpeed();
-                            $this->log->log('updateMergedRecords', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $avg records/sec");
-                        }
-                    }
-
-                    // Remove duplicate fields from the merged record
-                    foreach ($merged as $fieldkey => $value) {
-                        if (substr($fieldkey, -3, 3) == '_mv' || isset($this->mergedFields[$fieldkey])) {
-                            $merged[$fieldkey] = array_values(MetadataUtils::array_iunique($merged[$fieldkey]));
-                        }
-                    }
-                    if (isset($merged['allfields'])) {
-                        $merged['allfields'] = array_values(MetadataUtils::array_iunique($merged['allfields']));
-                    } else {
-                        $this->log->log('updateMergedRecords', "allfields missing in merged record for dedup key {$key['_id']}", Logger::WARNING);
-                    }
-
-                    $mergedId = (string)$key['_id'];
-                    if (empty($merged)) {
-                        $this->bufferedDelete($mergedId);
-                        ++$deleted;
-                        continue;
-                    }
-                    $merged['id'] = $mergedId;
-                    $merged['recordtype'] = 'merged';
-                    $merged['merged_boolean'] = true;
-
-                    if ($this->verbose) {
-                        echo "Merged record {$merged['id']}:\n";
-                        print_r($merged);
-                    }
-
-                    ++$count;
-                    $res = $this->bufferedUpdate($merged, $count, $noCommit);
-                    if ($res) {
-                        $pc->add($count);
-                        $avg = $pc->getSpeed();
-                        $this->log->log('updateMergedRecords', "$count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed, $avg records/sec");
-                    }
+                if ($childPid !== null) {
+                    exit($needCommit ? 1 : 0);
                 }
             }
-            $this->flushUpdateBuffer();
-            $needCommit = $count > 0;
-            $this->log->log('updateMergedRecords', "Total $count merged records (of which $deleted deleted) with $mergedComponents merged parts indexed");
 
             if ($delete) {
                 return;
             }
 
-            $this->log->log('updateMergedRecords', "Creating individual record list (from $from)");
+            $this->log->log('updateRecords', "Creating individual record list (from $from)");
             $params = array();
             if ($singleId) {
                 $params['_id'] = $singleId;
@@ -623,13 +668,27 @@ class SolrUpdater
             $mergedComponents = 0;
             $deleted = 0;
             if ($noCommit) {
-                $this->log->log('updateMergedRecords', "Indexing $total individual records (with no forced commits)");
+                $this->log->log('updateRecords', "Indexing $total individual records (with no forced commits)");
             } else {
-                $this->log->log('updateMergedRecords', "Indexing $total individual records (max commit interval {$this->commitInterval} records)");
+                $this->log->log('updateRecords', "Indexing $total individual records (max commit interval {$this->commitInterval} records)");
             }
-            $pc->reset();
+            $pc = new PerformanceCounter();
             $this->initBufferedUpdate();
             foreach ($records as $record) {
+                if (isset($this->terminate)) {
+                    if ($childPid) {
+                        $this->log->log('updateRecords', 'Waiting for child process to terminate...');
+                        while (1) {
+                            $pid = pcntl_waitpid($childPid, $status, WNOHANG);
+                            if ($pid > 0) {
+                                break;
+                            }
+                            sleep(10);
+                        }
+                    }
+                    $this->log->log('updateRecords', 'Termination upon request (individual record handler)');
+                    exit(1);
+                }
                 if ($record['deleted']) {
                     $this->bufferedDelete((string)$record['_id']);
                     ++$count;
@@ -647,11 +706,28 @@ class SolrUpdater
 
                     ++$count;
 
-                    $res = $this->bufferedUpdate($data, $count, $noCommit);
+                    $res = $this->bufferedUpdate(
+                        $data, $count, $childPid || $noCommit
+                    );
                     if ($res) {
                         $pc->add($count);
                         $avg = $pc->getSpeed();
-                        $this->log->log('updateMergedRecords', "$count individual records (of which $deleted deleted) with $mergedComponents merged parts indexed, $avg records/sec");
+                        $this->log->log('updateRecords', "$count individual records (of which $deleted deleted) with $mergedComponents merged parts indexed, $avg records/sec");
+
+                        // Check child status
+                        if ($childPid) {
+                            $pid = pcntl_waitpid($childPid, $status, WNOHANG);
+                            if ($pid > 0) {
+                                $childPid = null;
+                                $exitCode = pcntl_wexitstatus($status);
+                                if ($exitCode == 1) {
+                                    $needCommit = true;
+                                } elseif ($exitCode) {
+                                    $this->log->log('updateRecords', "Merged record update thread failed, aborting", Logger::ERROR);
+                                    throw new Exception('Merged record update thread failed');
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -664,17 +740,34 @@ class SolrUpdater
             if ($count > 0) {
                 $needCommit = true;
             }
-            $this->log->log('updateMergedRecords', "Total $count individual records (of which $deleted deleted) with $mergedComponents merged parts indexed");
+            $this->log->log('updateRecords', "Total $count individual records (of which $deleted deleted) with $mergedComponents merged parts indexed");
+
+            if ($childPid) {
+                // Wait for child to finish
+                while (1) {
+                    $pid = pcntl_waitpid($childPid, $status, WNOHANG);
+                    if ($pid > 0) {
+                        if (pcntl_wexitstatus($status) == 1) {
+                            $needCommit = true;
+                        }
+                        break;
+                    }
+                    sleep(10);
+                }
+            }
 
             if (!$noCommit && $needCommit) {
                 $this->waitForHttpChildren();
-                $this->log->log('updateMergedRecords', "Final commit...");
+                $this->log->log('updateRecords', "Final commit...");
                 $this->solrRequest('{ "commit": {} }');
                 $this->waitForHttpChildren();
-                $this->log->log('updateMergedRecords', "Commit complete");
+                $this->log->log('updateRecords', "Commit complete");
             }
         } catch (Exception $e) {
-            $this->log->log('updateMergedRecords', 'Exception: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine(), Logger::FATAL);
+            $this->log->log('updateRecords', 'Exception: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine(), Logger::FATAL);
+            if ($this->threadedMergedRecordUpdate && !$childPid) {
+                exit(2);
+            }
         }
     }
 
