@@ -50,15 +50,29 @@ Parameters:
 --verbose           Enable verbose output
 --config.section.name=value
                    Set configuration directive to given value overriding any setting in recordmanager.ini
+--lockfile=file    Use a lock file to avoid executing the command multiple times in
+                   parallel (useful when running from crontab)
 
 
 EOT;
         exit(1);
     }
 
-    $manager = new RecordManager(true, isset($params['verbose']) ? $params['verbose'] : false);
+    $lockfile = isset($params['lockfile']) ? $params['lockfile'] : '';
+    $lockhandle = false;
+    try {
+        if (($lockhandle = acquireLock($lockfile)) === false) {
+            die();
+        }
 
-    $manager->loadFromFile($params['source'], $params['file']);
+        $manager = new RecordManager(true, isset($params['verbose']) ? $params['verbose'] : false);
+
+        $manager->loadFromFile($params['source'], $params['file']);
+    } catch(Exception $e) {
+        releaseLock($lockhandle);
+        throw $e;
+    }
+    releaseLock($lockhandle);
 }
 
 main($argv);

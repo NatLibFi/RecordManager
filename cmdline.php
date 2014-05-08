@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) Patrick Fisher 2009 
+ * Copyright (C) Patrick Fisher 2009
  * Copyright (C) The National Library of Finland 2011-2013.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -47,9 +47,9 @@ PEAR::setErrorHandling(PEAR_ERROR_CALLBACK, 'pearHandleError');
 
 /**
  * PEAR error handler
- * 
+ *
  * @param object $error PEAR error
- * 
+ *
  * @return void
  */
 function pearHandleError($error)
@@ -61,13 +61,13 @@ function pearHandleError($error)
  * Apply any configuration overrides defined on command line
  *
  * @param array $params Command line parameters
- * 
+ *
  * @return void
  */
 function applyConfigOverrides($params)
 {
     global $configArray;
-    
+
     foreach ($params as $key => $value) {
         $setting = explode('.', $key);
         if ($setting[0] == 'config') {
@@ -78,10 +78,10 @@ function applyConfigOverrides($params)
 
 /**
  * parseArgs Command Line Interface (CLI) utility function.
- * 
+ *
  * @param string[] $argv Arguments
- * 
- * @return string[] Parsed keys and values 
+ *
+ * @return string[] Parsed keys and values
  * @usage               $args = parseArgs($_SERVER['argv']);
  * @author              Patrick Fisher <patrick@pwfisher.com>
  * @source              https://github.com/pwfisher/CommandLine.php
@@ -118,3 +118,41 @@ function parseArgs($argv)
     return $params;
 }
 
+/**
+ * Try to acquire a lock on a lock file
+ *
+ * @param string $lockfile Lock file
+ *
+ * @return handle|bool|null Returns file handle on success, null if no lock was
+ *                          required or false on failure
+ */
+function acquireLock($lockfile)
+{
+    if (empty($lockfile)) {
+        return null;
+    }
+    $handle = fopen($lockfile, 'c+');
+    if (!is_resource($handle)) {
+        return false;
+    }
+    if (!flock($handle, LOCK_EX | LOCK_NB)) {
+        fclose($handle);
+        return false;
+    }
+    return $handle;
+}
+
+/**
+ * Release a lock on a lock file
+ *
+ * @param handle $handle Lock file handle
+ *
+ * @return void
+ */
+function releaseLock($handle)
+{
+    if ($handle) {
+        flock($handle, LOCK_UN);
+        fclose($handle);
+    }
+}

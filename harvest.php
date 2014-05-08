@@ -55,27 +55,41 @@ Parameters:
 --reharvest[=date]  This is a full reharvest, delete all records that were not received during the harvesting (or were modified before [date]). Implies --all.
 --config.section.name=value
                     Set configuration directive to given value overriding any setting in recordmanager.ini
+--lockfile=file    Use a lock file to avoid executing the command multiple times in
+                   parallel (useful when running from crontab)
 
 
 EOT;
         exit(1);
     }
 
-    $manager = new RecordManager(true, isset($params['verbose']) ? $params['verbose'] : false);
-    $from = isset($params['from']) ? $params['from'] : null;
-    if (isset($params['all']) || isset($params['reharvest'])) {
-        $from = '-';
+    $lockfile = isset($params['lockfile']) ? $params['lockfile'] : '';
+    $lockhandle = false;
+    try {
+        if (($lockhandle = acquireLock($lockfile)) === false) {
+            die();
+        }
+
+        $manager = new RecordManager(true, isset($params['verbose']) ? $params['verbose'] : false);
+        $from = isset($params['from']) ? $params['from'] : null;
+        if (isset($params['all']) || isset($params['reharvest'])) {
+            $from = '-';
+        }
+        foreach (explode(',', $params['source']) as $source) {
+            $manager->harvest(
+                $source,
+                $from,
+                isset($params['until']) ? $params['until'] : null,
+                isset($params['override']) ? urldecode($params['override']) : '',
+                isset($params['exclude']) ? $params['exclude'] : null,
+                isset($params['reharvest']) ? $params['reharvest'] : ''
+            );
+        }
+    } catch(Exception $e) {
+        releaseLock($lockhandle);
+        throw $e;
     }
-    foreach (explode(',', $params['source']) as $source) {
-        $manager->harvest(
-            $source,
-            $from,
-            isset($params['until']) ? $params['until'] : null,
-            isset($params['override']) ? urldecode($params['override']) : '',
-            isset($params['exclude']) ? $params['exclude'] : null,
-            isset($params['reharvest']) ? $params['reharvest'] : ''
-        );
-    }
+    releaseLock($lockhandle);
 }
 
 main($argv);

@@ -54,69 +54,85 @@ Parameters:
 --nocommit         Don't ask Solr to commit the changes (updatesolr)
 --field            Field to analyze (count)
 --file             File containing places to geocode (updategeocoding)
---force            Force deletesource to proceed even if deduplication is enabled for the source
+--force            Force deletesource to proceed even if deduplication is enabled for
+                   the source
 --verbose          Enable verbose output for debugging
 --config.section.name=value
-                   Set configuration directive to given value overriding any setting in recordmanager.ini
+                   Set configuration directive to given value overriding any setting
+                   in recordmanager.ini
+--lockfile=file    Use a lock file to avoid executing the command multiple times in
+                   parallel (useful when running from crontab)
 
 
 EOT;
         exit(1);
     }
 
-    $manager = new RecordManager(true, isset($params['verbose']) ? $params['verbose'] : false);
+    $lockfile = isset($params['lockfile']) ? $params['lockfile'] : '';
+    $lockhandle = false;
+    try {
+        if (($lockhandle = acquireLock($lockfile)) === false) {
+            die();
+        }
 
-    $sources = isset($params['source']) ? $params['source'] : '';
-    $single = isset($params['single']) ? $params['single'] : '';
-    $noCommit = isset($params['nocommit']) ? $params['nocommit'] : false;
+        $manager = new RecordManager(true, isset($params['verbose']) ? $params['verbose'] : false);
 
-    // Solr update can handle multiple sources at once
-    if ($params['func'] == 'updatesolr') {
-        $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
-        $manager->updateSolrIndex($date, $sources, $single, $noCommit);
-    } else {
-        foreach (explode(',', $sources) as $source) {
-            switch ($params['func'])
-            {
-            case 'renormalize':
-                $manager->renormalize($source, $single);
-                break;
-            case 'deduplicate':
-                $manager->deduplicate($source, isset($params['all']) ? true : false, $single);
-                break;
-            case 'dump':
-                $manager->dumpRecord($single);
-                break;
-            case 'deletesource':
-                $manager->deleteRecords($source, isset($params['force']) ? $params['force'] : false);
-                break;
-            case 'markdeleted':
-                $manager->markDeleted($source);
-                break;
-            case 'deletesolr':
-                $manager->deleteSolrRecords($source);
-                break;
-            case 'optimizesolr':
-                $manager->optimizeSolr();
-                break;
-            case 'count':
-                $manager->countValues($source, isset($params['field']) ? $params['field'] : null);
-                break;
-            case 'updategeocoding':
-                $manager->updateGeocodingTable(isset($params['file']) ? $params['file'] : null);
-                break;
-            case 'resimplifygeocoding':
-                $manager->resimplifyGeocodingTable();
-                break;
-            case 'checkdedup':
-                $manager->checkDedupRecords();
-                break;
-            default:
-                echo 'Unknown func: ' . $params['func'] . "\n";
-                exit(1);
+        $sources = isset($params['source']) ? $params['source'] : '';
+        $single = isset($params['single']) ? $params['single'] : '';
+        $noCommit = isset($params['nocommit']) ? $params['nocommit'] : false;
+
+        // Solr update can handle multiple sources at once
+        if ($params['func'] == 'updatesolr') {
+            $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
+            $manager->updateSolrIndex($date, $sources, $single, $noCommit);
+        } else {
+            foreach (explode(',', $sources) as $source) {
+                switch ($params['func'])
+                {
+                case 'renormalize':
+                    $manager->renormalize($source, $single);
+                    break;
+                case 'deduplicate':
+                    $manager->deduplicate($source, isset($params['all']) ? true : false, $single);
+                    break;
+                case 'dump':
+                    $manager->dumpRecord($single);
+                    break;
+                case 'deletesource':
+                    $manager->deleteRecords($source, isset($params['force']) ? $params['force'] : false);
+                    break;
+                case 'markdeleted':
+                    $manager->markDeleted($source);
+                    break;
+                case 'deletesolr':
+                    $manager->deleteSolrRecords($source);
+                    break;
+                case 'optimizesolr':
+                    $manager->optimizeSolr();
+                    break;
+                case 'count':
+                    $manager->countValues($source, isset($params['field']) ? $params['field'] : null);
+                    break;
+                case 'updategeocoding':
+                    $manager->updateGeocodingTable(isset($params['file']) ? $params['file'] : null);
+                    break;
+                case 'resimplifygeocoding':
+                    $manager->resimplifyGeocodingTable();
+                    break;
+                case 'checkdedup':
+                    $manager->checkDedupRecords();
+                    break;
+                default:
+                    echo 'Unknown func: ' . $params['func'] . "\n";
+                    exit(1);
+                }
             }
         }
+    } catch(Exception $e) {
+        releaseLock($lockhandle);
+        throw $e;
     }
+    releaseLock($lockhandle);
 }
 
 main($argv);
