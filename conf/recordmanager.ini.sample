@@ -56,6 +56,9 @@ unicode_normalization_form = NFKC
 ;max_update_tries = 5
 ; Wait time between Solr update request attempts in seconds. Default is 60.
 ;update_retry_wait = 30
+;background_update = 10
+;threaded_merged_record_update = true
+
 
 [OAI-PMH]
 repository_name = OAI-PMH Repository
