@@ -1596,6 +1596,7 @@ class MarcRecord extends BaseRecord
                         print_r($field, true) . ", record {$this->source}." .
                         $this->getID(), Logger::ERROR
                     );
+                    continue;
                 }
                 if ($type != MarcRecord::GET_ALT) {
                     // Handle normal field
@@ -1757,6 +1758,7 @@ class MarcRecord extends BaseRecord
                 print_r($field, true) . ", record {$this->source}." .
                 $this->getID(), Logger::WARNING
             );
+            return array();
         }
         if (!is_array($field['s'])) {
             global $logger;
@@ -1765,6 +1767,7 @@ class MarcRecord extends BaseRecord
                 print_r($field, true) . ", record {$this->source}." .
                 $this->getID(), Logger::ERROR
             );
+            return array();
         }
 
         $subfields = array();
