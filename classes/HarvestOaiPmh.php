@@ -354,6 +354,26 @@ class HarvestOaiPmh
             $this->message("Sending request: $urlStr", true);
             try {
                 $response = $request->send();
+                $code = $response->getStatus();
+                if ($code >= 300) {
+                    if ($try < $this->maxTries) {
+                        $this->message(
+                            "Request '$urlStr' failed ($code), retrying in {$this->retryWait} seconds...",
+                            false,
+                            Logger::WARNING
+                        );
+                        sleep($this->retryWait);
+                        continue;
+                    }
+                    $this->message("Request '$urlStr' failed: $code", false, Logger::FATAL);
+                    throw new Exception("{$this->source}: Request failed: $code");
+                }
+
+                $responseStr = $response->getBody();
+                if ($this->debugLog) {
+                    file_put_contents($this->debugLog, date('Y-m-d H:i:s') . ' [' . getmypid() . "] Response:\n$responseStr\n\n", FILE_APPEND);
+                }
+                return $this->processResponse($responseStr, isset($params['resumptionToken']));
             } catch (Exception $e) {
                 if ($try < $this->maxTries) {
                     $this->message(
@@ -364,34 +384,9 @@ class HarvestOaiPmh
                     sleep($this->retryWait);
                     continue;
                 }
-                throw $e;
+                throw new Exception("{$this->source}: " . $e->getMessage());
             }
-            if ($try < $this->maxTries) {
-                $code = $response->getStatus();
-                if ($code >= 300) {
-                    $this->message(
-                        "Request '$urlStr' failed ($code), retrying in {$this->retryWait} seconds...",
-                        false,
-                        Logger::WARNING
-                    );
-                    sleep($this->retryWait);
-                    continue;
-                }
-            }
-            break;
         }
-        $code = $response->getStatus();
-        if ($code >= 300) {
-            $this->message("Request '$urlStr' failed: $code", false, Logger::FATAL);
-            throw new Exception("{$this->source}: Request failed: $code");
-        }
-
-        // If we got this far, there was no error -- send back response.
-        $responseStr = $response->getBody();
-        if ($this->debugLog) {
-            file_put_contents($this->debugLog, date('Y-m-d H:i:s') . ' [' . getmypid() . "] Response:\n$responseStr\n\n", FILE_APPEND);
-        }
-        return $this->processResponse($responseStr, isset($params['resumptionToken']));
     }
 
     /**
@@ -449,7 +444,7 @@ class HarvestOaiPmh
             libxml_use_internal_errors($saveUseErrors);
             $tempfile = tempnam(sys_get_temp_dir(), 'oai-pmh-error-') . '.xml';
             file_put_contents($tempfile, $xml);
-            $this->message("Could not parse XML response: $errors. XML stored in $tempfile", false, Logger::FATAL);
+            $this->message("Could not parse XML response: $errors. XML stored in $tempfile", false, Logger::ERROR);
             throw new Exception("{$this->source}: Failed to parse XML response");
         }
         libxml_use_internal_errors($saveUseErrors);
@@ -463,7 +458,7 @@ class HarvestOaiPmh
                 $this->message(
                     "OAI-PMH server returned error $code ($value)",
                     false,
-                    Logger::FATAL
+                    Logger::ERROR
                 );
                 throw new Exception(
                     "{$this->source}: OAI-PMH error -- code: $code, " .
