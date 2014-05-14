@@ -166,21 +166,28 @@ class LidoRecord extends BaseRecord
     /**
      * Return record title
      *
-     * @param bool   $forFiling Whether the title is to be used in filing (e.g. sorting, non-filing characters should be removed)
-     * @param string $lang      Language
+     * @param bool     $forFiling            Whether the title is to be used in filing (e.g. sorting, non-filing characters should be removed)
+     * @param string   $lang                 Language
+     * @param string[] $excludedDescriptions Description types to exclude
      *
      * @return string
      */
-    public function getTitle($forFiling = false, $lang = null)
+    public function getTitle($forFiling = false, $lang = null, $excludedDescriptions = array('provenance'))
     {
-        if ($lang != null) {
-            $titles = $this->extractArray("lido/descriptiveMetadata/objectIdentificationWrap/titleWrap/titleSet/appellationValue[@lang='$lang']");
+        $titles = array();
+        $allTitles = array();
+        foreach ($this->getTitleSetNodes() as $set) {
+            foreach ($set->appellationValue as $appellationValue) {
+                if ($lang == null || $appellationValue['lang'] == $lang) {
+                    $titles[] = (string) $appellationValue;
+                }
+                $allTitles[] = (string) $appellationValue;
+            }
         }
-        // Fallback to use any title in case none found with the specified language (or no language specified)
+        // Fallback to use any title in case none found with the specified language
         if (empty($titles)) {
-            $titles = $this->extractArray('lido/descriptiveMetadata/objectIdentificationWrap/titleWrap/titleSet/appellationValue');
+            $titles = $allTitles;
         }
-
         if (empty($titles)) {
             return null;
         }
@@ -192,7 +199,12 @@ class LidoRecord extends BaseRecord
         // name given here and the object type, recorded in the object / work
         // type element are often identical."
         if (strcasecmp($this->getObjectWorkType(), $title) == 0) {
-            $descriptionWrapDescriptions = $this->extractArray("lido/descriptiveMetadata/objectIdentificationWrap/objectDescriptionWrap/objectDescriptionSet[not(@type) or (@type!='provenienssi')]/descriptiveNoteValue");
+            $descriptionWrapDescriptions = array();
+            foreach ($this->getObjectDescriptionSetNodes($excludedDescriptions) as $set) {
+                if ($set->descriptiveNoteValue) {
+                    $descriptionWrapDescriptions[] = (string) $set->descriptiveNoteValue;
+                }
+            }
             if ($descriptionWrapDescriptions) {
                 $title = implode('; ', $descriptionWrapDescriptions);
             }
@@ -213,7 +225,16 @@ class LidoRecord extends BaseRecord
      */
     protected function getMeasurements()
     {
-        return $this->extractArray('lido/descriptiveMetadata/objectIdentificationWrap/objectMeasurementsWrap/objectMeasurementsSet/displayObjectMeasurements');
+        if (empty($this->doc->lido->descriptiveMetadata->objectIdentificationWrap->objectMeasurementsWrap->objectMeasurementsSet)) {
+            return '';
+        }
+        $results = array();
+        foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap->objectMeasurementsWrap->objectMeasurementsSet as $set) {
+            if (!empty($set->displayObjectMeasurements)) {
+                $results[] = (string)$set->displayObjectMeasurements;
+            }
+        }
+        return $results;
     }
 
     /**
@@ -226,7 +247,14 @@ class LidoRecord extends BaseRecord
      */
     protected function getIdentifier()
     {
-        return $this->extractFirst('lido/descriptiveMetadata/objectIdentificationWrap/repositoryWrap/repositorySet/workID');
+        if (empty($this->doc->lido->descriptiveMetadata->objectIdentificationWrap->repositoryWrap->repositorySet)) {
+            return '';
+        }
+        foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap->repositoryWrap->repositorySet as $set) {
+            if (!empty($set->workID)) {
+                return (string) $set->workID;
+            }
+        }
     }
 
     /**
@@ -237,18 +265,14 @@ class LidoRecord extends BaseRecord
      */
     protected function getLegalBodyName()
     {
-        return $this->extractFirst('lido/descriptiveMetadata/objectIdentificationWrap/repositoryWrap/repositorySet/repositoryName/legalBodyName/appellationValue');
-    }
-
-    /**
-     * Return the rights holder legal body name.
-     *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#legalBodyRefComplexType
-     * @return string
-     */
-    protected function getRightsHolderLegalBodyName()
-    {
-        return $this->extractFirst('lido/administrativeMetadata/rightsWorkWrap/rightsWorkSet/rightsHolder/legalBodyName/appellationValue');
+        if (empty($this->doc->lido->descriptiveMetadata->objectIdentificationWrap->repositoryWrap->repositorySet)) {
+            return '';
+        }
+        foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap->repositoryWrap->repositorySet as $set) {
+            if (!empty($set->repositoryName->legalBodyName->appellationValue)) {
+                return (string) $set->repositoryName->legalBodyName->appellationValue;
+            }
+        }
     }
 
     /**
@@ -259,7 +283,16 @@ class LidoRecord extends BaseRecord
      */
     protected function getDescription()
     {
-        $description = $this->extractArray('lido/descriptiveMetadata/objectIdentificationWrap/objectDescriptionWrap/objectDescriptionSet/descriptiveNoteValue');
+        if (empty($this->doc->lido->descriptiveMetadata->objectIdentificationWrap->objectDescriptionWrap->objectDescriptionSet)) {
+            return '';
+        }
+
+        $description = array();
+        foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap->objectDescriptionWrap->objectDescriptionSet as $set) {
+            foreach ($set->descriptiveNoteValue as $descriptiveNoteValue) {
+                $description[] = (string) $descriptiveNoteValue;
+            }
+        }
 
         if ($this->getTitle() == implode('; ', $description)) {
             // We have the description already in the title, don't repeat
@@ -277,7 +310,15 @@ class LidoRecord extends BaseRecord
      */
     protected function getCulture()
     {
-        return $this->extractArray('lido/descriptiveMetadata/eventWrap/eventSet/event/culture/term');
+        $results = array();
+        foreach ($this->getEventNodes() as $event) {
+            foreach ($event->culture as $culture) {
+                if ($culture->term) {
+                    $results[] = (string) $culture->term;
+                }
+            }
+        }
+        return $results;
     }
 
     /**
@@ -288,104 +329,17 @@ class LidoRecord extends BaseRecord
      */
     protected function getObjectWorkType()
     {
-        return $this->extractFirst('lido/descriptiveMetadata/objectClassificationWrap/objectWorkTypeWrap/objectWorkType/term');
-    }
-
-    /**
-     * Return the classification of the specified type or the first classification if none specified.
-     *
-     * @param string $type Classification
-     *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
-     * @return string
-     */
-    protected function getClassification($type = null)
-    {
-        $xpath = 'lido/descriptiveMetadata/objectClassificationWrap/classificationWrap/classification';
-        if (!empty($type)) {
-            $xpath .= "[@type='$type']";
-        }
-        return $this->extractFirst($xpath + '/term');
-    }
-
-    /**
-     * Return the classifications
-     *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
-     * @return string
-     */
-    protected function getClassifications()
-    {
-        return $this->extractArray('lido/descriptiveMetadata/objectClassificationWrap/classificationWrap/classification/term');
-    }
-
-    /**
-     * Return the term part of the category
-     *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
-     * @return string
-     */
-    protected function getCategoryTerm()
-    {
-        return $this->extractFirst('lido/category/term');
-    }
-
-    /**
-     * Return the organization name in the recordSource element
-     *
-     * @return array
-     */
-    protected function getRecordSourceOrganization()
-    {
-        return $this->extractFirst('lido/administrativeMetadata/recordWrap/recordSource/legalBodyName/appellationValue');
-    }
-
-    /**
-     * Return all the names for the specified event type
-     *
-     * @param string $eventType Event type
-     *
-     * @return array
-     */
-    protected function getEventNames($eventType)
-    {
-        return $this->extractArray("lido/descriptiveMetadata/eventWrap/eventSet/event[eventType/term='$eventType']/eventName/appellationValue");
-    }
-
-    /**
-     * Return the name(s) of events with specified type
-     *
-     * @param string $event     Which event to use (omit to scan all events)
-     * @param string $delimiter Delimiter between the dates
-     *
-     * @return string
-     */
-    protected function getEventName($event = null, $delimiter = ',')
-    {
-        $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
-        if (!empty($event)) {
-            $xpath .= "[eventType/term='$event']";
+        if (empty($this->doc->lido->descriptiveMetadata->objectClassificationWrap->objectWorkTypeWrap->objectWorkType)) {
+            return '';
         }
 
-        return $this->extractFirst($xpath . '/eventName/appellationValue');
-    }
-
-    /**
-     * Return the date range associated with specified event
-     *
-     * @param string $event     Which event to use (omit to scan all events)
-     * @param string $delimiter Delimiter between the dates
-     *
-     * @return string
-     */
-    protected function getEventMethod($event = null, $delimiter = ',')
-    {
-        $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
-        if (!empty($event)) {
-            $xpath .= "[eventType/term='$event']";
+        $description = array();
+        foreach ($this->doc->lido->descriptiveMetadata->objectClassificationWrap->objectWorkTypeWrap->objectWorkType as $type) {
+            if (!empty($type->term)) {
+                return (string) $type->term;
+            }
         }
-
-        return $this->extractFirst($xpath . '/eventMethod/term');
+        return '';
     }
 
     /**
@@ -395,7 +349,15 @@ class LidoRecord extends BaseRecord
      */
     protected function getURLs()
     {
-        return $this->extractArray('lido/administrativeMetadata/resourceWrap/resourceSet/resourceRepresentation/linkResource');
+        $results = array();
+        foreach ($this->getResourceSetNodes() as $set) {
+            foreach ($set->resourceRepresentation as $node) {
+                if (!empty($node->linkResource)) {
+                    $results[] = (string) $node->linkResource;
+                }
+            }
+        }
+        return $results;
     }
 
     /**
@@ -408,63 +370,17 @@ class LidoRecord extends BaseRecord
      */
     protected function getActor($event = null, $role = null)
     {
-        $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
-
-        if (!empty($event)) {
-            if (!is_array($event)) {
-                $event = array($event);
-            }
-            $xpath .= '[';
-            foreach ($event as $i => $thisEvent) {
-                if ($i) {
-                    $xpath .= ' or ';
+        foreach ($this->getEventNodes($event) as $eventNode) {
+            foreach ($eventNode->eventActor as $actorNode) {
+                foreach ($actorNode->actorInRole as $roleNode) {
+                    if (empty($role) || in_array(mb_strtolower((string)$roleNode->roleActor->term, 'UTF-8'), is_array($role) ? $role : array($role))) {
+                        return (string)$roleNode->actor->nameActorSet->appellationValue[0];
+                    }
                 }
-                $xpath .= "eventType/term='$thisEvent'";
             }
-            $xpath .= ']';
         }
 
-        $xpath .= '/eventActor/actorInRole';
-
-        if (!empty($role)) {
-            if (!is_array($role)) {
-                $role = array($role);
-            }
-            $xpath .= '[';
-            foreach ($role as $i => $thisRole) {
-                if ($i) {
-                    $xpath .= ' or ';
-                }
-                $xpath .= "roleActor/term='$thisRole'";
-            }
-            $xpath .= ']';
-        }
-
-        $xpath .= '/actor/nameActorSet/appellationValue';
-
-        return $this->extractFirst($xpath);
-    }
-
-    /**
-     * Return the date range associated with specified event
-     *
-     * @param string $event     Which event to use (omit to scan all events)
-     * @param string $delimiter Delimiter between the dates
-     *
-     * @return string
-     */
-    protected function getPeriod($event = null, $delimiter = ',')
-    {
-        $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
-        if (!empty($event)) {
-            $xpath .= "[eventType/term='$event']";
-        }
-
-        $period = $this->extractFirst($xpath . '/periodName/term');
-        if (!empty($period)) {
-            return $period;
-        }
-        return null;
+        return '';
     }
 
     /**
@@ -476,59 +392,46 @@ class LidoRecord extends BaseRecord
      */
     protected function getEventDisplayPlace($event = null)
     {
-        $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
-        if (!empty($event)) {
-            $xpath .= "[eventType/term='$event']";
+        foreach ($this->getEventNodes($event) as $eventNode) {
+            if (!empty($eventNode->eventPlace->displayPlace)) {
+                return (string)$eventNode->eventPlace->displayPlace;
+            }
         }
-
-        return $this->extractFirst($xpath . '/eventPlace/displayPlace');
+        return '';
     }
 
     /**
      * Return the date range associated with specified event
      *
-     * @param string $event     Which event to use (omit to scan all events)
-     * @param string $delimiter Delimiter between the dates
+     * @param string $event Which event to use (omit to scan all events)
      *
      * @return string
      */
-    protected function getEventDisplayDate($event = null, $delimiter = ',')
+    protected function getEventDisplayDate($event = null)
     {
-        $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
-        if (!empty($event)) {
-            $xpath .= "[eventType/term='$event']";
+        foreach ($this->getEventNodes($event) as $eventNode) {
+            if (!empty($eventNode->eventDate->displayDate)) {
+                return (string)$eventNode->eventDate->displayDate;
+            }
         }
-
-        return $this->extractFirst($xpath . '/eventDate/displayDate');
+        return '';
     }
 
     /**
      * Return the collection of the object.
      *
-     * @param array $relatedWorkRelType Which relation types to use
+     * @param string[] $relatedWorkRelType Which relation types to use
      *
      * @return string
      */
     protected function getRelatedWorkDisplayObject($relatedWorkRelType)
     {
-        $filter = '';
-        if (is_array($relatedWorkRelType)) {
-            foreach ($relatedWorkRelType as $i => $item) {
-                if ($i > 0) {
-                    $filter .= ' or ';
-                }
-                $filter .= "relatedWorkRelType/term='$item'";
+        foreach ($this->getRelatedWorkSetNodes($relatedWorkRelType) as $set) {
+            if (!empty($set->relatedWork->displayObject)) {
+                return (string) $set->relatedWork->displayObject;
             }
-        } else {
-            $filter = "relatedWorkRelType/term='$relatedWorkRelType'";
         }
-
-        $xpath = 'lido/descriptiveMetadata/objectRelationWrap/'
-            . 'relatedWorksWrap/relatedWorkSet'
-            . (empty($filter)? '': "[$filter]")
-            . '/relatedWork/displayObject';
-
-        return $this->extractFirst($xpath);
+        return '';
     }
 
     /**
@@ -539,11 +442,11 @@ class LidoRecord extends BaseRecord
      */
     protected function getRights()
     {
-        return $this->extractFirst(
-            'lido/administrativeMetadata/resourceWrap/'
-            . 'resourceSet/rightsResource/rightsHolder/'
-            . 'legalBodyName/appellationValue'
-        );
+        foreach ($this->getResourceSetNodes() as $set) {
+            if (!empty($set->rightsResource->rightsHolder->legalBodyName->appellationValue)) {
+                return (string)$set->rightsResource->rightsHolder->legalBodyName->appellationValue;
+            }
+        }
     }
 
     /**
@@ -553,20 +456,17 @@ class LidoRecord extends BaseRecord
      */
     protected function getLanguage()
     {
-        $wraps = $this->doc->xpath('lido/descriptiveMetadata');
-        if (!count($wraps)) {
-            return null;
+        if (empty($this->doc->descriptiveMetadata)) {
+            return array();
         }
 
-        $languages = array();
-        $att = 'lang';
-        foreach ($wraps as $wrap) {
-            $language = (string)$wrap->attributes()->$att;
-            if ($language) {
-                $languages[] = $language;
+        $results = array();
+        foreach ($this->doc->descriptiveMetadata as $node) {
+            if (!empty($node['lang'])) {
+                $results[] = (string)$node['lang'];
             }
         }
-        return $languages;
+        return $results;
     }
 
     /**
@@ -575,18 +475,22 @@ class LidoRecord extends BaseRecord
      * @param string[] $exclude List of subject types to exclude
      *
      * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#subjectComplexType
-     * @return string
+     * @return string[]
      */
-    protected function getSubjectTerms($exclude)
+    protected function getSubjectTerms($exclude = array('iconclass'))
     {
-        $filter = $this->buildAttributeFilter('type', $exclude);
-
-        // get list of subjects without filter
-        $xpath = 'lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/subject'
-            . $filter
-            . '/subjectConcept/term';
-
-        return $this->extractArray($xpath);
+        $results = array();
+        foreach ($this->getSubjectNodes($exclude) as $subject) {
+            foreach ($subject->subjectConcept as $concept) {
+                foreach ($concept->term as $term) {
+                    $str = trim((string) $term);
+                    if ($str !== '') {
+                        $results[] = $str;
+                    }
+                }
+            }
+        }
+        return $results;
     }
 
     /**
@@ -596,8 +500,15 @@ class LidoRecord extends BaseRecord
      */
     protected function getSubjectDisplayPlaces()
     {
-        $xpath = 'lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/subject/subjectPlace/displayPlace';
-        return $this->extractArray($xpath);
+        $results = array();
+        foreach ($this->getSubjectNodes() as $subject) {
+            foreach ($subject->subjectPlace as $place) {
+                if (!empty($place->displayPlace)) {
+                    $results[] = (string) $place->displayPlace;
+                }
+            }
+        }
+        return $results;
     }
 
     /**
@@ -607,8 +518,19 @@ class LidoRecord extends BaseRecord
      */
     protected function getSubjectPlaces()
     {
-        $xpath = 'lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/subject/subjectPlace/place/namePlaceSet/appellationValue';
-        return $this->extractArray($xpath);
+        $results = array();
+        foreach ($this->getSubjectNodes() as $subject) {
+            foreach ($subject->subjectPlace as $place) {
+                if (!empty($place->place->namePlaceSet)) {
+                    foreach ($place->place->namePlaceSet as $set) {
+                        if ($set->appellationValue) {
+                            $results[] = (string) $set->appellationValue;
+                        }
+                    }
+                }
+            }
+        }
+        return $results;
     }
 
     /**
@@ -622,73 +544,17 @@ class LidoRecord extends BaseRecord
      */
     protected function getEventMaterials($eventType)
     {
-        $xpath = 'lido/descriptiveMetadata/eventWrap/'
-            . "eventSet/event[eventType/term='$eventType']/"
-            . 'eventMaterialsTech/materialsTech/termMaterialsTech/term';
-
-        return $this->extractArray($xpath);
-    }
-
-    /**
-     * Utility method that returns an array of strings matching given XPath selector.
-     *
-     * @param string $xpath XPath expression
-     *
-     * @return string[]
-     */
-    protected function extractArray($xpath)
-    {
         $results = array();
-        $elements = $this->doc->xpath($xpath);
-        foreach ($elements as $element) {
-            if (!empty($element)) {
-                $results[] = (string)$element;
+        foreach ($this->getEventNodes($eventType) as $event) {
+            if (!empty($event->eventMaterialsTech->materialsTech->termMaterialsTech)) {
+                foreach ($event->eventMaterialsTech->materialsTech->termMaterialsTech as $termMaterialsTech) {
+                    if ($termMaterialsTech->term) {
+                        $results[] = (string) $termMaterialsTech->term;
+                    }
+                }
             }
         }
         return $results;
-    }
-
-    /**
-     * Utility method that returns the first string matching given XPath selector.
-     *
-     * @param string $xpath XPath expression
-     *
-     * @return string
-     */
-    protected function extractFirst($xpath)
-    {
-        $elements = $this->doc->xpath($xpath);
-        if (!$elements || empty($elements[0])) {
-            return '';
-        }
-
-        return (string)$elements[0];
-    }
-
-    /**
-     * Helper function, builds XPath filter for excluding attribute values
-     *
-     * @param string   $attribute Attribute name
-     * @param string[] $terms     Array of filter terms
-     *
-     * @return string
-     */
-    protected function buildAttributeFilter($attribute, $terms)
-    {
-        if (!is_array($terms)) {
-            $terms = array($terms);
-        }
-        if (empty($terms)) {
-            return '';
-        }
-        $filter = '[not (@type) or (';
-        foreach ($terms as $i => $term) {
-            if ($i > 0) {
-                $filter .= ' and ';
-            }
-            $filter .= "@$attribute!='$term'";
-        }
-        return $filter . ')]';
     }
 
     /**
@@ -736,7 +602,7 @@ class LidoRecord extends BaseRecord
      *
      * @param string $input Date range
      *
-     * @return string Two ISO 8601 dates separated with the supplied delimiter on success, and null on failure.
+     * @return string Two ISO 8601 dates separated with a comma on success, and null on failure.
      */
     protected function parseDateRange($input)
     {
@@ -801,4 +667,177 @@ class LidoRecord extends BaseRecord
 
         return "$startDate,$endDate";
     }
+
+    /**
+     * Get all events
+     *
+     * @param string|string[] $event Which events to use (omit to scan all events)
+     *
+     * @return simpleXMLElement[] Array of event nodes
+     */
+    protected function getEventNodes($event = null)
+    {
+        if (empty($this->doc->lido->descriptiveMetadata->eventWrap->eventSet)) {
+            return array();
+        }
+        $eventList = array();
+        foreach ($this->doc->lido->descriptiveMetadata->eventWrap->eventSet
+            as $eventSetNode
+        ) {
+            foreach ($eventSetNode->event as $eventNode) {
+                if (!empty($event)) {
+                    $eventTypes = array();
+                    if (!empty($eventNode->eventType->term)) {
+                        foreach ($eventNode->eventType->term as $term) {
+                            $eventTypes[] = mb_strtolower((string) $term, 'UTF-8');
+                        }
+                    }
+                    if (!array_intersect(
+                        $eventTypes, is_array($event) ? $event : array($event)
+                    )) {
+                        continue;
+                    }
+                }
+                $eventList[] = $eventNode;
+            }
+        }
+        return $eventList;
+    }
+
+    /**
+     * Get all title sets
+     *
+     * @param string|string[] $types Which subject types to include
+     *
+     * @return simpleXMLElement[] Array of subjectSet nodes
+     */
+    protected function getTitleSetNodes($types = array())
+    {
+        if (empty($this->doc->lido->descriptiveMetadata->objectIdentificationWrap->titleWrap->titleSet)) {
+            return array();
+        }
+        $setList = array();
+        foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap->titleWrap->titleSet
+            as $titleSetNode
+        ) {
+            $setList[] = $titleSetNode;
+        }
+        return $setList;
+
+    }
+
+    /**
+     * Get all subject sets
+     *
+     * @return simpleXMLElement[] Array of subjectSet nodes
+     */
+    protected function getSubjectSetNodes()
+    {
+        if (empty($this->doc->lido->descriptiveMetadata->objectRelationWrap->subjectWrap->subjectSet)) {
+            return array();
+        }
+        $setList = array();
+        foreach ($this->doc->lido->descriptiveMetadata->objectRelationWrap->subjectWrap->subjectSet
+            as $subjectSetNode
+        ) {
+            $setList[] = $subjectSetNode;
+        }
+        return $setList;
+    }
+
+    /**
+     * Get all subjects
+     *
+     * @param string|string[] $exclude Which subject types to exclude
+     *
+     * @return simpleXMLElement[] Array of subject nodes
+     */
+    protected function getSubjectNodes($exclude = array())
+    {
+        $subjectList = array();
+        foreach ($this->getSubjectSetNodes() as $subjectSetNode) {
+            foreach ($subjectSetNode->subject as $subjectNode) {
+                if (empty($exclude)
+                    || empty($subjectNode['type'])
+                    || !in_array(mb_strtolower($subjectNode['type'], 'UTF-8'), $exclude)
+                ) {
+                    $subjectList[] = $subjectNode;
+                }
+            }
+        }
+        return $subjectList;
+    }
+
+    /**
+     * Get all object description sets
+     *
+     * @param string|string[] $exclude Which description types to exclude
+     *
+     * @return simpleXMLElement[] Array of objectDescriptionSet nodes
+     */
+    protected function getObjectDescriptionSetNodes($exclude = array())
+    {
+        if (empty($this->doc->lido->descriptiveMetadata->objectIdentificationWrap->objectDescriptionWrap->objectDescriptionSet)) {
+            return array();
+        }
+        $setList = array();
+        foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap->objectDescriptionWrap->objectDescriptionSet
+            as $objectSetNode
+        ) {
+            if (empty($exclude)
+                || empty($objectSetNode['type'])
+                || !in_array(mb_strtolower($objectSetNode['type'], 'UTF-8'), $exclude)
+            ) {
+                $setList[] = $objectSetNode;
+            }
+        }
+        return $setList;
+    }
+
+    /**
+     * Get related work sets
+     *
+     * @param string[] $relatedWorkRelType Which relation types to include
+     *
+     * @return simpleXMLElement[] Array of relatedWorkSet nodes
+     */
+    protected function getRelatedWorkSetNodes($relatedWorkRelType = array())
+    {
+        if (empty($this->doc->lido->descriptiveMetadata->objectRelationWrap->relatedWorksWrap->relatedWorkSet)) {
+            return array();
+        }
+        $setList = array();
+        foreach ($this->doc->lido->descriptiveMetadata->objectRelationWrap->relatedWorksWrap->relatedWorkSet
+            as $relatedWorkSetNode
+        ) {
+            if (empty($relatedWorkRelType)
+                || empty($relatedWorkSetNode->relatedWorkRelType->term)
+                || in_array(mb_strtolower($relatedWorkSetNode->relatedWorkRelType->term, 'UTF-8'), $relatedWorkRelType)
+            ) {
+                $setList[] = $relatedWorkSetNode;
+            }
+        }
+        return $setList;
+    }
+
+    /**
+     * Get resource sets
+     *
+     * @return simpleXMLElement[] Array of resourceSet nodes
+     */
+    protected function getResourceSetNodes()
+    {
+        if (empty($this->doc->lido->administrativeMetadata->resourceWrap->resourceSet)) {
+            return array();
+        }
+        $setList = array();
+        foreach ($this->doc->lido->administrativeMetadata->resourceWrap->resourceSet
+            as $resourceSetNode
+        ) {
+            $setList[] = $resourceSetNode;
+        }
+        return $setList;
+    }
+
+
 }

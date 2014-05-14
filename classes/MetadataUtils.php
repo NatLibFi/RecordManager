@@ -42,12 +42,12 @@ class MetadataUtils
     static $fullTitlePrefixes = null;
     static $abbreviations = null;
     static $articles = null;
-    
+
     /**
      * Convert ISBN-10 (without dashes) to ISBN-13
      *
      * @param string $isbn ISBN
-     * 
+     *
      * @return boolean|string Resulting ISBN or false for invalid string
      */
     static public function isbn10to13($isbn)
@@ -69,7 +69,7 @@ class MetadataUtils
      * Convert coordinates in [EWSN]DDDMMSS format to decimal
      *
      * @param string $value Coordinates
-     * 
+     *
      * @return float
      */
     static public function coordinateToDecimal($value)
@@ -91,14 +91,14 @@ class MetadataUtils
      * Create a normalized title key for dedup
      *
      * @param string $title Title
-     * 
+     *
      * @return string
      */
     static public function createTitleKey($title)
     {
         global $configArray;
         global $basePath;
-        
+
         $full = false;
         if (isset(MetadataUtils::$fullTitlePrefixes)) {
             $normalTitle = MetadataUtils::normalize($title);
@@ -109,7 +109,7 @@ class MetadataUtils
                 }
             }
         }
-        
+
         $words = explode(' ', $title);
         $longWords = 0;
         $key = '';
@@ -126,7 +126,7 @@ class MetadataUtils
             } elseif ($full && $keyLen > 100) {
                 break;
             }
-            
+
         }
         return MetadataUtils::normalize($key);
     }
@@ -135,7 +135,7 @@ class MetadataUtils
      * Normalize a string for comparison
      *
      * @param string $str String to be normalized
-     * 
+     *
      * @return string
      */
     static public function normalize($str)
@@ -157,7 +157,7 @@ class MetadataUtils
      *
      * @param string $a1 LastName FirstName
      * @param string $a2 LastName FirstName
-     * 
+     *
      * @return bool
      */
     static public function authorMatch($a1, $a2)
@@ -197,7 +197,7 @@ class MetadataUtils
      * Check whether the string contains trailing punctuation characters
      *
      * @param string $str String to check
-     * 
+     *
      * @return boolean
      */
     static public function hasTrailingPunctuation($str)
@@ -208,11 +208,11 @@ class MetadataUtils
         }
         while ($i > 0 && $str[$i] == ' ') {
             --$i;
-        } 
+        }
         $c = $str[$i];
         $punctuation = strstr('/:;,=([', $c) !== false;
         if (!$punctuation) {
-            $punctuation = substr($str, -1) == '.' && !substr($str, -3, 1) != ' '; 
+            $punctuation = substr($str, -1) == '.' && !substr($str, -3, 1) != ' ';
         }
         return $punctuation;
     }
@@ -221,13 +221,13 @@ class MetadataUtils
      * Strip trailing spaces and punctuation characters from a string
      *
      * @param string $str String to strip
-     * 
+     *
      * @return string
      */
     static public function stripTrailingPunctuation($str)
     {
         global $configArray;
-        
+
         $str = rtrim($str, ' /:;,=([');
 
         // Don't replace an initial letter (e.g. string "Smith, A.") followed by period
@@ -244,25 +244,25 @@ class MetadataUtils
         }
         return $str;
     }
-    
+
     /**
      * Strip leading spaces and punctuation characters from a string
      *
      * @param string $str         String to strip
      * @param string $punctuation String of punctuation characters
-     * 
+     *
      * @return string
      */
     static public function stripLeadingPunctuation($str, $punctuation = " \#!?/:;.,=(['\"")
     {
         return ltrim($str, $punctuation);
     }
-    
+
     /**
      * Strip leading article from a title
-     * 
+     *
      * @param string $str Title string
-     * 
+     *
      * @return string Modified title string
      */
     static public function stripLeadingArticle($str)
@@ -272,22 +272,22 @@ class MetadataUtils
             if (strncasecmp($article, $str, $len) == 0) {
                 $str = substr($str, $len);
                 break;
-            }    
+            }
         }
         return $str;
     }
-    
+
     /**
      * Case-insensitive array_unique
-     * 
+     *
      * @param array $array Array
-     * 
+     *
      * @return array
      */
     // @codingStandardsIgnoreStart
-    static public function array_iunique($array) 
+    static public function array_iunique($array)
     {
-        // This one handles UTF-8 properly, but mb_strtolower is SLOW 
+        // This one handles UTF-8 properly, but mb_strtolower is SLOW
         $map = array();
         foreach ($array as $key => $value) {
             $mb = preg_match('/[\x80-\xFF]/', $value); //mb_detect_encoding($value, 'ASCII', true);
@@ -295,51 +295,51 @@ class MetadataUtils
         }
         return array_intersect_key($array, array_unique($map));
         //return array_intersect_key($array, array_unique(array_map('strtolower', $array)));
-    } 
+    }
     // @codingStandardsIgnoreEnd
-    
+
     /**
-     * Try to find the important numeric part from a record ID to sort by 
-     * 
+     * Try to find the important numeric part from a record ID to sort by
+     *
      * @param string $id Record ID
-     * 
+     *
      * @return string Sort key
      */
-    static public function createIdSortKey($id) 
+    static public function createIdSortKey($id)
     {
         if (preg_match('/^\w*(\d+)$/', $id, $matches)) {
             return $matches[1];
         }
         return $id;
     }
-    
+
     /**
      * Validate a date in ISO8601 format.
      *
      * @param string $date Date to validate
-     * 
-     * @return boolean
+     *
+     * @return boolean|time False if invalid, resulting time otherwise
      */
     static public function validateISO8601Date($date)
     {
-        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/', $date, $parts) == true) {
+        if (preg_match('/^(\-?\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/', $date, $parts) == true) {
             $time = gmmktime($parts[4], $parts[5], $parts[6], $parts[2], $parts[3], $parts[1]);
-    
+
             $inputTime = strtotime($date);
             if ($inputTime === false) {
                 return false;
             }
-    
-            return $inputTime == $time;
+
+            return $inputTime == $time ? $inputTime : false;
         }
         return false;
     }
 
     /**
      * Convert a textual date range to numeric (days since 1970-01-01)
-     * 
+     *
      * @param string|array $range Start and end date (separated by a comma if string)
-     * 
+     *
      * @return string Start and end date in numeric format
      */
     static public function convertDateRange($range)
@@ -356,30 +356,30 @@ class MetadataUtils
             $start = floor(strtotime($range[0]) / 86400);
             $end = floor(strtotime($range[1]) / 86400);
         } catch (Exception $e) {
-        } 
+        }
         date_default_timezone_set($oldTZ);
-        
+
         return max(array($start, -4371587)) . ' ' . min(array($end, 2932896));
     }
-    
+
     /**
      * Trim whitespace between tags (but not in data)
      *
      * @param string $xml XML string
-     * 
-     * @return string Cleaned string 
+     *
+     * @return string Cleaned string
      */
     static public function trimXMLWhitespace($xml)
     {
         return preg_replace('~\s*(<([^>]*)>[^<]*</\2>|<[^>]*>)\s*~', '$1', $xml);
     }
-    
+
     /**
      * Get record metadata from a database record
      *
      * @param object &$record    Database record
      * @param bool   $normalized Whether to return the original (false) or normalized (true) record
-     * 
+     *
      * @return string Metadata as a string
      */
     static public function getRecordData(&$record, $normalized)
@@ -394,23 +394,23 @@ class MetadataUtils
 
     /**
      * Create a timestamp string from the given unix timestamp
-     * 
+     *
      * @param int $timestamp Unix timestamp
-     * 
+     *
      * @return string Formatted string
-     */    
+     */
     public static function formatTimestamp($timestamp)
     {
         $date = new DateTime('', new DateTimeZone('UTC'));
         $date->setTimeStamp($timestamp);
         return $date->format('Y-m-d') . 'T' . $date->format('H:i:s') . 'Z';
     }
-    
+
     /**
      * Extract year from a date string
-     * 
+     *
      * @param string $str Date string
-     * 
+     *
      * @return string Year
      */
     public static function extractYear($str)
@@ -420,12 +420,12 @@ class MetadataUtils
             return $matches[1];
         }
     }
-    
+
     /**
      * Convert first character of string to upper case (mb aware)
-     * 
+     *
      * @param string|string[] $str String to be converted
-     * 
+     *
      * @return string|string[] Converted string
      */
     public static function ucFirst($str)
@@ -438,21 +438,21 @@ class MetadataUtils
         }
         return mb_strtoupper(mb_substr($str, 0, 1)) . mb_substr($str, 1);
     }
-    
+
     /**
      * Normalize string to one of the UNICODE normalization forms
-     * 
+     *
      * @param string $str String to normalize
-     * 
+     *
      * @return string Normalized string
      */
     public static function normalizeUnicode($str)
     {
         global $configArray;
-        
+
         if (!isset($configArray['Solr']['unicode_normalization_form'])) {
             return $str;
-        } 
+        }
         switch ($configArray['Solr']['unicode_normalization_form']) {
         case 'NFC': return Normalizer::normalize($str, Normalizer::FORM_C);
         case 'NFD': return Normalizer::normalize($str, Normalizer::FORM_D);

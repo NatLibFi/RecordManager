@@ -146,6 +146,20 @@ class NdlLidoRecord extends LidoRecord
     }
 
     /**
+     * Return record title
+     *
+     * @param bool     $forFiling            Whether the title is to be used in filing (e.g. sorting, non-filing characters should be removed)
+     * @param string   $lang                 Language
+     * @param string[] $excludedDescriptions Description types to exclude
+     *
+     * @return string
+     */
+    public function getTitle($forFiling = false, $lang = null, $excludedDescriptions = array('provenance'))
+    {
+        return parent::getTitle($forFiling, $lang, array('provenienssi'));
+    }
+
+    /**
      * Return materials associated with the object. Materials are contained inside events, and the
      * 'valmistus' (creation) event contains all the materials of the object.
      * Either the individual materials are retrieved, or the display materials element is
@@ -170,12 +184,13 @@ class NdlLidoRecord extends LidoRecord
         // However, it's possible to extract the different materials from the display field
         // Some CMS have only one field for materials so this is the only way to index their materials
 
-        $xpath = 'lido/descriptiveMetadata/eventWrap/'
-            . "eventSet/event[eventType/term='$eventType']/"
-            . 'eventMaterialsTech/displayMaterialsTech';
-
-
-        $material = $this->extractFirst($xpath);
+        $material = '';
+        foreach ($this->getEventNodes($eventType) as $node) {
+            if (!empty($node->eventMaterialsTech->displayMaterialsTech)) {
+                $material = (string) $node->eventMaterialsTech->displayMaterialsTech;
+                break;
+            }
+        }
         if (empty($material)) {
             return array();
         }
@@ -196,23 +211,27 @@ class NdlLidoRecord extends LidoRecord
      */
     protected function getDescription()
     {
-        // Exception: Don't extract descriptions with type attribute "provenienssi"
-        $descriptionWrapDescriptions = $this->extractArray("lido/descriptiveMetadata/objectIdentificationWrap/objectDescriptionWrap/objectDescriptionSet[not(@type) or (@type!='provenienssi')]/descriptiveNoteValue");
-
+        $descriptionWrapDescriptions = array();
+        foreach ($this->getObjectDescriptionSetNodes(array('provenienssi'))
+            as $set
+        ) {
+            foreach ($set->descriptiveNoteValue as $descriptiveNoteValue) {
+                $descriptionWrapDescriptions[] = (string) $descriptiveNoteValue;
+            }
+        }
         if ($descriptionWrapDescriptions && $this->getTitle() == implode('; ', $descriptionWrapDescriptions)) {
             // We have the description already in the title, don't repeat
             $descriptionWrapDescriptions = array();
         }
 
         // Also read in "description of subject" which contains data suitable for this field
-        $subjectDescriptions = $this->extractArray("lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/displaySubject[@label='aihe']");
+        $subjectDescriptions = array();
+        foreach ($this->getSubjectSetNodes() as $set) {
+            if (mb_strtolower($set->displaySubject['label'], 'UTF-8') == 'aihe') {
+                $subjectDescriptions[] = (string) $set->displaySubject;
+            }
+        }
 
-        if (empty($descriptionWrapDescriptions)) {
-            $descriptionWrapDescriptions = array();
-        }
-        if (empty($subjectDescriptions)) {
-            $subjectDescriptions = array();
-        }
         return implode(' ', array_merge($descriptionWrapDescriptions, $subjectDescriptions));
     }
 
@@ -242,21 +261,34 @@ class NdlLidoRecord extends LidoRecord
     /**
      * Return the date range associated with specified event
      *
-     * @param string $event     Which event to use (omit to scan all events)
-     * @param string $delimiter Delimiter between the dates
+     * @param string $event Which event to use (omit to scan all events)
      *
      * @return string[] Two ISO 8601 dates
      */
-    protected function getDateRange($event = null, $delimiter = ',')
+    protected function getDateRange($event = null)
     {
-        $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
-        if (!empty($event)) {
-            $xpath .= "[eventType/term='$event']";
+        $startDate = '';
+        $endDate = '';
+        $displayDate = '';
+        $periodName = '';
+        foreach ($this->getEventNodes($event) as $eventNode) {
+            if (!$startDate
+                && !empty($eventNode->eventDate->date->earliestDate)
+                && !empty($eventNode->eventDate->date->latestDate)
+            ) {
+                $startDate = (string)$eventNode->eventDate->date->earliestDate;
+                $endDate = (string)$eventNode->eventDate->date->latestDate;
+                break;
+            }
+            if (!$displayDate && !empty($eventNode->eventDate->displayDate)) {
+                $displayDate = (string)$eventNode->eventDate->displayDate;
+            }
+            if (!$periodName && !empty($eventNode->periodName->term)) {
+                $periodName = (string)$eventNode->periodName->term;
+            }
         }
 
-        $startDate = $this->extractFirst($xpath . '/eventDate/date/earliestDate');
-        $endDate = $this->extractFirst($xpath . '/eventDate/date/latestDate');
-        if (!empty($startDate) && !empty($endDate)) {
+        if ($startDate) {
             if ($endDate < $startDate) {
                 global $logger;
                 $logger->log('NdlLidoRecord', "Invalid date range {$startDate} - {$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
@@ -280,12 +312,13 @@ class NdlLidoRecord extends LidoRecord
             return array($startDate, $endDate);
         }
 
-        $date = $this->extractFirst($xpath . '/eventDate/displayDate');
-        if (empty($date)) {
-            $date = $this->extractFirst($xpath . '/periodName/term');
+        if ($displayDate) {
+            return $this->parseDateRange($displayDate);
         }
-
-        return $this->parseDateRange($date);
+        if ($periodName) {
+            return $this->parseDateRange($periodName);
+        }
+        return null;
     }
 
     /**
@@ -297,12 +330,13 @@ class NdlLidoRecord extends LidoRecord
      */
     protected function getEventPlaceCoordinates($event = null)
     {
-        $xpath = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
-        if (!empty($event)) {
-            $xpath .= "[eventType/term='$event']";
+        $coordinates = array();
+        foreach ($this->getEventNodes($event) as $event) {
+            if (!empty($event->eventPlace->place->gml->Point->pos)) {
+                $coordinates[] = (string) $event->eventPlace->place->gml->Point->pos;
+            }
         }
 
-        $coordinates = $this->doc->xpath($xpath . '/eventPlace/place/gml/Point/pos');
         $results = array();
         foreach ($coordinates as $coord) {
             list($lat, $long) = explode(' ', (string)$coord, 2);
@@ -534,6 +568,12 @@ class NdlLidoRecord extends LidoRecord
             } else {
                 $endDate = $year;
             }
+        } elseif (preg_match('/(\d?\d?\d\d)\s*ekr.?\s*\-\s*(\d?\d?\d\d)\s*ekr.?/', $input, $matches) > 0) {
+            $startDate = -$matches[1];
+            $endDate = -$matches[2];
+        } elseif (preg_match('/(\d?\d?\d\d)\s*ekr.?\s*\-\s*(\d?\d?\d\d)\s*jkr.?/', $input, $matches) > 0) {
+            $startDate = -$matches[1];
+            $endDate = $matches[2];
         } elseif (preg_match('/(\d?\d?\d\d) jälkeen/', $input, $matches) > 0) {
             $year = $matches[1];
 
@@ -553,6 +593,20 @@ class NdlLidoRecord extends LidoRecord
             return null;
         }
 
+        if ($startDate < 0) {
+            $startDate = '-' . substr('0000', 0, 5-strlen($startDate))
+                . substr($startDate, 1);
+        } elseif ($startDate == 0) {
+            $startDate = '0000';
+        }
+
+        if ($endDate < 0) {
+            $endDate = '-' . substr('0000', 0, 5-strlen($endDate))
+                . substr($endDate, 1);
+        } elseif ($endDate == 0) {
+            $endDate = '0000';
+        }
+
         if (strlen($startDate) == 2) {
             $startDate = 1900 + $startDate;
         }
@@ -566,12 +620,6 @@ class NdlLidoRecord extends LidoRecord
             $endDate = $endDate . '-12-31T23:59:59Z';
         }
 
-        if ($endDate < $startDate) {
-            global $logger;
-            $logger->log('NdlLidoRecord', "Invalid date range {$startDate} - {$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
-            $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
-        }
-
         // Trying to index dates into the future? I don't think so...
         $yearNow = date('Y');
         if ($startDate > $yearNow || $endDate > $yearNow) {
@@ -581,10 +629,96 @@ class NdlLidoRecord extends LidoRecord
         $this->earliestYear = $startDate;
         $this->latestYear = $startDate;
 
-        if (!MetadataUtils::validateISO8601Date($startDate) || !MetadataUtils::validateISO8601Date($endDate)) {
-            return null;
+        $start = MetadataUtils::validateISO8601Date($startDate);
+        $end = MetadataUtils::validateISO8601Date($endDate);
+        if ($start === false || $end === false) {
+            global $logger;
+            $logger->log('NdlLidoRecord', "Invalid date range {$startDate} - {$endDate} parsed from '$input', record {$this->source}." . $this->getID(), Logger::WARNING);
+            if ($start !== false) {
+                $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
+            } elseif ($end !== false) {
+                $startDate = substr($endDate, 0, 4) . '-01-01T00:00:00Z';
+            } else {
+                return null;
+            }
+        } elseif ($start > $end) {
+            global $logger;
+            $logger->log('NdlLidoRecord', "Invalid date range {$startDate} - {$endDate} parsed from '$input', record {$this->source}." . $this->getID(), Logger::WARNING);
+            $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
         }
 
         return array($startDate, $endDate);
     }
+
+    /**
+     * Return the classifications.
+     *
+     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
+     * @return string[]
+     */
+    protected function getClassifications()
+    {
+        if (empty($this->doc->lido->descriptiveMetadata->objectClassificationWrap->classificationWrap->classification)) {
+            return array();
+        }
+        $results = array();
+        foreach ($this->doc->lido->descriptiveMetadata->objectClassificationWrap->classificationWrap->classification as $classification) {
+            if (!empty($classification->term)) {
+                $results[] = (string)$classification->term;
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Return all the names for the specified event type
+     *
+     * @param string $eventType Event type
+     *
+     * @return string[]
+     */
+    protected function getEventNames($eventType)
+    {
+        $results = array();
+        foreach ($this->getEventNodes($eventType) as $event) {
+            if (!empty($event->eventName->appellationValue)) {
+                $results[] = (string)$event->eventName->appellationValue;
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Return the rights holder legal body name.
+     *
+     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#legalBodyRefComplexType
+     * @return string
+     */
+    protected function getRightsHolderLegalBodyName()
+    {
+        if (empty($this->doc->lido->administrativeMetadata->rightsWorkWrap->rightsWorkSet)) {
+            return '';
+        }
+
+        foreach ($this->doc->lido->administrativeMetadata->rightsWorkWrap->rightsWorkSet as $set) {
+            if (!empty($set->rightsHolder->legalBodyName->appellationValue)) {
+                return (string) $set->rightsHolder->legalBodyName->appellationValue;
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Return the organization name in the recordSource element
+     *
+     * @return array
+     */
+    protected function getRecordSourceOrganization()
+    {
+        if (empty($this->doc->lido->administrativeMetadata->recordWrap->recordSource->legalBodyName->appellationValue)) {
+            return '';
+        }
+        return (string) $this->doc->lido->administrativeMetadata->recordWrap->recordSource->legalBodyName->appellationValue;
+    }
+
 }
