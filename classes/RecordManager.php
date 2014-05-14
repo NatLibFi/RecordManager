@@ -325,18 +325,21 @@ class RecordManager
      *                              sources (ignored if record merging is enabled)
      * @param string      $singleId Export only a record with the given ID
      * @param bool        $noCommit If true, changes are not explicitly committed
+     * @param string      $compare  If set, just compare records and write
+     *                              differences into the file in this parameter
      *
      * @return void
      */
-    public function updateSolrIndex($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false)
-    {
+    public function updateSolrIndex($fromDate = null, $sourceId = '', $singleId = '',
+        $noCommit = false, $compare = ''
+    ) {
         global $configArray;
         $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
 
         if (isset($configArray['Solr']['merge_records']) && $configArray['Solr']['merge_records']) {
-            return $updater->updateRecords($fromDate, $sourceId, $singleId, $noCommit);
+            return $updater->updateRecords($fromDate, $sourceId, $singleId, $noCommit, false, $compare);
         }
-        return $updater->updateIndividualRecords($fromDate, $sourceId, $singleId, $noCommit);
+        return $updater->updateIndividualRecords($fromDate, $sourceId, $singleId, $noCommit, $compare);
     }
 
     /**

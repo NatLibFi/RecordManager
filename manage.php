@@ -45,7 +45,7 @@ Usage: $argv[0] --func=... [...]
 
 Parameters:
 
---func             renormalize|deduplicate|updatesolr|dump|markdeleted|deletesource|deletesolr|optimizesolr|count|updategeocoding|resimplifygeocoding|checkdedup
+--func             renormalize|deduplicate|updatesolr|dump|markdeleted|deletesource|deletesolr|optimizesolr|count|updategeocoding|resimplifygeocoding|checkdedup|comparesolr
 --source           Source ID to process (separate multiple sources with commas)
 --all              Process all records regardless of their state (deduplicate)
                    or date (updatesolr)
@@ -62,6 +62,8 @@ Parameters:
                    in recordmanager.ini
 --lockfile=file    Use a lock file to avoid executing the command multiple times in
                    parallel (useful when running from crontab)
+--comparelog       Record comparison output file. N.B. The file will be overwritten
+                   (comparesolr)
 
 
 EOT;
@@ -81,10 +83,13 @@ EOT;
         $single = isset($params['single']) ? $params['single'] : '';
         $noCommit = isset($params['nocommit']) ? $params['nocommit'] : false;
 
-        // Solr update can handle multiple sources at once
+        // Solr update or compare can handle multiple sources at once
         if ($params['func'] == 'updatesolr') {
             $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
             $manager->updateSolrIndex($date, $sources, $single, $noCommit);
+        } elseif ($params['func'] == 'comparesolr') {
+            $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
+            $manager->updateSolrIndex($date, $sources, $single, $noCommit, isset($params['comparelog']) ? $params['comparelog'] : '-');
         } else {
             foreach (explode(',', $sources) as $source) {
                 switch ($params['func'])
