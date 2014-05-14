@@ -547,8 +547,12 @@ class LidoRecord extends BaseRecord
     protected function getEventMaterials($eventType)
     {
         $results = array();
+        $displayTerms = array();
         foreach ($this->getEventNodes($eventType) as $event) {
             foreach ($event->eventMaterialsTech as $eventMaterialsTech) {
+                foreach ($eventMaterialsTech->displayMaterialsTech as $displayMaterialsTech) {
+                    $displayTerms[] = (string) $displayMaterialsTech;
+                }
                 foreach ($eventMaterialsTech->materialsTech as $materialsTech) {
                     foreach ($materialsTech->termMaterialsTech as $termMaterialsTech) {
                         foreach ($termMaterialsTech->term as $term) {
@@ -558,7 +562,7 @@ class LidoRecord extends BaseRecord
                 }
             }
         }
-        return $results;
+        return $results ? $results : $displayTerms;
     }
 
     /**
