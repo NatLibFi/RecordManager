@@ -231,7 +231,10 @@ class LidoRecord extends BaseRecord
         $results = array();
         foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap->objectMeasurementsWrap->objectMeasurementsSet as $set) {
             foreach ($set->displayObjectMeasurements as $measurements) {
-                $results[] = (string) $measurements;
+                $value = trim((string) $measurements);
+                if ($value) {
+                    $results[] = $value;
+                }
             }
         }
         return $results;
