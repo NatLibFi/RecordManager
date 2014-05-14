@@ -548,10 +548,12 @@ class LidoRecord extends BaseRecord
     {
         $results = array();
         foreach ($this->getEventNodes($eventType) as $event) {
-            if (!empty($event->eventMaterialsTech->materialsTech->termMaterialsTech)) {
-                foreach ($event->eventMaterialsTech->materialsTech->termMaterialsTech as $termMaterialsTech) {
-                    if ($termMaterialsTech->term) {
-                        $results[] = (string) $termMaterialsTech->term;
+            foreach ($event->eventMaterialsTech as $eventMaterialsTech) {
+                foreach ($eventMaterialsTech->materialsTech as $materialsTech) {
+                    foreach ($materialsTech->termMaterialsTech as $termMaterialsTech) {
+                        foreach ($termMaterialsTech->term as $term) {
+                            $results[] = (string) $term;
+                        }
                     }
                 }
             }
