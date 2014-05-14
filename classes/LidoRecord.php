@@ -230,8 +230,8 @@ class LidoRecord extends BaseRecord
         }
         $results = array();
         foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap->objectMeasurementsWrap->objectMeasurementsSet as $set) {
-            if (!empty($set->displayObjectMeasurements)) {
-                $results[] = (string)$set->displayObjectMeasurements;
+            foreach ($set->displayObjectMeasurements as $measurements) {
+                $results[] = (string) $measurements;
             }
         }
         return $results;
@@ -373,8 +373,10 @@ class LidoRecord extends BaseRecord
         foreach ($this->getEventNodes($event) as $eventNode) {
             foreach ($eventNode->eventActor as $actorNode) {
                 foreach ($actorNode->actorInRole as $roleNode) {
-                    if (empty($role) || in_array(mb_strtolower((string)$roleNode->roleActor->term, 'UTF-8'), is_array($role) ? $role : array($role))) {
-                        return (string)$roleNode->actor->nameActorSet->appellationValue[0];
+                    if (isset($roleNode->actor->nameActorSet->appellationValue)) {
+                        if (empty($role) || in_array(mb_strtolower((string)$roleNode->roleActor->term, 'UTF-8'), is_array($role) ? $role : array($role))) {
+                            return (string)$roleNode->actor->nameActorSet->appellationValue[0];
+                        }
                     }
                 }
             }
