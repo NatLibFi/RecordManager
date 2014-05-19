@@ -281,16 +281,7 @@ class MarcRecord extends BaseRecord
         $data['allfields'] = $this->getAllFields();
 
         // language
-        $languages = array(substr($this->getField('008'), 35, 3));
-        $languages += $this->getFieldsSubfields(
-            array(
-                array(MarcRecord::GET_NORMAL, '041', array('a'=>1)),
-                array(MarcRecord::GET_NORMAL, '041', array('d'=>1)),
-                array(MarcRecord::GET_NORMAL, '041', array('h'=>1)),
-                array(MarcRecord::GET_NORMAL, '041', array('j'=>1))
-            ),
-            false, true, true
-        );
+        $languages = $this->getLanguages();
 
         foreach ($languages as $language) {
             if (preg_match('/^\w{3}$/', $language) && $language != 'zxx' && $language != 'und') {
@@ -469,86 +460,15 @@ class MarcRecord extends BaseRecord
         );
         $data['callnumber-first-code'] = substr($data['callnumber-a'], 0, 1);
 
-        $data['topic'] = $this->getFieldsSubfields(
-            array(
-                array(MarcRecord::GET_BOTH, '600', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1, 'e'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'j'=>1, 'k'=>1, 'l'=>1, 'm'=>1, 'n'=>1, 'o'=>1, 'p'=>1, 'q'=>1, 'r'=>1, 's'=>1, 't'=>1, 'u'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1)),
-                array(MarcRecord::GET_BOTH, '610', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1, 'e'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'k'=>1, 'l'=>1, 'm'=>1, 'n'=>1, 'o'=>1, 'p'=>1, 'r'=>1, 's'=>1, 't'=>1, 'u'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1)),
-                array(MarcRecord::GET_BOTH, '611', array('a'=>1, 'c'=>1, 'd'=>1, 'e'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'j'=>1, 'k'=>1, 'l'=>1, 'n'=>1, 'p'=>1, 'q'=>1, 's'=>1, 't'=>1, 'u'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1)),
-                array(MarcRecord::GET_BOTH, '630', array('a'=>1, 'd'=>1, 'e'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'k'=>1, 'l'=>1, 'm'=>1, 'n'=>1, 'o'=>1, 'p'=>1, 'r'=>1, 's'=>1, 't'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1)),
-                array(MarcRecord::GET_BOTH, '650', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1, 'e'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1))
-            )
-        );
-        $data['genre'] = $this->getFieldsSubfields(
-            array(
-                array(MarcRecord::GET_BOTH, '655', array('a'=>1, 'b'=>1, 'c'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1))
-            )
-        );
-        $data['geographic'] = $this->getFieldsSubfields(
-            array(
-                array(MarcRecord::GET_BOTH, '651', array('a'=>1, 'e'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1))
-            )
-        );
-        $data['era'] = $this->getFieldsSubfields(
-            array(
-                array(MarcRecord::GET_BOTH, '648', array('a'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1))
-            )
-        );
+        $data['topic'] = $this->getTopics();
+        $data['genre'] = $this->getGenres();
+        $data['geographic'] = $this->getGeographicTopics();
+        $data['era'] = $this->getEras();
 
-        $data['topic_facet'] = $this->getFieldsSubfields(
-            array(
-                array(MarcRecord::GET_NORMAL, '600', array('x'=>1)),
-                array(MarcRecord::GET_NORMAL, '610', array('x'=>1)),
-                array(MarcRecord::GET_NORMAL, '611', array('x'=>1)),
-                array(MarcRecord::GET_NORMAL, '630', array('x'=>1)),
-                array(MarcRecord::GET_NORMAL, '648', array('x'=>1)),
-                array(MarcRecord::GET_NORMAL, '650', array('a'=>1)),
-                array(MarcRecord::GET_NORMAL, '650', array('x'=>1)),
-                array(MarcRecord::GET_NORMAL, '651', array('x'=>1)),
-                array(MarcRecord::GET_NORMAL, '655', array('x'=>1))
-            ),
-            false, true, true
-        );
-        $data['genre_facet'] = MetadataUtils::ucFirst(
-            $this->getFieldsSubfields(
-                array(
-                    array(MarcRecord::GET_NORMAL, '600', array('v'=>1)),
-                    array(MarcRecord::GET_NORMAL, '610', array('v'=>1)),
-                    array(MarcRecord::GET_NORMAL, '611', array('v'=>1)),
-                    array(MarcRecord::GET_NORMAL, '630', array('v'=>1)),
-                    array(MarcRecord::GET_NORMAL, '648', array('v'=>1)),
-                    array(MarcRecord::GET_NORMAL, '650', array('v'=>1)),
-                    array(MarcRecord::GET_NORMAL, '651', array('v'=>1)),
-                    array(MarcRecord::GET_NORMAL, '655', array('a'=>1)),
-                    array(MarcRecord::GET_NORMAL, '655', array('v'=>1))
-                ),
-                false, true, true
-            )
-        );
-        $data['geographic_facet'] = $this->getFieldsSubfields(
-            array(
-                array(MarcRecord::GET_NORMAL, '600', array('z'=>1)),
-                array(MarcRecord::GET_NORMAL, '610', array('z'=>1)),
-                array(MarcRecord::GET_NORMAL, '611', array('z'=>1)),
-                array(MarcRecord::GET_NORMAL, '630', array('z'=>1)),
-                array(MarcRecord::GET_NORMAL, '648', array('z'=>1)),
-                array(MarcRecord::GET_NORMAL, '650', array('z'=>1)),
-                array(MarcRecord::GET_NORMAL, '651', array('a'=>1)),
-                array(MarcRecord::GET_NORMAL, '651', array('z'=>1)),
-                array(MarcRecord::GET_NORMAL, '655', array('z'=>1))
-            ),
-            false, true, true
-        );
-        $data['era_facet'] = $this->getFieldsSubfields(
-            array(
-                array(MarcRecord::GET_NORMAL, '630', array('y'=>1)),
-                array(MarcRecord::GET_NORMAL, '648', array('a'=>1)),
-                array(MarcRecord::GET_NORMAL, '648', array('y'=>1)),
-                array(MarcRecord::GET_NORMAL, '650', array('y'=>1)),
-                array(MarcRecord::GET_NORMAL, '651', array('y'=>1)),
-                array(MarcRecord::GET_NORMAL, '655', array('y'=>1))
-            ),
-            false, true, true
-        );
+        $data['topic_facet'] = $this->getTopicFacets();
+        $data['genre_facet'] = $this->getGenreFacets();
+        $data['geographic_facet'] = $this->getGeographicFacets();
+        $data['era_facet'] = $this->getEraFacets();
 
         $data['url'] = $this->getFieldsSubfields(
             array(
@@ -1829,5 +1749,176 @@ class MarcRecord extends BaseRecord
             $allFields
         );
         return array_values(array_unique($allFields));
+    }
+
+    /**
+     * Get all non-specific topics
+     *
+     * @return string[]
+     */
+    protected function getTopics()
+    {
+        return $this->getFieldsSubfields(
+            array(
+                array(MarcRecord::GET_BOTH, '600', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1, 'e'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'j'=>1, 'k'=>1, 'l'=>1, 'm'=>1, 'n'=>1, 'o'=>1, 'p'=>1, 'q'=>1, 'r'=>1, 's'=>1, 't'=>1, 'u'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1)),
+                array(MarcRecord::GET_BOTH, '610', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1, 'e'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'k'=>1, 'l'=>1, 'm'=>1, 'n'=>1, 'o'=>1, 'p'=>1, 'r'=>1, 's'=>1, 't'=>1, 'u'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1)),
+                array(MarcRecord::GET_BOTH, '611', array('a'=>1, 'c'=>1, 'd'=>1, 'e'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'j'=>1, 'k'=>1, 'l'=>1, 'n'=>1, 'p'=>1, 'q'=>1, 's'=>1, 't'=>1, 'u'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1)),
+                array(MarcRecord::GET_BOTH, '630', array('a'=>1, 'd'=>1, 'e'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'k'=>1, 'l'=>1, 'm'=>1, 'n'=>1, 'o'=>1, 'p'=>1, 'r'=>1, 's'=>1, 't'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1)),
+                array(MarcRecord::GET_BOTH, '650', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1, 'e'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1))
+            )
+        );
+    }
+
+    /**
+     * Get all genre topics
+     *
+     * @return string[]
+     */
+    protected function getGenres()
+    {
+        return $this->getFieldsSubfields(
+            array(
+                array(MarcRecord::GET_BOTH, '655', array('a'=>1, 'b'=>1, 'c'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1))
+            )
+        );
+    }
+
+    /**
+     * Get all geographic topics
+     *
+     * @return string[]
+     */
+    protected function getGeographicTopics()
+    {
+        return $this->getFieldsSubfields(
+            array(
+                array(MarcRecord::GET_BOTH, '651', array('a'=>1, 'e'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1))
+            )
+        );
+    }
+
+    /**
+     * Get all era topics
+     *
+     * @return string[]
+     */
+    protected function getEras()
+    {
+        return $this->getFieldsSubfields(
+            array(
+                array(MarcRecord::GET_BOTH, '648', array('a'=>1, 'v'=>1, 'x'=>1, 'y'=>1, 'z'=>1))
+            )
+        );
+    }
+
+    /**
+     * Get topic facet fields
+     *
+     * @return string[] Topics
+     */
+    protected function getTopicFacets()
+    {
+        return $this->getFieldsSubfields(
+            array(
+                array(MarcRecord::GET_NORMAL, '600', array('x'=>1)),
+                array(MarcRecord::GET_NORMAL, '610', array('x'=>1)),
+                array(MarcRecord::GET_NORMAL, '611', array('x'=>1)),
+                array(MarcRecord::GET_NORMAL, '630', array('x'=>1)),
+                array(MarcRecord::GET_NORMAL, '648', array('x'=>1)),
+                array(MarcRecord::GET_NORMAL, '650', array('a'=>1)),
+                array(MarcRecord::GET_NORMAL, '650', array('x'=>1)),
+                array(MarcRecord::GET_NORMAL, '651', array('x'=>1)),
+                array(MarcRecord::GET_NORMAL, '655', array('x'=>1))
+            ),
+            false, true, true
+        );
+    }
+
+    /**
+     * Get genre facet fields
+     *
+     * @return string[] Topics
+     */
+    protected function getGenreFacets()
+    {
+        return MetadataUtils::ucFirst(
+            $this->getFieldsSubfields(
+                array(
+                    array(MarcRecord::GET_NORMAL, '600', array('v'=>1)),
+                    array(MarcRecord::GET_NORMAL, '610', array('v'=>1)),
+                    array(MarcRecord::GET_NORMAL, '611', array('v'=>1)),
+                    array(MarcRecord::GET_NORMAL, '630', array('v'=>1)),
+                    array(MarcRecord::GET_NORMAL, '648', array('v'=>1)),
+                    array(MarcRecord::GET_NORMAL, '650', array('v'=>1)),
+                    array(MarcRecord::GET_NORMAL, '651', array('v'=>1)),
+                    array(MarcRecord::GET_NORMAL, '655', array('a'=>1)),
+                    array(MarcRecord::GET_NORMAL, '655', array('v'=>1))
+                ),
+                false, true, true
+            )
+        );
+    }
+
+    /**
+     * Get geographic facet fields
+     *
+     * @return string[] Topics
+     */
+    protected function getGeographicFacets()
+    {
+        return $this->getFieldsSubfields(
+            array(
+                array(MarcRecord::GET_NORMAL, '600', array('z'=>1)),
+                array(MarcRecord::GET_NORMAL, '610', array('z'=>1)),
+                array(MarcRecord::GET_NORMAL, '611', array('z'=>1)),
+                array(MarcRecord::GET_NORMAL, '630', array('z'=>1)),
+                array(MarcRecord::GET_NORMAL, '648', array('z'=>1)),
+                array(MarcRecord::GET_NORMAL, '650', array('z'=>1)),
+                array(MarcRecord::GET_NORMAL, '651', array('a'=>1)),
+                array(MarcRecord::GET_NORMAL, '651', array('z'=>1)),
+                array(MarcRecord::GET_NORMAL, '655', array('z'=>1))
+            ),
+            false, true, true
+        );
+    }
+
+    /**
+     * Get era facet fields
+     *
+     * @return string[] Topics
+     */
+    protected function getEraFacets()
+    {
+        return $this->getFieldsSubfields(
+            array(
+                array(MarcRecord::GET_NORMAL, '630', array('y'=>1)),
+                array(MarcRecord::GET_NORMAL, '648', array('a'=>1)),
+                array(MarcRecord::GET_NORMAL, '648', array('y'=>1)),
+                array(MarcRecord::GET_NORMAL, '650', array('y'=>1)),
+                array(MarcRecord::GET_NORMAL, '651', array('y'=>1)),
+                array(MarcRecord::GET_NORMAL, '655', array('y'=>1))
+            ),
+            false, true, true
+        );
+    }
+
+    /**
+     * Get all language codes
+     *
+     * @return string[] Language codes
+     */
+    protected function getLanguages()
+    {
+        $languages = array(substr($this->getField('008'), 35, 3));
+        $languages2 = $this->getFieldsSubfields(
+            array(
+                array(MarcRecord::GET_NORMAL, '041', array('a'=>1)),
+                array(MarcRecord::GET_NORMAL, '041', array('d'=>1)),
+                array(MarcRecord::GET_NORMAL, '041', array('h'=>1)),
+                array(MarcRecord::GET_NORMAL, '041', array('j'=>1))
+            ),
+            false, true, true
+        );
+        return array_merge($languages, $languages2);
     }
 }

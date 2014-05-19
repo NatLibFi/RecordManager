@@ -461,4 +461,24 @@ class MetadataUtils
         }
         return $str;
     }
+
+    /**
+     * trim for arrays
+     *
+     * @param string[] $array Array of strings to trim
+     * @param string   $chars Characters to trim
+     *
+     * @return string[] Trimmed array
+     */
+    public static function arrayTrim($array, $chars = " \t\n\r\0\x0B")
+    {
+        array_walk(
+            $array,
+            function(&$val, $key, $chars) {
+                $val = trim($val, $chars);
+            },
+            $chars
+        );
+        return $array;
+    }
 }
