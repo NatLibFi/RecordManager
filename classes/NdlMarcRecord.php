@@ -356,7 +356,12 @@ class NdlMarcRecord extends MarcRecord
         // Hierarchical Categories (e.g. MetaLib)
         foreach ($this->getFields('976') as $field976) {
             $category = $this->getSubfield($field976, 'a');
+            $category = trim(str_replace(array('/', '\\'), '', $category));
+            if (!trim($category)) {
+                continue;
+            }
             $sub = $this->getSubfield($field976, 'b');
+            $sub = trim(str_replace(array('/', '\\'), '', $sub));
             if ($sub) {
                 $category .= "/$sub";
             }
