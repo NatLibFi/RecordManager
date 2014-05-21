@@ -78,14 +78,18 @@ class HarvestMetaLibExport extends HarvestHTTPFiles
         // Remove the namespace declaration. Helps process the file, and it's invalid
         // anyway.
         $data = str_replace('<collection xmlns="http://www.loc.gov/MARC21/slim">', '<collection>', $data);
-        // Fix the data. Looks like the category data comes in without proper encoding
-        // of characters that must be encoded in XML.
+        // Fix the data
         $dataRows = explode("\n", $data);
         foreach ($dataRows as &$row) {
+            // Looks like the category data comes in without proper encoding
+            // of characters that must be encoded in XML.
             if (strncmp($row, '<main>', 6) == 0
                 || strncmp($row, '<sub>', 5) == 0
             ) {
                 $row = str_replace('&', '&amp;', $row);
+            } elseif (strncmp($row, '<line>', 6) == 0) {
+                // Remove all the <line>... stuff
+                $row = '';
             }
         }
         return implode("\n", $dataRows);
