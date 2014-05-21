@@ -137,16 +137,14 @@ prepend_parent_title_with_unitid = true
 recordXPath = //ead
 oaiIDXPath = ../../header/identifier
 
-; Sample MetaLib configuration
+; Sample MetaLib CKB Export configuration
 [metalib]
-type = metalib
-url = http://metalib.server/X
-xUser = username
-xPassword = password
+type = metalib_export
 format = marc
-normalization = metalib_ird.properties
-query = "WIN=FINELIB"
-institution = SampleInstitution
+url = https://www.nelliportaali.fi/finna_export/
+filePrefix = "METALIB_"
+fileSuffix = ".xml"
+preTransformation = metalib_export.xsl
 
 ; Sample SFX configuration
 [sfx]

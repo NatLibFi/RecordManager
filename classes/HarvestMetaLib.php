@@ -32,7 +32,7 @@ require_once 'FileSplitter.php';
 /**
  * HarvestMetaLib
  *
- * This class harvests IRD records from MetaLib via X-Server using settings from datasources.ini. 
+ * This class harvests IRD records from MetaLib via X-Server using settings from datasources.ini.
  *
  * @category DataManagement
  * @package  RecordManager
@@ -49,9 +49,9 @@ class HarvestMetaLib
     protected $username = '';         // MetaLib X-Server user name
     protected $password = '';         // MetaLib X-Server password
     protected $verbose = false;       // Whether to display debug output
-    protected $query = '';            // Query used to find the IRD's (e.g. WIN=INSTITUTE, see 
+    protected $query = '';            // Query used to find the IRD's (e.g. WIN=INSTITUTE, see
                                       // locate_command in http://www.exlibrisgroup.org/display/MetaLibOI/source_locate)
-        
+
     /**
     * Constructor.
     *
@@ -68,10 +68,10 @@ class HarvestMetaLib
         $this->log = $logger;
         $this->db = $db;
         $this->basePath = $basePath;
-         
+
         // Don't time out during harvest
         set_time_limit(0);
-    
+
         // Set up base URL:
         if (empty($settings['url'])) {
             throw new Exception("Missing base URL for {$source}");
@@ -84,14 +84,14 @@ class HarvestMetaLib
         $this->password = $settings['xPassword'];
         $this->query = $settings['query'];
     }
-    
+
     /**
      * Harvest all available documents.
      *
      * @return string[] Array of MARCXML records
      * @access public
      */
-    public function launch()
+    public function harvest()
     {
         $xml = $this->callXServer(
             array(
@@ -114,16 +114,16 @@ class HarvestMetaLib
             throw new Exception("X-Server login failed");
         }
         $session = (string)$doc->login_response->session_id;
-        
+
         $xml = $this->callXServer(
             array(
                 'op' => 'source_locate_request',
-                'session_id' => $session, 
+                'session_id' => $session,
                 'locate_command' => $this->query,
                 'source_full_info_flag' => 'Y'
             )
         );
-        
+
         $style = new DOMDocument();
         if ($style->load($this->basePath . '/transformations/strip_namespaces.xsl') === false) {
             throw new Exception('Could not load ' . $this->basePath . '/transformations/strip_namespaces.xsl');
@@ -144,7 +144,7 @@ class HarvestMetaLib
         $transformation = new XSLTProcessor();
         $transformation->importStylesheet($style);
         $splitter = new FileSplitter($transformation->transformToDoc($doc), '//source_locate_response/source_full_info/record', '');
-        
+
         $records = array();
         while (!$splitter->getEOF()) {
             $oaiID = '';
@@ -152,27 +152,27 @@ class HarvestMetaLib
         }
         return $records;
     }
-    
+
     /**
      * Call MetaLib X-Server
      *
-     * @param array $params URL Parameters 
-     * 
+     * @param array $params URL Parameters
+     *
      * @return string XML
      * @access public
      */
     protected function callXServer($params)
     {
         $request = new HTTP_Request2(
-            $this->baseURL, 
-            HTTP_Request2::METHOD_GET, 
+            $this->baseURL,
+            HTTP_Request2::METHOD_GET,
             array('ssl_verify_peer' => false)
         );
         $request->setHeader('User-Agent', 'RecordManager');
 
         $url = $request->getURL();
         $url->setQueryVariables($params);
-        
+
         $cleanUrl = preg_replace('/user_password=([^&]+)/', 'user_password=***', $url->getURL());
         $this->_message("Sending request: $cleanUrl", true);
 
@@ -183,7 +183,7 @@ class HarvestMetaLib
             throw new Exception("Request failed: $code");
         }
         $this->_message("Request successful", true);
-        
+
         return $response->getBody();
     }
 

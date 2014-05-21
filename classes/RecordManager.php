@@ -35,6 +35,7 @@ require_once 'RecordFactory.php';
 require_once 'FileSplitter.php';
 require_once 'HarvestOaiPmh.php';
 require_once 'HarvestMetaLib.php';
+require_once 'HarvestMetaLibExport.php';
 require_once 'HarvestSfx.php';
 require_once 'XslTransformation.php';
 require_once 'MetadataUtils.php';
@@ -583,50 +584,24 @@ class RecordManager
                     // MetaLib doesn't handle deleted records, so we'll just fetch everything and compare with what we have
                     $this->log->log('harvest', "Fetching records from MetaLib");
                     $harvest = new HarvestMetaLib($this->log, $this->db, $source, $this->basePath, $settings);
-                    $harvestedRecords = $harvest->launch();
+                    $harvestedRecords = $harvest->harvest();
+                    $this->processFullRecordSet($source, $harvestedRecords);
+                } elseif ($this->harvestType == 'metalib_export') {
+                    // MetaLib doesn't handle deleted records, so we'll just fetch everything delete whatever we didn't get
+                    $dateThreshold = new MongoDate();
 
-                    $this->log->log('harvest', "Processing MetaLib records");
-                    // Create keyed array
-                    $records = array();
-                    foreach ($harvestedRecords as $record) {
-                        $marc = RecordFactory::createRecord('marc', $record, '', $source);
-                        $id = $marc->getID();
-                        $records["$source.$id"] = $record;
+                    $harvest = new HarvestMetaLibExport($this->log, $this->db, $source, $this->basePath, $settings);
+                    if (isset($harvestFromDate)) {
+                        $harvest->setStartDate($harvestFromDate);
                     }
-
-                    $this->log->log('harvest', "Merging results with the records in database");
-                    $deleted = 0;
-                    $unchanged = 0;
-                    $changed = 0;
-                    $added = 0;
-                    $dbRecords = $this->db->record->find(array('deleted' => false, 'source_id' => $source));
-                    foreach ($dbRecords as $dbRecord) {
-                        $id = $dbRecord['_id'];
-                        if (!isset($records[$id])) {
-                            // Record not in harvested records, mark deleted
-                            $this->storeRecord($id, true, '');
-                            unset($records[$id]);
-                            ++$deleted;
-                            continue;
-                        }
-                        // Check if the record has changed
-                        $dbMarc = RecordFactory::createRecord('marc', MetadataUtils::getRecordData($dbRecord, false), '', $source);
-                        $marc = RecordFactory::createRecord('marc', $records[$id], '', $source);
-                        if ((isset($harvestFromDate) && $harvestFromDate == '-') || $marc->serialize() != MetadataUtils::getRecordData($dbRecord, false)) {
-                            // Record changed, update...
-                            $this->storeRecord($id, false, $records[$id]);
-                            ++$changed;
-                        } else {
-                            ++$unchanged;
-                        }
-                        unset($records[$id]);
+                    if (isset($harvestUntilDate)) {
+                        $harvest->setEndDate($harvestUntilDate);
                     }
-                    $this->log->log('harvest', "Adding new records");
-                    foreach ($records as $id => $record) {
-                        $this->storeRecord($id, false, $record);
-                        ++$added;
+                    $this->metaLibRecords = array();
+                    $harvest->harvest(array($this, 'storeMetaLibRecord'));
+                    if ($this->metaLibRecords) {
+                        $this->processFullRecordSet($source, $this->metaLibRecords);
                     }
-                    $this->log->log('harvest', "$added new, $changed changed, $unchanged unchanged and $deleted deleted records processed");
                 } elseif ($this->harvestType == 'sfx') {
                     $harvest = new HarvestSfx($this->log, $this->db, $source, $this->basePath, $settings);
                     if (isset($harvestFromDate)) {
@@ -635,7 +610,7 @@ class RecordManager
                     if (isset($harvestUntilDate)) {
                         $harvest->setEndDate($harvestUntilDate);
                     }
-                    $harvest->launch(array($this, 'storeRecord'));
+                    $harvest->harvest(array($this, 'storeRecord'));
                 } else {
                     if ($reharvest) {
                         if (is_string($reharvest)) {
@@ -1055,6 +1030,22 @@ class RecordManager
     }
 
     /**
+     * Save a record temporarily to an array. Used by MetaLib harvesting.
+     *
+     * @param string $oaiID      ID of the record as received from OAI-PMH
+     * @param bool   $deleted    Whether the record is to be deleted
+     * @param string $recordData Record metadata
+     *
+     * @throws Exception
+     * @return integer Number of records processed (can be > 1 for split records)
+     */
+    public function storeMetaLibRecord($oaiID, $deleted, $recordData)
+    {
+        $this->metaLibRecords[] = $recordData;
+        return 1;
+    }
+
+    /**
      * Count distinct values in the specified field (that would be added to the Solr index)
      *
      * @param string $sourceId Source ID
@@ -1274,4 +1265,60 @@ class RecordManager
 
         return $lines;
     }
+
+    /**
+     * Process a complete record set harvested e.g. from MetaLib
+     *
+     * @param string   $source           Source ID
+     * @param string[] $harvestedRecords Array of records
+     *
+     * @return void
+     */
+    protected function processFullRecordSet(
+        $source, $harvestedRecords
+    ) {
+        $this->log->log('processFullRecordSet', "Processing complete record set");
+        // Create keyed array
+        $records = array();
+        foreach ($harvestedRecords as $record) {
+            $marc = RecordFactory::createRecord('marc', $record, '', $source);
+            $id = $marc->getID();
+            $records["$source.$id"] = $record;
+        }
+
+        $this->log->log('processFullRecordSet', "Merging results with the records in database");
+        $deleted = 0;
+        $unchanged = 0;
+        $changed = 0;
+        $added = 0;
+        $dbRecords = $this->db->record->find(array('deleted' => false, 'source_id' => $source));
+        foreach ($dbRecords as $dbRecord) {
+            $id = $dbRecord['_id'];
+            if (!isset($records[$id])) {
+                // Record not in harvested records, mark deleted
+                $this->storeRecord($id, true, '');
+                unset($records[$id]);
+                ++$deleted;
+                continue;
+            }
+            // Check if the record has changed
+            $dbMarc = RecordFactory::createRecord('marc', MetadataUtils::getRecordData($dbRecord, false), '', $source);
+            $marc = RecordFactory::createRecord('marc', $records[$id], '', $source);
+            if ($marc->serialize() != MetadataUtils::getRecordData($dbRecord, false)) {
+                // Record changed, update...
+                $this->storeRecord($id, false, $records[$id]);
+                ++$changed;
+            } else {
+                ++$unchanged;
+            }
+            unset($records[$id]);
+        }
+        $this->log->log('processFullRecordSet', "Adding new records");
+        foreach ($records as $id => $record) {
+            $this->storeRecord($id, false, $record);
+            ++$added;
+        }
+        $this->log->log('processFullRecordSet', "$added new, $changed changed, $unchanged unchanged and $deleted deleted records processed");
+    }
+
 }

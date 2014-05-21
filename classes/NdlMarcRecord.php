@@ -353,6 +353,16 @@ class NdlMarcRecord extends MarcRecord
             );
         }
 
+        // Hierarchical Categories (e.g. MetaLib)
+        foreach ($this->getFields('976') as $field976) {
+            $category = $this->getSubfield($field976, 'a');
+            $sub = $this->getSubfield($field976, 'b');
+            if ($sub) {
+                $category .= "/$sub";
+            }
+            $data['category_str_mv'][] = $category;
+        };
+
         return $data;
     }
 
