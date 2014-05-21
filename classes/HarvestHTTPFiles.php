@@ -446,7 +446,7 @@ class HarvestHTTPFiles
     {
         $nodes = $record->xpath("controlfield[@tag='001']");
         if (empty($nodes)) {
-            throw new Exception('No ID found in harvested record');
+            throw new Exception("[{$this->source}] No ID found in harvested record");
         }
         return trim((string)$nodes[0]);
     }
