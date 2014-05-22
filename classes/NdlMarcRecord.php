@@ -353,11 +353,11 @@ class NdlMarcRecord extends MarcRecord
             );
         }
 
-        // Hierarchical Categories (e.g. MetaLib)
+        // Hierarchical Categories (MetaLib)
         foreach ($this->getFields('976') as $field976) {
             $category = $this->getSubfield($field976, 'a');
             $category = trim(str_replace(array('/', '\\'), '', $category));
-            if (!trim($category)) {
+            if (!$category) {
                 continue;
             }
             $sub = $this->getSubfield($field976, 'b');
@@ -367,6 +367,23 @@ class NdlMarcRecord extends MarcRecord
             }
             $data['category_str_mv'][] = $category;
         };
+
+        // Hierarchical categories (e.g. SFX)
+        if ($this->getDriverParam('categoriesIn650', false)) {
+            foreach ($this->getFields('650') as $field650) {
+                $category = $this->getSubfield($field650, 'a');
+                $category = trim(str_replace(array('/', '\\'), '', $category));
+                if (!$category) {
+                    continue;
+                }
+                $sub = $this->getSubfield($field650, 'x');
+                $sub = trim(str_replace(array('/', '\\'), '', $sub));
+                if ($sub) {
+                    $category .= "/$sub";
+                }
+                $data['category_str_mv'][] = $category;
+            }
+        }
 
         return $data;
     }
