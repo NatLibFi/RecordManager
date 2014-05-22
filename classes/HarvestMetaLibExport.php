@@ -123,5 +123,15 @@ class HarvestMetaLibExport extends HarvestHTTPFiles
         }
         return $list;
     }
+
+    /**
+     * Report the results of harvesting
+     *
+     * @return void
+     */
+    protected function reportResults()
+    {
+        $this->message('Harvested ' . $this->changedRecords . ' records');
+    }
 }
 

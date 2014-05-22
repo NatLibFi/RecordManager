@@ -204,7 +204,7 @@ class HarvestHTTPFiles
 
             $this->processRecords($xml);
 
-            $this->message('Harvested ' . $this->changedRecords . ' updated, ' . $this->unchangedRecords . ' unchanged and ' . $this->deletedRecords . ' deleted records');
+            $this->reportResults();
         }
         if ($this->trackedEndDate > 0) {
             $this->saveLastHarvestedDate();
@@ -537,6 +537,16 @@ class HarvestHTTPFiles
         libxml_use_internal_errors($saveUseErrors);
 
         return $this->preXSLT->transformToXml($doc);
+    }
+
+    /**
+     * Report the results of harvesting
+     *
+     * @return void
+     */
+    protected function reportResults()
+    {
+        $this->message('Harvested ' . $this->changedRecords . ' updated, ' . $this->unchangedRecords . ' unchanged and ' . $this->deletedRecords . ' deleted records');
     }
 
     /**

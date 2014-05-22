@@ -1277,7 +1277,7 @@ class RecordManager
     protected function processFullRecordSet(
         $source, $harvestedRecords
     ) {
-        $this->log->log('processFullRecordSet', "Processing complete record set");
+        $this->log->log('processFullRecordSet', "[$source] Processing complete record set");
         // Create keyed array
         $records = array();
         foreach ($harvestedRecords as $record) {
@@ -1286,7 +1286,7 @@ class RecordManager
             $records["$source.$id"] = $record;
         }
 
-        $this->log->log('processFullRecordSet', "Merging results with the records in database");
+        $this->log->log('processFullRecordSet', "[$source] Merging results with the records in database");
         $deleted = 0;
         $unchanged = 0;
         $changed = 0;
@@ -1313,12 +1313,12 @@ class RecordManager
             }
             unset($records[$id]);
         }
-        $this->log->log('processFullRecordSet', "Adding new records");
+        $this->log->log('processFullRecordSet', "[$source] Adding new records");
         foreach ($records as $id => $record) {
             $this->storeRecord($id, false, $record);
             ++$added;
         }
-        $this->log->log('processFullRecordSet', "$added new, $changed changed, $unchanged unchanged and $deleted deleted records processed");
+        $this->log->log('processFullRecordSet', "[$source] $added new, $changed changed, $unchanged unchanged and $deleted deleted records processed");
     }
 
 }
