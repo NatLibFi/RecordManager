@@ -8,13 +8,15 @@ exclude-result-prefixes="marc"
   <xsl:template match="/">
     <collection>
     <xsl:for-each select=".//marc:knowledge_unit">
-      <record>
-      <xsl:apply-templates select="./marc:record"/>
-      <xsl:apply-templates select="./marc:category"/>
-		<datafield tag="977">
-		  <subfield code="a">Database</subfield>
-		</datafield>
-      </record>
+      <xsl:if test="./marc:record">
+        <record>
+	      <xsl:apply-templates select="./marc:record"/>
+	      <xsl:apply-templates select="./marc:category"/>
+					<datafield tag="977">
+					  <subfield code="a">Database</subfield>
+					</datafield>
+			  </record>
+      </xsl:if>
     </xsl:for-each>
     </collection>
   </xsl:template>

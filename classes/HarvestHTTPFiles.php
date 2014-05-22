@@ -372,8 +372,9 @@ class HarvestHTTPFiles
         $count = 0;
         $doc = new DOMDocument;
         while ($xml->name == $this->recordElem) {
-            $this->processRecord(simplexml_import_dom($doc->importNode($xml->expand(), true)));
-            if (++$count % 1000 == 0) {
+            ++$count;
+            $this->processRecord(simplexml_import_dom($doc->importNode($xml->expand(), true)), $count);
+            if ($count % 1000 == 0) {
                 $this->message("$count records processed", true);
             }
             $xml->next($this->recordElem);
@@ -384,13 +385,20 @@ class HarvestHTTPFiles
      * Save a harvested record.
      *
      * @param SimpleXMLElement $record Record
+     * @param int              $recNum Record number in the file (1-based)
      *
      * @return void
      * @access protected
      */
-    protected function processRecord($record)
+    protected function processRecord($record, $recNum)
     {
         $id = $this->extractID($record);
+        if ($id === false) {
+            $this->message(
+                "No ID found in record $recNum: " . $record->asXML(), false, Logger::ERROR
+            );
+            return;
+        }
         $oaiId = $this->createOaiId($this->source, $id);
         if ($this->isDeleted($record)) {
             call_user_func($this->callback, $oaiId, true, null);
@@ -439,14 +447,14 @@ class HarvestHTTPFiles
      *
      * @param SimpleXMLElement $record Record
      *
-     * @return string ID
+     * @return string|bool ID if found, bool if record is missing ID
      * @throws Exception
      */
     protected function extractID($record)
     {
         $nodes = $record->xpath("controlfield[@tag='001']");
         if (empty($nodes)) {
-            throw new Exception("[{$this->source}] No ID found in harvested record");
+            return false;
         }
         return trim((string)$nodes[0]);
     }
