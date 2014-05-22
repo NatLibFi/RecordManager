@@ -77,6 +77,9 @@ exclude-result-prefixes="marc"
           <xsl:when test="substring(., 1, 2) = '- '">
             <xsl:value-of select="substring(., 3)"/>
           </xsl:when>
+          <xsl:when test="substring(., 1, 1) = '-'">
+            <xsl:value-of select="substring(., 2)"/>
+          </xsl:when>
           <xsl:otherwise>
             <xsl:value-of select="."/>
           </xsl:otherwise>
