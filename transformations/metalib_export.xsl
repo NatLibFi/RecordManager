@@ -73,17 +73,7 @@ exclude-result-prefixes="marc"
     <xsl:for-each select=".//marc:main">
     <datafield tag="976">
       <subfield code="a">
-        <xsl:choose>
-          <xsl:when test="substring(., 1, 2) = '- '">
-            <xsl:value-of select="substring(., 3)"/>
-          </xsl:when>
-          <xsl:when test="substring(., 1, 1) = '-'">
-            <xsl:value-of select="substring(., 2)"/>
-          </xsl:when>
-          <xsl:otherwise>
-            <xsl:value-of select="."/>
-          </xsl:otherwise>
-        </xsl:choose>
+        <xsl:value-of select="."/>
       </subfield>
       <xsl:if test="local-name(following-sibling::*[1]) = 'sub'">
       <subfield code="b">
