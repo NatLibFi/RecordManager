@@ -31,13 +31,13 @@ exclude-result-prefixes="marc"
                 <xsl:when test="local-name() = 'datafield' and @tag = '856' and @ind1 = '4'">
                     <xsl:if test="@ind2 = '1'">
 		<datafield tag="856">
-		  <subfield code="u"><xsl:value-of select="subfield"></xsl:value-of></subfield>
+		  <subfield code="u"><xsl:value-of select="marc:subfield"></xsl:value-of></subfield>
 		  <subfield code="y">Database Interface</subfield>
 		</datafield>
                     </xsl:if>
                     <xsl:if test="@ind2 = '9'">
 		<datafield tag="856">
-		  <subfield code="u"><xsl:value-of select="subfield"></xsl:value-of></subfield>
+		  <subfield code="u"><xsl:value-of select="marc:subfield"></xsl:value-of></subfield>
 		  <subfield code="y">Database Guide</subfield>
 		</datafield>
                     </xsl:if>
@@ -51,7 +51,7 @@ exclude-result-prefixes="marc"
              <xsl:if test="local-name() = 'controlfield' and @tag = '001'">
 
     <controlfield tag="007">cr||||||||||||</controlfield>
-                 <xsl:variable name="createdate"><xsl:value-of select="substring(concat(//datafield[@tag='CAT'][1]/subfield[@code='c'], '        '), 3, 6)"/></xsl:variable>
+                 <xsl:variable name="createdate"><xsl:value-of select="substring(concat(//marc:datafield[@tag='CAT'][1]/marc:subfield[@code='c'], '        '), 3, 6)"/></xsl:variable>
     <controlfield tag="008"><xsl:value-of select="$createdate"/>uuuuuuuuuxx|||||o|||||||||||||||</controlfield>
              </xsl:if>
          </xsl:if>
