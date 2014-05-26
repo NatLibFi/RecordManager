@@ -340,7 +340,12 @@ class NdlMarcRecord extends MarcRecord
         // ISMN
         foreach ($this->getFields('024') as $field024) {
             if ($this->getIndicator($field024, 1) == '2') {
-                $data['ismn_isn_mv'] = $this->getSubfield($field024, 'a');
+                $ismn = $this->getSubfield($field024, 'a');
+                $ismn = str_replace('-', '', $ismn);
+                if (!preg_match('{([0-9]{13})}', $ismn, $matches)) {
+                    continue;
+                };
+                $data['ismn_isn_mv'] = $matches[1];
             }
         }
 
