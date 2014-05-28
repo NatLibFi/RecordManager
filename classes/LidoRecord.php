@@ -577,7 +577,7 @@ class LidoRecord extends BaseRecord
      */
     protected function getAllFields($xml)
     {
-        $ignoredFields = array('conceptID', 'eventType', 'legalBodyWeblink', 'linkResource', 'objectMeasurementsWrap', 'recordMetadataDate', 'recordType', 'resourceWrap', 'relatedWorksWrap', 'rightsType', 'roleActor', 'workID');
+        $ignoredFields = array('conceptID', 'eventType', 'legalBodyWeblink', 'linkResource', 'objectMeasurementsWrap', 'recordMetadataDate', 'recordType', 'resourceWrap', 'relatedWorksWrap', 'rightsType', 'roleActor');
 
         $allFields = array();
         foreach ($xml->children() as $tag => $field) {
