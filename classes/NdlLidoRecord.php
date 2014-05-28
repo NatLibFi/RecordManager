@@ -304,7 +304,13 @@ class NdlLidoRecord extends LidoRecord
             if (strlen($endDate) == 4) {
                 $endDate = $endDate . '-12-31T23:59:59Z';
             } else if (strlen($endDate) == 7) {
-                $d = new DateTime($endDate . '-01');
+                try {
+                    $d = new DateTime($endDate . '-01');
+                } catch (Exception $e) {
+                    global $logger;
+                    $logger->log('NdlLidoRecord', "Failed to parse date $endDate, record {$this->source}." . $this->getID(), Logger::ERROR);
+                    return null;
+                }
                 $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
             } else if (strlen($endDate) == 10) {
                 $endDate = $endDate . 'T23:59:59Z';
