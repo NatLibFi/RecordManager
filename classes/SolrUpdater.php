@@ -353,7 +353,7 @@ class SolrUpdater
         }
         $record = $this->db->record->find()->sort(array('updated' => -1))->getNext();
         $lastRecordTime = $record['updated']->sec;
-        $collectionName .= "_$lastRecordTime";
+        $collectionName .= '_' . getmypid() . "_$lastRecordTime";
 
         // Install a signal handler so that we can exit cleanly if interrupted
         unset($this->terminate);
@@ -381,12 +381,13 @@ class SolrUpdater
             } else {
                 $collTime = end(explode('_', $collection));
                 if (strncmp($collection, 'mr_record_', 10) == 0
+                    && is_numeric($collTime)
                     && $collTime != $lastRecordTime
-                    && $collTime > time() - 60 * 60 * 24 * 7
+                    && $collTime < time() - 60 * 60 * 24 * 7
                 ) {
                     $this->log->log(
                         'processMerged',
-                        "Cleanup: dropping old m/r collection $collection"
+                        "Cleanup: dropping old m/r collection $collection with time $collTime"
                     );
                     $this->db->dropCollection($collection);
                 }
