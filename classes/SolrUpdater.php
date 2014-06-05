@@ -387,7 +387,7 @@ class SolrUpdater
                 ) {
                     $this->log->log(
                         'processMerged',
-                        "Cleanup: dropping old m/r collection $collection with time $collTime"
+                        "Cleanup: dropping old m/r collection $collection"
                     );
                     $this->db->dropCollection($collection);
                 }
