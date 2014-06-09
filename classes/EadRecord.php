@@ -67,7 +67,9 @@ class EadRecord extends BaseRecord
      */
     public function getID()
     {
-        if (isset($this->doc->{'add-data'}) && isset($this->doc->{'add-data'}->attributes()->identifier)) {
+        if (isset($this->doc->{'add-data'})
+            && isset($this->doc->{'add-data'}->attributes()->identifier)
+        ) {
             return (string)$this->doc->{'add-data'}->attributes()->identifier;
         }
         if (isset($this->doc->did->unitid)) {
@@ -105,8 +107,8 @@ class EadRecord extends BaseRecord
     /**
      * Return fields to be indexed in Solr
      *
-     * @param boolean $prependTitleWithSubtitle If true and title_sub differs from title_short,
-     *                                          title is formed by combining title_sub and title_short
+     * @param boolean $prependTitleWithSubtitle If true and title_sub differs from
+     * title_short, title is formed by combining title_sub and title_short
      *
      * @return string[]
      * @access public
@@ -121,7 +123,9 @@ class EadRecord extends BaseRecord
         $data['allfields'] = $this->getAllFields($doc);
 
         if ($doc->scopecontent) {
-            $data['description'] = $doc->scopecontent->p ? (string)$doc->scopecontent->p : (string)$doc->scopecontent;
+            $data['description'] = $doc->scopecontent->p
+                ? (string)$doc->scopecontent->p
+                : (string)$doc->scopecontent;
         }
 
         $authors = array();
@@ -196,7 +200,8 @@ class EadRecord extends BaseRecord
         default:
             $data['title_sub'] = (string)$doc->did->unitid;
             if ($doc->{'add-data'}->parent) {
-                $data['series'] = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
+                $data['series']
+                    = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
             }
             break;
         }
@@ -210,7 +215,9 @@ class EadRecord extends BaseRecord
         }
         $data['title'] .= $data['title_short'];
         $data['title_full'] = $data['title_sort'] = $data['title'];
-        $data['title_sort'] = mb_strtolower(MetadataUtils::stripLeadingPunctuation($data['title_sort']), 'UTF-8');
+        $data['title_sort'] = mb_strtolower(
+            MetadataUtils::stripLeadingPunctuation($data['title_sort']), 'UTF-8'
+        );
 
 
         if (isset($doc->did->unitid)) {
@@ -262,18 +269,23 @@ class EadRecord extends BaseRecord
             $data['hierarchy_top_id'] = (string)$archiveAttr->{'id'};
             $data['hierarchy_top_title'] = (string)$archiveAttr->title;
             if ($archiveAttr->subtitle) {
-                $data['hierarchy_top_title'] .= ' : ' . (string)$archiveAttr->subtitle;
+                $data['hierarchy_top_title'] .= ' : '
+                    . (string)$archiveAttr->subtitle;
             }
+            $data['allfields'][] = $data['hierarchy_top_title'];
             if ($archiveAttr->sequence) {
                 $data['hierarchy_sequence'] = (string)$archiveAttr->sequence;
             }
         }
         if ($this->doc->{'add-data'}->{'parent'}) {
-            $data['hierarchy_parent_id'] = (string)$this->doc->{'add-data'}->{'parent'}->attributes()->{'id'};
-            $data['hierarchy_parent_title'] = (string)$this->doc->{'add-data'}->{'parent'}->attributes()->title;
+            $data['hierarchy_parent_id']
+                = (string)$this->doc->{'add-data'}->{'parent'}->attributes()->{'id'};
+            $data['allfields'][] = $data['hierarchy_parent_title']
+                = (string)$this->doc->{'add-data'}->{'parent'}->attributes()->title;
         } else {
             $data['is_hierarchy_id'] = $data['hierarchy_top_id'] = $this->getID();
-            $data['is_hierarchy_title'] = $data['hierarchy_top_title'] = (string)$doc->did->unittitle;
+            $data['is_hierarchy_title'] = $data['hierarchy_top_title']
+                = (string)$doc->did->unittitle;
         }
 
         return $data;
