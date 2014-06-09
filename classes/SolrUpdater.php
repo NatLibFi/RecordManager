@@ -1514,7 +1514,8 @@ class SolrUpdater
             'spelling', 'spellingShingle', 'authorStr', 'author2Str', 'publisherStr',
             'publishDateSort', 'topic_browse', 'hierarchy_browse',
             'first_indexed', 'last_indexed', '_version_',
-            'fullrecord', 'title_full_unstemmed', 'title_fullStr'
+            'fullrecord', 'title_full_unstemmed', 'title_fullStr',
+            'author_additionalStr'
         );
 
         if (!isset($configArray['Solr']['search_url'])) {
@@ -1568,7 +1569,7 @@ class SolrUpdater
 
                 foreach ($values as $value) {
                     if (!in_array($value, $solrValues)) {
-                        $valueDiffs .= "+++ $value" . PHP_EOL;
+                        $valueDiffs .= "+++ $value " . PHP_EOL;
                     }
                 }
                 foreach ($solrValues as $solrValue) {
