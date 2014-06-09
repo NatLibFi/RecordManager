@@ -445,7 +445,7 @@ class HarvestOaiPmh
             $tempfile = tempnam(sys_get_temp_dir(), 'oai-pmh-error-') . '.xml';
             file_put_contents($tempfile, $xml);
             $this->message("Could not parse XML response: $errors. XML stored in $tempfile", false, Logger::ERROR);
-            throw new Exception("{$this->source}: Failed to parse XML response");
+            throw new Exception("Failed to parse XML response");
         }
         libxml_use_internal_errors($saveUseErrors);
 
@@ -461,7 +461,7 @@ class HarvestOaiPmh
                     Logger::ERROR
                 );
                 throw new Exception(
-                    "{$this->source}: OAI-PMH error -- code: $code, " .
+                    "OAI-PMH error -- code: $code, " .
                     "value: $value\n"
                 );
             }
