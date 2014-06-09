@@ -246,9 +246,7 @@ class NdlMarcRecord extends MarcRecord
             }
         }
         if (isset($data['classification_str_mv'])) {
-            foreach ($data['classification_str_mv'] as $classification) {
-                $data['allfields'][] = $classification;
-            }
+            $data['allfields'] = array_merge($data['allfields'], $data['classification_str_mv']);
         }
 
         // Ebrary location
