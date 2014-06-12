@@ -353,7 +353,7 @@ class SolrUpdater
         }
         $record = $this->db->record->find()->sort(array('updated' => -1))->getNext();
         $lastRecordTime = $record['updated']->sec;
-        $collectionName .= '_' . getmypid() . "_$lastRecordTime";
+        $collectionName .= "_$lastRecordTime";
 
         // Install a signal handler so that we can exit cleanly if interrupted
         unset($this->terminate);
