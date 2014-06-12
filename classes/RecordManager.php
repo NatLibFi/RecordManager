@@ -646,13 +646,12 @@ class RecordManager
                             $this->storeRecord($record['oai_id'], true, '');
                             if (++$count % 1000 == 0) {
                                 $this->log->log('harvest', "Deleted $count records");
-
                             }
                         }
                         $this->log->log('harvest', "Deleted $count records");
                     }
 
-                    if (isset($settings['deletions']) && strncmp($settings['deletions'], 'ListIdentifiers', 15) == 0) {
+                    if (!$reharvest && isset($settings['deletions']) && strncmp($settings['deletions'], 'ListIdentifiers', 15) == 0) {
                         // The repository doesn't support reporting deletions, so list all identifiers
                         // and mark deleted records that were not found
                         $processDeletions = true;
@@ -683,11 +682,24 @@ class RecordManager
                             $harvest->listIdentifiers(array($this, 'markRecord'));
 
                             $this->log->log('harvest', "Marking deleted records");
-                            $result = $this->db->record->update(
-                                array('source_id' => $this->sourceId, 'deleted' => false, 'mark' => array('$exists' => false)),
-                                array('$set' => array('deleted' => true, 'updated' => new MongoDate())),
-                                array('safe' => true, 'timeout' => 3000000, 'multiple' => true)
+
+                            $records = $this->db->record->find(
+                                array(
+                                    'source_id' => $this->sourceId,
+                                    'deleted' => false,
+                                    'mark' => array('$exists' => false)
+                                )
                             );
+                            $records->immortal(true);
+                            $count = 0;
+                            foreach ($records as $record) {
+                                $this->storeRecord($record['oai_id'], true, '');
+                                if (++$count % 1000 == 0) {
+                                    $this->log->log('harvest', "Deleted $count records");
+                                }
+                            }
+                            $this->log->log('harvest', "Deleted $count records");
+
                             $state = array('_id' => "Last Deletion Processing Time $source", 'value' => time());
                             $this->db->state->save($state);
 
@@ -879,6 +891,7 @@ class RecordManager
                 }
                 $record['deleted'] = true;
                 $record['updated'] = new MongoDate();
+                $record['update_needed'] = false;
                 $this->db->record->save($record);
                 ++$count;
             }
@@ -1021,7 +1034,7 @@ class RecordManager
                     'main_id' => $mainID,
                     'updated' => array('$lt' => $startTime)
                 ),
-                array('$set' => array('deleted' => true, 'updated' => $startTime)),
+                array('$set' => array('deleted' => true, 'updated' => $startTime, 'update_needed' => false)),
                 array('multiple' => true)
             );
         }
