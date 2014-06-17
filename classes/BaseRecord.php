@@ -29,7 +29,7 @@
 /**
  * BaseRecord Class
  *
- * This is an abstract base class for processing records.
+ * This is a base class for processing records.
  *
  * @category DataManagement
  * @package  RecordManager
