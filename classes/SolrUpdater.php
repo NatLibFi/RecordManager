@@ -379,7 +379,8 @@ class SolrUpdater
             if ($collection == $collectionName) {
                 $collectionExists = true;
             } else {
-                $collTime = end(explode('_', $collection));
+                $nameParts = explode('_', $collection);
+                $collTime = end($nameParts);
                 if (strncmp($collection, 'mr_record_', 10) == 0
                     && is_numeric($collTime)
                     && $collTime != $lastRecordTime
