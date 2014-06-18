@@ -79,6 +79,8 @@
 ; extrafields[]         An array of extra fields added to each record from this data source when sending records to Solr.
 ;                       Use format fieldname:contents, e.g.
 ;                         extrafields[] = sector_str_mv:library   
+; driverParams[]        An array of extra parameters that can be used to customize record driver behavior
+; enrichments[]         An array of enrichment class names that can be used to enrich records
 
 ; OAI-PMH Provider Specific settings:
 ; transformation_to_{fmt}

@@ -91,6 +91,10 @@ solr_field = location_geo
 ; are ignored. Default is 0.9.
 ;important_threshold = 0.8
 
+[Enrichment]
+; Maximum lifetime of cached entries in minutes. Default is 1440 (24 hours)
+;cache_expiration = 1440
+
 [Log]
 log_file        = /var/log/recman.log
 log_level       = 4

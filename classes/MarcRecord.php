@@ -1336,7 +1336,7 @@ class MarcRecord extends BaseRecord
      *
      * @return string
      */
-    protected function getField($field)
+    public function getField($field)
     {
         if (isset($this->fields[$field])) {
             if (is_array($this->fields[$field])) {
@@ -1355,7 +1355,7 @@ class MarcRecord extends BaseRecord
      *
      * @return mixed[]
      */
-    protected function getFields($field)
+    public function getFields($field)
     {
         if (isset($this->fields[$field])) {
             return $this->fields[$field];
@@ -1371,7 +1371,7 @@ class MarcRecord extends BaseRecord
      *
      * @return string
      */
-    protected function getIndicator($field, $indicator)
+    public function getIndicator($field, $indicator)
     {
         switch ($indicator) {
         case 1: return $field['i1'];
@@ -1388,7 +1388,7 @@ class MarcRecord extends BaseRecord
      *
      * @return string Subfield
      */
-    protected function getSubfield($field, $code)
+    public function getSubfield($field, $code)
     {
         if (!$field || !isset($field['s']) || !is_array($field['s'])) {
             return '';

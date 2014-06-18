@@ -79,6 +79,7 @@ class SolrUpdater
         'callnumber', 'callnumber-a', 'callnumber-first-code', 'illustrated',
         'first_indexed', 'last-indexed');
 
+    protected $enrichments = array();
 
     /**
      * Constructor
@@ -1007,6 +1008,7 @@ class SolrUpdater
                                                   ? $settings['prepend_title_with_subtitle']
                                                   : true;
                 $data = $metadataRecord->toSolrArray($prependTitleWithSubtitle);
+                $this->enrich($source, $settings, $metadataRecord, $data);
             }
             if (isset($data[$field])) {
                 foreach (is_array($data[$field]) ? $data[$field] : array($data[$field]) as $value) {
@@ -1193,6 +1195,7 @@ class SolrUpdater
                 ? $settings['prepend_title_with_subtitle']
                 : true;
             $data = $metadataRecord->toSolrArray($prependTitleWithSubtitle);
+            $this->enrich($source, $settings, $metadataRecord, $data);
         }
 
         $data['id'] = $record['_id'];
@@ -1880,5 +1883,28 @@ class SolrUpdater
         }
         fclose($handle);
         return $mappings;
+    }
+
+    /**
+     * Enrich record according to the data source settings
+     *
+     * @param string $source   Source ID
+     * @param array  $settings Data source settings
+     * @param object $record   Metadata record
+     * @param array  &$data    Array of Solr fields
+     *
+     * @return void
+     */
+    protected function enrich($source, $settings, $record, &$data)
+    {
+        if (isset($settings['enrichments'])) {
+            foreach ($settings['enrichments'] as $enrichment) {
+                if (!isset($this->enrichments[$enrichment])) {
+                    include_once "$enrichment.php";
+                    $this->enrichments[$enrichment] = new $enrichment($this->db);
+                }
+                $this->enrichments[$enrichment]->enrich($source, $record, $data);
+            }
+        }
     }
 }
