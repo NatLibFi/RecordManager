@@ -157,6 +157,7 @@ class EadRecord extends BaseRecord
         }
 
         if ($geoNames = $doc->xpath('controlaccess/geogname')) {
+            $names = array();
             foreach ($geoNames as $name) {
                 if (trim((string)$name) !== '-') {
                     $names[] = (string)$name;
