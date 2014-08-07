@@ -77,6 +77,7 @@ class RecordManager
     protected $normalizationXSLT = null;
     protected $solrTransformationXSLT = null;
     protected $recordSplitter = null;
+    protected $keepMissingHierarchyMembers = false;
     protected $pretransformation = '';
     protected $indexMergedParts = true;
     protected $counts = false;
@@ -1026,7 +1027,7 @@ class RecordManager
             }
         }
 
-        if ($count > 1 && $mainID) {
+        if ($count > 1 && $mainID && !$this->keepMissingHierarchyMembers) {
             // We processed a hierarchical record. Mark deleted any children that were not updated.
             $this->db->record->update(
                 array(
@@ -1250,6 +1251,11 @@ class RecordManager
         } else {
             $this->recordSplitter = null;
         }
+
+        $this->keepMissingHierarchyMembers
+            = isset($settings['keepMissingHierarchyMembers'])
+            ? $settings['keepMissingHierarchyMembers']
+            : false;
     }
 
     /**

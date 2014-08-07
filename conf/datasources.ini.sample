@@ -61,6 +61,8 @@
 ; recordSplitter        Transformation or PHP class used to split records in import or OAI-PMH harvest (optional, e.g. to split EAD records to multiple records)
 ; normalization         XSL Transformation to be applied to each record (optional)
 ; dedup                 Whether to deduplicate records in this set (optional, true or false, default false)
+; keepMissingHierarchyMembers
+;                       If true, existing members of a hierarchical record not present in a newly imported record are kept instead of deleted (optional, true or false, default false)
 ; solrTransformation    XSL Transformation for solr updates (required for formats whose driver doesn't provide toSolrArray method)
 ; componentParts        How to handle component parts:
 ;                         as_is                No special handling (default)
