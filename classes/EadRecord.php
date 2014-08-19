@@ -123,9 +123,18 @@ class EadRecord extends BaseRecord
         $data['allfields'] = $this->getAllFields($doc);
 
         if ($doc->scopecontent) {
-            $data['description'] = $doc->scopecontent->p
-                ? (string)$doc->scopecontent->p
-                : (string)$doc->scopecontent;
+            $desc = '';
+            if ($doc->scopecontent->p) {
+                // Join all p-elements into a flat string.                
+                $desc = array();
+                foreach ($doc->scopecontent->p as $p) {
+                    $desc[] = (string)$p;
+                }
+                $desc = implode('   /   ', $desc);
+            } else {
+                $desc = (string)$doc->scopecontent;
+            }
+            $data['description'] = $desc;
         }
 
         $authors = array();
