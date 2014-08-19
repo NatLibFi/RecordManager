@@ -77,6 +77,7 @@ class RecordManager
     protected $normalizationXSLT = null;
     protected $solrTransformationXSLT = null;
     protected $recordSplitter = null;
+    protected $keepMissingHierarchyMembers = false;
     protected $pretransformation = '';
     protected $indexMergedParts = true;
     protected $counts = false;
@@ -847,7 +848,7 @@ class RecordManager
         $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
         if (isset($configArray['Solr']['merge_records']) && $configArray['Solr']['merge_records']) {
             $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' from merged records via Solr update for merged records");
-            $updater->updateMergedRecords('', $sourceId, '', false, true);
+            $updater->updateRecords('', $sourceId, '', false, true);
         }
         $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' directly from Solr");
         $updater->deleteDataSource($sourceId);
@@ -1026,7 +1027,7 @@ class RecordManager
             }
         }
 
-        if ($count > 1 && $mainID) {
+        if ($count > 1 && $mainID && !$this->keepMissingHierarchyMembers) {
             // We processed a hierarchical record. Mark deleted any children that were not updated.
             $this->db->record->update(
                 array(
@@ -1250,6 +1251,11 @@ class RecordManager
         } else {
             $this->recordSplitter = null;
         }
+
+        $this->keepMissingHierarchyMembers
+            = isset($settings['keepMissingHierarchyMembers'])
+            ? $settings['keepMissingHierarchyMembers']
+            : false;
     }
 
     /**
