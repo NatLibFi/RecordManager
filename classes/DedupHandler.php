@@ -40,16 +40,22 @@
 class DedupHandler
 {
     /**
+     * Mongo database
+     *
      * @var MongoDB
      */
     protected $db = null;
 
     /**
+     * Logger
+     *
      * @var Logger
      */
     protected $log = null;
 
     /**
+     * Verbose mode
+     *
      * @var bool
      */
     protected $verbose = false;
@@ -376,6 +382,16 @@ class DedupHandler
             echo "\nCandidate " . $candidate['_id'] . ":\n" . MetadataUtils::getRecordData($candidate, true) . "\n";
         }
 
+        // Check format before anything else
+        $origFormat = $origRecord->getFormat();
+        $cFormat = $cRecord->getFormat();
+        if ($origFormat != $cFormat && $this->solrUpdater->mapFormat($record['source_id'], $origFormat) != $this->solrUpdater->mapFormat($candidate['source_id'], $cFormat)) {
+            if ($this->verbose) {
+                echo "--Format mismatch: $origFormat != $cFormat\n";
+            }
+            return false;
+        }
+
         // Check for common ISBN
         $origISBNs = $origRecord->getISBNs();
         $cISBNs = $cRecord->getISBNs();
@@ -423,14 +439,6 @@ class DedupHandler
             return false;
         }
 
-        $origFormat = $origRecord->getFormat();
-        $cFormat = $cRecord->getFormat();
-        if ($origFormat != $cFormat && $this->solrUpdater->mapFormat($record['source_id'], $origFormat) != $this->solrUpdater->mapFormat($candidate['source_id'], $cFormat)) {
-            if ($this->verbose) {
-                echo "--Format mismatch: $origFormat != $cFormat\n";
-            }
-            return false;
-        }
         $origYear = $origRecord->getPublicationYear();
         $cYear = $cRecord->getPublicationYear();
         if ($origYear && $cYear && $origYear != $cYear) {
