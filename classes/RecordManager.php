@@ -512,11 +512,8 @@ class RecordManager
                             echo '.';
                         }
                     }
-                    if (microtime(true) - $startRecordTime > 0.7) {
-                        if ($this->verbose) {
-                            echo "\n";
-                        }
-                        $this->log->log('deduplicate', 'Deduplication of ' . $record['_id'] . ' took ' . (microtime(true) - $startRecordTime));
+                    if ($this->verbose && microtime(true) - $startRecordTime > 0.7) {
+                        echo "\nDeduplication of " . $record['_id'] . ' took ' . (microtime(true) - $startRecordTime) . "\n";
                     }
                     ++$count;
                     if ($count % 1000 == 0) {
