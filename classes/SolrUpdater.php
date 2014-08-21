@@ -1418,8 +1418,7 @@ class SolrUpdater
             if (is_array($values)) {
                 $values = array_values(array_unique($values));
                 $values = array_map(
-                    function($value)
-                    {
+                    function($value) {
                         return MetadataUtils::normalizeUnicode($value);
                     },
                     $values

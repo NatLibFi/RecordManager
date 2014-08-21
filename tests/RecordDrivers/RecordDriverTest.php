@@ -31,9 +31,9 @@ require_once 'classes/MetadataUtils.php';
 
 /**
  * Generic Record Driver Test Class
- * 
+ *
  * @category DataManagement
- * @package  RecordManager 
+ * @package  RecordManager
  * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
@@ -42,7 +42,7 @@ abstract class RecordDriverTest extends PHPUnit_Framework_TestCase
 {
     // Override this from subclass
     protected $driver;
-    
+
     /**
      * Standard setup method.
      *
@@ -54,15 +54,15 @@ abstract class RecordDriverTest extends PHPUnit_Framework_TestCase
         if(empty($this->driver))
             $this->markTestIncomplete('Record driver needs to be set in subclass.');
     }
-    
+
     /**
      * Process a sample record
      *
      * @param string $sample Sample record file
-     * 
-     * @return array SOLR record array  
+     *
+     * @return array SOLR record array
      */
-    protected function processSample($sample) 
+    protected function processSample($sample)
     {
         $actualdir = dirname(__FILE__);
         $sample = file_get_contents($actualdir . "/../samples/" . $sample);

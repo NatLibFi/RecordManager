@@ -167,7 +167,7 @@ class NdlLidoRecord extends LidoRecord
      *
      * @param string $eventType Which event to use
      *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#materialsTechSetComplexType
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#materialsTechSetComplexType
      * @return string[]
      * @access public
      */

@@ -104,16 +104,31 @@ class HarvestHTTPFiles
         }
     }
 
+    /**
+     * Return the number of changed records
+     *
+     * @return number
+     */
     public function getChangedRecordCount()
     {
         return $this->changedRecords;
     }
 
+    /**
+     * Return the number of deleted records
+     *
+     * @return number
+     */
     public function getDeletedRecordCount()
     {
         return $this->deletedRecords;
     }
 
+    /**
+     * Return the number of unchanged records
+     *
+     * @return number
+     */
     public function getUnchangedRecordCount()
     {
         return $this->unchangedRecords;

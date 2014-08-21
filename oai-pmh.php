@@ -28,7 +28,6 @@
 
 /**
  * OAI-PMH Provider Front-End
- *
  */
 
 require 'classes/OaiPmhProvider.php';
@@ -37,14 +36,14 @@ $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
 $configArray = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
 
 /**
- * Main function 
- * 
+ * Main function
+ *
  * @return void
  */
 function main()
 {
     $provider = new OaiPmhProvider();
-    $provider->launch(); 
+    $provider->launch();
 }
 
 main();

@@ -31,7 +31,6 @@
  * Command Line Utility Functions
  *
  * Helper functions for command line utilities.
- *
  */
 
 require_once 'PEAR.php';

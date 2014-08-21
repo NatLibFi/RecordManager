@@ -52,7 +52,8 @@ class MarcRecord extends BaseRecord
     const GET_ALT = 1;
     const GET_BOTH = 2;
 
-    /** MARC is stored in a multidimensional array:
+    /**
+     * MARC is stored in a multidimensional array:
      *  [001] - "12345"
      *  [245] - i1: '0'
      *          i2: '1'

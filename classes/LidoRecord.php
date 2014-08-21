@@ -220,7 +220,7 @@ class LidoRecord extends BaseRecord
      * Return the object measurements. Only the display element is used currently
      * until processing more granular data is needed.
      *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectMeasurementsSetComplexType
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectMeasurementsSetComplexType
      * @return string
      */
     protected function getMeasurements()

@@ -454,10 +454,14 @@ class MetadataUtils
             return $str;
         }
         switch ($configArray['Solr']['unicode_normalization_form']) {
-        case 'NFC': return Normalizer::normalize($str, Normalizer::FORM_C);
-        case 'NFD': return Normalizer::normalize($str, Normalizer::FORM_D);
-        case 'NFKC': return Normalizer::normalize($str, Normalizer::FORM_KC);
-        case 'NFKD': return Normalizer::normalize($str, Normalizer::FORM_KD);
+        case 'NFC':
+            return Normalizer::normalize($str, Normalizer::FORM_C);
+        case 'NFD':
+            return Normalizer::normalize($str, Normalizer::FORM_D);
+        case 'NFKC':
+            return Normalizer::normalize($str, Normalizer::FORM_KC);
+        case 'NFKD':
+            return Normalizer::normalize($str, Normalizer::FORM_KD);
         }
         return $str;
     }

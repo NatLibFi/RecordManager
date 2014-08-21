@@ -84,7 +84,7 @@ class Preview extends SolrUpdater
      * @param string $format   Metadata format
      * @param string $source   Source identifier
      *
-     * @return array
+     * @return array Solr record fields
      */
     public function preview($metadata, $format, $source)
     {

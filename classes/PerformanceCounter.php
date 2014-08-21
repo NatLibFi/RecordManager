@@ -40,31 +40,30 @@
 class PerformanceCounter
 {
     protected $counts = array();
-    
+
     /**
      * Constructor
-     *
      */
     public function __construct()
     {
         $this->reset();
-    } 
-    
+    }
+
     /**
      * Reset counter
-     * 
+     *
      * @return void
      */
     public function reset()
     {
         $this->counts = array(array('t' => microtime(true), 'c' => 0));
     }
-    
+
     /**
-     * Add the current count 
-     * 
+     * Add the current count
+     *
      * @param number $count Current progress
-     * 
+     *
      * @return void
      */
     public function add($count)
@@ -74,10 +73,10 @@ class PerformanceCounter
             array_shift($this->counts);
         }
     }
-    
+
     /**
      * Get the speed as units / second
-     * 
+     *
      * @return number
      */
     public function getSpeed()

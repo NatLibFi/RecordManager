@@ -75,11 +75,11 @@ class Logger
 
     /**
      * Write a message to the log
-     * 
+     *
      * @param string $context Context of the log message (e.g. current function)
-     * @param string $msg     Actual message 
+     * @param string $msg     Actual message
      * @param int    $level   Message level used to filter logged messages. Default is INFO (3)
-     * 
+     *
      * @return void
      */
     public function log($context, $msg, $level = Logger::INFO)
@@ -121,19 +121,24 @@ class Logger
 
     /**
      * Convert log level to string
-     * 
+     *
      * @param level $level Level to convert
-     * 
+     *
      * @return string
      */
     protected function logLevelToStr($level)
     {
         switch ($level) {
-        case Logger::FATAL: return 'FATAL';
-        case Logger::ERROR: return 'ERROR';
-        case Logger::WARNING: return 'WARNING';
-        case Logger::INFO: return 'INFO';
-        case Logger::DEBUG: return 'DEBUG';
+        case Logger::FATAL:
+            return 'FATAL';
+        case Logger::ERROR:
+            return 'ERROR';
+        case Logger::WARNING:
+            return 'WARNING';
+        case Logger::INFO:
+            return 'INFO';
+        case Logger::DEBUG:
+            return 'DEBUG';
         }
         return '???';
     }

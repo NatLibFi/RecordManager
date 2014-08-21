@@ -40,8 +40,6 @@
 class RecordFactory
 {
     /**
-     * createRecord
-     *
      * This constructs a metadata record driver for the specified format.
      *
      * @param string $format Metadata format
