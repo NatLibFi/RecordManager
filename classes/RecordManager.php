@@ -337,11 +337,7 @@ class RecordManager
     ) {
         global $configArray;
         $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
-
-        if (isset($configArray['Solr']['merge_records']) && $configArray['Solr']['merge_records']) {
-            return $updater->updateRecords($fromDate, $sourceId, $singleId, $noCommit, false, $compare);
-        }
-        return $updater->updateIndividualRecords($fromDate, $sourceId, $singleId, $noCommit, $compare);
+        return $updater->updateRecords($fromDate, $sourceId, $singleId, $noCommit, false, $compare);
     }
 
     /**
@@ -1010,6 +1006,7 @@ class RecordManager
                             '$set' => array('update_needed' => true)
                         )
                     );
+                    $dbRecord['update_needed'] = false;
                 }
             } else {
                 unset($dbRecord['title_keys']);
