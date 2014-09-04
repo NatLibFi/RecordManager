@@ -82,8 +82,8 @@ class MarcOnkiLightEnrichment extends Enrichment
         if (empty($this->onkiLightBaseURL)) {
             return;
         }
-        $this->enrichField($sourceId, $record, &$solrArray, '650', 'topic');
-        $this->enrichField($sourceId, $record, &$solrArray, '651', 'geographic');
+        $this->enrichField($sourceId, $record, $solrArray, '650', 'topic');
+        $this->enrichField($sourceId, $record, $solrArray, '651', 'geographic');
     }
 
     /**
