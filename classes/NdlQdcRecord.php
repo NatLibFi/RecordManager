@@ -83,6 +83,7 @@ class NdlQdcRecord extends QdcRecord
                 'source' => $this->source
             );
             $data['online_boolean'] = true;
+            $data['online_str_mv'] = $this->source;
             $data['online_urls_str_mv'][] = json_encode($link);
         }
 
@@ -93,6 +94,7 @@ class NdlQdcRecord extends QdcRecord
                 'source' => $this->source
             );
             $data['online_boolean'] = true;
+            $data['online_str_mv'] = $this->source;
             $data['online_urls_str_mv'][] = json_encode($link);
         }
 

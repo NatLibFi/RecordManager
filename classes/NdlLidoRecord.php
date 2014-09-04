@@ -136,6 +136,7 @@ class NdlLidoRecord extends LidoRecord
 
         if ($this->getURLs()) {
             $data['online_boolean'] = true;
+            $data['online_str_mv'] = $this->source;
         }
 
         $data['location_geo'] = $this->getEventPlaceCoordinates();

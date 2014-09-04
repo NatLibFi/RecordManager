@@ -308,6 +308,7 @@ class NdlMarcRecord extends MarcRecord
                     continue;
                 }
                 $data['online_boolean'] = true;
+                $data['online_str_mv'] = $this->source;
                 $linkText = $this->getSubfield($field, 'y');
                 if (!$linkText) {
                     $linkText = $this->getSubfield($field, 'z');
