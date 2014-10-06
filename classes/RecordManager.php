@@ -84,6 +84,7 @@ class RecordManager
     protected $compressedRecords = true;
     protected $nonInheritedFields = array();
     protected $prependParentTitleWithUnitId = null;
+    protected $previousId = '[none]';
 
     /**
      * Constructor
@@ -320,24 +321,28 @@ class RecordManager
     /**
      * Send updates to a Solr index (e.g. VuFind)
      *
-     * @param string|null $fromDate Starting date for updates (if empty
-     *                              string, last update date stored in the database
-     *                              is used and if null, all records are processed)
-     * @param string      $sourceId Source ID to update, or empty or * for all
-     *                              sources (ignored if record merging is enabled)
-     * @param string      $singleId Export only a record with the given ID
-     * @param bool        $noCommit If true, changes are not explicitly committed
-     * @param string      $compare  If set, just compare records and write
-     *                              differences into the file in this parameter
+     * @param string|null $fromDate   Starting date for updates (if empty
+     *                                string, last update date stored in the database
+     *                                is used and if null, all records are processed)
+     * @param string      $sourceId   Source ID to update, or empty or * for all
+     *                                sources (ignored if record merging is enabled)
+     * @param string      $singleId   Export only a record with the given ID
+     * @param bool        $noCommit   If true, changes are not explicitly committed
+     * @param string      $compare    If set, just compare records and write
+     *                                differences into the file in this parameter
+     * @param string      $dumpPrefix If set, dump Solr records into a file instead
+     *                                sending them to Solr
      *
      * @return void
      */
     public function updateSolrIndex($fromDate = null, $sourceId = '', $singleId = '',
-        $noCommit = false, $compare = ''
+        $noCommit = false, $compare = '', $dumpPrefix = ''
     ) {
         global $configArray;
         $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
-        return $updater->updateRecords($fromDate, $sourceId, $singleId, $noCommit, false, $compare);
+        return $updater->updateRecords(
+            $fromDate, $sourceId, $singleId, $noCommit, false, $compare, $dumpPrefix
+        );
     }
 
     /**
@@ -952,10 +957,11 @@ class RecordManager
             $id = $metadataRecord->getID();
             if (!$id) {
                 if (!$oaiID) {
-                    throw new Exception("Empty ID returned for record and no OAI ID");
+                    throw new Exception("Empty ID returned for record, and no OAI ID (previous record ID: $this->previousId)");
                 }
                 $id = $oaiID;
             }
+            $this->previousId = $id;
             $id = $this->idPrefix . '.' . $id;
             $dbRecord = $this->db->record->findOne(array('_id' => $id));
             if ($dbRecord) {
@@ -1058,17 +1064,19 @@ class RecordManager
      *
      * @param string $sourceId Source ID
      * @param string $field    Field name
+     * @param bool   $mapped   Whether to count values after any mapping files are
+     *                         are processed
      *
      * @return void
      */
-    public function countValues($sourceId, $field)
+    public function countValues($sourceId, $field, $mapped)
     {
         if (!$field) {
             echo "Field must be specified\n";
             exit;
         }
         $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
-        $updater->countValues($sourceId, $field);
+        $updater->countValues($sourceId, $field, $mapped);
     }
 
     /**

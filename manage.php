@@ -45,7 +45,7 @@ Usage: $argv[0] --func=... [...]
 
 Parameters:
 
---func             renormalize|deduplicate|updatesolr|dump|markdeleted|deletesource|deletesolr|optimizesolr|count|updategeocoding|resimplifygeocoding|checkdedup|comparesolr
+--func             renormalize|deduplicate|updatesolr|dump|dumpsolr|markdeleted|deletesource|deletesolr|optimizesolr|count|updategeocoding|resimplifygeocoding|checkdedup|comparesolr
 --source           Source ID to process (separate multiple sources with commas)
 --all              Process all records regardless of their state (deduplicate)
                    or date (updatesolr)
@@ -64,6 +64,10 @@ Parameters:
                    parallel (useful when running from crontab)
 --comparelog       Record comparison output file. N.B. The file will be overwritten
                    (comparesolr)
+--dumpprefix       File name prefix to use when dumping records (dumpsolr). Default
+                   is "dumpsolr".
+--mapped           If set, use values only after any mapping files are processed when
+                   counting records (count)
 
 
 EOT;
@@ -83,10 +87,16 @@ EOT;
         $single = isset($params['single']) ? $params['single'] : '';
         $noCommit = isset($params['nocommit']) ? $params['nocommit'] : false;
 
-        // Solr update or compare can handle multiple sources at once
-        if ($params['func'] == 'updatesolr') {
+        // Solr update, compare and dump can handle multiple sources at once
+        if ($params['func'] == 'updatesolr' || $params['func'] == 'dumpsolr') {
             $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
-            $manager->updateSolrIndex($date, $sources, $single, $noCommit);
+            $dumpPrefix = $params['func'] == 'dumpsolr'
+                ? (isset($params['dumpprefix']) ? $params['dumpprefix'] : 'dumpsolr')
+                : '';
+            $manager->updateSolrIndex(
+                $date, $sources, $single, $noCommit, '',
+                $dumpPrefix
+            );
         } elseif ($params['func'] == 'comparesolr') {
             $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
             $manager->updateSolrIndex($date, $sources, $single, $noCommit, isset($params['comparelog']) ? $params['comparelog'] : '-');
@@ -116,7 +126,11 @@ EOT;
                     $manager->optimizeSolr();
                     break;
                 case 'count':
-                    $manager->countValues($source, isset($params['field']) ? $params['field'] : null);
+                    $manager->countValues(
+                        $source,
+                        isset($params['field']) ? $params['field'] : null,
+                        isset($params['mapped']) ? $params['mapped'] : false
+                    );
                     break;
                 case 'updategeocoding':
                     $manager->updateGeocodingTable(isset($params['file']) ? $params['file'] : null);

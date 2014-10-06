@@ -59,6 +59,7 @@ class SolrUpdater
     protected $allArticleFormats;
     protected $httpPids = array();
     protected $terminate;
+    protected $dumpPrefix = '';
 
     protected $commitInterval;
     protected $maxUpdateRecords;
@@ -191,8 +192,11 @@ class SolrUpdater
     ) {
         global $configArray;
 
-        $verb = $compare ? 'compared' : 'indexed';
-        $initVerb = $compare ? 'Comparing' : 'Indexing';
+        $verb = $compare ? 'compared' : ($this->dumpPrefix ? 'dumped' : 'indexed');
+        $initVerb = $compare
+            ? 'Comparing'
+            : ($this->dumpPrefix ? 'Dumping' : 'Indexing');
+
         $params = array();
         if ($singleId) {
             $params['_id'] = $singleId;
@@ -587,31 +591,38 @@ class SolrUpdater
     /**
      * Update Solr index (merged records and individual records)
      *
-     * @param string|null $fromDate Starting date for updates (if empty
-     *                              string, last update date stored in the database
-     *                              is used and if null, all records are processed)
-     * @param string      $sourceId Comma-separated list of source IDs to update,
-     *                              or empty or * for all sources
-     * @param string      $singleId Export only a record with the given ID
-     * @param bool        $noCommit If true, changes are not explicitly committed
-     * @param bool        $delete   If true, records in the given $sourceId are all
-     *                              deleted
-     * @param string      $compare  If set, just compare the records with the ones
-     *                              already in the Solr index and write any
-     *                              differences in a file given in this parameter
+     * @param string|null $fromDate   Starting date for updates (if empty
+     *                                string, last update date stored in the database
+     *                                is used and if null, all records are processed)
+     * @param string      $sourceId   Comma-separated list of source IDs to update,
+     *                                or empty or * for all sources
+     * @param string      $singleId   Export only a record with the given ID
+     * @param bool        $noCommit   If true, changes are not explicitly committed
+     * @param bool        $delete     If true, records in the given $sourceId are all
+     *                                deleted
+     * @param string      $compare    If set, just compare the records with the ones
+     *                                already in the Solr index and write any
+     *                                differences in a file given in this parameter
+     * @param string      $dumpPrefix If specified, the Solr records are dumped into
+     *                                files and not sent to Solr.
      *
      * @return void
      */
-    public function updateRecords($fromDate = null, $sourceId = '', $singleId = '', $noCommit = false, $delete = false, $compare = false)
-    {
+    public function updateRecords($fromDate = null, $sourceId = '', $singleId = '',
+        $noCommit = false, $delete = false, $compare = false, $dumpPrefix = ''
+    ) {
         global $configArray;
 
         if ($compare && $compare != '-') {
             file_put_contents($compare, '');
         }
 
-        $verb = $compare ? 'compared' : 'indexed';
-        $initVerb = $compare ? 'Comparing' : 'Indexing';
+        $this->dumpPrefix = $dumpPrefix;
+
+        $verb = $compare ? 'compared' : ($this->dumpPrefix ? 'dumped' : 'indexed');
+        $initVerb = $compare
+            ? 'Comparing'
+            : ($this->dumpPrefix ? 'Dumping' : 'Indexing');
 
         try {
             if ($this->backgroundUpdates && !$compare) {
@@ -794,7 +805,7 @@ class SolrUpdater
                 }
             }
 
-            if (!$noCommit && $needCommit && !$compare) {
+            if (!$noCommit && $needCommit && !$compare && !$this->dumpPrefix) {
                 $this->waitForHttpChildren();
                 $this->log->log('updateRecords', "Final commit...");
                 $this->solrRequest('{ "commit": {} }');
@@ -839,10 +850,12 @@ class SolrUpdater
      *
      * @param string $sourceId Source ID
      * @param string $field    Field name
+     * @param bool   $mapped   Whether to count values after any mapping files are
+     *                         are processed
      *
      * @return void
      */
-    public function countValues($sourceId, $field)
+    public function countValues($sourceId, $field, $mapped = false)
     {
         $this->log->log('countValues', "Creating record list");
         $params = array('deleted' => false);
@@ -866,21 +879,25 @@ class SolrUpdater
             }
             $settings = $this->settings[$source];
             $mergedComponents = 0;
-            $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
-            if (isset($settings['solrTransformationXSLT'])) {
-                $params = array(
-                    'source_id' => $source,
-                    'institution' => $settings['institution'],
-                    'format' => $settings['format'],
-                    'id_prefix' => $settings['idPrefix']
-                );
-                $data = $settings['solrTransformationXSLT']->transformToSolrArray($metadataRecord->toXML(), $params);
+            if ($mapped) {
+                $data = $this->createSolrArray($record, $mergedComponents);
             } else {
-                $prependTitleWithSubtitle = isset($settings['prepend_title_with_subtitle'])
-                                                  ? $settings['prepend_title_with_subtitle']
-                                                  : true;
-                $data = $metadataRecord->toSolrArray($prependTitleWithSubtitle);
-                $this->enrich($source, $settings, $metadataRecord, $data);
+                $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
+                if (isset($settings['solrTransformationXSLT'])) {
+                    $params = array(
+                        'source_id' => $source,
+                        'institution' => $settings['institution'],
+                        'format' => $settings['format'],
+                        'id_prefix' => $settings['idPrefix']
+                    );
+                    $data = $settings['solrTransformationXSLT']->transformToSolrArray($metadataRecord->toXML(), $params);
+                } else {
+                    $prependTitleWithSubtitle = isset($settings['prepend_title_with_subtitle'])
+                                                      ? $settings['prepend_title_with_subtitle']
+                                                      : true;
+                    $data = $metadataRecord->toSolrArray($prependTitleWithSubtitle);
+                    $this->enrich($source, $settings, $metadataRecord, $data);
+                }
             }
             if (isset($data[$field])) {
                 foreach (is_array($data[$field]) ? $data[$field] : array($data[$field]) as $value) {
@@ -1667,13 +1684,22 @@ class SolrUpdater
         $this->buffer .= $jsonData;
         $this->bufferLen += strlen($jsonData);
         if (++$this->buffered >= $this->maxUpdateRecords || $this->bufferLen > $this->maxUpdateSize) {
-            $this->solrRequest("[\n{$this->buffer}\n]");
+            $request = "[\n{$this->buffer}\n]";
+            if ($this->dumpPrefix) {
+                file_put_contents(
+                    $this->getDumpFileName($this->dumpPrefix),
+                    $request,
+                    FILE_APPEND | LOCK_EX
+                );
+            } else {
+                $this->solrRequest($request);
+            }
             $this->buffer = '';
             $this->bufferLen = 0;
             $this->buffered = 0;
             $result = true;
         }
-        if (!$noCommit && $count % $this->commitInterval == 0) {
+        if (!$noCommit && !$this->dumpPrefix && $count % $this->commitInterval == 0) {
             $this->waitForHttpChildren();
             $this->log->log('bufferedUpdate', "Intermediate commit...");
             $this->solrRequest('{ "commit": {} }');
@@ -1692,6 +1718,9 @@ class SolrUpdater
      */
     protected function bufferedDelete($id)
     {
+        if ($this->dumpPrefix) {
+            return false;
+        }
         $this->bufferedDeletions[] = '"delete":{"id":"' . $id . '"}';
         if (count($this->bufferedDeletions) >= 1000) {
             $this->solrRequest("{" . implode(',', $this->bufferedDeletions) . "}");
@@ -1709,7 +1738,16 @@ class SolrUpdater
     protected function flushUpdateBuffer()
     {
         if ($this->buffered > 0) {
-            $this->solrRequest("[\n{$this->buffer}\n]");
+            $request = "[\n{$this->buffer}\n]";
+            if ($this->dumpPrefix) {
+                file_put_contents(
+                    $this->getDumpFileName($this->dumpPrefix),
+                    $request,
+                    FILE_APPEND | LOCK_EX
+                );
+            } else {
+                $this->solrRequest($request);
+            }
         }
         if (!empty($this->bufferedDeletions)) {
             $this->solrRequest("{" . implode(',', $this->bufferedDeletions) . "}");
@@ -1777,5 +1815,24 @@ class SolrUpdater
                 $this->enrichments[$enrichment]->enrich($source, $record, $data);
             }
         }
+    }
+
+    /**
+     * Get a dump file name for a given prefix
+     *
+     * @param string $prefix File name prefix, may include path
+     *
+     * @return string File name for a newly created temp file
+     */
+    protected function getDumpFileName($prefix)
+    {
+        for ($i = 1; $i < 1000000; $i++) {
+            $filename = "$prefix-$i.json";
+            if (!file_exists($filename)) {
+                touch($filename);
+                return $filename;
+            }
+        }
+        throw new Exception('Could not find a free dump file slot');
     }
 }
