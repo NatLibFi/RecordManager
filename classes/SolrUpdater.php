@@ -915,8 +915,7 @@ class SolrUpdater
                     echo "Current list:\n";
                     arsort($values, SORT_NUMERIC);
                     foreach ($values as $key => $value) {
-                        if (count($value) > 1)
-                          echo "$key: " . print_r($value, true) . "\n";
+                        echo "$key: $value\n";
                     }
                     echo "\n";
                 }
