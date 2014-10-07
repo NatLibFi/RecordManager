@@ -91,8 +91,7 @@ class NdlMarcRecord extends MarcRecord
      */
     public function getLinkingID()
     {
-        global $configArray;
-        if (isset($configArray['Local']['linking_id_003']) && in_array($this->source, $configArray['Local']['linking_id_003'])) {
+        if ($this->getDriverParam('003InLinkingID', false)) {
             $source = $this->getField('003');
             if ($source) {
                 return "($source)" . $this->getID();
