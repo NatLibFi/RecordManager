@@ -1504,7 +1504,7 @@ class MarcRecord extends BaseRecord
                 if (!isset($field['s'])) {
                     global $logger;
                     $logger->log(
-                        'MarcRecord', 'Subfields missing in field: ' .
+                        'MarcRecord', "Subfields missing in field $tag: " .
                         print_r($field, true) . ", record {$this->source}." .
                         $this->getID(), Logger::WARNING
                     );
@@ -1513,7 +1513,7 @@ class MarcRecord extends BaseRecord
                 if (!is_array($field['s'])) {
                     global $logger;
                     $logger->log(
-                        'MarcRecord', 'Invalid subfields in field: ' .
+                        'MarcRecord', "Invalid subfields in field $tag: " .
                         print_r($field, true) . ", record {$this->source}." .
                         $this->getID(), Logger::ERROR
                     );
@@ -1675,7 +1675,7 @@ class MarcRecord extends BaseRecord
         if (!isset($field['s'])) {
             global $logger;
             $logger->log(
-                'MarcRecord', 'Subfields missing in field: ' .
+                'MarcRecord', "Subfields missing in field: " .
                 print_r($field, true) . ", record {$this->source}." .
                 $this->getID(), Logger::WARNING
             );
