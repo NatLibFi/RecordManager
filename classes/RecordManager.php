@@ -804,7 +804,7 @@ class RecordManager
         $params['source_id'] = $sourceId;
         $this->log->log('deleteRecords', "Creating record list for '$sourceId'");
 
-        $params = array('deleted' => false, 'source_id' => $sourceId);
+        $params = array('source_id' => $sourceId);
         $records = $this->db->record->find($params);
         $records->immortal(true);
         $total = $this->counts ? $records->count() : 'the';
