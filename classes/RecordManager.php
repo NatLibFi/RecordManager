@@ -701,8 +701,6 @@ class RecordManager
 
                             $state = array('_id' => "Last Deletion Processing Time $source", 'value' => time());
                             $this->db->state->save($state);
-
-                            $this->log->log('harvest', $result['n'] . " deleted records");
                         }
                     }
                 }
