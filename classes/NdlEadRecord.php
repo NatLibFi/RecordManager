@@ -79,7 +79,9 @@ class NdlEadRecord extends EadRecord
                 foreach ($this->doc->did->daogrp->daoloc as $daoloc) {
                     if ($daoloc->attributes()->{'href'}) {
                         $data['online_boolean'] = true;
-                        $data['online_str_mv'] = $this->source;
+                        // This is sort of special. Make sure to use source instead
+                        // of datasource.
+                        $data['online_str_mv'] = $data['source_str_mv'];
                         break;
                     }
                 }
