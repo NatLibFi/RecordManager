@@ -33,28 +33,12 @@
  * Helper functions for command line utilities.
  */
 
-require_once 'PEAR.php';
-
 ini_set('display_errors', '1');
 
 // Initialize command line environment
 $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
 require_once 'classes/RecordManager.php';
 $configArray = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
-
-PEAR::setErrorHandling(PEAR_ERROR_CALLBACK, 'pearHandleError');
-
-/**
- * PEAR error handler
- *
- * @param object $error PEAR error
- *
- * @return void
- */
-function pearHandleError($error)
-{
-    echo $error->toString() . "\n";
-}
 
 /**
  * Apply any configuration overrides defined on command line
