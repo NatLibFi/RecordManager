@@ -474,7 +474,8 @@ class LidoRecord extends BaseRecord
     /**
      * Return subjects associated with object.
      *
-     * @param string[] $exclude List of subject types to exclude
+     * @param string[] $exclude List of subject types to exclude (defaults to
+     * 'iconclass' since it doesn't contain human readable terms)
      *
      * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#subjectComplexType
      * @return string[]

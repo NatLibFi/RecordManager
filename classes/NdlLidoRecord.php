@@ -239,14 +239,16 @@ class NdlLidoRecord extends LidoRecord
     /**
      * Return subjects associated with object.
      *
+     * @param string[] $exclude List of subject types to exclude (defaults to 'aihe'
+     * and 'iconclass' since they don't contain human readable terms)
+     *
      * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#subjectComplexType
      * @return string
      * @access public
      */
-    protected function getSubjectTerms()
+    protected function getSubjectTerms($exclude = array('aihe', 'iconclass'))
     {
-        // Exclude 'aihe' and 'iconclass' because these don't contain (human readable) terms
-        return parent::getSubjectTerms(array('aihe', 'iconclass'));
+        return parent::getSubjectTerms($exclude);
     }
 
     /**
@@ -693,6 +695,9 @@ class NdlLidoRecord extends LidoRecord
             $logger->log('NdlLidoRecord', "Invalid date range {$startDate} - {$endDate} parsed from '$input', record {$this->source}." . $this->getID(), Logger::WARNING);
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
         }
+
+        file_put_contents('dates.log', "$input\t" . substr($startDate, 0, 10) . "\t" . substr($endDate, 0, 10) . "\t" . $this->source . '.' . $this->getID() . "\n", FILE_APPEND);
+
 
         return array($startDate, $endDate);
     }
