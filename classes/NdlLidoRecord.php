@@ -372,28 +372,26 @@ class NdlLidoRecord extends LidoRecord
     {
         $input = trim(strtolower($input));
 
-        switch($input) {
-        case 'kivikausi':
-        case 'kivikauisi':
-        case 'kiviakausi':
-            $this->earliestYear = '-8600';
-            $this->latestYear = '-1500';
-            return '-8600-01-01T00:00:00Z,-1501-12-31T23:59:59Z';
-        case 'pronssikausi':
-            $this->earliestYear = '-1500';
-            $this->latestYear = '-500';
-            return '-1500-01-01T00:00:00Z,-501-12-31T23:59:59Z';
-        case 'rautakausi':
-            $this->earliestYear = '-500';
-            $this->latestYear = '1300';
-            return '-500-01-01T00:00:00Z,1299-12-31T23:59:59Z';
-        case 'keskiaika':
-            $this->earliestYear = '1300';
-            $this->latestYear = '1550';
-            return '1300-01-01T00:00:00Z,1550-12-31T23:59:59Z';
-        case 'ajoittamaton':
-        case 'tuntematon':
-            return null;
+        $dateMappings = array(
+            'kivikausi' => array('-8600-01-01T00:00:00Z', '-1501-12-31T23:59:59Z'),
+            'pronssikausi'
+                => array('-1500-01-01T00:00:00Z', '-0501-12-31T23:59:59Z'),
+            'rautakausi' => array('-0500-01-01T00:00:00Z' ,'1299-12-31T23:59:59Z'),
+            'keskiaika' => array('1300-01-01T00:00:00Z' ,'1550-12-31T23:59:59Z'),
+            'ajoittamaton' => null,
+            'tuntematon' => null
+        );
+
+        foreach ($dateMappings as $str => $value) {
+            if (strstr($input, $str)) {
+                if (is_null($value)) {
+                    file_put_contents('dates.log', "$input\t(null)\t(null)\t" . $this->source . '.' . $this->getID() . "\n", FILE_APPEND);
+                } else {
+                    file_put_contents('dates.log', "$input\t" . substr($value[0], 0, 10) . "\t" . substr($value[1], 0, 10) . "\t" . $this->source . '.' . $this->getID() . "\n", FILE_APPEND);
+                }
+
+                return $value;
+            }
         }
 
         $k = array(
@@ -411,19 +409,31 @@ class NdlLidoRecord extends LidoRecord
                 'joulukuu' => '12'
         );
 
-        if (preg_match('/(\d\d?).(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
+        $imprecise = false;
+
+        list($input) = explode(',', $input, 2);
+
+        if (preg_match('/(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)\s*-\s*(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)/', $input, $matches) > 0) {
             $startDate = sprintf('%04d-%02d-%02dT00:00:00Z', $matches[3], $matches[2], $matches[1]);
             $endDate = sprintf('%04d-%02d-%02dT23:59:59Z', $matches[6], $matches[5], $matches[4]);
             $noprocess = true;
-        } elseif (preg_match('/(\d\d\d\d).(\d\d?).(\d\d?) ?- ?(\d\d\d\d).(\d\d?).(\d\d?)/', $input, $matches) > 0) {
+        } elseif (preg_match('/(\d\d\d\d)\s*-\s*(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)/', $input, $matches) > 0) {
+            $startDate = sprintf('%04d-01-01T00:00:00Z', $matches[1]);
+            $endDate = sprintf('%04d-%02d-%02dT23:59:59Z', $matches[4], $matches[3], $matches[2]);
+            $noprocess = true;
+        } elseif (preg_match('/(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)\s*-\s*(\d\d\d\d)/', $input, $matches) > 0) {
+            $startDate = sprintf('%04d-%02d-%02dT00:00:00Z', $matches[3], $matches[2], $matches[1]);
+            $endDate = sprintf('%04d-12-31T23:59:59Z', $matches[4]);
+            $noprocess = true;
+        } elseif (preg_match('/(\d\d\d\d)\s*.\s*(\d\d?)\s*.\s*(\d\d?)\s*-\s*(\d\d\d\d)\s*.\s*(\d\d?)\s*.\s*(\d\d?)/', $input, $matches) > 0) {
             $startDate = sprintf('%04d-%02d-%02dT00:00:00Z', $matches[1], $matches[2], $matches[3]);
             $endDate = sprintf('%04d-%02d-%02dT23:59:59Z', $matches[4], $matches[5], $matches[6]);
             $noprocess = true;
-        } elseif (preg_match('/(\d\d\d\d)(\d\d?)(\d\d?) ?- ?(\d\d\d\d)(\d\d?)(\d\d?)/', $input, $matches) > 0) {
+        } elseif (preg_match('/(\d\d\d\d)(\d\d?)(\d\d?)\s*-\s*(\d\d\d\d)(\d\d?)(\d\d?)/', $input, $matches) > 0) {
             $startDate = sprintf('%04d-%02d-%02dT00:00:00Z', $matches[1], $matches[2], $matches[3]);
             $endDate = sprintf('%04d-%02d-%02dT23:59:59Z', $matches[4], $matches[5], $matches[6]);
             $noprocess = true;
-        } elseif (preg_match('/(\d\d\d\d)(\d\d?) ?- ?(\d\d\d\d)(\d\d?)/', $input, $matches) > 0) {
+        } elseif (preg_match('/(\d\d\d\d)(\d\d?)\s*-\s*(\d\d\d\d)(\d\d?)/', $input, $matches) > 0) {
             $startDate = sprintf('%04d-%02d-01T00:00:00Z', $matches[1], $matches[2]);
             $endDate = sprintf('%04d-%02d-01', $matches[3], $matches[4]);
             try {
@@ -435,9 +445,46 @@ class NdlLidoRecord extends LidoRecord
             }
             $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
             $noprocess = true;
-        } elseif (preg_match('/(\d\d\d\d) ?- (\d\d\d\d)/', $input, $matches) > 0) {
+        } elseif (preg_match('/(\d\d\d\d)\s*-\s*(\d\d\d\d)\s*(-luvun|-l)\s+(loppupuoli|loppu)/', $input, $matches) > 0) {
             $startDate = $matches[1];
             $endDate = $matches[2];
+            if ($endDate % 100 == 0) {
+                // Century
+                $endDate += 99;
+            } elseif ($endDate % 10 == 0) {
+                // Decade
+                $endDate += 9;
+            }
+        } elseif (preg_match('/(\d?\d?\d\d)\s*(-|~)\s*(\d?\d?\d\d)\s*(-luku|-l)?\s*(\(?\?\)?)?/', $input, $matches) > 0) {
+            // 1940-1960-luku
+            // 1940-1960-l
+            // 1940-60-l
+            // 1930 - 1970-luku
+            // 30-40-luku
+            $startDate = $matches[1];
+            $endDate = $matches[3];
+
+            if (isset($matches[4])) {
+                if ($endDate % 10 == 0) {
+                    $endDate += 9;
+                }
+            }
+
+            $imprecise = isset($matches[5]);
+        } elseif (preg_match('/(\d?\d?\d\d)\s+(tammikuu|helmikuu|maaliskuu|huhtikuu|toukokuu|kesäkuu|heinäkuu|elokuu|syyskuu|lokakuu|marraskuu|joulukuu)/', $input, $matches) > 0) {
+            $year = $matches[1];
+            $month = $k[$matches[2]];
+            $startDate = $year . '-' . $month . '-01T00:00:00Z';
+            $endDate = $year . '-' . $month . '-01';
+            try {
+                $d = new DateTime($endDate);
+                $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
+            } catch (Exception $e) {
+                global $logger;
+                $logger->log('NdlLidoRecord', "Failed to parse date $endDate, record {$this->source}." . $this->getID(), Logger::ERROR);
+                return null;
+            }
+            $noprocess = true;
         } elseif (preg_match('/(\d\d\d\d)-(\d\d?)-(\d\d?)/', $input, $matches) > 0) {
             $year = $matches[1];
             $month =  sprintf('%02d', $matches[2]);
@@ -466,59 +513,14 @@ class NdlLidoRecord extends LidoRecord
             }
             $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
             $noprocess = true;
-        } elseif (preg_match('/(\d?\d?\d\d) ?(-|~) ?(\d?\d?\d\d) ?(-luku)?(\(?\?\)?)?/', $input, $matches) > 0) {
-            // 1940-1960-luku
-            // 1930 - 1970-luku
-            // 30-40-luku
-            $startDate = $matches[1];
-            $endDate = $matches[3];
-
-            if (isset($matches[4])) {
-                $luku = $matches[4];
-                if ($endDate % 10 == 0) {
-                    $endDate+=9;
-                }
-            }
-
-            if (isset($matches[5])) {
-                $epavarma = $matches[5];
-                $startDate -= 2;
-                $endDate += 2;
-            }
-        } elseif (preg_match('/(\d?\d?\d\d) ?-luvun (loppupuoli|loppu|lopulta|loppupuolelta)/', $input, $matches) > 0) {
-            $year = $matches[1];
-
-            if ($year % 100 == 0) {
-                // Century
-                $startDate = $year + 70;
-                $endDate = $year + 99;
-            } elseif ($year % 10 == 0) {
-                // Decade
-                $startDate = $year + 7;
-                $endDate = $year + 9;
-            }
-        } elseif (preg_match('/(\d?\d?\d\d) (tammikuu|helmikuu|maaliskuu|huhtikuu|toukokuu|kesäkuu|heinäkuu|elokuu|syyskuu|lokakuu|marraskuu|joulukuu)/', $input, $matches) > 0) {
-            $year = $matches[1];
-            $month = $k[$matches[2]];
-            $startDate = $year . '-' . $month . '-01T00:00:00Z';
-            $endDate = $year . '-' . $month . '-01';
-            try {
-                $d = new DateTime($endDate);
-                $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
-            } catch (Exception $e) {
-                global $logger;
-                $logger->log('NdlLidoRecord', "Failed to parse date $endDate, record {$this->source}." . $this->getID(), Logger::ERROR);
-                return null;
-            }
-            $noprocess = true;
-        } elseif (preg_match('/(\d\d?).(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
+        } elseif (preg_match('/(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)/', $input, $matches) > 0) {
             $year = $matches[3];
             $month =  sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[1]);
             $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
             $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
             $noprocess = true;
-        } elseif (preg_match('/(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
+        } elseif (preg_match('/(\d\d?)\s*.\s*(\d\d\d\d)/', $input, $matches) > 0) {
             $year = $matches[2];
             $month =  sprintf('%02d', $matches[1]);
             $startDate = $year . '-' . $month . '-01' . 'T00:00:00Z';
@@ -532,7 +534,7 @@ class NdlLidoRecord extends LidoRecord
                 return null;
             }
             $noprocess = true;
-        } elseif (preg_match('/(\d?\d?\d\d) ?-luvun (alkupuolelta|alkupuoli|alku|alusta)/', $input, $matches) > 0) {
+        } elseif (preg_match('/(\d?\d?\d\d)\s*-(luvun|luku)\s+(alkupuolelta|alkupuoli|alku|alusta)/', $input, $matches) > 0) {
             $year = $matches[1];
 
             if ($year % 100 == 0) {
@@ -548,23 +550,35 @@ class NdlLidoRecord extends LidoRecord
                 $startDate = $year;
                 $endDate = $year;
             }
-        } elseif (preg_match('/(\d?\d?\d\d) ?-(luvun|luku) (alkupuolelta|alkupuoli|alku|alusta)/', $input, $matches) > 0) {
+        } elseif (preg_match('/(\d?\d?\d\d)\s*-(luvun|luku)\s+(puoliväli)/', $input, $matches) > 0) {
             $year = $matches[1];
 
             if ($year % 100 == 0) {
                 // Century
-                $startDate = $year;
-                $endDate = $year + 29;
+                $startDate = $year + 29;
+                $endDate = $year + 70;
             } elseif ($year % 10 == 0) {
                 // Decade
-                $startDate = $year;
-                $endDate = $year + 3;
+                $startDate = $year + 3;
+                $endDate = $year + 7;
             } else {
                 // Uhh?
                 $startDate = $year;
                 $endDate = $year;
             }
-        } elseif (preg_match('/(\d?\d?\d\d) ?-(luku|luvulta)/', $input, $matches) > 0) {
+        } elseif (preg_match('/(\d?\d?\d\d)\s*(-luvun|-l)\s+(loppupuoli|loppu|lopulta|loppupuolelta)/', $input, $matches) > 0) {
+            $year = $matches[1];
+
+            if ($year % 100 == 0) {
+                // Century
+                $startDate = $year + 70;
+                $endDate = $year + 99;
+            } elseif ($year % 10 == 0) {
+                // Decade
+                $startDate = $year + 7;
+                $endDate = $year + 9;
+            }
+        } elseif (preg_match('/(-?\d?\d?\d\d)\s*-(luku|luvulta|l)/', $input, $matches) > 0) {
             $year = $matches[1];
             $startDate = $year;
 
@@ -581,17 +595,24 @@ class NdlLidoRecord extends LidoRecord
         } elseif (preg_match('/(\d?\d?\d\d)\s*ekr.?\s*\-\s*(\d?\d?\d\d)\s*jkr.?/', $input, $matches) > 0) {
             $startDate = -$matches[1];
             $endDate = $matches[2];
-        } elseif (preg_match('/(\d?\d?\d\d) jälkeen/', $input, $matches) > 0) {
+        } elseif (preg_match('/(-?\d?\d?\d\d) jälkeen/', $input, $matches) > 0) {
             $year = $matches[1];
 
             $startDate = $year;
             $endDate = $year + 9;
-        } elseif (preg_match('/(\d?\d?\d\d) ?\?/', $input, $matches) > 0) {
+        } elseif (preg_match('/(-?\d\d\d\d)\s*-\s*(-?\d\d\d\d)/', $input, $matches) > 0) {
+            $startDate = $matches[1];
+            $endDate = $matches[2];
+        } elseif (preg_match('/(-?\d{1-4})\s+-\s+(-?\d{1-4})/', $input, $matches) > 0) {
+            $startDate = $matches[1];
+            $endDate = $matches[2];
+        } elseif (preg_match('/(-?\d?\d?\d\d)\s*\?/', $input, $matches) > 0) {
             $year = $matches[1];
 
-            $startDate = $year-3;
-            $endDate = $year+3;
-        } elseif (preg_match('/(\d?\d?\d\d)/', $input, $matches) > 0) {
+            $startDate = $year;
+            $endDate = $year;
+            $imprecise = true;
+        } elseif (preg_match('/(-?\d?\d?\d\d)/', $input, $matches) > 0) {
             $year = $matches[1];
 
             $startDate = $year;
@@ -614,12 +635,34 @@ class NdlLidoRecord extends LidoRecord
             $endDate = '0000';
         }
 
-        if (strlen($startDate) == 2) {
-            $startDate = 1900 + $startDate;
+        switch (strlen($startDate)) {
+        case 1:
+            $startdate = "000$startDate";
+            break;
+        case 2:
+            $startDate = "19$startDate";
+            break;
+        case 3:
+            $startDate = "0$startDate";
+            break;
         }
-        if (strlen($endDate) == 2) {
-            $century = substr($startDate, 0, 2) . '00';
-            $endDate = $century + $endDate;
+        switch (strlen($endDate)) {
+        case 1:
+            $endDate = "000$endDate";
+            break;
+        case 2:
+            // Take into account possible negative sign
+            $endDate = substr($startDate, 0, -2) . $endDate;
+            break;
+        case 3:
+            $endDate = "0$endDate";
+            break;
+        }
+
+        if ($imprecise) {
+            // This is way arbitrary, so disabled for now..
+            //$startDate -= 2;
+            //$endDate += 2;
         }
 
         if (empty($noprocess)) {
@@ -632,9 +675,6 @@ class NdlLidoRecord extends LidoRecord
         if ($startDate > $yearNow || $endDate > $yearNow) {
             return null;
         }
-
-        $this->earliestYear = $startDate;
-        $this->latestYear = $startDate;
 
         $start = MetadataUtils::validateISO8601Date($startDate);
         $end = MetadataUtils::validateISO8601Date($endDate);

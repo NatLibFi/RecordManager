@@ -43,9 +43,6 @@ class LidoRecord extends BaseRecord
 {
     protected $doc = null;
 
-    protected $earliestYear;
-    protected $latestYear;
-
     // These are types reflecting the terminology in the particular LIDO records,
     // and can be overridden in a subclass.
     protected $mainEvent = 'creation';
@@ -629,7 +626,7 @@ class LidoRecord extends BaseRecord
             $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
             $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
             $noprocess = true;
-        } elseif (preg_match('/(\d\d?).(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
+        } elseif (preg_match('/(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)/', $input, $matches) > 0) {
             $year = $matches[3];
             $month =  sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[1]);
@@ -668,9 +665,6 @@ class LidoRecord extends BaseRecord
         if ($startDate > $yearNow || $endDate > $yearNow) {
             return null;
         }
-
-        $this->earliestYear = $startDate;
-        $this->latestYear = $startDate;
 
         if (!MetadataUtils::validateISO8601Date($startDate) || !MetadataUtils::validateISO8601Date($endDate)) {
             return null;

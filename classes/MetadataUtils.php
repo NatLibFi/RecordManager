@@ -323,14 +323,7 @@ class MetadataUtils
     static public function validateISO8601Date($date)
     {
         if (preg_match('/^(\-?\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/', $date, $parts) == true) {
-            $time = gmmktime($parts[4], $parts[5], $parts[6], $parts[2], $parts[3], $parts[1]);
-
-            $inputTime = strtotime($date);
-            if ($inputTime === false) {
-                return false;
-            }
-
-            return $inputTime == $time ? $inputTime : false;
+            return strtotime($date);
         }
         return false;
     }
