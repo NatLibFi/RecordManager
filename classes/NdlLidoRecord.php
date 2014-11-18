@@ -386,12 +386,6 @@ class NdlLidoRecord extends LidoRecord
 
         foreach ($dateMappings as $str => $value) {
             if (strstr($input, $str)) {
-                if (is_null($value)) {
-                    file_put_contents('dates.log', "$input\t(null)\t(null)\t" . $this->source . '.' . $this->getID() . "\n", FILE_APPEND);
-                } else {
-                    file_put_contents('dates.log', "$input\t" . substr($value[0], 0, 10) . "\t" . substr($value[1], 0, 10) . "\t" . $this->source . '.' . $this->getID() . "\n", FILE_APPEND);
-                }
-
                 return $value;
             }
         }
@@ -696,9 +690,6 @@ class NdlLidoRecord extends LidoRecord
             $logger->log('NdlLidoRecord', "Invalid date range {$startDate} - {$endDate} parsed from '$input', record {$this->source}." . $this->getID(), Logger::WARNING);
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
         }
-
-        file_put_contents('dates.log', "$input\t" . substr($startDate, 0, 10) . "\t" . substr($endDate, 0, 10) . "\t" . $this->source . '.' . $this->getID() . "\n", FILE_APPEND);
-
 
         return array($startDate, $endDate);
     }
