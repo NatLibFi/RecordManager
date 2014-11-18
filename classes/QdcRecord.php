@@ -71,7 +71,7 @@ class QdcRecord extends BaseRecord
      */
     public function getID()
     {
-        return $this->doc->recordID[0];
+        return (string)$this->doc->recordID[0];
     }
 
     /**
