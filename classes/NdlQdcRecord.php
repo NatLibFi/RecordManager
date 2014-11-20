@@ -64,6 +64,7 @@ class NdlQdcRecord extends QdcRecord
 
         if (isset($data['publishDate'])) {
             $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate']);
+            $data['main_date'] = $this->getPublicationYear() . '-01-01T00:00:00Z';
         }
 
         $data['publication_sdaterange'] = $this->getPublicationDateRange();

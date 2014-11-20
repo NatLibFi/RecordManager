@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2013
+ * Copyright (C) The National Library of Finland 2012-2014
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -33,7 +33,7 @@ require_once 'MetadataUtils.php';
  * NdlDcRecord Class
  *
  * DcRecord with NDL specific functionality
- * 
+ *
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
@@ -50,21 +50,22 @@ class NdlDcRecord extends DcRecord
     public function toSolrArray()
     {
         $data = parent::toSolrArray();
-        
+
         if (isset($data['publishDate'])) {
             $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate']);
+            $data['main_date'] = $this->getPublicationYear() . '-01-01T00:00:00Z';
         }
-        
+
         $data['publication_sdaterange'] = $this->getPublicationDateRange();
         if ($data['publication_sdaterange']) {
             $data['search_sdaterange_mv'][] = $data['publication_sdaterange'];
         }
-        
+
         // language, take only first
         $data['language'] = array_shift(
             array_filter(
                 explode(
-                    ' ', 
+                    ' ',
                     (string)$this->doc->language
                 ),
                 function($value) {
@@ -72,10 +73,10 @@ class NdlDcRecord extends DcRecord
                 }
             )
         );
-        
+
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
-        
+
         return $data;
     }
 
@@ -94,5 +95,5 @@ class NdlDcRecord extends DcRecord
             return MetadataUtils::convertDateRange(array($startDate, $endDate));
         }
         return '';
-    }   
+    }
 }

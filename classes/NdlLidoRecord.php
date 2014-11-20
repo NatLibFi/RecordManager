@@ -112,6 +112,7 @@ class NdlLidoRecord extends LidoRecord
         $daterange = $this->getDateRange('valmistus');
         if ($daterange) {
             $data['main_date_str'] = MetadataUtils::extractYear($daterange[0]);
+            $data['main_date'] = $daterange[0];
             $data['search_sdaterange_mv'][] = $data['creation_sdaterange'] = MetadataUtils::convertDateRange($daterange);
         } else {
             $dateSources = array('suunnittelu' => 'design', 'tuotanto' => 'production', 'kuvaus' => 'photography');
@@ -124,6 +125,7 @@ class NdlLidoRecord extends LidoRecord
                     }
                     if (!isset($data['main_date_str'])) {
                         $data['main_date_str'] = MetadataUtils::extractYear($daterange[0]);
+                        $data['main_date'] = $daterange[0];
                     }
                 }
             }
