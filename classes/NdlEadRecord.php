@@ -59,7 +59,7 @@ class NdlEadRecord extends EadRecord
         $data['search_sdaterange_mv'] = $data['unit_sdaterange'] = MetadataUtils::convertDateRange($unitDateRange);
         if ($unitDateRange) {
             $data['main_date_str'] = MetadataUtils::extractYear($unitDateRange[0]);
-            $data['main_date'] = $unitDateRange[0];
+            $data['main_date'] = $this->validateDate($unitDateRange[0]);
         }
 
         // Single-valued sequence for sorting

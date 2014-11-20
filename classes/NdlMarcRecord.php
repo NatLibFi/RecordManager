@@ -110,7 +110,7 @@ class NdlMarcRecord extends MarcRecord
         $data = parent::toSolrArray();
         if (isset($data['publishDate'])) {
             $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate'][0]);
-            $data['main_date'] = $data['main_date_str'] . '-01-01T00:00:00Z';
+            $data['main_date'] = $this->validateDate($data['main_date_str'] . '-01-01T00:00:00Z');
         }
         $data['publication_sdaterange'] = $this->getPublicationDateRange();
         if ($data['publication_sdaterange']) {

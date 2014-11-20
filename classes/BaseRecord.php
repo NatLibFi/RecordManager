@@ -349,5 +349,20 @@ class BaseRecord
 
         return isset($iniValues[$parameter]) ? $iniValues[$parameter] : $default;
     }
+
+    /**
+     * Verify that a string is valid ISO8601 date
+     *
+     * @param string $dateString Date string
+     *
+     * @return string Valid date string or an empty string if invalid
+     */
+    protected function validateDate($dateString)
+    {
+        if (MetadataUtils::validateISO8601Date($dateString)) {
+            return $dateString;
+        }
+        return '';
+    }
 }
 
