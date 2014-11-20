@@ -5,3 +5,5 @@ RecordManager is a metadata record management system intended to be used in conj
 See INSTALL for simple installation instructions on CentOS 6 systems, adaptable to other systems too.
 
 See the RecordManager wiki for more information (https://github.com/KDK-Alli/RecordManager/wiki).
+
+For a stable version, see the stable branch.
