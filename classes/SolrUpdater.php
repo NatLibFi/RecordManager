@@ -1409,6 +1409,12 @@ class SolrUpdater
             'author_additionalStr'
         );
 
+        if (isset($configArray['Solr']['ignore_in_comparison'])) {
+            $ignoreFields = array_merge($ignoreFields,
+                explode(',', $configArray['Solr']['ignore_in_comparison'])
+            );
+        }
+
         if (!isset($configArray['Solr']['search_url'])) {
             throw new Exception('search_url not set in ini file Solr section');
         }
