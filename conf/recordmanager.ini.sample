@@ -33,7 +33,7 @@ counts = false
 ; Whether to compress record data in MongoDB. Saves space but slows down the operation. 
 ; Not very useful when using TokuMX instead of plain MongoDB.
 compress_records = false
-; Connection timeout in milliseconds. Might be needed e.g. during Solr update if the map/reduce takes a long time
+; Connection timeout in milliseconds. Default is 300 000 ms.
 ; connect_timeout = 12000000
 ; Cursor timeout. Might be needed if a cursor doesn't live long enough for the whole operation to complete.
 ; cursor_timeout = 12000000
