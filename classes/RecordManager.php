@@ -1100,46 +1100,6 @@ class RecordManager
     }
 
     /**
-     * Update the geocoding table with the geocoder selected in settings.
-     *
-     * @param unknown $placeFile File containing places to add (one per file)
-     *
-     * @return void
-     */
-    public function updateGeocodingTable($placeFile)
-    {
-        global $configArray;
-
-        if (!isset($configArray['Geocoding']) || !isset($configArray['Geocoding']['geocoder'])) {
-            throw new Exception('Error: no geocoder defined');
-        }
-
-        include_once $configArray['Geocoding']['geocoder'] . '.php';
-        $geocoder = new $configArray['Geocoding']['geocoder']($this->db, $this->log, $this->verbose);
-        $geocoder->init($configArray['Geocoding']);
-        $geocoder->geocode($placeFile);
-    }
-
-    /**
-     * Resimplify the geocoding table with current geocoder settings.
-     *
-     * @return void
-     */
-    public function resimplifyGeocodingTable()
-    {
-        global $configArray;
-
-        if (!isset($configArray['Geocoding']) || !isset($configArray['Geocoding']['geocoder'])) {
-            throw new Exception('Error: no geocoder defined');
-        }
-
-        include_once $configArray['Geocoding']['geocoder'] . '.php';
-        $geocoder = new $configArray['Geocoding']['geocoder']($this->db, $this->log, $this->verbose);
-        $geocoder->init($configArray['Geocoding']);
-        $geocoder->resimplify();
-    }
-
-    /**
      * Verify consistency of dedup records links with actual records
      *
      * @return void

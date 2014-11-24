@@ -45,7 +45,7 @@ Usage: $argv[0] --func=... [...]
 
 Parameters:
 
---func             renormalize|deduplicate|updatesolr|dump|dumpsolr|markdeleted|deletesource|deletesolr|optimizesolr|count|updategeocoding|resimplifygeocoding|checkdedup|comparesolr
+--func             renormalize|deduplicate|updatesolr|dump|dumpsolr|markdeleted|deletesource|deletesolr|optimizesolr|count|checkdedup|comparesolr
 --source           Source ID to process (separate multiple sources with commas)
 --all              Process all records regardless of their state (deduplicate)
                    or date (updatesolr)
@@ -53,7 +53,6 @@ Parameters:
 --single           Process only the given record id (deduplicate, updatesolr, dump)
 --nocommit         Don't ask Solr to commit the changes (updatesolr)
 --field            Field to analyze (count)
---file             File containing places to geocode (updategeocoding)
 --force            Force deletesource to proceed even if deduplication is enabled for
                    the source
 --verbose          Enable verbose output for debugging
@@ -131,12 +130,6 @@ EOT;
                         isset($params['field']) ? $params['field'] : null,
                         isset($params['mapped']) ? $params['mapped'] : false
                     );
-                    break;
-                case 'updategeocoding':
-                    $manager->updateGeocodingTable(isset($params['file']) ? $params['file'] : null);
-                    break;
-                case 'resimplifygeocoding':
-                    $manager->resimplifyGeocodingTable();
                     break;
                 case 'checkdedup':
                     $manager->checkDedupRecords();
