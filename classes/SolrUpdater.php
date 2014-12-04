@@ -1473,6 +1473,7 @@ class SolrUpdater
             if (isset($timeout)) {
                 $this->request->setConfig('timeout', $timeout);
             }
+            $this->request->setHeader('Connection', 'Keep-Alive');
             $this->request->setHeader('User-Agent', 'RecordManager');
             if (isset($configArray['Solr']['username'])
                 && isset($configArray['Solr']['password'])
@@ -1779,7 +1780,9 @@ class SolrUpdater
             foreach ($settings['enrichments'] as $enrichment) {
                 if (!isset($this->enrichments[$enrichment])) {
                     include_once "$enrichment.php";
-                    $this->enrichments[$enrichment] = new $enrichment($this->db);
+                    $this->enrichments[$enrichment] = new $enrichment(
+                        $this->db, $this->log
+                    );
                 }
                 $this->enrichments[$enrichment]->enrich($source, $record, $data);
             }

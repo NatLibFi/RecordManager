@@ -54,11 +54,12 @@ class MarcOnkiLightEnrichment extends Enrichment
     /**
      * Constructor
      *
-     * @param MongoDB $db Database connection (for cache)
+     * @param MongoDB $db  Database connection (for cache)
+     * @param Logger  $log Logger
      */
-    public function __construct($db)
+    public function __construct($db, $log)
     {
-        parent::__construct($db);
+        parent::__construct($db, $log);
 
         global $configArray;
 

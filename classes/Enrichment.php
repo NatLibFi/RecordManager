@@ -50,6 +50,13 @@ class Enrichment
     protected $db;
 
     /**
+     * Logger
+     *
+     * @var Logger
+     */
+    protected $log;
+
+    /**
      * Maximum age of cached data in seconds
      *
      * @var number
@@ -57,18 +64,47 @@ class Enrichment
     protected $maxCacheAge;
 
     /**
+     * HTTP Request
+     *
+     * @var HTTP_Request2
+     */
+    protected $request = null;
+
+    /**
+     * Maximum number of HTTP request attempts
+     *
+     * @var int
+     */
+    protected $maxTries;
+
+    /**
+     * Delay between HTTP request attempts (seconds)
+     *
+     * @var int
+     */
+    protected $retryWait;
+
+    /**
      * Constructor
      *
-     * @param MongoDB $db Database connection (for cache)
+     * @param MongoDB $db  Database connection (for cache)
+     * @param Logger  $log Logger
      */
-    public function __construct($db)
+    public function __construct($db, $log)
     {
         global $configArray;
 
         $this->db = $db;
+        $this->log = $log;
         $this->maxCacheAge = isset($configArray['Enrichment']['cache_expiration'])
             ? $configArray['Enrichment']['cache_expiration'] * 60
             : 86400;
+        $this->maxTries = isset($configArray['Enrichment']['max_tries'])
+            ? $configArray['Enrichment']['max_tries']
+            : 15;
+        $this->retryWait = isset($configArray['Enrichment']['retry_wait'])
+            ? $configArray['Enrichment']['retry_wait']
+            : 30;
     }
 
     /**
@@ -97,7 +133,6 @@ class Enrichment
     protected function getExternalData($url, $id, $headers = array())
     {
         global $configArray;
-
         $cached = $this->db->uriCache->findOne(
             array(
                 '_id' => $id,
@@ -110,20 +145,54 @@ class Enrichment
             return $cached['data'];
         }
 
-        $request = new HTTP_Request2(
-            $url,
-            HTTP_Request2::METHOD_GET,
-            array(
-                'ssl_verify_peer' => false,
-                'follow_redirects' => true
-            )
-        );
-        $request->setHeader('User-Agent', 'RecordManager');
+        if (is_null($this->request)) {
+            $this->request = new HTTP_Request2(
+                $url,
+                HTTP_Request2::METHOD_GET,
+                array(
+                    'ssl_verify_peer' => false,
+                    'follow_redirects' => true
+                )
+            );
+            $this->request->setHeader('Connection', 'Keep-Alive');
+            $this->request->setHeader('User-Agent', 'RecordManager');
+        } else {
+            $this->request->setUrl($url);
+        }
         if ($headers) {
-            $request->setHeader($headers);
+            $this->request->setHeader($headers);
         }
 
-        $response = $request->send();
+        for ($try = 1; $try <= $this->maxTries; $try++) {
+            try {
+                $response = $this->request->send();
+            } catch (Exception $e) {
+                if ($try < $this->maxTries) {
+                    $this->log->log(
+                        'getExternalData',
+                        'HTTP request failed (' . $e->getMessage() . "), retrying in {$this->retryWait} seconds...",
+                        Logger::WARNING
+                    );
+                    sleep($this->retryWait);
+                    continue;
+                }
+                throw $e;
+            }
+            if ($try < $this->maxTries) {
+                $code = $response->getStatus();
+                if ($code >= 300 && $code != 404) {
+                    $this->log->log(
+                        'getExternalData',
+                        "HTTP request failed ($code), retrying in {$this->retryWait} seconds...",
+                        Logger::WARNING
+                    );
+                    sleep($this->retryWait);
+                    continue;
+                }
+            }
+            break;
+        }
+
         $code = $response->getStatus();
         if ($code >= 300 && $code != 404) {
             throw new Exception("Enrichment failed to fetch '$url': $code");
