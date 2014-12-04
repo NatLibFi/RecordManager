@@ -39,7 +39,7 @@ function main($argv)
 {
     $params = parseArgs($argv);
     applyConfigOverrides($params);
-    if (!isset($params['file'])) {
+    if (empty($params['file'])) {
         echo <<<EOT
 Usage: $argv[0] --file=... [...]
 
