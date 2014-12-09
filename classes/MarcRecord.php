@@ -1121,12 +1121,14 @@ class MarcRecord extends BaseRecord
     public function addDedupKeyToMetadata($dedupKey)
     {
         if ($dedupKey) {
-            $this->fields['995'][] = array(
-                'i1' => ' ',
-                'i2' => ' ',
-                's' => array(
-                    array(
-                        'a' => $dedupKey
+            $this->fields['995'] = array(
+                array(
+                    'i1' => ' ',
+                    'i2' => ' ',
+                    's' => array(
+                        array(
+                            'a' => $dedupKey
+                        )
                     )
                 )
             );
