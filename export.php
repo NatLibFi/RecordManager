@@ -45,17 +45,21 @@ Usage: $argv[0] --file=... [...]
 
 Parameters:
 
---file              The file for records
---deleted           The file for deleted record IDs
---from              From date where to start the export
+--file=...          The file for records
+--deleted=...       The file for deleted record IDs
+--from=...          From date where to start the export
 --verbose           Enable verbose output
 --quiet             Quiet, no output apart from the data
---skip              Skip x records to export only a "representative" subset
---source            Export only the given source
---single            Export single record with the given id
---xpath             Export only records matching the XPath expression
---config.section.name=value
+--skip=...          Skip x records to export only a "representative" subset
+--source=...        Export only the given source(s) (separate multiple sources with commas)
+--single=...        Export single record with the given id
+--xpath=...         Export only records matching the XPath expression
+--config.section.name=...
                     Set configuration directive to given value overriding any setting in recordmanager.ini
+--sortdedup         Sort export file by dedup id
+--dedupid=...       deduped = Add dedup id's to records that have duplicates
+                    always  = Always add dedup id's to the records
+                    Otherwise dedup id's are not added to the records
 
 
 EOT;
@@ -72,7 +76,9 @@ EOT;
         isset($params['skip']) ? $params['skip'] : 0,
         isset($params['source']) ? $params['source'] : '',
         isset($params['single']) ? $params['single'] : '',
-        isset($params['xpath']) ? $params['xpath'] : ''
+        isset($params['xpath']) ? $params['xpath'] : '',
+        isset($params['sortdedup']) ? $params['sortdedup'] : false,
+        isset($params['dedupid']) ? $params['dedupid'] : ''
     );
 }
 
