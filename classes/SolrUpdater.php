@@ -1374,7 +1374,8 @@ class SolrUpdater
         );
 
         if (isset($configArray['Solr']['ignore_in_comparison'])) {
-            $ignoreFields = array_merge($ignoreFields,
+            $ignoreFields = array_merge(
+                $ignoreFields,
                 explode(',', $configArray['Solr']['ignore_in_comparison'])
             );
         }
