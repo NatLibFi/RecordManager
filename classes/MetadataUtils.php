@@ -519,7 +519,6 @@ class MetadataUtils
                         && (is_numeric($nextFirst) || !ctype_lower($nextFirst))
                         && !preg_match('/.+\-\w{1,2}\.$/', $word)
                     ) {
-file_put_contents('words.log', "$word\n", FILE_APPEND);
                         return  metadataUtils::stripTrailingPunctuation(
                             implode(' ', array_splice($titleWords, 0, $i))
                         );

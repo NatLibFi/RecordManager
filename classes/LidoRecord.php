@@ -113,10 +113,8 @@ class LidoRecord extends BaseRecord
         if ($this->getDriverParam('splitTitles', false)) {
             $titlePart = MetadataUtils::splitTitle($title);
             if ($titlePart) {
-file_put_contents('titles.log', "ORIG: $title\n", FILE_APPEND);
                 $data['description'] = $title;
                 $title = $titlePart;
-file_put_contents('titles.log', "NEW:  $title\n\n", FILE_APPEND);
             }
         }
         $data['title'] = $data['title_short'] = $data['title_full'] = $title;
