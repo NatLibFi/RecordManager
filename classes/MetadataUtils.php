@@ -238,7 +238,9 @@ class MetadataUtils
             } else {
                 $lastWord = $str;
             }
-            if (!in_array($lastWord, MetadataUtils::$abbreviations)) {
+            if (!is_numeric($lastWord)
+                && !in_array(strtolower($lastWord), MetadataUtils::$abbreviations)
+            ) {
                 $str = substr($str, 0, -1);
             }
         }
@@ -477,5 +479,54 @@ class MetadataUtils
             $chars
         );
         return $array;
+    }
+
+    /**
+     * Split title to main title and description. Tries to find the first sentence
+     * break where the title can be split.
+     *
+     * @param string $title Title to split
+     *
+     * @return null|string Null if title was not split, otherwise the initial
+     * title part
+     */
+    public static function splitTitle($title)
+    {
+        $i = 0;
+        $parenLevel = 0;
+        $bracketLevel = 0;
+        $titleWords = explode(' ', $title);
+        foreach ($titleWords as $word) {
+            ++$i;
+            $parenLevel += substr_count($word, '(');
+            $parenLevel -= substr_count($word, ')');
+            $bracketLevel += substr_count($word, '[');
+            $bracketLevel -= substr_count($word, ']');
+            if ($parenLevel == 0 && $bracketLevel == 0) {
+                if (substr($word, -1) == '.' && strlen($word) > 2) {
+                    // Verify that the word is strippable (not abbreviation etc.)
+                    $leadStripped = MetadataUtils::stripLeadingPunctuation(
+                        $word
+                    );
+                    $stripped = metadataUtils::stripTrailingPunctuation(
+                        $leadStripped
+                    );
+                    $nextFirst = isset($titleWords[$i])
+                        ? substr($titleWords[$i], 0, 1)
+                        : '';
+                    if ($nextFirst
+                        && $leadStripped != $stripped
+                        && (is_numeric($nextFirst) || !ctype_lower($nextFirst))
+                        && !preg_match('/.+\-\w{1,2}\.$/', $word)
+                    ) {
+file_put_contents('words.log', "$word\n", FILE_APPEND);
+                        return  metadataUtils::stripTrailingPunctuation(
+                            implode(' ', array_splice($titleWords, 0, $i))
+                        );
+                    }
+                }
+            }
+        }
+        return null;
     }
 }

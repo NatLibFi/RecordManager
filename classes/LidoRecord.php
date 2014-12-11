@@ -109,7 +109,17 @@ class LidoRecord extends BaseRecord
         $doc = $this->doc;
         $lang = $this->getDefaultLanguage();
 
-        $data['title'] = $data['title_short'] = $data['title_full'] = $this->getTitle(false, $lang);
+        $title = $this->getTitle(false, $lang);
+        if ($this->getDriverParam('splitTitles', false)) {
+            $titlePart = MetadataUtils::splitTitle($title);
+            if ($titlePart) {
+file_put_contents('titles.log', "ORIG: $title\n", FILE_APPEND);
+                $data['description'] = $title;
+                $title = $titlePart;
+file_put_contents('titles.log', "NEW:  $title\n\n", FILE_APPEND);
+            }
+        }
+        $data['title'] = $data['title_short'] = $data['title_full'] = $title;
         $allTitles = $this->getTitle(false);
         foreach (explode('; ', $allTitles) as $title) {
             if ($title != $data['title']) {
@@ -117,7 +127,14 @@ class LidoRecord extends BaseRecord
             }
         }
         $data['title_sort'] = $this->getTitle(true, $lang);
-        $data['description'] = $this->getDescription();
+        $description = $this->getDescription();
+        if ($description) {
+            if (!empty($data['description'])) {
+                $data['description'] .= " -- $description";
+            } else {
+                $data['description'] = $description;
+            }
+        }
 
         $data['format'] = $this->getObjectWorkType();
 
