@@ -518,6 +518,7 @@ class MetadataUtils
                         && $leadStripped != $stripped
                         && (is_numeric($nextFirst) || !ctype_lower($nextFirst))
                         && !preg_match('/.+\-\w{1,2}\.$/', $word)
+                        && !preg_match('/^\w\.\w\.$/', $word) // initials
                     ) {
                         return  metadataUtils::stripTrailingPunctuation(
                             implode(' ', array_splice($titleWords, 0, $i))
