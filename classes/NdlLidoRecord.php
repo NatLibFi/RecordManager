@@ -109,10 +109,21 @@ class NdlLidoRecord extends LidoRecord
         $data['classification_str_mv'] = $this->getClassifications();
         $data['exhibition_str_mv'] = $this->getEventNames('näyttely');
 
+        foreach ($this->getSubjectDateRanges() as $range) {
+            if (!isset($data['main_date_str'])) {
+                $data['main_date_str'] = MetadataUtils::extractYear($range[0]);
+                $data['main_date'] = $this->validateDate($range[0]);
+            }
+            $data['search_sdaterange_mv'][]
+                = MetadataUtils::convertDateRange($range);
+        }
+
         $daterange = $this->getDateRange('valmistus');
         if ($daterange) {
-            $data['main_date_str'] = MetadataUtils::extractYear($daterange[0]);
-            $data['main_date'] = $this->validateDate($daterange[0]);
+            if (!isset($data['main_date_str'])) {
+                $data['main_date_str'] = MetadataUtils::extractYear($daterange[0]);
+                $data['main_date'] = $this->validateDate($daterange[0]);
+            }
             $data['search_sdaterange_mv'][] = $data['creation_sdaterange'] = MetadataUtils::convertDateRange($daterange);
         } else {
             $dateSources = array('suunnittelu' => 'design', 'tuotanto' => 'production', 'kuvaus' => 'photography');
@@ -268,7 +279,7 @@ class NdlLidoRecord extends LidoRecord
      *
      * @param string $event Which event to use (omit to scan all events)
      *
-     * @return string[] Two ISO 8601 dates
+     * @return null|string[] Null if parsing failed, two ISO 8601 dates otherwise
      */
     protected function getDateRange($event = null)
     {
@@ -293,6 +304,55 @@ class NdlLidoRecord extends LidoRecord
             }
         }
 
+        return $this->processDateRangeValues(
+            $startDate, $endDate, $displayDate, $periodName
+        );
+    }
+
+    /**
+     * Return the date ranges associated with subjects
+     *
+     * @return string[][] Array of two ISO 8601 dates
+     */
+    protected function getSubjectDateRanges()
+    {
+        $ranges = array();
+        foreach ($this->getSubjectNodes() as $node) {
+            $startDate = '';
+            $endDate = '';
+            $displayDate = '';
+            if (!empty($node->subjectDate->date->earliestDate)
+                && !empty($node->subjectDate->date->latestDate)
+            ) {
+                $startDate = (string)$node->subjectDate->date->earliestDate;
+                $endDate = (string)$node->subjectDate->date->latestDate;
+            }
+            if (!empty($node->subjectDate->displayDate)) {
+                $displayDate = (string)$node->subjectDate->displayDate;
+            }
+            $range = $this->processDateRangeValues(
+                $startDate, $endDate, $displayDate, ''
+            );
+            if ($range) {
+                $ranges[] = $range;
+            }
+        }
+        return $ranges;
+    }
+
+    /**
+     * Process extracted date values and create best possible date range
+     *
+     * @param string $startDate   Start date
+     * @param string $endDate     End date
+     * @param string $displayDate Display date
+     * @param string $periodName  Period name
+     *
+     * @return null|string[] Null if parsing failed, two ISO 8601 dates otherwise
+     */
+    protected function processDateRangeValues(
+        $startDate, $endDate, $displayDate, $periodName
+    ) {
         if ($startDate) {
             if ($endDate < $startDate) {
                 global $logger;
