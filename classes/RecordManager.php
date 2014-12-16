@@ -1152,6 +1152,38 @@ class RecordManager
     }
 
     /**
+     * Search for $regexp in data sources
+     *
+     * @param string $regexp Regular expression
+     *
+     * @return void
+     */
+    public function searchDataSources($regexp)
+    {
+        if (substr($regexp, 0, 1) !== '/') {
+            $regexp = "/$regexp/";
+        }
+        $matches = '';
+        foreach ($this->dataSourceSettings as $source => $settings) {
+            foreach ($settings as $setting => $value) {
+                foreach (is_array($value) ? $value : array($value) as $single) {
+                    if (!is_string($single)) {
+                        continue;
+                    }
+                    if (preg_match($regexp, "$setting=$single")) {
+                        if ($matches) {
+                            $matches .= ',';
+                        }
+                        $matches .= $source;
+                        break 2;
+                    }
+                }
+            }
+        }
+        echo "$matches\n";
+    }
+
+    /**
      * Execute a pretransformation on data before it is split into records and loaded. Used when loading from a file.
      *
      * @param string $data The original data
