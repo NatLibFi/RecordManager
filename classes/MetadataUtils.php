@@ -519,8 +519,14 @@ class MetadataUtils
                     $nextFirst = isset($titleWords[$i])
                         ? substr($titleWords[$i], 0, 1)
                         : '';
+                    // 1.) There has to be something following this word.
+                    // 2.) The trailing period must be strippable or end with a year.
+                    // 3.) Next word has to start with a capital or digit
+                    // 4.) Not something like 12-p.
+                    // 5.) Not initials like A.N.
                     if ($nextFirst
-                        && $leadStripped != $stripped
+                        && ($leadStripped != $stripped
+                        || preg_match('/^\d{4}\.$/', $word))
                         && (is_numeric($nextFirst) || !ctype_lower($nextFirst))
                         && !preg_match('/.+\-\w{1,2}\.$/', $word)
                         && !preg_match('/^\w\.\w\.$/', $word) // initials
