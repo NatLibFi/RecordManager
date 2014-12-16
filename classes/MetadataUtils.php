@@ -495,6 +495,8 @@ class MetadataUtils
         $i = 0;
         $parenLevel = 0;
         $bracketLevel = 0;
+        // Make sure the title has single spaces for whitespace
+        $title = preg_replace('/\s+/', ' ', $title);
         $titleWords = explode(' ', $title);
         foreach ($titleWords as $word) {
             ++$i;
@@ -503,7 +505,10 @@ class MetadataUtils
             $bracketLevel += substr_count($word, '[');
             $bracketLevel -= substr_count($word, ']');
             if ($parenLevel == 0 && $bracketLevel == 0) {
-                if (substr($word, -1) == '.' && strlen($word) > 2) {
+                // Try to avoid splitting at short words or the very beginning
+                if (substr($word, -1) == '.' && strlen($word) > 2
+                    && ($i > 1 || strlen($word) > 4)
+                ) {
                     // Verify that the word is strippable (not abbreviation etc.)
                     $leadStripped = MetadataUtils::stripLeadingPunctuation(
                         $word
