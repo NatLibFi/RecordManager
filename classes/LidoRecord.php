@@ -127,10 +127,10 @@ class LidoRecord extends BaseRecord
         $data['title_sort'] = $this->getTitle(true, $lang);
         $description = $this->getDescription();
         if ($description) {
-            if (!empty($data['description'])) {
-                if ($data['description'] != $description) {
-                    $data['description'] .= " -- $description";
-                }
+            if (!empty($data['description']) && strncmp(
+                $data['description'], $description, strlen($data['description'])
+            )) {
+                $data['description'] .= " -- $description";
             } else {
                 $data['description'] = $description;
             }
