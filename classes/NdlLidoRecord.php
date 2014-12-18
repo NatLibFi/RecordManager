@@ -246,7 +246,7 @@ class NdlLidoRecord extends LidoRecord
             }
         }
 
-        return implode(' ', array_merge($descriptionWrapDescriptions, $subjectDescriptions));
+        return trim(implode(' ', array_merge($descriptionWrapDescriptions, $subjectDescriptions)));
     }
 
     /**

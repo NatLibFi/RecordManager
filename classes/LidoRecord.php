@@ -128,7 +128,9 @@ class LidoRecord extends BaseRecord
         $description = $this->getDescription();
         if ($description) {
             if (!empty($data['description'])) {
-                $data['description'] .= " -- $description";
+                if ($data['description'] != $description) {
+                    $data['description'] .= " -- $description";
+                }
             } else {
                 $data['description'] = $description;
             }
@@ -314,7 +316,7 @@ class LidoRecord extends BaseRecord
             return '';
         }
 
-        return implode(' ', $description);
+        return trim(implode(' ', $description));
     }
 
     /**
