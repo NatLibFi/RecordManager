@@ -298,6 +298,15 @@ class SolrUpdater
                     exit(1);
                 }
                 $id = $record['dedup_id'];
+                if (isset($record['update_needed']) && $record['update_needed']) {
+                    $this->log->log(
+                        'processMerged',
+                        "Record {$record['_id']} needs deduplication and would not"
+                        . " be processed in a normal update",
+                        Logger::WARNING
+                    );
+                }
+
                 if (!isset($prevId) || $prevId != $id) {
                     $collection->insert(array('_id' => $id), array('w' => 0));
                     ++$totalMergeCount;
@@ -731,6 +740,15 @@ class SolrUpdater
                     $this->log->log('updateRecords', 'Termination upon request (individual record handler)');
                     exit(1);
                 }
+                if (isset($record['update_needed']) && $record['update_needed']) {
+                    $this->log->log(
+                        'updateRecords',
+                        "Record {$record['_id']} needs deduplication and would not"
+                        . " be processed in a normal update",
+                        Logger::WARNING
+                    );
+                }
+
                 if ($record['deleted']) {
                     if (!$compare) {
                         $this->bufferedDelete((string)$record['_id']);
