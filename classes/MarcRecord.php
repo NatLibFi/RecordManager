@@ -768,14 +768,7 @@ class MarcRecord extends BaseRecord
         $fields = $this->getFields('020');
         foreach ($fields as $field) {
             $isbn = $this->getSubfield($field, 'a');
-            $isbn = str_replace('-', '', $isbn);
-            if (!preg_match('{([0-9]{9,12}[0-9xX])}', $isbn, $matches)) {
-                continue;
-            };
-            $isbn = $matches[1];
-            if (strlen($isbn) == 10) {
-                $isbn = MetadataUtils::isbn10to13($isbn);
-            }
+            $isbn = MetadataUtils::normalizeISBN($isbn);
             if ($isbn) {
                 $arr[] = $isbn;
             }

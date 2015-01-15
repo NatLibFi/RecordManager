@@ -153,6 +153,26 @@ class MetadataUtils
     }
 
     /**
+     * Normalize an ISBN to ISBN-13 without dashes
+     *
+     * @param string $isbn ISBN to normalize
+     *
+     * @return string Normalized ISBN
+     */
+    static public function normalizeISBN($isbn)
+    {
+        $isbn = str_replace('-', '', $isbn);
+        if (!preg_match('{([0-9]{9,12}[0-9xX])}', $isbn, $matches)) {
+            continue;
+        };
+        $isbn = $matches[1];
+        if (strlen($isbn) == 10) {
+            $isbn = MetadataUtils::isbn10to13($isbn);
+        }
+        return $isbn;
+    }
+
+    /**
      * Try to match two authors with at least last name and initial letter of first name
      *
      * @param string $a1 LastName FirstName
