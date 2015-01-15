@@ -60,6 +60,32 @@ class NdlEadRecord extends EadRecord
         if ($unitDateRange) {
             $data['main_date_str'] = MetadataUtils::extractYear($unitDateRange[0]);
             $data['main_date'] = $this->validateDate($unitDateRange[0]);
+            // Append year range to title (only years, not the full dates)
+            $startYear = MetadataUtils::extractYear($unitDateRange[0]);
+            $endYear = MetadataUtils::extractYear($unitDateRange[1]);
+            $yearRange = '';
+            if ($startYear != '-9999') {
+                $yearRange = $startYear;
+            }
+            if ($endYear != $startYear) {
+                $yearRange .= '-';
+                if ($endYear != '9999') {
+                    $yearRange .= $endYear;
+                }
+            }
+            if ($yearRange) {
+                $len = strlen($yearRange);
+                foreach (
+                    array('title_full', 'title_sort', 'title', 'title_short')
+                    as $field
+                ) {
+                    if (substr($data[$field], -$len) != $yearRange
+                        && substr($data[$field], -$len - 2) != "($yearRange)"
+                    ) {
+                        $data[$field] .= " ($yearRange)";
+                    }
+                }
+            }
         }
 
         // Single-valued sequence for sorting
