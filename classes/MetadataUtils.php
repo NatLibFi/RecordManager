@@ -157,13 +157,13 @@ class MetadataUtils
      *
      * @param string $isbn ISBN to normalize
      *
-     * @return string Normalized ISBN
+     * @return string Normalized ISBN or empty string
      */
     static public function normalizeISBN($isbn)
     {
         $isbn = str_replace('-', '', $isbn);
         if (!preg_match('{([0-9]{9,12}[0-9xX])}', $isbn, $matches)) {
-            continue;
+            return '';
         };
         $isbn = $matches[1];
         if (strlen($isbn) == 10) {
