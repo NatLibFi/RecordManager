@@ -71,12 +71,12 @@ class SolrUpdater
 
     protected $mergedFields = array('institution', 'collection', 'building',
         'language', 'physical', 'publisher', 'publishDate', 'contents', 'url',
-        'ctrlnum', 'author2', 'author_additional', 'title_alt', 'title_old',
+        'ctrlnum', 'author=author2', 'author2', 'author_additional', 'title_alt', 'title_old',
         'title_new', 'dateSpan', 'series', 'series2', 'topic', 'genre', 'geographic',
         'era', 'long_lat', 'isbn', 'issn');
 
     protected $singleFields = array('title', 'title_short', 'title_full',
-        'title_sort', 'author', 'author-letter', 'format', 'publishDateSort',
+        'title_sort', 'author-letter', 'format', 'publishDateSort',
         'callnumber', 'callnumber-a', 'callnumber-first-code', 'illustrated',
         'first_indexed', 'last-indexed');
 
@@ -530,6 +530,9 @@ class SolrUpdater
 
                 // Remove duplicate fields from the merged record
                 foreach ($merged as $fieldkey => $value) {
+                    if ($fieldkey == 'author=author2') {
+                        $fieldkey = 'author2';
+                    }
                     if (substr($fieldkey, -3, 3) == '_mv'
                         || isset($this->mergedFields[$fieldkey])
                     ) {
@@ -1346,7 +1349,15 @@ class SolrUpdater
             $merged['local_ids_str_mv'][] = $add['id'];
         }
         foreach ($add as $key => $value) {
-            if (substr($key, -3, 3) == '_mv' || isset($this->mergedFields[$key])) {
+            $authorSpecial = $key == 'author'
+                && isset($this->mergedFields['author=author2']);
+            if (substr($key, -3, 3) == '_mv' || isset($this->mergedFields[$key])
+                || ($authorSpecial && isset($merged['author'])
+                && $merged['author'] !== $value)
+            ) {
+                if ($authorSpecial) {
+                    $key = 'author2';
+                }
                 if (!isset($merged[$key])) {
                     $merged[$key] = array();
                 } elseif (!is_array($merged[$key])) {
@@ -1354,7 +1365,9 @@ class SolrUpdater
                 }
                 $values = is_array($value) ? $value : array($value);
                 $merged[$key] = array_values(array_merge($merged[$key], $values));
-            } elseif (isset($this->singleFields[$key])) {
+            } elseif (isset($this->singleFields[$key])
+                || ($authorSpecial && !isset($merged[$key]))
+            ) {
                 if (empty($merged[$key])) {
                     $merged[$key] = $value;
                 }
