@@ -326,6 +326,17 @@ class BaseRecord
     }
 
     /**
+     * Check if record has access restrictions.
+     *
+     * @return string 'restricted' or more specific licence id if restricted,
+     * empty string otherwise
+     */
+    public function getAccessRestrictions()
+    {
+        return '';
+    }
+
+    /**
      * Return a parameter specified in driverParams[] of datasources.ini
      *
      * @param string $parameter Parameter name

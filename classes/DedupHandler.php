@@ -148,6 +148,16 @@ class DedupHandler
     {
         $result = false;
 
+        if ($metadataRecord->getAccessRestrictions()) {
+            $result = isset($record['title_keys'])
+                || isset($record['isbn_keys'])
+                || isset($record['id_keys']);
+            unset($record['title_keys']);
+            unset($record['isbn_keys']);
+            unset($record['id_keys']);
+            return $result;
+        }
+
         $keys = array(MetadataUtils::createTitleKey(
             $metadataRecord->getTitle(true)
         ));
@@ -228,6 +238,7 @@ class DedupHandler
                     if ($candidate['deleted'] || $candidate['source_id'] == $record['source_id']) {
                         continue;
                     }
+
                     // Don't bother with id or title dedup if ISBN dedup already failed
                     if ($type != 'isbn_keys') {
                         if (isset($candidate['isbn_keys'])) {
@@ -266,6 +277,9 @@ class DedupHandler
 
                     if (!isset($origRecord)) {
                         $origRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
+                        if ($origRecord->getAccessRestrictions()) {
+                            break 2;
+                        }
                     }
                     if ($this->matchRecords($record, $origRecord, $candidate)) {
                         if ($this->verbose && ($processed > 300 || microtime(true) - $startTime > 0.7)) {
@@ -382,7 +396,15 @@ class DedupHandler
             echo "\nCandidate " . $candidate['_id'] . ":\n" . MetadataUtils::getRecordData($candidate, true) . "\n";
         }
 
-        // Check format before anything else
+        // Check that the record does not have access restrictions
+        if ($cRecord->getAccessRestrictions()) {
+            if ($this->verbose) {
+                echo "--Candidate has access restrictions\n";
+            }
+            return false;
+        }
+
+        // Check format
         $origFormat = $origRecord->getFormat();
         $cFormat = $cRecord->getFormat();
         if ($origFormat != $cFormat && $this->solrUpdater->mapFormat($record['source_id'], $origFormat) != $this->solrUpdater->mapFormat($candidate['source_id'], $cFormat)) {
