@@ -217,7 +217,7 @@ class EadSplitter
      */
     protected function appendXMLFiltered(&$simplexml, $append)
     {
-        if ($append) {
+        if ($append !== null) {
             $name = $append->getName();
             if ($name == 'c' || (substr($name, 0, 1) == 'c' && is_numeric(substr($name, 1)))) {
                 return;
