@@ -72,9 +72,9 @@ class MarcOnkiLightEnrichment extends Enrichment
     /**
      * Enrich the record and return any additions in solrArray
      *
-     * @param string    $sourceId   Source ID
-     * @param multitype $record     Record
-     * @param array     &$solrArray Metadata to be sent to Solr
+     * @param string    $sourceId  Source ID
+     * @param multitype $record    Record
+     * @param array     $solrArray Metadata to be sent to Solr
      *
      * @return void
      */
@@ -90,11 +90,11 @@ class MarcOnkiLightEnrichment extends Enrichment
     /**
      * Enrich the record and return any additions in solrArray
      *
-     * @param string    $sourceId   Source ID
-     * @param multitype $record     Record
-     * @param array     &$solrArray Metadata to be sent to Solr
-     * @param string    $marcField  MARC field code to use
-     * @param string    $solrField  Target Solr field
+     * @param string    $sourceId  Source ID
+     * @param multitype $record    Record
+     * @param array     $solrArray Metadata to be sent to Solr
+     * @param string    $marcField MARC field code to use
+     * @param string    $solrField Target Solr field
      *
      * @return void
      */

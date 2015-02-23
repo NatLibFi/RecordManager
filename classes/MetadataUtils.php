@@ -392,8 +392,9 @@ class MetadataUtils
     /**
      * Get record metadata from a database record
      *
-     * @param object &$record    Database record
-     * @param bool   $normalized Whether to return the original (false) or normalized (true) record
+     * @param object $record     Database record
+     * @param bool   $normalized Whether to return the original (false) or
+     * normalized (true) record
      *
      * @return string Metadata as a string
      */
@@ -482,7 +483,7 @@ class MetadataUtils
     }
 
     /**
-     * trim for arrays
+     * Trim for arrays
      *
      * @param string[] $array Array of strings to trim
      * @param string   $chars Characters to trim

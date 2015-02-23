@@ -139,7 +139,7 @@ class DedupHandler
     /**
      * Update dedup candidate keys for the given record
      *
-     * @param object &$record        Database record
+     * @param object $record         Database record
      * @param object $metadataRecord Metadata record for the used format
      *
      * @return boolean Whether anything was changed

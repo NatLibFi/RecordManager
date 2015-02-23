@@ -1370,9 +1370,12 @@ class MarcRecord extends BaseRecord
     public function getIndicator($field, $indicator)
     {
         switch ($indicator) {
-        case 1: return $field['i1'];
-        case 2: return $field['i2'];
-        default: die("Invalid indicator '$indicator' requested\n");
+        case 1:
+            return $field['i1'];
+        case 2:
+            return $field['i2'];
+        default:
+            die("Invalid indicator '$indicator' requested\n");
         }
     }
 

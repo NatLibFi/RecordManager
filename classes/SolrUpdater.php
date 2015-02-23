@@ -1025,8 +1025,9 @@ class SolrUpdater
     /**
      * Create Solr array for the given record
      *
-     * @param object  $record            Mongo record
-     * @param integer &$mergedComponents Number of component parts merged to the record
+     * @param object  $record           Mongo record
+     * @param integer $mergedComponents Number of component parts merged to the
+     * record
      *
      * @return string[]
      */
@@ -1303,8 +1304,7 @@ class SolrUpdater
 
         $data = array_filter(
             $data,
-            function($value)
-            {
+            function($value) {
                 return !(empty($value) && $value !== 0 && $value !== 0.0 && $value !== '0');
             }
         );
@@ -1802,7 +1802,7 @@ class SolrUpdater
      * @param string $source   Source ID
      * @param array  $settings Data source settings
      * @param object $record   Metadata record
-     * @param array  &$data    Array of Solr fields
+     * @param array  $data     Array of Solr fields
      *
      * @return void
      */

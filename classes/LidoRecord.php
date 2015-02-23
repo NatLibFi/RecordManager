@@ -259,7 +259,7 @@ class LidoRecord extends BaseRecord
      * identification number, assigned to the object by the institution of custody."
      * (usually differs from a technical database id)
      *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#repositorySetComplexType
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#repositorySetComplexType
      * @return string
      */
     protected function getIdentifier()
@@ -277,7 +277,7 @@ class LidoRecord extends BaseRecord
     /**
      * Return the legal body name.
      *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#legalBodyRefComplexType
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#legalBodyRefComplexType
      * @return string
      */
     protected function getLegalBodyName()
@@ -295,7 +295,7 @@ class LidoRecord extends BaseRecord
     /**
      * Return the object description.
      *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#descriptiveNoteComplexType
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#descriptiveNoteComplexType
      * @return string
      */
     protected function getDescription()
@@ -322,7 +322,7 @@ class LidoRecord extends BaseRecord
     /**
      * Return all the cultures associated with an object.
      *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#eventComplexType
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#eventComplexType
      * @return string[]
      */
     protected function getCulture()
@@ -341,7 +341,7 @@ class LidoRecord extends BaseRecord
     /**
      * Return the object type.
      *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectWorkTypeWrap
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectWorkTypeWrap
      * @return string
      */
     protected function getObjectWorkType()
@@ -456,7 +456,7 @@ class LidoRecord extends BaseRecord
     /**
      * Return the rights of the object.
      *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#rightsComplexType
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#rightsComplexType
      * @return string
      */
     protected function getRights()
@@ -494,7 +494,7 @@ class LidoRecord extends BaseRecord
      * @param string[] $exclude List of subject types to exclude (defaults to
      * 'iconclass' since it doesn't contain human readable terms)
      *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#subjectComplexType
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#subjectComplexType
      * @return string[]
      */
     protected function getSubjectTerms($exclude = array('iconclass'))
@@ -559,7 +559,7 @@ class LidoRecord extends BaseRecord
      *
      * @param string $eventType Which event to use
      *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#materialsTechSetComplexType
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#materialsTechSetComplexType
      * @return string[]
      */
     protected function getEventMaterials($eventType)

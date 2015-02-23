@@ -220,7 +220,7 @@ class NdlLidoRecord extends LidoRecord
     /**
      * Return the object description.
      *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#descriptiveNoteComplexType
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#descriptiveNoteComplexType
      * @return string
      */
     protected function getDescription()
@@ -255,7 +255,7 @@ class NdlLidoRecord extends LidoRecord
      * @param string[] $exclude List of subject types to exclude (defaults to 'aihe'
      * and 'iconclass' since they don't contain human readable terms)
      *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#subjectComplexType
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#subjectComplexType
      * @return string
      * @access public
      */
@@ -759,7 +759,7 @@ class NdlLidoRecord extends LidoRecord
     /**
      * Return the classifications.
      *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#objectClassificationWrap
      * @return string[]
      */
     protected function getClassifications()
@@ -797,7 +797,7 @@ class NdlLidoRecord extends LidoRecord
     /**
      * Return the rights holder legal body name.
      *
-     * @link http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#legalBodyRefComplexType
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html#legalBodyRefComplexType
      * @return string
      */
     protected function getRightsHolderLegalBodyName()

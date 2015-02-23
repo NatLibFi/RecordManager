@@ -377,7 +377,7 @@ class HarvestHTTPFiles
     /**
      * Process the records xml
      *
-     * @param XMLReader &$xml XML File of records
+     * @param XMLReader $xml XML File of records
      *
      * @return void
      */
@@ -509,8 +509,8 @@ class HarvestHTTPFiles
     /**
      * Normalize a record
      *
-     * @param SimpleXMLElement &$record Record
-     * @param string           $id      Record ID
+     * @param SimpleXMLElement $record Record
+     * @param string           $id     Record ID
      *
      * @return void
      */

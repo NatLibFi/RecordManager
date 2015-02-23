@@ -93,8 +93,8 @@ class HarvestSfx extends HarvestHTTPFiles
     /**
      * Normalize a record
      *
-     * @param SimpleXMLElement &$record Record
-     * @param string           $id      Record ID
+     * @param SimpleXMLElement $record Record
+     * @param string           $id     Record ID
      *
      * @return void
      */

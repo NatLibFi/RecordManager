@@ -48,7 +48,7 @@ class FileSplitter
 
     /**
      * Construct the splitter
-     * 
+     *
      * @param mixed  $data        XML string or DOM document
      * @param string $recordXPath XPath used to find the records
      * @param string $oaiIDXPath  XPath used to find the records' oaiID's (relative to record)
@@ -70,7 +70,7 @@ class FileSplitter
 
     /**
      * Check whether EOF has been encountered
-     * 
+     *
      * @return boolean
      */
     public function getEOF()
@@ -80,9 +80,9 @@ class FileSplitter
 
     /**
      * Get next record
-     * 
-     * @param string &$oaiID OAI Identifier (if XPath specified in constructor)
-     * 
+     *
+     * @param string $oaiID OAI Identifier (if XPath specified in constructor)
+     *
      * @return string|boolean
      */
     public function getNextRecord(&$oaiID)
