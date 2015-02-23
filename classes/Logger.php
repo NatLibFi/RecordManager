@@ -78,7 +78,8 @@ class Logger
      *
      * @param string $context Context of the log message (e.g. current function)
      * @param string $msg     Actual message
-     * @param int    $level   Message level used to filter logged messages. Default is INFO (3)
+     * @param int    $level   Message level used to filter logged messages. Default
+     * is INFO (3)
      *
      * @return void
      */
@@ -87,15 +88,20 @@ class Logger
         if ($this->logLevel < $level) {
             return;
         }
-        $msg = date('Y-m-d H:i:s') . ' [' . getmypid() . '] [' . $this->logLevelToStr($level) . "] [$context] $msg\n";
+        $msg = date('Y-m-d H:i:s') . ' [' . getmypid() . '] ['
+            . $this->logLevelToStr($level) . "] [$context] $msg\n";
         if ($this->logFile) {
-            if ($this->maxFileSize && file_exists($this->logFile) && filesize($this->logFile) > $this->maxFileSize * 1024 * 1024) {
+            if ($this->maxFileSize && file_exists($this->logFile)
+                && filesize($this->logFile) > $this->maxFileSize * 1024 * 1024
+            ) {
                 if (file_exists($this->logFile . '.' . $this->maxFileHistory)) {
                     unlink($this->logFile . '.' . $this->maxFileHistory);
                 }
                 for ($i = $this->maxFileHistory - 1; $i >= 0; $i--) {
-                    if (file_exists($this->logFile . '.' . $i)) {
-                        rename($this->logFile . '.' . $i, $this->logFile . '.' . ($i + 1));
+                    $logFileName = $this->logFile . '.' . $i;
+                    if (file_exists($logFileName)) {
+                        $newLogFileName = $this->logFile . '.' . ($i + 1);
+                        rename($logFileName, $newLogFileName);
                     }
                 }
                 rename($this->logFile, $this->logFile . '.0');
@@ -104,11 +110,18 @@ class Logger
         }
         if (strlen($msg) > 4096) {
             // Avoid throwing a large error on the console or in the email
-            $msg = substr($msg, 0, 2048) . "\n\n[... Truncated - See log for full message ...]\n\n" . substr($msg, -2048);
+            $msg = substr($msg, 0, 2048)
+                . "\n\n[... Truncated - See log for full message ...]\n\n"
+                . substr($msg, -2048);
         }
         if ($level == Logger::FATAL && $this->errorEmail) {
-            $email = "RecordManager encountered the following fatal error: " . PHP_EOL . PHP_EOL . $msg;
-            mail($this->errorEmail, 'RecordManager Error Report', $email);
+            $email = "RecordManager encountered the following fatal error: "
+                . PHP_EOL . PHP_EOL . $msg;
+            mail(
+                $this->errorEmail,
+                'RecordManager Error Report (' . gethostname() . ')',
+                $email
+            );
         }
         if ($this->logToConsole) {
             if ($level == Logger::INFO) {
