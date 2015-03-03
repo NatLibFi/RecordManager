@@ -136,7 +136,7 @@ class MarcOnkiLightEnrichment extends Enrichment
                         $solrArray[$solrField][] = $item['altLabel']['value'];
                     }
 
-                    if (isset($item['skos:exactMatch'])) {
+                    if (!empty($item['skos:exactMatch']['uri'])) {
                         $matchURL = $matchId = $item['skos:exactMatch']['uri'];
                         if (strncmp($matchURL, 'http', 4) !== 0) {
                             $url = $this->onkiLightBaseURL

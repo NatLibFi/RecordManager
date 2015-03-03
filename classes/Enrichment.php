@@ -170,7 +170,7 @@ class Enrichment
                 if ($try < $this->maxTries) {
                     $this->log->log(
                         'getExternalData',
-                        'HTTP request failed (' . $e->getMessage() . "), retrying in {$this->retryWait} seconds...",
+                        "HTTP request for '$url' failed (" . $e->getMessage() . "), retrying in {$this->retryWait} seconds...",
                         Logger::WARNING
                     );
                     sleep($this->retryWait);
@@ -183,7 +183,7 @@ class Enrichment
                 if ($code >= 300 && $code != 404) {
                     $this->log->log(
                         'getExternalData',
-                        "HTTP request failed ($code), retrying in {$this->retryWait} seconds...",
+                        "HTTP request for '$url' failed ($code), retrying in {$this->retryWait} seconds...",
                         Logger::WARNING
                     );
                     sleep($this->retryWait);
