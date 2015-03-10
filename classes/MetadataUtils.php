@@ -275,7 +275,7 @@ class MetadataUtils
      *
      * @return string
      */
-    static public function stripLeadingPunctuation($str, $punctuation = " \#!?/:;.,=(['\"")
+    static public function stripLeadingPunctuation($str, $punctuation = " \t\\#!?/:;.,=(['\"")
     {
         return ltrim($str, $punctuation);
     }
