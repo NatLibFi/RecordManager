@@ -99,6 +99,10 @@ class NdlQdcRecord extends QdcRecord
             $data['online_urls_str_mv'][] = json_encode($link);
         }
 
+        if ($this->doc->permaddress) {
+            $data['url'] = (string)$this->doc->permaddress[0];
+        }
+
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
 
