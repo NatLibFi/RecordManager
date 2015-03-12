@@ -561,4 +561,22 @@ class MetadataUtils
         }
         return null;
     }
+
+    /**
+     * Strip HTML tags from string.
+     *
+     * @param string|string[] $str String to be converted
+     *
+     * @return string|string[] Converted string
+     */
+    public static function stripHtmlTags($str)
+    {
+        if (is_array($str)) {
+            foreach ($str as &$s) {
+                $s = strip_tags($s);
+            }
+            return $str;
+        }
+        return strip_tags($str);
+    }
 }
