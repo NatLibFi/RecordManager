@@ -135,6 +135,7 @@ class LidoRecord extends BaseRecord
                 $data['description'] = $description;
             }
         }
+        $data['description'] = MetadataUtils::stripHtmlTags($data['description']);
 
         $data['format'] = $this->getObjectWorkType();
 
