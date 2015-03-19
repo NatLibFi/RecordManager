@@ -1191,8 +1191,9 @@ class SolrUpdater
             }
         }
 
-        // Special case: Hierarchical facet support for building (institution/location)
-        if ($this->buildingHierarchy) {
+        // Special case: Special values for building (institution/location).
+        // Used by default if building is set as a hierarchical facet.
+        if ($this->buildingHierarchy || isset($settings['institutionInBuilding'])) {
             $useInstitution = isset($settings['institutionInBuilding']) ? $settings['institutionInBuilding'] : 'institution';
             switch ($useInstitution) {
             case 'driver':
@@ -1228,6 +1229,7 @@ class SolrUpdater
                 }
             }
         }
+
         // Hierarchical facets
         if (isset($configArray['Solr']['hierarchical_facets'])) {
             foreach ($configArray['Solr']['hierarchical_facets'] as $facet) {
