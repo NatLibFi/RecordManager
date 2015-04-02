@@ -301,7 +301,7 @@ class MarcRecord extends BaseRecord
                 array(MarcRecord::GET_ALT, '100', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1)),
                 array(MarcRecord::GET_BOTH, '110', array('a'=>1, 'b'=>1)),
                 array(MarcRecord::GET_BOTH, '111', array('a'=>1, 'b'=>1)),
-                array(MarcRecord::GET_BOTH, '700', array('a'=>1, 'b'=>1, 'c'=>1, 'd'=>1, 'e'=>1)),
+                array(MarcRecord::GET_BOTH, '700', array('a'=>1, 'q'=>1, 'b'=>1, 'c'=>1, 'd'=>1, 'e'=>1)),
                 array(MarcRecord::GET_BOTH, '710', array('a'=>1, 'b'=>1)),
                 array(MarcRecord::GET_BOTH, '711', array('a'=>1, 'b'=>1))
             )
@@ -1475,19 +1475,26 @@ class MarcRecord extends BaseRecord
     /**
      * Return an array of fields according to the fieldspecs.
      *
-     * Format of fieldspecs: [+*][fieldcode][subfields]:...
-     *              + = return only alternate script fields (880 equivalents)
-     *              * = return normal and alternate script fields
+     * Format of fieldspecs:
+     * [
+     *   type (e.g. MarcRecord::GET_BOTH),
+     *   field code (e.g. '245'),
+     *   subfields (e.g. ['a'=>1, 'b'=>1, 'c'=>1]),
+     *   required subfields (e.g. ['t'=>1])
+     * ]
      *
      * @param array   $fieldspecs               Fields to get
      * @param boolean $firstOnly                Return only first matching field
-     * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation from the results
-     * @param boolean $splitSubfields           Whether to split subfields to separate array items
+     * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
+     * from the results
+     * @param boolean $splitSubfields           Whether to split subfields to
+     * separate array items
      *
      * @return string[] Subfields
      */
-    protected function getFieldsSubfields($fieldspecs, $firstOnly = false, $stripTrailingPunctuation = true, $splitSubfields = false)
-    {
+    protected function getFieldsSubfields($fieldspecs, $firstOnly = false,
+        $stripTrailingPunctuation = true, $splitSubfields = false
+    ) {
         $data = array();
         foreach ($fieldspecs as $fieldspec) {
             $type = $fieldspec[0];
@@ -1498,6 +1505,7 @@ class MarcRecord extends BaseRecord
             if (!isset($this->fields[$tag])) {
                 continue;
             }
+
             foreach ($this->fields[$tag] as $field) {
                 if (!isset($field['s'])) {
                     global $logger;
@@ -1517,6 +1525,23 @@ class MarcRecord extends BaseRecord
                     );
                     continue;
                 }
+
+                // Check for required subfields
+                if (isset($fieldspec[3])) {
+                    foreach ($fieldspec[3] as $required => $dummy) {
+                        $found = false;
+                        foreach ($field['s'] as $subfield) {
+                            if ($required == key($subfield)) {
+                                $found = true;
+                                break;
+                            }
+                        }
+                        if (!$found) {
+                            continue 2;
+                        }
+                    }
+                }
+
                 if ($type != MarcRecord::GET_ALT) {
                     // Handle normal field
                     if ($codes) {

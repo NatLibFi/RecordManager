@@ -125,7 +125,6 @@ class NdlMarcRecord extends MarcRecord
             ' []'
         );
 
-
         $data['subtitle_lng_str_mv'] = $this->getFieldsSubfields(
             array(
                 array(MarcRecord::GET_NORMAL, '041', array('j'=>1)),
@@ -169,10 +168,13 @@ class NdlMarcRecord extends MarcRecord
                 $this->getFieldsSubfields(
                     array(
                         array(MarcRecord::GET_ALT, '245', array('a'=>1, 'b'=>1)),
-                        array(MarcRecord::GET_BOTH, '130', array('a'=>1, 'd'=>1, 'f'=>1, 'g'=>1, 'k'=>1, 'l'=>1, 'n'=>1, 'p'=>1, 's'=>1, 't'=>1)),
-                        array(MarcRecord::GET_BOTH, '240', array('a'=>1)),
+                        array(MarcRecord::GET_BOTH, '130', array('a'=>1, 'd'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'k'=>1, 'l'=>1, 'n'=>1, 'p'=>1, 'r'=>1, 's'=>1, 't'=>1)),
+                        array(MarcRecord::GET_BOTH, '240', array('a'=>1, 'd'=>1, 'f'=>1, 'g'=>1, 'k'=>1, 'l'=>1, 'n'=>1, 'p'=>1, 'r'=>1, 's'=>1)),
+                        array(MarcRecord::GET_BOTH, '243', array('a'=>1, 'd'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'k'=>1, 'l'=>1, 'm'=>1, 'n'=>1, 'o'=>1, 'p'=>1, 'r'=>1, 's'=>1)),
                         array(MarcRecord::GET_BOTH, '246', array('g'=>1)),
-                        array(MarcRecord::GET_BOTH, '730', array('a'=>1, 'd'=>1, 'f'=>1, 'g'=>1, 'k'=>1, 'l'=>1, 'n'=>1, 'p'=>1, 's'=>1, 't'=>1)),
+                        // Use only 700 fields that contain subfield 't'
+                        array(MarcRecord::GET_BOTH, '700', array('t'=>1, 'm'=>1, 'n'=>1, 'r'=>1, 'h'=>1, 'i'=>1, 'g'=>1, 'n'=>1, 'p'=>1, 's'=>1, 'l'=>1, 'o'=>1, 'k'=>1), array('t'=>1)),
+                        array(MarcRecord::GET_BOTH, '730', array('a'=>1, 'd'=>1, 'f'=>1, 'g'=>1, 'h'=>1, 'i'=> 1, 'k'=>1, 'l'=>1, 'm'=>1, 'n'=>1, 'o'=>1, 'p'=>1, 'r'=>1, 's'=>1, 't'=>1)),
                         array(MarcRecord::GET_BOTH, '740', array('a'=>1)),
                         // 979b = component part title
                         array(MarcRecord::GET_BOTH, '979', array('b'=>1)),
