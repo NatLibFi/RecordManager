@@ -238,13 +238,13 @@ class NdlMarcRecord extends MarcRecord
             }
         }
         foreach ($this->getFieldsSubfields(array(array(MarcRecord::GET_NORMAL, '050', array('a'=>1, 'b'=>1)))) as $classification) {
-            $data['classification_str_mv'][] = 'dlc ' . strtolower(str_replace(' ', '', $classification));
+            $data['classification_str_mv'][] = 'dlc ' . mb_strtolower(str_replace(' ', '', $classification), 'UTF-8');
         }
         foreach ($this->getFields('084') as $field) {
             $source = $this->getSubfield($field, '2');
             $classification = $this->getSubfields($field, array('a'=>1, 'b'=>1));
             if ($source) {
-                $data['classification_str_mv'][] = "$source " . mb_strtolower(str_replace(' ', '', $classification));
+                $data['classification_str_mv'][] = "$source " . mb_strtolower(str_replace(' ', '', $classification), 'UTF-8');
             }
         }
         if (isset($data['classification_str_mv'])) {
