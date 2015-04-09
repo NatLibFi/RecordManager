@@ -418,6 +418,9 @@ class NdlMarcRecord extends MarcRecord
             $marc = new MARCRecord($data, '', $this->source, $this->idPrefix);
             $title = $marc->getFieldSubfields('245', array('a'=>1, 'b'=>1, 'n'=>1, 'p'=>1));
             $uniTitle = $marc->getFieldSubfields('240', array('a'=>1, 'n'=>1, 'p'=>1));
+            if (!$uniTitle) {
+                $uniTitle = $marc->getFieldSubfields('130', array('a'=>1, 'n'=>1, 'p'=>1));
+            }
             $additionalTitles = $marc->getFieldsSubfields(
                 array(
                     array(MarcRecord::GET_NORMAL, '740', array('a'=>1))
