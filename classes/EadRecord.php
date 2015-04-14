@@ -125,10 +125,10 @@ class EadRecord extends BaseRecord
         if ($doc->scopecontent) {
             $desc = '';
             if ($doc->scopecontent->p) {
-                // Join all p-elements into a flat string.                
+                // Join all p-elements into a flat string.
                 $desc = array();
                 foreach ($doc->scopecontent->p as $p) {
-                    $desc[] = (string)$p;
+                    $desc[] = trim((string)$p);
                 }
                 $desc = implode('   /   ', $desc);
             } else {
@@ -142,14 +142,14 @@ class EadRecord extends BaseRecord
         if ($names = $doc->xpath('controlaccess/persname')) {
             foreach ($names as $name) {
                 if (trim((string)$name) !== '-') {
-                    $authors[] = (string)$name;
+                    $authors[] = trim((string)$name);
                 }
             }
         }
 
         if ($names = $doc->xpath('controlaccess/corpname')) {
             foreach ($names as $name) {
-                $authors[] = (string)$name;
+                $authors[] = trim((string)$name);
             }
         }
 
@@ -162,14 +162,14 @@ class EadRecord extends BaseRecord
         }
 
         if ($doc->did->origination) {
-            $data['author_additional'] = (string)$doc->did->origination->corpname;
+            $data['author_additional'] = trim((string)$doc->did->origination->corpname);
         }
 
         if ($geoNames = $doc->xpath('controlaccess/geogname')) {
             $names = array();
             foreach ($geoNames as $name) {
                 if (trim((string)$name) !== '-') {
-                    $names[] = (string)$name;
+                    $names[] = trim((string)$name);
                 }
             }
             $data['geographic'] = $data['geographic_facet'] = $names;
@@ -179,7 +179,7 @@ class EadRecord extends BaseRecord
             $topics = array();
             foreach ($subjects as $subject) {
                 if (trim((string)$subject) !== '-') {
-                    $topics[] = (string)$subject;
+                    $topics[] = trim((string)$subject);
                 }
             }
             $data['topic'] = $data['topic_facet'] = $topics;
