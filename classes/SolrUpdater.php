@@ -504,7 +504,7 @@ class SolrUpdater
                     if ($this->verbose) {
                         echo 'Original deduplicated record '
                             . $child['solr']['id'] . ":\n";
-                        print_r($child['solr']);
+                        $this->prettyPrint($child['solr']);
                     }
 
                     ++$count;
@@ -568,7 +568,7 @@ class SolrUpdater
 
                 if ($this->verbose) {
                     echo "Merged record {$merged['id']}:\n";
-                    print_r($merged);
+                    $this->prettyPrint($merged);
                 }
 
                 ++$count;
@@ -766,7 +766,7 @@ class SolrUpdater
 
                     if ($this->verbose) {
                         echo "Metadata for record {$record['_id']}: \n";
-                        print_r($data);
+                        $this->prettyPrint($data);
                     }
 
                     ++$count;
@@ -1840,5 +1840,17 @@ class SolrUpdater
             }
         }
         throw new Exception('Could not find a free dump file slot');
+    }
+
+    /**
+     * Pretty-print a record
+     *
+     * @param array $data Record data to print
+     *
+     * @return void
+     */
+    protected function prettyPrint($data)
+    {
+        echo json_encode($data, JSON_PRETTY_PRINT + JSON_UNESCAPED_UNICODE) . "\n";
     }
 }
