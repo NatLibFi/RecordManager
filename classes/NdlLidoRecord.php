@@ -115,7 +115,9 @@ class NdlLidoRecord extends LidoRecord
                 $data['main_date'] = $this->validateDate($range[0]);
             }
             $data['search_sdaterange_mv'][]
-                = MetadataUtils::convertDateRange($range);
+                = MetadataUtils::dateRangeToNumeric($range);
+            $data['search_daterange_mv'][]
+                = MetadataUtils::dateRangeToStr($range);
         }
 
         $daterange = $this->getDateRange('valmistus');
@@ -124,15 +126,22 @@ class NdlLidoRecord extends LidoRecord
                 $data['main_date_str'] = MetadataUtils::extractYear($daterange[0]);
                 $data['main_date'] = $this->validateDate($daterange[0]);
             }
-            $data['search_sdaterange_mv'][] = $data['creation_sdaterange'] = MetadataUtils::convertDateRange($daterange);
+            $data['search_sdaterange_mv'][]
+                = $data['creation_sdaterange'] = MetadataUtils::dateRangeToNumeric($daterange);
+            $data['search_daterange_mv'][]
+                = $data['creation_daterange'] = MetadataUtils::dateRangeToStr($daterange);
         } else {
             $dateSources = array('suunnittelu' => 'design', 'tuotanto' => 'production', 'kuvaus' => 'photography');
             foreach ($dateSources as $dateSource => $field) {
                 $daterange = $this->getDateRange($dateSource);
                 if ($daterange) {
-                    $data[$field . '_sdaterange'] = MetadataUtils::convertDateRange($daterange);
+                    $data[$field . '_sdaterange'] = MetadataUtils::dateRangeToNumeric($daterange);
+                    $data[$field . '_daterange'] = MetadataUtils::dateRangeToStr($daterange);
                     if (!isset($data['search_sdaterange_mv'])) {
                         $data['search_sdaterange_mv'][] = $data[$field . '_sdaterange'];
+                    }
+                    if (!isset($data['search_daterange_mv'])) {
+                        $data['search_daterange_mv'][] = $data[$field . '_daterange'];
                     }
                     if (!isset($data['main_date_str'])) {
                         $data['main_date_str'] = MetadataUtils::extractYear($daterange[0]);
@@ -141,8 +150,14 @@ class NdlLidoRecord extends LidoRecord
                 }
             }
         }
-        $data['use_sdaterange'] = MetadataUtils::convertDateRange($this->getDateRange('käyttö'));
-        $data['finding_sdaterange'] = MetadataUtils::convertDateRange($this->getDateRange('löytyminen'));
+        if ($range = $this->getDateRange('käyttö')) {
+            $data['use_sdaterange'] = MetadataUtils::dateRangeToNumeric($range);
+            $data['use_daterange'] = MetadataUtils::dateRangeToStr($range);
+        }
+        if ($range = $this->getDateRange('löytyminen')) {
+            $data['finding_sdaterange'] = MetadataUtils::dateRangeToNumeric($range);
+            $data['finding_daterange'] = MetadataUtils::dateRangeToStr($range);
+        }
 
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
@@ -359,14 +374,23 @@ class NdlLidoRecord extends LidoRecord
                 $logger->log('NdlLidoRecord', "Invalid date range {$startDate} - {$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
                 $endDate = $startDate;
             }
-            if (strlen($startDate) == 4) {
+            if (strlen($startDate) == 2) {
+                $startDate = '00' . $startDate . '-01-01T00:00:00Z';
+            } else if (strlen($startDate) == 3) {
+                $startDate = '0' . $startDate . '-01-01T00:00:00Z';
+            } else if (strlen($startDate) == 4) {
                 $startDate = $startDate . '-01-01T00:00:00Z';
             } else if (strlen($startDate) == 7) {
                 $startDate = $startDate . '-01T00:00:00Z';
             } else if (strlen($startDate) == 10) {
                 $startDate = $startDate . 'T00:00:00Z';
             }
-            if (strlen($endDate) == 4) {
+
+            if (strlen($endDate) == 2) {
+                $endDate = '00' . $endDate . '-12-31T23:59:59Z';
+            } else if (strlen($endDate) == 3) {
+                $endDate = '0' . $endDate . '-12-31T23:59:59Z';
+            } else if (strlen($endDate) == 4) {
                 $endDate = $endDate . '-12-31T23:59:59Z';
             } else if (strlen($endDate) == 7) {
                 try {
@@ -417,7 +441,7 @@ class NdlLidoRecord extends LidoRecord
                 continue;
             }
 
-            $results[] = "$long $lat";
+            $results[] = "POINT($long $lat)";
         }
         return $results;
     }

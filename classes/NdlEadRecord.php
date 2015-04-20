@@ -56,7 +56,10 @@ class NdlEadRecord extends EadRecord
         $doc = $this->doc;
 
         $unitDateRange = $this->parseDateRange((string)$doc->did->unitdate);
-        $data['search_sdaterange_mv'] = $data['unit_sdaterange'] = MetadataUtils::convertDateRange($unitDateRange);
+        $data['search_sdaterange_mv'] = $data['unit_sdaterange']
+            = MetadataUtils::dateRangeToNumeric($unitDateRange);
+        $data['search_daterange_mv'] = $data['unit_daterange']
+            = MetadataUtils::dateRangeToStr($unitDateRange);
         if ($unitDateRange) {
             $data['main_date_str'] = MetadataUtils::extractYear($unitDateRange[0]);
             $data['main_date'] = $this->validateDate($unitDateRange[0]);
@@ -123,7 +126,7 @@ class NdlEadRecord extends EadRecord
      *
      * @param string $input Date range
      *
-     * @return NULL|string
+     * @return NULL|array
      */
     protected function parseDateRange($input)
     {

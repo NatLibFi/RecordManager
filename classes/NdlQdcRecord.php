@@ -67,9 +67,11 @@ class NdlQdcRecord extends QdcRecord
             $data['main_date'] = $this->validateDate($this->getPublicationYear() . '-01-01T00:00:00Z');
         }
 
-        $data['publication_sdaterange'] = $this->getPublicationDateRange();
-        if ($data['publication_sdaterange']) {
-            $data['search_sdaterange_mv'][] = $data['publication_sdaterange'];
+        if ($range = $this->getPublicationDateRange()) {
+            $data['search_sdaterange_mv'][] = $data['publication_sdaterange']
+                = MetadataUtils::dateRangeToNumeric($range);
+            $data['search_daterange_mv'][] = $data['publication_daterange']
+                = MetadataUtils::dateRangeToStr($range);
         }
 
         foreach ($this->doc->relation as $relation) {
@@ -112,8 +114,7 @@ class NdlQdcRecord extends QdcRecord
     /**
      * Return publication year/date range
      *
-     * @return string
-     * @access protected
+     * @return array|null
      */
     protected function getPublicationDateRange()
     {
@@ -121,8 +122,8 @@ class NdlQdcRecord extends QdcRecord
         if ($year) {
             $startDate = "$year-01-01T00:00:00Z";
             $endDate = "$year-12-31T23:59:59Z";
-            return MetadataUtils::convertDateRange(array($startDate, $endDate));
+            return array($startDate, $endDate);
         }
-        return '';
+        return null;
     }
 }

@@ -351,13 +351,13 @@ class MetadataUtils
     }
 
     /**
-     * Convert a textual date range to numeric (days since 1970-01-01)
+     * Convert a date range to numeric (days since 1970-01-01)
      *
      * @param string|array $range Start and end date (separated by a comma if string)
      *
      * @return string Start and end date in numeric format
      */
-    static public function convertDateRange($range)
+    static public function dateRangeToNumeric($range)
     {
         if (!isset($range)) {
             return null;
@@ -375,6 +375,33 @@ class MetadataUtils
         date_default_timezone_set($oldTZ);
 
         return max(array($start, -4371587)) . ' ' . min(array($end, 2932896));
+    }
+
+    /**
+     * Convert a date range to a Solr date range string,
+     * e.g. [1970-01-01 TO 1981-01-01]
+     *
+     * @param array $range Start and end date
+     *
+     * @return string Start and end date in Solr format
+     */
+    static public function dateRangeToStr($range)
+    {
+        if (!isset($range)) {
+            return null;
+        }
+        $oldTZ = date_default_timezone_get();
+        try {
+            date_default_timezone_set('UTC');
+            $start = date('Y-m-d', strtotime($range[0]));
+            $end = date('Y-m-d', strtotime($range[1]));
+        } catch (Exception $e) {
+            date_default_timezone_set($oldTZ);
+            throw $e;
+        }
+        date_default_timezone_set($oldTZ);
+
+        return $start === $end ? $start : "[$start TO $end]";
     }
 
     /**

@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2014.
+ * Copyright (C) The National Library of Finland 2012-2015.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -1042,7 +1042,7 @@ class SolrUpdater
             // Try to reload data source settings as they might have been updated during a long run
             $this->loadDatasources();
             if (!isset($this->settings[$source])) {
-                $this->log->log('createSolrArray', "No settings found for data source '$source'", Logger::FATAL);
+                $this->log->log('createSolrArray', "No settings found for data source '$source', record {$record['_id']}", Logger::FATAL);
                 throw new Exception("No settings found for data source '$source'");
             }
         }
@@ -1310,27 +1310,6 @@ class SolrUpdater
                 return !(empty($value) && $value !== 0 && $value !== 0.0 && $value !== '0');
             }
         );
-
-        // Add spatial date ranges
-        // Make sure the reference is not reused..
-        unset($value);
-        unset($values);
-        foreach ($data as $key => $values) {
-            if (substr($key, -10) == '_daterange') {
-                $newKey = substr($key, 0, -10) . '_sdaterange';
-                if (is_array($values)) {
-                    foreach ($values as &$value) {
-                        $dateRange = MetadataUtils::convertDateRange($value);
-                        $data[$newKey][] = $dateRange;
-                        $data['search_sdaterange_mv'][] = $dateRange;
-                    }
-                } else {
-                    $dateRange = MetadataUtils::convertDateRange($values);
-                    $data[$newKey] = $dateRange;
-                    $data['search_sdaterange_mv'][] = $dateRange;
-                }
-            }
-        }
 
         return $data;
     }

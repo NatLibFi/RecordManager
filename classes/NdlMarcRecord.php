@@ -112,9 +112,11 @@ class NdlMarcRecord extends MarcRecord
             $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate'][0]);
             $data['main_date'] = $this->validateDate($data['main_date_str'] . '-01-01T00:00:00Z');
         }
-        $data['publication_sdaterange'] = $this->getPublicationDateRange();
-        if ($data['publication_sdaterange']) {
-            $data['search_sdaterange_mv'][] = $data['publication_sdaterange'];
+        if ($range = $this->getPublicationDateRange()) {
+            $data['search_sdaterange_mv'][] = $data['publication_sdaterange']
+                = MetadataUtils::dateRangeToNumeric($range);
+            $data['search_daterange_mv'][] = $data['publication_daterange']
+                = MetadataUtils::dateRangeToStr($range);
         }
         $data['publication_place_txt_mv'] = MetadataUtils::arrayTrim(
             $this->getFieldsSubfields(
@@ -216,10 +218,11 @@ class NdlMarcRecord extends MarcRecord
                             if ($west > $east) {
                                 list($west, $east) = array($east, $west);
                             }
-                            $data['location_geo'] = "$west $north $east $south";
+                            $data['location_geo']
+                                = "ENVELOPE($west, $east, $south, $north)";
                         }
                     } else {
-                        $data['location_geo'] = "$west $north";
+                        $data['location_geo'] = "POINT($west $north)";
                     }
                 }
             }
@@ -608,8 +611,7 @@ class NdlMarcRecord extends MarcRecord
     /**
      * Return publication year/date range
      *
-     * @return string
-     * @access protected
+     * @return array Date range
      */
     protected function getPublicationDateRange()
     {
@@ -680,7 +682,7 @@ class NdlMarcRecord extends MarcRecord
                 $logger->log('NdlMarcRecord', "Invalid date range {$startDate} - {$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
                 $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
             }
-            return MetadataUtils::convertDateRange(array($startDate, $endDate));
+            return array($startDate, $endDate);
         }
 
         return '';
