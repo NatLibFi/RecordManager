@@ -1042,7 +1042,7 @@ class SolrUpdater
             // Try to reload data source settings as they might have been updated during a long run
             $this->loadDatasources();
             if (!isset($this->settings[$source])) {
-                $this->log->log('createSolrArray', "No settings found for data source '$source', record {$record['_id']}", Logger::FATAL);
+                $this->log->log('createSolrArray', "No settings found for data source '$source', record {$record['_id']}: " . $this->prettyPrint($record, true), Logger::FATAL);
                 throw new Exception("No settings found for data source '$source'");
             }
         }
@@ -1824,12 +1824,18 @@ class SolrUpdater
     /**
      * Pretty-print a record
      *
-     * @param array $data Record data to print
+     * @param array $data   Record data to print
+     * @param bool  $return If true, the pretty-printed record is returned instead
+     * of being echoed to screen.
      *
-     * @return void
+     * @return void|string
      */
-    protected function prettyPrint($data)
+    protected function prettyPrint($data, $return = false)
     {
-        echo json_encode($data, JSON_PRETTY_PRINT + JSON_UNESCAPED_UNICODE) . "\n";
+        $res = json_encode($data, JSON_PRETTY_PRINT + JSON_UNESCAPED_UNICODE) . "\n";
+        if ($return) {
+            return $res;
+        }
+        echo $res;
     }
 }
