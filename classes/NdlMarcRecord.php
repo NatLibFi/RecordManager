@@ -701,15 +701,17 @@ class NdlMarcRecord extends MarcRecord
             '979' => array('0'=>1, 'a'=>1, 'f'=>1)
         );
         $allFields = array();
-        // Include also invalid ISBN, normalized
-        if (isset($this->fields['020'])) {
-            foreach ($this->fields['020'] as $field) {
-                $isbn = $this->getSubfield($field, 'z');
+        // Include ISBNs, also normalized if possible
+        foreach ($this->getFields('020') as $field) {
+            $isbns = $this->getSubfieldsArray($field, array('a'=>1, 'z'=>1));
+            foreach ($isbns as $isbn) {
+                $allFields[] = $isbn;
                 $isbn = MetadataUtils::normalizeISBN($isbn);
                 if ($isbn) {
                     $allFields[] = $isbn;
                 }
             }
+
         }
         foreach ($this->fields as $tag => $fields) {
             if (($tag >= 100 && $tag < 841) || $tag == 856 || $tag == 880 || $tag == 979) {
