@@ -1832,7 +1832,12 @@ class SolrUpdater
      */
     protected function prettyPrint($data, $return = false)
     {
-        $res = json_encode($data, JSON_PRETTY_PRINT + JSON_UNESCAPED_UNICODE) . "\n";
+        if (defined('JSON_PRETTY_PRINT') && defined('JSON_UNESCAPED_UNICODE')) {
+            $res = json_encode($data, JSON_PRETTY_PRINT + JSON_UNESCAPED_UNICODE)
+                . "\n";
+        } else {
+            $res = print_r($data, true);
+        }
         if ($return) {
             return $res;
         }
