@@ -1851,6 +1851,11 @@ class SolrUpdater
      */
     protected function prettyPrint($data)
     {
-        echo json_encode($data, JSON_PRETTY_PRINT + JSON_UNESCAPED_UNICODE) . "\n";
+        if (defined('JSON_PRETTY_PRINT') && defined('JSON_UNESCAPED_UNICODE')) {
+            echo json_encode($data, JSON_PRETTY_PRINT + JSON_UNESCAPED_UNICODE)
+                . "\n";
+        } else {
+            echo print_r($data, true) . "\n";
+        }
     }
 }
