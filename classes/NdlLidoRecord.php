@@ -374,36 +374,12 @@ class NdlLidoRecord extends LidoRecord
                 $logger->log('NdlLidoRecord', "Invalid date range {$startDate} - {$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
                 $endDate = $startDate;
             }
-            if (strlen($startDate) == 2) {
-                $startDate = '00' . $startDate . '-01-01T00:00:00Z';
-            } else if (strlen($startDate) == 3) {
-                $startDate = '0' . $startDate . '-01-01T00:00:00Z';
-            } else if (strlen($startDate) == 4) {
-                $startDate = $startDate . '-01-01T00:00:00Z';
-            } else if (strlen($startDate) == 7) {
-                $startDate = $startDate . '-01T00:00:00Z';
-            } else if (strlen($startDate) == 10) {
-                $startDate = $startDate . 'T00:00:00Z';
+            $startDate = $this->completeDate($startDate);
+            $endDate = $this->completeDate($endDate, true);
+            if ($startDate === null || $endDate === null) {
+                return null;
             }
 
-            if (strlen($endDate) == 2) {
-                $endDate = '00' . $endDate . '-12-31T23:59:59Z';
-            } else if (strlen($endDate) == 3) {
-                $endDate = '0' . $endDate . '-12-31T23:59:59Z';
-            } else if (strlen($endDate) == 4) {
-                $endDate = $endDate . '-12-31T23:59:59Z';
-            } else if (strlen($endDate) == 7) {
-                try {
-                    $d = new DateTime($endDate . '-01');
-                } catch (Exception $e) {
-                    global $logger;
-                    $logger->log('NdlLidoRecord', "Failed to parse date $endDate, record {$this->source}." . $this->getID(), Logger::ERROR);
-                    return null;
-                }
-                $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
-            } else if (strlen($endDate) == 10) {
-                $endDate = $endDate . 'T23:59:59Z';
-            }
             return array($startDate, $endDate);
         }
 
@@ -414,6 +390,66 @@ class NdlLidoRecord extends LidoRecord
             return $this->parseDateRange($periodName);
         }
         return null;
+    }
+
+    /**
+     * Complete a partial date
+     *
+     * @param string $date Date string
+     * @param bool   $end  Whether $date represents the end of a date range
+     *
+     * @return null|string
+     */
+    protected function completeDate($date, $end = false)
+    {
+        $negative = false;
+        if (substr($date, 0, 1) == '-') {
+            $negative = true;
+            $date = substr($date, 1);
+        }
+
+        if (!$end) {
+            if (strlen($date) == 2) {
+                $date = '00' . $date . '-01-01T00:00:00Z';
+            } else if (strlen($date) == 3) {
+                $date = '0' . $date . '-01-01T00:00:00Z';
+            } else if (strlen($date) == 4) {
+                $date = $date . '-01-01T00:00:00Z';
+            } else if (strlen($date) == 7) {
+                $date = $date . '-01T00:00:00Z';
+            } else if (strlen($date) == 10) {
+                $date = $date . 'T00:00:00Z';
+            }
+        } else {
+            if (strlen($date) == 2) {
+                $date = '00' . $date . '-12-31T23:59:59Z';
+            } else if (strlen($date) == 3) {
+                $date = '0' . $date . '-12-31T23:59:59Z';
+            } else if (strlen($date) == 4) {
+                $date = $date . '-12-31T23:59:59Z';
+            } else if (strlen($date) == 7) {
+                try {
+                    $d = new DateTime($date . '-01');
+                } catch (Exception $e) {
+                    global $logger;
+                    $logger->log(
+                        'NdlLidoRecord',
+                        "Failed to parse date $date, record {$this->source}."
+                        . $this->getID(),
+                        Logger::ERROR
+                    );
+                    return null;
+                }
+                $date = $d->format('Y-m-t') . 'T23:59:59Z';
+            } else if (strlen($date) == 10) {
+                $date = $date . 'T23:59:59Z';
+            }
+        }
+        if ($negative) {
+            $date = "-$date";
+        }
+
+        return $date;
     }
 
     /**
