@@ -7,7 +7,7 @@
  * PHP version 5
  *
  * Copyright (c) Demian Katz 2010.
- * Copyright (c) The National Library of Finland 2011-2014.
+ * Copyright (c) The National Library of Finland 2011-2015.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -46,27 +46,160 @@ require_once 'HTTP/Request2.php';
  */
 class HarvestOaiPmh
 {
-    protected $log;                   // Logger
-    protected $db;                    // Mongo database
-    protected $baseURL;               // URL to harvest from
-    protected $set = null;            // Set to harvest (null for all records)
-    protected $metadata = 'oai_dc';   // Metadata type to harvest
-    protected $idPrefix = '';         // OAI prefix to strip from ID values
-    protected $idSearch = array();    // Regular expression searches
-    protected $idReplace = array();   // Replacements for regular expression matches
-    protected $source;                // Source ID
-    protected $startDate = null;      // Harvest start date (null for all records)
-    protected $endDate = null;      // Harvest end date (null for all records)
-    protected $granularity = 'auto';  // Date granularity
-    protected $verbose = false;       // Whether to display debug output
-    protected $deletedRecords = 0;    // Harvested deleted record count
-    protected $debugLog = '';         // File where to dump OAI requests and responses for debugging
-    protected $resumptionToken = '';  // Override the first harvest request
-    protected $transformation = null; // Transformation applied to the OAI-PMH responses before processing
-    protected $serverDate = null;     // Date received from server via Identify command. Used to set the last harvest date
-    protected $ignoreNoRecordsMatch = false; // Whether to ignore noRecordsMatch error when harvesting (broken sources may report an error even with a valid resumptionToken)
-    protected $maxTries = 5;          // Number of times to attempt a request before bailing out
-    protected $retryWait = 30;        // Seconds to wait between request attempts
+    /**
+     * Logger
+     *
+     * @var Logger
+     */
+    protected $log;
+
+    /**
+     * Mongo database
+     *
+     * @var MongoDB
+     */
+    protected $db;
+
+    /**
+     * Base URL of repository
+     *
+     * @var string
+     */
+    protected $baseURL;
+
+    /**
+     * Set to harvest (null for all records)
+     *
+     * @var string
+     */
+    protected $set = null;
+
+    /**
+     * Metadata type to harvest
+     *
+     * @var string
+     */
+    protected $metadata = 'oai_dc';
+
+    /**
+     * OAI prefix to strip from ID values
+     *
+     * @var string
+     */
+    protected $idPrefix = '';
+
+    /**
+     * Regular expression searches for ID substitutions
+     *
+     * @var array
+     */
+    protected $idSearch = array();
+
+    /**
+     * Replacements for regular expression matches for ID substitutions
+     *
+     * @var array
+     */
+    protected $idReplace = array();
+
+    /**
+     * Source ID
+     *
+     * @var string
+     */
+    protected $source;
+
+    /**
+     * Harvest start date (null for all records)
+     *
+     * @var string
+     */
+    protected $startDate = null;
+
+    /**
+     * Harvest end date (null for all records)
+     *
+     * @var string
+     */
+    protected $endDate = null;
+
+    /**
+     * Date granularity
+     *
+     * @var string
+     */
+    protected $granularity = 'auto';
+
+    /**
+     * Whether to display debug output
+     *
+     * @var bool
+     */
+    protected $verbose = false;
+
+    /**
+     * Harvested normal record count
+     *
+     * @var int
+     */
+    protected $normalRecords = 0;
+
+    /**
+     * Harvested deleted record count
+     *
+     * @var int
+     */
+    protected $deletedRecords = 0;
+
+    /**
+     * File where to dump OAI requests and responses for debugging
+     *
+     * @var string
+     */
+    protected $debugLog = '';
+
+    /**
+     * Resumption token to use to override the first harvest request
+     *
+     * @var string
+     */
+    protected $resumptionToken = '';
+
+    /**
+     * Transformation applied to the OAI-PMH responses before processing
+     *
+     * @var XslTransformation
+     */
+    protected $transformation = null;
+
+    /**
+     * Date received from server via Identify command. Used to set the last harvest date
+     *
+     * @var string
+     */
+    protected $serverDate = null;
+
+    /**
+     * Whether to ignore noRecordsMatch error when harvesting
+     * (broken sources may report an error even with a valid resumptionToken)
+     *
+     * @var bool
+     */
+    protected $ignoreNoRecordsMatch = false;
+
+    /**
+     * Number of times to attempt a request before bailing out
+     *
+     * @var int
+     */
+    protected $maxTries = 5;
+
+    /**
+     * Seconds to wait between request attempts
+     *
+     * @var int
+     */
+    protected $retryWait = 30;
 
     /**
      * Constructor.
@@ -191,9 +324,9 @@ class HarvestOaiPmh
      */
     public function harvest($callback)
     {
-        $this->_normalRecords = 0;
+        $this->normalRecords = 0;
         $this->deletedRecords = 0;
-        $this->_callback = $callback;
+        $this->callback = $callback;
 
         if ($this->resumptionToken) {
             $this->message('Incremental harvest from given resumptionToken');
@@ -226,9 +359,9 @@ class HarvestOaiPmh
      */
     public function listIdentifiers($callback)
     {
-        $this->_normalRecords = 0;
+        $this->normalRecords = 0;
         $this->deletedRecords = 0;
-        $this->_callback = $callback;
+        $this->callback = $callback;
 
         if ($this->resumptionToken) {
             $this->message('Incremental listing from given resumptionToken');
@@ -247,6 +380,16 @@ class HarvestOaiPmh
     }
 
     /**
+     * Return total count of harvested records (normal + deleted)
+     *
+     * @return int
+     */
+    public function getHarvestedRecordCount()
+    {
+        return $this->normalRecords + $this->deletedRecords;
+    }
+
+    /**
      * Display harvesting progress
      *
      * @return void
@@ -254,7 +397,7 @@ class HarvestOaiPmh
     protected function harvestProgressReport()
     {
         $this->message(
-            'Harvested ' . $this->_normalRecords . ' normal records and '
+            'Harvested ' . $this->normalRecords . ' normal records and '
             . $this->deletedRecords . ' deleted records from ' . $this->source
         );
     }
@@ -267,7 +410,7 @@ class HarvestOaiPmh
     protected function listIdentifiersProgressReport()
     {
         $this->message(
-            'Listed ' . $this->_normalRecords . ' normal records and '
+            'Listed ' . $this->normalRecords . ' normal records and '
             . $this->deletedRecords . ' deleted records from ' . $this->source
         );
     }
@@ -508,7 +651,9 @@ class HarvestOaiPmh
      */
     protected function processRecords($records)
     {
-        $this->message('Processing ' . count($records) . ' records', true);
+        $count = count($records);
+        $this->totalCount += $count;
+        $this->message("Processing $count records", true);
 
         // Loop through the records:
         foreach ($records as $record) {
@@ -526,7 +671,7 @@ class HarvestOaiPmh
 
             // Save the current record, either as a deleted or as a regular record:
             if (strcasecmp($header->getAttribute('status'), 'deleted') == 0) {
-                call_user_func($this->_callback, $id, true, null);
+                call_user_func($this->callback, $id, true, null);
                 $this->deletedRecords++;
             } else {
                 $recordMetadata = $this->getSingleNode($record, 'metadata');
@@ -554,7 +699,7 @@ class HarvestOaiPmh
                     $attr->value = $node->nodeValue;
                     $recordNode->appendChild($attr);
                 }
-                $this->_normalRecords += call_user_func($this->_callback, $id, false, trim($this->_xml->saveXML($recordNode)));
+                $this->normalRecords += call_user_func($this->callback, $id, false, trim($this->_xml->saveXML($recordNode)));
             }
         }
     }
@@ -688,11 +833,11 @@ class HarvestOaiPmh
 
             // Process the current header, either as a deleted or as a regular record:
             if (strcasecmp($header->getAttribute('status'), 'deleted') == 0) {
-                call_user_func($this->_callback, $id, true);
+                call_user_func($this->callback, $id, true);
                 $this->deletedRecords++;
             } else {
-                call_user_func($this->_callback, $id, false);
-                $this->_normalRecords++;
+                call_user_func($this->callback, $id, false);
+                $this->normalRecords++;
             }
         }
     }
