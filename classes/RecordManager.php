@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2014.
+ * Copyright (C) The National Library of Finland 2011-2015.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -651,23 +651,39 @@ class RecordManager
                     $harvest->harvest(array($this, 'storeRecord'));
 
                     if ($reharvest) {
-                        $this->log->log('harvest', 'Marking deleted all records not received during the harvesting');
-                        $records = $this->db->record->find(
-                            array(
-                                'source_id' => $this->sourceId,
-                                'deleted' => false,
-                                'updated' => array('$lt' => $dateThreshold)
-                            )
-                        );
-                        $records->immortal(true);
-                        $count = 0;
-                        foreach ($records as $record) {
-                            $this->storeRecord($record['oai_id'], true, '');
-                            if (++$count % 1000 == 0) {
-                                $this->log->log('harvest', "Deleted $count records");
+                        if ($harvest->getHarvestedRecordCount() == 0) {
+                            $this->log->log(
+                                'harvest',
+                                'No records received during reharvesting'
+                                . ' -- assuming an error and skipping marking'
+                                . ' records deleted',
+                                Logger::FATAL
+                            );
+                        } else {
+                            $this->log->log(
+                                'harvest',
+                                'Marking deleted all records not received during'
+                                . ' the harvesting'
+                            );
+                            $records = $this->db->record->find(
+                                array(
+                                    'source_id' => $this->sourceId,
+                                    'deleted' => false,
+                                    'updated' => array('$lt' => $dateThreshold)
+                                )
+                            );
+                            $records->immortal(true);
+                            $count = 0;
+                            foreach ($records as $record) {
+                                $this->storeRecord($record['oai_id'], true, '');
+                                if (++$count % 1000 == 0) {
+                                    $this->log->log(
+                                        'harvest', "Deleted $count records"
+                                    );
+                                }
                             }
+                            $this->log->log('harvest', "Deleted $count records");
                         }
-                        $this->log->log('harvest', "Deleted $count records");
                     }
 
                     if (!$reharvest && isset($settings['deletions']) && strncmp($settings['deletions'], 'ListIdentifiers', 15) == 0) {
