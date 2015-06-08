@@ -278,7 +278,10 @@ class DedupHandler
                     if (!isset($origRecord)) {
                         $origRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
                         if ($origRecord->getAccessRestrictions()) {
-                            break 2;
+                            if ($this->verbose) {
+                                echo "Record has access restrictions, skipping\n";
+                            }
+                            break 3;
                         }
                     }
                     if ($this->matchRecords($record, $origRecord, $candidate)) {
