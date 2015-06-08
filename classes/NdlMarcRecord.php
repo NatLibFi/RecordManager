@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2014.
+ * Copyright (C) The National Library of Finland 2012-2015.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -600,6 +600,13 @@ class NdlMarcRecord extends MarcRecord
                 if (isset($restricted[$locationCode])) {
                     return 'restricted';
                 }
+            }
+        }
+        foreach ($this->getFields('540') as $field) {
+            if (strcasecmp($this->getSubfield($field, '3'), 'metadata') == 0
+                && strcasecmp($this->getSubfield($field, 'a'), 'ei poimintaa') == 0
+            ) {
+                return 'restricted';
             }
         }
         return '';
