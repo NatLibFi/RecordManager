@@ -190,7 +190,9 @@ class NdlMarcRecord extends MarcRecord
                             'k' => 1, 'l' => 1, 'm' => 1, 'n' => 1, 'o' => 1,
                             'p' => 1, 'r' => 1, 's' => 1
                         ]],
-                        [MarcRecord::GET_BOTH, '246', ['g' => 1]],
+                        [MarcRecord::GET_BOTH, '246', [
+                            'a' => 1, 'b' => 1, 'g' => 1
+                        ]],
                         // Use only 700 fields that contain subfield 't'
                         [MarcRecord::GET_BOTH, '700', [
                             't' => 1, 'm' => 1, 'r' => 1, 'h' => 1,
