@@ -307,7 +307,7 @@ class SolrUpdater
                         'processMerged',
                         "Cleanup: dropping old m/r collection $collection"
                     );
-                    $this->db->dropCollection($collection);
+                    $this->db->selectCollection($collection)->drop();
                 }
             }
         }
@@ -404,7 +404,7 @@ class SolrUpdater
                 );
             }
             if ($totalMergeCount > 0) {
-                $mongo = new Mongo($configArray['Mongo']['url']);
+                $mongo = new MongoClient($configArray['Mongo']['url']);
                 $dbName = $configArray['Mongo']['database'];
                 $res = $mongo->admin->command(
                     [

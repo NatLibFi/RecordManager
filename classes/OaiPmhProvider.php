@@ -114,7 +114,7 @@ class OaiPmhProvider
 
         $this->log = new Logger();
 
-        $mongo = new Mongo($configArray['Mongo']['url']);
+        $mongo = new MongoClient($configArray['Mongo']['url']);
         $this->db = $mongo->selectDB($configArray['Mongo']['database']);
         MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout'])
             ? $configArray['Mongo']['cursor_timeout'] : 300000;

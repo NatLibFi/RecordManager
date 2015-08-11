@@ -174,7 +174,7 @@ class RecordManager
 
         $timeout = isset($configArray['Mongo']['connect_timeout'])
             ? $configArray['Mongo']['connect_timeout'] : 300000;
-        $mongo = new Mongo(
+        $mongo = new MongoClient(
             $configArray['Mongo']['url'], ['connectTimeoutMS' => $timeout]
         );
         $this->db = $mongo->selectDB($configArray['Mongo']['database']);
