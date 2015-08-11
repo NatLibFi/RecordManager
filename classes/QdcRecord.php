@@ -142,12 +142,20 @@ class QdcRecord extends BaseRecord
                 = MetadataUtils::stripTrailingPunctuation($contributor);
         }
 
-        $data['title'] = $data['title_full'] = (string)$doc->title;
-        $titleParts = explode(' : ', $data['title']);
-        if (!empty($titleParts)) {
-            $data['title_short'] = $titleParts[0];
-            if (isset($titleParts[1])) {
-                $data['title_sub'] = $titleParts[1];
+        foreach ($doc->title as $title) {
+            if (!isset($data['title'])
+                && $title->attributes()->{'type'} !== 'alternative'
+            ) {
+                $data['title'] = $data['title_full'] = (string)$title;
+                $titleParts = explode(' : ', $data['title']);
+                if (!empty($titleParts)) {
+                    $data['title_short'] = $titleParts[0];
+                    if (isset($titleParts[1])) {
+                        $data['title_sub'] = $titleParts[1];
+                    }
+                }
+            } else {
+                $data['title_alt'][] = (string)$title;
             }
         }
         $data['title_sort'] = $this->getTitle(true);
