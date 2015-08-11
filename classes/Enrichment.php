@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'HTTP/Request2.php';
 
 /**
@@ -39,7 +38,6 @@ require_once 'HTTP/Request2.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 class Enrichment
 {
     /**
@@ -110,9 +108,9 @@ class Enrichment
     /**
      * Enrich the record and return any additions in solrArray
      *
-     * @param string    $sourceId  Source ID
-     * @param multitype $record    Record
-     * @param array     $solrArray Metadata to be sent to Solr
+     * @param string $sourceId  Source ID
+     * @param object $record    Metadata Record
+     * @param array  $solrArray Metadata to be sent to Solr
      *
      * @return void
      */
@@ -128,18 +126,18 @@ class Enrichment
      * @param string   $id      ID of the entity to fetch
      * @param string[] $headers Optional headers to add to the request
      *
-     * @return multitype Metadata (typically XML)
+     * @return string Metadata (typically XML)
+     * @throws Exception
      */
-    protected function getExternalData($url, $id, $headers = array())
+    protected function getExternalData($url, $id, $headers = [])
     {
-        global $configArray;
         $cached = $this->db->uriCache->findOne(
-            array(
+            [
                 '_id' => $id,
-                'timestamp' => array(
+                'timestamp' => [
                     '$gt' => new MongoDate(time() - $this->maxCacheAge)
-                 )
-            )
+                 ]
+            ]
         );
         if ($cached) {
             return $cached['data'];
@@ -149,10 +147,10 @@ class Enrichment
             $this->request = new HTTP_Request2(
                 $url,
                 HTTP_Request2::METHOD_GET,
-                array(
+                [
                     'ssl_verify_peer' => false,
                     'follow_redirects' => true
-                )
+                ]
             );
             $this->request->setHeader('Connection', 'Keep-Alive');
             $this->request->setHeader('User-Agent', 'RecordManager');
@@ -163,6 +161,7 @@ class Enrichment
             $this->request->setHeader($headers);
         }
 
+        $response = null;
         for ($try = 1; $try <= $this->maxTries; $try++) {
             try {
                 $response = $this->request->send();
@@ -170,7 +169,8 @@ class Enrichment
                 if ($try < $this->maxTries) {
                     $this->log->log(
                         'getExternalData',
-                        "HTTP request for '$url' failed (" . $e->getMessage() . "), retrying in {$this->retryWait} seconds...",
+                        "HTTP request for '$url' failed (" . $e->getMessage()
+                        . "), retrying in {$this->retryWait} seconds...",
                         Logger::WARNING
                     );
                     sleep($this->retryWait);
@@ -183,7 +183,8 @@ class Enrichment
                 if ($code >= 300 && $code != 404) {
                     $this->log->log(
                         'getExternalData',
-                        "HTTP request for '$url' failed ($code), retrying in {$this->retryWait} seconds...",
+                        "HTTP request for '$url' failed ($code), retrying "
+                        . "in {$this->retryWait} seconds...",
                         Logger::WARNING
                     );
                     sleep($this->retryWait);
@@ -193,7 +194,7 @@ class Enrichment
             break;
         }
 
-        $code = $response->getStatus();
+        $code = is_null($response) ? 999 : $response->getStatus();
         if ($code >= 300 && $code != 404) {
             throw new Exception("Enrichment failed to fetch '$url': $code");
         }
@@ -201,11 +202,11 @@ class Enrichment
         $data = $code != 404 ? $response->getBody() : '';
 
         $this->db->uriCache->save(
-            array(
+            [
                 '_id' => $id,
                 'timestamp' => new MongoDate(),
                 'data' => $data
-            )
+            ]
         );
 
         return $data;

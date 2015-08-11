@@ -54,8 +54,6 @@ class EadSplitter
     * Constructor
     *
     * @param string $data EAD XML
-    *
-    * @access public
     */
     public function __construct($data)
     {
@@ -64,10 +62,17 @@ class EadSplitter
         $this->recordCount = count($this->recordNodes);
         $this->currentPos = 0;
 
-        $this->agency = (string)$this->doc->eadheader->eadid->attributes()->mainagencycode;
-        $this->archiveId = urlencode((string)($this->doc->eadheader->eadid->attributes()->identifier ? $this->doc->eadheader->eadid->attributes()->identifier : $this->doc->eadheader->eadid));
-        $this->archiveTitle = (string)$this->doc->eadheader->filedesc->titlestmt->titleproper;
-        $this->archiveSubTitle = (string)$this->doc->eadheader->filedesc->titlestmt->subtitle;
+        $this->agency
+            = (string)$this->doc->eadheader->eadid->attributes()->mainagencycode;
+        $this->archiveId = urlencode(
+            (string)($this->doc->eadheader->eadid->attributes()->identifier
+                ? $this->doc->eadheader->eadid->attributes()->identifier
+                : $this->doc->eadheader->eadid)
+        );
+        $this->archiveTitle
+            = (string)$this->doc->eadheader->filedesc->titlestmt->titleproper;
+        $this->archiveSubTitle
+            = (string)$this->doc->eadheader->filedesc->titlestmt->subtitle;
     }
 
     /**
@@ -90,8 +95,9 @@ class EadSplitter
      *
      * @return string XML
      */
-    public function getNextRecord($prependParentTitleWithUnitId, $nonInheritedFields = array())
-    {
+    public function getNextRecord(
+        $prependParentTitleWithUnitId, $nonInheritedFields = []
+    ) {
         if ($this->currentPos < $this->recordCount) {
             $original = $this->recordNodes[$this->currentPos++];
             $record = simplexml_load_string('<' . $original->getName() . '/>');
@@ -106,20 +112,32 @@ class EadSplitter
 
             if ($record->getName() != 'archdesc') {
                 if ($record->did->unitid) {
-                    $unitid = urlencode($record->did->unitid->attributes()->identifier ? (string)$record->did->unitid->attributes()->identifier : (string)$record->did->unitid);
-                    $addData->addAttribute('identifier', $this->archiveId . '_' . $unitid);
+                    $unitid = urlencode(
+                        $record->did->unitid->attributes()->identifier
+                        ? (string)$record->did->unitid->attributes()->identifier
+                        : (string)$record->did->unitid
+                    );
+                    $addData->addAttribute(
+                        'identifier', $this->archiveId . '_' . $unitid
+                    );
                 } else {
                     // Create ID for the unit
-                    $addData->addAttribute('identifier', $this->archiveId . '_' . $this->currentPos);
+                    $addData->addAttribute(
+                        'identifier', $this->archiveId . '_' . $this->currentPos
+                    );
                     // Also store it in original record for the children
-                    $original->addChild('add-data')->addAttribute('identifier', $this->archiveId . '_' . $this->currentPos);
+                    $original->addChild('add-data')->addAttribute(
+                        'identifier', $this->archiveId . '_' . $this->currentPos
+                    );
                 }
             }
 
             $absolute = $addData->addChild('archive');
             $absolute->addAttribute('id', $this->archiveId);
             $absolute->addAttribute('title', $this->archiveTitle);
-            $absolute->addAttribute('sequence', str_pad($this->currentPos, 7, '0', STR_PAD_LEFT));
+            $absolute->addAttribute(
+                'sequence', str_pad($this->currentPos, 7, '0', STR_PAD_LEFT)
+            );
             if ($this->archiveSubTitle) {
                 $absolute->addAttribute('subtitle', $this->archiveSubTitle);
             }
@@ -148,19 +166,29 @@ class EadSplitter
                 $parentDid = $parentDid[0];
                 // If parent has add-data, take the generated ID from it
                 if (isset($original->{'add-data'})) {
-                    $parentID = (string)$original->{'add-data'}->attributes()->identifier;
+                    $parentID
+                        = (string)$original->{'add-data'}->attributes()->identifier;
                 } else {
-                    $parentID = urlencode($parentDid->unitid->attributes()->identifier ? (string)$parentDid->unitid->attributes()->identifier : (string)$parentDid->unitid);
+                    $parentID = urlencode(
+                        $parentDid->unitid->attributes()->identifier
+                        ? (string)$parentDid->unitid->attributes()->identifier
+                        : (string)$parentDid->unitid
+                    );
                 }
                 if ($parentID != $this->archiveId) {
                     $parentID = $this->archiveId . '_' . $parentID;
                 }
                 $parentTitle = (string)$parentDid->unittitle;
 
-
                 if ($prependParentTitleWithUnitId) {
-                    if ((string)$parentDid->unitid && in_array((string)$record->attributes()->level, array('series', 'subseries', 'item', 'file'))) {
-                        $parentTitle = (string)$parentDid->unitid . ' ' . $parentTitle;
+                    if ((string)$parentDid->unitid
+                        && in_array(
+                            (string)$record->attributes()->level,
+                            ['series', 'subseries', 'item', 'file']
+                        )
+                    ) {
+                        $parentTitle = (string)$parentDid->unitid . ' '
+                            . $parentTitle;
                     }
                 }
                 $parent = $addData->addChild('parent');
@@ -182,7 +210,7 @@ class EadSplitter
      *
      * @return void
      */
-    protected function appendXML(&$simplexml, $append, $ignore = array())
+    protected function appendXML(&$simplexml, $append, $ignore = [])
     {
         if ($append) {
             $name = $append->getName();
@@ -219,7 +247,9 @@ class EadSplitter
     {
         if ($append !== null) {
             $name = $append->getName();
-            if ($name == 'c' || (substr($name, 0, 1) == 'c' && is_numeric(substr($name, 1)))) {
+            if ($name == 'c' || (substr($name, 0, 1) == 'c'
+                && is_numeric(substr($name, 1)))
+            ) {
                 return;
             }
             // addChild doesn't encode & ...

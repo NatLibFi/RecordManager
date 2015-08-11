@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'cmdline.php';
 
 /**
@@ -51,11 +50,13 @@ Parameters:
 --verbose           Enable verbose output
 --quiet             Quiet, no output apart from the data
 --skip=...          Skip x records to export only a "representative" subset
---source=...        Export only the given source(s) (separate multiple sources with commas)
+--source=...        Export only the given source(s)
+                    (separate multiple sources with commas)
 --single=...        Export single record with the given id
 --xpath=...         Export only records matching the XPath expression
 --config.section.name=...
-                    Set configuration directive to given value overriding any setting in recordmanager.ini
+                    Set configuration directive to given value overriding
+                    any setting in recordmanager.ini
 --sortdedup         Sort export file by dedup id
 --dedupid=...       deduped = Add dedup id's to records that have duplicates
                     always  = Always add dedup id's to the records
@@ -66,7 +67,9 @@ EOT;
         exit(1);
     }
 
-    $manager = new RecordManager(true, isset($params['verbose']) ? $params['verbose'] : false);
+    $manager = new RecordManager(
+        true, isset($params['verbose']) ? $params['verbose'] : false
+    );
     $manager->quiet = isset($params['quiet']) ? $params['quiet'] : false;
 
     $manager->exportRecords(

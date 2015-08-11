@@ -27,7 +27,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'HTTP/Request2.php';
 require_once 'HarvestHTTPFiles.php';
 
@@ -55,7 +54,11 @@ class HarvestSfx extends HarvestHTTPFiles
     protected function retrieveFile($filename)
     {
         $data = parent::retrieveFile($filename);
-        $data = str_replace('<collection xmlns="http://www.loc.gov/MARC21/slim">', '<collection>', $data);
+        $data = str_replace(
+            '<collection xmlns="http://www.loc.gov/MARC21/slim">',
+            '<collection>',
+            $data
+        );
         return $data;
     }
 

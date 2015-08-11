@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'QdcRecord.php';
 require_once 'MetadataUtils.php';
 
@@ -63,8 +62,11 @@ class NdlQdcRecord extends QdcRecord
         }
 
         if (isset($data['publishDate'])) {
-            $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate']);
-            $data['main_date'] = $this->validateDate($this->getPublicationYear() . '-01-01T00:00:00Z');
+            $data['main_date_str']
+                = MetadataUtils::extractYear($data['publishDate']);
+            $data['main_date'] = $this->validateDate(
+                $this->getPublicationYear() . '-01-01T00:00:00Z'
+            );
         }
 
         if ($range = $this->getPublicationDateRange()) {
@@ -76,26 +78,29 @@ class NdlQdcRecord extends QdcRecord
 
         foreach ($this->doc->relation as $relation) {
             $url = (string)$relation;
-            // Require at least one dot surrounded by valid characters or a familiar scheme
-            if (!preg_match('/[A-Za-z0-9]\.[A-Za-z0-9]/', $url) && !preg_match('/^(http|ftp)s?:\/\//', $url)) {
+            // Require at least one dot surrounded by valid characters or a familiar
+            // scheme
+            if (!preg_match('/[A-Za-z0-9]\.[A-Za-z0-9]/', $url)
+                && !preg_match('/^(http|ftp)s?:\/\//', $url)
+            ) {
                 continue;
             }
-            $link = array(
+            $link = [
                 'url' => $url,
                 'text' => '',
                 'source' => $this->source
-            );
+            ];
             $data['online_boolean'] = true;
             $data['online_str_mv'] = $this->source;
             $data['online_urls_str_mv'][] = json_encode($link);
         }
 
         foreach ($this->doc->file as $file) {
-            $link = array(
+            $link = [
                 'url' => (string)$file->attributes()->href,
                 'text' => (string)$file->attributes()->name,
                 'source' => $this->source
-            );
+            ];
             $data['online_boolean'] = true;
             $data['online_str_mv'] = $this->source;
             $data['online_urls_str_mv'][] = json_encode($link);
@@ -122,7 +127,7 @@ class NdlQdcRecord extends QdcRecord
         if ($year) {
             $startDate = "$year-01-01T00:00:00Z";
             $endDate = "$year-12-31T23:59:59Z";
-            return array($startDate, $endDate);
+            return [$startDate, $endDate];
         }
         return null;
     }

@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'cmdline.php';
 
 /**
@@ -34,6 +33,7 @@ require_once 'cmdline.php';
  * @param string[] $argv Program parameters
  *
  * @return void
+ * @throws Exception
  */
 function main($argv)
 {
@@ -45,7 +45,8 @@ Usage: $argv[0] --func=... [...]
 
 Parameters:
 
---func             renormalize|deduplicate|updatesolr|dump|dumpsolr|markdeleted|deletesource|deletesolr|optimizesolr|count|checkdedup|comparesolr
+--func             renormalize|deduplicate|updatesolr|dump|dumpsolr|markdeleted
+                   |deletesource|deletesolr|optimizesolr|count|checkdedup|comparesolr
 --source           Source ID to process (separate multiple sources with commas)
 --all              Process all records regardless of their state (deduplicate)
                    or date (updatesolr)
@@ -80,7 +81,9 @@ EOT;
             die();
         }
 
-        $manager = new RecordManager(true, isset($params['verbose']) ? $params['verbose'] : false);
+        $manager = new RecordManager(
+            true, isset($params['verbose']) ? $params['verbose'] : false
+        );
 
         $sources = isset($params['source']) ? $params['source'] : '';
         $single = isset($params['single']) ? $params['single'] : '';
@@ -88,7 +91,8 @@ EOT;
 
         // Solr update, compare and dump can handle multiple sources at once
         if ($params['func'] == 'updatesolr' || $params['func'] == 'dumpsolr') {
-            $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
+            $date = isset($params['all'])
+                ? '' : (isset($params['from']) ? $params['from'] : null);
             $dumpPrefix = $params['func'] == 'dumpsolr'
                 ? (isset($params['dumpprefix']) ? $params['dumpprefix'] : 'dumpsolr')
                 : '';
@@ -97,8 +101,15 @@ EOT;
                 $dumpPrefix
             );
         } elseif ($params['func'] == 'comparesolr') {
-            $date = isset($params['all']) ? '' : (isset($params['from']) ? $params['from'] : null);
-            $manager->updateSolrIndex($date, $sources, $single, $noCommit, isset($params['comparelog']) ? $params['comparelog'] : '-');
+            $date = isset($params['all'])
+                ? '' : (isset($params['from']) ? $params['from'] : null);
+            $manager->updateSolrIndex(
+                $date,
+                $sources,
+                $single,
+                $noCommit,
+                isset($params['comparelog']) ? $params['comparelog'] : '-'
+            );
         } else {
             foreach (explode(',', $sources) as $source) {
                 switch ($params['func'])
@@ -107,13 +118,17 @@ EOT;
                     $manager->renormalize($source, $single);
                     break;
                 case 'deduplicate':
-                    $manager->deduplicate($source, isset($params['all']) ? true : false, $single);
+                    $manager->deduplicate(
+                        $source, isset($params['all']) ? true : false, $single
+                    );
                     break;
                 case 'dump':
                     $manager->dumpRecord($single);
                     break;
                 case 'deletesource':
-                    $manager->deleteRecords($source, isset($params['force']) ? $params['force'] : false);
+                    $manager->deleteRecords(
+                        $source, isset($params['force']) ? $params['force'] : false
+                    );
                     break;
                 case 'markdeleted':
                     $manager->markDeleted($source);

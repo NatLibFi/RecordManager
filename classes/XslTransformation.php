@@ -26,11 +26,11 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 
-
 /**
  * XslTransformation Class
  *
- * Class to manage XSL Transformations. Config file is compatible with VuFind's import-xsl.php.
+ * Class to manage XSL Transformations. Config file is compatible with VuFind's
+ * import-xsl.php.
  *
  * @category DataManagement
  * @package  RecordManager
@@ -44,11 +44,11 @@ class XslTransformation
 
     /**
      * Constructor
-     * 
+     *
      * @param string $basePath   Base path of transformation files
      * @param string $configFile Configuration (properties) file
      * @param array  $params     Parameters passed to the xslt
-     * 
+     *
      * @throws Exception
      */
     public function __construct($basePath, $configFile, $params = null)
@@ -63,7 +63,9 @@ class XslTransformation
 
         // Register any custom classes
         if (isset($options['General']['custom_class'])) {
-            $classes = is_array($options['General']['custom_class']) ? $options['General']['custom_class'] : array($options['General']['custom_class']);
+            $classes = is_array($options['General']['custom_class'])
+                ? $options['General']['custom_class']
+                : [$options['General']['custom_class']];
             foreach ($classes as $class) {
                 // Find the file containing the class; if necessary, be forgiving
                 // about filename case.
@@ -96,10 +98,10 @@ class XslTransformation
 
     /**
      * Do a transformation
-     * 
+     *
      * @param string $data   XML string
      * @param array  $params Parameters passed to the xslt
-     * 
+     *
      * @return string XML
      * @throws Exception
      */
@@ -123,10 +125,10 @@ class XslTransformation
 
     /**
      * Do a transformation resulting in an array
-     * 
+     *
      * @param string $data   XML string
      * @param array  $params Parameters passed to the xslt
-     * 
+     *
      * @return array
      * @throws Exception
      */
@@ -139,17 +141,20 @@ class XslTransformation
         $doc->loadXML($data);
         $transformedDoc = $this->xslt->transformToDoc($doc);
         if ($transformedDoc === false) {
-            throw new Exception("XSLTransformation: failed transformation: " . libxml_get_last_error());
+            throw new Exception(
+                "XslTransformation: failed transformation: "
+                . print_r(libxml_get_last_error(), true)
+            );
         }
 
-        $arr = array();
+        $arr = [];
         $fieldNodes = $transformedDoc->getElementsByTagName('field');
         foreach ($fieldNodes as $node) {
             $key = $node->attributes->getNamedItem('name')->nodeValue;
             $value = $node->nodeValue;
             if (isset($arr[$key])) {
                 if (!is_array($arr[$key])) {
-                    $arr[$key] = array($arr[$key]);
+                    $arr[$key] = [$arr[$key]];
                 }
                 $arr[$key][] = $value;
             } else {

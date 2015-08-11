@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="RecordManager" basedir="." default="main">
+  <property name="tmp" value="/tmp" />
+  <property name="package"  value="${phing.project.name}" override="true" />
+  <property name="builddir" value="${tmp}/build/${phing.project.name}" override="true" />
+  <property name="srcdir"   value="${project.basedir}" override="true" />
+  <property name="php-cs-fixers" value="no_blank_lines_before_namespaces,function_call_space,trailing_spaces,unused_use,lowercase_keywords,encoding,parenthesis,php_closing_tag,visibility,duplicate_semicolon,extra_empty_lines,no_blank_lines_after_class_opening,no_empty_lines_after_phpdocs,operators_spaces,spaces_before_semicolon,ternary_spaces,concat_with_spaces,short_array_syntax,phpdoc_no_access,remove_leading_slash_use" />
+
+  <!-- Main Target -->
+  <target name="main" description="main target">
+  </target>
+
+  <!-- Continuous Integration Tasks -->
+  <target name="ci-tasks" description="continuous integration tasks">
+    <!-- Call standard tasks -->
+    <phingcall target="phpcs"/>
+    <phingcall target="php-cs-fixer-dryrun"/>
+  </target>
+
+  <!-- PHP CodeSniffer -->
+  <target name="phpcs">
+    <exec command="phpcs --standard=PEAR --extensions=php" escape="false" />
+  </target>
+
+  <!-- php-cs-fixer (first task applies fixes, second task simply checks if they are needed) -->
+  <target name="php-cs-fixer">
+    <exec command="php-cs-fixer fix ${srcdir} --fixers=${php-cs-fixers} --verbose" passthru="true" escape="false" />
+  </target>
+  <target name="php-cs-fixer-dryrun">
+    <exec command="php-cs-fixer fix ${srcdir} --fixers=${php-cs-fixers} --dry-run --verbose --diff" passthru="true" escape="false" checkreturn="true" />
+  </target>
+</project>

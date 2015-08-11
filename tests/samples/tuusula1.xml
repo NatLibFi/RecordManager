@@ -1,4 +1,4 @@
-﻿<?xml version="1.0"?>
+<?xml version="1.0"?>
 <lidoWrap schemaLocation="http://www.lido-schema.org http://www.lido-schema.org/schema/v1.0/lido-v1.0.xsd">
     <lido>
         <lidoRecID pref="preferred" type="URI">vtm.urn:uuid:1A53062D-4CB9-4A14-940E-C30F3088C8B5</lidoRecID>

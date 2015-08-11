@@ -39,7 +39,7 @@
  */
 class PerformanceCounter
 {
-    protected $counts = array();
+    protected $counts = [];
 
     /**
      * Constructor
@@ -56,7 +56,7 @@ class PerformanceCounter
      */
     public function reset()
     {
-        $this->counts = array(array('t' => microtime(true), 'c' => 0));
+        $this->counts = [['t' => microtime(true), 'c' => 0]];
     }
 
     /**
@@ -68,7 +68,7 @@ class PerformanceCounter
      */
     public function add($count)
     {
-        $this->counts[] = array('t' => microtime(true), 'c' => $count);
+        $this->counts[] = ['t' => microtime(true), 'c' => $count];
         if (count($this->counts) > 10) {
             array_shift($this->counts);
         }
