@@ -913,6 +913,19 @@ class SolrUpdater
                 . $e->getLine(),
                 Logger::FATAL
             );
+            if ($childPid) {
+                // Kill the child process too
+                posix_kill($childPid, SIGINT);
+                // Wait for child to finish
+                while (1) {
+                    $pid = pcntl_waitpid($childPid, $status, WNOHANG);
+                    if ($pid > 0) {
+                        break;
+                    }
+                    sleep(10);
+                }
+            }
+
             if ($this->threadedMergedRecordUpdate && !$childPid) {
                 exit(2);
             }
