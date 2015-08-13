@@ -437,7 +437,9 @@ class NdlLidoRecord extends LidoRecord
         }
 
         if (!$end) {
-            if (strlen($date) == 2) {
+            if (strlen($date) == 1) {
+                $date = '000' . $date . '-01-01T00:00:00Z';
+            } else if (strlen($date) == 2) {
                 $date = '00' . $date . '-01-01T00:00:00Z';
             } else if (strlen($date) == 3) {
                 $date = '0' . $date . '-01-01T00:00:00Z';
@@ -449,7 +451,9 @@ class NdlLidoRecord extends LidoRecord
                 $date = $date . 'T00:00:00Z';
             }
         } else {
-            if (strlen($date) == 2) {
+            if (strlen($date) == 1) {
+                $date = '00' . $date . '-12-31T23:59:59Z';
+            } else if (strlen($date) == 2) {
                 $date = '00' . $date . '-12-31T23:59:59Z';
             } else if (strlen($date) == 3) {
                 $date = '0' . $date . '-12-31T23:59:59Z';
