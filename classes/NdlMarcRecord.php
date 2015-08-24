@@ -685,8 +685,18 @@ class NdlMarcRecord extends MarcRecord
             }
         }
         foreach ($this->getFields('540') as $field) {
-            if (strcasecmp($this->getSubfield($field, '3'), 'metadata') == 0
-                && strcasecmp($this->getSubfield($field, 'a'), 'ei poimintaa') == 0
+            if (strcasecmp(
+                    MetadataUtils::stripTrailingPunctuation(
+                        $this->getSubfield($field, '3')
+                    ),
+                    'metadata'
+                ) == 0
+                && strcasecmp(
+                    MetadataUtils::stripTrailingPunctuation(
+                        $this->getSubfield($field, 'a')
+                    ),
+                    'ei poimintaa'
+                ) == 0
             ) {
                 return 'restricted';
             }
