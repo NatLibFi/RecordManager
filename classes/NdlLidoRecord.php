@@ -983,7 +983,9 @@ class NdlLidoRecord extends LidoRecord
             ->classificationWrap->classification as $classification
         ) {
             if (!empty($classification->term)) {
-                $results[] = (string)$classification->term;
+                foreach ($classification->term as $term) {
+                    $results[] = (string)$term;
+                }
             }
         }
         return $results;

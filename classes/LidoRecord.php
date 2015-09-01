@@ -625,7 +625,7 @@ class LidoRecord extends BaseRecord
                 foreach ($eventMaterialsTech->displayMaterialsTech
                     as $displayMaterialsTech
                 ) {
-                    $displayTerms[] = (string) $displayMaterialsTech;
+                    $displayTerms[] = trim((string) $displayMaterialsTech);
                 }
                 foreach ($eventMaterialsTech->materialsTech as $materialsTech) {
                     foreach ($materialsTech->termMaterialsTech as $termMaterialsTech
