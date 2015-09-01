@@ -508,11 +508,11 @@ class MarcRecord extends BaseRecord
             ]
         );
         if ($values) {
-            if (preg_match('/^([A-Z]+)/', strtoupper($values[1]), $matches)) {
+            if (preg_match('/^([A-Z]+)/', strtoupper($values[0]), $matches)) {
                 $data['callnumber-subject'] = $matches[1];
             }
 
-            $dotPos = strstr($values[1], '.');
+            $dotPos = strstr($values[0], '.');
             if ($dotPos > 0) {
                 $data['callnumber-label'] = strtoupper(
                     substr($values[1], 0, $dotPos)
