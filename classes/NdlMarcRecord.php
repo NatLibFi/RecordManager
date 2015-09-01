@@ -469,6 +469,57 @@ class NdlMarcRecord extends MarcRecord
             }
         }
 
+        // Call numbers
+        $data['callnumber-first'] = strtoupper(
+            str_replace(
+                ' ',
+                '',
+                $this->getFirstFieldSubfields(
+                    [
+                        [MarcRecord::GET_NORMAL, '080', ['a' => 1, 'b' => 1]],
+                        [MarcRecord::GET_NORMAL, '084', ['a' => 1, 'b' => 1]],
+                        [MarcRecord::GET_NORMAL, '050', ['a' => 1, 'b' => 1]]
+                    ]
+                )
+            )
+        );
+        $data['callnumber-raw'] = array_map(
+            'strtoupper',
+            $this->getFieldsSubfields(
+                [
+                    [MarcRecord::GET_NORMAL, '080', ['a' => 1, 'b' => 1]],
+                    [MarcRecord::GET_NORMAL, '084', ['a' => 1, 'b' => 1]],
+                    [MarcRecord::GET_NORMAL, '050', ['a' => 1, 'b' => 1]]
+                ]
+            )
+        );
+        $data['callnumber-sort'] = empty($data['callnumber-raw'])
+            ? '' : $data['callnumber-raw'][0];
+
+        // Legacy callnumber fields. TODO: Remove when VuFind 1 is gone.
+        $data['callnumber'] = strtoupper(
+            str_replace(
+                ' ',
+                '',
+                $this->getFirstFieldSubfields(
+                    [
+                        [MarcRecord::GET_NORMAL, '080', ['a' => 1, 'b' => 1]],
+                        [MarcRecord::GET_NORMAL, '084', ['a' => 1, 'b' => 1]],
+                        [MarcRecord::GET_NORMAL, '050', ['a' => 1, 'b' => 1]]
+                    ]
+                )
+            )
+        );
+        $data['callnumber-a'] = $this->getFirstFieldSubfields(
+            [
+                [MarcRecord::GET_NORMAL, '080', ['a' => 1]],
+                [MarcRecord::GET_NORMAL, '084', ['a' => 1]],
+                [MarcRecord::GET_NORMAL, '050', ['a' => 1]]
+            ]
+        );
+        $data['callnumber-first-code'] = substr($data['callnumber-a'], 0, 1);
+
+
         return $data;
     }
 
@@ -685,12 +736,10 @@ class NdlMarcRecord extends MarcRecord
             }
         }
         foreach ($this->getFields('540') as $field) {
-            if (strcasecmp(
-                    MetadataUtils::stripTrailingPunctuation(
-                        $this->getSubfield($field, '3')
-                    ),
-                    'metadata'
-                ) == 0
+            $sub3 = MetadataUtils::stripTrailingPunctuation(
+                $this->getSubfield($field, '3')
+            );
+            if (strcasecmp($sub3, 'metadata') == 0
                 && strcasecmp(
                     MetadataUtils::stripTrailingPunctuation(
                         $this->getSubfield($field, 'a')

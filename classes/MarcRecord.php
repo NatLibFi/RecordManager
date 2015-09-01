@@ -27,6 +27,7 @@
  */
 require_once 'BaseRecord.php';
 require_once 'MetadataUtils.php';
+require_once 'LcCallNumber.php';
 require_once 'Logger.php';
 
 /**
@@ -93,7 +94,7 @@ class MarcRecord extends BaseRecord
                             );
                             foreach ($subfields as $subfield) {
                                 $newField['s'][] = [
-                                    $subfield[0] => substr($subfield, 1)
+                                    (string)$subfield[0] => substr($subfield, 1)
                                 ];
                             }
                             $this->fields[$tag][] = $newField;
@@ -493,27 +494,53 @@ class MarcRecord extends BaseRecord
             $value = str_replace('-', '', $value);
         }
 
-        $data['callnumber'] = strtoupper(
-            str_replace(
-                ' ',
-                '',
-                $this->getFirstFieldSubfields(
-                    [
-                        [MarcRecord::GET_NORMAL, '080', ['a' => 1, 'b' => 1]],
-                        [MarcRecord::GET_NORMAL, '084', ['a' => 1, 'b' => 1]],
-                        [MarcRecord::GET_NORMAL, '050', ['a' => 1, 'b' => 1]]
-                    ]
-                )
-            )
-        );
-        $data['callnumber-a'] = $this->getFirstFieldSubfields(
+        $data['callnumber-first'] = $this->getFirstFieldSubfields(
             [
-                [MarcRecord::GET_NORMAL, '080', ['a' => 1]],
-                [MarcRecord::GET_NORMAL, '084', ['a' => 1]],
+                [MarcRecord::GET_NORMAL, '099', ['a' => 1]],
+                [MarcRecord::GET_NORMAL, '090', ['a' => 1]],
                 [MarcRecord::GET_NORMAL, '050', ['a' => 1]]
             ]
         );
-        $data['callnumber-first-code'] = substr($data['callnumber-a'], 0, 1);
+        $values = $this->getFirstFieldSubfields(
+            [
+                [MarcRecord::GET_NORMAL, '090', ['a' => 1]],
+                [MarcRecord::GET_NORMAL, '050', ['a' => 1]]
+            ]
+        );
+        if ($values) {
+            if (preg_match('/^([A-Z]+)/', strtoupper($values[1]), $matches)) {
+                $data['callnumber-subject'] = $matches[1];
+            }
+
+            $dotPos = strstr($values[1], '.');
+            if ($dotPos > 0) {
+                $data['callnumber-label'] = strtoupper(
+                    substr($values[1], 0, $dotPos)
+                );
+            } else {
+                $data['callnumber-label'] = strtoupper($values[0]);
+            }
+        }
+        $data['callnumber-raw'] = array_map(
+            'strtoupper',
+            $this->getFieldsSubfields(
+                [
+                    [MarcRecord::GET_NORMAL, '080', ['a' => 1, 'b' => 1]],
+                    [MarcRecord::GET_NORMAL, '084', ['a' => 1, 'b' => 1]],
+                    [MarcRecord::GET_NORMAL, '050', ['a' => 1, 'b' => 1]]
+                ]
+            )
+        );
+        foreach ($data['callnumber-raw'] as $callnumber) {
+            $cn = new LcCallNumber($callnumber);
+            if ($cn->isValid()) {
+                $data['callnumber-sort'] = $cn->getSortKey();
+            }
+        }
+        if (empty($data['callnumber-sort']) && !empty($data['callnumber-raw'])) {
+            $cn = new LcCallNumber($data['callnumber-raw'][0]);
+            $data['callnumber-sort'] = $cn->getSortKey();
+        }
 
         $data['topic'] = $this->getTopics();
         $data['genre'] = $this->getGenres();
@@ -1267,7 +1294,9 @@ class MarcRecord extends BaseRecord
                     MARCRecord::SUBFIELD_INDICATOR, substr($tagData, 3)
                 );
                 foreach ($subfields as $subfield) {
-                    $newField['s'][] = [$subfield[0] => substr($subfield, 1)];
+                    $newField['s'][] = [
+                        (string)$subfield[0] => substr($subfield, 1)
+                    ];
                 }
                 $this->fields[$tag][] = $newField;
             } else {

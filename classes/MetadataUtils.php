@@ -608,4 +608,23 @@ class MetadataUtils
         }
         return null;
     }
+
+    /**
+     * Make a string numerically sortable
+     *
+     * @param string $str String
+     *
+     * @return string
+     */
+    static public function createSortableString($str)
+    {
+        $str = preg_replace_callback(
+            '/(\d+)/',
+            function ($matches) {
+                return strlen((int)$matches[1]) . $matches[1];
+            },
+            strtoupper($str)
+        );
+        return preg_replace('/\s{2,}/', ' ', $str);
+    }
 }
