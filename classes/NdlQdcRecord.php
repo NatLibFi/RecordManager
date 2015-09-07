@@ -96,14 +96,22 @@ class NdlQdcRecord extends QdcRecord
         }
 
         foreach ($this->doc->file as $file) {
+            $url = (string)$file->attributes()->href
+                ? (string)$file->attributes()->href
+                : (string)$file;
             $link = [
-                'url' => (string)$file->attributes()->href,
+                'url' => $url,
                 'text' => (string)$file->attributes()->name,
                 'source' => $this->source
             ];
             $data['online_boolean'] = true;
             $data['online_str_mv'] = $this->source;
             $data['online_urls_str_mv'][] = json_encode($link);
+            if (strcasecmp($file->attributes()->bundle, 'THUMBNAIL') == 0
+                && !isset($data['thumbnail'])
+            ) {
+                $data['thumbnail'] = $url;
+            }
         }
 
         if ($this->doc->permaddress) {
