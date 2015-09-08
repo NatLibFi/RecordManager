@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'EadRecord.php';
 require_once 'MetadataUtils.php';
 
@@ -45,8 +44,8 @@ class NdlEadRecord extends EadRecord
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
-     * @param boolean $prependTitleWithSubtitle If true and title_sub differs from title_short,
-     *                                          title is formed by combining title_sub and title_short
+     * @param boolean $prependTitleWithSubtitle If true and title_sub differs from
+     * title_short, title is formed by combining title_sub and title_short
      *
      * @return string[]
      */
@@ -56,7 +55,10 @@ class NdlEadRecord extends EadRecord
         $doc = $this->doc;
 
         $unitDateRange = $this->parseDateRange((string)$doc->did->unitdate);
-        $data['search_sdaterange_mv'] = $data['unit_sdaterange'] = MetadataUtils::convertDateRange($unitDateRange);
+        $data['search_sdaterange_mv'] = $data['unit_sdaterange']
+            = MetadataUtils::dateRangeToNumeric($unitDateRange);
+        $data['search_daterange_mv'] = $data['unit_daterange']
+            = MetadataUtils::dateRangeToStr($unitDateRange);
         if ($unitDateRange) {
             $data['main_date_str'] = MetadataUtils::extractYear($unitDateRange[0]);
             $data['main_date'] = $this->validateDate($unitDateRange[0]);
@@ -76,7 +78,7 @@ class NdlEadRecord extends EadRecord
             if ($yearRange) {
                 $len = strlen($yearRange);
                 foreach (
-                    array('title_full', 'title_sort', 'title', 'title_short')
+                    ['title_full', 'title_sort', 'title', 'title_short']
                     as $field
                 ) {
                     if (substr($data[$field], -$len) != $yearRange
@@ -93,12 +95,14 @@ class NdlEadRecord extends EadRecord
             $data['hierarchy_sequence_str'] = $data['hierarchy_sequence'];
         }
 
-        $data['source_str_mv'] = isset($data['institution']) ? $data['institution'] : $this->source;
+        $data['source_str_mv'] = isset($data['institution'])
+            ? $data['institution'] : $this->source;
         $data['datasource_str_mv'] = $this->source;
 
         // Digitized?
         if ($doc->did->daogrp) {
-            if (in_array($data['format'], array('collection', 'series', 'fonds', 'item'))) {
+            if (in_array($data['format'], ['collection', 'series', 'fonds', 'item'])
+            ) {
                 $data['format'] = 'digitized_' . $data['format'];
             }
 
@@ -123,7 +127,7 @@ class NdlEadRecord extends EadRecord
      *
      * @param string $input Date range
      *
-     * @return NULL|string
+     * @return NULL|array
      */
     protected function parseDateRange($input)
     {
@@ -131,20 +135,28 @@ class NdlEadRecord extends EadRecord
             return null;
         }
 
-        if (preg_match('/(\d\d?).(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
+        if (preg_match(
+            '/(\d\d?).(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d?).(\d\d\d\d)/',
+            $input,
+            $matches
+        ) > 0) {
             $startYear = $matches[3];
             $startMonth = sprintf('%02d', $matches[2]);
             $startDay = sprintf('%02d', $matches[1]);
-            $startDate = $startYear . '-' . $startMonth . '-' .  $startDay . 'T00:00:00Z';
+            $startDate = $startYear . '-' . $startMonth . '-' .  $startDay
+                . 'T00:00:00Z';
             $endYear = $matches[6];
             $endMonth =  sprintf('%02d', $matches[5]);
             $endDay = sprintf('%02d', $matches[4]);
             $endDate = $endYear . '-' . $endMonth . '-' .  $endDay . 'T23:59:59Z';
-        } elseif (preg_match('/(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
+        } elseif (preg_match(
+            '/(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d\d\d)/', $input, $matches
+        ) > 0) {
             $startYear = $matches[2];
             $startMonth = sprintf('%02d', $matches[1]);
             $startDay = '01';
-            $startDate = $startYear . '-' . $startMonth . '-' .  $startDay . 'T00:00:00Z';
+            $startDate = $startYear . '-' . $startMonth . '-' .  $startDay
+                . 'T00:00:00Z';
             $endYear = $matches[4];
             $endMonth =  sprintf('%02d', $matches[3]);
             $endDate = $endYear . '-' . $endMonth . '-01';
@@ -152,7 +164,12 @@ class NdlEadRecord extends EadRecord
                 $d = new DateTime($endDate);
             } catch (Exception $e) {
                 global $logger;
-                $logger->log('NdlEadRecord', "Failed to parse date $endDate, record {$this->source}." . $this->getID(), Logger::ERROR);
+                $logger->log(
+                    'NdlEadRecord',
+                    "Failed to parse date $endDate, record {$this->source}."
+                    . $this->getID(),
+                    Logger::ERROR
+                );
                 return null;
             }
             $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
@@ -180,7 +197,12 @@ class NdlEadRecord extends EadRecord
                 $d = new DateTime($endDate);
             } catch (Exception $e) {
                 global $logger;
-                $logger->log('NdlEadRecord', "Failed to parse date $endDate, record {$this->source}." . $this->getID(), Logger::ERROR);
+                $logger->log(
+                    'NdlEadRecord',
+                    "Failed to parse date $endDate, record {$this->source}."
+                    . $this->getID(),
+                    Logger::ERROR
+                );
                 return null;
             }
             $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
@@ -195,13 +217,18 @@ class NdlEadRecord extends EadRecord
             return null;
         }
 
-        if ($endDate < $startDate) {
+        if (strtotime($startDate) > strtotime($endDate)) {
             global $logger;
-            $logger->log('NdlEadRecord', "Invalid date range {$startDate} - {$endDate}, record {$this->source}." . $this->getID(), Logger::WARNING);
+            $logger->log(
+                'NdlEadRecord',
+                "Invalid date range {$startDate} - {$endDate}, record " .
+                "{$this->source}." . $this->getID(),
+                Logger::WARNING
+            );
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
         }
 
-        return array($startDate, $endDate);
+        return [$startDate, $endDate];
     }
 }
 

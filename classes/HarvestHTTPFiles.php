@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'HTTP/Request2.php';
 
 /**
@@ -55,6 +54,7 @@ class HarvestHTTPFiles
     protected $deletedRecords = 0;    // Harvested deleted record count
     protected $unchangedRecords = 0;  // Harvested unchanged record count
     protected $recordElem = 'record'; // Element to look for in retrieved XML
+    protected $callback = null;       // Record handling callback
 
     // As we harvest records, we want to track the most recent date encountered
     // so we can set a start point for the next harvest.
@@ -69,7 +69,7 @@ class HarvestHTTPFiles
      * @param string $basePath RecordManager main directory location
      * @param array  $settings Settings from datasources.ini.
      *
-     * @access public
+     * @throws Exception
      */
     public function __construct($logger, $db, $source, $basePath, $settings)
     {
@@ -97,7 +97,9 @@ class HarvestHTTPFiles
 
         if (isset($settings['preTransformation'])) {
             $style = new DOMDocument();
-            $style->load($basePath . '/transformations/' . $settings['preTransformation']);
+            $style->load(
+                $basePath . '/transformations/' . $settings['preTransformation']
+            );
             $this->preXSLT = new XSLTProcessor();
             $this->preXSLT->importStylesheet($style);
             $this->preXSLT->setParameter('', 'source_id', $this->source);
@@ -140,7 +142,6 @@ class HarvestHTTPFiles
      * @param string $date Start date (YYYY-MM-DD format).
      *
      * @return void
-     * @access public
      */
     public function setStartDate($date)
     {
@@ -153,7 +154,6 @@ class HarvestHTTPFiles
      * @param string $date End date (YYYY-MM-DD format).
      *
      * @return void
-     * @access public
      */
     public function setEndDate($date)
     {
@@ -163,10 +163,10 @@ class HarvestHTTPFiles
     /**
      * Harvest all available documents.
      *
-     * @param functionref $callback Function to be called to store a harvested record
+     * @param callable $callback Function to be called to store a harvested record
      *
      * @return void
-     * @access public
+     * @throws Exception
      */
     public function harvest($callback)
     {
@@ -194,7 +194,11 @@ class HarvestHTTPFiles
             $result = $xml->XML($data);
             if ($result === false || libxml_get_last_error() !== false) {
                 // Assuming it's a character encoding issue, this might help...
-                $this->message('Invalid XML received, trying encoding fix...', false, Logger::WARNING);
+                $this->message(
+                    'Invalid XML received, trying encoding fix...',
+                    false,
+                    Logger::WARNING
+                );
                 $data = iconv('UTF-8', 'UTF-8//IGNORE', $data);
                 libxml_clear_errors();
                 $result = $xml->XML($data);
@@ -206,9 +210,12 @@ class HarvestHTTPFiles
                     if ($errors) {
                         $errors .= '; ';
                     }
-                    $errors .= 'Error ' . $error->code . ' at ' . $error->line . ':' . $error->column . ': ' . $error->message;
+                    $errors .= 'Error ' . $error->code . ' at ' . $error->line
+                        . ':' . $error->column . ': ' . $error->message;
                 }
-                $this->message("Could not parse XML response: $errors\n", false, Logger::FATAL);
+                $this->message(
+                    "Could not parse XML response: $errors\n", false, Logger::FATAL
+                );
                 throw new Exception("Failed to parse XML response");
             }
             libxml_use_internal_errors($saveUseErrors);
@@ -231,11 +238,12 @@ class HarvestHTTPFiles
      * date if it is available.
      *
      * @return void
-     * @access protected
      */
     protected function loadLastHarvestedDate()
     {
-        $state = $this->db->state->findOne(array('_id' => "Last Harvest Date {$this->source}"));
+        $state = $this->db->state->findOne(
+            ['_id' => "Last Harvest Date {$this->source}"]
+        );
         if (isset($state)) {
             $this->setStartDate($state['value']);
         }
@@ -245,11 +253,13 @@ class HarvestHTTPFiles
      * Save the tracked date as the last harvested date.
      *
      * @return void
-     * @access protected
      */
     protected function saveLastHarvestedDate()
     {
-        $state = array('_id' => "Last Harvest Date {$this->source}", 'value' => $this->trackedEndDate);
+        $state = [
+            '_id' => "Last Harvest Date {$this->source}",
+            'value' => $this->trackedEndDate
+        ];
         $this->db->state->save($state);
     }
 
@@ -264,7 +274,7 @@ class HarvestHTTPFiles
         $request = new HTTP_Request2(
             $this->baseURL,
             HTTP_Request2::METHOD_GET,
-            array('ssl_verify_peer' => false)
+            ['ssl_verify_peer' => false]
         );
         $request->setHeader('User-Agent', 'RecordManager');
 
@@ -273,12 +283,18 @@ class HarvestHTTPFiles
         $this->message("Sending request: $urlStr", true);
 
         // Perform request and throw an exception on error:
+        $response = null;
         for ($try = 1; $try <= 5; $try++) {
             try {
                 $response = $request->send();
             } catch (Exception $e) {
                 if ($try < 5) {
-                    $this->message("Request '$urlStr' failed (" . $e->getMessage() . "), retrying in 30 seconds...", false, Logger::WARNING);
+                    $this->message(
+                        "Request '$urlStr' failed (" . $e->getMessage()
+                        . "), retrying in 30 seconds...",
+                        false,
+                        Logger::WARNING
+                    );
                     sleep(30);
                     continue;
                 }
@@ -287,14 +303,19 @@ class HarvestHTTPFiles
             if ($try < 5) {
                 $code = $response->getStatus();
                 if ($code >= 300) {
-                    $this->message("Request '$urlStr' failed ($code), retrying in 30 seconds...", false, Logger::WARNING);
+                    $this->message(
+                        "Request '$urlStr' failed ($code), "
+                        . "retrying in 30 seconds...",
+                        false,
+                        Logger::WARNING
+                    );
                     sleep(30);
                     continue;
                 }
             }
             break;
         }
-        $code = $response->getStatus();
+        $code = is_null($response) ? 999 : $response->getStatus();
         if ($code >= 300) {
             $this->message("Request '$urlStr' failed: $code", false, Logger::FATAL);
             throw new Exception("Request failed: $code");
@@ -302,17 +323,26 @@ class HarvestHTTPFiles
 
         $responseStr = $response->getBody();
 
-        $matches = array();
-        preg_match_all("/href=\"({$this->filePrefix}.*?{$this->fileSuffix})\"/", $responseStr, $matches, PREG_SET_ORDER);
-        $files = array();
+        $matches = [];
+        preg_match_all(
+            "/href=\"({$this->filePrefix}.*?{$this->fileSuffix})\"/",
+            $responseStr,
+            $matches,
+            PREG_SET_ORDER
+        );
+        $files = [];
         foreach ($matches as $match) {
             $filename = $match[1];
             $date = $this->getFileDate($filename, $responseStr);
             if ($date === false) {
-                $this->message("Invalid filename date in '$filename'", false, Logger::WARNING);
+                $this->message(
+                    "Invalid filename date in '$filename'", false, Logger::WARNING
+                );
                 continue;
             }
-            if ($date > $this->startDate && (!$this->endDate || $date <= $this->endDate)) {
+            if ($date > $this->startDate
+                && (!$this->endDate || $date <= $this->endDate)
+            ) {
                 $files[] = $filename;
                 if (!$this->trackedEndDate || $this->trackedEndDate < $date) {
                     $this->trackedEndDate = $date;
@@ -335,7 +365,7 @@ class HarvestHTTPFiles
         $request = new HTTP_Request2(
             $this->baseURL . $filename,
             HTTP_Request2::METHOD_GET,
-            array('ssl_verify_peer' => false)
+            ['ssl_verify_peer' => false]
         );
         $request->setHeader('User-Agent', 'RecordManager');
 
@@ -344,12 +374,18 @@ class HarvestHTTPFiles
         $this->message("Sending request: $urlStr", true);
 
         // Perform request and throw an exception on error:
+        $response = null;
         for ($try = 1; $try <= 5; $try++) {
             try {
                 $response = $request->send();
             } catch (Exception $e) {
                 if ($try < 5) {
-                    $this->message("Request '$urlStr' failed (" . $e->getMessage() . "), retrying in 30 seconds...", false, Logger::WARNING);
+                    $this->message(
+                        "Request '$urlStr' failed (" . $e->getMessage()
+                        . "), retrying in 30 seconds...",
+                        false,
+                        Logger::WARNING
+                    );
                     sleep(30);
                     continue;
                 }
@@ -358,14 +394,19 @@ class HarvestHTTPFiles
             if ($try < 5) {
                 $code = $response->getStatus();
                 if ($code >= 300) {
-                    $this->message("Request '$urlStr' failed ($code), retrying in 30 seconds...", false, Logger::WARNING);
+                    $this->message(
+                        "Request '$urlStr' failed ($code), retrying in "
+                        . "30 seconds...",
+                        false,
+                        Logger::WARNING
+                    );
                     sleep(30);
                     continue;
                 }
             }
             break;
         }
-        $code = $response->getStatus();
+        $code = is_null($response) ? 999 : $response->getStatus();
         if ($code >= 300) {
             $this->message("Request '$urlStr' failed: $code", false, Logger::FATAL);
             throw new Exception("Request failed: $code");
@@ -383,12 +424,15 @@ class HarvestHTTPFiles
      */
     protected function processRecords(&$xml)
     {
-        while ($xml->read() && $xml->name !== $this->recordElem);
+        while ($xml->read() && $xml->name !== $this->recordElem) {
+        };
         $count = 0;
         $doc = new DOMDocument;
         while ($xml->name == $this->recordElem) {
             ++$count;
-            $this->processRecord(simplexml_import_dom($doc->importNode($xml->expand(), true)), $count);
+            $this->processRecord(
+                simplexml_import_dom($doc->importNode($xml->expand(), true)), $count
+            );
             if ($count % 1000 == 0) {
                 $this->message("$count records processed", true);
             }
@@ -403,14 +447,15 @@ class HarvestHTTPFiles
      * @param int              $recNum Record number in the file (1-based)
      *
      * @return void
-     * @access protected
      */
     protected function processRecord($record, $recNum)
     {
         $id = $this->extractID($record);
         if ($id === false) {
             $this->message(
-                "No ID found in record $recNum: " . $record->asXML(), false, Logger::ERROR
+                "No ID found in record $recNum: " . $record->asXML(),
+                false,
+                Logger::ERROR
             );
             return;
         }
@@ -420,7 +465,9 @@ class HarvestHTTPFiles
             $this->deletedRecords++;
         } elseif ($this->isModified($record)) {
             $this->normalizeRecord($record, $id);
-            $this->changedRecords += call_user_func($this->callback, $oaiId, false, $record->asXML());
+            $this->changedRecords += call_user_func(
+                $this->callback, $oaiId, false, $record->asXML()
+            );
         } else {
             // This assumes the provider may return records that are not changed or
             // deleted.
@@ -485,7 +532,9 @@ class HarvestHTTPFiles
      */
     protected function getFileDate($filename, $responseStr)
     {
-        if (!preg_match('/(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)/', $filename, $dateparts)) {
+        if (!preg_match(
+            '/(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)/', $filename, $dateparts
+        )) {
             return false;
         }
         $date = $dateparts[1] . '-' . $dateparts[2] . '-' . $dateparts[3] . 'T' .
@@ -524,6 +573,7 @@ class HarvestHTTPFiles
      * @param string $xml XML to transform
      *
      * @return string Transformed XML
+     * @throws Exception
      */
     protected function preTransform($xml)
     {
@@ -532,7 +582,11 @@ class HarvestHTTPFiles
         libxml_clear_errors();
         $result = $doc->loadXML($xml, LIBXML_PARSEHUGE);
         if ($result === false || libxml_get_last_error() !== false) {
-            $this->message('Invalid XML received, trying encoding fix...', false, Logger::WARNING);
+            $this->message(
+                'Invalid XML received, trying encoding fix...',
+                false,
+                Logger::WARNING
+            );
             $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
             libxml_clear_errors();
             $result = $doc->loadXML($xml, LIBXML_PARSEHUGE);
@@ -544,7 +598,8 @@ class HarvestHTTPFiles
                 if ($errors) {
                     $errors .= '; ';
                 }
-                $errors .= 'Error ' . $error->code . ' at ' . $error->line . ':' . $error->column . ': ' . $error->message;
+                $errors .= 'Error ' . $error->code . ' at ' . $error->line . ':'
+                    . $error->column . ': ' . $error->message;
             }
             $this->message("Could not parse XML: $errors\n", false, Logger::FATAL);
             throw new Exception("Failed to parse XML");
@@ -561,7 +616,11 @@ class HarvestHTTPFiles
      */
     protected function reportResults()
     {
-        $this->message('Harvested ' . $this->changedRecords . ' updated, ' . $this->unchangedRecords . ' unchanged and ' . $this->deletedRecords . ' deleted records');
+        $this->message(
+            'Harvested ' . $this->changedRecords . ' updated, '
+            . $this->unchangedRecords . ' unchanged and '
+            . $this->deletedRecords . ' deleted records'
+        );
     }
 
     /**
@@ -569,10 +628,9 @@ class HarvestHTTPFiles
      *
      * @param string $msg     Message
      * @param bool   $verbose Flag telling whether this is considered verbose output
-     * @param level  $level   Logging level
+     * @param int    $level   Logging level
      *
      * @return void
-     * @access protected
      */
     protected function message($msg, $verbose = false, $level = Logger::INFO)
     {

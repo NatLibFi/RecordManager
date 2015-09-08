@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'cmdline.php';
 
 /**
@@ -34,6 +33,7 @@ require_once 'cmdline.php';
  * @param string[] $argv Program parameters
  *
  * @return void
+ * @throws Exception
  */
 function main($argv)
 {
@@ -49,7 +49,8 @@ Parameters:
 --source            Source ID
 --verbose           Enable verbose output
 --config.section.name=value
-                   Set configuration directive to given value overriding any setting in recordmanager.ini
+                   Set configuration directive to given value overriding any
+                   setting in recordmanager.ini
 --lockfile=file    Use a lock file to avoid executing the command multiple times in
                    parallel (useful when running from crontab)
 
@@ -65,7 +66,9 @@ EOT;
             die();
         }
 
-        $manager = new RecordManager(true, isset($params['verbose']) ? $params['verbose'] : false);
+        $manager = new RecordManager(
+            true, isset($params['verbose']) ? $params['verbose'] : false
+        );
 
         $manager->loadFromFile($params['source'], $params['file']);
     } catch(Exception $e) {

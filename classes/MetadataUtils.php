@@ -29,7 +29,8 @@
 /**
  * MetadataUtils Class
  *
- * This class contains a collection of static helper functions for metadata processing
+ * This class contains a collection of static helper functions for metadata
+ * processing
  *
  * @category DataManagement
  * @package  RecordManager
@@ -39,9 +40,9 @@
  */
 class MetadataUtils
 {
-    static $fullTitlePrefixes = null;
-    static $abbreviations = null;
-    static $articles = null;
+    public static $fullTitlePrefixes = null;
+    public static $abbreviations = null;
+    public static $articles = null;
 
     /**
      * Convert ISBN-10 (without dashes) to ISBN-13
@@ -50,15 +51,15 @@ class MetadataUtils
      *
      * @return boolean|string Resulting ISBN or false for invalid string
      */
-    static public function isbn10to13($isbn)
+    public static function isbn10to13($isbn)
     {
         if (!preg_match('{^([0-9]{9})[0-9xX]$}', $isbn, $matches)) {
             // number is not 10 digits
             return false;
         }
 
-        $sum_of_digits = 38 + 3 * ($isbn{0} + $isbn{2} + $isbn{4} + $isbn{6} + $isbn{8}) +
-        $isbn{1} + $isbn{3} + $isbn{5} + $isbn{7};
+        $sum_of_digits = 38 + 3 * ($isbn{0} + $isbn{2} + $isbn{4} + $isbn{6}
+            + $isbn{8}) + $isbn{1} + $isbn{3} + $isbn{5} + $isbn{7};
 
         $check_digit = (10 - ($sum_of_digits % 10)) % 10;
 
@@ -72,14 +73,14 @@ class MetadataUtils
      *
      * @return float
      */
-    static public function coordinateToDecimal($value)
+    public static function coordinateToDecimal($value)
     {
         if ($value === '') {
             return (float)NAN;
         }
         if (preg_match('/^([eEwWnNsS])(\d{3})(\d{2})(\d{2})/', $value, $matches)) {
             $dec = $matches[2] + $matches[3] / 60 + $matches[4] / 3600;
-            if (in_array($matches[1], array('w', 'W', 's', 'S'))) {
+            if (in_array($matches[1], ['w', 'W', 's', 'S'])) {
                 return -$dec;
             }
             return $dec;
@@ -94,11 +95,8 @@ class MetadataUtils
      *
      * @return string
      */
-    static public function createTitleKey($title)
+    public static function createTitleKey($title)
     {
-        global $configArray;
-        global $basePath;
-
         $full = false;
         if (isset(MetadataUtils::$fullTitlePrefixes)) {
             $normalTitle = MetadataUtils::normalize($title);
@@ -138,16 +136,29 @@ class MetadataUtils
      *
      * @return string
      */
-    static public function normalize($str)
+    public static function normalize($str)
     {
-        $unwanted_array = array('Š'=>'S', 'š'=>'s', 'Ž'=>'Z', 'ž'=>'z', 'À'=>'A', 'Á'=>'A', 'Â'=>'A', 'Ã'=>'A', /*'Ä'=>'A', 'Å'=>'A',*/ 'Æ'=>'A', 'Ç'=>'C', 'È'=>'E', 'É'=>'E',
-                          'Ê'=>'E', 'Ë'=>'E', 'Ì'=>'I', 'Í'=>'I', 'Î'=>'I', 'Ï'=>'I', 'Ñ'=>'N', 'Ò'=>'O', 'Ó'=>'O', 'Ô'=>'O', 'Õ'=>'O', /*'Ö'=>'O',*/ 'Ø'=>'O', 'Ù'=>'U',
-                          'Ú'=>'U', 'Û'=>'U', 'Ü'=>'U', 'Ý'=>'Y', 'Þ'=>'B', 'ß'=>'Ss', 'à'=>'a', 'á'=>'a', 'â'=>'a', 'ã'=>'a', /*'ä'=>'a', 'å'=>'a',*/ 'æ'=>'a', 'ç'=>'c',
-                          'è'=>'e', 'é'=>'e', 'ê'=>'e', 'ë'=>'e', 'ì'=>'i', 'í'=>'i', 'î'=>'i', 'ï'=>'i', 'ð'=>'o', 'ñ'=>'n', 'ò'=>'o', 'ó'=>'o', 'ô'=>'o', 'õ'=>'o',
-        /*'ö'=>'o',*/ 'ø'=>'o', 'ù'=>'u', 'ú'=>'u', 'û'=>'u', 'ü'=>'u', 'ý'=>'y', 'ý'=>'y', 'þ'=>'b', 'ÿ'=>'y' );
+        $unwanted_array = [
+            'Š' => 'S', 'š' => 's', 'Ž' => 'Z', 'ž' => 'z', 'À' => 'A', 'Á' => 'A',
+            'Â' => 'A', 'Ã' => 'A', /*'Ä'=>'A', 'Å'=>'A',*/ 'Æ' => 'A', 'Ç' => 'C',
+            'È' => 'E', 'É' => 'E', 'Ê' => 'E', 'Ë' => 'E', 'Ì' => 'I', 'Í' => 'I',
+            'Î' => 'I', 'Ï' => 'I', 'Ñ' => 'N', 'Ò' => 'O', 'Ó' => 'O', 'Ô' => 'O',
+            'Õ' => 'O', /*'Ö'=>'O',*/ 'Ø' => 'O', 'Ù' => 'U', 'Ú' => 'U', 'Û' => 'U',
+            'Ü' => 'U', 'Ý' => 'Y', 'Þ' => 'B', 'ß' => 'Ss', 'à' => 'a', 'á' => 'a',
+            'â' => 'a', 'ã' => 'a', /*'ä'=>'a', 'å'=>'a',*/ 'æ' => 'a', 'ç' => 'c',
+            'è' => 'e', 'é' => 'e', 'ê' => 'e', 'ë' => 'e', 'ì' => 'i', 'í' => 'i',
+            'î' => 'i', 'ï' => 'i', 'ð' => 'o', 'ñ' => 'n', 'ò' => 'o', 'ó' => 'o',
+            'ô' => 'o', 'õ' => 'o', /*'ö'=>'o',*/ 'ø' => 'o', 'ù' => 'u', 'ú' => 'u',
+            'û' => 'u', 'ü' => 'u', 'ý' => 'y', 'þ' => 'b', 'ÿ' => 'y'
+        ];
         $str = strtr($str, $unwanted_array);
         $str = utf8_decode($str);
-        $str = preg_replace('/[\x00-\x20\x21-\x2F\x3A-\x40\x7B-\xC3\xC6-\xD5\xD7-\xE3\xE6-\xF5\xF7-\xFF]/', '', $str);
+        $str = preg_replace(
+            // @codingStandardsIgnoreLine
+            '/[\x00-\x20\x21-\x2F\x3A-\x40\x7B-\xC3\xC6-\xD5\xD7-\xE3\xE6-\xF5\xF7-\xFF]/',
+            '',
+            $str
+        );
         $str = mb_strtolower(trim($str));
         return utf8_encode($str);
     }
@@ -159,7 +170,7 @@ class MetadataUtils
      *
      * @return string Normalized ISBN or empty string
      */
-    static public function normalizeISBN($isbn)
+    public static function normalizeISBN($isbn)
     {
         $isbn = str_replace('-', '', $isbn);
         if (!preg_match('{([0-9]{9,12}[0-9xX])}', $isbn, $matches)) {
@@ -173,14 +184,15 @@ class MetadataUtils
     }
 
     /**
-     * Try to match two authors with at least last name and initial letter of first name
+     * Try to match two authors with at least last name and initial letter of first
+     * name
      *
      * @param string $a1 LastName FirstName
      * @param string $a2 LastName FirstName
      *
      * @return bool
      */
-    static public function authorMatch($a1, $a2)
+    public static function authorMatch($a1, $a2)
     {
         if ($a1 == $a2) {
             return true;
@@ -220,7 +232,7 @@ class MetadataUtils
      *
      * @return boolean
      */
-    static public function hasTrailingPunctuation($str)
+    public static function hasTrailingPunctuation($str)
     {
         $i = strlen($str) - 1;
         if ($i < 0) {
@@ -244,13 +256,12 @@ class MetadataUtils
      *
      * @return string
      */
-    static public function stripTrailingPunctuation($str)
+    public static function stripTrailingPunctuation($str)
     {
-        global $configArray;
-
         $str = rtrim($str, ' /:;,=([');
 
-        // Don't replace an initial letter (e.g. string "Smith, A.") followed by period
+        // Don't replace an initial letter (e.g. string "Smith, A.") followed by
+        // period
         if (substr($str, -1) == '.' && substr($str, -3, 1) != ' ') {
             $p = strrpos($str, ' ');
             if ($p > 0) {
@@ -275,8 +286,9 @@ class MetadataUtils
      *
      * @return string
      */
-    static public function stripLeadingPunctuation($str, $punctuation = " \t\\#!¡?/:;.,=(['\"´`” ̈")
-    {
+    public static function stripLeadingPunctuation($str,
+        $punctuation = " \t\\#!¡?/:;.,=(['\"´`” ̈"
+    ) {
         return ltrim($str, $punctuation);
     }
 
@@ -287,7 +299,7 @@ class MetadataUtils
      *
      * @return string Modified title string
      */
-    static public function stripLeadingArticle($str)
+    public static function stripLeadingArticle($str)
     {
         foreach (MetadataUtils::$articles as $article) {
             $len = strlen($article);
@@ -307,10 +319,10 @@ class MetadataUtils
      * @return array
      */
     // @codingStandardsIgnoreStart
-    static public function array_iunique($array)
+    public static function array_iunique($array)
     {
         // This one handles UTF-8 properly, but mb_strtolower is SLOW
-        $map = array();
+        $map = [];
         foreach ($array as $key => $value) {
             $mb = preg_match('/[\x80-\xFF]/', $value); //mb_detect_encoding($value, 'ASCII', true);
             $map[$key] = $mb ? mb_strtolower($value, 'UTF-8') : strtolower($value);
@@ -327,7 +339,7 @@ class MetadataUtils
      *
      * @return string Sort key
      */
-    static public function createIdSortKey($id)
+    public static function createIdSortKey($id)
     {
         if (preg_match('/^\w*(\d+)$/', $id, $matches)) {
             return $matches[1];
@@ -340,24 +352,26 @@ class MetadataUtils
      *
      * @param string $date Date to validate
      *
-     * @return boolean|time False if invalid, resulting time otherwise
+     * @return boolean|int False if invalid, resulting time otherwise
      */
-    static public function validateISO8601Date($date)
+    public static function validateISO8601Date($date)
     {
-        if (preg_match('/^(\-?\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/', $date, $parts) == true) {
+        if (preg_match(
+            '/^(\-?\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/', $date, $parts
+        )) {
             return strtotime($date);
         }
         return false;
     }
 
     /**
-     * Convert a textual date range to numeric (days since 1970-01-01)
+     * Convert a date range to numeric (days since 1970-01-01)
      *
      * @param string|array $range Start and end date (separated by a comma if string)
      *
      * @return string Start and end date in numeric format
      */
-    static public function convertDateRange($range)
+    public static function dateRangeToNumeric($range)
     {
         if (!isset($range)) {
             return null;
@@ -371,10 +385,40 @@ class MetadataUtils
             $start = floor(strtotime($range[0]) / 86400);
             $end = floor(strtotime($range[1]) / 86400);
         } catch (Exception $e) {
+            date_default_timezone_set($oldTZ);
+            return '';
         }
         date_default_timezone_set($oldTZ);
 
-        return max(array($start, -4371587)) . ' ' . min(array($end, 2932896));
+        return max([$start, -4371587]) . ' ' . min([$end, 2932896]);
+    }
+
+    /**
+     * Convert a date range to a Solr date range string,
+     * e.g. [1970-01-01 TO 1981-01-01]
+     *
+     * @param array $range Start and end date
+     *
+     * @return string Start and end date in Solr format
+     * @throws Exception
+     */
+    public static function dateRangeToStr($range)
+    {
+        if (!isset($range)) {
+            return null;
+        }
+        $oldTZ = date_default_timezone_get();
+        try {
+            date_default_timezone_set('UTC');
+            $start = date('Y-m-d', strtotime($range[0]));
+            $end = date('Y-m-d', strtotime($range[1]));
+        } catch (Exception $e) {
+            date_default_timezone_set($oldTZ);
+            throw $e;
+        }
+        date_default_timezone_set($oldTZ);
+
+        return $start === $end ? $start : "[$start TO $end]";
     }
 
     /**
@@ -384,7 +428,7 @@ class MetadataUtils
      *
      * @return string Cleaned string
      */
-    static public function trimXMLWhitespace($xml)
+    public static function trimXMLWhitespace($xml)
     {
         return preg_replace('~\s*(<([^>]*)>[^<]*</\2>|<[^>]*>)\s*~', '$1', $xml);
     }
@@ -392,16 +436,18 @@ class MetadataUtils
     /**
      * Get record metadata from a database record
      *
-     * @param object $record     Database record
-     * @param bool   $normalized Whether to return the original (false) or
+     * @param array $record     Database record
+     * @param bool  $normalized Whether to return the original (false) or
      * normalized (true) record
      *
      * @return string Metadata as a string
      */
-    static public function getRecordData(&$record, $normalized)
+    public static function getRecordData(&$record, $normalized)
     {
         if ($normalized) {
-            $data = $record['normalized_data'] ? $record['normalized_data'] : $record['original_data'];
+            $data = $record['normalized_data']
+                ? $record['normalized_data']
+                : $record['original_data'];
         } else {
             $data = $record['original_data'];
         }
@@ -431,10 +477,11 @@ class MetadataUtils
      */
     public static function extractYear($str)
     {
-        $matches = array();
+        $matches = [];
         if (preg_match('/(\-?\d{4})/', $str, $matches)) {
             return $matches[1];
         }
+        return '';
     }
 
     /**
@@ -560,5 +607,24 @@ class MetadataUtils
             }
         }
         return null;
+    }
+
+    /**
+     * Make a string numerically sortable
+     *
+     * @param string $str String
+     *
+     * @return string
+     */
+    static public function createSortableString($str)
+    {
+        $str = preg_replace_callback(
+            '/(\d+)/',
+            function ($matches) {
+                return strlen((int)$matches[1]) . $matches[1];
+            },
+            strtoupper($str)
+        );
+        return preg_replace('/\s{2,}/', ' ', $str);
     }
 }

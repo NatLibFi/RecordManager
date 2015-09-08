@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'BaseRecord.php';
 require_once 'MetadataUtils.php';
 
@@ -101,14 +100,14 @@ class QdcRecord extends BaseRecord
      */
     public function toSolrArray()
     {
-        $data = array();
+        $data = [];
 
         $doc = $this->doc;
         $data['ctrlnum'] = (string)$doc->recordID;
         $data['fullrecord'] = $doc->asXML();
 
         // allfields
-        $allFields = array();
+        $allFields = [];
         foreach ($doc->children() as $tag => $field) {
             $allFields[] = (string)$field;
         }
@@ -122,7 +121,8 @@ class QdcRecord extends BaseRecord
                     (string)$doc->language
                 ),
                 function($value) {
-                    return preg_match('/^[a-z]{2,3}$/', $value) && $value != 'zxx' && $value != 'und';
+                    return preg_match('/^[a-z]{2,3}$/', $value) && $value != 'zxx'
+                        && $value != 'und';
                 }
             )
         );
@@ -130,21 +130,32 @@ class QdcRecord extends BaseRecord
         $data['format'] = (string)$doc->type;
         $authors = $this->getValues('creator');
         if ($authors) {
-            $data['author'] = MetadataUtils::stripTrailingPunctuation(array_shift($authors));
+            $data['author']
+                = MetadataUtils::stripTrailingPunctuation(array_shift($authors));
             foreach ($authors as $author) {
-                $data['author2'][] = MetadataUtils::stripTrailingPunctuation($author);
+                $data['author2'][]
+                    = MetadataUtils::stripTrailingPunctuation($author);
             }
         }
         foreach ($this->getValues('contributor') as $contributor) {
-            $data['author2'][] = MetadataUtils::stripTrailingPunctuation($contributor);
+            $data['author2'][]
+                = MetadataUtils::stripTrailingPunctuation($contributor);
         }
 
-        $data['title'] = $data['title_full'] = (string)$doc->title;
-        $titleParts = explode(' : ', $data['title']);
-        if (!empty($titleParts)) {
-            $data['title_short'] = $titleParts[0];
-            if (isset($titleParts[1])) {
-                $data['title_sub'] = $titleParts[1];
+        foreach ($doc->title as $title) {
+            if (!isset($data['title'])
+                && $title->attributes()->{'type'} !== 'alternative'
+            ) {
+                $data['title'] = $data['title_full'] = (string)$title;
+                $titleParts = explode(' : ', $data['title']);
+                if (!empty($titleParts)) {
+                    $data['title_short'] = $titleParts[0];
+                    if (isset($titleParts[1])) {
+                        $data['title_sub'] = $titleParts[1];
+                    }
+                }
+            } else {
+                $data['title_alt'][] = (string)$title;
             }
         }
         $data['title_sort'] = $this->getTitle(true);
@@ -187,14 +198,13 @@ class QdcRecord extends BaseRecord
     /**
      * Dedup: Return record title
      *
-     * @param bool $forFiling Whether the title is to be used in filing (e.g. sorting, non-filing characters should be removed)
+     * @param bool $forFiling Whether the title is to be used in filing
+     * (e.g. sorting, non-filing characters should be removed)
      *
      * @return string
      */
     public function getTitle($forFiling = false)
     {
-        global $configArray;
-
         $title = trim((string)$this->doc->title);
         $title = MetadataUtils::stripTrailingPunctuation($title);
         if ($forFiling) {
@@ -224,8 +234,8 @@ class QdcRecord extends BaseRecord
      */
     public function getISBNs()
     {
-        $arr = array();
-        foreach (array($this->doc->identifier, $this->doc->isFormatOf) as $field) {
+        $arr = [];
+        foreach ([$this->doc->identifier, $this->doc->isFormatOf] as $field) {
             foreach ($field as $identifier) {
                 $identifier = str_replace('-', '', $identifier);
                 if (!preg_match('{^([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
@@ -291,6 +301,7 @@ class QdcRecord extends BaseRecord
                 return (string)$date;
             }
         }
+        return '';
     }
 
     /**
@@ -312,7 +323,7 @@ class QdcRecord extends BaseRecord
      */
     protected function getValues($tag)
     {
-        $values = array();
+        $values = [];
         foreach ($this->doc->{$tag} as $value) {
             $values[] = (string)$value;
         }

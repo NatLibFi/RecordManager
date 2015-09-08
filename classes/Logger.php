@@ -135,7 +135,7 @@ class Logger
     /**
      * Convert log level to string
      *
-     * @param level $level Level to convert
+     * @param int $level Level to convert
      *
      * @return string
      */

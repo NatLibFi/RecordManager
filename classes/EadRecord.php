@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'BaseRecord.php';
 
 /**
@@ -63,7 +62,6 @@ class EadRecord extends BaseRecord
      * Return record ID (local)
      *
      * @return string
-     * @access public
      */
     public function getID()
     {
@@ -86,7 +84,6 @@ class EadRecord extends BaseRecord
      * Serialize the record for storing in the database
      *
      * @return string
-     * @access public
      */
     public function serialize()
     {
@@ -97,7 +94,6 @@ class EadRecord extends BaseRecord
      * Serialize the record into XML for export
      *
      * @return string
-     * @access public
      */
     public function toXML()
     {
@@ -111,11 +107,10 @@ class EadRecord extends BaseRecord
      * title_short, title is formed by combining title_sub and title_short
      *
      * @return string[]
-     * @access public
      */
     public function toSolrArray($prependTitleWithSubtitle)
     {
-        $data = array();
+        $data = [];
 
         $doc = $this->doc;
         $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
@@ -123,10 +118,9 @@ class EadRecord extends BaseRecord
         $data['allfields'] = $this->getAllFields($doc);
 
         if ($doc->scopecontent) {
-            $desc = '';
             if ($doc->scopecontent->p) {
                 // Join all p-elements into a flat string.
-                $desc = array();
+                $desc = [];
                 foreach ($doc->scopecontent->p as $p) {
                     $desc[] = trim((string)$p);
                 }
@@ -137,7 +131,7 @@ class EadRecord extends BaseRecord
             $data['description'] = $desc;
         }
 
-        $authors = array();
+        $authors = [];
 
         if ($names = $doc->xpath('controlaccess/persname')) {
             foreach ($names as $name) {
@@ -162,11 +156,13 @@ class EadRecord extends BaseRecord
         }
 
         if ($doc->did->origination) {
-            $data['author_additional'] = trim((string)$doc->did->origination->corpname);
+            $data['author_additional'] = trim(
+                (string)$doc->did->origination->corpname
+            );
         }
 
         if ($geoNames = $doc->xpath('controlaccess/geogname')) {
-            $names = array();
+            $names = [];
             foreach ($geoNames as $name) {
                 if (trim((string)$name) !== '-') {
                     $names[] = trim((string)$name);
@@ -176,7 +172,7 @@ class EadRecord extends BaseRecord
         }
 
         if ($subjects = $doc->xpath('controlaccess/subject')) {
-            $topics = array();
+            $topics = [];
             foreach ($subjects as $subject) {
                 if (trim((string)$subject) !== '-') {
                     $topics[] = trim((string)$subject);
@@ -194,7 +190,6 @@ class EadRecord extends BaseRecord
                 ? $doc->did->repository->corpname
                 : $doc->did->repository;
         }
-
 
         $data['title_sub'] = '';
 
@@ -228,7 +223,6 @@ class EadRecord extends BaseRecord
         $data['title_sort'] = mb_strtolower(
             MetadataUtils::stripLeadingPunctuation($data['title_sort']), 'UTF-8'
         );
-
 
         if (isset($doc->did->unitid)) {
             $data['identifier'] = (string)$doc->did->unitid;
@@ -265,7 +259,8 @@ class EadRecord extends BaseRecord
             }
         }
 
-        if ($nodes = $this->doc->did->daogrp->xpath('daoloc[@role="image_thumbnail"]')) {
+        $nodes = $this->doc->did->daogrp->xpath('daoloc[@role="image_thumbnail"]');
+        if ($nodes) {
             // store first thumbnail
             $node = $nodes[0];
             if (isset($node->attributes()->href)) {
@@ -304,13 +299,13 @@ class EadRecord extends BaseRecord
     /**
      * Get all XML fields
      *
-     * @param SimpleXMLDocument $xml The XML document
+     * @param SimpleXMLElement $xml The XML document
      *
      * @return string[]
      */
     protected function getAllFields($xml)
     {
-        $allFields = array();
+        $allFields = [];
         foreach ($xml->children() as $tag => $field) {
             $s = trim((string)$field);
             if ($s) {

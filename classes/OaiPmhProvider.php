@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'RecordFactory.php';
 require_once 'Logger.php';
 require_once 'XslTransformation.php';
@@ -46,35 +45,79 @@ class OaiPmhProvider
     const DT_SHORT = 2;
     const DT_LONG = 3;
 
+    /**
+     * Requested command
+     *
+     * @var string
+     */
     protected $verb = '';
+
+    /**
+     * Logger
+     *
+     * @var Logger
+     */
     protected $log = null;
+
+    /**
+     * Mongo Database
+     *
+     * @var MongoDB
+     */
     protected $db = null;
-    protected $transformations = array();
-    protected $dataSourceSettings = array();
-    protected $formats = array();
-    protected $sets = array();
+
+    /**
+     * Transformations
+     *
+     * @var XslTransformation[]
+     */
+    protected $transformations = [];
+
+    /**
+     * Datasource settings
+     *
+     * @var array
+     */
+    protected $dataSourceSettings = [];
+
+    /**
+     * Formats
+     *
+     * @var array
+     */
+    protected $formats = [];
+
+    /**
+     * Sets
+     *
+     * @var array
+     */
+    protected $sets = [];
 
     /**
      * Constructor
-     *
-     * @access public
      */
     public function __construct()
     {
         global $configArray;
         global $basePath;
-        $this->dataSourceSettings = parse_ini_file("$basePath/conf/datasources.ini", true);
-        $this->formats = parse_ini_file("$basePath/conf/{$configArray['OAI-PMH']['format_definitions']}", true);
-        $this->sets = parse_ini_file("$basePath/conf/{$configArray['OAI-PMH']['set_definitions']}", true);
+        $this->dataSourceSettings
+            = parse_ini_file("$basePath/conf/datasources.ini", true);
+        $this->formats = parse_ini_file(
+            "$basePath/conf/{$configArray['OAI-PMH']['format_definitions']}", true
+        );
+        $this->sets = parse_ini_file(
+            "$basePath/conf/{$configArray['OAI-PMH']['set_definitions']}", true
+        );
 
         date_default_timezone_set($configArray['Site']['timezone']);
 
         $this->log = new Logger();
 
-        $mongo = new Mongo($configArray['Mongo']['url']);
+        $mongo = new MongoClient($configArray['Mongo']['url']);
         $this->db = $mongo->selectDB($configArray['Mongo']['database']);
-        MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout']) ? $configArray['Mongo']['cursor_timeout'] : 300000;
-
+        MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout'])
+            ? $configArray['Mongo']['cursor_timeout'] : 300000;
     }
 
     /**
@@ -124,9 +167,13 @@ class OaiPmhProvider
         $id = $this->getParam('identifier');
         $prefix = $this->getParam('metadataPrefix');
 
-        $record = $this->db->record->findOne(array('oai_id' => $id));
+        $record = $this->db->record->findOne(['oai_id' => $id]);
         if (!$record) {
-            $this->error('idDoesNotExist', 'The value of the identifier argument is unknown or illegal in this repository.');
+            $this->error(
+                'idDoesNotExist',
+                'The value of the identifier argument is unknown or illegal in "
+                . "this repository.'
+            );
             $this->printSuffix();
             die();
         }
@@ -201,7 +248,7 @@ EOF;
             $position = 0;
         }
 
-        $queryParams = array();
+        $queryParams = [];
         if ($set) {
             if (!isset($this->sets[$set])) {
                 $this->error('noRecordsMatch', 'Requested set does not exist');
@@ -216,15 +263,25 @@ EOF;
             }
         }
         if ($from && $until) {
-            $queryParams['updated'] = array('$gte' => new MongoDate($this->fromOaiDate($from, '00:00:00'), 0),
-              '$lte' => new MongoDate($this->fromOaiDate($until, '23:59:59'), 999999));
+            $queryParams['updated'] = [
+                '$gte' => new MongoDate($this->fromOaiDate($from, '00:00:00'), 0),
+                '$lte' => new MongoDate(
+                    $this->fromOaiDate($until, '23:59:59'), 999999
+                )
+            ];
         } elseif ($from) {
-            $queryParams['updated'] = array('$gte' => new MongoDate($this->fromOaiDate($from, '00:00:00'), 0));
+            $queryParams['updated'] = [
+                '$gte' => new MongoDate($this->fromOaiDate($from, '00:00:00'), 0)
+            ];
         } elseif ($until) {
-            $queryParams['updated'] = array('$lte' => new MongoDate($this->fromOaiDate($until, '23:59:59'), 999999));
+            $queryParams['updated'] = [
+                '$lte' => new MongoDate(
+                    $this->fromOaiDate($until, '23:59:59'), 999999
+                )
+            ];
         }
 
-        $records = $this->db->record->find($queryParams)->sort(array('updated' => 1));
+        $records = $this->db->record->find($queryParams)->sort(['updated' => 1]);
         if ($position) {
             $records = $records->skip($position);
         }
@@ -251,7 +308,18 @@ EOF;
             if (++$count >= $maxRecords) {
                 if ($records->hasNext()) {
                     // More records available, create resumptionToken
-                    $token = $this->escape(implode('|', array($set, $metadataPrefix, $from, $until, $count + $position)));
+                    $token = $this->escape(
+                        implode(
+                            '|',
+                            [
+                                $set,
+                                $metadataPrefix,
+                                $from,
+                                $until,
+                                $count + $position
+                            ]
+                        )
+                    );
                     print <<<EOF
     <resumptionToken cursor="$position">$token</resumptionToken>
 
@@ -273,16 +341,18 @@ EOF;
      */
     protected function listMetadataFormats()
     {
-        global $configArray;
-
-        $formats = array();
+        $formats = [];
 
         $id = $this->getParam('identifier');
         $source = '';
         if ($id) {
-            $record = $this->db->record->findOne(array('oai_id' => $id));
+            $record = $this->db->record->findOne(['oai_id' => $id]);
             if (!$record) {
-                $this->error('idDoesNotExist', 'The value of the identifier argument is unknown or illegal in this repository.');
+                $this->error(
+                    'idDoesNotExist',
+                    'The value of the identifier argument is unknown or illegal '
+                    . 'in this repository.'
+                );
                 $this->printSuffix();
                 die();
             }
@@ -290,8 +360,8 @@ EOF;
         }
 
         // List available formats
-        foreach ($this->dataSourceSettings as $key => $datasource) {
-            if ($source && $key != $source) {
+        foreach ($this->dataSourceSettings as $sourceId => $datasource) {
+            if ($source && $sourceId != $source) {
                 continue;
             }
             if (!isset($datasource['format'])) {
@@ -311,7 +381,6 @@ EOF;
 EOF;
 
         // Map to OAI-PMH formats
-        $xml = '';
         foreach ($formats as $key => $dummy) {
             foreach ($this->formats as $id => $settings) {
                 if ($settings['format'] == $key) {
@@ -398,7 +467,8 @@ EOF;
         foreach ($this->getRequestParameters() as $param) {
             $keyValue = explode('=', $param, 2);
             if (isset($keyValue[1])) {
-                $arguments .= ' ' . $keyValue[0] . '="' . $this->escape($keyValue[1]) . '"';
+                $arguments .= ' ' . $keyValue[0] . '="' . $this->escape($keyValue[1])
+                    . '"';
             }
         }
 
@@ -476,20 +546,21 @@ EOF;
      */
     protected function getEarliestDateStamp()
     {
-        $record = $this->db->record->find()->sort(array('updated' => 1))->limit(1)->getNext();
+        $record = $this->db->record->find()->sort(['updated' => 1])->limit(1)
+            ->getNext();
         return $record['updated']->sec;
     }
 
     /**
      * Get the sets the record belongs to
      *
-     * @param object $record Mongo record
+     * @param array $record Mongo record
      *
      * @return string[]
      */
     protected function getRecordSets($record)
     {
-        $sets = array();
+        $sets = [];
         foreach ($this->sets as $id => $set) {
             $match = true;
             foreach ($set as $key => $value) {
@@ -531,7 +602,7 @@ EOF;
     protected function checkParameters()
     {
         $paramArray = $this->getRequestParameters();
-        $checkArray = array();
+        $checkArray = [];
         foreach ($paramArray as $param) {
             $keyValue = explode('=', $param, 2);
             if (isset($checkArray[$keyValue[0]])) {
@@ -544,7 +615,9 @@ EOF;
         $paramCount = count($paramArray) - 1;
         switch ($this->verb) {
         case 'GetRecord':
-            if ($paramCount != 2 || !$this->getParam('identifier') || !$this->getParam('metadataPrefix')) {
+            if ($paramCount != 2 || !$this->getParam('identifier')
+                || !$this->getParam('metadataPrefix')
+            ) {
                 $this->error('badArgument', 'Missing or extraneous arguments');
                 return false;
             }
@@ -559,7 +632,9 @@ EOF;
         case 'ListRecords':
             if ($this->getParam('resumptionToken')) {
                 if ($paramCount != 1) {
-                    $this->error('badArgument', 'Extraneous arguments with resumptionToken');
+                    $this->error(
+                        'badArgument', 'Extraneous arguments with resumptionToken'
+                    );
                     return false;
                 }
             } else {
@@ -568,7 +643,9 @@ EOF;
                     return false;
                 }
                 foreach ($_GET as $key => $value) {
-                    if (!in_array($key, array('verb', 'from', 'until', 'set', 'metadataPrefix'))) {
+                    if (!in_array(
+                        $key, ['verb', 'from', 'until', 'set', 'metadataPrefix']
+                    )) {
                         $this->error('badArgument', 'Illegal argument');
                         return false;
                     }
@@ -576,13 +653,17 @@ EOF;
             }
             break;
         case 'ListMetadataFormats':
-            if ($paramCount > 1 || ($paramCount == 1 && !$this->getParam('identifier'))) {
+            if ($paramCount > 1
+                || ($paramCount == 1 && !$this->getParam('identifier'))
+            ) {
                 $this->error('badArgument', 'Invalid arguments');
                 return false;
             }
             break;
         case 'ListSets':
-            if ($paramCount > 1 || ($paramCount == 1 && !$this->getParam('resumptionToken'))) {
+            if ($paramCount > 1
+                || ($paramCount == 1 && !$this->getParam('resumptionToken'))
+            ) {
                 $this->error('badArgument', 'Invalid arguments');
                 return false;
             } elseif ($this->getParam('resumptionToken')) {
@@ -600,11 +681,15 @@ EOF;
         $fromType = $this->getOaiDateType($this->getParam('from'));
         $untilType = $this->getOaiDateType($this->getParam('until'));
 
-        if ($fromType == OaiPmhProvider::DT_INVALID || $untilType == OaiPmhProvider::DT_INVALID) {
+        if ($fromType == OaiPmhProvider::DT_INVALID
+            || $untilType == OaiPmhProvider::DT_INVALID
+        ) {
             $this->error('badArgument', 'Invalid date format');
             return false;
         }
-        if ($fromType != OaiPmhProvider::DT_EMPTY && $untilType != OaiPmhProvider::DT_EMPTY && $fromType != $untilType) {
+        if ($fromType != OaiPmhProvider::DT_EMPTY
+            && $untilType != OaiPmhProvider::DT_EMPTY && $fromType != $untilType
+        ) {
             $this->error('badArgument', 'Incompatible date formats');
             return false;
         }
@@ -617,7 +702,7 @@ EOF;
      *
      * @param string $date OAI-PMH timestamp
      *
-     * @return enum Date type
+     * @return int Date type
      */
     protected function getOaiDateType($date)
     {
@@ -637,28 +722,29 @@ EOF;
      * Write a message to log
      *
      * @param string $message Message
-     * @param enum   $level   Log level for the message
+     * @param int    $level   Log level for the message
      *
      * @return void
      */
     protected function log($message, $level = Logger::INFO)
     {
-        $message = '[' . $_SERVER['REMOTE_ADDR'] . '] ' . $message . ' (request: ' . $_SERVER['QUERY_STRING'] . ')';
+        $message = '[' . $_SERVER['REMOTE_ADDR'] . '] ' . $message . ' (request: '
+            . $_SERVER['QUERY_STRING'] . ')';
         $this->log->log('OaiPmhProvider', $message, $level);
     }
 
     /**
      * Create record XML
      *
-     * @param object  $record          Mongo record
+     * @param array   $record          Mongo record
      * @param string  $format          Metadata format
-     * @param boolean $includeMetadata Whether to include record data (or only header)
+     * @param boolean $includeMetadata Whether to include record data
+     * (or only header)
      *
      * @return boolean|string
      */
     protected function createRecord($record, $format, $includeMetadata)
     {
-        global $configArray;
         global $basePath;
 
         $sourceFormat = $record['format'];
@@ -667,23 +753,37 @@ EOF;
         }
         $metadata = '';
         if ($includeMetadata) {
-            $mongodata = $record['normalized_data'] ? $record['normalized_data'] : $record['original_data'];
-            $metadataRecord = RecordFactory::createRecord($record['format'], gzinflate($mongodata->bin), $record['oai_id'], $record['source_id']);
+            $mongodata = $record['normalized_data']
+                ? $record['normalized_data'] : $record['original_data'];
+            $metadataRecord = RecordFactory::createRecord(
+                $record['format'],
+                gzinflate($mongodata->bin),
+                $record['oai_id'],
+                $record['source_id']
+            );
             $metadata = $metadataRecord->toXML();
             $key = "transformation_to_{$format}";
             $source = $record['source_id'];
             $datasource = $this->dataSourceSettings[$source];
             if ($sourceFormat != $format || isset($datasource[$key])) {
                 if (!isset($datasource[$key])) {
-                    $this->error('cannotDisseminateFormat', '', false);
+                    $this->error('cannotDisseminateFormat', '');
                     return false;
                 }
                 $transformationKey = "{$key}_$source";
                 if (!isset($this->transformations[$transformationKey])) {
-                    $this->transformations[$transformationKey] = new XslTransformation($basePath . '/transformations', $datasource[$key]);
+                    $this->transformations[$transformationKey]
+                        = new XslTransformation(
+                            $basePath . '/transformations', $datasource[$key]
+                        );
                 }
-                $params = array('source_id' => $source, 'institution' => $datasource['institution'], 'format' => $record['format']);
-                $metadata = $this->transformations[$transformationKey]->transform($metadata, $params);
+                $params = [
+                    'source_id' => $source,
+                    'institution' => $datasource['institution'],
+                    'format' => $record['format']
+                ];
+                $metadata = $this->transformations[$transformationKey]
+                    ->transform($metadata, $params);
             }
             if (strncmp($metadata, '<?xml', 5) == 0) {
                 $end = strpos($metadata, '>');
@@ -708,7 +808,6 @@ EOF;
 
         $id = $this->escape($record['oai_id']);
         $date = $this->toOaiDate($record['updated']->sec);
-        $source = $this->escape($record['source_id']);
         $status = $record['deleted'] ? ' status="deleted"' : '';
         return <<<EOF
     <record>

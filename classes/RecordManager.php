@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 declare(ticks = 1);
 
 require_once 'PEAR.php';
@@ -55,23 +54,71 @@ require_once 'PerformanceCounter.php';
  */
 class RecordManager
 {
+    /**
+     * Quiet mode
+     *
+     * @var bool
+     */
     public $quiet = false;
-    public $harvestFromDate = null;
-    public $harvestUntilDate = null;
 
+    /**
+     * Verbose mode
+     *
+     * @var bool
+     */
     protected $verbose = false;
-    protected $basePath = '';
-    protected $log = null;
-    protected $db = null;
-    protected $dataSourceSettings = null;
+
+    /**
+     * Base path of Record Manager
+     *
+     * @var string
+     */
+    protected $basePath;
+
+    /**
+     * Logger
+     *
+     * @var Logger
+     */
+    protected $log;
+
+    /**
+     * Mongo Database
+     *
+     * @var MongoDB
+     */
+    protected $db;
+
+    /**
+     * Data source settings
+     *
+     * @var array
+     */
+    protected $dataSourceSettings;
+
+    /**
+     * Dedup Handler
+     *
+     * @var DedupHandler
+     */
     protected $dedupHandler = null;
 
+
+    /**
+     * Harvested MetaLib Records
+     *
+     * @var array
+     */
+    protected $metaLibRecords = [];
+
+    // TODO: refactor data source setting handling
     protected $harvestType = '';
     protected $format = '';
     protected $idPrefix = '';
     protected $sourceId = '';
     protected $institution = '';
     protected $recordXPath = '';
+    protected $oaiIDXPath = '';
     protected $componentParts = '';
     protected $dedup = false;
     protected $normalizationXSLT = null;
@@ -82,15 +129,15 @@ class RecordManager
     protected $indexMergedParts = true;
     protected $counts = false;
     protected $compressedRecords = true;
-    protected $nonInheritedFields = array();
+    protected $nonInheritedFields = [];
     protected $prependParentTitleWithUnitId = null;
     protected $previousId = '[none]';
 
     /**
      * Constructor
      *
-     * @param boolean $console Specify whether RecordManager is executed on the console,
-     *                           so log output is also output to the console.
+     * @param boolean $console Specify whether RecordManager is executed on the
+     * console so that log output is also output to the console.
      * @param boolean $verbose Whether verbose output is enabled
      */
     public function __construct($console = false, $verbose = false)
@@ -108,42 +155,61 @@ class RecordManager
         // Store logger in a global so that others can access it easily
         $logger = $this->log;
 
-        if (isset($configArray['Mongo']['counts']) && $configArray['Mongo']['counts']) {
+        if (isset($configArray['Mongo']['counts'])
+            && $configArray['Mongo']['counts']
+        ) {
             $this->counts = true;
         }
-        if (isset($configArray['Mongo']['compressed_records']) && !$configArray['Mongo']['compressed_records']) {
+        if (isset($configArray['Mongo']['compressed_records'])
+            && !$configArray['Mongo']['compressed_records']
+        ) {
             $this->compressedRecords = false;
         }
 
         $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
         $basePath = substr($basePath, 0, strrpos($basePath, DIRECTORY_SEPARATOR));
-        $this->dataSourceSettings = $configArray['dataSourceSettings'] = parse_ini_file("$basePath/conf/datasources.ini", true);
+        $this->dataSourceSettings = $configArray['dataSourceSettings']
+            = parse_ini_file("$basePath/conf/datasources.ini", true);
         $this->basePath = $basePath;
 
-        $timeout = isset($configArray['Mongo']['connect_timeout']) ? $configArray['Mongo']['connect_timeout'] : 300000;
-        $mongo = new Mongo($configArray['Mongo']['url'], array('connectTimeoutMS' => $timeout));
+        $timeout = isset($configArray['Mongo']['connect_timeout'])
+            ? $configArray['Mongo']['connect_timeout'] : 300000;
+        $mongo = new MongoClient(
+            $configArray['Mongo']['url'], ['connectTimeoutMS' => $timeout]
+        );
         $this->db = $mongo->selectDB($configArray['Mongo']['database']);
-        MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout']) ? $configArray['Mongo']['cursor_timeout'] : 300000;
+        MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout'])
+            ? $configArray['Mongo']['cursor_timeout'] : 300000;
 
         // Used for format mapping in dedup handler
-        $solrUpdater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
+        $solrUpdater = new SolrUpdater(
+            $this->db, $this->basePath, $this->log, $this->verbose
+        );
         $dedupClass = isset($configArray['Site']['dedup_handler'])
             ? $configArray['Site']['dedup_handler']
             : 'DedupHandler';
         include_once "$dedupClass.php";
-        $this->dedupHandler = new $dedupClass($this->db, $this->log, $this->verbose, $solrUpdater);
+        $this->dedupHandler = new $dedupClass(
+            $this->db, $this->log, $this->verbose, $solrUpdater
+        );
 
         if (isset($configArray['Site']['full_title_prefixes'])) {
-            MetadataUtils::$fullTitlePrefixes = array_map(array('MetadataUtils', 'normalize'), file("$basePath/conf/{$configArray['Site']['full_title_prefixes']}",  FILE_IGNORE_NEW_LINES));
+            MetadataUtils::$fullTitlePrefixes = array_map(
+                ['MetadataUtils', 'normalize'],
+                file(
+                    "$basePath/conf/{$configArray['Site']['full_title_prefixes']}",
+                    FILE_IGNORE_NEW_LINES
+                )
+            );
         }
 
         // Read the abbreviations file
         MetadataUtils::$abbreviations = isset($configArray['Site']['abbreviations'])
-            ? $this->readListFile($configArray['Site']['abbreviations']) : array();
+            ? $this->readListFile($configArray['Site']['abbreviations']) : [];
 
         // Read the artices file
         MetadataUtils::$articles = isset($configArray['Site']['articles'])
-            ? $this->readListFile($configArray['Site']['articles']) : array();
+            ? $this->readListFile($configArray['Site']['articles']) : [];
     }
 
     /**
@@ -172,12 +238,16 @@ class RecordManager
     {
         $this->loadSourceSettings($source);
         if (!$this->recordXPath) {
-            $this->log->log('loadFromFile', 'recordXPath not defined', Logger::FATAL);
+            $this->log->log(
+                'loadFromFile', 'recordXPath not defined', Logger::FATAL
+            );
             throw new Exception('recordXPath not defined');
         }
         $count = 0;
         foreach (glob($files) as $file) {
-            $this->log->log('loadFromFile', "Loading records from '$file' into '$source'");
+            $this->log->log(
+                'loadFromFile', "Loading records from '$file' into '$source'"
+            );
             $data = file_get_contents($file);
             if ($data === false) {
                 throw new Exception("Could not read file '$file'");
@@ -193,7 +263,9 @@ class RecordManager
             if ($this->verbose) {
                 echo "Creating FileSplitter\n";
             }
-            $splitter = new FileSplitter($data, $this->recordXPath, $this->oaiIDXPath);
+            $splitter = new FileSplitter(
+                $data, $this->recordXPath, $this->oaiIDXPath
+            );
 
             if ($this->verbose) {
                 echo "Storing records\n";
@@ -222,7 +294,8 @@ class RecordManager
      * @param string $file        File name where to write exported records
      * @param string $deletedFile File name where to write ID's of deleted records
      * @param string $fromDate    Starting date (e.g. 2011-12-24)
-     * @param int    $skipRecords Export only one per each $skipRecords records for a sample set
+     * @param int    $skipRecords Export only one per each $skipRecords records for
+     * a sample set
      * @param string $sourceId    Source ID to export, or empty or * for all
      * @param string $singleId    Export only a record with the given ID
      * @param string $xpath       Optional XPath expression to limit the export with
@@ -247,17 +320,26 @@ class RecordManager
         if ($deletedFile && file_exists($deletedFile)) {
             unlink($deletedFile);
         }
-        file_put_contents($file, "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n<collection>\n", FILE_APPEND);
+        file_put_contents(
+            $file,
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n<collection>\n",
+            FILE_APPEND
+        );
 
         try {
-            $this->log->log('exportRecords', "Creating record list (from " . ($fromDate ? $fromDate : 'the beginning') . ')');
+            $this->log->log(
+                'exportRecords',
+                "Creating record list (from "
+                . ($fromDate ? $fromDate : 'the beginning') . ')'
+            );
 
-            $params = array();
+            $params = [];
             if ($singleId) {
                 $params['_id'] = $singleId;
             } else {
                 if ($fromDate) {
-                    $params['updated'] = array('$gte' => new MongoDate(strtotime($fromDate)));
+                    $params['updated']
+                        = ['$gte' => new MongoDate(strtotime($fromDate))];
                 }
                 $params['update_needed'] = false;
                 if ($sourceId && $sourceId !== '*') {
@@ -265,9 +347,9 @@ class RecordManager
                     if (count($sources) == 1) {
                         $params['source_id'] = $sourceId;
                     } else {
-                        $sourceParams = array();
+                        $sourceParams = [];
                         foreach ($sources as $source) {
-                            $sourceParams[] = array('source_id' => $source);
+                            $sourceParams[] = ['source_id' => $source];
                         }
                         $params['$or'] = $sourceParams;
                     }
@@ -275,7 +357,7 @@ class RecordManager
             }
             $records = $this->db->record->find($params);
             if ($sortDedup) {
-                $records->sort(array('dedup_id' => 1));
+                $records->sort(['dedup_id' => 1]);
             }
             $total = $this->counts ? $records->count() : 'the';
             $count = 0;
@@ -283,15 +365,24 @@ class RecordManager
             $deleted = 0;
             $this->log->log('exportRecords', "Exporting $total records");
             if ($skipRecords) {
-                $this->log->log('exportRecords', "(1 per each $skipRecords records)");
+                $this->log->log(
+                    'exportRecords', "(1 per each $skipRecords records)"
+                );
             }
             foreach ($records as $record) {
-                $metadataRecord = RecordFactory::createRecord($record['format'], MetadataUtils::getRecordData($record, true), $record['oai_id'], $record['source_id']);
+                $metadataRecord = RecordFactory::createRecord(
+                    $record['format'],
+                    MetadataUtils::getRecordData($record, true),
+                    $record['oai_id'],
+                    $record['source_id']
+                );
                 if ($xpath) {
                     $xml = $metadataRecord->toXML();
                     $xpathResult = simplexml_load_string($xml)->xpath($xpath);
                     if ($xpathResult === false) {
-                        throw new Exception("Failed to evaluate XPath expression '$xpath'");
+                        throw new Exception(
+                            "Failed to evaluate XPath expression '$xpath'"
+                        );
                     }
                     if (!$xpathResult) {
                         continue;
@@ -300,7 +391,9 @@ class RecordManager
                 ++$count;
                 if ($record['deleted']) {
                     if ($deletedFile) {
-                        file_put_contents($deletedFile, "{$record['_id']}\n", FILE_APPEND);
+                        file_put_contents(
+                            $deletedFile, "{$record['_id']}\n", FILE_APPEND
+                        );
                     }
                     ++$deleted;
                 } else {
@@ -328,12 +421,22 @@ class RecordManager
                     file_put_contents($file, $xml . "\n", FILE_APPEND);
                 }
                 if ($count % 1000 == 0) {
-                    $this->log->log('exportRecords', "$count records (of which $deduped deduped, $deleted deleted) exported");
+                    $this->log->log(
+                        'exportRecords',
+                        "$count records (of which $deduped deduped, $deleted "
+                        . "deleted) exported"
+                    );
                 }
             }
-            $this->log->log('exportRecords', "Completed with $count records (of which $deduped deduped, $deleted deleted) exported");
+            $this->log->log(
+                'exportRecords',
+                "Completed with $count records (of which $deduped deduped, $deleted "
+                . "deleted) exported"
+            );
         } catch (Exception $e) {
-            $this->log->log('exportRecords', 'Exception: ' . $e->getMessage(), Logger::FATAL);
+            $this->log->log(
+                'exportRecords', 'Exception: ' . $e->getMessage(), Logger::FATAL
+            );
         }
         file_put_contents($file, "</collection>\n", FILE_APPEND);
     }
@@ -358,9 +461,10 @@ class RecordManager
     public function updateSolrIndex($fromDate = null, $sourceId = '', $singleId = '',
         $noCommit = false, $compare = '', $dumpPrefix = ''
     ) {
-        global $configArray;
-        $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
-        return $updater->updateRecords(
+        $updater = new SolrUpdater(
+            $this->db, $this->basePath, $this->log, $this->verbose
+        );
+        $updater->updateRecords(
             $fromDate, $sourceId, $singleId, $noCommit, false, $compare, $dumpPrefix
         );
     }
@@ -385,7 +489,7 @@ class RecordManager
             $this->loadSourceSettings($source);
             $this->log->log('renormalize', "Creating record list for '$source'");
 
-            $params = array('deleted' => false);
+            $params = ['deleted' => false];
             if ($singleId) {
                 $params['_id'] = $singleId;
                 $params['source_id'] = $source;
@@ -397,22 +501,37 @@ class RecordManager
             $total = $this->counts ? $records->count() : 'the';
             $count = 0;
 
-            $this->log->log('renormalize', "Processing $total records from '$source'");
+            $this->log->log(
+                'renormalize', "Processing $total records from '$source'"
+            );
             $pc = new PerformanceCounter();
             foreach ($records as $record) {
                 $originalData = MetadataUtils::getRecordData($record, false);
                 $normalizedData = $originalData;
                 if (isset($this->normalizationXSLT)) {
-                    $origMetadataRecord = RecordFactory::createRecord($record['format'], $originalData, $record['oai_id'], $record['source_id']);
-                    $normalizedData = $this->normalizationXSLT->transform($origMetadataRecord->toXML(), array('oai_id' => $record['oai_id']));
+                    $origMetadataRecord = RecordFactory::createRecord(
+                        $record['format'],
+                        $originalData,
+                        $record['oai_id'],
+                        $record['source_id']
+                    );
+                    $normalizedData = $this->normalizationXSLT->transform(
+                        $origMetadataRecord->toXML(), ['oai_id' => $record['oai_id']]
+                    );
                 }
 
-                $metadataRecord = RecordFactory::createRecord($record['format'], $normalizedData, $record['oai_id'], $record['source_id']);
+                $metadataRecord = RecordFactory::createRecord(
+                    $record['format'],
+                    $normalizedData,
+                    $record['oai_id'],
+                    $record['source_id']
+                );
                 $metadataRecord->normalize();
                 $hostID = $metadataRecord->getHostRecordID();
                 $normalizedData = $metadataRecord->serialize();
                 if ($this->dedup && !$hostID) {
-                    $record['update_needed'] = $this->dedupHandler->updateDedupCandidateKeys($record, $metadataRecord);
+                    $record['update_needed'] = $this->dedupHandler
+                        ->updateDedupCandidateKeys($record, $metadataRecord);
                 } else {
                     unset($record['title_keys']);
                     unset($record['isbn_keys']);
@@ -421,11 +540,14 @@ class RecordManager
                     $record['update_needed'] = false;
                 }
 
-                $record['original_data'] = $this->compressedRecords ? new MongoBinData(gzdeflate($originalData), 2) : $originalData;
+                $record['original_data'] = $this->compressedRecords
+                    ? new MongoBinData(gzdeflate($originalData), 2) : $originalData;
                 if ($normalizedData == $originalData) {
                     $record['normalized_data'] = '';
                 } else {
-                    $record['normalized_data'] = $this->compressedRecords ? new MongoBinData(gzdeflate($normalizedData), 2) : $normalizedData;
+                    $record['normalized_data'] = $this->compressedRecords
+                        ? new MongoBinData(gzdeflate($normalizedData), 2)
+                        : $normalizedData;
                 }
                 $record['linking_id'] = $metadataRecord->getLinkingID();
                 if ($hostID) {
@@ -438,8 +560,10 @@ class RecordManager
 
                 if ($this->verbose) {
                     echo "Metadata for record {$record['_id']}: \n";
-                    $record['normalized_data'] = MetadataUtils::getRecordData($record, true);
-                    $record['original_data'] = MetadataUtils::getRecordData($record, false);
+                    $record['normalized_data']
+                        = MetadataUtils::getRecordData($record, true);
+                    $record['original_data']
+                        = MetadataUtils::getRecordData($record, false);
                     if ($record['normalized_data'] === $record['original_data']) {
                         $record['normalized_data'] = '';
                     }
@@ -450,18 +574,26 @@ class RecordManager
                 if ($count % 1000 == 0) {
                     $pc->add($count);
                     $avg = $pc->getSpeed();
-                    $this->log->log('renormalize', "$count records processed from '$source', $avg records/sec");
+                    $this->log->log(
+                        'renormalize',
+                        "$count records processed from '$source', $avg records/sec"
+                    );
                 }
             }
-            $this->log->log('renormalize', "Completed with $count records processed from '$source'");
+            $this->log->log(
+                'renormalize',
+                "Completed with $count records processed from '$source'"
+            );
         }
     }
 
     /**
      * Find duplicate records and give them dedup keys
      *
-     * @param string $sourceId   Source ID to process, or empty or * for all sources where dedup is enabled
-     * @param string $allRecords If true, process all records regardless of their status (otherwise only freshly imported or updated records are processed)
+     * @param string $sourceId   Source ID to process, or empty or * for all sources
+     * where dedup is enabled
+     * @param bool   $allRecords If true, process all records regardless of their
+     * status (otherwise only freshly imported or updated records are processed)
      * @param string $singleId   Process only a record with the given ID
      *
      * @return void
@@ -470,10 +602,13 @@ class RecordManager
     {
         // Install a signal handler so that we can exit cleanly if interrupted
         if (function_exists('pcntl_signal')) {
-            pcntl_signal(SIGINT, array($this, 'sigIntHandler'));
+            pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
             $this->log->log('deduplicate', 'Interrupt handler set');
         } else {
-            $this->log->log('deduplicate', 'Could not set an interrupt handler -- pcntl not available');
+            $this->log->log(
+                'deduplicate',
+                'Could not set an interrupt handler -- pcntl not available'
+            );
         }
 
         if ($allRecords) {
@@ -481,14 +616,22 @@ class RecordManager
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
                     continue;
                 }
-                if (empty($source) || empty($settings) || !isset($settings['dedup']) || !$settings['dedup']) {
+                if (empty($source) || empty($settings) || !isset($settings['dedup'])
+                    || !$settings['dedup']
+                ) {
                     continue;
                 }
-                $this->log->log('deduplicate', "Marking all records for processing in '$source'");
+                $this->log->log(
+                    'deduplicate', "Marking all records for processing in '$source'"
+                );
                 $this->db->record->update(
-                    array('source_id' => $source, 'host_record_id' => array('$exists' => false), 'deleted' => false),
-                    array('$set' => array('update_needed' => true)),
-                    array('multiple' => true, 'safe' => true, 'timeout' => 3000000)
+                    [
+                        'source_id' => $source,
+                        'host_record_id' => ['$exists' => false],
+                        'deleted' => false
+                    ],
+                    ['$set' => ['update_needed' => true]],
+                    ['multiple' => true, 'safe' => true, 'timeout' => 3000000]
                 );
             }
         }
@@ -497,14 +640,20 @@ class RecordManager
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
                     continue;
                 }
-                if (empty($source) || empty($settings) || !isset($settings['dedup']) || !$settings['dedup']) {
+                if (empty($source) || empty($settings) || !isset($settings['dedup'])
+                    || !$settings['dedup']
+                ) {
                     continue;
                 }
 
                 $this->loadSourceSettings($source);
-                $this->log->log('deduplicate', "Creating record list for '$source'" . ($allRecords ? ' (all records)' : '') . '');
+                $this->log->log(
+                    'deduplicate',
+                    "Creating record list for '$source'"
+                    . ($allRecords ? ' (all records)' : '')
+                );
 
-                $params = array('deleted' => false, 'source_id' => $source);
+                $params = ['deleted' => false, 'source_id' => $source];
                 if ($singleId) {
                     $params['_id'] = $singleId;
                 } else {
@@ -516,7 +665,9 @@ class RecordManager
                 $count = 0;
                 $deduped = 0;
                 $pc = new PerformanceCounter();
-                $this->log->log('deduplicate', "Processing $total records for '$source'");
+                $this->log->log(
+                    'deduplicate', "Processing $total records for '$source'"
+                );
                 foreach ($records as $record) {
                     if (isset($this->terminate)) {
                         $this->log->log('deduplicate', 'Termination upon request');
@@ -534,7 +685,8 @@ class RecordManager
                         }
                     }
                     if ($this->verbose && microtime(true) - $startRecordTime > 0.7) {
-                        echo "\nDeduplication of " . $record['_id'] . ' took ' . (microtime(true) - $startRecordTime) . "\n";
+                        echo "\nDeduplication of " . $record['_id'] . ' took '
+                            . (microtime(true) - $startRecordTime) . "\n";
                     }
                     ++$count;
                     if ($count % 1000 == 0) {
@@ -543,13 +695,22 @@ class RecordManager
                         if ($this->verbose) {
                             echo "\n";
                         }
-                        $this->log->log('deduplicate', "$count records processed for '$source', $deduped deduplicated, $avg records/sec");
-                        $starttime = microtime(true);
+                        $this->log->log(
+                            'deduplicate',
+                            "$count records processed for '$source', $deduped "
+                            . "deduplicated, $avg records/sec"
+                        );
                     }
                 }
-                $this->log->log('deduplicate', "Completed with $count records processed for '$source', $deduped deduplicated");
+                $this->log->log(
+                    'deduplicate',
+                    "Completed with $count records processed for '$source', "
+                    . "$deduped deduplicated"
+                );
             } catch (Exception $e) {
-                $this->log->log('deduplicate', 'Exception: ' . $e->getMessage(), Logger::FATAL);
+                $this->log->log(
+                    'deduplicate', 'Exception: ' . $e->getMessage(), Logger::FATAL
+                );
             }
         }
     }
@@ -558,26 +719,37 @@ class RecordManager
      * Harvest records from a data source
      *
      * @param string      $repository           Source ID to harvest
-     * @param string      $harvestFromDate      Override start date (otherwise harvesting is done from the previous harvest date)
-     * @param string      $harvestUntilDate     Override end date (otherwise current date is used)
-     * @param string      $startResumptionToken Override OAI-PMH resumptionToken to resume interrupted harvesting process (note
+     * @param string      $harvestFromDate      Override start date (otherwise
+     * harvesting is done from the previous harvest date)
+     * @param string      $harvestUntilDate     Override end date (otherwise
+     * current date is used)
+     * @param string      $startResumptionToken Override OAI-PMH resumptionToken to
+     * resume interrupted harvesting process (note
      *                                     that tokens may have a limited lifetime)
-     * @param string      $exclude              Source ID's to exclude whe using '*' for repository
-     * @param bool|string $reharvest            Whether to consider this a full reharvest where sets may have changed
-     *                                          (deletes records not received during this harvesting)
+     * @param string      $exclude              Source ID's to exclude whe using '*'
+     * for repository
+     * @param bool|string $reharvest            Whether to consider this a full
+     * reharvest where sets may have changed
+     *                                          (deletes records not received during
+     * this harvesting)
      *
      * @return void
+     * @throws Exception
      */
-    public function harvest($repository = '', $harvestFromDate = null, $harvestUntilDate = null, $startResumptionToken = '', $exclude = null, $reharvest = false)
-    {
-        global $configArray;
-
+    public function harvest($repository = '', $harvestFromDate = null,
+        $harvestUntilDate = null, $startResumptionToken = '', $exclude = null,
+        $reharvest = false
+    ) {
         if (empty($this->dataSourceSettings)) {
-            $this->log->log('harvest', "Please add data source settings to datasources.ini", Logger::FATAL);
+            $this->log->log(
+                'harvest',
+                "Please add data source settings to datasources.ini",
+                Logger::FATAL
+            );
             throw new Exception("Data source settings missing in datasources.ini");
         }
 
-        $excludedSources = isset($exclude) ? explode(',', $exclude) : array();
+        $excludedSources = isset($exclude) ? explode(',', $exclude) : [];
 
         // Loop through all the sources and perform harvests
         foreach ($this->dataSourceSettings as $source => $settings) {
@@ -585,13 +757,19 @@ class RecordManager
                 if ($repository && $repository != '*' && $source != $repository) {
                     continue;
                 }
-                if ((!$repository || $repository == '*') && in_array($source, $excludedSources)) {
+                if ((!$repository || $repository == '*')
+                    && in_array($source, $excludedSources)
+                ) {
                     continue;
                 }
                 if (empty($source) || empty($settings) || !isset($settings['url'])) {
                     continue;
                 }
-                $this->log->log('harvest', "Harvesting from '{$source}'" . ($reharvest ? ' (full reharvest)' : ''));
+                $this->log->log(
+                    'harvest',
+                    "Harvesting from '{$source}'"
+                    . ($reharvest ? ' (full reharvest)' : '')
+                );
 
                 $this->loadSourceSettings($source);
 
@@ -600,55 +778,75 @@ class RecordManager
                 }
 
                 if ($this->harvestType == 'metalib') {
-                    // MetaLib doesn't handle deleted records, so we'll just fetch everything and compare with what we have
+                    // MetaLib doesn't handle deleted records, so we'll just fetch
+                    // everything and compare with what we have
                     $this->log->log('harvest', "Fetching records from MetaLib");
-                    $harvest = new HarvestMetaLib($this->log, $this->db, $source, $this->basePath, $settings);
+                    $harvest = new HarvestMetaLib(
+                        $this->log, $this->db, $source, $this->basePath, $settings
+                    );
                     $harvestedRecords = $harvest->harvest();
                     $this->processFullRecordSet($source, $harvestedRecords);
                 } elseif ($this->harvestType == 'metalib_export') {
-                    // MetaLib doesn't handle deleted records, so we'll just fetch everything delete whatever we didn't get
-                    $dateThreshold = new MongoDate();
-
-                    $harvest = new HarvestMetaLibExport($this->log, $this->db, $source, $this->basePath, $settings);
+                    // MetaLib doesn't handle deleted records, so we'll just fetch
+                    // everything and delete whatever we didn't get
+                    $harvest = new HarvestMetaLibExport(
+                        $this->log, $this->db, $source, $this->basePath, $settings
+                    );
                     if (isset($harvestFromDate)) {
                         $harvest->setStartDate($harvestFromDate);
                     }
                     if (isset($harvestUntilDate)) {
                         $harvest->setEndDate($harvestUntilDate);
                     }
-                    $this->metaLibRecords = array();
-                    $harvest->harvest(array($this, 'storeMetaLibRecord'));
+                    $this->metaLibRecords = [];
+                    $harvest->harvest([$this, 'storeMetaLibRecord']);
                     if ($this->metaLibRecords) {
                         $this->processFullRecordSet($source, $this->metaLibRecords);
                     }
                 } elseif ($this->harvestType == 'sfx') {
-                    $harvest = new HarvestSfx($this->log, $this->db, $source, $this->basePath, $settings);
+                    $harvest = new HarvestSfx(
+                        $this->log, $this->db, $source, $this->basePath, $settings
+                    );
                     if (isset($harvestFromDate)) {
                         $harvest->setStartDate($harvestFromDate);
                     }
                     if (isset($harvestUntilDate)) {
                         $harvest->setEndDate($harvestUntilDate);
                     }
-                    $harvest->harvest(array($this, 'storeRecord'));
+                    $harvest->harvest([$this, 'storeRecord']);
                 } else {
+                    $dateThreshold = null;
                     if ($reharvest) {
                         if (is_string($reharvest)) {
                             $dateThreshold = new MongoDate(strtotime($reharvest));
                         } else {
                             $dateThreshold = new MongoDate();
                         }
-                        $this->log->log('harvest', 'Reharvest date threshold: ' . strftime('%F %T', $dateThreshold->sec));
+                        $this->log->log(
+                            'harvest',
+                            'Reharvest date threshold: '
+                            . strftime('%F %T', $dateThreshold->sec)
+                        );
                     }
 
-                    $harvest = new HarvestOAIPMH($this->log, $this->db, $source, $this->basePath, $settings, $startResumptionToken);
+                    $harvest = new HarvestOAIPMH(
+                        $this->log,
+                        $this->db,
+                        $source,
+                        $this->basePath,
+                        $settings,
+                        $startResumptionToken
+                    );
                     if (isset($harvestFromDate)) {
-                        $harvest->setStartDate($harvestFromDate == '-' ? null : $harvestFromDate);
+                        $harvest->setStartDate(
+                            $harvestFromDate == '-' ? null : $harvestFromDate
+                        );
                     }
                     if (isset($harvestUntilDate)) {
                         $harvest->setEndDate($harvestUntilDate);
                     }
 
-                    $harvest->harvest(array($this, 'storeRecord'));
+                    $harvest->harvest([$this, 'storeRecord']);
 
                     if ($reharvest) {
                         if ($harvest->getHarvestedRecordCount() == 0) {
@@ -666,11 +864,11 @@ class RecordManager
                                 . ' the harvesting'
                             );
                             $records = $this->db->record->find(
-                                array(
+                                [
                                     'source_id' => $this->sourceId,
                                     'deleted' => false,
-                                    'updated' => array('$lt' => $dateThreshold)
-                                )
+                                    'updated' => ['$lt' => $dateThreshold]
+                                ]
                             );
                             $records->immortal(true);
                             $count = 0;
@@ -686,63 +884,86 @@ class RecordManager
                         }
                     }
 
-                    if (!$reharvest && isset($settings['deletions']) && strncmp($settings['deletions'], 'ListIdentifiers', 15) == 0) {
-                        // The repository doesn't support reporting deletions, so list all identifiers
-                        // and mark deleted records that were not found
+                    if (!$reharvest && isset($settings['deletions'])
+                        && strncmp(
+                            $settings['deletions'], 'ListIdentifiers', 15
+                        ) == 0
+                    ) {
+                        // The repository doesn't support reporting deletions, so
+                        // list all identifiers and mark deleted records that were
+                        // not found
                         $processDeletions = true;
                         $interval = null;
                         $deletions = explode(':', $settings['deletions']);
                         if (isset($deletions[1])) {
-                            $state = $this->db->state->findOne(array('_id' => "Last Deletion Processing Time $source"));
+                            $state = $this->db->state->findOne(
+                                ['_id' => "Last Deletion Processing Time $source"]
+                            );
                             if (isset($state)) {
-                                $interval = round((time() - $state['value']) / 3600 / 24);
+                                $interval
+                                    = round((time() - $state['value']) / 3600 / 24);
                                 if ($interval < $deletions[1]) {
-                                    $this->log->log('harvest', "Not processing deletions, $interval days since last time");
+                                    $this->log->log(
+                                        'harvest',
+                                        "Not processing deletions, $interval days "
+                                        . "since last time"
+                                    );
                                     $processDeletions = false;
                                 }
                             }
                         }
 
                         if ($processDeletions) {
-                            $this->log->log('harvest', 'Processing deletions' . (isset($interval) ? " ($interval days since last time)" : ''));
+                            $this->log->log(
+                                'harvest',
+                                'Processing deletions' . (isset($interval)
+                                    ? " ($interval days since last time)" : '')
+                            );
 
                             $this->log->log('harvest', 'Unmarking records');
                             $this->db->record->update(
-                                array('source_id' => $this->sourceId, 'deleted' => false),
-                                array('$unset' => array('mark' => 1)),
-                                array('multiple' => true)
+                                ['source_id' => $this->sourceId, 'deleted' => false],
+                                ['$unset' => ['mark' => 1]],
+                                ['multiple' => true]
                             );
 
                             $this->log->log('harvest', "Fetching identifiers");
-                            $harvest->listIdentifiers(array($this, 'markRecord'));
+                            $harvest->listIdentifiers([$this, 'markRecord']);
 
                             $this->log->log('harvest', "Marking deleted records");
 
                             $records = $this->db->record->find(
-                                array(
+                                [
                                     'source_id' => $this->sourceId,
                                     'deleted' => false,
-                                    'mark' => array('$exists' => false)
-                                )
+                                    'mark' => ['$exists' => false]
+                                ]
                             );
                             $records->immortal(true);
                             $count = 0;
                             foreach ($records as $record) {
                                 $this->storeRecord($record['oai_id'], true, '');
                                 if (++$count % 1000 == 0) {
-                                    $this->log->log('harvest', "Deleted $count records");
+                                    $this->log->log(
+                                        'harvest', "Deleted $count records"
+                                    );
                                 }
                             }
                             $this->log->log('harvest', "Deleted $count records");
 
-                            $state = array('_id' => "Last Deletion Processing Time $source", 'value' => time());
+                            $state = [
+                                '_id' => "Last Deletion Processing Time $source",
+                                'value' => time()
+                            ];
                             $this->db->state->save($state);
                         }
                     }
                 }
                 $this->log->log('harvest', "Harvesting from '{$source}' completed");
             } catch (Exception $e) {
-                $this->log->log('harvest', 'Exception: ' . $e->getMessage(), Logger::FATAL);
+                $this->log->log(
+                    'harvest', 'Exception: ' . $e->getMessage(), Logger::FATAL
+                );
             }
         }
     }
@@ -753,13 +974,14 @@ class RecordManager
      * @param string $recordID ID of the record to be dumped
      *
      * @return void
+     * @throws Exception
      */
     public function dumpRecord($recordID)
     {
         if (!$recordID) {
             throw new Exception('dump: record id must be specified');
         }
-        $records = $this->db->record->find(array('_id' => $recordID));
+        $records = $this->db->record->find(['_id' => $recordID]);
         foreach ($records as $record) {
             $record['original_data'] = MetadataUtils::getRecordData($record, false);
             $record['normalized_data'] = MetadataUtils::getRecordData($record, true);
@@ -781,17 +1003,21 @@ class RecordManager
     {
         $this->log->log('markDeleted', "Creating record list for '$sourceId'");
 
-        $params = array('deleted' => false, 'source_id' => $sourceId);
+        $params = ['deleted' => false, 'source_id' => $sourceId];
         $records = $this->db->record->find($params);
         $records->immortal(true);
         $total = $this->counts ? $records->count() : 'the';
         $count = 0;
 
-        $this->log->log('markDeleted', "Marking deleted $total records from '$sourceId'");
+        $this->log->log(
+            'markDeleted', "Marking deleted $total records from '$sourceId'"
+        );
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
             if (isset($record['dedup_id'])) {
-                $this->dedupHandler->removeFromDedupRecord($record['dedup_id'], $record['_id']);
+                $this->dedupHandler->removeFromDedupRecord(
+                    $record['dedup_id'], $record['_id']
+                );
                 unset($record['dedup_id']);
             }
             $record['deleted'] = true;
@@ -802,13 +1028,25 @@ class RecordManager
             if ($count % 1000 == 0) {
                 $pc->add($count);
                 $avg = $pc->getSpeed();
-                $this->log->log('markDeleted', "$count records marked deleted from '$sourceId', $avg records/sec");
+                $this->log->log(
+                    'markDeleted',
+                    "$count records marked deleted from '$sourceId', "
+                    . "$avg records/sec"
+                );
             }
         }
-        $this->log->log('markDeleted', "Completed with $count records marked deleted from '$sourceId'");
+        $this->log->log(
+            'markDeleted',
+            "Completed with $count records marked deleted from '$sourceId'"
+        );
 
-        $this->log->log('markDeleted', "Deleting last harvest date from data source '$sourceId'");
-        $this->db->state->remove(array('_id' => "Last Harvest Date $sourceId"), array('safe' => true));
+        $this->log->log(
+            'markDeleted',
+            "Deleting last harvest date from data source '$sourceId'"
+        );
+        $this->db->state->remove(
+            ['_id' => "Last Harvest Date $sourceId"], ['safe' => true]
+        );
         $this->log->log('markDeleted', "Marking of $sourceId completed");
     }
 
@@ -826,19 +1064,29 @@ class RecordManager
             $settings = $this->dataSourceSettings[$sourceId];
             if (isset($settings['dedup']) && $settings['dedup']) {
                 if ($force) {
-                    $this->log->log('deleteRecords', "Deduplication enabled for '$sourceId' but deletion forced - may lead to orphaned dedup records", Logger::WARNING);
+                    $this->log->log(
+                        'deleteRecords',
+                        "Deduplication enabled for '$sourceId' but deletion forced "
+                        . " - may lead to orphaned dedup records",
+                        Logger::WARNING
+                    );
                 } else {
-                    $this->log->log('deleteRecords', "Deduplication enabled for '$sourceId', aborting (use markdeleted instead)", Logger::ERROR);
+                    $this->log->log(
+                        'deleteRecords',
+                        "Deduplication enabled for '$sourceId', aborting "
+                        . "(use markdeleted instead)",
+                        Logger::ERROR
+                    );
                     return;
                 }
             }
         }
 
-        $params = array();
+        $params = [];
         $params['source_id'] = $sourceId;
         $this->log->log('deleteRecords', "Creating record list for '$sourceId'");
 
-        $params = array('source_id' => $sourceId);
+        $params = ['source_id' => $sourceId];
         $records = $this->db->record->find($params);
         $records->immortal(true);
         $total = $this->counts ? $records->count() : 'the';
@@ -848,21 +1096,33 @@ class RecordManager
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
             if (isset($record['dedup_id'])) {
-                $this->dedupHandler->removeFromDedupRecord($record['dedup_id'], $record['_id']);
+                $this->dedupHandler->removeFromDedupRecord(
+                    $record['dedup_id'], $record['_id']
+                );
             }
-            $this->db->record->remove(array('_id' => $record['_id']));
+            $this->db->record->remove(['_id' => $record['_id']]);
 
             ++$count;
             if ($count % 1000 == 0) {
                 $pc->add($count);
                 $avg = $pc->getSpeed();
-                $this->log->log('deleteRecords', "$count records deleted from '$sourceId', $avg records/sec");
+                $this->log->log(
+                    'deleteRecords',
+                    "$count records deleted from '$sourceId', $avg records/sec"
+                );
             }
         }
-        $this->log->log('deleteRecords', "Completed with $count records deleted from '$sourceId'");
+        $this->log->log(
+            'deleteRecords', "Completed with $count records deleted from '$sourceId'"
+        );
 
-        $this->log->log('deleteRecords', "Deleting last harvest date from data source '$sourceId'");
-        $this->db->state->remove(array('_id' => "Last Harvest Date $sourceId"), array('safe' => true));
+        $this->log->log(
+            'deleteRecords',
+            "Deleting last harvest date from data source '$sourceId'"
+        );
+        $this->db->state->remove(
+            ['_id' => "Last Harvest Date $sourceId"], ['safe' => true]
+        );
         $this->log->log('deleteRecords', "Deletion of $sourceId completed");
     }
 
@@ -877,14 +1137,27 @@ class RecordManager
     {
         global $configArray;
 
-        $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
-        if (isset($configArray['Solr']['merge_records']) && $configArray['Solr']['merge_records']) {
-            $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' from merged records via Solr update for merged records");
+        $updater = new SolrUpdater(
+            $this->db, $this->basePath, $this->log, $this->verbose
+        );
+        if (isset($configArray['Solr']['merge_records'])
+            && $configArray['Solr']['merge_records']
+        ) {
+            $this->log->log(
+                'deleteSolrRecords',
+                "Deleting data source '$sourceId' from merged records via Solr "
+                . "update for merged records"
+            );
             $updater->updateRecords('', $sourceId, '', false, true);
         }
-        $this->log->log('deleteSolrRecords', "Deleting data source '$sourceId' directly from Solr");
+        $this->log->log(
+            'deleteSolrRecords',
+            "Deleting data source '$sourceId' directly from Solr"
+        );
         $updater->deleteDataSource($sourceId);
-        $this->log->log('deleteSolrRecords', "Deletion of '$sourceId' from Solr completed");
+        $this->log->log(
+            'deleteSolrRecords', "Deletion of '$sourceId' from Solr completed"
+        );
     }
 
     /**
@@ -894,7 +1167,9 @@ class RecordManager
      */
     public function optimizeSolr()
     {
-        $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
+        $updater = new SolrUpdater(
+            $this->db, $this->basePath, $this->log, $this->verbose
+        );
 
         $this->log->log('optimizeSolr', 'Optimizing Solr index');
         $updater->optimizeIndex();
@@ -915,11 +1190,15 @@ class RecordManager
     {
         if ($deleted) {
             // A single OAI-PMH record may have been split to multiple records
-            $records = $this->db->record->find(array('source_id' => $this->sourceId, 'oai_id' => $oaiID));
+            $records = $this->db->record->find(
+                ['source_id' => $this->sourceId, 'oai_id' => $oaiID]
+            );
             $count = 0;
             foreach ($records as $record) {
                 if (isset($record['dedup_id'])) {
-                    $this->dedupHandler->removeFromDedupRecord($record['dedup_id'], $record['_id']);
+                    $this->dedupHandler->removeFromDedupRecord(
+                        $record['dedup_id'], $record['_id']
+                    );
                     unset($record['dedup_id']);
                 }
                 $record['deleted'] = true;
@@ -931,7 +1210,7 @@ class RecordManager
             return $count;
         }
 
-        $dataArray = Array();
+        $dataArray = [];
         if ($this->recordSplitter) {
             if ($this->verbose) {
                 echo "Splitting records\n";
@@ -941,7 +1220,10 @@ class RecordManager
                 $className = substr($this->recordSplitter, 0, -4);
                 $splitter = new $className($recordData);
                 while (!$splitter->getEOF()) {
-                    $dataArray[] = $splitter->getNextRecord($this->prependParentTitleWithUnitId, $this->nonInheritedFields);
+                    $dataArray[] = $splitter->getNextRecord(
+                        $this->prependParentTitleWithUnitId,
+                        $this->nonInheritedFields
+                    );
                 }
             } else {
                 $doc = new DOMDocument();
@@ -962,26 +1244,36 @@ class RecordManager
                 }
             }
         } else {
-            $dataArray = array($recordData);
+            $dataArray = [$recordData];
         }
 
         if ($this->verbose) {
             echo "Storing array of " . count($dataArray) . " records\n";
         }
 
-        // Store start time so that we can mark deleted any child records not present anymore
+        // Store start time so that we can mark deleted any child records not
+        // present anymore
         $startTime = new MongoDate();
 
         $count = 0;
         $mainID = '';
         foreach ($dataArray as $data) {
             if (isset($this->normalizationXSLT)) {
-                $metadataRecord = RecordFactory::createRecord($this->format, $this->normalizationXSLT->transform($data, array('oai_id' => $oaiID)), $oaiID, $this->sourceId);
+                $metadataRecord = RecordFactory::createRecord(
+                    $this->format,
+                    $this->normalizationXSLT->transform($data, ['oai_id' => $oaiID]),
+                    $oaiID,
+                    $this->sourceId
+                );
                 $metadataRecord->normalize();
                 $normalizedData = $metadataRecord->serialize();
-                $originalData = RecordFactory::createRecord($this->format, $data, $oaiID, $this->sourceId)->serialize();
+                $originalData = RecordFactory::createRecord(
+                    $this->format, $data, $oaiID, $this->sourceId
+                )->serialize();
             } else {
-                $metadataRecord = RecordFactory::createRecord($this->format, $data, $oaiID, $this->sourceId);
+                $metadataRecord = RecordFactory::createRecord(
+                    $this->format, $data, $oaiID, $this->sourceId
+                );
                 $originalData = $metadataRecord->serialize();
                 $metadataRecord->normalize();
                 $normalizedData = $metadataRecord->serialize();
@@ -991,17 +1283,20 @@ class RecordManager
             $id = $metadataRecord->getID();
             if (!$id) {
                 if (!$oaiID) {
-                    throw new Exception("Empty ID returned for record, and no OAI ID (previous record ID: $this->previousId)");
+                    throw new Exception(
+                        'Empty ID returned for record, and no OAI ID '
+                        . "(previous record ID: $this->previousId)"
+                    );
                 }
                 $id = $oaiID;
             }
             $this->previousId = $id;
             $id = $this->idPrefix . '.' . $id;
-            $dbRecord = $this->db->record->findOne(array('_id' => $id));
+            $dbRecord = $this->db->record->findOne(['_id' => $id]);
             if ($dbRecord) {
                 $dbRecord['updated'] = new MongoDate();
             } else {
-                $dbRecord = array();
+                $dbRecord = [];
                 $dbRecord['source_id'] = $this->sourceId;
                 $dbRecord['_id'] = $id;
                 $dbRecord['created'] = $dbRecord['updated'] = new MongoDate();
@@ -1015,7 +1310,8 @@ class RecordManager
             if ($this->compressedRecords) {
                 $originalData = new MongoBinData(gzdeflate($originalData), 2);
                 if ($normalizedData) {
-                    $normalizedData = new MongoBinData(gzdeflate($normalizedData), 2);
+                    $normalizedData
+                        = new MongoBinData(gzdeflate($normalizedData), 2);
                 }
             }
             $dbRecord['oai_id'] = $oaiID;
@@ -1034,17 +1330,21 @@ class RecordManager
             $dbRecord['normalized_data'] = $normalizedData;
             if ($this->dedup) {
                 // If this is a host record, mark it to be deduplicated.
-                // If this is a component part, mark its host record to be deduplicated.
+                // If this is a component part, mark its host record to be
+                // deduplicated.
                 if (!$hostID) {
-                    $dbRecord['update_needed'] = $this->dedupHandler->updateDedupCandidateKeys($dbRecord, $metadataRecord);
+                    $dbRecord['update_needed']
+                        = $this->dedupHandler->updateDedupCandidateKeys(
+                            $dbRecord, $metadataRecord
+                        );
                 } else {
                     $this->db->record->update(
-                        array(
+                        [
                             '_id' => $hostID
-                        ),
-                        array(
-                            '$set' => array('update_needed' => true)
-                        )
+                        ],
+                        [
+                            '$set' => ['update_needed' => true]
+                        ]
                     );
                     $dbRecord['update_needed'] = false;
                 }
@@ -1062,15 +1362,20 @@ class RecordManager
         }
 
         if ($count > 1 && $mainID && !$this->keepMissingHierarchyMembers) {
-            // We processed a hierarchical record. Mark deleted any children that were not updated.
+            // We processed a hierarchical record. Mark deleted any children that
+            // were not updated.
             $this->db->record->update(
-                array(
+                [
                     'source_id' => $this->sourceId,
                     'main_id' => $mainID,
-                    'updated' => array('$lt' => $startTime)
-                ),
-                array('$set' => array('deleted' => true, 'updated' => $startTime, 'update_needed' => false)),
-                array('multiple' => true)
+                    'updated' => ['$lt' => $startTime]
+                ],
+                ['$set' => [
+                    'deleted' => true,
+                    'updated' => $startTime,
+                    'update_needed' => false
+                ]],
+                ['multiple' => true]
             );
         }
 
@@ -1094,7 +1399,8 @@ class RecordManager
     }
 
     /**
-     * Count distinct values in the specified field (that would be added to the Solr index)
+     * Count distinct values in the specified field (that would be added to the
+     * Solr index)
      *
      * @param string $sourceId Source ID
      * @param string $field    Field name
@@ -1109,12 +1415,15 @@ class RecordManager
             echo "Field must be specified\n";
             exit;
         }
-        $updater = new SolrUpdater($this->db, $this->basePath, $this->log, $this->verbose);
+        $updater = new SolrUpdater(
+            $this->db, $this->basePath, $this->log, $this->verbose
+        );
         $updater->countValues($sourceId, $field, $mapped);
     }
 
     /**
-     * Mark a record "seen". Used by OAI-PMH harvesting when deletions are not supported.
+     * Mark a record "seen". Used by OAI-PMH harvesting when deletions are not
+     * supported.
      *
      * @param string $oaiID   ID of the record as received from OAI-PMH
      * @param bool   $deleted Whether the record is to be deleted
@@ -1129,9 +1438,9 @@ class RecordManager
             return;
         }
         $this->db->record->update(
-            array('source_id' => $this->sourceId, 'oai_id' => $oaiID),
-            array('$set' => array('mark' => true)),
-            array('multiple' => true)
+            ['source_id' => $this->sourceId, 'oai_id' => $oaiID],
+            ['$set' => ['mark' => true]],
+            ['multiple' => true]
         );
     }
 
@@ -1144,7 +1453,7 @@ class RecordManager
     {
         $this->log->log('checkDedupRecords', "Checking dedup record consistency");
 
-        $dedupRecords = $this->db->dedup->find(array('deleted' => false));
+        $dedupRecords = $this->db->dedup->find(['deleted' => false]);
         $dedupRecords->immortal(true);
         $count = 0;
         $fixed = 0;
@@ -1161,10 +1470,17 @@ class RecordManager
             if ($count % 1000 == 0) {
                 $pc->add($count);
                 $avg = $pc->getSpeed();
-                $this->log->log('checkDedupRecords', "$count records checked with $fixed links fixed, $avg records/sec");
+                $this->log->log(
+                    'checkDedupRecords',
+                    "$count records checked with $fixed links fixed, "
+                    . "$avg records/sec"
+                );
             }
         }
-        $this->log->log('checkDedupRecords', "Completed with $count records checked with $fixed links fixed");
+        $this->log->log(
+            'checkDedupRecords',
+            "Completed with $count records checked with $fixed links fixed"
+        );
     }
 
     /**
@@ -1182,7 +1498,7 @@ class RecordManager
         $matches = '';
         foreach ($this->dataSourceSettings as $source => $settings) {
             foreach ($settings as $setting => $value) {
-                foreach (is_array($value) ? $value : array($value) as $single) {
+                foreach (is_array($value) ? $value : [$value] as $single) {
                     if (!is_string($single)) {
                         continue;
                     }
@@ -1200,7 +1516,8 @@ class RecordManager
     }
 
     /**
-     * Execute a pretransformation on data before it is split into records and loaded. Used when loading from a file.
+     * Execute a pretransformation on data before it is split into records and
+     * loaded. Used when loading from a file.
      *
      * @param string $data The original data
      *
@@ -1210,7 +1527,9 @@ class RecordManager
     {
         if (!isset($this->preXSLT)) {
             $style = new DOMDocument();
-            $style->load($this->basePath . '/transformations/' . $this->pretransformation);
+            $style->load(
+                $this->basePath . '/transformations/' . $this->pretransformation
+            );
             $this->preXSLT = new XSLTProcessor();
             $this->preXSLT->importStylesheet($style);
             $this->preXSLT->setParameter('', 'source_id', $this->sourceId);
@@ -1234,42 +1553,79 @@ class RecordManager
     protected function loadSourceSettings($source)
     {
         if (!isset($this->dataSourceSettings[$source])) {
-            $this->log->log('loadSourceSettings', "Settings not found for data source $source", Logger::FATAL);
+            $this->log->log(
+                'loadSourceSettings',
+                "Settings not found for data source $source",
+                Logger::FATAL
+            );
             throw new Exception("Error: settings not found for $source\n");
         }
         $settings = $this->dataSourceSettings[$source];
         if (!isset($settings['institution'])) {
-            $this->log->log('loadSourceSettings', "institution not set for $source", Logger::FATAL);
+            $this->log->log(
+                'loadSourceSettings',
+                "institution not set for $source",
+                Logger::FATAL
+            );
             throw new Exception("Error: institution not set for $source\n");
         }
         if (!isset($settings['format'])) {
-            $this->log->log('loadSourceSettings', "format not set for $source", Logger::FATAL);
+            $this->log->log(
+                'loadSourceSettings', "format not set for $source", Logger::FATAL
+            );
             throw new Exception("Error: format not set for $source\n");
         }
         $this->format = $settings['format'];
         $this->sourceId = $source;
-        $this->idPrefix = isset($settings['idPrefix']) && $settings['idPrefix'] ? $settings['idPrefix'] : $source;
+        $this->idPrefix = isset($settings['idPrefix']) && $settings['idPrefix']
+            ? $settings['idPrefix'] : $source;
         $this->institution = $settings['institution'];
-        $this->recordXPath = isset($settings['recordXPath']) ? $settings['recordXPath'] : '';
-        $this->oaiIDXPath = isset($settings['oaiIDXPath']) ? $settings['oaiIDXPath'] : '';
+        $this->recordXPath
+            = isset($settings['recordXPath']) ? $settings['recordXPath'] : '';
+        $this->oaiIDXPath
+            = isset($settings['oaiIDXPath']) ? $settings['oaiIDXPath'] : '';
         $this->dedup = isset($settings['dedup']) ? $settings['dedup'] : false;
-        $this->componentParts = isset($settings['componentParts']) && $settings['componentParts'] ? $settings['componentParts'] : 'as_is';
-        $this->pretransformation = isset($settings['preTransformation']) ? $settings['preTransformation'] : '';
-        $this->indexMergedParts = isset($settings['indexMergedParts']) ? $settings['indexMergedParts'] : true;
+        $this->componentParts = isset($settings['componentParts'])
+            && $settings['componentParts'] ? $settings['componentParts'] : 'as_is';
+        $this->pretransformation = isset($settings['preTransformation'])
+            ? $settings['preTransformation'] : '';
+        $this->indexMergedParts = isset($settings['indexMergedParts'])
+            ? $settings['indexMergedParts'] : true;
         $this->harvestType = isset($settings['type']) ? $settings['type'] : '';
-        $this->nonInheritedFields = isset($settings['non_inherited_fields']) ? $settings['non_inherited_fields'] : array();
-        $this->prependParentTitleWithUnitId = isset($settings['prepend_parent_title_with_unitid']) ? $settings['prepend_parent_title_with_unitid'] : true;
+        $this->nonInheritedFields = isset($settings['non_inherited_fields'])
+            ? $settings['non_inherited_fields'] : [];
+        $this->prependParentTitleWithUnitId
+            = isset($settings['prepend_parent_title_with_unitid'])
+            ? $settings['prepend_parent_title_with_unitid'] : true;
 
-        $params = array('source_id' => $this->sourceId, 'institution' => $this->institution, 'format' => $this->format, 'id_prefix' => $this->idPrefix);
-        $this->normalizationXSLT = isset($settings['normalization']) && $settings['normalization'] ? new XslTransformation($this->basePath . '/transformations', $settings['normalization'], $params) : null;
-        $this->solrTransformationXSLT = isset($settings['solrTransformation']) && $settings['solrTransformation'] ? new XslTransformation($this->basePath . '/transformations', $settings['solrTransformation'], $params) : null;
+        $params = [
+            'source_id' => $this->sourceId,
+            'institution' => $this->institution,
+            'format' => $this->format,
+            'id_prefix' => $this->idPrefix
+        ];
+        $this->normalizationXSLT = isset($settings['normalization'])
+            && $settings['normalization']
+            ? new XslTransformation(
+                $this->basePath . '/transformations',
+                $settings['normalization'],
+                $params
+            ) : null;
+        $this->solrTransformationXSLT = isset($settings['solrTransformation'])
+            && $settings['solrTransformation']
+            ? new XslTransformation(
+                $this->basePath . '/transformations',
+                $settings['solrTransformation'],
+                $params
+            ) : null;
 
         if (isset($settings['recordSplitter'])) {
             if (substr($settings['recordSplitter'], -4) == '.php') {
                 $this->recordSplitter = $settings['recordSplitter'];
             } else {
                 $style = new DOMDocument();
-                $xslFile = $this->basePath . '/transformations/' . $settings['recordSplitter'];
+                $xslFile = $this->basePath . '/transformations/'
+                    . $settings['recordSplitter'];
                 if ($style->load($xslFile) === false) {
                     throw new Exception("Could not load $xslFile");
                 }
@@ -1293,15 +1649,17 @@ class RecordManager
      *
      * @return string[]
      */
-    protected static function readListFile($filename)
+    protected function readListFile($filename)
     {
         global $basePath;
 
         $filename = "$basePath/conf/$filename";
         $lines = file($filename, FILE_IGNORE_NEW_LINES);
         if ($lines === false) {
-            $this->log->log('readListFile', "Could not open list file '$filename'", Logger::ERROR);
-            return array();
+            $this->log->log(
+                'readListFile', "Could not open list file '$filename'", Logger::ERROR
+            );
+            return [];
         }
         array_walk(
             $lines,
@@ -1324,21 +1682,28 @@ class RecordManager
     protected function processFullRecordSet(
         $source, $harvestedRecords
     ) {
-        $this->log->log('processFullRecordSet', "[$source] Processing complete record set");
+        $this->log->log(
+            'processFullRecordSet', "[$source] Processing complete record set"
+        );
         // Create keyed array
-        $records = array();
+        $records = [];
         foreach ($harvestedRecords as $record) {
             $marc = RecordFactory::createRecord('marc', $record, '', $source);
             $id = $marc->getID();
             $records["$source.$id"] = $record;
         }
 
-        $this->log->log('processFullRecordSet', "[$source] Merging results with the records in database");
+        $this->log->log(
+            'processFullRecordSet',
+            "[$source] Merging results with the records in database"
+        );
         $deleted = 0;
         $unchanged = 0;
         $changed = 0;
         $added = 0;
-        $dbRecords = $this->db->record->find(array('deleted' => false, 'source_id' => $source));
+        $dbRecords = $this->db->record->find(
+            ['deleted' => false, 'source_id' => $source]
+        );
         foreach ($dbRecords as $dbRecord) {
             $id = $dbRecord['_id'];
             if (!isset($records[$id])) {
@@ -1349,9 +1714,9 @@ class RecordManager
                 continue;
             }
             // Check if the record has changed
-            $dbMarc = RecordFactory::createRecord('marc', MetadataUtils::getRecordData($dbRecord, false), '', $source);
             $marc = RecordFactory::createRecord('marc', $records[$id], '', $source);
-            if ($marc->serialize() != MetadataUtils::getRecordData($dbRecord, false)) {
+            if ($marc->serialize() != MetadataUtils::getRecordData($dbRecord, false)
+            ) {
                 // Record changed, update...
                 $this->storeRecord($id, false, $records[$id]);
                 ++$changed;
@@ -1365,7 +1730,11 @@ class RecordManager
             $this->storeRecord($id, false, $record);
             ++$added;
         }
-        $this->log->log('processFullRecordSet', "[$source] $added new, $changed changed, $unchanged unchanged and $deleted deleted records processed");
+        $this->log->log(
+            'processFullRecordSet',
+            "[$source] $added new, $changed changed, $unchanged unchanged and "
+            . "$deleted deleted records processed"
+        );
     }
 
 }

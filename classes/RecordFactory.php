@@ -48,8 +48,9 @@ class RecordFactory
      * @param string $source Record source
      *
      * @return object       The record driver for handling the record.
+     * @throws Exception
      */
-    static function createRecord($format, $data, $oaiID, $source)
+    public static function createRecord($format, $data, $oaiID, $source)
     {
         global $configArray;
 

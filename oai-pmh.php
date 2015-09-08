@@ -29,7 +29,6 @@
 /**
  * OAI-PMH Provider Front-End
  */
-
 require 'classes/OaiPmhProvider.php';
 
 $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));

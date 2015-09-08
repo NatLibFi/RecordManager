@@ -51,9 +51,10 @@ class FileSplitter
      *
      * @param mixed  $data        XML string or DOM document
      * @param string $recordXPath XPath used to find the records
-     * @param string $oaiIDXPath  XPath used to find the records' oaiID's (relative to record)
+     * @param string $oaiIDXPath  XPath used to find the records' oaiID's
+     * (relative to record)
      */
-    function __construct($data, $recordXPath, $oaiIDXPath)
+    public function __construct($data, $recordXPath, $oaiIDXPath)
     {
         if (is_string($data)) {
             $this->xmlDoc = new DOMDocument();
@@ -92,7 +93,8 @@ class FileSplitter
             if ($this->oaiIDXpath) {
                 $xNodes = $this->xpath->query($this->oaiIDXpath, $node);
                 if ($xNodes->length == 0 || !$xNodes->item(0)->nodeValue) {
-                    die("No OAI ID found with XPath '{$this->oaiIDXpath}' starting at element: '{$node->nodeName}'\n");
+                    die("No OAI ID found with XPath '{$this->oaiIDXpath}' " .
+                        "starting at element: '{$node->nodeName}'\n");
                 }
                 $oaiID = $xNodes->item(0)->nodeValue;
             }

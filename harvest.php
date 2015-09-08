@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'cmdline.php';
 
 /**
@@ -34,6 +33,7 @@ require_once 'cmdline.php';
  * @param string[] $argv Program parameters
  *
  * @return void
+ * @throws Exception
  */
 function main($argv)
 {
@@ -45,18 +45,24 @@ Usage: $argv[0] --source=... [...]
 
 Parameters:
 
---source            Repository id ('*' for all, separate multiple sources with commas)
---exclude           Repository id's to exclude when using '*' for source (separate multiple sources with commas)
+--source            Repository id ('*' for all, separate multiple sources
+                    with commas)
+--exclude           Repository id's to exclude when using '*' for source
+                    (separate multiple sources with commas)
 --from              Override harvesting start date
 --until             Override harvesting end date
 --all               Harvest from beginning (overrides --from)
 --verbose           Enable verbose output
---override          Override initial resumption token (e.g. to resume failed connection)
---reharvest[=date]  This is a full reharvest, delete all records that were not received during the harvesting (or were modified before [date]). Implies --all.
+--override          Override initial resumption token
+                    (e.g. to resume failed connection)
+--reharvest[=date]  This is a full reharvest, delete all records that were not
+                    received during the harvesting (or were modified before [date]).
+                    Implies --all.
 --config.section.name=value
-                    Set configuration directive to given value overriding any setting in recordmanager.ini
---lockfile=file    Use a lock file to avoid executing the command multiple times in
-                   parallel (useful when running from crontab)
+                    Set configuration directive to given value overriding any
+                    setting in recordmanager.ini
+--lockfile=file     Use a lock file to avoid executing the command multiple times in
+                    parallel (useful when running from crontab)
 
 
 EOT;
@@ -70,7 +76,9 @@ EOT;
             die();
         }
 
-        $manager = new RecordManager(true, isset($params['verbose']) ? $params['verbose'] : false);
+        $manager = new RecordManager(
+            true, isset($params['verbose']) ? $params['verbose'] : false
+        );
         $from = isset($params['from']) ? $params['from'] : null;
         if (isset($params['all']) || isset($params['reharvest'])) {
             $from = '-';

@@ -32,7 +32,6 @@
  *
  * Helper functions for command line utilities.
  */
-
 ini_set('display_errors', '1');
 
 // Initialize command line environment
@@ -72,7 +71,7 @@ function applyConfigOverrides($params)
 function parseArgs($argv)
 {
     array_shift($argv);
-    $params = array();
+    $params = [];
     foreach ($argv as $arg) {
         if (substr($arg, 0, 2) == '--') {
             $eqPos = strpos($arg, '=');
@@ -106,8 +105,8 @@ function parseArgs($argv)
  *
  * @param string $lockfile Lock file
  *
- * @return handle|bool|null Returns file handle on success, null if no lock was
- *                          required or false on failure
+ * @return resource|bool|null Returns file handle on success, null if no lock was
+ * required or false on failure
  */
 function acquireLock($lockfile)
 {
@@ -128,7 +127,7 @@ function acquireLock($lockfile)
 /**
  * Release a lock on a lock file
  *
- * @param handle $handle Lock file handle
+ * @param resource $handle Lock file handle
  *
  * @return void
  */

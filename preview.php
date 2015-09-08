@@ -27,8 +27,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
-
 require_once 'classes/Preview.php';
 
 if (!isset($_REQUEST['source']) || !isset($_REQUEST['data'])) {
@@ -43,16 +41,18 @@ if (!preg_match('/^[\w_]*$/', $format) || !preg_match('/^[\w_]*$/', $source)) {
 
 $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
 $configArray = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
-$configArray['dataSourceSettings'] = parse_ini_file($basePath . '/conf/datasources.ini', true);
+$configArray['dataSourceSettings']
+    = parse_ini_file($basePath . '/conf/datasources.ini', true);
 
 date_default_timezone_set($configArray['Site']['timezone']);
 
 $mongo = new Mongo($configArray['Mongo']['url']);
 $db = $mongo->selectDB($configArray['Mongo']['database']);
-MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout']) ? $configArray['Mongo']['cursor_timeout'] : 300000;
+MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout'])
+    ? $configArray['Mongo']['cursor_timeout'] : 300000;
 
 $log = new Logger();
-        
+
 $preview = new Preview($db, $basePath, $log, false);
 $fields = $preview->preview($_REQUEST['data'], $format, $source);
 

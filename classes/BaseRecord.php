@@ -49,7 +49,8 @@ class BaseRecord
      * Constructor
      *
      * @param string $data     Metadata
-     * @param string $oaiID    Record ID received from OAI-PMH (or empty string for file import)
+     * @param string $oaiID    Record ID received from OAI-PMH (or empty string for
+     * file import)
      * @param string $source   Source ID
      * @param string $idPrefix Record ID prefix
      */
@@ -154,9 +155,11 @@ class BaseRecord
      * Return record title
      *
      * @param bool $forFiling Whether the title is to be used in filing
-     *                        (e.g. sorting, non-filing characters should be removed)
+     * (e.g. sorting, non-filing characters should be removed)
      *
      * @return string
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function getTitle($forFiling = false)
     {
@@ -240,7 +243,7 @@ class BaseRecord
      */
     public function getUniqueIDs()
     {
-        return array();
+        return [];
     }
 
     /**
@@ -250,7 +253,7 @@ class BaseRecord
      */
     public function getISBNs()
     {
-        return array();
+        return [];
     }
 
     /**
@@ -260,7 +263,7 @@ class BaseRecord
     */
     public function getISSNs()
     {
-        return array();
+        return [];
     }
 
     /**
@@ -348,7 +351,8 @@ class BaseRecord
     {
         global $configArray;
 
-        if (!isset($configArray['dataSourceSettings'][$this->source]['driverParams'])) {
+        if (!isset($configArray['dataSourceSettings'][$this->source]['driverParams'])
+        ) {
             return $default;
         }
         $iniValues = parse_ini_string(

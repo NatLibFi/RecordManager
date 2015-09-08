@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'DcRecord.php';
 require_once 'MetadataUtils.php';
 
@@ -52,15 +51,18 @@ class NdlDcRecord extends DcRecord
         $data = parent::toSolrArray();
 
         if (isset($data['publishDate'])) {
-            $data['main_date_str'] = MetadataUtils::extractYear($data['publishDate']);
+            $data['main_date_str']
+                = MetadataUtils::extractYear($data['publishDate']);
             $data['main_date'] = $this->validateDate(
                 $this->getPublicationYear() . '-01-01T00:00:00Z'
             );
         }
 
-        $data['publication_sdaterange'] = $this->getPublicationDateRange();
-        if ($data['publication_sdaterange']) {
-            $data['search_sdaterange_mv'][] = $data['publication_sdaterange'];
+        if ($range = $this->getPublicationDateRange()) {
+            $data['search_sdaterange_mv'][] = $data['publication_sdaterange']
+                = metadataUtils::dateRangeToNumeric($range);
+            $data['search_daterange_mv'][] = $data['publication_daterange']
+                = metadataUtils::dateRangeToStr($range);
         }
 
         // language, take only first
@@ -71,7 +73,8 @@ class NdlDcRecord extends DcRecord
                     (string)$this->doc->language
                 ),
                 function($value) {
-                    return preg_match('/^[a-z]{2,3}$/', $value) && $value != 'zxx' && $value != 'und';
+                    return preg_match('/^[a-z]{2,3}$/', $value) && $value != 'zxx'
+                        && $value != 'und';
                 }
             )
         );
@@ -85,8 +88,7 @@ class NdlDcRecord extends DcRecord
     /**
      * Return publication year/date range
      *
-     * @return string
-     * @access protected
+     * @return array|null
      */
     protected function getPublicationDateRange()
     {
@@ -94,8 +96,8 @@ class NdlDcRecord extends DcRecord
         if ($year) {
             $startDate = "$year-01-01T00:00:00Z";
             $endDate = "$year-12-31T23:59:59Z";
-            return MetadataUtils::convertDateRange(array($startDate, $endDate));
+            return [$startDate, $endDate];
         }
-        return '';
+        return null;
     }
 }

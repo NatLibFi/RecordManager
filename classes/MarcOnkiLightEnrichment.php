@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'Enrichment.php';
 
 require_once 'HTTP/Request2.php';
@@ -41,7 +40,6 @@ require_once 'HTTP/Request2.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 class MarcOnkiLightEnrichment extends Enrichment
 {
     /**
@@ -72,9 +70,9 @@ class MarcOnkiLightEnrichment extends Enrichment
     /**
      * Enrich the record and return any additions in solrArray
      *
-     * @param string    $sourceId  Source ID
-     * @param multitype $record    Record
-     * @param array     $solrArray Metadata to be sent to Solr
+     * @param string $sourceId  Source ID
+     * @param object $record    Metadata Record
+     * @param array  $solrArray Metadata to be sent to Solr
      *
      * @return void
      */
@@ -90,11 +88,11 @@ class MarcOnkiLightEnrichment extends Enrichment
     /**
      * Enrich the record and return any additions in solrArray
      *
-     * @param string    $sourceId  Source ID
-     * @param multitype $record    Record
-     * @param array     $solrArray Metadata to be sent to Solr
-     * @param string    $marcField MARC field code to use
-     * @param string    $solrField Target Solr field
+     * @param string $sourceId  Source ID
+     * @param object $record    Record
+     * @param array  $solrArray Metadata to be sent to Solr
+     * @param string $marcField MARC field code to use
+     * @param string $solrField Target Solr field
      *
      * @return void
      */
@@ -114,7 +112,7 @@ class MarcOnkiLightEnrichment extends Enrichment
                     . urlencode($id);
             }
             $data = $this->getExternalData(
-                $url, $id, array('Accept' => 'application/json')
+                $url, $id, ['Accept' => 'application/json']
             );
             if ($data) {
                 $data = json_decode($data, true);
@@ -139,13 +137,13 @@ class MarcOnkiLightEnrichment extends Enrichment
                     if (!empty($item['skos:exactMatch']['uri'])) {
                         $matchURL = $matchId = $item['skos:exactMatch']['uri'];
                         if (strncmp($matchURL, 'http', 4) !== 0) {
-                            $url = $this->onkiLightBaseURL
+                            $matchURL = $this->onkiLightBaseURL
                                 . '/data?format=application/json&uri='
                                 . urlencode($matchId);
                         }
                         $matchData = $this->getExternalData(
                             $matchURL, $matchId,
-                            array('Accept' => 'application/json')
+                            ['Accept' => 'application/json']
                         );
                         if (!$matchData) {
                             continue;

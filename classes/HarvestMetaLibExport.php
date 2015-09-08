@@ -29,7 +29,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'HTTP/Request2.php';
 require_once 'HarvestHTTPFiles.php';
 
@@ -51,15 +50,17 @@ class HarvestMetaLibExport extends HarvestHTTPFiles
     /**
      * Harvest all available documents.
      *
-     * @param functionref $callback Function to be called to store a harvested record
+     * @param callable $callback Function to be called to store a harvested record
      *
-     * @return void
-     * @access public
+     * @return null
+     * @throws Exception
      */
     public function harvest($callback)
     {
         if (!$this->filePrefix) {
-            throw new Exception('Error: filePrefix not specified in source configuration');
+            throw new Exception(
+                'Error: filePrefix not specified in source configuration'
+            );
         }
         parent::harvest($callback);
     }
@@ -77,7 +78,11 @@ class HarvestMetaLibExport extends HarvestHTTPFiles
         $data = parent::retrieveFile($filename);
         // Remove the namespace declaration. Helps process the file, and it's invalid
         // anyway.
-        $data = str_replace('<collection xmlns="http://www.loc.gov/MARC21/slim">', '<collection>', $data);
+        $data = str_replace(
+            '<collection xmlns="http://www.loc.gov/MARC21/slim">',
+            '<collection>',
+            $data
+        );
         // Fix the data
         $dataRows = explode("\n", $data);
         foreach ($dataRows as &$row) {
@@ -119,7 +124,7 @@ class HarvestMetaLibExport extends HarvestHTTPFiles
         $list = parent::retrieveFileList();
         // Take only the latest file
         if ($list) {
-            $list = array(array_pop($list));
+            $list = [array_pop($list)];
         }
         return $list;
     }

@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'BaseRecord.php';
 require_once 'MetadataUtils.php';
 
@@ -48,7 +47,8 @@ class EseRecord extends BaseRecord
      * Constructor
      *
      * @param string $data     Metadata
-     * @param string $oaiID    Record ID received from OAI-PMH (or empty string for file import)
+     * @param string $oaiID    Record ID received from OAI-PMH
+     * (or empty string for file import)
      * @param string $source   Source ID
      * @param string $idPrefix Record ID prefix
      */
@@ -63,7 +63,6 @@ class EseRecord extends BaseRecord
      * Return record ID (local)
      *
      * @return string
-     * @access public
      */
     public function getID()
     {
@@ -74,7 +73,6 @@ class EseRecord extends BaseRecord
      * Serialize the record for storing in the database
      *
      * @return string
-     * @access public
      */
     public function serialize()
     {
@@ -85,7 +83,6 @@ class EseRecord extends BaseRecord
      * Serialize the record into XML for export
      *
      * @return string
-     * @access public
      */
     public function toXML()
     {
@@ -96,18 +93,17 @@ class EseRecord extends BaseRecord
      * Return fields to be indexed in Solr
      *
      * @return string[]
-     * @access public
      */
     public function toSolrArray()
     {
-        $data = array();
+        $data = [];
 
         $doc = $this->doc;
         $data['ctrlnum'] = (string)$doc->recordID;
         $data['fullrecord'] = $doc->asXML();
 
         // allfields
-        $allFields = array();
+        $allFields = [];
         foreach ($doc->children() as $tag => $field) {
             $allFields[] = $field;
         }
@@ -156,7 +152,6 @@ class EseRecord extends BaseRecord
      * Dedup: Return full title (for debugging purposes only)
      *
      * @return string
-     * @access public
      */
     public function getFullTitle()
     {
@@ -166,10 +161,10 @@ class EseRecord extends BaseRecord
     /**
      * Dedup: Return record title
      *
-     * @param bool $forFiling Whether the title is to be used in filing (e.g. sorting, non-filing characters should be removed)
+     * @param bool $forFiling Whether the title is to be used in filing
+     * (e.g. sorting, non-filing characters should be removed)
      *
      * @return string
-     * @access public
      */
     public function getTitle($forFiling = false)
     {
@@ -188,7 +183,6 @@ class EseRecord extends BaseRecord
      * Dedup: Return main author (format: Last, First)
      *
      * @return string
-     * @access public
      */
     public function getMainAuthor()
     {
@@ -199,11 +193,10 @@ class EseRecord extends BaseRecord
      * Dedup: Return ISBNs in ISBN-13 format without dashes
      *
      * @return string[]
-     * @access public
      */
     public function getISBNs()
     {
-        $arr = array();
+        $arr = [];
         foreach ($this->doc->identifier as $identifier) {
             $identifier = str_replace('-', '', $identifier);
             if (!preg_match('{([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
@@ -224,7 +217,6 @@ class EseRecord extends BaseRecord
      * Dedup: Return series ISSN
      *
      * @return string
-     * @access public
      */
     public function getSeriesISSN()
     {
@@ -235,7 +227,6 @@ class EseRecord extends BaseRecord
      * Dedup: Return series numbering
      *
      * @return string
-     * @access public
      */
     public function getSeriesNumbering()
     {
@@ -246,7 +237,6 @@ class EseRecord extends BaseRecord
      * Dedup: Return format from predefined values
      *
      * @return string
-     * @access public
      */
     public function getFormat()
     {
@@ -257,7 +247,6 @@ class EseRecord extends BaseRecord
      * Dedup: Return publication year (four digits only)
      *
      * @return string
-     * @access public
      */
     public function getPublicationYear()
     {
@@ -266,13 +255,13 @@ class EseRecord extends BaseRecord
                 return (string)$date;
             }
         }
+        return '';
     }
 
     /**
      * Dedup: Return page count (number only)
      *
      * @return string
-     * @access public
      */
     public function getPageCount()
     {
@@ -284,11 +273,11 @@ class EseRecord extends BaseRecord
      *
      * @param string $tag XML tag
      *
-     * @return multitype:string
+     * @return string[]
      */
     protected function getValues($tag)
     {
-        $values = array();
+        $values = [];
         foreach ($this->doc->{$tag} as $value) {
             $values[] = (string)$value;
         }

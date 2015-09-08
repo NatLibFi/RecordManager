@@ -1,10 +1,10 @@
 <?php
 /**
- * Performance Counter
+ * MetadataUtils tests
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012.
+ * Copyright (C) The National Library of Finland 2015
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,11 +25,10 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
+require_once 'classes/MetadataUtils.php';
 
 /**
- * PerformanceCounter
- *
- * This class provides average speed estimation for different processes
+ * MetadataUtils tests
  *
  * @category DataManagement
  * @package  RecordManager
@@ -37,60 +36,23 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class PerformanceCounter
+class MetadataUtilsTest extends PHPUnit_Framework_TestCase
 {
-    protected $counts = [];
-
     /**
-     * Constructor
-     */
-    public function __construct()
-    {
-        $this->reset();
-    }
-
-    /**
-     * Reset counter
+     * Tests for createSortableString
      *
      * @return void
      */
-    public function reset()
+    public function testCreateSortableString()
     {
-        $this->counts = [['t' => microtime(true), 'c' => 0]];
-    }
-
-    /**
-     * Add the current count
-     *
-     * @param number $count Current progress
-     *
-     * @return void
-     */
-    public function add($count)
-    {
-        $this->counts[] = ['t' => microtime(true), 'c' => $count];
-        if (count($this->counts) > 10) {
-            array_shift($this->counts);
-        }
-    }
-
-    /**
-     * Get the speed as units / second
-     *
-     * @return number
-     */
-    public function getSpeed()
-    {
-        if (count($this->counts) < 2) {
-            return 0;
-        }
-        $first = $this->counts[0];
-        $last = end($this->counts);
-        $count = $last['c'] - $first['c'];
-        $time = $last['t'] - $first['t'];
-        if ($time > 0) {
-            return round($count / $time);
-        }
-        return 0;
+        $this->assertEquals(
+            'A 3123', MetadataUtils::createSortableString('A 123')
+        );
+        $this->assertEquals(
+            'A 3123 18 ABC', MetadataUtils::createSortableString('A 123 8 abc')
+        );
+        $this->assertEquals(
+            'A 11 12', MetadataUtils::createSortableString('A  1   2')
+        );
     }
 }
