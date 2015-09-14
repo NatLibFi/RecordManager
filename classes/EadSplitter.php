@@ -212,7 +212,7 @@ class EadSplitter
      */
     protected function appendXML(&$simplexml, $append, $ignore = [])
     {
-        if ($append) {
+        if ($append !== null) {
             $name = $append->getName();
             // addChild doesn't encode & ...
             $data = (string)$append;
