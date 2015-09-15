@@ -44,7 +44,7 @@ require_once 'XslTransformation.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Preview extends SolrUpdater
+class PreviewCreator extends SolrUpdater
 {
     /**
      * Constructor
@@ -64,14 +64,18 @@ class Preview extends SolrUpdater
                 'institution' => '_preview',
                 'componentParts' => null,
                 'format' => '_preview',
-                'preTransformation' => 'strip_namespaces.xsl'
+                'preTransformation' => 'strip_namespaces.xsl',
+                'extraFields' => [],
+                'mappingFiles' => []
             ];
         }
         if (empty($this->settings['_marc_preview'])) {
             $this->settings['_marc_preview'] = [
                 'institution' => '_preview',
                 'componentParts' => null,
-                'format' => 'marc'
+                'format' => 'marc',
+                'extraFields' => [],
+                'mappingFiles' => []
             ];
         }
     }
@@ -160,6 +164,7 @@ class Preview extends SolrUpdater
         );
         $metadataRecord->normalize();
         $record['normalized_data'] = $metadataRecord->serialize();
+        $record['_id'] = $source . '.' . $metadataRecord->getID();
 
         return $this->createSolrArray($record, $componentParts);
     }

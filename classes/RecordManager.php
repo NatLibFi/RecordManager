@@ -1516,6 +1516,24 @@ class RecordManager
     }
 
     /**
+     * Creates a preview of the given metadata and returns it
+     *
+     * @param string $metadata The metadata to process
+     * @param string $format   Metadata format
+     * @param string $source   Source identifier
+     *
+     * @return array Solr record fields
+     */
+    public function previewRecord($metadata, $format, $source)
+    {
+        include_once 'PreviewCreator.php';
+        $preview = new PreviewCreator(
+            $this->db, $this->basePath, $this->log, $this->verbose
+        );
+        return $preview->preview($metadata, $format, $source);
+    }
+
+    /**
      * Execute a pretransformation on data before it is split into records and
      * loaded. Used when loading from a file.
      *

@@ -334,7 +334,7 @@ class NdlMarcRecord extends MarcRecord
 
         // Source
         $data['source_str_mv'] = $this->source;
-        $data['datasource_str_mv'] = $this->source;
+        $data['datasource_str_mv'] = [$this->source];
 
         // ISSN
         $data['issn'] = $this->getFieldsSubfields(
