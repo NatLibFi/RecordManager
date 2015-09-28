@@ -796,8 +796,8 @@ class NdlMarcRecord extends MarcRecord
         }
 
         if (!isset($startDate) || !isset($endDate)
-            || !MetadataUtils::validateISO8601Date($startDate)
-            || !MetadataUtils::validateISO8601Date($endDate)
+            || MetadataUtils::validateISO8601Date($startDate) === false
+            || MetadataUtils::validateISO8601Date($endDate) === false
         ) {
             $field = $this->getField('260');
             if ($field) {
@@ -811,8 +811,8 @@ class NdlMarcRecord extends MarcRecord
         }
 
         if (!isset($startDate) || !isset($endDate)
-            || !MetadataUtils::validateISO8601Date($startDate)
-            || !MetadataUtils::validateISO8601Date($endDate)
+            || MetadataUtils::validateISO8601Date($startDate) === false
+            || MetadataUtils::validateISO8601Date($endDate) === false
         ) {
             $fields = $this->getFields('264');
             foreach ($fields as $field) {
@@ -828,8 +828,8 @@ class NdlMarcRecord extends MarcRecord
             }
         }
         if (isset($startDate) && isset($endDate)
-            && MetadataUtils::validateISO8601Date($startDate)
-            && MetadataUtils::validateISO8601Date($endDate)
+            && MetadataUtils::validateISO8601Date($startDate) !== false
+            && MetadataUtils::validateISO8601Date($endDate) !== false
         ) {
             if ($endDate < $startDate) {
                 global $logger;

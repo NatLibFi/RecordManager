@@ -750,8 +750,8 @@ class LidoRecord extends BaseRecord
             return null;
         }
 
-        if (!MetadataUtils::validateISO8601Date($startDate)
-            || !MetadataUtils::validateISO8601Date($endDate)
+        if (MetadataUtils::validateISO8601Date($startDate) === false
+            || MetadataUtils::validateISO8601Date($endDate) === false
         ) {
             return null;
         }

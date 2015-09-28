@@ -374,7 +374,7 @@ class BaseRecord
      */
     protected function validateDate($dateString)
     {
-        if (MetadataUtils::validateISO8601Date($dateString)) {
+        if (MetadataUtils::validateISO8601Date($dateString) !== false) {
             return $dateString;
         }
         return '';
