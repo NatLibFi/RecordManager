@@ -1451,7 +1451,12 @@ class SolrUpdater
             && $configArray['Solr']['format_in_allfields']
         ) {
             foreach ($data['format'] as $format) {
-                $data['allfields'][] = MetadataUtils::normalize($format);
+                // Replace numbers since they may be be considered word boundaries
+                $data['allfields'][] = str_replace(
+                    ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+                    ['ax', 'bx', 'cx', 'dx', 'ex', 'fx', 'gx', 'hx', 'ix', 'jx'],
+                    MetadataUtils::normalize($format)
+                );
             }
         }
 
