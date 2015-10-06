@@ -1161,6 +1161,65 @@ class RecordManager
     }
 
     /**
+     * Purge deleted records from the database
+     *
+     * @return void
+     */
+    public function purgeDeletedRecords()
+    {
+        global $configArray;
+
+        $params = ['deleted' => true];
+        $this->log->log('purgeDeletedRecords', "Creating record list");
+        $records = $this->db->record->find($params, ['_id' => true]);
+        $records->immortal(true);
+        $total = $this->counts ? $records->count() : 'the';
+        $count = 0;
+
+        $this->log->log('purgeDeletedRecords', "Purging $total records");
+        $pc = new PerformanceCounter();
+        foreach ($records as $record) {
+            $this->db->record->remove(['_id' => $record['_id']]);
+            ++$count;
+            if ($count % 1000 == 0) {
+                $pc->add($count);
+                $avg = $pc->getSpeed();
+                $this->log->log(
+                    'purgeDeletedRecords',
+                    "$count records purged, $avg records/sec"
+                );
+            }
+        }
+        $this->log->log(
+            'purgeDeletedRecords', "Total $count records purged"
+        );
+
+        $this->log->log('purgeDeletedRecords', "Creating dedup record list");
+        $records = $this->db->dedup->find($params, ['_id' => true]);
+        $records->immortal(true);
+        $total = $this->counts ? $records->count() : 'the';
+        $count = 0;
+
+        $this->log->log('purgeDeletedRecords', "Purging $total dedup records");
+        $pc = new PerformanceCounter();
+        foreach ($records as $record) {
+            $this->db->dedup->remove(['_id' => $record['_id']]);
+            ++$count;
+            if ($count % 1000 == 0) {
+                $pc->add($count);
+                $avg = $pc->getSpeed();
+                $this->log->log(
+                    'purgeDeletedRecords',
+                    "$count dedup records purged, $avg records/sec"
+                );
+            }
+        }
+        $this->log->log(
+            'purgeDeletedRecords', "Total $count dedup records purged"
+        );
+    }
+
+    /**
      * Optimize the Solr index
      *
      * @return void

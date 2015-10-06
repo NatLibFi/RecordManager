@@ -47,6 +47,7 @@ Parameters:
 
 --func             renormalize|deduplicate|updatesolr|dump|dumpsolr|markdeleted
                    |deletesource|deletesolr|optimizesolr|count|checkdedup|comparesolr
+                   |purgedeleted
 --source           Source ID to process (separate multiple sources with commas)
 --all              Process all records regardless of their state (deduplicate)
                    or date (updatesolr)
@@ -148,6 +149,18 @@ EOT;
                     break;
                 case 'checkdedup':
                     $manager->checkDedupRecords();
+                    break;
+                case 'purgedeleted':
+                    if (!isset($params['force']) || !$params['force']) {
+                        echo <<<EOT
+Purging of deleted records means that any further Solr updates don't include
+deletions. Use the --force parameter to indicate that this is ok. No records
+have been purged.
+
+EOT;
+                        exit(1);
+                    }
+                    $manager->purgeDeletedRecords();
                     break;
                 default:
                     echo 'Unknown func: ' . $params['func'] . "\n";
