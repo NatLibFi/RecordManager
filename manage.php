@@ -69,6 +69,8 @@ Parameters:
                    is "dumpsolr".
 --mapped           If set, use values only after any mapping files are processed when
                    counting records (count)
+--daystokeep=days  How many last days to keep when purging deleted records
+                   (purgedeleted)
 
 
 EOT;
@@ -160,7 +162,10 @@ have been purged.
 EOT;
                         exit(1);
                     }
-                    $manager->purgeDeletedRecords();
+                    $manager->purgeDeletedRecords(
+                        isset($params['daystokeep']) ? intval($params['daystokeep'])
+                        : 0
+                    );
                     break;
                 default:
                     echo 'Unknown func: ' . $params['func'] . "\n";

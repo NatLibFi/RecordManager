@@ -1163,14 +1163,22 @@ class RecordManager
     /**
      * Purge deleted records from the database
      *
+     * @param int $daysToKeep Days to keep
+     *
      * @return void
      */
-    public function purgeDeletedRecords()
+    public function purgeDeletedRecords($daysToKeep = 0)
     {
         global $configArray;
 
+        $dateStr = '';
         $params = ['deleted' => true];
-        $this->log->log('purgeDeletedRecords', "Creating record list");
+        if ($daysToKeep) {
+            $date = strtotime("-$daysToKeep day");
+            $dateStr = ' until ' . date('Y-m-d', $date);
+            $params['updated'] = ['$lt' => new MongoDate($date)];
+        }
+        $this->log->log('purgeDeletedRecords', "Creating record list$dateStr");
         $records = $this->db->record->find($params, ['_id' => true]);
         $records->immortal(true);
         $total = $this->counts ? $records->count() : 'the';
@@ -1194,7 +1202,12 @@ class RecordManager
             'purgeDeletedRecords', "Total $count records purged"
         );
 
-        $this->log->log('purgeDeletedRecords', "Creating dedup record list");
+
+        $params = ['deleted' => true];
+        if ($daysToKeep) {
+            $params['changed'] = ['$lt' => new MongoDate($date)];
+        }
+        $this->log->log('purgeDeletedRecords', "Creating dedup record list$dateStr");
         $records = $this->db->dedup->find($params, ['_id' => true]);
         $records->immortal(true);
         $total = $this->counts ? $records->count() : 'the';
