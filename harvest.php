@@ -39,7 +39,7 @@ function main($argv)
 {
     $params = parseArgs($argv);
     applyConfigOverrides($params);
-    if (empty($params['source'])) {
+    if (empty($params['source']) || !is_string($params['source'])) {
         echo <<<EOT
 Usage: $argv[0] --source=... [...]
 
