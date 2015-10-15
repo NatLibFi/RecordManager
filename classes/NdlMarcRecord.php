@@ -874,14 +874,14 @@ class NdlMarcRecord extends MarcRecord
 
         }
         foreach ($this->fields as $tag => $fields) {
-            if (($tag >= 100 && $tag < 841) || $tag == 856 || $tag == 880
-                || $tag == 979
+            if (($tag >= 100 && $tag < 841 && $tag != 336 && $tag != 337)
+                || $tag == 856 || $tag == 880 || $tag == 979
             ) {
                 foreach ($fields as $field) {
                     $subfields = $this->getAllSubfields(
                         $field,
-                        isset($subfieldFilter[$tag])
-                        ? $subfieldFilter[$tag] : ['0' => 1, '6' => 1, '8' => 1]
+                        isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag]
+                        : ['0' => 1, '6' => 1, '8' => 1]
                     );
                     if ($subfields) {
                         $allFields = array_merge($allFields, $subfields);
