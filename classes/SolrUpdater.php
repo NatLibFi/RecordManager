@@ -1467,25 +1467,22 @@ class SolrUpdater
         foreach ($data as $key => &$values) {
             if (is_array($values)) {
                 $values = array_values(array_unique($values));
-                $values = array_map(
-                    function($value) {
-                        return MetadataUtils::normalizeUnicode($value);
-                    },
-                    $values
-                );
+                foreach ($values as $key => &$value) {
+                    $value = MetadataUtils::normalizeUnicode($value);
+                    if (empty($value) || $value === 0 || $value === 0.0
+                        || $value === '0'
+                    ) {
+                        unset($values[$key]);
+                    }
+                }
             } elseif ($key != 'fullrecord') {
                 $values = MetadataUtils::normalizeUnicode($values);
             }
-        }
-
-        $data = array_filter(
-            $data,
-            function($value) {
-                return !(empty($value) && $value !== 0 && $value !== 0.0
-                    && $value !== '0'
-                );
+            if (empty($values) || $values === 0 || $values === 0.0 || $values === '0'
+            ) {
+                unset($data[$key]);
             }
-        );
+        }
 
         return $data;
     }
