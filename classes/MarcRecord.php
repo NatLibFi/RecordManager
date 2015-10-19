@@ -762,14 +762,6 @@ class MarcRecord extends BaseRecord
             }
             return MetadataUtils::stripTrailingPunctuation($author);
         }
-        /* Not a good idea?
-         $f110 = $this->getField('110');
-        if ($f110)
-        {
-        $author = $this->getSubfield($f110, 'a');
-        return $author;
-        }
-        */
         return '';
     }
 
