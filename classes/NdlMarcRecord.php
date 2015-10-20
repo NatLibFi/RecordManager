@@ -112,6 +112,17 @@ class NdlMarcRecord extends MarcRecord
     public function toSolrArray()
     {
         $data = parent::toSolrArray();
+
+        if (empty($data['author'])) {
+            $data['author'] = $data['author_fuller'] = $data['author-letter']
+                = $this->getFieldSubfields('110', ['a' => 1]);
+        }
+
+        $key = array_search($data['author'], $data['author2']);
+        if ($key !== false) {
+            unset($data['author2'][$key]);
+        }
+
         if (isset($data['publishDate'])) {
             $data['main_date_str']
                 = MetadataUtils::extractYear($data['publishDate'][0]);
