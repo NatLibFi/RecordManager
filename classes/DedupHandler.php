@@ -627,11 +627,19 @@ class DedupHandler
             if (isset($rec1['dedup_id']) && $rec1['dedup_id'] != $rec2['dedup_id']) {
                 $this->removeFromDedupRecord($rec1['dedup_id'], $rec1['_id']);
             }
-            $this->addToDedupRecord($rec2['dedup_id'], $rec1['_id']);
+            if (!$this->addToDedupRecord($rec2['dedup_id'], $rec1['_id'])) {
+                $rec2['dedup_id'] = $this->createDedupRecord(
+                    $rec1['_id'], $rec2['_id']
+                );
+            }
             $setValues['dedup_id'] = $rec1['dedup_id'] = $rec2['dedup_id'];
         } else {
             if (!empty($rec1['dedup_id'])) {
-                $this->addToDedupRecord($rec1['dedup_id'], $rec2['_id']);
+                if (!$this->addToDedupRecord($rec1['dedup_id'], $rec2['_id'])) {
+                    $rec1['dedup_id'] = $this->createDedupRecord(
+                        $rec1['_id'], $rec2['_id']
+                    );
+                }
                 $setValues['dedup_id'] = $rec2['dedup_id'] = $rec1['dedup_id'];
             } else {
                 $setValues['dedup_id'] = $rec1['dedup_id'] = $rec2['dedup_id']
@@ -686,24 +694,20 @@ class DedupHandler
      * @param string $dedupId ID of the dedup record
      * @param string $id      Record ID to add
      *
-     * @return void
+     * @return bool Whether the dedup record was found and updated
      */
     protected function addToDedupRecord($dedupId, $id)
     {
-        $record = $this->db->dedup->findOne(['_id' => $dedupId]);
+        $record = $this->db->dedup->findOne(['_id' => $dedupId, 'deleted' => false]);
         if (!$record) {
-            $this->log->log(
-                'addToDedupRecord',
-                "Found dangling reference to dedup record $dedupId",
-                Logger::ERROR
-            );
-            return;
+            return false;
         }
         if (!in_array($id, $record['ids'])) {
             $record['changed'] = new MongoDate();
             $record['ids'][] = $id;
             $this->db->dedup->save($record);
         }
+        return true;
     }
 
     /**
