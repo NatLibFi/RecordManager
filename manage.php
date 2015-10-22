@@ -47,9 +47,10 @@ Parameters:
 
 --func             renormalize|deduplicate|updatesolr|dump|dumpsolr|markdeleted
                    |deletesource|deletesolr|optimizesolr|count|checkdedup|comparesolr
-                   |purgedeleted
+                   |purgedeleted|markdedup
 --source           Source ID to process (separate multiple sources with commas)
---all              Process all records regardless of their state (deduplicate)
+--all              Process all records regardless of their state (deduplicate,
+                   markdedup)
                    or date (updatesolr)
 --from             Override the date from which to run the update (updatesolr)
 --single           Process only the given record id (deduplicate, updatesolr, dump)
@@ -121,8 +122,10 @@ EOT;
                     $manager->renormalize($source, $single);
                     break;
                 case 'deduplicate':
+                case 'markdedup':
                     $manager->deduplicate(
-                        $source, isset($params['all']) ? true : false, $single
+                        $source, isset($params['all']) ? true : false, $single,
+                        $params['func'] == 'markdedup'
                     );
                     break;
                 case 'dump':

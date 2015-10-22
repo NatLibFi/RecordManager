@@ -595,11 +595,13 @@ class RecordManager
      * @param bool   $allRecords If true, process all records regardless of their
      * status (otherwise only freshly imported or updated records are processed)
      * @param string $singleId   Process only a record with the given ID
+     * @param bool   $markOnly   If true, just mark the records for deduplication
      *
      * @return void
      */
-    public function deduplicate($sourceId, $allRecords = false, $singleId = '')
-    {
+    public function deduplicate($sourceId, $allRecords = false, $singleId = '',
+        $markOnly = false
+    ) {
         // Install a signal handler so that we can exit cleanly if interrupted
         if (function_exists('pcntl_signal')) {
             pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
@@ -611,7 +613,7 @@ class RecordManager
             );
         }
 
-        if ($allRecords) {
+        if ($allRecords || $markOnly) {
             foreach ($this->dataSourceSettings as $source => $settings) {
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
                     continue;
@@ -634,7 +636,11 @@ class RecordManager
                     ['multiple' => true, 'safe' => true, 'timeout' => 3000000]
                 );
             }
+            if ($markOnly) {
+                return;
+            }
         }
+
         foreach ($this->dataSourceSettings as $source => $settings) {
             try {
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
