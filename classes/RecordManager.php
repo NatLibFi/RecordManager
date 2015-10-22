@@ -1531,7 +1531,7 @@ class RecordManager
     {
         $this->log->log('checkDedupRecords', "Checking dedup record consistency");
 
-        $dedupRecords = $this->db->dedup->find(['deleted' => false]);
+        $dedupRecords = $this->db->dedup->find();
         $dedupRecords->immortal(true);
         $count = 0;
         $fixed = 0;
