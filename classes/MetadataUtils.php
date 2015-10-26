@@ -519,12 +519,16 @@ class MetadataUtils
         switch ($configArray['Solr']['unicode_normalization_form']) {
         case 'NFC':
             $str = Normalizer::normalize($str, Normalizer::FORM_C);
+            break;
         case 'NFD':
             $str = Normalizer::normalize($str, Normalizer::FORM_D);
+            break;
         case 'NFKC':
             $str = Normalizer::normalize($str, Normalizer::FORM_KC);
+            break;
         case 'NFKD':
             $str = Normalizer::normalize($str, Normalizer::FORM_KD);
+            break;
         }
         return $str === false ? '' : $str;
     }
