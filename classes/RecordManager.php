@@ -626,14 +626,43 @@ class RecordManager
                 $this->log->log(
                     'deduplicate', "Marking all records for processing in '$source'"
                 );
-                $this->db->record->update(
+                $records = $this->db->record->find(
                     [
                         'source_id' => $source,
                         'host_record_id' => ['$exists' => false],
                         'deleted' => false
-                    ],
-                    ['$set' => ['update_needed' => true]],
-                    ['multiple' => true, 'safe' => true, 'timeout' => 3000000]
+                    ]
+                );
+                $records->immortal(true);
+                $pc = new PerformanceCounter();
+                $count = 0;
+                foreach ($records as $record) {
+                    if (isset($this->terminate)) {
+                        $this->log->log('deduplicate', 'Termination upon request');
+                        exit(1);
+                    }
+
+                    $record['update_needed'] = true;
+                    $this->db->record->save($record);
+
+                    ++$count;
+                    if ($count % 1000 == 0) {
+                        $pc->add($count);
+                        $avg = $pc->getSpeed();
+                        if ($this->verbose) {
+                            echo "\n";
+                        }
+                        $this->log->log(
+                            'deduplicate',
+                            "$count records marked for processing in '$source', "
+                            . "$avg records/sec"
+                        );
+                    }
+                }
+                $this->log->log(
+                    'deduplicate',
+                    "Completed with $count records marked for processing "
+                    . " in '$source'"
                 );
             }
             if ($markOnly) {
