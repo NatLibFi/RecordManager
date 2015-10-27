@@ -1466,7 +1466,6 @@ class SolrUpdater
 
         foreach ($data as $key => &$values) {
             if (is_array($values)) {
-                $values = array_values(array_unique($values));
                 foreach ($values as $key => &$value) {
                     $value = MetadataUtils::normalizeUnicode($value);
                     if (empty($value) || $value === 0 || $value === 0.0
@@ -1475,6 +1474,7 @@ class SolrUpdater
                         unset($values[$key]);
                     }
                 }
+                $values = array_values(array_unique($values));
             } elseif ($key != 'fullrecord') {
                 $values = MetadataUtils::normalizeUnicode($values);
             }
