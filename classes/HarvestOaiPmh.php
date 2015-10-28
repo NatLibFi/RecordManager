@@ -621,13 +621,13 @@ class HarvestOaiPmh
         if ($result === false || libxml_get_last_error() !== false) {
             // Assuming it's a character encoding issue, this might help...
             $this->message(
-                'Invalid XML received, trying encoding fix...',
+                'Invalid XML received, trying to fix the encoding',
                 false,
                 Logger::WARNING
             );
-            $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
+            $fixedXml = mb_convert_encoding($xml, 'UTF-8', 'UTF-8');
             libxml_clear_errors();
-            $result = $this->loadXML($xml);
+            $result = $this->loadXML($fixedXml);
         }
         if ($result === false || libxml_get_last_error() !== false) {
             $errors = '';
