@@ -430,11 +430,20 @@ class HarvestHTTPFiles
         $doc = new DOMDocument;
         while ($xml->name == $this->recordElem) {
             ++$count;
-            $this->processRecord(
-                simplexml_import_dom($doc->importNode($xml->expand(), true)), $count
-            );
-            if ($count % 1000 == 0) {
-                $this->message("$count records processed", true);
+            $expanded = $xml->expand();
+            if ($expanded === false) {
+                $this->message(
+                    'Failed to expand node: ' . $xml->readOuterXml(),
+                    false,
+                    Logger::ERROR
+                );
+            } else {
+                $this->processRecord(
+                    simplexml_import_dom($doc->importNode($expanded, true)), $count
+                );
+                if ($count % 1000 == 0) {
+                    $this->message("$count records processed", true);
+                }
             }
             $xml->next($this->recordElem);
         }
