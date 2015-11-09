@@ -111,6 +111,12 @@ class RecordManager
      */
     protected $metaLibRecords = [];
 
+    /**
+     * Mongo cursor timeout
+     * @var int
+     */
+    protected $cursorTimeout = 300000;
+
     // TODO: refactor data source setting handling
     protected $harvestType = '';
     protected $format = '';
@@ -178,7 +184,7 @@ class RecordManager
             $configArray['Mongo']['url'], ['connectTimeoutMS' => $timeout]
         );
         $this->db = $mongo->selectDB($configArray['Mongo']['database']);
-        MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout'])
+        $this->cursorTimeout = isset($configArray['Mongo']['cursor_timeout'])
             ? $configArray['Mongo']['cursor_timeout'] : 300000;
 
         // Used for format mapping in dedup handler
@@ -355,7 +361,8 @@ class RecordManager
                     }
                 }
             }
-            $records = $this->db->record->find($params);
+            $records = $this->db->record->find($params)
+                ->timeout($this->cursorTimeout);
             if ($sortDedup) {
                 $records->sort(['dedup_id' => 1]);
             }
@@ -496,7 +503,8 @@ class RecordManager
             } else {
                 $params['source_id'] = $source;
             }
-            $records = $this->db->record->find($params)->batchSize(5000);
+            $records = $this->db->record->find($params)->batchSize(5000)
+                ->timeout($this->cursorTimeout);
             $records->immortal(true);
             $total = $this->counts ? $records->count() : 'the';
             $count = 0;
@@ -633,7 +641,7 @@ class RecordManager
                         'deleted' => false
                     ]
                 );
-                $records->immortal(true);
+                $records->immortal(true)->timeout($this->cursorTimeout);
                 $pc = new PerformanceCounter();
                 $count = 0;
                 foreach ($records as $record) {
@@ -694,7 +702,8 @@ class RecordManager
                 } else {
                     $params['update_needed'] = true;
                 }
-                $records = $this->db->record->find($params)->batchSize(5000);
+                $records = $this->db->record->find($params)->batchSize(5000)
+                    ->timeout($this->cursorTimeout);
                 $records->immortal(true);
                 $total = $this->counts ? $records->count() : 'the';
                 $count = 0;
@@ -905,7 +914,7 @@ class RecordManager
                                     'updated' => ['$lt' => $dateThreshold]
                                 ]
                             );
-                            $records->immortal(true);
+                            $records->immortal(true)->timeout($this->cursorTimeout);
                             $count = 0;
                             foreach ($records as $record) {
                                 $this->storeRecord($record['oai_id'], true, '');
@@ -974,7 +983,7 @@ class RecordManager
                                     'mark' => ['$exists' => false]
                                 ]
                             );
-                            $records->immortal(true);
+                            $records->immortal(true)->timeout($this->cursorTimeout);
                             $count = 0;
                             foreach ($records as $record) {
                                 $this->storeRecord($record['oai_id'], true, '');
@@ -1016,7 +1025,8 @@ class RecordManager
         if (!$recordID) {
             throw new Exception('dump: record id must be specified');
         }
-        $records = $this->db->record->find(['_id' => $recordID]);
+        $records = $this->db->record->find(['_id' => $recordID])
+            ->timeout($this->cursorTimeout);
         foreach ($records as $record) {
             $record['original_data'] = MetadataUtils::getRecordData($record, false);
             $record['normalized_data'] = MetadataUtils::getRecordData($record, true);
@@ -1040,7 +1050,7 @@ class RecordManager
 
         $params = ['deleted' => false, 'source_id' => $sourceId];
         $records = $this->db->record->find($params);
-        $records->immortal(true);
+        $records->immortal(true)->timeout($this->cursorTimeout);
         $total = $this->counts ? $records->count() : 'the';
         $count = 0;
 
@@ -1123,7 +1133,7 @@ class RecordManager
 
         $params = ['source_id' => $sourceId];
         $records = $this->db->record->find($params);
-        $records->immortal(true);
+        $records->immortal(true)->timeout($this->cursorTimeout);
         $total = $this->counts ? $records->count() : 'the';
         $count = 0;
 
@@ -1215,7 +1225,7 @@ class RecordManager
         }
         $this->log->log('purgeDeletedRecords', "Creating record list$dateStr");
         $records = $this->db->record->find($params, ['_id' => true]);
-        $records->immortal(true);
+        $records->immortal(true)->timeout($this->cursorTimeout);
         $total = $this->counts ? $records->count() : 'the';
         $count = 0;
 
@@ -1244,7 +1254,7 @@ class RecordManager
         }
         $this->log->log('purgeDeletedRecords', "Creating dedup record list$dateStr");
         $records = $this->db->dedup->find($params, ['_id' => true]);
-        $records->immortal(true);
+        $records->immortal(true)->timeout($this->cursorTimeout);
         $total = $this->counts ? $records->count() : 'the';
         $count = 0;
 
@@ -1299,7 +1309,7 @@ class RecordManager
             // A single OAI-PMH record may have been split to multiple records
             $records = $this->db->record->find(
                 ['source_id' => $this->sourceId, 'oai_id' => $oaiID]
-            );
+            )->timeout($this->cursorTimeout);
             $count = 0;
             foreach ($records as $record) {
                 if (isset($record['dedup_id'])) {
@@ -1561,7 +1571,7 @@ class RecordManager
         $this->log->log('checkDedupRecords', "Checking dedup record consistency");
 
         $dedupRecords = $this->db->dedup->find();
-        $dedupRecords->immortal(true);
+        $dedupRecords->immortal(true)->timeout($this->cursorTimeout);
         $count = 0;
         $fixed = 0;
         $pc = new PerformanceCounter();
@@ -1828,7 +1838,7 @@ class RecordManager
         $added = 0;
         $dbRecords = $this->db->record->find(
             ['deleted' => false, 'source_id' => $source]
-        );
+        )->timeout($this->cursorTimeout);
         foreach ($dbRecords as $dbRecord) {
             $id = $dbRecord['_id'];
             if (!isset($records[$id])) {
