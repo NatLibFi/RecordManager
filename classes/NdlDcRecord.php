@@ -66,18 +66,17 @@ class NdlDcRecord extends DcRecord
         }
 
         // language, take only first
-        $data['language'] = array_shift(
-            array_filter(
-                explode(
-                    ' ',
-                    (string)$this->doc->language
-                ),
-                function($value) {
-                    return preg_match('/^[a-z]{2,3}$/', $value) && $value != 'zxx'
-                        && $value != 'und';
-                }
-            )
+        $languages = array_filter(
+            explode(
+                ' ',
+                (string)$this->doc->language
+            ),
+            function($value) {
+                return preg_match('/^[a-z]{2,3}$/', $value) && $value != 'zxx'
+                    && $value != 'und';
+            }
         );
+        $data['language'] = array_shift($languages);
 
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
