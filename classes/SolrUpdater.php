@@ -1851,7 +1851,15 @@ class SolrUpdater
     {
         $result = false;
 
-        $jsonData = json_encode($data);
+        $jsonData = json_encode($data, JSON_PARTIAL_OUTPUT_ON_ERROR);
+        if ($jsonData === false) {
+            $this->log->log(
+                'bufferedUpdate',
+                'Could not convert to JSON: ' . var_export($data, true),
+                Logger::FATAL
+            );
+            throw new Exception('Could not convert record to JSON');
+        }
         if ($this->buffered > 0) {
             $this->buffer .= ",\n";
         }
