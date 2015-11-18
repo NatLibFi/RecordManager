@@ -902,7 +902,7 @@ class SolrUpdater
             if (!$noCommit && $needCommit && !$compare && !$this->dumpPrefix) {
                 $this->waitForHttpChildren();
                 $this->log->log('updateRecords', "Final commit...");
-                $this->solrRequest('{ "commit": {} }');
+                $this->solrRequest('{ "commit": {} }', 3600);
                 $this->waitForHttpChildren();
                 $this->log->log('updateRecords', "Commit complete");
             }
@@ -1646,9 +1646,11 @@ class SolrUpdater
     /**
      * Initialize the Solr request object
      *
+     * @param int $timeout Timeout in seconds (optional)
+     *
      * @return void
      */
-    protected function initSolrRequest()
+    protected function initSolrRequest($timeout = null)
     {
         global $configArray;
 
@@ -1658,7 +1660,7 @@ class SolrUpdater
                 HTTP_Request2::METHOD_POST,
                 ['ssl_verify_peer' => false]
             );
-            if (isset($timeout)) {
+            if ($timeout !== null) {
                 $this->request->setConfig('timeout', $timeout);
             }
             $this->request->setHeader('Connection', 'Keep-Alive');
@@ -1687,7 +1689,7 @@ class SolrUpdater
     {
         global $configArray;
 
-        $this->initSolrRequest();
+        $this->initSolrRequest($timeout);
         if ($this->backgroundUpdates) {
             if ($this->backgroundUpdates <= count($this->httpPids)) {
                 $this->waitForAHttpChild();
@@ -1887,7 +1889,7 @@ class SolrUpdater
         ) {
             $this->waitForHttpChildren();
             $this->log->log('bufferedUpdate', "Intermediate commit...");
-            $this->solrRequest('{ "commit": {} }');
+            $this->solrRequest('{ "commit": {} }', 3600);
             $this->waitForHttpChildren();
             $this->log->log('bufferedUpdate', "Intermediate commit complete");
         }
