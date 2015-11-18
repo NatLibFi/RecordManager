@@ -170,7 +170,7 @@ class LidoRecord extends BaseRecord
         $data['collection']
             = $this->getRelatedWorkDisplayObject($this->relatedWorkRelationTypes);
 
-        $urls = $this->getUrls();
+        $urls = $this->getURLs();
         if (count($urls)) {
             // thumbnail field is not multivalued so can only store first image url
             $data['thumbnail'] = $urls[0];
