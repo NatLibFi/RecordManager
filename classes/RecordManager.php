@@ -896,9 +896,9 @@ class RecordManager
                         if ($harvest->getHarvestedRecordCount() == 0) {
                             $this->log->log(
                                 'harvest',
-                                'No records received during reharvesting'
-                                . ' -- assuming an error and skipping marking'
-                                . ' records deleted',
+                                "No records received from '$source' during"
+                                . ' reharvesting -- assuming an error and skipping'
+                                . ' marking records deleted',
                                 Logger::FATAL
                             );
                         } else {
