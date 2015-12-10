@@ -717,7 +717,35 @@ class NdlMarcRecord extends MarcRecord
             }
             return 'Thesis';
         }
-        return parent::getFormat();
+        $format = parent::getFormat();
+
+        // Separate non-musical sound from other sound types. This is not quite
+        // perfect since there's already e.g. MusicRecording, but we need to keep
+        // e.g. CD intact for backwards-compatibility.
+        if (in_array($format, ['CD', 'SoundCassette', 'SoundDisc', 'SoundRecording'])
+        ) {
+            $leader = $this->getField('000');
+            $type = substr($leader, 6, 1);
+            if ($type == 'i') {
+                switch ($format) {
+                    case 'CD':
+                        $format = 'NonmusicalCD';
+                        break;
+                    case 'SoundCassette':
+                        $format = 'NonmusicalCassette';
+                        break;
+                    case 'SoundDisc':
+                        $format = 'NonmusicalDisc';
+                        break;
+                    case 'SoundRecording':
+                        $format = 'NonmusicalRecording';
+                        break;
+                }
+            } elseif ($type == 'j' && $format == 'SoundRecording') {
+                $format = 'MusicRecording';
+            }
+        }
+        return $format;
     }
 
     /**
