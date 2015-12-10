@@ -197,7 +197,7 @@ class RecordManager
             : 'DedupHandler';
         include_once "$dedupClass.php";
         $this->dedupHandler = new $dedupClass(
-            $this->db, $this->log, $this->verbose, $solrUpdater
+            $this->db, $this->log, $this->verbose, $solrUpdater, $this->cursorTimeout
         );
 
         if (isset($configArray['Site']['full_title_prefixes'])) {

@@ -75,19 +75,27 @@ class DedupHandler
     protected $solrUpdater = null;
 
     /**
+     * Mongo cursor timeout
+     * @var int
+     */
+    protected $cursorTimeout = 300000;
+
+    /**
      * Constructor
      *
      * @param MongoDB     $db          Mongo database object
      * @param Logger      $log         Logger object
      * @param boolean     $verbose     Whether verbose output is enabled
      * @param SolrUpdater $solrUpdater SolrUpdater instance
+     * @param int     $cursorTimeout Mongo cursor timeout
      */
-    public function __construct($db, $log, $verbose, $solrUpdater)
+    public function __construct($db, $log, $verbose, $solrUpdater, $cursorTimeout)
     {
         $this->db = $db;
         $this->log = $log;
         $this->verbose = $verbose;
         $this->solrUpdater = $solrUpdater;
+        $this->cursorTimeout = $cursorTimeout;
     }
 
     /**
@@ -101,7 +109,8 @@ class DedupHandler
     {
         $results = [];
         foreach ($dedupRecord['ids'] as $id) {
-            $record = $this->db->record->findOne(['_id' => $id]);
+            $record = $this->db->record->find(['_id' => $id])->limit(-1)
+                ->timeout($this->cursorTimeout)->getNext();
             if (!$record
                 || $dedupRecord['deleted']
                 || $record['deleted']
@@ -238,7 +247,8 @@ class DedupHandler
                 if ($this->verbose) {
                     echo "Search: '$keyPart'\n";
                 }
-                $candidates = $this->db->record->find([$type => $keyPart]);
+                $candidates = $this->db->record->find([$type => $keyPart])
+                    ->timeout($this->cursorTimeout);
                 $processed = 0;
                 // Go through the candidates, try to match
                 $matchRecord = null;
@@ -282,7 +292,7 @@ class DedupHandler
                                 'dedup_id' => $candidate['dedup_id'],
                                 'source_id' => $record['source_id']
                             ]
-                        )->limit(1)->count() > 0) {
+                        )->timeout($this->cursorTimeout)->limit(1)->count() > 0) {
                             if ($this->verbose) {
                                 echo "Candidate {$candidate['_id']} "
                                     . "already deduplicated\n";
@@ -390,7 +400,8 @@ class DedupHandler
      */
     public function removeFromDedupRecord($dedupId, $id)
     {
-        $record = $this->db->dedup->findOne(['_id' => $dedupId]);
+        $record = $this->db->dedup->find(['_id' => $dedupId])->limit(-1)
+            ->timeout($this->cursorTimeout)->getNext();
         if (!$record) {
             $this->log->log(
                 'removeFromDedupRecord',
@@ -698,7 +709,8 @@ class DedupHandler
      */
     protected function addToDedupRecord($dedupId, $id)
     {
-        $record = $this->db->dedup->findOne(['_id' => $dedupId, 'deleted' => false]);
+        $record = $this->db->dedup->find(['_id' => $dedupId, 'deleted' => false])
+            ->limit(-1)->timeout($this->cursorTimeout)->getNext();
         if (!$record) {
             return false;
         }
@@ -743,7 +755,7 @@ class DedupHandler
         $marked = 0;
         $otherRecords = $this->db->record->find(
             ['dedup_id' => $hostRecord['dedup_id'], 'deleted' => false]
-        );
+        )->timeout($this->cursorTimeout);
         foreach ($otherRecords as $otherRecord) {
             if ($otherRecord['source_id'] == $hostRecord['source_id']) {
                 continue;
@@ -817,7 +829,7 @@ class DedupHandler
     {
         $componentsIter = $this->db->record->find(
             ['source_id' => $sourceId, 'host_record_id' => $hostRecordId]
-        );
+        )->timeout($this->cursorTimeout);
         $components = [];
         foreach ($componentsIter as $component) {
             $components[MetadataUtils::createIdSortKey($component['_id'])]
