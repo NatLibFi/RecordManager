@@ -68,6 +68,11 @@ class SolrUpdater
     protected $backgroundUpdates;
     protected $threadedMergedRecordUpdate;
 
+    /**
+     * Mongo cursor timeout
+     * @var int
+     */
+    protected $cursorTimeout = 300000;
 
     /**
      * Solr Update Buffer
@@ -127,11 +132,12 @@ class SolrUpdater
      *
      * @throws Exception
      */
-    public function __construct($db, $basePath, $log, $verbose)
+    public function __construct($db, $basePath, $log, $verbose, $cursorTimeout)
     {
         global $configArray;
 
         $this->db = $db;
+        $this->cursorTimeout = $cursorTimeout;
         $this->basePath = $basePath;
         $this->log = $log;
         $this->verbose = $verbose;
@@ -268,7 +274,8 @@ class SolrUpdater
         if (isset($fromDate)) {
             $collectionName .= '_' . date('Ymd', strtotime($fromDate));
         }
-        $record = $this->db->record->find()->sort(['updated' => -1])->getNext();
+        $record = $this->db->record->find()->timeout($this->cursorTimeout)
+            ->sort(['updated' => -1])->getNext();
         $lastRecordTime = $record['updated']->sec;
         $collectionName .= "_$lastRecordTime";
 
@@ -322,7 +329,8 @@ class SolrUpdater
                 "Creating merged record list $collectionName (from $from, stage 1/2)"
             );
 
-            $records = $this->db->record->find($params, ['dedup_id' => 1]);
+            $records = $this->db->record->find($params, ['dedup_id' => 1])
+                ->timeout($this->cursorTimeout);
             $prevId = null;
             $collection = $this->db->selectCollection($collectionName . '_tmp');
             $collection->drop();
@@ -377,7 +385,8 @@ class SolrUpdater
                     $dedupParams['changed'] = ['$gte' => $mongoFromDate];
                 }
 
-                $records = $this->db->dedup->find($dedupParams, ['_id' => 1]);
+                $records = $this->db->dedup->find($dedupParams, ['_id' => 1])
+                    ->timeout($this->cursorTimeout);
                 $count = 0;
                 foreach ($records as $record) {
                     if (isset($this->terminate)) {
@@ -427,7 +436,7 @@ class SolrUpdater
         }
         pcntl_signal(SIGINT, SIG_DFL);
 
-        $keys = $this->db->{$collectionName}->find();
+        $keys = $this->db->{$collectionName}->find()->timeout($this->cursorTimeout);
         $keys->immortal(true);
         $count = 0;
         $mergedComponents = 0;
@@ -451,7 +460,8 @@ class SolrUpdater
                 continue;
             }
 
-            $dedupRecord = $this->db->dedup->findOne(['_id' => $key['_id']]);
+            $dedupRecord = $this->db->dedup->find(['_id' => $key['_id']])->limit(-1)
+                ->timeout($this->cursorTimeout)->getNext();
             if (empty($dedupRecord)) {
                 $this->log->log(
                     'processMerged',
@@ -473,7 +483,7 @@ class SolrUpdater
             $merged = [];
             $records = $this->db->record->find(
                 ['_id' => ['$in' => $dedupRecord['ids']]]
-            );
+            )->timeout($this->cursorTimeout);
             foreach ($records as $record) {
                 if ($record['deleted']
                     || ($sourceId && $delete && $record['source_id'] == $sourceId)
@@ -690,7 +700,8 @@ class SolrUpdater
             }
 
             if (!isset($fromDate)) {
-                $state = $this->db->state->findOne(['_id' => 'Last Index Update']);
+                $state = $this->db->state->find(['_id' => 'Last Index Update'])
+                    ->limit(-1)->timeout($this->cursorTimeout)->getNext();
                 if (isset($state)) {
                     $mongoFromDate = $state['value'];
                 } else {
@@ -757,7 +768,8 @@ class SolrUpdater
                 $params['dedup_id'] = ['$exists' => false];
                 $params['update_needed'] = false;
             }
-            $records = $this->db->record->find($params);
+            $records = $this->db->record->find($params)
+                ->timeout($this->cursorTimeout);
             $records->immortal(true);
 
             $total = $this->counts ? $records->count() : 'the';
@@ -975,7 +987,7 @@ class SolrUpdater
         if ($sourceId) {
             $params['source_id'] = $sourceId;
         }
-        $records = $this->db->record->find($params);
+        $records = $this->db->record->find($params)->timeout($this->cursorTimeout);
         $records->immortal(true);
         $this->log->log('countValues', "Counting values");
         $values = [];
@@ -1217,7 +1229,7 @@ class SolrUpdater
                         'host_record_id' => $record['linking_id'],
                         'deleted' => false
                     ]
-                );
+                )->timeout($this->cursorTimeout);
                 $hasComponentParts = $components->hasNext();
                 $format = $metadataRecord->getFormat();
                 $merge = false;
@@ -1262,12 +1274,12 @@ class SolrUpdater
         if ($metadataRecord->getIsComponentPart()) {
             $hostRecord = null;
             if (isset($record['host_record_id']) && $this->db) {
-                $hostRecord = $this->db->record->findOne(
+                $hostRecord = $this->db->record->find(
                     [
                         'source_id' => $record['source_id'],
                         'linking_id' => $record['host_record_id']
                     ]
-                );
+                )->limit(-1)->timeout($this->cursorTimeout)->getNext();
             }
             if (!$hostRecord) {
                 if (isset($record['host_record_id'])) {

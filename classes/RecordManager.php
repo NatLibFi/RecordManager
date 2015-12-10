@@ -189,7 +189,8 @@ class RecordManager
 
         // Used for format mapping in dedup handler
         $solrUpdater = new SolrUpdater(
-            $this->db, $this->basePath, $this->log, $this->verbose
+            $this->db, $this->basePath, $this->log, $this->verbose,
+            $this->cursorTimeout
         );
         $dedupClass = isset($configArray['Site']['dedup_handler'])
             ? $configArray['Site']['dedup_handler']
@@ -469,7 +470,8 @@ class RecordManager
         $noCommit = false, $compare = '', $dumpPrefix = ''
     ) {
         $updater = new SolrUpdater(
-            $this->db, $this->basePath, $this->log, $this->verbose
+            $this->db, $this->basePath, $this->log, $this->verbose,
+            $this->cursorTimeout
         );
         $updater->updateRecords(
             $fromDate, $sourceId, $singleId, $noCommit, false, $compare, $dumpPrefix
@@ -1183,7 +1185,8 @@ class RecordManager
         global $configArray;
 
         $updater = new SolrUpdater(
-            $this->db, $this->basePath, $this->log, $this->verbose
+            $this->db, $this->basePath, $this->log, $this->verbose,
+            $this->cursorTimeout
         );
         if (isset($configArray['Solr']['merge_records'])
             && $configArray['Solr']['merge_records']
@@ -1285,7 +1288,8 @@ class RecordManager
     public function optimizeSolr()
     {
         $updater = new SolrUpdater(
-            $this->db, $this->basePath, $this->log, $this->verbose
+            $this->db, $this->basePath, $this->log, $this->verbose,
+            $this->cursorTimeout
         );
 
         $this->log->log('optimizeSolr', 'Optimizing Solr index');
@@ -1533,7 +1537,8 @@ class RecordManager
             exit;
         }
         $updater = new SolrUpdater(
-            $this->db, $this->basePath, $this->log, $this->verbose
+            $this->db, $this->basePath, $this->log, $this->verbose,
+            $this->cursorTimeout
         );
         $updater->countValues($sourceId, $field, $mapped);
     }
