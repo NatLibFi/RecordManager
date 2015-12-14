@@ -108,7 +108,9 @@ class NdlLidoRecord extends LidoRecord
         $data['finder_str_mv'] = $this->getActor('löytyminen', 'löytäjä');
         $data['manufacturer_str_mv'] = $this->getActor('valmistus', 'valmistaja');
         $data['designer_str_mv'] = $this->getActor('suunnittelu', 'suunnittelija');
-        $data['classification_str_mv'] = $this->getClassifications();
+        // Keep classification_str_mv for backward-compatibility for now
+        $data['classification_txt_mv'] = $data['classification_str_mv']
+            = $this->getClassifications();
         $data['exhibition_str_mv'] = $this->getEventNames('näyttely');
 
         foreach ($this->getSubjectDateRanges() as $range) {

@@ -52,11 +52,11 @@ class LidoRecordDriverTest extends RecordDriverTest
         $this->assertContains('metalli', $fields['material']);
         $this->assertContains('kupari', $fields['material']);
 
-        $this->assertContains('ruokatalous ja elintarviketeollisuus', $fields['classification_str_mv']);
-        $this->assertContains('ruoan valmistus', $fields['classification_str_mv']);
-        $this->assertContains('työkalut ja välineet', $fields['classification_str_mv']);
-        $this->assertContains('astiat ja välineet', $fields['classification_str_mv']);
-        $this->assertContains('kahvipannu', $fields['classification_str_mv']);
+        $this->assertContains('ruokatalous ja elintarviketeollisuus', $fields['classification_txt_mv']);
+        $this->assertContains('ruoan valmistus', $fields['classification_txt_mv']);
+        $this->assertContains('työkalut ja välineet', $fields['classification_txt_mv']);
+        $this->assertContains('astiat ja välineet', $fields['classification_txt_mv']);
+        $this->assertContains('kahvipannu', $fields['classification_txt_mv']);
 
         $this->assertContains('taloustarvikkeet', $fields['topic']);
         $this->assertContains('nautintoaineet', $fields['topic']);
@@ -99,7 +99,7 @@ class LidoRecordDriverTest extends RecordDriverTest
     {
         $fields = $this->processSample('musketti2.xml');
 
-        $this->assertContains('valokuva', $fields['classification_str_mv']);
+        $this->assertContains('valokuva', $fields['classification_txt_mv']);
 
         $this->assertContains('kuva', $fields['format']);
 
@@ -158,7 +158,7 @@ class LidoRecordDriverTest extends RecordDriverTest
         $this->assertContains('kangas', $fields['material']);
         $this->assertContains('öljy', $fields['material']);
 
-        $this->assertContains('maalaus', $fields['classification_str_mv']);
+        $this->assertContains('maalaus', $fields['classification_txt_mv']);
 
         $this->assertEquals('Venetsia', $fields['title']);
 
@@ -191,7 +191,7 @@ class LidoRecordDriverTest extends RecordDriverTest
         $this->assertContains('pahvi', $fields['material']);
         $this->assertContains('öljy', $fields['material']);
 
-        $this->assertContains('maalaus', $fields['classification_str_mv']);
+        $this->assertContains('maalaus', $fields['classification_txt_mv']);
 
         $this->assertEquals('Rantakiviä', $fields['title']);
 

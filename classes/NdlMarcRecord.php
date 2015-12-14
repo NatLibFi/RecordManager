@@ -291,27 +291,32 @@ class NdlMarcRecord extends MarcRecord
                 if ($aux) {
                     $classification .= " $aux";
                 }
-                $data['classification_str_mv'][] = "udk $classification";
+                $data['classification_txt_mv'][] = "udk $classification";
             }
         }
         $dlc = $this->getFieldsSubfields(
             [[MarcRecord::GET_NORMAL, '050', ['a' => 1, 'b' => 1]]]
         );
         foreach ($dlc as $classification) {
-            $data['classification_str_mv'][] = 'dlc '
+            $data['classification_txt_mv'][] = 'dlc '
                 . mb_strtolower(str_replace(' ', '', $classification), 'UTF-8');
         }
         foreach ($this->getFields('084') as $field) {
             $source = $this->getSubfield($field, '2');
             $classification = $this->getSubfields($field, ['a' => 1, 'b' => 1]);
             if ($source) {
-                $data['classification_str_mv'][] = "$source "
+                $data['classification_txt_mv'][] = "$source "
                     . mb_strtolower(str_replace(' ', '', $classification), 'UTF-8');
             }
         }
-        if (isset($data['classification_str_mv'])) {
+        if (isset($data['classification_txt_mv'])) {
             $data['allfields']
-                = array_merge($data['allfields'], $data['classification_str_mv']);
+                = array_merge($data['allfields'], $data['classification_txt_mv']);
+        }
+
+        // Keep classification_str_mv for backward-compatibility for now
+        if (isset($data['classification_txt_mv'])) {
+            $data['classification_str_mv'] = $data['classification_txt_mv'];
         }
 
         // Ebrary location
