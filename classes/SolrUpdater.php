@@ -125,10 +125,11 @@ class SolrUpdater
     /**
      * Constructor
      *
-     * @param MongoDB $db       Database connection
-     * @param string  $basePath RecordManager main directory
-     * @param object  $log      Logger
-     * @param boolean $verbose  Whether to output verbose messages
+     * @param MongoDB $db            Database connection
+     * @param string  $basePath      RecordManager main directory
+     * @param object  $log           Logger
+     * @param boolean $verbose       Whether to output verbose messages
+     * @param int     $cursorTimeout Mongo cursor timeout
      *
      * @throws Exception
      */
