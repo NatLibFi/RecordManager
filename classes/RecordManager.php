@@ -178,14 +178,23 @@ class RecordManager
             = parse_ini_file("$basePath/conf/datasources.ini", true);
         $this->basePath = $basePath;
 
-        $timeout = isset($configArray['Mongo']['connect_timeout'])
-            ? $configArray['Mongo']['connect_timeout'] : 300000;
-        $mongo = new MongoClient(
-            $configArray['Mongo']['url'], ['connectTimeoutMS' => $timeout]
-        );
-        $this->db = $mongo->selectDB($configArray['Mongo']['database']);
-        $this->cursorTimeout = isset($configArray['Mongo']['cursor_timeout'])
-            ? $configArray['Mongo']['cursor_timeout'] : 300000;
+        try {
+            $timeout = isset($configArray['Mongo']['connect_timeout'])
+                ? $configArray['Mongo']['connect_timeout'] : 300000;
+            $mongo = new MongoClient(
+                $configArray['Mongo']['url'], ['connectTimeoutMS' => $timeout]
+            );
+            $this->db = $mongo->selectDB($configArray['Mongo']['database']);
+            $this->cursorTimeout = isset($configArray['Mongo']['cursor_timeout'])
+                ? $configArray['Mongo']['cursor_timeout'] : 300000;
+        } catch (Exception $e) {
+            $this->log->log(
+                'startup',
+                'Failed to connect to MongoDB: ' . $e->getMessage(),
+                Logger::FATAL
+            );
+            throw $e;
+        }
 
         // Used for format mapping in dedup handler
         $solrUpdater = new SolrUpdater(
