@@ -183,6 +183,11 @@ class NdlLidoRecord extends LidoRecord
 
         $data['location_geo'] = $this->getEventPlaceCoordinates();
 
+        // License
+        if ($license = $this->getLicense()) {
+            $data['license_str_mv'][] = $license;
+        }
+
         $allfields[] = $this->getRecordSourceOrganization();
 
         return $data;
@@ -202,6 +207,23 @@ class NdlLidoRecord extends LidoRecord
         $excludedDescriptions = ['provenance']
     ) {
         return parent::getTitle($forFiling, $lang, ['provenienssi']);
+    }
+
+    /**
+     * Return license if any
+     *
+     * @return string 'restricted' or a more specific licence id if restricted,
+     * empty string otherwise
+     */
+    protected function getLicense()
+    {
+        $license = isset($this->doc->lido->administrativeMetadata->recordWrap
+            ->recordRights->rightsType->conceptID)
+            ? (string)$this->doc->lido->administrativeMetadata->recordWrap
+            ->recordRights->rightsType->conceptID
+            : '';
+
+        return $license ? $license : 'restricted';
     }
 
     /**

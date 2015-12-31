@@ -1084,7 +1084,8 @@ class SolrUpdater
             $map = $settings['mappingFiles'][$source]['format'];
             if (!empty($format)) {
                 if (isset($map[$format])) {
-                    return $map[$format];
+                    return is_array($map[$format])
+                        ? $map[$format][0] : $map[$format];
                 }
                 if (isset($map['##default'])) {
                     return $map['##default'];
@@ -1345,7 +1346,17 @@ class SolrUpdater
                 if (is_array($data[$field])) {
                     foreach ($data[$field] as &$value) {
                         if (isset($map[$value])) {
-                            $value = $map[$value];
+                            if (is_array($map[$value])) {
+                                // Replace the original value with the first
+                                // substitute, then add the rest
+                                $array = $map[$value];
+                                $value = array_shift($array);
+                                foreach ($array as $item) {
+                                    $data[$field][] = $item;
+                                }
+                            } else {
+                                $value = $map[$value];
+                            }
                         } elseif (isset($map['##default'])) {
                             $value = $map['##default'];
                         }
@@ -1990,7 +2001,12 @@ class SolrUpdater
                 $values = explode(' =', $line, 2);
                 $mappings[$values[0]] = '';
             } else {
-                $mappings[$values[0]] = $values[1];
+                $key = trim($values[0]);
+                if (substr($key, -2) == '[]') {
+                    $mappings[substr($key, 0, -2)][] = $values[1];
+                } else {
+                    $mappings[$key] = $values[1];
+                }
             }
         }
         fclose($handle);

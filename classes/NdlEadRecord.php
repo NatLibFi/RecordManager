@@ -135,7 +135,29 @@ class NdlEadRecord extends EadRecord
             $data['rights'] = (string)$doc->did->accessrestrict->p;
         }
 
+        // License
+        if ($license = $this->getLicense()) {
+            $data['license_str_mv'][] = $license;
+        }
+
         return $data;
+    }
+
+    /**
+     * Return license if any
+     *
+     * @return string 'restricted' or a more specific licence id if restricted,
+     * empty string otherwise
+     */
+    protected function getLicense()
+    {
+        $license = isset($this->doc->did->accessrestrict->p)
+            ? (string)$this->doc->did->accessrestrict->p : '';
+
+        if (strstr($license, 'Ei tunnettuja oikeuksellisia rajoitteita')) {
+            return 'Ei tunnettuja oikeuksellisia rajoitteita';
+        }
+        return $license ? $license : '';
     }
 
     /**
