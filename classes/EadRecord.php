@@ -224,22 +224,6 @@ class EadRecord extends BaseRecord
             MetadataUtils::stripLeadingPunctuation($data['title_sort']), 'UTF-8'
         );
 
-        if (isset($doc->did->unitid)) {
-            $data['identifier'] = (string)$doc->did->unitid;
-        }
-        if (isset($doc->did->dimensions)) {
-            // display measurements
-            $data['measurements'] = (string)$doc->did->dimensions;
-        }
-
-        if (isset($doc->did->physdesc)) {
-            $data['material'] = (string)$doc->did->physdesc;
-        }
-
-        if (isset($doc->did->accessrestrict->p)) {
-            $data['rights'] = (string)$doc->did->accessrestrict->p;
-        }
-
         if ($languages = $doc->did->xpath('langmaterial/language')) {
             foreach ($languages as $lang) {
                 if (isset($lang->attributes()->langcode)) {

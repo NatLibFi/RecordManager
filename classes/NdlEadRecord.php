@@ -119,6 +119,22 @@ class NdlEadRecord extends EadRecord
             }
         }
 
+        if (isset($doc->did->unitid)) {
+            $data['identifier'] = (string)$doc->did->unitid;
+        }
+        if (isset($doc->did->dimensions)) {
+            // display measurements
+            $data['measurements'] = (string)$doc->did->dimensions;
+        }
+
+        if (isset($doc->did->physdesc)) {
+            $data['material'] = (string)$doc->did->physdesc;
+        }
+
+        if (isset($doc->did->accessrestrict->p)) {
+            $data['rights'] = (string)$doc->did->accessrestrict->p;
+        }
+
         return $data;
     }
 
