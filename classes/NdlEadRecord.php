@@ -152,16 +152,13 @@ class NdlEadRecord extends EadRecord
     protected function getLicense()
     {
         if (!isset($this->doc->accessrestrict->p)) {
-            echo "No accessrestrict\n";
             return [];
         }
-        echo "Check\n";
         foreach ($this->doc->accessrestrict->p as $restrict) {
             if (strstr((string)$restrict, 'No known copyright restrictions')) {
                 return ['No known copyright restrictions'];
             }
         }
-            echo "Accessrestricts looped\n";
         return [];
     }
 
