@@ -185,7 +185,7 @@ class NdlLidoRecord extends LidoRecord
 
         // License
         if ($license = $this->getLicense()) {
-            $data['license_str_mv'][] = $license;
+            $data['license_str_mv'] = $license;
         }
 
         $allfields[] = $this->getRecordSourceOrganization();
@@ -212,18 +212,29 @@ class NdlLidoRecord extends LidoRecord
     /**
      * Return license if any
      *
-     * @return string 'restricted' or a more specific licence id if restricted,
-     * empty string otherwise
+     * @return array ['restricted'] or a more specific licence id if restricted,
+     * empty array otherwise
      */
     protected function getLicense()
     {
-        $license = isset($this->doc->lido->administrativeMetadata->recordWrap
-            ->recordRights->rightsType->conceptID)
-            ? (string)$this->doc->lido->administrativeMetadata->recordWrap
-            ->recordRights->rightsType->conceptID
-            : '';
+        if (!isset(
+            $this->doc->lido->administrativeMetadata->resourceWrap->resourceSet)
+        ) {
+            return [];
+        }
 
-        return $license ? $license : 'restricted';
+        $result = [];
+        foreach ($this->doc->lido->administrativeMetadata->resourceWrap->resourceSet
+            as $set
+        ) {
+            if (isset($set->rightsResource->rightsType->conceptID)) {
+                $result[] = (string)$set->rightsResource->rightsType->conceptID;
+
+            } else {
+                $result[] = 'restricted';
+            }
+        }
+        return $result;
     }
 
     /**

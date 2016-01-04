@@ -154,7 +154,9 @@ class NdlEadRecord extends EadRecord
         $license = isset($this->doc->did->accessrestrict->p)
             ? (string)$this->doc->did->accessrestrict->p : '';
 
-        if (strstr($license, 'Ei tunnettuja oikeuksellisia rajoitteita')) {
+        if (strstr($license, 'Ei tunnettuja oikeuksellisia rajoitteita')
+            || strstr($license, 'No known copyright restrictions')
+        ) {
             return 'Ei tunnettuja oikeuksellisia rajoitteita';
         }
         return $license ? $license : '';

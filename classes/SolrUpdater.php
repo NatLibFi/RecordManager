@@ -1345,20 +1345,23 @@ class SolrUpdater
             if (isset($data[$field]) && !empty($data[$field])) {
                 if (is_array($data[$field])) {
                     foreach ($data[$field] as &$value) {
+                        $newValue = null;
                         if (isset($map[$value])) {
-                            if (is_array($map[$value])) {
+                            $newValue = $map[$value];
+                        } elseif (isset($map['##default'])) {
+                            $newValue = $map['##default'];
+                        }
+                        if (null !== $newValue) {
+                            if (is_array($newValue)) {
                                 // Replace the original value with the first
                                 // substitute, then add the rest
-                                $array = $map[$value];
-                                $value = array_shift($array);
-                                foreach ($array as $item) {
+                                $value = array_shift($newValue);
+                                foreach ($newValue as $item) {
                                     $data[$field][] = $item;
                                 }
                             } else {
-                                $value = $map[$value];
+                                $value = $newValue;
                             }
-                        } elseif (isset($map['##default'])) {
-                            $value = $map['##default'];
                         }
                     }
                     $data[$field] = array_values(array_unique($data[$field]));
