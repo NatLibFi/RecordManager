@@ -1353,7 +1353,11 @@ class SolrUpdater
                         }
                     }
                     if (null !== $newValues) {
-                        $data[$field] = array_values(array_unique($newValues));
+                        if (is_array($newValues)) {
+                            $data[$field] = array_values(array_unique($newValues));
+                        } else {
+                            $data[$field] = $newValues;
+                        }
                     }
                 } else {
                     if (isset($map[$data[$field]])) {
