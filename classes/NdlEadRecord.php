@@ -135,21 +135,21 @@ class NdlEadRecord extends EadRecord
             $data['rights'] = (string)$doc->did->accessrestrict->p;
         }
 
-        // License
-        if ($license = $this->getLicense()) {
-            $data['license_str_mv'] = $license;
+        // Usage rights
+        if ($rights = $this->getUsageRights()) {
+            $data['usage_rights_str_mv'] = $rights;
         }
 
         return $data;
     }
 
     /**
-     * Return license if any
+     * Return usage rights if any
      *
-     * @return array ['restricted'] or a more specific licence id if restricted,
+     * @return array ['restricted'] or a more specific id if restricted,
      * empty array otherwise
      */
-    protected function getLicense()
+    protected function getUsageRights()
     {
         if (!isset($this->doc->accessrestrict->p)) {
             return ['restricted'];
