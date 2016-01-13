@@ -274,6 +274,8 @@ class SolrUpdater
         $collectionName = 'mr_record_' . md5(json_encode($params));
         if (isset($fromDate)) {
             $collectionName .= '_' . date('Ymd', strtotime($fromDate));
+        } else {
+            $collectionName .= '_0';
         }
         $record = $this->db->record->find()->timeout($this->cursorTimeout)
             ->sort(['updated' => -1])->getNext();
@@ -305,7 +307,7 @@ class SolrUpdater
                 $collectionExists = true;
             } else {
                 $nameParts = explode('_', $collection);
-                $collTime = end($nameParts);
+                $collTime = isset($nameParts[4]) ? $nameParts[4] : null;
                 if (strncmp($collection, 'mr_record_', 10) == 0
                     && is_numeric($collTime)
                     && $collTime != $lastRecordTime
@@ -313,9 +315,18 @@ class SolrUpdater
                 ) {
                     $this->log->log(
                         'processMerged',
-                        "Cleanup: dropping old m/r collection $collection"
+                        "Cleanup: dropping old merged record collection $collection"
                     );
-                    $this->db->selectCollection($collection)->drop();
+                    try {
+                        $this->db->selectCollection($collection)->drop();
+                    } catch (Exception $e) {
+                        $this->log->log(
+                            'processMerged',
+                            "Failed to drop collection $collection: "
+                            . $e->getMessage(),
+                            Logger::WARNING
+                        );
+                    }
                 }
             }
         }
@@ -333,8 +344,8 @@ class SolrUpdater
             $records = $this->db->record->find($params, ['dedup_id' => 1])
                 ->timeout($this->cursorTimeout);
             $prevId = null;
-            $collection = $this->db->selectCollection($collectionName . '_tmp');
-            $collection->drop();
+            $tmpCollectionName = $collectionName . '_tmp_' . getmypid();
+            $collection = $this->db->selectCollection($tmpCollectionName);
             $count = 0;
             $totalMergeCount = 0;
             foreach ($records as $record) {
@@ -418,8 +429,7 @@ class SolrUpdater
                 $dbName = $configArray['Mongo']['database'];
                 $res = $mongo->admin->command(
                     [
-                        'renameCollection' => $dbName . '.' . $collectionName
-                            . '_tmp',
+                        'renameCollection' => $dbName . '.' . $tmpCollectionName,
                         'to' => $dbName . '.' . $collectionName
                     ]
                 );
