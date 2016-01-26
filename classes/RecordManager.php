@@ -1228,14 +1228,16 @@ class RecordManager
     /**
      * Purge deleted records from the database
      *
-     * @param int $daysToKeep Days to keep
+     * @param int    $daysToKeep Days to keep
+     * @param string $sourceId   Optional source ID
      *
      * @return void
      */
-    public function purgeDeletedRecords($daysToKeep = 0)
+    public function purgeDeletedRecords($daysToKeep = 0, $sourceId = '')
     {
         global $configArray;
 
+        // Process normal records
         $dateStr = '';
         $params = ['deleted' => true];
         if ($daysToKeep) {
@@ -1243,7 +1245,13 @@ class RecordManager
             $dateStr = ' until ' . date('Y-m-d', $date);
             $params['updated'] = ['$lt' => new MongoDate($date)];
         }
-        $this->log->log('purgeDeletedRecords', "Creating record list$dateStr");
+        if ($sourceId) {
+            $params['source_id'] = $sourceId;
+        }
+        $this->log->log(
+            'purgeDeletedRecords',
+            "Creating record list$dateStr" . ($sourceId ? " for '$sourceId'" : '')
+        );
         $records = $this->db->record->find($params, ['_id' => true]);
         $records->immortal(true)->timeout($this->cursorTimeout);
         $total = $this->counts ? $records->count() : 'the';
@@ -1267,7 +1275,14 @@ class RecordManager
             'purgeDeletedRecords', "Total $count records purged"
         );
 
+        if ($sourceId) {
+            $this->log->log(
+                'purgeDeletedRecords', 'Source specified -- skipping dedup records'
+            );
+            return;
+        }
 
+        // Process dedup records
         $params = ['deleted' => true];
         if ($daysToKeep) {
             $params['changed'] = ['$lt' => new MongoDate($date)];

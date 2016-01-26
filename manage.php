@@ -167,7 +167,8 @@ EOT;
                     }
                     $manager->purgeDeletedRecords(
                         isset($params['daystokeep']) ? intval($params['daystokeep'])
-                        : 0
+                        : 0,
+                        $source
                     );
                     break;
                 default:
