@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2014.
+ * Copyright (C) The National Library of Finland 2014-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -131,14 +131,14 @@ class Enrichment
      */
     protected function getExternalData($url, $id, $headers = [])
     {
-        $cached = $this->db->uriCache->findOne(
+        $cached = $this->db->uriCache->find(
             [
                 '_id' => $id,
                 'timestamp' => [
                     '$gt' => new MongoDate(time() - $this->maxCacheAge)
                  ]
             ]
-        );
+        )->limit(-1)->timeout(300000)->getNext();
         if ($cached) {
             return $cached['data'];
         }
@@ -206,6 +206,9 @@ class Enrichment
                 '_id' => $id,
                 'timestamp' => new MongoDate(),
                 'data' => $data
+            ],
+            [
+                'socketTimeoutMS' => 300000
             ]
         );
 

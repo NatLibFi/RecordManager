@@ -7,7 +7,7 @@
  * PHP version 5
  *
  * Copyright (c) Demian Katz 2010.
- * Copyright (c) The National Library of Finland 2011-2015.
+ * Copyright (c) The National Library of Finland 2011-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -492,7 +492,7 @@ class HarvestOaiPmh
     protected function saveHarvestDate($date)
     {
         $state = ['_id' => "Last Harvest Date {$this->source}", 'value' => $date];
-        $this->db->state->save($state);
+        $this->db->state->save($state, ['socketTimeoutMS' => 300000]);
     }
 
     /**

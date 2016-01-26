@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2014.
+ * Copyright (C) The National Library of Finland 2011-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -378,7 +378,9 @@ class DedupHandler
             }
             $record['updated'] = new MongoDate();
             $record['update_needed'] = false;
-            $this->db->record->save($record);
+            $this->db->record->save(
+                $record, ['socketTimeoutMS' => $this->cursorTimeout]
+            );
         }
 
         if ($this->verbose && microtime(true) - $startTime > 0.2) {
@@ -433,7 +435,9 @@ class DedupHandler
                 $record['deleted'] = true;
             }
             $record['changed'] = new MongoDate();
-            $this->db->dedup->save($record);
+            $this->db->dedup->save(
+                $record, ['socketTimeoutMS' => $this->cursorTimeout]
+            );
 
             // Mark remaining records to be processed again as this change may affect
             // their preferred dedup group
@@ -717,7 +721,9 @@ class DedupHandler
         if (!in_array($id, $record['ids'])) {
             $record['changed'] = new MongoDate();
             $record['ids'][] = $id;
-            $this->db->dedup->save($record);
+            $this->db->dedup->save(
+                $record, ['socketTimeoutMS' => $this->cursorTimeout]
+            );
         }
         return true;
     }

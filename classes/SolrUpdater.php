@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2015.
+ * Copyright (C) The National Library of Finland 2012-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -900,7 +900,9 @@ class SolrUpdater
             if (isset($lastIndexingDate) && !$compare) {
                 $state
                     = ['_id' => "Last Index Update", 'value' => $lastIndexingDate];
-                $this->db->state->save($state);
+                $this->db->state->save(
+                    $state, ['socketTimeoutMS' => $this->cursorTimeout]
+                );
             }
             if ($count > 0) {
                 $needCommit = true;
@@ -2040,7 +2042,7 @@ class SolrUpdater
                 if (!isset($this->enrichments[$enrichment])) {
                     include_once "$enrichment.php";
                     $this->enrichments[$enrichment] = new $enrichment(
-                        $this->db, $this->log
+                        $this->db, $this->log, $this->cursorTimeout
                     );
                 }
                 $this->enrichments[$enrichment]->enrich($source, $record, $data);

@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2015.
+ * Copyright (C) The National Library of Finland 2011-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -575,7 +575,9 @@ class RecordManager
                     unset($record['host_record_id']);
                 }
                 $record['updated'] = new MongoDate();
-                $this->db->record->save($record);
+                $this->db->record->save(
+                    $record, ['socketTimeoutMS' => $this->cursorTimeout]
+                );
 
                 if ($this->verbose) {
                     echo "Metadata for record {$record['_id']}: \n";
@@ -662,7 +664,9 @@ class RecordManager
                     }
 
                     $record['update_needed'] = true;
-                    $this->db->record->save($record);
+                    $this->db->record->save(
+                        $record, ['socketTimeoutMS' => $this->cursorTimeout]
+                    );
 
                     ++$count;
                     if ($count % 1000 == 0) {
@@ -1010,7 +1014,9 @@ class RecordManager
                                 '_id' => "Last Deletion Processing Time $source",
                                 'value' => time()
                             ];
-                            $this->db->state->save($state);
+                            $this->db->state->save(
+                                $state, ['socketTimeoutMS' => $this->cursorTimeout]
+                            );
                         }
                     }
                 }
@@ -1078,7 +1084,9 @@ class RecordManager
             }
             $record['deleted'] = true;
             $record['updated'] = new MongoDate();
-            $this->db->record->save($record);
+            $this->db->record->save(
+                $record, ['socketTimeoutMS' => $this->cursorTimeout]
+            );
 
             ++$count;
             if ($count % 1000 == 0) {
@@ -1334,7 +1342,9 @@ class RecordManager
                 $record['deleted'] = true;
                 $record['updated'] = new MongoDate();
                 $record['update_needed'] = false;
-                $this->db->record->save($record);
+                $this->db->record->save(
+                    $record, ['socketTimeoutMS' => $this->cursorTimeout]
+                );
                 ++$count;
             }
             return $count;
@@ -1484,7 +1494,9 @@ class RecordManager
                 unset($dbRecord['id_keys']);
                 $dbRecord['update_needed'] = false;
             }
-            $this->db->record->save($dbRecord);
+            $this->db->record->save(
+                $dbRecord, ['socketTimeoutMS' => $this->cursorTimeout]
+            );
             ++$count;
             if (!$mainID) {
                 $mainID = $id;

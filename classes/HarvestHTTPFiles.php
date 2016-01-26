@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (c) The National Library of Finland 2011-2014.
+ * Copyright (c) The National Library of Finland 2011-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -260,7 +260,7 @@ class HarvestHTTPFiles
             '_id' => "Last Harvest Date {$this->source}",
             'value' => $this->trackedEndDate
         ];
-        $this->db->state->save($state);
+        $this->db->state->save($state, ['socketTimeoutMS' => 300000]);
     }
 
     /**
