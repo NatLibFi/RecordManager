@@ -431,6 +431,9 @@ class SolrUpdater
                     [
                         'renameCollection' => $dbName . '.' . $tmpCollectionName,
                         'to' => $dbName . '.' . $collectionName
+                    ],
+                    [
+                        'socketTimeoutMS' => $this->cursorTimeout
                     ]
                 );
                 if (!$res['ok']) {
