@@ -292,6 +292,18 @@ class NdlMarcRecord extends MarcRecord
                     $classification .= " $aux";
                 }
                 $data['classification_txt_mv'][] = "udk $classification";
+
+                list($mainClass) = explode('.', $classification, 2);
+                $mainClass = ".$mainClass";
+                if (is_numeric($mainClass)) {
+                    if ($mainClass >= 0.82 && $mainClass < 0.9) {
+                        $data['major_genre_str_mv'] = 'fiction';
+                    } elseif ($mainClass >= 0.78 && $mainClass < 0.79) {
+                        $data['major_genre_str_mv'] = 'music';
+                    } else {
+                        $data['major_genre_str_mv'] = 'nonfiction';
+                    }
+                }
             }
         }
         $dlc = $this->getFieldsSubfields(
@@ -327,17 +339,6 @@ class NdlMarcRecord extends MarcRecord
                     break;
                 }
             } elseif ($source == 'udk') {
-                list($mainClass) = explode('.', $classification, 2);
-                $mainClass = ".$mainClass";
-                if (is_numeric($mainClass)) {
-                    if ($mainClass >= 0.82 && $mainClass < 0.9) {
-                        $data['major_genre_str_mv'] = 'fiction';
-                    } elseif ($mainClass >= 0.78 && $mainClass < 0.79) {
-                        $data['major_genre_str_mv'] = 'music';
-                    } else {
-                        $data['major_genre_str_mv'] = 'nonfiction';
-                    }
-                }
             }
         }
         if (isset($data['classification_txt_mv'])) {
