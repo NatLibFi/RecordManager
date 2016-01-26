@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2014.
+ * Copyright (C) The National Library of Finland 2012-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -95,6 +95,20 @@ class OaiPmhProvider
     protected $sets = [];
 
     /**
+     * Mongo cursor timeout
+     *
+     * @var int
+     */
+    protected $cursorTimeout;
+
+    /**
+     * ID Prefix used to create an OAI ID for records that don't have one
+     *
+     * @var string
+     */
+    protected $idPrefix;
+
+    /**
      * Constructor
      */
     public function __construct()
@@ -116,8 +130,10 @@ class OaiPmhProvider
 
         $mongo = new MongoClient($configArray['Mongo']['url']);
         $this->db = $mongo->selectDB($configArray['Mongo']['database']);
-        MongoCursor::$timeout = isset($configArray['Mongo']['cursor_timeout'])
+        $this->cursorTimeout = isset($configArray['Mongo']['cursor_timeout'])
             ? $configArray['Mongo']['cursor_timeout'] : 300000;
+        $this->idPrefix = isset($configArray['OAI-PMH']['id_prefix'])
+            ? $configArray['OAI-PMH']['id_prefix'] : '';
     }
 
     /**
@@ -167,7 +183,8 @@ class OaiPmhProvider
         $id = $this->getParam('identifier');
         $prefix = $this->getParam('metadataPrefix');
 
-        $record = $this->db->record->findOne(['oai_id' => $id]);
+        $record = $this->db->record->find(['oai_id' => $id])->limit(-1)
+            ->timeout($this->cursorTimeout)->getNext();
         if (!$record) {
             $this->error(
                 'idDoesNotExist',
@@ -281,7 +298,8 @@ EOF;
             ];
         }
 
-        $records = $this->db->record->find($queryParams)->sort(['updated' => 1]);
+        $records = $this->db->record->find($queryParams)
+            ->timeout($this->cursorTimeout)->sort(['updated' => 1]);
         if ($position) {
             $records = $records->skip($position);
         }
@@ -346,7 +364,8 @@ EOF;
         $id = $this->getParam('identifier');
         $source = '';
         if ($id) {
-            $record = $this->db->record->findOne(['oai_id' => $id]);
+            $record = $this->db->record->find(['oai_id' => $id])->limit(-1)
+                ->timeout($this->cursorTimeout)->getNext();
             if (!$record) {
                 $this->error(
                     'idDoesNotExist',
@@ -546,8 +565,8 @@ EOF;
      */
     protected function getEarliestDateStamp()
     {
-        $record = $this->db->record->find()->sort(['updated' => 1])->limit(1)
-            ->getNext();
+        $record = $this->db->record->find()->timeout($this->cursorTimeout)
+            ->sort(['updated' => 1])->limit(1)->getNext();
         return $record['updated']->sec;
     }
 
@@ -739,7 +758,7 @@ EOF;
      * @param array   $record          Mongo record
      * @param string  $format          Metadata format
      * @param boolean $includeMetadata Whether to include record data
-     * (or only header)
+     * (or only header). Metadata is never returned for deleted records.
      *
      * @return boolean|string
      */
@@ -752,7 +771,7 @@ EOF;
             $format = $this->formats[$format]['format'];
         }
         $metadata = '';
-        if ($includeMetadata) {
+        if ($includeMetadata && !$record['deleted']) {
             $mongodata = $record['normalized_data']
                 ? $record['normalized_data'] : $record['original_data'];
             $metadataRecord = RecordFactory::createRecord(
@@ -806,7 +825,11 @@ EOF;
 EOF;
         }
 
-        $id = $this->escape($record['oai_id']);
+        $id = $this->escape(
+            !empty($record['oai_id'])
+            ? $record['oai_id']
+            : $this->idPrefix . $record['_id']
+        );
         $date = $this->toOaiDate($record['updated']->sec);
         $status = $record['deleted'] ? ' status="deleted"' : '';
         return <<<EOF

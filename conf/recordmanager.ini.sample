@@ -59,37 +59,26 @@ unicode_normalization_form = NFKC
 ;background_update = 10
 ;threaded_merged_record_update = true
 
-
 [OAI-PMH]
+; Repository name returned in the Identify response
 repository_name = OAI-PMH Repository
+; Repository base URL returned in the Identify response
 base_url = http://base.address
+; Repository admin email address returned in the Identify response
 admin_email = nobody@localhost
+; Maximum number of results to return for a single request (resumptionToken is used
+; if there are more results to be returned) 
 result_limit = 1000
+; Name of the .ini file containing metadata format definitions
 format_definitions = oai-pmh-formats.ini
+; Name of the .ini file containing record set definitions
 set_definitions = oai-pmh-sets.ini
+; Record ID prefix used to create an OAI ID for records that don't already have one.
+; To create an OAI ID, the record ID is appended to the prefix. 
+id_prefix = "oai:base.address:"
 
 [Record Classes]
 ;ead = NdlEadRecord
-
-[Geocoding]
-; Please see http://wiki.openstreetmap.org/wiki/Nominatim_usage_policy before using Nominatim
-geocoder = NominatimGeocoder
-; Milliseconds to wait between requests (set to at least 1000 when using OpenStreetMap's servers)
-delay = 1500
-;url = "http://nominatim.openstreetmap.org/search"
-;email = "your@address"
-;preferred_area = "-2.75,70.42,36.63,55.21"
-; Polygon simplification tolerance. GEOS and its PHP extension must be installed for simplification to be available
-; (see https://github.com/phayes/geoPHP/wiki/GEOS)
-;simplification_tolerance = 0.001
-; Maximum number of polygon elements
-;simplification_max_length = 1000
-
-; Solr field that contains the geocoding data
-solr_field = location_geo
-; Threshold governing whether a location is considered important. If such a location is found, locations with lower importance
-; are ignored. Default is 0.9.
-;important_threshold = 0.8
 
 [Enrichment]
 ; Maximum lifetime of cached entries in minutes. Default is 1440 (24 hours)
