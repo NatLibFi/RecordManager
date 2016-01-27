@@ -53,9 +53,6 @@ class SolrUpdater
     protected $journalFormats;
     protected $eJournalFormats;
     protected $allJournalFormats;
-    protected $articleFormats;
-    protected $eArticleFormats;
-    protected $allArticleFormats;
     protected $httpPids = [];
     protected $terminate;
     protected $dumpPrefix = '';
@@ -155,17 +152,6 @@ class SolrUpdater
 
         $this->allJournalFormats
             = array_merge($this->journalFormats, $this->eJournalFormats);
-
-        $this->articleFormats = isset($configArray['Solr']['article_formats'])
-            ? $configArray['Solr']['article_formats']
-            : ['Article'];
-
-        $this->eArticleFormats = isset($configArray['Solr']['earticle_formats'])
-            ? $configArray['Solr']['earticle_formats']
-            : ['eArticle'];
-
-        $this->allArticleFormats
-            = array_merge($this->articleFormats, $this->eArticleFormats);
 
         // Special case: building hierarchy
         $this->buildingHierarchy = isset($configArray['Solr']['hierarchical_facets'])
@@ -1209,21 +1195,9 @@ class SolrUpdater
             }
         }
         $settings = $this->settings[$source];
-        $hiddenComponent = false;
-        if (isset($record['host_record_id'])) {
-            if ($settings['componentParts'] == 'merge_all') {
-                $hiddenComponent = true;
-            } elseif ($settings['componentParts'] == 'merge_non_articles'
-                || $settings['componentParts'] == 'merge_non_earticles'
-            ) {
-                $format = $metadataRecord->getFormat();
-                if (!in_array($format, $this->allArticleFormats)) {
-                    $hiddenComponent = true;
-                } elseif (in_array($format, $this->articleFormats)) {
-                    $hiddenComponent = true;
-                }
-            }
-        }
+        $hiddenComponent = MetadataUtils::isHiddenComponentPart(
+            $settings, $record, $metadataRecord
+        );
 
         if ($hiddenComponent && !$settings['indexMergedParts']) {
             return false;

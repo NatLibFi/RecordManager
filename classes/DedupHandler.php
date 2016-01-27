@@ -67,8 +67,8 @@ class DedupHandler
      */
     protected $tooManyCandidatesKeys = [];
 
-    /*
-     * Used for format mapping
+    /**
+     * SolrUpdater for format mapping
      *
      * @val SolrUpdater
      */
@@ -76,26 +76,37 @@ class DedupHandler
 
     /**
      * Mongo cursor timeout
+     *
      * @var int
      */
     protected $cursorTimeout = 300000;
 
     /**
+     * Data source settings
+     *
+     * @var array
+     */
+    protected $dataSourceSettings = [];
+
+    /**
      * Constructor
      *
-     * @param MongoDB     $db          Mongo database object
-     * @param Logger      $log         Logger object
-     * @param boolean     $verbose     Whether verbose output is enabled
-     * @param SolrUpdater $solrUpdater SolrUpdater instance
-     * @param int     $cursorTimeout Mongo cursor timeout
+     * @param MongoDB     $db            Mongo database object
+     * @param Logger      $log           Logger object
+     * @param boolean     $verbose       Whether verbose output is enabled
+     * @param SolrUpdater $solrUpdater   SolrUpdater instance
+     * @param int         $cursorTimeout Mongo cursor timeout
+     * @param array       $settings      Data source settings
      */
-    public function __construct($db, $log, $verbose, $solrUpdater, $cursorTimeout)
-    {
+    public function __construct($db, $log, $verbose, $solrUpdater, $cursorTimeout,
+        $settings
+    ) {
         $this->db = $db;
         $this->log = $log;
         $this->verbose = $verbose;
         $this->solrUpdater = $solrUpdater;
         $this->cursorTimeout = $cursorTimeout;
+        $this->dataSourceSettings = $settings;
     }
 
     /**
@@ -474,6 +485,25 @@ class DedupHandler
         if ($this->verbose) {
             echo "\nCandidate " . $candidate['_id'] . ":\n"
                 . MetadataUtils::getRecordData($candidate, true) . "\n";
+        }
+
+        $recordHidden = MetadataUtils::isHiddenComponentPart(
+            $this->dataSourceSettings[$record['source_id']], $record, $origRecord
+        );
+        $candidateHidden = MetadataUtils::isHiddenComponentPart(
+            $this->dataSourceSettings[$candidate['source_id']], $candidate, $cRecord
+        );
+
+        // Check that both records are hidden component parts or neither is
+        if ($recordHidden != $candidateHidden) {
+            if ($this->verbose) {
+                if ($candidateHidden) {
+                    echo "--Candidate is a hidden component part\n";
+                } else {
+                    echo "--Candidate is not a hidden component part\n";
+                }
+            }
+            return false;
         }
 
         // Check that the record does not have access restrictions

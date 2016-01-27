@@ -45,6 +45,20 @@ class MetadataUtils
     public static $articles = null;
 
     /**
+     * Non-electronic article formats
+     *
+     * @var array
+     */
+    public static $articleFormats = null;
+
+    /**
+     * All article formats
+     *
+     * @var array
+     */
+    public static $allArticleFormats = null;
+
+    /**
      * Convert ISBN-10 (without dashes) to ISBN-13
      *
      * @param string $isbn ISBN
@@ -630,5 +644,52 @@ class MetadataUtils
             strtoupper($str)
         );
         return preg_replace('/\s{2,}/', ' ', $str);
+    }
+
+    /**
+     * Determine if a record is a hidden component part
+     *
+     * @param array       $settings       Data source settings
+     * @param array       $record         Mongo record
+     * @param \BaseRecord $metadataRecord Metadata record
+     *
+     * @return boolean
+     */
+    static public function isHiddenComponentPart($settings, $record, $metadataRecord)
+    {
+        if (isset($record['host_record_id'])) {
+            if ($settings['componentParts'] == 'merge_all') {
+                return true;
+            } elseif ($settings['componentParts'] == 'merge_non_articles'
+                || $settings['componentParts'] == 'merge_non_earticles'
+            ) {
+                $format = $metadataRecord->getFormat();
+
+                if (null === MetadataUtils::$articleFormats) {
+                    global $configArray;
+
+                    MetadataUtils::$articleFormats
+                        = isset($configArray['Solr']['article_formats'])
+                        ? $configArray['Solr']['article_formats']
+                        : ['Article'];
+
+                    $eArticleFormats
+                        = isset($configArray['Solr']['earticle_formats'])
+                        ? $configArray['Solr']['earticle_formats']
+                        : ['eArticle'];
+
+                    MetadataUtils::$allArticleFormats = array_merge(
+                        MetadataUtils::$articleFormats, $eArticleFormats
+                    );
+                }
+
+                if (!in_array($format, MetadataUtils::$allArticleFormats)) {
+                    return true;
+                } elseif (in_array($format, MetadataUtils::$articleFormats)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }
