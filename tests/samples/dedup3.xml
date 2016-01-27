@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<collection>
+  <record>
+    <leader>00000cas a2200      4500</leader>
+    <controlfield tag="001">3</controlfield>
+    <datafield tag="020">
+      <subfield code="a">9780471397120</subfield>
+    </datafield>
+    <datafield tag="245">
+      <subfield code="a">Test title 3</subfield>
+      <subfield code="b">This record gets duplicated with others in set 2</subfield>
+    </datafield>
+  </record>
+</collection>
