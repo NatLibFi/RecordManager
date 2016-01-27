@@ -97,6 +97,7 @@ class NdlMarcRecord extends MarcRecord
     {
         if ($this->getDriverParam('003InLinkingID', false)) {
             $source = $this->getField('003');
+            $source = MetadataUtils::stripTrailingPunctuation($source);
             if ($source) {
                 return "($source)" . $this->getID();
             }
