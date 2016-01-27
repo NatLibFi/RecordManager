@@ -5,13 +5,15 @@ ehthumbs.db
 Icon?
 Thumbs.db
 
-# Eclipse Files
+# IDE Files
 .metadata/*
 .settings/*
 .project
 .buildpath
+.ExternalToolBuilders
+.idea
 
 # Local files
-conf/datasources.ini
-conf/recordmanager.ini
-
+conf/*.ini
+conf/*.lst
+recman.log
