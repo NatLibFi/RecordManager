@@ -1336,17 +1336,13 @@ class SolrUpdater
                     $newValues = null;
                     foreach ($data[$field] as $value) {
                         if (isset($map[$value])) {
-                            $newValues = $map[$value];
+                            $newValues[] = $map[$value];
                         } elseif (isset($map['##default'])) {
-                            $newValues = $map['##default'];
+                            $newValues[] = $map['##default'];
                         }
                     }
                     if (null !== $newValues) {
-                        if (is_array($newValues)) {
-                            $data[$field] = array_values(array_unique($newValues));
-                        } else {
-                            $data[$field] = $newValues;
-                        }
+                        $data[$field] = array_values(array_unique($newValues));
                     }
                 } else {
                     if (isset($map[$data[$field]])) {
