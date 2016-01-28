@@ -1333,12 +1333,20 @@ class SolrUpdater
         foreach ($settings['mappingFiles'] as $field => $map) {
             if (isset($data[$field]) && !empty($data[$field])) {
                 if (is_array($data[$field])) {
-                    $newValues = null;
+                    $newValues = [];
                     foreach ($data[$field] as $value) {
+                        $replacement = null;
                         if (isset($map[$value])) {
-                            $newValues[] = $map[$value];
+                            $replacement = $map[$value];
                         } elseif (isset($map['##default'])) {
-                            $newValues[] = $map['##default'];
+                            $replacement = $map['##default'];
+                        }
+                        if (null !== $replacement) {
+                            if (is_array($replacement)) {
+                                $newValues += $replacement;
+                            } else {
+                                $newValues[] = $replacement;
+                            }
                         }
                     }
                     if (null !== $newValues) {
