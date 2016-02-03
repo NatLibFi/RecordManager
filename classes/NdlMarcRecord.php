@@ -288,7 +288,7 @@ class NdlMarcRecord extends MarcRecord
             $classification = trim($this->getSubfield($field080, 'a'));
             $classification .= trim($this->getSubfield($field080, 'b'));
             if ($classification) {
-                $aux = $this->getSubfields($field080, ['x' => 1]);
+                $aux = trim($this->getSubfields($field080, ['x' => 1]));
                 if ($aux) {
                     $classification .= " $aux";
                 }
@@ -297,7 +297,9 @@ class NdlMarcRecord extends MarcRecord
                 list($mainClass) = explode('.', $classification, 2);
                 $mainClass = ".$mainClass";
                 if (is_numeric($mainClass)) {
-                    if ($mainClass >= 0.82 && $mainClass < 0.9) {
+                    if ($mainClass >= 0.82 && $mainClass < 0.9
+                        && in_array($aux, ['-1', '-2', '-3', '-4', '-5', '-6', '-8'])
+                    ) {
                         $data['major_genre_str_mv'] = 'fiction';
                     } elseif ($mainClass >= 0.78 && $mainClass < 0.79) {
                         $data['major_genre_str_mv'] = 'music';
