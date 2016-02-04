@@ -296,7 +296,9 @@ class NdlMarcRecord extends MarcRecord
 
                 list($mainClass) = explode('.', $classification, 2);
                 $mainClass = ".$mainClass";
-                if (is_numeric($mainClass)) {
+                if (is_numeric($mainClass) && (!isset($data['major_genre_str_mv'])
+                    || $data['major_genre_str_mv'] == 'nonfiction')
+                ) {
                     if ($mainClass >= 0.82 && $mainClass < 0.9
                         && in_array($aux, ['-1', '-2', '-3', '-4', '-5', '-6', '-8'])
                     ) {
@@ -324,7 +326,9 @@ class NdlMarcRecord extends MarcRecord
                     . mb_strtolower(str_replace(' ', '', $classification), 'UTF-8');
             }
             // Major genre
-            if ($source == 'ykl') {
+            if ($source == 'ykl' && (!isset($data['major_genre_str_mv'])
+                || $data['major_genre_str_mv'] == 'nonfiction')
+            ) {
                 switch (substr($classification, 0, 2)) {
                 case '78':
                     $data['major_genre_str_mv'] = 'music';
