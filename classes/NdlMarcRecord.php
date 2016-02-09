@@ -822,15 +822,13 @@ class NdlMarcRecord extends MarcRecord
             $sub3 = MetadataUtils::stripTrailingPunctuation(
                 $this->getSubfield($field, '3')
             );
-            if (strcasecmp($sub3, 'metadata') == 0
-                && strcasecmp(
-                    MetadataUtils::stripTrailingPunctuation(
-                        $this->getSubfield($field, 'a')
-                    ),
-                    'ei poimintaa'
-                ) == 0
-            ) {
-                return 'restricted';
+            if ($sub3 == 'Metadata' || strncasecmp($sub3, 'metadata', 8) == 0) {
+                $subA = MetadataUtils::stripTrailingPunctuation(
+                    $this->getSubfield($field, 'a')
+                );
+                if (strncasecmp($subA, 'ei poimintaa', 12) == 0) {
+                    return 'restricted';
+                }
             }
         }
         return '';
