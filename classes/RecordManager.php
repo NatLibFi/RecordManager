@@ -683,6 +683,11 @@ class RecordManager
                         );
                     }
                 }
+                if (isset($this->terminate)) {
+                    $this->log->log('deduplicate', 'Termination upon request');
+                    exit(1);
+                }
+
                 $this->log->log(
                     'deduplicate',
                     "Completed with $count records marked for processing "
@@ -761,6 +766,10 @@ class RecordManager
                             . "deduplicated, $avg records/sec"
                         );
                     }
+                }
+                if (isset($this->terminate)) {
+                    $this->log->log('deduplicate', 'Termination upon request');
+                    exit(1);
                 }
                 $this->log->log(
                     'deduplicate',
