@@ -83,6 +83,15 @@ class Enrichment
     protected $retryWait;
 
     /**
+     * HTTP_Request2 configuration params
+     *
+     * @array
+     */
+    protected $httpParams = [
+        'follow_redirects' => true
+    ];
+
+    /**
      * Constructor
      *
      * @param MongoDB $db  Database connection (for cache)
@@ -103,6 +112,10 @@ class Enrichment
         $this->retryWait = isset($configArray['Enrichment']['retry_wait'])
             ? $configArray['Enrichment']['retry_wait']
             : 30;
+
+        if (isset($configArray['HTTP'])) {
+            $this->httpParams += $configArray['HTTP'];
+        }
     }
 
     /**
@@ -147,10 +160,7 @@ class Enrichment
             $this->request = new HTTP_Request2(
                 $url,
                 HTTP_Request2::METHOD_GET,
-                [
-                    'ssl_verify_peer' => false,
-                    'follow_redirects' => true
-                ]
+                $this->httpParams
             );
             $this->request->setHeader('Connection', 'Keep-Alive');
             $this->request->setHeader('User-Agent', 'RecordManager');

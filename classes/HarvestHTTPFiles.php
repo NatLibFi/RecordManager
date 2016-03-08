@@ -61,6 +61,13 @@ class HarvestHTTPFiles
     protected $trackedEndDate = '';
 
     /**
+     * HTTP_Request2 configuration params
+     *
+     * @array
+     */
+    protected $httpParams = [];
+
+    /**
      * Constructor.
      *
      * @param object $logger   The Logger object used for logging messages.
@@ -73,6 +80,8 @@ class HarvestHTTPFiles
      */
     public function __construct($logger, $db, $source, $basePath, $settings)
     {
+        global $configArray;
+
         $this->log = $logger;
         $this->db = $db;
 
@@ -103,6 +112,10 @@ class HarvestHTTPFiles
             $this->preXSLT = new XSLTProcessor();
             $this->preXSLT->importStylesheet($style);
             $this->preXSLT->setParameter('', 'source_id', $this->source);
+        }
+
+        if (isset($configArray['HTTP'])) {
+            $this->httpParams += $configArray['HTTP'];
         }
     }
 
@@ -274,7 +287,7 @@ class HarvestHTTPFiles
         $request = new HTTP_Request2(
             $this->baseURL,
             HTTP_Request2::METHOD_GET,
-            ['ssl_verify_peer' => false]
+            $this->httpParams
         );
         $request->setHeader('User-Agent', 'RecordManager');
 
@@ -365,7 +378,7 @@ class HarvestHTTPFiles
         $request = new HTTP_Request2(
             $this->baseURL . $filename,
             HTTP_Request2::METHOD_GET,
-            ['ssl_verify_peer' => false]
+            $this->httpParams
         );
         $request->setHeader('User-Agent', 'RecordManager');
 

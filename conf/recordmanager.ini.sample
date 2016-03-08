@@ -89,5 +89,12 @@ log_file        = /var/log/recman.log
 log_level       = 4
 error_email     = 
 
+; The following section contains parameters passed to the HTTP client.
+; See https://pear.php.net/manual/en/package.http.http-request2.config.php for
+; documentation on the valid parameters.
+[HTTP]
+;adapter = HTTP_Request2_Adapter_Curl
+;ssl_verify_peer = false
+
 [Local]
 ; Put here locally defined settings for e.g. custom record classes

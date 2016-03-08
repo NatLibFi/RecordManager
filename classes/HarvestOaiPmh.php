@@ -223,6 +223,13 @@ class HarvestOaiPmh
     protected $xml = null;
 
     /**
+     * HTTP_Request2 configuration params
+     *
+     * @array
+     */
+    protected $httpParams = [];
+
+    /**
      * Constructor.
      *
      * @param object $logger     The Logger object used for logging messages.
@@ -303,6 +310,10 @@ class HarvestOaiPmh
         }
         if (isset($configArray['Harvesting']['retry_wait'])) {
             $this->retryWait = $configArray['Harvesting']['retry_wait'];
+        }
+
+        if (isset($configArray['HTTP'])) {
+            $this->httpParams += $configArray['HTTP'];
         }
 
         $this->message('Identifying server');
@@ -512,7 +523,7 @@ class HarvestOaiPmh
         $request = new HTTP_Request2(
             $this->baseURL,
             HTTP_Request2::METHOD_GET,
-            ['ssl_verify_peer' => false]
+            $this->httpParams
         );
         $request->setHeader('User-Agent', 'RecordManager');
 

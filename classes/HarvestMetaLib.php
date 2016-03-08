@@ -92,6 +92,13 @@ class HarvestMetaLib
     protected $verbose = false;
 
     /**
+     * HTTP_Request2 configuration params
+     *
+     * @array
+     */
+    protected $httpParams = [];
+
+    /**
      * Query used to Query used to find the IRDs (e.g. WIN=INSTITUTE, see locate_
      * command in http://www.exlibrisgroup.org/display/MetaLibOI/source_locate)
      *
@@ -113,6 +120,8 @@ class HarvestMetaLib
     */
     public function __construct($logger, $db, $source, $basePath, $settings)
     {
+        global $configArray;
+
         $this->log = $logger;
         $this->db = $db;
         $this->basePath = $basePath;
@@ -131,6 +140,10 @@ class HarvestMetaLib
         $this->username = $settings['xUser'];
         $this->password = $settings['xPassword'];
         $this->query = $settings['query'];
+
+        if (isset($configArray['HTTP'])) {
+            $this->httpParams += $configArray['HTTP'];
+        }
     }
 
     /**
@@ -241,7 +254,7 @@ class HarvestMetaLib
         $request = new HTTP_Request2(
             $this->baseURL,
             HTTP_Request2::METHOD_GET,
-            ['ssl_verify_peer' => false]
+            $this->httpParams
         );
         $request->setHeader('User-Agent', 'RecordManager');
 

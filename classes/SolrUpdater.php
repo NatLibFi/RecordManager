@@ -106,6 +106,13 @@ class SolrUpdater
      */
     protected $request;
 
+    /**
+     * HTTP_Request2 configuration params
+     *
+     * @array
+     */
+    protected $httpParams = [];
+
     protected $mergedFields = ['institution', 'collection', 'building',
         'language', 'physical', 'publisher', 'publishDate', 'contents', 'url',
         'ctrlnum', 'author=author2', 'author2', 'author_additional', 'title_alt',
@@ -185,6 +192,10 @@ class SolrUpdater
         $this->threadedMergedRecordUpdate
             = isset($configArray['Solr']['threaded_merged_record_update'])
                 ? $configArray['Solr']['threaded_merged_record_update'] : false;
+
+        if (isset($configArray['HTTP'])) {
+            $this->httpParams += $configArray['HTTP'];
+        }
 
         // Load settings and mapping files
         $this->loadDatasources();
@@ -1672,7 +1683,7 @@ class SolrUpdater
             $this->request = new HTTP_Request2(
                 $configArray['Solr']['update_url'],
                 HTTP_Request2::METHOD_POST,
-                ['ssl_verify_peer' => false]
+                $this->httpParams
             );
             if ($timeout !== null) {
                 $this->request->setConfig('timeout', $timeout);
