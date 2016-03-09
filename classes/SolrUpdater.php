@@ -375,52 +375,52 @@ class SolrUpdater
             }
             $this->log->log('processMerged', "$count id's processed");
 
-            // Add dedup records by date (those that were not added by record date)
-            if (!isset($mongoFromDate)) {
-                $this->log->log(
-                    'processMerged',
-                    'No starting date, bypassing stage 2/2'
-                );
+            $this->log->log(
+                'processMerged',
+                "Creating merged record list $collectionName"
+                . " (from $from, stage 2/2)"
+            );
+            $dedupParams = [];
+            if ($singleId) {
+                $dedupParams['ids'] = $singleId;
+            } elseif (isset($mongoFromDate)) {
+                $dedupParams['changed'] = ['$gte' => $mongoFromDate];
             } else {
                 $this->log->log(
                     'processMerged',
-                    "Creating merged record list $collectionName"
-                    . " (from $from, stage 2/2)"
-                );
-                $dedupParams = [];
-                if ($singleId) {
-                    $dedupParams['ids'] = $singleId;
-                } else {
-                    $dedupParams['changed'] = ['$gte' => $mongoFromDate];
-                }
-
-                $records = $this->db->dedup->find($dedupParams, ['_id' => 1])
-                    ->timeout($this->cursorTimeout);
-                $count = 0;
-                foreach ($records as $record) {
-                    if (isset($this->terminate)) {
-                        $this->log->log('processMerged', 'Termination upon request');
-                        $collection->drop();
-                        exit(1);
-                    }
-                    $id = $record['_id'];
-                    if (!isset($prevId) || $prevId != $id) {
-                        $collection->insert(['_id' => $id], ['w' => 0]);
-                        ++$totalMergeCount;
-                        if (++$count % 10000 == 0) {
-                            $this->log->log(
-                                'processMerged',
-                                "$count merge record id's processed"
-                            );
-                        }
-                    }
-                    $prevId = $id;
-                }
-                $this->log->log(
-                    'processMerged',
-                    "$count merge record id's processed"
+                    'Processing all merge records -- this may be a lengthy process'
+                    . ' if deleted records have not been purged regularly',
+                    Logger::WARNING
                 );
             }
+
+            $records = $this->db->dedup->find($dedupParams, ['_id' => 1])
+                ->timeout($this->cursorTimeout);
+            $count = 0;
+            foreach ($records as $record) {
+                if (isset($this->terminate)) {
+                    $this->log->log('processMerged', 'Termination upon request');
+                    $collection->drop();
+                    exit(1);
+                }
+                $id = $record['_id'];
+                if (!isset($prevId) || $prevId != $id) {
+                    $collection->insert(['_id' => $id], ['w' => 0]);
+                    ++$totalMergeCount;
+                    if (++$count % 10000 == 0) {
+                        $this->log->log(
+                            'processMerged',
+                            "$count merge record id's processed"
+                        );
+                    }
+                }
+                $prevId = $id;
+            }
+            $this->log->log(
+                'processMerged',
+                "$count merge record id's processed"
+            );
+
             if ($totalMergeCount > 0) {
                 $mongo = new MongoClient($configArray['Mongo']['url']);
                 $dbName = $configArray['Mongo']['database'];
