@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2015.
+ * Copyright (C) The National Library of Finland 2012-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -938,7 +938,6 @@ class NdlMarcRecord extends MarcRecord
         $subfieldFilter = [
             '650' => ['0' => 1, '2' => 1, '6' => 1, '8' => 1],
             '773' => ['0' => 1, '6' => 1, '7' => 1, '8' => 1, 'w' => 1],
-            '856' => ['0' => 1, '6' => 1, '8' => 1, 'q' => 1],
             '979' => ['0' => 1, 'a' => 1, 'f' => 1]
         ];
         $allFields = [];
@@ -956,7 +955,7 @@ class NdlMarcRecord extends MarcRecord
         }
         foreach ($this->fields as $tag => $fields) {
             if (($tag >= 100 && $tag < 841 && $tag != 336 && $tag != 337)
-                || $tag == 856 || $tag == 880 || $tag == 979
+                || $tag == 880 || $tag == 979
             ) {
                 foreach ($fields as $field) {
                     $subfields = $this->getAllSubfields(
