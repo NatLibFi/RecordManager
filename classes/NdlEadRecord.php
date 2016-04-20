@@ -131,7 +131,10 @@ class NdlEadRecord extends EadRecord
             $data['material'] = (string)$doc->did->physdesc;
         }
 
-        if (isset($doc->did->accessrestrict->p)) {
+
+        if (isset($doc->did->userestrict->p)) {
+            $data['rights'] = (string)$doc->did->userestrict->p;
+        } else if (isset($doc->did->accessrestrict->p)) {
             $data['rights'] = (string)$doc->did->accessrestrict->p;
         }
 
@@ -151,9 +154,18 @@ class NdlEadRecord extends EadRecord
      */
     protected function getUsageRights()
     {
-        if (!isset($this->doc->accessrestrict->p)) {
+        if (!isset($this->doc->userestrict->p)
+            && !isset($this->doc->accessrestrict->p)
+        ) {
             return ['restricted'];
         }
+
+        foreach ($this->doc->userestrict->p as $restrict) {
+            if (strstr((string)$restrict, 'No known copyright restrictions')) {
+                return ['No known copyright restrictions'];
+            }
+        }
+
         foreach ($this->doc->accessrestrict->p as $restrict) {
             if (strstr((string)$restrict, 'No known copyright restrictions')) {
                 return ['No known copyright restrictions'];
