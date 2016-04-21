@@ -128,14 +128,12 @@ class QdcRecord extends BaseRecord
         );
 
         $data['format'] = (string)$doc->type;
-        $authors = $this->getValues('creator');
-        if ($authors) {
-            $data['author']
-                = MetadataUtils::stripTrailingPunctuation(array_shift($authors));
-            foreach ($authors as $author) {
-                $data['author2'][]
-                    = MetadataUtils::stripTrailingPunctuation($author);
-            }
+        foreach ($this->getValues('creator') as $author) {
+            $data['author'][]
+                = MetadataUtils::stripTrailingPunctuation($author);
+        }
+        if (!empty($data['author'])) {
+            $data['author_sort'] = $data['author'][0];
         }
         foreach ($this->getValues('contributor') as $contributor) {
             $data['author2'][]

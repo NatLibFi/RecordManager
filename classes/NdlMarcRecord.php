@@ -115,13 +115,18 @@ class NdlMarcRecord extends MarcRecord
         $data = parent::toSolrArray();
 
         if (empty($data['author'])) {
-            $data['author'] = $data['author_fuller'] = $data['author-letter']
-                = $this->getFieldSubfields('110', ['a' => 1]);
-        }
-
-        $key = array_search($data['author'], $data['author2']);
-        if ($key !== false) {
-            unset($data['author2'][$key]);
+            foreach ($this->getFields('110') as $field110) {
+                $author = $this->getSubfield($field110, 'a');
+                if ($author) {
+                    $data['author'][] = $author;
+                    $role = $this->getSubfield($field110, '4');
+                    if (!$role) {
+                        $role = $this->getSubfield($field110, 'e');
+                    }
+                    $data['author_role'][] = $role ? $this->normalizeRelator($role)
+                        : '-';
+                }
+            }
         }
 
         if (isset($data['publishDate'])) {
@@ -175,13 +180,12 @@ class NdlMarcRecord extends MarcRecord
             ],
             false, true, true
         ) as $field) {
-            $data['author2'][] = $field;
+            $field = trim($field);
+            if ($field) {
+                $data['author2'][] = $field;
+                $data['author2_role'][] = '-';
+            }
         }
-        $key = array_search($data['author'], $data['author2']);
-        if ($key !== false) {
-            unset($data['author2'][$key]);
-        }
-        $data['author2'] = array_filter(array_values($data['author2']));
 
         $data['title_alt'] = array_values(
             array_unique(
@@ -1029,5 +1033,63 @@ class NdlMarcRecord extends MarcRecord
             }
         }
         return $results;
+    }
+
+    /**
+     * Get primary authors
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthors()
+    {
+        $fieldSpecs = [
+            '100' => ['a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1],
+            '700' => [
+                'a' => 1, 'q' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1
+            ]
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs, $this->primaryAuthorRelators, ['100']
+        );
+    }
+
+    /**
+     * Get secondary authors
+     *
+     * @return array
+     */
+    protected function getSecondaryAuthors()
+    {
+        $fieldSpecs = [
+            '100' => ['a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1],
+            '700' => [
+                'a' => 1, 'q' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1
+            ]
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs, $this->secondaryAuthorRelators, ['700']
+        );
+    }
+
+    /**
+     * Get corporate authors
+     *
+     * @return array
+     */
+    protected function getCorporateAuthors()
+    {
+        $fieldSpecs = [
+            '110' => ['a' => 1, 'b' => 1, 'e' => 1],
+            '111' => ['a' => 1, 'b' => 1, 'e' => 1],
+            '710' => ['a' => 1, 'b' => 1, 'e' => 1],
+            '711' => ['a' => 1, 'b' => 1, 'e' => 1]
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs,
+            array_merge(
+                $this->primaryAuthorRelators, $this->secondaryAuthorRelators
+            ),
+            ['110', '111', '710', '711']
+        );
     }
 }

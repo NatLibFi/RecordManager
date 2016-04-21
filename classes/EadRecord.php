@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2014.
+ * Copyright (C) The National Library of Finland 2011-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -131,28 +131,21 @@ class EadRecord extends BaseRecord
             $data['description'] = $desc;
         }
 
-        $authors = [];
-
         if ($names = $doc->xpath('controlaccess/persname')) {
             foreach ($names as $name) {
                 if (trim((string)$name) !== '-') {
-                    $authors[] = trim((string)$name);
+                    $data['author'][] = trim((string)$name);
                 }
             }
+        }
+        if ($data['author']) {
+            $data['author_sort'] = $data['author'][0];
         }
 
         if ($names = $doc->xpath('controlaccess/corpname')) {
             foreach ($names as $name) {
-                $authors[] = trim((string)$name);
+                $data['author_corporate'][] = trim((string)$name);
             }
-        }
-
-        if ($authors) {
-            $data['author'] = array_shift($authors);
-            $data['author-letter'] = $data['author'];
-        }
-        if ($authors) {
-            $data['author2'] = $authors;
         }
 
         if ($doc->did->origination) {

@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2014.
+ * Copyright (C) The National Library of Finland 2011-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -64,6 +64,36 @@ class MarcRecord extends BaseRecord
     protected $fields;
 
     /**
+     * Default primary author relator codes, may be overridden in configuration
+     *
+     * @var array
+     */
+    protected $primaryAuthorRelators = [
+        'adp', 'aut', 'cmp', 'cre', 'dub', 'inv'
+    ];
+
+    /**
+     * Default secondary author relator codes, may be overridden in configuration
+     *
+     * @var array
+     */
+    protected $secondaryAuthorRelators = [
+        'act', 'anm', 'ann', 'arr', 'acp', 'ar', 'ard', 'aft', 'aud', 'aui', 'aus',
+        'bjd', 'bpd', 'cll', 'ctg', 'chr', 'cng', 'clb', 'clr', 'cmm', 'cwt', 'com',
+        'cpl', 'cpt', 'cpe', 'ccp', 'cnd', 'cos', 'cot', 'coe', 'cts', 'ctt', 'cte',
+        'ctb', 'crp', 'cst', 'cov', 'cur', 'dnc', 'dtc', 'dto', 'dfd', 'dft', 'dfe',
+        'dln', 'dpc', 'dsr', 'drt', 'dis', 'drm', 'edt', 'elt', 'egr', 'etr', 'fac',
+        'fld', 'flm', 'frg', 'ilu', 'ill', 'ins', 'itr', 'ivr', 'ldr', 'lsa', 'led',
+        'lil', 'lit', 'lie', 'lel', 'let', 'lee', 'lbt', 'lgd', 'ltg', 'lyr', 'mrb',
+        'mte', 'msd', 'mus', 'nrt', 'opn', 'org', 'pta', 'pth', 'prf', 'pht', 'ptf',
+        'ptt', 'pte', 'prt', 'pop', 'prm', 'pro', 'pmn', 'prd', 'prg', 'pdr', 'pbd',
+        'ppt', 'ren', 'rpt', 'rth', 'rtm', 'res', 'rsp', 'rst', 'rse', 'rpy', 'rsg',
+        'rev', 'rbr', 'sce', 'sad', 'scr', 'scl', 'spy', 'std', 'sng', 'sds', 'spk',
+        'stm', 'str', 'stl', 'sht', 'ths', 'trl', 'tyd', 'tyg', 'vdg', 'voc', 'wde',
+        'wdc', 'wam'
+    ];
+
+    /**
      * Constructor
      *
      * @param string $data     Metadata
@@ -75,6 +105,18 @@ class MarcRecord extends BaseRecord
     public function __construct($data, $oaiID, $source, $idPrefix)
     {
         parent::__construct($data, $oaiID, $source, $idPrefix);
+
+        global $configArray;
+        if (isset($configArray['MarcRecord']['primary_author_relators'])) {
+            $this->primaryAuthorRelators = explode(
+                ',', $configArray['MarcRecord']['primary_author_relators']
+            );
+        }
+        if (isset($configArray['MarcRecord']['secondary_author_relators'])) {
+            $this->secondaryAuthorRelators = explode(
+                ',', $configArray['MarcRecord']['secondary_author_relators']
+            );
+        }
 
         $firstChar = substr($data, 0, 1);
         if ($firstChar === '{') {
@@ -228,8 +270,10 @@ class MarcRecord extends BaseRecord
                     if (isset($marcfield['s'])) {
                         foreach ($marcfield['s'] as &$marcsubfield) {
                             if (key($marcsubfield) == 'w') {
-                                $marcsubfield['w'] = $this->idPrefix . '.'
-                                    . $marcsubfield['w'];
+                                $marcsubfield = [
+                                    'w' => $this->idPrefix . '.'
+                                    . current($marcsubfield)
+                                ];
                             }
                         }
                     }
@@ -316,39 +360,25 @@ class MarcRecord extends BaseRecord
 
         $data['format'] = $this->getFormat();
 
-        $data['author'] = $this->getFieldSubfields(
-            '100', ['a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1]
-        );
-        $data['author_fuller'] = $this->getFieldSubfields('100', ['q' => 1]);
-        $data['author-letter'] = $this->getFieldSubfields('100', ['a' => 1]);
-
-        $data['author2'] = $this->getFieldsSubfields(
-            [
-                [MarcRecord::GET_ALT, '100', [
-                    'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1
-                ]],
-                [MarcRecord::GET_BOTH, '110', ['a' => 1, 'b' => 1]],
-                [MarcRecord::GET_BOTH, '111', ['a' => 1, 'b' => 1]],
-                [MarcRecord::GET_BOTH, '700', [
-                    'a' => 1, 'q' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1
-                ]],
-                [MarcRecord::GET_BOTH, '710', ['a' => 1, 'b' => 1]],
-                [MarcRecord::GET_BOTH, '711', ['a' => 1, 'b' => 1]]
-            ]
-        );
-
-        $key = array_search($data['author'], $data['author2']);
-        if ($key !== false) {
-            unset($data['author2'][$key]);
+        $primaryAuthors = $this->getPrimaryAuthors();
+        $data['author'] = $primaryAuthors['names'];
+        // Support for author_variant is currently not implemented
+        $data['author_role'] = $primaryAuthors['relators'];
+        $data['author_fuller'] = $primaryAuthors['fuller'];
+        if (isset($primaryAuthors['names'][0])) {
+            $data['author_sort'] = $primaryAuthors['names'][0];
         }
-        $data['author2'] = array_filter(array_values($data['author2']));
-        $data['author2-role'] = $this->getFieldsSubfields(
-            [
-                [MarcRecord::GET_BOTH, '700', ['e' => 1]],
-                [MarcRecord::GET_BOTH, '710', ['e' => 1]]
-            ],
-            true
-        );
+
+        $secondaryAuthors = $this->getSecondaryAuthors();
+        $data['author2'] = $secondaryAuthors['names'];
+        // Support for author2_variant is currently not implemented
+        $data['author2_role'] = $secondaryAuthors['relators'];
+        $data['author2_fuller'] = $secondaryAuthors['fuller'];
+
+        $corporateAuthors = $this->getCorporateAuthors();
+        $data['author_corporate'] = $corporateAuthors['names'];
+        $data['author_corporate_role'] = $corporateAuthors['relators'];
+
         $data['author_additional'] = $this->getFieldsSubfields(
             [
                 [MarcRecord::GET_BOTH, '505', ['r' => 1]]
@@ -596,14 +626,14 @@ class MarcRecord extends BaseRecord
     {
         $field = $this->getField('941');
         if ($field) {
-            return $this->getSubfield($field, 'a');
+            return MetadataUtils::stripControlChars($this->getSubfield($field, 'a'));
         }
         $field = $this->getField('773');
         if (!$field) {
             return '';
         }
-        return MetadataUtils::stripTrailingPunctuation(
-            $this->getSubfield($field, 'w')
+        return MetadataUtils::stripControlChars(
+            MetadataUtils::stripTrailingPunctuation($this->getSubfield($field, 'w'))
         );
     }
 
@@ -1454,8 +1484,26 @@ class MarcRecord extends BaseRecord
     {
         switch ($indicator) {
         case 1:
+            if (!isset($field['i1'])) {
+                global $logger;
+                $logger->log(
+                    'Indicator 1 missing from field:' . print_r($field, true)
+                    . ", record {$this->source}." . $this->getID(),
+                    Logger::ERROR
+                );
+                return ' ';
+            }
             return $field['i1'];
         case 2:
+            if (!isset($field['i2'])) {
+                global $logger;
+                $logger->log(
+                    'Indicator 2 missing from field:' . print_r($field, true)
+                    . ", record {$this->source}." . $this->getID(),
+                    Logger::ERROR
+                );
+                return ' ';
+            }
             return $field['i2'];
         default:
             die("Invalid indicator '$indicator' requested\n");
@@ -1595,18 +1643,20 @@ class MarcRecord extends BaseRecord
                 if (!isset($field['s'])) {
                     global $logger;
                     $logger->log(
-                        'MarcRecord', "Subfields missing in field $tag: " .
-                        print_r($field, true) . ", record {$this->source}." .
-                        $this->getID(), Logger::WARNING
+                        'MarcRecord', "Subfields missing in field $tag"
+                        . ", record {$this->source}." .
+                        $this->getID(),
+                        Logger::WARNING
                     );
                     continue;
                 }
                 if (!is_array($field['s'])) {
                     global $logger;
                     $logger->log(
-                        'MarcRecord', "Invalid subfields in field $tag: " .
-                        print_r($field, true) . ", record {$this->source}." .
-                        $this->getID(), Logger::ERROR
+                        'MarcRecord', "Invalid subfields in field $tag"
+                        . ", record {$this->source}." .
+                        $this->getID(),
+                        Logger::ERROR
                     );
                     continue;
                 }
@@ -1672,53 +1722,9 @@ class MarcRecord extends BaseRecord
                     && isset($this->fields['880'])
                     && ($origSub6 = $this->getSubfield($field, '6'))
                 ) {
-                    // Handle alternate script field
-                    $findSub6 = "$tag-" . substr($origSub6, 4, 2);
-                    foreach ($this->fields['880'] as $field880) {
-                        if (strncmp(
-                            $this->getSubfield($field880, '6'), $findSub6, 6
-                        ) != 0) {
-                            continue;
-                        }
-                        if ($codes) {
-                            if ($splitSubfields) {
-                                foreach ($field880['s'] as $subfield) {
-                                    $code = key($subfield);
-                                    if (isset($codes[(string)$code])) {
-                                        $data[] = current($subfield);
-                                    }
-                                }
-                            } else {
-                                $fieldContents = '';
-                                foreach ($field880['s'] as $subfield) {
-                                    $code = key($subfield);
-                                    if ($code === 0) {
-                                        $code = '0';
-                                    }
-                                    if (isset($codes[(string)$code])) {
-                                        if ($fieldContents) {
-                                            $fieldContents .= ' ';
-                                        }
-                                        $fieldContents .= current($subfield);
-                                    }
-                                }
-                                if ($fieldContents) {
-                                    $data[] = $fieldContents;
-                                }
-                            }
-                        } else {
-                            $fieldContents = '';
-                            foreach ($field880['s'] as $subfield) {
-                                if ($fieldContents) {
-                                    $fieldContents .= ' ';
-                                }
-                                $fieldContents .= current($subfield);
-                            }
-                            if ($fieldContents) {
-                                $data[] = $fieldContents;
-                            }
-                        }
-                    }
+                    $this->getAlternateScriptSubfields(
+                        $tag, $origSub6, $codes, $splitSubfields
+                    );
                 }
                 if ($firstOnly) {
                     break 2;
@@ -1728,6 +1734,71 @@ class MarcRecord extends BaseRecord
         if ($stripTrailingPunctuation) {
             foreach ($data as &$item) {
                 $item = MetadataUtils::stripTrailingPunctuation($item);
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * Get the subfields for any alternate script field
+     *
+     * @param string  $tag            Field code
+     * @param string  $sub6           Subfield 6 in original script identifying the
+     * alt field
+     * @param array   $codes          Array of subfield codes in keys
+     * @param boolean $splitSubfields Whether to split subfields to separate array
+     * items
+     *
+     * @return array
+     */
+    protected function getAlternateScriptSubfields($tag, $sub6, $codes,
+        $splitSubfields = false
+    ) {
+        $data = [];
+        $findSub6 = "$tag-" . substr($sub6, 4, 2);
+        foreach ($this->fields['880'] as $field880) {
+            if (strncmp(
+                $this->getSubfield($field880, '6'), $findSub6, 6
+            ) != 0) {
+                continue;
+            }
+            if ($codes) {
+                if ($splitSubfields) {
+                    foreach ($field880['s'] as $subfield) {
+                        $code = key($subfield);
+                        if (isset($codes[(string)$code])) {
+                            $data[] = current($subfield);
+                        }
+                    }
+                } else {
+                    $fieldContents = '';
+                    foreach ($field880['s'] as $subfield) {
+                        $code = key($subfield);
+                        if ($code === 0) {
+                            $code = '0';
+                        }
+                        if (isset($codes[(string)$code])) {
+                            if ($fieldContents) {
+                                $fieldContents .= ' ';
+                            }
+                            $fieldContents .= current($subfield);
+                        }
+                    }
+                    if ($fieldContents) {
+                        $data[] = $fieldContents;
+                    }
+                }
+            } else {
+                $fieldContents = '';
+                foreach ($field880['s'] as $subfield) {
+                    if ($fieldContents) {
+                        $fieldContents .= ' ';
+                    }
+                    $fieldContents .= current($subfield);
+                }
+                if ($fieldContents) {
+                    $data[] = $fieldContents;
+                }
             }
         }
         return $data;
@@ -2065,5 +2136,144 @@ class MarcRecord extends BaseRecord
             false, true, true
         );
         return array_merge($languages, $languages2);
+    }
+
+    /**
+     * Normalize a relator code
+     *
+     * @param string $relator Relator
+     *
+     * @return string
+     */
+    protected function normalizeRelator($relator)
+    {
+        $relator = trim($relator);
+        $relator = preg_replace('/\p{P}+/', '', $relator);
+        $relator = mb_strtolower($relator, 'UTF-8');
+        return $relator;
+    }
+
+    /**
+     * Normalize relator codes
+     *
+     * @param array $relators Relators
+     *
+     * @return array
+     */
+    protected function normalizeRelators($relators)
+    {
+        return array_map([$this, 'normalizeRelator'], $relators);
+    }
+
+    /**
+     * Get authors by relator codes
+     *
+     * @param array  $fieldSpecs        Fields to retrieve
+     * @param array  $relators          Allowed relators
+     * @param string $noRelatorRequired Field that is accepted if it doesn't have a
+     * relator
+     *
+     * @return array Array keyed by 'names' for author names, 'fuller' for fuller
+     * forms and 'relators' for relator codes
+     */
+    protected function getAuthorsByRelator($fieldSpecs, $relators,
+        $noRelatorRequired
+    ) {
+        $result = ['names' => [], 'fuller' => [], 'relators' => []];
+        foreach ($fieldSpecs as $tag => $subfieldList) {
+            foreach ($this->getFields($tag) as $field) {
+                $fieldRelators = $this->normalizeRelators(
+                    $this->getSubfieldsArray($field, ['4' => 1, 'e' => 1])
+                );
+                if (!empty($fieldRelators) || !in_array($tag, $noRelatorRequired)) {
+                    if (empty(array_intersect($relators, $fieldRelators))) {
+                        continue;
+                    }
+                }
+                $terms = $this->getSubfields($field, $subfieldList);
+                if (isset($this->fields['880'])
+                    && $sub6 = $this->getSubfield($field, ['6' => 1])
+                ) {
+                    $terms = array_merge(
+                        $terms,
+                        $this->getAlternateScriptSubfields(
+                            $tag, $sub6, $subfieldList
+                        )
+                    );
+                }
+                $fuller = ($tag == '100' || $tag == '700')
+                    ? $this->getSubfields($field, ['q' => 1]) : '';
+                $result['names'][] = MetadataUtils::stripTrailingPunctuation($terms);
+                if ($fuller) {
+                    $result['fuller'][]
+                        = MetadataUtils::stripTrailingPunctuation($fuller);
+                }
+                if ($fieldRelators) {
+                    $result['relators'][] = reset($fieldRelators);
+                } else {
+                    $result['relators'][] = '-';
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get primary authors
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthors()
+    {
+        $fieldSpecs = [
+            '100' => ['a' => 1, 'b' => 1, 'c' => 1, 'd' => 1],
+            '700' => [
+                'a' => 1, 'q' => 1, 'b' => 1, 'c' => 1, 'd' => 1
+            ]
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs, $this->primaryAuthorRelators, ['100']
+        );
+    }
+
+    /**
+     * Get secondary authors
+     *
+     * @return array
+     */
+    protected function getSecondaryAuthors()
+    {
+        $fieldSpecs = [
+            '100' => ['a' => 1, 'b' => 1, 'c' => 1, 'd' => 1],
+            '700' => [
+                'a' => 1, 'q' => 1, 'b' => 1, 'c' => 1, 'd' => 1
+            ]
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs, $this->secondaryAuthorRelators, ['700']
+        );
+    }
+
+    /**
+     * Get corporate authors
+     *
+     * @return array
+     */
+    protected function getCorporateAuthors()
+    {
+        $fieldSpecs = [
+            '110' => ['a' => 1, 'b' => 1],
+            '111' => ['a' => 1, 'b' => 1],
+            '710' => ['a' => 1, 'b' => 1],
+            '711' => ['a' => 1, 'b' => 1]
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs,
+            array_merge(
+                $this->primaryAuthorRelators, $this->secondaryAuthorRelators
+            ),
+            ['110', '111', '710', '711']
+        );
     }
 }

@@ -137,8 +137,10 @@ class LidoRecord extends BaseRecord
 
         $data['institution'] = $this->getLegalBodyName();
 
-        $data['author'] = $this->getActor($this->mainEvent);
-        $data['author-letter'] = $data['author'];
+        $data['author'] = $this->getActors($this->mainEvent);
+        if (!empty($data['author'])) {
+            $data['author_sort'] = $data['author'][0];
+        }
 
         $data['topic'] = $data['topic_facet'] = $this->getSubjectTerms();
         $data['material'] = $this->getEventMaterials($this->mainEvent);
@@ -419,15 +421,16 @@ class LidoRecord extends BaseRecord
     }
 
     /**
-     * Return name of first actor associated with specified event
+     * Return names of actors associated with specified event
      *
      * @param string|string[] $event Which events to use (omit to scan all events)
      * @param string|string[] $role  Which roles to use (omit to scan all roles)
      *
-     * @return string
+     * @return array
      */
-    protected function getActor($event = null, $role = null)
+    protected function getActors($event = null, $role = null)
     {
+        $result = [];
         foreach ($this->getEventNodes($event) as $eventNode) {
             foreach ($eventNode->eventActor as $actorNode) {
                 foreach ($actorNode->actorInRole as $roleNode) {
@@ -440,7 +443,7 @@ class LidoRecord extends BaseRecord
                                 is_array($role) ? $role : [$role]
                             )
                         ) {
-                            return (string)$roleNode->actor->nameActorSet
+                            $result[] = (string)$roleNode->actor->nameActorSet
                                 ->appellationValue[0];
                         }
                     }
@@ -448,7 +451,7 @@ class LidoRecord extends BaseRecord
             }
         }
 
-        return '';
+        return $result;
     }
 
     /**

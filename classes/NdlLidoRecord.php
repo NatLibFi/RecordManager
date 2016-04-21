@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2014.
+ * Copyright (C) The National Library of Finland 2012-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -103,11 +103,11 @@ class NdlLidoRecord extends LidoRecord
         $data['topic'] = $data['topic_facet'] = $topic;
         // END OF TUUSULA FIX
 
-        $data['artist_str_mv'] = $this->getActor('valmistus', 'taiteilija');
-        $data['photographer_str_mv'] = $this->getActor('valmistus', 'valokuvaaja');
-        $data['finder_str_mv'] = $this->getActor('löytyminen', 'löytäjä');
-        $data['manufacturer_str_mv'] = $this->getActor('valmistus', 'valmistaja');
-        $data['designer_str_mv'] = $this->getActor('suunnittelu', 'suunnittelija');
+        $data['artist_str_mv'] = $this->getActors('valmistus', 'taiteilija');
+        $data['photographer_str_mv'] = $this->getActors('valmistus', 'valokuvaaja');
+        $data['finder_str_mv'] = $this->getActors('löytyminen', 'löytäjä');
+        $data['manufacturer_str_mv'] = $this->getActors('valmistus', 'valmistaja');
+        $data['designer_str_mv'] = $this->getActors('suunnittelu', 'suunnittelija');
         // Keep classification_str_mv for backward-compatibility for now
         $data['classification_txt_mv'] = $data['classification_str_mv']
             = $this->getClassifications();
