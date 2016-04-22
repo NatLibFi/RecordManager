@@ -692,4 +692,16 @@ class MetadataUtils
         }
         return false;
     }
+
+    /**
+     * Strip control characters from the string
+     *
+     * @param string $str String
+     *
+     * @return string
+     */
+    static public function stripControlCharacters($str)
+    {
+        return str_replace(["\r", "\n", "\t"], '', $str);
+    }
 }

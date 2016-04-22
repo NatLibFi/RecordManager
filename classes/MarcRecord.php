@@ -626,13 +626,15 @@ class MarcRecord extends BaseRecord
     {
         $field = $this->getField('941');
         if ($field) {
-            return MetadataUtils::stripControlChars($this->getSubfield($field, 'a'));
+            return MetadataUtils::stripControlCharacters(
+                $this->getSubfield($field, 'a')
+            );
         }
         $field = $this->getField('773');
         if (!$field) {
             return '';
         }
-        return MetadataUtils::stripControlChars(
+        return MetadataUtils::stripControlCharacters(
             MetadataUtils::stripTrailingPunctuation($this->getSubfield($field, 'w'))
         );
     }
