@@ -96,11 +96,11 @@ class MarcRecord extends BaseRecord
     /**
      * Constructor
      *
-     * @param string $data     Metadata
-     * @param string $oaiID    Record ID received from OAI-PMH (or empty string for
-     * file import)
-     * @param string $source   Source ID
-     * @param string $idPrefix Record ID prefix
+     * @param string|array $data     Metadata
+     * @param string       $oaiID    Record ID received from OAI-PMH (or empty string
+     * for file import)
+     * @param string       $source   Source ID
+     * @param string       $idPrefix Record ID prefix
      */
     public function __construct($data, $oaiID, $source, $idPrefix)
     {
@@ -118,9 +118,9 @@ class MarcRecord extends BaseRecord
             );
         }
 
-        $firstChar = substr($data, 0, 1);
+        $firstChar = is_array($data) ? '{' : substr($data, 0, 1);
         if ($firstChar === '{') {
-            $fields = json_decode($data, true);
+            $fields = is_array($data) ? $data : json_decode($data, true);
             if (!isset($fields['v'])) {
                 // Old format, convert...
                 $this->fields = [];

@@ -113,16 +113,23 @@ class SolrUpdater
      */
     protected $httpParams = [];
 
-    protected $mergedFields = ['institution', 'collection', 'building',
-        'language', 'physical', 'publisher', 'publishDate', 'contents', 'url',
-        'ctrlnum', 'author=author2', 'author2', 'author_additional', 'title_alt',
-        'title_old', 'title_new', 'dateSpan', 'series', 'series2', 'topic', 'genre',
-        'geographic', 'era', 'long_lat', 'isbn', 'issn'];
+    protected $mergedFields = [
+        'institution', 'collection', 'building', 'language', 'physical', 'publisher',
+        'publishDate', 'contents', 'url', 'ctrlnum', 'callnumber-raw',
+        'callnumber-search',
+        'author', 'author_variant', 'author_role', 'author_fuller', 'author_sort',
+        'author2', 'author2_variant', 'author2_role', 'author2_fuller',
+        'author_corporate', 'author_corporate_role', 'author_additional',
+        'title_alt', 'title_old', 'title_new', 'dateSpan', 'series', 'series2',
+        'topic', 'genre', 'geographic', 'era', 'long_lat', 'isbn', 'issn'
+    ];
 
-    protected $singleFields = ['title', 'title_short', 'title_full',
-        'title_sort', 'author-letter', 'format', 'publishDateSort',
-        'callnumber', 'callnumber-a', 'callnumber-first-code', 'illustrated',
-        'first_indexed', 'last-indexed'];
+    protected $singleFields = [
+        'title', 'title_short', 'title_full', 'title_sort', 'author_sort', 'format',
+        'publishDateSort', 'callnumber-first', 'callnumber-subject',
+        'callnumber-label', 'callnumber-sort', 'illustrated', 'first_indexed',
+        'last-indexed'
+    ];
 
     protected $enrichments = [];
 
@@ -1578,8 +1585,8 @@ class SolrUpdater
 
         $ignoreFields = [
             'allfields', 'allfields_unstemmed', 'fulltext', 'fulltext_unstemmed',
-            'spelling', 'spellingShingle', 'authorStr', 'author2Str', 'publisherStr',
-            'publishDateSort', 'topic_browse', 'hierarchy_browse',
+            'spelling', 'spellingShingle', 'authorStr', 'author_facet',
+            'publisherStr', 'publishDateSort', 'topic_browse', 'hierarchy_browse',
             'first_indexed', 'last_indexed', '_version_',
             'fullrecord', 'title_full_unstemmed', 'title_fullStr',
             'author_additionalStr'

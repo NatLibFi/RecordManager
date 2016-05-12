@@ -30,6 +30,7 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 require_once 'HTTP/Request2.php';
+require_once 'BaseHarvest.php';
 
 /**
  * HarvestOaiPmh Class
@@ -43,29 +44,8 @@ require_once 'HTTP/Request2.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class HarvestOaiPmh
+class HarvestOaiPmh extends BaseHarvest
 {
-    /**
-     * Logger
-     *
-     * @var Logger
-     */
-    protected $log;
-
-    /**
-     * Mongo database
-     *
-     * @var MongoDB
-     */
-    protected $db;
-
-    /**
-     * Base URL of repository
-     *
-     * @var string
-     */
-    protected $baseURL;
-
     /**
      * Set to harvest (null for all records)
      *
@@ -102,60 +82,11 @@ class HarvestOaiPmh
     protected $idReplace = [];
 
     /**
-     * Source ID
-     *
-     * @var string
-     */
-    protected $source;
-
-    /**
-     * Harvest start date (null for all records)
-     *
-     * @var string
-     */
-    protected $startDate = null;
-
-    /**
-     * Harvest end date (null for all records)
-     *
-     * @var string
-     */
-    protected $endDate = null;
-
-    /**
      * Date granularity
      *
      * @var string
      */
     protected $granularity = 'auto';
-
-    /**
-     * Whether to display debug output
-     *
-     * @var bool
-     */
-    protected $verbose = false;
-
-    /**
-     * Harvested normal record count
-     *
-     * @var int
-     */
-    protected $normalRecords = 0;
-
-    /**
-     * Harvested deleted record count
-     *
-     * @var int
-     */
-    protected $deletedRecords = 0;
-
-    /**
-     * Total number of records processed
-     *
-     * @var int
-     */
-    protected $totalCount = 0;
 
     /**
      * File where to dump OAI requests and responses for debugging
@@ -170,13 +101,6 @@ class HarvestOaiPmh
      * @var string
      */
     protected $resumptionToken = '';
-
-    /**
-     * Transformation applied to the OAI-PMH responses before processing
-     *
-     * @var XslTransformation
-     */
-    protected $transformation = null;
 
     /**
      * Date received from server via Identify command. Used to set the last
@@ -195,39 +119,11 @@ class HarvestOaiPmh
     protected $ignoreNoRecordsMatch = false;
 
     /**
-     * Number of times to attempt a request before bailing out
-     *
-     * @var int
-     */
-    protected $maxTries = 5;
-
-    /**
-     * Seconds to wait between request attempts
-     *
-     * @var int
-     */
-    protected $retryWait = 30;
-
-    /**
-     * Callback for handling harvested records
-     *
-     * @var callable
-     */
-    protected $callback = null;
-
-    /**
      * Current response being processed
      *
      * @var DOMDocument
      */
     protected $xml = null;
-
-    /**
-     * HTTP_Request2 configuration params
-     *
-     * @array
-     */
-    protected $httpParams = [];
 
     /**
      * Constructor.
@@ -245,25 +141,12 @@ class HarvestOaiPmh
     public function __construct(
         $logger, $db, $source, $basePath, $settings, $startToken = ''
     ) {
+        parent::__construct($logger, $db, $source, $basePath, $settings);
+
         global $configArray;
 
-        $this->log = $logger;
-        $this->db = $db;
+        $this->resumptionToken = $startToken;
 
-        // Don't time out during harvest
-        set_time_limit(0);
-
-        // Check if we have a start date
-        $this->source = $source;
-        $this->loadHarvestDate();
-
-         $this->resumptionToken = $startToken;
-
-        // Set up base URL:
-        if (empty($settings['url'])) {
-            throw new Exception("Missing base URL for {$source}");
-        }
-        $this->baseURL = $settings['url'];
         if (isset($settings['set'])) {
             $this->set = $settings['set'];
         }
@@ -282,9 +165,6 @@ class HarvestOaiPmh
         if (isset($settings['dateGranularity'])) {
             $this->granularity = $settings['dateGranularity'];
         }
-        if (isset($settings['verbose'])) {
-            $this->verbose = $settings['verbose'];
-        }
         if (isset($settings['debuglog'])) {
             $this->debugLog = $settings['debuglog'];
         }
@@ -298,41 +178,14 @@ class HarvestOaiPmh
                     . $settings['oaipmhTransformation']
                 );
             }
-            $this->transformation = new XSLTProcessor();
-            $this->transformation->importStylesheet($style);
+            $this->preXslt = new XSLTProcessor();
+            $this->preXslt->importStylesheet($style);
         }
         if (isset($settings['ignoreNoRecordsMatch'])) {
             $this->ignoreNoRecordsMatch = $settings['ignoreNoRecordsMatch'];
         }
 
-        if (isset($configArray['Harvesting']['max_tries'])) {
-            $this->maxTries = $configArray['Harvesting']['max_tries'];
-        }
-        if (isset($configArray['Harvesting']['retry_wait'])) {
-            $this->retryWait = $configArray['Harvesting']['retry_wait'];
-        }
-
-        if (isset($configArray['HTTP'])) {
-            $this->httpParams += $configArray['HTTP'];
-        }
-
-        $this->message('Identifying server');
-        $response = $this->sendRequest('Identify');
-        if ($this->granularity == 'auto') {
-            $this->granularity = trim(
-                $this->getSingleNode(
-                    $this->getSingleNode($response, 'Identify'),
-                    'granularity'
-                )->nodeValue
-            );
-            $this->message("Detected date granularity: {$this->granularity}");
-        }
-        $this->serverDate = $this->normalizeDate(
-            $this->getSingleNode($response, 'responseDate')->nodeValue
-        );
-        $this->message(
-            'Current server date: ' . date('Y-m-d\TH:i:s\Z', $this->serverDate)
-        );
+        $this->identifyServer();
     }
 
     /**
@@ -368,9 +221,7 @@ class HarvestOaiPmh
      */
     public function harvest($callback)
     {
-        $this->normalRecords = 0;
-        $this->deletedRecords = 0;
-        $this->callback = $callback;
+        $this->initHarvest($callback);
 
         if ($this->resumptionToken) {
             $this->message('Incremental harvest from given resumptionToken');
@@ -389,10 +240,10 @@ class HarvestOaiPmh
 
         // Keep harvesting as long as a resumption token is provided:
         while ($token !== false) {
-            $this->harvestProgressReport();
+            $this->reportResults();
             $token = $this->getRecordsByToken($token);
         }
-        $this->harvestProgressReport();
+        $this->reportResults();
     }
 
     /**
@@ -404,9 +255,7 @@ class HarvestOaiPmh
      */
     public function listIdentifiers($callback)
     {
-        $this->normalRecords = 0;
-        $this->deletedRecords = 0;
-        $this->callback = $callback;
+        $this->initHarvest($callback);
 
         if ($this->resumptionToken) {
             $this->message('Incremental listing from given resumptionToken');
@@ -418,31 +267,21 @@ class HarvestOaiPmh
 
         // Keep harvesting as long as a resumption token is provided:
         while ($token !== false) {
-            $this->listIdentifiersProgressReport();
+            $this->reportListIdentifiersResults();
             $token = $this->getIdentifiersByToken($token);
         }
-        $this->listIdentifiersProgressReport();
+        $this->reportListIdentifiersResults();
     }
 
     /**
-     * Return total count of harvested records (normal + deleted)
-     *
-     * @return int
-     */
-    public function getHarvestedRecordCount()
-    {
-        return $this->normalRecords + $this->deletedRecords;
-    }
-
-    /**
-     * Display harvesting progress
+     * Report the results of harvesting
      *
      * @return void
      */
-    protected function harvestProgressReport()
+    protected function reportResults()
     {
         $this->message(
-            'Harvested ' . $this->normalRecords . ' normal records and '
+            'Harvested ' . $this->changedRecords . ' normal records and '
             . $this->deletedRecords . ' deleted records from ' . $this->source
         );
     }
@@ -452,10 +291,10 @@ class HarvestOaiPmh
      *
      * @return void
      */
-    protected function listIdentifiersProgressReport()
+    protected function reportListIdentifiersResults()
     {
         $this->message(
-            'Listed ' . $this->normalRecords . ' normal records and '
+            'Listed ' . $this->changedRecords . ' normal records and '
             . $this->deletedRecords . ' deleted records from ' . $this->source
         );
     }
@@ -491,19 +330,6 @@ class HarvestOaiPmh
 
         // Translate to a timestamp:
         return strtotime($date);
-    }
-
-    /**
-     * Save the harvest date.
-     *
-     * @param string $date Date to save.
-     *
-     * @return void
-     */
-    protected function saveHarvestDate($date)
-    {
-        $state = ['_id' => "Last Harvest Date {$this->source}", 'value' => $date];
-        $this->db->state->save($state, ['socketTimeoutMS' => 300000]);
     }
 
     /**
@@ -606,8 +432,8 @@ class HarvestOaiPmh
         if (!$doc->loadXML($xml, LIBXML_PARSEHUGE)) {
             return false;
         }
-        if ($this->transformation) {
-            return $this->transformation->transformToDoc($doc);
+        if (null !== $this->preXslt) {
+            return $this->preXslt->transformToDoc($doc);
         }
         return $doc;
     }
@@ -713,7 +539,7 @@ class HarvestOaiPmh
     }
 
     /**
-     * Save harvested records and track the end date.
+     * Process the records.
      *
      * @param object $records SimpleXML records.
      *
@@ -722,7 +548,6 @@ class HarvestOaiPmh
     protected function processRecords($records)
     {
         $count = count($records);
-        $this->totalCount += $count;
         $this->message("Processing $count records", true);
 
         // Loop through the records:
@@ -775,7 +600,7 @@ class HarvestOaiPmh
                     $attr->value = $node->nodeValue;
                     $recordNode->appendChild($attr);
                 }
-                $this->normalRecords += call_user_func(
+                $this->changedRecords += call_user_func(
                     $this->callback,
                     $id,
                     false,
@@ -814,7 +639,7 @@ class HarvestOaiPmh
         }
         $dateFormat = $this->granularity == 'YYYY-MM-DD'
             ? 'Y-m-d' : 'Y-m-d\TH:i:s\Z';
-        $this->saveHarvestDate(date($dateFormat, $this->serverDate));
+        $this->saveLastHarvestedDate(date($dateFormat, $this->serverDate));
         return false;
     }
 
@@ -915,27 +740,9 @@ class HarvestOaiPmh
                 $this->deletedRecords++;
             } else {
                 call_user_func($this->callback, $id, false);
-                $this->normalRecords++;
+                $this->changedRecords++;
             }
         }
-    }
-
-    /**
-     * Log a message and display on console in verbose mode.
-     *
-     * @param string $msg     Message
-     * @param bool   $verbose Flag telling whether this is considered verbose output
-     * @param int    $level   Logging level
-     *
-     * @return void
-     */
-    protected function message($msg, $verbose = false, $level = Logger::INFO)
-    {
-        $msg = "[{$this->source}] $msg";
-        if ($this->verbose) {
-            echo "$msg\n";
-        }
-        $this->log->log('harvestOaiPmh', $msg, $level);
     }
 
     /**
@@ -973,6 +780,32 @@ class HarvestOaiPmh
             }
         }
         return $result;
+    }
+
+    /**
+     * Identify the server and setup some setting based on the response
+     *
+     * @return void
+     */
+    protected function identifyServer()
+    {
+        $this->message('Identifying server');
+        $response = $this->sendRequest('Identify');
+        if ($this->granularity == 'auto') {
+            $this->granularity = trim(
+                $this->getSingleNode(
+                    $this->getSingleNode($response, 'Identify'),
+                    'granularity'
+                )->nodeValue
+            );
+            $this->message("Detected date granularity: {$this->granularity}");
+        }
+        $this->serverDate = $this->normalizeDate(
+            $this->getSingleNode($response, 'responseDate')->nodeValue
+        );
+        $this->message(
+            'Current server date: ' . date('Y-m-d\TH:i:s\Z', $this->serverDate)
+        );
     }
 }
 

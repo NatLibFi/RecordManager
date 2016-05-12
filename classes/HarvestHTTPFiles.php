@@ -38,34 +38,28 @@ require_once 'HTTP/Request2.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class HarvestHTTPFiles
+class HarvestHTTPFiles extends BaseHarvest
 {
-    protected $log;                   // Logger
-    protected $db;                    // Mongo database
-    protected $baseURL;               // URL to harvest from
-    protected $filePrefix = '';       // File name prefix
-    protected $fileSuffix = '';       // File name prefix
-    protected $source;                // Source ID
-    protected $startDate = null;      // Harvest start date (null for all records)
-    protected $endDate = null;        // Harvest end date (null for all records)
-    protected $verbose = false;       // Whether to display debug output
-    protected $preXSLT = false;       // Pre-transformation XSLT
-    protected $changedRecords = 0;    // Harvested changed record count
-    protected $deletedRecords = 0;    // Harvested deleted record count
-    protected $unchangedRecords = 0;  // Harvested unchanged record count
-    protected $recordElem = 'record'; // Element to look for in retrieved XML
-    protected $callback = null;       // Record handling callback
-
-    // As we harvest records, we want to track the most recent date encountered
-    // so we can set a start point for the next harvest.
-    protected $trackedEndDate = '';
+    /**
+     * File name prefix
+     *
+     * @var string
+     */
+    protected $filePrefix = '';
 
     /**
-     * HTTP_Request2 configuration params
+     * File name suffix
      *
-     * @array
+     * @var string
      */
-    protected $httpParams = [];
+    protected $fileSuffix = '';
+
+    /**
+     * Element to look for in retrieved XML
+     *
+     * @var string
+     */
+    protected $recordElem = 'record';
 
     /**
      * Constructor.
@@ -80,97 +74,14 @@ class HarvestHTTPFiles
      */
     public function __construct($logger, $db, $source, $basePath, $settings)
     {
-        global $configArray;
+        parent::__construct($logger, $db, $source, $basePath, $settings);
 
-        $this->log = $logger;
-        $this->db = $db;
-
-        // Check if we have a start date
-        $this->source = $source;
-        $this->loadLastHarvestedDate();
-
-        // Set up base URL:
-        if (empty($settings['url'])) {
-            throw new Exception("Missing base URL for {$source}");
-        }
-        $this->baseURL = $settings['url'];
         if (isset($settings['filePrefix'])) {
             $this->filePrefix = $settings['filePrefix'];
         }
         if (isset($settings['fileSuffix'])) {
             $this->fileSuffix = $settings['fileSuffix'];
         }
-        if (isset($settings['verbose'])) {
-            $this->verbose = $settings['verbose'];
-        }
-
-        if (isset($settings['preTransformation'])) {
-            $style = new DOMDocument();
-            $style->load(
-                $basePath . '/transformations/' . $settings['preTransformation']
-            );
-            $this->preXSLT = new XSLTProcessor();
-            $this->preXSLT->importStylesheet($style);
-            $this->preXSLT->setParameter('', 'source_id', $this->source);
-        }
-
-        if (isset($configArray['HTTP'])) {
-            $this->httpParams += $configArray['HTTP'];
-        }
-    }
-
-    /**
-     * Return the number of changed records
-     *
-     * @return number
-     */
-    public function getChangedRecordCount()
-    {
-        return $this->changedRecords;
-    }
-
-    /**
-     * Return the number of deleted records
-     *
-     * @return number
-     */
-    public function getDeletedRecordCount()
-    {
-        return $this->deletedRecords;
-    }
-
-    /**
-     * Return the number of unchanged records
-     *
-     * @return number
-     */
-    public function getUnchangedRecordCount()
-    {
-        return $this->unchangedRecords;
-    }
-
-    /**
-     * Set a start date for the harvest (only harvest records AFTER this date).
-     *
-     * @param string $date Start date (YYYY-MM-DD format).
-     *
-     * @return void
-     */
-    public function setStartDate($date)
-    {
-        $this->startDate = $date;
-    }
-
-    /**
-     * Set an end date for the harvest (only harvest records BEFORE this date).
-     *
-     * @param string $date End date (YYYY-MM-DD format).
-     *
-     * @return void
-     */
-    public function setEndDate($date)
-    {
-        $this->endDate = $date;
     }
 
     /**
@@ -183,7 +94,7 @@ class HarvestHTTPFiles
      */
     public function harvest($callback)
     {
-        $this->callback = $callback;
+        $this->initHarvest($callback);
 
         if (isset($this->startDate)) {
             $this->message('Incremental harvest from timestamp ' . $this->startDate);
@@ -197,7 +108,7 @@ class HarvestHTTPFiles
 
             $this->message('Processing the records...', true);
 
-            if ($this->preXSLT) {
+            if (null !== $this->preXslt) {
                 $data = $this->preTransform($data);
             }
 
@@ -233,54 +144,20 @@ class HarvestHTTPFiles
             }
             libxml_use_internal_errors($saveUseErrors);
 
-            $this->changedRecords = 0;
-            $this->unchangedRecords = 0;
-            $this->deletedRecords = 0;
-
             $this->processRecords($xml);
 
             $this->reportResults();
         }
         if ($this->trackedEndDate > 0) {
-            $this->saveLastHarvestedDate();
+            $this->saveLastHarvestedDate($this->trackedEndDate);
         }
-    }
-
-    /**
-     * Retrieve the date from the database and use it as our start
-     * date if it is available.
-     *
-     * @return void
-     */
-    protected function loadLastHarvestedDate()
-    {
-        $state = $this->db->state->findOne(
-            ['_id' => "Last Harvest Date {$this->source}"]
-        );
-        if (isset($state)) {
-            $this->setStartDate($state['value']);
-        }
-    }
-
-    /**
-     * Save the tracked date as the last harvested date.
-     *
-     * @return void
-     */
-    protected function saveLastHarvestedDate()
-    {
-        $state = [
-            '_id' => "Last Harvest Date {$this->source}",
-            'value' => $this->trackedEndDate
-        ];
-        $this->db->state->save($state, ['socketTimeoutMS' => 300000]);
     }
 
     /**
      * Retrieve list of files to be harvested, filter by date
      *
      * @throws Exception
-     * @return string[]
+     * @return array
      */
     protected function retrieveFileList()
     {
@@ -565,19 +442,6 @@ class HarvestHTTPFiles
     }
 
     /**
-     * Create an OAI style ID
-     *
-     * @param string $sourceId Source ID
-     * @param string $id       Record ID
-     *
-     * @return string OAI ID
-     */
-    protected function createOaiId($sourceId, $id)
-    {
-        return get_class() . ":$sourceId:$id";
-    }
-
-    /**
      * Normalize a record
      *
      * @param SimpleXMLElement $record Record
@@ -628,21 +492,7 @@ class HarvestHTTPFiles
         }
         libxml_use_internal_errors($saveUseErrors);
 
-        return $this->preXSLT->transformToXml($doc);
-    }
-
-    /**
-     * Report the results of harvesting
-     *
-     * @return void
-     */
-    protected function reportResults()
-    {
-        $this->message(
-            'Harvested ' . $this->changedRecords . ' updated, '
-            . $this->unchangedRecords . ' unchanged and '
-            . $this->deletedRecords . ' deleted records'
-        );
+        return $this->preXslt->transformToXml($doc);
     }
 
     /**

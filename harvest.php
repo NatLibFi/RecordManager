@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2013.
+ * Copyright (C) The National Library of Finland 2011-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -53,8 +53,9 @@ Parameters:
 --until             Override harvesting end date
 --all               Harvest from beginning (overrides --from)
 --verbose           Enable verbose output
---override          Override initial resumption token
-                    (e.g. to resume failed connection)
+--override          Override initial resumption token e.g. to resume harvesting after
+                    a connection failure. For Sierra API harvesting this is the
+                    offset to start from.
 --reharvest[=date]  This is a full reharvest, delete all records that were not
                     received during the harvesting (or were modified before [date]).
                     Implies --all.

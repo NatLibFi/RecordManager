@@ -36,6 +36,7 @@ require_once 'HarvestOaiPmh.php';
 require_once 'HarvestMetaLib.php';
 require_once 'HarvestMetaLibExport.php';
 require_once 'HarvestSfx.php';
+require_once 'HarvestSierraApi.php';
 require_once 'XslTransformation.php';
 require_once 'MetadataUtils.php';
 require_once 'SolrUpdater.php';
@@ -898,14 +899,25 @@ class RecordManager
                         );
                     }
 
-                    $harvest = new HarvestOAIPMH(
-                        $this->log,
-                        $this->db,
-                        $source,
-                        $this->basePath,
-                        $settings,
-                        $startResumptionToken
-                    );
+                    if ($this->harvestType == 'sierra') {
+                        $harvest = new HarvestSierraApi(
+                            $this->log,
+                            $this->db,
+                            $source,
+                            $this->basePath,
+                            $settings,
+                            $startResumptionToken
+                        );
+                    } else {
+                        $harvest = new HarvestOAIPMH(
+                            $this->log,
+                            $this->db,
+                            $source,
+                            $this->basePath,
+                            $settings,
+                            $startResumptionToken
+                        );
+                    }
                     if (isset($harvestFromDate)) {
                         $harvest->setStartDate(
                             $harvestFromDate == '-' ? null : $harvestFromDate
@@ -961,6 +973,14 @@ class RecordManager
                         // The repository doesn't support reporting deletions, so
                         // list all identifiers and mark deleted records that were
                         // not found
+
+                        if (!is_callable([$harvest, 'listIdentifiers'])) {
+                            throw new Exception(
+                                get_class($harvest)
+                                . ' does not support listing identifiers'
+                            );
+                        }
+
                         $processDeletions = true;
                         $interval = null;
                         $deletions = explode(':', $settings['deletions']);
@@ -1194,9 +1214,7 @@ class RecordManager
             'deleteRecords',
             "Deleting last harvest date from data source '$sourceId'"
         );
-        $this->db->state->remove(
-            ['_id' => "Last Harvest Date $sourceId"], ['safe' => true]
-        );
+        $this->db->state->remove(['_id' => "Last Harvest Date $sourceId"]);
         $this->log->log('deleteRecords', "Deletion of $sourceId completed");
     }
 
