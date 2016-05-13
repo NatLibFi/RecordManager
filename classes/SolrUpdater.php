@@ -731,27 +731,45 @@ class SolrUpdater
             // Take the last indexing date now and store it when done
             $lastIndexingDate = new MongoDate();
 
-            if (!$delete && $this->threadedMergedRecordUpdate && !$compare) {
-                $childPid = pcntl_fork();
-                if ($childPid == -1) {
-                    throw new Exception(
-                        "Could not fork merged record background update child"
-                    );
+            // Only process merged records if any of the selected sources has
+            // deduplication enabled
+            $processDedupRecords = true;
+            if ($sourceId) {
+                $processDedupRecords = false;
+                $sources = explode(',', $sourceId);
+                foreach ($sources as $source) {
+                    if (isset($this->settings[$source]['dedup'])
+                        && $this->settings[$source]['dedup']
+                    ) {
+                        $processDedupRecords = true;
+                        break;
+                    }
                 }
             }
 
-            if (!$childPid) {
-                $needCommit = $this->processMerged(
-                    isset($mongoFromDate) ? $mongoFromDate : null,
-                    $sourceId,
-                    $singleId,
-                    $noCommit,
-                    $delete,
-                    $compare
-                );
+            if ($processDedupRecords) {
+                if (!$delete && $this->threadedMergedRecordUpdate && !$compare) {
+                    $childPid = pcntl_fork();
+                    if ($childPid == -1) {
+                        throw new Exception(
+                            "Could not fork merged record background update child"
+                        );
+                    }
+                }
 
-                if ($childPid !== null) {
-                    exit($needCommit ? 1 : 0);
+                if (!$childPid) {
+                    $needCommit = $this->processMerged(
+                        isset($mongoFromDate) ? $mongoFromDate : null,
+                        $sourceId,
+                        $singleId,
+                        $noCommit,
+                        $delete,
+                        $compare
+                    );
+
+                    if ($childPid !== null) {
+                        exit($needCommit ? 1 : 0);
+                    }
                 }
             }
 
