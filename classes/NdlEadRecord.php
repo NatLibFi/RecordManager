@@ -154,21 +154,19 @@ class NdlEadRecord extends EadRecord
      */
     protected function getUsageRights()
     {
-        if (!isset($this->doc->userestrict->p)
-            && !isset($this->doc->accessrestrict->p)
-        ) {
-            return ['restricted'];
-        }
-
-        foreach ($this->doc->userestrict->p as $restrict) {
-            if (strstr((string)$restrict, 'No known copyright restrictions')) {
-                return ['No known copyright restrictions'];
+        if (isset($this->doc->userestrict->p)) {
+            foreach ($this->doc->userestrict->p as $restrict) {
+                if (strstr((string)$restrict, 'No known copyright restrictions')) {
+                    return ['No known copyright restrictions'];
+                }
             }
         }
 
-        foreach ($this->doc->accessrestrict->p as $restrict) {
-            if (strstr((string)$restrict, 'No known copyright restrictions')) {
-                return ['No known copyright restrictions'];
+        if (isset($this->doc->accessrestrict->p)) {
+            foreach ($this->doc->accessrestrict->p as $restrict) {
+                if (strstr((string)$restrict, 'No known copyright restrictions')) {
+                    return ['No known copyright restrictions'];
+                }
             }
         }
         return ['restricted'];
