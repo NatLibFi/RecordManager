@@ -70,8 +70,6 @@ class NdlQdcRecord extends QdcRecord
         }
 
         if ($range = $this->getPublicationDateRange()) {
-            $data['search_sdaterange_mv'][] = $data['publication_sdaterange']
-                = MetadataUtils::dateRangeToNumeric($range);
             $data['search_daterange_mv'][] = $data['publication_daterange']
                 = MetadataUtils::dateRangeToStr($range);
         }

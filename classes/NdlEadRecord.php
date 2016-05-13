@@ -55,8 +55,6 @@ class NdlEadRecord extends EadRecord
         $doc = $this->doc;
 
         $unitDateRange = $this->parseDateRange((string)$doc->did->unitdate);
-        $data['search_sdaterange_mv'] = $data['unit_sdaterange']
-            = MetadataUtils::dateRangeToNumeric($unitDateRange);
         $data['search_daterange_mv'] = $data['unit_daterange']
             = MetadataUtils::dateRangeToStr($unitDateRange);
         if ($unitDateRange) {

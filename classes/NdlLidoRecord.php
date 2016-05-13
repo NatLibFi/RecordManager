@@ -118,8 +118,6 @@ class NdlLidoRecord extends LidoRecord
                 $data['main_date_str'] = MetadataUtils::extractYear($range[0]);
                 $data['main_date'] = $this->validateDate($range[0]);
             }
-            $data['search_sdaterange_mv'][]
-                = MetadataUtils::dateRangeToNumeric($range);
             $data['search_daterange_mv'][]
                 = MetadataUtils::dateRangeToStr($range);
         }
@@ -130,9 +128,6 @@ class NdlLidoRecord extends LidoRecord
                 $data['main_date_str'] = MetadataUtils::extractYear($daterange[0]);
                 $data['main_date'] = $this->validateDate($daterange[0]);
             }
-            $data['search_sdaterange_mv'][]
-                = $data['creation_sdaterange']
-                    = MetadataUtils::dateRangeToNumeric($daterange);
             $data['search_daterange_mv'][]
                 = $data['creation_daterange']
                     = MetadataUtils::dateRangeToStr($daterange);
@@ -144,14 +139,8 @@ class NdlLidoRecord extends LidoRecord
             foreach ($dateSources as $dateSource => $field) {
                 $daterange = $this->getDateRange($dateSource);
                 if ($daterange) {
-                    $data[$field . '_sdaterange']
-                        = MetadataUtils::dateRangeToNumeric($daterange);
                     $data[$field . '_daterange']
                         = MetadataUtils::dateRangeToStr($daterange);
-                    if (!isset($data['search_sdaterange_mv'])) {
-                        $data['search_sdaterange_mv'][]
-                            = $data[$field . '_sdaterange'];
-                    }
                     if (!isset($data['search_daterange_mv'])) {
                         $data['search_daterange_mv'][]
                             = $data[$field . '_daterange'];
@@ -165,11 +154,9 @@ class NdlLidoRecord extends LidoRecord
             }
         }
         if ($range = $this->getDateRange('käyttö')) {
-            $data['use_sdaterange'] = MetadataUtils::dateRangeToNumeric($range);
             $data['use_daterange'] = MetadataUtils::dateRangeToStr($range);
         }
         if ($range = $this->getDateRange('löytyminen')) {
-            $data['finding_sdaterange'] = MetadataUtils::dateRangeToNumeric($range);
             $data['finding_daterange'] = MetadataUtils::dateRangeToStr($range);
         }
 

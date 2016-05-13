@@ -136,8 +136,6 @@ class NdlMarcRecord extends MarcRecord
                 = $this->validateDate($data['main_date_str'] . '-01-01T00:00:00Z');
         }
         if ($range = $this->getPublicationDateRange()) {
-            $data['search_sdaterange_mv'][] = $data['publication_sdaterange']
-                = MetadataUtils::dateRangeToNumeric($range);
             $data['search_daterange_mv'][] = $data['publication_daterange']
                 = MetadataUtils::dateRangeToStr($range);
         }

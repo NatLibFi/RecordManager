@@ -59,8 +59,6 @@ class NdlDcRecord extends DcRecord
         }
 
         if ($range = $this->getPublicationDateRange()) {
-            $data['search_sdaterange_mv'][] = $data['publication_sdaterange']
-                = metadataUtils::dateRangeToNumeric($range);
             $data['search_daterange_mv'][] = $data['publication_daterange']
                 = metadataUtils::dateRangeToStr($range);
         }
