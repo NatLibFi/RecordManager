@@ -138,7 +138,7 @@ class EadRecord extends BaseRecord
                 }
             }
         }
-        if ($data['author']) {
+        if (!empty($data['author'])) {
             $data['author_sort'] = $data['author'][0];
         }
 
