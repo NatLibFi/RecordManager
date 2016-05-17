@@ -191,9 +191,9 @@ class BaseHarvest
             $style->load(
                 $basePath . '/transformations/' . $settings['preTransformation']
             );
-            $this->preXSLT = new XSLTProcessor();
-            $this->preXSLT->importStylesheet($style);
-            $this->preXSLT->setParameter('', 'source_id', $this->source);
+            $this->preXslt = new XSLTProcessor();
+            $this->preXslt->importStylesheet($style);
+            $this->preXslt->setParameter('', 'source_id', $this->source);
         }
 
         if (isset($configArray['Harvesting']['max_tries'])) {
@@ -351,16 +351,17 @@ class BaseHarvest
      *
      * @param SimpleXMLElement $record Record
      *
-     * @return string|bool ID if found, bool if record is missing ID
+     * @return string|bool ID if found, false if record is missing ID
      * @throws Exception
      */
     protected function extractID($record)
     {
-        $nodes = $record->xpath("controlfield[@tag='001']");
-        if (empty($nodes)) {
-            return false;
+        foreach ($record->controlfield as $field) {
+            if ($field->attributes()->tag == '001') {
+                return (string)$field;
+            }
         }
-        return trim((string)$nodes[0]);
+        return false;
     }
 
     /**
@@ -415,7 +416,7 @@ class BaseHarvest
         }
         libxml_use_internal_errors($saveUseErrors);
 
-        return $this->preXSLT->transformToXml($doc);
+        return $this->preXslt->transformToXml($doc);
     }
 
     /**

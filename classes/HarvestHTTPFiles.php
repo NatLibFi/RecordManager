@@ -375,52 +375,6 @@ class HarvestHTTPFiles extends BaseHarvest
     }
 
     /**
-     * Check if the record is deleted.
-     * This implementation works for MARC records.
-     *
-     * @param SimpleXMLElement $record Record
-     *
-     * @return bool
-     */
-    protected function isDeleted($record)
-    {
-        $status = substr($record->leader, 5, 1);
-        return $status == 'd';
-    }
-
-    /**
-     * Check if the record is modified.
-     * This implementation works for MARC records.
-     *
-     * @param SimpleXMLElement $record Record
-     *
-     * @return bool
-     */
-    protected function isModified($record)
-    {
-        $status = substr($record->leader, 5, 1);
-        return $status != 'd';
-    }
-
-    /**
-     * Extract record ID.
-     * This implementation works for MARC records.
-     *
-     * @param SimpleXMLElement $record Record
-     *
-     * @return string|bool ID if found, bool if record is missing ID
-     * @throws Exception
-     */
-    protected function extractID($record)
-    {
-        $nodes = $record->xpath("controlfield[@tag='001']");
-        if (empty($nodes)) {
-            return false;
-        }
-        return trim((string)$nodes[0]);
-    }
-
-    /**
      * Extract file date from the file name or directory list response data
      *
      * @param string $filename    File name
@@ -451,66 +405,6 @@ class HarvestHTTPFiles extends BaseHarvest
      */
     protected function normalizeRecord(&$record, $id)
     {
-    }
-
-    /**
-     * Do pre-transformation
-     *
-     * @param string $xml XML to transform
-     *
-     * @return string Transformed XML
-     * @throws Exception
-     */
-    protected function preTransform($xml)
-    {
-        $doc = new DOMDocument();
-        $saveUseErrors = libxml_use_internal_errors(true);
-        libxml_clear_errors();
-        $result = $doc->loadXML($xml, LIBXML_PARSEHUGE);
-        if ($result === false || libxml_get_last_error() !== false) {
-            $this->message(
-                'Invalid XML received, trying encoding fix...',
-                false,
-                Logger::WARNING
-            );
-            $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
-            libxml_clear_errors();
-            $result = $doc->loadXML($xml, LIBXML_PARSEHUGE);
-        }
-        if ($result === false || libxml_get_last_error() !== false) {
-            libxml_use_internal_errors($saveUseErrors);
-            $errors = '';
-            foreach (libxml_get_errors() as $error) {
-                if ($errors) {
-                    $errors .= '; ';
-                }
-                $errors .= 'Error ' . $error->code . ' at ' . $error->line . ':'
-                    . $error->column . ': ' . $error->message;
-            }
-            $this->message("Could not parse XML: $errors\n", false, Logger::FATAL);
-            throw new Exception("Failed to parse XML");
-        }
-        libxml_use_internal_errors($saveUseErrors);
-
-        return $this->preXslt->transformToXml($doc);
-    }
-
-    /**
-     * Log a message and display on console in verbose mode.
-     *
-     * @param string $msg     Message
-     * @param bool   $verbose Flag telling whether this is considered verbose output
-     * @param int    $level   Logging level
-     *
-     * @return void
-     */
-    protected function message($msg, $verbose = false, $level = Logger::INFO)
-    {
-        $msg = "[{$this->source}] $msg";
-        if ($this->verbose) {
-            echo "$msg\n";
-        }
-        $this->log->log(get_class($this), $msg, $level);
     }
 }
 
