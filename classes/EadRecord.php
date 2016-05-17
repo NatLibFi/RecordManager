@@ -148,9 +148,14 @@ class EadRecord extends BaseRecord
             }
         }
 
-        if ($doc->did->origination) {
+        if ($doc->did->origination->corpname) {
             $data['author_corporate'] = trim(
                 (string)$doc->did->origination->corpname
+            );
+        }
+        if ($doc->did->origination->persname) {
+            $data['author2'] = trim(
+                (string)$doc->did->origination->persname
             );
         }
 
