@@ -832,15 +832,18 @@ EOF;
         );
         $date = $this->toOaiDate($record['updated']->sec);
         $status = $record['deleted'] ? ' status="deleted"' : '';
-        return <<<EOF
-    <record>
+
+        $result = <<<EOF
       <header$status>
         <identifier>$id</identifier>
         <datestamp>$date</datestamp>
 $setSpecs      </header>
-$metadata    </record>
-
 EOF;
+        if ($includeMetadata) {
+            return "<record>\n" . $result."\n" . $metadata . "</record>\n\n";
+        } else {
+            return $result."\n\n";
+	}
     }
 
     /**
