@@ -812,10 +812,23 @@ class RecordManager
         if (empty($this->dataSourceSettings)) {
             $this->log->log(
                 'harvest',
-                "Please add data source settings to datasources.ini",
+                'Please add data source settings to datasources.ini',
                 Logger::FATAL
             );
             throw new Exception("Data source settings missing in datasources.ini");
+        }
+
+        if ($reharvest && !is_string($reharvest) && $startResumptionToken) {
+            $this->log->log(
+                'harvest',
+                'Reharvest start date must be specified when used with the'
+                . ' resumption token override option',
+                Logger::FATAL
+            );
+            throw new Exception(
+                'Reharvest start date must be specified when used with the'
+                . ' resumption token override option'
+            );
         }
 
         $excludedSources = isset($exclude) ? explode(',', $exclude) : [];
