@@ -195,12 +195,12 @@ class OaiPmhProvider
             die();
         }
         $xml = $this->createRecord($record, $prefix, true);
-        print <<<EOF
+        print <<<EOT
   <GetRecord>
 $xml
   </GetRecord>
 
-EOF;
+EOT;
     }
 
     /**
@@ -216,7 +216,7 @@ EOF;
         $admin = $this->escape($configArray['OAI-PMH']['admin_email']);
         $earliestDate = $this->toOaiDate($this->getEarliestDateStamp());
 
-        print <<<EOF
+        print <<<EOT
 <Identify>
   <repositoryName>$name</repositoryName>
   <baseURL>$base</baseURL>
@@ -228,7 +228,7 @@ EOF;
 <!--  <compression>deflate</compression> -->
 </Identify>
 
-EOF;
+EOT;
     }
 
     /**
@@ -310,10 +310,10 @@ EOF;
             die();
         }
 
-        print <<<EOF
-          <$verb>
+        print <<<EOT
+  <$verb>
 
-EOF;
+EOT;
 
         $maxRecords = $configArray['OAI-PMH']['result_limit'];
         $count = 0;
@@ -338,18 +338,18 @@ EOF;
                             ]
                         )
                     );
-                    print <<<EOF
+                    print <<<EOT
     <resumptionToken cursor="$position">$token</resumptionToken>
 
-EOF;
+EOT;
                 }
                 break;
             }
         }
-        print <<<EOF
+        print <<<EOT
   </$verb>
 
-EOF;
+EOT;
     }
 
     /**
@@ -394,10 +394,10 @@ EOF;
             }
         }
 
-        print <<<EOF
+        print <<<EOT
   <ListMetadataFormats>
 
-EOF;
+EOT;
 
         // Map to OAI-PMH formats
         foreach ($formats as $key => $dummy) {
@@ -407,22 +407,22 @@ EOF;
                     $schema = $settings['schema'];
                     $namespace = $settings['namespace'];
 
-                    print <<<EOF
+                    print <<<EOT
     <metadataFormat>
       <metadataPrefix>$prefix</metadataPrefix>
       <schema>$schema</schema>
       <metadataNamespace>$namespace</metadataNamespace>
     </metadataFormat>
 
-EOF;
+EOT;
                     break;
                 }
             }
         }
-        print <<<EOF
+        print <<<EOT
   </ListMetadataFormats>
 
-EOF;
+EOT;
     }
 
     /**
@@ -432,26 +432,26 @@ EOF;
      */
     protected function listSets()
     {
-        print <<<EOF
+        print <<<EOT
   <ListSets>
 
-EOF;
+EOT;
 
         foreach ($this->sets as $id => $set) {
             $id = $this->escape($id);
             $name = $this->escape($set['name']);
 
-            print <<<EOF
+            print <<<EOT
     <set>
       <setSpec>$id</setSpec>
       <setName>$name</setName>
     </set>
-EOF;
+EOT;
         }
 
-        print <<<EOF
+        print <<<EOT
   </ListSets>
-EOF;
+EOT;
     }
 
     /**
@@ -491,7 +491,7 @@ EOF;
             }
         }
 
-        print <<<EOF
+        print <<<EOT
 <?xml version="1.0" encoding="UTF-8"?>
 <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -500,7 +500,7 @@ EOF;
   <responseDate>$date</responseDate>
   <request$arguments>$base</request>
 
-EOF;
+EOT;
     }
 
     /**
@@ -808,21 +808,20 @@ EOF;
                 $end = strpos($metadata, '>');
                 $metadata = substr($metadata, $end + 1);
             }
-            $metadata = <<<EOF
+            $metadata = <<<EOT
       <metadata>
         $metadata
       </metadata>
-
-EOF;
+EOT;
         }
 
         $setSpecs = '';
         foreach ($this->getRecordSets($record) as $id) {
             $id = $this->escape($id);
-            $setSpecs .= <<<EOF
+            $setSpecs .= <<<EOT
         <setSpec>$id</setSpec>
 
-EOF;
+EOT;
         }
 
         $id = $this->escape(
@@ -832,15 +831,24 @@ EOF;
         );
         $date = $this->toOaiDate($record['updated']->sec);
         $status = $record['deleted'] ? ' status="deleted"' : '';
-        return <<<EOF
-    <record>
+
+        $header = <<<EOT
       <header$status>
         <identifier>$id</identifier>
         <datestamp>$date</datestamp>
 $setSpecs      </header>
-$metadata    </record>
+EOT;
 
-EOF;
+        if ($includeMetadata) {
+            return <<<EOT
+    <record>
+$header
+$metadata
+    </record>
+
+EOT;
+        }
+        return "$header\n";
     }
 
     /**
