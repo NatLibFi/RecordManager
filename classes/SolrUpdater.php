@@ -1371,18 +1371,16 @@ class SolrUpdater
                 if (is_array($data[$field])) {
                     $newValues = [];
                     foreach ($data[$field] as $value) {
-                        $replacement = null;
+                        $replacement = $value;
                         if (isset($map[$value])) {
                             $replacement = $map[$value];
                         } elseif (isset($map['##default'])) {
                             $replacement = $map['##default'];
                         }
-                        if (null !== $replacement) {
-                            if (is_array($replacement)) {
-                                $newValues += $replacement;
-                            } else {
-                                $newValues[] = $replacement;
-                            }
+                        if (is_array($replacement)) {
+                            $newValues = array_merge($newValues, $replacement);
+                        } else {
+                            $newValues[] = $replacement;
                         }
                     }
                     if (null !== $newValues) {
