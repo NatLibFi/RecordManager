@@ -104,7 +104,6 @@ class RecordManager
      */
     protected $dedupHandler = null;
 
-
     /**
      * Harvested MetaLib Records
      *

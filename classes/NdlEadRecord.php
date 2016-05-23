@@ -129,7 +129,6 @@ class NdlEadRecord extends EadRecord
             $data['material'] = (string)$doc->did->physdesc;
         }
 
-
         if (isset($doc->did->userestrict->p)) {
             $data['rights'] = (string)$doc->did->userestrict->p;
         } else if (isset($doc->did->accessrestrict->p)) {

@@ -605,7 +605,7 @@ class MetadataUtils
      *
      * @return string
      */
-    static public function createSortableString($str)
+    public static function createSortableString($str)
     {
         $str = preg_replace_callback(
             '/(\d+)/',
@@ -626,7 +626,7 @@ class MetadataUtils
      *
      * @return boolean
      */
-    static public function isHiddenComponentPart($settings, $record, $metadataRecord)
+    public static function isHiddenComponentPart($settings, $record, $metadataRecord)
     {
         if (isset($record['host_record_id'])) {
             if ($settings['componentParts'] == 'merge_all') {
@@ -671,7 +671,7 @@ class MetadataUtils
      *
      * @return string
      */
-    static public function stripControlCharacters($str)
+    public static function stripControlCharacters($str)
     {
         return str_replace(["\r", "\n", "\t"], '', $str);
     }

@@ -576,7 +576,6 @@ class NdlMarcRecord extends MarcRecord
         );
         $data['callnumber-first-code'] = substr($data['callnumber-a'], 0, 1);
 
-
         return $data;
     }
 
