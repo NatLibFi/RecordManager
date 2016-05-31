@@ -350,10 +350,6 @@ class NdlMarcRecord extends MarcRecord
             } elseif ($source == 'udk') {
             }
         }
-        if (isset($data['classification_txt_mv'])) {
-            $data['allfields']
-                = array_merge($data['allfields'], $data['classification_txt_mv']);
-        }
 
         // Keep classification_str_mv for backward-compatibility for now
         if (isset($data['classification_txt_mv'])) {
@@ -552,29 +548,6 @@ class NdlMarcRecord extends MarcRecord
         );
         $data['callnumber-sort'] = empty($data['callnumber-raw'])
             ? '' : $data['callnumber-raw'][0];
-
-        // Legacy callnumber fields. TODO: Remove when VuFind 1 is gone.
-        $data['callnumber'] = strtoupper(
-            str_replace(
-                ' ',
-                '',
-                $this->getFirstFieldSubfields(
-                    [
-                        [MarcRecord::GET_NORMAL, '080', ['a' => 1, 'b' => 1]],
-                        [MarcRecord::GET_NORMAL, '084', ['a' => 1, 'b' => 1]],
-                        [MarcRecord::GET_NORMAL, '050', ['a' => 1, 'b' => 1]]
-                    ]
-                )
-            )
-        );
-        $data['callnumber-a'] = $this->getFirstFieldSubfields(
-            [
-                [MarcRecord::GET_NORMAL, '080', ['a' => 1]],
-                [MarcRecord::GET_NORMAL, '084', ['a' => 1]],
-                [MarcRecord::GET_NORMAL, '050', ['a' => 1]]
-            ]
-        );
-        $data['callnumber-first-code'] = substr($data['callnumber-a'], 0, 1);
 
         return $data;
     }
@@ -936,9 +909,20 @@ class NdlMarcRecord extends MarcRecord
      */
     protected function getAllFields()
     {
+        $fieldFilter = [
+            '300' => 1, '336' => 1, '337' => 1,
+        ];
         $subfieldFilter = [
             '650' => ['0' => 1, '2' => 1, '6' => 1, '8' => 1],
-            '773' => ['0' => 1, '6' => 1, '7' => 1, '8' => 1, 'w' => 1],
+            '100' => ['4' => 1],
+            '700' => ['4' => 1],
+            '710' => ['4' => 1],
+            '711' => ['4' => 1],
+            '773' => [
+                '0' => 1, '4' => 1, '6' => 1, '7' => 1, '8' => 1, 'g' => 1, 'q' => 1,
+                'w' => 1
+            ],
+            '787' => ['i' => 1],
             '979' => ['0' => 1, 'a' => 1, 'f' => 1]
         ];
         $allFields = [];
@@ -946,6 +930,9 @@ class NdlMarcRecord extends MarcRecord
         foreach ($this->getFields('020') as $field) {
             $isbns = $this->getSubfieldsArray($field, ['a' => 1, 'z' => 1]);
             foreach ($isbns as $isbn) {
+                if (strlen($isbn) < 10) {
+                    continue;
+                }
                 $allFields[] = $isbn;
                 $isbn = MetadataUtils::normalizeISBN($isbn);
                 if ($isbn) {
@@ -955,7 +942,7 @@ class NdlMarcRecord extends MarcRecord
 
         }
         foreach ($this->fields as $tag => $fields) {
-            if (($tag >= 100 && $tag < 841 && $tag != 336 && $tag != 337)
+            if (($tag >= 100 && $tag < 841 && !isset($fieldFilter[$tag]))
                 || $tag == 880 || $tag == 979
             ) {
                 foreach ($fields as $field) {
