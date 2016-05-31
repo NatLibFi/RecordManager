@@ -792,11 +792,23 @@ class HarvestOaiPmh extends BaseHarvest
         $this->message('Identifying server');
         $response = $this->sendRequest('Identify');
         if ($this->granularity == 'auto') {
+            $identify = $this->getSingleNode($response, 'Identify');
+            if ($identify === false) {
+                throw new Exception(
+                    'Could not find Identify node in the Identify response'
+                );
+            }
+            $granularity = $this->getSingleNode(
+                $identify,
+                'granularity'
+            );
+            if ($granularity === false) {
+                throw new Exception(
+                    'Could not find date granularity in the Identify response'
+                );
+            }
             $this->granularity = trim(
-                $this->getSingleNode(
-                    $this->getSingleNode($response, 'Identify'),
-                    'granularity'
-                )->nodeValue
+                $granularity->nodeValue
             );
             $this->message("Detected date granularity: {$this->granularity}");
         }
