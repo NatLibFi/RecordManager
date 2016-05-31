@@ -289,6 +289,18 @@ class MetadataUtils
                 $str = substr($str, 0, -1);
             }
         }
+        if (substr($str, -3) == '. -') {
+            $str = substr($str, 0, -3);
+        }
+        // Remove trailing parenthesis and square backets if they don't have
+        // counterparts
+        $last = substr($str, -1);
+        if (($last == ')' && strstr($str, '(') === false)
+            || ($last == ']' && strstr($str, '[') === false)
+        ) {
+            $str = substr($str, 0, -1);
+        }
+
         return $str;
     }
 
