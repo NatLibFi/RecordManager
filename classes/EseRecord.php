@@ -114,7 +114,6 @@ class EseRecord extends BaseRecord
 
         $data['format'] = (string)$doc->type;
         $data['author'] = (string)$doc->creator;
-        $data['author-letter'] = $data['author'];
         $data['author2'] = $this->getValues('contributor');
 
         $data['title'] = $data['title_full'] = (string)$doc->title;

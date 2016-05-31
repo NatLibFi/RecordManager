@@ -134,7 +134,6 @@ class DcRecord extends BaseRecord
         $data['author'] = MetadataUtils::stripTrailingPunctuation(
             (string)$doc->creator
         );
-        $data['author-letter'] = $data['author'];
         $data['author2'] = $this->getValues('contributor');
 
         $data['title'] = $data['title_full']
