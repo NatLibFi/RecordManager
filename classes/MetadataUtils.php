@@ -385,6 +385,14 @@ class MetadataUtils
         if (preg_match(
             '/^(\-?\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/', $date, $parts
         )) {
+            if ($parts[2] < 1 || $parts[2] > 12
+                || $parts[3] < 1 || $parts[3] > 31
+                || $parts[4] < 0 || $parts[4] > 23
+                || $parts[5] < 0 || $parts[5] > 59
+                || $parts[6] < 0 || $parts[6] > 59
+            ) {
+                return false;
+            }
             return strtotime($date);
         }
         return false;
