@@ -393,7 +393,11 @@ class MetadataUtils
             ) {
                 return false;
             }
-            return strtotime($date);
+            // Since strtotime is quite clever in interpreting bad dates too, convert
+            // back to make sure the interpretation was correct.
+            $resultDate = strtotime($date);
+            return gmdate('Y-m-d\TH:i:s\Z', $resultDate) == $date
+                ? $resultDate : false;
         }
         return false;
     }

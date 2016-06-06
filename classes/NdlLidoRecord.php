@@ -490,7 +490,7 @@ class NdlLidoRecord extends LidoRecord
                         'NdlLidoRecord',
                         "Failed to parse date $date, record {$this->source}."
                         . $this->getID(),
-                        Logger::ERROR
+                        Logger::WARNING
                     );
                     return null;
                 }
@@ -662,7 +662,7 @@ class NdlLidoRecord extends LidoRecord
                     'NdlLidoRecord',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
-                    Logger::ERROR
+                    Logger::WARNING
                 );
                 return null;
             }
@@ -729,7 +729,7 @@ class NdlLidoRecord extends LidoRecord
                     'NdlLidoRecord',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
-                    Logger::ERROR
+                    Logger::WARNING
                 );
                 return null;
             }
@@ -754,7 +754,7 @@ class NdlLidoRecord extends LidoRecord
                     'NdlLidoRecord',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
-                    Logger::ERROR
+                    Logger::WARNING
                 );
                 return null;
             }
@@ -783,7 +783,7 @@ class NdlLidoRecord extends LidoRecord
                     'NdlLidoRecord',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
-                    Logger::ERROR
+                    Logger::WARNING
                 );
                 return null;
             }

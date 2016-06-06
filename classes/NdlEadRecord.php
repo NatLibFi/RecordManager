@@ -215,7 +215,7 @@ class NdlEadRecord extends EadRecord
                     'NdlEadRecord',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
-                    Logger::ERROR
+                    Logger::WARNING
                 );
                 return null;
             }
@@ -248,7 +248,7 @@ class NdlEadRecord extends EadRecord
                     'NdlEadRecord',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
-                    Logger::ERROR
+                    Logger::WARNING
                 );
                 return null;
             }
