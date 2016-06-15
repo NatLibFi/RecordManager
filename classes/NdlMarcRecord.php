@@ -147,6 +147,17 @@ class NdlMarcRecord extends MarcRecord
             ),
             ' []'
         );
+        if (empty($data['publication_place_txt_mv'])) {
+            $fields = $this->getFields('264');
+            foreach ($fields as $field) {
+                if ($this->getIndicator($field, 2) == '1') {
+                    $data['publication_place_txt_mv'][] =
+                        metadataUtils::stripTrailingPunctuation(
+                            $this->getSubfield($field, 'a')
+                    );
+                }
+            }
+        }
 
         $data['subtitle_lng_str_mv'] = $this->getFieldsSubfields(
             [
