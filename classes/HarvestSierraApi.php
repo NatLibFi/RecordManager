@@ -457,6 +457,8 @@ class HarvestSierraApi extends BaseHarvest
 
         $marc['001'] = [$id];
 
+        ksort($marc);
+
         return ['v' => 3, 'f' => $marc];
     }
 
