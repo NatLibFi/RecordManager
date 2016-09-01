@@ -1151,7 +1151,7 @@ class RecordManager
             "Deleting last harvest date from data source '$sourceId'"
         );
         $this->db->state->remove(
-            ['_id' => "Last Harvest Date $sourceId"], ['safe' => true]
+            ['_id' => "Last Harvest Date $sourceId"]
         );
         $this->log->log('markDeleted', "Marking of $sourceId completed");
     }
