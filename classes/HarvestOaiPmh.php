@@ -300,22 +300,6 @@ class HarvestOaiPmh extends BaseHarvest
     }
 
     /**
-     * Retrieve the date from the database and use it as our start
-     * date if it is available.
-     *
-     * @return void
-     */
-    protected function loadHarvestDate()
-    {
-        $state = $this->db->state->findOne(
-            ['_id' => "Last Harvest Date {$this->source}"]
-        );
-        if (isset($state)) {
-            $this->setStartDate($state['value']);
-        }
-    }
-
-    /**
      * Normalize a date to a Unix timestamp.
      *
      * @param string $date Date (ISO-8601 or YYYY-MM-DD HH:MM:SS)
