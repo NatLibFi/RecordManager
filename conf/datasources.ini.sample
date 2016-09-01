@@ -158,4 +158,17 @@ filePrefix = NDL
 format = marc
 normalization = sfx.properties
 institution = SampleInstitution
+
+; Sample configuration for Sierra REST API
+[sierra]
+type = sierra
+sierraApiKey = "[api_key]"
+sierraApiSecret = "[api_secret]"
+url = https://kirjtuo1.helmet.fi/iii/sierra-api
+batchSize = 100
+suppressedBibCode3 = 'c,d,n'
+institution = SierraLib
+format = marc
+dedup = true
+building_mapping = sierra_locations.map
  

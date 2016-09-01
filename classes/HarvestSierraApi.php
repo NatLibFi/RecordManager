@@ -78,6 +78,23 @@ class HarvestSierraApi extends BaseHarvest
     protected $suppressedRecords = null;
 
     /**
+     * Number of records to request in one query. A too high number may result in
+     * error from the API or the request taking indefinitely long.
+     *
+     * @var int
+     */
+    protected $batchSize = 100;
+
+    /**
+     * Bib codes (BCODE3) suppressed from being harvested. Records having one of
+     * these codes will be processed as deleted. Usually not required if
+     * suppressedRecords = false.
+     *
+     * @var array
+     */
+    protected $suppressedBibCode3 = [];
+
+    /**
      * Constructor.
      *
      * @param object $logger   The Logger object used for logging messages.
@@ -107,6 +124,17 @@ class HarvestSierraApi extends BaseHarvest
         if (isset($settings['suppressedRecords'])) {
             $this->suppressedRecords = $settings['suppressedRecords'];
         }
+        if (isset($settings['batchSize'])) {
+            $this->batchSize = $settings['batchSize'];
+        }
+        if (isset($settings['suppressedBibCode3'])) {
+            $this->suppressedBibCode3 = explode(
+                ',', $settings['suppressedBibCode3']
+            );
+        }
+
+        // Set a timeout since Sierra may sometimes just hang without ever returning.
+        $this->httpParams['timeout'] = 600;
     }
 
     /**
@@ -122,9 +150,9 @@ class HarvestSierraApi extends BaseHarvest
 
         $harvestStartTime = time();
         $apiParams = [
-            'limit' => 500,
+            'limit' => $this->batchSize,
             'offset' => $this->startPosition,
-            'fields' => 'deleted,marc,locations',
+            'fields' => 'id,deleted,locations,fixedFields,varFields',
         ];
         if (null !== $this->suppressedRecords) {
             $apiParams['suppressed'] = $this->suppressedRecords ? 'true' : 'false';
@@ -138,21 +166,22 @@ class HarvestSierraApi extends BaseHarvest
 
         // Keep harvesting as long as a records are received:
         do {
-            $response = $this->sendRequest('bibs/', $apiParams);
+            $response = $this->sendRequest(['v3', 'bibs'], $apiParams);
             $count = $this->processResponse($response);
             $this->reportResults();
             $apiParams['offset'] += $apiParams['limit'];
         } while ($count > 0);
-        if (!empty($this->endDate)) {
-            $this->saveLastHarvestedDate(date($dateFormat, $harvestStartTime));
+
+        if (empty($this->endDate)) {
+            $this->saveLastHarvestedDate(date('Y-m-d\TH:i:s\Z', $harvestStartTime));
         }
     }
 
     /**
      * Make a request and return the response as a string
      *
-     * @param string $path   Sierra API path
-     * @param array  $params GET parameters for the method
+     * @param array $path   Sierra API path
+     * @param array $params GET parameters for the method
      *
      * @return string
      * @throws Exception
@@ -162,10 +191,11 @@ class HarvestSierraApi extends BaseHarvest
     {
         // Set up the request:
         $apiUrl = $this->baseURL;
-        if (substr($apiUrl, -1) != '/') {
-            $apiUrl .= '/';
+
+        foreach ($path as $value) {
+            $apiUrl .= '/' . urlencode($value);
         }
-        $apiUrl .= $path;
+
         $request = new HTTP_Request2(
             $apiUrl,
             HTTP_Request2::METHOD_GET,
@@ -265,7 +295,7 @@ class HarvestSierraApi extends BaseHarvest
                 false,
                 Logger::ERROR
             );
-            throw new Exception('Server returned error: '
+            throw new Exception('{$this->source}: Server returned error: '
                 . $json['ErrorCodes']['code'] . ' ' . $json['ErrorCodes']['name']
                 . ': ' . $json['ErrorCodes']['description']
             );
@@ -274,22 +304,22 @@ class HarvestSierraApi extends BaseHarvest
         if (!isset($json['entries'])) {
             return 0;
         }
+
         $count = 0;
         foreach ($json['entries'] as $record) {
             ++$count;
             $id = $record['id'];
             $oaiId = $this->createOaiId($this->source, $id);
-            $deleted = $record['deleted'];
+            $deleted = $this->isDeleted($record);
             if ($deleted) {
                 call_user_func($this->callback, $oaiId, true, null);
                 $this->deletedRecords++;
             } else {
-                $marc = $this->convertRecordToMarcArray($record);
                 $this->changedRecords += call_user_func(
                     $this->callback,
                     $oaiId,
                     false,
-                    $marc
+                    $this->convertVarFieldsToMarcArray($id, $record['varFields'])
                 );
             }
         }
@@ -306,11 +336,7 @@ class HarvestSierraApi extends BaseHarvest
     protected function renewAccessToken()
     {
         // Set up the request:
-        $apiUrl = $this->baseURL;
-        if (substr($apiUrl, -1) != '/') {
-            $apiUrl .= '/';
-        }
-        $apiUrl .= 'token';
+        $apiUrl = $this->baseURL . '/v3/token';
         $request = new HTTP_Request2(
             $apiUrl,
             HTTP_Request2::METHOD_POST,
@@ -382,38 +408,41 @@ class HarvestSierraApi extends BaseHarvest
     }
 
     /**
-     * Convert Sierra MARC JSON to our internal MARC array format
+     * Convert Sierra varFields array to our internal MARC array format
      *
-     * @param array $record Sierra record
+     * @param string $id        Sierra BIB record ID
+     * @param array  $varFields Sierra BIB record varFields
      *
      * @return array
      */
-    protected function convertRecordToMarcArray($record)
+    protected function convertVarFieldsToMarcArray($id, $varFields)
     {
-        $json = $record['marc'];
         $marc = [];
-        $marc['000'] = $json['leader'];
-        foreach ($json['fields'] as $field) {
-            if (isset($field['data'])) {
-                $data = $field['data'];
-                $newField = [
-                    'i1' => $data['ind1'],
-                    'i2' => $data['ind2'],
-                    's' => []
-                ];
-                foreach ($data['subfields'] as $subfield) {
-                    $newField['s'][] = [
-                        $subfield['code'] => $subfield['data']
+        foreach ($varFields as $varField) {
+            if ($varField['fieldTag'] == '_') {
+                $marc['000'] = $varField['content'];
+                continue;
+            }
+            if (!isset($varField['marcTag']) || $varField['marcTag'] == '852') {
+                continue;
+            }
+            if (isset($varField['subfields'])) {
+                $subfields = [];
+                foreach ($varField['subfields'] as $subfield) {
+                    $subfields[] = [
+                        $subfield['tag'] => $subfield['content']
                     ];
                 }
-                $marc[$field['tag']][] = $newField;
-            } elseif ($field['tag'] !== '000') {
-                $marc[$field['tag']][] = $field['value'];
+                $marc[$varField['marcTag']][] = [
+                    'i1' => $varField['ind1'],
+                    'i2' => $varField['ind2'],
+                    's' => $subfields
+                ];
+            } else {
+                $marc[$varField['marcTag']][] = $varField['content'];
             }
         }
-        $marc['001'] = [$record['id']];
 
-        unset($marc['852']);
         if (!empty($record['locations'])) {
             foreach ($record['locations'] as $location) {
                 $marc['852'][] = [
@@ -426,7 +455,33 @@ class HarvestSierraApi extends BaseHarvest
             }
         }
 
+        $marc['001'] = [$id];
+
         return ['v' => 3, 'f' => $marc];
+    }
+
+    /**
+     * Check if the record is deleted.
+     * This implementation works for MARC records.
+     *
+     * @param array $record Sierra Bib Record
+     *
+     * @return bool
+     */
+    protected function isDeleted($record)
+    {
+        if ($record['deleted']) {
+            return true;
+        }
+        if (isset($record['fixedFields']['31'])) {
+            if (in_array(
+                $record['fixedFields']['31']['value'], $this->suppressedBibCode3)
+            ) {
+                echo "Suppressed: " . $record['fixedFields']['31']['value'] . "\n";
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
