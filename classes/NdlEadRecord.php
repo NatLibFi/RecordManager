@@ -49,7 +49,7 @@ class NdlEadRecord extends EadRecord
      *
      * @return string[]
      */
-    public function toSolrArray($prependTitleWithSubtitle)
+    public function toSolrArray($prependTitleWithSubtitle = false)
     {
         $data = parent::toSolrArray($prependTitleWithSubtitle);
         $doc = $this->doc;

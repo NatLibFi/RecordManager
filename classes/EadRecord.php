@@ -108,7 +108,7 @@ class EadRecord extends BaseRecord
      *
      * @return string[]
      */
-    public function toSolrArray($prependTitleWithSubtitle)
+    public function toSolrArray($prependTitleWithSubtitle = false)
     {
         $data = [];
 
