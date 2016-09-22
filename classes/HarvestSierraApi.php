@@ -376,6 +376,11 @@ class HarvestSierraApi extends BaseHarvest
                 }
 
                 $json = json_decode($response->getBody(), true);
+                if (empty($json['access_token'])) {
+                    throw new Exception(
+                        'No access token in response: ' . $response->getBody()
+                    );
+                }
                 $this->accessToken = $json['access_token'];
                 break;
             } catch (Exception $e) {
@@ -456,6 +461,15 @@ class HarvestSierraApi extends BaseHarvest
         }
 
         $marc['001'] = [$id];
+
+        if (empty($marc['000'])) {
+            $this->log->log(
+                'convertVarFieldsToMarcArray',
+                "No leader found for record $id in {$this->source}",
+                Logger::WARNING
+            );
+            $marc['000'] = '00000nam  2200000   4500';
+        }
 
         ksort($marc);
 
