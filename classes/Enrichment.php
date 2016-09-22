@@ -135,14 +135,15 @@ class Enrichment
     /**
      * A helper function that retrieves external metadata and caches it
      *
-     * @param string   $url     URL to fetch
-     * @param string   $id      ID of the entity to fetch
-     * @param string[] $headers Optional headers to add to the request
+     * @param string   $url          URL to fetch
+     * @param string   $id           ID of the entity to fetch
+     * @param string[] $headers      Optional headers to add to the request
+     * @param array    $ignoreErrors Error codes to ignore
      *
      * @return string Metadata (typically XML)
      * @throws Exception
      */
-    protected function getExternalData($url, $id, $headers = [])
+    protected function getExternalData($url, $id, $headers = [], $ignoreErrors = [])
     {
         $cached = $this->db->uriCache->find(
             [
@@ -190,7 +191,8 @@ class Enrichment
             }
             if ($try < $this->maxTries) {
                 $code = $response->getStatus();
-                if ($code >= 300 && $code != 404) {
+                if ($code >= 300 && $code != 404 && !in_array($code, $ignoreErrors)
+                ) {
                     $this->log->log(
                         'getExternalData',
                         "HTTP request for '$url' failed ($code), retrying "
@@ -205,11 +207,11 @@ class Enrichment
         }
 
         $code = is_null($response) ? 999 : $response->getStatus();
-        if ($code >= 300 && $code != 404) {
+        if ($code >= 300 && $code != 404 && !in_array($code, $ignoreErrors)) {
             throw new Exception("Enrichment failed to fetch '$url': $code");
         }
 
-        $data = $code != 404 ? $response->getBody() : '';
+        $data = $code < 300 ? $response->getBody() : '';
 
         $this->db->uriCache->save(
             [

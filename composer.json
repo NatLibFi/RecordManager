@@ -1,0 +1,14 @@
+{
+    "name": "natlibfi/recordmanager",
+    "description": "Record management utility for VuFind",
+    "authors": [
+        {
+            "name": "Ere Maijala",
+            "email": "ere.maijala@helsinki.fi"
+        }
+    ],
+    "license": "GPL-2.0",
+    "require": {
+        "phayes/geophp": "^1.2"
+    }
+}

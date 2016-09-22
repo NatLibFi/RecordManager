@@ -197,6 +197,32 @@ class NdlLidoRecord extends LidoRecord
     }
 
     /**
+     * Get locations for geocoding
+     *
+     * @return array
+     */
+    public function getLocations()
+    {
+        $locations = parent::getLocations();
+        $result = [];
+        // Try to split address lists like "Helsinki, Kalevankatu 17, 19" to separate
+        // entries
+        foreach ($locations as $location) {
+            if (preg_match('/(.+?) \d+, *\d+/', $location, $bodyMatches)
+                && preg_match_all('/ (\d+)(,|$)/', $location, $matches)
+            ) {
+                $body = $bodyMatches[1];
+                foreach ($matches[1] as $match) {
+                    $result[] = "$body $match";
+                }
+            } else {
+                $result[] = $location;
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Return usage rights if any
      *
      * @return array ['restricted'] or a more specific id if restricted,

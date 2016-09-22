@@ -242,6 +242,67 @@ class LidoRecord extends BaseRecord
     }
 
     /**
+     * Get locations for geocoding
+     *
+     * @return array
+     */
+    public function getLocations()
+    {
+        $locations = [];
+        foreach ([$this->mainEvent, $this->usagePlaceEvent] as $event) {
+            foreach ($this->getEventNodes($event) as $eventNode) {
+                // If there is already gml in the record, don't return anything for
+                // geocoding
+                if (!empty($ventNode->eventPlace->gml)) {
+                    return [];
+                }
+                if (!empty(
+                    $eventNode->eventPlace->place->namePlaceSet->appellationValue
+                )) {
+                    $mainPlace = (string)$eventNode->eventPlace->place->namePlaceSet
+                        ->appellationValue;
+                    $subLocation = $this->getSubLocation(
+                        $eventNode->eventPlace->place
+                    );
+                    if ($mainPlace && !$subLocation) {
+                        $locations = array_merge(
+                            $locations,
+                            explode('/', $mainPlace)
+                        );
+                    } else {
+                        $locations[] = "$mainPlace $subLocation";
+                    }
+                } elseif (!empty($eventNode->eventPlace->displayPlace)) {
+                    // Split multiple locations separated with a slash
+                    $locations = array_merge(
+                        $locations,
+                        preg_split(
+                            '/[\/;]/', (string)$eventNode->eventPlace->displayPlace
+                        )
+                    );
+                }
+            }
+        }
+        return $locations;
+    }
+
+    /**
+     * Get the last sublocation (partOfPlace) of a place
+     *
+     * @param simpleXMLElement $place Place element
+     *
+     * @return string
+     */
+    protected function getSubLocation($place)
+    {
+        if (!empty($place->partOfPlace)) {
+            return $this->getSubLocation($place->partOfPlace);
+        }
+        return isset($place->namePlaceSet->appellationValue)
+            ? (string)$place->namePlaceSet->appellationValue : '';
+    }
+
+    /**
      * Return the object measurements. Only the display element is used currently
      * until processing more granular data is needed.
      *
