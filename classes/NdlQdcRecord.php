@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2014.
+ * Copyright (C) The National Library of Finland 2012-2016.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -115,6 +115,24 @@ class NdlQdcRecord extends QdcRecord
 
         if ($this->doc->permaddress) {
             $data['url'] = (string)$this->doc->permaddress[0];
+        }
+
+        foreach ($this->doc->coverage as $coverage) {
+            $attrs = $coverage->attributes();
+            if ($attrs->type == 'geocoding') {
+                if (preg_match(
+                    '/([\d\.]+)\s*,\s*([\d\.]+)/', (string)$coverage, $matches
+                )) {
+                    if ($attrs->format == 'lon,lat') {
+                        $lon = $matches[1];
+                        $lat = $matches[2];
+                    } else {
+                        $lat = $matches[1];
+                        $lon = $matches[2];
+                    }
+                    $data['location_geo'][] = "POINT($lon $lat)";
+                }
+            }
         }
 
         $data['source_str_mv'] = $this->source;
