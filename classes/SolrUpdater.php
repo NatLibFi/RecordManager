@@ -345,13 +345,14 @@ class SolrUpdater
                 "Creating merged record list $collectionName (from $from, stage 1/2)"
             );
 
-            $records = $this->db->record->find($params, ['dedup_id' => 1])
-                ->timeout($this->cursorTimeout);
             $prevId = null;
             $tmpCollectionName = $collectionName . '_tmp_' . getmypid();
             $collection = $this->db->selectCollection($tmpCollectionName);
             $count = 0;
             $totalMergeCount = 0;
+            $records = $this->db->record->find(
+                $params, ['_id' => 1, 'dedup_id' => 1, 'update_needed' => 1]
+            )->timeout($this->cursorTimeout);
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
                     $this->log->log(
@@ -1250,13 +1251,22 @@ class SolrUpdater
                     Logger::ERROR
                 );
             } else {
-                $components = $this->db->record->find(
-                    [
-                        'source_id' => $record['source_id'],
-                        'host_record_id' => $record['linking_id'],
-                        'deleted' => false
-                    ]
-                )->timeout($this->cursorTimeout);
+                $params = [
+                    'host_record_id' => $record['linking_id'],
+                    'deleted' => false
+                ];
+                if (!empty($settings['componentPartSourceId'])) {
+                    $sourceParams = [];
+                    foreach ($settings['componentPartSourceId'] as $componentSource
+                    ) {
+                        $sourceParams[] = ['source_id' => $componentSource];
+                    }
+                    $params['$or'] = $sourceParams;
+                } else {
+                    $params['source_id'] = $record['source_id'];
+                }
+                $components = $this->db->record->find($params)
+                    ->timeout($this->cursorTimeout);
                 $hasComponentParts = $components->hasNext();
                 $format = $metadataRecord->getFormat();
                 $merge = false;
