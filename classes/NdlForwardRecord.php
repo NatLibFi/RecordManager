@@ -47,7 +47,10 @@ class NdlForwardRecord extends ForwardRecord
      * @var array
      */
     protected $primaryAuthorRelators = [
-        'A00', 'A03', 'A06', 'A50', 'A99',
+        'A00', 'A01', 'A02', 'A03', 'A05', 'A06', 'A08', 'A09', 'A10', 'A11', 'A12',
+        'A13', 'A31', 'A38', 'A43', 'A50', 'A99',
+        // Some of these are from MarcRecord
+        'adp', 'aud', 'chr', 'cmm', 'cmp', 'cre', 'dub', 'inv'
     ];
 
     /**
@@ -56,7 +59,22 @@ class NdlForwardRecord extends ForwardRecord
      * @var array
      */
     protected $secondaryAuthorRelators = [
-        'D01', 'D02', 'E01', 'F01', 'F02', 'ctb', 'rce'
+        'D01', 'D02', 'D99', 'E01', 'E02', 'E03', 'E04', 'E05', 'E06', 'E08',
+        'F01', 'F02', 'F99', 'ctb', 'exp', 'rce', 'wst', 'sds', 'oth',
+        // These are copied from MarcRecord
+        'act', 'anm', 'ann', 'arr', 'acp', 'ar', 'ard', 'aft', 'aud', 'aui', 'aus',
+        'bjd', 'bpd', 'cll', 'ctg', 'chr', 'cng', 'clb', 'clr', 'cmm', 'cwt', 'com',
+        'cpl', 'cpt', 'cpe', 'ccp', 'cnd', 'cos', 'cot', 'coe', 'cts', 'ctt', 'cte',
+        'ctb', 'crp', 'cst', 'cov', 'cur', 'dnc', 'dtc', 'dto', 'dfd', 'dft', 'dfe',
+        'dln', 'dpc', 'dsr', 'drt', 'dis', 'drm', 'edt', 'elt', 'egr', 'etr', 'fac',
+        'fld', 'flm', 'frg', 'ilu', 'ill', 'ins', 'itr', 'ivr', 'ldr', 'lsa', 'led',
+        'lil', 'lit', 'lie', 'lel', 'let', 'lee', 'lbt', 'lgd', 'ltg', 'lyr', 'mrb',
+        'mte', 'msd', 'mus', 'nrt', 'opn', 'org', 'pta', 'pth', 'prf', 'pht', 'ptf',
+        'ptt', 'pte', 'prt', 'pop', 'prm', 'pro', 'pmn', 'prd', 'prg', 'pdr', 'pbd',
+        'ppt', 'ren', 'rpt', 'rth', 'rtm', 'res', 'rsp', 'rst', 'rse', 'rpy', 'rsg',
+        'rev', 'rbr', 'sce', 'sad', 'scr', 'scl', 'spy', 'std', 'sng', 'sds', 'spk',
+        'stm', 'str', 'stl', 'sht', 'ths', 'trl', 'tyd', 'tyg', 'vdg', 'voc', 'wde',
+        'wdc', 'wam'
     ];
 
     /**
@@ -65,7 +83,7 @@ class NdlForwardRecord extends ForwardRecord
      * @var array
      */
     protected $corporateAuthorRelators = [
-        'dst', 'prn', 'fnd', 'lbr'
+        'E10', 'dst', 'prn', 'fnd', 'lbr'
     ];
 
     /**
@@ -90,61 +108,95 @@ class NdlForwardRecord extends ForwardRecord
         $data['publisher'] = $this->getPublishers();
         $data['genre'] = $this->getGenres();
 
+        $data['topic'] = $this->getSubjects();
+
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
+
+        if ($urls = $this->getOnlineUrls()) {
+            $data['online_boolean'] = true;
+            $data['online_str_mv'] = $this->source;
+            foreach ($urls as $url) {
+                $data['online_urls_str_mv'][] = json_encode($url);
+            }
+        }
 
         return $data;
     }
 
+
     /**
-     * Get authors by relator codes
+     * Return host record ID for component part
      *
-     * @param array $relators Allowed relators
-     *
-     * @return array Array keyed by 'names' for author names, 'ids' for author ids
-     * and 'relators' for relator codes
+     * @return string
      */
-    protected function getAuthorsByRelator($relators)
+    public function getHostRecordID()
     {
-        $result = ['names' => [], 'ids' => [], 'relators' => []];
-        foreach ($this->getMainElement()->HasAgent as $agent) {
-            $relator = $this->normalizeRelator((string)$agent->Activity);
-
-            $attributes = $agent->Activity->attributes();
-            if (!empty($attributes->{'elokuva-avustajat'})
-                && $attributes->{'elokuva-avustajat'} == 'avustajat'
-            ) {
-                $relator = 'ctb';
-            } elseif (!empty($attributes->{'elokuva-elolevittaja'})) {
-                $relator = 'dst';
-            } elseif (!empty($attributes->{'elokuva-elotuotantoyhtio'})) {
-                continue;
-            } elseif (!empty($attributes->{'elokuva-elorahoitusyhtio'})) {
-                $relator = 'fnd';
-            } elseif (!empty($attributes->{'elokuva-elolaboratorio'})) {
-                $relator = 'lbr';
-            } elseif (!empty($attributes->{'elokuva-elotekija-tehtava'})) {
-                switch ($attributes->{'elokuva-elotekija-tehtava'}) {
-                case 'äänitys':
-                    $relator = 'rce';
-                    break;
-                }
-            }
-
-            if (!in_array($relator, $relators)) {
-                continue;
-            }
-
-            $result['names'][] = (string)$agent->AgentName;
-            $id = (string)$agent->AgentIdentifier->IDTypeName . ':'
-                . (string)$agent->AgentIdentifier->IDValue;
-            if ($id != ':') {
-                $result['ids'][] = $id;
-            }
-            $result['relators'][] = $relator;
+        if (!($parentIdType = $this->getDriverParam('parentIdType', ''))) {
+            return '';
         }
+        foreach ($this->getMainElement()->HasAgent as $agent) {
+            if ($agent->AgentIdentifier && $agent->AgentIdentifier->IDTypeName
+                && $agent->AgentIdentifier->IDValue
+                && (string)$agent->AgentIdentifier->IDTypeName == $parentIdType
+            ) {
+                return (string)$agent->AgentIdentifier->IDTypeName . '_'
+                    . (string)$agent->AgentIdentifier->IDValue;
+            }
+        }
+        return '';
+    }
 
-        return $result;
+    /**
+     * Merge component parts to this record
+     *
+     * @param MongoCollection $componentParts Component parts to be merged
+     *
+     * @return int Count of records merged
+     */
+    public function mergeComponentParts($componentParts)
+    {
+        $count = 0;
+        $parts = [];
+        foreach ($componentParts as $componentPart) {
+            $data = MetadataUtils::getRecordData($componentPart, true);
+            $xml = simplexml_load_string($data);
+            foreach ($xml->children() as $child) {
+                $parts[] = [
+                    'xml' => $child,
+                    'order' => empty($child->Title->PartDesignation->Value)
+                        ? 0 : (int)$child->Title->PartDesignation->Value
+                ];
+            }
+            ++$count;
+        }
+        usort(
+            $parts,
+            function ($a, $b) {
+                return $a['order'] - $b['order'];
+            }
+        );
+        foreach ($parts as $part) {
+            $this->appendXml($this->doc, $part['xml']);
+        }
+        return $count;
+    }
+
+    /**
+     * Recursive function to get fields to be indexed in allfields
+     *
+     * @param string $fields Fields to use (optional)
+     *
+     * @return array
+     */
+    protected function getAllFields($fields = null)
+    {
+        $results = parent::getAllFields($fields);
+        if (null === $fields) {
+            $results = array_merge($results, $this->getDescriptions());
+            $results = array_merge($results, $this->getContents());
+        }
+        return $results;
     }
 
     /**
@@ -206,5 +258,186 @@ class NdlForwardRecord extends ForwardRecord
             }
         }
         return '';
+    }
+
+    /**
+     * Get relator code for the agent
+     *
+     * @param SimpleXMLElement $agent Agent
+     *
+     * @return string
+     */
+    protected function getRelator($agent)
+    {
+        if (empty($agent->Activity)) {
+            return '';
+        }
+        $activity = $agent->Activity;
+        $relator = $this->normalizeRelator((string)$activity);
+        if (($relator == 'A99' || $relator == 'E99')
+            && !empty($activity->attributes()->{'finna-activity-text'})
+        ) {
+            $relator = (string)$activity->attributes()->{'finna-activity-text'};
+        }
+        return $relator;
+
+    }
+
+    /**
+     * Get contents
+     *
+     * @return array
+     */
+    protected function getContents()
+    {
+        $results = [];
+        foreach ($this->getMainElement()->ProductionEvent as $event) {
+            foreach ($event->elokuva_sisaltoseloste as $item) {
+                $results[] = (string)$item;
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Get all descriptions
+     *
+     * @return array
+     */
+    protected function getDescriptions()
+    {
+        $results = [];
+        foreach ($this->getMainElement()->ProductionEvent as $event) {
+            foreach ($event->elokuva_tiivistelma as $item) {
+                $results[] = (string)$item;
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Get all subjects
+     *
+     * @return array
+     */
+    protected function getSubjects()
+    {
+        $results = [];
+        foreach ($this->getMainElement()->ProductionEvent as $event) {
+            foreach ($event->elokuva_asiasana as $item) {
+                $results[] = (string)$item;
+            }
+        }
+        return $results;
+    }
+
+
+    /**
+     * Get thumbnail
+     *
+     * @return string
+     */
+    protected function getThumbnail()
+    {
+        foreach ($this->getMainElement()->ProductionEvent as $event) {
+            $attributes = $event->ProductionEventType->attributes();
+            if ($attributes->{'elokuva-elonet-materiaali-kuva-url'}) {
+                return (string)$attributes->{'elokuva-elonet-materiaali-kuva-url'};
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Get URLs
+     *
+     * @return array
+     */
+    protected function getUrls()
+    {
+        $results = [];
+        $records = $this->doc->children();
+        $records = reset($records);
+        foreach (is_array($records) ? $records : [$records] as $record) {
+            foreach ($record->ProductionEvent as $event) {
+                $attrs = [
+                    'elokuva-elonet-url', 'elokuva-elonet-materiaali-video-url'
+                ];
+                foreach ($attrs as $attr) {
+                    $attributes = $event->ProductionEventType->attributes();
+                    if ($attributes->{$attr}) {
+                        $results[] = (string)$attributes->{$attr};
+                    }
+                }
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Get online URLs
+     *
+     * @return array
+     */
+    protected function getOnlineUrls()
+    {
+        $results = [];
+        $records = $this->doc->children();
+        $records = reset($records);
+        foreach (is_array($records) ? $records : [$records] as $record) {
+            if (isset($record->Title->PartDesignation->Value)) {
+                $attributes = $record->Title->PartDesignation->Value->attributes();
+                if (empty($attributes{'video-tyyppi'})
+                    || $attributes{'video-tyyppi'} != 'elokuva'
+                ) {
+                    continue;
+                }
+                foreach ($record->ProductionEvent as $event) {
+                    $attributes = $event->ProductionEventType->attributes();
+                    $url
+                        = (string)$attributes
+                            ->{'elokuva-elonet-materiaali-video-url'};
+                    $type = '';
+                    $description = '';
+                    if ($record->Title->PartDesignation->Value) {
+                        $attributes = $record->Title->PartDesignation->Value
+                            ->attributes();
+                        $type = (string)$attributes->{'video-tyyppi'};
+                        $description = (string)$attributes->{'video-lisatieto'};
+                    }
+                    $results[] = [
+                        'url' => $url,
+                        'text' => $description ? $description : $type,
+                        'source' => $this->source
+                    ];
+                }
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Recursively append XML
+     *
+     * @param SimpleXMLElement $simplexml Node to append to
+     * @param SimpleXMLElement $append    Node to be appended
+     *
+     * @return void
+     */
+    protected function appendXml(&$simplexml, $append)
+    {
+        if ($append !== null) {
+            $name = $append->getName();
+            // addChild doesn't encode & ...
+            $data = (string)$append;
+            $data = str_replace('&', '&amp;', $data);
+            $xml = $simplexml->addChild($name, $data);
+            foreach ($append->attributes() as $key => $value) {
+                 $xml->addAttribute($key, $value);
+            }
+            foreach ($append->children() as $child) {
+                $this->appendXML($xml, $child);
+            }
+        }
     }
 }

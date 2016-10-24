@@ -74,6 +74,11 @@ class ForwardRecord extends BaseRecord
     protected $corporateAuthorRelators = [
     ];
 
+    protected $filterFromAllFields = [
+        'Identifier', 'RecordSource', 'TitleRelationship', 'Activity',
+        'AgentIdentifier', 'ProductionEvent',
+    ];
+
     /**
      * Constructor
      *
@@ -114,7 +119,13 @@ class ForwardRecord extends BaseRecord
      */
     public function getID()
     {
-        return (string)$this->getMainElement()->Identifier;
+        $doc = $this->getMainElement();
+        $id = (string)$doc->Identifier;
+        $attributes = $doc->Identifier->attributes();
+        if ($attributes->IDTypeName) {
+            $id = (string)$attributes->IDTypeName . '_' . $id;
+        }
+        return $id;
     }
 
     /**
@@ -179,13 +190,11 @@ class ForwardRecord extends BaseRecord
         );
 
         $data['publishDate'] = (string)$doc->YearOfReference;
-
-        foreach ($doc->ContentDescription as $description) {
-            $data['description'][] = (string)$description->DescriptionText;
-        }
-        foreach ($doc->SubjectTerms as $term) {
-            $data['topic'][] = $term;
-        }
+        $data['contents'] = $this->getContents();
+        $data['description'] = $this->getDescriptions();
+        $data['topic'] = $this->getSubjects();
+        $data['url'] = $this->getUrls();
+        $data['thumbnail'] = $this->getThumbnail();
 
         $primaryAuthors = $this->getPrimaryAuthors();
         $data['author'] = $primaryAuthors['names'];
@@ -208,24 +217,21 @@ class ForwardRecord extends BaseRecord
             $data['geographic'][] = (string)$country->Country->RegionName;
         }
 
+        $data['url'] = $this->getUrls();
+
         $data['format'] = 'MotionPicture';
 
         // allfields
-        $allFields = [];
-        foreach ($doc->children() as $tag => $field) {
-            $allFields[] = MetadataUtils::stripTrailingPunctuation(
-                trim((string)$field)
-            );
-        }
-        $data['allfields'] = $allFields;
+        $data['allfields'] = $this->getAllFields();
 
         return $data;
     }
 
     protected function getMainElement()
     {
-        $nodes = $this->doc->children();
-        return reset($nodes);
+        $nodes = (array)$this->doc->children();
+        $node = reset($nodes);
+        return is_array($node) ? reset($node) : $node;
     }
 
     /**
@@ -243,6 +249,34 @@ class ForwardRecord extends BaseRecord
     }
 
     /**
+     * Recursive function to get fields to be indexed in allfields
+     *
+     * @param string $fields Fields to use (optional)
+     *
+     * @return array
+     */
+    protected function getAllFields($fields = null)
+    {
+        $results = [];
+        if (null === $fields) {
+            $fields = $this->getMainElement();
+        }
+        foreach ($fields as $tag => $field) {
+            if (in_array($tag, $this->filterFromAllFields)) {
+                continue;
+            }
+            $results[] = MetadataUtils::stripTrailingPunctuation(
+                trim((string)$field)
+            );
+            $subs = $this->getAllFields($field->children());
+            if ($subs) {
+                $results = array_merge($results, $subs);
+            }
+        }
+        return $results;
+    }
+
+    /**
      * Get authors by relator codes
      *
      * @param array $relators Allowed relators
@@ -254,7 +288,7 @@ class ForwardRecord extends BaseRecord
     {
         $result = ['names' => [], 'ids' => [], 'relators' => []];
         foreach ($this->getMainElement()->HasAgent as $agent) {
-            $relator = $this->normalizeRelator((string)$agent->Activity);
+            $relator = $this->getRelator($agent);
             if (!in_array($relator, $relators)) {
                 continue;
             }
@@ -268,6 +302,18 @@ class ForwardRecord extends BaseRecord
         }
 
         return $result;
+    }
+
+    /**
+     * Get relator code for the agent
+     *
+     * @param SimpleXMLElement $agent Agent
+     *
+     * @return string
+     */
+    protected function getRelator($agent)
+    {
+        return $this->normalizeRelator((string)$agent->Activity);
     }
 
     /**
@@ -298,5 +344,63 @@ class ForwardRecord extends BaseRecord
     protected function getCorporateAuthors()
     {
         return $this->getAuthorsByRelator($this->corporateAuthorRelators);
+    }
+
+    /**
+     * Get contents
+     *
+     * @return array
+     */
+    protected function getContents()
+    {
+        return [];
+    }
+
+    /**
+     * Get all descriptions
+     *
+     * @return array
+     */
+    protected function getDescriptions()
+    {
+        $results = [];
+        foreach ($this->getMainElement()->ContentDescription as $description) {
+            $results[] = (string)$description->DescriptionText;
+        }
+        return $results;
+    }
+
+    /**
+     * Get all subjects
+     *
+     * @return array
+     */
+    protected function getSubjects()
+    {
+        $results = [];
+        foreach ($this->getMainElement()->SubjectTerms as $term) {
+            $results[] = $term;
+        }
+        return $results;
+    }
+
+    /**
+     * Get thumbnail
+     *
+     * @return string
+     */
+    protected function getThumbnail()
+    {
+        return '';
+    }
+
+    /**
+     * Get URLs
+     *
+     * @return array
+     */
+    protected function getUrls()
+    {
+        return [];
     }
 }
