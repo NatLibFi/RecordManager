@@ -87,6 +87,13 @@ class NdlForwardRecord extends ForwardRecord
     ];
 
     /**
+     * Primary language to use
+     *
+     * @var string
+     */
+    protected $primaryLanguage = 'fi';
+
+    /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
      * @return string[]
@@ -180,23 +187,6 @@ class NdlForwardRecord extends ForwardRecord
     }
 
     /**
-     * Recursive function to get fields to be indexed in allfields
-     *
-     * @param string $fields Fields to use (optional)
-     *
-     * @return array
-     */
-    protected function getAllFields($fields = null)
-    {
-        $results = parent::getAllFields($fields);
-        if (null === $fields) {
-            $results = array_merge($results, $this->getDescriptions());
-            $results = array_merge($results, $this->getContents());
-        }
-        return $results;
-    }
-
-    /**
      * Return publishers
      *
      * @return array
@@ -278,38 +268,6 @@ class NdlForwardRecord extends ForwardRecord
         }
         return $relator;
 
-    }
-
-    /**
-     * Get contents
-     *
-     * @return array
-     */
-    protected function getContents()
-    {
-        $results = [];
-        foreach ($this->getMainElement()->ProductionEvent as $event) {
-            foreach ($event->elokuva_sisaltoseloste as $item) {
-                $results[] = (string)$item;
-            }
-        }
-        return $results;
-    }
-
-    /**
-     * Get all descriptions
-     *
-     * @return array
-     */
-    protected function getDescriptions()
-    {
-        $results = [];
-        foreach ($this->getMainElement()->ProductionEvent as $event) {
-            foreach ($event->elokuva_tiivistelma as $item) {
-                $results[] = (string)$item;
-            }
-        }
-        return $results;
     }
 
     /**

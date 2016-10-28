@@ -76,8 +76,15 @@ class ForwardRecord extends BaseRecord
 
     protected $filterFromAllFields = [
         'Identifier', 'RecordSource', 'TitleRelationship', 'Activity',
-        'AgentIdentifier', 'ProductionEvent',
+        'AgentIdentifier', 'ProductionEvent', 'DescriptionType', 'Language'
     ];
+
+    /**
+     * Primary language to use
+     *
+     * @var string
+     */
+    protected $primaryLanguage = 'en';
 
     /**
      * Constructor
@@ -190,8 +197,19 @@ class ForwardRecord extends BaseRecord
         );
 
         $data['publishDate'] = (string)$doc->YearOfReference;
-        $data['contents'] = $this->getContents();
-        $data['description'] = $this->getDescriptions();
+
+        $data['description'] = $this->getDescriptions($this->primaryLanguage);
+        if (empty($data['description'])) {
+            $data['description'] = $this->getDescriptions();
+        }
+        $contents = $this->getContents($this->primaryLanguage);
+        if (empty($contents)) {
+            $contents = $this->getContents();
+        }
+        if (!empty($contents)) {
+            $data['description'] = array_merge($data['description'], $contents);
+        }
+
         $data['topic'] = $this->getSubjects();
         $data['url'] = $this->getUrls();
         $data['thumbnail'] = $this->getThumbnail();
@@ -349,23 +367,45 @@ class ForwardRecord extends BaseRecord
     /**
      * Get contents
      *
+     * @array string $language Optionally take only description in the given language
+     *
      * @return array
      */
-    protected function getContents()
+    protected function getContents($language = null)
     {
-        return [];
+        $results = [];
+        foreach ($this->getMainElement()->ContentDescription as $description) {
+            if (null !== $language && (string)$description->Language !== $language) {
+                continue;
+            }
+            if ((string)$description->DescriptionType == 'Content description'
+                && !empty($description->DescriptionText)
+            ) {
+                $results[] = (string)$description->DescriptionText;
+            }
+        }
+        return $results;
     }
 
     /**
      * Get all descriptions
      *
+     * @array string $language Optionally take only description in the given language
+     *
      * @return array
      */
-    protected function getDescriptions()
+    protected function getDescriptions($language = null)
     {
         $results = [];
         foreach ($this->getMainElement()->ContentDescription as $description) {
-            $results[] = (string)$description->DescriptionText;
+            if (null !== $language && (string)$description->Language !== $language) {
+                continue;
+            }
+            if ((string)$description->DescriptionType == 'Synopsis'
+                && !empty($description->DescriptionText)
+            ) {
+                $results[] = (string)$description->DescriptionText;
+            }
         }
         return $results;
     }
