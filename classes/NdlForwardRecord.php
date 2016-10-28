@@ -107,9 +107,6 @@ class NdlForwardRecord extends ForwardRecord
 
         $data['publisher'] = $this->getPublishers();
         $data['genre'] = $this->getGenres();
-
-        $data['topic'] = $this->getSubjects();
-
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
 
@@ -316,23 +313,6 @@ class NdlForwardRecord extends ForwardRecord
     }
 
     /**
-     * Get all subjects
-     *
-     * @return array
-     */
-    protected function getSubjects()
-    {
-        $results = [];
-        foreach ($this->getMainElement()->ProductionEvent as $event) {
-            foreach ($event->elokuva_asiasana as $item) {
-                $results[] = (string)$item;
-            }
-        }
-        return $results;
-    }
-
-
-    /**
      * Get thumbnail
      *
      * @return string
@@ -381,6 +361,10 @@ class NdlForwardRecord extends ForwardRecord
      */
     protected function getOnlineUrls()
     {
+        // Not reliable, cannot use at the moment
+        return [];
+
+        /*
         $results = [];
         $records = $this->doc->children();
         $records = reset($records);
@@ -414,6 +398,7 @@ class NdlForwardRecord extends ForwardRecord
             }
         }
         return $results;
+        */
     }
 
     /**

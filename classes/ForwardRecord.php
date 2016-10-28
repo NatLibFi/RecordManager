@@ -378,8 +378,10 @@ class ForwardRecord extends BaseRecord
     protected function getSubjects()
     {
         $results = [];
-        foreach ($this->getMainElement()->SubjectTerms as $term) {
-            $results[] = $term;
+        foreach ($this->getMainElement()->SubjectTerms as $subjectTerms) {
+            foreach ($subjectTerms->Term as $term) {
+                $results[] = (string)$term;
+            }
         }
         return $results;
     }
