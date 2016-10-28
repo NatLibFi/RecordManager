@@ -188,8 +188,8 @@ class OaiPmhProvider
         if (!$record) {
             $this->error(
                 'idDoesNotExist',
-                'The value of the identifier argument is unknown or illegal in "
-                . "this repository.'
+                'The value of the identifier argument is unknown or illegal in'
+                . ' this repository.'
             );
             $this->printSuffix();
             die();
@@ -369,8 +369,8 @@ EOT;
             if (!$record) {
                 $this->error(
                     'idDoesNotExist',
-                    'The value of the identifier argument is unknown or illegal '
-                    . 'in this repository.'
+                    'The value of the identifier argument is unknown or illegal in'
+                    . ' this repository.'
                 );
                 $this->printSuffix();
                 die();
