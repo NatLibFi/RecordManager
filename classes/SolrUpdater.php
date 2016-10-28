@@ -113,6 +113,11 @@ class SolrUpdater
      */
     protected $httpParams = [];
 
+    /**
+     * Fields to merge when merging deduplicated records
+     *
+     * @var array
+     */
     protected $mergedFields = [
         'institution', 'collection', 'building', 'language', 'physical', 'publisher',
         'publishDate', 'contents', 'url', 'ctrlnum', 'callnumber-raw',
@@ -124,6 +129,11 @@ class SolrUpdater
         'topic', 'genre', 'geographic', 'era', 'long_lat', 'isbn', 'issn'
     ];
 
+    /**
+     * Fields to use only once if not already set when merging deduplicated records
+     *
+     * @var array
+     */
     protected $singleFields = [
         'title', 'title_short', 'title_full', 'title_sort', 'author_sort', 'format',
         'publishDateSort', 'callnumber-first', 'callnumber-subject',
@@ -131,7 +141,19 @@ class SolrUpdater
         'last-indexed'
     ];
 
+    /**
+     * Available enrichments
+     *
+     * @var array
+     */
     protected $enrichments = [];
+
+    /**
+     * Data sources that are completely ignored when updating the Solr index
+     *
+     * @var array
+     */
+    protected $nonIndexedSources = [];
 
     /**
      * Constructor
@@ -504,6 +526,9 @@ class SolrUpdater
                 ['_id' => ['$in' => $dedupRecord['ids']]]
             )->timeout($this->cursorTimeout);
             foreach ($records as $record) {
+                if (in_array($record['source_id'], $this->nonIndexedSources)) {
+                    continue;
+                }
                 if ($record['deleted']
                     || ($sourceId && $delete && $record['source_id'] == $sourceId)
                 ) {
@@ -848,6 +873,9 @@ class SolrUpdater
                     );
                     exit(1);
                 }
+                if (in_array($record['source_id'], $this->nonIndexedSources)) {
+                    continue;
+                }
                 if (isset($record['update_needed']) && $record['update_needed']) {
                     $this->log->log(
                         'updateRecords',
@@ -1191,6 +1219,10 @@ class SolrUpdater
                     list($field, $value) = explode(':', $extraField, 2);
                     $this->settings[$source]['extraFields'][] = [$field => $value];
                 }
+            }
+
+            if (isset($settings['index']) && !$settings['index']) {
+                $this->nonIndexedSources[] = $source;
             }
         }
     }
