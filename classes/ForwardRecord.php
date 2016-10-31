@@ -198,17 +198,16 @@ class ForwardRecord extends BaseRecord
 
         $data['publishDate'] = (string)$doc->YearOfReference;
 
-        $data['description'] = $this->getDescriptions($this->primaryLanguage);
-        if (empty($data['description'])) {
-            $data['description'] = $this->getDescriptions();
+        $descriptions = $this->getDescriptions($this->primaryLanguage);
+        if (empty($descriptions)) {
+            $descriptions = $this->getDescriptions();
         }
         $contents = $this->getContents($this->primaryLanguage);
         if (empty($contents)) {
             $contents = $this->getContents();
         }
-        if (!empty($contents)) {
-            $data['description'] = array_merge($data['description'], $contents);
-        }
+        $descriptions = array_merge($descriptions, $contents);
+        $data['description'] = implode(' ', $descriptions);
 
         $data['topic'] = $this->getSubjects();
         $data['url'] = $this->getUrls();
