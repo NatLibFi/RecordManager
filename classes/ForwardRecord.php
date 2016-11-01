@@ -209,7 +209,7 @@ class ForwardRecord extends BaseRecord
         $descriptions = array_merge($descriptions, $contents);
         $data['description'] = implode(' ', $descriptions);
 
-        $data['topic'] = $this->getSubjects();
+        $data['topic'] = $data['topic_facet'] = $this->getSubjects();
         $data['url'] = $this->getUrls();
         $data['thumbnail'] = $this->getThumbnail();
 
@@ -230,13 +230,16 @@ class ForwardRecord extends BaseRecord
         $data['author_corporate'] = $corporateAuthors['names'];
         $data['author_corporate_role'] = $corporateAuthors['relators'];
 
-        foreach ($doc->CountryOfReference as $country) {
-            $data['geographic'][] = (string)$country->Country->RegionName;
-        }
+        $data['geographic'] = $data['geographic_facet']
+            = $this->getGeographicSubjects();
+
+        $data['genre'] = $data['genre_facet'] = $this->getGenres();
 
         $data['url'] = $this->getUrls();
 
         $data['format'] = 'MotionPicture';
+
+        $data['publisher'] = $this->getPublishers();
 
         // allfields
         $data['allfields'] = $this->getAllFields();
@@ -407,6 +410,42 @@ class ForwardRecord extends BaseRecord
             }
         }
         return $results;
+    }
+
+    /**
+     * Return genres
+     *
+     * @return array
+     */
+    protected function getGenres()
+    {
+        return [];
+    }
+
+    /**
+     * Get geographic subjects
+     *
+     * @return array
+     */
+    protected function getGeographicSubjects()
+    {
+        $result = [];
+        foreach ($this->getMainElement()->CountryOfReference as $country) {
+            if (!empty($country->Country->RegionName)) {
+                $result[] = (string)$country->Country->RegionName;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Return publishers
+     *
+     * @return array
+     */
+    protected function getPublishers()
+    {
+        return [];
     }
 
     /**

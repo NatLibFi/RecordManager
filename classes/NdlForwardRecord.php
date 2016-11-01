@@ -112,8 +112,6 @@ class NdlForwardRecord extends ForwardRecord
                 );
         }
 
-        $data['publisher'] = $this->getPublishers();
-        $data['genre'] = $this->getGenres();
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
 
