@@ -319,10 +319,6 @@ class NdlForwardRecord extends ForwardRecord
      */
     protected function getOnlineUrls()
     {
-        // Not reliable, cannot use at the moment
-        return [];
-
-        /*
         $results = [];
         $records = $this->doc->children();
         $records = reset($records);
@@ -356,7 +352,6 @@ class NdlForwardRecord extends ForwardRecord
             }
         }
         return $results;
-        */
     }
 
     /**
