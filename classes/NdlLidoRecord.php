@@ -76,7 +76,8 @@ class NdlLidoRecord extends LidoRecord
         }
         // Handle sources that contain multiple organisations properly
         if ($this->getDriverParam('institutionInBuilding', false)) {
-            $data['building'] = reset(explode('/', $data['institution']));
+            $institutionParts = explode('/', $data['institution']);
+            $data['building'] = reset($institutionParts);
         }
         if ($data['collection']
             && $this->getDriverParam('collectionInBuilding', false)
@@ -203,7 +204,63 @@ class NdlLidoRecord extends LidoRecord
      */
     public function getLocations()
     {
-        $locations = parent::getLocations();
+        $locations = [];
+        foreach ([$this->mainEvent, $this->usagePlaceEvent] as $event) {
+            foreach ($this->getEventNodes($event) as $eventNode) {
+                // If there is already gml in the record, don't return anything for
+                // geocoding
+                if (!empty($ventNode->eventPlace->gml)) {
+                    return [];
+                }
+                if (!empty($eventNode->eventPlace->place->partOfPlace)) {
+                    $haveStreet = false;
+                    foreach ($eventNode->eventPlace->place->partOfPlace as $part) {
+                        if (isset($part->placeClassification->term)
+                            && $part->placeClassification->term == 'katuosoite'
+                        ) {
+                            $haveStreet = true;
+                            break;
+                        }
+                    }
+                    $parts = [];
+                    foreach ($eventNode->eventPlace->place->partOfPlace as $part) {
+                        if ($haveStreet && isset($part->placeClassification->term)
+                            && $part->placeClassification->term == 'kaupunginosa'
+                        ) {
+                            continue;
+                        }
+                        if (isset($part->namePlaceSet->appellationValue)) {
+                            $parts[] = (string)$part->namePlaceSet->appellationValue;
+                        }
+                    }
+                    $locations[] = implode(' ', $parts);
+                } elseif (!empty(
+                    $eventNode->eventPlace->place->namePlaceSet->appellationValue
+                )) {
+                    $mainPlace = (string)$eventNode->eventPlace->place->namePlaceSet
+                        ->appellationValue;
+                    $subLocation = $this->getSubLocation(
+                        $eventNode->eventPlace->place
+                    );
+                    if ($mainPlace && !$subLocation) {
+                        $locations = array_merge(
+                            $locations,
+                            explode('/', $mainPlace)
+                        );
+                    } else {
+                        $locations[] = "$mainPlace $subLocation";
+                    }
+                } elseif (!empty($eventNode->eventPlace->displayPlace)) {
+                    // Split multiple locations separated with a slash
+                    $locations = array_merge(
+                        $locations,
+                        preg_split(
+                            '/[\/;]/', (string)$eventNode->eventPlace->displayPlace
+                        )
+                    );
+                }
+            }
+        }
         $result = [];
         // Try to split address lists like "Helsinki, Kalevankatu 17, 19" to separate
         // entries
