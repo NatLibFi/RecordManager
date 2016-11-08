@@ -114,12 +114,12 @@ class XslTransformation
         if (isset($params)) {
             $this->xslt->setParameter('', $params);
         }
-        $result = $this->xslt->transformToXml($doc);
         if (isset($params)) {
             foreach ($params as $key => $value) {
                 $this->xslt->setParameter('', $key, '');
             }
         }
+        $result = $this->xslt->transformToXml($doc);
         return $result;
     }
 
