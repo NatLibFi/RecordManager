@@ -319,7 +319,7 @@ class HarvestSierraApi extends BaseHarvest
                     $this->callback,
                     $oaiId,
                     false,
-                    $this->convertVarFieldsToMarcArray($id, $record['varFields'])
+                    $this->convertRecordToMarcArray($record)
                 );
             }
         }
@@ -413,17 +413,17 @@ class HarvestSierraApi extends BaseHarvest
     }
 
     /**
-     * Convert Sierra varFields array to our internal MARC array format
+     * Convert Sierra record to our internal MARC array format
      *
-     * @param string $id        Sierra BIB record ID
-     * @param array  $varFields Sierra BIB record varFields
+     * @param array  $record Sierra BIB record varFields
      *
      * @return array
      */
-    protected function convertVarFieldsToMarcArray($id, $varFields)
+    protected function convertRecordToMarcArray($record)
     {
+        $id = $record['id'];
         $marc = [];
-        foreach ($varFields as $varField) {
+        foreach ($record['varFields'] as $varField) {
             if ($varField['fieldTag'] == '_') {
                 $marc['000'] = $varField['content'];
                 continue;
@@ -446,6 +446,16 @@ class HarvestSierraApi extends BaseHarvest
             } else {
                 $marc[$varField['marcTag']][] = $varField['content'];
             }
+        }
+
+        if (isset($record['fixedFields']['30']['display'])) {
+            $marc['977'][] = [
+                'i1' => ' ',
+                'i2' => ' ',
+                's' => [
+                    ['a' => $record['fixedFields']['30']['display']]
+                ]
+            ];
         }
 
         if (!empty($record['locations'])) {
@@ -493,7 +503,6 @@ class HarvestSierraApi extends BaseHarvest
             if (in_array(
                 $record['fixedFields']['31']['value'], $this->suppressedBibCode3)
             ) {
-                echo "Suppressed: " . $record['fixedFields']['31']['value'] . "\n";
                 return true;
             }
         }
