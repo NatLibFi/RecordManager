@@ -1260,6 +1260,11 @@ class MarcRecord extends BaseRecord
             throw new Exception('MarcRecord: failed to parse from XML');
         }
 
+        // Move to the record element if we were given a collection
+        if ($xml->record) {
+            $xml = $xml->record;
+        }
+
         $this->fields['000'] = isset($xml->leader) ? (string)$xml->leader[0] : '';
 
         foreach ($xml->controlfield as $field) {
