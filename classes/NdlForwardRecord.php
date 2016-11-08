@@ -185,6 +185,42 @@ class NdlForwardRecord extends ForwardRecord
     }
 
     /**
+     * Get authors by relator codes
+     *
+     * @param array $relators Allowed relators
+     *
+     * @return array Array keyed by 'names' for author names, 'ids' for author ids
+     * and 'relators' for relator codes
+     */
+    protected function getAuthorsByRelator($relators)
+    {
+        $result = ['names' => [], 'ids' => [], 'relators' => []];
+        foreach ($this->getMainElement()->HasAgent as $agent) {
+            $relator = $this->getRelator($agent);
+            if (!in_array($relator, $relators)) {
+                continue;
+            }
+            $name = (string)$agent->AgentName;
+            if (empty($name)) {
+                $attrName = 'elokuva-elokreditoimatontekija-nimi';
+                $attrs = $agent->AgentName->attributes();
+                if (!empty($attrs->{$attrName})) {
+                    $name = (string)$attrs->{$attrName};
+                }
+            }
+            $result['names'][] = $name;
+            $id = (string)$agent->AgentIdentifier->IDTypeName . ':'
+                . (string)$agent->AgentIdentifier->IDValue;
+            if ($id != ':') {
+                $result['ids'][] = $id;
+            }
+            $result['relators'][] = $relator;
+        }
+
+        return $result;
+    }
+
+    /**
      * Return publishers
      *
      * @return array
