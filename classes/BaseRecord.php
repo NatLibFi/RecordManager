@@ -167,6 +167,16 @@ class BaseRecord
     }
 
     /**
+     * Return format from predefined values
+     *
+     * @return string
+     */
+    public function getFormat()
+    {
+        return '';
+    }
+
+    /**
      * Component parts: get the volume that contains this component part
      *
      * @return string
@@ -282,16 +292,6 @@ class BaseRecord
      * @return string
      */
     public function getSeriesNumbering()
-    {
-        return '';
-    }
-
-    /**
-     * Dedup: Return format from predefined values
-     *
-     * @return string
-     */
-    public function getFormat()
     {
         return '';
     }

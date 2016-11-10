@@ -126,6 +126,24 @@ class NdlForwardRecord extends ForwardRecord
         return $data;
     }
 
+    /**
+     * Return format from predefined values
+      *
+     * @return string
+     */
+    public function getFormat()
+    {
+        foreach ($this->getMainElement()->ProductionEvent as $event) {
+            if (isset($event->elokuva_laji2fin)) {
+                $laji = mb_strtolower((string)$event->elokuva_laji2fin, 'UTF-8');
+                if (strstr($laji, 'sarja') !== false || strstr($laji, 'tv') !== false
+                ) {
+                    return 'Video';
+                }
+            }
+        }
+        return 'MotionPicture';
+    }
 
     /**
      * Return host record ID for component part
@@ -221,6 +239,16 @@ class NdlForwardRecord extends ForwardRecord
     }
 
     /**
+     * Return genres
+     *
+     * @return array
+     */
+    protected function getGenres()
+    {
+        return [$this->getProductionEventAttribute('elokuva-genre')];
+    }
+
+    /**
      * Return publishers
      *
      * @return array
@@ -235,16 +263,6 @@ class NdlForwardRecord extends ForwardRecord
             }
         }
         return $result;
-    }
-
-    /**
-     * Return genres
-     *
-     * @return array
-     */
-    protected function getGenres()
-    {
-        return [$this->getProductionEventAttribute('elokuva-genre')];
     }
 
     /**

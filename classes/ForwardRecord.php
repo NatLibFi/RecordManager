@@ -237,7 +237,7 @@ class ForwardRecord extends BaseRecord
 
         $data['url'] = $this->getUrls();
 
-        $data['format'] = 'MotionPicture';
+        $data['format'] = $this->getFormat();
 
         $data['publisher'] = $this->getPublishers();
 
@@ -410,6 +410,16 @@ class ForwardRecord extends BaseRecord
             }
         }
         return $results;
+    }
+
+    /**
+     * Return format from predefined values
+     *
+     * @return string
+     */
+    public function getFormat()
+    {
+        return 'MotionPicture';
     }
 
     /**
