@@ -1147,15 +1147,11 @@ class SolrUpdater
         $settings = $this->settings[$source];
 
         if (isset($settings['mappingFiles'][$source]['format'])) {
-            $map = $settings['mappingFiles'][$source]['format'];
+            $mappingFile = $settings['mappingFiles'][$source]['format'];
+            $map = $mappingFile['map'];
             if (!empty($format)) {
-                if (isset($map[$format])) {
-                    return is_array($map[$format])
-                        ? $map[$format][0] : $map[$format];
-                }
-                if (isset($map['##default'])) {
-                    return $map['##default'];
-                }
+                $format = $this->mapValue($format, $mappingFile);
+                return is_array($format) ? $format[0] : $format;
             } elseif (isset($map['##empty'])) {
                 return $map['##empty'];
             } elseif (isset($map['##emptyarray'])) {
@@ -1206,10 +1202,15 @@ class SolrUpdater
             foreach ($settings as $key => $value) {
                 if (substr($key, -8, 8) == '_mapping') {
                     $field = substr($key, 0, -8);
-                    $this->settings[$source]['mappingFiles'][$field]
-                        = $this->readMappingFile(
-                            $this->basePath . '/mappings/' . $value
-                        );
+                    $parts = explode(',', $value, 2);
+                    $filename = $parts[0];
+                    $type = isset($parts[1]) ? $parts[1] : 'normal';
+                    $this->settings[$source]['mappingFiles'][$field] = [
+                        'type' => $type,
+                        'map' => $this->readMappingFile(
+                            $this->basePath . '/mappings/' . $filename
+                        )
+                    ];
                 }
             }
 
@@ -1408,17 +1409,12 @@ class SolrUpdater
         }
 
         // Map field values according to any mapping files
-        foreach ($settings['mappingFiles'] as $field => $map) {
+        foreach ($settings['mappingFiles'] as $field => $mappingFile) {
             if (isset($data[$field]) && !empty($data[$field])) {
                 if (is_array($data[$field])) {
                     $newValues = [];
                     foreach ($data[$field] as $value) {
-                        $replacement = $value;
-                        if (isset($map[$value])) {
-                            $replacement = $map[$value];
-                        } elseif (isset($map['##default'])) {
-                            $replacement = $map['##default'];
-                        }
+                        $replacement = $this->mapValue($value, $mappingFile);
                         if (is_array($replacement)) {
                             $newValues = array_merge($newValues, $replacement);
                         } else {
@@ -1429,11 +1425,7 @@ class SolrUpdater
                         $data[$field] = array_values(array_unique($newValues));
                     }
                 } else {
-                    if (isset($map[$data[$field]])) {
-                        $data[$field] = $map[$data[$field]];
-                    } elseif (isset($map['##default'])) {
-                        $data[$field] = $map['##default'];
-                    }
+                    $data[$field] = $this->mapValue($data[$field], $mappingFile);
                 }
             } elseif (isset($map['##empty'])) {
                 $data[$field] = $map['##empty'];
@@ -1575,6 +1567,33 @@ class SolrUpdater
         }
 
         return $data;
+    }
+
+    /**
+     * Map a value using a mapping file
+     *
+     * @param string $value       Value to map
+     * @param array  $mappingFile Mapping file
+     */
+    protected function mapValue($value, $mappingFile)
+    {
+        if ('regexp' == $mappingFile['type']) {
+            foreach ($mappingFile['map'] as $pattern => $replacement) {
+                $newValue = preg_replace("/$pattern/", $replacement, $value);
+                if ($newValue != $value) {
+                    return $newValue;
+                }
+            }
+            return $value;
+        }
+        $map = $mappingFile['map'];
+        $replacement = $value;
+        if (isset($map[$value])) {
+            $replacement = $map[$value];
+        } elseif (isset($map['##default'])) {
+            $replacement = $map['##default'];
+        }
+        return $replacement;
     }
 
     /**
