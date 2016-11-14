@@ -1579,6 +1579,7 @@ class SolrUpdater
     {
         if ('regexp' == $mappingFile['type']) {
             foreach ($mappingFile['map'] as $pattern => $replacement) {
+                $pattern = addcslashes($pattern, '/');
                 $newValue = preg_replace("/$pattern/", $replacement, $value);
                 if ($newValue != $value) {
                     return $newValue;
