@@ -953,7 +953,7 @@ class MarcRecord extends BaseRecord
             $formatCode2 = strtoupper(substr($contents, 1, 1));
             switch ($formatCode) {
             case 'A':
-                switch($formatCode2) {
+                switch ($formatCode2) {
                 case 'D':
                     return 'Atlas';
                 default:
@@ -961,7 +961,7 @@ class MarcRecord extends BaseRecord
                 }
                 break;
             case 'C':
-                switch($formatCode2) {
+                switch ($formatCode2) {
                 case 'A':
                     return 'TapeCartridge';
                 case 'B':
@@ -991,7 +991,7 @@ class MarcRecord extends BaseRecord
             case 'F':
                 return 'Braille';
             case 'G':
-                switch($formatCode2) {
+                switch ($formatCode2) {
                 case 'C':
                 case 'D':
                     return 'Filmstrip';
@@ -1004,7 +1004,7 @@ class MarcRecord extends BaseRecord
             case 'H':
                 return 'Microfilm';
             case 'K':
-                switch($formatCode2) {
+                switch ($formatCode2) {
                 case 'C':
                     return 'Collage';
                 case 'D':
@@ -1028,7 +1028,7 @@ class MarcRecord extends BaseRecord
                 }
                 break;
             case 'M':
-                switch($formatCode2) {
+                switch ($formatCode2) {
                 case 'F':
                     return 'VideoCassette';
                 case 'R':
@@ -1045,7 +1045,7 @@ class MarcRecord extends BaseRecord
                 return 'SensorImage';
             case 'S':
                 $soundTech = strtoupper(substr($contents, 13, 1));
-                switch($formatCode2) {
+                switch ($formatCode2) {
                 case 'D':
                     return $soundTech == 'D' ? 'CD' : 'SoundDisc';
                 case 'S':
@@ -1056,14 +1056,14 @@ class MarcRecord extends BaseRecord
                 break;
             case 'V':
                 $videoFormat = strtoupper(substr($contents, 4, 1));
-                switch($videoFormat) {
+                switch ($videoFormat) {
                 case 'S':
                     return 'BluRay';
                 case 'V':
                     return 'DVD';
                 }
 
-                switch($formatCode2) {
+                switch ($formatCode2) {
                 case 'C':
                     return 'VideoCartridge';
                 case 'D':
@@ -1250,7 +1250,7 @@ class MarcRecord extends BaseRecord
         if (strcasecmp(substr($marc, 0, strlen($xmlHead)), $xmlHead) === 0) {
             $decl = substr($marc, 0, strpos($marc, '?>'));
             if (strstr($decl, 'encoding') === false) {
-                $marc = $decl .  ' encoding="utf-8"' . substr($marc, strlen($decl));
+                $marc = $decl . ' encoding="utf-8"' . substr($marc, strlen($decl));
             }
         } else {
             $marc = '<?xml version="1.0" encoding="utf-8"?>' . "\n\n$marc";
@@ -1934,7 +1934,7 @@ class MarcRecord extends BaseRecord
             }
         }
         $allFields = array_map(
-            function($str) {
+            function ($str) {
                 return MetadataUtils::stripLeadingPunctuation(
                     MetadataUtils::stripTrailingPunctuation($str)
                 );
@@ -2155,7 +2155,7 @@ class MarcRecord extends BaseRecord
     protected function normalizeRelator($relator)
     {
         $relator = trim($relator);
-        $relator = preg_replace('/\p{P}+/', '', $relator);
+        $relator = preg_replace('/\p{P}+/u', '', $relator);
         $relator = mb_strtolower($relator, 'UTF-8');
         return $relator;
     }
