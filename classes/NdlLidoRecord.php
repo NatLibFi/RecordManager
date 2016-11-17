@@ -209,7 +209,7 @@ class NdlLidoRecord extends LidoRecord
             foreach ($this->getEventNodes($event) as $eventNode) {
                 // If there is already gml in the record, don't return anything for
                 // geocoding
-                if (!empty($ventNode->eventPlace->gml)) {
+                if (!empty($eventNode->eventPlace->place->gml)) {
                     return [];
                 }
                 if (!empty($eventNode->eventPlace->place->partOfPlace)) {
@@ -299,7 +299,6 @@ class NdlLidoRecord extends LidoRecord
         ) {
             if (isset($set->rightsResource->rightsType->conceptID)) {
                 $result[] = (string)$set->rightsResource->rightsType->conceptID;
-
             } else {
                 $result[] = 'restricted';
             }
@@ -544,27 +543,27 @@ class NdlLidoRecord extends LidoRecord
         if (!$end) {
             if (strlen($date) == 1) {
                 $date = '000' . $date . '-01-01T00:00:00Z';
-            } else if (strlen($date) == 2) {
+            } elseif (strlen($date) == 2) {
                 $date = '00' . $date . '-01-01T00:00:00Z';
-            } else if (strlen($date) == 3) {
+            } elseif (strlen($date) == 3) {
                 $date = '0' . $date . '-01-01T00:00:00Z';
-            } else if (strlen($date) == 4) {
+            } elseif (strlen($date) == 4) {
                 $date = $date . '-01-01T00:00:00Z';
-            } else if (strlen($date) == 7) {
+            } elseif (strlen($date) == 7) {
                 $date = $date . '-01T00:00:00Z';
-            } else if (strlen($date) == 10) {
+            } elseif (strlen($date) == 10) {
                 $date = $date . 'T00:00:00Z';
             }
         } else {
             if (strlen($date) == 1) {
                 $date = '00' . $date . '-12-31T23:59:59Z';
-            } else if (strlen($date) == 2) {
+            } elseif (strlen($date) == 2) {
                 $date = '00' . $date . '-12-31T23:59:59Z';
-            } else if (strlen($date) == 3) {
+            } elseif (strlen($date) == 3) {
                 $date = '0' . $date . '-12-31T23:59:59Z';
-            } else if (strlen($date) == 4) {
+            } elseif (strlen($date) == 4) {
                 $date = $date . '-12-31T23:59:59Z';
-            } else if (strlen($date) == 7) {
+            } elseif (strlen($date) == 7) {
                 try {
                     $d = new DateTime($date . '-01');
                 } catch (Exception $e) {
@@ -578,7 +577,7 @@ class NdlLidoRecord extends LidoRecord
                     return null;
                 }
                 $date = $d->format('Y-m-t') . 'T23:59:59Z';
-            } else if (strlen($date) == 10) {
+            } elseif (strlen($date) == 10) {
                 $date = $date . 'T23:59:59Z';
             }
         }
@@ -756,8 +755,8 @@ class NdlLidoRecord extends LidoRecord
             $year = $matches[1];
             $month =  sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[3]);
-            $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
-            $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+            $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
             $noprocess = true;
         } elseif (preg_match(
             '/(\d\d\d\d)\s*-\s*(\d\d\d\d)\s*(-luvun|-l)\s+(loppupuoli|loppu)/',
@@ -821,8 +820,8 @@ class NdlLidoRecord extends LidoRecord
             $year = $matches[1];
             $month =  sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[3]);
-            $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
-            $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+            $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
             $noprocess = true;
         } elseif (preg_match('/(\d\d\d\d)(\d\d)/', $input, $matches) > 0) {
             $year = $matches[1];
@@ -849,8 +848,8 @@ class NdlLidoRecord extends LidoRecord
             $year = $matches[3];
             $month =  sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[1]);
-            $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
-            $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+            $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
             $noprocess = true;
         } elseif (preg_match('/(\d\d?)\s*\.\s*(\d\d\d\d)/', $input, $matches) > 0) {
             $year = $matches[2];
@@ -929,7 +928,6 @@ class NdlLidoRecord extends LidoRecord
                 $startDate = $year;
                 $endDate = $year;
             }
-
         } elseif (preg_match(
             '/(-?\d?\d?\d\d)\s*-(luku|luvulta|l)/', $input, $matches
         ) > 0) {
@@ -1154,5 +1152,4 @@ class NdlLidoRecord extends LidoRecord
         return (string)$this->doc->lido->administrativeMetadata->recordWrap
             ->recordSource->legalBodyName->appellationValue;
     }
-
 }
