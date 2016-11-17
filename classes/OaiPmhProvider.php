@@ -28,6 +28,7 @@
 require_once 'RecordFactory.php';
 require_once 'Logger.php';
 require_once 'XslTransformation.php';
+require_once 'MetadataUtils.php';
 
 /**
  * OAI-PMH Provider Class
@@ -95,13 +96,6 @@ class OaiPmhProvider
     protected $sets = [];
 
     /**
-     * Mongo cursor timeout
-     *
-     * @var int
-     */
-    protected $cursorTimeout;
-
-    /**
      * ID Prefix used to create an OAI ID for records that don't have one
      *
      * @var string
@@ -128,10 +122,8 @@ class OaiPmhProvider
 
         $this->log = new Logger();
 
-        $mongo = new MongoClient($configArray['Mongo']['url']);
-        $this->db = $mongo->selectDB($configArray['Mongo']['database']);
-        $this->cursorTimeout = isset($configArray['Mongo']['cursor_timeout'])
-            ? $configArray['Mongo']['cursor_timeout'] : 300000;
+        $mongo = new \MongoDB\Client($configArray['Mongo']['url']);
+        $this->db = $mongo->{$configArray['Mongo']['database']};
         $this->idPrefix = isset($configArray['OAI-PMH']['id_prefix'])
             ? $configArray['OAI-PMH']['id_prefix'] : '';
     }
@@ -183,8 +175,7 @@ class OaiPmhProvider
         $id = $this->getParam('identifier');
         $prefix = $this->getParam('metadataPrefix');
 
-        $record = $this->db->record->find(['oai_id' => $id])->limit(-1)
-            ->timeout($this->cursorTimeout)->getNext();
+        $record = $this->db->record->findOne(['oai_id' => $id]);
         if (!$record) {
             $this->error(
                 'idDoesNotExist',
@@ -225,7 +216,6 @@ EOT;
   <earliestDatestamp>$earliestDate</earliestDatestamp>
   <deletedRecord>persistent</deletedRecord>
   <granularity>YYYY-MM-DDThh:mm:ssZ</granularity>
-<!--  <compression>deflate</compression> -->
 </Identify>
 
 EOT;
@@ -281,71 +271,75 @@ EOT;
         }
         if ($from && $until) {
             $queryParams['updated'] = [
-                '$gte' => new MongoDate($this->fromOaiDate($from, '00:00:00'), 0),
-                '$lte' => new MongoDate(
-                    $this->fromOaiDate($until, '23:59:59'), 999999
+                '$gte' => new \MongoDB\BSON\UTCDateTime(
+                    $this->fromOaiDate($from, '00:00:00') * 1000
+                ),
+                '$lte' => new \MongoDB\BSON\UTCDateTime(
+                    $this->fromOaiDate($until, '23:59:59') * 1000
                 )
             ];
         } elseif ($from) {
             $queryParams['updated'] = [
-                '$gte' => new MongoDate($this->fromOaiDate($from, '00:00:00'), 0)
+                '$gte' => new \MongoDB\BSON\UTCDateTime(
+                    $this->fromOaiDate($from, '00:00:00') * 1000
+                )
             ];
         } elseif ($until) {
             $queryParams['updated'] = [
-                '$lte' => new MongoDate(
-                    $this->fromOaiDate($until, '23:59:59'), 999999
+                '$lte' => new \MongoDB\BSON\UTCDateTime(
+                    $this->fromOaiDate($until, '23:59:59') * 1000
                 )
             ];
         }
 
-        $records = $this->db->record->find($queryParams)
-            ->timeout($this->cursorTimeout)->sort(['updated' => 1]);
+        $options = ['sort' => ['updated' => 1]];
         if ($position) {
-            $records = $records->skip($position);
+            $options['skip'] = (int)$position;
         }
-
-        if (!$records->hasNext()) {
-            $this->error('noRecordsMatch', '');
-            $this->printSuffix();
-            die();
-        }
-
-        print <<<EOT
-  <$verb>
-
-EOT;
+        $records = $this->db->record->find($queryParams, $options);
 
         $maxRecords = $configArray['OAI-PMH']['result_limit'];
         $count = 0;
         foreach ($records as $record) {
+            if ($count == 1) {
+                print <<<EOT
+  <$verb>
+
+EOT;
+            }
+            if (++$count > $maxRecords) {
+                // More records available, create resumptionToken
+                $token = $this->escape(
+                    implode(
+                        '|',
+                        [
+                            $set,
+                            $metadataPrefix,
+                            $from,
+                            $until,
+                            $count + $position
+                        ]
+                    )
+                );
+                print <<<EOT
+    <resumptionToken cursor="$position">$token</resumptionToken>
+
+EOT;
+                break;
+            }
             $xml = $this->createRecord($record, $metadataPrefix, $includeMetadata);
             if ($xml === false) {
                 break;
             }
             print $xml;
-            if (++$count >= $maxRecords) {
-                if ($records->hasNext()) {
-                    // More records available, create resumptionToken
-                    $token = $this->escape(
-                        implode(
-                            '|',
-                            [
-                                $set,
-                                $metadataPrefix,
-                                $from,
-                                $until,
-                                $count + $position
-                            ]
-                        )
-                    );
-                    print <<<EOT
-    <resumptionToken cursor="$position">$token</resumptionToken>
-
-EOT;
-                }
-                break;
-            }
         }
+
+        if ($count == 0) {
+            $this->error('noRecordsMatch', '');
+            $this->printSuffix();
+            die();
+        }
+
         print <<<EOT
   </$verb>
 
@@ -364,8 +358,7 @@ EOT;
         $id = $this->getParam('identifier');
         $source = '';
         if ($id) {
-            $record = $this->db->record->find(['oai_id' => $id])->limit(-1)
-                ->timeout($this->cursorTimeout)->getNext();
+            $record = $this->db->record->findOne(['oai_id' => $id]);
             if (!$record) {
                 $this->error(
                     'idDoesNotExist',
@@ -565,9 +558,8 @@ EOT;
      */
     protected function getEarliestDateStamp()
     {
-        $record = $this->db->record->find()->timeout($this->cursorTimeout)
-            ->sort(['updated' => 1])->limit(1)->getNext();
-        return $record['updated']->sec;
+        $record = $this->db->record->findOne([], ['sort' => ['updated' => 1]]);
+        return $record['updated']->toDateTime()->getTimestamp();
     }
 
     /**
@@ -772,11 +764,9 @@ EOT;
         }
         $metadata = '';
         if ($includeMetadata && !$record['deleted']) {
-            $mongodata = $record['normalized_data']
-                ? $record['normalized_data'] : $record['original_data'];
             $metadataRecord = RecordFactory::createRecord(
                 $record['format'],
-                gzinflate($mongodata->bin),
+                MetadataUtils::getRecordData($record, true),
                 $record['oai_id'],
                 $record['source_id']
             );
@@ -829,7 +819,7 @@ EOT;
             ? $record['oai_id']
             : $this->idPrefix . $record['_id']
         );
-        $date = $this->toOaiDate($record['updated']->sec);
+        $date = $this->toOaiDate($record['updated']->toDateTime()->getTimestamp());
         $status = $record['deleted'] ? ' status="deleted"' : '';
 
         $header = <<<EOT
@@ -867,4 +857,3 @@ EOT;
         return $str;
     }
 }
-

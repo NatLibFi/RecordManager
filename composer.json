@@ -9,6 +9,7 @@
     ],
     "license": "GPL-2.0",
     "require": {
+        "mongodb/mongodb": "^1.0.0",
         "phayes/geophp": "^1.2"
     }
 }

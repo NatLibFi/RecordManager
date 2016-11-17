@@ -1,6 +1,6 @@
 # RecordManager
 
-RecordManager is a metadata record management system intended to be used in conjunction with VuFind. It can also be used as an OAI-PMH repository and a generic metadata management utility. 
+RecordManager is a metadata record management system intended to be used in conjunction with VuFind. It can also be used as an OAI-PMH repository and a generic metadata management utility.
 
 See the [RecordManager wiki](https://github.com/NatLibFi/RecordManager/wiki) for more information and OAI-PMH provider setup.
 
@@ -18,15 +18,15 @@ These are quick instructions on how to set up RecordManager. Please refer to the
 
       yum install geos-php
 
-  With PHP 7 a recent version from https://git.osgeo.org/gogs/geos/php-geos may be 
-  required. 
+  With PHP 7 a recent version from https://git.osgeo.org/gogs/geos/php-geos may be
+  required.
 
-- Required pecl modules: mongo
+- Required pecl modules: mongodb
 
       yum install gcc make
-      pecl install mongo
-    
-- Add the extension=mongo.so line to /etc/php.d/mongo.ini
+      pecl install mongodb
+
+- Add the extension=mongodb.so line to /etc/php.d/mongodb.ini
 
 - Required Pear modules: HTTP_Request2
 
@@ -48,11 +48,11 @@ These are quick instructions on how to set up RecordManager. Please refer to the
 
 - Copy conf/datasources.ini.sample to conf/datasources.ini and modify the settings to suit your needs.
 
-- Start using the system by executing e.g. 
+- Start using the system by executing e.g.
 
       php harvest.php --source=datasource_id
 
-  or 
+  or
 
       php import.php --file=filename --source=datasource_id
 

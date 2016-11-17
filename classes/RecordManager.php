@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-declare(ticks = 1);
+declare(ticks=1);
 
 require_once 'PEAR.php';
 require_once 'HTTP/Request2.php';
@@ -111,12 +111,6 @@ class RecordManager
      */
     protected $metaLibRecords = [];
 
-    /**
-     * Mongo cursor timeout
-     * @var int
-     */
-    protected $cursorTimeout = 300000;
-
     // TODO: refactor data source setting handling
     protected $harvestType = '';
     protected $format = '';
@@ -181,12 +175,16 @@ class RecordManager
         try {
             $timeout = isset($configArray['Mongo']['connect_timeout'])
                 ? $configArray['Mongo']['connect_timeout'] : 300000;
-            $mongo = new MongoClient(
-                $configArray['Mongo']['url'], ['connectTimeoutMS' => $timeout]
-            );
-            $this->db = $mongo->selectDB($configArray['Mongo']['database']);
-            $this->cursorTimeout = isset($configArray['Mongo']['cursor_timeout'])
+            $socketTimeout = isset($configArray['Mongo']['cursor_timeout'])
                 ? $configArray['Mongo']['cursor_timeout'] : 300000;
+            $mongo = new \MongoDB\Client(
+                $configArray['Mongo']['url'],
+                [
+                    'connectTimeoutMS' => $timeout,
+                    'cursorTimeoutMS' => $socketTimeout
+                ]
+            );
+            $this->db = $mongo->{$configArray['Mongo']['database']};
         } catch (Exception $e) {
             $this->log->log(
                 'startup',
@@ -198,8 +196,7 @@ class RecordManager
 
         // Used for format mapping in dedup handler
         $solrUpdater = new SolrUpdater(
-            $this->db, $this->basePath, $this->log, $this->verbose,
-            $this->cursorTimeout
+            $this->db, $this->basePath, $this->log, $this->verbose
         );
         $dedupClass = isset($configArray['Site']['dedup_handler'])
             ? $configArray['Site']['dedup_handler']
@@ -207,7 +204,7 @@ class RecordManager
         include_once "$dedupClass.php";
         $this->dedupHandler = new $dedupClass(
             $this->db, $this->log, $this->verbose, $solrUpdater,
-            $this->cursorTimeout, $this->dataSourceSettings
+            $this->dataSourceSettings
         );
 
         if (isset($configArray['Site']['full_title_prefixes'])) {
@@ -356,7 +353,7 @@ class RecordManager
             } else {
                 if ($fromDate) {
                     $params['updated']
-                        = ['$gte' => new MongoDate(strtotime($fromDate))];
+                        = ['$gte' => strtotime($fromDate)];
                 }
                 $params['update_needed'] = false;
                 if ($sourceId && $sourceId !== '*') {
@@ -372,12 +369,13 @@ class RecordManager
                     }
                 }
             }
-            $records = $this->db->record->find($params)
-                ->timeout($this->cursorTimeout);
+            $options = [];
             if ($sortDedup) {
-                $records->sort(['dedup_id' => 1]);
+                $options['sort'] = ['dedup_id' => 1];
             }
-            $total = $this->counts ? $records->count() : 'the';
+            $records = $this->db->record->find($params, $options);
+            $total = $this->counts ? $this->db->record->count($params, $options)
+                : 'the';
             $count = 0;
             $deduped = 0;
             $deleted = 0;
@@ -427,7 +425,7 @@ class RecordManager
                             ? $record['dedup_id']
                             : $record['_id']
                         );
-                    } else if ($addDedupId == 'deduped') {
+                    } elseif ($addDedupId == 'deduped') {
                         $metadataRecord->addDedupKeyToMetadata(
                             isset($record['dedup_id'])
                             ? $record['dedup_id']
@@ -480,8 +478,7 @@ class RecordManager
         $noCommit = false, $compare = '', $dumpPrefix = ''
     ) {
         $updater = new SolrUpdater(
-            $this->db, $this->basePath, $this->log, $this->verbose,
-            $this->cursorTimeout
+            $this->db, $this->basePath, $this->log, $this->verbose
         );
         $updater->updateRecords(
             $fromDate, $sourceId, $singleId, $noCommit, false, $compare, $dumpPrefix
@@ -515,10 +512,8 @@ class RecordManager
             } else {
                 $params['source_id'] = $source;
             }
-            $records = $this->db->record->find($params)->batchSize(5000)
-                ->timeout($this->cursorTimeout);
-            $records->immortal(true);
-            $total = $this->counts ? $records->count() : 'the';
+            $records = $this->db->record->find($params, ['batchSize' => 5000]);
+            $total = $this->counts ? $this->db->record->count($params) : 'the';
             $count = 0;
 
             $this->log->log(
@@ -561,12 +556,13 @@ class RecordManager
                 }
 
                 $record['original_data'] = $this->compressedRecords
-                    ? new MongoBinData(gzdeflate($originalData), 2) : $originalData;
+                    ? new \MongoDB\BSON\Binary(gzdeflate($originalData), 2)
+                    : $originalData;
                 if ($normalizedData == $originalData) {
                     $record['normalized_data'] = '';
                 } else {
                     $record['normalized_data'] = $this->compressedRecords
-                        ? new MongoBinData(gzdeflate($normalizedData), 2)
+                        ? new \MongoDB\BSON\Binary(gzdeflate($normalizedData), 2)
                         : $normalizedData;
                 }
                 $record['linking_id'] = $metadataRecord->getLinkingID();
@@ -575,10 +571,8 @@ class RecordManager
                 } else {
                     unset($record['host_record_id']);
                 }
-                $record['updated'] = new MongoDate();
-                $this->db->record->save(
-                    $record, ['socketTimeoutMS' => $this->cursorTimeout]
-                );
+                $record['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
+                $this->db->record->replaceOne(['_id' => $record['_id']], $record);
 
                 if ($this->verbose) {
                     echo "Metadata for record {$record['_id']}: \n";
@@ -655,7 +649,6 @@ class RecordManager
                         'deleted' => false
                     ]
                 );
-                $records->immortal(true)->timeout($this->cursorTimeout);
                 $pc = new PerformanceCounter();
                 $count = 0;
                 foreach ($records as $record) {
@@ -664,9 +657,9 @@ class RecordManager
                         exit(1);
                     }
 
-                    $record['update_needed'] = true;
-                    $this->db->record->save(
-                        $record, ['socketTimeoutMS' => $this->cursorTimeout]
+                    $this->db->record->updateOne(
+                        ['_id' => $record['_id']],
+                        ['$set' => ['update_needed' => true]]
                     );
 
                     ++$count;
@@ -723,10 +716,8 @@ class RecordManager
                 } else {
                     $params['update_needed'] = true;
                 }
-                $records = $this->db->record->find($params)->batchSize(5000)
-                    ->timeout($this->cursorTimeout);
-                $records->immortal(true);
-                $total = $this->counts ? $records->count() : 'the';
+                $records = $this->db->record->find($params, ['batchSize' => 5000]);
+                $total = $this->counts ? $this->db->record->count($params) : 'the';
                 $count = 0;
                 $deduped = 0;
                 $pc = new PerformanceCounter();
@@ -900,14 +891,16 @@ class RecordManager
                     $dateThreshold = null;
                     if ($reharvest) {
                         if (is_string($reharvest)) {
-                            $dateThreshold = new MongoDate(strtotime($reharvest));
+                            $dateThreshold = new \MongoDB\BSON\UTCDateTime(
+                                strtotime($reharvest)
+                            );
                         } else {
-                            $dateThreshold = new MongoDate();
+                            $dateThreshold = new \MongoDB\BSON\UTCDateTime(time() * 1000);
                         }
                         $this->log->log(
                             'harvest',
                             'Reharvest date threshold: '
-                            . strftime('%F %T', $dateThreshold->sec)
+                            . $dateThreshold->toDatetime()->format('%F %T')
                         );
                     }
 
@@ -963,7 +956,6 @@ class RecordManager
                                     'updated' => ['$lt' => $dateThreshold]
                                 ]
                             );
-                            $records->immortal(true)->timeout($this->cursorTimeout);
                             $count = 0;
                             foreach ($records as $record) {
                                 $this->storeRecord($record['oai_id'], true, '');
@@ -1022,10 +1014,9 @@ class RecordManager
                             );
 
                             $this->log->log('harvest', 'Unmarking records');
-                            $this->db->record->update(
+                            $this->db->record->updateMany(
                                 ['source_id' => $this->sourceId, 'deleted' => false],
-                                ['$unset' => ['mark' => 1]],
-                                ['multiple' => true]
+                                ['$unset' => ['mark' => 1]]
                             );
 
                             $this->log->log('harvest', "Fetching identifiers");
@@ -1040,7 +1031,6 @@ class RecordManager
                                     'mark' => ['$exists' => false]
                                 ]
                             );
-                            $records->immortal(true)->timeout($this->cursorTimeout);
                             $count = 0;
                             foreach ($records as $record) {
                                 $this->storeRecord($record['oai_id'], true, '');
@@ -1056,8 +1046,9 @@ class RecordManager
                                 '_id' => "Last Deletion Processing Time $source",
                                 'value' => time()
                             ];
-                            $this->db->state->save(
-                                $state, ['socketTimeoutMS' => $this->cursorTimeout]
+                            $this->db->state->replaceOne(
+                                ['_id' => $state['_id']], $state,
+                                ['upsert' => true]
                             );
                         }
                     }
@@ -1084,8 +1075,7 @@ class RecordManager
         if (!$recordID) {
             throw new Exception('dump: record id must be specified');
         }
-        $records = $this->db->record->find(['_id' => $recordID])
-            ->timeout($this->cursorTimeout);
+        $records = $this->db->record->find(['_id' => $recordID]);
         foreach ($records as $record) {
             $record['original_data'] = MetadataUtils::getRecordData($record, false);
             $record['normalized_data'] = MetadataUtils::getRecordData($record, true);
@@ -1109,8 +1099,7 @@ class RecordManager
 
         $params = ['deleted' => false, 'source_id' => $sourceId];
         $records = $this->db->record->find($params);
-        $records->immortal(true)->timeout($this->cursorTimeout);
-        $total = $this->counts ? $records->count() : 'the';
+        $total = $this->counts ? $this->db->record->count($params) : 'the';
         $count = 0;
 
         $this->log->log(
@@ -1125,10 +1114,8 @@ class RecordManager
                 unset($record['dedup_id']);
             }
             $record['deleted'] = true;
-            $record['updated'] = new MongoDate();
-            $this->db->record->save(
-                $record, ['socketTimeoutMS' => $this->cursorTimeout]
-            );
+            $record['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
+            $this->db->record->replaceOne(['_id' => $record['_id']], $record);
 
             ++$count;
             if ($count % 1000 == 0) {
@@ -1150,7 +1137,7 @@ class RecordManager
             'markDeleted',
             "Deleting last harvest date from data source '$sourceId'"
         );
-        $this->db->state->remove(
+        $this->db->state->deleteOne(
             ['_id' => "Last Harvest Date $sourceId"]
         );
         $this->log->log('markDeleted', "Marking of $sourceId completed");
@@ -1194,8 +1181,7 @@ class RecordManager
 
         $params = ['source_id' => $sourceId];
         $records = $this->db->record->find($params);
-        $records->immortal(true)->timeout($this->cursorTimeout);
-        $total = $this->counts ? $records->count() : 'the';
+        $total = $this->counts ? $this->db->record->count($params) : 'the';
         $count = 0;
 
         $this->log->log('deleteRecords', "Deleting $total records from '$sourceId'");
@@ -1206,7 +1192,7 @@ class RecordManager
                     $record['dedup_id'], $record['_id']
                 );
             }
-            $this->db->record->remove(['_id' => $record['_id']]);
+            $this->db->record->deleteOne(['_id' => $record['_id']]);
 
             ++$count;
             if ($count % 1000 == 0) {
@@ -1226,7 +1212,7 @@ class RecordManager
             'deleteRecords',
             "Deleting last harvest date from data source '$sourceId'"
         );
-        $this->db->state->remove(['_id' => "Last Harvest Date $sourceId"]);
+        $this->db->state->deleteOne(['_id' => "Last Harvest Date $sourceId"]);
         $this->log->log('deleteRecords', "Deletion of $sourceId completed");
     }
 
@@ -1242,8 +1228,7 @@ class RecordManager
         global $configArray;
 
         $updater = new SolrUpdater(
-            $this->db, $this->basePath, $this->log, $this->verbose,
-            $this->cursorTimeout
+            $this->db, $this->basePath, $this->log, $this->verbose
         );
         if (isset($configArray['Solr']['merge_records'])
             && $configArray['Solr']['merge_records']
@@ -1283,7 +1268,7 @@ class RecordManager
         if ($daysToKeep) {
             $date = strtotime("-$daysToKeep day");
             $dateStr = ' until ' . date('Y-m-d', $date);
-            $params['updated'] = ['$lt' => new MongoDate($date)];
+            $params['updated'] = ['$lt' => new \MongoDB\BSON\UTCDateTime($date)];
         }
         if ($sourceId) {
             $params['source_id'] = $sourceId;
@@ -1292,15 +1277,14 @@ class RecordManager
             'purgeDeletedRecords',
             "Creating record list$dateStr" . ($sourceId ? " for '$sourceId'" : '')
         );
-        $records = $this->db->record->find($params, ['_id' => true]);
-        $records->immortal(true)->timeout($this->cursorTimeout);
-        $total = $this->counts ? $records->count() : 'the';
+        $records = $this->db->record->find($params);
+        $total = $this->counts ? $this->db->record->count($params) : 'the';
         $count = 0;
 
         $this->log->log('purgeDeletedRecords', "Purging $total records");
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
-            $this->db->record->remove(['_id' => $record['_id']]);
+            $this->db->record->deleteOne(['_id' => $record['_id']]);
             ++$count;
             if ($count % 1000 == 0) {
                 $pc->add($count);
@@ -1325,18 +1309,17 @@ class RecordManager
         // Process dedup records
         $params = ['deleted' => true];
         if ($daysToKeep) {
-            $params['changed'] = ['$lt' => new MongoDate($date)];
+            $params['changed'] = ['$lt' => new \MongoDB\BSON\UTCDateTime($date)];
         }
         $this->log->log('purgeDeletedRecords', "Creating dedup record list$dateStr");
-        $records = $this->db->dedup->find($params, ['_id' => true]);
-        $records->immortal(true)->timeout($this->cursorTimeout);
-        $total = $this->counts ? $records->count() : 'the';
+        $records = $this->db->dedup->find($params);
+        $total = $this->counts ? $this->db->dedup->count($params) : 'the';
         $count = 0;
 
         $this->log->log('purgeDeletedRecords', "Purging $total dedup records");
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
-            $this->db->dedup->remove(['_id' => $record['_id']]);
+            $this->db->dedup->deleteOne(['_id' => $record['_id']]);
             ++$count;
             if ($count % 1000 == 0) {
                 $pc->add($count);
@@ -1360,8 +1343,7 @@ class RecordManager
     public function optimizeSolr()
     {
         $updater = new SolrUpdater(
-            $this->db, $this->basePath, $this->log, $this->verbose,
-            $this->cursorTimeout
+            $this->db, $this->basePath, $this->log, $this->verbose
         );
 
         $this->log->log('optimizeSolr', 'Optimizing Solr index');
@@ -1385,7 +1367,7 @@ class RecordManager
             // A single OAI-PMH record may have been split to multiple records
             $records = $this->db->record->find(
                 ['source_id' => $this->sourceId, 'oai_id' => $oaiID]
-            )->timeout($this->cursorTimeout);
+            );
             $count = 0;
             foreach ($records as $record) {
                 if (isset($record['dedup_id'])) {
@@ -1395,11 +1377,9 @@ class RecordManager
                     unset($record['dedup_id']);
                 }
                 $record['deleted'] = true;
-                $record['updated'] = new MongoDate();
+                $record['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
                 $record['update_needed'] = false;
-                $this->db->record->save(
-                    $record, ['socketTimeoutMS' => $this->cursorTimeout]
-                );
+                $this->db->record->replaceOne(['_id' => $record['_id']], $record);
                 ++$count;
             }
             return $count;
@@ -1448,7 +1428,7 @@ class RecordManager
 
         // Store start time so that we can mark deleted any child records not
         // present anymore
-        $startTime = new MongoDate();
+        $startTime = new \MongoDB\BSON\UTCDateTime(time() * 1000);
 
         $count = 0;
         $mainID = '';
@@ -1489,12 +1469,13 @@ class RecordManager
             $id = $this->idPrefix . '.' . $id;
             $dbRecord = $this->db->record->findOne(['_id' => $id]);
             if ($dbRecord) {
-                $dbRecord['updated'] = new MongoDate();
+                $dbRecord['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
             } else {
                 $dbRecord = [];
                 $dbRecord['source_id'] = $this->sourceId;
                 $dbRecord['_id'] = $id;
-                $dbRecord['created'] = $dbRecord['updated'] = new MongoDate();
+                $dbRecord['created'] = $dbRecord['updated']
+                    = new \MongoDB\BSON\UTCDateTime(time() * 1000);
             }
             $dbRecord['date'] = $dbRecord['updated'];
             if ($normalizedData) {
@@ -1503,10 +1484,13 @@ class RecordManager
                 };
             }
             if ($this->compressedRecords) {
-                $originalData = new MongoBinData(gzdeflate($originalData), 2);
+                $originalData = new \MongoDB\BSON\Binary(
+                    gzdeflate($originalData), 2
+                );
                 if ($normalizedData) {
-                    $normalizedData
-                        = new MongoBinData(gzdeflate($normalizedData), 2);
+                    $normalizedData = new \MongoDB\BSON\Binary(
+                        gzdeflate($normalizedData), 2
+                    );
                 }
             }
             $dbRecord['oai_id'] = $oaiID;
@@ -1517,7 +1501,7 @@ class RecordManager
             }
             if ($hostID) {
                 $dbRecord['host_record_id'] = $hostID;
-            } else {
+            } elseif (isset($dbRecord['host_record_id'])) {
                 unset($dbRecord['host_record_id']);
             }
             $dbRecord['format'] = $this->format;
@@ -1533,13 +1517,8 @@ class RecordManager
                             $dbRecord, $metadataRecord
                         );
                 } else {
-                    $this->db->record->update(
-                        [
-                            '_id' => $hostID
-                        ],
-                        [
-                            '$set' => ['update_needed' => true]
-                        ]
+                    $this->db->record->updateOne(
+                        ['_id' => $hostID], ['$set' => ['update_needed' => true]]
                     );
                     $dbRecord['update_needed'] = false;
                 }
@@ -1549,8 +1528,8 @@ class RecordManager
                 unset($dbRecord['id_keys']);
                 $dbRecord['update_needed'] = false;
             }
-            $this->db->record->save(
-                $dbRecord, ['socketTimeoutMS' => $this->cursorTimeout]
+            $this->db->record->replaceOne(
+                ['_id' => $dbRecord['_id']], $dbRecord, ['upsert' => true]
             );
             ++$count;
             if (!$mainID) {
@@ -1561,7 +1540,7 @@ class RecordManager
         if ($count > 1 && $mainID && !$this->keepMissingHierarchyMembers) {
             // We processed a hierarchical record. Mark deleted any children that
             // were not updated.
-            $this->db->record->update(
+            $this->db->record->updateMany(
                 [
                     'source_id' => $this->sourceId,
                     'main_id' => $mainID,
@@ -1571,8 +1550,7 @@ class RecordManager
                     'deleted' => true,
                     'updated' => $startTime,
                     'update_needed' => false
-                ]],
-                ['multiple' => true]
+                ]]
             );
         }
 
@@ -1613,8 +1591,7 @@ class RecordManager
             exit;
         }
         $updater = new SolrUpdater(
-            $this->db, $this->basePath, $this->log, $this->verbose,
-            $this->cursorTimeout
+            $this->db, $this->basePath, $this->log, $this->verbose
         );
         $updater->countValues($sourceId, $field, $mapped);
     }
@@ -1635,10 +1612,9 @@ class RecordManager
             // Don't mark deleted records...
             return;
         }
-        $this->db->record->update(
+        $this->db->record->updateMany(
             ['source_id' => $this->sourceId, 'oai_id' => $oaiID],
-            ['$set' => ['mark' => true]],
-            ['multiple' => true]
+            ['$set' => ['mark' => true]]
         );
     }
 
@@ -1652,7 +1628,6 @@ class RecordManager
         $this->log->log('checkDedupRecords', "Checking dedup record consistency");
 
         $dedupRecords = $this->db->dedup->find();
-        $dedupRecords->immortal(true)->timeout($this->cursorTimeout);
         $count = 0;
         $fixed = 0;
         $pc = new PerformanceCounter();
@@ -1879,7 +1854,7 @@ class RecordManager
         }
         array_walk(
             $lines,
-            function(&$value) {
+            function (&$value) {
                 $value = trim($value, "'");
             }
         );
@@ -1919,7 +1894,7 @@ class RecordManager
         $added = 0;
         $dbRecords = $this->db->record->find(
             ['deleted' => false, 'source_id' => $source]
-        )->timeout($this->cursorTimeout);
+        );
         foreach ($dbRecords as $dbRecord) {
             $id = $dbRecord['_id'];
             if (!isset($records[$id])) {
@@ -1952,5 +1927,4 @@ class RecordManager
             . "$deleted deleted records processed"
         );
     }
-
 }

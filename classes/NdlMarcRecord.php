@@ -22,7 +22,7 @@
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
- * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @license  http://opensource.org/licenses/gpl-2.0.1 GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 require_once 'MarcRecord.php';
@@ -84,7 +84,6 @@ class NdlMarcRecord extends MarcRecord
                 $this->fields['245'][0]['s'][] = ['n' => $enum];
             }
         }
-
     }
 
     /**
@@ -467,7 +466,7 @@ class NdlMarcRecord extends MarcRecord
                 ]
             );
         if (!empty($data['holdings_txtP_mv'])) {
-            $updateFunc = function(&$val, $k, $source) {
+            $updateFunc = function (&$val, $k, $source) {
                 $val .= " $source";
             };
             array_walk($data['holdings_txtP_mv'], $updateFunc, $this->source);
@@ -950,7 +949,6 @@ class NdlMarcRecord extends MarcRecord
                     $allFields[] = $isbn;
                 }
             }
-
         }
         foreach ($this->fields as $tag => $fields) {
             if (($tag >= 100 && $tag < 841 && !isset($fieldFilter[$tag]))
@@ -969,7 +967,7 @@ class NdlMarcRecord extends MarcRecord
             }
         }
         $allFields = array_map(
-            function($str) {
+            function ($str) {
                 return MetadataUtils::stripLeadingPunctuation(
                     MetadataUtils::stripTrailingPunctuation($str)
                 );

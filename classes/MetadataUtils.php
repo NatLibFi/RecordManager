@@ -73,7 +73,10 @@ class MetadataUtils
         }
 
         $sum_of_digits = 38 + 3 * ($isbn{0} + $isbn{2} + $isbn{4} + $isbn{6}
-            + $isbn{8}) + $isbn{1} + $isbn{3} + $isbn{5} + $isbn{7};
+            + $isbn{8}) + $isbn{1}
+        + $isbn{3}
+        + $isbn{5}
+        + $isbn{7};
 
         $check_digit = (10 - ($sum_of_digits % 10)) % 10;
 
@@ -138,7 +141,6 @@ class MetadataUtils
             } elseif ($full && $keyLen > 100) {
                 break;
             }
-
         }
         return MetadataUtils::normalize($key);
     }
@@ -460,7 +462,7 @@ class MetadataUtils
         } else {
             $data = $record['original_data'];
         }
-        return is_object($data) ? gzinflate($data->bin) : $data;
+        return is_object($data) ? gzinflate($data->getData()) : $data;
     }
 
     /**
@@ -554,7 +556,7 @@ class MetadataUtils
     {
         array_walk(
             $array,
-            function(&$val, $key, $chars) {
+            function (&$val, $key, $chars) {
                 $val = trim($val, $chars);
             },
             $chars

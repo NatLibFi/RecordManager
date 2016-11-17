@@ -145,14 +145,16 @@ class Enrichment
      */
     protected function getExternalData($url, $id, $headers = [], $ignoreErrors = [])
     {
-        $cached = $this->db->uriCache->find(
+        $cached = $this->db->uriCache->findOne(
             [
                 '_id' => $id,
                 'timestamp' => [
-                    '$gt' => new MongoDate(time() - $this->maxCacheAge)
+                    '$gt' => new \MongoDB\BSON\UTCDateTime(
+                        (time() - $this->maxCacheAge) * 1000
+                    )
                  ]
             ]
-        )->limit(-1)->timeout(300000)->getNext();
+        );
         if ($cached) {
             return $cached['data'];
         }
@@ -213,14 +215,14 @@ class Enrichment
 
         $data = $code < 300 ? $response->getBody() : '';
 
-        $this->db->uriCache->save(
+        $this->db->uriCache->replaceOne(
             [
                 '_id' => $id,
-                'timestamp' => new MongoDate(),
+                'timestamp' => new \MongoDB\BSON\UTCDateTime(time() * 1000),
                 'data' => $data
             ],
             [
-                'socketTimeoutMS' => 300000
+                'upsert' => true
             ]
         );
 
