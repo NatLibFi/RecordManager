@@ -109,7 +109,7 @@ class DedupHandler
     public function checkDedupRecord($dedupRecord)
     {
         $results = [];
-        foreach ($dedupRecord['ids'] as $id) {
+        foreach ((array)$dedupRecord['ids'] as $id) {
             $record = $this->db->record->findOne(['_id' => $id]);
             if (!$record
                 || $dedupRecord['deleted']
