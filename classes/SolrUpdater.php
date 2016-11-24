@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-declare(ticks = 100);
+declare(ticks=100);
 
 require_once 'BaseRecord.php';
 require_once 'MetadataUtils.php';
@@ -1427,10 +1427,10 @@ class SolrUpdater
                 } else {
                     $data[$field] = $this->mapValue($data[$field], $mappingFile);
                 }
-            } elseif (isset($map['##empty'])) {
-                $data[$field] = $map['##empty'];
-            } elseif (isset($map['##emptyarray'])) {
-                $data[$field] = [$map['##emptyarray']];
+            } elseif (isset($mappingFile['map']['##empty'])) {
+                $data[$field] = $mappingFile['map']['##empty'];
+            } elseif (isset($mappingFile['map']['##emptyarray'])) {
+                $data[$field] = [$mappingFile['map']['##emptyarray']];
             }
         }
 
