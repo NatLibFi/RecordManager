@@ -84,7 +84,6 @@ class NdlMarcRecord extends MarcRecord
                 $this->fields['245'][0]['s'][] = ['n' => $enum];
             }
         }
-
     }
 
     /**
@@ -467,7 +466,7 @@ class NdlMarcRecord extends MarcRecord
                 ]
             );
         if (!empty($data['holdings_txtP_mv'])) {
-            $updateFunc = function(&$val, $k, $source) {
+            $updateFunc = function (&$val, $k, $source) {
                 $val .= " $source";
             };
             array_walk($data['holdings_txtP_mv'], $updateFunc, $this->source);
@@ -515,6 +514,22 @@ class NdlMarcRecord extends MarcRecord
             }
             $data['category_str_mv'][] = $category;
         };
+        foreach ($this->getFields('886') as $field886) {
+            if ($this->getIndicator($field886, 1) != '2'
+                || $this->getSubfield($field886, '2') != 'local') {
+                continue;
+            }
+            $type = $this->getSubfield($field886, 'a');
+            if (!in_array($type, ['kategoria', 'kategori'])) {
+                continue;
+            }
+            $category = $this->getSubfield($field886, 'c');
+            $sub = $this->getSubfield($field886, 'd');
+            if ($sub) {
+                $category .= "/$sub";
+            }
+            $data['category_str_mv'][] = $category;
+        }
 
         // Hierarchical categories (e.g. SFX)
         if ($this->getDriverParam('categoriesIn650', false)) {
@@ -559,6 +574,17 @@ class NdlMarcRecord extends MarcRecord
         );
         $data['callnumber-sort'] = empty($data['callnumber-raw'])
             ? '' : $data['callnumber-raw'][0];
+
+        if (isset($this->fields['977'])) {
+            $field977 = $this->fields['977'];
+            unset($this->fields['977']);
+            $data['fullrecord'] = $this->toISO2709();
+            if (!$data['fullrecord']) {
+                // In case the record exceeds 99999 bytes...
+                $data['fullrecord'] = $this->toXML();
+            }
+            $this->fields['977'] = $field977;
+        }
 
         return $data;
     }
@@ -950,7 +976,6 @@ class NdlMarcRecord extends MarcRecord
                     $allFields[] = $isbn;
                 }
             }
-
         }
         foreach ($this->fields as $tag => $fields) {
             if (($tag >= 100 && $tag < 841 && !isset($fieldFilter[$tag]))
@@ -969,7 +994,7 @@ class NdlMarcRecord extends MarcRecord
             }
         }
         $allFields = array_map(
-            function($str) {
+            function ($str) {
                 return MetadataUtils::stripLeadingPunctuation(
                     MetadataUtils::stripTrailingPunctuation($str)
                 );
