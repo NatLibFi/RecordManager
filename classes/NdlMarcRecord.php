@@ -531,6 +531,13 @@ class NdlMarcRecord extends MarcRecord
                 $resourceType = $this->getSubfield($field886, 'c');
                 if (in_array($resourceType, ['tietokanta', 'databas'])) {
                     $data['format'] = 'Database';
+                    foreach ($this->getFields('035') as $f035) {
+                        if ($originalId = $this->getSubfield($f035, 'a')) {
+                            $originalId
+                                = preg_replace('/^\(.*?\)/', '', $originalId);
+                            $data['original_id_str_mv'][] = $originalId;
+                        }
+                    }
                 }
             }
             if (in_array($type, ['kategoria', 'kategori'])) {
