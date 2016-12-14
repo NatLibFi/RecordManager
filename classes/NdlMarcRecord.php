@@ -527,15 +527,20 @@ class NdlMarcRecord extends MarcRecord
                 continue;
             }
             $type = $this->getSubfield($field886, 'a');
-            if (!in_array($type, ['kategoria', 'kategori'])) {
-                continue;
+            if (in_array($type, ['aineistotyyppi', 'resurstyp'])) {
+                $resourceType = $this->getSubfield($field886, 'c');
+                if (in_array($resourceType, ['tietokanta', 'databas'])) {
+                    $data['format'] = 'Database';
+                }
             }
-            $category = $this->getSubfield($field886, 'c');
-            $sub = $this->getSubfield($field886, 'd');
-            if ($sub) {
-                $category .= "/$sub";
+            if (in_array($type, ['kategoria', 'kategori'])) {
+                $category = $this->getSubfield($field886, 'c');
+                $sub = $this->getSubfield($field886, 'd');
+                if ($sub) {
+                    $category .= "/$sub";
+                }
+                $data['category_str_mv'][] = $category;
             }
-            $data['category_str_mv'][] = $category;
         }
 
         // Hierarchical categories (e.g. SFX)
@@ -581,17 +586,6 @@ class NdlMarcRecord extends MarcRecord
         );
         $data['callnumber-sort'] = empty($data['callnumber-raw'])
             ? '' : $data['callnumber-raw'][0];
-
-        if (isset($this->fields['977'])) {
-            $field977 = $this->fields['977'];
-            unset($this->fields['977']);
-            $data['fullrecord'] = $this->toISO2709();
-            if (!$data['fullrecord']) {
-                // In case the record exceeds 99999 bytes...
-                $data['fullrecord'] = $this->toXML();
-            }
-            $this->fields['977'] = $field977;
-        }
 
         return $data;
     }
