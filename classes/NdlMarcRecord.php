@@ -330,6 +330,13 @@ class NdlMarcRecord extends MarcRecord
             $data['classification_txt_mv'][] = 'dlc '
                 . mb_strtolower(str_replace(' ', '', $classification), 'UTF-8');
         }
+        $nlm = $this->getFieldsSubfields(
+            [[MarcRecord::GET_NORMAL, '060', ['a' => 1, 'b' => 1]]]
+        );
+        foreach ($nlm as $classification) {
+            $data['classification_txt_mv'][] = 'nlm '
+                . mb_strtolower(str_replace(' ', '', $classification), 'UTF-8');
+        }
         foreach ($this->getFields('084') as $field) {
             $source = $this->getSubfield($field, '2');
             $classification = $this->getSubfields($field, ['a' => 1, 'b' => 1]);
