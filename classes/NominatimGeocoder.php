@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 require_once 'Enrichment.php';
 require_once 'vendor/phayes/geophp/geoPHP.inc';
 
@@ -99,6 +98,13 @@ class NominatimGeocoder extends Enrichment
     protected $solrField = 'location_geo';
 
     /**
+     * Solr field to use for the center coordinates of locations
+     *
+     * @var string
+     */
+    protected $solrCenterField = 'center_coords';
+
+    /**
      * Optional terms that may be removed from a string to geocode
      *
      * @var array
@@ -167,6 +173,9 @@ class NominatimGeocoder extends Enrichment
         if (isset($settings['solr_field'])) {
             $this->solrField = $settings['solr_field'];
         }
+        if (isset($settings['solr_center_field'])) {
+            $this->solrCenterField = $settings['solr_center_field'];
+        }
         if (isset($settings['optional_terms'])) {
             $this->optionalTerms = $settings['optional_terms'];
         }
@@ -220,6 +229,12 @@ class NominatimGeocoder extends Enrichment
                         $solrArray[$this->solrField] = array_merge(
                             $solrArray[$this->solrField], $wkts
                         );
+                    }
+                    if (!empty($this->solrCenterField)) {
+                        $solrArray[$this->solrCenterField]
+                            = MetadataUtils::getCenterCoordinates(
+                                $solrArray[$this->solrField]
+                            );
                     }
                     break;
                 }
@@ -283,6 +298,9 @@ class NominatimGeocoder extends Enrichment
             $url, 'nominatim ' . md5($url), [], [500]
         );
         $places = json_decode($response, true);
+        if (null === $places) {
+            throw new Exception("Could not decode Nominatim response: $response");
+        }
 
         $items = [];
         $highestImportance = null;
@@ -299,11 +317,11 @@ class NominatimGeocoder extends Enrichment
                 ) {
                     $wkt = $this->simplify($wkt);
                 }
-                $items[] = [
-                    'wkt' => $this->simplify($wkt),
-                    'importance' => $place['importance']
-                ];
             }
+            $items[] = [
+                'wkt' => $wkt,
+                'importance' => $place['importance']
+            ];
         }
         // Include only items with the highest importance (there may be many with the
         // same importance)
@@ -313,6 +331,7 @@ class NominatimGeocoder extends Enrichment
                 $results[] = $item['wkt'];
             }
         }
+        $results = $this->mergeLineStrings($results);
         return $results;
     }
 
@@ -351,5 +370,55 @@ class NominatimGeocoder extends Enrichment
             $location = $simplifiedWKT;
         }
         return $location;
+    }
+
+    /**
+     * Merge a set of linestrings if they are contiguous
+     *
+     * @param array $wktArray WKT shapes
+     *
+     * @return array
+     */
+    protected function mergeLineStrings($wktArray)
+    {
+        $results = [];
+        $previous = null;
+        foreach ($wktArray as $current) {
+            if (null === $previous || strncmp($current, 'LINESTRING', 10) != 0
+                || strncmp($previous, 'LINESTRING', 10) != 0
+            ) {
+                $results[] = $previous = $current;
+                continue;
+            }
+            $prev = geoPHP::load($previous, 'wkt');
+            $curr = geoPHP::load($current, 'wkt');
+            if ($prev->startPoint() == $curr->endPoint()) {
+                $previous = $this->mergeShapes($current, $previous);
+                array_pop($results);
+                $results[] = $previous;
+            } elseif ($prev->endPoint() == $curr->startPoint()) {
+                $previous = $this->mergeShapes($previous, $current);
+                array_pop($results);
+                $results[] = $previous;
+            } else {
+                $results[] = $previous = $current;
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Merge two WKT shapes (works with linestrings)
+     *
+     * @param string $shape1 First shape
+     * @param string $shape2 Second shape
+     *
+     * @return string
+     */
+    protected function mergeShapes($shape1, $shape2)
+    {
+        $shape2 = preg_replace('/.*\(/', '', $shape2);
+        $shape1 = preg_replace('/,\s*[\d\.\s]+\)$/', ",$shape2", $shape1);
+        return $shape1;
     }
 }

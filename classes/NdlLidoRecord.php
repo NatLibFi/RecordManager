@@ -170,6 +170,8 @@ class NdlLidoRecord extends LidoRecord
         }
 
         $data['location_geo'] = $this->getEventPlaceCoordinates();
+        $data['center_coords']
+            = MetadataUtils::getCenterCoordinates($data['location_geo']);
 
         // Usage rights
         if ($rights = $this->getUsageRights()) {

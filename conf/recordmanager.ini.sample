@@ -4,9 +4,9 @@
 timezone        = "Europe/Helsinki"
 ; Abbreviations that need to be considered before removing trailing period
 abbreviations = abbreviations.lst
-; A file that contains title prefixes. If a title starts with a listed title prefix, 
-; it will not be shortened in title_keys (for deduplication). Add frequently found 
-; titles, such as "visual approach chart" to the list 
+; A file that contains title prefixes. If a title starts with a listed title prefix,
+; it will not be shortened in title_keys (for deduplication). Add frequently found
+; titles, such as "visual approach chart" to the list
 ;full_title_prefixes = full-title-prefixes.lst
 ; Articles that should be removed from the beginning of a title for sorting
 articles = articles.lst
@@ -24,13 +24,13 @@ articles = articles.lst
 [Mongo]
 ; url = mongodb://{username}:{password}@localhost
 ;url = mongodb://localhost
-; Use a unix socket like below, if possible. It can be an order of magnitude faster than TCP/IP. 
+; Use a unix socket like below, if possible. It can be an order of magnitude faster than TCP/IP.
 url = mongodb:///tmp/mongodb-27017.sock
 ; Database to use
 database = recman
 ; Whether to ask MongoDB for counts of records to be processed. Can be really slow.
 counts = false
-; Whether to compress record data in MongoDB. Saves space but slows down the operation. 
+; Whether to compress record data in MongoDB. Saves space but slows down the operation.
 ; Not very useful when using TokuMX instead of plain MongoDB.
 compress_records = false
 ; Connection timeout in milliseconds. Default is 300 000 ms.
@@ -40,7 +40,7 @@ compress_records = false
 
 [Solr]
 ; Note that RecordManager requires that the json update method be available
-; In Solr 4 the same update url is used for all formats, so remove /json 
+; In Solr 4 the same update url is used for all formats, so remove /json
 update_url = http://localhost:8080/solr/biblio/update/json
 ;background_update = true
 max_commit_interval = 1000000
@@ -67,14 +67,14 @@ base_url = http://base.address
 ; Repository admin email address returned in the Identify response
 admin_email = nobody@localhost
 ; Maximum number of results to return for a single request (resumptionToken is used
-; if there are more results to be returned) 
+; if there are more results to be returned)
 result_limit = 1000
 ; Name of the .ini file containing metadata format definitions
 format_definitions = oai-pmh-formats.ini
 ; Name of the .ini file containing record set definitions
 set_definitions = oai-pmh-sets.ini
 ; Record ID prefix used to create an OAI ID for records that don't already have one.
-; To create an OAI ID, the record ID is appended to the prefix. 
+; To create an OAI ID, the record ID is appended to the prefix.
 id_prefix = "oai:base.address:"
 
 [Record Classes]
@@ -87,7 +87,7 @@ id_prefix = "oai:base.address:"
 [Log]
 log_file        = /var/log/recman.log
 log_level       = 4
-error_email     = 
+error_email     =
 
 ; The following section contains parameters passed to the HTTP client.
 ; See https://pear.php.net/manual/en/package.http.http-request2.config.php for
@@ -98,21 +98,21 @@ error_email     =
 
 [MarcRecord]
 ; The following settings can be used to override the default RDA relator codes that
-; are used to classify authors between primary, secondary and others (that are not 
+; are used to classify authors between primary, secondary and others (that are not
 ; indexed)
 ;primary_author_relators = "adp,aut,cmp"
 ;secondary_author_relators = "act,anm,ann,arr"
 
 [ForwardRecord]
 ; The following settings can be used to override the default relator codes that
-; are used to classify authors between primary, secondary and others (that are not 
+; are used to classify authors between primary, secondary and others (that are not
 ; indexed)
 ;primary_author_relators = "A00,A03,A06,A50,A99"
 ;secondary_author_relators = "D01,D02,E01,F01,F02"
 ;corporate_author_relators = ""
 
 [NominatimGeocoder]
-; Please see http://wiki.openstreetmap.org/wiki/Nominatim_usage_policy before using 
+; Please see http://wiki.openstreetmap.org/wiki/Nominatim_usage_policy before using
 ; Nominatim at http://nominatim.openstreetmap.org/search.php. Preferably use a local
 ; installation.
 ; Note that you need to add the following line to any data source in datasources.ini
@@ -121,7 +121,7 @@ error_email     =
 ;url = http://localhost:8080/search.php
 ; http://nominatim.openstreetmap.org/search.php requires a valid email address
 ;email = "your@address"
-; Milliseconds to wait between requests (set to at least 1000 when using 
+; Milliseconds to wait between requests (set to at least 1000 when using
 ; OpenStreetMap's servers). Can be set to 0 when using your own server instance.
 ;delay = 1500
 ; A preferred area for the results may be defined but is not mandatory.
@@ -132,6 +132,9 @@ error_email     =
 ;simplification_max_length = 1000
 ; Solr field that contains the location data
 ;solr_field = location_geo
+; Solr field that contains centroids for the locations. Set to empty if no suitable
+; field is available.
+;solr_center_field = center_coords
 ; Regexp's for terms that may be ignored in a location string if no match is found
 ;optional_terms[] = 'finland'
 ;optional_terms[] = '[^\s]+ lääni'

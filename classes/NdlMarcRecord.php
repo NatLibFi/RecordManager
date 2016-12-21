@@ -294,6 +294,10 @@ class NdlMarcRecord extends MarcRecord
                 }
             }
         }
+        if (!empty($data['location_geo'])) {
+            $data['center_coords']
+                = MetadataUtils::getCenterCoordinates($data['location_geo']);
+        }
 
         // Classifications
         foreach ($this->getFields('080') as $field080) {

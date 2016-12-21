@@ -25,6 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
+require_once 'vendor/phayes/geophp/geoPHP.inc';
 
 /**
  * MetadataUtils Class
@@ -73,7 +74,10 @@ class MetadataUtils
         }
 
         $sum_of_digits = 38 + 3 * ($isbn{0} + $isbn{2} + $isbn{4} + $isbn{6}
-            + $isbn{8}) + $isbn{1} + $isbn{3} + $isbn{5} + $isbn{7};
+            + $isbn{8}) + $isbn{1}
+        + $isbn{3}
+        + $isbn{5}
+        + $isbn{7};
 
         $check_digit = (10 - ($sum_of_digits % 10)) % 10;
 
@@ -138,7 +142,6 @@ class MetadataUtils
             } elseif ($full && $keyLen > 100) {
                 break;
             }
-
         }
         return MetadataUtils::normalize($key);
     }
@@ -554,7 +557,7 @@ class MetadataUtils
     {
         array_walk(
             $array,
-            function(&$val, $key, $chars) {
+            function (&$val, $key, $chars) {
                 $val = trim($val, $chars);
             },
             $chars
@@ -698,5 +701,21 @@ class MetadataUtils
     public static function stripControlCharacters($str)
     {
         return str_replace(["\r", "\n", "\t"], '', $str);
+    }
+
+    /**
+     * Get center coordinates (lat,lon) for any WKT shapes
+     *
+     * @param array $wktArray WKT shapes
+     *
+     * @return string Center coordinates
+     */
+    public static function getCenterCoordinates($wktArray)
+    {
+        if (!empty($wktArray)) {
+            $item = geoPHP::load($wktArray[0], 'wkt');
+            $centroid = $item->centroid();
+            return $centroid->getX() . ' ' . $centroid->getY();
+        }
     }
 }
