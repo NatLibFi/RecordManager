@@ -717,5 +717,6 @@ class MetadataUtils
             $centroid = $item->centroid();
             return $centroid ? $centroid->getX() . ' ' . $centroid->getY() : '';
         }
+        return '';
     }
 }
