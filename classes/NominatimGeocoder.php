@@ -299,7 +299,11 @@ class NominatimGeocoder extends Enrichment
         );
         $places = json_decode($response, true);
         if (null === $places) {
-            throw new Exception("Could not decode Nominatim response: $response");
+            $this->log->log(
+                "Could not decode Nominatim response (request: $url): $response",
+                Logger::ERROR
+            );
+            return [];
         }
 
         $items = [];
