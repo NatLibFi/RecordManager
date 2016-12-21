@@ -706,15 +706,24 @@ class MetadataUtils
     /**
      * Get center coordinates (lat,lon) for any WKT shapes
      *
-     * @param array $wktArray WKT shapes
+     * @param string|array $wkt WKT shape(s)
      *
      * @return string Center coordinates
      */
-    public static function getCenterCoordinates($wktArray)
+    public static function getCenterCoordinates($wkt)
     {
-        if (!empty($wktArray)) {
-            $item = geoPHP::load($wktArray[0], 'wkt');
-            $centroid = $item->centroid();
+        if (!empty($wkt)) {
+            $wkt = is_array($wkt) ? $wkt[0] : $wkt;
+            try {
+                $item = geoPHP::load($wkt, 'wkt');
+            } catch (Exception $e) {
+                global $logger;
+                $logger->log(
+                    "Could not parse WKT '$wkt': " . $e->getMessage(), Logger::ERROR
+                );
+                return [];
+            }
+            $centroid = $item ? $item->centroid() : null;
             return $centroid ? $centroid->getX() . ' ' . $centroid->getY() : '';
         }
         return '';
