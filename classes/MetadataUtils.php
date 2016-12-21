@@ -715,7 +715,7 @@ class MetadataUtils
         if (!empty($wktArray)) {
             $item = geoPHP::load($wktArray[0], 'wkt');
             $centroid = $item->centroid();
-            return $centroid->getX() . ' ' . $centroid->getY();
+            return $centroid ? $centroid->getX() . ' ' . $centroid->getY() : '';
         }
     }
 }
