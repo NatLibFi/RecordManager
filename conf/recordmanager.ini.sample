@@ -135,6 +135,9 @@ error_email     =
 ; Solr field that contains centroids for the locations. Set to empty if no suitable
 ; field is available.
 ;solr_center_field = center_coords
+; Ignored OSM Classes overriding the default list
+;ignored_classes[] = 'amenity'
+;ignored_classes[] = 'office'
 ; Regexp's for terms that may be ignored in a location string if no match is found
 ;optional_terms[] = 'finland'
 ;optional_terms[] = '[^\s]+ lääni'

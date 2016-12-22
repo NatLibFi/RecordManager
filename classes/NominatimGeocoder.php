@@ -105,6 +105,16 @@ class NominatimGeocoder extends Enrichment
     protected $solrCenterField = 'center_coords';
 
     /**
+     * Ignored classes
+     *
+     * @var array
+     */
+    protected $ignoredClasses = [
+        'amenity', 'craft', 'emergency', 'office', 'power', 'public_transport',
+        'shop', 'sport', 'tourism'
+    ];
+
+    /**
      * Optional terms that may be removed from a string to geocode
      *
      * @var array
@@ -176,6 +186,9 @@ class NominatimGeocoder extends Enrichment
         if (isset($settings['solr_center_field'])) {
             $this->solrCenterField = $settings['solr_center_field'];
         }
+        if (isset($settings['ignored_classes'])) {
+            $this->ignoredClasses = $settings['ignored_classes'];
+        }
         if (isset($settings['optional_terms'])) {
             $this->optionalTerms = $settings['optional_terms'];
         }
@@ -221,8 +234,9 @@ class NominatimGeocoder extends Enrichment
                 }
             }
             for ($i = 0; $i < 10; $i++) {
-                $wkts = $this->geocode($location);
-                if ($wkts) {
+                $geocoded = $this->geocode($location);
+                if ($geocoded) {
+                    $wkts = array_column($geocoded, 'wkt');
                     if (!isset($solrArray[$this->solrField])) {
                         $solrArray[$this->solrField] = $wkts;
                     } else {
@@ -232,9 +246,7 @@ class NominatimGeocoder extends Enrichment
                     }
                     if (!empty($this->solrCenterField)) {
                         $solrArray[$this->solrCenterField]
-                            = MetadataUtils::getCenterCoordinates(
-                                $solrArray[$this->solrField]
-                            );
+                            = $geocoded[0]['lon'] . ' ' . $geocoded[0]['lat'];
                     }
                     break;
                 }
@@ -270,7 +282,8 @@ class NominatimGeocoder extends Enrichment
      *
      * @param string $location Location string
      *
-     * @return array WKT strings
+     * @return array Array of keyed arrays with keys wkt, lat and lon for each
+     * location
      */
     protected function geocode($location)
     {
@@ -309,22 +322,34 @@ class NominatimGeocoder extends Enrichment
         $items = [];
         $highestImportance = null;
         foreach ($places as $place) {
-            if (null === $highestImportance
-                || $place['importance'] > $highestImportance
-            ) {
-                $highestImportance = $place['importance'];
+            if (in_array($place['class'], $this->ignoredClasses)) {
+                continue;
+            }
+            $importance = $place['importance'];
+            if ($place['class'] == 'boundary') {
+                // Boost boundaries
+                $importance *= 10;
+            }
+            if (null === $highestImportance || $importance > $highestImportance) {
+                $highestImportance = $importance;
+            } elseif ($importance < $highestImportance) {
+                continue;
             }
             $wkt = $place['geotext'];
             if ($this->simplificationTolerance) {
                 if (strcasecmp(substr($wkt, 0, 7), 'POLYGON') == 0
                     || strcasecmp(substr($wkt, 0, 12), 'MULTIPOLYGON') == 0
+                    || strcasecmp(substr($wkt, 0, 10), 'LINESTRING') == 0
+                    || strcasecmp(substr($wkt, 0, 15), 'MULTILINESTRING') == 0
                 ) {
                     $wkt = $this->simplify($wkt);
                 }
             }
             $items[] = [
                 'wkt' => $wkt,
-                'importance' => $place['importance']
+                'lat' => $place['lat'],
+                'lon' => $place['lon'],
+                'importance' => $importance
             ];
         }
         // Include only items with the highest importance (there may be many with the
@@ -332,7 +357,7 @@ class NominatimGeocoder extends Enrichment
         $results = [];
         foreach ($items as $item) {
             if ($item['importance'] == $highestImportance) {
-                $results[] = $item['wkt'];
+                $results[] = $item;
             }
         }
         $results = $this->mergeLineStrings($results);
@@ -340,11 +365,11 @@ class NominatimGeocoder extends Enrichment
     }
 
     /**
-     * Simplify a polygon
+     * Simplify a shape
      *
-     * @param string $location WKT polygon
+     * @param string $location WKT shape
      *
-     * @return string Simplified WKT polygon
+     * @return string Simplified WKT shape
      */
     protected function simplify($location)
     {
@@ -359,7 +384,7 @@ class NominatimGeocoder extends Enrichment
         for ($try = 1; $try < 100; $try++) {
             $simplified = $polygon->simplify($tolerance);
             if (null === $simplified) {
-                throw new Exception('Polygon simplification failed');
+                throw new Exception('Shape simplification failed');
             }
             $simplifiedWKT = $simplified->out('wkt');
             $pointCount = substr_count($simplifiedWKT, ',') + 1;
@@ -379,29 +404,33 @@ class NominatimGeocoder extends Enrichment
     /**
      * Merge a set of linestrings if they are contiguous
      *
-     * @param array $wktArray WKT shapes
+     * @param array $locations Locations (keyed arrays)
      *
      * @return array
      */
-    protected function mergeLineStrings($wktArray)
+    protected function mergeLineStrings($locations)
     {
         $results = [];
         $previous = null;
-        foreach ($wktArray as $current) {
-            if (null === $previous || strncmp($current, 'LINESTRING', 10) != 0
-                || strncmp($previous, 'LINESTRING', 10) != 0
+        foreach ($locations as $current) {
+            if (null === $previous || strncmp($current['wkt'], 'LINESTRING', 10) != 0
+                || strncmp($previous['wkt'], 'LINESTRING', 10) != 0
             ) {
                 $results[] = $previous = $current;
                 continue;
             }
-            $prev = geoPHP::load($previous, 'wkt');
-            $curr = geoPHP::load($current, 'wkt');
+            $prev = geoPHP::load($previous['wkt'], 'wkt');
+            $curr = geoPHP::load($current['wkt'], 'wkt');
             if ($prev->startPoint() == $curr->endPoint()) {
-                $previous = $this->mergeShapes($current, $previous);
+                $previous['wkt'] = $this->mergeShapes(
+                    $current['wkt'], $previous['wkt']
+                );
                 array_pop($results);
                 $results[] = $previous;
             } elseif ($prev->endPoint() == $curr->startPoint()) {
-                $previous = $this->mergeShapes($previous, $current);
+                $previous['wkt'] = $this->mergeShapes(
+                    $previous['wkt'], $current['wkt']
+                );
                 array_pop($results);
                 $results[] = $previous;
             } else {
