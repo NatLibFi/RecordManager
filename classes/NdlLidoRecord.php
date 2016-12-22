@@ -207,6 +207,31 @@ class NdlLidoRecord extends LidoRecord
     public function getLocations()
     {
         $locations = [];
+
+        // Subject places
+        $results = [];
+        foreach ($this->getSubjectNodes() as $subject) {
+            foreach ($subject->subjectPlace as $subjectPlace) {
+                foreach ($subjectPlace->place as $place) {
+                    if ($place->namePlaceSet->appellationValue) {
+                        $mainPlace
+                            = (string)$place->namePlaceSet->appellationValue;
+                        $subLocation = $this->getSubLocation($place);
+                        if ($mainPlace && !$subLocation) {
+                            continue;
+                        } else {
+                            foreach (preg_split('/( tai |\. )/', $subLocation)
+                                as $subPart
+                            ) {
+                                $locations[] = "$mainPlace $subPart";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Event places
         foreach ([$this->mainEvent, $this->usagePlaceEvent] as $event) {
             foreach ($this->getEventNodes($event) as $eventNode) {
                 // If there is already gml in the record, don't return anything for
@@ -214,29 +239,7 @@ class NdlLidoRecord extends LidoRecord
                 if (!empty($eventNode->eventPlace->place->gml)) {
                     return [];
                 }
-                if (!empty($eventNode->eventPlace->place->partOfPlace)) {
-                    $haveStreet = false;
-                    foreach ($eventNode->eventPlace->place->partOfPlace as $part) {
-                        if (isset($part->placeClassification->term)
-                            && $part->placeClassification->term == 'katuosoite'
-                        ) {
-                            $haveStreet = true;
-                            break;
-                        }
-                    }
-                    $parts = [];
-                    foreach ($eventNode->eventPlace->place->partOfPlace as $part) {
-                        if ($haveStreet && isset($part->placeClassification->term)
-                            && $part->placeClassification->term == 'kaupunginosa'
-                        ) {
-                            continue;
-                        }
-                        if (isset($part->namePlaceSet->appellationValue)) {
-                            $parts[] = (string)$part->namePlaceSet->appellationValue;
-                        }
-                    }
-                    $locations[] = implode(' ', $parts);
-                } elseif (!empty(
+                if (!empty(
                     $eventNode->eventPlace->place->namePlaceSet->appellationValue
                 )) {
                     $mainPlace = (string)$eventNode->eventPlace->place->namePlaceSet
@@ -250,8 +253,36 @@ class NdlLidoRecord extends LidoRecord
                             explode('/', $mainPlace)
                         );
                     } else {
-                        $locations[] = "$mainPlace $subLocation";
+                        $locations = array_merge(
+                            $locations,
+                            $this->splitAddresses($mainPlace, $subLocation)
+                        );
                     }
+                } elseif (!empty($eventNode->eventPlace->place->partOfPlace)) {
+                    // Flat part of place structure (e.g. Musketti)
+                    $haveStreet = false;
+                    foreach ($eventNode->eventPlace->place->partOfPlace as $part) {
+                        if (isset($part->placeClassification->term)
+                            && $part->placeClassification->term == 'katuosoite'
+                            && !empty($part->namePlaceSet->appellationValue)
+                        ) {
+                            $haveStreet = true;
+                            break;
+                        }
+                    }
+                    $parts = [];
+                    foreach ($eventNode->eventPlace->place->partOfPlace as $part) {
+                        if ($haveStreet && isset($part->placeClassification->term)
+                            && ($part->placeClassification->term == 'kaupunginosa'
+                            || $part->placeClassification->term == 'rakennus')
+                        ) {
+                            continue;
+                        }
+                        if (!empty($part->namePlaceSet->appellationValue)) {
+                            $parts[] = (string)$part->namePlaceSet->appellationValue;
+                        }
+                    }
+                    $locations[] = implode(' ', $parts);
                 } elseif (!empty($eventNode->eventPlace->displayPlace)) {
                     // Split multiple locations separated with a slash
                     $locations = array_merge(
@@ -278,7 +309,50 @@ class NdlLidoRecord extends LidoRecord
                 $result[] = $location;
             }
         }
+        // Try to add versions with additional notes like
+        // "Helsinki Uudenmaankatu 31, katurakennus" removed
+        foreach ($result as $item) {
+            if (preg_match('/(.*[^\s]+\s+[^\s]+),/', $item, $matches)) {
+                $result[] = $matches[1];
+            }
+        }
+
+        // Remove commas and stuff in parenthesis
+        $result = array_filter($result);
+        $result = array_map(
+            function ($s) {
+                $s = preg_replace('/\(.*/', '', $s);
+                $s = str_replace(', ', ' ', $s);
+                $s = str_replace(',', ' ', $s);
+                return $s;
+            },
+            $result
+        );
+        $result = array_unique($result);
+
         return $result;
+    }
+
+    /**
+     * Try to split logical sublocation parts
+     *
+     * @param string $mainPlace   Main location
+     * @param string $subLocation Sublocation(s)
+     *
+     * @return array
+     */
+    protected function splitAddresses($mainPlace, $subLocation)
+    {
+        $locations = [];
+        if (preg_match('/[^\s]+(\,(?!\s*\d)|\.|\s*\&)\s+[^\s]+/', $subLocation)) {
+            foreach (preg_split('/(\,(?!\s*\d)|\.|\s*\&)\s+/', $subLocation) as $sub
+            ) {
+                $locations[] = "$mainPlace $sub";
+            }
+        } else {
+            $locations[] = "$mainPlace $subLocation";
+        }
+        return $locations;
     }
 
     /**

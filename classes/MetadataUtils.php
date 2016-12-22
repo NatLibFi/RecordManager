@@ -704,7 +704,7 @@ class MetadataUtils
     }
 
     /**
-     * Get center coordinates (lat,lon) for any WKT shapes
+     * Get center coordinates (lon lat) for any WKT shapes
      *
      * @param string|array $wkt WKT shape(s)
      *
