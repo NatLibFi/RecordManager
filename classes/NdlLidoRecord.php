@@ -169,7 +169,7 @@ class NdlLidoRecord extends LidoRecord
             $data['online_str_mv'] = $this->source;
         }
 
-        $data['location_geo'] = $this->getEventPlaceCoordinates();
+        $data['location_geo'] = $this->getEventPlaceLocations();
         $data['center_coords']
             = MetadataUtils::getCenterCoordinates($data['location_geo']);
 
@@ -665,38 +665,133 @@ class NdlLidoRecord extends LidoRecord
     }
 
     /**
-     * Return the event place coordinates associated with specified event
+     * Return the event place locations associated with specified event
      *
      * @param string $event Which event to use (omit to scan all events)
      *
-     * @return string
+     * @return array WKT
      */
-    protected function getEventPlaceCoordinates($event = null)
+    protected function getEventPlaceLocations($event = null)
     {
-        $coordinates = [];
+        $results = [];
         foreach ($this->getEventNodes($event) as $event) {
-            if (!empty($event->eventPlace->place->gml->Point->pos)) {
-                $coordinates[] = (string) $event->eventPlace->place->gml->Point->pos;
+            foreach ($event->eventPlace as $eventPlace) {
+                foreach ($eventPlace->place as $place) {
+                    if (!empty($place->gml)) {
+                        if ($wkt = $this->convertGmlToWkt($place->gml)) {
+                            $results[] = $wkt;
             }
         }
+                }
+            }
+        }
+        return $results;
+    }
 
-        $results = [];
-        foreach ($coordinates as $coord) {
-            list($lat, $long) = explode(' ', (string)$coord, 2);
-            if ($lat < -90 || $lat > 90 || $long < -180 || $long > 180) {
+    /**
+     * Convert SimpleXML GML node to a WKT string
+     *
+     * This assumes WSG 84
+     *
+     * @param SimpleXMLElement $gml GML Node
+     *
+     * @return string WKT
+     */
+    protected function convertGmlToWkt($gml)
+    {
                 global $logger;
+
+        if (!empty($gml->Polygon)) {
+            if (empty($gml->Polygon->outerBoundaryIs->LinearRing->coordinates)) {
                 $logger->log(
                     'NdlLidoRecord',
-                    "Discarding invalid coordinates $lat,$long, record "
+                    "GML Polygon missing outer boundary, record "
                     . "{$this->source}." . $this->getID(),
                     Logger::WARNING
                 );
-                continue;
+                return '';
             }
+            $outerBoundary
+                = $this->swapCoordinates(
+                    (string)$gml->Polygon->outerBoundaryIs->LinearRing->coordinates
+                );
+            $innerBoundary
+                = !empty($gml->Polygon->innerBoundaryIs->LinearRing->coordinates)
+                ? $this->swapCoordinates(
+                    (string)$gml->Polygon->innerBoundaryIs->LinearRing->coordinates
+                ) : '';
 
-            $results[] = "POINT($long $lat)";
+            return $innerBoundary
+                ? "POLYGON (($outerBoundary),($innerBoundary))"
+                : "POLYGON (($outerBoundary))";
         }
-        return $results;
+
+        if (!empty($gml->LineString)) {
+            if (empty($gml->LineString->coordinates)) {
+                $logger->log(
+                    'NdlLidoRecord',
+                    "GML LineString missing coordinates, record "
+                    . "{$this->source}." . $this->getID(),
+                    Logger::WARNING
+                );
+                return '';
+            }
+            $coordinates = $this->swapCoordinates(
+                (string)$gml->LineString->coordinates
+            );
+            return "LINESTRING ($coordinates)";
+        }
+
+        if (!empty($gml->Point)) {
+            if (isset($gml->Point->pos)) {
+                $coordinates = (string)$gml->Point->pos;
+                list($lat, $lon) = explode(' ', (string)$coordinates, 2);
+            } elseif (isset($gml->Point->coordinates)) {
+                $coordinates = (string)$gml->Point->coordinates;
+                list($lat, $lon) = explode(',', (string)$coordinates, 2);
+            } else {
+                $logger->log(
+                'NdlLidoRecord',
+                "GML Point does not contain pos or coordinates, record "
+                . "{$this->source}." . $this->getID(),
+                Logger::WARNING
+            );
+                return '';
+            }
+            $lat = trim($lat);
+            $lon = trim($lon);
+            if ($lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) {
+                $logger->log(
+                'NdlLidoRecord',
+                "Discarding invalid coordinates $lat,$lon, record "
+                . "{$this->source}." . $this->getID(),
+                Logger::WARNING
+            );
+                return '';
+            }
+            return "POINT ($lon $lat)";
+        }
+
+        return '';
+    }
+
+    /**
+     * Convert GML coordinates to WKT coordinates
+     *
+     * @param string $coordinates GML coordinates
+     *
+     * @return string WKT coordinates
+     */
+    protected function swapCoordinates($coordinates)
+    {
+        $result = [];
+        foreach (preg_split('/(?=/\d)\s(?=/\d)/', $coordinates) as $coordinate) {
+            list($lat, $lon) = explode(',', $coordinate, 2);
+            $lat = trim($lat);
+            $lon = trim($lon);
+            $result[] = "$lon $lat";
+        }
+        return implode(',', $result);
     }
 
     /**
