@@ -250,8 +250,9 @@ class NominatimGeocoder extends Enrichment
                     }
                     break;
                 }
-                // Try to remove optional words if we have more than two words
                 $cleaned = $location;
+
+                // Try to remove optional words if we have more than two words
                 if ($this->optionalTerms && str_word_count($location) > 2) {
                     foreach ($this->optionalTerms as $term) {
                         $cleaned = preg_replace(
@@ -261,6 +262,15 @@ class NominatimGeocoder extends Enrichment
                         );
                     }
                 }
+                // If optional words have been cleaned to no avail, try also removing
+                // last word if we have more than two
+                if ($cleaned == $location) {
+                    $words = explode(',', $cleaned);
+                    if (count($words) > 2) {
+                        $cleaned = implode(',', array_splice($words, 0, -1));
+                    }
+                }
+
                 // Apply transformations
                 foreach ($this->transformations as $transformation) {
                     $cleaned = preg_replace(
@@ -383,6 +393,10 @@ class NominatimGeocoder extends Enrichment
         $pointCount = null;
         for ($try = 1; $try < 100; $try++) {
             $simplified = $polygon->simplify($tolerance);
+            if (strstr($simplified, 'EMPTY') !== false) {
+                // Got empty shape as result, return the original
+                return $location;
+            }
             if (null === $simplified) {
                 throw new Exception('Shape simplification failed');
             }

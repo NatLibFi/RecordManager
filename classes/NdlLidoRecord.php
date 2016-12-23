@@ -206,10 +206,8 @@ class NdlLidoRecord extends LidoRecord
      */
     public function getLocations()
     {
-        $locations = [];
-
         // Subject places
-        $results = [];
+        $subjectLocations = [];
         foreach ($this->getSubjectNodes() as $subject) {
             foreach ($subject->subjectPlace as $subjectPlace) {
                 foreach ($subjectPlace->place as $place) {
@@ -223,7 +221,7 @@ class NdlLidoRecord extends LidoRecord
                             foreach (preg_split('/( tai |\. )/', $subLocation)
                                 as $subPart
                             ) {
-                                $locations[] = "$mainPlace $subPart";
+                                $subjectLocations[] = "$mainPlace $subPart";
                             }
                         }
                     }
@@ -232,6 +230,7 @@ class NdlLidoRecord extends LidoRecord
         }
 
         // Event places
+        $locations = [];
         foreach ([$this->mainEvent, $this->usagePlaceEvent] as $event) {
             foreach ($this->getEventNodes($event) as $eventNode) {
                 // If there is already gml in the record, don't return anything for
@@ -294,6 +293,28 @@ class NdlLidoRecord extends LidoRecord
                 }
             }
         }
+
+        $locations = array_map(
+            function ($s) {
+                return rtrim($s, ',. ');
+            },
+            $locations
+        );
+
+        $accepted = [];
+        foreach ($locations as $location) {
+            if (str_word_count($location) == 1) {
+                foreach ($subjectLocations as $subjectLocation) {
+                    if (strncmp($subjectLocation, $location, strlen($location)) == 0
+                    ) {
+                        continue 2;
+                    }
+                }
+            }
+            $accepted[] = $location;
+        }
+        $locations = array_merge($accepted, $subjectLocations);
+
         $result = [];
         // Try to split address lists like "Helsinki, Kalevankatu 17, 19" to separate
         // entries
@@ -310,21 +331,22 @@ class NdlLidoRecord extends LidoRecord
             }
         }
         // Try to add versions with additional notes like
-        // "Helsinki Uudenmaankatu 31, katurakennus" removed
+        // "Helsinki Uudenmaankatu 31, katurakennus" removed, but avoid changing e.g.
+        // "Uusimaa, Helsinki, Malmi"
         foreach ($result as $item) {
-            if (preg_match('/(.*[^\s]+\s+[^\s]+),/', $item, $matches)) {
+            if (str_word_count($item) > 2 && substr_count($item, ',') == 1
+                && preg_match('/(.*[^\s]+\s+\d+),/', $item, $matches)
+            ) {
                 $result[] = $matches[1];
             }
         }
 
-        // Remove commas and stuff in parenthesis
+        // Remove stuff in parenthesis
         $result = array_filter($result);
         $result = array_map(
             function ($s) {
                 $s = preg_replace('/\(.*/', '', $s);
-                $s = str_replace(', ', ' ', $s);
-                $s = str_replace(',', ' ', $s);
-                return $s;
+                return trim($s);
             },
             $result
         );
@@ -680,8 +702,8 @@ class NdlLidoRecord extends LidoRecord
                     if (!empty($place->gml)) {
                         if ($wkt = $this->convertGmlToWkt($place->gml)) {
                             $results[] = $wkt;
-            }
-        }
+                        }
+                    }
                 }
             }
         }
@@ -699,7 +721,7 @@ class NdlLidoRecord extends LidoRecord
      */
     protected function convertGmlToWkt($gml)
     {
-                global $logger;
+        global $logger;
 
         if (!empty($gml->Polygon)) {
             if (empty($gml->Polygon->outerBoundaryIs->LinearRing->coordinates)) {
