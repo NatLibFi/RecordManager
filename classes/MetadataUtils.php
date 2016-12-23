@@ -25,6 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
+require_once 'vendor/phayes/geophp/geoPHP.inc';
 
 /**
  * MetadataUtils Class
@@ -700,5 +701,31 @@ class MetadataUtils
     public static function stripControlCharacters($str)
     {
         return str_replace(["\r", "\n", "\t"], '', $str);
+    }
+
+    /**
+     * Get center coordinates (lon lat) for any WKT shapes
+     *
+     * @param string|array $wkt WKT shape(s)
+     *
+     * @return string Center coordinates
+     */
+    public static function getCenterCoordinates($wkt)
+    {
+        if (!empty($wkt)) {
+            $wkt = is_array($wkt) ? $wkt[0] : $wkt;
+            try {
+                $item = geoPHP::load($wkt, 'wkt');
+            } catch (Exception $e) {
+                global $logger;
+                $logger->log(
+                    "Could not parse WKT '$wkt': " . $e->getMessage(), Logger::ERROR
+                );
+                return [];
+            }
+            $centroid = $item ? $item->centroid() : null;
+            return $centroid ? $centroid->getX() . ' ' . $centroid->getY() : '';
+        }
+        return '';
     }
 }

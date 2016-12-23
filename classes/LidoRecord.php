@@ -290,15 +290,19 @@ class LidoRecord extends BaseRecord
      * Get the last sublocation (partOfPlace) of a place
      *
      * @param simpleXMLElement $place Place element
+     * @param bool             $isSub Is the current $place a sublocation
      *
      * @return string
      */
-    protected function getSubLocation($place)
+    protected function getSubLocation($place, $isSub = false)
     {
         if (!empty($place->partOfPlace)) {
-            return $this->getSubLocation($place->partOfPlace);
+            $result = $this->getSubLocation($place->partOfPlace, true);
+            if (!empty($result)) {
+                return $result;
+            }
         }
-        return isset($place->namePlaceSet->appellationValue)
+        return $isSub && isset($place->namePlaceSet->appellationValue)
             ? (string)$place->namePlaceSet->appellationValue : '';
     }
 
@@ -772,8 +776,8 @@ class LidoRecord extends BaseRecord
             $year = $matches[1];
             $month =  sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[3]);
-            $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
-            $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+            $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
             $noprocess = true;
         } elseif (preg_match(
             '/(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)/', $input, $matches
@@ -781,8 +785,8 @@ class LidoRecord extends BaseRecord
             $year = $matches[3];
             $month =  sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[1]);
-            $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
-            $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+            $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
             $noprocess = true;
         } elseif (preg_match('/(\d?\d?\d\d) ?\?/', $input, $matches) > 0) {
             $year = $matches[1];
@@ -884,7 +888,6 @@ class LidoRecord extends BaseRecord
             $setList[] = $titleSetNode;
         }
         return $setList;
-
     }
 
     /**
@@ -1017,5 +1020,4 @@ class LidoRecord extends BaseRecord
         }
         return $setList;
     }
-
 }

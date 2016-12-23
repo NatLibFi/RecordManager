@@ -169,7 +169,9 @@ class NdlLidoRecord extends LidoRecord
             $data['online_str_mv'] = $this->source;
         }
 
-        $data['location_geo'] = $this->getEventPlaceCoordinates();
+        $data['location_geo'] = $this->getEventPlaceLocations();
+        $data['center_coords']
+            = MetadataUtils::getCenterCoordinates($data['location_geo']);
 
         // Usage rights
         if ($rights = $this->getUsageRights()) {
@@ -204,6 +206,30 @@ class NdlLidoRecord extends LidoRecord
      */
     public function getLocations()
     {
+        // Subject places
+        $subjectLocations = [];
+        foreach ($this->getSubjectNodes() as $subject) {
+            foreach ($subject->subjectPlace as $subjectPlace) {
+                foreach ($subjectPlace->place as $place) {
+                    if ($place->namePlaceSet->appellationValue) {
+                        $mainPlace
+                            = (string)$place->namePlaceSet->appellationValue;
+                        $subLocation = $this->getSubLocation($place);
+                        if ($mainPlace && !$subLocation) {
+                            continue;
+                        } else {
+                            foreach (preg_split('/( tai |\. )/', $subLocation)
+                                as $subPart
+                            ) {
+                                $subjectLocations[] = "$mainPlace $subPart";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Event places
         $locations = [];
         foreach ([$this->mainEvent, $this->usagePlaceEvent] as $event) {
             foreach ($this->getEventNodes($event) as $eventNode) {
@@ -212,29 +238,7 @@ class NdlLidoRecord extends LidoRecord
                 if (!empty($eventNode->eventPlace->place->gml)) {
                     return [];
                 }
-                if (!empty($eventNode->eventPlace->place->partOfPlace)) {
-                    $haveStreet = false;
-                    foreach ($eventNode->eventPlace->place->partOfPlace as $part) {
-                        if (isset($part->placeClassification->term)
-                            && $part->placeClassification->term == 'katuosoite'
-                        ) {
-                            $haveStreet = true;
-                            break;
-                        }
-                    }
-                    $parts = [];
-                    foreach ($eventNode->eventPlace->place->partOfPlace as $part) {
-                        if ($haveStreet && isset($part->placeClassification->term)
-                            && $part->placeClassification->term == 'kaupunginosa'
-                        ) {
-                            continue;
-                        }
-                        if (isset($part->namePlaceSet->appellationValue)) {
-                            $parts[] = (string)$part->namePlaceSet->appellationValue;
-                        }
-                    }
-                    $locations[] = implode(' ', $parts);
-                } elseif (!empty(
+                if (!empty(
                     $eventNode->eventPlace->place->namePlaceSet->appellationValue
                 )) {
                     $mainPlace = (string)$eventNode->eventPlace->place->namePlaceSet
@@ -248,8 +252,36 @@ class NdlLidoRecord extends LidoRecord
                             explode('/', $mainPlace)
                         );
                     } else {
-                        $locations[] = "$mainPlace $subLocation";
+                        $locations = array_merge(
+                            $locations,
+                            $this->splitAddresses($mainPlace, $subLocation)
+                        );
                     }
+                } elseif (!empty($eventNode->eventPlace->place->partOfPlace)) {
+                    // Flat part of place structure (e.g. Musketti)
+                    $haveStreet = false;
+                    foreach ($eventNode->eventPlace->place->partOfPlace as $part) {
+                        if (isset($part->placeClassification->term)
+                            && $part->placeClassification->term == 'katuosoite'
+                            && !empty($part->namePlaceSet->appellationValue)
+                        ) {
+                            $haveStreet = true;
+                            break;
+                        }
+                    }
+                    $parts = [];
+                    foreach ($eventNode->eventPlace->place->partOfPlace as $part) {
+                        if ($haveStreet && isset($part->placeClassification->term)
+                            && ($part->placeClassification->term == 'kaupunginosa'
+                            || $part->placeClassification->term == 'rakennus')
+                        ) {
+                            continue;
+                        }
+                        if (!empty($part->namePlaceSet->appellationValue)) {
+                            $parts[] = (string)$part->namePlaceSet->appellationValue;
+                        }
+                    }
+                    $locations[] = implode(' ', $parts);
                 } elseif (!empty($eventNode->eventPlace->displayPlace)) {
                     // Split multiple locations separated with a slash
                     $locations = array_merge(
@@ -261,6 +293,28 @@ class NdlLidoRecord extends LidoRecord
                 }
             }
         }
+
+        $locations = array_map(
+            function ($s) {
+                return rtrim($s, ',. ');
+            },
+            $locations
+        );
+
+        $accepted = [];
+        foreach ($locations as $location) {
+            if (str_word_count($location) == 1) {
+                foreach ($subjectLocations as $subjectLocation) {
+                    if (strncmp($subjectLocation, $location, strlen($location)) == 0
+                    ) {
+                        continue 2;
+                    }
+                }
+            }
+            $accepted[] = $location;
+        }
+        $locations = array_merge($accepted, $subjectLocations);
+
         $result = [];
         // Try to split address lists like "Helsinki, Kalevankatu 17, 19" to separate
         // entries
@@ -276,7 +330,51 @@ class NdlLidoRecord extends LidoRecord
                 $result[] = $location;
             }
         }
+        // Try to add versions with additional notes like
+        // "Helsinki Uudenmaankatu 31, katurakennus" removed, but avoid changing e.g.
+        // "Uusimaa, Helsinki, Malmi"
+        foreach ($result as $item) {
+            if (str_word_count($item) > 2 && substr_count($item, ',') == 1
+                && preg_match('/(.*[^\s]+\s+\d+),/', $item, $matches)
+            ) {
+                $result[] = $matches[1];
+            }
+        }
+
+        // Remove stuff in parenthesis
+        $result = array_filter($result);
+        $result = array_map(
+            function ($s) {
+                $s = preg_replace('/\(.*/', '', $s);
+                return trim($s);
+            },
+            $result
+        );
+        $result = array_unique($result);
+
         return $result;
+    }
+
+    /**
+     * Try to split logical sublocation parts
+     *
+     * @param string $mainPlace   Main location
+     * @param string $subLocation Sublocation(s)
+     *
+     * @return array
+     */
+    protected function splitAddresses($mainPlace, $subLocation)
+    {
+        $locations = [];
+        if (preg_match('/[^\s]+(\,(?!\s*\d)|\.|\s*\&)\s+[^\s]+/', $subLocation)) {
+            foreach (preg_split('/(\,(?!\s*\d)|\.|\s*\&)\s+/', $subLocation) as $sub
+            ) {
+                $locations[] = "$mainPlace $sub";
+            }
+        } else {
+            $locations[] = "$mainPlace $subLocation";
+        }
+        return $locations;
     }
 
     /**
@@ -589,38 +687,133 @@ class NdlLidoRecord extends LidoRecord
     }
 
     /**
-     * Return the event place coordinates associated with specified event
+     * Return the event place locations associated with specified event
      *
      * @param string $event Which event to use (omit to scan all events)
      *
-     * @return string
+     * @return array WKT
      */
-    protected function getEventPlaceCoordinates($event = null)
+    protected function getEventPlaceLocations($event = null)
     {
-        $coordinates = [];
+        $results = [];
         foreach ($this->getEventNodes($event) as $event) {
-            if (!empty($event->eventPlace->place->gml->Point->pos)) {
-                $coordinates[] = (string) $event->eventPlace->place->gml->Point->pos;
+            foreach ($event->eventPlace as $eventPlace) {
+                foreach ($eventPlace->place as $place) {
+                    if (!empty($place->gml)) {
+                        if ($wkt = $this->convertGmlToWkt($place->gml)) {
+                            $results[] = $wkt;
+                        }
+                    }
+                }
             }
         }
+        return $results;
+    }
 
-        $results = [];
-        foreach ($coordinates as $coord) {
-            list($lat, $long) = explode(' ', (string)$coord, 2);
-            if ($lat < -90 || $lat > 90 || $long < -180 || $long > 180) {
-                global $logger;
+    /**
+     * Convert SimpleXML GML node to a WKT string
+     *
+     * This assumes WSG 84
+     *
+     * @param SimpleXMLElement $gml GML Node
+     *
+     * @return string WKT
+     */
+    protected function convertGmlToWkt($gml)
+    {
+        global $logger;
+
+        if (!empty($gml->Polygon)) {
+            if (empty($gml->Polygon->outerBoundaryIs->LinearRing->coordinates)) {
                 $logger->log(
                     'NdlLidoRecord',
-                    "Discarding invalid coordinates $lat,$long, record "
+                    "GML Polygon missing outer boundary, record "
                     . "{$this->source}." . $this->getID(),
                     Logger::WARNING
                 );
-                continue;
+                return '';
             }
+            $outerBoundary
+                = $this->swapCoordinates(
+                    (string)$gml->Polygon->outerBoundaryIs->LinearRing->coordinates
+                );
+            $innerBoundary
+                = !empty($gml->Polygon->innerBoundaryIs->LinearRing->coordinates)
+                ? $this->swapCoordinates(
+                    (string)$gml->Polygon->innerBoundaryIs->LinearRing->coordinates
+                ) : '';
 
-            $results[] = "POINT($long $lat)";
+            return $innerBoundary
+                ? "POLYGON (($outerBoundary),($innerBoundary))"
+                : "POLYGON (($outerBoundary))";
         }
-        return $results;
+
+        if (!empty($gml->LineString)) {
+            if (empty($gml->LineString->coordinates)) {
+                $logger->log(
+                    'NdlLidoRecord',
+                    "GML LineString missing coordinates, record "
+                    . "{$this->source}." . $this->getID(),
+                    Logger::WARNING
+                );
+                return '';
+            }
+            $coordinates = $this->swapCoordinates(
+                (string)$gml->LineString->coordinates
+            );
+            return "LINESTRING ($coordinates)";
+        }
+
+        if (!empty($gml->Point)) {
+            if (isset($gml->Point->pos)) {
+                $coordinates = (string)$gml->Point->pos;
+                list($lat, $lon) = explode(' ', (string)$coordinates, 2);
+            } elseif (isset($gml->Point->coordinates)) {
+                $coordinates = (string)$gml->Point->coordinates;
+                list($lat, $lon) = explode(',', (string)$coordinates, 2);
+            } else {
+                $logger->log(
+                'NdlLidoRecord',
+                "GML Point does not contain pos or coordinates, record "
+                . "{$this->source}." . $this->getID(),
+                Logger::WARNING
+            );
+                return '';
+            }
+            $lat = trim($lat);
+            $lon = trim($lon);
+            if ($lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) {
+                $logger->log(
+                'NdlLidoRecord',
+                "Discarding invalid coordinates $lat,$lon, record "
+                . "{$this->source}." . $this->getID(),
+                Logger::WARNING
+            );
+                return '';
+            }
+            return "POINT ($lon $lat)";
+        }
+
+        return '';
+    }
+
+    /**
+     * Convert GML coordinates to WKT coordinates
+     *
+     * @param string $coordinates GML coordinates
+     *
+     * @return string WKT coordinates
+     */
+    protected function swapCoordinates($coordinates)
+    {
+        $result = [];
+        foreach (preg_split('/(?=/\d)\s(?=/\d)/', $coordinates) as $coordinate) {
+            list($lat, $lon) = explode(',', $coordinate, 2);
+            $lat = trim($lat);
+            $lon = trim($lon);
+            $result[] = "$lon $lat";
+        }
+        return implode(',', $result);
     }
 
     /**

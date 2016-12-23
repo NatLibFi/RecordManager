@@ -1417,10 +1417,10 @@ class SolrUpdater
                 } else {
                     $data[$field] = $this->mapValue($data[$field], $mappingFile);
                 }
-            } elseif (isset($map['##empty'])) {
-                $data[$field] = $map['##empty'];
-            } elseif (isset($map['##emptyarray'])) {
-                $data[$field] = [$map['##emptyarray']];
+            } elseif (isset($mappingFile['map']['##empty'])) {
+                $data[$field] = $mappingFile['map']['##empty'];
+            } elseif (isset($mappingFile['map']['##emptyarray'])) {
+                $data[$field] = [$mappingFile['map']['##emptyarray']];
             }
         }
 

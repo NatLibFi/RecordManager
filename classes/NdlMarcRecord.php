@@ -294,6 +294,10 @@ class NdlMarcRecord extends MarcRecord
                 }
             }
         }
+        if (!empty($data['location_geo'])) {
+            $data['center_coords']
+                = MetadataUtils::getCenterCoordinates($data['location_geo']);
+        }
 
         // Classifications
         foreach ($this->getFields('080') as $field080) {
@@ -328,6 +332,13 @@ class NdlMarcRecord extends MarcRecord
         );
         foreach ($dlc as $classification) {
             $data['classification_txt_mv'][] = 'dlc '
+                . mb_strtolower(str_replace(' ', '', $classification), 'UTF-8');
+        }
+        $nlm = $this->getFieldsSubfields(
+            [[MarcRecord::GET_NORMAL, '060', ['a' => 1, 'b' => 1]]]
+        );
+        foreach ($nlm as $classification) {
+            $data['classification_txt_mv'][] = 'nlm '
                 . mb_strtolower(str_replace(' ', '', $classification), 'UTF-8');
         }
         foreach ($this->getFields('084') as $field) {
@@ -514,6 +525,34 @@ class NdlMarcRecord extends MarcRecord
             }
             $data['category_str_mv'][] = $category;
         };
+        foreach ($this->getFields('886') as $field886) {
+            if ($this->getIndicator($field886, 1) != '2'
+                || $this->getSubfield($field886, '2') != 'local') {
+                continue;
+            }
+            $type = $this->getSubfield($field886, 'a');
+            if (in_array($type, ['aineistotyyppi', 'resurstyp'])) {
+                $resourceType = $this->getSubfield($field886, 'c');
+                if (in_array($resourceType, ['tietokanta', 'databas'])) {
+                    $data['format'] = 'Database';
+                    foreach ($this->getFields('035') as $f035) {
+                        if ($originalId = $this->getSubfield($f035, 'a')) {
+                            $originalId
+                                = preg_replace('/^\(.*?\)/', '', $originalId);
+                            $data['original_id_str_mv'][] = $originalId;
+                        }
+                    }
+                }
+            }
+            if (in_array($type, ['kategoria', 'kategori'])) {
+                $category = $this->getSubfield($field886, 'c');
+                $sub = $this->getSubfield($field886, 'd');
+                if ($sub) {
+                    $category .= "/$sub";
+                }
+                $data['category_str_mv'][] = $category;
+            }
+        }
 
         // Hierarchical categories (e.g. SFX)
         if ($this->getDriverParam('categoriesIn650', false)) {

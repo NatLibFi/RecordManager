@@ -134,6 +134,10 @@ class NdlQdcRecord extends QdcRecord
                 }
             }
         }
+        if (!empty($data['location_geo'])) {
+            $data['center_coords']
+                = MetadataUtils::getCenterCoordinates($data['location_geo']);
+        }
 
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
