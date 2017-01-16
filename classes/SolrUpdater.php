@@ -1415,7 +1415,7 @@ class SolrUpdater
         if (($this->buildingHierarchy || isset($settings['institutionInBuilding']))
             && !empty($settings['addInstitutionToBuildingBeforeMapping'])
         ) {
-            $this->addInstitutionToBuilding($data, $settings);
+            $this->addInstitutionToBuilding($data, $source, $settings);
         }
 
         // Map field values according to any mapping files
@@ -1451,7 +1451,7 @@ class SolrUpdater
         if (($this->buildingHierarchy || isset($settings['institutionInBuilding']))
             && empty($settings['addInstitutionToBuildingBeforeMapping'])
         ) {
-            $this->addInstitutionToBuilding($data, $settings);
+            $this->addInstitutionToBuilding($data, $source, $settings);
         }
 
         // Hierarchical facets
@@ -1578,12 +1578,13 @@ class SolrUpdater
     /**
      * Prefix building with institution code according to the settings
      *
-     * @param array $data     Record data
-     * @param array $settings Data source settings
+     * @param array  $data     Record data
+     * @param string $source   Source ID
+     * @param array  $settings Data source settings
      *
      * @return void
      */
-    protected function addInstitutionToBuilding(&$data, $settings)
+    protected function addInstitutionToBuilding(&$data, $source, $settings)
     {
         $useInstitution = isset($settings['institutionInBuilding'])
             ? $settings['institutionInBuilding'] : 'institution';

@@ -120,7 +120,7 @@ class QdcRecord extends BaseRecord
                     ' ',
                     (string)$doc->language
                 ),
-                function($value) {
+                function ($value) {
                     return preg_match('/^[a-z]{2,3}$/', $value) && $value != 'zxx'
                         && $value != 'und';
                 }
@@ -158,7 +158,7 @@ class QdcRecord extends BaseRecord
         }
         $data['title_sort'] = $this->getTitle(true);
 
-        $data['publisher'] = (string)$doc->publisher;
+        $data['publisher'] = [(string)$doc->publisher];
         $data['publishDate'] = $this->getPublicationYear();
 
         $data['isbn'] = $this->getISBNs();
@@ -328,4 +328,3 @@ class QdcRecord extends BaseRecord
         return $values;
     }
 }
-

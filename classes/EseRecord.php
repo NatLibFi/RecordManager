@@ -126,7 +126,7 @@ class EseRecord extends BaseRecord
         }
         $data['title_sort'] = $this->getTitle(true);
 
-        $data['publisher'] = (string)$doc->publisher;
+        $data['publisher'] = [(string)$doc->publisher];
         $data['publishDate'] = $this->getPublicationYear();
 
         $data['isbn'] = $this->getISBNs();
@@ -282,6 +282,4 @@ class EseRecord extends BaseRecord
         }
         return $values;
     }
-
 }
-
