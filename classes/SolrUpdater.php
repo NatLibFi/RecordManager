@@ -1408,6 +1408,16 @@ class SolrUpdater
             }
         }
 
+        // Special case: Special values for building (institution/location).
+        // Used by default if building is set as a hierarchical facet.
+        // This version adds institution to building before mapping files are
+        // processed.
+        if (($this->buildingHierarchy || isset($settings['institutionInBuilding']))
+            && !empty($settings['addInstitutionToBuildingBeforeMapping'])
+        ) {
+            $this->addInstitutionToBuilding($data, $settings);
+        }
+
         // Map field values according to any mapping files
         foreach ($settings['mappingFiles'] as $field => $mappingFile) {
             if (isset($data[$field]) && !empty($data[$field])) {
@@ -1436,44 +1446,12 @@ class SolrUpdater
 
         // Special case: Special values for building (institution/location).
         // Used by default if building is set as a hierarchical facet.
-        if ($this->buildingHierarchy || isset($settings['institutionInBuilding'])) {
-            $useInstitution = isset($settings['institutionInBuilding'])
-                ? $settings['institutionInBuilding'] : 'institution';
-            switch ($useInstitution) {
-            case 'driver':
-                $institutionCode = $data['institution'];
-                break;
-            case 'none':
-                $institutionCode = '';
-                break;
-            case 'source':
-                $institutionCode = $source;
-                break;
-            case 'institution/source':
-                $institutionCode = $settings['institution'] . '/' . $source;
-                break;
-            default:
-                $institutionCode = $settings['institution'];
-                break;
-            }
-            if ($institutionCode) {
-                if (isset($data['building']) && $data['building']) {
-                    if (is_array($data['building'])) {
-                        foreach ($data['building'] as &$building) {
-                            // Allow also empty values that might result from
-                            // mapping tables
-                            if ($building !== '') {
-                                $building = "$institutionCode/$building";
-                            }
-                        }
-                    } else {
-                        $data['building']
-                            = $institutionCode . '/' . $data['building'];
-                    }
-                } else {
-                    $data['building'] = [$institutionCode];
-                }
-            }
+        // This version adds institution to building after mapping files are
+        // processed.
+        if (($this->buildingHierarchy || isset($settings['institutionInBuilding']))
+            && empty($settings['addInstitutionToBuildingBeforeMapping'])
+        ) {
+            $this->addInstitutionToBuilding($data, $settings);
         }
 
         // Hierarchical facets
@@ -1595,6 +1573,55 @@ class SolrUpdater
             $replacement = $map['##default'];
         }
         return $replacement;
+    }
+
+    /**
+     * Prefix building with institution code according to the settings
+     *
+     * @param array $data     Record data
+     * @param array $settings Data source settings
+     *
+     * @return void
+     */
+    protected function addInstitutionToBuilding(&$data, $settings)
+    {
+        $useInstitution = isset($settings['institutionInBuilding'])
+            ? $settings['institutionInBuilding'] : 'institution';
+        switch ($useInstitution) {
+        case 'driver':
+            $institutionCode = $data['institution'];
+            break;
+        case 'none':
+            $institutionCode = '';
+            break;
+        case 'source':
+            $institutionCode = $source;
+            break;
+        case 'institution/source':
+            $institutionCode = $settings['institution'] . '/' . $source;
+            break;
+        default:
+            $institutionCode = $settings['institution'];
+            break;
+        }
+        if ($institutionCode) {
+            if (isset($data['building']) && $data['building']) {
+                if (is_array($data['building'])) {
+                    foreach ($data['building'] as &$building) {
+                        // Allow also empty values that might result from
+                        // mapping tables
+                        if ($building !== '') {
+                            $building = "$institutionCode/$building";
+                        }
+                    }
+                } else {
+                    $data['building']
+                        = $institutionCode . '/' . $data['building'];
+                }
+            } else {
+                $data['building'] = [$institutionCode];
+            }
+        }
     }
 
     /**
