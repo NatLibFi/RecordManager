@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-declare(ticks=100);
+declare(ticks = 100);
 
 require_once 'BaseRecord.php';
 require_once 'MetadataUtils.php';
