@@ -392,14 +392,14 @@ class NominatimGeocoder extends Enrichment
         $pointCount = null;
         for ($try = 1; $try < 100; $try++) {
             $simplified = $polygon->simplify($tolerance);
-            if (strstr($simplified, 'EMPTY') !== false) {
-                // Got empty shape as result, return the original
-                return $location;
-            }
             if (null === $simplified) {
                 throw new Exception('Shape simplification failed');
             }
             $simplifiedWKT = $simplified->out('wkt');
+            if (strstr($simplifiedWKT, 'EMPTY') !== false) {
+                // Got empty shape as result, return the original
+                return $location;
+            }
             $pointCount = substr_count($simplifiedWKT, ',') + 1;
             if (!$this->simplificationMaxLength
                 || $pointCount <= $this->simplificationMaxLength
