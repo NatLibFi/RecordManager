@@ -184,9 +184,9 @@ class EadRecord extends BaseRecord
 
         if (isset($doc->did->repository)) {
             $data['institution']
-                = (string) isset($doc->did->repository->corpname)
+                = (string) (isset($doc->did->repository->corpname)
                 ? $doc->did->repository->corpname
-                : $doc->did->repository;
+                : $doc->did->repository);
         }
 
         $data['title_sub'] = '';
@@ -301,4 +301,3 @@ class EadRecord extends BaseRecord
         return $allFields;
     }
 }
-
