@@ -714,8 +714,8 @@ class MetadataUtils
     {
         if (!empty($wkt)) {
             $wkt = is_array($wkt) ? $wkt[0] : $wkt;
-            $expr = '/ENVELOPE\s*\(([\d\.\-]+),\s*([\d\.\-]+),\s*([\d\.\-]+),'
-                . '\s*([\d\.]+\-)\)/i';
+            $expr = '/ENVELOPE\s*\((-?[\d\.]+),\s*(-?[\d\.]+),\s*(-?[\d\.]+),'
+                . '\s*(-?[\d\.]+)\)/i';
             if (preg_match($expr, $wkt, $matches)) {
                 return (($matches[1] + $matches[2]) / 2) . ' '
                     . (($matches[3] + $matches[4]) / 2);
