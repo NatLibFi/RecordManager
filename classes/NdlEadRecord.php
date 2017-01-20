@@ -131,7 +131,7 @@ class NdlEadRecord extends EadRecord
 
         if (isset($doc->did->userestrict->p)) {
             $data['rights'] = (string)$doc->did->userestrict->p;
-        } else if (isset($doc->did->accessrestrict->p)) {
+        } elseif (isset($doc->did->accessrestrict->p)) {
             $data['rights'] = (string)$doc->did->accessrestrict->p;
         }
 
@@ -190,19 +190,19 @@ class NdlEadRecord extends EadRecord
             $startYear = $matches[3];
             $startMonth = sprintf('%02d', $matches[2]);
             $startDay = sprintf('%02d', $matches[1]);
-            $startDate = $startYear . '-' . $startMonth . '-' .  $startDay
+            $startDate = $startYear . '-' . $startMonth . '-' . $startDay
                 . 'T00:00:00Z';
             $endYear = $matches[6];
             $endMonth =  sprintf('%02d', $matches[5]);
             $endDay = sprintf('%02d', $matches[4]);
-            $endDate = $endYear . '-' . $endMonth . '-' .  $endDay . 'T23:59:59Z';
+            $endDate = $endYear . '-' . $endMonth . '-' . $endDay . 'T23:59:59Z';
         } elseif (preg_match(
             '/(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d\d\d)/', $input, $matches
         ) > 0) {
             $startYear = $matches[2];
             $startMonth = sprintf('%02d', $matches[1]);
             $startDay = '01';
-            $startDate = $startYear . '-' . $startMonth . '-' .  $startDay
+            $startDate = $startYear . '-' . $startMonth . '-' . $startDay
                 . 'T00:00:00Z';
             $endYear = $matches[4];
             $endMonth =  sprintf('%02d', $matches[3]);
@@ -227,14 +227,14 @@ class NdlEadRecord extends EadRecord
             $year = $matches[1];
             $month =  sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[3]);
-            $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
-            $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+            $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
         } elseif (preg_match('/(\d\d?).(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
             $year = $matches[3];
             $month =  sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[1]);
-            $startDate = $year . '-' . $month . '-' .  $day . 'T00:00:00Z';
-            $endDate = $year . '-' . $month . '-' .  $day . 'T23:59:59Z';
+            $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
+            $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
         } elseif (preg_match('/(\d\d?)\.(\d\d\d\d)/', $input, $matches) > 0) {
             $year = $matches[2];
             $month =  sprintf('%02d', $matches[1]);
@@ -278,4 +278,3 @@ class NdlEadRecord extends EadRecord
         return [$startDate, $endDate];
     }
 }
-
