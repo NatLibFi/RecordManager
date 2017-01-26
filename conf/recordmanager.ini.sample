@@ -111,6 +111,11 @@ error_email     =
 ;secondary_author_relators = "D01,D02,E01,F01,F02"
 ;corporate_author_relators = ""
 
+; The following section contains default mapping file definitions. Key is the field
+; name and value is the mapping file name in mappings directory.
+[DefaultMappings]
+;usage_rights_str_mv = usage_rights.map
+
 [NominatimGeocoder]
 ; Please see http://wiki.openstreetmap.org/wiki/Nominatim_usage_policy before using
 ; Nominatim at http://nominatim.openstreetmap.org/search.php. Preferably use a local
