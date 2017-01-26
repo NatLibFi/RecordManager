@@ -104,7 +104,7 @@ class SolrUpdater
      *
      * @var HTTP_Request2
      */
-    protected $request;
+    protected $request = null;
 
     /**
      * HTTP_Request2 configuration params
@@ -154,6 +154,13 @@ class SolrUpdater
      * @var array
      */
     protected $nonIndexedSources = [];
+
+    /**
+     * SolrCloud cluster state check interval
+     *
+     * @var int
+     */
+    protected $clusterStateCheckInterval = 0;
 
     /**
      * Constructor
@@ -221,6 +228,17 @@ class SolrUpdater
         $this->threadedMergedRecordUpdate
             = isset($configArray['Solr']['threaded_merged_record_update'])
                 ? $configArray['Solr']['threaded_merged_record_update'] : false;
+        $this->clusterStateCheckInterval
+            = isset($configArray['Solr']['cluster_state_check_interval'])
+                ? $configArray['Solr']['cluster_state_check_interval'] : 0;
+        if (empty($configArray['Solr']['admin_url'])) {
+            $this->clusterStateCheckInterval = 0;
+            $this->log->log(
+                'SolrUpdater',
+                'admin_url not defined, cluster state check disabled',
+                Logger::WARNING
+            );
+        }
 
         if (isset($configArray['HTTP'])) {
             $this->httpParams += $configArray['HTTP'];
@@ -1724,7 +1742,7 @@ class SolrUpdater
             throw new Exception('search_url not set in ini file Solr section');
         }
 
-        $this->initSolrRequest();
+        $this->request = $this->initSolrRequest();
         $this->request->setMethod(HTTP_Request2::METHOD_GET);
         $url = $configArray['Solr']['search_url'];
         $url .= '?q=id:"' . urlencode($record['id']) . '"&wt=json';
@@ -1797,37 +1815,36 @@ class SolrUpdater
     }
 
     /**
-     * Initialize the Solr request object
+     * Initialize a Solr request object
      *
      * @param int $timeout Timeout in seconds (optional)
      *
-     * @return void
+     * @return HTTP_Request2
      */
     protected function initSolrRequest($timeout = null)
     {
         global $configArray;
 
-        if (!isset($this->request)) {
-            $this->request = new HTTP_Request2(
-                $configArray['Solr']['update_url'],
-                HTTP_Request2::METHOD_POST,
-                $this->httpParams
-            );
-            if ($timeout !== null) {
-                $this->request->setConfig('timeout', $timeout);
-            }
-            $this->request->setHeader('Connection', 'Keep-Alive');
-            $this->request->setHeader('User-Agent', 'RecordManager');
-            if (isset($configArray['Solr']['username'])
-                && isset($configArray['Solr']['password'])
-            ) {
-                $this->request->setAuth(
-                    $configArray['Solr']['username'],
-                    $configArray['Solr']['password'],
-                    HTTP_Request2::AUTH_BASIC
-                );
-            }
+        $request = new HTTP_Request2(
+            $configArray['Solr']['update_url'],
+            HTTP_Request2::METHOD_POST,
+            $this->httpParams
+        );
+        if ($timeout !== null) {
+            $request->setConfig('timeout', $timeout);
         }
+        $request->setHeader('Connection', 'Keep-Alive');
+        $request->setHeader('User-Agent', 'RecordManager');
+        if (isset($configArray['Solr']['username'])
+            && isset($configArray['Solr']['password'])
+        ) {
+            $request->setAuth(
+                $configArray['Solr']['username'],
+                $configArray['Solr']['password'],
+                HTTP_Request2::AUTH_BASIC
+            );
+        }
+        return $request;
     }
 
     /**
@@ -1842,7 +1859,9 @@ class SolrUpdater
     {
         global $configArray;
 
-        $this->initSolrRequest($timeout);
+        if (null === $this->request) {
+            $this->request = $this->initSolrRequest($timeout);
+        }
         if ($this->backgroundUpdates) {
             if ($this->backgroundUpdates <= count($this->httpPids)) {
                 $this->waitForAHttpChild();
@@ -1861,6 +1880,23 @@ class SolrUpdater
         $response = null;
         $maxTries = $this->maxUpdateTries;
         for ($try = 1; $try <= $maxTries; $try++) {
+            // Check cluster state if necessary
+            if ($this->clusterStateCheckInterval > 0) {
+                $state = $this->checkClusterState();
+                if ('ok' !== $state) {
+                    if ('degraded' === $state) {
+                        ++$maxTries;
+                    }
+                    $this->log->log(
+                        'solrRequest',
+                        'Retrying cluster state check in'
+                        . " {$this->clusterStateCheckInterval} seconds...",
+                        Logger::WARNING
+                    );
+                    sleep($this->clusterStateCheckInterval);
+                    continue;
+                }
+            }
             try {
                 $response = $this->request->send();
             } catch (Exception $e) {
@@ -1890,7 +1926,7 @@ class SolrUpdater
                 }
             }
             if ($try < $maxTries) {
-                $code = is_null($response) ? 999 : $response->getStatus();
+                $code = null === $response ? 999 : $response->getStatus();
                 if ($code >= 300) {
                     $this->log->log(
                         'solrRequest',
@@ -1904,7 +1940,7 @@ class SolrUpdater
             }
             break;
         }
-        $code = is_null($response) ? 999 : $response->getStatus();
+        $code = null === $response ? 999 : $response->getStatus();
         if ($code >= 300) {
             if ($this->backgroundUpdates) {
                 $this->log->log(
@@ -1922,7 +1958,8 @@ class SolrUpdater
                 throw new Exception(
                     "Solr server request failed ($code). URL:\n"
                     . $configArray['Solr']['update_url']
-                    . "\nRequest:\n$body\n\nResponse:\n" . $response->getBody()
+                    . "\nRequest:\n$body\n\nResponse:\n"
+                    . (null !== $response ? $response->getBody() : '')
                 );
             }
         }
@@ -1978,6 +2015,96 @@ class SolrUpdater
             }
             sleep(10);
         }
+    }
+
+    /**
+     * Check SolrCloud cluster state
+     *
+     * Returns one of the following strings:
+     * - ok       Everything is good
+     * - error    Checking cluster state failed
+     * - degraded Cluster is degraded or down
+     *
+     * @return string
+     */
+    protected function checkClusterState()
+    {
+        global $configArray;
+
+        static $lastClusterStateCheck = 0;
+        $lastCheck = time() - $lastClusterStateCheck;
+        if ($lastCheck >= $this->clusterStateCheckInterval) {
+            $lastClusterStateCheck = time();
+            $request = $this->initSolrRequest();
+            $url = $configArray['Solr']['admin_url'] . '/zookeeper'
+                . '?wt=json&detail=true&path=%2Fclusterstate.json&view=graph';
+            $request->setUrl($url);
+            try {
+                $response = $request->send();
+            } catch (Exception $e) {
+                $this->log->log(
+                    'checkClusterState',
+                    "Solr admin request '$url' failed (" . $e->getMessage() . ')',
+                    Logger::ERROR
+                );
+                return 'error';
+            }
+
+            $code = null === $response ? 999 : $response->getStatus();
+            if (200 !== $code) {
+                $this->log->log(
+                    'checkClusterState',
+                    "Solr admin request '$url' failed ($code)",
+                    Logger::ERROR
+                );
+                return 'error';
+            }
+            $state = json_decode($response->getBody(), true);
+            if (null === $state) {
+                $this->log->log(
+                    'checkClusterState',
+                    'Unable to decode zookeeper status from response: '
+                    . (null !== $response ? $response->getBody() : ''),
+                    Logger::ERROR
+                );
+                return 'error';
+            }
+            $data = json_decode($state['znode']['data'], true);
+            if (null === $data) {
+                $this->log->log(
+                    'checkClusterState',
+                    'Unable to decode node data from ' . $state['znode']['data'],
+                    Logger::ERROR
+                );
+                return 'error';
+            }
+            foreach ($data as $collectionName => $collection) {
+                foreach ($collection['shards'] as $shardName => $shard) {
+                    if ('active' !== $shard['state']) {
+                        $this->log->log(
+                            'checkClusterState',
+                            "Collection $collectionName shard $shardName:"
+                            . " Not in active state: {$shard['state']}",
+                            Logger::WARNING
+                        );
+                        return 'degraded';
+                    }
+                    foreach ($shard['replicas'] as $replica) {
+                        if ('active' !== $replica['state']) {
+                            $this->log->log(
+                                'checkClusterState',
+                                "Collection $collectionName shard $shardName: Core"
+                                . " {$replica['core']} at {$replica['node_name']}"
+                                . " not in active state: {$replica['state']}",
+                                Logger::WARNING
+                            );
+                            return 'degraded';
+                        }
+                    }
+                }
+            }
+        }
+        return 'ok';
     }
 
     /**

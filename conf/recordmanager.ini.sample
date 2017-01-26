@@ -39,10 +39,16 @@ compress_records = false
 ; cursor_timeout = 12000000
 
 [Solr]
-; Note that RecordManager requires that the json update method be available
-; In Solr 4 the same update url is used for all formats, so remove /json
+; Update URL. Note that RecordManager requires that the json update method be available.
 update_url = http://localhost:8080/solr/biblio/update/json
-;background_update = true
+; Search URL. Used in comparesolr function.
+search_url = http://localhost:8080/solr/biblio2/search
+; Admin URL. Used for watching SolrCloud cluster state.
+admin_url = http://localhost:8080/solr/admin
+; SolrCloud status check interval in seconds. If enabled, updates are disables when
+; a degraded status is detected. Do not enable for non-cloud installations.
+;cluster_state_check_interval = 30
+; Number of records to update before forcing a commit.
 max_commit_interval = 1000000
 username =
 password =
@@ -56,7 +62,11 @@ unicode_normalization_form = NFKC
 ;max_update_tries = 5
 ; Wait time between Solr update request attempts in seconds. Default is 60.
 ;update_retry_wait = 30
+; Number of background threads to use for Solr update requests. By default background
+; update is disabled.
 ;background_update = 10
+; Whether to use a separate thread for updating merged records. Allows merged and
+; single record update to run in parallel.
 ;threaded_merged_record_update = true
 
 [OAI-PMH]
