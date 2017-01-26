@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2016.
+ * Copyright (C) The National Library of Finland 2012-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-declare(ticks = 100);
+declare(ticks=100);
 
 require_once 'BaseRecord.php';
 require_once 'MetadataUtils.php';
@@ -249,7 +249,7 @@ class SolrUpdater
      * @param MongoDate $mongoFromDate Start date
      * @param string    $sourceId      Comma-separated list of source IDs to update,
      *                                 or empty or * for all sources
-     * @param string    $singleId      Export only a record with the given ID
+     * @param string    $singleId      Process only the record with the given ID
      * @param bool      $noCommit      If true, changes are not explicitly committed
      * @param bool      $delete        If true, records in the given $sourceId are
      *                                 all deleted
@@ -702,7 +702,7 @@ class SolrUpdater
      *                                is used and if null, all records are processed)
      * @param string      $sourceId   Comma-separated list of source IDs to update,
      *                                or empty or * for all sources
-     * @param string      $singleId   Export only a record with the given ID
+     * @param string      $singleId   Process only the record with the given ID
      * @param bool        $noCommit   If true, changes are not explicitly committed
      * @param bool        $delete     If true, records in the given $sourceId are all
      *                                deleted
@@ -1168,6 +1168,8 @@ class SolrUpdater
      */
     protected function loadDatasources()
     {
+        global $configArray;
+
         $dataSourceSettings
             = parse_ini_file("{$this->basePath}/conf/datasources.ini", true);
         $this->settings = [];
@@ -1199,19 +1201,32 @@ class SolrUpdater
             }
             $this->settings[$source]['mappingFiles'] = [];
 
+            // Use default mappings as the basis
+            $allMappings = isset($configArray['DefaultMappings'])
+                ? $configArray['DefaultMappings'] : [];
+
+            // Apply data source specific overrides
             foreach ($settings as $key => $value) {
                 if (substr($key, -8, 8) == '_mapping') {
                     $field = substr($key, 0, -8);
-                    $parts = explode(',', $value, 2);
-                    $filename = $parts[0];
-                    $type = isset($parts[1]) ? $parts[1] : 'normal';
-                    $this->settings[$source]['mappingFiles'][$field] = [
-                        'type' => $type,
-                        'map' => $this->readMappingFile(
-                            $this->basePath . '/mappings/' . $filename
-                        )
-                    ];
+                    if (empty($value)) {
+                        unset($allMappings[$field]);
+                    } else {
+                        $allMappings[$field] = $value;
+                    }
                 }
+            }
+
+            foreach ($allMappings as $field => $value) {
+                $parts = explode(',', $value, 2);
+                $filename = $parts[0];
+                $type = isset($parts[1]) ? $parts[1] : 'normal';
+                $this->settings[$source]['mappingFiles'][$field] = [
+                    'type' => $type,
+                    'map' => $this->readMappingFile(
+                        $this->basePath . '/mappings/' . $filename
+                    )
+                ];
             }
 
             $this->settings[$source]['extraFields'] = [];
