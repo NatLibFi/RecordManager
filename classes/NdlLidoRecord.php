@@ -766,26 +766,44 @@ class NdlLidoRecord extends LidoRecord
 
         if (!empty($gml->Point)) {
             if (isset($gml->Point->pos)) {
-                $coordinates = (string)$gml->Point->pos;
+                $coordinates = trim((string)$gml->Point->pos);
+                if (!$coordinates) {
+                    $logger->log(
+                        'NdlLidoRecord',
+                        "Empty pos in GML point, record "
+                        . "{$this->source}." . $this->getID(),
+                        Logger::WARNING
+                    );
+                }
                 list($lat, $lon) = explode(' ', (string)$coordinates, 2);
             } elseif (isset($gml->Point->coordinates)) {
-                $coordinates = (string)$gml->Point->coordinates;
+                $coordinates = trim((string)$gml->Point->coordinates);
+                if (!$coordinates) {
+                    $logger->log(
+                        'NdlLidoRecord',
+                        "Empty coordinates in GML point, record "
+                        . "{$this->source}." . $this->getID(),
+                        Logger::WARNING
+                    );
+                }
                 list($lat, $lon) = explode(',', (string)$coordinates, 2);
             } else {
                 $logger->log(
-                'NdlLidoRecord',
-                "GML Point does not contain pos or coordinates, record "
-                . "{$this->source}." . $this->getID(),
-                Logger::WARNING
-            );
+                    'NdlLidoRecord',
+                    "GML Point does not contain pos or coordinates, record "
+                    . "{$this->source}." . $this->getID(),
+                    Logger::WARNING
+                );
                 return '';
             }
             $lat = trim($lat);
             $lon = trim($lon);
-            if ($lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) {
+            if ('' === $lat || '' === $lon || $lat < -90 || $lat > 90 || $lon < -180
+                || $lon > 180
+            ) {
                 $logger->log(
                 'NdlLidoRecord',
-                "Discarding invalid coordinates $lat,$lon, record "
+                "Discarding invalid coordinates '$lat,$lon', record "
                 . "{$this->source}." . $this->getID(),
                 Logger::WARNING
             );
