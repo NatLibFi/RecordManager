@@ -1948,7 +1948,7 @@ class SolrUpdater
                     "Solr server request failed ($code). URL:\n"
                     . $configArray['Solr']['update_url']
                     . "\nRequest:\n$body\n\nResponse:\n"
-                    . $response->getBody(),
+                    . (null !== $response ? $response->getBody() : ''),
                     Logger::FATAL
                 );
                 // Kill parent and self
