@@ -411,7 +411,7 @@ class SolrUpdater
                 }
 
                 if (!isset($prevId) || $prevId != $id) {
-                    $collection->insert(['_id' => $id], ['w' => 0]);
+                    $collection->insertOne(['_id' => $id], ['w' => 0]);
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
                         $this->log->log('processMerged', "$count id's processed");
@@ -450,7 +450,7 @@ class SolrUpdater
                 }
                 $id = $record['_id'];
                 if (!isset($prevId) || $prevId != $id) {
-                    $collection->insert(['_id' => $id], ['w' => 0]);
+                    $collection->insertOne(['_id' => $id], ['w' => 0]);
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
                         $this->log->log(
