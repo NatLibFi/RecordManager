@@ -484,17 +484,19 @@ class SolrUpdater
             );
 
             if ($totalMergeCount > 0) {
-                $mongo = new MongoClient($configArray['Mongo']['url']);
+                // renameCollection requires admin priviledge
+                $mongo = new \MongoDB\Client($configArray['Mongo']['url']);
                 $dbName = $configArray['Mongo']['database'];
-                $res = $this->db->command(
+                $res = $mongo->admin->command(
                     [
                         'renameCollection' => $dbName . '.' . $tmpCollectionName,
                         'to' => $dbName . '.' . $collectionName
                     ]
                 );
-                if (!$res['ok']) {
+                $resArray = $res->toArray();
+                if (!$resArray[0]['ok']) {
                     throw new Exception(
-                        'Renaming collection failed: ' . print_r($res, true)
+                        'Renaming collection failed: ' . print_r($resArray, true)
                     );
                 }
             }
