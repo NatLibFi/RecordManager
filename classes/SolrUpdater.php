@@ -163,6 +163,13 @@ class SolrUpdater
     protected $clusterStateCheckInterval = 0;
 
     /**
+     * Time of last SolrCloud cluster state check
+     *
+     * @var int
+     */
+    protected $lastClusterStateCheck = 0;
+
+    /**
      * Constructor
      *
      * @param MongoDB $db            Database connection
@@ -1862,13 +1869,22 @@ class SolrUpdater
         if (null === $this->request) {
             $this->request = $this->initSolrRequest($timeout);
         }
+
+        if (!$this->waitForClusterStateOk()) {
+            throw new Exception('Failed to check that the cluster state is ok');
+        }
+
         if ($this->backgroundUpdates) {
             if ($this->backgroundUpdates <= count($this->httpPids)) {
                 $this->waitForAHttpChild();
             }
+            if (!$this->waitForClusterStateOk()) {
+                throw new Exception('Failed to check that the cluster state is ok');
+            }
+
             $pid = pcntl_fork();
             if ($pid == -1) {
-                throw new Exception("Could not fork background update child");
+                throw new Exception('Could not fork background update child');
             } elseif ($pid) {
                 $this->httpPids[] = $pid;
                 return;
@@ -1880,24 +1896,10 @@ class SolrUpdater
         $response = null;
         $maxTries = $this->maxUpdateTries;
         for ($try = 1; $try <= $maxTries; $try++) {
-            // Check cluster state if necessary
-            if ($this->clusterStateCheckInterval > 0) {
-                $state = $this->checkClusterState();
-                if ('ok' !== $state) {
-                    if ('degraded' === $state) {
-                        ++$maxTries;
-                    }
-                    $this->log->log(
-                        'solrRequest',
-                        'Retrying cluster state check in'
-                        . " {$this->clusterStateCheckInterval} seconds...",
-                        Logger::WARNING
-                    );
-                    sleep($this->clusterStateCheckInterval);
-                    continue;
-                }
-            }
             try {
+                if (!$this->waitForClusterStateOk()) {
+                    throw new Exception('Failed to check that the cluster state is ok');
+                }
                 $response = $this->request->send();
             } catch (Exception $e) {
                 if ($try < $maxTries) {
@@ -2018,6 +2020,44 @@ class SolrUpdater
     }
 
     /**
+     * Wait until SolrCloud cluster state is ok
+     *
+     * @return bool
+     */
+    protected function waitForClusterStateOk()
+    {
+        if ($this->clusterStateCheckInterval <= 0) {
+            return true;
+        }
+        $errors = 0;
+        while (true) {
+            $state = $this->checkClusterState();
+            if ('ok' === $state) {
+                return true;
+            }
+            if ('error' === $state) {
+                ++$errors;
+                if ($errors > $this->maxUpdateTries) {
+                    $this->log->log(
+                        'waitForClusterStateOk',
+                        "Cluster state check failed after {$this->maxUpdateTries}"
+                        . ' attempts',
+                        Logger::ERROR
+                    );
+                    return false;
+                }
+            }
+            $this->log->log(
+                'waitForClusterStateOk',
+                'Retrying cluster state check in'
+                . " {$this->clusterStateCheckInterval} seconds...",
+                Logger::WARNING
+            );
+            sleep($this->clusterStateCheckInterval);
+        }
+    }
+
+    /**
      * Check SolrCloud cluster state
      *
      * Returns one of the following strings:
@@ -2031,10 +2071,9 @@ class SolrUpdater
     {
         global $configArray;
 
-        static $lastClusterStateCheck = 0;
-        $lastCheck = time() - $lastClusterStateCheck;
+        $lastCheck = time() - $this->lastClusterStateCheck;
         if ($lastCheck >= $this->clusterStateCheckInterval) {
-            $lastClusterStateCheck = time();
+            $this->lastClusterStateCheck = time();
             $request = $this->initSolrRequest();
             $url = $configArray['Solr']['admin_url'] . '/zookeeper'
                 . '?wt=json&detail=true&path=%2Fclusterstate.json&view=graph';
