@@ -170,16 +170,6 @@ class DedupHandler
     {
         $result = false;
 
-        if ($metadataRecord->getAccessRestrictions()) {
-            $result = isset($record['title_keys'])
-                || isset($record['isbn_keys'])
-                || isset($record['id_keys']);
-            unset($record['title_keys']);
-            unset($record['isbn_keys']);
-            unset($record['id_keys']);
-            return $result;
-        }
-
         $keys = [MetadataUtils::createTitleKey(
             $metadataRecord->getTitle(true)
         )];
@@ -337,12 +327,6 @@ class DedupHandler
                             $record['oai_id'],
                             $record['source_id']
                         );
-                        if ($origRecord->getAccessRestrictions()) {
-                            if ($this->verbose) {
-                                echo "Record has access restrictions, skipping\n";
-                            }
-                            break 3;
-                        }
                     }
                     if ($this->matchRecords($record, $origRecord, $candidate)) {
                         if ($this->verbose && ($processed > 300
@@ -506,10 +490,11 @@ class DedupHandler
             return false;
         }
 
-        // Check that the record does not have access restrictions
-        if ($cRecord->getAccessRestrictions()) {
+        // Check access restrictions
+        if ($cRecord->getAccessRestrictions() != $origRecord->getAccessRestrictions()
+        ) {
             if ($this->verbose) {
-                echo "--Candidate has access restrictions\n";
+                echo "--Candidate has different access restrictions\n";
             }
             return false;
         }
