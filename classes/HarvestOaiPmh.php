@@ -468,7 +468,7 @@ class HarvestOaiPmh extends BaseHarvest
                 false,
                 Logger::ERROR
             );
-            throw new Exception("Failed to parse XML response");
+            throw new Exception("{$this->source}: Failed to parse XML response");
         }
         libxml_use_internal_errors($saveUseErrors);
 
@@ -486,7 +486,7 @@ class HarvestOaiPmh extends BaseHarvest
                     Logger::ERROR
                 );
                 throw new Exception(
-                    "OAI-PMH error -- code: $code, " .
+                    "{$this->source}: OAI-PMH error -- code: $code, " .
                     "value: $value\n"
                 );
             }
@@ -779,7 +779,8 @@ class HarvestOaiPmh extends BaseHarvest
             $identify = $this->getSingleNode($response, 'Identify');
             if ($identify === false) {
                 throw new Exception(
-                    'Could not find Identify node in the Identify response'
+                    "{$this->source}: Could not find Identify node in the Identify"
+                    . ' response'
                 );
             }
             $granularity = $this->getSingleNode(
@@ -788,7 +789,8 @@ class HarvestOaiPmh extends BaseHarvest
             );
             if ($granularity === false) {
                 throw new Exception(
-                    'Could not find date granularity in the Identify response'
+                    "{$this->source}: Could not find date granularity in the"
+                    . ' Identify response'
                 );
             }
             $this->granularity = trim(
@@ -804,4 +806,3 @@ class HarvestOaiPmh extends BaseHarvest
         );
     }
 }
-
