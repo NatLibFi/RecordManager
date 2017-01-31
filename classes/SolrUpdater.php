@@ -412,15 +412,14 @@ class SolrUpdater
                 }
 
                 if (!isset($prevId) || $prevId != $id) {
-                    try {
-                        $collection->insertOne(
-                            ['_id' => $id], ['writeConcern' => $writeConcern]
-                        );
-                    } catch (Exception $e) {
-                        if (strncmp($e->getMessage(), 'E11000', 6) !== 0) {
-                            throw $e;
-                        }
-                    }
+                    $collection->replaceOne(
+                        ['_id' => $id],
+                        ['_id' => $id],
+                        [
+                            'upsert' => true,
+                            'writeConcern' => $writeConcern
+                        ]
+                    );
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
                         $this->log->log('processMerged', "$count id's processed");
@@ -460,15 +459,14 @@ class SolrUpdater
                 }
                 $id = $record['_id'];
                 if (!isset($prevId) || $prevId != $id) {
-                    try {
-                        $collection->insertOne(
-                            ['_id' => $id], ['writeConcern' => $writeConcern]
-                        );
-                    } catch (Exception $e) {
-                        if (strncmp($e->getMessage(), 'E11000', 6) !== 0) {
-                            throw $e;
-                        }
-                    }
+                    $collection->replaceOne(
+                        ['_id' => $id],
+                        ['_id' => $id],
+                        [
+                            'upsert' => true,
+                            'writeConcern' => $writeConcern
+                        ]
+                    );
 
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
