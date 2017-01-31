@@ -457,9 +457,11 @@ class MarcRecord extends BaseRecord
             $fields = $this->getFields('264');
             foreach ($fields as $field) {
                 if ($this->getIndicator($field, 2) == '1') {
-                    $data['publisher'] = metadataUtils::stripTrailingPunctuation(
-                        $this->getSubfield($field, 'b')
-                    );
+                    $data['publisher'] = [
+                        metadataUtils::stripTrailingPunctuation(
+                            $this->getSubfield($field, 'b')
+                        )
+                    ];
                     break;
                 }
             }

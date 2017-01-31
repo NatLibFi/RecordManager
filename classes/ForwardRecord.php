@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2016.
+ * Copyright (C) The National Library of Finland 2016-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -167,36 +167,22 @@ class ForwardRecord extends BaseRecord
         $doc = $this->getMainElement();
         $data['ctrlnum'] = $this->getID();
         $data['fullrecord'] = $this->toXML();
+        $publishDate = (string)$doc->YearOfReference;
+        $data['publishDate'] = $publishDate;
         $data['title'] = (string)$doc->IdentifyingTitle;
-        $originalTitle = '';
-        $translatedTitles = [];
-        $otherTitles = [];
         foreach ($doc->Title as $title) {
             $titleText = (string)$title->TitleText;
             if ($titleText != $data['title']) {
                 $data['title_alt'][] = $titleText;
             }
         }
-
-        if (!empty($originalTitle)) {
-            if (empty($data['title'])) {
-                $data['title'] = $originalTitle;
-            } else {
-                $data['title_alt'][] = $originalTitle;
-            }
+        if ($publishDate) {
+            $data['title'] .= " ($publishDate)";
         }
-        foreach (array_merge($translatedTitles, $otherTitles) as $title) {
-            if ($title == $data['title']) {
-                continue;
-            }
-            $data['title_alt'][] = $title;
-        }
-        $data['title_full'] = $data['title_short'] = $data['title'];
+        $data['title_short'] = $data['title_full'] = $data['title'];
         $data['title_sort'] = MetadataUtils::stripLeadingPunctuation(
             MetadataUtils::stripLeadingArticle($data['title'])
         );
-
-        $data['publishDate'] = (string)$doc->YearOfReference;
 
         $descriptions = $this->getDescriptions($this->primaryLanguage);
         if (empty($descriptions)) {

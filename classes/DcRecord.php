@@ -148,7 +148,7 @@ class DcRecord extends BaseRecord
         $data['title_sort'] = $this->getTitle(true);
 
         $data['publisher']
-            = MetadataUtils::stripTrailingPunctuation((string)$doc->publisher);
+            = [MetadataUtils::stripTrailingPunctuation((string)$doc->publisher)];
         $data['publishDate'] = $this->getPublicationYear();
 
         $data['isbn'] = $this->getISBNs();
@@ -309,6 +309,4 @@ class DcRecord extends BaseRecord
         }
         return $values;
     }
-
 }
-

@@ -598,6 +598,10 @@ class NdlMarcRecord extends MarcRecord
         $data['callnumber-sort'] = empty($data['callnumber-raw'])
             ? '' : $data['callnumber-raw'][0];
 
+        if ($rights = $this->getUsageRights()) {
+            $data['usage_rights_str_mv'] = $rights;
+        }
+
         return $data;
     }
 
@@ -855,6 +859,30 @@ class NdlMarcRecord extends MarcRecord
             }
         }
         return '';
+    }
+
+    /**
+     * Return usage rights if any
+     *
+     * @return array ['restricted'] or a more specific id if restricted,
+     * empty array otherwise
+     */
+    protected function getUsageRights()
+    {
+        $rights = [];
+        foreach ($this->getFields('540') as $field) {
+            $sub3 = MetadataUtils::stripTrailingPunctuation(
+                $this->getSubfield($field, '3')
+            );
+            if ($sub3 == 'Metadata' || strncasecmp($sub3, 'metadata', 8) == 0) {
+                continue;
+            }
+            $subC = MetadataUtils::stripTrailingPunctuation(
+                $this->getSubfield($field, 'c')
+            );
+            $rights[] = $subC ? $subC : 'restricted';
+        }
+        return $rights;
     }
 
     /**
