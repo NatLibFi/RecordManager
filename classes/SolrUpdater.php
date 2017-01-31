@@ -390,7 +390,7 @@ class SolrUpdater
             $collection = $this->db->selectCollection($tmpCollectionName);
             $count = 0;
             $totalMergeCount = 0;
-            $records = $this->db->record->find($params);
+            $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
             $writeConcern = new MongoDB\Driver\WriteConcern(0);
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
@@ -448,7 +448,9 @@ class SolrUpdater
                 );
             }
 
-            $records = $this->db->dedup->find($dedupParams);
+            $records = $this->db->dedup->find(
+                $dedupParams, ['noCursorTimeout' => true]
+            );
             $count = 0;
             $writeConcern = new MongoDB\Driver\WriteConcern(0);
             foreach ($records as $record) {
@@ -508,7 +510,7 @@ class SolrUpdater
         }
         pcntl_signal(SIGINT, SIG_DFL);
 
-        $keys = $this->db->{$collectionName}->find();
+        $keys = $this->db->{$collectionName}->find([], ['noCursorTimeout' => true]);
         $count = 0;
         $mergedComponents = 0;
         $deleted = 0;
@@ -531,9 +533,7 @@ class SolrUpdater
                 continue;
             }
 
-            $dedupRecord = $this->db->dedup->findOne(
-                ['_id' => $key['_id']], ['limit' => -1]
-            );
+            $dedupRecord = $this->db->dedup->findOne(['_id' => $key['_id']]);
             if (empty($dedupRecord)) {
                 $this->log->log(
                     'processMerged',
@@ -554,7 +554,7 @@ class SolrUpdater
             $children = [];
             $merged = [];
             $records = $this->db->record->find(
-                ['_id' => ['$in' => $dedupRecord['ids']]]
+                ['_id' => ['$in' => $dedupRecord['ids']]], ['noCursorTimeout' => true]
             );
             foreach ($records as $record) {
                 if (in_array($record['source_id'], $this->nonIndexedSources)) {
@@ -775,9 +775,7 @@ class SolrUpdater
             }
 
             if (!isset($fromDate)) {
-                $state = $this->db->state->findOne(
-                    ['_id' => 'Last Index Update'], ['limit' => -1]
-                );
+                $state = $this->db->state->findOne(['_id' => 'Last Index Update']);
                 if ($state) {
                     $mongoFromDate = $state['value'];
                 } else {
@@ -863,7 +861,7 @@ class SolrUpdater
                 $params['dedup_id'] = ['$exists' => false];
                 $params['update_needed'] = false;
             }
-            $records = $this->db->record->find($params);
+            $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
             $total = $this->counts ? $this->db->record->count($params) : 'the';
             $count = 0;
             $mergedComponents = 0;
@@ -1086,7 +1084,7 @@ class SolrUpdater
         if ($sourceId) {
             $params['source_id'] = $sourceId;
         }
-        $records = $this->db->record->find($params);
+        $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
         $this->log->log('countValues', "Counting values");
         $values = [];
         $count = 0;
@@ -1394,9 +1392,6 @@ class SolrUpdater
                     [
                         'source_id' => $record['source_id'],
                         'linking_id' => $record['host_record_id']
-                    ],
-                    [
-                        'limit' => -1
                     ]
                 );
             }

@@ -292,7 +292,7 @@ EOT;
             ];
         }
 
-        $options = ['sort' => ['updated' => 1]];
+        $options = ['sort' => ['updated' => 1], 'noCursorTimeout' => true];
         if ($position) {
             $options['skip'] = (int)$position;
         }

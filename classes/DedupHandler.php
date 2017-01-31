@@ -237,7 +237,9 @@ class DedupHandler
                 if ($this->verbose) {
                     echo "Search: '$keyPart'\n";
                 }
-                $candidates = $this->db->record->find([$type => $keyPart]);
+                $candidates = $this->db->record->find(
+                    [$type => $keyPart], ['noCursorTimeout' => true]
+                );
                 $processed = 0;
                 // Go through the candidates, try to match
                 $matchRecord = null;
@@ -754,7 +756,8 @@ class DedupHandler
         // component parts match
         $marked = 0;
         $otherRecords = $this->db->record->find(
-            ['dedup_id' => $hostRecord['dedup_id'], 'deleted' => false]
+            ['dedup_id' => $hostRecord['dedup_id'], 'deleted' => false],
+            ['noCursorTimeout' => true]
         );
         foreach ($otherRecords as $otherRecord) {
             if ($otherRecord['source_id'] == $hostRecord['source_id']) {
@@ -828,7 +831,8 @@ class DedupHandler
     protected function getComponentPartsSorted($sourceId, $hostRecordId)
     {
         $componentsIter = $this->db->record->find(
-            ['source_id' => $sourceId, 'host_record_id' => $hostRecordId]
+            ['source_id' => $sourceId, 'host_record_id' => $hostRecordId],
+            ['noCursorTimeout' => true]
         );
         $components = [];
         foreach ($componentsIter as $component) {

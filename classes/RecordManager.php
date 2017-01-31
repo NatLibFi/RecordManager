@@ -369,7 +369,7 @@ class RecordManager
                     }
                 }
             }
-            $options = [];
+            $options = ['noCursorTimeout' => true];
             if ($sortDedup) {
                 $options['sort'] = ['dedup_id' => 1];
             }
@@ -512,7 +512,9 @@ class RecordManager
             } else {
                 $params['source_id'] = $source;
             }
-            $records = $this->db->record->find($params, ['batchSize' => 5000]);
+            $records = $this->db->record->find(
+                $params, ['batchSize' => 5000, 'noCursorTimeout' => true]
+            );
             $total = $this->counts ? $this->db->record->count($params) : 'the';
             $count = 0;
 
@@ -647,7 +649,8 @@ class RecordManager
                         'source_id' => $source,
                         'host_record_id' => ['$exists' => false],
                         'deleted' => false
-                    ]
+                    ],
+                    ['noCursorTimeout' => true]
                 );
                 $pc = new PerformanceCounter();
                 $count = 0;
@@ -716,7 +719,9 @@ class RecordManager
                 } else {
                     $params['update_needed'] = true;
                 }
-                $records = $this->db->record->find($params, ['batchSize' => 5000]);
+                $records = $this->db->record->find(
+                    $params, ['batchSize' => 5000, 'noCursorTimeout' => true]
+                );
                 $total = $this->counts ? $this->db->record->count($params) : 'the';
                 $count = 0;
                 $deduped = 0;
@@ -954,7 +959,8 @@ class RecordManager
                                     'source_id' => $this->sourceId,
                                     'deleted' => false,
                                     'updated' => ['$lt' => $dateThreshold]
-                                ]
+                                ],
+                                ['noCursorTimeout' => true]
                             );
                             $count = 0;
                             foreach ($records as $record) {
@@ -1029,7 +1035,8 @@ class RecordManager
                                     'source_id' => $this->sourceId,
                                     'deleted' => false,
                                     'mark' => ['$exists' => false]
-                                ]
+                                ],
+                                ['noCursorTimeout' => true]
                             );
                             $count = 0;
                             foreach ($records as $record) {
@@ -1075,7 +1082,9 @@ class RecordManager
         if (!$recordID) {
             throw new Exception('dump: record id must be specified');
         }
-        $records = $this->db->record->find(['_id' => $recordID]);
+        $records = $this->db->record->find(
+            ['_id' => $recordID], ['noCursorTimeout' => true]
+        );
         foreach ($records as $record) {
             $record['original_data'] = MetadataUtils::getRecordData($record, false);
             $record['normalized_data'] = MetadataUtils::getRecordData($record, true);
@@ -1098,7 +1107,7 @@ class RecordManager
         $this->log->log('markDeleted', "Creating record list for '$sourceId'");
 
         $params = ['deleted' => false, 'source_id' => $sourceId];
-        $records = $this->db->record->find($params);
+        $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
         $total = $this->counts ? $this->db->record->count($params) : 'the';
         $count = 0;
 
@@ -1180,7 +1189,7 @@ class RecordManager
         $this->log->log('deleteRecords', "Creating record list for '$sourceId'");
 
         $params = ['source_id' => $sourceId];
-        $records = $this->db->record->find($params);
+        $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
         $total = $this->counts ? $this->db->record->count($params) : 'the';
         $count = 0;
 
@@ -1277,7 +1286,7 @@ class RecordManager
             'purgeDeletedRecords',
             "Creating record list$dateStr" . ($sourceId ? " for '$sourceId'" : '')
         );
-        $records = $this->db->record->find($params);
+        $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
         $total = $this->counts ? $this->db->record->count($params) : 'the';
         $count = 0;
 
@@ -1312,7 +1321,7 @@ class RecordManager
             $params['changed'] = ['$lt' => new \MongoDB\BSON\UTCDateTime($date)];
         }
         $this->log->log('purgeDeletedRecords', "Creating dedup record list$dateStr");
-        $records = $this->db->dedup->find($params);
+        $records = $this->db->dedup->find($params, ['noCursorTimeout' => true]);
         $total = $this->counts ? $this->db->dedup->count($params) : 'the';
         $count = 0;
 
@@ -1366,7 +1375,8 @@ class RecordManager
         if ($deleted) {
             // A single OAI-PMH record may have been split to multiple records
             $records = $this->db->record->find(
-                ['source_id' => $this->sourceId, 'oai_id' => $oaiID]
+                ['source_id' => $this->sourceId, 'oai_id' => $oaiID],
+                ['noCursorTimeout' => true]
             );
             $count = 0;
             foreach ($records as $record) {
@@ -1627,7 +1637,7 @@ class RecordManager
     {
         $this->log->log('checkDedupRecords', "Checking dedup record consistency");
 
-        $dedupRecords = $this->db->dedup->find();
+        $dedupRecords = $this->db->dedup->find([], ['noCursorTimeout' => true]);
         $count = 0;
         $fixed = 0;
         $pc = new PerformanceCounter();
@@ -1893,7 +1903,8 @@ class RecordManager
         $changed = 0;
         $added = 0;
         $dbRecords = $this->db->record->find(
-            ['deleted' => false, 'source_id' => $source]
+            ['deleted' => false, 'source_id' => $source],
+            ['noCursorTimeout' => true]
         );
         foreach ($dbRecords as $dbRecord) {
             $id = $dbRecord['_id'];
