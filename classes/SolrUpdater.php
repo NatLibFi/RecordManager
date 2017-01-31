@@ -391,6 +391,7 @@ class SolrUpdater
             $count = 0;
             $totalMergeCount = 0;
             $records = $this->db->record->find($params);
+            $writeConcern = new MongoDB\Driver\WriteConcern(0);
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
                     $this->log->log(
@@ -411,7 +412,15 @@ class SolrUpdater
                 }
 
                 if (!isset($prevId) || $prevId != $id) {
-                    $collection->insertOne(['_id' => $id], ['w' => 0]);
+                    try {
+                        $collection->insertOne(
+                            ['_id' => $id], ['writeConcern' => $writeConcern]
+                        );
+                    } catch (Exception $e) {
+                        if (strncmp($e->getMessage(), 'E11000', 6) !== 0) {
+                            throw $e;
+                        }
+                    }
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
                         $this->log->log('processMerged', "$count id's processed");
@@ -442,6 +451,7 @@ class SolrUpdater
 
             $records = $this->db->dedup->find($dedupParams);
             $count = 0;
+            $writeConcern = new MongoDB\Driver\WriteConcern(0);
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
                     $this->log->log('processMerged', 'Termination upon request');
@@ -450,7 +460,16 @@ class SolrUpdater
                 }
                 $id = $record['_id'];
                 if (!isset($prevId) || $prevId != $id) {
-                    $collection->insertOne(['_id' => $id], ['w' => 0]);
+                    try {
+                        $collection->insertOne(
+                            ['_id' => $id], ['writeConcern' => $writeConcern]
+                        );
+                    } catch (Exception $e) {
+                        if (strncmp($e->getMessage(), 'E11000', 6) !== 0) {
+                            throw $e;
+                        }
+                    }
+
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
                         $this->log->log(
@@ -512,9 +531,9 @@ class SolrUpdater
                 continue;
             }
 
-            $dedupRecord = $this->db->dedup->find(
+            $dedupRecord = $this->db->dedup->findOne(
                 ['_id' => $key['_id']], ['limit' => -1]
-            )->getNext();
+            );
             if (empty($dedupRecord)) {
                 $this->log->log(
                     'processMerged',
@@ -1371,7 +1390,7 @@ class SolrUpdater
         if ($metadataRecord->getIsComponentPart()) {
             $hostRecord = null;
             if (isset($record['host_record_id']) && $this->db) {
-                $hostRecord = $this->db->record->find(
+                $hostRecord = $this->db->record->findOne(
                     [
                         'source_id' => $record['source_id'],
                         'linking_id' => $record['host_record_id']
@@ -1379,7 +1398,7 @@ class SolrUpdater
                     [
                         'limit' => -1
                     ]
-                )->getNext();
+                );
             }
             if (!$hostRecord) {
                 if (isset($record['host_record_id'])) {
