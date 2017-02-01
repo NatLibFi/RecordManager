@@ -84,11 +84,11 @@ class DedupHandler
     /**
      * Constructor
      *
-     * @param MongoDB     $db            Mongo database object
-     * @param Logger      $log           Logger object
-     * @param boolean     $verbose       Whether verbose output is enabled
-     * @param SolrUpdater $solrUpdater   SolrUpdater instance
-     * @param array       $settings      Data source settings
+     * @param MongoDB     $db          Mongo database object
+     * @param Logger      $log         Logger object
+     * @param boolean     $verbose     Whether verbose output is enabled
+     * @param SolrUpdater $solrUpdater SolrUpdater instance
+     * @param array       $settings    Data source settings
      */
     public function __construct($db, $log, $verbose, $solrUpdater, $settings)
     {
@@ -283,7 +283,8 @@ class DedupHandler
                                 'dedup_id' => $candidate['dedup_id'],
                                 'source_id' => $record['source_id']
                             ]
-                        )) {
+                        )
+                        ) {
                             if ($this->verbose) {
                                 echo "Candidate {$candidate['_id']} "
                                     . "already deduplicated\n";
@@ -637,7 +638,8 @@ class DedupHandler
     protected function markDuplicates($rec1, $rec2)
     {
         $setValues = [
-            'updated' => new MongoDB\BSON\UTCDateTime(time() * 1000), 'update_needed' => false
+            'updated' => new MongoDB\BSON\UTCDateTime(time() * 1000),
+            'update_needed' => false
         ];
         if (!empty($rec2['dedup_id'])) {
             if (isset($rec1['dedup_id']) && $rec1['dedup_id'] != $rec2['dedup_id']) {
@@ -791,7 +793,8 @@ class DedupHandler
                     );
                     if (!$this->matchRecords(
                         $component1, $metadataComponent1, $component2
-                    )) {
+                    )
+                    ) {
                         $allMatch = false;
                         break;
                     }

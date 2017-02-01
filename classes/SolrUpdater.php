@@ -168,10 +168,10 @@ class SolrUpdater
     /**
      * Constructor
      *
-     * @param MongoDB $db            Database connection
-     * @param string  $basePath      RecordManager main directory
-     * @param object  $log           Logger
-     * @param boolean $verbose       Whether to output verbose messages
+     * @param MongoDB $db       Database connection
+     * @param string  $basePath RecordManager main directory
+     * @param object  $log      Logger
+     * @param boolean $verbose  Whether to output verbose messages
      *
      * @throws Exception
      */
@@ -269,12 +269,14 @@ class SolrUpdater
      * @param string      $sourceId      Comma-separated list of source IDs to
      *                                   update, or empty or * for all sources
      * @param string      $singleId      Process only the record with the given ID
-     * @param bool        $noCommit      If true, changes are not explicitly committed
+     * @param bool        $noCommit      If true, changes are not explicitly
+     *                                   committed
      * @param bool        $delete        If true, records in the given $sourceId are
      *                                   all deleted
      * @param string      $compare       If set, just compare the records with the
      *                                   ones already in the Solr index and write any
-     *                                   differences in a file given in this parameter
+     *                                   differences in a file given in this
+     *                                   parameter
      *
      * @throws Exception
      * @return boolean Whether anything was updated
@@ -554,7 +556,8 @@ class SolrUpdater
             $children = [];
             $merged = [];
             $records = $this->db->record->find(
-                ['_id' => ['$in' => $dedupRecord['ids']]], ['noCursorTimeout' => true]
+                ['_id' => ['$in' => $dedupRecord['ids']]],
+                ['noCursorTimeout' => true]
             );
             foreach ($records as $record) {
                 if (in_array($record['source_id'], $this->nonIndexedSources)) {
@@ -1530,7 +1533,8 @@ class SolrUpdater
             foreach ($data as $key => $field) {
                 if (in_array(
                     $key, ['fullrecord', 'thumbnail', 'id', 'recordtype', 'ctrlnum']
-                )) {
+                )
+                ) {
                     continue;
                 }
                 if (is_array($field)) {
@@ -1921,7 +1925,9 @@ class SolrUpdater
         for ($try = 1; $try <= $maxTries; $try++) {
             try {
                 if (!$this->waitForClusterStateOk()) {
-                    throw new Exception('Failed to check that the cluster state is ok');
+                    throw new Exception(
+                        'Failed to check that the cluster state is ok'
+                    );
                 }
                 $response = $this->request->send();
             } catch (Exception $e) {
@@ -2291,7 +2297,7 @@ class SolrUpdater
      * @param string $filename Mapping file name
      *
      * @throws Exception
-     * @return string[string] Mappings
+     * @return string[] Mappings
      */
     protected function readMappingFile($filename)
     {

@@ -900,7 +900,9 @@ class RecordManager
                                 strtotime($reharvest)
                             );
                         } else {
-                            $dateThreshold = new \MongoDB\BSON\UTCDateTime(time() * 1000);
+                            $dateThreshold = new \MongoDB\BSON\UTCDateTime(
+                                time() * 1000
+                            );
                         }
                         $this->log->log(
                             'harvest',

@@ -102,8 +102,8 @@ class HarvestMetaLib
      * Query used to Query used to find the IRDs (e.g. WIN=INSTITUTE, see locate_
      * command in http://www.exlibrisgroup.org/display/MetaLibOI/source_locate)
      *
-     * @see http://www.exlibrisgroup.org/display/MetaLibOI/source_locate
-     * @var string
+     * @link http://www.exlibrisgroup.org/display/MetaLibOI/source_locate
+     * @var  string
      */
     protected $query = '';
 
@@ -197,7 +197,8 @@ class HarvestMetaLib
         $style = new DOMDocument();
         if ($style->load(
             $this->basePath . '/transformations/strip_namespaces.xsl'
-        ) === false) {
+        ) === false
+        ) {
             throw new Exception(
                 'Could not load ' . $this->basePath
                 . '/transformations/strip_namespaces.xsl'

@@ -23,8 +23,21 @@ These are quick instructions on how to set up RecordManager. Please refer to the
 
 - Required pecl modules: mongodb
 
+    E.g. remi repos include a package for mongodb:
+
+      yum install php70-php-pecl-mongodb
+
+    Webtatic too:
+
+      yum install php70w-pecl-mongodb
+
+    If there's no package available, use pecl to install mongodb:
+
       yum install gcc make
       pecl install mongodb
+
+    Either way, make sure it's at least v1.2.0. Earlier versions have problems with
+    pcntl.
 
 - Add the extension=mongodb.so line to /etc/php.d/mongodb.ini
 
