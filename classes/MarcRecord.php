@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2016.
+ * Copyright (C) The National Library of Finland 2011-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -284,15 +284,7 @@ class MarcRecord extends BaseRecord
         $data = parent::toSolrArray();
 
         // building
-        $data['building'] = [];
-        if ($this->getDriverParam('holdingsInBuilding', true)) {
-            foreach ($this->getFields('852') as $field) {
-                $location = $this->getSubfield($field, 'b');
-                if ($location) {
-                    $data['building'][] = $location;
-                }
-            }
-        }
+        $data['building'] = $this->getBuilding();
 
         // long_lat
         $field = $this->getField('034');
@@ -1239,6 +1231,25 @@ class MarcRecord extends BaseRecord
     }
 
     /**
+     * Get the building field
+     *
+     * @return array
+     */
+    protected function getBuilding()
+    {
+        $building = [];
+        if ($this->getDriverParam('holdingsInBuilding', true)) {
+            foreach ($this->getFields('852') as $field) {
+                $location = $this->getSubfield($field, 'b');
+                if ($location) {
+                    $building[] = $location;
+                }
+            }
+        }
+        return $building;
+    }
+
+    /**
      * Parse MARCXML
      *
      * @param string $marc MARCXML
@@ -1427,7 +1438,8 @@ class MarcRecord extends BaseRecord
                 for ($pos = 1; $pos <= 4; $pos++) {
                     if (strpos(
                         $illustratedCodes, substr($field006, $pos, 1)
-                    ) !== false) {
+                    ) !== false
+                    ) {
                         return 'Illustrated';
                     }
                 }
@@ -1768,7 +1780,8 @@ class MarcRecord extends BaseRecord
         foreach ($this->fields['880'] as $field880) {
             if (strncmp(
                 $this->getSubfield($field880, '6'), $findSub6, 6
-            ) != 0) {
+            ) != 0
+            ) {
                 continue;
             }
             if ($codes) {

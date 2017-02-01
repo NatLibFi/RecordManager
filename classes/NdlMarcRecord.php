@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2016.
+ * Copyright (C) The National Library of Finland 2012-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -150,10 +150,10 @@ class NdlMarcRecord extends MarcRecord
             $fields = $this->getFields('264');
             foreach ($fields as $field) {
                 if ($this->getIndicator($field, 2) == '1') {
-                    $data['publication_place_txt_mv'][] =
-                        metadataUtils::stripTrailingPunctuation(
+                    $data['publication_place_txt_mv'][]
+                        = metadataUtils::stripTrailingPunctuation(
                             $this->getSubfield($field, 'a')
-                    );
+                        );
                 }
             }
         }
@@ -377,20 +377,6 @@ class NdlMarcRecord extends MarcRecord
             $data['classification_str_mv'] = $data['classification_txt_mv'];
         }
 
-        // Ebrary location
-        $ebraryLocs = $this->getFieldsSubfields(
-            [[MarcRecord::GET_NORMAL, '035', ['a' => 1]]]
-        );
-        foreach ($ebraryLocs as $field) {
-            if (strncmp($field, 'ebr', 3) == 0 && is_numeric(substr($field, 3))) {
-                if (!isset($data['building'])
-                    || !in_array('EbraryDynamic', $data['building'])
-                ) {
-                    $data['building'][] = 'EbraryDynamic';
-                }
-            }
-        }
-
         // Topics
         if (strncmp($this->source, 'metalib', 7) == 0) {
             $field653 = $this->getFieldsSubfields(
@@ -527,7 +513,8 @@ class NdlMarcRecord extends MarcRecord
         };
         foreach ($this->getFields('886') as $field886) {
             if ($this->getIndicator($field886, 1) != '2'
-                || $this->getSubfield($field886, '2') != 'local') {
+                || $this->getSubfield($field886, '2') != 'local'
+            ) {
                 continue;
             }
             $type = $this->getSubfield($field886, 'a');
@@ -799,18 +786,18 @@ class NdlMarcRecord extends MarcRecord
             $type = substr($leader, 6, 1);
             if ($type == 'i') {
                 switch ($format) {
-                    case 'CD':
-                        $format = 'NonmusicalCD';
-                        break;
-                    case 'SoundCassette':
-                        $format = 'NonmusicalCassette';
-                        break;
-                    case 'SoundDisc':
-                        $format = 'NonmusicalDisc';
-                        break;
-                    case 'SoundRecording':
-                        $format = 'NonmusicalRecording';
-                        break;
+                case 'CD':
+                    $format = 'NonmusicalCD';
+                    break;
+                case 'SoundCassette':
+                    $format = 'NonmusicalCassette';
+                    break;
+                case 'SoundDisc':
+                    $format = 'NonmusicalDisc';
+                    break;
+                case 'SoundRecording':
+                    $format = 'NonmusicalRecording';
+                    break;
                 }
             } elseif ($type == 'j' && $format == 'SoundRecording') {
                 $format = 'MusicRecording';
@@ -1042,6 +1029,44 @@ class NdlMarcRecord extends MarcRecord
             $allFields
         );
         return array_values(array_unique($allFields));
+    }
+
+    /**
+     * Get the building field
+     *
+     * @return array
+     */
+    protected function getBuilding()
+    {
+        $building = [];
+        if ($this->getDriverParam('holdingsInBuilding', true)) {
+            $useSub = $this->getDriverParam('subLocationInBuilding', '');
+            foreach ($this->getFields('852') as $field) {
+                $location = $this->getSubfield($field, 'b');
+                if ($location) {
+                    if ($useSub && $sub = $this->getSubfield($field, $useSub)) {
+                        $location = [$location, $sub];
+                    }
+                    $building[] = $location;
+                }
+            }
+        }
+
+        // Ebrary location
+        $ebraryLocs = $this->getFieldsSubfields(
+            [[MarcRecord::GET_NORMAL, '035', ['a' => 1]]]
+        );
+        foreach ($ebraryLocs as $field) {
+            if (strncmp($field, 'ebr', 3) == 0 && is_numeric(substr($field, 3))) {
+                if (!isset($data['building'])
+                    || !in_array('EbraryDynamic', $data['building'])
+                ) {
+                    $building[] = 'EbraryDynamic';
+                }
+            }
+        }
+
+        return $building;
     }
 
     /**
