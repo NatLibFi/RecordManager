@@ -1347,8 +1347,12 @@ class SolrUpdater
                 } else {
                     $params['source_id'] = $record['source_id'];
                 }
-                $components = $this->db->record->find($params)->toArray();
-                $hasComponentParts = !empty($components);
+                $components = $this->db->record->find($params);
+                $hasComponentParts = false;
+                foreach ($components as $c) {
+                    $hasComponentParts = true;
+                    break;
+                }
 
                 $format = $metadataRecord->getFormat();
                 $merge = false;
@@ -1367,7 +1371,7 @@ class SolrUpdater
             }
         }
 
-        if (isset($components)) {
+        if ($hasComponentParts && isset($components)) {
             $mergedComponents += $metadataRecord->mergeComponentParts($components);
         }
         if (isset($settings['solrTransformationXSLT'])) {
