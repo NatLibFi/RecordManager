@@ -108,10 +108,10 @@ class Enrichment
             : 86400;
         $this->maxTries = isset($configArray['Enrichment']['max_tries'])
             ? $configArray['Enrichment']['max_tries']
-            : 15;
+            : 90;
         $this->retryWait = isset($configArray['Enrichment']['retry_wait'])
             ? $configArray['Enrichment']['retry_wait']
-            : 30;
+            : 5;
 
         if (isset($configArray['HTTP'])) {
             $this->httpParams += $configArray['HTTP'];
@@ -174,19 +174,24 @@ class Enrichment
             $this->request->setHeader($headers);
         }
 
+        $retryWait = $this->retryWait;
         $response = null;
         for ($try = 1; $try <= $this->maxTries; $try++) {
             try {
                 $response = $this->request->send();
             } catch (Exception $e) {
                 if ($try < $this->maxTries) {
+                    if ($retryWait < 30) {
+                        // Progressively longer delay
+                        $retryWait *= 2;
+                    }
                     $this->log->log(
                         'getExternalData',
                         "HTTP request for '$url' failed (" . $e->getMessage()
-                        . "), retrying in {$this->retryWait} seconds...",
+                        . "), retrying in {$retryWait} seconds...",
                         Logger::WARNING
                     );
-                    sleep($this->retryWait);
+                    sleep($retryWait);
                     continue;
                 }
                 throw $e;
