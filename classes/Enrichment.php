@@ -155,7 +155,7 @@ class Enrichment
                  ]
             ]
         );
-        if ($cached) {
+        if (null !== $cached) {
             return $cached['data'];
         }
 
@@ -221,6 +221,9 @@ class Enrichment
         $data = $code < 300 ? $response->getBody() : '';
 
         $this->db->uriCache->replaceOne(
+            [
+                '_id' => $id,
+            ],
             [
                 '_id' => $id,
                 'timestamp' => new \MongoDB\BSON\UTCDateTime(time() * 1000),
