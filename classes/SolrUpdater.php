@@ -1347,11 +1347,10 @@ class SolrUpdater
                 } else {
                     $params['source_id'] = $record['source_id'];
                 }
-                $components = $this->db->record->find($params);
-                $hasComponentParts = false;
-                foreach ($components as $c) {
-                    $hasComponentParts = true;
-                    break;
+                $component = $this->db->record->findOne($params);
+                $hasComponentParts = !empty($componen);
+                if ($hasComponentParts) {
+                    $components = $this->db->record->find($params);
                 }
 
                 $format = $metadataRecord->getFormat();
