@@ -1056,7 +1056,8 @@ class RecordManager
                                 'value' => time()
                             ];
                             $this->db->state->replaceOne(
-                                ['_id' => $state['_id']], $state,
+                                ['_id' => $state['_id']],
+                                $state,
                                 ['upsert' => true]
                             );
                         }
