@@ -94,6 +94,14 @@ class MarcRecord extends BaseRecord
     ];
 
     /**
+     * Strings in field 300 that signify that the work is illustrated.
+     *
+     * @var string
+     */
+    protected $illustrationStrings = ['ill.', 'illus.'];
+
+
+    /**
      * Constructor
      *
      * @param string|array $data     Metadata
@@ -1427,8 +1435,8 @@ class MarcRecord extends BaseRecord
             // 008
             $field008 = $this->getField('008');
             for ($pos = 18; $pos <= 21; $pos++) {
-                if (strpos($illustratedCodes, substr($field008, $pos, 1)) !== false
-                ) {
+                $ch = substr($field008, $pos, 1);
+                if ('' !== $ch && strpos($illustratedCodes, $ch) !== false) {
                     return 'Illustrated';
                 }
             }
@@ -1436,10 +1444,8 @@ class MarcRecord extends BaseRecord
             // 006
             foreach ($this->getFields('006') as $field006) {
                 for ($pos = 1; $pos <= 4; $pos++) {
-                    if (strpos(
-                        $illustratedCodes, substr($field006, $pos, 1)
-                    ) !== false
-                    ) {
+                    $ch = substr($field006, $pos, 1);
+                    if ('' !== $ch && strpos($illustratedCodes, $ch) !== false) {
                         return 'Illustrated';
                     }
                 }
@@ -1447,10 +1453,9 @@ class MarcRecord extends BaseRecord
         }
 
         // Now check for interesting strings in 300 subfield b:
-        $illustrationStrings = ['ill.', 'illus.', 'kuv.'];
         foreach ($this->getFields('300') as $field300) {
             $sub = strtolower($this->getSubfield($field300, 'b'));
-            foreach ($illustrationStrings as $illStr) {
+            foreach ($this->illustrationStrings as $illStr) {
                 if (strpos($sub, $illStr) !== false) {
                     return 'Illustrated';
                 }

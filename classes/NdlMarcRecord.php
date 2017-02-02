@@ -42,6 +42,13 @@ require_once 'MetadataUtils.php';
 class NdlMarcRecord extends MarcRecord
 {
     /**
+     * Strings in field 300 that signify that the work is illustrated.
+     *
+     * @var string
+     */
+    protected $illustrationStrings = ['ill.', 'illus.', 'kuv.'];
+
+    /**
      * Normalize the record (optional)
      *
      * @return void
