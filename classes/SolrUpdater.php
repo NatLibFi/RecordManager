@@ -1348,7 +1348,7 @@ class SolrUpdater
                     $params['source_id'] = $record['source_id'];
                 }
                 $component = $this->db->record->findOne($params);
-                $hasComponentParts = !empty($componen);
+                $hasComponentParts = !empty($component);
                 if ($hasComponentParts) {
                     $components = $this->db->record->find($params);
                 }
