@@ -1536,9 +1536,15 @@ class RecordManager
                     $dbRecord['update_needed'] = false;
                 }
             } else {
-                unset($dbRecord['title_keys']);
-                unset($dbRecord['isbn_keys']);
-                unset($dbRecord['id_keys']);
+                if (isset($dbRecord['title_keys'])) {
+                    unset($dbRecord['title_keys']);
+                }
+                if (isset($dbRecord['isbn_keys'])) {
+                    unset($dbRecord['isbn_keys']);
+                }
+                if (isset($dbRecord['id_keys'])) {
+                    unset($dbRecord['id_keys']);
+                }
                 $dbRecord['update_needed'] = false;
             }
             $this->db->record->replaceOne(
