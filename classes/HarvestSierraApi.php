@@ -148,7 +148,7 @@ class HarvestSierraApi extends BaseHarvest
     {
         $this->initHarvest($callback);
 
-        $harvestStartTime = new \MongoDB\BSON\UTCDateTime(time() * 1000);
+        $harvestStartTime = time();
         $apiParams = [
             'limit' => $this->batchSize,
             'offset' => $this->startPosition,
