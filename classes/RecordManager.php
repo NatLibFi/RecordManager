@@ -907,7 +907,7 @@ class RecordManager
                         $this->log->log(
                             'harvest',
                             'Reharvest date threshold: '
-                            . $dateThreshold->toDatetime()->format('%F %T')
+                            . $dateThreshold->toDatetime()->format('Y-m-d H:i:s')
                         );
                     }
 
