@@ -463,7 +463,7 @@ class MetadataUtils
         } else {
             $data = $record['original_data'];
         }
-        return is_object($data) ? gzinflate($data->bin) : $data;
+        return is_object($data) ? gzinflate($data->getData()) : $data;
     }
 
     /**

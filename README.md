@@ -21,12 +21,25 @@ These are quick instructions on how to set up RecordManager. Please refer to the
   With PHP 7 a recent version from https://git.osgeo.org/gogs/geos/php-geos may be
   required, and it will require `yum install geos-devel` to compile.
 
-- Required pecl modules: mongo
+- Required pecl modules: mongodb
+
+    E.g. remi repos include a package for mongodb:
+
+      yum install php70-php-pecl-mongodb
+
+    Webtatic too:
+
+      yum install php70w-pecl-mongodb
+
+    If there's no package available, use pecl to install mongodb:
 
       yum install gcc make
-      pecl install mongo
+      pecl install mongodb
 
-- Add the extension=mongo.so line to /etc/php.d/mongo.ini
+    Either way, make sure it's at least v1.2.0. Earlier versions have problems with
+    pcntl.
+
+- Add the extension=mongodb.so line to /etc/php.d/mongodb.ini
 
 - Required Pear modules: HTTP_Request2
 

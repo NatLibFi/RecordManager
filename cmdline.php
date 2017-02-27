@@ -34,8 +34,10 @@
  */
 ini_set('display_errors', '1');
 
+require_once __DIR__ . '/vendor/autoload.php';
+
 // Initialize command line environment
-$basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
+$basePath = __DIR__;
 require_once 'classes/RecordManager.php';
 $configArray = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
 
@@ -82,7 +84,7 @@ function parseArgs($argv)
                 $key = substr($arg, 2, $eqPos - 2);
                 $params[$key] = substr($arg, $eqPos + 1);
             }
-        } else if (substr($arg, 0, 1) == '-') {
+        } elseif (substr($arg, 0, 1) == '-') {
             if (substr($arg, 2, 1) == '=') {
                 $key = substr($arg, 1, 1);
                 $params[$key] = substr($arg, 3);

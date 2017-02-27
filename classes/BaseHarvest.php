@@ -314,7 +314,9 @@ class BaseHarvest
     protected function saveLastHarvestedDate($date)
     {
         $state = ['_id' => "Last Harvest Date {$this->source}", 'value' => $date];
-        $this->db->state->save($state, ['socketTimeoutMS' => 300000]);
+        $this->db->state->replaceOne(
+            ['_id' => $state['_id']], $state, ['upsert' => true]
+        );
     }
 
     /**

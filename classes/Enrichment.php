@@ -108,10 +108,10 @@ class Enrichment
             : 86400;
         $this->maxTries = isset($configArray['Enrichment']['max_tries'])
             ? $configArray['Enrichment']['max_tries']
-            : 15;
+            : 90;
         $this->retryWait = isset($configArray['Enrichment']['retry_wait'])
             ? $configArray['Enrichment']['retry_wait']
-            : 30;
+            : 5;
 
         if (isset($configArray['HTTP'])) {
             $this->httpParams += $configArray['HTTP'];
@@ -145,15 +145,17 @@ class Enrichment
      */
     protected function getExternalData($url, $id, $headers = [], $ignoreErrors = [])
     {
-        $cached = $this->db->uriCache->find(
+        $cached = $this->db->uriCache->findOne(
             [
                 '_id' => $id,
                 'timestamp' => [
-                    '$gt' => new MongoDate(time() - $this->maxCacheAge)
+                    '$gt' => new \MongoDB\BSON\UTCDateTime(
+                        (time() - $this->maxCacheAge) * 1000
+                    )
                  ]
             ]
-        )->limit(-1)->timeout(300000)->getNext();
-        if ($cached) {
+        );
+        if (null !== $cached) {
             return $cached['data'];
         }
 
@@ -172,19 +174,24 @@ class Enrichment
             $this->request->setHeader($headers);
         }
 
+        $retryWait = $this->retryWait;
         $response = null;
         for ($try = 1; $try <= $this->maxTries; $try++) {
             try {
                 $response = $this->request->send();
             } catch (Exception $e) {
                 if ($try < $this->maxTries) {
+                    if ($retryWait < 30) {
+                        // Progressively longer delay
+                        $retryWait *= 2;
+                    }
                     $this->log->log(
                         'getExternalData',
                         "HTTP request for '$url' failed (" . $e->getMessage()
-                        . "), retrying in {$this->retryWait} seconds...",
+                        . "), retrying in {$retryWait} seconds...",
                         Logger::WARNING
                     );
-                    sleep($this->retryWait);
+                    sleep($retryWait);
                     continue;
                 }
                 throw $e;
@@ -213,14 +220,17 @@ class Enrichment
 
         $data = $code < 300 ? $response->getBody() : '';
 
-        $this->db->uriCache->save(
+        $this->db->uriCache->replaceOne(
             [
                 '_id' => $id,
-                'timestamp' => new MongoDate(),
+            ],
+            [
+                '_id' => $id,
+                'timestamp' => new \MongoDB\BSON\UTCDateTime(time() * 1000),
                 'data' => $data
             ],
             [
-                'socketTimeoutMS' => 300000
+                'upsert' => true
             ]
         );
 

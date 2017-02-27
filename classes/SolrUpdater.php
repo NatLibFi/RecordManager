@@ -31,6 +31,8 @@ require_once 'BaseRecord.php';
 require_once 'MetadataUtils.php';
 require_once 'PerformanceCounter.php';
 
+use MongoDB\BSON\UTCDateTime;
+
 /**
  * SolrUpdater Class
  *
@@ -64,12 +66,6 @@ class SolrUpdater
     protected $updateRetryWait;
     protected $backgroundUpdates;
     protected $threadedMergedRecordUpdate;
-
-    /**
-     * Mongo cursor timeout
-     * @var int
-     */
-    protected $cursorTimeout = 300000;
 
     /**
      * Solr Update Buffer
@@ -172,20 +168,18 @@ class SolrUpdater
     /**
      * Constructor
      *
-     * @param MongoDB $db            Database connection
-     * @param string  $basePath      RecordManager main directory
-     * @param object  $log           Logger
-     * @param boolean $verbose       Whether to output verbose messages
-     * @param int     $cursorTimeout Mongo cursor timeout
+     * @param MongoDB $db       Database connection
+     * @param string  $basePath RecordManager main directory
+     * @param object  $log      Logger
+     * @param boolean $verbose  Whether to output verbose messages
      *
      * @throws Exception
      */
-    public function __construct($db, $basePath, $log, $verbose, $cursorTimeout)
+    public function __construct($db, $basePath, $log, $verbose)
     {
         global $configArray;
 
         $this->db = $db;
-        $this->cursorTimeout = $cursorTimeout;
         $this->basePath = $basePath;
         $this->log = $log;
         $this->verbose = $verbose;
@@ -271,16 +265,18 @@ class SolrUpdater
     /**
      * Process merged (deduplicated) records
      *
-     * @param MongoDate $mongoFromDate Start date
-     * @param string    $sourceId      Comma-separated list of source IDs to update,
-     *                                 or empty or * for all sources
-     * @param string    $singleId      Process only the record with the given ID
-     * @param bool      $noCommit      If true, changes are not explicitly committed
-     * @param bool      $delete        If true, records in the given $sourceId are
-     *                                 all deleted
-     * @param string    $compare       If set, just compare the records with the
-     *                                 ones already in the Solr index and write any
-     *                                 differences in a file given in this parameter
+     * @param UTCDateTime $mongoFromDate Start date
+     * @param string      $sourceId      Comma-separated list of source IDs to
+     *                                   update, or empty or * for all sources
+     * @param string      $singleId      Process only the record with the given ID
+     * @param bool        $noCommit      If true, changes are not explicitly
+     *                                   committed
+     * @param bool        $delete        If true, records in the given $sourceId are
+     *                                   all deleted
+     * @param string      $compare       If set, just compare the records with the
+     *                                   ones already in the Solr index and write any
+     *                                   differences in a file given in this
+     *                                   parameter
      *
      * @throws Exception
      * @return boolean Whether anything was updated
@@ -328,9 +324,12 @@ class SolrUpdater
         } else {
             $collectionName .= '_0';
         }
-        $record = $this->db->record->find()->timeout($this->cursorTimeout)
-            ->sort(['updated' => -1])->getNext();
-        $lastRecordTime = $record['updated']->sec;
+        $record = $this->db->record->findOne([], ['sort' => ['updated' => -1]]);
+        if (empty($record)) {
+            $this->log->log('processMerged', 'No records found');
+            return;
+        }
+        $lastRecordTime = $record['updated']->toDateTime()->getTimestamp();
         $collectionName .= "_$lastRecordTime";
 
         // Install a signal handler so that we can exit cleanly if interrupted
@@ -349,11 +348,7 @@ class SolrUpdater
         // collections
         $collectionExists = false;
         foreach ($this->db->listCollections() as $collection) {
-            $collection = explode('.', $collection, 2);
-            if ($collection[0] != $configArray['Mongo']['database']) {
-                continue;
-            }
-            $collection = end($collection);
+            $collection = $collection->getName();
             if ($collection == $collectionName) {
                 $collectionExists = true;
             } else {
@@ -383,7 +378,7 @@ class SolrUpdater
         }
 
         $from = isset($mongoFromDate)
-            ? date('Y-m-d H:i:s', $mongoFromDate->sec)
+            ? $mongoFromDate->toDateTime()->format('Y-m-d H:i:s')
             : 'the beginning';
 
         if (!$collectionExists) {
@@ -397,9 +392,8 @@ class SolrUpdater
             $collection = $this->db->selectCollection($tmpCollectionName);
             $count = 0;
             $totalMergeCount = 0;
-            $records = $this->db->record->find(
-                $params, ['_id' => 1, 'dedup_id' => 1, 'update_needed' => 1]
-            )->timeout($this->cursorTimeout);
+            $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
+            $writeConcern = new MongoDB\Driver\WriteConcern(0);
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
                     $this->log->log(
@@ -420,7 +414,14 @@ class SolrUpdater
                 }
 
                 if (!isset($prevId) || $prevId != $id) {
-                    $collection->insert(['_id' => $id], ['w' => 0]);
+                    $collection->replaceOne(
+                        ['_id' => $id],
+                        ['_id' => $id],
+                        [
+                            'upsert' => true,
+                            'writeConcern' => $writeConcern
+                        ]
+                    );
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
                         $this->log->log('processMerged', "$count id's processed");
@@ -449,9 +450,11 @@ class SolrUpdater
                 );
             }
 
-            $records = $this->db->dedup->find($dedupParams, ['_id' => 1])
-                ->timeout($this->cursorTimeout);
+            $records = $this->db->dedup->find(
+                $dedupParams, ['noCursorTimeout' => true]
+            );
             $count = 0;
+            $writeConcern = new MongoDB\Driver\WriteConcern(0);
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
                     $this->log->log('processMerged', 'Termination upon request');
@@ -460,7 +463,15 @@ class SolrUpdater
                 }
                 $id = $record['_id'];
                 if (!isset($prevId) || $prevId != $id) {
-                    $collection->insert(['_id' => $id], ['w' => 0]);
+                    $collection->replaceOne(
+                        ['_id' => $id],
+                        ['_id' => $id],
+                        [
+                            'upsert' => true,
+                            'writeConcern' => $writeConcern
+                        ]
+                    );
+
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
                         $this->log->log(
@@ -477,20 +488,19 @@ class SolrUpdater
             );
 
             if ($totalMergeCount > 0) {
-                $mongo = new MongoClient($configArray['Mongo']['url']);
+                // renameCollection requires admin priviledge
+                $mongo = new \MongoDB\Client($configArray['Mongo']['url']);
                 $dbName = $configArray['Mongo']['database'];
                 $res = $mongo->admin->command(
                     [
                         'renameCollection' => $dbName . '.' . $tmpCollectionName,
                         'to' => $dbName . '.' . $collectionName
-                    ],
-                    [
-                        'socketTimeoutMS' => $this->cursorTimeout
                     ]
                 );
-                if (!$res['ok']) {
+                $resArray = $res->toArray();
+                if (!$resArray[0]['ok']) {
                     throw new Exception(
-                        'Renaming collection failed: ' . print_r($res, true)
+                        'Renaming collection failed: ' . print_r($resArray, true)
                     );
                 }
             }
@@ -502,8 +512,7 @@ class SolrUpdater
         }
         pcntl_signal(SIGINT, SIG_DFL);
 
-        $keys = $this->db->{$collectionName}->find()->timeout($this->cursorTimeout);
-        $keys->immortal(true);
+        $keys = $this->db->{$collectionName}->find([], ['noCursorTimeout' => true]);
         $count = 0;
         $mergedComponents = 0;
         $deleted = 0;
@@ -526,8 +535,7 @@ class SolrUpdater
                 continue;
             }
 
-            $dedupRecord = $this->db->dedup->find(['_id' => $key['_id']])->limit(-1)
-                ->timeout($this->cursorTimeout)->getNext();
+            $dedupRecord = $this->db->dedup->findOne(['_id' => $key['_id']]);
             if (empty($dedupRecord)) {
                 $this->log->log(
                     'processMerged',
@@ -548,8 +556,9 @@ class SolrUpdater
             $children = [];
             $merged = [];
             $records = $this->db->record->find(
-                ['_id' => ['$in' => $dedupRecord['ids']]]
-            )->timeout($this->cursorTimeout);
+                ['_id' => ['$in' => $dedupRecord['ids']]],
+                ['noCursorTimeout' => true]
+            );
             foreach ($records as $record) {
                 if (in_array($record['source_id'], $this->nonIndexedSources)) {
                     continue;
@@ -742,6 +751,17 @@ class SolrUpdater
     public function updateRecords($fromDate = null, $sourceId = '', $singleId = '',
         $noCommit = false, $delete = false, $compare = false, $dumpPrefix = ''
     ) {
+        // Disable threaded merge record update for now
+        if ($this->threadedMergedRecordUpdate) {
+            $this->threadedMergedRecordUpdate = false;
+            $this->log->log(
+                'SolrUpdater',
+                'Threaded merged record update is disabled at the moment due to'
+                . ' issues with the MongoDB driver',
+                Logger::WARNING
+            );
+        }
+
         if ($compare && $compare != '-') {
             file_put_contents($compare, '');
         }
@@ -765,22 +785,22 @@ class SolrUpdater
             $needCommit = false;
 
             if (isset($fromDate) && $fromDate) {
-                $mongoFromDate = new MongoDate(strtotime($fromDate));
+                $mongoFromDate = new UTCDateTime(strtotime($fromDate) * 1000);
             }
 
             if (!isset($fromDate)) {
-                $state = $this->db->state->find(['_id' => 'Last Index Update'])
-                    ->limit(-1)->timeout($this->cursorTimeout)->getNext();
-                if (isset($state)) {
+                $state = $this->db->state->findOne(['_id' => 'Last Index Update']);
+                if ($state) {
                     $mongoFromDate = $state['value'];
                 } else {
                     unset($mongoFromDate);
                 }
             }
             $from = isset($mongoFromDate)
-                ? date('Y-m-d H:i:s', $mongoFromDate->sec) : 'the beginning';
+                ? $mongoFromDate->toDatetime()->format('Y-m-d H:i:s')
+                : 'the beginning';
             // Take the last indexing date now and store it when done
-            $lastIndexingDate = new MongoDate();
+            $lastIndexingDate = new UTCDateTime(time() * 1000);
 
             // Only process merged records if any of the selected sources has
             // deduplication enabled
@@ -855,11 +875,8 @@ class SolrUpdater
                 $params['dedup_id'] = ['$exists' => false];
                 $params['update_needed'] = false;
             }
-            $records = $this->db->record->find($params)
-                ->timeout($this->cursorTimeout);
-            $records->immortal(true);
-
-            $total = $this->counts ? $records->count() : 'the';
+            $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
+            $total = $this->counts ? $this->db->record->count($params) : 'the';
             $count = 0;
             $mergedComponents = 0;
             $deleted = 0;
@@ -976,8 +993,10 @@ class SolrUpdater
             if (isset($lastIndexingDate) && !$compare) {
                 $state
                     = ['_id' => "Last Index Update", 'value' => $lastIndexingDate];
-                $this->db->state->save(
-                    $state, ['socketTimeoutMS' => $this->cursorTimeout]
+                $this->db->state->replaceOne(
+                    ['_id' => $state['_id']],
+                    $state,
+                    ['upsert' => true]
                 );
             }
             if ($count > 0) {
@@ -1079,8 +1098,7 @@ class SolrUpdater
         if ($sourceId) {
             $params['source_id'] = $sourceId;
         }
-        $records = $this->db->record->find($params)->timeout($this->cursorTimeout);
-        $records->immortal(true);
+        $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
         $this->log->log('countValues', "Counting values");
         $values = [];
         $count = 0;
@@ -1173,7 +1191,7 @@ class SolrUpdater
 
         if (isset($settings['mappingFiles'][$source]['format'])) {
             $mappingFile = $settings['mappingFiles'][$source]['format'];
-            $map = $mappingFile['map'];
+            $map = $mappingFile[0]['map'];
             if (!empty($format)) {
                 $format = $this->mapValue($format, $mappingFile);
                 return is_array($format) ? $format[0] : $format;
@@ -1242,16 +1260,18 @@ class SolrUpdater
                 }
             }
 
-            foreach ($allMappings as $field => $value) {
-                $parts = explode(',', $value, 2);
-                $filename = $parts[0];
-                $type = isset($parts[1]) ? $parts[1] : 'normal';
-                $this->settings[$source]['mappingFiles'][$field] = [
-                    'type' => $type,
-                    'map' => $this->readMappingFile(
-                        $this->basePath . '/mappings/' . $filename
-                    )
-                ];
+            foreach ($allMappings as $field => $values) {
+                foreach ((array)$values as $value) {
+                    $parts = explode(',', $value, 2);
+                    $filename = $parts[0];
+                    $type = isset($parts[1]) ? $parts[1] : 'normal';
+                    $this->settings[$source]['mappingFiles'][$field][] = [
+                        'type' => $type,
+                        'map' => $this->readMappingFile(
+                            $this->basePath . '/mappings/' . $filename
+                        )
+                    ];
+                }
             }
 
             $this->settings[$source]['extraFields'] = [];
@@ -1338,9 +1358,12 @@ class SolrUpdater
                 } else {
                     $params['source_id'] = $record['source_id'];
                 }
-                $components = $this->db->record->find($params)
-                    ->timeout($this->cursorTimeout);
-                $hasComponentParts = $components->hasNext();
+                $component = $this->db->record->findOne($params);
+                $hasComponentParts = !empty($component);
+                if ($hasComponentParts) {
+                    $components = $this->db->record->find($params);
+                }
+
                 $format = $metadataRecord->getFormat();
                 $merge = false;
                 if ($settings['componentParts'] == 'merge_all') {
@@ -1358,7 +1381,7 @@ class SolrUpdater
             }
         }
 
-        if (isset($components)) {
+        if ($hasComponentParts && isset($components)) {
             $mergedComponents += $metadataRecord->mergeComponentParts($components);
         }
         if (isset($settings['solrTransformationXSLT'])) {
@@ -1384,12 +1407,12 @@ class SolrUpdater
         if ($metadataRecord->getIsComponentPart()) {
             $hostRecord = null;
             if (isset($record['host_record_id']) && $this->db) {
-                $hostRecord = $this->db->record->find(
+                $hostRecord = $this->db->record->findOne(
                     [
                         'source_id' => $record['source_id'],
                         'linking_id' => $record['host_record_id']
                     ]
-                )->limit(-1)->timeout($this->cursorTimeout)->getNext();
+                );
             }
             if (!$hostRecord) {
                 if (isset($record['host_record_id'])) {
@@ -1477,10 +1500,10 @@ class SolrUpdater
                 } else {
                     $data[$field] = $this->mapValue($data[$field], $mappingFile);
                 }
-            } elseif (isset($mappingFile['map']['##empty'])) {
-                $data[$field] = $mappingFile['map']['##empty'];
-            } elseif (isset($mappingFile['map']['##emptyarray'])) {
-                $data[$field] = [$mappingFile['map']['##emptyarray']];
+            } elseif (isset($mappingFile[0]['map']['##empty'])) {
+                $data[$field] = $mappingFile[0]['map']['##empty'];
+            } elseif (isset($mappingFile[0]['map']['##emptyarray'])) {
+                $data[$field] = [$mappingFile[0]['map']['##emptyarray']];
             }
         }
 
@@ -1524,7 +1547,8 @@ class SolrUpdater
             foreach ($data as $key => $field) {
                 if (in_array(
                     $key, ['fullrecord', 'thumbnail', 'id', 'recordtype', 'ctrlnum']
-                )) {
+                )
+                ) {
                     continue;
                 }
                 if (is_array($field)) {
@@ -1537,8 +1561,12 @@ class SolrUpdater
         }
 
         $data['first_indexed']
-            = MetadataUtils::formatTimestamp($record['created']->sec);
-        $data['last_indexed'] = MetadataUtils::formatTimestamp($record['date']->sec);
+            = MetadataUtils::formatTimestamp(
+                $record['created']->toDateTime()->getTimestamp()
+            );
+        $data['last_indexed'] = MetadataUtils::formatTimestamp(
+            $record['date']->toDateTime()->getTimestamp()
+        );
         $data['recordtype'] = $record['format'];
         if (!isset($data['fullrecord'])) {
             $data['fullrecord'] = $metadataRecord->toXML();
@@ -1590,22 +1618,35 @@ class SolrUpdater
     /**
      * Map a value using a mapping file
      *
-     * @param string $value       Value to map
-     * @param array  $mappingFile Mapping file
+     * @param mixed $value       Value to map
+     * @param array $mappingFile Mapping file
+     * @param int   $index       Mapping index for sub-entry mappings
+     *
+     * @return mixed
      */
-    protected function mapValue($value, $mappingFile)
+    protected function mapValue($value, $mappingFile, $index = 0)
     {
-        if ('regexp' == $mappingFile['type']) {
-            foreach ($mappingFile['map'] as $pattern => $replacement) {
+        if (is_array($value)) {
+            // Map array parts (predefined hierarchy) separately
+            foreach ($value as $i => &$v) {
+                $v = $this->mapValue($v, $mappingFile, $i);
+            }
+            return implode('/', $value);
+        }
+        $map = isset($mappingFile[$index]['map']) ? $mappingFile[$index]['map']
+            : $mappingFile[0]['map'];
+        $type = isset($mappingFile[$index]['type'])
+            ? $mappingFile[$index]['type'] : $mappingFile[0]['type'];
+        if ('regexp' == $type) {
+            foreach ($map as $pattern => $replacement) {
                 $pattern = addcslashes($pattern, '/');
-                $newValue = preg_replace("/$pattern/", $replacement, $value);
+                $newValue = preg_replace("/$pattern/u", $replacement, $value);
                 if ($newValue != $value) {
                     return $newValue;
                 }
             }
             return $value;
         }
-        $map = $mappingFile['map'];
         $replacement = $value;
         if (isset($map[$value])) {
             $replacement = $map[$value];
@@ -1898,7 +1939,9 @@ class SolrUpdater
         for ($try = 1; $try <= $maxTries; $try++) {
             try {
                 if (!$this->waitForClusterStateOk()) {
-                    throw new Exception('Failed to check that the cluster state is ok');
+                    throw new Exception(
+                        'Failed to check that the cluster state is ok'
+                    );
                 }
                 $response = $this->request->send();
             } catch (Exception $e) {
@@ -2268,7 +2311,7 @@ class SolrUpdater
      * @param string $filename Mapping file name
      *
      * @throws Exception
-     * @return string[string] Mappings
+     * @return string[] Mappings
      */
     protected function readMappingFile($filename)
     {
@@ -2325,7 +2368,7 @@ class SolrUpdater
                 if (!isset($this->enrichments[$enrichment])) {
                     include_once "$enrichment.php";
                     $this->enrichments[$enrichment] = new $enrichment(
-                        $this->db, $this->log, $this->cursorTimeout
+                        $this->db, $this->log
                     );
                 }
                 $this->enrichments[$enrichment]->enrich($source, $record, $data);

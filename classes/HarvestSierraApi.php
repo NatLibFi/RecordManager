@@ -152,7 +152,7 @@ class HarvestSierraApi extends BaseHarvest
         $apiParams = [
             'limit' => $this->batchSize,
             'offset' => $this->startPosition,
-            'fields' => 'id,deleted,locations,fixedFields,varFields',
+            'fields' => 'id,deleted,locations,fixedFields,varFields'
         ];
         if (null !== $this->suppressedRecords) {
             $apiParams['suppressed'] = $this->suppressedRecords ? 'true' : 'false';
@@ -448,12 +448,12 @@ class HarvestSierraApi extends BaseHarvest
             }
         }
 
-        if (isset($record['fixedFields']['30']['display'])) {
+        if (isset($record['fixedFields']['30']['value'])) {
             $marc['977'][] = [
                 'i1' => ' ',
                 'i2' => ' ',
                 's' => [
-                    ['a' => $record['fixedFields']['30']['display']]
+                    ['a' => trim($record['fixedFields']['30']['value'])]
                 ]
             ];
         }
@@ -521,5 +521,4 @@ class HarvestSierraApi extends BaseHarvest
             . $this->deletedRecords . ' deleted records'
         );
     }
-
 }

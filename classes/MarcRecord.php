@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2016.
+ * Copyright (C) The National Library of Finland 2011-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -92,6 +92,14 @@ class MarcRecord extends BaseRecord
         'stm', 'str', 'stl', 'sht', 'ths', 'trl', 'tyd', 'tyg', 'vdg', 'voc', 'wde',
         'wdc', 'wam'
     ];
+
+    /**
+     * Strings in field 300 that signify that the work is illustrated.
+     *
+     * @var string
+     */
+    protected $illustrationStrings = ['ill.', 'illus.'];
+
 
     /**
      * Constructor
@@ -284,15 +292,7 @@ class MarcRecord extends BaseRecord
         $data = parent::toSolrArray();
 
         // building
-        $data['building'] = [];
-        if ($this->getDriverParam('holdingsInBuilding', true)) {
-            foreach ($this->getFields('852') as $field) {
-                $location = $this->getSubfield($field, 'b');
-                if ($location) {
-                    $data['building'][] = $location;
-                }
-            }
-        }
+        $data['building'] = $this->getBuilding();
 
         // long_lat
         $field = $this->getField('034');
@@ -1239,6 +1239,25 @@ class MarcRecord extends BaseRecord
     }
 
     /**
+     * Get the building field
+     *
+     * @return array
+     */
+    protected function getBuilding()
+    {
+        $building = [];
+        if ($this->getDriverParam('holdingsInBuilding', true)) {
+            foreach ($this->getFields('852') as $field) {
+                $location = $this->getSubfield($field, 'b');
+                if ($location) {
+                    $building[] = $location;
+                }
+            }
+        }
+        return $building;
+    }
+
+    /**
      * Parse MARCXML
      *
      * @param string $marc MARCXML
@@ -1416,8 +1435,8 @@ class MarcRecord extends BaseRecord
             // 008
             $field008 = $this->getField('008');
             for ($pos = 18; $pos <= 21; $pos++) {
-                if (strpos($illustratedCodes, substr($field008, $pos, 1)) !== false
-                ) {
+                $ch = substr($field008, $pos, 1);
+                if ('' !== $ch && strpos($illustratedCodes, $ch) !== false) {
                     return 'Illustrated';
                 }
             }
@@ -1425,9 +1444,8 @@ class MarcRecord extends BaseRecord
             // 006
             foreach ($this->getFields('006') as $field006) {
                 for ($pos = 1; $pos <= 4; $pos++) {
-                    if (strpos(
-                        $illustratedCodes, substr($field006, $pos, 1)
-                    ) !== false) {
+                    $ch = substr($field006, $pos, 1);
+                    if ('' !== $ch && strpos($illustratedCodes, $ch) !== false) {
                         return 'Illustrated';
                     }
                 }
@@ -1435,10 +1453,9 @@ class MarcRecord extends BaseRecord
         }
 
         // Now check for interesting strings in 300 subfield b:
-        $illustrationStrings = ['ill.', 'illus.', 'kuv.'];
         foreach ($this->getFields('300') as $field300) {
             $sub = strtolower($this->getSubfield($field300, 'b'));
-            foreach ($illustrationStrings as $illStr) {
+            foreach ($this->illustrationStrings as $illStr) {
                 if (strpos($sub, $illStr) !== false) {
                     return 'Illustrated';
                 }
@@ -1768,7 +1785,8 @@ class MarcRecord extends BaseRecord
         foreach ($this->fields['880'] as $field880) {
             if (strncmp(
                 $this->getSubfield($field880, '6'), $findSub6, 6
-            ) != 0) {
+            ) != 0
+            ) {
                 continue;
             }
             if ($codes) {

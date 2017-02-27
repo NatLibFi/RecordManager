@@ -27,6 +27,8 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
+require_once __DIR__ . '/vendor/autoload.php';
+
 if (!isset($_REQUEST['source']) || !isset($_REQUEST['data'])) {
     die('Missing parameters');
 }

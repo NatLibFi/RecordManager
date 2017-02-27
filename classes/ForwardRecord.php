@@ -250,7 +250,7 @@ class ForwardRecord extends BaseRecord
     protected function normalizeRelator($relator)
     {
         $relator = trim($relator);
-        $relator = preg_replace('/\p{P}+/', '', $relator);
+        $relator = preg_replace('/\p{P}+/u', '', $relator);
         return $relator;
     }
 
