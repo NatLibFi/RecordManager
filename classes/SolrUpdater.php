@@ -751,6 +751,17 @@ class SolrUpdater
     public function updateRecords($fromDate = null, $sourceId = '', $singleId = '',
         $noCommit = false, $delete = false, $compare = false, $dumpPrefix = ''
     ) {
+        // Disable threaded merge record update for now
+        if ($this->threadedMergedRecordUpdate) {
+            $this->threadedMergedRecordUpdate = false;
+            $this->log->log(
+                'SolrUpdater',
+                'Threaded merged record update is disabled at the moment due to'
+                . ' issues with the MongoDB driver',
+                Logger::WARNING
+            );
+        }
+
         if ($compare && $compare != '-') {
             file_put_contents($compare, '');
         }
