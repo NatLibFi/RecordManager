@@ -556,7 +556,7 @@ class SolrUpdater
             $children = [];
             $merged = [];
             $records = $this->db->record->find(
-                ['_id' => ['$in' => $dedupRecord['ids']]],
+                ['_id' => ['$in' => (array)$dedupRecord['ids']]],
                 ['noCursorTimeout' => true]
             );
             foreach ($records as $record) {
