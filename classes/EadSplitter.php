@@ -39,7 +39,7 @@
 */
 class EadSplitter
 {
-    protected $doc = null;
+    protected $doc;
     protected $recordNodes;
     protected $recordCount;
     protected $currentPos;
@@ -110,27 +110,24 @@ class EadSplitter
 
             $addData = $record->addChild('add-data');
 
-            if ($record->getName() != 'archdesc') {
-                if ($record->did->unitid) {
-                    $unitid = urlencode(
-                        $record->did->unitid->attributes()->identifier
-                        ? (string)$record->did->unitid->attributes()->identifier
-                        : (string)$record->did->unitid
-                    );
-                    $addData->addAttribute(
-                        'identifier', $this->archiveId . '_' . $unitid
-                    );
-                } else {
-                    // Create ID for the unit
-                    $addData->addAttribute(
-                        'identifier', $this->archiveId . '_' . $this->currentPos
-                    );
-                    // Also store it in original record for the children
-                    $original->addChild('add-data')->addAttribute(
-                        'identifier', $this->archiveId . '_' . $this->currentPos
-                    );
+            if ($record->did->unitid) {
+                $unitId = urlencode(
+                    $record->did->unitid->attributes()->identifier
+                    ? (string)$record->did->unitid->attributes()->identifier
+                    : (string)$record->did->unitid
+                );
+                if ($unitId != $this->archiveId) {
+                    $unitId = $this->archiveId . '_' . $unitId;
                 }
+            } else {
+                // Create ID for the unit
+                $unitId = $this->archiveId . '_' . $this->currentPos;
             }
+            if ($record->getName() != 'archdesc') {
+                $addData->addAttribute('identifier', $unitId);
+            }
+            // Also store it in original record for the children
+            $original->addChild('add-data')->addAttribute('identifier', $unitId);
 
             $absolute = $addData->addChild('archive');
             $absolute->addAttribute('id', $this->archiveId);
@@ -165,18 +162,22 @@ class EadSplitter
             if ($parentDid) {
                 $parentDid = $parentDid[0];
                 // If parent has add-data, take the generated ID from it
-                if (isset($original->{'add-data'})) {
+                $parentAddData = $original->xpath(
+                    'parent::*/add-data | parent::*/parent::*/add-data'
+                );
+                if ($parentAddData) {
                     $parentID
-                        = (string)$original->{'add-data'}->attributes()->identifier;
+                        = (string)$parentAddData[0]->attributes()->identifier;
                 } else {
+                    // Generate parent ID
                     $parentID = urlencode(
                         $parentDid->unitid->attributes()->identifier
                         ? (string)$parentDid->unitid->attributes()->identifier
                         : (string)$parentDid->unitid
                     );
-                }
-                if ($parentID != $this->archiveId) {
-                    $parentID = $this->archiveId . '_' . $parentID;
+                    if ($parentID != $this->archiveId) {
+                        $parentID = $this->archiveId . '_' . $parentID;
+                    }
                 }
                 $parentTitle = (string)$parentDid->unittitle;
 
