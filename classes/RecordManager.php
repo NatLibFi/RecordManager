@@ -287,9 +287,6 @@ class RecordManager
             while (!$splitter->getEOF()) {
                 $oaiID = '';
                 $data = $splitter->getNextRecord($oaiID);
-                if ($this->verbose) {
-                    echo "Storing a record\n";
-                }
                 $count += $this->storeRecord($oaiID, false, $data);
                 if ($this->verbose) {
                     echo "Stored records: $count\n";
@@ -1376,7 +1373,8 @@ class RecordManager
     public function storeRecord($oaiID, $deleted, $recordData)
     {
         if ($deleted) {
-            // A single OAI-PMH record may have been split to multiple records
+            // A single OAI-PMH record may have been split to multiple records. Find
+            // all occurrences.
             $records = $this->db->record->find(
                 ['source_id' => $this->sourceId, 'oai_id' => $oaiID],
                 ['noCursorTimeout' => true]
@@ -1483,12 +1481,18 @@ class RecordManager
             $dbRecord = $this->db->record->findOne(['_id' => $id]);
             if ($dbRecord) {
                 $dbRecord['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
+                if ($this->verbose) {
+                    echo "Updating record $id\n";
+                }
             } else {
                 $dbRecord = [];
                 $dbRecord['source_id'] = $this->sourceId;
                 $dbRecord['_id'] = $id;
                 $dbRecord['created'] = $dbRecord['updated']
                     = new \MongoDB\BSON\UTCDateTime(time() * 1000);
+                if ($this->verbose) {
+                    echo "Adding record $id\n";
+                }
             }
             $dbRecord['date'] = $dbRecord['updated'];
             if ($normalizedData) {
