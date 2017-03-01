@@ -584,7 +584,8 @@ class SolrUpdater
             if (count($children) == 0) {
                 $this->log->log(
                     'processMerged',
-                    "Found no records with dedup id: {$key['_id']}",
+                    "Found no records with dedup id: {$key['_id']}, ids: "
+                    . implode(',', (array)$dedupRecord['ids']),
                     Logger::INFO
                 );
                 if (!$compare) {
