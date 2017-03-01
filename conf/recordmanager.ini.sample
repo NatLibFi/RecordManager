@@ -52,6 +52,9 @@ admin_url = http://localhost:8080/solr/admin
 max_commit_interval = 1000000
 username =
 password =
+; Hierarchical facets. These facet fields have special handling that makes them
+; compatible with VuFind's hierarchical facets. The levels in a hierarchical facets
+; are delimited with a slash, e.g. "MainLibrary/Fiction"
 ;hierarchical_facets[] = building
 ;merge_records = true
 ;merged_fields = institution,collection,my_local_field_str_mv
