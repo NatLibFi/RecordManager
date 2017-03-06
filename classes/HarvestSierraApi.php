@@ -162,6 +162,9 @@ class HarvestSierraApi extends BaseHarvest
             $startDate = !empty($this->startDate) ? $this->startDate : '';
             $endDate = !empty($this->endDate) ? $this->endDate : '';
             $apiParams['updatedDate'] = "[$startDate,$endDate]";
+            $this->message("Incremental harvest: $startDate-$endDate");
+        } else {
+            $this->message('Initial harvest for all records');
         }
 
         // Keep harvesting as long as a records are received:
