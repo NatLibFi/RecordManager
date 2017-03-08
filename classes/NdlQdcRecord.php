@@ -139,6 +139,11 @@ class NdlQdcRecord extends QdcRecord
                 = MetadataUtils::getCenterCoordinates($data['location_geo']);
         }
 
+        // Usage rights
+        if ($rights = $this->getUsageRights()) {
+            $data['usage_rights_str_mv'] = $rights;
+        }
+                
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
 
@@ -159,5 +164,22 @@ class NdlQdcRecord extends QdcRecord
             return [$startDate, $endDate];
         }
         return null;
+    }
+
+    /**
+     * Return usage rights if any
+     *
+     * @return array ['restricted'] or more specific id's if defined for the record
+     */
+    protected function getUsageRights()
+    {
+        if (!isset($this->doc->rights)) {
+            return ['restricted'];
+        }
+        $result = [];
+        foreach ($this->doc->rights as $rights) {
+            $result[] = (string)$rights;
+        }
+        return $result;
     }
 }
