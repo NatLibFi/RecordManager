@@ -148,7 +148,7 @@ class HarvestSierraApi extends BaseHarvest
     {
         $this->initHarvest($callback);
 
-        $harvestStartTime = time();
+        $harvestStartTime = $this->getHarvestStartTime();
         $apiParams = [
             'limit' => $this->batchSize,
             'offset' => $this->startPosition,
@@ -170,14 +170,45 @@ class HarvestSierraApi extends BaseHarvest
         // Keep harvesting as long as a records are received:
         do {
             $response = $this->sendRequest(['v3', 'bibs'], $apiParams);
-            $count = $this->processResponse($response);
+            $count = $this->processResponse($response->getBody());
             $this->reportResults();
             $apiParams['offset'] += $apiParams['limit'];
         } while ($count > 0);
 
         if (empty($this->endDate)) {
-            $this->saveLastHarvestedDate(date('Y-m-d\TH:i:s\Z', $harvestStartTime));
+            $this->saveLastHarvestedDate(
+                gmdate('Y-m-d\TH:i:s\Z', $harvestStartTime)
+            );
         }
+    }
+
+    /**
+     * Get server date as a unix timestamp
+     *
+     * @return int
+     */
+    protected function getHarvestStartTime()
+    {
+        $response = $this->sendRequest(['v3', 'info', 'token'], []);
+        if ($date = $response->getHeader('Date')) {
+            $dateTime = DateTime::createFromFormat('D\, d M Y H:i:s O+', $date);
+            if (false === $dateTime) {
+                throw new Exception("Could not parse server date header: $date");
+            }
+            $result = $dateTime->getTimestamp();
+            $this->message(
+                'Current server date: ' . gmdate('Y-m-d\TH:i:s\Z', $result)
+            );
+            return $result;
+        }
+        $result = time();
+        $this->message(
+            'Could not find server date, using local date: '
+            . gmdate('Y-m-d\TH:i:s\Z', $result),
+            false,
+            Logger::WARNING
+        );
+        return $result;
     }
 
     /**
@@ -186,7 +217,7 @@ class HarvestSierraApi extends BaseHarvest
      * @param array $path   Sierra API path
      * @param array $params GET parameters for the method
      *
-     * @return string
+     * @return HTTP_Request2_Response
      * @throws Exception
      * @throws HTTP_Request2_LogicException
      */
@@ -227,7 +258,7 @@ class HarvestSierraApi extends BaseHarvest
                 $response = $request->send();
                 $code = $response->getStatus();
                 if ($code == 404) {
-                    return '';
+                    return $response;
                 }
                 if ($code == 401) {
                     $this->message('Renewing access token');
@@ -257,7 +288,7 @@ class HarvestSierraApi extends BaseHarvest
                     throw new Exception("{$this->source}: Request failed: $code");
                 }
 
-                return $response->getBody();
+                return $response;
             } catch (Exception $e) {
                 if ($try < $this->maxTries) {
                     $this->message(
@@ -298,7 +329,8 @@ class HarvestSierraApi extends BaseHarvest
                 false,
                 Logger::ERROR
             );
-            throw new Exception('{$this->source}: Server returned error: '
+            throw new Exception(
+                '{$this->source}: Server returned error: '
                 . $json['ErrorCodes']['code'] . ' ' . $json['ErrorCodes']['name']
                 . ': ' . $json['ErrorCodes']['description']
             );
@@ -418,7 +450,7 @@ class HarvestSierraApi extends BaseHarvest
     /**
      * Convert Sierra record to our internal MARC array format
      *
-     * @param array  $record Sierra BIB record varFields
+     * @param array $record Sierra BIB record varFields
      *
      * @return array
      */
@@ -503,9 +535,10 @@ class HarvestSierraApi extends BaseHarvest
             return true;
         }
         if (isset($record['fixedFields']['31'])) {
-            if (in_array(
-                $record['fixedFields']['31']['value'], $this->suppressedBibCode3)
-            ) {
+            $suppressed = in_array(
+                $record['fixedFields']['31']['value'], $this->suppressedBibCode3
+            );
+            if ($suppressed) {
                 return true;
             }
         }
