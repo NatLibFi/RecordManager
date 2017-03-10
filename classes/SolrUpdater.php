@@ -1190,8 +1190,8 @@ class SolrUpdater
     {
         $settings = $this->settings[$source];
 
-        if (isset($settings['mappingFiles'][$source]['format'])) {
-            $mappingFile = $settings['mappingFiles'][$source]['format'];
+        if (isset($settings['mappingFiles']['format'])) {
+            $mappingFile = $settings['mappingFiles']['format'];
             $map = $mappingFile[0]['map'];
             if (!empty($format)) {
                 $format = $this->mapValue($format, $mappingFile);
