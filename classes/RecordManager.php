@@ -575,7 +575,7 @@ class RecordManager
                 $record['linking_id'] = $metadataRecord->getLinkingID();
                 if ($hostID) {
                     $record['host_record_id'] = $hostID;
-                } else {
+                } elseif (isset($record['host_record_id'])) {
                     unset($record['host_record_id']);
                 }
                 $record['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
