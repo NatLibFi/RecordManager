@@ -547,10 +547,18 @@ class RecordManager
                     $record['update_needed'] = $this->dedupHandler
                         ->updateDedupCandidateKeys($record, $metadataRecord);
                 } else {
-                    unset($record['title_keys']);
-                    unset($record['isbn_keys']);
-                    unset($record['id_keys']);
-                    unset($record['dedup_id']);
+                    if (isset($record['title_keys'])) {
+                        unset($record['title_keys']);
+                    }
+                    if (isset($record['isbn_keys'])) {
+                        unset($record['isbn_keys']);
+                    }
+                    if (isset($record['id_keys'])) {
+                        unset($record['id_keys']);
+                    }
+                    if (isset($record['dedup_id'])) {
+                        unset($record['dedup_id']);
+                    }
                     $record['update_needed'] = false;
                 }
 
