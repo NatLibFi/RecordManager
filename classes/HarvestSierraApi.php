@@ -317,6 +317,7 @@ class HarvestSierraApi extends BaseHarvest
      */
     protected function processResponse($response)
     {
+        $this->message('Processing received records', true);
         if (empty($response)) {
             return 0;
         }
