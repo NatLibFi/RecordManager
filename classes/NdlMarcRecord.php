@@ -755,6 +755,7 @@ class NdlMarcRecord extends MarcRecord
             case 'kandidaatintyö':
             case 'kandidatarbete':
                 return 'BachelorsThesis';
+            case 'pro gradu -tutkielma':
             case 'pro gradu -työ':
             case 'pro gradu':
                 return 'ProGradu';
