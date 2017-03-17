@@ -105,10 +105,10 @@ class NdlMarcRecord extends MarcRecord
             $source = $this->getField('003');
             $source = MetadataUtils::stripTrailingPunctuation($source);
             if ($source) {
-                return "($source)" . $this->getID();
+                return "($source)" . $this->getField('001');
             }
         }
-        return $this->getID();
+        return $this->getField('001');
     }
 
     /**

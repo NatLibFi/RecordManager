@@ -604,6 +604,22 @@ class MarcRecord extends BaseRecord
      */
     public function getID()
     {
+        if ($this->getDriverParam('idIn999', false)) {
+            if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
+                return $id;
+            }
+        }
+        return $this->getField('001');
+    }
+
+    /**
+     * Return record linking ID (typically same as ID) used for links
+     * between records in the data source
+     *
+     * @return string
+     */
+    public function getLinkingID()
+    {
         return $this->getField('001');
     }
 
