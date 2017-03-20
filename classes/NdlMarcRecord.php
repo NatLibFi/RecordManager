@@ -101,14 +101,19 @@ class NdlMarcRecord extends MarcRecord
      */
     public function getLinkingID()
     {
-        if ($this->getDriverParam('003InLinkingID', false)) {
+        $id = $this->getField('001');
+        if ('' === $id && $this->getDriverParam('idIn999', false)) {
+            // Koha style ID fallback
+            $id = $this->getFieldSubfields('999', ['c' => 1]);
+        }
+        if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
             $source = $this->getField('003');
             $source = MetadataUtils::stripTrailingPunctuation($source);
             if ($source) {
-                return "($source)" . $this->getField('001');
+                return "($source)$id";
             }
         }
-        return $this->getField('001');
+        return $id;
     }
 
     /**
