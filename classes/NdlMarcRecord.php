@@ -542,6 +542,18 @@ class NdlMarcRecord extends MarcRecord
                         }
                     }
                 }
+                $access = MetadataUtils::normalize(
+                    $this->getFieldSubfields('506', ['f' => 1])
+                );
+                switch (MetadataUtils::normalize($access)) {
+                case 'unrestricted':
+                case 'unrestrictedonlineaccess':
+                    // no restrictions
+                    break;
+                default:
+                    $data['restricted_str'] = 'restricted';
+                    break;
+                }
             }
             if (in_array($type, ['kategoria', 'kategori'])) {
                 $category = $this->getSubfield($field886, 'c');
