@@ -148,12 +148,12 @@ class EadRecord extends BaseRecord
             }
         }
 
-        if ($doc->did->origination->corpname) {
+        if (!empty($doc->did->origination->corpname)) {
             $data['author_corporate'] = trim(
                 (string)$doc->did->origination->corpname
             );
         }
-        if ($doc->did->origination->persname) {
+        if (!empty($doc->did->origination->persname)) {
             $data['author2'] = trim(
                 (string)$doc->did->origination->persname
             );
@@ -241,7 +241,9 @@ class EadRecord extends BaseRecord
             }
         }
 
-        $nodes = $this->doc->did->daogrp->xpath('daoloc[@role="image_thumbnail"]');
+        $nodes = isset($this->doc->did->daogrp)
+            ? $this->doc->did->daogrp->xpath('daoloc[@role="image_thumbnail"]')
+            : null;
         if ($nodes) {
             // store first thumbnail
             $node = $nodes[0];
