@@ -733,7 +733,7 @@ class NdlLidoRecord extends LidoRecord
                     . "{$this->source}." . $this->getID(),
                     Logger::WARNING
                 );
-                $this->storeWarning('gml polygon no outer boundary');
+                $this->storeWarning('gml polygon missing outer boundary');
                 return '';
             }
             $outerBoundary
@@ -778,7 +778,7 @@ class NdlLidoRecord extends LidoRecord
                         . "{$this->source}." . $this->getID(),
                         Logger::WARNING
                     );
-                    $this->storeWarning('gml empty pos in point');
+                    $this->storeWarning('empty gml pos in point');
                 }
                 list($lat, $lon) = explode(' ', (string)$coordinates, 2);
             } elseif (isset($gml->Point->coordinates)) {
@@ -790,7 +790,7 @@ class NdlLidoRecord extends LidoRecord
                         . "{$this->source}." . $this->getID(),
                         Logger::WARNING
                     );
-                    $this->storeWarning('gml empty coordinates in point');
+                    $this->storeWarning('empty gml coordinates in point');
                     return '';
                 }
                 list($lat, $lon) = explode(',', (string)$coordinates, 2);
@@ -815,7 +815,7 @@ class NdlLidoRecord extends LidoRecord
                     . "{$this->source}." . $this->getID(),
                     Logger::WARNING
                 );
-                $this->storeWarning('gml invalid coordinates');
+                $this->storeWarning('invalid gml coordinates');
                 return '';
             }
             return "POINT ($lon $lat)";

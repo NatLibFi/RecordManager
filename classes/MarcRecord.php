@@ -329,7 +329,7 @@ class MarcRecord extends BaseRecord
                         "s=$southOrig, record {$this->source}." . $this->getID(),
                         Logger::WARNING
                     );
-                    $this->storeWarning('034 invalid coordinates');
+                    $this->storeWarning('invalid coordinates in 034');
                 } else {
                     $data['long_lat'] = "$longitude,$latitude";
                 }

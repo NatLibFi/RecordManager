@@ -275,7 +275,7 @@ class NdlMarcRecord extends MarcRecord
                         . "record {$this->source}." . $this->getID(),
                         Logger::WARNING
                     );
-                    $this->storeWarning('034 invalid coordinates');
+                    $this->storeWarning('invalid coordinates in 034');
                 } else {
                     if (!is_nan($east) && !is_nan($south)) {
                         if ($east < -180 || $east > 180 || $south < -90
@@ -290,7 +290,7 @@ class NdlMarcRecord extends MarcRecord
                                 . "{$this->source}." . $this->getID(),
                                 Logger::WARNING
                             );
-                            $this->storeWarning('034 invalid coordinates');
+                            $this->storeWarning('invalid coordinates in 034');
                         } else {
                             // Try to cope with weird coordinate order
                             if ($north > $south) {
@@ -985,7 +985,7 @@ class NdlMarcRecord extends MarcRecord
                     . "{$this->source}." . $this->getID(),
                     Logger::WARNING
                 );
-                $this->storeWarning('008 invalid date range');
+                $this->storeWarning('invalid date range in 008');
                 $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
             }
             return [$startDate, $endDate];
