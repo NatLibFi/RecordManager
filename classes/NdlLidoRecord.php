@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2016.
+ * Copyright (C) The National Library of Finland 2012-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -603,6 +603,7 @@ class NdlLidoRecord extends LidoRecord
                     Logger::WARNING
                 );
                 $endDate = $startDate;
+                $this->storeWarning('invalid date range');
             }
             $startDate = $this->completeDate($startDate);
             $endDate = $this->completeDate($endDate, true);
@@ -672,6 +673,7 @@ class NdlLidoRecord extends LidoRecord
                         . $this->getID(),
                         Logger::WARNING
                     );
+                    $this->storeWarning('invalid date');
                     return null;
                 }
                 $date = $d->format('Y-m-t') . 'T23:59:59Z';
@@ -731,6 +733,7 @@ class NdlLidoRecord extends LidoRecord
                     . "{$this->source}." . $this->getID(),
                     Logger::WARNING
                 );
+                $this->storeWarning('gml polygon no outer boundary');
                 return '';
             }
             $outerBoundary
@@ -756,6 +759,7 @@ class NdlLidoRecord extends LidoRecord
                     . "{$this->source}." . $this->getID(),
                     Logger::WARNING
                 );
+                $this->storeWarning('gml linestring missing coordinates');
                 return '';
             }
             $coordinates = $this->swapCoordinates(
@@ -774,6 +778,7 @@ class NdlLidoRecord extends LidoRecord
                         . "{$this->source}." . $this->getID(),
                         Logger::WARNING
                     );
+                    $this->storeWarning('gml empty pos in point');
                 }
                 list($lat, $lon) = explode(' ', (string)$coordinates, 2);
             } elseif (isset($gml->Point->coordinates)) {
@@ -785,6 +790,8 @@ class NdlLidoRecord extends LidoRecord
                         . "{$this->source}." . $this->getID(),
                         Logger::WARNING
                     );
+                    $this->storeWarning('gml empty coordinates in point');
+                    return '';
                 }
                 list($lat, $lon) = explode(',', (string)$coordinates, 2);
             } else {
@@ -794,6 +801,7 @@ class NdlLidoRecord extends LidoRecord
                     . "{$this->source}." . $this->getID(),
                     Logger::WARNING
                 );
+                $this->storeWarning('gml point missing data');
                 return '';
             }
             $lat = trim($lat);
@@ -802,11 +810,12 @@ class NdlLidoRecord extends LidoRecord
                 || $lon > 180
             ) {
                 $logger->log(
-                'NdlLidoRecord',
-                "Discarding invalid coordinates '$lat,$lon', record "
-                . "{$this->source}." . $this->getID(),
-                Logger::WARNING
-            );
+                    'NdlLidoRecord',
+                    "Discarding invalid coordinates '$lat,$lon', record "
+                    . "{$this->source}." . $this->getID(),
+                    Logger::WARNING
+                );
+                $this->storeWarning('gml invalid coordinates');
                 return '';
             }
             return "POINT ($lon $lat)";
@@ -957,6 +966,7 @@ class NdlLidoRecord extends LidoRecord
                     . $this->getID(),
                     Logger::WARNING
                 );
+                $this->storeWarning('invalid end date');
                 return null;
             }
             $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
@@ -1024,6 +1034,7 @@ class NdlLidoRecord extends LidoRecord
                     . $this->getID(),
                     Logger::WARNING
                 );
+                $this->storeWarning('invalid end date');
                 return null;
             }
             $noprocess = true;
@@ -1049,6 +1060,7 @@ class NdlLidoRecord extends LidoRecord
                     . $this->getID(),
                     Logger::WARNING
                 );
+                $this->storeWarning('invalid end date');
                 return null;
             }
             $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
@@ -1078,6 +1090,7 @@ class NdlLidoRecord extends LidoRecord
                     . $this->getID(),
                     Logger::WARNING
                 );
+                $this->storeWarning('invalid end date');
                 return null;
             }
             $noprocess = true;
@@ -1257,6 +1270,7 @@ class NdlLidoRecord extends LidoRecord
                 . "'$input', record {$this->source}." . $this->getID(),
                 Logger::WARNING
             );
+            $this->storeWarning('invalid date range');
             if ($start !== false) {
                 $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
             } elseif ($end !== false) {
@@ -1272,6 +1286,7 @@ class NdlLidoRecord extends LidoRecord
                 . "record {$this->source}." . $this->getID(),
                 Logger::WARNING
             );
+            $this->storeWarning('invalid date range');
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
         }
 
@@ -1287,8 +1302,10 @@ class NdlLidoRecord extends LidoRecord
      */
     protected function getClassifications()
     {
-        $empty = empty($this->doc->lido->descriptiveMetadata
-            ->objectClassificationWrap->classificationWrap->classification);
+        $empty = empty(
+            $this->doc->lido->descriptiveMetadata
+                ->objectClassificationWrap->classificationWrap->classification
+        );
         if ($empty) {
             return [];
         }
@@ -1332,8 +1349,10 @@ class NdlLidoRecord extends LidoRecord
      */
     protected function getRightsHolderLegalBodyName()
     {
-        $empty = empty($this->doc->lido->administrativeMetadata->rightsWorkWrap
-            ->rightsWorkSet);
+        $empty = empty(
+            $this->doc->lido->administrativeMetadata->rightsWorkWrap
+                ->rightsWorkSet
+        );
         if ($empty) {
             return '';
         }
@@ -1355,8 +1374,10 @@ class NdlLidoRecord extends LidoRecord
      */
     protected function getRecordSourceOrganization()
     {
-        $empty = empty($this->doc->lido->administrativeMetadata->recordWrap
-            ->recordSource->legalBodyName->appellationValue);
+        $empty = empty(
+            $this->doc->lido->administrativeMetadata->recordWrap
+                ->recordSource->legalBodyName->appellationValue
+        );
         if ($empty) {
             return '';
         }

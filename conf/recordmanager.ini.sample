@@ -57,8 +57,13 @@ password =
 ; are delimited with a slash, e.g. "MainLibrary/Fiction"
 ;hierarchical_facets[] = building
 ;merge_records = true
+; Fields that are merged when creating the merged record
 ;merged_fields = institution,collection,my_local_field_str_mv
+; Fields that are added to the merged record if they don't already exist
 ;single_fields = title,publishDateSort
+; Field to use for record warnings about problems with the metadata
+;warnings_field = warnings_str_mv
+; Whether to put record format in allfields
 ;format_in_allfields = true
 unicode_normalization_form = NFKC
 ; Maximum number of tries to send an update to Solr. Default is 15.

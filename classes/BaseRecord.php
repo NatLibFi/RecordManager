@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2014.
+ * Copyright (C) The National Library of Finland 2011-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -44,6 +44,9 @@ class BaseRecord
 
     // Record ID prefix
     protected $idPrefix = '';
+
+    // Warnings about problems in the record
+    protected $warnings = [];
 
     /**
      * Constructor
@@ -340,6 +343,16 @@ class BaseRecord
     }
 
     /**
+     * Get any warnings about problems processing the record.
+     *
+     * @return array
+     */
+    public function getProcessingWarnings()
+    {
+        return $this->warnings;
+    }
+
+    /**
      * Return a parameter specified in driverParams[] of datasources.ini
      *
      * @param string $parameter Parameter name
@@ -363,6 +376,18 @@ class BaseRecord
         );
 
         return isset($iniValues[$parameter]) ? $iniValues[$parameter] : $default;
+    }
+
+    /**
+     * Store a warning message about problems with the record
+     *
+     * @param string $msg Message
+     *
+     * @return void
+     */
+    protected function storeWarning($msg)
+    {
+        $this->warnings[] = $msg;
     }
 
     /**

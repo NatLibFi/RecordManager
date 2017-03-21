@@ -138,6 +138,13 @@ class SolrUpdater
     ];
 
     /**
+     * Field used for warnings about metadata
+     *
+     * @var string
+     */
+    protected $warningsField = '';
+
+    /**
      * Available enrichments
      *
      * @var array
@@ -212,6 +219,10 @@ class SolrUpdater
                 = explode(',', $configArray['Solr']['single_fields']);
         }
         $this->singleFields = array_flip($this->singleFields);
+
+        if (isset($configArray['Solr']['warnings_field'])) {
+            $this->warningsField = $configArray['Solr']['warnings_field'];
+        }
 
         $this->commitInterval = isset($configArray['Solr']['max_commit_interval'])
             ? $configArray['Solr']['max_commit_interval'] : 50000;
@@ -1334,6 +1345,8 @@ class SolrUpdater
             return false;
         }
 
+        $warnings = [];
+
         $hasComponentParts = false;
         $components = null;
         if (!isset($record['host_record_id'])) {
@@ -1344,6 +1357,7 @@ class SolrUpdater
                     "linking_id missing for record '{$record['_id']}'",
                     Logger::ERROR
                 );
+                $warnings[] = 'linking_id missing';
             } else {
                 $params = [
                     'host_record_id' => $record['linking_id'],
@@ -1424,6 +1438,7 @@ class SolrUpdater
                         Logger::WARNING
                     );
                 }
+                $warnings[] = 'host record missing';
                 $data['container_title'] = $metadataRecord->getContainerTitle();
             } else {
                 $data['hierarchy_parent_id'] = $hostRecord['_id'];
@@ -1610,6 +1625,15 @@ class SolrUpdater
             if (empty($values) || $values === 0 || $values === 0.0 || $values === '0'
             ) {
                 unset($data[$key]);
+            }
+        }
+
+        if (!empty($this->warningsField)) {
+            $warnings = array_merge(
+                $warnings, $metadataRecord->getProcessingWarnings()
+            );
+            if ($warnings) {
+                $data[$this->warningsField] = $warnings;
             }
         }
 

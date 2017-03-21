@@ -329,6 +329,7 @@ class MarcRecord extends BaseRecord
                         "s=$southOrig, record {$this->source}." . $this->getID(),
                         Logger::WARNING
                     );
+                    $this->storeWarning('034 invalid coordinates');
                 } else {
                     $data['long_lat'] = "$longitude,$latitude";
                 }
@@ -1391,6 +1392,7 @@ class MarcRecord extends BaseRecord
             }
             if (strlen($tag) != 3) {
                 error_log("Invalid field tag: '$tag', id " . $this->getField('001'));
+                $this->storeWarning("invalid field tag '$tag'");
                 continue;
             }
             foreach ($fields as $field) {
@@ -1533,6 +1535,7 @@ class MarcRecord extends BaseRecord
                     . ", record {$this->source}." . $this->getID(),
                     Logger::ERROR
                 );
+                $this->storeWarning('indicator 1 missing');
                 return ' ';
             }
             return $field['i1'];
@@ -1544,6 +1547,7 @@ class MarcRecord extends BaseRecord
                     . ", record {$this->source}." . $this->getID(),
                     Logger::ERROR
                 );
+                $this->storeWarning('indicator 2 missing');
                 return ' ';
             }
             return $field['i2'];
@@ -1690,6 +1694,7 @@ class MarcRecord extends BaseRecord
                         $this->getID(),
                         Logger::WARNING
                     );
+                    $this->storeWarning("missing subfields in $tag");
                     continue;
                 }
                 if (!is_array($field['s'])) {
@@ -1700,6 +1705,7 @@ class MarcRecord extends BaseRecord
                         $this->getID(),
                         Logger::ERROR
                     );
+                    $this->storeWarning("invalid subfields in $tag");
                     continue;
                 }
 
@@ -1907,6 +1913,7 @@ class MarcRecord extends BaseRecord
                 print_r($field, true) . ", record {$this->source}." .
                 $this->getID(), Logger::WARNING
             );
+            $this->storeWarning('missing subfields');
             return [];
         }
         if (!is_array($field['s'])) {
@@ -1916,6 +1923,7 @@ class MarcRecord extends BaseRecord
                 print_r($field, true) . ", record {$this->source}." .
                 $this->getID(), Logger::ERROR
             );
+            $this->storeWarning('invalid subfields');
             return [];
         }
 

@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2014.
+ * Copyright (C) The National Library of Finland 2012-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -217,6 +217,7 @@ class NdlEadRecord extends EadRecord
                     . $this->getID(),
                     Logger::WARNING
                 );
+                $this->storeWarning('invalid end date');
                 return null;
             }
             $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
@@ -250,6 +251,7 @@ class NdlEadRecord extends EadRecord
                     . $this->getID(),
                     Logger::WARNING
                 );
+                $this->storeWarning('invalid end date');
                 return null;
             }
             $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
@@ -272,6 +274,7 @@ class NdlEadRecord extends EadRecord
                 "{$this->source}." . $this->getID(),
                 Logger::WARNING
             );
+            $this->storeWarning('invalid date range');
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
         }
 
