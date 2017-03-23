@@ -25,8 +25,11 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-declare(ticks=100);
-
+if (function_exists('pcntl_async_signals')) {
+    pcntl_async_signals(true);
+} else {
+    declare(ticks = 10);
+}
 require_once 'BaseRecord.php';
 require_once 'MetadataUtils.php';
 require_once 'PerformanceCounter.php';
