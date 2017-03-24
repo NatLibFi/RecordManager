@@ -60,8 +60,10 @@ class Logger
     {
         global $configArray;
 
-        $this->logLevel = $configArray['Log']['log_level'];
-        $this->logFile = $configArray['Log']['log_file'];
+        $this->logLevel = isset($configArray['Log']['log_level'])
+            ? $configArray['Log']['log_level'] : 0;
+        $this->logFile = isset($configArray['Log']['log_file'])
+            ? $configArray['Log']['log_file'] : '';
         if (isset($configArray['Log']['max_file_size'])) {
             $this->maxFileSize = $configArray['Log']['max_file_size'];
         }
