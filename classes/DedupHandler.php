@@ -638,8 +638,10 @@ class DedupHandler
     protected function markDuplicates($rec1, $rec2)
     {
         // Reread the original record just in case it has changed in the meantime.
-        $rec1 = $this->db->record->findOne([
-            '_id' => $rec1['_id'], 'deleted' => false]
+        $rec1 = $this->db->record->findOne(
+            [
+                '_id' => $rec1['_id'], 'deleted' => false
+            ]
         );
         if (!$rec1) {
             $this->log->log(

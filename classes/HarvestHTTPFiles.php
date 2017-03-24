@@ -315,7 +315,7 @@ class HarvestHTTPFiles extends BaseHarvest
     protected function processRecords(&$xml)
     {
         while ($xml->read() && $xml->name !== $this->recordElem) {
-        };
+        }
         $count = 0;
         $doc = new DOMDocument;
         while ($xml->name == $this->recordElem) {

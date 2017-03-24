@@ -495,7 +495,7 @@ class NdlMarcRecord extends MarcRecord
                 $ismn = str_replace('-', '', $ismn);
                 if (!preg_match('{([0-9]{13})}', $ismn, $matches)) {
                     continue;
-                };
+                }
                 $data['ismn_isn_mv'] = $matches[1];
             }
         }
@@ -524,7 +524,7 @@ class NdlMarcRecord extends MarcRecord
                 $category .= "/$sub";
             }
             $data['category_str_mv'][] = $category;
-        };
+        }
         foreach ($this->getFields('886') as $field886) {
             if ($this->getIndicator($field886, 1) != '2'
                 || $this->getSubfield($field886, '2') != 'local'

@@ -4,7 +4,7 @@
   <property name="package"  value="${phing.project.name}" override="true" />
   <property name="builddir" value="${tmp}/build/${phing.project.name}" override="true" />
   <property name="srcdir"   value="${project.basedir}" override="true" />
-  <property name="php-cs-fixers" value="no_blank_lines_before_namespaces,function_call_space,trailing_spaces,unused_use,lowercase_keywords,encoding,parenthesis,php_closing_tag,visibility,duplicate_semicolon,extra_empty_lines,no_blank_lines_after_class_opening,no_empty_lines_after_phpdocs,operators_spaces,spaces_before_semicolon,ternary_spaces,concat_with_spaces,short_array_syntax,phpdoc_no_access,remove_leading_slash_use" />
+  <property name="php-cs-fixers" value="no_spaces_after_function_name,no_trailing_whitespace,no_unused_imports,lowercase_keywords,encoding,no_spaces_inside_parenthesis,no_closing_tag,visibility_required,no_empty_statement,no_extra_consecutive_blank_lines,no_blank_lines_after_class_opening,no_blank_lines_after_phpdoc,binary_operator_spaces,no_singleline_whitespace_before_semicolons,ternary_operator_spaces,phpdoc_no_access,no_leading_import_slash" />
 
   <!-- Main Target -->
   <target name="main" description="main target">
@@ -19,14 +19,14 @@
 
   <!-- PHP CodeSniffer -->
   <target name="phpcs">
-    <exec command="phpcs --standard=PEAR --extensions=php" escape="false" />
+    <exec command="${srcdir}/vendor/bin/phpcs --standard=PEAR --extensions=php" escape="false" />
   </target>
 
   <!-- php-cs-fixer (first task applies fixes, second task simply checks if they are needed) -->
   <target name="php-cs-fixer">
-    <exec command="php-cs-fixer fix ${srcdir} --fixers=${php-cs-fixers} --verbose" passthru="true" escape="false" />
+    <exec command="${srcdir}/vendor/bin/php-cs-fixer fix ${srcdir}/classes --rules=${php-cs-fixers} --verbose" passthru="true" escape="false" />
   </target>
   <target name="php-cs-fixer-dryrun">
-    <exec command="php-cs-fixer fix ${srcdir} --fixers=${php-cs-fixers} --dry-run --verbose --diff" passthru="true" escape="false" checkreturn="true" />
+    <exec command="${srcdir}/vendor/bin/php-cs-fixer fix ${srcdir}/classes --rules=${php-cs-fixers} --dry-run --verbose --diff" passthru="true" escape="false" checkreturn="true" />
   </target>
 </project>

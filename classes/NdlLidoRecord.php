@@ -974,7 +974,7 @@ class NdlLidoRecord extends LidoRecord
         } elseif (preg_match('/(\d\d\d\d)-(\d\d?)-(\d\d?)/', $input, $matches) > 0) {
             // This one needs to be before the lazy matcher below
             $year = $matches[1];
-            $month =  sprintf('%02d', $matches[2]);
+            $month = sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[3]);
             $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
             $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
@@ -1040,14 +1040,14 @@ class NdlLidoRecord extends LidoRecord
             $noprocess = true;
         } elseif (preg_match('/(\d\d\d\d)(\d\d)(\d\d)/', $input, $matches) > 0) {
             $year = $matches[1];
-            $month =  sprintf('%02d', $matches[2]);
+            $month = sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[3]);
             $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
             $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
             $noprocess = true;
         } elseif (preg_match('/(\d\d\d\d)(\d\d)/', $input, $matches) > 0) {
             $year = $matches[1];
-            $month =  sprintf('%02d', $matches[2]);
+            $month = sprintf('%02d', $matches[2]);
             $startDate = $year . '-' . $month . '-01T00:00:00Z';
             $endDate = $year . '-' . $month . '-01';
             try {
@@ -1069,14 +1069,14 @@ class NdlLidoRecord extends LidoRecord
             '/(\d\d?)\s*\.\s*(\d\d?)\s*\.\s*(\d\d\d\d)/', $input, $matches
         ) > 0) {
             $year = $matches[3];
-            $month =  sprintf('%02d', $matches[2]);
+            $month = sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[1]);
             $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
             $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
             $noprocess = true;
         } elseif (preg_match('/(\d\d?)\s*\.\s*(\d\d\d\d)/', $input, $matches) > 0) {
             $year = $matches[2];
-            $month =  sprintf('%02d', $matches[1]);
+            $month = sprintf('%02d', $matches[1]);
             $startDate = $year . '-' . $month . '-01' . 'T00:00:00Z';
             $endDate = $year . '-' . $month . '-01';
             try {

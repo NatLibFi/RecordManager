@@ -100,7 +100,6 @@ class MarcRecord extends BaseRecord
      */
     protected $illustrationStrings = ['ill.', 'illus.'];
 
-
     /**
      * Constructor
      *
@@ -502,7 +501,7 @@ class MarcRecord extends BaseRecord
             $isbn = str_replace('-', '', $isbn);
             if (!preg_match('{([0-9]{9,12}[0-9xX])}', $isbn, $matches)) {
                 continue;
-            };
+            }
             $isbn = $matches[1];
             if (strlen($isbn) == 10) {
                 $isbn = MetadataUtils::isbn10to13($isbn);

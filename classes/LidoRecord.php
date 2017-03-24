@@ -774,7 +774,7 @@ class LidoRecord extends BaseRecord
             $endDate = $matches[2];
         } elseif (preg_match('/(\d\d\d\d)-(\d\d?)-(\d\d?)/', $input, $matches) > 0) {
             $year = $matches[1];
-            $month =  sprintf('%02d', $matches[2]);
+            $month = sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[3]);
             $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
             $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
@@ -783,7 +783,7 @@ class LidoRecord extends BaseRecord
             '/(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)/', $input, $matches
         ) > 0) {
             $year = $matches[3];
-            $month =  sprintf('%02d', $matches[2]);
+            $month = sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[1]);
             $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
             $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';

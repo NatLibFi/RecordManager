@@ -1510,7 +1510,7 @@ class RecordManager
             if ($normalizedData) {
                 if ($originalData == $normalizedData) {
                     $normalizedData = '';
-                };
+                }
             }
             if ($this->compressedRecords) {
                 $originalData = new \MongoDB\BSON\Binary(

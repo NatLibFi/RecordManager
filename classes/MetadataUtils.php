@@ -192,7 +192,7 @@ class MetadataUtils
         $isbn = str_replace('-', '', $isbn);
         if (!preg_match('{([0-9]{9,12}[0-9xX])}', $isbn, $matches)) {
             return '';
-        };
+        }
         $isbn = $matches[1];
         if (strlen($isbn) == 10) {
             $isbn = MetadataUtils::isbn10to13($isbn);
