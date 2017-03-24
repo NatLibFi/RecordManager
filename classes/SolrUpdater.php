@@ -1656,10 +1656,16 @@ class SolrUpdater
     {
         if (is_array($value)) {
             // Map array parts (predefined hierarchy) separately
+            $newValue = [];
             foreach ($value as $i => &$v) {
                 $v = $this->mapValue($v, $mappingFile, $i);
+                if ('' === $v) {
+                    // If we get an empty string from any level, stop here
+                    break;
+                }
+                $newValue[] = $v;
             }
-            return implode('/', $value);
+            return implode('/', $newValue);
         }
         $map = isset($mappingFile[$index]['map']) ? $mappingFile[$index]['map']
             : $mappingFile[0]['map'];
@@ -1668,8 +1674,10 @@ class SolrUpdater
         if ('regexp' == $type) {
             foreach ($map as $pattern => $replacement) {
                 $pattern = addcslashes($pattern, '/');
-                $newValue = preg_replace("/$pattern/u", $replacement, $value);
-                if ($newValue != $value) {
+                $newValue = preg_replace(
+                    "/$pattern/u", $replacement, $value, -1, $count
+                );
+                if ($count > 0) {
                     return $newValue;
                 }
             }
