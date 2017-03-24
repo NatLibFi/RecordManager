@@ -5,6 +5,7 @@
  * PHP version 5
  *
  * Copyright (C) Eero Heikkinen 2013.
+ * Copyright (C) The National Library of Finland 2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -22,6 +23,7 @@
  * @category DataManagement
  * @package  RecordManager
  * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -115,9 +117,9 @@ class LidoRecordDriverTest extends RecordDriverTest
 
         $this->assertEquals('4878:1', $fields['identifier']);
 
-        $this->assertContains('12 x 17 cm, 12 cm', $fields['measurements']);
+        $this->assertEquals(['12 x 17 cm, 12 cm'], $fields['measurements']);
 
-        $this->assertEquals('Hintze Harry', $fields['author']);
+        $this->assertEquals(['Hintze Harry'], $fields['author']);
     }
 
     /**
@@ -174,7 +176,7 @@ class LidoRecordDriverTest extends RecordDriverTest
 
         $this->assertContains('maalaus', $fields['format']);
 
-        $this->assertEquals('Salokivi, Santeri', $fields['author']);
+        $this->assertEquals(['Salokivi, Santeri'], $fields['author']);
         $this->assertEquals('[1911-01-01 TO 1911-12-31]', $fields['creation_daterange']);
     }
 
@@ -214,7 +216,7 @@ class LidoRecordDriverTest extends RecordDriverTest
 
         $this->assertContains('maalaus', $fields['format']);
 
-        $this->assertEquals('Halonen, Pekka', $fields['author']);
+        $this->assertEquals(['Halonen, Pekka'], $fields['author']);
         $this->assertEquals('[1930-01-01 TO 1930-12-31]', $fields['creation_daterange']);
     }
 
