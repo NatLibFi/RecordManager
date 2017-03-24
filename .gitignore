@@ -12,8 +12,11 @@ Thumbs.db
 .buildpath
 .ExternalToolBuilders
 .idea
+.vscode
 
 # Local files
 conf/*.ini
 conf/*.lst
-recman.log
+.php_cs.cache
+*.log
+vendor
