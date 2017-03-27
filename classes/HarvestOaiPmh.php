@@ -173,7 +173,7 @@ class HarvestOaiPmh extends BaseHarvest
             $loadResult = $style->load(
                 "$basePath/transformations/" . $settings['oaipmhTransformation']
             );
-            if ($loadResult === false) {
+            if (false === $loadResult) {
                 throw new Exception(
                     "Could not load $basePath/transformations/"
                     . $settings['oaipmhTransformation']
