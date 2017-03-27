@@ -1,7 +1,6 @@
 sudo: false
 language: php
 php:
-  - 5.6
   - 7.0
   - 7.1
 
@@ -9,7 +8,7 @@ before_script:
   - echo "extension = mongodb.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - phpenv config-rm xdebug.ini
   - phpenv rehash
-  - composer install --ignore-platform-reqs
+  - composer install
 
 cache:
   directories:
@@ -18,4 +17,4 @@ cache:
     - .php_cs.cache
 
 script:
-  - vendor/bin/phing phpunit phpcs php-cs-fixer-dryrun
+  - vendor/bin/phing phpunit phpcs php-cs-fixer-dryrun-nocache -Dphp-cs-fixer-extra-params="--using-cache=no"
