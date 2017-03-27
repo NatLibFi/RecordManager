@@ -8,7 +8,7 @@ php:
 before_script:
   - phpenv config-rm xdebug.ini
   - phpenv rehash
-  - composer install
+  - composer install --ignore-platform-reqs
 
 cache:
   directories:
