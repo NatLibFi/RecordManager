@@ -17,4 +17,4 @@ cache:
     - .php_cs.cache
 
 script:
-  - vendor/bin/phing phpunit phpcs php-cs-fixer-dryrun-nocache -Dphp-cs-fixer-extra-params="--using-cache=no"
+  - vendor/bin/phing phpunit phpcs php-cs-fixer-dryrun -Dphp-cs-fixer-extra-params="--cache-file=.php_cs.cache/.php_cs.cache"
