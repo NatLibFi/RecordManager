@@ -120,9 +120,10 @@ class NdlQdcRecord extends QdcRecord
         foreach ($this->doc->coverage as $coverage) {
             $attrs = $coverage->attributes();
             if ($attrs->type == 'geocoding') {
-                if (preg_match(
+                $match = preg_match(
                     '/([\d\.]+)\s*,\s*([\d\.]+)/', (string)$coverage, $matches
-                )) {
+                );
+                if ($match) {
                     if ($attrs->format == 'lon,lat') {
                         $lon = $matches[1];
                         $lat = $matches[2];

@@ -233,6 +233,11 @@ class ForwardRecord extends BaseRecord
         return $data;
     }
 
+    /**
+     * Get the main metadata element
+     *
+     * @return SimpleXMLElement
+     */
     protected function getMainElement()
     {
         $nodes = (array)$this->doc->children();
@@ -355,7 +360,7 @@ class ForwardRecord extends BaseRecord
     /**
      * Get contents
      *
-     * @array string $language Optionally take only description in the given language
+     * @param string $language Optionally take only description in the given language
      *
      * @return array
      */
@@ -378,7 +383,7 @@ class ForwardRecord extends BaseRecord
     /**
      * Get all descriptions
      *
-     * @array string $language Optionally take only description in the given language
+     * @param string $language Optionally take only description in the given language
      *
      * @return array
      */

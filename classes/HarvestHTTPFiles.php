@@ -385,9 +385,10 @@ class HarvestHTTPFiles extends BaseHarvest
      */
     protected function getFileDate($filename, $responseStr)
     {
-        if (!preg_match(
+        $match = preg_match(
             '/(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)/', $filename, $dateparts
-        )) {
+        );
+        if (!$match) {
             return false;
         }
         $date = $dateparts[1] . '-' . $dateparts[2] . '-' . $dateparts[3] . 'T' .

@@ -13,8 +13,9 @@
         "phayes/geophp": "^1.2"
     },
     "require-dev": {
-        "phing/phing": "2.16.0",
-        "squizlabs/php_codesniffer": "2.*",
-        "friendsofphp/php-cs-fixer": "2.*"
+        "friendsofphp/php-cs-fixer": "2.*",
+        "phing/phing": "^2.16.0",
+        "phpunit/phpunit": "^5.7.17",
+        "squizlabs/php_codesniffer": "2.*"
     }
 }

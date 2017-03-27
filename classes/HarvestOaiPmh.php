@@ -170,9 +170,10 @@ class HarvestOaiPmh extends BaseHarvest
         }
         if (isset($settings['oaipmhTransformation'])) {
             $style = new DOMDocument();
-            if ($style->load(
+            $loadResult = $style->load(
                 "$basePath/transformations/" . $settings['oaipmhTransformation']
-            ) === false) {
+            );
+            if ($loadResult === false) {
                 throw new Exception(
                     "Could not load $basePath/transformations/"
                     . $settings['oaipmhTransformation']

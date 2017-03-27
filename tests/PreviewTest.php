@@ -92,7 +92,7 @@ EOT;
     protected function getPreviewCreator()
     {
         $basePath = dirname(__FILE__) . '/configs/mappingfilestest';
-        $logger = $this->getMock(Logger::class);
+        $logger = $this->createMock(Logger::class);
         $preview = new PreviewCreator(null, $basePath, $logger, false);
 
         return $preview;

@@ -69,7 +69,7 @@ class NdlDcRecord extends DcRecord
                 ' ',
                 (string)$this->doc->language
             ),
-            function($value) {
+            function ($value) {
                 return preg_match('/^[a-z]{2,3}$/', $value) && $value != 'zxx'
                     && $value != 'und';
             }

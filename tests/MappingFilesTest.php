@@ -210,7 +210,7 @@ class MappingFilesTest extends PHPUnit_Framework_TestCase
     protected function getSolrUpdater()
     {
         $basePath = dirname(__FILE__) . '/configs/mappingfilestest';
-        $logger = $this->getMock(Logger::class);
+        $logger = $this->createMock(Logger::class);
         $solrUpdater = new SolrUpdater(null, $basePath, $logger, false);
 
         return $solrUpdater;

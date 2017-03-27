@@ -654,9 +654,10 @@ EOT;
                     return false;
                 }
                 foreach ($_GET as $key => $value) {
-                    if (!in_array(
+                    $validVerb = in_array(
                         $key, ['verb', 'from', 'until', 'set', 'metadataPrefix']
-                    )) {
+                    );
+                    if (!$validVerb) {
                         $this->error('badArgument', 'Illegal argument');
                         return false;
                     }

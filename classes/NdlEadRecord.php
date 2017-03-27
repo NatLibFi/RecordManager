@@ -182,11 +182,13 @@ class NdlEadRecord extends EadRecord
             return null;
         }
 
-        if (preg_match(
-            '/(\d\d?).(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d?).(\d\d\d\d)/',
-            $input,
-            $matches
-        ) > 0) {
+        if (true
+            && preg_match(
+                '/(\d\d?).(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d?).(\d\d\d\d)/',
+                $input,
+                $matches
+            ) > 0
+        ) {
             $startYear = $matches[3];
             $startMonth = sprintf('%02d', $matches[2]);
             $startDay = sprintf('%02d', $matches[1]);
@@ -196,9 +198,11 @@ class NdlEadRecord extends EadRecord
             $endMonth = sprintf('%02d', $matches[5]);
             $endDay = sprintf('%02d', $matches[4]);
             $endDate = $endYear . '-' . $endMonth . '-' . $endDay . 'T23:59:59Z';
-        } elseif (preg_match(
-            '/(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d\d\d)/', $input, $matches
-        ) > 0) {
+        } elseif (true
+            && preg_match(
+                '/(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d\d\d)/', $input, $matches
+            ) > 0
+        ) {
             $startYear = $matches[2];
             $startMonth = sprintf('%02d', $matches[1]);
             $startDay = '01';

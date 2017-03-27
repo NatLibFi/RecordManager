@@ -124,9 +124,11 @@ class LidoRecord extends BaseRecord
         $data['title_sort'] = $this->getTitle(true, $lang);
         $description = $this->getDescription();
         if ($description) {
-            if (!empty($data['description']) && strncmp(
-                $data['description'], $description, strlen($data['description'])
-            )) {
+            if (!empty($data['description'])
+                && strncmp(
+                    $data['description'], $description, strlen($data['description'])
+                )
+            ) {
                 $data['description'] .= " -- $description";
             } else {
                 $data['description'] = $description;
@@ -256,9 +258,10 @@ class LidoRecord extends BaseRecord
                 if (!empty($ventNode->eventPlace->gml)) {
                     return [];
                 }
-                if (!empty(
+                $hasValue = !empty(
                     $eventNode->eventPlace->place->namePlaceSet->appellationValue
-                )) {
+                );
+                if ($hasValue) {
                     $mainPlace = (string)$eventNode->eventPlace->place->namePlaceSet
                         ->appellationValue;
                     $subLocation = $this->getSubLocation(
@@ -316,9 +319,10 @@ class LidoRecord extends BaseRecord
      */
     protected function getMeasurements()
     {
-        $nodeExists = !empty($this->doc->lido->descriptiveMetadata
-            ->objectIdentificationWrap->objectMeasurementsWrap
-            ->objectMeasurementsSet);
+        $nodeExists = !empty(
+            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
+                ->objectMeasurementsWrap->objectMeasurementsSet
+        );
         if (!$nodeExists) {
             return '';
         }
@@ -348,8 +352,10 @@ class LidoRecord extends BaseRecord
      */
     protected function getIdentifier()
     {
-        $nodeExists = !empty($this->doc->lido->descriptiveMetadata
-            ->objectIdentificationWrap->repositoryWrap->repositorySet);
+        $nodeExists = !empty(
+            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
+                ->repositoryWrap->repositorySet
+        );
         if (!$nodeExists) {
             return '';
         }
@@ -372,8 +378,10 @@ class LidoRecord extends BaseRecord
      */
     protected function getLegalBodyName()
     {
-        $empty = empty($this->doc->lido->descriptiveMetadata
-            ->objectIdentificationWrap->repositoryWrap->repositorySet);
+        $empty = empty(
+            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
+                ->repositoryWrap->repositorySet
+        );
         if ($empty) {
             return '';
         }
@@ -396,8 +404,10 @@ class LidoRecord extends BaseRecord
      */
     protected function getDescription()
     {
-        $empty = empty($this->doc->lido->descriptiveMetadata
-            ->objectIdentificationWrap->objectDescriptionWrap->objectDescriptionSet);
+        $empty = empty(
+            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
+                ->objectDescriptionWrap->objectDescriptionSet
+        );
         if ($empty) {
             return '';
         }
@@ -448,8 +458,10 @@ class LidoRecord extends BaseRecord
      */
     protected function getObjectWorkType()
     {
-        $empty = empty($this->doc->lido->descriptiveMetadata
-            ->objectClassificationWrap->objectWorkTypeWrap->objectWorkType);
+        $empty = empty(
+            $this->doc->lido->descriptiveMetadata->objectClassificationWrap
+                ->objectWorkTypeWrap->objectWorkType
+        );
         if ($empty) {
             return '';
         }
@@ -580,8 +592,9 @@ class LidoRecord extends BaseRecord
     protected function getRights()
     {
         foreach ($this->getResourceSetNodes() as $set) {
-            $empty = empty($set->rightsResource->rightsHolder->legalBodyName
-                ->appellationValue);
+            $empty = empty(
+                $set->rightsResource->rightsHolder->legalBodyName->appellationValue
+            );
             if (!$empty) {
                 return (string)$set->rightsResource->rightsHolder->legalBodyName
                     ->appellationValue;
@@ -779,9 +792,11 @@ class LidoRecord extends BaseRecord
             $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
             $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
             $noprocess = true;
-        } elseif (preg_match(
-            '/(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)/', $input, $matches
-        ) > 0) {
+        } elseif (true
+            && preg_match(
+                '/(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)/', $input, $matches
+            ) > 0
+        ) {
             $year = $matches[3];
             $month = sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[1]);
@@ -854,9 +869,11 @@ class LidoRecord extends BaseRecord
                             $eventTypes[] = mb_strtolower((string) $term, 'UTF-8');
                         }
                     }
-                    if (!array_intersect(
-                        $eventTypes, is_array($event) ? $event : [$event]
-                    )) {
+                    if (true
+                        && !array_intersect(
+                            $eventTypes, is_array($event) ? $event : [$event]
+                        )
+                    ) {
                         continue;
                     }
                 }
@@ -875,8 +892,9 @@ class LidoRecord extends BaseRecord
      */
     protected function getTitleSetNodes($types = [])
     {
-        $empty = empty($this->doc->lido->descriptiveMetadata
-            ->objectIdentificationWrap->titleWrap->titleSet
+        $empty = empty(
+            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
+                ->titleWrap->titleSet
         );
         if ($empty) {
             return [];
@@ -897,8 +915,10 @@ class LidoRecord extends BaseRecord
      */
     protected function getSubjectSetNodes()
     {
-        $empty = empty($this->doc->lido->descriptiveMetadata
-            ->objectRelationWrap->subjectWrap->subjectSet);
+        $empty = empty(
+            $this->doc->lido->descriptiveMetadata->objectRelationWrap->subjectWrap
+                ->subjectSet
+        );
         if ($empty) {
             return [];
         }
@@ -945,8 +965,10 @@ class LidoRecord extends BaseRecord
      */
     protected function getObjectDescriptionSetNodes($exclude = [])
     {
-        $empty = empty($this->doc->lido->descriptiveMetadata
-            ->objectIdentificationWrap->objectDescriptionWrap->objectDescriptionSet);
+        $empty = empty(
+            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
+                ->objectDescriptionWrap->objectDescriptionSet
+        );
         if ($empty) {
             return [];
         }
@@ -976,8 +998,10 @@ class LidoRecord extends BaseRecord
      */
     protected function getRelatedWorkSetNodes($relatedWorkRelType = [])
     {
-        $empty = empty($this->doc->lido->descriptiveMetadata
-            ->objectRelationWrap->relatedWorksWrap->relatedWorkSet);
+        $empty = empty(
+            $this->doc->lido->descriptiveMetadata->objectRelationWrap
+                ->relatedWorksWrap->relatedWorkSet
+        );
         if ($empty) {
             return [];
         }
@@ -1007,8 +1031,9 @@ class LidoRecord extends BaseRecord
      */
     protected function getResourceSetNodes()
     {
-        $empty = empty($this->doc->lido->administrativeMetadata->resourceWrap
-            ->resourceSet);
+        $empty = empty(
+            $this->doc->lido->administrativeMetadata->resourceWrap->resourceSet
+        );
         if ($empty) {
             return [];
         }
