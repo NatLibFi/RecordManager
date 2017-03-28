@@ -349,7 +349,7 @@ class BaseRecord
      */
     public function getProcessingWarnings()
     {
-        return $this->warnings;
+        return array_unique($this->warnings);
     }
 
     /**
