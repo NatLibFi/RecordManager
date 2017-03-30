@@ -786,6 +786,10 @@ class RecordManager
                     'deduplicate', 'Exception: ' . $e->getMessage(), Logger::FATAL
                 );
             }
+            if (isset($this->terminate)) {
+                $this->log->log('deduplicate', 'Termination upon request');
+                exit(1);
+            }
         }
     }
 
