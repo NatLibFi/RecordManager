@@ -176,6 +176,13 @@ class SolrUpdater
     protected $lastClusterStateCheck = 0;
 
     /**
+     * Hierarchical facets
+     *
+     * @var array
+     */
+    protected $hierarchicalFacets = [];
+
+    /**
      * Constructor
      *
      * @param MongoDB $db       Database connection
@@ -207,9 +214,11 @@ class SolrUpdater
         $this->allJournalFormats
             = array_merge($this->journalFormats, $this->eJournalFormats);
 
+        if (isset($configArray['Solr']['hierarchical_facets'])) {
+            $this->hierarchicalFacets = $configArray['Solr']['hierarchical_facets'];
+        }
         // Special case: building hierarchy
-        $this->buildingHierarchy = isset($configArray['Solr']['hierarchical_facets'])
-            && in_array('building', $configArray['Solr']['hierarchical_facets']);
+        $this->buildingHierarchy = in_array('building', $this->hierarchicalFacets);
 
         if (isset($configArray['Solr']['merged_fields'])) {
             $this->mergedFields
@@ -679,9 +688,17 @@ class SolrUpdater
                     if (substr($fieldkey, -3, 3) == '_mv'
                         || isset($this->mergedFields[$fieldkey])
                     ) {
-                        $merged[$fieldkey] = array_values(
-                            MetadataUtils::array_iunique($merged[$fieldkey])
-                        );
+                        // For hierarchical fields we need to store all combinations
+                        // of character cases
+                        if (in_array($fieldkey, $this->hierarchicalFacets)) {
+                            $merged[$fieldkey] = array_values(
+                                array_unique($merged[$fieldkey])
+                            );
+                        } else {
+                            $merged[$fieldkey] = array_values(
+                                MetadataUtils::array_iunique($merged[$fieldkey])
+                            );
+                        }
                     }
                 }
                 if (isset($merged['allfields'])) {
@@ -1537,28 +1554,26 @@ class SolrUpdater
         }
 
         // Hierarchical facets
-        if (isset($configArray['Solr']['hierarchical_facets'])) {
-            foreach ($configArray['Solr']['hierarchical_facets'] as $facet) {
-                if (!isset($data[$facet])) {
+        foreach ($this->hierarchicalFacets as $facet) {
+            if (!isset($data[$facet])) {
+                continue;
+            }
+            $array = [];
+            if (!is_array($data[$facet])) {
+                $data[$facet] = [$data[$facet]];
+            }
+            foreach ($data[$facet] as $datavalue) {
+                if ($datavalue === '') {
                     continue;
                 }
-                $array = [];
-                if (!is_array($data[$facet])) {
-                    $data[$facet] = [$data[$facet]];
+                $values = explode('/', $datavalue);
+                $hierarchyString = '';
+                for ($i = 0; $i < count($values); $i++) {
+                    $hierarchyString .= '/' . $values[$i];
+                    $array[] = ($i) . $hierarchyString . '/';
                 }
-                foreach ($data[$facet] as $datavalue) {
-                    if ($datavalue === '') {
-                        continue;
-                    }
-                    $values = explode('/', $datavalue);
-                    $hierarchyString = '';
-                    for ($i = 0; $i < count($values); $i++) {
-                        $hierarchyString .= '/' . $values[$i];
-                        $array[] = ($i) . $hierarchyString . '/';
-                    }
-                }
-                $data[$facet] = $array;
             }
+            $data[$facet] = $array;
         }
 
         if (!isset($data['allfields'])) {
