@@ -1587,7 +1587,7 @@ class RecordManager
                 ],
                 ['$set' => [
                     'deleted' => true,
-                    'updated' => $startTime,
+                    'updated' => new \MongoDB\BSON\UTCDateTime(time() * 1000),
                     'update_needed' => false
                 ]]
             );
