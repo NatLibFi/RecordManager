@@ -760,7 +760,7 @@ class MarcRecord extends BaseRecord
         }
         foreach (['245', '240'] as $fieldCode) {
             $field = $this->getField($fieldCode);
-            if ($field) {
+            if ($field && !empty($field['s'])) {
                 $title = $this->getSubfield($field, 'a');
                 if ($forFiling) {
                     $nonfiling = $this->getIndicator($field, 2);
@@ -1490,7 +1490,7 @@ class MarcRecord extends BaseRecord
      *
      * @param string $field Tag to get
      *
-     * @return string
+     * @return string|array String for controlfields, array for datafields
      */
     public function getField($field)
     {
