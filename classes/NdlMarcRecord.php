@@ -55,33 +55,6 @@ class NdlMarcRecord extends MarcRecord
      */
     public function normalize()
     {
-        if (isset($this->fields['653'])
-            && strncmp($this->source, 'metalib', 7) == 0
-        ) {
-            // Split MetaLib subjects
-            $fields = [];
-            foreach ($this->fields['653'] as &$field) {
-                foreach ($field['s'] as $subfield) {
-                    if (key($subfield) == 'a') {
-                        $values = preg_split('/[;\,]\s+/', current($subfield));
-                        foreach ($values as $value) {
-                            $fields[] = [
-                                'i1' => $field['i1'],
-                                'i2' => $field['i2'],
-                                's' => [['a' => $value]]
-                            ];
-                        }
-                    } else {
-                        $fields[] = [
-                            'i1' => $field['i1'],
-                            'i2' => $field['i2'],
-                            's' => [$subfield]
-                        ];
-                    }
-                }
-            }
-            $this->fields['653'] = $fields;
-        }
         // Kyyti enumeration from 362 to title
         if ($this->source == 'kyyti' && isset($this->fields['245'])
             && isset($this->fields['362'])
@@ -391,15 +364,6 @@ class NdlMarcRecord extends MarcRecord
             $data['classification_str_mv'] = $data['classification_txt_mv'];
         }
 
-        // Topics
-        if (strncmp($this->source, 'metalib', 7) == 0) {
-            $field653 = $this->getFieldsSubfields(
-                [[MarcRecord::GET_BOTH, '653', ['a' => 1]]]
-            );
-            $data['topic'] = array_merge($data['topic'], $field653);
-            $data['topic_facet'] = array_merge($data['topic_facet'], $field653);
-        }
-
         // Original Study Number
         $data['ctrlnum'] = array_merge(
             $data['ctrlnum'],
@@ -509,22 +473,7 @@ class NdlMarcRecord extends MarcRecord
             );
         }
 
-        // Hierarchical Categories (MetaLib)
-        foreach ($this->getFields('976') as $field976) {
-            $category = $this->getSubfield($field976, 'a');
-            $category = trim(
-                str_replace(['/', '\\'], '', $category), " -\t\n\r\0\x0B"
-            );
-            if (!$category) {
-                continue;
-            }
-            $sub = $this->getSubfield($field976, 'b');
-            $sub = trim(str_replace(['/', '\\'], '', $sub), " -\t\n\r\0\x0B");
-            if ($sub) {
-                $category .= "/$sub";
-            }
-            $data['category_str_mv'][] = $category;
-        }
+        // Hierarchical Categories (database records in Voyager)
         foreach ($this->getFields('886') as $field886) {
             if ($this->getIndicator($field886, 1) != '2'
                 || $this->getSubfield($field886, '2') != 'local'
