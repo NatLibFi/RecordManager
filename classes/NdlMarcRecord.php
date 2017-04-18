@@ -447,6 +447,17 @@ class NdlMarcRecord extends MarcRecord
             array_walk($data['holdings_txtP_mv'], $updateFunc, $this->source);
         }
 
+        // Shelving location in building_sub_str_mv
+        $subBuilding = $this->getDriverParam('subBuilding', '');
+        if ($subBuilding) {
+            foreach ($this->getFields('852') as $field) {
+                $location = $this->getSubfield($field, 'c');
+                if ('' !== $location) {
+                    $data['building_sub_str_mv'][] = $location;
+                }
+            }
+        }
+
         // Access restrictions
         if ($restrictions = $this->getAccessRestrictions()) {
             $data['restricted_str'] = $restrictions;
