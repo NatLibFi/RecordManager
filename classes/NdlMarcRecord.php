@@ -955,6 +955,28 @@ class NdlMarcRecord extends MarcRecord
     }
 
     /**
+     * Get 653 fields that have the requested second indicator
+     *
+     * @param string|array $ind Allowed second indicator value(s)
+     *
+     * @return array
+     */
+    protected function get653WithSecondInd($ind)
+    {
+        $result = [];
+        $ind = (array)$ind;
+        foreach ($this->getFields('653') as $field) {
+            if (in_array($this->getIndicator($field, 2), $ind)) {
+                $term = $this->getSubfields($field, ['a' => 1]);
+                if ($term) {
+                    $result[] = $term;
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Get an array of all fields relevant to allfields search
      *
      * @return string[]
@@ -1058,13 +1080,115 @@ class NdlMarcRecord extends MarcRecord
     }
 
     /**
+     * Get era facet fields
+     *
+     * @return string[] Topics
+     */
+    protected function getEraFacets()
+    {
+        $result = parent::getEraFacets();
+        $result = array_unique(
+            array_merge(
+                $result,
+                $this->get653WithSecondInd('4')
+            )
+        );
+        return $result;
+    }
+
+    /**
+     * Get all era topics
+     *
+     * @return string[]
+     */
+    protected function getEras()
+    {
+        $result = parent::getEras();
+        $result = array_unique(
+            array_merge(
+                $result,
+                $this->get653WithSecondInd('4')
+            )
+        );
+        return $result;
+    }
+
+    /**
+     * Get genre facet fields
+     *
+     * @return string[] Topics
+     */
+    protected function getGenreFacets()
+    {
+        $result = parent::getGenreFacets();
+        $result = array_unique(
+            array_merge(
+                $result,
+                $this->get653WithSecondInd('6')
+            )
+        );
+        return $result;
+    }
+
+    /**
+     * Get all genre topics
+     *
+     * @return string[]
+     */
+    protected function getGenres()
+    {
+        $result = parent::getGenres();
+        $result = array_unique(
+            array_merge(
+                $result,
+                $this->get653WithSecondInd('6')
+            )
+        );
+        return $result;
+    }
+
+    /**
+     * Get geographic facet fields
+     *
+     * @return string[] Topics
+     */
+    protected function getGeographicFacets()
+    {
+        $result = parent::getGeographicFacets();
+        $result = array_unique(
+            array_merge(
+                $result,
+                $this->get653WithSecondInd('5')
+            )
+        );
+        return $result;
+    }
+
+    /**
+     * Get all geographic topics
+     *
+     * @return string[]
+     */
+    protected function getGeographicTopics()
+    {
+        $result = parent::getGeographicTopics();
+        $result = array_unique(
+            array_merge(
+                $result,
+                $this->get653WithSecondInd('5')
+            )
+        );
+        return $result;
+    }
+
+    /**
      * Get topic facet fields
      *
      * @return string[] Topics
      */
     protected function getTopicFacets()
     {
-        return $this->getFieldsSubfields(
+        $result = $this->getFieldsSubfields(
             [
                 [MarcRecord::GET_NORMAL, '600', ['a' => 1, 'x' => 1]],
                 [MarcRecord::GET_NORMAL, '610', ['a' => 1, 'x' => 1]],
@@ -1077,6 +1201,29 @@ class NdlMarcRecord extends MarcRecord
             ],
             false, true, true
         );
+        $result = array_unique(
+            array_merge(
+                $result,
+                $this->get653WithSecondInd([' ', '0', '1', '2', '3'])
+            )
+        );
+        return $result;
+    }
+
+    /**
+     * Get all non-specific topics
+     *
+     * @return string[]
+     */
+    protected function getTopics()
+    {
+        $result = array_unique(
+            array_merge(
+                parent::getTopics(),
+                $this->get653WithSecondInd('0')
+            )
+        );
+        return $result;
     }
 
     /**
