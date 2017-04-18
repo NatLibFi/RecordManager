@@ -1220,7 +1220,7 @@ class NdlMarcRecord extends MarcRecord
         $result = array_unique(
             array_merge(
                 parent::getTopics(),
-                $this->get653WithSecondInd('0')
+                $this->get653WithSecondInd([' ', '0', '1', '2', '3'])
             )
         );
         return $result;
