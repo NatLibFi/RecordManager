@@ -783,17 +783,6 @@ class SolrUpdater
     public function updateRecords($fromDate = null, $sourceId = '', $singleId = '',
         $noCommit = false, $delete = false, $compare = false, $dumpPrefix = ''
     ) {
-        // Disable threaded merge record update for now
-        if ($this->threadedMergedRecordUpdate) {
-            $this->threadedMergedRecordUpdate = false;
-            $this->log->log(
-                'SolrUpdater',
-                'Threaded merged record update is disabled at the moment due to'
-                . ' issues with the MongoDB driver',
-                Logger::WARNING
-            );
-        }
-
         if ($compare && $compare != '-') {
             file_put_contents($compare, '');
         }
@@ -861,6 +850,25 @@ class SolrUpdater
                 }
 
                 if (!$childPid) {
+                    global $configArray;
+                    // Make sure not to reuse the existing MongoDB connection by
+                    // opening a new connection with our pid as an additional
+                    // but unused parameter in the url.
+                    $timeout = isset($configArray['Mongo']['connect_timeout'])
+                        ? $configArray['Mongo']['connect_timeout'] : 300000;
+                    $socketTimeout = isset($configArray['Mongo']['cursor_timeout'])
+                        ? $configArray['Mongo']['cursor_timeout'] : 300000;
+                    $url = $configArray['Mongo']['url'];
+                    $url .= strpos($url, '?') >= 0 ? '&' : '?';
+                    $url .= '_xpid=' . getmypid();
+                    $mongo = new \MongoDB\Client(
+                        $url,
+                        [
+                            'connectTimeoutMS' => $timeout,
+                            'cursorTimeoutMS' => $socketTimeout
+                        ]
+                    );
+                    $this->db = $mongo->{$configArray['Mongo']['database']};
                     $needCommit = $this->processMerged(
                         isset($mongoFromDate) ? $mongoFromDate : null,
                         $sourceId,
