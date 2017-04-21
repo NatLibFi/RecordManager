@@ -70,9 +70,18 @@ unicode_normalization_form = NFKC
 ;max_update_tries = 5
 ; Wait time between Solr update request attempts in seconds. Default is 60.
 ;update_retry_wait = 30
-; Number of background threads to use for Solr update requests. By default background
-; update is disabled.
-;background_update = 10
+; Maximum number of records to send in a single Solr update request. Default is 5000.
+;max_update_records = 10000
+; Maximum Solr update request size in kilobytes. Default is 1024 (1 MB).
+;max_update_size = 1024
+; Number of worker processes to use to handle records. By default no workers are used
+; meaning that the process is essentially single-threaded. Note that
+; setting threaded_merged_record_update to true will essentially double this.
+;record_workers = 3
+; Number of worker processes to use to send updates to Solr. By default no workers
+; are used meaning that the process is essentially single-threaded. Note that
+; setting threaded_merged_record_update to true will essentially double this.
+;solr_update_workers = 3
 ; Whether to use a separate thread for updating merged records. Allows merged and
 ; single record update to run in parallel.
 ;threaded_merged_record_update = true
