@@ -2605,9 +2605,9 @@ class SolrUpdater
         // opening a new connection with our pid as an additional
         // but unused parameter in the url.
         global $configArray;
-        $timeout = isset($configArray['Mongo']['connect_timeout'])
+        $connectTimeout = isset($configArray['Mongo']['connect_timeout'])
             ? $configArray['Mongo']['connect_timeout'] : 300000;
-        $socketTimeout = isset($configArray['Mongo']['cursor_timeout'])
+        $cursorTimeout = isset($configArray['Mongo']['cursor_timeout'])
             ? $configArray['Mongo']['cursor_timeout'] : 300000;
         $url = $configArray['Mongo']['url'];
         $url .= strpos($url, '?') >= 0 ? '&' : '?';
@@ -2615,8 +2615,8 @@ class SolrUpdater
         $mongo = new \MongoDB\Client(
             $url,
             [
-                'connectTimeoutMS' => $timeout,
-                'cursorTimeoutMS' => $socketTimeout
+                'connectTimeoutMS' => $connectTimeout,
+                'cursorTimeoutMS' => $cursorTimeout
             ]
         );
         $this->db = $mongo->{$configArray['Mongo']['database']};
