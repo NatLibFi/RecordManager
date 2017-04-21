@@ -43,13 +43,6 @@ if (function_exists('pcntl_async_signals')) {
 class WorkerPoolManager
 {
     /**
-     * Original signal handler before ours was set
-     *
-     * @var int
-     */
-    protected $originalSignalHandler;
-
-    /**
      * Request queue
      *
      * @var array
@@ -101,10 +94,6 @@ class WorkerPoolManager
     public function __construct()
     {
         if (function_exists('pcntl_signal')) {
-            $this->originalSignalHandler = pcntl_signal_get_handler(SIGCHLD);
-            if (!in_array($this->originalSignalHandler, [SIG_DFL, SIG_IGN])) {
-                throw new Exception('SIGCHLD handler already set');
-            }
             if (false === pcntl_signal(SIGCHLD, [$this, 'signalHandler'])) {
                 throw new Exception('Could not set SIGCHLD handler');
             }
@@ -118,7 +107,7 @@ class WorkerPoolManager
     {
         $this->destroyWorkerPools();
         if (function_exists('pcntl_signal')) {
-            pcntl_signal(SIGCHLD, $this->originalSignalHandler);
+            pcntl_signal(SIGCHLD, SIG_DFL);
         }
     }
 
