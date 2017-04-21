@@ -401,7 +401,9 @@ class WorkerPoolManager
         $received = 0;
         while ($received < $messageLength) {
             $buffer = '';
-            $result = socket_recv($socket, $buffer, $messageLength - $received, MSG_WAITALL);
+            $result = socket_recv(
+                $socket, $buffer, $messageLength - $received, MSG_WAITALL
+            );
             if (false === $result) {
                 throw new Exception(
                     'socket_read failed: ' . socket_strerror(socket_last_error())
@@ -413,7 +415,9 @@ class WorkerPoolManager
 
         $result = unserialize($message);
         if (false === $result) {
-            throw new Exception(getmypid() . " could not unserialize msg from socket $socket");
+            throw new Exception(
+                getmypid() . " could not unserialize msg from socket $socket"
+            );
         }
         return $result;
     }
