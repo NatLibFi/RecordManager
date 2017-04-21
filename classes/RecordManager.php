@@ -177,15 +177,15 @@ class RecordManager
         $this->basePath = $basePath;
 
         try {
-            $timeout = isset($configArray['Mongo']['connect_timeout'])
+            $connectTimeout = isset($configArray['Mongo']['connect_timeout'])
                 ? $configArray['Mongo']['connect_timeout'] : 300000;
-            $socketTimeout = isset($configArray['Mongo']['cursor_timeout'])
+            $cursorTimeout = isset($configArray['Mongo']['cursor_timeout'])
                 ? $configArray['Mongo']['cursor_timeout'] : 300000;
             $mongo = new \MongoDB\Client(
                 $configArray['Mongo']['url'],
                 [
-                    'connectTimeoutMS' => $timeout,
-                    'cursorTimeoutMS' => $socketTimeout
+                    'connectTimeoutMS' => $connectTimeout,
+                    'cursorTimeoutMS' => $cursorTimeout
                 ]
             );
             $this->db = $mongo->{$configArray['Mongo']['database']};
