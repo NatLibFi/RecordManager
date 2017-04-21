@@ -1027,7 +1027,8 @@ class SolrUpdater
             $this->workerPoolManager->addRequest(
                 'merge',
                 (string)$key['_id'],
-                $sourceId
+                $sourceId,
+                $delete
             );
 
             while (!isset($this->terminate)
@@ -1108,10 +1109,11 @@ class SolrUpdater
      *
      * @param string $dedupId  Dedup record id
      * @param string $sourceId Source id, if any
+     * @param bool   $delete   Whether a data source deletion is in progress
      *
      * @return array
      */
-    public function processDedupRecord($dedupId, $sourceId)
+    public function processDedupRecord($dedupId, $sourceId, $delete)
     {
         $result = [
             'deleted' => [],
