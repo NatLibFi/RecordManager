@@ -2607,8 +2607,8 @@ class SolrUpdater
         global $configArray;
         $connectTimeout = isset($configArray['Mongo']['connect_timeout'])
             ? $configArray['Mongo']['connect_timeout'] : 300000;
-        $cursorTimeout = isset($configArray['Mongo']['cursor_timeout'])
-            ? $configArray['Mongo']['cursor_timeout'] : 300000;
+        $socketTimeout = isset($configArray['Mongo']['socket_timeout'])
+            ? $configArray['Mongo']['socket_timeout'] : 300000;
         $url = $configArray['Mongo']['url'];
         $url .= strpos($url, '?') >= 0 ? '&' : '?';
         $url .= '_xpid=' . getmypid();
@@ -2616,7 +2616,7 @@ class SolrUpdater
             $url,
             [
                 'connectTimeoutMS' => $connectTimeout,
-                'cursorTimeoutMS' => $cursorTimeout
+                'socketTimeoutMS' => $socketTimeout
             ]
         );
         $this->db = $mongo->{$configArray['Mongo']['database']};

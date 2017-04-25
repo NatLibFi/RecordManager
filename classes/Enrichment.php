@@ -220,19 +220,27 @@ class Enrichment
 
         $data = $code < 300 ? $response->getBody() : '';
 
-        $this->db->uriCache->replaceOne(
-            [
-                '_id' => $id,
-            ],
-            [
-                '_id' => $id,
-                'timestamp' => new \MongoDB\BSON\UTCDateTime(time() * 1000),
-                'data' => $data
-            ],
-            [
-                'upsert' => true
-            ]
-        );
+        try {
+            $this->db->uriCache->replaceOne(
+                [
+                    '_id' => $id,
+                ],
+                [
+                    '_id' => $id,
+                    'timestamp' => new \MongoDB\BSON\UTCDateTime(time() * 1000),
+                    'data' => $data
+                ],
+                [
+                    'upsert' => true
+                ]
+            );
+        } catch (Exception $e) {
+            // Since this can be run in multiple processes, we might encounter
+            // duplicate inserts at the same time, so ignore duplicate key errors.
+            if (strncmp($e->getMessage(), 'E11000 ', 7) !== 0) {
+                throw $e;
+            }
+        }
 
         return $data;
     }
