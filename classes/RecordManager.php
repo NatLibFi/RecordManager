@@ -931,7 +931,7 @@ class RecordManager
                             $source,
                             $this->basePath,
                             $settings,
-                            $startResumptionToken
+                            $startResumptionToken ? $startResumptionToken : 0
                         );
                     } else {
                         $harvest = new HarvestOAIPMH(
