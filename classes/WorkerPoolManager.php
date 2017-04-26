@@ -186,6 +186,10 @@ class WorkerPoolManager
                     'active' => false
                 ];
             } else {
+                if (is_callable('cli_set_process_title')) {
+                    // This doesn't work with macOS, so suppress warnings.
+                    @cli_set_process_title("RecordManager $poolId worker");
+                }
                 try {
                     socket_close($parentSocket);
                     if (null !== $initMethod) {
