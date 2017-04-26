@@ -174,6 +174,7 @@ class WorkerPoolManager
             list($childSocket, $parentSocket) = $socketPair;
             unset($socketPair);
 
+            $parentPid = getmypid();
             $childPid = pcntl_fork();
             if ($childPid == -1) {
                 throw new Exception('Could not fork worker');
@@ -188,7 +189,9 @@ class WorkerPoolManager
             } else {
                 if (is_callable('cli_set_process_title')) {
                     // This doesn't work with macOS, so suppress warnings.
-                    @cli_set_process_title("RecordManager $poolId worker");
+                    @cli_set_process_title(
+                        "RecordManager $poolId worker for $parentPid"
+                    );
                 }
                 try {
                     socket_close($parentSocket);
