@@ -176,6 +176,12 @@ class OaiPmhProvider
         $prefix = $this->getParam('metadataPrefix');
 
         $record = $this->db->record->findOne(['oai_id' => $id]);
+        if (!$record
+            && strncmp($id, $this->idPrefix, strlen($this->idPrefix)) === 0
+        ) {
+            $id = substr($id, strlen($this->idPrefix));
+            $record = $this->db->record->findOne(['_id' => $id]);
+        }
         if (!$record) {
             $this->error(
                 'idDoesNotExist',
