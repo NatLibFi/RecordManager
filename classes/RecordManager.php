@@ -248,11 +248,12 @@ class RecordManager
      *
      * @param string $source Source id
      * @param string $files  Wildcard pattern of files containing the records
+     * @param bool   $delete Whether to delete the records (default = false)
      *
      * @throws Exception
      * @return int Number of records loaded
      */
-    public function loadFromFile($source, $files)
+    public function loadFromFile($source, $files, $delete = false)
     {
         $this->loadSourceSettings($source);
         if (!$this->recordXPath) {
@@ -291,7 +292,7 @@ class RecordManager
             while (!$splitter->getEOF()) {
                 $oaiID = '';
                 $data = $splitter->getNextRecord($oaiID);
-                $count += $this->storeRecord($oaiID, false, $data);
+                $count += $this->storeRecord($oaiID, $delete, $data);
                 if ($this->verbose) {
                     echo "Stored records: $count\n";
                 }
@@ -1388,7 +1389,7 @@ class RecordManager
      */
     public function storeRecord($oaiID, $deleted, $recordData)
     {
-        if ($deleted) {
+        if ($deleted && !empty($oaiID)) {
             // A single OAI-PMH record may have been split to multiple records. Find
             // all occurrences.
             $records = $this->db->record->find(
@@ -1527,7 +1528,7 @@ class RecordManager
                 }
             }
             $dbRecord['oai_id'] = $oaiID;
-            $dbRecord['deleted'] = false;
+            $dbRecord['deleted'] = $deleted;
             $dbRecord['linking_id'] = $metadataRecord->getLinkingID();
             if ($mainID) {
                 $dbRecord['main_id'] = $mainID;

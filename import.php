@@ -45,9 +45,10 @@ Usage: $argv[0] --file=... --source=... [...]
 
 Parameters:
 
---file              The file or wildcard pattern of files of records
---source            Source ID
---verbose           Enable verbose output
+--file             The file or wildcard pattern of files of records
+--source           Source ID
+--delete           Mark the imported records deleted
+--verbose          Enable verbose output
 --config.section.name=value
                    Set configuration directive to given value overriding any
                    setting in recordmanager.ini
@@ -70,7 +71,8 @@ EOT;
             true, isset($params['verbose']) ? $params['verbose'] : false
         );
 
-        $manager->loadFromFile($params['source'], $params['file']);
+        $delete = isset($params['delete']) ? $params['delete'] : false;
+        $manager->loadFromFile($params['source'], $params['file'], $delete);
     } catch(Exception $e) {
         releaseLock($lockhandle);
         throw $e;
