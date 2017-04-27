@@ -486,6 +486,16 @@ class SolrUpdater
                 $this->solrUpdateWorkers,
                 [$this, 'solrRequest']
             );
+            $this->workerPoolManager->createWorkerPool(
+                'record',
+                $this->recordWorkers,
+                $this->recordWorkers,
+                [$this, 'processSingleRecord'],
+                [$this, 'reconnectMongoDB']
+            );
+
+            // Reconnect MongoDB to be sure it's used just by us
+            $this->reconnectMongoDB();
 
             $this->log->log(
                 'updateRecords', "Creating individual record list (from $from)"
@@ -534,13 +544,6 @@ class SolrUpdater
             }
             $pc = new PerformanceCounter();
             $this->initBufferedUpdate();
-            $this->workerPoolManager->createWorkerPool(
-                'record',
-                $this->recordWorkers,
-                $this->recordWorkers,
-                [$this, 'processSingleRecord'],
-                [$this, 'reconnectMongoDB']
-            );
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
                     if ($childPid) {
