@@ -296,10 +296,10 @@ class WorkerPoolManager
     public function requestsActive($poolId)
     {
         $this->handleRequests($poolId);
-        if (empty($this->workerPool[$poolId])) {
+        if (empty($this->workerPools[$poolId])) {
             return false;
         }
-        foreach ($this->workerPool[$poolId] as $worker) {
+        foreach ($this->workerPools[$poolId] as $worker) {
             if ($worker['active']) {
                 return true;
             }
