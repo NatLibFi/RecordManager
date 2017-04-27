@@ -1582,12 +1582,14 @@ class SolrUpdater
         if (!isset($record['host_record_id'])) {
             // Fetch info whether component parts exist and need to be merged
             if (!$record['linking_id']) {
-                $this->log->log(
-                    'createSolrArray',
-                    "linking_id missing for record '{$record['_id']}'",
-                    Logger::ERROR
-                );
-                $warnings[] = 'linking_id missing';
+                if ($this->db) {
+                    $this->log->log(
+                        'createSolrArray',
+                        "linking_id missing for record '{$record['_id']}'",
+                        Logger::ERROR
+                    );
+                    $warnings[] = 'linking_id missing';
+                }
             } else {
                 $params = [
                     'host_record_id' => $record['linking_id'],
