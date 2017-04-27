@@ -128,7 +128,7 @@ class PreviewCreator extends SolrUpdater
             'original_data' => $metadata,
             'normalized_data' => $metadata,
             'source_id' => $source,
-            'linking_id' => '',
+            'linking_id' => '_preview',
             'oai_id' => '_preview',
             '_id' => '_preview',
             'created' => new \MongoDB\BSON\UTCDateTime(time() * 1000),
