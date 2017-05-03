@@ -307,13 +307,14 @@ EOT;
         $maxRecords = $configArray['OAI-PMH']['result_limit'];
         $count = 0;
         foreach ($records as $record) {
+            ++$count;
             if ($count == 1) {
                 print <<<EOT
   <$verb>
 
 EOT;
             }
-            if (++$count > $maxRecords) {
+            if ($count > $maxRecords) {
                 // More records available, create resumptionToken
                 $token = $this->escape(
                     implode(
