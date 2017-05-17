@@ -379,9 +379,6 @@ class NdlForwardRecord extends ForwardRecord
                 || substr((string)$record->Title->TitleText, -4) !== '.mp4'
             ) {
                 $attrs = $record->Identifier->attributes();
-                if ($attrs{'IDTypeName'} == 'elonet_materiaali_video') {
-                    echo "NO video " . (string)$record->Identifier . "\n";
-                }
                 continue;
             }
             $videoType = 'elokuva';
