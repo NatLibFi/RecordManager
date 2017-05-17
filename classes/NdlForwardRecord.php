@@ -375,32 +375,33 @@ class NdlForwardRecord extends ForwardRecord
         $records = $this->doc->children();
         $records = reset($records);
         foreach (is_array($records) ? $records : [$records] as $record) {
+            if (!isset($record->Title->TitleText)
+                || substr((string)$record->Title->TitleText, -4) !== '.mp4'
+            ) {
+                $attrs = $record->Identifier->attributes();
+                if ($attrs{'IDTypeName'} == 'elonet_materiaali_video') {
+                    echo "NO video " . (string)$record->Identifier . "\n";
+                }
+                continue;
+            }
+            $videoType = 'elokuva';
+            $description = '';
             if (isset($record->Title->PartDesignation->Value)) {
                 $attributes = $record->Title->PartDesignation->Value->attributes();
-                if (empty($attributes{'video-tyyppi'})
-                    || $attributes{'video-tyyppi'} != 'elokuva'
-                ) {
-                    continue;
+                if (!empty($attributes{'video-tyyppi'})) {
+                    $videoType = (string)$attributes{'video-tyyppi'};
                 }
-                foreach ($record->ProductionEvent as $event) {
-                    $attributes = $event->ProductionEventType->attributes();
-                    $url
-                        = (string)$attributes
-                            ->{'elokuva-elonet-materiaali-video-url'};
-                    $type = '';
-                    $description = '';
-                    if ($record->Title->PartDesignation->Value) {
-                        $attributes = $record->Title->PartDesignation->Value
-                            ->attributes();
-                        $type = (string)$attributes->{'video-tyyppi'};
-                        $description = (string)$attributes->{'video-lisatieto'};
-                    }
-                    $results[] = [
-                        'url' => $url,
-                        'text' => $description ? $description : $type,
-                        'source' => $this->source
-                    ];
-                }
+                $description = (string)$attributes->{'video-lisatieto'};
+            }
+            foreach ($record->ProductionEvent as $event) {
+                $attributes = $event->ProductionEventType->attributes();
+                $url = (string)$attributes
+                    ->{'elokuva-elonet-materiaali-video-url'};
+                $results[] = [
+                    'url' => $url,
+                    'text' => $description ? $description : $videoType,
+                    'source' => $this->source
+                ];
             }
         }
         return $results;
