@@ -437,6 +437,9 @@ class NdlMarcRecord extends MarcRecord
                 [
                     [MarcRecord::GET_NORMAL, '852', [
                         'a' => 1, 'b' => 1, 'h' => 1, 'z' => 1
+                    ]],
+                    [MarcRecord::GET_NORMAL, '952', [
+                        'b' => 1, 'c' => 1, 'o' => 1, 'h' => 1
                     ]]
                 ]
             );
@@ -451,6 +454,12 @@ class NdlMarcRecord extends MarcRecord
         $subBuilding = $this->getDriverParam('subBuilding', '');
         if ($subBuilding) {
             foreach ($this->getFields('852') as $field) {
+                $location = $this->getSubfield($field, 'c');
+                if ('' !== $location) {
+                    $data['building_sub_str_mv'][] = $location;
+                }
+            }
+            foreach ($this->getFields('952') as $field) {
                 $location = $this->getSubfield($field, 'c');
                 if ('' !== $location) {
                     $data['building_sub_str_mv'][] = $location;
@@ -818,6 +827,12 @@ class NdlMarcRecord extends MarcRecord
                     return 'restricted';
                 }
             }
+            foreach ($this->getFields('952') as $field952) {
+                $locationCode = trim($this->getSubfield($field952, 'b'));
+                if (isset($restricted[$locationCode])) {
+                    return 'restricted';
+                }
+            }
         }
         foreach ($this->getFields('540') as $field) {
             $sub3 = MetadataUtils::stripTrailingPunctuation(
@@ -997,6 +1012,8 @@ class NdlMarcRecord extends MarcRecord
                 'w' => 1
             ],
             '787' => ['i' => 1],
+            // Koha serial enumerations
+            '952' => ['a' => 1, 'b' => 1, 'c' => 1, 'o' => 1],
             '979' => ['0' => 1, 'a' => 1, 'f' => 1]
         ];
         $allFields = [];
@@ -1016,7 +1033,7 @@ class NdlMarcRecord extends MarcRecord
         }
         foreach ($this->fields as $tag => $fields) {
             if (($tag >= 100 && $tag < 841 && !isset($fieldFilter[$tag]))
-                || $tag == 880 || $tag == 979
+                || $tag == 880 || $tag == 979 || $tag == 952
             ) {
                 foreach ($fields as $field) {
                     $subfields = $this->getAllSubfields(
@@ -1052,6 +1069,15 @@ class NdlMarcRecord extends MarcRecord
         if ($this->getDriverParam('holdingsInBuilding', true)) {
             $useSub = $this->getDriverParam('subLocationInBuilding', '');
             foreach ($this->getFields('852') as $field) {
+                $location = $this->getSubfield($field, 'b');
+                if ($location) {
+                    if ($useSub && $sub = $this->getSubfield($field, $useSub)) {
+                        $location = [$location, $sub];
+                    }
+                    $building[] = $location;
+                }
+            }
+            foreach ($this->getFields('952') as $field) {
                 $location = $this->getSubfield($field, 'b');
                 if ($location) {
                     if ($useSub && $sub = $this->getSubfield($field, $useSub)) {

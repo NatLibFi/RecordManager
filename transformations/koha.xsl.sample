@@ -1,0 +1,50 @@
+<xsl:stylesheet version="1.0"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+xmlns:marc="http://www.loc.gov/standards/marcxml/schema/MARC21slim.xsd"
+>
+     <xsl:output method="xml" indent="no"/>
+
+     <xsl:template match="/|comment()|processing-instruction()">
+         <xsl:copy>
+             <xsl:apply-templates/>
+         </xsl:copy>
+     </xsl:template>
+
+     <xsl:template match="*">
+         <xsl:choose>
+            <xsl:when test="@tag = '852' and ../datafield[@tag = '952']">
+            </xsl:when>
+            <xsl:when test="@tag = '952'">
+                <xsl:if test="not(preceding::datafield[@tag = '952']/subfield[@code='b']/text() = current()/subfield[@code='b']/text() and preceding::datafield[@tag = '952']/subfield[@code='c']/text() = current()/subfield[@code='c']/text() and preceding::datafield[@tag = '952']/subfield[@code='h']/text() = current()/subfield[@code='h']/text() and preceding::datafield[@tag = '952']/subfield[@code='o']/text() = current()/subfield[@code='o']/text())">
+                    <datafield tag="952">
+                        <subfield code="b"><xsl:value-of select="subfield[@code='b']"/></subfield>
+                  <xsl:if test="subfield[@code='c']">
+  						<subfield code="c"><xsl:value-of select="subfield[@code='c']"/></subfield>
+                  </xsl:if>
+                  <xsl:if test="subfield[@code='h']">
+  						<subfield code="h"><xsl:value-of select="subfield[@code='h']"/></subfield>
+                  </xsl:if>
+                  <xsl:if test="subfield[@code='o']">
+  						<subfield code="o"><xsl:value-of select="subfield[@code='o']"/></subfield>
+                  </xsl:if>
+                    </datafield>
+                </xsl:if>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:element name="{local-name()}">
+                    <xsl:apply-templates select="@*|node()"/>
+                </xsl:element>
+            </xsl:otherwise>
+         </xsl:choose>
+         <xsl:if test="@tag = '999' and not(../controlfield[@tag = '001'])">
+                <controlfield tag="001"><xsl:value-of select="subfield[@code='c']"/></controlfield>
+         </xsl:if>
+     </xsl:template>
+
+     <xsl:template match="@*">
+         <xsl:attribute name="{local-name()}">
+           <xsl:value-of select="."/>
+         </xsl:attribute>
+     </xsl:template>
+
+</xsl:stylesheet>
