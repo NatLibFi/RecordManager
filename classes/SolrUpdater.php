@@ -684,7 +684,9 @@ class SolrUpdater
                         $exitCode = $this->workerPoolManager
                             ->getExternalProcessExitCode($childPid);
                         if (null !== $exitCode) {
-                            $needCommit = 1 === $exitCode;
+                            if (1 === $exitCode) {
+                                $needCommit = true;
+                            }
                         } else {
                             $this->log->log(
                                 'updateRecords',
