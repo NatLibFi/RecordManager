@@ -1004,6 +1004,8 @@ class NdlMarcRecord extends MarcRecord
             '300' => 1, '336' => 1, '337' => 1,
         ];
         $subfieldFilter = [
+            '024' => ['c' => 1, 'd' => 1, 'z' => 1, '6' => 1, '8' => 1],
+            '027' => ['z' => 1, '6' => 1, '8' => 1],
             '650' => ['0' => 1, '2' => 1, '6' => 1, '8' => 1],
             '100' => ['4' => 1],
             '700' => ['4' => 1],
@@ -1035,7 +1037,9 @@ class NdlMarcRecord extends MarcRecord
         }
         foreach ($this->fields as $tag => $fields) {
             if (($tag >= 100 && $tag < 841 && !isset($fieldFilter[$tag]))
-                || $tag == 880 || $tag == 979 || $tag == 952
+                || in_array(
+                    $tag, ['024', '025', '026', '027', '028', '880', '952', '979']
+                )
             ) {
                 foreach ($fields as $field) {
                     $subfields = $this->getAllSubfields(
