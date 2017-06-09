@@ -46,7 +46,9 @@ class NdlMarcRecord extends MarcRecord
      *
      * @var string
      */
-    protected $illustrationStrings = ['ill.', 'illus.', 'kuv.'];
+    protected $illustrationStrings = [
+        'ill.', 'illus.', 'kuv.', 'kuvitettu', 'illustrated'
+    ];
 
     /**
      * Normalize the record (optional)

@@ -1450,14 +1450,30 @@ class MarcRecord extends BaseRecord
     protected function getIllustrated()
     {
         $leader = $this->getField('000');
-        if (substr($leader, 6, 1) == 'a') {
-            $illustratedCodes = 'abcdefghijklmop';
+        if (in_array(substr($leader, 6, 1), ['a', 't'])) {
+            $illustratedCodes = [
+                'a' => 1,
+                'b' => 1,
+                'c' => 1,
+                'd' => 1,
+                'e' => 1,
+                'f' => 1,
+                'g' => 1,
+                'h' => 1,
+                'i' => 1,
+                'j' => 1,
+                'k' => 1,
+                'l' => 1,
+                'm' => 1,
+                'o' => 1,
+                'p' => 1
+            ];
 
             // 008
             $field008 = $this->getField('008');
             for ($pos = 18; $pos <= 21; $pos++) {
                 $ch = substr($field008, $pos, 1);
-                if ('' !== $ch && strpos($illustratedCodes, $ch) !== false) {
+                if ('' !== $ch && isset($illustratedCodes[$ch])) {
                     return 'Illustrated';
                 }
             }
@@ -1466,7 +1482,7 @@ class MarcRecord extends BaseRecord
             foreach ($this->getFields('006') as $field006) {
                 for ($pos = 1; $pos <= 4; $pos++) {
                     $ch = substr($field006, $pos, 1);
-                    if ('' !== $ch && strpos($illustratedCodes, $ch) !== false) {
+                    if ('' !== $ch && isset($illustratedCodes[$ch])) {
                         return 'Illustrated';
                     }
                 }
