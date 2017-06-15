@@ -54,6 +54,12 @@ class XslTransformation
     public function __construct($basePath, $configFile, $params = null)
     {
         $options = parse_ini_file("$basePath/$configFile", true);
+        if (false === $options) {
+            throw new Exception(
+                "Could not load or parse ini file '$basePath/$configFile'"
+            );
+        }
+
         $this->xslt = new XSLTProcessor();
 
         // Register any PHP functions
@@ -91,7 +97,9 @@ class XslTransformation
 
         $style = new DOMDocument();
         if ($style->load($basePath . '/' . $options['General']['xslt']) === false) {
-            throw new Exception($basePath . '/' . $options['General']['xslt']);
+            throw new Exception(
+                'Could not load ' . $basePath . '/' . $options['General']['xslt']
+            );
         }
         $this->xslt->importStylesheet($style);
     }
