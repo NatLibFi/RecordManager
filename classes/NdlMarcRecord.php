@@ -1344,4 +1344,23 @@ class NdlMarcRecord extends MarcRecord
             ['110', '111', '710', '711']
         );
     }
+
+    /**
+     * Dedup: Return unique IDs (control numbers)
+     *
+     * @return string[]
+     */
+    public function getUniqueIDs()
+    {
+        $result = parent::getUniqueIDs();
+        // Melinda ID
+        $f035 = $this->getField('035');
+        if ($f035) {
+            $id = $this->getSubfield($f035, 'a');
+            if (strncmp($id, 'FCC', 3) === 0 && ctype_digit(substr($id, 3))) {
+                $result[] = $id;
+            }
+        }
+        return $result;
+    }
 }
