@@ -30,7 +30,7 @@
  * OAI-PMH Provider Front-End
  */
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . 'src/RecordManager/Autoloader.php';
+require_once __DIR__ . '/src/RecordManager/Autoloader.php';
 
 $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
 $configArray = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
