@@ -165,18 +165,11 @@ class RecordManager
         $this->basePath = $basePath;
 
         try {
-            $connectTimeout = isset($configArray['Mongo']['connect_timeout'])
-                ? $configArray['Mongo']['connect_timeout'] : 300000;
-            $socketTimeout = isset($configArray['Mongo']['socket_timeout'])
-                ? $configArray['Mongo']['socket_timeout'] : 300000;
-            $mongo = new \MongoDB\Client(
+            $this->db = new Database(
                 $configArray['Mongo']['url'],
-                [
-                    'connectTimeoutMS' => $connectTimeout,
-                    'socketTimeoutMS' => $socketTimeout
-                ]
+                $configArray['Mongo']['database'],
+                $configArray['Mongo']
             );
-            $this->db = $mongo->{$configArray['Mongo']['database']};
         } catch (Exception $e) {
             $this->log->log(
                 'startup',
@@ -359,12 +352,11 @@ class RecordManager
                     }
                 }
             }
-            $options = ['noCursorTimeout' => true];
             if ($sortDedup) {
                 $options['sort'] = ['dedup_id' => 1];
             }
-            $records = $this->db->record->find($params, $options);
-            $total = $this->counts ? $this->db->record->count($params, $options)
+            $records = $this->db->findRecords($params, $options);
+            $total = $this->counts ? $this->db->countRecords($params, $options)
                 : 'the';
             $count = 0;
             $deduped = 0;
@@ -502,10 +494,8 @@ class RecordManager
             } else {
                 $params['source_id'] = $source;
             }
-            $records = $this->db->record->find(
-                $params, ['batchSize' => 5000, 'noCursorTimeout' => true]
-            );
-            $total = $this->counts ? $this->db->record->count($params) : 'the';
+            $records = $this->db->findRecords($params);
+            $total = $this->counts ? $this->db->countRecords($params) : 'the';
             $count = 0;
 
             $this->log->log(
@@ -572,7 +562,7 @@ class RecordManager
                     unset($record['host_record_id']);
                 }
                 $record['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
-                $this->db->record->replaceOne(['_id' => $record['_id']], $record);
+                $this->db->saveRecord($record);
 
                 if ($this->verbose) {
                     echo "Metadata for record {$record['_id']}: \n";
@@ -642,13 +632,12 @@ class RecordManager
                 $this->log->log(
                     'deduplicate', "Marking all records for processing in '$source'"
                 );
-                $records = $this->db->record->find(
+                $records = $this->db->findRecords(
                     [
                         'source_id' => $source,
                         'host_record_id' => ['$exists' => false],
                         'deleted' => false
-                    ],
-                    ['noCursorTimeout' => true]
+                    ]
                 );
                 $pc = new PerformanceCounter();
                 $count = 0;
@@ -658,9 +647,8 @@ class RecordManager
                         exit(1);
                     }
 
-                    $this->db->record->updateOne(
-                        ['_id' => $record['_id']],
-                        ['$set' => ['update_needed' => true]]
+                    $this->db->updateRecord(
+                        $record['_id'], ['update_needed' => true]
                     );
 
                     ++$count;
@@ -717,10 +705,8 @@ class RecordManager
                 } else {
                     $params['update_needed'] = true;
                 }
-                $records = $this->db->record->find(
-                    $params, ['batchSize' => 5000, 'noCursorTimeout' => true]
-                );
-                $total = $this->counts ? $this->db->record->count($params) : 'the';
+                $records = $this->db->findRecords($params);
+                $total = $this->counts ? $this->db->countRecords($params) : 'the';
                 $count = 0;
                 $deduped = 0;
                 $pc = new PerformanceCounter();
@@ -958,13 +944,12 @@ class RecordManager
                                 'Marking deleted all records not received during'
                                 . ' the harvesting'
                             );
-                            $records = $this->db->record->find(
+                            $records = $this->db->findRecords(
                                 [
                                     'source_id' => $this->sourceId,
                                     'deleted' => false,
                                     'updated' => ['$lt' => $dateThreshold]
-                                ],
-                                ['noCursorTimeout' => true]
+                                ]
                             );
                             $count = 0;
                             foreach ($records as $record) {
@@ -999,10 +984,10 @@ class RecordManager
                         $interval = null;
                         $deletions = explode(':', $settings['deletions']);
                         if (isset($deletions[1])) {
-                            $state = $this->db->state->findOne(
-                                ['_id' => "Last Deletion Processing Time $source"]
+                            $state = $this->db->getState(
+                                "Last Deletion Processing Time $source"
                             );
-                            if (isset($state)) {
+                            if (null !== $state) {
                                 $interval
                                     = round((time() - $state['value']) / 3600 / 24);
                                 if ($interval < $deletions[1]) {
@@ -1024,9 +1009,10 @@ class RecordManager
                             );
 
                             $this->log->log('harvest', 'Unmarking records');
-                            $this->db->record->updateMany(
+                            $this->db->updateRecords(
                                 ['source_id' => $this->sourceId, 'deleted' => false],
-                                ['$unset' => ['mark' => 1]]
+                                [],
+                                ['mark' => 1]
                             );
 
                             $this->log->log('harvest', "Fetching identifiers");
@@ -1034,13 +1020,12 @@ class RecordManager
 
                             $this->log->log('harvest', "Marking deleted records");
 
-                            $records = $this->db->record->find(
+                            $records = $this->db->findRecords(
                                 [
                                     'source_id' => $this->sourceId,
                                     'deleted' => false,
                                     'mark' => ['$exists' => false]
-                                ],
-                                ['noCursorTimeout' => true]
+                                ]
                             );
                             $count = 0;
                             foreach ($records as $record) {
@@ -1057,11 +1042,7 @@ class RecordManager
                                 '_id' => "Last Deletion Processing Time $source",
                                 'value' => time()
                             ];
-                            $this->db->state->replaceOne(
-                                ['_id' => $state['_id']],
-                                $state,
-                                ['upsert' => true]
-                            );
+                            $this->db->saveState($state);
                         }
                     }
                 }
@@ -1087,9 +1068,7 @@ class RecordManager
         if (!$recordID) {
             throw new Exception('dump: record id must be specified');
         }
-        $records = $this->db->record->find(
-            ['_id' => $recordID], ['noCursorTimeout' => true]
-        );
+        $records = $this->db->findRecords(['_id' => $recordID]);
         foreach ($records as $record) {
             $record['original_data'] = MetadataUtils::getRecordData($record, false);
             $record['normalized_data'] = MetadataUtils::getRecordData($record, true);
@@ -1112,8 +1091,8 @@ class RecordManager
         $this->log->log('markDeleted', "Creating record list for '$sourceId'");
 
         $params = ['deleted' => false, 'source_id' => $sourceId];
-        $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
-        $total = $this->counts ? $this->db->record->count($params) : 'the';
+        $records = $this->db->findRecords($params);
+        $total = $this->counts ? $this->db->countRecords($params) : 'the';
         $count = 0;
 
         $this->log->log(
@@ -1129,7 +1108,7 @@ class RecordManager
             }
             $record['deleted'] = true;
             $record['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
-            $this->db->record->replaceOne(['_id' => $record['_id']], $record);
+            $this->db->saveRecord($record);
 
             ++$count;
             if ($count % 1000 == 0) {
@@ -1151,9 +1130,7 @@ class RecordManager
             'markDeleted',
             "Deleting last harvest date from data source '$sourceId'"
         );
-        $this->db->state->deleteOne(
-            ['_id' => "Last Harvest Date $sourceId"]
-        );
+        $this->db->deleteState("Last Harvest Date $sourceId");
         $this->log->log('markDeleted', "Marking of $sourceId completed");
     }
 
@@ -1194,8 +1171,8 @@ class RecordManager
         $this->log->log('deleteRecords', "Creating record list for '$sourceId'");
 
         $params = ['source_id' => $sourceId];
-        $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
-        $total = $this->counts ? $this->db->record->count($params) : 'the';
+        $records = $this->db->findRecords($params);
+        $total = $this->counts ? $this->db->countRecords($params) : 'the';
         $count = 0;
 
         $this->log->log('deleteRecords', "Deleting $total records from '$sourceId'");
@@ -1206,7 +1183,7 @@ class RecordManager
                     $record['dedup_id'], $record['_id']
                 );
             }
-            $this->db->record->deleteOne(['_id' => $record['_id']]);
+            $this->db->deleteRecord($record['_id']);
 
             ++$count;
             if ($count % 1000 == 0) {
@@ -1226,7 +1203,7 @@ class RecordManager
             'deleteRecords',
             "Deleting last harvest date from data source '$sourceId'"
         );
-        $this->db->state->deleteOne(['_id' => "Last Harvest Date $sourceId"]);
+        $this->db->deleteState("Last Harvest Date $sourceId");
         $this->log->log('deleteRecords', "Deletion of $sourceId completed");
     }
 
@@ -1291,14 +1268,14 @@ class RecordManager
             'purgeDeletedRecords',
             "Creating record list$dateStr" . ($sourceId ? " for '$sourceId'" : '')
         );
-        $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
-        $total = $this->counts ? $this->db->record->count($params) : 'the';
+        $records = $this->db->findRecords($params);
+        $total = $this->counts ? $this->db->countRecords($params) : 'the';
         $count = 0;
 
         $this->log->log('purgeDeletedRecords', "Purging $total records");
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
-            $this->db->record->deleteOne(['_id' => $record['_id']]);
+            $this->db->deleteRecord($record['_id']);
             ++$count;
             if ($count % 1000 == 0) {
                 $pc->add($count);
@@ -1326,14 +1303,14 @@ class RecordManager
             $params['changed'] = ['$lt' => new \MongoDB\BSON\UTCDateTime($date)];
         }
         $this->log->log('purgeDeletedRecords', "Creating dedup record list$dateStr");
-        $records = $this->db->dedup->find($params, ['noCursorTimeout' => true]);
-        $total = $this->counts ? $this->db->dedup->count($params) : 'the';
+        $records = $this->db->findDedups($params);
+        $total = $this->counts ? $this->db->countDedups($params) : 'the';
         $count = 0;
 
         $this->log->log('purgeDeletedRecords', "Purging $total dedup records");
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
-            $this->db->dedup->deleteOne(['_id' => $record['_id']]);
+            $this->db->deleteDedup($record['_id']);
             ++$count;
             if ($count % 1000 == 0) {
                 $pc->add($count);
@@ -1380,9 +1357,8 @@ class RecordManager
         if ($deleted && !empty($oaiID)) {
             // A single OAI-PMH record may have been split to multiple records. Find
             // all occurrences.
-            $records = $this->db->record->find(
-                ['source_id' => $this->sourceId, 'oai_id' => $oaiID],
-                ['noCursorTimeout' => true]
+            $records = $this->db->findRecords(
+                ['source_id' => $this->sourceId, 'oai_id' => $oaiID]
             );
             $count = 0;
             foreach ($records as $record) {
@@ -1395,7 +1371,7 @@ class RecordManager
                 $record['deleted'] = true;
                 $record['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
                 $record['update_needed'] = false;
-                $this->db->record->replaceOne(['_id' => $record['_id']], $record);
+                $this->db->saveRecord($record);
                 ++$count;
             }
             return $count;
@@ -1483,7 +1459,7 @@ class RecordManager
             }
             $this->previousId = $id;
             $id = $this->idPrefix . '.' . $id;
-            $dbRecord = $this->db->record->findOne(['_id' => $id]);
+            $dbRecord = $this->db->getRecord($id);
             if ($dbRecord) {
                 $dbRecord['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
                 if ($this->verbose) {
@@ -1539,9 +1515,7 @@ class RecordManager
                             $dbRecord, $metadataRecord
                         );
                 } else {
-                    $this->db->record->updateOne(
-                        ['_id' => $hostID], ['$set' => ['update_needed' => true]]
-                    );
+                    $this->db->updateRecord($hostId, ['update_needed' => true]);
                     $dbRecord['update_needed'] = false;
                 }
             } else {
@@ -1556,9 +1530,7 @@ class RecordManager
                 }
                 $dbRecord['update_needed'] = false;
             }
-            $this->db->record->replaceOne(
-                ['_id' => $dbRecord['_id']], $dbRecord, ['upsert' => true]
-            );
+            $this->db->saveRecord($dbRecord);
             ++$count;
             if (!$mainID) {
                 $mainID = $id;
@@ -1568,17 +1540,17 @@ class RecordManager
         if ($count > 1 && $mainID && !$this->keepMissingHierarchyMembers) {
             // We processed a hierarchical record. Mark deleted any children that
             // were not updated.
-            $this->db->record->updateMany(
+            $this->db->updateRecords(
                 [
                     'source_id' => $this->sourceId,
                     'main_id' => $mainID,
                     'updated' => ['$lt' => $startTime]
                 ],
-                ['$set' => [
+                [
                     'deleted' => true,
-                    'updated' => new \MongoDB\BSON\UTCDateTime(time() * 1000),
+                    'updated' => $this->db->getTimestamp(),
                     'update_needed' => false
-                ]]
+                ]
             );
         }
 
@@ -1640,9 +1612,9 @@ class RecordManager
             // Don't mark deleted records...
             return;
         }
-        $this->db->record->updateMany(
+        $this->db->updateRecords(
             ['source_id' => $this->sourceId, 'oai_id' => $oaiID],
-            ['$set' => ['mark' => true]]
+            ['mark' => true]
         );
     }
 
@@ -1655,7 +1627,7 @@ class RecordManager
     {
         $this->log->log('checkDedupRecords', "Checking dedup record consistency");
 
-        $dedupRecords = $this->db->dedup->find([], ['noCursorTimeout' => true]);
+        $dedupRecords = $this->db->findDedups([]);
         $count = 0;
         $fixed = 0;
         $pc = new PerformanceCounter();
@@ -1920,9 +1892,8 @@ class RecordManager
         $unchanged = 0;
         $changed = 0;
         $added = 0;
-        $dbRecords = $this->db->record->find(
-            ['deleted' => false, 'source_id' => $source],
-            ['noCursorTimeout' => true]
+        $dbRecords = $this->db->findRecords(
+            ['deleted' => false, 'source_id' => $source]
         );
         foreach ($dbRecords as $dbRecord) {
             $id = $dbRecord['_id'];

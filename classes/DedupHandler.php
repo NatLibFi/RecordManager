@@ -40,9 +40,9 @@
 class DedupHandler
 {
     /**
-     * Mongo database
+     * Database
      *
-     * @var MongoDB
+     * @var Database
      */
     protected $db = null;
 
@@ -84,14 +84,15 @@ class DedupHandler
     /**
      * Constructor
      *
-     * @param MongoDB     $db          Mongo database object
+     * @param Database    $db          Database
      * @param Logger      $log         Logger object
      * @param boolean     $verbose     Whether verbose output is enabled
      * @param SolrUpdater $solrUpdater SolrUpdater instance
      * @param array       $settings    Data source settings
      */
-    public function __construct($db, $log, $verbose, $solrUpdater, $settings)
-    {
+    public function __construct(Database $db, Logger $log, $verbose,
+        SolrUpdater $solrUpdater, $settings
+    ) {
         $this->db = $db;
         $this->log = $log;
         $this->verbose = $verbose;
@@ -110,7 +111,7 @@ class DedupHandler
     {
         $results = [];
         foreach ((array)$dedupRecord['ids'] as $id) {
-            $record = $this->db->record->findOne(['_id' => $id]);
+            $record = $this->db->getRecord($id);
             if (!$record
                 || $dedupRecord['deleted']
                 || $record['deleted']
@@ -133,12 +134,10 @@ class DedupHandler
                     $reason
                         = "record linked with dedup record '{$record['dedup_id']}'";
                 }
-                $this->db->record->updateOne(
+                $this->db->updateRecords(
                     ['_id' => $id, 'deleted' => false],
-                    [
-                        '$set' => ['update_needed' => true],
-                        '$unset' => ['dedup_id' => 1]
-                    ]
+                    ['update_needed' => true],
+                    ['dedup_id' => 1]
                 );
                 $results[] = "Removed '$id' from dedup record "
                     . "'{$dedupRecord['_id']}' ($reason)";
@@ -237,9 +236,7 @@ class DedupHandler
                 if ($this->verbose) {
                     echo "Search: '$keyPart'\n";
                 }
-                $candidates = $this->db->record->find(
-                    [$type => $keyPart], ['noCursorTimeout' => true]
-                );
+                $candidates = $this->db->findRecords([$type => $keyPart]);
                 $processed = 0;
                 // Go through the candidates, try to match
                 $matchRecord = null;
@@ -278,7 +275,7 @@ class DedupHandler
                         && (!isset($record['dedup_id'])
                         || $candidate['dedup_id'] != $record['dedup_id'])
                     ) {
-                        if ($this->db->record->findOne(
+                        if ($this->db->findRecord(
                             [
                                 'dedup_id' => $candidate['dedup_id'],
                                 'source_id' => $record['source_id']
@@ -364,7 +361,7 @@ class DedupHandler
             }
             $record['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
             $record['update_needed'] = false;
-            $this->db->record->replaceOne(['_id' => $record['_id']], $record);
+            $this->db->saveRecord($record);
         }
 
         if ($this->verbose && microtime(true) - $startTime > 0.2) {
@@ -386,7 +383,7 @@ class DedupHandler
      */
     public function removeFromDedupRecord($dedupId, $id)
     {
-        $record = $this->db->dedup->findOne(['_id' => $dedupId]);
+        $record = $this->db->getDedup($dedupId);
         if (!$record) {
             $this->log->log(
                 'removeFromDedupRecord',
@@ -404,12 +401,10 @@ class DedupHandler
                 $record['ids'] = [];
                 $record['deleted'] = true;
 
-                $this->db->record->updateOne(
+                $this->db->updateRecords(
                     ['_id' => $otherId, 'deleted' => false],
-                    [
-                        '$set' => ['update_needed' => true],
-                        '$unset' => ['dedup_id' => 1]
-                    ]
+                    ['update_needed' => true],
+                    ['dedup_id' => 1]
                 );
             } elseif (empty($record['ids'])) {
                 // No records remaining => just mark dedup record deleted.
@@ -417,18 +412,18 @@ class DedupHandler
                 // at least two records
                 $record['deleted'] = true;
             }
-            $record['changed'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
-            $this->db->dedup->replaceOne(['_id' => $record['_id']], $record);
+            $record['changed'] = $this->db->getTimestamp();
+            $this->db->saveDedup($record);
 
             // Mark remaining records to be processed again as this change may affect
             // their preferred dedup group
             if (!$record['deleted']) {
-                $this->db->record->updateMany(
+                $this->db->updateRecords(
                     [
                         '_id' => ['$in' => $record['ids']],
                         'deleted' => false
                     ],
-                    ['$set' => ['update_needed' => true]]
+                    ['update_needed' => true]
                 );
             }
         }
@@ -639,11 +634,7 @@ class DedupHandler
     {
         // Reread the original record just in case it has changed in the meantime.
         $origRec1 = $rec1;
-        $rec1 = $this->db->record->findOne(
-            [
-                '_id' => $rec1['_id'], 'deleted' => false
-            ]
-        );
+        $rec1 = $this->db->findRecord(['_id' => $rec1['_id'], 'deleted' => false]);
         if (null === $rec1) {
             $this->log->log(
                 'markDuplicates',
@@ -654,7 +645,7 @@ class DedupHandler
         }
 
         $setValues = [
-            'updated' => new MongoDB\BSON\UTCDateTime(time() * 1000),
+            'updated' => $this->db->getTimestamp(),
             'update_needed' => false
         ];
         if (!empty($rec2['dedup_id'])) {
@@ -692,9 +683,9 @@ class DedupHandler
             }
         }
 
-        $this->db->record->updateMany(
+        $this->db->updateRecords(
             ['_id' => ['$in' => [$rec1['_id'], $rec2['_id']]]],
-            ['$set' => $setValues]
+            $setValues
         );
     }
 
@@ -716,8 +707,8 @@ class DedupHandler
                 $id2
              ]
         ];
-        $result = $this->db->dedup->insertOne($record);
-        return $result->getInsertedId();
+        $record = $this->db->saveDedup($record);
+        return $record['_id'];
     }
 
     /**
@@ -730,14 +721,14 @@ class DedupHandler
      */
     protected function addToDedupRecord($dedupId, $id)
     {
-        $record = $this->db->dedup->findOne(['_id' => $dedupId, 'deleted' => false]);
+        $record = $this->db->findDedup(['_id' => $dedupId, 'deleted' => false]);
         if (!$record) {
             return false;
         }
         if (!in_array($id, (array)$record['ids'])) {
-            $record['changed'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
+            $record['changed'] = $this->db->getTimestamp();
             $record['ids'][] = $id;
-            $this->db->dedup->replaceOne(['_id' => $record['_id']], $record);
+            $this->db->saveDedup($record);
         }
         return true;
     }
@@ -773,9 +764,8 @@ class DedupHandler
         // Go through all other records with same dedup id and see if their
         // component parts match
         $marked = 0;
-        $otherRecords = $this->db->record->find(
-            ['dedup_id' => $hostRecord['dedup_id'], 'deleted' => false],
-            ['noCursorTimeout' => true]
+        $otherRecords = $this->db->findRecords(
+            ['dedup_id' => $hostRecord['dedup_id'], 'deleted' => false]
         );
         foreach ($otherRecords as $otherRecord) {
             if ($otherRecord['source_id'] == $hostRecord['source_id']) {
@@ -849,9 +839,8 @@ class DedupHandler
      */
     protected function getComponentPartsSorted($sourceId, $hostRecordId)
     {
-        $componentsIter = $this->db->record->find(
-            ['source_id' => $sourceId, 'host_record_id' => $hostRecordId],
-            ['noCursorTimeout' => true]
+        $componentsIter = $this->db->findRecords(
+            ['source_id' => $sourceId, 'host_record_id' => $hostRecordId]
         );
         $components = [];
         foreach ($componentsIter as $component) {

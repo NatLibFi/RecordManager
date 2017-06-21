@@ -41,9 +41,9 @@ require_once 'HTTP/Request2.php';
 class Enrichment
 {
     /**
-     * Mongo DB connection
+     * Database
      *
-     * @var MongoDB
+     * @var Database
      */
     protected $db;
 
@@ -94,10 +94,10 @@ class Enrichment
     /**
      * Constructor
      *
-     * @param MongoDB $db  Database connection (for cache)
-     * @param Logger  $log Logger
+     * @param Database $db  Database connection (for cache)
+     * @param Logger   $log Logger
      */
-    public function __construct($db, $log)
+    public function __construct(Database $db, Logger $log)
     {
         global $configArray;
 
@@ -145,7 +145,7 @@ class Enrichment
      */
     protected function getExternalData($url, $id, $headers = [], $ignoreErrors = [])
     {
-        $cached = $this->db->uriCache->findOne(
+        $cached = $this->db->findUriCache(
             [
                 '_id' => $id,
                 'timestamp' => [
@@ -221,17 +221,11 @@ class Enrichment
         $data = $code < 300 ? $response->getBody() : '';
 
         try {
-            $this->db->uriCache->replaceOne(
+            $this->db->saveUriCache(
                 [
                     '_id' => $id,
-                ],
-                [
-                    '_id' => $id,
-                    'timestamp' => new \MongoDB\BSON\UTCDateTime(time() * 1000),
+                    'timestamp' => $this->db->getTimestamp(),
                     'data' => $data
-                ],
-                [
-                    'upsert' => true
                 ]
             );
         } catch (Exception $e) {

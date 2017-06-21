@@ -383,12 +383,12 @@ class SolrUpdater
             $needCommit = false;
 
             if (isset($fromDate) && $fromDate) {
-                $mongoFromDate = new UTCDateTime(strtotime($fromDate) * 1000);
+                $mongoFromDate = $this->db->getTimestamp(strtotime($fromDate));
             }
 
             if (!isset($fromDate)) {
-                $state = $this->db->state->findOne(['_id' => 'Last Index Update']);
-                if ($state) {
+                $state = $this->db->getState('Last Index Update');
+                if (null !== $state) {
                     $mongoFromDate = $state['value'];
                 } else {
                     unset($mongoFromDate);
@@ -433,7 +433,7 @@ class SolrUpdater
 
                 if (!$childPid) {
                     if (null !== $childPid) {
-                        $this->reconnectMongoDb();
+                        $this->reconnectDatabase();
                     }
                     $this->InitWorkerPoolManager();
                     try {
@@ -487,11 +487,11 @@ class SolrUpdater
                 $this->recordWorkers,
                 $this->recordWorkers,
                 [$this, 'processSingleRecord'],
-                [$this, 'reconnectMongoDB']
+                [$this, 'reconnectDatabase']
             );
 
             // Reconnect MongoDB to be sure it's used just by us
-            $this->reconnectMongoDB();
+            $this->reconnectDatabase();
 
             $this->log->log(
                 'updateRecords', "Creating individual record list (from $from)"
@@ -520,8 +520,8 @@ class SolrUpdater
                 $params['dedup_id'] = ['$exists' => false];
                 $params['update_needed'] = false;
             }
-            $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
-            $total = $this->counts ? $this->db->record->count($params) : 'the';
+            $records = $this->db->findRecords($params);
+            $total = $this->counts ? $this->db->countRecords($params) : 'the';
             $count = 0;
             $lastDisplayedCount = 0;
             $mergedComponents = 0;
@@ -650,13 +650,11 @@ class SolrUpdater
             $this->flushUpdateBuffer();
 
             if (isset($lastIndexingDate) && !$compare) {
-                $state
-                    = ['_id' => "Last Index Update", 'value' => $lastIndexingDate];
-                $this->db->state->replaceOne(
-                    ['_id' => $state['_id']],
-                    $state,
-                    ['upsert' => true]
-                );
+                $state = [
+                    '_id' => 'Last Index Update',
+                    'value' => $lastIndexingDate
+                ];
+                $this->db->saveState($state);
             }
             if ($count > 0) {
                 $needCommit = true;
@@ -791,89 +789,75 @@ class SolrUpdater
             $params['dedup_id'] = ['$exists' => true];
         }
 
-        $collectionName = 'mr_record_' . md5(json_encode($params));
-        if (isset($fromDate)) {
-            $collectionName .= '_' . date('Ymd', strtotime($fromDate));
-        } else {
-            $collectionName .= '_0';
-        }
-        $record = $this->db->record->findOne([], ['sort' => ['updated' => -1]]);
+        $record = $this->db->findRecord([], ['sort' => ['updated' => -1]]);
         if (empty($record)) {
             $this->log->log('processMerged', 'No records found');
             return;
         }
-        $lastRecordTime = $record['updated']->toDateTime()->getTimestamp();
-        $collectionName .= "_$lastRecordTime";
 
-        // Install a signal handler so that we can exit cleanly if interrupted
-        unset($this->terminate);
-        if (function_exists('pcntl_signal')) {
-            pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
-            $this->log->log('updateRecords', 'Interrupt handler set');
-        } else {
+        $lastRecordTime = $record['updated']->toDateTime()->getTimestamp();
+
+        $res = $this->db->cleanupQueueCollections($lastRecordTime);
+
+        if ($res['removed']) {
             $this->log->log(
-                'updateRecords',
-                'Could not set an interrupt handler -- pcntl not available'
+                'processMerged',
+                'Cleanup: dropped old queue collections: '
+                    . implode(', ', $res['removed'])
+            );
+        }
+        if ($res['failed']) {
+            $this->log->log(
+                'processMerged',
+                'Failed to drop collections: ' . implode(', ', $res['failed']),
+                Logger::WARNING
             );
         }
 
-        // Check if we already have a suitable collection and drop too old
-        // collections
-        $collectionExists = false;
-        foreach ($this->db->listCollections() as $collection) {
-            $collection = $collection->getName();
-            if ($collection == $collectionName) {
-                $collectionExists = true;
-            } else {
-                $nameParts = explode('_', $collection);
-                $collTime = isset($nameParts[4]) ? $nameParts[4] : null;
-                if (strncmp($collection, 'mr_record_', 10) == 0
-                    && is_numeric($collTime)
-                    && $collTime != $lastRecordTime
-                    && $collTime < time() - 60 * 60 * 24 * 7
-                ) {
-                    $this->log->log(
-                        'processMerged',
-                        "Cleanup: dropping old merged record collection $collection"
-                    );
-                    try {
-                        $this->db->selectCollection($collection)->drop();
-                    } catch (Exception $e) {
-                        $this->log->log(
-                            'processMerged',
-                            "Failed to drop collection $collection: "
-                            . $e->getMessage(),
-                            Logger::WARNING
-                        );
-                    }
-                }
-            }
-        }
+        $collectionName = $this->db->getExistingQueueCollection(
+            md5(json_encode($params)),
+            isset($fromDate) ? date('Ymd', strtotime($fromDate)) : 0,
+            $lastRecordTime
+        );
 
         $from = isset($mongoFromDate)
             ? $mongoFromDate->toDateTime()->format('Y-m-d H:i:s')
             : 'the beginning';
 
-        if (!$collectionExists) {
+        if (!$collectionName) {
+            // Install a signal handler so that we can exit cleanly if interrupted
+            unset($this->terminate);
+            if (function_exists('pcntl_signal')) {
+                pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
+                $this->log->log('updateRecords', 'Interrupt handler set');
+            } else {
+                $this->log->log(
+                    'updateRecords',
+                    'Could not set an interrupt handler -- pcntl not available'
+                );
+            }
+
+            $collectionName = $this->db->getNewQueueCollection(
+                md5(json_encode($params)),
+                isset($fromDate) ? date('Ymd', strtotime($fromDate)) : 0,
+                $lastRecordTime
+            );
             $this->log->log(
                 'processMerged',
-                "Creating merged record list $collectionName (from $from, stage 1/2)"
+                "Creating queue collection $collectionName (from $from, stage 1/2)"
             );
 
             $prevId = null;
-            $tmpCollectionName = $collectionName . '_tmp_' . getmypid();
-            $collection = $this->db->selectCollection($tmpCollectionName);
             $count = 0;
             $totalMergeCount = 0;
-            $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
-            $writeConcern = new MongoDB\Driver\WriteConcern(0);
+            $records = $this->db->findRecords($params);
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
                     $this->log->log(
                         'processMerged',
-                        'Termination upon request (merged record list)'
+                        'Termination upon request (queue collection creation)'
                     );
-                    $collection->drop();
+                    $this->db->dropQueueCollection($collectionName);
                     exit(1);
                 }
                 $id = $record['dedup_id'];
@@ -887,14 +871,7 @@ class SolrUpdater
                 }
 
                 if (!isset($prevId) || $prevId != $id) {
-                    $collection->replaceOne(
-                        ['_id' => $id],
-                        ['_id' => $id],
-                        [
-                            'upsert' => true,
-                            'writeConcern' => $writeConcern
-                        ]
-                    );
+                    $this->db->addIdToQueue($collectionName, $id);
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
                         $this->log->log('processMerged', "$count id's processed");
@@ -906,7 +883,7 @@ class SolrUpdater
 
             $this->log->log(
                 'processMerged',
-                "Creating merged record list $collectionName"
+                "Creating queue collection $collectionName"
                 . " (from $from, stage 2/2)"
             );
             $dedupParams = [];
@@ -923,27 +900,17 @@ class SolrUpdater
                 );
             }
 
-            $records = $this->db->dedup->find(
-                $dedupParams, ['noCursorTimeout' => true]
-            );
+            $records = $this->db->findDedups($dedupParams);
             $count = 0;
-            $writeConcern = new MongoDB\Driver\WriteConcern(0);
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
                     $this->log->log('processMerged', 'Termination upon request');
-                    $collection->drop();
+                    $this->db->dropQueueCollection($collectionName);
                     exit(1);
                 }
                 $id = $record['_id'];
                 if (!isset($prevId) || $prevId != $id) {
-                    $collection->replaceOne(
-                        ['_id' => $id],
-                        ['_id' => $id],
-                        [
-                            'upsert' => true,
-                            'writeConcern' => $writeConcern
-                        ]
-                    );
+                    $this->db->addIdToQueue($collectionName, $id);
 
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
@@ -961,26 +928,13 @@ class SolrUpdater
             );
 
             if ($totalMergeCount > 0) {
-                // renameCollection requires admin priviledge
-                $mongo = new \MongoDB\Client($configArray['Mongo']['url']);
-                $dbName = $configArray['Mongo']['database'];
-                $res = $mongo->admin->command(
-                    [
-                        'renameCollection' => $dbName . '.' . $tmpCollectionName,
-                        'to' => $dbName . '.' . $collectionName
-                    ]
-                );
-                $resArray = $res->toArray();
-                if (!$resArray[0]['ok']) {
-                    throw new Exception(
-                        'Renaming collection failed: ' . print_r($resArray, true)
-                    );
-                }
+                $collectionName = $this->db
+                    ->finalizeQueueCollection($collectionName);
             }
         } else {
             $this->log->log(
                 'processMerged',
-                "Using existing merged record list $collectionName"
+                "Using existing queue collection $collectionName"
             );
         }
 
@@ -991,7 +945,7 @@ class SolrUpdater
             [$this, 'solrRequest']
         );
 
-        $keys = $this->db->{$collectionName}->find([], ['noCursorTimeout' => true]);
+        $keys = $this->db->getQueuedIds($collectionName);
         $count = 0;
         $lastDisplayedCount = 0;
         $mergedComponents = 0;
@@ -1015,7 +969,7 @@ class SolrUpdater
             $this->recordWorkers,
             $this->recordWorkers,
             [$this, 'processDedupRecord'],
-            [$this, 'reconnectMongoDb']
+            [$this, 'reconnectDatabase']
         );
         foreach ($keys as $key) {
             if (isset($this->terminate)) {
@@ -1121,9 +1075,7 @@ class SolrUpdater
             'records' => [],
             'mergedComponents' => 0
         ];
-        $dedupRecord = $this->db->dedup->findOne(
-            ['_id' => new \MongoDB\BSON\ObjectID($dedupId)]
-        );
+        $dedupRecord = $this->db->getDedup($dedupId);
         if (empty($dedupRecord)) {
             $this->log->log(
                 'processDedupRecord',
@@ -1139,9 +1091,8 @@ class SolrUpdater
 
         $children = [];
         $merged = [];
-        $records = $this->db->record->find(
-            ['_id' => ['$in' => (array)$dedupRecord['ids']]],
-            ['noCursorTimeout' => true]
+        $records = $this->db->findRecords(
+            ['_id' => ['$in' => (array)$dedupRecord['ids']]]
         );
         foreach ($records as $record) {
             if (in_array($record['source_id'], $this->nonIndexedSources)) {
@@ -1336,7 +1287,7 @@ class SolrUpdater
         if ($sourceId) {
             $params['source_id'] = $sourceId;
         }
-        $records = $this->db->record->find($params, ['noCursorTimeout' => true]);
+        $records = $this->db->findRecords($params);
         $this->log->log('countValues', "Counting values");
         $values = [];
         $count = 0;
@@ -1603,10 +1554,10 @@ class SolrUpdater
                 } else {
                     $params['source_id'] = $record['source_id'];
                 }
-                $component = $this->db->record->findOne($params);
+                $component = $this->db->findRecord($params);
                 $hasComponentParts = !empty($component);
                 if ($hasComponentParts) {
-                    $components = $this->db->record->find($params);
+                    $components = $this->db->findRecords($params);
                 }
 
                 $format = $metadataRecord->getFormat();
@@ -1652,7 +1603,7 @@ class SolrUpdater
         if ($metadataRecord->getIsComponentPart()) {
             $hostRecord = null;
             if (isset($record['host_record_id']) && $this->db) {
-                $hostRecord = $this->db->record->findOne(
+                $hostRecord = $this->db->findRecord(
                     [
                         'source_id' => $record['source_id'],
                         'linking_id' => $record['host_record_id']
@@ -2596,32 +2547,15 @@ class SolrUpdater
     }
 
     /**
-     * Reconnect to the Mongo database after forking
+     * Reconnect to the Mongo database after forking to avoid trouble with multiple
+     * processes sharing the connection.
      *
      * Public visibility so that the worker init can call this
      *
      * @return void
      */
-    public function reconnectMongoDb()
+    public function reconnectDatabase()
     {
-        // Make sure not to reuse the existing MongoDB connection by
-        // opening a new connection with our pid as an additional
-        // but unused parameter in the url.
-        global $configArray;
-        $connectTimeout = isset($configArray['Mongo']['connect_timeout'])
-            ? $configArray['Mongo']['connect_timeout'] : 300000;
-        $socketTimeout = isset($configArray['Mongo']['socket_timeout'])
-            ? $configArray['Mongo']['socket_timeout'] : 300000;
-        $url = $configArray['Mongo']['url'];
-        $url .= strpos($url, '?') >= 0 ? '&' : '?';
-        $url .= '_xpid=' . getmypid();
-        $mongo = new \MongoDB\Client(
-            $url,
-            [
-                'connectTimeoutMS' => $connectTimeout,
-                'socketTimeoutMS' => $socketTimeout
-            ]
-        );
-        $this->db = $mongo->{$configArray['Mongo']['database']};
+        $this->db->reconnectDatabase();
     }
 }

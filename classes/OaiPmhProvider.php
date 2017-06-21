@@ -118,8 +118,11 @@ class OaiPmhProvider
 
         $this->log = new Logger();
 
-        $mongo = new \MongoDB\Client($configArray['Mongo']['url']);
-        $this->db = $mongo->{$configArray['Mongo']['database']};
+        $this->db = new Database(
+            $configArray['Mongo']['url'],
+            $configArray['Mongo']['database'],
+            $configArray['Mongo']
+        );
         $this->idPrefix = isset($configArray['OAI-PMH']['id_prefix'])
             ? $configArray['OAI-PMH']['id_prefix'] : '';
     }
@@ -171,12 +174,12 @@ class OaiPmhProvider
         $id = $this->getParam('identifier');
         $prefix = $this->getParam('metadataPrefix');
 
-        $record = $this->db->record->findOne(['oai_id' => $id]);
+        $record = $this->db->findRecord(['oai_id' => $id]);
         if (!$record
             && strncmp($id, $this->idPrefix, strlen($this->idPrefix)) === 0
         ) {
             $id = substr($id, strlen($this->idPrefix));
-            $record = $this->db->record->findOne(['_id' => $id]);
+            $record = $this->db->getRecord($id);
         }
         if (!$record) {
             $this->error(
@@ -294,11 +297,11 @@ EOT;
             ];
         }
 
-        $options = ['sort' => ['updated' => 1], 'noCursorTimeout' => true];
+        $options = ['sort' => ['updated' => 1]];
         if ($position) {
             $options['skip'] = (int)$position;
         }
-        $records = $this->db->record->find($queryParams, $options);
+        $records = $this->db->findRecords($queryParams, $options);
 
         $maxRecords = $configArray['OAI-PMH']['result_limit'];
         $count = 0;
@@ -361,7 +364,7 @@ EOT;
         $id = $this->getParam('identifier');
         $source = '';
         if ($id) {
-            $record = $this->db->record->findOne(['oai_id' => $id]);
+            $record = $this->db->findRecord(['oai_id' => $id]);
             if (!$record) {
                 $this->error(
                     'idDoesNotExist',
@@ -561,7 +564,7 @@ EOT;
      */
     protected function getEarliestDateStamp()
     {
-        $record = $this->db->record->findOne([], ['sort' => ['updated' => 1]]);
+        $record = $this->db->findRecord([], ['sort' => ['updated' => 1]]);
         return $record['updated']->toDateTime()->getTimestamp();
     }
 

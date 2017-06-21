@@ -48,9 +48,9 @@ class BaseHarvest
     protected $log;
 
     /**
-     * Mongo database
+     * Database
      *
-     * @var MongoDB
+     * @var Database
      */
     protected $db;
 
@@ -155,16 +155,17 @@ class BaseHarvest
     /**
      * Constructor.
      *
-     * @param object $logger   The Logger object used for logging messages.
-     * @param object $db       Mongo database handle.
-     * @param string $source   The data source to be harvested.
-     * @param string $basePath RecordManager main directory location
-     * @param array  $settings Settings from datasources.ini.
+     * @param Logger   $logger   The Logger object used for logging messages
+     * @param Database $db       Database
+     * @param string   $source   The data source to be harvested
+     * @param string   $basePath RecordManager main directory location
+     * @param array    $settings Settings from datasources.ini
      *
      * @throws Exception
      */
-    public function __construct($logger, $db, $source, $basePath, $settings)
-    {
+    public function __construct(Logger $logger, Database $db, $source, $basePath,
+        $settings
+    ) {
         global $configArray;
 
         $this->log = $logger;
@@ -296,10 +297,10 @@ class BaseHarvest
      */
     protected function loadLastHarvestedDate()
     {
-        $state = $this->db->state->findOne(
+        $state = $this->db->getState(
             ['_id' => "Last Harvest Date {$this->source}"]
         );
-        if (isset($state)) {
+        if (null !== $state) {
             $this->setStartDate($state['value']);
         }
     }
@@ -314,9 +315,7 @@ class BaseHarvest
     protected function saveLastHarvestedDate($date)
     {
         $state = ['_id' => "Last Harvest Date {$this->source}", 'value' => $date];
-        $this->db->state->replaceOne(
-            ['_id' => $state['_id']], $state, ['upsert' => true]
-        );
+        $this->db->saveState($state);
     }
 
     /**
