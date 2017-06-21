@@ -25,8 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-require_once 'classes/RecordFactory.php';
-require_once 'classes/MetadataUtils.php';
 
 /**
  * Generic Record Driver Test Class
@@ -37,7 +35,7 @@ require_once 'classes/MetadataUtils.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-abstract class RecordDriverTest extends PHPUnit_Framework_TestCase
+abstract class RecordDriverTest extends AbstractTest
 {
     // Override this from subclass
     protected $driver;

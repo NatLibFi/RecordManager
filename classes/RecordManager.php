@@ -33,18 +33,6 @@ if (function_exists('pcntl_async_signals')) {
 
 require_once 'PEAR.php';
 require_once 'HTTP/Request2.php';
-require_once 'Logger.php';
-require_once 'RecordFactory.php';
-require_once 'FileSplitter.php';
-require_once 'HarvestOaiPmh.php';
-require_once 'HarvestMetaLib.php';
-require_once 'HarvestMetaLibExport.php';
-require_once 'HarvestSfx.php';
-require_once 'HarvestSierraApi.php';
-require_once 'XslTransformation.php';
-require_once 'MetadataUtils.php';
-require_once 'SolrUpdater.php';
-require_once 'PerformanceCounter.php';
 
 /**
  * RecordManager Class

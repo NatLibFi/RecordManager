@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-require_once 'classes/SolrUpdater.php';
 
 /**
  * Mapping file tests
@@ -36,7 +35,7 @@ require_once 'classes/SolrUpdater.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class MappingFilesTest extends PHPUnit_Framework_TestCase
+class MappingFilesTest extends AbstractTest
 {
     /**
      * Basic mapping

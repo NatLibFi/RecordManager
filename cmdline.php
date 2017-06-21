@@ -35,10 +35,10 @@
 ini_set('display_errors', '1');
 
 require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/classes/Autoloader.php';
 
 // Initialize command line environment
 $basePath = __DIR__;
-require_once 'classes/RecordManager.php';
 $configArray = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
 
 /**

@@ -20,12 +20,12 @@
 
   <!-- PHPUnit -->
   <target name="phpunit" description="Run tests">
-    <exec command="${srcdir}/vendor/bin/phpunit -dzend.enable_gc=0 tests" passthru="true" checkreturn="true" />
+    <exec command="${srcdir}/vendor/bin/phpunit -dzend.enable_gc=0 -c ${srcdir}/tests/phpunit.xml ${srcdir}/tests" passthru="true" checkreturn="true" />
   </target>
 
   <!-- PHP CodeSniffer -->
   <target name="phpcs">
-    <exec command="${srcdir}/vendor/bin/phpcs --standard=PEAR --extensions=php *.php classes" escape="false" passthru="true" checkreturn="true" />
+    <exec command="${srcdir}/vendor/bin/phpcs --standard=PEAR --extensions=php *.php ${srcdir}/classes" escape="false" passthru="true" checkreturn="true" />
   </target>
 
   <!-- php-cs-fixer (first task applies fixes, second task simply checks if they are needed) -->

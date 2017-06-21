@@ -28,7 +28,6 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 require_once 'HTTP/Request2.php';
-require_once 'HarvestHTTPFiles.php';
 
 /**
  * HarvestSfx Class

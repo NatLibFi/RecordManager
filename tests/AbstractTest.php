@@ -1,10 +1,10 @@
 <?php
 /**
- * MetadataUtils tests
+ * Abstract base class for tests
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2015
+ * Copyright (C) The National Library of Finland 2017
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,7 +27,7 @@
  */
 
 /**
- * MetadataUtils tests
+ * Abstract base class for tests
  *
  * @category DataManagement
  * @package  RecordManager
@@ -35,23 +35,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class MetadataUtilsTest extends AbstractTest
+abstract class AbstractTest extends PHPUnit_Framework_TestCase
 {
-    /**
-     * Tests for createSortableString
-     *
-     * @return void
-     */
-    public function testCreateSortableString()
-    {
-        $this->assertEquals(
-            'A 3123', MetadataUtils::createSortableString('A 123')
-        );
-        $this->assertEquals(
-            'A 3123 18 ABC', MetadataUtils::createSortableString('A 123 8 abc')
-        );
-        $this->assertEquals(
-            'A 11 12', MetadataUtils::createSortableString('A  1   2')
-        );
-    }
 }

@@ -30,7 +30,6 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 require_once 'HTTP/Request2.php';
-require_once 'BaseHarvest.php';
 
 /**
  * HarvestOaiPmh Class

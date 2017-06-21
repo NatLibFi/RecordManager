@@ -25,10 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-require_once 'RecordFactory.php';
-require_once 'Logger.php';
-require_once 'XslTransformation.php';
-require_once 'MetadataUtils.php';
 
 /**
  * OAI-PMH Provider Class

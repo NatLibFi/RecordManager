@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-require_once 'classes/LcCallNumber.php';
 
 /**
  * LcCallNumber tests
@@ -36,7 +35,7 @@ require_once 'classes/LcCallNumber.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class LcCallNumberTest extends PHPUnit_Framework_TestCase
+class LcCallNumberTest extends AbstractTest
 {
     /**
      * Tests for call number handling

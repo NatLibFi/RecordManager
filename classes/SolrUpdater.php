@@ -30,10 +30,6 @@ if (function_exists('pcntl_async_signals')) {
 } else {
     declare(ticks = 10);
 }
-require_once 'BaseRecord.php';
-require_once 'MetadataUtils.php';
-require_once 'PerformanceCounter.php';
-require_once 'WorkerPoolManager.php';
 
 use MongoDB\BSON\UTCDateTime;
 
