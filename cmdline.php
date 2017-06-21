@@ -35,7 +35,7 @@
 ini_set('display_errors', '1');
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/classes/Autoloader.php';
+require_once __DIR__ . '/src/RecordManager/Autoloader.php';
 
 // Initialize command line environment
 $basePath = __DIR__;

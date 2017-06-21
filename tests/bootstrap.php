@@ -1,6 +1,5 @@
 <?php
-require_once 'classes/Autoloader.php';
-echo "Bootstrap..\n";
+require_once 'src/RecordManager/Autoloader.php';
 $loader = Autoloader::getLoader();
 $loader->addDirectory('tests');
 $loader->addDirectory('tests/RecordDrivers');

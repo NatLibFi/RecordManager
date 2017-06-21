@@ -67,7 +67,7 @@ EOT;
             die();
         }
 
-        $manager = new RecordManager(
+        $manager = new \RecordManager\RecordManager(
             true, isset($params['verbose']) ? $params['verbose'] : false
         );
 

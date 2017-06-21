@@ -51,7 +51,7 @@ EOT;
         exit(1);
     }
 
-    $manager = new RecordManager(
+    $manager = new \RecordManager\RecordManager(
         true, isset($params['verbose']) ? $params['verbose'] : false
     );
     if (!empty($params['search'])) {

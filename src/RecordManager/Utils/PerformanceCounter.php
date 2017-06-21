@@ -1,10 +1,10 @@
 <?php
 /**
- * LcCallNumber tests
+ * Performance Counter
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2015
+ * Copyright (C) The National Library of Finland 2012.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,10 +25,12 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-use \RecordManager\Utils\LcCallNumber;
+namespace RecordManager\Utils;
 
 /**
- * LcCallNumber tests
+ * PerformanceCounter
+ *
+ * This class provides average speed estimation for different processes
  *
  * @category DataManagement
  * @package  RecordManager
@@ -36,28 +38,60 @@ use \RecordManager\Utils\LcCallNumber;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class LcCallNumberTest extends AbstractTest
+class PerformanceCounter
 {
+    protected $counts = [];
+
     /**
-     * Tests for call number handling
+     * Constructor
+     */
+    public function __construct()
+    {
+        $this->reset();
+    }
+
+    /**
+     * Reset counter
      *
      * @return void
      */
-    public function testCallNumber()
+    public function reset()
     {
-        $cn = new LcCallNumber('AC901.M5 vol. 1013, no. 8');
-        $this->assertTrue($cn->isValid());
-        $this->assertEquals(
-            'AC 3901', $cn->getSortKey()
-        );
+        $this->counts = [['t' => microtime(true), 'c' => 0]];
+    }
 
-        $cn = new LcCallNumber('GV1101 .D7 1980');
-        $this->assertTrue($cn->isValid());
-        $this->assertEquals(
-            'GV 41101', $cn->getSortKey()
-        );
+    /**
+     * Add the current count
+     *
+     * @param number $count Current progress
+     *
+     * @return void
+     */
+    public function add($count)
+    {
+        $this->counts[] = ['t' => microtime(true), 'c' => $count];
+        if (count($this->counts) > 10) {
+            array_shift($this->counts);
+        }
+    }
 
-        $cn = new LcCallNumber('XV1101 .D7 1980');
-        $this->assertFalse($cn->isValid());
+    /**
+     * Get the speed as units / second
+     *
+     * @return number
+     */
+    public function getSpeed()
+    {
+        if (count($this->counts) < 2) {
+            return 0;
+        }
+        $first = $this->counts[0];
+        $last = end($this->counts);
+        $count = $last['c'] - $first['c'];
+        $time = $last['t'] - $first['t'];
+        if ($time > 0) {
+            return round($count / $time);
+        }
+        return 0;
     }
 }
