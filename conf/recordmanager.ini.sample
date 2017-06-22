@@ -105,7 +105,7 @@ set_definitions = oai-pmh-sets.ini
 id_prefix = "oai:base.address:"
 
 [Record Classes]
-;ead = NdlEadRecord
+;ead = "\RecordManager\Finna\Record\Ead"
 
 [Enrichment]
 ; Maximum lifetime of cached entries in minutes. Default is 1440 (24 hours)
@@ -120,7 +120,7 @@ error_email     =
 ; See https://pear.php.net/manual/en/package.http.http-request2.config.php for
 ; documentation on the valid parameters.
 [HTTP]
-;adapter = HTTP_Request2_Adapter_Curl
+;adapter = "\HTTP_Request2_Adapter_Curl"
 ;ssl_verify_peer = false
 
 [MarcRecord]

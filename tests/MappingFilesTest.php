@@ -26,8 +26,8 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 
-use RecordManager\Solr\SolrUpdater;
-use RecordManager\Utils\Logger;
+use RecordManager\Base\Solr\SolrUpdater;
+use RecordManager\Base\Utils\Logger;
 
 /**
  * Mapping file tests

@@ -85,7 +85,7 @@ EOT;
             die();
         }
 
-        $manager = new \RecordManager\RecordManager(
+        $manager = new \RecordManager\Base\RecordManager(
             true, isset($params['verbose']) ? $params['verbose'] : false
         );
 
@@ -176,7 +176,7 @@ EOT;
                 }
             }
         }
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         releaseLock($lockhandle);
         throw $e;
     }

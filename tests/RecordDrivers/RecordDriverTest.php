@@ -26,7 +26,7 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 
-use RecordManager\Record\RecordFactory;
+use RecordManager\Base\Record\Factory as RecordFactory;
 
 /**
  * Generic Record Driver Test Class

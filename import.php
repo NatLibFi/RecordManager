@@ -67,13 +67,13 @@ EOT;
             die();
         }
 
-        $manager = new \RecordManager\RecordManager(
+        $manager = new \RecordManager\Base\RecordManager(
             true, isset($params['verbose']) ? $params['verbose'] : false
         );
 
         $delete = isset($params['delete']) ? $params['delete'] : false;
         $manager->loadFromFile($params['source'], $params['file'], $delete);
-    } catch(Exception $e) {
+    } catch (\Exception $e) {
         releaseLock($lockhandle);
         throw $e;
     }

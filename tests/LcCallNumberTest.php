@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-use \RecordManager\Utils\LcCallNumber;
+use \RecordManager\Base\Utils\LcCallNumber;
 
 /**
  * LcCallNumber tests

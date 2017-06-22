@@ -26,7 +26,7 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 
-use RecordManager\Utils\MetadataUtils;
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * MetadataUtils tests

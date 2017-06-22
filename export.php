@@ -67,7 +67,7 @@ EOT;
         exit(1);
     }
 
-    $manager = new \RecordManager\RecordManager(
+    $manager = new \RecordManager\Base\RecordManager(
         true, isset($params['verbose']) ? $params['verbose'] : false
     );
     $manager->quiet = isset($params['quiet']) ? $params['quiet'] : false;

@@ -77,7 +77,7 @@ EOT;
             die();
         }
 
-        $manager = new \RecordManager\RecordManager(
+        $manager = new \RecordManager\Base\RecordManager(
             true, isset($params['verbose']) ? $params['verbose'] : false
         );
         $from = isset($params['from']) ? $params['from'] : null;
@@ -94,7 +94,7 @@ EOT;
                 isset($params['reharvest']) ? $params['reharvest'] : ''
             );
         }
-    } catch(Exception $e) {
+    } catch (\Exception $e) {
         releaseLock($lockhandle);
         throw $e;
     }
