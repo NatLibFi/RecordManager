@@ -41,7 +41,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Record extends \RecordManager\Base\Record\Lido
+class Lido extends \RecordManager\Base\Record\Lido
 {
     /**
      * Constructor

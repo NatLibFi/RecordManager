@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Utils;
 
-use RecordManager\Base\Utils\Logger;
-
 require_once 'vendor/phayes/geophp/geoPHP.inc';
 
 /**
@@ -738,7 +736,7 @@ class MetadataUtils
                 $logger->log(
                     'getCenterCoordinates',
                     "Could not parse WKT '$wkt': " . $e->getMessage(),
-                    Logger::ERROR
+                    \RecordManager\Base\Utils\Logger::ERROR
                 );
                 return [];
             }

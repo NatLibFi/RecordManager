@@ -58,7 +58,7 @@ class Factory
         if (isset($configArray['Record Classes'][$format])) {
             $class = $configArray['Record Classes'][$format];
         } else {
-            $class = ucwords($format) . 'Record';
+            $class = ucfirst($format);
         }
 
         if (strpos($class, '\\') === false) {

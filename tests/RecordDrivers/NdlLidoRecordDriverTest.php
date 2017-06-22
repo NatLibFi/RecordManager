@@ -39,7 +39,7 @@
  */
 class LidoRecordDriverTest extends RecordDriverTest
 {
-    protected $driver = 'NdlLido';
+    protected $driver = '\RecordManager\Finna\Record\Lido';
 
     /**
      * Test Musketti LIDO record handling
