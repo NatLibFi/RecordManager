@@ -42,7 +42,7 @@ $configArray = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
  */
 function main()
 {
-    $provider = new \RecordManager\Base\OaiPmhProvider();
+    $provider = new \RecordManager\Base\Controller\OaiPmhProvider();
     $provider->launch();
 }
 

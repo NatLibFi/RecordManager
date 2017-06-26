@@ -1,10 +1,10 @@
 <?php
 /**
- * OAI-PMH Provider Class
+ * OAI-PMH Provider
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2016.
+ * Copyright (C) The National Library of Finland 2012-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager;
+namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
@@ -33,7 +33,7 @@ use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\XslTransformation;
 
 /**
- * OAI-PMH Provider Class
+ * OAI-PMH Provider
  *
  * @category DataManagement
  * @package  RecordManager
@@ -41,7 +41,7 @@ use RecordManager\Base\Utils\XslTransformation;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class OaiPmhProvider
+class OaiPmhProvider extends AbstractBase
 {
     const DT_EMPTY = 0;
     const DT_INVALID = 1;
@@ -56,32 +56,11 @@ class OaiPmhProvider
     protected $verb = '';
 
     /**
-     * Logger
-     *
-     * @var Logger
-     */
-    protected $log = null;
-
-    /**
-     * Database
-     *
-     * @var Database
-     */
-    protected $db = null;
-
-    /**
      * Transformations
      *
      * @var array
      */
     protected $transformations = [];
-
-    /**
-     * Datasource settings
-     *
-     * @var array
-     */
-    protected $dataSourceSettings = [];
 
     /**
      * Formats
@@ -109,6 +88,7 @@ class OaiPmhProvider
      */
     public function __construct()
     {
+        parent::__construct();
         global $configArray;
         global $basePath;
         $this->dataSourceSettings
@@ -119,8 +99,6 @@ class OaiPmhProvider
         $this->sets = parse_ini_file(
             "$basePath/conf/{$configArray['OAI-PMH']['set_definitions']}", true
         );
-
-        date_default_timezone_set($configArray['Site']['timezone']);
 
         $this->log = new Logger();
 

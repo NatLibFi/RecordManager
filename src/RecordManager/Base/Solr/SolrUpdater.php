@@ -58,7 +58,6 @@ class SolrUpdater
     protected $settings;
     protected $buildingHierarchy;
     protected $verbose;
-    protected $counts;
     protected $journalFormats;
     protected $eJournalFormats;
     protected $allJournalFormats;
@@ -224,8 +223,6 @@ class SolrUpdater
         $this->basePath = $basePath;
         $this->log = $log;
         $this->verbose = $verbose;
-        $this->counts = isset($configArray['Mongo']['counts'])
-            && $configArray['Mongo']['counts'];
 
         $this->journalFormats = isset($configArray['Solr']['journal_formats'])
             ? $configArray['Solr']['journal_formats']
@@ -528,7 +525,7 @@ class SolrUpdater
                 $params['update_needed'] = false;
             }
             $records = $this->db->findRecords($params);
-            $total = $this->counts ? $this->db->countRecords($params) : 'the';
+            $total = $this->db->countRecords($params);
             $count = 0;
             $lastDisplayedCount = 0;
             $mergedComponents = 0;

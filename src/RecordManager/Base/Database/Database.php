@@ -76,6 +76,14 @@ class Database
     protected $db;
 
     /**
+     * Whether to report actual counts. When false, all count methods return 'the'
+     * instead.
+     *
+     * @var bool
+     */
+    protected $counts = false;
+
+    /**
      * Dedup collection name
      *
      * @var string
@@ -130,6 +138,7 @@ class Database
         $this->mongoUrl = $url;
         $this->mongoDatabaseName = $database;
         $this->mongoSettings = $settings;
+        $this->counts = !empty($settings['counts']);
 
         $this->reconnectDatabase();
     }
@@ -216,7 +225,7 @@ class Database
      *
      * @return int
      */
-    public function countRecords($filter, $options)
+    public function countRecords($filter, $options = [])
     {
         return $this->countMongoRecords($this->recordCollection, $filter, $options);
     }
@@ -360,7 +369,7 @@ class Database
      *
      * @return int
      */
-    public function countDedups($filter, $options)
+    public function countDedups($filter, $options = [])
     {
         return $this->countMongoRecords($this->dedupCollection, $filter, $options);
     }
@@ -618,7 +627,9 @@ class Database
      */
     protected function countMongoRecords($collection, $filter, $options)
     {
-        return $this->db->{$collection}->count($filter, $options);
+        return $this->counts
+            ? $this->db->{$collection}->count($filter, $options)
+            : 'the';
     }
 
     /**

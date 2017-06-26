@@ -30,9 +30,6 @@ url = mongodb:///tmp/mongodb-27017.sock
 database = recman
 ; Whether to ask MongoDB for counts of records to be processed. Can be really slow.
 counts = false
-; Whether to compress record data in MongoDB. Saves space but slows down the operation.
-; Not very useful with modern versions of MongoDB that support block level compression.
-compressed_records = false
 ; Connection timeout in milliseconds. Default is 300 000 ms.
 ;connect_timeout = 12000000
 ; Socket timeout. Default is 300 000 ms.
