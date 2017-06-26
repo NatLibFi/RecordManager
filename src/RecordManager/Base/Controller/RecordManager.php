@@ -35,19 +35,11 @@ use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\PerformanceCounter;
 use RecordManager\Base\Utils\XslTransformation;
 
-if (function_exists('pcntl_async_signals')) {
-    pcntl_async_signals(true);
-} else {
-    declare(ticks = 1);
-}
-
 require_once 'PEAR.php';
 require_once 'HTTP/Request2.php';
 
 /**
  * RecordManager Class
- *
- * This is the main class for RecordManager.
  *
  * @category DataManagement
  * @package  RecordManager
@@ -567,7 +559,9 @@ class RecordManager extends AbstractBase
                 $count = 0;
                 foreach ($records as $record) {
                     if (isset($this->terminate)) {
-                        $this->logger->log('deduplicate', 'Termination upon request');
+                        $this->logger->log(
+                            'deduplicate', 'Termination upon request'
+                        );
                         exit(1);
                     }
 
@@ -639,7 +633,9 @@ class RecordManager extends AbstractBase
                 );
                 foreach ($records as $record) {
                     if (isset($this->terminate)) {
-                        $this->logger->log('deduplicate', 'Termination upon request');
+                        $this->logger->log(
+                            'deduplicate', 'Termination upon request'
+                        );
                         exit(1);
                     }
                     $startRecordTime = microtime(true);
@@ -837,7 +833,7 @@ class RecordManager extends AbstractBase
                             $startResumptionToken ? $startResumptionToken : 0
                         );
                     } else {
-                        $harvest = new HarvestOAIPMH(
+                        $harvest = new \RecordManager\Base\Harvest\HarvestOAIPMH(
                             $this->logger,
                             $this->db,
                             $source,
@@ -974,7 +970,9 @@ class RecordManager extends AbstractBase
                         }
                     }
                 }
-                $this->logger->log('harvest', "Harvesting from '{$source}' completed");
+                $this->logger->log(
+                    'harvest', "Harvesting from '{$source}' completed"
+                );
             } catch (\Exception $e) {
                 $this->logger->log(
                     'harvest', 'Exception: ' . $e->getMessage(), Logger::FATAL
@@ -1103,7 +1101,9 @@ class RecordManager extends AbstractBase
         $total = $this->db->countRecords($params);
         $count = 0;
 
-        $this->logger->log('deleteRecords', "Deleting $total records from '$sourceId'");
+        $this->logger->log(
+            'deleteRecords', "Deleting $total records from '$sourceId'"
+        );
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
             if (isset($record['dedup_id'])) {
@@ -1166,91 +1166,6 @@ class RecordManager extends AbstractBase
         $updater->deleteDataSource($sourceId);
         $this->logger->log(
             'deleteSolrRecords', "Deletion of '$sourceId' from Solr completed"
-        );
-    }
-
-    /**
-     * Purge deleted records from the database
-     *
-     * @param int    $daysToKeep Days to keep
-     * @param string $sourceId   Optional source ID
-     *
-     * @return void
-     */
-    public function purgeDeletedRecords($daysToKeep = 0, $sourceId = '')
-    {
-        global $configArray;
-
-        // Process normal records
-        $dateStr = '';
-        $params = ['deleted' => true];
-        if ($daysToKeep) {
-            $date = strtotime("-$daysToKeep day");
-            $dateStr = ' until ' . date('Y-m-d', $date);
-            $params['updated'] = ['$lt' => new \MongoDB\BSON\UTCDateTime($date)];
-        }
-        if ($sourceId) {
-            $params['source_id'] = $sourceId;
-        }
-        $this->logger->log(
-            'purgeDeletedRecords',
-            "Creating record list$dateStr" . ($sourceId ? " for '$sourceId'" : '')
-        );
-        $records = $this->db->findRecords($params);
-        $total = $this->db->countRecords($params);
-        $count = 0;
-
-        $this->logger->log('purgeDeletedRecords', "Purging $total records");
-        $pc = new PerformanceCounter();
-        foreach ($records as $record) {
-            $this->db->deleteRecord($record['_id']);
-            ++$count;
-            if ($count % 1000 == 0) {
-                $pc->add($count);
-                $avg = $pc->getSpeed();
-                $this->logger->log(
-                    'purgeDeletedRecords',
-                    "$count records purged, $avg records/sec"
-                );
-            }
-        }
-        $this->logger->log(
-            'purgeDeletedRecords', "Total $count records purged"
-        );
-
-        if ($sourceId) {
-            $this->logger->log(
-                'purgeDeletedRecords', 'Source specified -- skipping dedup records'
-            );
-            return;
-        }
-
-        // Process dedup records
-        $params = ['deleted' => true];
-        if ($daysToKeep) {
-            $params['changed'] = ['$lt' => new \MongoDB\BSON\UTCDateTime($date)];
-        }
-        $this->logger->log('purgeDeletedRecords', "Creating dedup record list$dateStr");
-        $records = $this->db->findDedups($params);
-        $total = $this->db->countDedups($params);
-        $count = 0;
-
-        $this->logger->log('purgeDeletedRecords', "Purging $total dedup records");
-        $pc = new PerformanceCounter();
-        foreach ($records as $record) {
-            $this->db->deleteDedup($record['_id']);
-            ++$count;
-            if ($count % 1000 == 0) {
-                $pc->add($count);
-                $avg = $pc->getSpeed();
-                $this->logger->log(
-                    'purgeDeletedRecords',
-                    "$count dedup records purged, $avg records/sec"
-                );
-            }
-        }
-        $this->logger->log(
-            'purgeDeletedRecords', "Total $count dedup records purged"
         );
     }
 

@@ -164,7 +164,10 @@ been purged.
 EOT;
                         exit(1);
                     }
-                    $manager->purgeDeletedRecords(
+                    $purge = new \RecordManager\Base\Controller\PurgeDeleted(
+                        true, isset($params['verbose']) ? $params['verbose'] : false
+                    );
+                    $purge->launch(
                         isset($params['daystokeep']) ? intval($params['daystokeep'])
                         : 0,
                         $source

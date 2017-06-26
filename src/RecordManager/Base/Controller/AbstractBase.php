@@ -159,7 +159,7 @@ abstract class AbstractBase
      *
      * @return void
      */
-    public abstract function launch();
+    abstract public function launch();
 
     /**
      * Read a list file into an array
