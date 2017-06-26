@@ -303,9 +303,7 @@ class BaseHarvest
      */
     protected function loadLastHarvestedDate()
     {
-        $state = $this->db->getState(
-            ['_id' => "Last Harvest Date {$this->source}"]
-        );
+        $state = $this->db->getState("Last Harvest Date {$this->source}");
         if (null !== $state) {
             $this->setStartDate($state['value']);
         }
