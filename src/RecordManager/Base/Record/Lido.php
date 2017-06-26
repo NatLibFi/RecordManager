@@ -75,7 +75,7 @@ class Lido extends Base
      */
     public function getID()
     {
-        return $this->doc->lido->lidoRecID;
+        return (string)$this->doc->lido->lidoRecID;
     }
 
     /**
