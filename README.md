@@ -41,10 +41,6 @@ These are quick instructions on how to set up RecordManager. Please refer to the
 
 - Add the extension=mongodb.so line to /etc/php.d/mongodb.ini
 
-- Required Pear modules: HTTP_Request2
-
-      pear install HTTP_Request2
-
 - Install MongoDB from 10gen repositories (see http://www.mongodb.org/display/DOCS/CentOS+and+Fedora+Packages)
 
 - Adjust MongoDB settings as needed
