@@ -81,6 +81,9 @@ EOT;
             'building_mapping' => [
                 'building.map',
                 'building_sub.map,regexp'
+            ],
+            'driverParams' => [
+                'subLocationInBuilding=c'
             ]
         ]
     ];
@@ -92,12 +95,6 @@ EOT;
      */
     public function testBuilding()
     {
-        global $configArray;
-
-        $configArray['dataSourceSettings']['test']['driverParams'] = [
-            'subLocationInBuilding=c'
-        ];
-
         $preview = $this->getPreviewCreator();
 
         $timestamp = new \MongoDB\BSON\UTCDateTime();
@@ -129,7 +126,7 @@ EOT;
     {
         $basePath = dirname(__FILE__) . '/configs/mappingfilestest';
         $logger = $this->createMock(Logger::class);
-        $recordFactory = new RecordFactory([]);
+        $recordFactory = new RecordFactory($logger, [], $this->dataSourceSettings);
         $preview = new PreviewCreator(
             null, $basePath, $logger, false, [], $this->dataSourceSettings,
             $recordFactory

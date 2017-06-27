@@ -40,9 +40,9 @@ if (!preg_match('/^[\w_]*$/', $format) || !preg_match('/^[\w_]*$/', $source)) {
     die('Invalid parameters');
 }
 
-$basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
-$configArray = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
-$createPreview = new \RecordManager\Base\Controller\CreatePreview($configArray);
+$basePath = __DIR__;
+$config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
+$createPreview = new \RecordManager\Base\Controller\CreatePreview($config);
 
 $record = $createPreview->launch($_REQUEST['data'], $format, $source);
 

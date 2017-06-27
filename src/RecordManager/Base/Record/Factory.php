@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Utils\Logger;
+
 /**
  * Record factory class
  *
@@ -41,20 +43,38 @@ namespace RecordManager\Base\Record;
 class Factory
 {
     /**
-     * Configured record classes
+     * Logger
+     *
+     * @var Logger
+     */
+    protected $logger;
+
+    /**
+     * Main configuration
      *
      * @var array
      */
-    protected $recordClasses;
+    protected $config;
+
+    /**
+     * Data source settings
+     *
+     * @var array
+     */
+    protected $dataSourceSettings;
 
     /**
      * Constructor
      *
-     * @param array $recordClasses Record classes
+     * @param Logger $logger             Logger
+     * @param array  $config             Main configuration
+     * @param array  $dataSourceSettings Data source settings
      */
-    public function __construct($recordClasses)
+    public function __construct(Logger $logger, $config, $dataSourceSettings)
     {
-        $this->recordClasses = $recordClasses;
+        $this->logger = $logger;
+        $this->config = $config;
+        $this->dataSourceSettings = $dataSourceSettings;
     }
 
     /**
@@ -84,15 +104,13 @@ class Factory
      */
     public function createRecord($format, $data, $oaiID, $source)
     {
-        $idPrefix
-            = isset($configArray['dataSourceSettings'][$source]['idPrefix'])
-            ? $configArray['dataSourceSettings'][$source]['idPrefix']
-            : $source;
-
         $class = $this->getRecordClass($format);
 
         if (class_exists($class)) {
-            $obj = new $class($data, $oaiID, $source, $idPrefix);
+            $obj = new $class(
+                $this->logger, $this->config, $this->dataSourceSettings
+            );
+            $obj->setData($source, $oaiID, $data);
             return $obj;
         }
 
@@ -108,8 +126,8 @@ class Factory
      */
     protected function getRecordClass($format)
     {
-        if (isset($this->recordClasses[$format])) {
-            $class = $this->recordClasses[$format];
+        if (isset($this->config['Record Classes'][$format])) {
+            $class = $this->config['Record Classes'][$format];
         } else {
             $class = ucfirst($format);
         }

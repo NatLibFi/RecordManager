@@ -27,6 +27,7 @@
  */
 
 use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Utils\Logger;
 
 /**
  * Generic Record Driver Test Class
@@ -62,10 +63,12 @@ abstract class RecordDriverTest extends AbstractTest
      */
     protected function processSample($sample)
     {
-        $recordFactory = new RecordFactory([]);
-        $actualdir = dirname(__FILE__);
-        $sample = file_get_contents($actualdir . "/../samples/" . $sample);
-        $record = $recordFactory->createRecord($this->driver, $sample, "__unit_test_no_id__", "__unit_test_no_source__");
+        $logger = $this->createMock(Logger::class);
+        $recordFactory = new RecordFactory($logger, [], []);
+        $sample = file_get_contents(__DIR__ . '/../samples/' . $sample);
+        $record = $recordFactory->createRecord(
+            $this->driver, $sample, '__unit_test_no_id__', '__unit_test_no_source__'
+        );
         return $record->toSolrArray();
     }
 }

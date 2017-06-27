@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Base\Utils;
 
+use RecordManager\Base\Utils\Logger;
+
 require_once 'vendor/phayes/geophp/geoPHP.inc';
 
 /**
@@ -43,23 +45,102 @@ require_once 'vendor/phayes/geophp/geoPHP.inc';
  */
 class MetadataUtils
 {
-    public static $fullTitlePrefixes = null;
-    public static $abbreviations = null;
-    public static $articles = null;
+    /**
+     * Logger
+     *
+     * @var Logger
+     */
+    protected static $logger = null;
+
+    /**
+     * Title prefixes that, when encountered, will cause the full title to be
+     * returned as title key.
+     *
+     * @var array
+     */
+    protected static $fullTitlePrefixes = null;
+
+    /**
+     * Abbreviations that require the following period to be retained.
+     *
+     * @var array
+     */
+    protected static $abbreviations = null;
+
+    /**
+     * Articles that should be removed from the beginning of sort keys.
+     *
+     * @var array
+     */
+    protected static $articles = null;
 
     /**
      * Non-electronic article formats
      *
      * @var array
      */
-    public static $articleFormats = null;
+    protected static $articleFormats = null;
 
     /**
      * All article formats
      *
      * @var array
      */
-    public static $allArticleFormats = null;
+    protected static $allArticleFormats = null;
+
+    protected static $unicodeNormalizationForm = '';
+
+    /**
+     * Set the logger
+     *
+     * @param Logger $logger Logger
+     *
+     * @return void
+     */
+    public static function setLogger(Logger $logger)
+    {
+        self::$logger = $logger;
+    }
+
+    public static function setConfig($config, $basePath)
+    {
+        if (isset($config['Site']['full_title_prefixes'])) {
+            self::$fullTitlePrefixes = array_map(
+                ['\RecordManager\Base\Utils\MetadataUtils', 'normalize'],
+                file(
+                    "$basePath/conf/{$config['Site']['full_title_prefixes']}",
+                    FILE_IGNORE_NEW_LINES
+                )
+            );
+        }
+
+        // Read the abbreviations file
+        self::$abbreviations = isset($config['Site']['abbreviations'])
+            ? self::readListFile($basePath, $config['Site']['abbreviations']) : [];
+
+        // Read the artices file
+        self::$articles = isset($config['Site']['articles'])
+            ? self::readListFile($basePath, $config['Site']['articles']) : [];
+
+        self::$articleFormats
+            = isset($config['Solr']['article_formats'])
+            ? $config['Solr']['article_formats']
+            : ['Article'];
+
+        $eArticleFormats
+            = isset($config['Solr']['earticle_formats'])
+            ? $config['Solr']['earticle_formats']
+            : ['eArticle'];
+
+        self::$allArticleFormats = array_merge(
+            self::$articleFormats, $eArticleFormats
+        );
+
+        self::$unicodeNormalizationForm
+            = isset($config['Solr']['unicode_normalization_form'])
+            ? $config['Solr']['unicode_normalization_form']
+            : '';
+    }
 
     /**
      * Convert ISBN-10 (without dashes) to ISBN-13
@@ -532,12 +613,7 @@ class MetadataUtils
      */
     public static function normalizeUnicode($str)
     {
-        global $configArray;
-
-        if (!isset($configArray['Solr']['unicode_normalization_form'])) {
-            return $str;
-        }
-        switch ($configArray['Solr']['unicode_normalization_form']) {
+        switch (self::$unicodeNormalizationForm) {
         case 'NFC':
             $str = Normalizer::normalize($str, Normalizer::FORM_C);
             break;
@@ -672,24 +748,6 @@ class MetadataUtils
             ) {
                 $format = $metadataRecord->getFormat();
 
-                if (null === MetadataUtils::$articleFormats) {
-                    global $configArray;
-
-                    MetadataUtils::$articleFormats
-                        = isset($configArray['Solr']['article_formats'])
-                        ? $configArray['Solr']['article_formats']
-                        : ['Article'];
-
-                    $eArticleFormats
-                        = isset($configArray['Solr']['earticle_formats'])
-                        ? $configArray['Solr']['earticle_formats']
-                        : ['eArticle'];
-
-                    MetadataUtils::$allArticleFormats = array_merge(
-                        MetadataUtils::$articleFormats, $eArticleFormats
-                    );
-                }
-
                 if (!in_array($format, MetadataUtils::$allArticleFormats)) {
                     return true;
                 } elseif (in_array($format, MetadataUtils::$articleFormats)) {
@@ -732,12 +790,13 @@ class MetadataUtils
             try {
                 $item = geoPHP::load($wkt, 'wkt');
             } catch (\Exception $e) {
-                global $logger;
-                $logger->log(
-                    'getCenterCoordinates',
-                    "Could not parse WKT '$wkt': " . $e->getMessage(),
-                    \RecordManager\Base\Utils\Logger::ERROR
-                );
+                if (null !== self::$logger) {
+                    self::$logger->log(
+                        'getCenterCoordinates',
+                        "Could not parse WKT '$wkt': " . $e->getMessage(),
+                        \RecordManager\Base\Utils\Logger::ERROR
+                    );
+                }
                 return [];
             }
             $centroid = $item ? $item->centroid() : null;
@@ -745,4 +804,33 @@ class MetadataUtils
         }
         return '';
     }
+
+    /**
+     * Read a list file into an array
+     *
+     * @param string $filename List file name
+     *
+     * @return array
+     */
+    protected static function readListFile($basePath, $filename)
+    {
+        $filename = "$basePath/conf/$filename";
+        $lines = file($filename, FILE_IGNORE_NEW_LINES);
+        if ($lines === false) {
+            $this->logger->log(
+                'readListFile', "Could not open list file '$filename'", Logger::ERROR
+            );
+            return [];
+        }
+        array_walk(
+            $lines,
+            function (&$value) {
+                $value = trim($value, "'");
+            }
+        );
+
+        return $lines;
+    }
+
+
 }

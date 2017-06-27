@@ -27,6 +27,7 @@
  */
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -42,28 +43,79 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Base
 {
-    // Record source ID
+    /**
+     * Logger
+     *
+     * @var Logger
+     */
+    protected $logger;
+
+    /**
+     * Main configuration
+     *
+     * @var array
+     */
+    protected $config;
+
+    /**
+     * Data source settings
+     *
+     * @var array
+     */
+    protected $dataSourceSettings;
+
+    /**
+     * Record source ID
+     *
+     * @var string
+     */
     protected $source;
 
-    // Record ID prefix
+    /**
+     * Record ID prefix
+     *
+     * @var string
+     */
     protected $idPrefix = '';
 
-    // Warnings about problems in the record
+    /**
+     * Warnings about problems in the record
+     *
+     * @var array
+     */
     protected $warnings = [];
 
     /**
      * Constructor
      *
-     * @param string $data     Metadata
+     * @param Logger $logger             Logger
+     * @param array  $config             Main configuration
+     * @param array  $dataSourceSettings Data source settings
+     */
+    public function __construct($logger, $config, $dataSourceSettings)
+    {
+        $this->logger = $logger;
+        $this->config = $config;
+        $this->dataSourceSettings = $dataSourceSettings;
+    }
+
+    /**
+     * Set record data
+     *
+     * @param string $source   Source ID
      * @param string $oaiID    Record ID received from OAI-PMH (or empty string for
      * file import)
-     * @param string $source   Source ID
-     * @param string $idPrefix Record ID prefix
+     * @param string $data     Metadata
+     *
+     * @return void
      */
-    public function __construct($data, $oaiID, $source, $idPrefix)
+    public function setData($source, $oaiID, $data)
     {
         $this->source = $source;
-        $this->idPrefix = $idPrefix;
+        $this->idPrefix
+            = isset($this->dataSourceSettings[$source]['idPrefix'])
+            ? $this->dataSourceSettings[$source]['idPrefix']
+            : $source;
     }
 
     /**
@@ -365,16 +417,14 @@ class Base
      */
     protected function getDriverParam($parameter, $default = true)
     {
-        global $configArray;
-
-        if (!isset($configArray['dataSourceSettings'][$this->source]['driverParams'])
+        if (!isset($this->dataSourceSettings[$this->source]['driverParams'])
         ) {
             return $default;
         }
         $iniValues = parse_ini_string(
             implode(
                 PHP_EOL,
-                $configArray['dataSourceSettings'][$this->source]['driverParams']
+                $this->dataSourceSettings[$this->source]['driverParams']
             )
         );
 

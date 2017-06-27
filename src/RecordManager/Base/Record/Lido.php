@@ -27,6 +27,7 @@
  */
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -44,26 +45,44 @@ class Lido extends Base
 {
     protected $doc = null;
 
-    // These are types reflecting the terminology in the particular LIDO records,
-    // and can be overridden in a subclass.
+    /**
+     * Main event name reflecting the terminology in the particular LIDO records.
+     *
+     * @var string
+     */
     protected $mainEvent = 'creation';
+
+    /**
+     * Usage place event name reflecting the terminology in the particular LIDO
+     * records.
+     *
+     * @var string
+     */
     protected $usagePlaceEvent = 'usage';
+
+    /**
+     * Related work relation types reflecting the terminology in the particular LIDO
+     * records.
+     *
+     * @var string
+     */
     protected $relatedWorkRelationTypes = [
         'Collection', 'belongs to collection', 'collection'
     ];
 
     /**
-     * Constructor
+     * Set record data
      *
-     * @param string $data     Metadata
-     * @param string $oaiID    Record ID received from OAI-PMH
-     * (or empty string for file import)
      * @param string $source   Source ID
-     * @param string $idPrefix Record ID prefix
+     * @param string $oaiID    Record ID received from OAI-PMH (or empty string for
+     * file import)
+     * @param string $data     Metadata
+     *
+     * @return void
      */
-    public function __construct($data, $oaiID, $source, $idPrefix)
+    public function setData($source, $oaiID, $data)
     {
-        parent::__construct($data, $oaiID, $source, $idPrefix);
+        parent::setData($source, $oaiID, $data);
 
         $this->doc = simplexml_load_string($data);
     }

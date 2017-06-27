@@ -37,10 +37,12 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
-    global $configArray;
+    $basePath = __DIR__;
+    $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
 
     $params = parseArgs($argv);
-    applyConfigOverrides($params);
+    $config = applyConfigOverrides($params, $config);
+
     if (empty($params['file']) || empty($params['source'])) {
         echo <<<EOT
 Usage: $argv[0] --file=... --source=... [...]
@@ -70,7 +72,7 @@ EOT;
         }
 
         $import = new \RecordManager\Base\Controller\Import(
-            $configArray,
+            $config,
             true,
             isset($params['verbose']) ? $params['verbose'] : false
         );

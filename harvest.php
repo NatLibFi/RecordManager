@@ -37,10 +37,12 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
-    global $configArray;
+    $basePath = __DIR__;
+    $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
 
     $params = parseArgs($argv);
-    applyConfigOverrides($params);
+    $config = applyConfigOverrides($params, $config);
+
     if (empty($params['source']) || !is_string($params['source'])) {
         echo <<<EOT
 Usage: $argv[0] --source=... [...]
@@ -80,7 +82,7 @@ EOT;
         }
 
         $harvest = new \RecordManager\Base\Controller\Harvest(
-            $configArray,
+            $config,
             true,
             isset($params['verbose']) ? $params['verbose'] : false
         );

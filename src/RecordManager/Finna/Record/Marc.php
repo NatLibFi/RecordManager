@@ -244,8 +244,7 @@ class Marc extends \RecordManager\Base\Record\Marc
 
             if (!is_nan($west) && !is_nan($north)) {
                 if (($west < -180 || $west > 180) || ($north < -90 || $north > 90)) {
-                    global $logger;
-                    $logger->log(
+                    $this->logger->log(
                         'Marc',
                         "Discarding invalid coordinates $west,$north decoded from "
                         . "w=$westOrig, e=$eastOrig, n=$northOrig, s=$southOrig, "
@@ -258,8 +257,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                         if ($east < -180 || $east > 180 || $south < -90
                             || $south > 90
                         ) {
-                            global $logger;
-                            $logger->log(
+                            $this->logger->log(
                                 'Marc',
                                 "Discarding invalid coordinates $east,$south "
                                 . "decoded from w=$westOrig, e=$eastOrig, "
@@ -957,8 +955,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             && MetadataUtils::validateISO8601Date($endDate) !== false
         ) {
             if ($endDate < $startDate) {
-                global $logger;
-                $logger->log(
+                $this->logger->log(
                     'Marc',
                     "Invalid date range {$startDate} - {$endDate}, record "
                     . "{$this->source}." . $this->getID(),

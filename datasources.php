@@ -36,10 +36,12 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
-    global $configArray;
+    $basePath = __DIR__;
+    $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
 
     $params = parseArgs($argv);
-    applyConfigOverrides($params);
+    $config = applyConfigOverrides($params, $config);
+
     if (empty($params['search'])) {
         echo <<<EOT
 Usage: $argv[0] --search=...
@@ -58,7 +60,7 @@ EOT;
 
     if (!empty($params['search'])) {
         $searchDataSources = new \RecordManager\Base\Controller\SearchDataSources(
-            $configArray,
+            $config,
             true,
             isset($params['verbose']) ? $params['verbose'] : false
         );

@@ -104,27 +104,39 @@ class Marc extends Base
     /**
      * Constructor
      *
-     * @param string|array $data     Metadata
-     * @param string       $oaiID    Record ID received from OAI-PMH (or empty string
-     * for file import)
-     * @param string       $source   Source ID
-     * @param string       $idPrefix Record ID prefix
+     * @param Logger $logger             Logger
+     * @param array  $config             Main configuration
+     * @param array  $dataSourceSettings Data source settings
      */
-    public function __construct($data, $oaiID, $source, $idPrefix)
+    public function __construct($logger, $config, $dataSourceSettings)
     {
-        parent::__construct($data, $oaiID, $source, $idPrefix);
+        parent::__construct($logger, $config, $dataSourceSettings);
 
-        global $configArray;
-        if (isset($configArray['MarcRecord']['primary_author_relators'])) {
+        if (isset($config['MarcRecord']['primary_author_relators'])) {
             $this->primaryAuthorRelators = explode(
-                ',', $configArray['MarcRecord']['primary_author_relators']
+                ',', $config['MarcRecord']['primary_author_relators']
             );
         }
-        if (isset($configArray['MarcRecord']['secondary_author_relators'])) {
+        if (isset($config['MarcRecord']['secondary_author_relators'])) {
             $this->secondaryAuthorRelators = explode(
-                ',', $configArray['MarcRecord']['secondary_author_relators']
+                ',', $config['MarcRecord']['secondary_author_relators']
             );
         }
+    }
+
+    /**
+     * Set record data
+     *
+     * @param string $source   Source ID
+     * @param string $oaiID    Record ID received from OAI-PMH (or empty string for
+     * file import)
+     * @param string $data     Metadata
+     *
+     * @return void
+     */
+    public function setData($source, $oaiID, $data)
+    {
+        parent::setData($source, $oaiID, $data);
 
         $firstChar = is_array($data) ? '{' : substr($data, 0, 1);
         if ($firstChar === '{') {
@@ -321,8 +333,7 @@ class Marc extends Base
                 if (($longitude < -180 || $longitude > 180)
                     || ($latitude < -90 || $latitude > 90)
                 ) {
-                    global $logger;
-                    $logger->log(
+                    $this->logger->log(
                         'Marc',
                         "Discarding invalid coordinates $longitude,$latitude " .
                         "decoded from w=$westOrig, e=$eastOrig, n=$northOrig, " .
@@ -1395,8 +1406,7 @@ class Marc extends Base
                 continue;
             }
             if (strlen($tag) != 3) {
-                global $logger;
-                $logger->log(
+                $this->logger->log(
                     'Marc',
                     "Invalid field tag: '$tag', id " . $this->getField('001'),
                     Logger::ERROR
@@ -1554,8 +1564,7 @@ class Marc extends Base
         switch ($indicator) {
         case 1:
             if (!isset($field['i1'])) {
-                global $logger;
-                $logger->log(
+                $this->logger->log(
                     'Marc',
                     'Indicator 1 missing from field:' . print_r($field, true)
                     . ", record {$this->source}." . $this->getID(),
@@ -1567,8 +1576,7 @@ class Marc extends Base
             return $field['i1'];
         case 2:
             if (!isset($field['i2'])) {
-                global $logger;
-                $logger->log(
+                $this->logger->log(
                     'Marc',
                     'Indicator 2 missing from field:' . print_r($field, true)
                     . ", record {$this->source}." . $this->getID(),
@@ -1714,8 +1722,7 @@ class Marc extends Base
 
             foreach ($this->fields[$tag] as $field) {
                 if (!isset($field['s'])) {
-                    global $logger;
-                    $logger->log(
+                    $this->logger->log(
                         'Marc', "Subfields missing in field $tag"
                         . ", record {$this->source}." .
                         $this->getID(),
@@ -1725,8 +1732,7 @@ class Marc extends Base
                     continue;
                 }
                 if (!is_array($field['s'])) {
-                    global $logger;
-                    $logger->log(
+                    $this->logger->log(
                         'Marc', "Invalid subfields in field $tag"
                         . ", record {$this->source}." .
                         $this->getID(),
@@ -1934,8 +1940,7 @@ class Marc extends Base
             return '';
         }
         if (!isset($field['s'])) {
-            global $logger;
-            $logger->log(
+            $this->logger->log(
                 'Marc', "Subfields missing in field: " .
                 print_r($field, true) . ", record {$this->source}." .
                 $this->getID(), Logger::WARNING
@@ -1944,8 +1949,7 @@ class Marc extends Base
             return [];
         }
         if (!is_array($field['s'])) {
-            global $logger;
-            $logger->log(
+            $this->logger->log(
                 'Marc', 'Invalid subfields in field: ' .
                 print_r($field, true) . ", record {$this->source}." .
                 $this->getID(), Logger::ERROR

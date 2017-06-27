@@ -37,10 +37,12 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
-    global $configArray;
+    $basePath = __DIR__;
+    $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
 
     $params = parseArgs($argv);
-    applyConfigOverrides($params);
+    $config = applyConfigOverrides($params, $config);
+
     if (empty($params['func']) || !is_string($params['func'])) {
         echo <<<EOT
 Usage: $argv[0] --func=... [...]
@@ -98,7 +100,7 @@ EOT;
                 ? '' : (isset($params['from']) ? $params['from'] : null);
 
             $solrUpdate = new \RecordManager\Base\Controller\SolrUpdate(
-                $configArray, true, $verbose
+                $config, true, $verbose
             );
             $solrUpdate->launch($date, $sources, $single, $noCommit);
         } elseif ($params['func'] == 'comparesolr') {
@@ -107,7 +109,7 @@ EOT;
             $log = isset($params['comparelog']) ? $params['comparelog'] : '-';
 
             $solrCompare = new \RecordManager\Base\Controller\SolrCompare(
-                $configArray, true, $verbose
+                $config, true, $verbose
             );
             $solrCompare->launch($log, $date, $sources, $single);
         } elseif ($params['func'] == 'dumpsolr') {
@@ -117,7 +119,7 @@ EOT;
                 ? $params['dumpprefix'] : 'dumpsolr';
 
             $solrDump = new \RecordManager\Base\Controller\SolrDump(
-                $configArray, true, $verbose
+                $config, true, $verbose
             );
             $solrDump->launch($dumpPrefix, $date, $sources, $single);
         } else {
@@ -125,14 +127,14 @@ EOT;
                 switch ($params['func']) {
                 case 'renormalize':
                     $renormalize = new \RecordManager\Base\Controller\Renormalize(
-                        $configArray, true, $verbose
+                        $config, true, $verbose
                     );
                     $renormalize->launch($source, $single);
                     break;
                 case 'deduplicate':
                 case 'markdedup':
                     $deduplicate = new \RecordManager\Base\Controller\Deduplicate(
-                        $configArray, true, $verbose
+                        $config, true, $verbose
                     );
                     $deduplicate->launch(
                         $source, isset($params['all']) ? true : false, $single,
@@ -141,39 +143,39 @@ EOT;
                     break;
                 case 'dump':
                     $dump = new \RecordManager\Base\Controller\Dump(
-                        $configArray, true, $verbose
+                        $config, true, $verbose
                     );
                     $dump->launch($single);
                     break;
                 case 'deletesource':
                     $deleteRecords
                         = new \RecordManager\Base\Controller\DeleteRecords(
-                            $configArray, true, $verbose
+                            $config, true, $verbose
                         );
                     $deleteRecords->launch($source, !empty($params['force']));
                     break;
                 case 'markdeleted':
                     $markDeleted = new \RecordManager\Base\Controller\MarkDeleted(
-                        $configArray, true, $verbose
+                        $config, true, $verbose
                     );
                     $markDeleted->launch($source);
                     break;
                 case 'deletesolr':
                     $deleteSolr
                         = new \RecordManager\Base\Controller\DeleteSolrRecords(
-                            $configArray, true, $verbose
+                            $config, true, $verbose
                         );
                     $deleteSolr->launch($source);
                     break;
                 case 'optimizesolr':
                     $solrOptimize = new \RecordManager\Base\Controller\SolrOptimize(
-                        $configArray, true, $verbose
+                        $config, true, $verbose
                     );
                     $solrOptimize->launch();
                     break;
                 case 'count':
                     $countValues = new \RecordManager\Base\Controller\CountValues(
-                        $configArray, true, $verbose
+                        $config, true, $verbose
                     );
                     $countValues->launch(
                         $source,
@@ -183,7 +185,7 @@ EOT;
                     break;
                 case 'checkdedup':
                     $checkDedup = new \RecordManager\Base\Controller\CheckDedup(
-                        $configArray, true, $verbose
+                        $config, true, $verbose
                     );
                     $checkDedup->launch();
                     break;
@@ -198,7 +200,7 @@ EOT;
                         exit(1);
                     }
                     $purge = new \RecordManager\Base\Controller\PurgeDeleted(
-                        $configArray, true, $verbose
+                        $config, true, $verbose
                     );
                     $purge->launch(
                         isset($params['daystokeep']) ? intval($params['daystokeep'])

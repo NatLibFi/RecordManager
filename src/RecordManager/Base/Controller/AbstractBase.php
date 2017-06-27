@@ -109,8 +109,6 @@ abstract class AbstractBase
      */
     public function __construct($config, $console = false, $verbose = false)
     {
-        global $logger;
-
         $this->config = $config;
 
         date_default_timezone_set($config['Site']['timezone']);
@@ -121,15 +119,12 @@ abstract class AbstractBase
         }
         $this->verbose = $verbose;
 
-        // Store logger in a global for legacy access in other classes
-        $logger = $this->logger;
-
         $basePath = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR
             . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..';
         $basePath = realpath($basePath);
+        $this->basePath = $basePath;
         $this->dataSourceSettings = $config['dataSourceSettings']
             = parse_ini_file("$basePath/conf/datasources.ini", true);
-        $this->basePath = $basePath;
 
         try {
             $this->db = new Database(
@@ -146,54 +141,12 @@ abstract class AbstractBase
             throw $e;
         }
 
-        if (isset($config['Site']['full_title_prefixes'])) {
-            MetadataUtils::$fullTitlePrefixes = array_map(
-                ['\RecordManager\Base\Utils\MetadataUtils', 'normalize'],
-                file(
-                    "$basePath/conf/{$config['Site']['full_title_prefixes']}",
-                    FILE_IGNORE_NEW_LINES
-                )
-            );
-        }
-
-        // Read the abbreviations file
-        MetadataUtils::$abbreviations = isset($config['Site']['abbreviations'])
-            ? $this->readListFile($config['Site']['abbreviations']) : [];
-
-        // Read the artices file
-        MetadataUtils::$articles = isset($config['Site']['articles'])
-            ? $this->readListFile($config['Site']['articles']) : [];
+        MetadataUtils::setLogger($this->logger);
+        MetadataUtils::setConfig($config, $this->basePath);
 
         $this->recordFactory = new RecordFactory(
-            isset($config['Record Classes']) ? $config['Record Classes'] : []
+            $this->logger, $config, $this->dataSourceSettings
         );
-    }
-
-    /**
-     * Read a list file into an array
-     *
-     * @param string $filename List file name
-     *
-     * @return array
-     */
-    protected function readListFile($filename)
-    {
-        $filename = "{$this->basePath}/conf/$filename";
-        $lines = file($filename, FILE_IGNORE_NEW_LINES);
-        if ($lines === false) {
-            $this->logger->log(
-                'readListFile', "Could not open list file '$filename'", Logger::ERROR
-            );
-            return [];
-        }
-        array_walk(
-            $lines,
-            function (&$value) {
-                $value = trim($value, "'");
-            }
-        );
-
-        return $lines;
     }
 
     /**

@@ -92,8 +92,6 @@ class OaiPmhProvider extends AbstractBase
     {
         parent::__construct($config);
 
-        $this->dataSourceSettings
-            = parse_ini_file("{$this->basePath}/conf/datasources.ini", true);
         $formatIni = $this->basePath . '/conf/'
             . $this->config['OAI-PMH']['format_definitions'];
         $this->formats = parse_ini_file($formatIni, true);
@@ -737,8 +735,6 @@ EOT;
      */
     protected function createRecord($record, $format, $includeMetadata)
     {
-        global $basePath;
-
         $sourceFormat = $record['format'];
         if (isset($this->formats[$format])) {
             $format = $this->formats[$format]['format'];
@@ -764,7 +760,7 @@ EOT;
                 if (!isset($this->transformations[$transformationKey])) {
                     $this->transformations[$transformationKey]
                         = new XslTransformation(
-                            $basePath . '/transformations', $datasource[$key]
+                            $this->basePath . '/transformations', $datasource[$key]
                         );
                 }
                 $params = [

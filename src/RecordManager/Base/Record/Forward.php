@@ -27,6 +27,7 @@
  */
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -90,32 +91,44 @@ class Forward extends Base
     /**
      * Constructor
      *
-     * @param string $data     Metadata
+     * @param Logger $logger             Logger
+     * @param array  $config             Main configuration
+     * @param array  $dataSourceSettings Data source settings
+     */
+    public function __construct($logger, $config, $dataSourceSettings)
+    {
+        parent::__construct($logger, $config, $dataSourceSettings);
+
+        if (isset($config['ForwardRecord']['primary_author_relators'])) {
+            $this->primaryAuthorRelators = explode(
+                ',', $config['ForwardRecord']['primary_author_relators']
+            );
+        }
+        if (isset($config['ForwardRecord']['secondary_author_relators'])) {
+            $this->secondaryAuthorRelators = explode(
+                ',', $config['ForwardRecord']['secondary_author_relators']
+            );
+        }
+        if (isset($config['ForwardRecord']['corporate_author_relators'])) {
+            $this->corporateAuthorRelators = explode(
+                ',', $config['ForwardRecord']['corporate_author_relators']
+            );
+        }
+    }
+
+    /**
+     * Set record data
+     *
+     * @param string $source   Source ID
      * @param string $oaiID    Record ID received from OAI-PMH (or empty string for
      * file import)
-     * @param string $source   Source ID
-     * @param string $idPrefix Record ID prefix
+     * @param string $data     Metadata
+     *
+     * @return void
      */
-    public function __construct($data, $oaiID, $source, $idPrefix)
+    public function setData($source, $oaiID, $data)
     {
-        parent::__construct($data, $oaiID, $source, $idPrefix);
-
-        global $configArray;
-        if (isset($configArray['ForwardRecord']['primary_author_relators'])) {
-            $this->primaryAuthorRelators = explode(
-                ',', $configArray['ForwardRecord']['primary_author_relators']
-            );
-        }
-        if (isset($configArray['ForwardRecord']['secondary_author_relators'])) {
-            $this->secondaryAuthorRelators = explode(
-                ',', $configArray['ForwardRecord']['secondary_author_relators']
-            );
-        }
-        if (isset($configArray['ForwardRecord']['corporate_author_relators'])) {
-            $this->corporateAuthorRelators = explode(
-                ',', $configArray['ForwardRecord']['corporate_author_relators']
-            );
-        }
+        parent::setData($source, $oaiID, $data);
 
         $this->doc = simplexml_load_string($data);
     }

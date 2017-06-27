@@ -44,23 +44,29 @@ use RecordManager\Base\Utils\MetadataUtils;
 class Lido extends \RecordManager\Base\Record\Lido
 {
     /**
-     * Constructor
+     * Main event name reflecting the terminology in the particular LIDO records.
      *
-     * @param string $data     Metadata
-     * @param string $oaiID    Record ID received from OAI-PMH (or empty string for
-     * file import)
-     * @param string $source   Source ID
-     * @param string $idPrefix Record ID prefix
+     * @var string
      */
-    public function __construct($data, $oaiID, $source, $idPrefix)
-    {
-        parent::__construct($data, $oaiID, $source, $idPrefix);
+    protected $mainEvent = 'valmistus';
 
-        $this->mainEvent = 'valmistus';
-        $this->usagePlaceEvent = 'käyttö';
-        $this->relatedWorkRelationTypes
-            = ['Kokoelma', 'kuuluu kokoelmaan', 'kokoelma'];
-    }
+    /**
+     * Usage place event name reflecting the terminology in the particular LIDO
+     * records.
+     *
+     * @var string
+     */
+    protected $usagePlaceEvent = 'käyttö';
+
+    /**
+     * Related work relation types reflecting the terminology in the particular LIDO
+     * records.
+     *
+     * @var string
+     */
+    protected $relatedWorkRelationTypes = [
+        'Kokoelma', 'kuuluu kokoelmaan', 'kokoelma'
+    ];
 
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
@@ -599,8 +605,7 @@ class Lido extends \RecordManager\Base\Record\Lido
     ) {
         if ($startDate) {
             if ($endDate < $startDate) {
-                global $logger;
-                $logger->log(
+                $this->logger->log(
                     'Lido',
                     "Invalid date range {$startDate} - {$endDate}, record "
                     . "{$this->source}." . $this->getID(),
@@ -670,8 +675,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                 try {
                     $d = new \DateTime($date . '-01');
                 } catch (\Exception $e) {
-                    global $logger;
-                    $logger->log(
+                    $this->logger->log(
                         'Lido',
                         "Failed to parse date $date, record {$this->source}."
                         . $this->getID(),
@@ -727,11 +731,9 @@ class Lido extends \RecordManager\Base\Record\Lido
      */
     protected function convertGmlToWkt($gml)
     {
-        global $logger;
-
         if (!empty($gml->Polygon)) {
             if (empty($gml->Polygon->outerBoundaryIs->LinearRing->coordinates)) {
-                $logger->log(
+                $this->logger->log(
                     'Lido',
                     "GML Polygon missing outer boundary, record "
                     . "{$this->source}." . $this->getID(),
@@ -757,7 +759,7 @@ class Lido extends \RecordManager\Base\Record\Lido
 
         if (!empty($gml->LineString)) {
             if (empty($gml->LineString->coordinates)) {
-                $logger->log(
+                $this->logger->log(
                     'Lido',
                     "GML LineString missing coordinates, record "
                     . "{$this->source}." . $this->getID(),
@@ -776,7 +778,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             if (isset($gml->Point->pos)) {
                 $coordinates = trim((string)$gml->Point->pos);
                 if (!$coordinates) {
-                    $logger->log(
+                    $this->logger->log(
                         'Lido',
                         "Empty pos in GML point, record "
                         . "{$this->source}." . $this->getID(),
@@ -788,7 +790,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             } elseif (isset($gml->Point->coordinates)) {
                 $coordinates = trim((string)$gml->Point->coordinates);
                 if (!$coordinates) {
-                    $logger->log(
+                    $this->logger->log(
                         'Lido',
                         "Empty coordinates in GML point, record "
                         . "{$this->source}." . $this->getID(),
@@ -799,7 +801,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                 }
                 list($lat, $lon) = explode(',', (string)$coordinates, 2);
             } else {
-                $logger->log(
+                $this->logger->log(
                     'Lido',
                     "GML Point does not contain pos or coordinates, record "
                     . "{$this->source}." . $this->getID(),
@@ -813,7 +815,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             if ('' === $lat || '' === $lon || $lat < -90 || $lat > 90 || $lon < -180
                 || $lon > 180
             ) {
-                $logger->log(
+                $this->logger->log(
                     'Lido',
                     "Discarding invalid coordinates '$lat,$lon', record "
                     . "{$this->source}." . $this->getID(),
@@ -975,8 +977,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             try {
                 $d = new \DateTime($endDate);
             } catch (\Exception $e) {
-                global $logger;
-                $logger->log(
+                $this->logger->log(
                     'Lido',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
@@ -1049,8 +1050,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                 $d = new \DateTime($endDate);
                 $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
             } catch (\Exception $e) {
-                global $logger;
-                $logger->log(
+                $this->logger->log(
                     'Lido',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
@@ -1075,8 +1075,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             try {
                 $d = new \DateTime($endDate);
             } catch (\Exception $e) {
-                global $logger;
-                $logger->log(
+                $this->logger->log(
                     'Lido',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
@@ -1107,8 +1106,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                 $d = new \DateTime($endDate);
                 $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
             } catch (\Exception $e) {
-                global $logger;
-                $logger->log(
+                $this->logger->log(
                     'Lido',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
@@ -1305,8 +1303,7 @@ class Lido extends \RecordManager\Base\Record\Lido
         $start = MetadataUtils::validateISO8601Date($startDate);
         $end = MetadataUtils::validateISO8601Date($endDate);
         if ($start === false || $end === false) {
-            global $logger;
-            $logger->log(
+            $this->logger->log(
                 'Lido',
                 "Invalid date range {$startDate} - {$endDate} parsed from "
                 . "'$input', record {$this->source}." . $this->getID(),
@@ -1321,8 +1318,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                 return null;
             }
         } elseif ($start > $end) {
-            global $logger;
-            $logger->log(
+            $this->logger->log(
                 'Lido',
                 "Invalid date range {$startDate} - {$endDate} parsed from '$input', "
                 . "record {$this->source}." . $this->getID(),

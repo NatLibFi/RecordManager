@@ -27,6 +27,7 @@
  */
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -45,17 +46,18 @@ class Ese extends Base
     protected $doc = null;
 
     /**
-     * Constructor
+     * Set record data
      *
-     * @param string $data     Metadata
-     * @param string $oaiID    Record ID received from OAI-PMH
-     * (or empty string for file import)
      * @param string $source   Source ID
-     * @param string $idPrefix Record ID prefix
+     * @param string $oaiID    Record ID received from OAI-PMH (or empty string for
+     * file import)
+     * @param string $data     Metadata
+     *
+     * @return void
      */
-    public function __construct($data, $oaiID, $source, $idPrefix)
+    public function setData($source, $oaiID, $data)
     {
-        parent::__construct($data, $oaiID, $source, $idPrefix);
+        parent::setData($source, $oaiID, $data);
 
         $this->doc = simplexml_load_string($data);
     }
