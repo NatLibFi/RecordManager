@@ -144,18 +144,30 @@ EOT;
                     );
                     break;
                 case 'dump':
-                    $manager->dumpRecord($single);
+                    $dump = new \RecordManager\Base\Controller\Dump(
+                        $configArray, true, $verbose
+                    );
+                    $dump->launch($single);
                     break;
                 case 'deletesource':
-                    $manager->deleteRecords(
-                        $source, isset($params['force']) ? $params['force'] : false
-                    );
+                    $deleteRecords
+                        = new \RecordManager\Base\Controller\DeleteRecords(
+                            $configArray, true, $verbose
+                        );
+                    $deleteRecords->launch($source, !empty($params['force']));
                     break;
                 case 'markdeleted':
-                    $manager->markDeleted($source);
+                    $markDeleted = new \RecordManager\Base\Controller\MarkDeleted(
+                        $configArray, true, $verbose
+                    );
+                    $markDeleted->launch($source);
                     break;
                 case 'deletesolr':
-                    $manager->deleteSolrRecords($source);
+                    $deleteSolr
+                        = new \RecordManager\Base\Controller\DeleteSolrRecords(
+                            $configArray, true, $verbose
+                        );
+                    $deleteSolr->launch($source);
                     break;
                 case 'optimizesolr':
                     $manager->optimizeSolr();
