@@ -581,14 +581,14 @@ class SolrUpdater
                             exit($needCommit ? 1 : 0);
                         }
                     } catch (\Exception $e) {
-                        if (null === $childPid) {
-                            throw $e;
-                        }
                         $this->log->log(
                             'updateRecords',
                             'Exception from merged record processing: '
                             . $e->getMessage()
                         );
+                        if (null === $childPid) {
+                            throw $e;
+                        }
                         if (null !== $childPid) {
                             $this->deInitWorkerPoolManager();
                         }
@@ -2454,7 +2454,7 @@ class SolrUpdater
                         $className = "\RecordManager\Base\Enrichment\\$className";
                     }
                     $this->enrichments[$enrichment] = new $className(
-                        $this->db, $this->log
+                        $this->db, $this->log, $this->config
                     );
                 }
                 $this->enrichments[$enrichment]->enrich($source, $record, $data);

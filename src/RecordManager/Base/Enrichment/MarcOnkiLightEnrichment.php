@@ -52,18 +52,17 @@ class MarcOnkiLightEnrichment extends Enrichment
     /**
      * Constructor
      *
-     * @param MongoDB $db  Database connection (for cache)
-     * @param Logger  $log Logger
+     * @param Database $db     Database connection (for cache)
+     * @param Logger   $log    Logger
+     * @param array    $config Main configuration
      */
-    public function __construct($db, $log)
+    public function __construct($db, $log, $config)
     {
-        parent::__construct($db, $log);
-
-        global $configArray;
+        parent::__construct($db, $log, $config);
 
         $this->onkiLightBaseURL
-            = isset($configArray['MarcOnkiLightEnrichment']['base_url'])
-            ? $configArray['MarcOnkiLightEnrichment']['base_url']
+            = isset($this->config['MarcOnkiLightEnrichment']['base_url'])
+            ? $this->config['MarcOnkiLightEnrichment']['base_url']
             : '';
     }
 

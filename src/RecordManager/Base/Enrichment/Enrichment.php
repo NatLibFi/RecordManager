@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2014-2016.
+ * Copyright (C) The National Library of Finland 2014-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -58,6 +58,13 @@ class Enrichment
     protected $log;
 
     /**
+     * Main configuration
+     *
+     * @var array
+     */
+    protected $config;
+
+    /**
      * Maximum age of cached data in seconds
      *
      * @var number
@@ -97,27 +104,28 @@ class Enrichment
     /**
      * Constructor
      *
-     * @param Database $db  Database connection (for cache)
-     * @param Logger   $log Logger
+     * @param Database $db     Database connection (for cache)
+     * @param Logger   $log    Logger
+     * @param array    $config Main configuration
      */
-    public function __construct(Database $db, Logger $log)
+    public function __construct(Database $db, Logger $log, $config)
     {
-        global $configArray;
-
         $this->db = $db;
         $this->log = $log;
-        $this->maxCacheAge = isset($configArray['Enrichment']['cache_expiration'])
-            ? $configArray['Enrichment']['cache_expiration'] * 60
+        $this->config = $config;
+
+        $this->maxCacheAge = isset($config['Enrichment']['cache_expiration'])
+            ? $config['Enrichment']['cache_expiration'] * 60
             : 86400;
-        $this->maxTries = isset($configArray['Enrichment']['max_tries'])
-            ? $configArray['Enrichment']['max_tries']
+        $this->maxTries = isset($config['Enrichment']['max_tries'])
+            ? $config['Enrichment']['max_tries']
             : 90;
-        $this->retryWait = isset($configArray['Enrichment']['retry_wait'])
-            ? $configArray['Enrichment']['retry_wait']
+        $this->retryWait = isset($config['Enrichment']['retry_wait'])
+            ? $config['Enrichment']['retry_wait']
             : 5;
 
-        if (isset($configArray['HTTP'])) {
-            $this->httpParams += $configArray['HTTP'];
+        if (isset($config['HTTP'])) {
+            $this->httpParams += $config['HTTP'];
         }
     }
 

@@ -66,17 +66,19 @@ class HTTPFiles extends Base
     /**
      * Constructor.
      *
-     * @param object $logger   The Logger object used for logging messages.
-     * @param object $db       Mongo database handle.
-     * @param string $source   The data source to be harvested.
-     * @param string $basePath RecordManager main directory location
-     * @param array  $settings Settings from datasources.ini.
+     * @param Database $db       Database
+     * @param Logger   $logger   The Logger object used for logging messages
+     * @param string   $source   The data source to be harvested
+     * @param string   $basePath RecordManager main directory location
+     * @param array    $config   Main configuration
+     * @param array    $settings Settings from datasources.ini
      *
      * @throws Exception
      */
-    public function __construct($logger, $db, $source, $basePath, $settings)
-    {
-        parent::__construct($logger, $db, $source, $basePath, $settings);
+    public function __construct(Database $db, Logger $logger, $source, $basePath,
+        $config, $settings
+    ) {
+        parent::__construct($db, $logger, $source, $basePath, $config, $settings);
 
         if (isset($settings['filePrefix'])) {
             $this->filePrefix = $settings['filePrefix'];

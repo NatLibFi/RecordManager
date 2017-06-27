@@ -129,24 +129,19 @@ class OaiPmh extends Base
     /**
      * Constructor.
      *
-     * @param object $logger     The Logger object used for logging messages.
-     * @param object $db         Mongo database handle.
-     * @param string $source     The data source to be harvested.
-     * @param string $basePath   RecordManager main directory location
-     * @param array  $settings   Settings from datasources.ini.
-     * @param string $startToken Optional override for the initial
-     *                           harvest command (to resume interrupted harvesting)
+     * @param Database $db       Database
+     * @param Logger   $logger   The Logger object used for logging messages
+     * @param string   $source   The data source to be harvested
+     * @param string   $basePath RecordManager main directory location
+     * @param array    $config   Main configuration
+     * @param array    $settings Settings from datasources.ini
      *
      * @throws Exception
      */
-    public function __construct(
-        $logger, $db, $source, $basePath, $settings, $startToken = ''
+    public function __construct(Database $db, Logger $logger, $source, $basePath,
+        $config, $settings
     ) {
-        parent::__construct($logger, $db, $source, $basePath, $settings);
-
-        global $configArray;
-
-        $this->resumptionToken = $startToken;
+        parent::__construct($db, $logger, $source, $basePath, $config, $settings);
 
         if (isset($settings['set'])) {
             $this->set = $settings['set'];
@@ -188,6 +183,18 @@ class OaiPmh extends Base
         }
 
         $this->identifyServer();
+    }
+
+    /**
+     * Override the resumption token.
+     *
+     * @param string $token New resumption token
+     *
+     * @return void
+     */
+    public function setResumptionToken($token)
+    {
+        $this->resumptionToken = $token;
     }
 
     /**

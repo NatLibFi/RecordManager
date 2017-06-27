@@ -45,6 +45,13 @@ use RecordManager\Base\Utils\XslTransformation;
 class Base
 {
     /**
+     * Database
+     *
+     * @var Database
+     */
+    protected $db;
+
+    /**
      * Logger
      *
      * @var Logger
@@ -52,11 +59,11 @@ class Base
     protected $log;
 
     /**
-     * Database
+     * Main configuration
      *
-     * @var Database
+     * @var array
      */
-    protected $db;
+    protected $config;
 
     /**
      * Base URL of repository
@@ -159,21 +166,21 @@ class Base
     /**
      * Constructor.
      *
-     * @param Logger   $logger   The Logger object used for logging messages
      * @param Database $db       Database
+     * @param Logger   $logger   The Logger object used for logging messages
      * @param string   $source   The data source to be harvested
      * @param string   $basePath RecordManager main directory location
+     * @param array    $config   Main configuration
      * @param array    $settings Settings from datasources.ini
      *
      * @throws Exception
      */
-    public function __construct(Logger $logger, Database $db, $source, $basePath,
-        $settings
+    public function __construct(Database $db, Logger $logger, $source, $basePath,
+        $config, $settings
     ) {
-        global $configArray;
-
-        $this->log = $logger;
         $this->db = $db;
+        $this->log = $logger;
+        $this->config = $config;
 
         // Don't time out during harvest
         set_time_limit(0);
@@ -201,15 +208,15 @@ class Base
             $this->preXslt->setParameter('', 'source_id', $this->source);
         }
 
-        if (isset($configArray['Harvesting']['max_tries'])) {
-            $this->maxTries = $configArray['Harvesting']['max_tries'];
+        if (isset($config['Harvesting']['max_tries'])) {
+            $this->maxTries = $config['Harvesting']['max_tries'];
         }
-        if (isset($configArray['Harvesting']['retry_wait'])) {
-            $this->retryWait = $configArray['Harvesting']['retry_wait'];
+        if (isset($config['Harvesting']['retry_wait'])) {
+            $this->retryWait = $config['Harvesting']['retry_wait'];
         }
 
-        if (isset($configArray['HTTP'])) {
-            $this->httpParams += $configArray['HTTP'];
+        if (isset($config['HTTP'])) {
+            $this->httpParams += $config['HTTP'];
         }
     }
 

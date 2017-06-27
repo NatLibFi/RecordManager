@@ -85,30 +85,24 @@ class OaiPmhProvider extends AbstractBase
 
     /**
      * Constructor
+     *
+     * @param array $config Main configuration
      */
-    public function __construct()
+    public function __construct($config)
     {
-        parent::__construct();
-        global $configArray;
-        global $basePath;
+        parent::__construct($config);
+
         $this->dataSourceSettings
-            = parse_ini_file("$basePath/conf/datasources.ini", true);
-        $this->formats = parse_ini_file(
-            "$basePath/conf/{$configArray['OAI-PMH']['format_definitions']}", true
-        );
-        $this->sets = parse_ini_file(
-            "$basePath/conf/{$configArray['OAI-PMH']['set_definitions']}", true
-        );
+            = parse_ini_file("{$this->basePath}/conf/datasources.ini", true);
+        $formatIni = $this->basePath . '/conf/'
+            . $this->config['OAI-PMH']['format_definitions'];
+        $this->formats = parse_ini_file($formatIni, true);
+        $setIni = $this->basePath . '/conf/'
+            . $this->config['OAI-PMH']['set_definitions'];
+        $this->sets = parse_ini_file($setIni, true);
 
-        $this->log = new Logger();
-
-        $this->db = new Database(
-            $configArray['Mongo']['url'],
-            $configArray['Mongo']['database'],
-            $configArray['Mongo']
-        );
-        $this->idPrefix = isset($configArray['OAI-PMH']['id_prefix'])
-            ? $configArray['OAI-PMH']['id_prefix'] : '';
+        $this->idPrefix = isset($this->config['OAI-PMH']['id_prefix'])
+            ? $this->config['OAI-PMH']['id_prefix'] : '';
     }
 
     /**
@@ -190,10 +184,9 @@ EOT;
      */
     protected function identify()
     {
-        global $configArray;
-        $name = $this->escape($configArray['OAI-PMH']['repository_name']);
-        $base = $this->escape($configArray['OAI-PMH']['base_url']);
-        $admin = $this->escape($configArray['OAI-PMH']['admin_email']);
+        $name = $this->escape($this->config['OAI-PMH']['repository_name']);
+        $base = $this->escape($this->config['OAI-PMH']['base_url']);
+        $admin = $this->escape($this->config['OAI-PMH']['admin_email']);
         $earliestDate = $this->toOaiDate($this->getEarliestDateStamp());
 
         print <<<EOT
@@ -219,8 +212,6 @@ EOT;
      */
     protected function listRecords($verb)
     {
-        global $configArray;
-
         $includeMetadata = $verb == 'ListRecords';
 
         $resumptionToken = $this->getParam('resumptionToken');
@@ -287,7 +278,7 @@ EOT;
         }
         $records = $this->db->findRecords($queryParams, $options);
 
-        $maxRecords = $configArray['OAI-PMH']['result_limit'];
+        $maxRecords = $this->config['OAI-PMH']['result_limit'];
         $count = 0;
         foreach ($records as $record) {
             ++$count;
@@ -460,11 +451,10 @@ EOT;
      */
     protected function printPrefix()
     {
-        global $configArray;
         header('Content-Type: text/xml');
         header("Cache-Control: no-cache, must-revalidate");
         $date = $this->toOaiDate();
-        $base = $this->escape($configArray['OAI-PMH']['base_url']);
+        $base = $this->escape($this->config['OAI-PMH']['base_url']);
         $arguments = '';
         foreach ($this->getRequestParameters() as $param) {
             $keyValue = explode('=', $param, 2);
@@ -732,7 +722,7 @@ EOT;
     {
         $message = '[' . $_SERVER['REMOTE_ADDR'] . '] ' . $message . ' (request: '
             . $_SERVER['QUERY_STRING'] . ')';
-        $this->log->log('OaiPmhProvider', $message, $level);
+        $this->logger->log('OaiPmhProvider', $message, $level);
     }
 
     /**
@@ -755,7 +745,7 @@ EOT;
         }
         $metadata = '';
         if ($includeMetadata && !$record['deleted']) {
-            $metadataRecord = \RecordManager\Base\Record\Factory::createRecord(
+            $metadataRecord = $this->recordFactory->createRecord(
                 $record['format'],
                 MetadataUtils::getRecordData($record, true),
                 $record['oai_id'],

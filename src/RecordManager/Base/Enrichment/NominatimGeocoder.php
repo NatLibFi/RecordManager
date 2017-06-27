@@ -139,17 +139,16 @@ class NominatimGeocoder extends Enrichment
     /**
      * Constructor
      *
-     * @param MongoDB $db  Database connection (for cache)
-     * @param Logger  $log Logger
+     * @param Database $db     Database connection (for cache)
+     * @param Logger   $log    Logger
+     * @param array    $config Main configuration
      */
-    public function __construct($db, $log)
+    public function __construct($db, $log, $config)
     {
-        global $configArray;
+        parent::__construct($db, $log, $config);
 
-        parent::__construct($db, $log);
-
-        $settings = isset($configArray['NominatimGeocoder'])
-            ? $configArray['NominatimGeocoder'] : [];
+        $settings = isset($config['NominatimGeocoder'])
+            ? $config['NominatimGeocoder'] : [];
         if (!isset($settings['url']) || !$settings['url']) {
             throw new \Exception('url must be specified for Nominatim');
         }

@@ -98,19 +98,19 @@ class SierraApi extends Base
     /**
      * Constructor.
      *
-     * @param object $logger   The Logger object used for logging messages.
-     * @param object $db       Mongo database handle.
-     * @param string $source   The data source to be harvested.
-     * @param string $basePath RecordManager main directory location.
-     * @param array  $settings Settings from datasources.ini.
-     * @param int    $startPos Optional harvesting start position.
+     * @param Database $db       Database
+     * @param Logger   $logger   The Logger object used for logging messages
+     * @param string   $source   The data source to be harvested
+     * @param string   $basePath RecordManager main directory location
+     * @param array    $config   Main configuration
+     * @param array    $settings Settings from datasources.ini
      *
      * @throws Exception
      */
-    public function __construct($logger, $db, $source, $basePath, $settings,
-        $startPos = 0
+    public function __construct(Database $db, Logger $logger, $source, $basePath,
+        $config, $settings
     ) {
-        parent::__construct($logger, $db, $source, $basePath, $settings);
+        parent::__construct($db, $logger, $source, $basePath, $config, $settings);
 
         if (empty($settings['sierraApiKey'])
             || empty($settings['sierraApiSecret'])
@@ -121,7 +121,6 @@ class SierraApi extends Base
         }
         $this->apiKey = $settings['sierraApiKey'];
         $this->apiSecret = $settings['sierraApiSecret'];
-        $this->startPosition = $startPos;
         if (isset($settings['suppressedRecords'])) {
             $this->suppressedRecords = $settings['suppressedRecords'];
         }
@@ -136,6 +135,18 @@ class SierraApi extends Base
 
         // Set a timeout since Sierra may sometimes just hang without ever returning.
         $this->httpParams['timeout'] = 600;
+    }
+
+    /**
+     * Override the start position.
+     *
+     * @param int $pos New start position
+     *
+     * @return void
+     */
+    public function setStartPos($pos)
+    {
+        $this->startPosition = $pos;
     }
 
     /**

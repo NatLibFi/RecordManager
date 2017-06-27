@@ -42,8 +42,6 @@ if (!preg_match('/^[\w_]*$/', $format) || !preg_match('/^[\w_]*$/', $source)) {
 
 $basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
 $configArray = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
-$configArray['dataSourceSettings']
-    = parse_ini_file($basePath . '/conf/datasources.ini', true);
 $createPreview = new \RecordManager\Base\Controller\CreatePreview($configArray);
 
 $record = $createPreview->launch($_REQUEST['data'], $format, $source);

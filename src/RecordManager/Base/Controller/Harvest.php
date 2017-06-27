@@ -123,7 +123,8 @@ class Harvest extends AbstractBase
                     throw new \Exception('MetaLib harvesting no longer supported');
                 } elseif ($settings['type'] == 'sfx') {
                     $harvest = new \RecordManager\Base\Harvest\Sfx(
-                        $this->logger, $this->db, $source, $this->basePath, $settings
+                        $this->db, $this->logger, $source, $this->basePath,
+                        $this->config, $settings
                     );
                     if (isset($harvestFromDate)) {
                         $harvest->setStartDate($harvestFromDate);
@@ -151,22 +152,28 @@ class Harvest extends AbstractBase
 
                     if ($settings['type'] == 'sierra') {
                         $harvest = new \RecordManager\Base\Harvest\SierraApi(
-                            $this->logger,
                             $this->db,
+                            $this->logger,
                             $source,
                             $this->basePath,
-                            $settings,
-                            $startResumptionToken ? $startResumptionToken : 0
+                            $config,
+                            $settings
                         );
+                        if ($startResumptionToken) {
+                            $harvest->setStartPos($startResumptionToken);
+                        }
                     } else {
                         $harvest = new \RecordManager\Base\Harvest\OaiPmh(
-                            $this->logger,
                             $this->db,
+                            $this->logger,
                             $source,
                             $this->basePath,
-                            $settings,
-                            $startResumptionToken
+                            $config,
+                            $settings
                         );
+                        if ($startResumptionToken) {
+                            $harvest->setResumptionToken($startResumptionToken);
+                        }
                     }
                     if (isset($harvestFromDate)) {
                         $harvest->setStartDate(

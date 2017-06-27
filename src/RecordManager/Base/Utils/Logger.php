@@ -56,23 +56,23 @@ class Logger
 
     /**
      * Constructor
+     *
+     * @param array $config Main configuration
      */
-    public function __construct()
+    public function __construct($config)
     {
-        global $configArray;
-
-        $this->logLevel = isset($configArray['Log']['log_level'])
-            ? $configArray['Log']['log_level'] : 0;
-        $this->logFile = isset($configArray['Log']['log_file'])
-            ? $configArray['Log']['log_file'] : '';
-        if (isset($configArray['Log']['max_file_size'])) {
-            $this->maxFileSize = $configArray['Log']['max_file_size'];
+        $this->logLevel = isset($config['Log']['log_level'])
+            ? $config['Log']['log_level'] : 0;
+        $this->logFile = isset($config['Log']['log_file'])
+            ? $config['Log']['log_file'] : '';
+        if (isset($config['Log']['max_file_size'])) {
+            $this->maxFileSize = $config['Log']['max_file_size'];
         }
-        if (isset($configArray['Log']['max_file_history'])) {
-            $this->maxFileHistory = $configArray['Log']['max_file_history'];
+        if (isset($config['Log']['max_file_history'])) {
+            $this->maxFileHistory = $config['Log']['max_file_history'];
         }
-        if (isset($configArray['Log']['error_email'])) {
-            $this->errorEmail = $configArray['Log']['error_email'];
+        if (isset($config['Log']['error_email'])) {
+            $this->errorEmail = $config['Log']['error_email'];
         }
     }
 

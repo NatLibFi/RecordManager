@@ -115,7 +115,7 @@ abstract class AbstractBase
 
         date_default_timezone_set($config['Site']['timezone']);
 
-        $this->logger = new Logger();
+        $this->logger = new Logger($config);
         if ($console) {
             $this->logger->logToConsole = true;
         }
@@ -178,9 +178,7 @@ abstract class AbstractBase
      */
     protected function readListFile($filename)
     {
-        global $basePath;
-
-        $filename = "$basePath/conf/$filename";
+        $filename = "{$this->basePath}/conf/$filename";
         $lines = file($filename, FILE_IGNORE_NEW_LINES);
         if ($lines === false) {
             $this->logger->log(
