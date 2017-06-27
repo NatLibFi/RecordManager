@@ -28,9 +28,7 @@
 namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Database\Database;
-use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
-use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\PerformanceCounter;
 
 /**

@@ -41,6 +41,20 @@ namespace RecordManager\Base\Record;
 class Factory
 {
     /**
+     * Check if a record driver for the specified format can be created.
+     *
+     * @param string $format Metadata format
+     *
+     * @return bool
+     */
+    public static function canCreate($format)
+    {
+        $class = self::getRecordClass($format);
+
+        return class_exists($class);
+    }
+
+    /**
      * This constructs a metadata record driver for the specified format.
      *
      * @param string $format Metadata format
@@ -52,6 +66,30 @@ class Factory
      * @throws Exception
      */
     public static function createRecord($format, $data, $oaiID, $source)
+    {
+        $idPrefix
+            = isset($configArray['dataSourceSettings'][$source]['idPrefix'])
+            ? $configArray['dataSourceSettings'][$source]['idPrefix']
+            : $source;
+
+        $class = self::getRecordClass($format);
+
+        if (class_exists($class)) {
+            $obj = new $class($data, $oaiID, $source, $idPrefix);
+            return $obj;
+        }
+
+        throw new \Exception("Could not load record driver '$class' for {$format}");
+    }
+
+    /**
+     * Determine record class for the given format
+     *
+     * @param string $format Format
+     *
+     * @return string
+     */
+    protected static function getRecordClass($format)
     {
         global $configArray;
 
@@ -65,16 +103,7 @@ class Factory
             $class = "\\RecordManager\\Base\\Record\\$class";
         }
 
-        $idPrefix
-            = isset($configArray['dataSourceSettings'][$source]['idPrefix'])
-            ? $configArray['dataSourceSettings'][$source]['idPrefix']
-            : $source;
-        if (class_exists($class)) {
-            $obj = new $class($data, $oaiID, $source, $idPrefix);
-            return $obj;
-        }
-
-        throw new \Exception("Could not load record driver '$class' for {$format}");
+        return $class;
     }
 }
 

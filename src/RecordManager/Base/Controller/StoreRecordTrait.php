@@ -135,7 +135,7 @@ trait StoreRecordTrait
         $count = 0;
         $mainID = '';
         foreach ($dataArray as $data) {
-            if (isset($settings['normalizationXSLT'])) {
+            if (null !== $settings['normalizationXSLT']) {
                 $metadataRecord = RecordFactory::createRecord(
                     $settings['format'],
                     $settings['normalizationXSLT']

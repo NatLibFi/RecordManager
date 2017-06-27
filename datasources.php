@@ -36,6 +36,8 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
+    global $configArray;
+
     $params = parseArgs($argv);
     applyConfigOverrides($params);
     if (empty($params['search'])) {
@@ -45,19 +47,23 @@ Usage: $argv[0] --search=...
 Parameters:
 
 --search=[regexp]   Search for a string in data sources and list the data source id's
+                    Note that all settings are normalized to not contain any spaces
+                    around equal signs, and boolean true is denoted with 1 and false
+                    with 0.
 
 
 EOT;
         exit(1);
     }
 
-    $manager = new \RecordManager\Base\Controller\RecordManager(
-        true, isset($params['verbose']) ? $params['verbose'] : false
-    );
     if (!empty($params['search'])) {
-        $manager->searchDataSources($params['search']);
+        $searchDataSources = new \RecordManager\Base\Controller\SearchDataSources(
+            $configArray,
+            true,
+            isset($params['verbose']) ? $params['verbose'] : false
+        );
+        $searchDataSources->launch($params['search']);
     }
-
 }
 
 main($argv);

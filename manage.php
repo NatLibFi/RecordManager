@@ -88,10 +88,6 @@ EOT;
             die();
         }
 
-        $manager = new \RecordManager\Base\Controller\RecordManager(
-            $configArray, true, $verbose
-        );
-
         $sources = isset($params['source']) ? $params['source'] : '';
         $single = isset($params['single']) ? $params['single'] : '';
         $noCommit = isset($params['nocommit']) ? $params['nocommit'] : false;
@@ -186,7 +182,10 @@ EOT;
                     );
                     break;
                 case 'checkdedup':
-                    $manager->checkDedupRecords();
+                    $checkDedup = new \RecordManager\Base\Controller\CheckDedup(
+                        $configArray, true, $verbose
+                    );
+                    $checkDedup->launch();
                     break;
                 case 'purgedeleted':
                     if (!isset($params['force']) || !$params['force']) {

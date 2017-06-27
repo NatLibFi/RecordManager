@@ -1,11 +1,10 @@
 <?php
 /**
- * Preview Class
+ * Search Data Source Settings
  *
  * PHP version 5
  *
- * Copyright (C) Eero Heikkinen, The National Board of Antiquities 2013.
- * Copyright (C) The National Library of Finland 2012-2014.
+ * Copyright (C) The National Library of Finland 2011-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -23,39 +22,51 @@
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
- * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Base\Solr;
-
-use RecordManager\Base\Utils\Logger;
-use RecordManager\Base\Record\Factory as RecordFactory;
+namespace RecordManager\Base\Controller;
 
 /**
- * Preview Class
- *
- * This is a class for getting realtime previews of metadata normalization.
+ * Search Data Source Settings
  *
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
- * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class PreviewCreator extends SolrUpdater
+class SearchDataSources extends AbstractBase
 {
     /**
-     * Create a preview of the given record
+     * Search for $regexp in data sources
      *
-     * @param array $record Record
+     * @param string $regexp Regular expression
      *
-     * @return array Solr record fields
+     * @return void
      */
-    public function create($record)
+    public function launch($regexp)
     {
-        $components = [];
-        return $this->createSolrArray($record, $components);
+        if (substr($regexp, 0, 1) !== '/') {
+            $regexp = "/$regexp/";
+        }
+        $matches = [];
+        foreach ($this->dataSourceSettings as $source => $settings) {
+            foreach ($settings as $setting => $value) {
+                foreach (is_array($value) ? $value : [$value] as $single) {
+                    if (is_array($single)) {
+                        continue;
+                    }
+                    if (is_bool($single)) {
+                        $single = $single ? '1' : '0';
+                    }
+                    if (preg_match($regexp, "$setting=$single")) {
+                        $matches[] = $source;
+                        break 2;
+                    }
+                }
+            }
+        }
+        echo implode(',', $matches) . "\n";
     }
 }

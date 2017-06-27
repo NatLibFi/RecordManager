@@ -41,6 +41,7 @@ use RecordManager\Base\Database\Database;
 class Import extends AbstractBase
 {
     use StoreRecordTrait;
+    use PreTransformationTrait;
 
     /**
      * Load records into the database from a file
@@ -113,39 +114,5 @@ class Import extends AbstractBase
 
         $this->logger->log('loadFromFile', "Total $count records loaded");
         return $count;
-    }
-
-    /**
-     * Execute a pretransformation on data before it is split into records and
-     * loaded.
-     *
-     * @param string $data   The original data
-     * @param string $source Source ID
-     *
-     * @return string Transformed data
-     */
-    protected function pretransform($data, $source)
-    {
-        $settings = &$this->dataSourceSettings[$source];
-        if (!isset($settings['preXSLT'])) {
-            $style = new \DOMDocument();
-            $style->load(
-                $this->basePath . '/transformations/'
-                . $settings['preTransformation']
-            );
-            $settings['preXSLT'] = new \XSLTProcessor();
-            $settings['preXSLT']->importStylesheet($style);
-            $settings['preXSLT']->setParameter('', 'source_id', $source);
-            $settings['preXSLT']->setParameter(
-                '', 'institution', $settings['institution']
-            );
-            $settings['preXSLT']->setParameter('', 'format', $settings['format']);
-            $settings['preXSLT']->setParameter(
-                '', 'id_prefix', $settings['idPrefix']
-            );
-        }
-        $doc = new \DOMDocument();
-        $doc->loadXML($data, LIBXML_PARSEHUGE);
-        return $settings['preXSLT']->transformToXml($doc);
     }
 }

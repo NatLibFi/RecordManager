@@ -1,6 +1,6 @@
 <?php
 /**
- * Delete Records from Solr
+ * Pre-transformation trait
  *
  * PHP version 5
  *
@@ -27,8 +27,10 @@
  */
 namespace RecordManager\Base\Controller;
 
+use RecordManager\Base\Record\Factory as RecordFactory;
+
 /**
- * Delete Records from Solr
+ * Pre-transformation trait
  *
  * @category DataManagement
  * @package  RecordManager
@@ -36,36 +38,39 @@ namespace RecordManager\Base\Controller;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class DeleteSolrRecords extends AbstractBase
+trait PreTransformationTrait
 {
     /**
-     * Delete records of a single data source from the Solr index
+     * Execute a pretransformation on data before it is split into records and
+     * loaded.
      *
-     * @param string $sourceId Source ID
+     * @param string $data   The original data
+     * @param string $source Source ID
      *
-     * @return void
+     * @return string Transformed data
      */
-    public function launch($sourceId)
+    protected function pretransform($data, $source)
     {
-        $updater = new \RecordManager\Base\Solr\SolrUpdater(
-            $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings
-        );
-        if (!empty($this->config['Solr']['merge_records'])) {
-            $this->logger->log(
-                'deleteSolrRecords',
-                "Deleting data source '$sourceId' from merged records via Solr "
-                . "update for merged records"
+        $settings = &$this->dataSourceSettings[$source];
+        if (!isset($settings['preXSLT'])) {
+            $style = new \DOMDocument();
+            $style->load(
+                $this->basePath . '/transformations/'
+                . $settings['preTransformation']
             );
-            $updater->updateRecords('', $sourceId, '', false, true);
+            $settings['preXSLT'] = new \XSLTProcessor();
+            $settings['preXSLT']->importStylesheet($style);
+            $settings['preXSLT']->setParameter('', 'source_id', $source);
+            $settings['preXSLT']->setParameter(
+                '', 'institution', $settings['institution']
+            );
+            $settings['preXSLT']->setParameter('', 'format', $settings['format']);
+            $settings['preXSLT']->setParameter(
+                '', 'id_prefix', $settings['idPrefix']
+            );
         }
-        $this->logger->log(
-            'deleteSolrRecords',
-            "Deleting data source '$sourceId' directly from Solr"
-        );
-        $updater->deleteDataSource($sourceId);
-        $this->logger->log(
-            'deleteSolrRecords', "Deletion of '$sourceId' from Solr completed"
-        );
+        $doc = new \DOMDocument();
+        $doc->loadXML($data, LIBXML_PARSEHUGE);
+        return $settings['preXSLT']->transformToXml($doc);
     }
 }

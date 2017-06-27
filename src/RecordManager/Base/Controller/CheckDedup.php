@@ -1,6 +1,6 @@
 <?php
 /**
- * Dump Record
+ * Check Dedup Records
  *
  * PHP version 5
  *
@@ -27,10 +27,10 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Utils\MetadataUtils;
+use RecordManager\Base\Utils\PerformanceCounter;
 
 /**
- * Dump Record
+ * Check Dedup Records
  *
  * @category DataManagement
  * @package  RecordManager
@@ -38,29 +38,45 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Dump extends AbstractBase
+class CheckDedup extends AbstractBase
 {
     /**
-     * Dump a single record to console
-     *
-     * @param string $recordID ID of the record to be dumped
+     * Verify consistency of dedup records links with actual records
      *
      * @return void
-     * @throws Exception
      */
-    public function launch($recordID)
+    public function launch()
     {
-        if (!$recordID) {
-            throw new \Exception('dump: record id must be specified');
-        }
-        $records = $this->db->findRecords(['_id' => $recordID]);
-        foreach ($records as $record) {
-            $record['original_data'] = MetadataUtils::getRecordData($record, false);
-            $record['normalized_data'] = MetadataUtils::getRecordData($record, true);
-            if ($record['original_data'] == $record['normalized_data']) {
-                $record['normalized_data'] = '';
+        $this->logger->log('checkDedupRecords', 'Checking dedup record consistency');
+
+        $dedupHandler = $this->getDedupHandler();
+
+        $dedupRecords = $this->db->findDedups([]);
+        $count = 0;
+        $fixed = 0;
+        $pc = new PerformanceCounter();
+        foreach ($dedupRecords as $dedupRecord) {
+            $results = $dedupHandler->checkDedupRecord($dedupRecord);
+            if ($results) {
+                $fixed += count($results);
+                foreach ($results as $result) {
+                    $this->logger->log('checkDedupRecords', $result);
+                }
             }
-            print_r($record);
+            ++$count;
+            if ($count % 1000 == 0) {
+                $pc->add($count);
+                $avg = $pc->getSpeed();
+                $this->logger->log(
+                    'checkDedupRecords',
+                    "$count records checked with $fixed links fixed, "
+                    . "$avg records/sec"
+                );
+            }
         }
+        $this->logger->log(
+            'checkDedupRecords',
+            "Completed with $count records checked with $fixed links fixed"
+        );
     }
 }
