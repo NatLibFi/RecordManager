@@ -1482,6 +1482,7 @@ class SolrUpdater
             }
         }
         arsort($values, SORT_NUMERIC);
+        echo "Result list:\n";
         foreach ($values as $key => $value) {
             echo "$key: $value\n";
         }

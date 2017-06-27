@@ -170,10 +170,16 @@ EOT;
                     $deleteSolr->launch($source);
                     break;
                 case 'optimizesolr':
-                    $manager->optimizeSolr();
+                    $solrOptimize = new \RecordManager\Base\Controller\SolrOptimize(
+                        $configArray, true, $verbose
+                    );
+                    $solrOptimize->launch();
                     break;
                 case 'count':
-                    $manager->countValues(
+                    $countValues = new \RecordManager\Base\Controller\CountValues(
+                        $configArray, true, $verbose
+                    );
+                    $countValues->launch(
                         $source,
                         isset($params['field']) ? $params['field'] : null,
                         isset($params['mapped']) ? $params['mapped'] : false

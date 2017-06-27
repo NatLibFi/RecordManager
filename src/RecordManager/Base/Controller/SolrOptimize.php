@@ -1,6 +1,6 @@
 <?php
 /**
- * Solr Update
+ * Solr Optimization
  *
  * PHP version 5
  *
@@ -30,7 +30,7 @@ namespace RecordManager\Base\Controller;
 use RecordManager\Base\Solr\SolrUpdater;
 
 /**
- * Solr Update
+ * Solr Optimization
  *
  * @category DataManagement
  * @package  RecordManager
@@ -38,28 +38,22 @@ use RecordManager\Base\Solr\SolrUpdater;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class SolrUpdate extends AbstractBase
+class SolrOptimize extends AbstractBase
 {
     /**
-     * Send updates to the Solr index
-     *
-     * @param string|null $fromDate Starting date for updates (if empty
-     *                              string, last update date stored in the database
-     *                              is used and if null, all records are processed)
-     * @param string      $sourceId Source ID to process, or empty or * for all
-     *                              sources (ignored if record merging is enabled)
-     * @param string      $singleId Process only a record with the given ID
-     * @param bool        $noCommit If true, changes are not explicitly committed
+     * Optimize the Solr index
      *
      * @return void
      */
-    public function launch($fromDate = null, $sourceId = '', $singleId = '',
-        $noCommit = false
-    ) {
+    public function launch()
+    {
         $updater = new SolrUpdater(
             $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
             $this->dataSourceSettings
         );
-        $updater->updateRecords($fromDate, $sourceId, $singleId, $noCommit, false);
+
+        $this->logger->log('optimizeSolr', 'Optimizing Solr index');
+        $updater->optimizeIndex();
+        $this->logger->log('optimizeSolr', 'Solr optimization completed');
     }
 }

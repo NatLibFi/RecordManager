@@ -119,22 +119,6 @@ class RecordManager extends AbstractBase
     }
 
     /**
-     * Optimize the Solr index
-     *
-     * @return void
-     */
-    public function optimizeSolr()
-    {
-        $updater = new SolrUpdater(
-            $this->db, $this->basePath, $this->logger, $this->verbose
-        );
-
-        $this->logger->log('optimizeSolr', 'Optimizing Solr index');
-        $updater->optimizeIndex();
-        $this->logger->log('optimizeSolr', 'Solr optimization completed');
-    }
-
-    /**
      * Count distinct values in the specified field (that would be added to the
      * Solr index)
      *
