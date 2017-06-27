@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2016.
+ * Copyright (C) The National Library of Finland 2011-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -29,7 +29,7 @@ namespace RecordManager\Base\Deduplication;
 
 use RecordManager\Base\Database\Database;
 use RecordManager\Base\Record\Factory as RecordFactory;
-use RecordManager\Base\Solr\SolrUpdater;
+use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -75,11 +75,11 @@ class DedupHandler
     protected $tooManyCandidatesKeys = [];
 
     /**
-     * SolrUpdater for format mapping
+     * FieldMapper for format mapping
      *
-     * @val SolrUpdater
+     * @var FieldMapper
      */
-    protected $solrUpdater = null;
+    protected $fieldMapper = null;
 
     /**
      * Data source settings
@@ -91,24 +91,27 @@ class DedupHandler
     /**
      * Constructor
      *
-     * @param Database    $db          Database
-     * @param Logger      $log         Logger object
-     * @param boolean     $verbose     Whether verbose output is enabled
-     * @param SolrUpdater $solrUpdater SolrUpdater instance
-     * @param array       $settings    Data source settings
+     * @param Database $db         Database
+     * @param Logger   $log        Logger object
+     * @param boolean  $verbose    Whether verbose output is enabled
+     * @param string   $basePath   Base path
+     * @param array    $mainConfig Main configuration
+     * @param array    $settings   Data source settings
      */
-    public function __construct(
-        Database $db,
-        Logger $log,
-        $verbose,
-        SolrUpdater $solrUpdater,
-        $settings
+    public function __construct(Database $db, Logger $log, $verbose, $basePath,
+        $mainConfig, $settings
     ) {
         $this->db = $db;
         $this->log = $log;
         $this->verbose = $verbose;
-        $this->solrUpdater = $solrUpdater;
         $this->dataSourceSettings = $settings;
+
+        $this->fieldMapper = new FieldMapper(
+            $basePath,
+            isset($mainConfig['DefaultMappings'])
+                ? $mainConfig['DefaultMappings'] : [],
+            $settings
+        );
     }
 
     /**
@@ -495,10 +498,10 @@ class DedupHandler
         // Check format
         $origFormat = $origRecord->getFormat();
         $cFormat = $cRecord->getFormat();
-        $origMapped = $this->solrUpdater->mapFormat(
+        $origMapped = $this->fieldMapper->mapFormat(
             $record['source_id'], $origFormat
         );
-        $cMapped = $this->solrUpdater->mapFormat($candidate['source_id'], $cFormat);
+        $cMapped = $this->fieldMapper->mapFormat($candidate['source_id'], $cFormat);
         if ($origFormat != $cFormat && $origMapped != $cMapped) {
             if ($this->verbose) {
                 echo "--Format mismatch: $origFormat != $cFormat "

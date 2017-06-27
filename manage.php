@@ -37,6 +37,8 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
+    global $configArray;
+
     $params = parseArgs($argv);
     applyConfigOverrides($params);
     if (empty($params['func']) || !is_string($params['func'])) {
@@ -80,13 +82,14 @@ EOT;
 
     $lockfile = isset($params['lockfile']) ? $params['lockfile'] : '';
     $lockhandle = false;
+    $verbose = isset($params['verbose']) ? $params['verbose'] : false;
     try {
         if (($lockhandle = acquireLock($lockfile)) === false) {
             die();
         }
 
         $manager = new \RecordManager\Base\Controller\RecordManager(
-            true, isset($params['verbose']) ? $params['verbose'] : false
+            $configArray, true, $verbose
         );
 
         $sources = isset($params['source']) ? $params['source'] : '';
@@ -99,7 +102,7 @@ EOT;
                 ? '' : (isset($params['from']) ? $params['from'] : null);
 
             $solrUpdate = new \RecordManager\Base\Controller\SolrUpdate(
-                true, isset($params['verbose']) ? $params['verbose'] : false
+                $configArray, true, $verbose
             );
             $solrUpdate->launch($date, $sources, $single, $noCommit);
         } elseif ($params['func'] == 'comparesolr') {
@@ -108,7 +111,7 @@ EOT;
             $log = isset($params['comparelog']) ? $params['comparelog'] : '-';
 
             $solrCompare = new \RecordManager\Base\Controller\SolrCompare(
-                true, isset($params['verbose']) ? $params['verbose'] : false
+                $configArray, true, $verbose
             );
             $solrCompare->launch($log, $date, $sources, $single);
         } elseif ($params['func'] == 'dumpsolr') {
@@ -118,14 +121,17 @@ EOT;
                 ? $params['dumpprefix'] : 'dumpsolr';
 
             $solrDump = new \RecordManager\Base\Controller\SolrDump(
-                true, isset($params['verbose']) ? $params['verbose'] : false
+                $configArray, true, $verbose
             );
             $solrDump->launch($dumpPrefix, $date, $sources, $single);
         } else {
             foreach (explode(',', $sources) as $source) {
                 switch ($params['func']) {
                 case 'renormalize':
-                    $manager->renormalize($source, $single);
+                    $renormalize = new \RecordManager\Base\Controller\Renormalize(
+                        $configArray, true, $verbose
+                    );
+                    $renormalize->launch($source, $single);
                     break;
                 case 'deduplicate':
                 case 'markdedup':
@@ -172,7 +178,7 @@ EOT;
                         exit(1);
                     }
                     $purge = new \RecordManager\Base\Controller\PurgeDeleted(
-                        true, isset($params['verbose']) ? $params['verbose'] : false
+                        $configArray, true, $verbose
                     );
                     $purge->launch(
                         isset($params['daystokeep']) ? intval($params['daystokeep'])

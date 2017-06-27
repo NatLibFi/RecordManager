@@ -26,7 +26,7 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 
-use RecordManager\Base\Solr\SolrUpdater;
+use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -99,31 +99,49 @@ class MappingFilesTest extends AbstractTest
     ];
 
     /**
+     * Data source settings
+     *
+     * @var array
+     */
+    protected $dataSourceSettings = [
+        'test' => [
+            'institution' => 'Test',
+            'format' => 'marc',
+            'building_mapping' => [
+                'building.map',
+                'building_sub.map,regexp'
+            ]
+        ]
+    ];
+
+    // TODO: Add tests for default mappings
+
+    /**
      * Tests for basic mapping files
      *
      * @return void
      */
     public function testBasicMappingFile()
     {
-        $solrUpdater = $this->getSolrUpdater();
+        $fieldMapper = $this->getFieldMapper();
 
         $result = $this->callProtected(
-            $solrUpdater, 'mapValue', ['val1', $this->basicMapping]
+            $fieldMapper, 'mapValue', ['val1', $this->basicMapping]
         );
         $this->assertEquals('a/b', $result);
 
         $result = $this->callProtected(
-            $solrUpdater, 'mapValue', ['val2', $this->basicMapping]
+            $fieldMapper, 'mapValue', ['val2', $this->basicMapping]
         );
         $this->assertEquals('', $result);
 
         $result = $this->callProtected(
-            $solrUpdater, 'mapValue', ['val3', $this->basicMapping]
+            $fieldMapper, 'mapValue', ['val3', $this->basicMapping]
         );
         $this->assertEquals('def', $result);
 
         $result = $this->callProtected(
-            $solrUpdater, 'mapValue', ['', $this->basicMapping]
+            $fieldMapper, 'mapValue', ['', $this->basicMapping]
         );
         $this->assertEquals('def', $result);
     }
@@ -135,30 +153,30 @@ class MappingFilesTest extends AbstractTest
      */
     public function testRegexpMappingFile()
     {
-        $solrUpdater = $this->getSolrUpdater();
+        $fieldMapper = $this->getFieldMapper();
 
         $result = $this->callProtected(
-            $solrUpdater, 'mapValue', ['val1', $this->regexpMapping]
+            $fieldMapper, 'mapValue', ['val1', $this->regexpMapping]
         );
         $this->assertEquals('val/1', $result);
 
         $result = $this->callProtected(
-            $solrUpdater, 'mapValue', ['val', $this->regexpMapping]
+            $fieldMapper, 'mapValue', ['val', $this->regexpMapping]
         );
         $this->assertEquals('string', $result);
 
         $result = $this->callProtected(
-            $solrUpdater, 'mapValue', ['!21!', $this->regexpMapping]
+            $fieldMapper, 'mapValue', ['!21!', $this->regexpMapping]
         );
         $this->assertEquals('def', $result);
 
         $result = $this->callProtected(
-            $solrUpdater, 'mapValue', ['21!', $this->regexpMapping]
+            $fieldMapper, 'mapValue', ['21!', $this->regexpMapping]
         );
         $this->assertEquals('!', $result);
 
         $result = $this->callProtected(
-            $solrUpdater, 'mapValue', ['21', $this->regexpMapping]
+            $fieldMapper, 'mapValue', ['21', $this->regexpMapping]
         );
         $this->assertEquals('', $result);
     }
@@ -170,20 +188,20 @@ class MappingFilesTest extends AbstractTest
      */
     public function testMultilevelMappingFile()
     {
-        $solrUpdater = $this->getSolrUpdater();
+        $fieldMapper = $this->getFieldMapper();
 
         $result = $this->callProtected(
-            $solrUpdater, 'mapValue', [['val1', 'val1'], $this->multilevelMapping]
+            $fieldMapper, 'mapValue', [['val1', 'val1'], $this->multilevelMapping]
         );
         $this->assertEquals('a/b/val/1', $result);
 
         $result = $this->callProtected(
-            $solrUpdater, 'mapValue', [['val2', 'val1'], $this->multilevelMapping]
+            $fieldMapper, 'mapValue', [['val2', 'val1'], $this->multilevelMapping]
         );
         $this->assertEquals('', $result);
 
         $result = $this->callProtected(
-            $solrUpdater, 'mapValue', [['val1', '21'], $this->multilevelMapping]
+            $fieldMapper, 'mapValue', [['val1', '21'], $this->multilevelMapping]
         );
         $this->assertEquals('a/b', $result);
     }
@@ -205,16 +223,15 @@ class MappingFilesTest extends AbstractTest
     }
 
     /**
-     * Create SolrUpdater
+     * Create FieldMapper
      *
-     * @return SolrUpdater
+     * @return FieldMapper
      */
-    protected function getSolrUpdater()
+    protected function getFieldMapper()
     {
         $basePath = dirname(__FILE__) . '/configs/mappingfilestest';
-        $logger = $this->createMock(Logger::class);
-        $solrUpdater = new SolrUpdater(null, $basePath, $logger, false);
+        $fieldMapper = new FieldMapper($basePath, [], $this->dataSourceSettings);
 
-        return $solrUpdater;
+        return $fieldMapper;
     }
 }

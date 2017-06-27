@@ -28,6 +28,7 @@
 namespace RecordManager\Base\Solr;
 
 use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\PerformanceCounter;
@@ -53,23 +54,130 @@ if (function_exists('pcntl_async_signals')) {
  */
 class SolrUpdater
 {
+    /**
+     * Base path of Record Manager
+     *
+     * @var string
+     */
+    protected $basePath;
+
+    /**
+     * Database
+     *
+     * @var Database
+     */
     protected $db;
+
+    /**
+     * Logger
+     *
+     * @var Logger
+     */
     protected $log;
-    protected $settings;
-    protected $buildingHierarchy;
+
+    /**
+     * Verbose mode
+     *
+     * @var bool
+     */
     protected $verbose;
+
+    /**
+     * Main configuration
+     *
+     * @var array
+     */
+    protected $config;
+
+    /**
+     * Data source settings
+     *
+     * @var array
+     */
+    protected $settings;
+
+    /**
+     * Whether building field is hierarchical
+     *
+     * @var bool
+     */
+    protected $buildingHierarchy;
+
+    /**
+     * Formats that denote journals
+     *
+     * @var array
+     */
     protected $journalFormats;
+
+    /**
+     * Formats that denote ejournals
+     *
+     * @var array
+     */
     protected $eJournalFormats;
+
+    /**
+     * Formats that denote journals and ejournals
+     *
+     * @var array
+     */
     protected $allJournalFormats;
+
+    /**
+     * Termination flag
+     *
+     * @var bool
+     */
     protected $terminate;
+
+    /**
+     * File name prefix when dumping records
+     *
+     * @var string
+     */
     protected $dumpPrefix = '';
 
+    /**
+     * Commit interval (number of record updates before a forced commit)
+     *
+     * @var int
+     */
     protected $commitInterval;
+
+    /**
+     * Maximum number of records in a single update batch
+     *
+     * @var int
+     */
     protected $maxUpdateRecords;
+
+    /**
+     * Maximum size of a single update batch in bytes
+     *
+     * @var int
+     */
     protected $maxUpdateSize;
+
+    /**
+     * Maximum number attempts to send the update request to Solr
+     *
+     * @var int
+     */
     protected $maxUpdateTries;
+
+    /**
+     * Seconds to wait between any Solr request retries
+     *
+     * @var int
+     */
     protected $updateRetryWait;
-    protected $backgroundUpdates;
+
+    /**
+     * Whether to run merged record update in parallel with single records
+     *
+     * @var bool
+     */
     protected $threadedMergedRecordUpdate;
 
     /**
@@ -206,81 +314,88 @@ class SolrUpdater
     protected $workerPoolManager = null;
 
     /**
+     * Field mapper
+     *
+     * @var FieldMapper
+     */
+    protected $fieldMapper = null;
+
+    /**
      * Constructor
      *
-     * @param MongoDB $db       Database connection
-     * @param string  $basePath RecordManager main directory
-     * @param object  $log      Logger
-     * @param boolean $verbose  Whether to output verbose messages
+     * @param MongoDB $db                 Database connection
+     * @param string  $basePath           RecordManager main directory
+     * @param object  $log                Logger
+     * @param boolean $verbose            Whether to output verbose messages
+     * @param array   $config             Main configuration
+     * @param array   $dataSourceSettings Data source settings
      *
      * @throws Exception
      */
-    public function __construct($db, $basePath, $log, $verbose)
-    {
-        global $configArray;
-
+    public function __construct($db, $basePath, $log, $verbose, $config,
+        $dataSourceSettings
+    ) {
+        $this->config = $config;
         $this->db = $db;
         $this->basePath = $basePath;
         $this->log = $log;
         $this->verbose = $verbose;
 
-        $this->journalFormats = isset($configArray['Solr']['journal_formats'])
-            ? $configArray['Solr']['journal_formats']
+        $this->journalFormats = isset($config['Solr']['journal_formats'])
+            ? $config['Solr']['journal_formats']
             : ['Journal', 'Serial', 'Newspaper'];
 
-        $this->eJournalFormats = isset($configArray['Solr']['ejournal_formats'])
-            ? $configArray['Solr']['journal_formats']
+        $this->eJournalFormats = isset($config['Solr']['ejournal_formats'])
+            ? $config['Solr']['journal_formats']
             : ['eJournal'];
 
         $this->allJournalFormats
             = array_merge($this->journalFormats, $this->eJournalFormats);
 
-        if (isset($configArray['Solr']['hierarchical_facets'])) {
-            $this->hierarchicalFacets = $configArray['Solr']['hierarchical_facets'];
+        if (isset($config['Solr']['hierarchical_facets'])) {
+            $this->hierarchicalFacets = $config['Solr']['hierarchical_facets'];
         }
         // Special case: building hierarchy
         $this->buildingHierarchy = in_array('building', $this->hierarchicalFacets);
 
-        if (isset($configArray['Solr']['merged_fields'])) {
+        if (isset($config['Solr']['merged_fields'])) {
             $this->mergedFields
-                = explode(',', $configArray['Solr']['merged_fields']);
+                = explode(',', $config['Solr']['merged_fields']);
         }
         $this->mergedFields = array_flip($this->mergedFields);
 
-        if (isset($configArray['Solr']['single_fields'])) {
+        if (isset($config['Solr']['single_fields'])) {
             $this->singleFields
-                = explode(',', $configArray['Solr']['single_fields']);
+                = explode(',', $config['Solr']['single_fields']);
         }
         $this->singleFields = array_flip($this->singleFields);
 
-        if (isset($configArray['Solr']['warnings_field'])) {
-            $this->warningsField = $configArray['Solr']['warnings_field'];
+        if (isset($config['Solr']['warnings_field'])) {
+            $this->warningsField = $config['Solr']['warnings_field'];
         }
 
-        $this->commitInterval = isset($configArray['Solr']['max_commit_interval'])
-            ? $configArray['Solr']['max_commit_interval'] : 50000;
-        $this->maxUpdateRecords = isset($configArray['Solr']['max_update_records'])
-            ? $configArray['Solr']['max_update_records'] : 5000;
-        $this->maxUpdateSize = isset($configArray['Solr']['max_update_size'])
-            ? $configArray['Solr']['max_update_size'] : 1024;
+        $this->commitInterval = isset($config['Solr']['max_commit_interval'])
+            ? $config['Solr']['max_commit_interval'] : 50000;
+        $this->maxUpdateRecords = isset($config['Solr']['max_update_records'])
+            ? $config['Solr']['max_update_records'] : 5000;
+        $this->maxUpdateSize = isset($config['Solr']['max_update_size'])
+            ? $config['Solr']['max_update_size'] : 1024;
         $this->maxUpdateSize *= 1024;
-        $this->maxUpdateTries = isset($configArray['Solr']['max_update_tries'])
-            ? $configArray['Solr']['max_update_tries'] : 15;
-        $this->updateRetryWait = isset($configArray['Solr']['update_retry_wait'])
-            ? $configArray['Solr']['update_retry_wait'] : 60;
-        $this->backgroundUpdates = isset($configArray['Solr']['background_update'])
-            ? $configArray['Solr']['background_update'] : 0;
-        $this->recordWorkers = isset($configArray['Solr']['record_workers'])
-            ? $configArray['Solr']['record_workers'] : 0;
-        $this->solrUpdateWorkers = isset($configArray['Solr']['solr_update_workers'])
-            ? $configArray['Solr']['solr_update_workers'] : 0;
+        $this->maxUpdateTries = isset($config['Solr']['max_update_tries'])
+            ? $config['Solr']['max_update_tries'] : 15;
+        $this->updateRetryWait = isset($config['Solr']['update_retry_wait'])
+            ? $config['Solr']['update_retry_wait'] : 60;
+        $this->recordWorkers = isset($config['Solr']['record_workers'])
+            ? $config['Solr']['record_workers'] : 0;
+        $this->solrUpdateWorkers = isset($config['Solr']['solr_update_workers'])
+            ? $config['Solr']['solr_update_workers'] : 0;
         $this->threadedMergedRecordUpdate
-            = isset($configArray['Solr']['threaded_merged_record_update'])
-                ? $configArray['Solr']['threaded_merged_record_update'] : false;
+            = isset($config['Solr']['threaded_merged_record_update'])
+                ? $config['Solr']['threaded_merged_record_update'] : false;
         $this->clusterStateCheckInterval
-            = isset($configArray['Solr']['cluster_state_check_interval'])
-                ? $configArray['Solr']['cluster_state_check_interval'] : 0;
-        if (empty($configArray['Solr']['admin_url'])) {
+            = isset($config['Solr']['cluster_state_check_interval'])
+                ? $config['Solr']['cluster_state_check_interval'] : 0;
+        if (empty($config['Solr']['admin_url'])) {
             $this->clusterStateCheckInterval = 0;
             $this->log->log(
                 'SolrUpdater',
@@ -289,12 +404,12 @@ class SolrUpdater
             );
         }
 
-        if (isset($configArray['HTTP'])) {
-            $this->httpParams += $configArray['HTTP'];
+        if (isset($config['HTTP'])) {
+            $this->httpParams += $config['HTTP'];
         }
 
-        // Load settings and mapping files
-        $this->loadDatasources();
+        // Load settings
+        $this->initDatasources($dataSourceSettings);
     }
 
     /**
@@ -759,8 +874,6 @@ class SolrUpdater
     protected function processMerged(
         $mongoFromDate, $sourceId, $singleId, $noCommit, $delete, $compare
     ) {
-        global $configArray;
-
         $verb = $compare ? 'compared' : ($this->dumpPrefix ? 'dumped' : 'indexed');
         $initVerb = $compare
             ? 'Comparing'
@@ -1304,7 +1417,7 @@ class SolrUpdater
             if (!isset($this->settings[$source])) {
                 // Try to reload data source settings as they might have been updated
                 // during a long run
-                $this->loadDatasources();
+                $this->initDatasources();
                 if (!isset($this->settings[$source])) {
                     $this->log->log(
                         'countValues',
@@ -1375,43 +1488,19 @@ class SolrUpdater
     }
 
     /**
-     * Map source format to Solr format
+     * Initialize or reload data source settings
      *
-     * @param string $source Source ID
-     * @param string $format Format
-     *
-     * @return string Mapped format string
-     */
-    public function mapFormat($source, $format)
-    {
-        $settings = $this->settings[$source];
-
-        if (isset($settings['mappingFiles']['format'])) {
-            $mappingFile = $settings['mappingFiles']['format'];
-            $map = $mappingFile[0]['map'];
-            if (!empty($format)) {
-                $format = $this->mapValue($format, $mappingFile);
-                return is_array($format) ? $format[0] : $format;
-            } elseif (isset($map['##empty'])) {
-                return $map['##empty'];
-            } elseif (isset($map['##emptyarray'])) {
-                return $map['##emptyarray'];
-            }
-        }
-        return $format;
-    }
-
-    /**
-     * Load data source settings
+     * @param array $dataSourceSettings Optional data source settings to use instead
+     * of reading them from the ini file
      *
      * @return void
      */
-    protected function loadDatasources()
+    protected function initDatasources($dataSourceSettings = null)
     {
-        global $configArray;
-
-        $dataSourceSettings
-            = parse_ini_file("{$this->basePath}/conf/datasources.ini", true);
+        if (null === $dataSourceSettings) {
+            $dataSourceSettings
+                = parse_ini_file("{$this->basePath}/conf/datasources.ini", true);
+        }
         $this->settings = [];
         foreach ($dataSourceSettings as $source => $settings) {
             if (!isset($settings['institution'])) {
@@ -1439,37 +1528,6 @@ class SolrUpdater
             if (!isset($this->settings[$source]['dedup'])) {
                 $this->settings[$source]['dedup'] = false;
             }
-            $this->settings[$source]['mappingFiles'] = [];
-
-            // Use default mappings as the basis
-            $allMappings = isset($configArray['DefaultMappings'])
-                ? $configArray['DefaultMappings'] : [];
-
-            // Apply data source specific overrides
-            foreach ($settings as $key => $value) {
-                if (substr($key, -8, 8) == '_mapping') {
-                    $field = substr($key, 0, -8);
-                    if (empty($value)) {
-                        unset($allMappings[$field]);
-                    } else {
-                        $allMappings[$field] = $value;
-                    }
-                }
-            }
-
-            foreach ($allMappings as $field => $values) {
-                foreach ((array)$values as $value) {
-                    $parts = explode(',', $value, 2);
-                    $filename = $parts[0];
-                    $type = isset($parts[1]) ? $parts[1] : 'normal';
-                    $this->settings[$source]['mappingFiles'][$field][] = [
-                        'type' => $type,
-                        'map' => $this->readMappingFile(
-                            $this->basePath . '/mappings/' . $filename
-                        )
-                    ];
-                }
-            }
 
             $this->settings[$source]['extraFields'] = [];
             if (isset($settings['extrafields'])) {
@@ -1483,6 +1541,14 @@ class SolrUpdater
                 $this->nonIndexedSources[] = $source;
             }
         }
+
+        // Create field mapper
+        $this->fieldMapper = new FieldMapper(
+            $this->basePath,
+            isset($this->config['DefaultMappings'])
+                ? $this->config['DefaultMappings'] : [],
+            $dataSourceSettings
+        );
     }
 
     /**
@@ -1497,8 +1563,6 @@ class SolrUpdater
      */
     protected function createSolrArray($record, &$mergedComponents)
     {
-        global $configArray;
-
         $mergedComponents = 0;
 
         $metadataRecord = RecordFactory::createRecord(
@@ -1687,30 +1751,7 @@ class SolrUpdater
         }
 
         // Map field values according to any mapping files
-        foreach ($settings['mappingFiles'] as $field => $mappingFile) {
-            if (isset($data[$field]) && !empty($data[$field])) {
-                if (is_array($data[$field])) {
-                    $newValues = [];
-                    foreach ($data[$field] as $value) {
-                        $replacement = $this->mapValue($value, $mappingFile);
-                        if (is_array($replacement)) {
-                            $newValues = array_merge($newValues, $replacement);
-                        } else {
-                            $newValues[] = $replacement;
-                        }
-                    }
-                    if (null !== $newValues) {
-                        $data[$field] = array_values(array_unique($newValues));
-                    }
-                } else {
-                    $data[$field] = $this->mapValue($data[$field], $mappingFile);
-                }
-            } elseif (isset($mappingFile[0]['map']['##empty'])) {
-                $data[$field] = $mappingFile[0]['map']['##empty'];
-            } elseif (isset($mappingFile[0]['map']['##emptyarray'])) {
-                $data[$field] = [$mappingFile[0]['map']['##emptyarray']];
-            }
-        }
+        $data = $this->fieldMapper->mapValues($source, $data);
 
         // Special case: Special values for building (institution/location).
         // Used by default if building is set as a hierarchical facet.
@@ -1778,8 +1819,8 @@ class SolrUpdater
             $data['format'] = [$data['format']];
         }
 
-        if (isset($configArray['Solr']['format_in_allfields'])
-            && $configArray['Solr']['format_in_allfields']
+        if (isset($this->config['Solr']['format_in_allfields'])
+            && $this->config['Solr']['format_in_allfields']
         ) {
             foreach ($data['format'] as $format) {
                 // Replace numbers since they may be be considered word boundaries
@@ -1825,55 +1866,6 @@ class SolrUpdater
         }
 
         return $data;
-    }
-
-    /**
-     * Map a value using a mapping file
-     *
-     * @param mixed $value       Value to map
-     * @param array $mappingFile Mapping file
-     * @param int   $index       Mapping index for sub-entry mappings
-     *
-     * @return mixed
-     */
-    protected function mapValue($value, $mappingFile, $index = 0)
-    {
-        if (is_array($value)) {
-            // Map array parts (predefined hierarchy) separately
-            $newValue = [];
-            foreach ($value as $i => &$v) {
-                $v = $this->mapValue($v, $mappingFile, $i);
-                if ('' === $v) {
-                    // If we get an empty string from any level, stop here
-                    break;
-                }
-                $newValue[] = $v;
-            }
-            return implode('/', $newValue);
-        }
-        $map = isset($mappingFile[$index]['map']) ? $mappingFile[$index]['map']
-            : $mappingFile[0]['map'];
-        $type = isset($mappingFile[$index]['type'])
-            ? $mappingFile[$index]['type'] : $mappingFile[0]['type'];
-        if ('regexp' == $type) {
-            foreach ($map as $pattern => $replacement) {
-                $pattern = addcslashes($pattern, '/');
-                $newValue = preg_replace(
-                    "/$pattern/u", $replacement, $value, -1, $count
-                );
-                if ($count > 0) {
-                    return $newValue;
-                }
-            }
-            return $value;
-        }
-        $replacement = $value;
-        if (isset($map[$value])) {
-            $replacement = $map[$value];
-        } elseif (isset($map['##default'])) {
-            $replacement = $map['##default'];
-        }
-        return $replacement;
     }
 
     /**
@@ -1988,8 +1980,6 @@ class SolrUpdater
      */
     protected function compareWithSolrRecord($record, $logfile)
     {
-        global $configArray;
-
         $ignoreFields = [
             'allfields', 'allfields_unstemmed', 'fulltext', 'fulltext_unstemmed',
             'spelling', 'spellingShingle', 'authorStr', 'author_facet',
@@ -1999,20 +1989,20 @@ class SolrUpdater
             'author_additionalStr'
         ];
 
-        if (isset($configArray['Solr']['ignore_in_comparison'])) {
+        if (isset($this->config['Solr']['ignore_in_comparison'])) {
             $ignoreFields = array_merge(
                 $ignoreFields,
-                explode(',', $configArray['Solr']['ignore_in_comparison'])
+                explode(',', $this->config['Solr']['ignore_in_comparison'])
             );
         }
 
-        if (!isset($configArray['Solr']['search_url'])) {
+        if (!isset($this->config['Solr']['search_url'])) {
             throw new \Exception('search_url not set in ini file Solr section');
         }
 
         $this->request = $this->initSolrRequest();
         $this->request->setMethod(\HTTP_Request2::METHOD_GET);
-        $url = $configArray['Solr']['search_url'];
+        $url = $this->config['Solr']['search_url'];
         $url .= '?q=id:"' . urlencode($record['id']) . '"&wt=json';
         $this->request->setUrl($url);
 
@@ -2091,10 +2081,8 @@ class SolrUpdater
      */
     protected function initSolrRequest($timeout = null)
     {
-        global $configArray;
-
         $request = new \HTTP_Request2(
-            $configArray['Solr']['update_url'],
+            $this->config['Solr']['update_url'],
             \HTTP_Request2::METHOD_POST,
             $this->httpParams
         );
@@ -2103,12 +2091,12 @@ class SolrUpdater
         }
         $request->setHeader('Connection', 'Keep-Alive');
         $request->setHeader('User-Agent', 'RecordManager');
-        if (isset($configArray['Solr']['username'])
-            && isset($configArray['Solr']['password'])
+        if (isset($this->config['Solr']['username'])
+            && isset($this->config['Solr']['password'])
         ) {
             $request->setAuth(
-                $configArray['Solr']['username'],
-                $configArray['Solr']['password'],
+                $this->config['Solr']['username'],
+                $this->config['Solr']['password'],
                 \HTTP_Request2::AUTH_BASIC
             );
         }
@@ -2127,8 +2115,6 @@ class SolrUpdater
      */
     public function solrRequest($body, $timeout = null)
     {
-        global $configArray;
-
         if (null === $this->request) {
             $this->request = $this->initSolrRequest($timeout);
         }
@@ -2182,7 +2168,7 @@ class SolrUpdater
         if ($code >= 300) {
             throw new \Exception(
                 "Solr server request failed ($code). URL:\n"
-                . $configArray['Solr']['update_url']
+                . $this->config['Solr']['update_url']
                 . "\nRequest:\n$body\n\nResponse:\n"
                 . (null !== $response ? $response->getBody() : '')
             );
@@ -2239,13 +2225,11 @@ class SolrUpdater
      */
     protected function checkClusterState()
     {
-        global $configArray;
-
         $lastCheck = time() - $this->lastClusterStateCheck;
         if ($lastCheck >= $this->clusterStateCheckInterval) {
             $this->lastClusterStateCheck = time();
             $request = $this->initSolrRequest();
-            $url = $configArray['Solr']['admin_url'] . '/zookeeper'
+            $url = $this->config['Solr']['admin_url'] . '/zookeeper'
                 . '?wt=json&detail=true&path=%2Fclusterstate.json&view=graph';
             $request->setUrl($url);
             try {
@@ -2438,52 +2422,6 @@ class SolrUpdater
             $this->solrRequest("{" . implode(',', $this->bufferedDeletions) . "}");
             $this->bufferedDeletions = [];
         }
-    }
-
-    /**
-     * Read a mapping file (two strings separated by ' = ' per line)
-     *
-     * @param string $filename Mapping file name
-     *
-     * @throws Exception
-     * @return string[] Mappings
-     */
-    protected function readMappingFile($filename)
-    {
-        $mappings = [];
-        $handle = fopen($filename, 'r');
-        if (!$handle) {
-            throw new \Exception("Could not open mapping file '$filename'");
-        }
-        $lineno = 0;
-        while (($line = fgets($handle))) {
-            ++$lineno;
-            $line = rtrim($line);
-            if (!$line || $line[0] == ';') {
-                continue;
-            }
-            $values = explode(' = ', $line, 2);
-            if (!isset($values[1])) {
-                if (strstr($line, ' =') === false) {
-                    fclose($handle);
-                    throw new \Exception(
-                        "Unable to parse mapping file '$filename' line "
-                        . "(no ' = ' found): ($lineno) $line"
-                    );
-                }
-                $values = explode(' =', $line, 2);
-                $mappings[$values[0]] = '';
-            } else {
-                $key = trim($values[0]);
-                if (substr($key, -2) == '[]') {
-                    $mappings[substr($key, 0, -2)][] = $values[1];
-                } else {
-                    $mappings[$key] = $values[1];
-                }
-            }
-        }
-        fclose($handle);
-        return $mappings;
     }
 
     /**

@@ -57,7 +57,8 @@ class SolrCompare extends AbstractBase
     public function launch($log, $fromDate = null, $sourceId = '', $singleId = '')
     {
         $updater = new SolrUpdater(
-            $this->db, $this->basePath, $this->logger, $this->verbose
+            $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
+            $this->dataSourceSettings
         );
         $updater->updateRecords($fromDate, $sourceId, $singleId, false, false, $log);
     }

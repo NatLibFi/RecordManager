@@ -36,6 +36,8 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
+    global $configArray;
+
     $params = parseArgs($argv);
     applyConfigOverrides($params);
     if (empty($params['file'])) {
@@ -68,7 +70,9 @@ EOT;
     }
 
     $export = new \RecordManager\Base\Controller\Export(
-        true, isset($params['verbose']) ? $params['verbose'] : false
+        $configArray,
+        true,
+        isset($params['verbose']) ? $params['verbose'] : false
     );
 
     $export->launch(

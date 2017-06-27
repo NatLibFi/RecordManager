@@ -94,16 +94,18 @@ abstract class AbstractBase
     /**
      * Constructor
      *
-     * @param boolean $console Specify whether RecordManager is executed on the
+     * @param array $config  Main configuration
+     * @param bool  $console Specify whether RecordManager is executed on the
      * console so that log output is also output to the console.
-     * @param boolean $verbose Whether verbose output is enabled
+     * @param bool  $verbose Whether verbose output is enabled
      */
-    public function __construct($console = false, $verbose = false)
+    public function __construct($config, $console = false, $verbose = false)
     {
-        global $configArray;
         global $logger;
 
-        date_default_timezone_set($configArray['Site']['timezone']);
+        $this->config = $config;
+
+        date_default_timezone_set($config['Site']['timezone']);
 
         $this->logger = new Logger();
         if ($console) {
@@ -117,15 +119,15 @@ abstract class AbstractBase
         $basePath = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR
             . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..';
         $basePath = realpath($basePath);
-        $this->dataSourceSettings = $configArray['dataSourceSettings']
+        $this->dataSourceSettings = $config['dataSourceSettings']
             = parse_ini_file("$basePath/conf/datasources.ini", true);
         $this->basePath = $basePath;
 
         try {
             $this->db = new Database(
-                $configArray['Mongo']['url'],
-                $configArray['Mongo']['database'],
-                $configArray['Mongo']
+                $config['Mongo']['url'],
+                $config['Mongo']['database'],
+                $config['Mongo']
             );
         } catch (\Exception $e) {
             $this->log->log(
@@ -136,23 +138,23 @@ abstract class AbstractBase
             throw $e;
         }
 
-        if (isset($configArray['Site']['full_title_prefixes'])) {
+        if (isset($config['Site']['full_title_prefixes'])) {
             MetadataUtils::$fullTitlePrefixes = array_map(
                 ['\RecordManager\Base\Utils\MetadataUtils', 'normalize'],
                 file(
-                    "$basePath/conf/{$configArray['Site']['full_title_prefixes']}",
+                    "$basePath/conf/{$config['Site']['full_title_prefixes']}",
                     FILE_IGNORE_NEW_LINES
                 )
             );
         }
 
         // Read the abbreviations file
-        MetadataUtils::$abbreviations = isset($configArray['Site']['abbreviations'])
-            ? $this->readListFile($configArray['Site']['abbreviations']) : [];
+        MetadataUtils::$abbreviations = isset($config['Site']['abbreviations'])
+            ? $this->readListFile($config['Site']['abbreviations']) : [];
 
         // Read the artices file
-        MetadataUtils::$articles = isset($configArray['Site']['articles'])
-            ? $this->readListFile($configArray['Site']['articles']) : [];
+        MetadataUtils::$articles = isset($config['Site']['articles'])
+            ? $this->readListFile($config['Site']['articles']) : [];
     }
 
     /**
@@ -285,5 +287,22 @@ abstract class AbstractBase
                 $settings['recordSplitter'] = null;
             }
         }
+    }
+
+    /**
+     * Create a dedup handler
+     *
+     * @return DedupHandler
+     */
+    protected function getDedupHandler()
+    {
+        $dedupClass = isset($this->config['Site']['dedup_handler'])
+            ? $this->config['Site']['dedup_handler']
+            : '\RecordManager\Base\Deduplication\DedupHandler';
+        $this->dedupHandler = new $dedupClass(
+            $this->db, $this->logger, $this->verbose, $solrUpdater,
+            $this->dataSourceSettings
+        );
+
     }
 }

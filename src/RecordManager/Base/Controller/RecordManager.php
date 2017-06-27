@@ -96,15 +96,11 @@ class RecordManager extends AbstractBase
     {
         parent::__construct($console, $verbose);
 
-        // Used for format mapping in dedup handler
-        $solrUpdater = new SolrUpdater(
-            $this->db, $this->basePath, $this->logger, $this->verbose
-        );
         $dedupClass = isset($configArray['Site']['dedup_handler'])
             ? $configArray['Site']['dedup_handler']
             : '\RecordManager\Base\Deduplication\DedupHandler';
         $this->dedupHandler = new $dedupClass(
-            $this->db, $this->logger, $this->verbose, $solrUpdater,
+            $this->db, $this->logger, $this->verbose, $this->basePath, $this->config,
             $this->dataSourceSettings
         );
     }
@@ -120,128 +116,6 @@ class RecordManager extends AbstractBase
     {
         $this->terminate = true;
         echo "Termination requested\n";
-    }
-
-    /**
-     * Renormalize records in a data source
-     *
-     * @param string $sourceId Source ID to renormalize
-     * @param string $singleId Renormalize only a single record with the given ID
-     *
-     * @return void
-     */
-    public function renormalize($sourceId, $singleId)
-    {
-        foreach ($this->dataSourceSettings as $source => $settings) {
-            if ($sourceId && $sourceId != '*' && $source != $sourceId) {
-                continue;
-            }
-            if (empty($source) || empty($settings)) {
-                continue;
-            }
-            $this->loadSourceSettings($source);
-            $this->logger->log('renormalize', "Creating record list for '$source'");
-
-            $params = ['deleted' => false];
-            if ($singleId) {
-                $params['_id'] = $singleId;
-                $params['source_id'] = $source;
-            } else {
-                $params['source_id'] = $source;
-            }
-            $records = $this->db->findRecords($params);
-            $total = $this->db->countRecords($params);
-            $count = 0;
-
-            $this->logger->log(
-                'renormalize', "Processing $total records from '$source'"
-            );
-            $pc = new PerformanceCounter();
-            foreach ($records as $record) {
-                $originalData = MetadataUtils::getRecordData($record, false);
-                $normalizedData = $originalData;
-                if (isset($this->normalizationXSLT)) {
-                    $origMetadataRecord = RecordFactory::createRecord(
-                        $record['format'],
-                        $originalData,
-                        $record['oai_id'],
-                        $record['source_id']
-                    );
-                    $normalizedData = $this->normalizationXSLT->transform(
-                        $origMetadataRecord->toXML(), ['oai_id' => $record['oai_id']]
-                    );
-                }
-
-                $metadataRecord = RecordFactory::createRecord(
-                    $record['format'],
-                    $normalizedData,
-                    $record['oai_id'],
-                    $record['source_id']
-                );
-                $metadataRecord->normalize();
-                $hostID = $metadataRecord->getHostRecordID();
-                $normalizedData = $metadataRecord->serialize();
-                if ($this->dedup && !$hostID) {
-                    $record['update_needed'] = $this->dedupHandler
-                        ->updateDedupCandidateKeys($record, $metadataRecord);
-                } else {
-                    if (isset($record['title_keys'])) {
-                        unset($record['title_keys']);
-                    }
-                    if (isset($record['isbn_keys'])) {
-                        unset($record['isbn_keys']);
-                    }
-                    if (isset($record['id_keys'])) {
-                        unset($record['id_keys']);
-                    }
-                    if (isset($record['dedup_id'])) {
-                        unset($record['dedup_id']);
-                    }
-                    $record['update_needed'] = false;
-                }
-
-                $record['original_data'] = $originalData;
-                if ($normalizedData == $originalData) {
-                    $record['normalized_data'] = '';
-                } else {
-                    $record['normalized_data'] = $normalizedData;
-                }
-                $record['linking_id'] = $metadataRecord->getLinkingID();
-                if ($hostID) {
-                    $record['host_record_id'] = $hostID;
-                } elseif (isset($record['host_record_id'])) {
-                    unset($record['host_record_id']);
-                }
-                $record['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
-                $this->db->saveRecord($record);
-
-                if ($this->verbose) {
-                    echo "Metadata for record {$record['_id']}: \n";
-                    $record['normalized_data']
-                        = MetadataUtils::getRecordData($record, true);
-                    $record['original_data']
-                        = MetadataUtils::getRecordData($record, false);
-                    if ($record['normalized_data'] === $record['original_data']) {
-                        $record['normalized_data'] = '';
-                    }
-                    print_r($record);
-                }
-
-                ++$count;
-                if ($count % 1000 == 0) {
-                    $pc->add($count);
-                    $avg = $pc->getSpeed();
-                    $this->logger->log(
-                        'renormalize',
-                        "$count records processed from '$source', $avg records/sec"
-                    );
-                }
-            }
-            $this->logger->log(
-                'renormalize',
-                "Completed with $count records processed from '$source'"
-            );
-        }
     }
 
     /**

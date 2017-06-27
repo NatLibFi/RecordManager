@@ -37,6 +37,8 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
+    global $configArray;
+
     $params = parseArgs($argv);
     applyConfigOverrides($params);
     if (empty($params['file']) || empty($params['source'])) {
@@ -68,7 +70,9 @@ EOT;
         }
 
         $import = new \RecordManager\Base\Controller\Import(
-            true, isset($params['verbose']) ? $params['verbose'] : false
+            $configArray,
+            true,
+            isset($params['verbose']) ? $params['verbose'] : false
         );
 
         $delete = isset($params['delete']) ? $params['delete'] : false;

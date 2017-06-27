@@ -49,16 +49,21 @@ class PreviewCreator extends SolrUpdater
     /**
      * Constructor
      *
-     * @param MongoDB $db       Database connection
-     * @param string  $basePath RecordManager main directory
-     * @param object  $log      Logger
-     * @param boolean $verbose  Whether to output verbose messages
+     * @param MongoDB $db                 Database connection
+     * @param string  $basePath           RecordManager main directory
+     * @param object  $log                Logger
+     * @param boolean $verbose            Whether to output verbose messages
+     * @param array   $config             Main configuration
+     * @param array   $dataSourceSettings Data source settings
      *
      * @throws Exception
      */
-    public function __construct($db, $basePath, $log, $verbose)
-    {
-        parent::__construct($db, $basePath, $log, $verbose);
+    public function __construct($db, $basePath, $log, $verbose, $config,
+        $dataSourceSettings
+    ) {
+        parent::__construct(
+            $db, $basePath, $log, $verbose, $config, $dataSourceSettings
+        );
         if (empty($this->settings['_preview'])) {
             $this->settings['_preview'] = [
                 'institution' => '_preview',

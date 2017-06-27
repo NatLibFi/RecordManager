@@ -39,6 +39,11 @@ use RecordManager\Base\Utils\Logger;
  */
 class PreviewCreatorTest extends AbstractTest
 {
+    /**
+     * Holding test record
+     *
+     * @var string
+     */
     protected $holdingRecord = <<<EOT
 <record>
   <datafield tag="852">
@@ -62,6 +67,22 @@ class PreviewCreatorTest extends AbstractTest
   </datafield>
 </record>
 EOT;
+
+    /**
+     * Data source settings
+     *
+     * @var array
+     */
+    protected $dataSourceSettings = [
+        'test' => [
+            'institution' => 'Test',
+            'format' => 'marc',
+            'building_mapping' => [
+                'building.map',
+                'building_sub.map,regexp'
+            ]
+        ]
+    ];
 
     /**
      * Tests for building field
@@ -94,7 +115,9 @@ EOT;
     {
         $basePath = dirname(__FILE__) . '/configs/mappingfilestest';
         $logger = $this->createMock(Logger::class);
-        $preview = new PreviewCreator(null, $basePath, $logger, false);
+        $preview = new PreviewCreator(
+          null, $basePath, $logger, false, [], $this->dataSourceSettings
+        );
 
         return $preview;
     }
