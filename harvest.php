@@ -37,6 +37,8 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
+    global $configArray;
+
     $params = parseArgs($argv);
     applyConfigOverrides($params);
     if (empty($params['source']) || !is_string($params['source'])) {
@@ -77,15 +79,17 @@ EOT;
             die();
         }
 
-        $manager = new \RecordManager\Base\Controller\RecordManager(
-            true, isset($params['verbose']) ? $params['verbose'] : false
+        $harvest = new \RecordManager\Base\Controller\Harvest(
+            $configArray,
+            true,
+            isset($params['verbose']) ? $params['verbose'] : false
         );
         $from = isset($params['from']) ? $params['from'] : null;
         if (isset($params['all']) || isset($params['reharvest'])) {
             $from = '-';
         }
         foreach (explode(',', $params['source']) as $source) {
-            $manager->harvest(
+            $harvest->launch(
                 $source,
                 $from,
                 isset($params['until']) ? $params['until'] : null,

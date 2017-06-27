@@ -61,6 +61,10 @@ trait StoreRecordTrait
      */
     public function storeRecord($sourceId, $oaiID, $deleted, $recordData)
     {
+        if (!isset($this->dedupHandler)) {
+            throw new \Exception('Dedup handler missing');
+        }
+
         $settings = $this->dataSourceSettings[$sourceId];
         if ($deleted && !empty($oaiID)) {
             // A single OAI-PMH record may have been split to multiple records. Find
