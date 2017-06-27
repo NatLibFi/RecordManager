@@ -123,39 +123,6 @@ class RecordManager extends AbstractBase
     }
 
     /**
-     * Send updates to a Solr index (e.g. VuFind)
-     *
-     * @param string|null $fromDate   Starting date for updates (if empty
-     *                                string, last update date stored in the database
-     *                                is used and if null, all records are processed)
-     * @param string      $sourceId   Source ID to update, or empty or * for all
-     *                                sources (ignored if record merging is enabled)
-     * @param string      $singleId   Export only a record with the given ID
-     * @param bool        $noCommit   If true, changes are not explicitly committed
-     * @param string      $compare    If set, just compare records and write
-     *                                differences into the file in this parameter
-     * @param string      $dumpPrefix If set, dump Solr records into a file instead
-     *                                sending them to Solr
-     *
-     * @return void
-     */
-    public function updateSolrIndex(
-        $fromDate = null,
-        $sourceId = '',
-        $singleId = '',
-        $noCommit = false,
-        $compare = '',
-        $dumpPrefix = ''
-    ) {
-        $updater = new SolrUpdater(
-            $this->db, $this->basePath, $this->logger, $this->verbose
-        );
-        $updater->updateRecords(
-            $fromDate, $sourceId, $singleId, $noCommit, false, $compare, $dumpPrefix
-        );
-    }
-
-    /**
      * Renormalize records in a data source
      *
      * @param string $sourceId Source ID to renormalize

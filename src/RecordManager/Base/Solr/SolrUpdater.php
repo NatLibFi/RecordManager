@@ -380,7 +380,7 @@ class SolrUpdater
             if ($this->solrUpdateWorkers) {
                 $this->log->log(
                     'updateRecords',
-                    "Using {$this->solrUpdateWorkers} Solr update workers"
+                    "Using {$this->solrUpdateWorkers} Solr workers"
                 );
             }
 

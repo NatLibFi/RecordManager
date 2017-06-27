@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2013.
+ * Copyright (C) The National Library of Finland 2011-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -94,26 +94,33 @@ EOT;
         $noCommit = isset($params['nocommit']) ? $params['nocommit'] : false;
 
         // Solr update, compare and dump can handle multiple sources at once
-        if ($params['func'] == 'updatesolr' || $params['func'] == 'dumpsolr') {
+        if ($params['func'] == 'updatesolr') {
             $date = isset($params['all'])
                 ? '' : (isset($params['from']) ? $params['from'] : null);
-            $dumpPrefix = $params['func'] == 'dumpsolr'
-                ? (isset($params['dumpprefix']) ? $params['dumpprefix'] : 'dumpsolr')
-                : '';
-            $manager->updateSolrIndex(
-                $date, $sources, $single, $noCommit, '',
-                $dumpPrefix
+
+            $solrUpdate = new \RecordManager\Base\Controller\SolrUpdate(
+                true, isset($params['verbose']) ? $params['verbose'] : false
             );
+            $solrUpdate->launch($date, $sources, $single, $noCommit);
         } elseif ($params['func'] == 'comparesolr') {
             $date = isset($params['all'])
                 ? '' : (isset($params['from']) ? $params['from'] : null);
-            $manager->updateSolrIndex(
-                $date,
-                $sources,
-                $single,
-                $noCommit,
-                isset($params['comparelog']) ? $params['comparelog'] : '-'
+            $log = isset($params['comparelog']) ? $params['comparelog'] : '-';
+
+            $solrCompare = new \RecordManager\Base\Controller\SolrCompare(
+                true, isset($params['verbose']) ? $params['verbose'] : false
             );
+            $solrCompare->launch($log, $date, $sources, $single);
+        } elseif ($params['func'] == 'dumpsolr') {
+            $date = isset($params['all'])
+                ? '' : (isset($params['from']) ? $params['from'] : null);
+            $dumpPrefix = isset($params['dumpprefix'])
+                ? $params['dumpprefix'] : 'dumpsolr';
+
+            $solrDump = new \RecordManager\Base\Controller\SolrDump(
+                true, isset($params['verbose']) ? $params['verbose'] : false
+            );
+            $solrDump->launch($dumpPrefix, $date, $sources, $single);
         } else {
             foreach (explode(',', $sources) as $source) {
                 switch ($params['func']) {
