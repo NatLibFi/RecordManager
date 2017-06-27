@@ -7,7 +7,7 @@
  * PHP version 5
  *
  * Copyright (c) Demian Katz 2010.
- * Copyright (c) The National Library of Finland 2011-2016.
+ * Copyright (c) The National Library of Finland 2011-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -36,7 +36,7 @@ use RecordManager\Base\Utils\Logger;
 require_once 'HTTP/Request2.php';
 
 /**
- * HarvestOaiPmh Class
+ * OaiPmh Class
  *
  * This class harvests records via OAI-PMH using settings from datasources.ini.
  *
@@ -47,7 +47,7 @@ require_once 'HTTP/Request2.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class HarvestOaiPmh extends BaseHarvest
+class OaiPmh extends Base
 {
     /**
      * Set to harvest (null for all records)
@@ -554,7 +554,7 @@ class HarvestOaiPmh extends BaseHarvest
 
             // Save the current record, either as a deleted or as a regular record:
             if (strcasecmp($header->getAttribute('status'), 'deleted') == 0) {
-                call_user_func($this->callback, $id, true, null);
+                call_user_func($this->callback, $this->source, $id, true, null);
                 $this->deletedRecords++;
             } else {
                 $recordMetadata = $this->getSingleNode($record, 'metadata');
@@ -590,6 +590,7 @@ class HarvestOaiPmh extends BaseHarvest
                 }
                 $this->changedRecords += call_user_func(
                     $this->callback,
+                    $this->source,
                     $id,
                     false,
                     trim($this->xml->saveXML($recordNode))
@@ -724,10 +725,10 @@ class HarvestOaiPmh extends BaseHarvest
 
             // Process the current header, either as a deleted or as a regular record
             if (strcasecmp($header->getAttribute('status'), 'deleted') == 0) {
-                call_user_func($this->callback, $id, true);
+                call_user_func($this->callback, $this->source, $id, true);
                 $this->deletedRecords++;
             } else {
-                call_user_func($this->callback, $id, false);
+                call_user_func($this->callback, $this->source, $id, false);
                 $this->changedRecords++;
             }
         }
@@ -763,7 +764,7 @@ class HarvestOaiPmh extends BaseHarvest
     {
         $result = [];
         foreach ($element->childNodes as $child) {
-            if ($child instanceof DOMElement && $child->tagName == $tagName) {
+            if ($child instanceof \DOMElement && $child->tagName == $tagName) {
                 $result[] = $child;
             }
         }

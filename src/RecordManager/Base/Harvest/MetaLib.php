@@ -34,7 +34,7 @@ use RecordManager\Base\Utils\Logger;
 require_once 'HTTP/Request2.php';
 
 /**
- * HarvestMetaLib
+ * MetaLib Class
  *
  * This class harvests IRD records from MetaLib via X-Server using settings from
  * datasources.ini.
@@ -45,7 +45,7 @@ require_once 'HTTP/Request2.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class HarvestMetaLib
+class MetaLib
 {
     /**
      * Logger

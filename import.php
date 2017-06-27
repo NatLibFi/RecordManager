@@ -67,12 +67,12 @@ EOT;
             die();
         }
 
-        $manager = new \RecordManager\Base\Controller\RecordManager(
+        $import = new \RecordManager\Base\Controller\Import(
             true, isset($params['verbose']) ? $params['verbose'] : false
         );
 
         $delete = isset($params['delete']) ? $params['delete'] : false;
-        $manager->loadFromFile($params['source'], $params['file'], $delete);
+        $import->launch($params['source'], $params['file'], $delete);
     } catch (\Exception $e) {
         releaseLock($lockhandle);
         throw $e;

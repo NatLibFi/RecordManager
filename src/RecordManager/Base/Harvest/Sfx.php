@@ -2,11 +2,9 @@
 /**
  * SFX Export File Harvesting Class
  *
- * Based on harvest-oai.php in VuFind
- *
  * PHP version 5
  *
- * Copyright (c) The National Library of Finland 2011-2014.
+ * Copyright (c) The National Library of Finland 2011-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -32,7 +30,7 @@ namespace RecordManager\Base\Harvest;
 require_once 'HTTP/Request2.php';
 
 /**
- * HarvestSfx Class
+ * Sfx Class
  *
  * This class harvests SFX export files via HTTP using settings from datasources.ini.
  *
@@ -42,7 +40,7 @@ require_once 'HTTP/Request2.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class HarvestSfx extends HarvestHTTPFiles
+class Sfx extends HTTPFiles
 {
     /**
      * Fetch a file to be harvested

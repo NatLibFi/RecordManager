@@ -30,6 +30,7 @@ namespace RecordManager\Base\Controller;
 use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
+use RecordManager\Base\Utils\XslTransformation;
 
 if (function_exists('pcntl_async_signals')) {
     pcntl_async_signals(true);
@@ -155,13 +156,6 @@ abstract class AbstractBase
     }
 
     /**
-     * Run the workload
-     *
-     * @return void
-     */
-    abstract public function launch();
-
-    /**
      * Read a list file into an array
      *
      * @param string $filename List file name
@@ -188,5 +182,108 @@ abstract class AbstractBase
         );
 
         return $lines;
+    }
+
+    /**
+     * Initialize the data source settings and XSL transformations
+     *
+     * @throws Exception
+     * @return void
+     */
+    protected function initSourceSettings()
+    {
+        foreach ($this->dataSourceSettings as $source => &$settings) {
+            if (!isset($settings['institution'])) {
+                $this->logger->log(
+                    'initSourceSettings',
+                    "institution not set for $source",
+                    Logger::FATAL
+                );
+                throw new \Exception("Error: institution not set for $source\n");
+            }
+            if (!isset($settings['format'])) {
+                $this->logger->log(
+                    'initSourceSettings', "format not set for $source", Logger::FATAL
+                );
+                throw new \Exception("Error: format not set for $source\n");
+            }
+            if (empty($settings['idPrefix'])) {
+                $settings['idPrefix'] = $source;
+            }
+            if (!isset($settings['recordXPath'])) {
+                $settings['recordXPath'] = '';
+            }
+            if (!isset($settings['oaiIDXPath'])) {
+                $settings['oaiIDXPath'] = '';
+            }
+            if (!isset($settings['dedup'])) {
+                $settings['dedup'] = false;
+            }
+            if (empty($settings['componentParts'])) {
+                $settings['componentParts'] = 'as_is';
+            }
+            if (!isset($settings['preTransformation'])) {
+                $settings['preTransformation'] = '';
+            }
+            if (!isset($settings['indexMergedParts'])) {
+                $settings['indexMergedParts'] = true;
+            }
+            if (!isset($settings['type'])) {
+                $settings['type'] = '';
+            }
+            if (!isset($settings['non_inherited_fields'])) {
+                $settings['non_inherited_fields'] = [];
+            }
+            if (!isset($settings['prepend_parent_title_with_unitid'])) {
+                $settings['prepend_parent_title_with_unitid'] = true;
+            }
+            if (!isset($settings['keepMissingHierarchyMembers'])) {
+                $settings['keepMissingHierarchyMembers'] = false;
+            }
+
+            $params = [
+                'source_id' => $source,
+                'institution' => $settings['institution'],
+                'format' => $settings['format'],
+                'id_prefix' => $settings['idPrefix']
+            ];
+            $settings['normalizationXSLT'] = !empty($settings['normalization'])
+                ? new XslTransformation(
+                    $this->basePath . '/transformations',
+                    $settings['normalization'],
+                    $params
+                ) : null;
+            $settings['solrTransformationXSLT']
+                = !empty($settings['solrTransformation'])
+                ? new XslTransformation(
+                    $this->basePath . '/transformations',
+                    $settings['solrTransformation'],
+                    $params
+                ) : null;
+
+            if (!empty($settings['recordSplitterClass'])) {
+                if (!class_exists($settings['recordSplitterClass'])) {
+                    throw new \Exception(
+                        "Record splitter class '"
+                        . $settings['recordSplitterClass']
+                        . "' not found for source $source"
+                    );
+                }
+                $settings['recordSplitter'] = $settings['recordSplitterClass'];
+            } elseif (!empty($settings['recordSplitter'])) {
+                $style = new \DOMDocument();
+                $xslFile = $this->basePath . '/transformations/'
+                    . $settings['recordSplitter'];
+                if ($style->load($xslFile) === false) {
+                    throw new \Exception(
+                        "Could not load $xslFile for source $source"
+                    );
+                }
+                $settings['recordSplitter'] = new \XSLTProcessor();
+                $settings['recordSplitter']->importStylesheet($style);
+            } else {
+                $settings['recordSplitter'] = null;
+            }
+        }
     }
 }

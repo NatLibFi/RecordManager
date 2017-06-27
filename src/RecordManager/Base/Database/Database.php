@@ -251,7 +251,7 @@ class Database
      *
      * @return void
      */
-    public function updateRecord($id, $fields, $remove)
+    public function updateRecord($id, $fields, $remove = [])
     {
         $this->updateMongoRecord($this->recordCollection, $id, $fields, $remove);
     }
@@ -672,7 +672,7 @@ class Database
      *
      * @return void
      */
-    protected function updateMongoRecord($collection, $id, $fields, $remove)
+    protected function updateMongoRecord($collection, $id, $fields, $remove = [])
     {
         $params = [];
         if ($fields) {

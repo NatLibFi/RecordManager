@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (c) The National Library of Finland 2011-2016.
+ * Copyright (c) The National Library of Finland 2011-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -32,7 +32,7 @@ use RecordManager\Base\Utils\Logger;
 require_once 'HTTP/Request2.php';
 
 /**
- * HarvestHTTPFiles Class
+ * HTTPFiles Class
  *
  * This class harvests files via HTTP using settings from datasources.ini.
  *
@@ -42,7 +42,7 @@ require_once 'HTTP/Request2.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class HarvestHTTPFiles extends BaseHarvest
+class HTTPFiles extends Base
 {
     /**
      * File name prefix
@@ -364,12 +364,12 @@ class HarvestHTTPFiles extends BaseHarvest
         }
         $oaiId = $this->createOaiId($this->source, $id);
         if ($this->isDeleted($record)) {
-            call_user_func($this->callback, $oaiId, true, null);
+            call_user_func($this->callback, $this->source, $oaiId, true, null);
             $this->deletedRecords++;
         } elseif ($this->isModified($record)) {
             $this->normalizeRecord($record, $id);
             $this->changedRecords += call_user_func(
-                $this->callback, $oaiId, false, $record->asXML()
+                $this->callback, $this->source, $oaiId, false, $record->asXML()
             );
         } else {
             // This assumes the provider may return records that are not changed or

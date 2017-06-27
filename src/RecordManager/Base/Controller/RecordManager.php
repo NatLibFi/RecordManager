@@ -49,6 +49,8 @@ require_once 'HTTP/Request2.php';
  */
 class RecordManager extends AbstractBase
 {
+    use StoreRecordTrait;
+
     /**
      * Dedup Handler
      *
@@ -128,67 +130,6 @@ class RecordManager extends AbstractBase
     {
         $this->terminate = true;
         echo "Termination requested\n";
-    }
-
-    /**
-     * Load records into the database from a file
-     *
-     * @param string $source Source id
-     * @param string $files  Wildcard pattern of files containing the records
-     * @param bool   $delete Whether to delete the records (default = false)
-     *
-     * @throws Exception
-     * @return int Number of records loaded
-     */
-    public function loadFromFile($source, $files, $delete = false)
-    {
-        $this->loadSourceSettings($source);
-        if (!$this->recordXPath) {
-            $this->logger->log(
-                'loadFromFile', 'recordXPath not defined', Logger::FATAL
-            );
-            throw new \Exception('recordXPath not defined');
-        }
-        $count = 0;
-        foreach (glob($files) as $file) {
-            $this->logger->log(
-                'loadFromFile', "Loading records from '$file' into '$source'"
-            );
-            $data = file_get_contents($file);
-            if ($data === false) {
-                throw new \Exception("Could not read file '$file'");
-            }
-
-            if ($this->pretransformation) {
-                if ($this->verbose) {
-                    echo "Executing pretransformation\n";
-                }
-                $data = $this->pretransform($data);
-            }
-
-            if ($this->verbose) {
-                echo "Creating FileSplitter\n";
-            }
-            $splitter = new FileSplitter(
-                $data, $this->recordXPath, $this->oaiIDXPath
-            );
-
-            if ($this->verbose) {
-                echo "Storing records\n";
-            }
-            while (!$splitter->getEOF()) {
-                $oaiID = '';
-                $data = $splitter->getNextRecord($oaiID);
-                $count += $this->storeRecord($oaiID, $delete, $data);
-                if ($this->verbose) {
-                    echo "Stored records: $count\n";
-                }
-            }
-            $this->logger->log('loadFromFile', "$count records loaded");
-        }
-
-        $this->logger->log('loadFromFile', "Total $count records loaded");
-        return $count;
     }
 
     /**
@@ -717,6 +658,7 @@ class RecordManager extends AbstractBase
         $exclude = null,
         $reharvest = false
     ) {
+        $this->initSourceSettings();
         if (empty($this->dataSourceSettings)) {
             $this->logger->log(
                 'harvest',
@@ -771,7 +713,7 @@ class RecordManager extends AbstractBase
                     // MetaLib doesn't handle deleted records, so we'll just fetch
                     // everything and compare with what we have
                     $this->logger->log('harvest', "Fetching records from MetaLib");
-                    $harvest = new HarvestMetaLib(
+                    $harvest = new \RecordManager\Base\Harvest\MetaLib(
                         $this->logger, $this->db, $source, $this->basePath, $settings
                     );
                     $harvestedRecords = $harvest->harvest();
@@ -779,7 +721,7 @@ class RecordManager extends AbstractBase
                 } elseif ($this->harvestType == 'metalib_export') {
                     // MetaLib doesn't handle deleted records, so we'll just fetch
                     // everything and delete whatever we didn't get
-                    $harvest = new HarvestMetaLibExport(
+                    $harvest = new \RecordManager\Base\Harvest\MetaLibExport(
                         $this->logger, $this->db, $source, $this->basePath, $settings
                     );
                     if (isset($harvestFromDate)) {
@@ -794,7 +736,7 @@ class RecordManager extends AbstractBase
                         $this->processFullRecordSet($source, $this->metaLibRecords);
                     }
                 } elseif ($this->harvestType == 'sfx') {
-                    $harvest = new HarvestSfx(
+                    $harvest = new \RecordManager\Base\Harvest\Sfx(
                         $this->logger, $this->db, $source, $this->basePath, $settings
                     );
                     if (isset($harvestFromDate)) {
@@ -808,13 +750,11 @@ class RecordManager extends AbstractBase
                     $dateThreshold = null;
                     if ($reharvest) {
                         if (is_string($reharvest)) {
-                            $dateThreshold = new \MongoDB\BSON\UTCDateTime(
+                            $dateThreshold = $this->db->getTimetamp(
                                 strtotime($reharvest)
                             );
                         } else {
-                            $dateThreshold = new \MongoDB\BSON\UTCDateTime(
-                                time() * 1000
-                            );
+                            $dateThreshold = $this->db->getTimestamp();
                         }
                         $this->logger->log(
                             'harvest',
@@ -824,7 +764,7 @@ class RecordManager extends AbstractBase
                     }
 
                     if ($this->harvestType == 'sierra') {
-                        $harvest = new HarvestSierraApi(
+                        $harvest = new \RecordManager\Base\Harvest\SierraApi(
                             $this->logger,
                             $this->db,
                             $source,
@@ -833,7 +773,7 @@ class RecordManager extends AbstractBase
                             $startResumptionToken ? $startResumptionToken : 0
                         );
                     } else {
-                        $harvest = new \RecordManager\Base\Harvest\HarvestOAIPMH(
+                        $harvest = new \RecordManager\Base\Harvest\OAIPMH(
                             $this->logger,
                             $this->db,
                             $source,
@@ -877,7 +817,9 @@ class RecordManager extends AbstractBase
                             );
                             $count = 0;
                             foreach ($records as $record) {
-                                $this->storeRecord($record['oai_id'], true, '');
+                                $this->storeRecord(
+                                    $this->sourceId, $record['oai_id'], true, ''
+                                );
                                 if (++$count % 1000 == 0) {
                                     $this->logger->log(
                                         'harvest', "Deleted $count records"
@@ -953,7 +895,9 @@ class RecordManager extends AbstractBase
                             );
                             $count = 0;
                             foreach ($records as $record) {
-                                $this->storeRecord($record['oai_id'], true, '');
+                                $this->storeRecord(
+                                    $this->sourceId, $record['oai_id'], true, ''
+                                );
                                 if (++$count % 1000 == 0) {
                                     $this->logger->log(
                                         'harvest', "Deleted $count records"
@@ -1183,211 +1127,6 @@ class RecordManager extends AbstractBase
         $this->logger->log('optimizeSolr', 'Optimizing Solr index');
         $updater->optimizeIndex();
         $this->logger->log('optimizeSolr', 'Solr optimization completed');
-    }
-
-    /**
-     * Save a record into the database. Used by e.g. OAI-PMH harvesting.
-     *
-     * @param string $oaiID      ID of the record as received from OAI-PMH
-     * @param bool   $deleted    Whether the record is to be deleted
-     * @param string $recordData Record metadata
-     *
-     * @throws Exception
-     * @return integer Number of records processed (can be > 1 for split records)
-     */
-    public function storeRecord($oaiID, $deleted, $recordData)
-    {
-        if ($deleted && !empty($oaiID)) {
-            // A single OAI-PMH record may have been split to multiple records. Find
-            // all occurrences.
-            $records = $this->db->findRecords(
-                ['source_id' => $this->sourceId, 'oai_id' => $oaiID]
-            );
-            $count = 0;
-            foreach ($records as $record) {
-                if (isset($record['dedup_id'])) {
-                    $this->dedupHandler->removeFromDedupRecord(
-                        $record['dedup_id'], $record['_id']
-                    );
-                    unset($record['dedup_id']);
-                }
-                $record['deleted'] = true;
-                $record['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
-                $record['update_needed'] = false;
-                $this->db->saveRecord($record);
-                ++$count;
-            }
-            return $count;
-        }
-
-        $dataArray = [];
-        if ($this->recordSplitter) {
-            if ($this->verbose) {
-                echo "Splitting records\n";
-            }
-            if (is_string($this->recordSplitter)) {
-                include_once $this->recordSplitter;
-                $className = substr($this->recordSplitter, 0, -4);
-                $splitter = new $className($recordData);
-                while (!$splitter->getEOF()) {
-                    $dataArray[] = $splitter->getNextRecord(
-                        $this->prependParentTitleWithUnitId,
-                        $this->nonInheritedFields
-                    );
-                }
-            } else {
-                $doc = new \DOMDocument();
-                $doc->loadXML($recordData);
-                if ($this->verbose) {
-                    echo "XML Doc Created\n";
-                }
-                $transformedDoc = $this->recordSplitter->transformToDoc($doc);
-                if ($this->verbose) {
-                    echo "XML Transformation Done\n";
-                }
-                $records = simplexml_import_dom($transformedDoc);
-                if ($this->verbose) {
-                    echo "Creating record array\n";
-                }
-                foreach ($records as $record) {
-                    $dataArray[] = $record->saveXML();
-                }
-            }
-        } else {
-            $dataArray = [$recordData];
-        }
-
-        if ($this->verbose) {
-            echo "Storing array of " . count($dataArray) . " records\n";
-        }
-
-        // Store start time so that we can mark deleted any child records not
-        // present anymore
-        $startTime = new \MongoDB\BSON\UTCDateTime(time() * 1000);
-
-        $count = 0;
-        $mainID = '';
-        foreach ($dataArray as $data) {
-            if (isset($this->normalizationXSLT)) {
-                $metadataRecord = RecordFactory::createRecord(
-                    $this->format,
-                    $this->normalizationXSLT->transform($data, ['oai_id' => $oaiID]),
-                    $oaiID,
-                    $this->sourceId
-                );
-                $metadataRecord->normalize();
-                $normalizedData = $metadataRecord->serialize();
-                $originalData = RecordFactory::createRecord(
-                    $this->format, $data, $oaiID, $this->sourceId
-                )->serialize();
-            } else {
-                $metadataRecord = RecordFactory::createRecord(
-                    $this->format, $data, $oaiID, $this->sourceId
-                );
-                $originalData = $metadataRecord->serialize();
-                $metadataRecord->normalize();
-                $normalizedData = $metadataRecord->serialize();
-            }
-
-            $hostID = $metadataRecord->getHostRecordID();
-            $id = $metadataRecord->getID();
-            if (!$id) {
-                if (!$oaiID) {
-                    throw new \Exception(
-                        'Empty ID returned for record, and no OAI ID '
-                        . "(previous record ID: $this->previousId)"
-                    );
-                }
-                $id = $oaiID;
-            }
-            $this->previousId = $id;
-            $id = $this->idPrefix . '.' . $id;
-            $dbRecord = $this->db->getRecord($id);
-            if ($dbRecord) {
-                $dbRecord['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
-                if ($this->verbose) {
-                    echo "Updating record $id\n";
-                }
-            } else {
-                $dbRecord = [];
-                $dbRecord['source_id'] = $this->sourceId;
-                $dbRecord['_id'] = $id;
-                $dbRecord['created'] = $dbRecord['updated']
-                    = new \MongoDB\BSON\UTCDateTime(time() * 1000);
-                if ($this->verbose) {
-                    echo "Adding record $id\n";
-                }
-            }
-            $dbRecord['date'] = $dbRecord['updated'];
-            if ($normalizedData) {
-                if ($originalData == $normalizedData) {
-                    $normalizedData = '';
-                }
-            }
-            $dbRecord['oai_id'] = $oaiID;
-            $dbRecord['deleted'] = $deleted;
-            $dbRecord['linking_id'] = $metadataRecord->getLinkingID();
-            if ($mainID) {
-                $dbRecord['main_id'] = $mainID;
-            }
-            if ($hostID) {
-                $dbRecord['host_record_id'] = $hostID;
-            } elseif (isset($dbRecord['host_record_id'])) {
-                unset($dbRecord['host_record_id']);
-            }
-            $dbRecord['format'] = $this->format;
-            $dbRecord['original_data'] = $originalData;
-            $dbRecord['normalized_data'] = $normalizedData;
-            if ($this->dedup) {
-                // If this is a host record, mark it to be deduplicated.
-                // If this is a component part, mark its host record to be
-                // deduplicated.
-                if (!$hostID) {
-                    $dbRecord['update_needed']
-                        = $this->dedupHandler->updateDedupCandidateKeys(
-                            $dbRecord, $metadataRecord
-                        );
-                } else {
-                    $this->db->updateRecord($hostId, ['update_needed' => true]);
-                    $dbRecord['update_needed'] = false;
-                }
-            } else {
-                if (isset($dbRecord['title_keys'])) {
-                    unset($dbRecord['title_keys']);
-                }
-                if (isset($dbRecord['isbn_keys'])) {
-                    unset($dbRecord['isbn_keys']);
-                }
-                if (isset($dbRecord['id_keys'])) {
-                    unset($dbRecord['id_keys']);
-                }
-                $dbRecord['update_needed'] = false;
-            }
-            $this->db->saveRecord($dbRecord);
-            ++$count;
-            if (!$mainID) {
-                $mainID = $id;
-            }
-        }
-
-        if ($count > 1 && $mainID && !$this->keepMissingHierarchyMembers) {
-            // We processed a hierarchical record. Mark deleted any children that
-            // were not updated.
-            $this->db->updateRecords(
-                [
-                    'source_id' => $this->sourceId,
-                    'main_id' => $mainID,
-                    'updated' => ['$lt' => $startTime]
-                ],
-                [
-                    'deleted' => true,
-                    'updated' => $this->db->getTimestamp(),
-                    'update_needed' => false
-                ]
-            );
-        }
-
-        return $count;
     }
 
     /**
@@ -1703,7 +1442,7 @@ class RecordManager extends AbstractBase
             $id = $dbRecord['_id'];
             if (!isset($records[$id])) {
                 // Record not in harvested records, mark deleted
-                $this->storeRecord($id, true, '');
+                $this->storeRecord($source, $id, true, '');
                 unset($records[$id]);
                 ++$deleted;
                 continue;
@@ -1713,7 +1452,7 @@ class RecordManager extends AbstractBase
             if ($marc->serialize() != MetadataUtils::getRecordData($dbRecord, false)
             ) {
                 // Record changed, update...
-                $this->storeRecord($id, false, $records[$id]);
+                $this->storeRecord($source, $id, false, $records[$id]);
                 ++$changed;
             } else {
                 ++$unchanged;
@@ -1722,7 +1461,7 @@ class RecordManager extends AbstractBase
         }
         $this->logger->log('processFullRecordSet', "[$source] Adding new records");
         foreach ($records as $id => $record) {
-            $this->storeRecord($id, false, $record);
+            $this->storeRecord($source, $id, false, $record);
             ++$added;
         }
         $this->logger->log(

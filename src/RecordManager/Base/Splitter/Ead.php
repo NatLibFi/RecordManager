@@ -1,10 +1,10 @@
 <?php
 /**
- * EadSplitter Class
+ * Ead Splitter
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2014.
+ * Copyright (C) The National Library of Finland 2012-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,9 +25,10 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
+namespace RecordManager\Base\Splitter;
 
 /**
- * EadRecord Class
+ * Ead Splitter
  *
  * This is a class for splitting EAD records.
  *
@@ -37,7 +38,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
 */
-class EadSplitter
+class Ead
 {
     protected $doc;
     protected $recordNodes;

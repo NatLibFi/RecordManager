@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (c) The National Library of Finland 2011-2016.
+ * Copyright (c) The National Library of Finland 2011-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -34,7 +34,7 @@ use RecordManager\Base\Utils\XslTransformation;
 require_once 'HTTP/Request2.php';
 
 /**
- * HarvestHTTPFiles Class
+ * Harvesting Base Class
  *
  * This class provides a basic structure for harvesting classes.
  *
@@ -44,7 +44,7 @@ require_once 'HTTP/Request2.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class BaseHarvest
+class Base
 {
     /**
      * Logger
@@ -193,7 +193,7 @@ class BaseHarvest
             $this->verbose = $settings['verbose'];
         }
 
-        if (isset($settings['preTransformation'])) {
+        if (!empty($settings['preTransformation'])) {
             $style = new \DOMDocument();
             $style->load(
                 $basePath . '/transformations/' . $settings['preTransformation']
@@ -453,6 +453,8 @@ class BaseHarvest
         if ($this->verbose) {
             echo "$msg\n";
         }
-        $this->log->log(get_class($this), $msg, $level);
+        $classParts = explode('\\', get_class($this));
+        $class = end($classParts);
+        $this->log->log($class, $msg, $level);
     }
 }

@@ -1,10 +1,10 @@
 <?php
 /**
- * OAI-PMH Harvesting Class
+ * Sierra API Harvesting Class
  *
  * PHP version 5
  *
- * Copyright (c) The National Library of Finland 2016.
+ * Copyright (c) The National Library of Finland 2016-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -32,7 +32,7 @@ use RecordManager\Base\Utils\Logger;
 require_once 'HTTP/Request2.php';
 
 /**
- * HarvestOaiPmh Class
+ * SierraApi Class
  *
  * This class harvests records via the III Sierra REST API using settings from
  * datasources.ini.
@@ -43,7 +43,7 @@ require_once 'HTTP/Request2.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class HarvestSierraApi extends BaseHarvest
+class SierraApi extends Base
 {
     /**
      * Client key for the Sierra API
@@ -351,11 +351,12 @@ class HarvestSierraApi extends BaseHarvest
             $oaiId = $this->createOaiId($this->source, $id);
             $deleted = $this->isDeleted($record);
             if ($deleted) {
-                call_user_func($this->callback, $oaiId, true, null);
+                call_user_func($this->callback, $this->source, $oaiId, true, null);
                 $this->deletedRecords++;
             } else {
                 $this->changedRecords += call_user_func(
                     $this->callback,
+                    $this->source,
                     $oaiId,
                     false,
                     $this->convertRecordToMarcArray($record)
