@@ -49,7 +49,7 @@ class DeleteSolrRecords extends AbstractBase
     {
         $updater = new \RecordManager\Base\Solr\SolrUpdater(
             $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings
+            $this->dataSourceSettings, $this->recordFactory
         );
         if (!empty($this->config['Solr']['merge_records'])) {
             $this->logger->log(

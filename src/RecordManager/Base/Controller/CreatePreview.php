@@ -27,7 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Solr\PreviewCreator;
 
 /**
@@ -123,11 +122,11 @@ class CreatePreview extends AbstractBase
             );
         }
 
-        if (!RecordFactory::canCreate($record['format'])) {
+        if (!$this->recordFactory->canCreate($record['format'])) {
             die("Format '$format' not supported");
         }
 
-        $metadataRecord = RecordFactory::createRecord(
+        $metadataRecord = $this->recordFactory->createRecord(
             $record['format'],
             $record['normalized_data'],
             $record['oai_id'],
@@ -140,7 +139,7 @@ class CreatePreview extends AbstractBase
 
         $preview = new \RecordManager\Base\Solr\PreviewCreator(
             $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings
+            $this->dataSourceSettings, $this->recordFactory
         );
 
         return $preview->create($record);

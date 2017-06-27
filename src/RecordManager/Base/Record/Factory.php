@@ -41,15 +41,32 @@ namespace RecordManager\Base\Record;
 class Factory
 {
     /**
+     * Configured record classes
+     *
+     * @var array
+     */
+    protected $recordClasses;
+
+    /**
+     * Constructor
+     *
+     * @param array $recordClasses Record classes
+     */
+    public function __construct($recordClasses)
+    {
+        $this->recordClasses = $recordClasses;
+    }
+
+    /**
      * Check if a record driver for the specified format can be created.
      *
      * @param string $format Metadata format
      *
      * @return bool
      */
-    public static function canCreate($format)
+    public function canCreate($format)
     {
-        $class = self::getRecordClass($format);
+        $class = $this->getRecordClass($format);
 
         return class_exists($class);
     }
@@ -65,14 +82,14 @@ class Factory
      * @return object       The record driver for handling the record.
      * @throws Exception
      */
-    public static function createRecord($format, $data, $oaiID, $source)
+    public function createRecord($format, $data, $oaiID, $source)
     {
         $idPrefix
             = isset($configArray['dataSourceSettings'][$source]['idPrefix'])
             ? $configArray['dataSourceSettings'][$source]['idPrefix']
             : $source;
 
-        $class = self::getRecordClass($format);
+        $class = $this->getRecordClass($format);
 
         if (class_exists($class)) {
             $obj = new $class($data, $oaiID, $source, $idPrefix);
@@ -89,12 +106,10 @@ class Factory
      *
      * @return string
      */
-    protected static function getRecordClass($format)
+    protected function getRecordClass($format)
     {
-        global $configArray;
-
-        if (isset($configArray['Record Classes'][$format])) {
-            $class = $configArray['Record Classes'][$format];
+        if (isset($this->recordClasses[$format])) {
+            $class = $this->recordClasses[$format];
         } else {
             $class = ucfirst($format);
         }
@@ -106,4 +121,3 @@ class Factory
         return $class;
     }
 }
-

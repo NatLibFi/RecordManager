@@ -27,7 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\PerformanceCounter;
 
@@ -85,7 +84,7 @@ class Renormalize extends AbstractBase
                 $originalData = MetadataUtils::getRecordData($record, false);
                 $normalizedData = $originalData;
                 if (null !== $settings['normalizationXSLT']) {
-                    $origMetadataRecord = RecordFactory::createRecord(
+                    $origMetadataRecord = $this->recordFactory->createRecord(
                         $record['format'],
                         $originalData,
                         $record['oai_id'],
@@ -96,7 +95,7 @@ class Renormalize extends AbstractBase
                     );
                 }
 
-                $metadataRecord = RecordFactory::createRecord(
+                $metadataRecord = $this->recordFactory->createRecord(
                     $record['format'],
                     $normalizedData,
                     $record['oai_id'],

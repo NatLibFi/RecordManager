@@ -28,6 +28,7 @@
 namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Database\Database;
+use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\XslTransformation;
@@ -90,6 +91,13 @@ abstract class AbstractBase
      * @var array
      */
     protected $dataSourceSettings;
+
+    /**
+     * Record factory
+     *
+     * @var RecordFactory
+     */
+    protected $recordFactory;
 
     /**
      * Constructor
@@ -155,6 +163,10 @@ abstract class AbstractBase
         // Read the artices file
         MetadataUtils::$articles = isset($config['Site']['articles'])
             ? $this->readListFile($config['Site']['articles']) : [];
+
+        $this->recordFactory = new RecordFactory(
+            isset($config['Record Classes']) ? $config['Record Classes'] : []
+        );
     }
 
     /**
@@ -301,7 +313,7 @@ abstract class AbstractBase
             : '\RecordManager\Base\Deduplication\DedupHandler';
         $dedupHandler = new $dedupClass(
             $this->db, $this->logger, $this->verbose, $this->basePath, $this->config,
-            $this->dataSourceSettings
+            $this->dataSourceSettings, $this->recordFactory
         );
         return $dedupHandler;
     }

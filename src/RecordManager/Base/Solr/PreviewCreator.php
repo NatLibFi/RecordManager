@@ -30,7 +30,6 @@
 namespace RecordManager\Base\Solr;
 
 use RecordManager\Base\Utils\Logger;
-use RecordManager\Base\Record\Factory as RecordFactory;
 
 /**
  * Preview Class

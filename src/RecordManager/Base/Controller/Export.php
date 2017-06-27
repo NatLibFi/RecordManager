@@ -28,7 +28,6 @@
 namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Database\Database;
-use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -125,7 +124,7 @@ class Export extends AbstractBase
                 );
             }
             foreach ($records as $record) {
-                $metadataRecord = RecordFactory::createRecord(
+                $metadataRecord = $this->recordFactory->createRecord(
                     $record['format'],
                     MetadataUtils::getRecordData($record, true),
                     $record['oai_id'],

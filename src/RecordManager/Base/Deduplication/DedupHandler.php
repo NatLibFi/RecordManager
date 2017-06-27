@@ -51,21 +51,28 @@ class DedupHandler
      *
      * @var Database
      */
-    protected $db = null;
+    protected $db;
 
     /**
      * Logger
      *
      * @var Logger
      */
-    protected $log = null;
+    protected $log;
+
+    /**
+     * Record Factory
+     *
+     * @var RecordFactory
+     */
+    protected $recordFactory;
 
     /**
      * Verbose mode
      *
      * @var bool
      */
-    protected $verbose = false;
+    protected $verbose;
 
     /**
      * Array used to track keys that result in too many candidates
@@ -91,18 +98,20 @@ class DedupHandler
     /**
      * Constructor
      *
-     * @param Database $db         Database
-     * @param Logger   $log        Logger object
-     * @param boolean  $verbose    Whether verbose output is enabled
-     * @param string   $basePath   Base path
-     * @param array    $mainConfig Main configuration
-     * @param array    $settings   Data source settings
+     * @param Database      $db            Database
+     * @param Logger        $log           Logger object
+     * @param boolean       $verbose       Whether verbose output is enabled
+     * @param string        $basePath      Base path
+     * @param array         $mainConfig    Main configuration
+     * @param array         $settings      Data source settings
+     * @param RecordFactory $recordFactory Record factory
      */
     public function __construct(Database $db, Logger $log, $verbose, $basePath,
-        $mainConfig, $settings
+        $mainConfig, $settings, $recordFactory
     ) {
         $this->db = $db;
         $this->log = $log;
+        $this->recordFactory = $recordFactory;
         $this->verbose = $verbose;
         $this->dataSourceSettings = $settings;
 
@@ -323,7 +332,7 @@ class DedupHandler
                     }
 
                     if (!isset($origRecord)) {
-                        $origRecord = RecordFactory::createRecord(
+                        $origRecord = $this->recordFactory->createRecord(
                             $record['format'],
                             MetadataUtils::getRecordData($record, true),
                             $record['oai_id'],
@@ -456,7 +465,7 @@ class DedupHandler
      */
     protected function matchRecords($record, $origRecord, $candidate)
     {
-        $cRecord = RecordFactory::createRecord(
+        $cRecord = $this->recordFactory->createRecord(
             $candidate['format'],
             MetadataUtils::getRecordData($candidate, true),
             $candidate['oai_id'],
@@ -807,7 +816,7 @@ class DedupHandler
                         echo 'Original ' . $component1['_id'] . ":\n"
                             . MetadataUtils::getRecordData($component1, true) . "\n";
                     }
-                    $metadataComponent1 = RecordFactory::createRecord(
+                    $metadataComponent1 = $this->recordFactory->createRecord(
                         $component1['format'],
                         MetadataUtils::getRecordData($component1, true),
                         $component1['oai_id'],

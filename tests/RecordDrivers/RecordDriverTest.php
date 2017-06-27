@@ -62,9 +62,10 @@ abstract class RecordDriverTest extends AbstractTest
      */
     protected function processSample($sample)
     {
+        $recordFactory = new RecordFactory([]);
         $actualdir = dirname(__FILE__);
         $sample = file_get_contents($actualdir . "/../samples/" . $sample);
-        $record = RecordFactory::createRecord($this->driver, $sample, "__unit_test_no_id__", "__unit_test_no_source__");
+        $record = $recordFactory->createRecord($this->driver, $sample, "__unit_test_no_id__", "__unit_test_no_source__");
         return $record->toSolrArray();
     }
 }

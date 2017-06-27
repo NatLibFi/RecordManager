@@ -97,6 +97,13 @@ class SolrUpdater
     protected $settings;
 
     /**
+     * Record factory
+     *
+     * @var RecordFactory
+     */
+    protected $recordFactory;
+
+    /**
      * Whether building field is hierarchical
      *
      * @var bool
@@ -323,23 +330,25 @@ class SolrUpdater
     /**
      * Constructor
      *
-     * @param MongoDB $db                 Database connection
-     * @param string  $basePath           RecordManager main directory
-     * @param object  $log                Logger
-     * @param boolean $verbose            Whether to output verbose messages
-     * @param array   $config             Main configuration
-     * @param array   $dataSourceSettings Data source settings
+     * @param MongoDB       $db                 Database connection
+     * @param string        $basePath           RecordManager main directory
+     * @param object        $log                Logger
+     * @param boolean       $verbose            Whether to output verbose messages
+     * @param array         $config             Main configuration
+     * @param array         $dataSourceSettings Data source settings
+     * @param RecordFactory $recordFactory      Record Factory
      *
      * @throws Exception
      */
     public function __construct($db, $basePath, $log, $verbose, $config,
-        $dataSourceSettings
+        $dataSourceSettings, $recordFactory
     ) {
         $this->config = $config;
         $this->db = $db;
         $this->basePath = $basePath;
         $this->log = $log;
         $this->verbose = $verbose;
+        $this->recordFactory = $recordFactory;
 
         $this->journalFormats = isset($config['Solr']['journal_formats'])
             ? $config['Solr']['journal_formats']
@@ -1434,7 +1443,7 @@ class SolrUpdater
             if ($mapped) {
                 $data = $this->createSolrArray($record, $mergedComponents);
             } else {
-                $metadataRecord = RecordFactory::createRecord(
+                $metadataRecord = $this->recordFactory->createRecord(
                     $record['format'],
                     MetadataUtils::getRecordData($record, true),
                     $record['oai_id'],
@@ -1566,7 +1575,7 @@ class SolrUpdater
     {
         $mergedComponents = 0;
 
-        $metadataRecord = RecordFactory::createRecord(
+        $metadataRecord = $this->recordFactory->createRecord(
             $record['format'],
             MetadataUtils::getRecordData($record, true),
             $record['oai_id'],
@@ -1627,7 +1636,7 @@ class SolrUpdater
                 } else {
                     $params['source_id'] = $record['source_id'];
                 }
-                $component = $this->db->findRecord($params);
+                $component = $this->db ? $this->db->findRecord($params) : null;
                 $hasComponentParts = !empty($component);
                 if ($hasComponentParts) {
                     $components = $this->db->findRecords($params);
@@ -1696,7 +1705,7 @@ class SolrUpdater
                 $data['container_title'] = $metadataRecord->getContainerTitle();
             } else {
                 $data['hierarchy_parent_id'] = $hostRecord['_id'];
-                $hostMetadataRecord = RecordFactory::createRecord(
+                $hostMetadataRecord = $this->recordFactory->createRecord(
                     $hostRecord['format'],
                     MetadataUtils::getRecordData($hostRecord, true),
                     $hostRecord['oai_id'],

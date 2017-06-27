@@ -59,7 +59,7 @@ class CountValues extends AbstractBase
         }
         $updater = new SolrUpdater(
             $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings
+            $this->dataSourceSettings, $this->recordFactory
         );
         $updater->countValues($sourceId, $field, $mapped);
     }

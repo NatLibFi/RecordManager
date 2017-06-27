@@ -58,7 +58,7 @@ class SolrUpdate extends AbstractBase
     ) {
         $updater = new SolrUpdater(
             $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings
+            $this->dataSourceSettings, $this->recordFactory
         );
         $updater->updateRecords($fromDate, $sourceId, $singleId, $noCommit, false);
     }

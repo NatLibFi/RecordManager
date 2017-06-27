@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Record\Factory as RecordFactory;
-
 /**
  * Record storage trait
  *
@@ -136,7 +134,7 @@ trait StoreRecordTrait
         $mainID = '';
         foreach ($dataArray as $data) {
             if (null !== $settings['normalizationXSLT']) {
-                $metadataRecord = RecordFactory::createRecord(
+                $metadataRecord = $this->recordFactory->createRecord(
                     $settings['format'],
                     $settings['normalizationXSLT']
                         ->transform($data, ['oai_id' => $oaiID]),
@@ -145,11 +143,11 @@ trait StoreRecordTrait
                 );
                 $metadataRecord->normalize();
                 $normalizedData = $metadataRecord->serialize();
-                $originalData = RecordFactory::createRecord(
+                $originalData = $this->recordFactory->createRecord(
                     $settings['format'], $data, $oaiID, $sourceId
                 )->serialize();
             } else {
-                $metadataRecord = RecordFactory::createRecord(
+                $metadataRecord = $this->recordFactory->createRecord(
                     $settings['format'], $data, $oaiID, $sourceId
                 );
                 $originalData = $metadataRecord->serialize();

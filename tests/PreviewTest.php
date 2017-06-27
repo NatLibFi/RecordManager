@@ -25,6 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
+use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Solr\PreviewCreator;
 use RecordManager\Base\Utils\Logger;
 
@@ -99,7 +100,20 @@ EOT;
 
         $preview = $this->getPreviewCreator();
 
-        $result = $preview->preview($this->holdingRecord, 'marc', 'test');
+        $timestamp = new \MongoDB\BSON\UTCDateTime();
+        $record = [
+            'format' => 'marc',
+            'original_data' => $this->holdingRecord,
+            'normalized_data' => $this->holdingRecord,
+            'source_id' => 'test',
+            'linking_id' => '_preview',
+            'oai_id' => '_preview',
+            '_id' => '_preview',
+            'created' => $timestamp,
+            'date' => $timestamp
+        ];
+
+        $result = $preview->create($record);
         $this->assertEquals(
             ['B', 'A/2', 'A', 'DEF/2'],
             $result['building']
@@ -115,8 +129,10 @@ EOT;
     {
         $basePath = dirname(__FILE__) . '/configs/mappingfilestest';
         $logger = $this->createMock(Logger::class);
+        $recordFactory = new RecordFactory([]);
         $preview = new PreviewCreator(
-          null, $basePath, $logger, false, [], $this->dataSourceSettings
+            null, $basePath, $logger, false, [], $this->dataSourceSettings,
+            $recordFactory
         );
 
         return $preview;

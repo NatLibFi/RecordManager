@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Record\Factory as RecordFactory;
-
 /**
  * Pre-transformation trait
  *
