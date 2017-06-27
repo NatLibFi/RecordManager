@@ -30,8 +30,6 @@ namespace RecordManager\Base\Enrichment;
 use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
 
-require_once 'HTTP/Request2.php';
-
 /**
  * Enrichment Class
  *

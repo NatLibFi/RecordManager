@@ -10,6 +10,7 @@
     "license": "GPL-2.0",
     "require": {
         "mongodb/mongodb": "^1.1.2",
+        "pear/http_request2": "^2.3.0",
         "phayes/geophp": "^1.2"
     },
     "require-dev": {

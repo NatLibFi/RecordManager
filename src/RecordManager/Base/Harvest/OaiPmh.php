@@ -33,8 +33,6 @@ namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Utils\Logger;
 
-require_once 'HTTP/Request2.php';
-
 /**
  * OaiPmh Class
  *

@@ -30,9 +30,6 @@ namespace RecordManager\Base\Controller;
 use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\PerformanceCounter;
 
-require_once 'PEAR.php';
-require_once 'HTTP/Request2.php';
-
 /**
  * Purge deleted records
  *

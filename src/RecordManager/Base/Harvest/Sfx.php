@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Harvest;
 
-require_once 'HTTP/Request2.php';
-
 /**
  * Sfx Class
  *
