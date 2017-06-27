@@ -176,7 +176,9 @@ class Database
      */
     public function getTimestamp($time = null)
     {
-        return new \MongoDB\BSON\UTCDateTime($time === null ? time() : $time * 1000);
+        return new \MongoDB\BSON\UTCDateTime(
+            ($time === null ? time() : $time) * 1000
+        );
     }
 
     /**
