@@ -299,10 +299,10 @@ abstract class AbstractBase
         $dedupClass = isset($this->config['Site']['dedup_handler'])
             ? $this->config['Site']['dedup_handler']
             : '\RecordManager\Base\Deduplication\DedupHandler';
-        $this->dedupHandler = new $dedupClass(
-            $this->db, $this->logger, $this->verbose, $solrUpdater,
+        $dedupHandler = new $dedupClass(
+            $this->db, $this->logger, $this->verbose, $this->basePath, $this->config,
             $this->dataSourceSettings
         );
-
+        return $dedupHandler;
     }
 }

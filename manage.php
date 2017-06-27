@@ -135,7 +135,10 @@ EOT;
                     break;
                 case 'deduplicate':
                 case 'markdedup':
-                    $manager->deduplicate(
+                    $deduplicate = new \RecordManager\Base\Controller\Deduplicate(
+                        $configArray, true, $verbose
+                    );
+                    $deduplicate->launch(
                         $source, isset($params['all']) ? true : false, $single,
                         $params['func'] == 'markdedup'
                     );
