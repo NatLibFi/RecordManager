@@ -431,7 +431,7 @@ class DedupHandler
                     ['update_needed' => true],
                     ['dedup_id' => 1]
                 );
-            } elseif (empty($record['ids'])) {
+            } elseif (empty($dedupRecord['ids'])) {
                 // No records remaining => just mark dedup record deleted.
                 // This shouldn't happen since dedup record should always contain
                 // at least two records
