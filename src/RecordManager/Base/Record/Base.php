@@ -102,10 +102,10 @@ class Base
     /**
      * Set record data
      *
-     * @param string $source   Source ID
-     * @param string $oaiID    Record ID received from OAI-PMH (or empty string for
+     * @param string $source Source ID
+     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
      * file import)
-     * @param string $data     Metadata
+     * @param string $data   Metadata
      *
      * @return void
      */

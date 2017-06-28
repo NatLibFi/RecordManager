@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Utils;
 
-use RecordManager\Base\Utils\Logger;
-
 require_once 'vendor/phayes/geophp/geoPHP.inc';
 
 /**
@@ -48,7 +46,7 @@ class MetadataUtils
     /**
      * Logger
      *
-     * @var Logger
+     * @var \RecordManager\Base\Utils\Logger
      */
     protected static $logger = null;
 
@@ -93,15 +91,23 @@ class MetadataUtils
     /**
      * Set the logger
      *
-     * @param Logger $logger Logger
+     * @param \RecordManager\Base\Utils\Logger $logger Logger
      *
      * @return void
      */
-    public static function setLogger(Logger $logger)
+    public static function setLogger(\RecordManager\Base\Utils\Logger $logger)
     {
         self::$logger = $logger;
     }
 
+    /**
+     * Set the configuration
+     *
+     * @param array  $config   Main configuration
+     * @param string $basePath Base path for finding config files
+     *
+     * @return void
+     */
     public static function setConfig($config, $basePath)
     {
         if (isset($config['Site']['full_title_prefixes'])) {
@@ -808,6 +814,7 @@ class MetadataUtils
     /**
      * Read a list file into an array
      *
+     * @param string $basePath Base path
      * @param string $filename List file name
      *
      * @return array
@@ -818,7 +825,9 @@ class MetadataUtils
         $lines = file($filename, FILE_IGNORE_NEW_LINES);
         if ($lines === false) {
             $this->logger->log(
-                'readListFile', "Could not open list file '$filename'", Logger::ERROR
+                'readListFile',
+                "Could not open list file '$filename'",
+                \RecordManager\Base\Utils\Logger::ERROR
             );
             return [];
         }
@@ -831,6 +840,4 @@ class MetadataUtils
 
         return $lines;
     }
-
-
 }

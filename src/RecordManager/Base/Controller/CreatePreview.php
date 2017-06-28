@@ -137,7 +137,7 @@ class CreatePreview extends AbstractBase
         $record['_id'] = $record['linking_id']
             = $source . '.' . $metadataRecord->getID();
 
-        $preview = new \RecordManager\Base\Solr\PreviewCreator(
+        $preview = new PreviewCreator(
             $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
             $this->dataSourceSettings, $this->recordFactory
         );
