@@ -27,6 +27,7 @@
  */
 namespace RecordManager\Base\Harvest;
 
+use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -203,7 +204,7 @@ class SierraApi extends Base
     {
         $response = $this->sendRequest(['v3', 'info', 'token'], []);
         if ($date = $response->getHeader('Date')) {
-            $dateTime = DateTime::createFromFormat('D\, d M Y H:i:s O+', $date);
+            $dateTime = \DateTime::createFromFormat('D\, d M Y H:i:s O+', $date);
             if (false === $dateTime) {
                 throw new \Exception("Could not parse server date header: $date");
             }

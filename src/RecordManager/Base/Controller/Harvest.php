@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Base\Controller;
 
+use RecordManager\Base\Utils\Logger;
+
 /**
  * Harvest
  *
@@ -156,7 +158,7 @@ class Harvest extends AbstractBase
                             $this->logger,
                             $source,
                             $this->basePath,
-                            $config,
+                            $this->config,
                             $settings
                         );
                         if ($startResumptionToken) {
@@ -168,7 +170,7 @@ class Harvest extends AbstractBase
                             $this->logger,
                             $source,
                             $this->basePath,
-                            $config,
+                            $this->config,
                             $settings
                         );
                         if ($startResumptionToken) {
