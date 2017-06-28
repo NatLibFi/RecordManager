@@ -27,6 +27,7 @@
  */
 namespace RecordManager\Base\Harvest;
 
+use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
 
 /**
