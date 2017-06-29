@@ -51,11 +51,8 @@ class Renormalize extends AbstractBase
      */
     public function launch($sourceId, $singleId)
     {
-        $dedupHandler = new \RecordManager\Base\Deduplication\DedupHandler(
-            $this->db, $this->logger, $this->verbose, $this->basePath, $this->config,
-            $this->dataSourceSettings
-        );
         $this->initSourceSettings();
+        $dedupHandler = $this->getDedupHandler();
         foreach ($this->dataSourceSettings as $source => $settings) {
             if ($sourceId && $sourceId != '*' && $source != $sourceId) {
                 continue;
