@@ -20,19 +20,19 @@
 
   <!-- PHPUnit -->
   <target name="phpunit" description="Run tests">
-    <exec command="${srcdir}/vendor/bin/phpunit -dzend.enable_gc=0 tests" passthru="true" checkreturn="true" />
+    <exec command="${srcdir}/vendor/bin/phpunit -dzend.enable_gc=0 -c ${srcdir}/tests/phpunit.xml ${srcdir}/tests" passthru="true" checkreturn="true" />
   </target>
 
   <!-- PHP CodeSniffer -->
   <target name="phpcs">
-    <exec command="${srcdir}/vendor/bin/phpcs --standard=PEAR --extensions=php *.php classes" escape="false" passthru="true" checkreturn="true" />
+    <exec command="${srcdir}/vendor/bin/phpcs --standard=PEAR --extensions=php *.php ${srcdir}/src/RecordManager" escape="false" passthru="true" checkreturn="true" />
   </target>
 
   <!-- php-cs-fixer (first task applies fixes, second task simply checks if they are needed) -->
   <target name="php-cs-fixer">
-    <exec command="${srcdir}/vendor/bin/php-cs-fixer fix ${srcdir}/classes --rules=${php-cs-fixers} --verbose ${php-cs-fixer-extra-params}" passthru="true" escape="false" />
+    <exec command="${srcdir}/vendor/bin/php-cs-fixer fix ${srcdir}/src/RecordManager --rules=${php-cs-fixers} --verbose ${php-cs-fixer-extra-params}" passthru="true" escape="false" />
   </target>
   <target name="php-cs-fixer-dryrun">
-    <exec command="${srcdir}/vendor/bin/php-cs-fixer fix ${srcdir}/classes --rules=${php-cs-fixers} --dry-run --verbose --diff ${php-cs-fixer-extra-params}" passthru="true" escape="false" checkreturn="true" />
+    <exec command="${srcdir}/vendor/bin/php-cs-fixer fix ${srcdir}/src/RecordManager --rules=${php-cs-fixers} --dry-run --verbose --diff ${php-cs-fixer-extra-params}" passthru="true" escape="false" checkreturn="true" />
   </target>
 </project>

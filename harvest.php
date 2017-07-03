@@ -37,8 +37,12 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
+    $basePath = __DIR__;
+    $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
+
     $params = parseArgs($argv);
-    applyConfigOverrides($params);
+    $config = applyConfigOverrides($params, $config);
+
     if (empty($params['source']) || !is_string($params['source'])) {
         echo <<<EOT
 Usage: $argv[0] --source=... [...]
@@ -77,15 +81,17 @@ EOT;
             die();
         }
 
-        $manager = new RecordManager(
-            true, isset($params['verbose']) ? $params['verbose'] : false
+        $harvest = new \RecordManager\Base\Controller\Harvest(
+            $config,
+            true,
+            isset($params['verbose']) ? $params['verbose'] : false
         );
         $from = isset($params['from']) ? $params['from'] : null;
         if (isset($params['all']) || isset($params['reharvest'])) {
             $from = '-';
         }
         foreach (explode(',', $params['source']) as $source) {
-            $manager->harvest(
+            $harvest->launch(
                 $source,
                 $from,
                 isset($params['until']) ? $params['until'] : null,
@@ -94,7 +100,7 @@ EOT;
                 isset($params['reharvest']) ? $params['reharvest'] : ''
             );
         }
-    } catch(Exception $e) {
+    } catch (\Exception $e) {
         releaseLock($lockhandle);
         throw $e;
     }

@@ -35,29 +35,25 @@
 ini_set('display_errors', '1');
 
 require_once __DIR__ . '/vendor/autoload.php';
-
-// Initialize command line environment
-$basePath = __DIR__;
-require_once 'classes/RecordManager.php';
-$configArray = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
+require_once __DIR__ . '/src/RecordManager/Base/Autoloader.php';
 
 /**
  * Apply any configuration overrides defined on command line
  *
  * @param array $params Command line parameters
+ * @param array $config Configuration
  *
- * @return void
+ * @return array
  */
-function applyConfigOverrides($params)
+function applyConfigOverrides($params, $config)
 {
-    global $configArray;
-
     foreach ($params as $key => $value) {
         $setting = explode('.', $key);
         if ($setting[0] == 'config') {
-            $configArray[$setting[1]][$setting[2]] = $value;
+            $config[$setting[1]][$setting[2]] = $value;
         }
     }
+    return $config;
 }
 
 /**

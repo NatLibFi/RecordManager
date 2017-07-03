@@ -27,7 +27,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-require_once 'RecordDriverTest.php';
 
 /**
  * NDL LIDO Record Driver Test Class
@@ -40,7 +39,7 @@ require_once 'RecordDriverTest.php';
  */
 class LidoRecordDriverTest extends RecordDriverTest
 {
-    protected $driver = 'NdlLido';
+    protected $driver = '\RecordManager\Finna\Record\Lido';
 
     /**
      * Test Musketti LIDO record handling

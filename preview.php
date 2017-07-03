@@ -28,6 +28,7 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/src/RecordManager/Base/Autoloader.php';
 
 if (!isset($_REQUEST['source']) || !isset($_REQUEST['data'])) {
     die('Missing parameters');
@@ -39,14 +40,11 @@ if (!preg_match('/^[\w_]*$/', $format) || !preg_match('/^[\w_]*$/', $source)) {
     die('Invalid parameters');
 }
 
-$basePath = substr(__FILE__, 0, strrpos(__FILE__, DIRECTORY_SEPARATOR));
-require_once 'classes/RecordManager.php';
-$configArray = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
-$configArray['dataSourceSettings']
-    = parse_ini_file($basePath . '/conf/datasources.ini', true);
-$manager = new RecordManager();
+$basePath = __DIR__;
+$config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
+$createPreview = new \RecordManager\Base\Controller\CreatePreview($config);
 
-$record = $manager->previewRecord($_REQUEST['data'], $format, $source);
+$record = $createPreview->launch($_REQUEST['data'], $format, $source);
 
 header('Content-Type: application/json');
 echo json_encode($record);

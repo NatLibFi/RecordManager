@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2013.
+ * Copyright (C) The National Library of Finland 2011-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -36,8 +36,12 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
+    $basePath = __DIR__;
+    $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
+
     $params = parseArgs($argv);
-    applyConfigOverrides($params);
+    $config = applyConfigOverrides($params, $config);
+
     if (empty($params['file'])) {
         echo <<<EOT
 Usage: $argv[0] --file=... [...]
@@ -67,12 +71,13 @@ EOT;
         exit(1);
     }
 
-    $manager = new RecordManager(
-        true, isset($params['verbose']) ? $params['verbose'] : false
+    $export = new \RecordManager\Base\Controller\Export(
+        $config,
+        true,
+        isset($params['verbose']) ? $params['verbose'] : false
     );
-    $manager->quiet = isset($params['quiet']) ? $params['quiet'] : false;
 
-    $manager->exportRecords(
+    $export->launch(
         $params['file'],
         isset($params['deleted']) ? $params['deleted'] : '',
         isset($params['from']) ? $params['from'] : '',

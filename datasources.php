@@ -36,8 +36,12 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
+    $basePath = __DIR__;
+    $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
+
     $params = parseArgs($argv);
-    applyConfigOverrides($params);
+    $config = applyConfigOverrides($params, $config);
+
     if (empty($params['search'])) {
         echo <<<EOT
 Usage: $argv[0] --search=...
@@ -45,19 +49,23 @@ Usage: $argv[0] --search=...
 Parameters:
 
 --search=[regexp]   Search for a string in data sources and list the data source id's
+                    Note that all settings are normalized to not contain any spaces
+                    around equal signs, and boolean true is denoted with 1 and false
+                    with 0.
 
 
 EOT;
         exit(1);
     }
 
-    $manager = new RecordManager(
-        true, isset($params['verbose']) ? $params['verbose'] : false
-    );
     if (!empty($params['search'])) {
-        $manager->searchDataSources($params['search']);
+        $searchDataSources = new \RecordManager\Base\Controller\SearchDataSources(
+            $config,
+            true,
+            isset($params['verbose']) ? $params['verbose'] : false
+        );
+        $searchDataSources->launch($params['search']);
     }
-
 }
 
 main($argv);

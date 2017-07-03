@@ -25,8 +25,9 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-require_once 'classes/RecordFactory.php';
-require_once 'classes/MetadataUtils.php';
+
+use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Utils\Logger;
 
 /**
  * Generic Record Driver Test Class
@@ -37,7 +38,7 @@ require_once 'classes/MetadataUtils.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-abstract class RecordDriverTest extends PHPUnit_Framework_TestCase
+abstract class RecordDriverTest extends AbstractTest
 {
     // Override this from subclass
     protected $driver;
@@ -62,9 +63,12 @@ abstract class RecordDriverTest extends PHPUnit_Framework_TestCase
      */
     protected function processSample($sample)
     {
-        $actualdir = dirname(__FILE__);
-        $sample = file_get_contents($actualdir . "/../samples/" . $sample);
-        $record = RecordFactory::createRecord($this->driver, $sample, "__unit_test_no_id__", "__unit_test_no_source__");
+        $logger = $this->createMock(Logger::class);
+        $recordFactory = new RecordFactory($logger, [], []);
+        $sample = file_get_contents(__DIR__ . '/../samples/' . $sample);
+        $record = $recordFactory->createRecord(
+            $this->driver, $sample, '__unit_test_no_id__', '__unit_test_no_source__'
+        );
         return $record->toSolrArray();
     }
 }

@@ -58,7 +58,8 @@
 ; format                Record format in RecordManager
 ; oaipmhTransformation  Transformation to be applied to the OAI-PMH responses (e.g. to strip namespaces, optional)
 ; preTransformation     Transformation to be applied to files to be imported (e.g. to strip namespaces, optional)
-; recordSplitter        Transformation or PHP class used to split records in import or OAI-PMH harvest (optional, e.g. to split EAD records to multiple records)
+; recordSplitterClass   PHP class used to split records in import or OAI-PMH harvest (optional, e.g. to split EAD records to multiple records)
+; recordSplitter        Transformation (alternative to PHP class above) used to split records in import or OAI-PMH harvest (optional, e.g. to split EAD records to multiple records)
 ; normalization         XSL Transformation to be applied to each record (optional)
 ; dedup                 Whether to deduplicate records in this set (optional, true or false, default false)
 ; keepMissingHierarchyMembers
@@ -80,19 +81,19 @@
 ;                         institution/source   Use institution and source id separated with a slash
 ; extrafields[]         An array of extra fields added to each record from this data source when sending records to Solr.
 ;                       Use format fieldname:contents, e.g.
-;                         extrafields[] = sector_str_mv:library   
+;                         extrafields[] = sector_str_mv:library
 ; driverParams[]        An array of extra parameters that can be used to customize record driver behavior
 ; enrichments[]         An array of enrichment class names that can be used to enrich records
 
 ; OAI-PMH Provider Specific settings:
 ; transformation_to_{fmt}
-;                       XSL Transformation used to convert records from the original format to the requested format. E.g. if records are stored in MARC format, 
-;                       transformation_to_ese=marc2ese.properties could be used to transform the MARC records to ESE format.                            
+;                       XSL Transformation used to convert records from the original format to the requested format. E.g. if records are stored in MARC format,
+;                       transformation_to_ese=marc2ese.properties could be used to transform the MARC records to ESE format.
 
 ; SAMPLE CONFIGURATION FOR OPEN JOURNAL SYSTEMS
 ;[OJS]
 ;institution=SampleInstitution
-;format=dc 
+;format=dc
 ;url = http://ojs.myuniversity.edu/oai
 ;metadataPrefix = oai_dc
 ;idSearch[] = "/^oai:myuniversity.edu:/"
@@ -166,9 +167,9 @@ sierraApiKey = "[api_key]"
 sierraApiSecret = "[api_secret]"
 url = https://kirjtuo1.helmet.fi/iii/sierra-api
 batchSize = 100
-; Support for asking for non-suppressed records exists with the setting below, but as 
+; Support for asking for non-suppressed records exists with the setting below, but as
 ; long as the API doesn't return suppressed records as deleted in that case (as is
-; the situation at least with API v3), don't use it, since records that go from 
+; the situation at least with API v3), don't use it, since records that go from
 ; unsuppressed to suppressed won't be detected.
 ;suppressedRecords = false
 suppressedBibCode3 = 'c,d,n'
@@ -176,4 +177,3 @@ institution = SierraLib
 format = marc
 dedup = true
 building_mapping = sierra_locations.map
- 

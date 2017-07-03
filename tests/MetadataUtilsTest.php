@@ -25,7 +25,8 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-require_once 'classes/MetadataUtils.php';
+
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * MetadataUtils tests
@@ -36,7 +37,7 @@ require_once 'classes/MetadataUtils.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class MetadataUtilsTest extends PHPUnit_Framework_TestCase
+class MetadataUtilsTest extends AbstractTest
 {
     /**
      * Tests for createSortableString

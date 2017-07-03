@@ -25,7 +25,9 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-require_once 'classes/PreviewCreator.php';
+use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Solr\PreviewCreator;
+use RecordManager\Base\Utils\Logger;
 
 /**
  * Preview creation tests
@@ -36,8 +38,13 @@ require_once 'classes/PreviewCreator.php';
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class PreviewCreatorTest extends PHPUnit_Framework_TestCase
+class PreviewCreatorTest extends AbstractTest
 {
+    /**
+     * Holding test record
+     *
+     * @var string
+     */
     protected $holdingRecord = <<<EOT
 <record>
   <datafield tag="852">
@@ -63,21 +70,47 @@ class PreviewCreatorTest extends PHPUnit_Framework_TestCase
 EOT;
 
     /**
+     * Data source settings
+     *
+     * @var array
+     */
+    protected $dataSourceSettings = [
+        'test' => [
+            'institution' => 'Test',
+            'format' => 'marc',
+            'building_mapping' => [
+                'building.map',
+                'building_sub.map,regexp'
+            ],
+            'driverParams' => [
+                'subLocationInBuilding=c'
+            ]
+        ]
+    ];
+
+    /**
      * Tests for building field
      *
      * @return void
      */
     public function testBuilding()
     {
-        global $configArray;
-
-        $configArray['dataSourceSettings']['test']['driverParams'] = [
-            'subLocationInBuilding=c'
-        ];
-
         $preview = $this->getPreviewCreator();
 
-        $result = $preview->preview($this->holdingRecord, 'marc', 'test');
+        $timestamp = new \MongoDB\BSON\UTCDateTime();
+        $record = [
+            'format' => 'marc',
+            'original_data' => $this->holdingRecord,
+            'normalized_data' => $this->holdingRecord,
+            'source_id' => 'test',
+            'linking_id' => '_preview',
+            'oai_id' => '_preview',
+            '_id' => '_preview',
+            'created' => $timestamp,
+            'date' => $timestamp
+        ];
+
+        $result = $preview->create($record);
         $this->assertEquals(
             ['B', 'A/2', 'A', 'DEF/2'],
             $result['building']
@@ -93,7 +126,11 @@ EOT;
     {
         $basePath = dirname(__FILE__) . '/configs/mappingfilestest';
         $logger = $this->createMock(Logger::class);
-        $preview = new PreviewCreator(null, $basePath, $logger, false);
+        $recordFactory = new RecordFactory($logger, [], $this->dataSourceSettings);
+        $preview = new PreviewCreator(
+            null, $basePath, $logger, false, [], $this->dataSourceSettings,
+            $recordFactory
+        );
 
         return $preview;
     }

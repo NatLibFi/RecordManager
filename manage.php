@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2013.
+ * Copyright (C) The National Library of Finland 2011-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -37,8 +37,12 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
+    $basePath = __DIR__;
+    $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
+
     $params = parseArgs($argv);
-    applyConfigOverrides($params);
+    $config = applyConfigOverrides($params, $config);
+
     if (empty($params['func']) || !is_string($params['func'])) {
         echo <<<EOT
 Usage: $argv[0] --func=... [...]
@@ -80,79 +84,110 @@ EOT;
 
     $lockfile = isset($params['lockfile']) ? $params['lockfile'] : '';
     $lockhandle = false;
+    $verbose = isset($params['verbose']) ? $params['verbose'] : false;
     try {
         if (($lockhandle = acquireLock($lockfile)) === false) {
             die();
         }
-
-        $manager = new RecordManager(
-            true, isset($params['verbose']) ? $params['verbose'] : false
-        );
 
         $sources = isset($params['source']) ? $params['source'] : '';
         $single = isset($params['single']) ? $params['single'] : '';
         $noCommit = isset($params['nocommit']) ? $params['nocommit'] : false;
 
         // Solr update, compare and dump can handle multiple sources at once
-        if ($params['func'] == 'updatesolr' || $params['func'] == 'dumpsolr') {
+        if ($params['func'] == 'updatesolr') {
             $date = isset($params['all'])
                 ? '' : (isset($params['from']) ? $params['from'] : null);
-            $dumpPrefix = $params['func'] == 'dumpsolr'
-                ? (isset($params['dumpprefix']) ? $params['dumpprefix'] : 'dumpsolr')
-                : '';
-            $manager->updateSolrIndex(
-                $date, $sources, $single, $noCommit, '',
-                $dumpPrefix
+
+            $solrUpdate = new \RecordManager\Base\Controller\SolrUpdate(
+                $config, true, $verbose
             );
+            $solrUpdate->launch($date, $sources, $single, $noCommit);
         } elseif ($params['func'] == 'comparesolr') {
             $date = isset($params['all'])
                 ? '' : (isset($params['from']) ? $params['from'] : null);
-            $manager->updateSolrIndex(
-                $date,
-                $sources,
-                $single,
-                $noCommit,
-                isset($params['comparelog']) ? $params['comparelog'] : '-'
+            $log = isset($params['comparelog']) ? $params['comparelog'] : '-';
+
+            $solrCompare = new \RecordManager\Base\Controller\SolrCompare(
+                $config, true, $verbose
             );
+            $solrCompare->launch($log, $date, $sources, $single);
+        } elseif ($params['func'] == 'dumpsolr') {
+            $date = isset($params['all'])
+                ? '' : (isset($params['from']) ? $params['from'] : null);
+            $dumpPrefix = isset($params['dumpprefix'])
+                ? $params['dumpprefix'] : 'dumpsolr';
+
+            $solrDump = new \RecordManager\Base\Controller\SolrDump(
+                $config, true, $verbose
+            );
+            $solrDump->launch($dumpPrefix, $date, $sources, $single);
         } else {
             foreach (explode(',', $sources) as $source) {
                 switch ($params['func']) {
                 case 'renormalize':
-                    $manager->renormalize($source, $single);
+                    $renormalize = new \RecordManager\Base\Controller\Renormalize(
+                        $config, true, $verbose
+                    );
+                    $renormalize->launch($source, $single);
                     break;
                 case 'deduplicate':
                 case 'markdedup':
-                    $manager->deduplicate(
+                    $deduplicate = new \RecordManager\Base\Controller\Deduplicate(
+                        $config, true, $verbose
+                    );
+                    $deduplicate->launch(
                         $source, isset($params['all']) ? true : false, $single,
                         $params['func'] == 'markdedup'
                     );
                     break;
                 case 'dump':
-                    $manager->dumpRecord($single);
+                    $dump = new \RecordManager\Base\Controller\Dump(
+                        $config, true, $verbose
+                    );
+                    $dump->launch($single);
                     break;
                 case 'deletesource':
-                    $manager->deleteRecords(
-                        $source, isset($params['force']) ? $params['force'] : false
-                    );
+                    $deleteRecords
+                        = new \RecordManager\Base\Controller\DeleteRecords(
+                            $config, true, $verbose
+                        );
+                    $deleteRecords->launch($source, !empty($params['force']));
                     break;
                 case 'markdeleted':
-                    $manager->markDeleted($source);
+                    $markDeleted = new \RecordManager\Base\Controller\MarkDeleted(
+                        $config, true, $verbose
+                    );
+                    $markDeleted->launch($source);
                     break;
                 case 'deletesolr':
-                    $manager->deleteSolrRecords($source);
+                    $deleteSolr
+                        = new \RecordManager\Base\Controller\DeleteSolrRecords(
+                            $config, true, $verbose
+                        );
+                    $deleteSolr->launch($source);
                     break;
                 case 'optimizesolr':
-                    $manager->optimizeSolr();
+                    $solrOptimize = new \RecordManager\Base\Controller\SolrOptimize(
+                        $config, true, $verbose
+                    );
+                    $solrOptimize->launch();
                     break;
                 case 'count':
-                    $manager->countValues(
+                    $countValues = new \RecordManager\Base\Controller\CountValues(
+                        $config, true, $verbose
+                    );
+                    $countValues->launch(
                         $source,
                         isset($params['field']) ? $params['field'] : null,
                         isset($params['mapped']) ? $params['mapped'] : false
                     );
                     break;
                 case 'checkdedup':
-                    $manager->checkDedupRecords();
+                    $checkDedup = new \RecordManager\Base\Controller\CheckDedup(
+                        $config, true, $verbose
+                    );
+                    $checkDedup->launch();
                     break;
                 case 'purgedeleted':
                     if (!isset($params['force']) || !$params['force']) {
@@ -164,7 +199,10 @@ been purged.
 EOT;
                         exit(1);
                     }
-                    $manager->purgeDeletedRecords(
+                    $purge = new \RecordManager\Base\Controller\PurgeDeleted(
+                        $config, true, $verbose
+                    );
+                    $purge->launch(
                         isset($params['daystokeep']) ? intval($params['daystokeep'])
                         : 0,
                         $source
@@ -176,7 +214,7 @@ EOT;
                 }
             }
         }
-    } catch (Exception $e) {
+    } catch (\Exception $e) {
         releaseLock($lockhandle);
         throw $e;
     }
