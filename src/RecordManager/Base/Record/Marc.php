@@ -108,7 +108,7 @@ class Marc extends Base
      * @param array  $config             Main configuration
      * @param array  $dataSourceSettings Data source settings
      */
-    public function __construct($logger, $config, $dataSourceSettings)
+    public function __construct(Logger $logger, $config, $dataSourceSettings)
     {
         parent::__construct($logger, $config, $dataSourceSettings);
 
