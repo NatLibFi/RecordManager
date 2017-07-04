@@ -602,7 +602,10 @@ class Marc extends \RecordManager\Base\Record\Marc
         $parts = [];
         foreach ($componentParts as $componentPart) {
             $data = MetadataUtils::getRecordData($componentPart, true);
-            $marc = new Marc($data, '', $this->source, $this->idPrefix);
+            $marc = new Marc(
+                $this->logger, $this->config, $this->dataSourceSettings
+            );
+            $marc->setData($this->source, '', $data);
             $title = $marc->getFieldSubfields(
                 '245', ['a' => 1, 'b' => 1, 'n' => 1, 'p' => 1]
             );
