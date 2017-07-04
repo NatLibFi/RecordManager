@@ -660,7 +660,12 @@ class Marc extends Base
                 $this->getSubfield($field, 'a')
             );
         }
-        $ids = $this->getFieldSubfields('773', ['w' => 1]);
+        $ids = $this->getFieldsSubfields(
+            [[self::GET_NORMAL, '773', ['w' => 1]]],
+            false,
+            true,
+            true
+        );
         return array_map(
             ['\RecordManager\Base\Utils\MetadataUtils', 'stripControlCharacters'],
             $ids
