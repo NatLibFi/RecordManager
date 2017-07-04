@@ -147,25 +147,27 @@ class Forward extends \RecordManager\Base\Record\Forward
     }
 
     /**
-     * Return host record ID for component part
+     * Return host record IDs for a component part
      *
-     * @return string
+     * @return array
      */
-    public function getHostRecordID()
+    public function getHostRecordIDs()
     {
         if (!($parentIdType = $this->getDriverParam('parentIdType', ''))) {
-            return '';
+            return [];
         }
         foreach ($this->getMainElement()->HasAgent as $agent) {
             if ($agent->AgentIdentifier && $agent->AgentIdentifier->IDTypeName
                 && $agent->AgentIdentifier->IDValue
                 && (string)$agent->AgentIdentifier->IDTypeName == $parentIdType
             ) {
-                return (string)$agent->AgentIdentifier->IDTypeName . '_'
-                    . (string)$agent->AgentIdentifier->IDValue;
+                return [
+                    (string)$agent->AgentIdentifier->IDTypeName . '_'
+                    . (string)$agent->AgentIdentifier->IDValue
+                ];
             }
         }
-        return '';
+        return [];
     }
 
     /**

@@ -155,7 +155,6 @@ trait StoreRecordTrait
                 $normalizedData = $metadataRecord->serialize();
             }
 
-            $hostID = $metadataRecord->getHostRecordID();
             $id = $metadataRecord->getID();
             if (!$id) {
                 if (!$oaiID) {
@@ -168,6 +167,7 @@ trait StoreRecordTrait
             }
             $this->previousStoredId = $id;
             $id = $settings['idPrefix'] . '.' . $id;
+            $hostIDs = $metadataRecord->getHostRecordIDs();
             $dbRecord = $this->db->getRecord($id);
             if ($dbRecord) {
                 $dbRecord['updated'] = $this->db->getTimestamp();
@@ -196,8 +196,8 @@ trait StoreRecordTrait
             if ($mainID) {
                 $dbRecord['main_id'] = $mainID;
             }
-            if ($hostID) {
-                $dbRecord['host_record_id'] = $hostID;
+            if ($hostIDs) {
+                $dbRecord['host_record_id'] = $hostIDs;
             } elseif (isset($dbRecord['host_record_id'])) {
                 unset($dbRecord['host_record_id']);
             }
@@ -208,13 +208,16 @@ trait StoreRecordTrait
                 // If this is a host record, mark it to be deduplicated.
                 // If this is a component part, mark its host record to be
                 // deduplicated.
-                if (!$hostID) {
+                if (!$hostIDs) {
                     $dbRecord['update_needed']
                         = $this->dedupHandler->updateDedupCandidateKeys(
                             $dbRecord, $metadataRecord
                         );
                 } else {
-                    $this->db->updateRecord($hostID, ['update_needed' => true]);
+                    $this->db->updateRecord(
+                        ['_id' => ['$in' => $hostIDs]],
+                        ['update_needed' => true]
+                    );
                     $dbRecord['update_needed'] = false;
                 }
             } else {

@@ -99,9 +99,9 @@ class Renormalize extends AbstractBase
                     $record['source_id']
                 );
                 $metadataRecord->normalize();
-                $hostID = $metadataRecord->getHostRecordID();
+                $hostIDs = $metadataRecord->getHostRecordIDs();
                 $normalizedData = $metadataRecord->serialize();
-                if ($settings['dedup'] && !$hostID) {
+                if ($settings['dedup'] && !$hostIDs) {
                     $record['update_needed'] = $dedupHandler
                         ->updateDedupCandidateKeys($record, $metadataRecord);
                 } else {
@@ -127,8 +127,8 @@ class Renormalize extends AbstractBase
                     $record['normalized_data'] = $normalizedData;
                 }
                 $record['linking_id'] = $metadataRecord->getLinkingID();
-                if ($hostID) {
-                    $record['host_record_id'] = $hostID;
+                if ($hostIDs) {
+                    $record['host_record_id'] = $hostIDs;
                 } elseif (isset($record['host_record_id'])) {
                     unset($record['host_record_id']);
                 }

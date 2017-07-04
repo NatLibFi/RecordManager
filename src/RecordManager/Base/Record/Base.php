@@ -179,13 +179,13 @@ class Base
     }
 
     /**
-     * Return host record ID for component part
+     * Return host record IDs for a component part
      *
-     * @return string
+     * @return array
      */
-    public function getHostRecordID()
+    public function getHostRecordIDs()
     {
-        return '';
+        return [];
     }
 
     /**

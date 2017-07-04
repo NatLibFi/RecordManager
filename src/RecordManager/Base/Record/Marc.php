@@ -648,11 +648,11 @@ class Marc extends Base
     }
 
     /**
-     * Return host record ID for component part
+     * Return host record IDs for a component part
      *
-     * @return string
+     * @return array
      */
-    public function getHostRecordID()
+    public function getHostRecordIDs()
     {
         $field = $this->getField('941');
         if ($field) {
@@ -660,12 +660,10 @@ class Marc extends Base
                 $this->getSubfield($field, 'a')
             );
         }
-        $field = $this->getField('773');
-        if (!$field) {
-            return '';
-        }
-        return MetadataUtils::stripControlCharacters(
-            MetadataUtils::stripTrailingPunctuation($this->getSubfield($field, 'w'))
+        $ids = $this->getFieldSubfields('773', ['w' => 1]);
+        return array_map(
+            ['\RecordManager\Base\Utils\MetadataUtils', 'stripControlCharacters'],
+            $ids
         );
     }
 
@@ -742,7 +740,10 @@ class Marc extends Base
      */
     public function getContainerTitle()
     {
-        return $this->getFieldSubfields('773', ['t' => 1]);
+        $first773 = $this->getField('773');
+        return MetadataUtils::stripTrailingPunctuation(
+            $this->getSubfield($first773, 't')
+        );
     }
 
     /**
@@ -752,7 +753,10 @@ class Marc extends Base
      */
     public function getContainerReference()
     {
-        return $this->getFieldSubfields('773', ['g' => 1]);
+        $first773 = $this->getField('773');
+        return MetadataUtils::stripTrailingPunctuation(
+            $this->getSubfield($first773, 'g')
+        );
     }
 
     /**
@@ -1813,9 +1817,13 @@ class Marc extends Base
             }
         }
         if ($stripTrailingPunctuation) {
-            foreach ($data as &$item) {
-                $item = MetadataUtils::stripTrailingPunctuation($item);
-            }
+            $data = array_map(
+                [
+                    '\RecordManager\Base\Utils\MetadataUtils',
+                    'stripTrailingPunctuation'
+                ],
+                $data
+            );
         }
         return $data;
     }

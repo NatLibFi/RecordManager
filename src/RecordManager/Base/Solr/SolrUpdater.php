@@ -1683,36 +1683,41 @@ class SolrUpdater
 
         // Record links between host records and component parts
         if ($metadataRecord->getIsComponentPart()) {
-            $hostRecord = null;
-            if (isset($record['host_record_id']) && $this->db) {
-                $hostRecord = $this->db->findRecord(
+            $hostRecords = [];
+            if ($this->db && isset($record['host_record_id'])) {
+                $hostRecords = $this->db->findRecords(
                     [
                         'source_id' => $record['source_id'],
-                        'linking_id' => $record['host_record_id']
+                        'linking_id' => ['$in' => (array)$record['host_record_id']]
                     ]
                 );
-            }
-            if (!$hostRecord) {
-                if (isset($record['host_record_id'])) {
+                if (!$hostRecords) {
                     $this->log->log(
                         'createSolrArray',
-                        "Host record '" . $record['host_record_id']
-                        . "' not found for record '" . $record['_id'] . "'",
+                        "Any of host records ["
+                        . implode(', ', (array)$record['host_record_id'])
+                        . "] not found for record '" . $record['_id'] . "'",
                         Logger::WARNING
                     );
+                    $warnings[] = 'host record missing';
+                    $data['container_title'] = $metadataRecord->getContainerTitle();
                 }
-                $warnings[] = 'host record missing';
-                $data['container_title'] = $metadataRecord->getContainerTitle();
-            } else {
-                $data['hierarchy_parent_id'] = $hostRecord['_id'];
-                $hostMetadataRecord = $this->recordFactory->createRecord(
-                    $hostRecord['format'],
-                    MetadataUtils::getRecordData($hostRecord, true),
-                    $hostRecord['oai_id'],
-                    $hostRecord['source_id']
-                );
-                $data['container_title'] = $data['hierarchy_parent_title']
-                    = $hostMetadataRecord->getTitle();
+            }
+            if ($hostRecords) {
+                foreach ($hostRecords as $hostRecord) {
+                    $data['hierarchy_parent_id'][] = $hostRecord['_id'];
+                    $hostMetadataRecord = $this->recordFactory->createRecord(
+                        $hostRecord['format'],
+                        MetadataUtils::getRecordData($hostRecord, true),
+                        $hostRecord['oai_id'],
+                        $hostRecord['source_id']
+                    );
+                    $hostTitle = $hostMetadataRecord->getTitle();
+                    $data['hierarchy_parent_title'][] = $hostTitle;
+                    if (empty($data['container_title'])) {
+                        $data['container_title'] = $hostTitle;
+                    }
+                }
             }
             $data['container_volume'] = $metadataRecord->getVolume();
             $data['container_issue'] = $metadataRecord->getIssue();
@@ -2493,8 +2498,12 @@ class SolrUpdater
     protected function prettyPrint($data, $return = false)
     {
         if (defined('JSON_PRETTY_PRINT') && defined('JSON_UNESCAPED_UNICODE')) {
-            $res = json_encode($data, JSON_PRETTY_PRINT + JSON_UNESCAPED_UNICODE)
-                . "\n";
+            $res = json_encode($data, JSON_PRETTY_PRINT + JSON_UNESCAPED_UNICODE);
+            if (false !== $res) {
+                $res .= "\n";
+            } else {
+                $res = print_r($data, true);
+            }
         } else {
             $res = print_r($data, true);
         }
