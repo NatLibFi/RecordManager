@@ -170,7 +170,7 @@ class NominatimGeocoder extends Enrichment
             $this->delay = $settings['delay'];
         }
         if (isset($settings['simplification_tolerance'])) {
-            if (!geoPHP::geosInstalled()) {
+            if (!\geoPHP::geosInstalled()) {
                 throw new \Exception(
                     'PHP GEOS extension is required for simplification_tolerance'
                 );
@@ -388,7 +388,7 @@ class NominatimGeocoder extends Enrichment
         if ($origPointCount <= $this->simplificationMaxLength) {
             return $location;
         }
-        $polygon = geoPHP::load($location, 'wkt');
+        $polygon = \geoPHP::load($location, 'wkt');
         $tolerance = $this->simplificationTolerance;
         $simplifiedWKT = '';
         $pointCount = null;
@@ -434,8 +434,8 @@ class NominatimGeocoder extends Enrichment
                 $results[] = $previous = $current;
                 continue;
             }
-            $prev = geoPHP::load($previous['wkt'], 'wkt');
-            $curr = geoPHP::load($current['wkt'], 'wkt');
+            $prev = \geoPHP::load($previous['wkt'], 'wkt');
+            $curr = \geoPHP::load($current['wkt'], 'wkt');
             if ($prev->startPoint() == $curr->endPoint()) {
                 $previous['wkt'] = $this->mergeShapes(
                     $current['wkt'], $previous['wkt']

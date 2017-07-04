@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Utils;
 
-require_once 'vendor/phayes/geophp/geoPHP.inc';
-
 /**
  * MetadataUtils Class
  *
@@ -794,7 +792,7 @@ class MetadataUtils
                     . (($matches[3] + $matches[4]) / 2);
             }
             try {
-                $item = geoPHP::load($wkt, 'wkt');
+                $item = \geoPHP::load($wkt, 'wkt');
             } catch (\Exception $e) {
                 if (null !== self::$logger) {
                     self::$logger->log(
