@@ -119,9 +119,13 @@ class Dc extends Base
         $data['allfields'] = $allFields;
 
         // language
-        $data['language'] = MetadataUtils::normalizeLanguageStrings(
-            explode(' ', (string)$doc->language)
-        );
+        $languages = [];
+        foreach (explode(' ', (string)$doc->language) as $language) {
+            foreach (str_split($language, 3) as $code) {
+                $languages[] = $code;
+            }
+        }
+        $data['language'] = MetadataUtils::normalizeLanguageStrings($languages);
 
         $data['format'] = (string)$doc->type;
         $data['author'] = MetadataUtils::stripTrailingPunctuation(
