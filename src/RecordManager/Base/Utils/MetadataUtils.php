@@ -830,7 +830,7 @@ class MetadataUtils
      * Validate and normalize language strings. Return empty string or array if not
      * valid.
      *
-     * @param mixed $language Language or array of languages
+     * @param mixed $languages Language or array of languages
      *
      * @return mixed
      */
