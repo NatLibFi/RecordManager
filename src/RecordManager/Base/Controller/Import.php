@@ -28,6 +28,7 @@
 namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Database\Database;
+use RecordManager\Base\Utils\Logger;
 
 /**
  * Import
@@ -50,7 +51,7 @@ class Import extends AbstractBase
      * @param string $files  Wildcard pattern of files containing the records
      * @param bool   $delete Whether to delete the records (default = false)
      *
-     * @throws Exception
+     * @throws \Exception
      * @return void
      */
     public function launch($source, $files, $delete = false)
@@ -70,20 +71,67 @@ class Import extends AbstractBase
         $settings = $this->dataSourceSettings[$source];
         if (!$settings['recordXPath']) {
             $this->logger->log(
-                'loadFromFile', "recordXPath not defined for $source", Logger::FATAL
+                'import', "recordXPath not defined for $source", Logger::FATAL
             );
             throw new \Exception("recordXPath not defined for $source");
         }
         $count = 0;
         foreach (glob($files) as $file) {
             $this->logger->log(
-                'loadFromFile', "Loading records from '$file' into '$source'"
+                'import', "Loading records from '$file' into '$source'"
             );
-            $data = file_get_contents($file);
-            if ($data === false) {
-                throw new \Exception("Could not read file '$file'");
+
+            if (preg_match('/^[\/\w]+$/', $settings['recordXPath'])) {
+                $count += $this->streamingLoad($file, $source, $delete);
+            } else {
+                $this->logger->log(
+                    'import', "Complex recordXPath, cannot use streaming loader"
+                );
+                $count += $this->fullLoad($file, $source, $delete);
             }
 
+            $this->logger->log('import', "$count records loaded");
+        }
+
+        $this->logger->log('import', "Total $count records loaded");
+        return $count;
+    }
+
+    /**
+     * Load XML by streaming (minimal memory usage)
+     *
+     * @param string $file   File name
+     * @param string $source Source ID
+     * @param bool   $delete Whether to delete records
+     *
+     * @throws \Exception
+     * @return int Number of processed records
+     */
+    protected function streamingLoad($file, $source, $delete)
+    {
+        $settings = $this->dataSourceSettings[$source];
+        $xml = new \XMLReader();
+        $result = $xml->open($file);
+        if (false === $result) {
+            throw new \Exception("Could not parse '$file'");
+        }
+        $recordXPath = $settings['recordXPath'];
+        $count = 0;
+        $currentPath = [];
+        $nodes = 0;
+        while ($xml->read()) {
+            if ($xml->nodeType !== \XMLReader::ELEMENT) {
+                continue;
+            }
+            $currentPath = array_slice($currentPath, 0, $xml->depth);
+            $currentPath[] = $xml->name;
+
+            // Compare XPath
+            $currentPathString = '/' . implode('/', $currentPath);
+            if (!$this->matchXPath($currentPathString, $recordXPath)) {
+                continue;
+            }
+            $data = $xml->readOuterXML();
             if ($settings['preTransformation']) {
                 if ($this->verbose) {
                     echo "Executing pretransformation\n";
@@ -91,28 +139,100 @@ class Import extends AbstractBase
                 $data = $this->pretransform($data);
             }
 
-            if ($this->verbose) {
-                echo "Creating FileSplitter\n";
-            }
-            $splitter = new \RecordManager\Base\Splitter\File(
-                $data, $settings['recordXPath'], $settings['oaiIDXPath']
-            );
-
-            if ($this->verbose) {
-                echo "Storing records\n";
-            }
-            while (!$splitter->getEOF()) {
-                $oaiID = '';
-                $data = $splitter->getNextRecord($oaiID);
-                $count += $this->storeRecord($source, $oaiID, $delete, $data);
-                if ($this->verbose) {
-                    echo "Stored records: $count\n";
+            $oaiID = '';
+            if ($settings['oaiIDXPath']) {
+                $doc = new \DOMDocument();
+                $doc->loadXML($data);
+                $xpath = new \DOMXpath($doc);
+                $xNodes = $xpath->query($settings['oaiIDXPath']);
+                if ($xNodes->length == 0 || !$xNodes->item(0)->nodeValue) {
+                    $this->logger->log(
+                        "No OAI ID found with XPath '{$settings['oaiIDXPath']}'"
+                        . ", record: $data",
+                        Logger::FATAL
+                    );
+                    throw new \Exception(
+                        "No OAI ID found with XPath '{$settings['oaiIDXPath']}'"
+                    );
                 }
+                $oaiID = $xNodes->item(0)->nodeValue;
             }
-            $this->logger->log('loadFromFile', "$count records loaded");
+
+            $count += $this->storeRecord($source, $oaiID, $delete, $data);
+            if ($this->verbose) {
+                echo "Stored records: $count\n";
+            }
+            if ($count % 1000 === 0) {
+                $this->logger->log('import', "$count records loaded");
+            }
+        }
+        return $count;
+    }
+
+    /**
+     * Load XML by loading the full file into memory
+     *
+     * @param string $file   File name
+     * @param string $source Source ID
+     * @param bool   $delete Whether to delete records
+     *
+     * @throws \Exception
+     * @return int Number of processed records
+     */
+    protected function fullLoad($file, $source, $delete)
+    {
+        $settings = $this->dataSourceSettings[$source];
+        $data = file_get_contents($file);
+        if ($data === false) {
+            throw new \Exception("Could not read file '$file'");
         }
 
-        $this->logger->log('loadFromFile', "Total $count records loaded");
+        if ($settings['preTransformation']) {
+            if ($this->verbose) {
+                echo "Executing pretransformation\n";
+            }
+            $data = $this->pretransform($data);
+        }
+
+        if ($this->verbose) {
+            echo "Creating FileSplitter\n";
+        }
+        $splitter = new \RecordManager\Base\Splitter\File(
+            $data, $settings['recordXPath'], $settings['oaiIDXPath']
+        );
+
+        if ($this->verbose) {
+            echo "Storing records\n";
+        }
+        $count = 0;
+        while (!$splitter->getEOF()) {
+            $oaiID = '';
+            $data = $splitter->getNextRecord($oaiID);
+            $count += $this->storeRecord($source, $oaiID, $delete, $data);
+            if ($this->verbose) {
+                echo "Stored records: $count\n";
+            }
+        }
         return $count;
+    }
+
+    /**
+     * Check if path matches an XPath. Only works for very simple XPaths.
+     *
+     * @param string $path  Path to check
+     * @param string $xpath XPath expression
+     *
+     * @return bool
+     */
+    protected function matchXPath($path, $xpath)
+    {
+        if ($path === $xpath) {
+            return true;
+        }
+        if (strncmp('//', $xpath, 2) === 0) {
+            $xpath = substr($xpath, 1);
+            return substr($path, -strlen($xpath)) == $xpath;
+        }
+        return false;
     }
 }
