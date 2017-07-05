@@ -360,15 +360,7 @@ class Marc extends Base
         $data['allfields'] = $this->getAllFields();
 
         // language
-        $languages = $this->getLanguages();
-
-        foreach ($languages as $language) {
-            if (preg_match('/^\w{3}$/', $language) && $language != 'zxx'
-                && $language != 'und'
-            ) {
-                $data['language'][] = strtolower($language);
-            }
-        }
+        $data['language'] = $this->getLanguages();
 
         $data['format'] = $this->getFormat();
 
@@ -2230,7 +2222,8 @@ class Marc extends Base
             ],
             false, true, true
         );
-        return array_merge($languages, $languages2);
+        $result = array_merge($languages, $languages2);
+        return MetadataUtils::normalizeLanguageStrings($result);
     }
 
     /**
