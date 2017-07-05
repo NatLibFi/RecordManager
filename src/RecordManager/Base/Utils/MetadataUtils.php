@@ -84,7 +84,19 @@ class MetadataUtils
      */
     protected static $allArticleFormats = null;
 
+    /**
+     * Unicode normalization form
+     *
+     * @var string
+     */
     protected static $unicodeNormalizationForm = '';
+
+    /**
+     * Whether to convert all language strings to lowercase
+     *
+     * @var bool
+     */
+    protected static $lowercaseLanguageStrings = true;
 
     /**
      * Set the logger
@@ -144,6 +156,11 @@ class MetadataUtils
             = isset($config['Solr']['unicode_normalization_form'])
             ? $config['Solr']['unicode_normalization_form']
             : '';
+
+        self::$lowercaseLanguageStrings
+            = isset($config['Site']['lowercase_language_strings'])
+            ? $config['Site']['lowercase_language_strings']
+            : true;
     }
 
     /**
@@ -807,6 +824,29 @@ class MetadataUtils
             return $centroid ? $centroid->getX() . ' ' . $centroid->getY() : '';
         }
         return '';
+    }
+
+    /**
+     * Validate and normalize language strings. Return empty string or array if not
+     * valid.
+     *
+     * @param mixed $language Language or array of languages
+     *
+     * @return mixed
+     */
+    public static function normalizeLanguageStrings($languages)
+    {
+        if (is_array($languages)) {
+            foreach ($languages as &$language) {
+                $language = self::normalizeLanguageStrings($language);
+            }
+            return array_values(array_filter($languages));
+        }
+        $languages = trim($languages);
+        if (self::$lowercaseLanguageStrings) {
+            $languages = strtolower($languages);
+        }
+        return $languages;
     }
 
     /**

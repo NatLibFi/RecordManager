@@ -226,14 +226,7 @@ class Ead extends Base
         );
 
         if ($languages = $doc->did->xpath('langmaterial/language')) {
-            foreach ($languages as $lang) {
-                if (isset($lang->attributes()->langcode)) {
-                    $langCode = trim((string)$lang->attributes()->langcode);
-                    if ($langCode != '') {
-                        $data['language'][] = strtolower($langCode);
-                    }
-                }
-            }
+            $data['language'] = MetadataUtils::normalizeLanguageStrings($languages);
         }
 
         if ($extents = $doc->did->xpath('physdesc/extent')) {

@@ -112,12 +112,8 @@ class Ese extends Base
         $data['allfields'] = $allFields;
 
         // language
-        $data['language'] = explode(' ', $doc->language);
-        $data['language'] = array_map(
-            function ($s) {
-                return strtolower($s);
-            },
-            $data['language']
+        $data['language'] = MetadataUtils::normalizeLanguageStrings(
+            explode(' ', $doc->language)
         );
 
         $data['format'] = (string)$doc->type;

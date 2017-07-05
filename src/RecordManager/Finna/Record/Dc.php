@@ -65,17 +65,7 @@ class Dc extends \RecordManager\Base\Record\Dc
         }
 
         // language, take only first
-        $languages = array_filter(
-            explode(
-                ' ',
-                (string)$this->doc->language
-            ),
-            function ($value) {
-                return preg_match('/^[a-z]{2,3}$/', $value) && $value != 'zxx'
-                    && $value != 'und';
-            }
-        );
-        $data['language'] = strtolower(array_shift($languages));
+        $data['language'] = array_slice($data['language'], 0, 1);
 
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;

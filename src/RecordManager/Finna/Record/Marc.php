@@ -155,6 +155,9 @@ class Marc extends \RecordManager\Base\Record\Marc
             ],
             false, true, true
         );
+        $data['subtitle_lng_str_mv'] = MetadataUtils::normalizeLanguageStrings(
+            $data['subtitle_lng_str_mv']
+        );
 
         $data['original_lng_str_mv'] = $this->getFieldsSubfields(
             [
@@ -163,6 +166,9 @@ class Marc extends \RecordManager\Base\Record\Marc
                 [self::GET_NORMAL, '979', ['i' => 1]]
             ],
             false, true, true
+        );
+        $data['original_lng_str_mv'] = MetadataUtils::normalizeLanguageStrings(
+            $data['original_lng_str_mv']
         );
 
         // 979cd = component part authors
@@ -650,18 +656,23 @@ class Marc extends \RecordManager\Base\Record\Marc
                     )
                 )
             );
+            $languages = MetadataUtils::normalizeLanguageStrings($languages);
             $originalLanguages = $marc->getFieldsSubfields(
                 [
                     [self::GET_NORMAL, '041', ['h' => 1]]
                 ],
                 false, true, true
             );
+            $originalLanguages
+                = MetadataUtils::normalizeLanguageStrings($originalLanguages);
             $subtitleLanguages = $marc->getFieldsSubfields(
                 [
                     [self::GET_NORMAL, '041', ['j' => 1]]
                 ],
                 false, true, true
             );
+            $subtitleLanguages
+                = MetadataUtils::normalizeLanguageStrings($subtitleLanguages);
             $id = $componentPart['_id'];
 
             $newField = [
@@ -693,25 +704,13 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $newField['s'][] = ['g' => $addTitle];
             }
             foreach ($languages as $language) {
-                if (preg_match('/^\w{3}$/', $language) && $language != 'zxx'
-                    && $language != 'und'
-                ) {
-                    $newField['s'][] = ['h' => $language];
-                }
+                $newField['s'][] = ['h' => $language];
             }
             foreach ($originalLanguages as $language) {
-                if (preg_match('/^\w{3}$/', $language) && $language != 'zxx'
-                    && $language != 'und'
-                ) {
-                    $newField['s'][] = ['i' => $language];
-                }
+                $newField['s'][] = ['i' => $language];
             }
             foreach ($subtitleLanguages as $language) {
-                if (preg_match('/^\w{3}$/', $language) && $language != 'zxx'
-                    && $language != 'und'
-                ) {
-                    $newField['s'][] = ['j' => $language];
-                }
+                $newField['s'][] = ['j' => $language];
             }
 
             $key = MetadataUtils::createIdSortKey($id);
@@ -1277,16 +1276,8 @@ class Marc extends \RecordManager\Base\Record\Marc
             ],
             false, true, true
         );
-        $results = [];
-        foreach (array_merge($languages, $languages2) as $language) {
-            if (preg_match('/^\w{3}$/', $language)
-                && $language != 'zxx'
-                && $language != 'und'
-            ) {
-                $results[] = $language;
-            }
-        }
-        return $results;
+        $result = array_merge($languages, $languages2);
+        return MetadataUtils::normalizeLanguageStrings($result);
     }
 
     /**

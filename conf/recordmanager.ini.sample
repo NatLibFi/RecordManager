@@ -11,7 +11,9 @@ abbreviations = abbreviations.lst
 ; Articles that should be removed from the beginning of a title for sorting
 articles = articles.lst
 ; Deduplication handler class
-; dedup_handler = DedupHandler
+;dedup_handler = "\RecordManager\Base\Deduplication\DedupHandler"
+; Whether to convert all language strings to lower case. Default is true.
+;lowercase_language_strings = true
 
 ; These settings control the OAI-PMH harvester
 [Harvesting]
@@ -139,6 +141,7 @@ error_email     =
 ; name and value is the mapping file name in mappings directory.
 [DefaultMappings]
 ;usage_rights_str_mv = usage_rights.map
+;language = language_codes.map
 
 [NominatimGeocoder]
 ; Please see http://wiki.openstreetmap.org/wiki/Nominatim_usage_policy before using

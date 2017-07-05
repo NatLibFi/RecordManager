@@ -119,23 +119,8 @@ class Dc extends Base
         $data['allfields'] = $allFields;
 
         // language
-        $data['language'] = array_values(
-            array_filter(
-                explode(
-                    ' ',
-                    (string)$doc->language
-                ),
-                function ($value) {
-                    return preg_match('/^[a-z]{2,3}$/', $value) && $value != 'zxx'
-                        && $value != 'und';
-                }
-            )
-        );
-        $data['language'] = array_map(
-            function ($s) {
-                return strtolower($s);
-            },
-            $data['language']
+        $data['language'] = MetadataUtils::normalizeLanguageStrings(
+            explode(' ', (string)$doc->language)
         );
 
         $data['format'] = (string)$doc->type;
