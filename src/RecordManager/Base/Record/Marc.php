@@ -342,7 +342,7 @@ class Marc extends Base
                     );
                     $this->storeWarning('invalid coordinates in 034');
                 } else {
-                    $data['long_lat'] = "$longitude,$latitude";
+                    $data['long_lat'] = "$longitude $latitude";
                 }
             }
         }
