@@ -396,7 +396,7 @@ class WorkerPoolManager
             $result = socket_recv(
                 $socket, $buffer, 8 - strlen($msgLen), MSG_WAITALL
             );
-            if (!$result) {
+            if (false === $result) {
                 throw new \Exception(
                     'socket_recv failed: ' . socket_strerror(socket_last_error())
                 );
