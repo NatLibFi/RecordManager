@@ -77,11 +77,6 @@ class Lido extends \RecordManager\Base\Record\Lido
     {
         $data = parent::toSolrArray();
 
-        // Kantapuu oai provides just the consortium name as the legal body name,
-        // so getting the actual institution name from the rightsholder information
-        if ($data['institution'] == 'Kantapuu' || $data['institution'] == 'Akseli') {
-            $data['institution'] = $this->getRightsHolderLegalBodyName();
-        }
         // Handle sources that contain multiple organisations properly
         if ($this->getDriverParam('institutionInBuilding', false)) {
             $institutionParts = explode('/', $data['institution']);
