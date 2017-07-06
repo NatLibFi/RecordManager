@@ -117,8 +117,12 @@ class DedupHandler
 
         $this->fieldMapper = new FieldMapper(
             $basePath,
-            isset($mainConfig['DefaultMappings'])
+            array_merge(
+                isset($mainConfig['DefaultMappings'])
                 ? $mainConfig['DefaultMappings'] : [],
+                isset($mainConfig['Default Mappings'])
+                ? $mainConfig['Default Mappings'] : []
+            ),
             $settings
         );
     }

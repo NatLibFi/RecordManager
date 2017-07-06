@@ -139,7 +139,7 @@ error_email     =
 
 ; The following section contains default mapping file definitions. Key is the field
 ; name and value is the mapping file name in mappings directory.
-[DefaultMappings]
+[Default Mappings]
 ;usage_rights_str_mv = usage_rights.map
 ;language = language_codes.map
 
