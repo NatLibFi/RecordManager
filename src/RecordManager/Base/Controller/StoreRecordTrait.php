@@ -214,8 +214,11 @@ trait StoreRecordTrait
                             $dbRecord, $metadataRecord
                         );
                 } else {
-                    $this->db->updateRecord(
-                        ['_id' => ['$in' => $hostIDs]],
+                    $this->db->updateRecords(
+                        [
+                            'source_id' => $sourceId,
+                            'linking_id' => ['$in' => (array)$hostIDs]
+                        ],
                         ['update_needed' => true]
                     );
                     $dbRecord['update_needed'] = false;
@@ -231,6 +234,15 @@ trait StoreRecordTrait
                     unset($dbRecord['id_keys']);
                 }
                 $dbRecord['update_needed'] = false;
+
+                // Mark host records updated too
+                $this->db->updateRecords(
+                    [
+                        'source_id' => $sourceId,
+                        'linking_id' => ['$in' => (array)$hostIDs]
+                    ],
+                    ['updated' => $this->db->getTimestamp()]
+                );
             }
             $this->db->saveRecord($dbRecord);
             ++$count;
