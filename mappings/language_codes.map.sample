@@ -4,7 +4,7 @@ zxx =
 ; Undefined
 und =
 
-; ISO 639-1 to ISO 639-3
+; ISO 639-1 to ISO 639-3 (except zxx and und)
 aa = aar
 ab = abk
 ae = ave
@@ -7468,7 +7468,7 @@ umr = umr
 ums = ums
 umu = umu
 una = una
-und = und
+;und = und
 une = une
 ung = ung
 unk = unk
@@ -8553,7 +8553,7 @@ zum = zum
 zun = zun
 zuy = zuy
 zwa = zwa
-zxx = zxx
+;zxx = zxx
 zyb = zyb
 zyg = zyg
 zyj = zyj
