@@ -1556,10 +1556,10 @@ class SolrUpdater
         $this->fieldMapper = new FieldMapper(
             $this->basePath,
             array_merge(
-            isset($this->config['DefaultMappings'])
+                isset($this->config['DefaultMappings'])
                 ? $this->config['DefaultMappings'] : [],
                 isset($this->config['Default Mappings'])
-                    ? $this->config['Default Mappings'] : []
+                ? $this->config['Default Mappings'] : []
             ),
             $dataSourceSettings
         );
