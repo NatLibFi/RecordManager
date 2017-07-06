@@ -214,7 +214,7 @@ class Ead extends Base
 
         $data['title_short'] = (string)$doc->did->unittitle;
         $data['title'] = '';
-        if ($prependTitleWithSubtitle) {
+        if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
             if ($data['title_sub'] && $data['title_sub'] != $data['title_short']) {
                 $data['title'] = $data['title_sub'] . ' ';
             }

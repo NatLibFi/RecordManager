@@ -46,14 +46,11 @@ class Ead extends \RecordManager\Base\Record\Ead
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
-     * @param boolean $prependTitleWithSubtitle If true and title_sub differs from
-     * title_short, title is formed by combining title_sub and title_short
-     *
      * @return string[]
      */
-    public function toSolrArray($prependTitleWithSubtitle = false)
+    public function toSolrArray()
     {
-        $data = parent::toSolrArray($prependTitleWithSubtitle);
+        $data = parent::toSolrArray();
         $doc = $this->doc;
 
         $unitDateRange = $this->parseDateRange((string)$doc->did->unitdate);

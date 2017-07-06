@@ -1459,10 +1459,7 @@ class SolrUpdater
                     $data = $settings['solrTransformationXSLT']
                         ->transformToSolrArray($metadataRecord->toXML(), $params);
                 } else {
-                    $prependTitleWithSubtitle
-                        = isset($settings['prepend_title_with_subtitle'])
-                            ? $settings['prepend_title_with_subtitle'] : true;
-                    $data = $metadataRecord->toSolrArray($prependTitleWithSubtitle);
+                    $data = $metadataRecord->toSolrArray();
                     $this->enrich($source, $settings, $metadataRecord, $data);
                 }
             }
@@ -1676,10 +1673,7 @@ class SolrUpdater
             $data = $settings['solrTransformationXSLT']
                 ->transformToSolrArray($metadataRecord->toXML(), $params);
         } else {
-            $prependTitleWithSubtitle
-                = isset($settings['prepend_title_with_subtitle'])
-                    ? $settings['prepend_title_with_subtitle'] : true;
-            $data = $metadataRecord->toSolrArray($prependTitleWithSubtitle);
+            $data = $metadataRecord->toSolrArray();
             $this->enrich($source, $settings, $metadataRecord, $data);
         }
 

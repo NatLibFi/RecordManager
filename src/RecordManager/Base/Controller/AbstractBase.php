@@ -199,9 +199,6 @@ abstract class AbstractBase
             if (!isset($settings['non_inherited_fields'])) {
                 $settings['non_inherited_fields'] = [];
             }
-            if (!isset($settings['prepend_parent_title_with_unitid'])) {
-                $settings['prepend_parent_title_with_unitid'] = true;
-            }
             if (!isset($settings['keepMissingHierarchyMembers'])) {
                 $settings['keepMissingHierarchyMembers'] = false;
             }
