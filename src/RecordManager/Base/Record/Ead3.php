@@ -1,9 +1,20 @@
 <?php
 namespace RecordManager\Base\Record;
 
-use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
+/**
+ * Ead3 record class
+ *
+ * This is a class for processing EAD records.
+ *
+ * @category DataManagement
+ * @package  RecordManager
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Jukka Lehmus
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/KDK-Alli/RecordManager
+ */
 class Ead3 extends Base
 {
     protected $doc = null;
@@ -19,7 +30,6 @@ class Ead3 extends Base
     }
 
     public function setData($source, $oaiID, $data) {
-
         parent::setData($source, $oaiID, $data);
         $this->doc = simplexml_load_string($data);
     }
@@ -31,7 +41,7 @@ class Ead3 extends Base
      */
     public function getID()
     {
-	if (isset($this->doc->{'add-data'})
+        if (isset($this->doc->{'add-data'})
             && isset($this->doc->{'add-data'}->attributes()->identifier)
         ) {
             return (string)$this->doc->{'add-data'}->attributes()->identifier;
@@ -75,15 +85,11 @@ class Ead3 extends Base
     /**
      * Return fields to be indexed in Solr
      *
-     * @param boolean $prependTitleWithSubtitle If true and title_sub differs from
-     * title_short, title is formed by combining title_sub and title_short
-     *
      * @return string[]
      */
-    public function toSolrArray($prependTitleWithSubtitle = false)
+    public function toSolrArray()
     {
         $data = [];
-
         $doc = $this->doc;
         $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
         $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($doc->asXML());
@@ -113,62 +119,24 @@ class Ead3 extends Base
         }
 */ 
 
-    // NdlEad3-kamaa
-
-        if ($names = $doc->xpath('controlaccess/name')) {
-            foreach ($names as $name) {
-        // relator juttu?
-           if (strpos((string) $name->attributes()->relator, 'Tekij')) {
-                      foreach ($name->part as $part) {
-                           if ($part->attributes()->localtype) {
-            // well well what do we have here now?
-         //            $data['author'][] = trim((string)$part->attributes()->localtype . " [localtype]");
-                } else {
-                       $data['author'][] = trim((string)$part);           
-               }
-                  }
-           }
-         }                    
-        }
-
-       if (!empty($data['author'])) {
-            $data['author_sort'] = $data['author'][0];
-        }
-
         if ($names = $doc->xpath('controlaccess/corpname')) {
             foreach ($names as $name) {
                 $data['author_corporate'][] = trim((string)$name);
             }
         }
 
-/*
-        if (!empty($doc->did->origination->corpname)) {
-            $data['author_corporate'] = trim(
-                (string)$doc->did->origination->corpname
-            );
-        }
-*/
-
-    // NdlEad3-kamaako?
+        // NdlEad3-kamaako?
 
         if ($names = $doc->xpath('origination/name')) {
             foreach ($names as $name) {
-        // relator juttu?
-//           if (strpos((string) $name->attributes()->relator, 'Arkistonmuod')) {
-                      foreach ($name->part as $part) {
-//                           if ($part->attributes()->localtype) {
-//            // well well what do we have here now?
- //        //            $data['author_corporate'][] = trim((string)$part->attributes()->localtype . " [localtype]");
-//                } else {
-                       $data['author_corporate'][] = trim((string)$part);           
-//               }
-                  }
-//           }
-           $data['author_corporate'][] = "IDENT " . (string)$name->attributes()->identifier;           
-         }                    
+                // relator juttu?
+                foreach ($name->part as $part) {
+                    $data['author_corporate'][] = trim((string)$part);           
+                }
+                // debug info
+                $data['author_corporate'][] = "IDENT " . (string)$name->attributes()->identifier;
+            }                    
         }
-
-
 
         if (!empty($doc->did->origination->persname)) {
             $data['author2'] = trim(
@@ -199,32 +167,11 @@ class Ead3 extends Base
         $genre = $doc->xpath('controlaccess/genreform/part');
         $data['format'] = (string) ($genre ? $genre[0] : $doc->attributes()->level);
 
-        if (isset($doc->did->repository->corpname)) {
-            $data['institution']
-                = (string) (isset($doc->did->repository->corpname->part)
-                ? $doc->did->repository->corpname->part
-                : 'UNOWN INSTITUTIO');
+        if (isset($doc->did->repository->corpname->part)) {
+            $data['institution'] = (string) $doc->did->repository->corpname->part;
         }
 
         $data['title_sub'] = '';
-
-    $analogID = '';
-
-        if (isset($doc->did->unitid)) {
-    // xpath -toteutus tilalle
-                foreach ($doc->did->unitid as $i) {
-
-                    if ($i->attributes()->label == 'Analoginen') {
-
-               $idstr = (string) $i;
-
-                        $analogID = (strpos($idstr, "/") > 0)
-                  ? substr($idstr, strpos($idstr, "/") + 1)
-                  : $idstr;
-                  }
-                }      
-    }        
-
 
         switch ($data['format']) {
         case 'fonds':
@@ -246,12 +193,11 @@ class Ead3 extends Base
 
         $data['title_short'] 
                 = isset($doc->did->unittitle) 
-          ? (string)$doc->did->unittitle->attributes()->label
-//          : "NO-TITLE-IN-ORIGINAL";
-          : "";
+                ? (string)$doc->did->unittitle->attributes()->label
+                : "";
 
         $data['title'] = '';
-        if ($prependTitleWithSubtitle) {
+        if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
             if ($data['title_sub'] && $data['title_sub'] != $data['title_short']) {
                 $data['title'] = $data['title_sub'] . ' ';
             }
@@ -314,11 +260,9 @@ class Ead3 extends Base
         } else {
             $data['is_hierarchy_id'] = $data['hierarchy_top_id'] = $this->getID();
             $data['is_hierarchy_title'] = $data['hierarchy_top_title']
-//                = (string)$doc->did->unittitle;
                 = isset($doc->did->unittitle) 
-          ? (string)$doc->did->unittitle->attributes()->label
-//          : "NO-TITLE-IN-ORIGINAL";
-          : "";
+                ? (string)$doc->did->unittitle->attributes()->label
+                : "";
         }
 
         return $data;

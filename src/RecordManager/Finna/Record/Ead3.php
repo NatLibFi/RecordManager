@@ -1,14 +1,14 @@
 <?php
 namespace RecordManager\Finna\Record;
 
-use RecordManager\Base\Utils\Logger;
+// use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 class Ead3 extends \RecordManager\Base\Record\Ead3
 {
-    public function toSolrArray($prependTitleWithSubtitle = false)
+    public function toSolrArray()
     {
-        $data = parent::toSolrArray($prependTitleWithSubtitle);
+        $data = parent::toSolrArray();
         $doc = $this->doc;
         $unitDateRange = $this->parseDateRange((string)$doc->did->unitdate);
         $data['search_daterange_mv'] = $data['unit_daterange']
@@ -85,32 +85,20 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
 
-/*
-        if (isset($doc->did->unitid)) {
-            $data['identifier'] = (string)$doc->did->unitid;
-        }
-*/
-
         if (isset($doc->did->dimensions)) {
             // display measurements
             $data['measurements'] = (string)$doc->did->dimensions;
         }
 
-/*
-        if (isset($doc->did->physdesc)) {
-            $data['material'] = (string)$doc->did->physdesc;
-        }
-*/
-
         if (isset($doc->did->physdesc)) {
             foreach($doc->did->physdesc as $physdesc) {
-            if (isset($physdesc->attributes()->label)) {
+                if (isset($physdesc->attributes()->label)) {
                     $material[] = (string) $physdesc . " "
-                . $physdesc->attributes()->label;
-            } else {
-                $material[] = (string) $physdesc;       
+                    . $physdesc->attributes()->label;
+                } else {
+                    $material[] = (string) $physdesc;       
                 }
-        }
+            }
             $data['material'] = $material;
         }
 
@@ -129,13 +117,12 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $role[] = "";
             foreach($doc->controlaccess->name as $name) {
                 foreach($name->part as $part) {
-                    $nametype = $part->attributes()->localtype;
-                    // use switch
-                    if ($nametype == 'Ensisijainen nimi') {
+                    switch ((string)$part->attributes()->localtype) {
+                    case 'Ensisijainen nimi':
                         $author[] = (string) $part;
-                    } elseif ($nametype == 'Vaihtoehtoinen nimi') {
+                    case 'Vaihtoehtoinen nimi':
                         $author_variant[] = (string) $part;
-                    } elseif ($nametype == 'Vanhentunut nimi') {
+                    case 'Vanhentunut nimi':
                         $author_variant[] = (string) $part;
                     }            
                 }
@@ -147,6 +134,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $data['author'] = $author;
             if ($author_role) { $data['author_role'] = $author_role; }
             if ($author_variant) { $data['author_variant'] = $author_variant; }
+        }
+
+        if (!empty($data['author'])) {
+            $data['author_sort'] = $data['author'][0];
         }
 
         if (isset($doc->index->index->indexentry)) {
@@ -231,11 +222,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $endMonth = sprintf('%02d', $matches[3]);
             $endDate = $endYear . '-' . $endMonth . '-01';
             try {
-                $d = new DateTime($endDate);
-            } catch (Exception $e) {
-                global $logger;
-                $logger->log(
-                    'NdlEadRecord',
+                $d = new \DateTime($endDate);
+            } catch (\Exception $e) {
+                $this->$logger->log(
+                    'Ead3',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
                     Logger::WARNING
@@ -265,11 +255,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $startDate = $year . '-' . $month . '-01' . 'T00:00:00Z';
             $endDate = $year . '-' . $month . '-01';
             try {
-                $d = new DateTime($endDate);
-            } catch (Exception $e) {
-                global $logger;
-                $logger->log(
-                    'NdlEad3Record',
+                $d = new \DateTime($endDate);
+            } catch (\Exception $e) {
+                $this->$logger->log(
+                    'Ead3',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
                     Logger::WARNING
@@ -290,15 +279,12 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         }
 
         if (strtotime($startDate) > strtotime($endDate)) {
-            global $logger;
-/*            $logger->log(
-                'NdlEadRecord',
+            $this->$logger->log(
+                'Ead3',
                 "Invalid date range {$startDate} - {$endDate}, record " .
                 "{$this->source}." . $this->getID(),
                 Logger::WARNING
-);
-*/
-
+            );
             $this->storeWarning('invalid date range');
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
         }
