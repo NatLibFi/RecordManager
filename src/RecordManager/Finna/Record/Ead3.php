@@ -85,6 +85,56 @@ class Ead3 extends \RecordManager\Base\Record\Base
         $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($doc->asXML());
         $data['allfields'] = $this->getAllFields($doc);
 
+        $data['title_sub'] = '';
+	$analogID = '';
+
+        if ($this->doc->did->unitid) {
+            foreach ($this->doc->did->unitid as $i) {
+                if ($i->attributes()->label == 'Analoginen') {
+                    $idstr = (string) $i;
+                    $analogID = (strpos($idstr, "/") > 0)
+                              ? substr($idstr, strpos($idstr, "/") + 1)
+                              : $idstr;
+                    $data['identifier'] = $analogID;   
+                }
+            }
+        }
+
+        switch ($data['format']) {
+        case 'fonds':
+            break;
+        case 'collection':
+            break;
+        case 'series':
+        case 'subseries':
+            if ($analogID) { $data['title_sub'] == $analogID; }
+            break;
+        default:
+            if ($analogID) { $data['title_sub'] == $analogID; }
+            if ($doc->{'add-data'}->parent) {
+                $data['series']
+                    = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
+            }
+            break;
+        }
+
+        $data['title_short'] 
+                = isset($doc->did->unittitle) 
+                ? (string)$doc->did->unittitle->attributes()->label
+                : "";
+
+        $data['title'] = '';
+        if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
+            if ($data['title_sub'] && $data['title_sub'] != $data['title_short']) {
+                $data['title'] = $data['title_sub'] . ' ';
+            }
+        }
+        $data['title'] .= $data['title_short'];
+        $data['title_full'] = $data['title_sort'] = $data['title'];
+        $data['title_sort'] = mb_strtolower(
+            MetadataUtils::stripLeadingPunctuation($data['title_sort']), 'UTF-8'
+        );
+
         if ($doc->scopecontent) {
             if ($doc->scopecontent->p) {
                 // Join all p-elements into a flat string.
@@ -211,57 +261,6 @@ class Ead3 extends \RecordManager\Base\Record\Base
                 }
             }
         }
-
-	$analogID = '';
-
-        if ($this->doc->did->unitid) {
-            foreach ($this->doc->did->unitid as $i) {
-                if ($i->attributes()->label == 'Analoginen') {
-                    $idstr = (string) $i;
-                    $analogID = (strpos($idstr, "/") > 0)
-                              ? substr($idstr, strpos($idstr, "/") + 1)
-                              : $idstr;
-                    $data['identifier'] = $analogID;   
-                }
-            }
-        }
-
-        $data['title_sub'] = '';
-
-        switch ($data['format']) {
-        case 'fonds':
-            break;
-        case 'collection':
-            break;
-        case 'series':
-        case 'subseries':
-            if ($analogID) { $data['title_sub'] == $analogID; }
-            break;
-        default:
-            if ($analogID) { $data['title_sub'] == $analogID; }
-            if ($doc->{'add-data'}->parent) {
-                $data['series']
-                    = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
-            }
-            break;
-        }
-
-        $data['title_short'] 
-                = isset($doc->did->unittitle) 
-                ? (string)$doc->did->unittitle->attributes()->label
-                : "";
-
-        $data['title'] = '';
-        if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
-            if ($data['title_sub'] && $data['title_sub'] != $data['title_short']) {
-                $data['title'] = $data['title_sub'] . ' ';
-            }
-        }
-        $data['title'] .= $data['title_short'];
-        $data['title_full'] = $data['title_sort'] = $data['title'];
-        $data['title_sort'] = mb_strtolower(
-            MetadataUtils::stripLeadingPunctuation($data['title_sort']), 'UTF-8'
-        );
 
         if (isset($doc->did->dimensions)) {
             // display measurements
