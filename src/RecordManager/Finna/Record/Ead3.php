@@ -1,7 +1,7 @@
 <?php
 namespace RecordManager\Finna\Record;
 
-// use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 class Ead3 extends \RecordManager\Base\Record\Ead3
