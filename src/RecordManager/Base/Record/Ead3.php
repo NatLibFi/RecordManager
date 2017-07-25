@@ -1,6 +1,7 @@
 <?php
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 class Ead3 extends Base
