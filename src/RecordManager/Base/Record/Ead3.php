@@ -10,15 +10,10 @@ class Ead3 extends Base
     /**
      * Constructor
      *
-     * @param string $data     Metadata
-     * @param string $oaiID    Record ID received from OAI-PMH
-     * (or empty string for file import)
-     * @param string $source   Source ID
-     * @param string $idPrefix Record ID prefix
      */
-    public function __construct($data, $oaiID, $source, $idPrefix)
+    public function __construct(Logger $logger, $config, $dataSourceSettings)
     {
-        parent::__construct($data, $oaiID, $source, $idPrefix);
+        parent::__construct(Logger $logger, $config, $dataSourceSettings);
 
         $this->doc = simplexml_load_string($data);
     }
