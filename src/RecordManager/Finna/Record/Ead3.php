@@ -224,7 +224,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             try {
                 $d = new \DateTime($endDate);
             } catch (\Exception $e) {
-                $this->$logger->log(
+                $this->logger->log(
                     'Ead3',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
@@ -257,7 +257,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             try {
                 $d = new \DateTime($endDate);
             } catch (\Exception $e) {
-                $this->$logger->log(
+                $this->logger->log(
                     'Ead3',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
@@ -279,7 +279,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         }
 
         if (strtotime($startDate) > strtotime($endDate)) {
-            $this->$logger->log(
+            $this->logger->log(
                 'Ead3',
                 "Invalid date range {$startDate} - {$endDate}, record " .
                 "{$this->source}." . $this->getID(),
