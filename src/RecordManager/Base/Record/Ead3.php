@@ -22,14 +22,15 @@ class Ead3 extends Base
     /**
      * Constructor
      *
-     */
+
     public function __construct(Logger $logger, $config, $dataSourceSettings)
     {
         parent::__construct($logger, $config, $dataSourceSettings);
 
     }
 
-    public function setData($source, $oaiID, $data) {
+     */
+     public function setData($source, $oaiID, $data) {
         parent::setData($source, $oaiID, $data);
         $this->doc = simplexml_load_string($data);
     }
