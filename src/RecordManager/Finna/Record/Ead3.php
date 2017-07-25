@@ -10,11 +10,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     {
         $data = parent::toSolrArray($prependTitleWithSubtitle);
         $doc = $this->doc;
-
         $unitDateRange = $this->parseDateRange((string)$doc->did->unitdate);
         $data['search_daterange_mv'] = $data['unit_daterange']
-
             = MetadataUtils::dateRangeToStr($unitDateRange);
+
         if ($unitDateRange) {
             $data['main_date_str'] = MetadataUtils::extractYear($unitDateRange[0]);
             $data['main_date'] = $this->validateDate($unitDateRange[0]);
@@ -292,12 +291,13 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
 
         if (strtotime($startDate) > strtotime($endDate)) {
             global $logger;
-            $logger->log(
+/*            $logger->log(
                 'NdlEadRecord',
                 "Invalid date range {$startDate} - {$endDate}, record " .
                 "{$this->source}." . $this->getID(),
                 Logger::WARNING
-            );
+*/
+);
             $this->storeWarning('invalid date range');
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
         }
