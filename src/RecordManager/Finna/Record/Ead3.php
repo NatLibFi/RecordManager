@@ -296,8 +296,9 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 "Invalid date range {$startDate} - {$endDate}, record " .
                 "{$this->source}." . $this->getID(),
                 Logger::WARNING
-*/
 );
+*/
+
             $this->storeWarning('invalid date range');
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
         }
