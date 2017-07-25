@@ -96,10 +96,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             break;
         case 'series':
         case 'subseries':
-            if ($analogID) { $data['title_sub'] == $analogID }
+            if ($analogID) { $data['title_sub'] == $analogID; }
             break;
         default:
-            if ($analogID) { $data['title_sub'] == $analogID }
+            if ($analogID) { $data['title_sub'] == $analogID; }
             if ($doc->{'add-data'}->parent) {
                 $data['series']
                     = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
