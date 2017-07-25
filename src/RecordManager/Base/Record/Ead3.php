@@ -172,26 +172,6 @@ class Ead3 extends Base
             $data['institution'] = (string) $doc->did->repository->corpname->part;
         }
 
-        $data['title_sub'] = '';
-
-        switch ($data['format']) {
-        case 'fonds':
-            break;
-        case 'collection':
-            break;
-        case 'series':
-        case 'subseries':
-            $data['title_sub'] = $analogID; // (string)$doc->did->unitid;
-            break;
-        default:
-            $data['title_sub'] = $analogID; //(string)$doc->did->unitid;
-            if ($doc->{'add-data'}->parent) {
-                $data['series']
-                    = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
-            }
-            break;
-        }
-
         $data['title_short'] 
                 = isset($doc->did->unittitle) 
                 ? (string)$doc->did->unittitle->attributes()->label

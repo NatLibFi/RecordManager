@@ -72,7 +72,9 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 }
             }
         }
-    
+
+	$analogID = '';
+
         if ($this->doc->did->unitid) {
             foreach ($this->doc->did->unitid as $i) {
                 if ($i->attributes()->label == 'Analoginen') {
@@ -83,6 +85,26 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                     $data['identifier'] = $analogID;   
                 }
             }
+        }
+
+        $data['title_sub'] = '';
+
+        switch ($data['format']) {
+        case 'fonds':
+            break;
+        case 'collection':
+            break;
+        case 'series':
+        case 'subseries':
+            if ($analogID) { $data['title_sub'] = $analogID }
+            break;
+        default:
+            if ($analogID) { $data['title_sub'] = $analogID }
+            if ($doc->{'add-data'}->parent) {
+                $data['series']
+                    = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
+            }
+            break;
         }
 
         if (isset($doc->did->dimensions)) {
