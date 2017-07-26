@@ -16,25 +16,9 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/jlehmus/RecordManager
  */
-class Ead3 extends \RecordManager\Base\Record\Base
+class Ead3 extends \RecordManager\Finna\Record\Ead
 {
     protected $doc = null;
-
-    /**
-     * Constructor
-     *
-
-    public function __construct(Logger $logger, $config, $dataSourceSettings)
-    {
-        parent::__construct($logger, $config, $dataSourceSettings);
-
-    }
-
-     */
-     public function setData($source, $oaiID, $data) {
-        parent::setData($source, $oaiID, $data);
-        $this->doc = simplexml_load_string($data);
-    }
 
     /**
      * Return record ID (local)
@@ -62,26 +46,6 @@ class Ead3 extends \RecordManager\Base\Record\Base
             die('No ID found for record: ' . $this->doc->asXML());
         }
         return urlencode($id);
-    }
-
-    /**
-     * Serialize the record for storing in the database
-     *
-     * @return string
-     */
-    public function serialize()
-    {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
-    }
-
-    /**
-     * Serialize the record into XML for export
-     *
-     * @return string
-     */
-    public function toXML()
-    {
-        return $this->doc->asXML();
     }
 
     /**
@@ -398,168 +362,6 @@ class Ead3 extends \RecordManager\Base\Record\Base
         }
 
         return $data;
-    }
-
-    /**
-     * Return usage rights if any
-     *
-     * @return array ['restricted'] or a more specific id if restricted,
-     * empty array otherwise
-     */
-    protected function getUsageRights()
-    {
-        if (isset($this->doc->userestrict->p)) {
-            foreach ($this->doc->userestrict->p as $restrict) {
-                if (strstr((string)$restrict, 'No known copyright restrictions')) {
-                    return ['No known copyright restrictions'];
-                }
-            }
-        }
-
-        if (isset($this->doc->accessrestrict->p)) {
-            foreach ($this->doc->accessrestrict->p as $restrict) {
-                if (strstr((string)$restrict, 'No known copyright restrictions')) {
-                    return ['No known copyright restrictions'];
-                }
-            }
-        }
-        return ['restricted'];
-    }
-
-    /**
-     * Parse date range string
-     *
-     * @param string $input Date range
-     *
-     * @return NULL|array
-     */
-    protected function parseDateRange($input)
-    {
-        if (!$input || $input == '-') {
-            return null;
-        }
-
-        if (true
-            && preg_match(
-                '/(\d\d?).(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d?).(\d\d\d\d)/',
-                $input,
-                $matches
-            ) > 0
-        ) {
-            $startYear = $matches[3];
-            $startMonth = sprintf('%02d', $matches[2]);
-            $startDay = sprintf('%02d', $matches[1]);
-            $startDate = $startYear . '-' . $startMonth . '-' . $startDay
-                . 'T00:00:00Z';
-            $endYear = $matches[6];
-            $endMonth = sprintf('%02d', $matches[5]);
-            $endDay = sprintf('%02d', $matches[4]);
-            $endDate = $endYear . '-' . $endMonth . '-' . $endDay . 'T23:59:59Z';
-        } elseif (true
-            && preg_match(
-                '/(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d\d\d)/', $input, $matches
-            ) > 0
-        ) {
-            $startYear = $matches[2];
-            $startMonth = sprintf('%02d', $matches[1]);
-            $startDay = '01';
-            $startDate = $startYear . '-' . $startMonth . '-' . $startDay
-                . 'T00:00:00Z';
-            $endYear = $matches[4];
-            $endMonth = sprintf('%02d', $matches[3]);
-            $endDate = $endYear . '-' . $endMonth . '-01';
-            try {
-                $d = new \DateTime($endDate);
-            } catch (\Exception $e) {
-                $this->logger->log(
-                    'Ead3',
-                    "Failed to parse date $endDate, record {$this->source}."
-                    . $this->getID(),
-                    Logger::WARNING
-                );
-                $this->storeWarning('invalid end date');
-                return null;
-            }
-            $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
-        } elseif (preg_match('/(\d\d\d\d) ?- ?(\d\d\d\d)/', $input, $matches) > 0) {
-            $startDate = $matches[1] . '-01-01T00:00:00Z';
-            $endDate = $matches[2] . '-12-31T00:00:00Z';
-        } elseif (preg_match('/(\d\d\d\d)-(\d\d?)-(\d\d?)/', $input, $matches) > 0) {
-            $year = $matches[1];
-            $month = sprintf('%02d', $matches[2]);
-            $day = sprintf('%02d', $matches[3]);
-            $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
-            $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
-        } elseif (preg_match('/(\d\d?).(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
-            $year = $matches[3];
-            $month = sprintf('%02d', $matches[2]);
-            $day = sprintf('%02d', $matches[1]);
-            $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
-            $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
-        } elseif (preg_match('/(\d\d?)\.(\d\d\d\d)/', $input, $matches) > 0) {
-            $year = $matches[2];
-            $month = sprintf('%02d', $matches[1]);
-            $startDate = $year . '-' . $month . '-01' . 'T00:00:00Z';
-            $endDate = $year . '-' . $month . '-01';
-            try {
-                $d = new \DateTime($endDate);
-            } catch (\Exception $e) {
-                $this->logger->log(
-                    'Ead3',
-                    "Failed to parse date $endDate, record {$this->source}."
-                    . $this->getID(),
-                    Logger::WARNING
-                );
-                $this->storeWarning('invalid end date');
-                return null;
-            }
-            $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
-        } elseif (preg_match('/(\d+) ?- ?(\d+)/', $input, $matches) > 0) {
-            $startDate = $matches[1] . '-01-01T00:00:00Z';
-            $endDate = $matches[2] . '-12-31T00:00:00Z';
-        } elseif (preg_match('/(\d\d\d\d)/', $input, $matches) > 0) {
-            $year = $matches[1];
-            $startDate = $year . '-01-01T00:00:00Z';
-            $endDate = $year . '-12-31T23:59:59Z';
-        } else {
-            return null;
-        }
-
-        if (strtotime($startDate) > strtotime($endDate)) {
-            $this->logger->log(
-                'Ead3',
-                "Invalid date range {$startDate} - {$endDate}, record " .
-                "{$this->source}." . $this->getID(),
-                Logger::WARNING
-            );
-            $this->storeWarning('invalid date range');
-            $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
-        }
-
-        return [$startDate, $endDate];
-    }
-
-/**
-     * Get all XML fields
-     *
-     * @param SimpleXMLElement $xml The XML document
-     *
-     * @return string[]
-     */
-    protected function getAllFields($xml)
-    {
-        $allFields = [];
-        foreach ($xml->children() as $tag => $field) {
-            $s = trim((string)$field);
-            if ($s) {
-                $allFields[] = $s;
-            }
-            $s = $this->getAllFields($field);
-            if ($s) {
-                $allFields = array_merge($allFields, $s);
-            }
-        }
-        return $allFields;
     }
 }
 
