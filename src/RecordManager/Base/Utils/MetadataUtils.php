@@ -636,16 +636,16 @@ class MetadataUtils
     {
         switch (self::$unicodeNormalizationForm) {
         case 'NFC':
-            $str = Normalizer::normalize($str, Normalizer::FORM_C);
+            $str = \Normalizer::normalize($str, \Normalizer::FORM_C);
             break;
         case 'NFD':
-            $str = Normalizer::normalize($str, Normalizer::FORM_D);
+            $str = \Normalizer::normalize($str, \Normalizer::FORM_D);
             break;
         case 'NFKC':
-            $str = Normalizer::normalize($str, Normalizer::FORM_KC);
+            $str = \Normalizer::normalize($str, \Normalizer::FORM_KC);
             break;
         case 'NFKD':
-            $str = Normalizer::normalize($str, Normalizer::FORM_KD);
+            $str = \Normalizer::normalize($str, \Normalizer::FORM_KD);
             break;
         }
         return $str === false ? '' : $str;
