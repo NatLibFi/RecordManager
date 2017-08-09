@@ -57,7 +57,7 @@ class PurgeDeleted extends AbstractBase
         if ($daysToKeep) {
             $date = strtotime("-$daysToKeep day");
             $dateStr = ' until ' . date('Y-m-d', $date);
-            $params['updated'] = ['$lt' => new \MongoDB\BSON\UTCDateTime($date)];
+            $params['updated'] = ['$lt' => $this->db->getTimestamp($date)];
         }
         if ($sourceId) {
             $params['source_id'] = $sourceId;
@@ -98,7 +98,7 @@ class PurgeDeleted extends AbstractBase
         // Process dedup records
         $params = ['deleted' => true];
         if ($daysToKeep) {
-            $params['changed'] = ['$lt' => new \MongoDB\BSON\UTCDateTime($date)];
+            $params['changed'] = ['$lt' => $this->db->getTimestamp($date)];
         }
         $this->logger->log(
             'purgeDeletedRecords', "Creating dedup record list$dateStr"

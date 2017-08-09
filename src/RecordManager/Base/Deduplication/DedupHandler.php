@@ -386,7 +386,7 @@ class DedupHandler
                 $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
                 unset($record['dedup_id']);
             }
-            $record['updated'] = new \MongoDB\BSON\UTCDateTime(time() * 1000);
+            $record['updated'] = $this->db->getTimestamp();
             $record['update_needed'] = false;
             $this->db->saveRecord($record);
         }
@@ -729,7 +729,7 @@ class DedupHandler
     protected function createDedupRecord($id1, $id2)
     {
         $record = [
-            'changed' => new \MongoDB\BSON\UTCDateTime(time() * 1000),
+            'changed' => $this->db->getTimestamp(),
             'deleted' => false,
             'ids' => [
                 $id1,

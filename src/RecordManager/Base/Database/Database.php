@@ -170,7 +170,7 @@ class Database
     /**
      * Get a timestamp
      *
-     * @param int $time Optional unix time (default = current itime)
+     * @param int $time Optional unix time (default = current time)
      *
      * @return \MongoDB\BSON\UTCDateTime
      */

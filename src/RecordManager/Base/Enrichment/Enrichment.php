@@ -160,9 +160,7 @@ class Enrichment
             [
                 '_id' => $id,
                 'timestamp' => [
-                    '$gt' => new \MongoDB\BSON\UTCDateTime(
-                        (time() - $this->maxCacheAge) * 1000
-                    )
+                    '$gt' => $this->db->getTimestamp(time() - $this->maxCacheAge)
                  ]
             ]
         );

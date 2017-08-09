@@ -249,23 +249,23 @@ EOT;
         }
         if ($from && $until) {
             $queryParams['updated'] = [
-                '$gte' => new \MongoDB\BSON\UTCDateTime(
-                    $this->fromOaiDate($from, '00:00:00') * 1000
+                '$gte' => $this->db->getTimestamp(
+                    $this->fromOaiDate($from, '00:00:00')
                 ),
-                '$lte' => new \MongoDB\BSON\UTCDateTime(
-                    $this->fromOaiDate($until, '23:59:59') * 1000
+                '$lte' => $this->db->getTimestamp(
+                    $this->fromOaiDate($until, '23:59:59')
                 )
             ];
         } elseif ($from) {
             $queryParams['updated'] = [
-                '$gte' => new \MongoDB\BSON\UTCDateTime(
-                    $this->fromOaiDate($from, '00:00:00') * 1000
+                '$gte' => $this->db->getTimestamp(
+                    $this->fromOaiDate($from, '00:00:00')
                 )
             ];
         } elseif ($until) {
             $queryParams['updated'] = [
-                '$lte' => new \MongoDB\BSON\UTCDateTime(
-                    $this->fromOaiDate($until, '23:59:59') * 1000
+                '$lte' => $this->db->getTimestamp(
+                    $this->fromOaiDate($until, '23:59:59')
                 )
             ];
         }
