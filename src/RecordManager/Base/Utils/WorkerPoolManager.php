@@ -207,6 +207,10 @@ class WorkerPoolManager
                 } catch (\Exception $e) {
                     echo 'Fatal: Worker ' . getmypid()
                         . " exception in pool $poolId: " . $e->getMessage() . "\n";
+                    $this->writeSocket(
+                        $childSocket, ['exception' => $e->getMessage()]
+                    );
+                    socket_close($childSocket);
                     exit(1);
                 }
             }
@@ -254,7 +258,6 @@ class WorkerPoolManager
         if (empty($this->workerPools[$poolId])) {
             return;
         }
-        $this->checkForStoppedWorkers();
         while ($this->requestQueue[$poolId]) {
             $queueItem = array_shift($this->requestQueue[$poolId]);
             $handled = false;
@@ -272,6 +275,7 @@ class WorkerPoolManager
             }
         }
         $this->checkForResults($poolId);
+        $this->checkForStoppedWorkers();
     }
 
     /**
@@ -283,8 +287,8 @@ class WorkerPoolManager
      */
     public function requestsPending($poolId)
     {
-        $this->checkForStoppedWorkers();
         $this->handleRequests($poolId);
+        $this->checkForStoppedWorkers();
         return !empty($this->requests[$poolId]) || $this->requestsActive($poolId);
     }
 
@@ -332,18 +336,21 @@ class WorkerPoolManager
      */
     public function checkForResults($poolId)
     {
-        $this->checkForStoppedWorkers();
         if (!empty($this->workerPools[$poolId])) {
             foreach ($this->workerPools[$poolId] as &$worker) {
                 if ($worker['active']) {
                     $result = $this->readSocket($worker['socket']);
                     if (null !== $result) {
                         $worker['active'] = false;
+                        if (!empty($result['exception'])) {
+                            throw new \Exception($result['exception']);
+                        }
                         $this->results[$poolId][] = $result['r'];
                     }
                 }
             }
         }
+        $this->checkForStoppedWorkers();
         return !empty($this->results[$poolId]);
     }
 
