@@ -50,7 +50,14 @@ Parameters:
 
 --file=...          The file for records
 --deleted=...       The file for deleted record IDs
---from=...          From date where to start the export
+--from=...          Update date (and optional time) where to start the export
+                    (e.g. --from="2017-01-01 17:00")
+--until=...         Update date (and optional time) where to end the export
+                    (e.g. --until="2017-01-01 23:59:59")
+--createdfrom=...   Creation date (and optional time) where to start the export
+                    (e.g. --createdfrom="2017-01-01 17:00")
+--createduntil=...  Creation date (and optional time) where to end the export
+                    (e.g. --createduntil="2017-01-01 23:59:59")
 --verbose           Enable verbose output
 --quiet             Quiet, no output apart from the data
 --skip=...          Skip x records to export only a "representative" subset
@@ -81,6 +88,9 @@ EOT;
         $params['file'],
         isset($params['deleted']) ? $params['deleted'] : '',
         isset($params['from']) ? $params['from'] : '',
+        isset($params['until']) ? $params['until'] : '',
+        isset($params['createdfrom']) ? $params['createdfrom'] : '',
+        isset($params['createduntil']) ? $params['createduntil'] : '',
         isset($params['skip']) ? $params['skip'] : 0,
         isset($params['source']) ? $params['source'] : '',
         isset($params['single']) ? $params['single'] : '',

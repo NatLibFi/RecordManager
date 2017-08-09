@@ -29,6 +29,7 @@ namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\MetadataUtils;
+use RecordManager\Base\Utils\Logger;
 
 /**
  * Export
@@ -46,7 +47,10 @@ class Export extends AbstractBase
      *
      * @param string $file        File name where to write exported records
      * @param string $deletedFile File name where to write ID's of deleted records
-     * @param string $fromDate    Starting date (e.g. 2011-12-24)
+     * @param string $fromDate    Starting date of last update (e.g. 2011-12-24)
+     * @param string $untilDate   Ending date of last update (e.g. 2011-12-24)
+     * @param string $fromCreateDate Starting date of creation (e.g. 2011-12-24)
+     * @param string $untilCreateDate Ending date of creation (e.g. 2011-12-24)
      * @param int    $skipRecords Export only one per each $skipRecords records for
      * a sample set
      * @param string $sourceId    Source ID to export, or empty or * for all
@@ -59,9 +63,9 @@ class Export extends AbstractBase
      *
      * @return void
      */
-    public function launch($file, $deletedFile, $fromDate, $skipRecords = 0,
-        $sourceId = '', $singleId = '', $xpath = '', $sortDedup = false,
-        $addDedupId = ''
+    public function launch($file, $deletedFile, $fromDate, $untilDate,
+        $fromCreateDate, $untilCreateDate, $skipRecords = 0, $sourceId = '',
+        $singleId = '', $xpath = '', $sortDedup = false, $addDedupId = ''
     ) {
         if ($file == '-') {
             $file = 'php://stdout';
@@ -80,19 +84,58 @@ class Export extends AbstractBase
         );
 
         try {
-            $this->logger->log(
-                'exportRecords',
-                "Creating record list (from "
-                . ($fromDate ? $fromDate : 'the beginning') . ')'
-            );
+
+            $this->logger->log('exportRecords', 'Creating record list');
 
             $params = [];
             if ($singleId) {
                 $params['_id'] = $singleId;
             } else {
-                if ($fromDate) {
+                if ($fromDate && $untilDate) {
+                    $params['$and'] = [
+                        [
+                            'updated' => [
+                                '$gte'
+                                    => $this->db->getTimestamp(strtotime($fromDate))
+                            ]
+                        ],
+                        [
+                            'updated' => [
+                                '$lte'
+                                    => $this->db->getTimestamp(strtotime($untilDate))
+                            ]
+                        ]
+                    ];
+                } elseif ($fromDate) {
                     $params['updated']
-                        = ['$gte' => strtotime($fromDate)];
+                        = ['$gte' => $this->db->getTimestamp(strtotime($fromDate))];
+                } elseif ($untilDate) {
+                    $params['updated']
+                        = ['$lte' => $this->db->getTimestamp(strtotime($untilDate))];
+                }
+                if ($fromCreateDate && $untilCreateDate) {
+                    $params['$and'] = [
+                        [
+                            'created' => [
+                                '$gte' => $this->db->getTimestamp(
+                                    strtotime($fromCreateDate)
+                                )
+                            ]
+                        ],
+                        [
+                            'created' => [
+                                '$lte' => $this->db->getTimestamp(
+                                    strtotime($untilCreateDate)
+                                )
+                            ]
+                        ]
+                    ];
+                } elseif ($fromCreateDate) {
+                    $params['created']
+                        = ['$gte' => $this->db->getTimestamp(strtotime($fromCreateDate))];
+                } elseif ($untilDate) {
+                    $params['created']
+                        = ['$lte' => $this->db->getTimestamp(strtotime($untilCreateDate))];
                 }
                 $params['update_needed'] = false;
                 if ($sourceId && $sourceId !== '*') {
