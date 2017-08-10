@@ -45,27 +45,38 @@ class Export extends AbstractBase
     /**
      * Export records from the database to a file
      *
-     * @param string $file        File name where to write exported records
-     * @param string $deletedFile File name where to write ID's of deleted records
-     * @param string $fromDate    Starting date of last update (e.g. 2011-12-24)
-     * @param string $untilDate   Ending date of last update (e.g. 2011-12-24)
-     * @param string $fromCreateDate Starting date of creation (e.g. 2011-12-24)
+     * @param string $file            File name where to write exported records
+     * @param string $deletedFile     File name where to write IDs of deleted records
+     * @param string $fromDate        Starting date of last update (e.g. 2011-12-24)
+     * @param string $untilDate       Ending date of last update (e.g. 2011-12-24)
+     * @param string $fromCreateDate  Starting date of creation (e.g. 2011-12-24)
      * @param string $untilCreateDate Ending date of creation (e.g. 2011-12-24)
-     * @param int    $skipRecords Export only one per each $skipRecords records for
-     * a sample set
-     * @param string $sourceId    Source ID to export, or empty or * for all
-     * @param string $singleId    Export only a record with the given ID
-     * @param string $xpath       Optional XPath expression to limit the export with
-     * @param bool   $sortDedup   Whether to sort the records by dedup id
-     * @param string $addDedupId  When to add dedup id to each record
+     * @param int    $skipRecords     Export only one per each $skipRecords records
+     * for a sample set
+     * @param string $sourceId        Source ID to export, or empty or * for all
+     * @param string $singleId        Export only a record with the given ID
+     * @param string $xpath           Optional XPath expression to limit the export
+     * with
+     * @param bool   $sortDedup       Whether to sort the records by dedup id
+     * @param string $addDedupId      When to add dedup id to each record
      * ('deduped' = when the record has duplicates, 'always' = even if the record
      * doesn't have duplicates, otherwise never)
      *
      * @return void
      */
-    public function launch($file, $deletedFile, $fromDate, $untilDate,
-        $fromCreateDate, $untilCreateDate, $skipRecords = 0, $sourceId = '',
-        $singleId = '', $xpath = '', $sortDedup = false, $addDedupId = ''
+    public function launch(
+        $file,
+        $deletedFile,
+        $fromDate,
+        $untilDate,
+        $fromCreateDate,
+        $untilCreateDate,
+        $skipRecords = 0,
+        $sourceId = '',
+        $singleId = '',
+        $xpath = '',
+        $sortDedup = false,
+        $addDedupId = ''
     ) {
         if ($file == '-') {
             $file = 'php://stdout';
@@ -84,7 +95,6 @@ class Export extends AbstractBase
         );
 
         try {
-
             $this->logger->log('exportRecords', 'Creating record list');
 
             $params = [];
@@ -131,11 +141,14 @@ class Export extends AbstractBase
                         ]
                     ];
                 } elseif ($fromCreateDate) {
-                    $params['created']
-                        = ['$gte' => $this->db->getTimestamp(strtotime($fromCreateDate))];
+                    $params['created'] = [
+                        '$gte' => $this->db->getTimestamp(strtotime($fromCreateDate))
+                    ];
                 } elseif ($untilDate) {
-                    $params['created']
-                        = ['$lte' => $this->db->getTimestamp(strtotime($untilCreateDate))];
+                    $params['created'] = [
+                        '$lte'
+                            => $this->db->getTimestamp(strtotime($untilCreateDate))
+                    ];
                 }
                 $params['update_needed'] = false;
                 if ($sourceId && $sourceId !== '*') {
