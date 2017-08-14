@@ -480,15 +480,64 @@ class Marc extends \RecordManager\Base\Record\Marc
             $data['restricted_str'] = $restrictions;
         }
 
-        // ISMN
+        // ISMN, ISRC, UPC, EAN
         foreach ($this->getFields('024') as $field024) {
-            if ($this->getIndicator($field024, 1) == '2') {
+            $ind1 = $this->getIndicator($field024, 1);
+            switch ($ind1) {
+            case '0':
+                $isrc = $this->getSubfield($field024, 'a');
+                $data['isrc_isn_mv'] = $isrc;
+                break;
+            case '1':
+                $upc = $this->getSubfield($field024, 'a');
+                $data['upc_isn_mv'] = $upc;
+                break;
+            case '2':
                 $ismn = $this->getSubfield($field024, 'a');
                 $ismn = str_replace('-', '', $ismn);
                 if (!preg_match('{([0-9]{13})}', $ismn, $matches)) {
                     continue;
                 }
                 $data['ismn_isn_mv'] = $matches[1];
+                break;
+            case '3':
+                $ean = $this->getSubfield($field024, 'a');
+                $ean = str_replace('-', '', $ean);
+                if (!preg_match('{([0-9]{13})}', $ean, $matches)) {
+                    continue;
+                }
+                $data['ean_isn_mv'] = $matches[1];
+                break;
+            }
+        }
+
+        // Identifiers from component parts (type as a leading string)
+        foreach ($this->getFieldsSubfields(
+            [[self::GET_NORMAL, '979', ['k' => 1]]], false, true, true
+        ) as $identifier) {
+            $parts = explode(' ', $identifier, 2);
+            if (!isset($parts[1])) {
+                continue;
+            }
+            switch ($parts[0]) {
+            case 'ISBN':
+                $data['isbn'][] = $parts[1];
+                break;
+            case 'ISSN':
+                $data['issn'][] = $parts[1];
+                break;
+            case 'ISRC':
+                $data['isrc_isn_mv'][] = $parts[1];
+                break;
+            case 'UPC':
+                $data['upc_isn_mv'][] = $parts[1];
+                break;
+            case 'ISMN':
+                $data['ismn_isn_mv'][] = $parts[1];
+                break;
+            case 'EAN':
+                $data['ean_isn_mv'][] = $parts[1];
+                break;
             }
         }
 
@@ -675,6 +724,55 @@ class Marc extends \RecordManager\Base\Record\Marc
                 = MetadataUtils::normalizeLanguageStrings($subtitleLanguages);
             $id = $componentPart['_id'];
 
+            $identifierFields = [
+                'ISBN' => [self::GET_NORMAL, '020', ['a' => 1]],
+                'ISSN' => [self::GET_NORMAL, '022', ['a' => 1]],
+                'OAN' => [self::GET_NORMAL, '025', ['a' => 1]],
+                'FI' => [self::GET_NORMAL, '026', ['a' => 1, 'b' => 1]],
+                'STRN' => [self::GET_NORMAL, '027', ['a' => 1]],
+                'PDN' => [self::GET_NORMAL, '028', ['a' => 1]]
+            ];
+
+            foreach ($identifierFields as $id => $settings) {
+                $identifiers = $marc->getFieldsSubfields([$settings]);
+                $identifiers = array_map(
+                    function ($s) use ($id) {
+                        return "$id $s";
+                    },
+                    $identifiers
+                );
+            }
+
+            foreach ($marc->getFields('024') as $field024) {
+                $ind1 = $marc->getIndicator($field024, 1);
+                switch ($ind1) {
+                case '0':
+                    $isrc = $marc->getSubfield($field024, 'a');
+                    $identifiers[] = "ISRC $isrc";
+                    break;
+                case '1':
+                    $upc = $marc->getSubfield($field024, 'a');
+                    $identifiers[] = "UPC $upc";
+                    break;
+                case '2':
+                    $ismn = $marc->getSubfield($field024, 'a');
+                    $ismn = str_replace('-', '', $ismn);
+                    if (!preg_match('{([0-9]{13})}', $ismn, $matches)) {
+                        continue;
+                    }
+                    $identifiers[] = 'ISMN ' . $matches[1];
+                    break;
+                case '3':
+                    $ean = $marc->getSubfield($field024, 'a');
+                    $ean = str_replace('-', '', $ean);
+                    if (!preg_match('{([0-9]{13})}', $ean, $matches)) {
+                        continue;
+                    }
+                    $identifiers[] = 'EAN ' . $matches[1];
+                    break;
+                }
+            }
+
             $newField = [
                 'i1' => ' ',
                 'i2' => ' ',
@@ -711,6 +809,9 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
             foreach ($subtitleLanguages as $language) {
                 $newField['s'][] = ['j' => $language];
+            }
+            foreach ($identifiers as $identifier) {
+                $newField['s'][] = ['k' => $identifier];
             }
 
             $key = MetadataUtils::createIdSortKey($id);
@@ -1002,7 +1103,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getAllFields()
     {
         $fieldFilter = [
-            '300' => 1, '336' => 1, '337' => 1,
+            '300' => 1, '336' => 1, '337' => 1, '338' => 1
         ];
         $subfieldFilter = [
             '024' => ['c' => 1, 'd' => 1, 'z' => 1, '6' => 1, '8' => 1],
