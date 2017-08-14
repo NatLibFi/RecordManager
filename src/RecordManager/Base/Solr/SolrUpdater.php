@@ -826,7 +826,8 @@ class SolrUpdater
 
             if (!$noCommit && $needCommit && !$compare && !$this->dumpPrefix) {
                 $this->log->log(
-                    'updateRecords', 'Waiting for all requests to complete...'
+                    'updateRecords',
+                    'Waiting for any pending requests to complete...'
                 );
                 $this->workerPoolManager->waitUntilDone('solr');
                 $this->log->log('updateRecords', 'Final commit...');
@@ -2378,7 +2379,7 @@ class SolrUpdater
         if (!$noCommit && !$this->dumpPrefix && $count % $this->commitInterval == 0
         ) {
             $this->log->log(
-                'bufferedUpdate', 'Waiting for all requests to complete...'
+                'bufferedUpdate', 'Waiting for any pending requests to complete...'
             );
             $this->workerPoolManager->waitUntilDone('solr');
             $this->log->log('bufferedUpdate', 'Intermediate commit...');
