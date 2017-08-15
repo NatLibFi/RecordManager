@@ -297,7 +297,7 @@ class SolrUpdater
      *
      * @var string
      */
-     protected $clusterState = 'ok';
+    protected $clusterState = 'ok';
 
     /**
      * Hierarchical facets
