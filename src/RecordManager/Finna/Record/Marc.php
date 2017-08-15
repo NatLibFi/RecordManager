@@ -486,11 +486,11 @@ class Marc extends \RecordManager\Base\Record\Marc
             switch ($ind1) {
             case '0':
                 $isrc = $this->getSubfield($field024, 'a');
-                $data['isrc_isn_mv'] = $isrc;
+                $data['isrc_isn_mv'][] = $isrc;
                 break;
             case '1':
                 $upc = $this->getSubfield($field024, 'a');
-                $data['upc_isn_mv'] = $upc;
+                $data['upc_isn_mv'][] = $upc;
                 break;
             case '2':
                 $ismn = $this->getSubfield($field024, 'a');
@@ -498,7 +498,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 if (!preg_match('{([0-9]{13})}', $ismn, $matches)) {
                     continue;
                 }
-                $data['ismn_isn_mv'] = $matches[1];
+                $data['ismn_isn_mv'][] = $matches[1];
                 break;
             case '3':
                 $ean = $this->getSubfield($field024, 'a');
@@ -506,7 +506,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 if (!preg_match('{([0-9]{13})}', $ean, $matches)) {
                     continue;
                 }
-                $data['ean_isn_mv'] = $matches[1];
+                $data['ean_isn_mv'][] = $matches[1];
                 break;
             }
         }
