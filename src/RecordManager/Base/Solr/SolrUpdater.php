@@ -293,6 +293,13 @@ class SolrUpdater
     protected $lastClusterStateCheck = 0;
 
     /**
+     * SolrCloud cluster state
+     *
+     * @var string
+     */
+     protected $clusterState = 'ok';
+
+    /**
      * Hierarchical facets
      *
      * @var array
@@ -2241,77 +2248,85 @@ class SolrUpdater
     protected function checkClusterState()
     {
         $lastCheck = time() - $this->lastClusterStateCheck;
-        if ($lastCheck >= $this->clusterStateCheckInterval) {
-            $this->lastClusterStateCheck = time();
-            $request = $this->initSolrRequest();
-            $url = $this->config['Solr']['admin_url'] . '/zookeeper'
-                . '?wt=json&detail=true&path=%2Fclusterstate.json&view=graph';
-            $request->setUrl($url);
-            try {
-                $response = $request->send();
-            } catch (\Exception $e) {
-                $this->log->log(
-                    'checkClusterState',
-                    "Solr admin request '$url' failed (" . $e->getMessage() . ')',
-                    Logger::ERROR
-                );
-                return 'error';
-            }
+        if ($lastCheck < $this->clusterStateCheckInterval) {
+            return $this->clusterState;
+        }
+        $this->lastClusterStateCheck = time();
+        $request = $this->initSolrRequest();
+        $url = $this->config['Solr']['admin_url'] . '/zookeeper'
+            . '?wt=json&detail=true&path=%2Fclusterstate.json&view=graph';
+        $request->setUrl($url);
+        try {
+            $response = $request->send();
+        } catch (\Exception $e) {
+            $this->log->log(
+                'checkClusterState',
+                "Solr admin request '$url' failed (" . $e->getMessage() . ')',
+                Logger::ERROR
+            );
+            $this->clusterState = 'error';
+            return 'error';
+        }
 
-            $code = null === $response ? 999 : $response->getStatus();
-            if (200 !== $code) {
-                $this->log->log(
-                    'checkClusterState',
-                    "Solr admin request '$url' failed ($code)",
-                    Logger::ERROR
-                );
-                return 'error';
-            }
-            $state = json_decode($response->getBody(), true);
-            if (null === $state) {
-                $this->log->log(
-                    'checkClusterState',
-                    'Unable to decode zookeeper status from response: '
-                    . (null !== $response ? $response->getBody() : ''),
-                    Logger::ERROR
-                );
-                return 'error';
-            }
-            $data = json_decode($state['znode']['data'], true);
-            if (null === $data) {
-                $this->log->log(
-                    'checkClusterState',
-                    'Unable to decode node data from ' . $state['znode']['data'],
-                    Logger::ERROR
-                );
-                return 'error';
-            }
-            foreach ($data as $collectionName => $collection) {
-                foreach ($collection['shards'] as $shardName => $shard) {
-                    if ('active' !== $shard['state']) {
+        $code = null === $response ? 999 : $response->getStatus();
+        if (200 !== $code) {
+            $this->log->log(
+                'checkClusterState',
+                "Solr admin request '$url' failed ($code)",
+                Logger::ERROR
+            );
+            $this->clusterState = 'error';
+            return 'error';
+        }
+        $state = json_decode($response->getBody(), true);
+        if (null === $state) {
+            $this->log->log(
+                'checkClusterState',
+                'Unable to decode zookeeper status from response: '
+                . (null !== $response ? $response->getBody() : ''),
+                Logger::ERROR
+            );
+            $this->clusterState = 'error';
+            return 'error';
+        }
+        $data = json_decode($state['znode']['data'], true);
+        if (null === $data) {
+            $this->log->log(
+                'checkClusterState',
+                'Unable to decode node data from ' . $state['znode']['data'],
+                Logger::ERROR
+            );
+            $this->clusterState = 'error';
+            return 'error';
+        }
+        foreach ($data as $collectionName => $collection) {
+            foreach ($collection['shards'] as $shardName => $shard) {
+                if ('active' !== $shard['state']) {
+                    $this->log->log(
+                        'checkClusterState',
+                        "Collection $collectionName shard $shardName:"
+                        . " Not in active state: {$shard['state']}",
+                        Logger::WARNING
+                    );
+                    $this->clusterState = 'degraded';
+                    return 'degraded';
+                }
+                foreach ($shard['replicas'] as $replica) {
+                    if ('active' !== $replica['state']) {
                         $this->log->log(
                             'checkClusterState',
-                            "Collection $collectionName shard $shardName:"
-                            . " Not in active state: {$shard['state']}",
+                            "Collection $collectionName shard $shardName: Core"
+                            . " {$replica['core']} at {$replica['node_name']}"
+                            . " not in active state: {$replica['state']}",
                             Logger::WARNING
                         );
+                        $this->clusterState = 'degraded';
                         return 'degraded';
-                    }
-                    foreach ($shard['replicas'] as $replica) {
-                        if ('active' !== $replica['state']) {
-                            $this->log->log(
-                                'checkClusterState',
-                                "Collection $collectionName shard $shardName: Core"
-                                . " {$replica['core']} at {$replica['node_name']}"
-                                . " not in active state: {$replica['state']}",
-                                Logger::WARNING
-                            );
-                            return 'degraded';
-                        }
                     }
                 }
             }
         }
+        $this->clusterState = 'ok';
         return 'ok';
     }
 
