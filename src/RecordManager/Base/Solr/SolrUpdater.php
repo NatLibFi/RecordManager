@@ -1596,7 +1596,7 @@ class SolrUpdater
         if (!isset($this->settings[$source])) {
             // Try to reload data source settings as they might have been updated
             // during a long run
-            $this->loadDatasources();
+            $this->initDatasources();
             if (!isset($this->settings[$source])) {
                 $this->log->log(
                     'createSolrArray',
