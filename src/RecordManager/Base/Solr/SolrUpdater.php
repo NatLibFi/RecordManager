@@ -591,7 +591,8 @@ class SolrUpdater
                         $this->log->log(
                             'updateRecords',
                             'Exception from merged record processing: '
-                            . $e->getMessage(),
+                            . $e->getMessage() . ' at ' . $e->getFile() . ':'
+                            . $e->getLine(),
                             Logger::ERROR
                         );
                         if (null === $childPid) {
