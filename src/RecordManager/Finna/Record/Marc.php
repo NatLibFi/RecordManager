@@ -733,11 +733,11 @@ class Marc extends \RecordManager\Base\Record\Marc
                 'PDN' => [self::GET_NORMAL, '028', ['a' => 1]]
             ];
 
-            foreach ($identifierFields as $id => $settings) {
+            foreach ($identifierFields as $idKey => $settings) {
                 $identifiers = $marc->getFieldsSubfields([$settings]);
                 $identifiers = array_map(
-                    function ($s) use ($id) {
-                        return "$id $s";
+                    function ($s) use ($idKey) {
+                        return "$idKey $s";
                     },
                     $identifiers
                 );
