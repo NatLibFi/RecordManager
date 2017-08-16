@@ -96,7 +96,7 @@ trait StoreRecordTrait
                 $splitter = new $settings['recordSplitter']($recordData);
                 while (!$splitter->getEOF()) {
                     $dataArray[] = $splitter->getNextRecord(
-                        $settings['prependParentTitleWithUnitId'],
+                        !empty($settings['prependParentTitleWithUnitId']),
                         isset($settings['nonInheritedFields'])
                             ? $settings['nonInheritedFields']
                             : []
