@@ -106,12 +106,9 @@ class Ead extends Base
     /**
      * Return fields to be indexed in Solr
      *
-     * @param boolean $prependTitleWithSubtitle If true and title_sub differs from
-     * title_short, title is formed by combining title_sub and title_short
-     *
      * @return string[]
      */
-    public function toSolrArray($prependTitleWithSubtitle = false)
+    public function toSolrArray()
     {
         $data = [];
 
