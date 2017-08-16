@@ -176,7 +176,7 @@ abstract class AbstractBase
                 $settings['idPrefix'] = $source;
             }
             if (!isset($settings['recordXPath'])) {
-                $settings['recordXPath'] = '';
+                $settings['recordXPath'] = '//record';
             }
             if (!isset($settings['oaiIDXPath'])) {
                 $settings['oaiIDXPath'] = '';

@@ -45,17 +45,32 @@ class File
     protected $recordCount;
     protected $currentPos;
     protected $xpath;
-    protected $oaiIDXpath;
+    protected $recordXPath = '//record';
+    protected $oaiIDXpath = '';
 
     /**
-     * Construct the splitter
+     * Constructor
      *
-     * @param mixed  $data        XML string or DOM document
-     * @param string $recordXPath XPath used to find the records
-     * @param string $oaiIDXPath  XPath used to find the records' oaiID's
-     * (relative to record)
+     * @param array $params Splitter configuration params
      */
-    public function __construct($data, $recordXPath, $oaiIDXPath)
+    public function __construct($params)
+    {
+        if (!empty($params['recordXPath'])) {
+            $this->recordXPath = $params['recordXPath'];
+        }
+        if (!empty($params['oaiIDXPath'])) {
+            $this->oaiIDXPath = $params['oaiIDXPath'];
+        }
+    }
+
+    /**
+     * Set metadata
+     *
+     * @param mixed $data XML string or DOM document
+     *
+     * @return void
+     */
+    public function setData($data)
     {
         if (is_string($data)) {
             $this->xmlDoc = new \DOMDocument();
@@ -64,10 +79,9 @@ class File
             $this->xmlDoc = $data;
         }
         $this->xpath = new \DOMXpath($this->xmlDoc);
-        $this->recordNodes = $this->xpath->query($recordXPath);
+        $this->recordNodes = $this->xpath->query($this->recordXPath);
         $this->recordCount = $this->recordNodes->length;
         $this->currentPos = 0;
-        $this->oaiIDXpath = $oaiIDXPath;
     }
 
     /**

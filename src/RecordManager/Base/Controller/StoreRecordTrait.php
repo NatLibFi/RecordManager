@@ -93,14 +93,21 @@ trait StoreRecordTrait
                 echo "Splitting records\n";
             }
             if (is_string($settings['recordSplitter'])) {
-                $splitter = new $settings['recordSplitter']($recordData);
+                $splitterParams = !empty($settings['recordSplitterParams'])
+                    ? $settings['recordSplitterParams']
+                    : [];
+                // Support legacy params
+                if (!empty($settings['prependParentTitleWithUnitId'])) {
+                    $splitterParams['prependParentTitleWithUnitId'] = true;
+                }
+                if (!empty($settings['nonInheritedFields'])) {
+                    $splitterParams['nonInheritedFields']
+                        = $settings['nonInheritedFields'];
+                }
+                $splitter = new $settings['recordSplitter']($splitterParams);
+                $splitter->setData($recordData);
                 while (!$splitter->getEOF()) {
-                    $dataArray[] = $splitter->getNextRecord(
-                        !empty($settings['prependParentTitleWithUnitId']),
-                        isset($settings['nonInheritedFields'])
-                            ? $settings['nonInheritedFields']
-                            : []
-                    );
+                    $dataArray[] = $splitter->getNextRecord();
                 }
             } else {
                 $doc = new \DOMDocument();

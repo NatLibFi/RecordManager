@@ -40,6 +40,21 @@ namespace RecordManager\Base\Splitter;
 */
 class Ead
 {
+    /**
+     * Whether to prepend unit id to parent title
+     *
+     * @var bool
+     */
+    protected $prependParentTitleWithUnitId;
+
+    /**
+     * Keyed list of fields within record did element not to be inherited to child
+     * nodes
+     *
+     * @var array
+     */
+    protected $nonInheritedFields = [];
+
     protected $doc;
     protected $recordNodes;
     protected $recordCount;
@@ -52,11 +67,29 @@ class Ead
     protected $repository = '';
 
     /**
-    * Constructor
-    *
-    * @param string $data EAD XML
-    */
-    public function __construct($data)
+     * Constructor
+     *
+     * @param array $params Splitter configuration params
+     */
+    public function __construct($params)
+    {
+        $this->prependParentTitleWithUnitId
+            = !empty($params['prependParentTitleWithUnitId']);
+
+        if (!empty($params['nonInheritedFields'])) {
+            $fields = explode(',', $params['nonInheritedFields']);
+            $this->nonInheritedFields = array_flip($fields);
+        }
+    }
+
+    /**
+     * Set metadata
+     *
+     * @param string $data EAD XML
+     *
+     * @return void
+     */
+    public function setData($data)
     {
         $this->doc = simplexml_load_string($data, null, LIBXML_PARSEHUGE);
         $this->recordNodes = $this->doc->xpath('archdesc | archdesc/dsc//*[@level]');
@@ -89,16 +122,10 @@ class Ead
     /**
      * Get next record
      *
-     * @param boolean  $prependParentTitleWithUnitId if true, parent title is
-     * prepended with unit id.
-     * @param string[] $nonInheritedFields           list of fields within record
-     * did-element not to be inherited to child nodes.
-     *
      * @return string XML
      */
-    public function getNextRecord(
-        $prependParentTitleWithUnitId, $nonInheritedFields = []
-    ) {
+    public function getNextRecord()
+    {
         if ($this->currentPos < $this->recordCount) {
             $original = $this->recordNodes[$this->currentPos++];
             $record = simplexml_load_string('<' . $original->getName() . '/>');
@@ -144,7 +171,7 @@ class Ead
             if ($ancestorDid) {
                 // Append any ancestor did's
                 foreach (array_reverse($ancestorDid) as $did) {
-                    $this->appendXML($record, $did, $nonInheritedFields);
+                    $this->appendXML($record, $did, $this->nonInheritedFields);
                 }
             }
 
@@ -182,7 +209,7 @@ class Ead
                 }
                 $parentTitle = (string)$parentDid->unittitle;
 
-                if ($prependParentTitleWithUnitId) {
+                if ($this->prependParentTitleWithUnitId) {
                     if ((string)$parentDid->unitid
                         && in_array(
                             (string)$record->attributes()->level,
@@ -208,7 +235,7 @@ class Ead
      *
      * @param SimpleXMLElement $simplexml Node to append to
      * @param SimpleXMLElement $append    Node to be appended
-     * @param String[]         $ignore    Node names to be ignored
+     * @param array            $ignore    Keyed array of node names to be ignored
      *
      * @return void
      */
@@ -230,7 +257,7 @@ class Ead
                 }
             }
             foreach ($append->children() as $child) {
-                if (!in_array($child->getName(), $ignore)) {
+                if (!isset($ignore[$child->getName()])) {
                     $this->appendXML($xml, $child);
                 }
             }

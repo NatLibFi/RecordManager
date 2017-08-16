@@ -68,13 +68,7 @@ class Import extends AbstractBase
             );
             throw new \Exception("Error: settings not found for $source\n");
         }
-        $settings = $this->dataSourceSettings[$source];
-        if (!$settings['recordXPath']) {
-            $this->logger->log(
-                'import', "recordXPath not defined for $source", Logger::FATAL
-            );
-            throw new \Exception("recordXPath not defined for $source");
-        }
+        $settings = &$this->dataSourceSettings[$source];
         $count = 0;
         foreach (glob($files) as $file) {
             $this->logger->log(
@@ -195,11 +189,17 @@ class Import extends AbstractBase
         }
 
         if ($this->verbose) {
-            echo "Creating FileSplitter\n";
+            echo "Creating File splitter\n";
         }
-        $splitter = new \RecordManager\Base\Splitter\File(
-            $data, $settings['recordXPath'], $settings['oaiIDXPath']
-        );
+        $params = [];
+        if (!empty($settings['recordXPath'])) {
+            $params['recordXPath'] = $settings['recordXPath'];
+        }
+        if (!empty($settings['oaiIDXPath'])) {
+            $params['oaiIDXPath'] = $settings['oaiIDXPath'];
+        }
+        $splitter = new \RecordManager\Base\Splitter\File($params);
+        $splitter->setData($data);
 
         if ($this->verbose) {
             echo "Storing records\n";
