@@ -39,6 +39,13 @@ namespace RecordManager\Base\Utils;
 class FieldMapper
 {
     /**
+     * Mapping file cache
+     *
+     * @var array
+     */
+    protected static $mapCache = [];
+
+    /**
      * Settings for all data sources
      *
      * @var array
@@ -77,11 +84,14 @@ class FieldMapper
                     $parts = explode(',', $value, 2);
                     $filename = $parts[0];
                     $type = isset($parts[1]) ? $parts[1] : 'normal';
+                    if (!isset(self::$mapCache[$filename])) {
+                        self::$mapCache[$filename] = $this->readMappingFile(
+                            $basePath . '/mappings/' . $filename
+                        );
+                    }
                     $this->settings[$source]['mappingFiles'][$field][] = [
                         'type' => $type,
-                        'map' => $this->readMappingFile(
-                            $basePath . '/mappings/' . $filename
-                        )
+                        'map' => &self::$mapCache[$filename]
                     ];
                 }
             }
