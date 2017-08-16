@@ -99,7 +99,7 @@ trait StoreRecordTrait
                         $settings['prependParentTitleWithUnitId'],
                         isset($settings['nonInheritedFields'])
                             ? $settings['nonInheritedFields']
-                            : null
+                            : []
                     );
                 }
             } else {
