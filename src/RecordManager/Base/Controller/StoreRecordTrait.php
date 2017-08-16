@@ -97,7 +97,9 @@ trait StoreRecordTrait
                 while (!$splitter->getEOF()) {
                     $dataArray[] = $splitter->getNextRecord(
                         $settings['prependParentTitleWithUnitId'],
-                        $settings['nonInheritedFields']
+                        isset($settings['nonInheritedFields'])
+                            ? $settings['nonInheritedFields']
+                            : null
                     );
                 }
             } else {
