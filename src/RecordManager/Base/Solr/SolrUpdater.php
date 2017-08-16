@@ -776,7 +776,7 @@ class SolrUpdater
                         if (!$compare) {
                             $this->bufferedUpdate($record, $count, $noCommit);
                         } else {
-                            $this->compareWithSolrRecord($child['solr'], $compare);
+                            $this->compareWithSolrRecord($record, $compare);
                         }
                     }
                 }
