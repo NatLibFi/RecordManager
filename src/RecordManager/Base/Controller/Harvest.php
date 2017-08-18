@@ -324,20 +324,21 @@ class Harvest extends AbstractBase
      * Mark a record "seen". Used by OAI-PMH harvesting when deletions are not
      * supported.
      *
-     * @param string $oaiID   ID of the record as received from OAI-PMH
-     * @param bool   $deleted Whether the record is to be deleted
+     * @param string $sourceId Source ID
+     * @param string $oaiId    ID of the record as received from OAI-PMH
+     * @param bool   $deleted  Whether the record is to be deleted
      *
      * @throws Exception
      * @return void
      */
-    public function markRecord($oaiID, $deleted)
+    public function markRecord($sourceId, $oaiId, $deleted)
     {
         if ($deleted) {
             // Don't mark deleted records...
             return;
         }
         $this->db->updateRecords(
-            ['source_id' => $this->sourceId, 'oai_id' => $oaiID],
+            ['source_id' => $sourceId, 'oai_id' => $oaiId],
             ['mark' => true]
         );
     }
