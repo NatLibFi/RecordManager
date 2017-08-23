@@ -159,7 +159,7 @@ class Deduplicate extends AbstractBase
                     . ($allRecords ? ' (all records)' : '')
                 );
 
-                $params = ['deleted' => false, 'source_id' => $source];
+                $params = ['source_id' => $source];
                 if ($singleId) {
                     $params['_id'] = $singleId;
                 } else {

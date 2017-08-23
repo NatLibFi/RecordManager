@@ -227,7 +227,8 @@ class DedupHandler
     }
 
     /**
-     * Find a single duplicate for the given record and set a dedup key for them
+     * Find a single duplicate for the given record and set a common dedup key to
+     * both records
      *
      * @param array $record Database record
      *
@@ -235,6 +236,16 @@ class DedupHandler
      */
     public function dedupRecord($record)
     {
+        if ($record['deleted']) {
+            if (isset($record['dedup_id'])) {
+                $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
+                unset($record['dedup_id']);
+            }
+            $record['updated'] = $this->db->getTimestamp();
+            $record['update_needed'] = false;
+            $this->db->saveRecord($record);
+            return false;
+        }
         $startTime = microtime(true);
         if ($this->verbose) {
             echo 'Original ' . $record['_id'] . ":\n"
