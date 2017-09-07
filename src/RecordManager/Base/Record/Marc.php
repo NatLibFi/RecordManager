@@ -2291,10 +2291,12 @@ class Marc extends Base
                 }
                 $fuller = ($tag == '100' || $tag == '700')
                     ? $this->getSubfields($field, ['q' => 1]) : '';
-                $result['names'][] = MetadataUtils::stripTrailingPunctuation($terms);
+                $result['names'][] = MetadataUtils::stripTrailingPunctuation(
+                    trim($terms)
+                );
                 if ($fuller) {
                     $result['fuller'][]
-                        = MetadataUtils::stripTrailingPunctuation($fuller);
+                        = MetadataUtils::stripTrailingPunctuation(trim($fuller));
                 }
                 if ($fieldRelators) {
                     $result['relators'][] = reset($fieldRelators);
