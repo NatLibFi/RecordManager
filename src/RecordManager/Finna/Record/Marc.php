@@ -480,6 +480,12 @@ class Marc extends \RecordManager\Base\Record\Marc
             $data['restricted_str'] = $restrictions;
         }
 
+        // NBN
+        foreach ($this->getFields('015') as $field015) {
+            $nbn = $this->getSubfield($field015, 'a');
+            $data['nbn_isn_mv'] = $nbn;
+        }
+
         // ISMN, ISRC, UPC, EAN
         foreach ($this->getFields('024') as $field024) {
             $ind1 = $this->getIndicator($field024, 1);
@@ -1106,6 +1112,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             '300' => 1, '336' => 1, '337' => 1, '338' => 1
         ];
         $subfieldFilter = [
+            '015' => ['q' => 1, 'z' => 1, '2' => 1, '6' => 1, '8' => 1],
             '024' => ['c' => 1, 'd' => 1, 'z' => 1, '6' => 1, '8' => 1],
             '027' => ['z' => 1, '6' => 1, '8' => 1],
             '650' => ['0' => 1, '2' => 1, '6' => 1, '8' => 1],
@@ -1140,7 +1147,8 @@ class Marc extends \RecordManager\Base\Record\Marc
         foreach ($this->fields as $tag => $fields) {
             if (($tag >= 100 && $tag < 841 && !isset($fieldFilter[$tag]))
                 || in_array(
-                    $tag, ['024', '025', '026', '027', '028', '880', '952', '979']
+                    $tag,
+                    ['015', '024', '025', '026', '027', '028', '880', '952', '979']
                 )
             ) {
                 foreach ($fields as $field) {
