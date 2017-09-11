@@ -75,7 +75,7 @@ class Import extends AbstractBase
                 'import', "Loading records from '$file' into '$source'"
             );
 
-            if (preg_match('/^[\/\w]+$/', $settings['recordXPath'])) {
+            if (preg_match('/^[\/\w_:-]+$/', $settings['recordXPath'])) {
                 $count += $this->streamingLoad($file, $source, $delete);
             } else {
                 $this->logger->log(
@@ -130,7 +130,7 @@ class Import extends AbstractBase
                 if ($this->verbose) {
                     echo "Executing pretransformation\n";
                 }
-                $data = $this->pretransform($data);
+                $data = $this->pretransform($data, $source);
             }
 
             $oaiID = '';
@@ -185,7 +185,7 @@ class Import extends AbstractBase
             if ($this->verbose) {
                 echo "Executing pretransformation\n";
             }
-            $data = $this->pretransform($data);
+            $data = $this->pretransform($data, $source);
         }
 
         if ($this->verbose) {
