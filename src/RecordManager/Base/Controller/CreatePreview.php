@@ -45,14 +45,16 @@ class CreatePreview extends AbstractBase
     /**
      * Constructor
      *
-     * @param array $config  Main configuration
-     * @param bool  $console Specify whether RecordManager is executed on the
+     * @param string $basePath Base directory
+     * @param array  $config   Main configuration
+     * @param bool   $console  Specify whether RecordManager is executed on the
      * console so that log output is also output to the console.
-     * @param bool  $verbose Whether verbose output is enabled
+     * @param bool   $verbose  Whether verbose output is enabled
      */
-    public function __construct($config, $console = false, $verbose = false)
-    {
-        parent::__construct($config, $console, $verbose);
+    public function __construct($basePath, $config, $console = false,
+        $verbose = false
+    ) {
+        parent::__construct($basePath, $config, $console, $verbose);
 
         if (empty($this->dataSourceSettings['_preview'])) {
             $this->dataSourceSettings['_preview'] = [

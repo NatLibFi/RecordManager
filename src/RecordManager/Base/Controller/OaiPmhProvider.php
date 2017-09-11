@@ -86,11 +86,16 @@ class OaiPmhProvider extends AbstractBase
     /**
      * Constructor
      *
-     * @param array $config Main configuration
+     * @param string $basePath Base directory
+     * @param array  $config   Main configuration
+     * @param bool   $console  Specify whether RecordManager is executed on the
+     * console so that log output is also output to the console.
+     * @param bool   $verbose  Whether verbose output is enabled
      */
-    public function __construct($config)
-    {
-        parent::__construct($config);
+    public function __construct($basePath, $config, $console = false,
+        $verbose = false
+    ) {
+        parent::__construct($basePath, $config, $console, $verbose);
 
         $formatIni = $this->basePath . '/conf/'
             . $this->config['OAI-PMH']['format_definitions'];

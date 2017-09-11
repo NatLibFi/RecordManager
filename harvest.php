@@ -37,10 +37,10 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
-    $basePath = __DIR__;
+    $params = parseArgs($argv);
+    $basePath = !empty($params['basepath']) ? $params['basepath'] : __DIR__;
     $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
 
-    $params = parseArgs($argv);
     $config = applyConfigOverrides($params, $config);
 
     if (empty($params['source']) || !is_string($params['source'])) {
@@ -68,6 +68,8 @@ Parameters:
                     setting in recordmanager.ini
 --lockfile=file     Use a lock file to avoid executing the command multiple times in
                     parallel (useful when running from crontab)
+--basepath=path     Use path as the base directory for conf, mappings and
+                    transformations directories. Normally automatically determined.
 
 
 EOT;
@@ -82,6 +84,7 @@ EOT;
         }
 
         $harvest = new \RecordManager\Base\Controller\Harvest(
+            $basePath,
             $config,
             true,
             isset($params['verbose']) ? $params['verbose'] : false

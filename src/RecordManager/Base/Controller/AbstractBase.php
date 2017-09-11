@@ -102,13 +102,15 @@ abstract class AbstractBase
     /**
      * Constructor
      *
-     * @param array $config  Main configuration
-     * @param bool  $console Specify whether RecordManager is executed on the
+     * @param string $basePath Base directory
+     * @param array  $config   Main configuration
+     * @param bool   $console  Specify whether RecordManager is executed on the
      * console so that log output is also output to the console.
-     * @param bool  $verbose Whether verbose output is enabled
+     * @param bool   $verbose  Whether verbose output is enabled
      */
-    public function __construct($config, $console = false, $verbose = false)
-    {
+    public function __construct($basePath, $config, $console = false,
+        $verbose = false
+    ) {
         $this->config = $config;
 
         date_default_timezone_set($config['Site']['timezone']);
@@ -119,9 +121,6 @@ abstract class AbstractBase
         }
         $this->verbose = $verbose;
 
-        $basePath = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR
-            . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..';
-        $basePath = realpath($basePath);
         $this->basePath = $basePath;
         $this->dataSourceSettings = $config['dataSourceSettings']
             = parse_ini_file("$basePath/conf/datasources.ini", true);

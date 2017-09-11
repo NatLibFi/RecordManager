@@ -37,10 +37,10 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
-    $basePath = __DIR__;
+    $params = parseArgs($argv);
+    $basePath = !empty($params['basepath']) ? $params['basepath'] : __DIR__;
     $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
 
-    $params = parseArgs($argv);
     $config = applyConfigOverrides($params, $config);
 
     if (empty($params['file']) || empty($params['source'])) {
@@ -49,15 +49,17 @@ Usage: $argv[0] --file=... --source=... [...]
 
 Parameters:
 
---file             The file or wildcard pattern of files of records
---source           Source ID
---delete           Mark the imported records deleted
---verbose          Enable verbose output
+--file              The file or wildcard pattern of files of records
+--source            Source ID
+--delete            Mark the imported records deleted
+--verbose           Enable verbose output
 --config.section.name=value
-                   Set configuration directive to given value overriding any
-                   setting in recordmanager.ini
---lockfile=file    Use a lock file to avoid executing the command multiple times in
-                   parallel (useful when running from crontab)
+                    Set configuration directive to given value overriding any
+                    setting in recordmanager.ini
+--lockfile=file     Use a lock file to avoid executing the command multiple times in
+                    parallel (useful when running from crontab)
+--basepath=path     Use path as the base directory for conf, mappings and
+                    transformations directories. Normally automatically determined.
 
 
 EOT;
@@ -72,6 +74,7 @@ EOT;
         }
 
         $import = new \RecordManager\Base\Controller\Import(
+            $basePath,
             $config,
             true,
             isset($params['verbose']) ? $params['verbose'] : false

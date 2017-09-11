@@ -36,10 +36,10 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
-    $basePath = __DIR__;
+    $params = parseArgs($argv);
+    $basePath = !empty($params['basepath']) ? $params['basepath'] : __DIR__;
     $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
 
-    $params = parseArgs($argv);
     $config = applyConfigOverrides($params, $config);
 
     if (empty($params['search'])) {
@@ -52,6 +52,8 @@ Parameters:
                     Note that all settings are normalized to not contain any spaces
                     around equal signs, and boolean true is denoted with 1 and false
                     with 0.
+--basepath=path     Use path as the base directory for conf, mappings and
+                    transformations directories. Normally automatically determined.
 
 
 EOT;
@@ -60,6 +62,7 @@ EOT;
 
     if (!empty($params['search'])) {
         $searchDataSources = new \RecordManager\Base\Controller\SearchDataSources(
+            $basePath,
             $config,
             true,
             isset($params['verbose']) ? $params['verbose'] : false

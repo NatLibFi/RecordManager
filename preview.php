@@ -42,7 +42,9 @@ if (!preg_match('/^[\w_]*$/', $format) || !preg_match('/^[\w_]*$/', $source)) {
 
 $basePath = __DIR__;
 $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
-$createPreview = new \RecordManager\Base\Controller\CreatePreview($config);
+$createPreview = new \RecordManager\Base\Controller\CreatePreview(
+    $basePath, $config
+);
 
 $record = $createPreview->launch($_REQUEST['data'], $format, $source);
 
