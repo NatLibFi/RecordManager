@@ -764,7 +764,7 @@ class OaiPmh extends Base
      * @param DOMNode $element DOM Element
      * @param string  $tagName Tag to get
      *
-     * @return string[]
+     * @return array
      */
     protected function getImmediateChildrenByTagName($element, $tagName)
     {

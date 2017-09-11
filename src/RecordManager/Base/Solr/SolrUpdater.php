@@ -1520,9 +1520,6 @@ class SolrUpdater
         }
         $this->settings = [];
         foreach ($dataSourceSettings as $source => $settings) {
-            if (!isset($settings['institution'])) {
-                throw new \Exception("Error: institution not set for $source\n");
-            }
             if (!isset($settings['format'])) {
                 throw new \Exception("Error: format not set for $source\n");
             }
@@ -1579,7 +1576,7 @@ class SolrUpdater
      * @param integer $mergedComponents Number of component parts merged to the
      * record
      *
-     * @return string[]
+     * @return array
      * @throws Exception
      */
     protected function createSolrArray($record, &$mergedComponents)
@@ -1746,7 +1743,7 @@ class SolrUpdater
             $data['is_hierarchy_title'] = $metadataRecord->getTitle();
         }
 
-        if (!isset($data['institution'])) {
+        if (!isset($data['institution']) && isset($settings['institution'])) {
             $data['institution'] = $settings['institution'];
         }
 
@@ -1834,17 +1831,16 @@ class SolrUpdater
         $data['last_indexed'] = MetadataUtils::formatTimestamp(
             $record['date']->toDateTime()->getTimestamp()
         );
-        $data['recordtype'] = $record['format'];
         if (!isset($data['fullrecord'])) {
             $data['fullrecord'] = $metadataRecord->toXML();
-        }
-        if (!is_array($data['format'])) {
-            $data['format'] = [$data['format']];
         }
 
         if (isset($this->config['Solr']['format_in_allfields'])
             && $this->config['Solr']['format_in_allfields']
         ) {
+            if (!is_array($data['format'])) {
+                $data['format'] = [$data['format']];
+            }
             foreach ($data['format'] as $format) {
                 // Replace numbers since they may be be considered word boundaries
                 $data['allfields'][] = str_replace(
@@ -1915,10 +1911,13 @@ class SolrUpdater
             $institutionCode = $source;
             break;
         case 'institution/source':
-            $institutionCode = $settings['institution'] . '/' . $source;
+            $institutionCode = isset($settings['institution'])
+                ? $settings['institution'] . '/' . $source
+                : '/' . $source;
             break;
         default:
-            $institutionCode = $settings['institution'];
+            $institutionCode = isset($settings['institution'])
+                ? $settings['institution'] : '';
             break;
         }
         if ($institutionCode) {
@@ -1947,7 +1946,7 @@ class SolrUpdater
      * @param string[] $merged Merged (base) record
      * @param string[] $add    Record to merge into $merged
      *
-     * @return string[] Resulting merged record
+     * @return array Resulting merged record
      */
     protected function mergeRecords($merged, $add)
     {

@@ -46,7 +46,7 @@ class Ead extends \RecordManager\Base\Record\Ead
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
-     * @return string[]
+     * @return array
      */
     public function toSolrArray()
     {

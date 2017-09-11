@@ -96,7 +96,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
-     * @return string[]
+     * @return array
      */
     public function toSolrArray()
     {
@@ -1104,7 +1104,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Get an array of all fields relevant to allfields search
      *
-     * @return string[]
+     * @return array
      */
     protected function getAllFields()
     {
@@ -1224,7 +1224,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Get era facet fields
      *
-     * @return string[] Topics
+     * @return array Topics
      */
     protected function getEraFacets()
     {
@@ -1241,7 +1241,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Get all era topics
      *
-     * @return string[]
+     * @return array
      */
     protected function getEras()
     {
@@ -1258,7 +1258,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Get genre facet fields
      *
-     * @return string[] Topics
+     * @return array Topics
      */
     protected function getGenreFacets()
     {
@@ -1275,7 +1275,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Get all genre topics
      *
-     * @return string[]
+     * @return array
      */
     protected function getGenres()
     {
@@ -1292,7 +1292,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Get geographic facet fields
      *
-     * @return string[] Topics
+     * @return array Topics
      */
     protected function getGeographicFacets()
     {
@@ -1309,7 +1309,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Get all geographic topics
      *
-     * @return string[]
+     * @return array
      */
     protected function getGeographicTopics()
     {
@@ -1326,7 +1326,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Get topic facet fields
      *
-     * @return string[] Topics
+     * @return array Topics
      */
     protected function getTopicFacets()
     {
@@ -1355,7 +1355,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Get all non-specific topics
      *
-     * @return string[]
+     * @return array
      */
     protected function getTopics()
     {
@@ -1371,7 +1371,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Get all language codes
      *
-     * @return string[] Language codes
+     * @return array Language codes
      */
     protected function getLanguages()
     {
@@ -1450,7 +1450,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Dedup: Return unique IDs (control numbers)
      *
-     * @return string[]
+     * @return array
      */
     public function getUniqueIDs()
     {

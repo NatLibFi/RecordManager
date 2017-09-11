@@ -307,7 +307,7 @@ class Base
     /**
      * Dedup: Return unique IDs (control numbers)
      *
-     * @return string[]
+     * @return array
      */
     public function getUniqueIDs()
     {
@@ -317,7 +317,7 @@ class Base
     /**
      * Dedup: Return (unique) ISBNs in ISBN-13 format without dashes
      *
-     * @return string[]
+     * @return array
      */
     public function getISBNs()
     {
@@ -327,7 +327,7 @@ class Base
     /**
     * Dedup: Return ISSNs
     *
-    * @return string[]
+    * @return array
     */
     public function getISSNs()
     {

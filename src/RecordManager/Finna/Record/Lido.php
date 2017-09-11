@@ -71,7 +71,7 @@ class Lido extends \RecordManager\Base\Record\Lido
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
-     * @return string[]
+     * @return array
      */
     public function toSolrArray()
     {
@@ -419,7 +419,7 @@ class Lido extends \RecordManager\Base\Record\Lido
      *
      * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
      * #materialsTechSetComplexType
-     * @return string[]
+     * @return array
      */
     protected function getEventMaterials($eventType)
     {
@@ -557,7 +557,7 @@ class Lido extends \RecordManager\Base\Record\Lido
     /**
      * Return the date ranges associated with subjects
      *
-     * @return string[][] Array of two ISO 8601 dates
+     * @return array[] Array of two ISO 8601 dates
      */
     protected function getSubjectDateRanges()
     {
@@ -853,7 +853,7 @@ class Lido extends \RecordManager\Base\Record\Lido
      *
      * @param string $input Date range
      *
-     * @return string[] Two ISO 8601 dates
+     * @return array Two ISO 8601 dates
      */
     protected function parseDateRange($input)
     {
@@ -1331,7 +1331,7 @@ class Lido extends \RecordManager\Base\Record\Lido
      *
      * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
      * #objectClassificationWrap
-     * @return string[]
+     * @return array
      */
     protected function getClassifications()
     {
@@ -1360,7 +1360,7 @@ class Lido extends \RecordManager\Base\Record\Lido
      *
      * @param string $eventType Event type
      *
-     * @return string[]
+     * @return array
      */
     protected function getEventNames($eventType)
     {

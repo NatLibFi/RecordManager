@@ -99,13 +99,14 @@ class Dc extends Base
     /**
      * Return fields to be indexed in Solr
      *
-     * @return string[]
+     * @return array
      */
     public function toSolrArray()
     {
         $data = [];
 
         $doc = $this->doc;
+        $data['recordtype'] = 'dc';
         $data['ctrlnum'] = (string)$doc->recordID;
         $data['fullrecord'] = $doc->asXML();
 
@@ -215,7 +216,7 @@ class Dc extends Base
     /**
      * Dedup: Return ISBNs in ISBN-13 format without dashes
      *
-     * @return string[]
+     * @return array
      */
     public function getISBNs()
     {

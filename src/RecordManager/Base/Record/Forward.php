@@ -172,13 +172,14 @@ class Forward extends Base
     /**
      * Return fields to be indexed in Solr
      *
-     * @return string[]
+     * @return array
      */
     public function toSolrArray()
     {
         $data = [];
 
         $doc = $this->getMainElement();
+        $data['recordtype'] = 'forward';
         $data['ctrlnum'] = $this->getID();
         $data['fullrecord'] = $this->toXML();
         $publishDate = (string)$doc->YearOfReference;

@@ -550,7 +550,7 @@ EOT;
      *
      * @param array $record Mongo record
      *
-     * @return string[]
+     * @return array
      */
     protected function getRecordSets($record)
     {
@@ -576,7 +576,7 @@ EOT;
     /**
      * Get all request parameters
      *
-     * @return string[]
+     * @return array
      */
     protected function getRequestParameters()
     {

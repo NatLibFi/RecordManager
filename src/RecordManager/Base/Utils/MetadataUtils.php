@@ -484,6 +484,35 @@ class MetadataUtils
     }
 
     /**
+     * Validate a date in yyyy-mm-dd format.
+     *
+     * @param string $date Date to validate
+     *
+     * @return boolean|int False if invalid, resulting time otherwise
+     */
+    public static function validateDate($date)
+    {
+        if (true
+            && preg_match(
+                '/^(\-?\d{4})-(\d{2})-(\d{2})$/',
+                $date,
+                $parts
+            )
+        ) {
+            if ($parts[2] < 1 || $parts[2] > 12
+                || $parts[3] < 1 || $parts[3] > 31
+            ) {
+                return false;
+            }
+            // Since strtotime is quite clever in interpreting bad dates too, convert
+            // back to make sure the interpretation was correct.
+            $resultDate = strtotime($date);
+            return gmdate('Y-m-d', $resultDate) == $date ? $resultDate : false;
+        }
+        return false;
+    }
+
+    /**
      * Validate a date in ISO8601 format.
      *
      * @param string $date Date to validate
@@ -657,7 +686,7 @@ class MetadataUtils
      * @param string[] $array Array of strings to trim
      * @param string   $chars Characters to trim
      *
-     * @return string[] Trimmed array
+     * @return array Trimmed array
      */
     public static function arrayTrim($array, $chars = " \t\n\r\0\x0B")
     {

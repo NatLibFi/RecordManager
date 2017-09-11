@@ -106,13 +106,14 @@ class Ead extends Base
     /**
      * Return fields to be indexed in Solr
      *
-     * @return string[]
+     * @return array
      */
     public function toSolrArray()
     {
         $data = [];
 
         $doc = $this->doc;
+        $data['recordtype'] = 'ead';
         $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
         $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($doc->asXML());
         $data['allfields'] = $this->getAllFields($doc);
@@ -278,7 +279,7 @@ class Ead extends Base
      *
      * @param SimpleXMLElement $xml The XML document
      *
-     * @return string[]
+     * @return array
      */
     protected function getAllFields($xml)
     {

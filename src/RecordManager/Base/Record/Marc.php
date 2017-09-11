@@ -277,10 +277,13 @@ class Marc extends Base
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
-     * @return string[]
+     * @return array
      */
     public function toSolrArray()
     {
+        $data = [];
+        $data['recordtype'] = 'marc';
+
         // Add source prefix to IDs in link fields
         $fields = ['760', '762', '765', '767', '770', '772', '773', '774',
             '775', '776', '777', '780', '785', '786', '787'];
@@ -300,8 +303,6 @@ class Marc extends Base
                 }
             }
         }
-
-        $data = parent::toSolrArray();
 
         // building
         $data['building'] = $this->getBuilding();
@@ -841,7 +842,7 @@ class Marc extends Base
     /**
      * Dedup: Return unique IDs (control numbers)
      *
-     * @return string[]
+     * @return array
      */
     public function getUniqueIDs()
     {
@@ -903,7 +904,7 @@ class Marc extends Base
     /**
      * Dedup: Return (unique) ISBNs in ISBN-13 format without dashes
      *
-     * @return string[]
+     * @return array
      */
     public function getISBNs()
     {
@@ -923,7 +924,7 @@ class Marc extends Base
     /**
      * Dedup: Return ISSNs
      *
-     * @return string[]
+     * @return array
      */
     public function getISSNs()
     {
@@ -1619,7 +1620,7 @@ class Marc extends Base
      * @param array $field MARC Field
      * @param array $codes Array with keys of accepted subfield codes
      *
-     * @return string[] Subfields
+     * @return array Subfields
      */
     protected function getSubfieldsArray($field, $codes)
     {
@@ -1706,7 +1707,7 @@ class Marc extends Base
      * @param boolean $splitSubfields           Whether to split subfields to
      * separate array items
      *
-     * @return string[] Subfields
+     * @return array Subfields
      */
     protected function getFieldsSubfields($fieldspecs, $firstOnly = false,
         $stripTrailingPunctuation = true, $splitSubfields = false
@@ -1896,7 +1897,7 @@ class Marc extends Base
      *
      * @param string $tag Field tag
      *
-     * @return string[]
+     * @return array
      */
     protected function getFieldsAllSubfields($tag)
     {
@@ -1937,7 +1938,7 @@ class Marc extends Base
      * @param array $filter Optional array with keys of subfields codes to be
      * excluded
      *
-     * @return string[] All subfields
+     * @return array All subfields
      */
     protected function getAllSubfields($field, $filter = null)
     {
@@ -1989,7 +1990,7 @@ class Marc extends Base
     /**
      * Get an array of all fields relevant to allfields search
      *
-     * @return string[]
+     * @return array
      */
     protected function getAllFields()
     {
@@ -2027,7 +2028,7 @@ class Marc extends Base
     /**
      * Get all non-specific topics
      *
-     * @return string[]
+     * @return array
      */
     protected function getTopics()
     {
@@ -2068,7 +2069,7 @@ class Marc extends Base
     /**
      * Get all genre topics
      *
-     * @return string[]
+     * @return array
      */
     protected function getGenres()
     {
@@ -2085,7 +2086,7 @@ class Marc extends Base
     /**
      * Get all geographic topics
      *
-     * @return string[]
+     * @return array
      */
     protected function getGeographicTopics()
     {
@@ -2101,7 +2102,7 @@ class Marc extends Base
     /**
      * Get all era topics
      *
-     * @return string[]
+     * @return array
      */
     protected function getEras()
     {
@@ -2117,7 +2118,7 @@ class Marc extends Base
     /**
      * Get topic facet fields
      *
-     * @return string[] Topics
+     * @return array Topics
      */
     protected function getTopicFacets()
     {
@@ -2140,7 +2141,7 @@ class Marc extends Base
     /**
      * Get genre facet fields
      *
-     * @return string[] Topics
+     * @return array Topics
      */
     protected function getGenreFacets()
     {
@@ -2165,7 +2166,7 @@ class Marc extends Base
     /**
      * Get geographic facet fields
      *
-     * @return string[] Topics
+     * @return array Topics
      */
     protected function getGeographicFacets()
     {
@@ -2188,7 +2189,7 @@ class Marc extends Base
     /**
      * Get era facet fields
      *
-     * @return string[] Topics
+     * @return array Topics
      */
     protected function getEraFacets()
     {
@@ -2208,7 +2209,7 @@ class Marc extends Base
     /**
      * Get all language codes
      *
-     * @return string[] Language codes
+     * @return array Language codes
      */
     protected function getLanguages()
     {

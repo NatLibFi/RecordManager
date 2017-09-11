@@ -94,13 +94,14 @@ class Ese extends Base
     /**
      * Return fields to be indexed in Solr
      *
-     * @return string[]
+     * @return array
      */
     public function toSolrArray()
     {
         $data = [];
 
         $doc = $this->doc;
+        $data['recordtype'] = 'ese';
         $data['ctrlnum'] = (string)$doc->recordID;
         $data['fullrecord'] = $doc->asXML();
 
@@ -195,7 +196,7 @@ class Ese extends Base
     /**
      * Dedup: Return ISBNs in ISBN-13 format without dashes
      *
-     * @return string[]
+     * @return array
      */
     public function getISBNs()
     {
@@ -276,7 +277,7 @@ class Ese extends Base
      *
      * @param string $tag XML tag
      *
-     * @return string[]
+     * @return array
      */
     protected function getValues($tag)
     {

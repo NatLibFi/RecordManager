@@ -119,13 +119,14 @@ class Lido extends Base
     /**
      * Return fields to be indexed in Solr
      *
-     * @return string[]
+     * @return array
      */
     public function toSolrArray()
     {
         $data = [];
-        $lang = $this->getDefaultLanguage();
 
+        $data['recordtype'] = 'lido';
+        $lang = $this->getDefaultLanguage();
         $title = $this->getTitle(false, $lang);
         if ($this->getDriverParam('splitTitles', false)) {
             $titlePart = MetadataUtils::splitTitle($title);
@@ -454,7 +455,7 @@ class Lido extends Base
      *
      * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
      * #eventComplexType
-     * @return string[]
+     * @return array
      */
     protected function getCulture()
     {
@@ -499,7 +500,7 @@ class Lido extends Base
     /**
      * Return URLs associated with object
      *
-     * @return string[]
+     * @return array
      */
     protected function getURLs()
     {
@@ -627,7 +628,7 @@ class Lido extends Base
      * Return the languages used in the metadata (from 'lang' attributes used in
      * descriptiveMetadata elements)
      *
-     * @return string[]
+     * @return array
      */
     protected function getLanguage()
     {
@@ -652,7 +653,7 @@ class Lido extends Base
      *
      * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
      * #subjectComplexType
-     * @return string[]
+     * @return array
      */
     protected function getSubjectTerms($exclude = ['iconclass'])
     {
@@ -673,7 +674,7 @@ class Lido extends Base
     /**
      * Return the subject display places
      *
-     * @return string[]
+     * @return array
      */
     protected function getSubjectDisplayPlaces()
     {
@@ -691,7 +692,7 @@ class Lido extends Base
     /**
      * Return the subject places
      *
-     * @return string[]
+     * @return array
      */
     protected function getSubjectPlaces()
     {
@@ -718,7 +719,7 @@ class Lido extends Base
      *
      * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
      * #materialsTechSetComplexType
-     * @return string[]
+     * @return array
      */
     protected function getEventMaterials($eventType)
     {
@@ -749,7 +750,7 @@ class Lido extends Base
      *
      * @param SimpleXMLElement $xml The XML document
      *
-     * @return string[]
+     * @return array
      */
     protected function getAllFields($xml)
     {

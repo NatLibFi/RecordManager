@@ -59,9 +59,9 @@ function applyConfigOverrides($params, $config)
 /**
  * Command Line Interface (CLI) utility function.
  *
- * @param string[] $argv Arguments
+ * @param array $argv Arguments
  *
- * @return string[] Parsed keys and values
+ * @return array Parsed keys and values
  * @usage  $args = parseArgs($_SERVER['argv']);
  * @author Patrick Fisher <patrick@pwfisher.com>
  * @source https://github.com/pwfisher/CommandLine.php

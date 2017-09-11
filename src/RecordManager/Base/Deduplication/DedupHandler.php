@@ -132,7 +132,7 @@ class DedupHandler
      *
      * @param array $dedupRecord Dedup record
      *
-     * @return string[] An array with a line per fixed record
+     * @return array An array with a line per fixed record
      */
     public function checkDedupRecord($dedupRecord)
     {

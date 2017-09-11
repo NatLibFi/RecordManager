@@ -45,7 +45,7 @@ class Qdc extends \RecordManager\Base\Record\Qdc
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
-     * @return string[]
+     * @return array
      */
     public function toSolrArray()
     {

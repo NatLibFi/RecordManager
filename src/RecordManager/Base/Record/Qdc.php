@@ -106,6 +106,7 @@ class Qdc extends Base
         $data = [];
 
         $doc = $this->doc;
+        $data['recordtype'] = 'qdc';
         $data['ctrlnum'] = (string)$doc->recordID;
         $data['fullrecord'] = $doc->asXML();
 
@@ -226,7 +227,7 @@ class Qdc extends Base
     /**
      * Dedup: Return ISBNs in ISBN-13 format without dashes
      *
-     * @return string[]
+     * @return array
      */
     public function getISBNs()
     {
@@ -315,7 +316,7 @@ class Qdc extends Base
      *
      * @param string $tag Field name
      *
-     * @return string[]
+     * @return array
      */
     protected function getValues($tag)
     {

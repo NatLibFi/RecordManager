@@ -97,7 +97,7 @@ class Forward extends \RecordManager\Base\Record\Forward
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
-     * @return string[]
+     * @return array
      */
     public function toSolrArray()
     {
