@@ -399,8 +399,10 @@ class NominatimGeocoder extends Enrichment
             }
             $simplifiedWKT = $simplified->out('wkt');
             if (strstr($simplifiedWKT, 'EMPTY') !== false) {
-                // Got empty shape as result, return the original
-                return $location;
+                // Got empty shape as result, return bounding box
+                $bbox = $polygon->getBBox();
+                return "ENVELOPE({$bbox['minx']}, {$bbox['maxx']}, {$bbox['maxy']}, "
+                    . "{$bbox['miny']})";
             }
             $pointCount = substr_count($simplifiedWKT, ',') + 1;
             if (!$this->simplificationMaxLength
@@ -411,9 +413,12 @@ class NominatimGeocoder extends Enrichment
             $tolerance *= 2;
         }
         if (null !== $pointCount && $origPointCount > $pointCount) {
-            $location = $simplifiedWKT;
+            return $simplifiedWKT;
         }
-        return $location;
+        // Simplification failed, return bounding box
+        $bbox = $polygon->getBBox();
+        return "ENVELOPE({$bbox['minx']}, {$bbox['maxx']}, {$bbox['maxy']}, "
+            . "{$bbox['miny']})";
     }
 
     /**
