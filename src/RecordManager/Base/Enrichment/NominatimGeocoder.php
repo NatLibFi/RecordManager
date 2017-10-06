@@ -225,6 +225,26 @@ class NominatimGeocoder extends Enrichment
             return;
         }
         $locations = $record->getLocations();
+        if (empty($locations)) {
+            return;
+        }
+        if ($this->enrichLocations($locations['primary'], $solrArray)) {
+            return;
+        }
+        $this->enrichLocations($locations['secondary'], $solrArray);
+    }
+
+    /**
+     * Enrich using an array of location strings
+     *
+     * @param array $locations Locations
+     * @param array $solrArray Metadata to be sent to Solr
+     *
+     * @return bool Whether locations were found
+     */
+    protected function enrichLocations($locations, &$solrArray)
+    {
+        $result = false;
         foreach ($locations as $location) {
             if ($this->blacklist) {
                 foreach ($this->blacklist as $entry) {
@@ -248,6 +268,7 @@ class NominatimGeocoder extends Enrichment
                         $solrArray[$this->solrCenterField]
                             = $geocoded[0]['lon'] . ' ' . $geocoded[0]['lat'];
                     }
+                    $result = true;
                     break;
                 }
                 $cleaned = $location;
@@ -285,6 +306,7 @@ class NominatimGeocoder extends Enrichment
                 $location = $cleaned;
             }
         }
+        return $result;
     }
 
     /**

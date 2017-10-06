@@ -205,6 +205,8 @@ class Lido extends \RecordManager\Base\Record\Lido
     /**
      * Get locations for geocoding
      *
+     * Returns an associative array of primary and secondary locations
+     *
      * @return array
      */
     public function getLocations()
@@ -219,7 +221,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                             = (string)$place->namePlaceSet->appellationValue;
                         $subLocation = $this->getSubLocation($place);
                         if ($mainPlace && !$subLocation) {
-                            continue;
+                            $subjectLocations[] = $mainPlace;
                         } else {
                             foreach (preg_split('/( tai |\. )/', $subLocation)
                                 as $subPart
@@ -231,6 +233,13 @@ class Lido extends \RecordManager\Base\Record\Lido
                 }
             }
         }
+
+        $subjectLocations = array_map(
+            function ($s) {
+                return rtrim($s, ',. ');
+            },
+            $subjectLocations
+        );
 
         // Event places
         $locations = [];
@@ -298,13 +307,6 @@ class Lido extends \RecordManager\Base\Record\Lido
             }
         }
 
-        $locations = array_map(
-            function ($s) {
-                return rtrim($s, ',. ');
-            },
-            $locations
-        );
-
         $accepted = [];
         foreach ($locations as $location) {
             if (str_word_count($location) == 1) {
@@ -317,8 +319,22 @@ class Lido extends \RecordManager\Base\Record\Lido
             }
             $accepted[] = $location;
         }
-        $locations = array_merge($accepted, $subjectLocations);
 
+        return [
+            'primary' => $this->processLocations($subjectLocations),
+            'secondary' => $this->processLocations($accepted)
+        ];
+    }
+
+    /**
+     * Process an array of locations
+     *
+     * @param array $locations Location strings
+     *
+     * @return array
+     */
+    protected function processLocations($locations)
+    {
         $result = [];
         // Try to split address lists like "Helsinki, Kalevankatu 17, 19" to separate
         // entries
