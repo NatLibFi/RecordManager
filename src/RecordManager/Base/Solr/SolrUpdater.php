@@ -2555,9 +2555,11 @@ class SolrUpdater
      */
     protected function createSolrId($recordId)
     {
-        list($source, $id) = explode('.', $recordId, 2);
-        if (!empty($this->settings[$source]['indexUnprefixedIds'])) {
-            return $id;
+        $parts = explode('.', $recordId, 2);
+        if (isset($parts[1])
+            && !empty($this->settings[$parts[0]]['indexUnprefixedIds'])
+        ) {
+            return $parts[1];
         }
         return $recordId;
     }
