@@ -239,7 +239,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                         || strstr($classification, 'rakennus') !== false
                         || strstr($classification, 'alue') !== false
                     ) {
-                        $subLocation .=  ' ' . (string)$place->namePlaceSet
+                        $subLocation .= ' ' . (string)$place->namePlaceSet
                             ->appellationValue;
                     }
                 }
