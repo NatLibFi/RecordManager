@@ -132,7 +132,7 @@ abstract class AbstractBase
                 $config['Mongo']
             );
         } catch (\Exception $e) {
-            $this->log->log(
+            $this->logger->log(
                 'startup',
                 'Failed to connect to MongoDB: ' . $e->getMessage(),
                 Logger::FATAL

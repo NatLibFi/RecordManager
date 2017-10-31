@@ -79,6 +79,7 @@ EOT;
     }
 
     $export = new \RecordManager\Base\Controller\Export(
+        $basePath,
         $config,
         true,
         isset($params['verbose']) ? $params['verbose'] : false

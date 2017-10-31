@@ -55,7 +55,7 @@ class Enrichment
      *
      * @var Logger
      */
-    protected $log;
+    protected $logger;
 
     /**
      * Main configuration
@@ -105,13 +105,13 @@ class Enrichment
      * Constructor
      *
      * @param Database $db     Database connection (for cache)
-     * @param Logger   $log    Logger
+     * @param Logger   $logger Logger
      * @param array    $config Main configuration
      */
-    public function __construct(Database $db, Logger $log, $config)
+    public function __construct(Database $db, Logger $logger, $config)
     {
         $this->db = $db;
-        $this->log = $log;
+        $this->logger = $logger;
         $this->config = $config;
 
         $this->maxCacheAge = isset($config['Enrichment']['cache_expiration'])

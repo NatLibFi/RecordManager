@@ -53,12 +53,12 @@ class MarcOnkiLightEnrichment extends Enrichment
      * Constructor
      *
      * @param Database $db     Database connection (for cache)
-     * @param Logger   $log    Logger
+     * @param Logger   $logger Logger
      * @param array    $config Main configuration
      */
-    public function __construct($db, $log, $config)
+    public function __construct($db, $logger, $config)
     {
-        parent::__construct($db, $log, $config);
+        parent::__construct($db, $logger, $config);
 
         $this->onkiLightBaseURL
             = isset($this->config['MarcOnkiLightEnrichment']['base_url'])
@@ -107,6 +107,16 @@ class MarcOnkiLightEnrichment extends Enrichment
             // Fetch alternate language expressions
             $url = $id;
             if (strncmp($id, 'http', 4) !== 0) {
+                if (!preg_match('/^[a-zA-Z][a-zA-Z0-9.\+\-]*:/', $id)) {
+                    $this->logger->log(
+                        'enrichField',
+                        "Ignoring invalid URI '$id', record $sourceId."
+                        . $record->getId(),
+                        Logger::WARNING
+                    );
+                    continue;
+                }
+
                 $url = $this->onkiLightBaseURL . '/data?format=application/json&uri='
                     . urlencode($id);
             }
