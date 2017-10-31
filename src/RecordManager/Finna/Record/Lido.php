@@ -214,6 +214,44 @@ class Lido extends \RecordManager\Base\Record\Lido
         // Subject places
         $subjectLocations = [];
         foreach ($this->getSubjectNodes() as $subject) {
+            // Try first to find non-hierarchical street address and city.
+            // E.g. Musketti.
+            $mainPlace = '';
+            $subLocation = '';
+            foreach ($subject->subjectPlace as $subjectPlace) {
+                foreach ($subjectPlace->place as $place) {
+                    if (!isset($place->namePlaceSet->appellationValue)
+                        || !isset($place->placeClassification->term)
+                    ) {
+                        continue;
+                    }
+                    $classification = strtolower($place->placeClassification->term);
+                    if (strstr($classification, 'kunta') !== false
+                        || strstr($classification, 'kaupunki') !== false
+                        || strstr($classification, 'kylä') !== false
+                    ) {
+                        $mainPlace .= ' '
+                            . (string)$place->namePlaceSet->appellationValue;
+                    } elseif (strstr($classification, 'katuosoite') !== false
+                        || strstr($classification, 'kartano') !== false
+                        || strstr($classification, 'tila') !== false
+                        || strstr($classification, 'talo') !== false
+                        || strstr($classification, 'rakennus') !== false
+                        || strstr($classification, 'alue') !== false
+                    ) {
+                        $subLocation .=  ' ' . (string)$place->namePlaceSet
+                            ->appellationValue;
+                    }
+                }
+            }
+            if ('' !== $mainPlace && '' !== $subLocation) {
+                $subjectLocations = array_merge(
+                    $subjectLocations,
+                    $this->splitAddresses(trim($mainPlace), trim($subLocation))
+                );
+                continue;
+            }
+            // Handle a hierarchical place
             foreach ($subject->subjectPlace as $subjectPlace) {
                 foreach ($subjectPlace->place as $place) {
                     if ($place->namePlaceSet->appellationValue) {
