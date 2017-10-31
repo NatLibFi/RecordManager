@@ -44,14 +44,18 @@ class MarkDeleted extends AbstractBase
      * Mark deleted records of a single data source
      *
      * @param string $sourceId Source ID
+     * @param string $singleId Mark deleted only a single record with the given ID
      *
      * @return void
      */
-    public function launch($sourceId)
+    public function launch($sourceId, $singleId)
     {
         $this->logger->log('markDeleted', "Creating record list for '$sourceId'");
 
         $params = ['deleted' => false, 'source_id' => $sourceId];
+        if ($singleId) {
+            $params['_id'] = $singleId;
+        }
         $records = $this->db->findRecords($params);
         $total = $this->db->countRecords($params);
         $count = 0;
