@@ -57,7 +57,8 @@ Parameters:
                     markdedup)
                     or date (updatesolr)
 --from              Override the date from which to run the update (updatesolr)
---single            Process only the given record id (deduplicate, updatesolr, dump)
+--single            Process only the given record id (deduplicate, updatesolr, dump,
+                    markdeleted)
 --nocommit          Don't ask Solr to commit the changes (updatesolr)
 --field             Field to analyze (count)
 --force             Force deletesource to proceed even if deduplication is enabled
@@ -160,7 +161,7 @@ EOT;
                     $markDeleted = new \RecordManager\Base\Controller\MarkDeleted(
                         $basePath, $config, true, $verbose
                     );
-                    $markDeleted->launch($source);
+                    $markDeleted->launch($source, $single);
                     break;
                 case 'deletesolr':
                     $deleteSolr
