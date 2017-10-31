@@ -140,12 +140,12 @@ class NominatimGeocoder extends Enrichment
      * Constructor
      *
      * @param Database $db     Database connection (for cache)
-     * @param Logger   $log    Logger
+     * @param Logger   $logger Logger
      * @param array    $config Main configuration
      */
-    public function __construct($db, $log, $config)
+    public function __construct($db, $logger, $config)
     {
-        parent::__construct($db, $log, $config);
+        parent::__construct($db, $logger, $config);
 
         $settings = isset($config['NominatimGeocoder'])
             ? $config['NominatimGeocoder'] : [];
@@ -322,7 +322,7 @@ class NominatimGeocoder extends Enrichment
         );
         $places = json_decode($response, true);
         if (null === $places) {
-            $this->log->log(
+            $this->logger->log(
                 'NominatimGeocoder',
                 "Could not decode Nominatim response (request: $url): $response",
                 Logger::ERROR
