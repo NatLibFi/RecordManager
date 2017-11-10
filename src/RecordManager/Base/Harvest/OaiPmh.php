@@ -471,7 +471,7 @@ class OaiPmh extends Base
                     . str_replace(["\n", "\r"], '', $error->message);
             }
             libxml_use_internal_errors($saveUseErrors);
-            $tempfile = tempnam(sys_get_temp_dir(), 'oai-pmh-error-') . '.xml';
+            $tempfile = tempnam(getcwd(), 'oai-pmh-error-') . '.xml';
             file_put_contents($tempfile, $xml);
             $this->message(
                 "Could not parse XML response: $errors. XML stored in $tempfile",
