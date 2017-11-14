@@ -155,13 +155,12 @@ class Database
         $socketTimeout = isset($this->mongoSettings['socket_timeout'])
             ? $this->mongoSettings['socket_timeout'] : 300000;
         $url = $this->mongoUrl;
-        $url .= strpos($url, '?') >= 0 ? '&' : '?';
-        $url .= '_xpid=' . getmypid();
         $this->mongoClient = new \MongoDB\Client(
             $url,
             [
-                'connectTimeoutMS' => $connectTimeout,
-                'socketTimeoutMS' => $socketTimeout
+                'connectTimeoutMS' => (int)$connectTimeout,
+                'socketTimeoutMS' => (int)$socketTimeout,
+                '_xpid' => getmypid()
             ]
         );
         $this->db = $this->mongoClient->{$this->mongoDatabaseName};
