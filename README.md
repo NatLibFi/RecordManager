@@ -18,8 +18,13 @@ These are quick instructions on how to set up RecordManager. Please refer to the
 
       yum install geos geos-php
 
-  With PHP 7 a recent version from https://git.osgeo.org/gogs/geos/php-geos may be
-  required, and it will require `yum install geos-devel` to compile.
+  Note that as of September 2017 CentOS comes with geo 3.4.2 which has memory leaks
+  and problems with polygon simplification, so building at least version 3.6.2 from
+  source is recommended (see https://trac.osgeo.org/geos). With PHP 7 a recent
+  version of GEOS PHP bindings from https://git.osgeo.org/gogs/geos/php-geos is
+  required anyway.
+  `yum install geos-devel` will be needed to compile the bindings unless GEOS is
+  installed from source.
 
 - Required pecl modules: mongodb
 

@@ -205,6 +205,8 @@ class Lido extends \RecordManager\Base\Record\Lido
     /**
      * Get locations for geocoding
      *
+     * Returns an associative array of primary and secondary locations
+     *
      * @return array
      */
     public function getLocations()
@@ -212,6 +214,44 @@ class Lido extends \RecordManager\Base\Record\Lido
         // Subject places
         $subjectLocations = [];
         foreach ($this->getSubjectNodes() as $subject) {
+            // Try first to find non-hierarchical street address and city.
+            // E.g. Musketti.
+            $mainPlace = '';
+            $subLocation = '';
+            foreach ($subject->subjectPlace as $subjectPlace) {
+                foreach ($subjectPlace->place as $place) {
+                    if (!isset($place->namePlaceSet->appellationValue)
+                        || !isset($place->placeClassification->term)
+                    ) {
+                        continue;
+                    }
+                    $classification = strtolower($place->placeClassification->term);
+                    if (strstr($classification, 'kunta') !== false
+                        || strstr($classification, 'kaupunki') !== false
+                        || strstr($classification, 'kylä') !== false
+                    ) {
+                        $mainPlace .= ' '
+                            . (string)$place->namePlaceSet->appellationValue;
+                    } elseif (strstr($classification, 'katuosoite') !== false
+                        || strstr($classification, 'kartano') !== false
+                        || strstr($classification, 'tila') !== false
+                        || strstr($classification, 'talo') !== false
+                        || strstr($classification, 'rakennus') !== false
+                        || strstr($classification, 'alue') !== false
+                    ) {
+                        $subLocation .= ' ' . (string)$place->namePlaceSet
+                            ->appellationValue;
+                    }
+                }
+            }
+            if ('' !== $mainPlace && '' !== $subLocation) {
+                $subjectLocations = array_merge(
+                    $subjectLocations,
+                    $this->splitAddresses(trim($mainPlace), trim($subLocation))
+                );
+                continue;
+            }
+            // Handle a hierarchical place
             foreach ($subject->subjectPlace as $subjectPlace) {
                 foreach ($subjectPlace->place as $place) {
                     if ($place->namePlaceSet->appellationValue) {
@@ -219,7 +259,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                             = (string)$place->namePlaceSet->appellationValue;
                         $subLocation = $this->getSubLocation($place);
                         if ($mainPlace && !$subLocation) {
-                            continue;
+                            $subjectLocations[] = $mainPlace;
                         } else {
                             foreach (preg_split('/( tai |\. )/', $subLocation)
                                 as $subPart
@@ -231,6 +271,13 @@ class Lido extends \RecordManager\Base\Record\Lido
                 }
             }
         }
+
+        $subjectLocations = array_map(
+            function ($s) {
+                return rtrim($s, ',. ');
+            },
+            $subjectLocations
+        );
 
         // Event places
         $locations = [];
@@ -298,13 +345,6 @@ class Lido extends \RecordManager\Base\Record\Lido
             }
         }
 
-        $locations = array_map(
-            function ($s) {
-                return rtrim($s, ',. ');
-            },
-            $locations
-        );
-
         $accepted = [];
         foreach ($locations as $location) {
             if (str_word_count($location) == 1) {
@@ -317,8 +357,22 @@ class Lido extends \RecordManager\Base\Record\Lido
             }
             $accepted[] = $location;
         }
-        $locations = array_merge($accepted, $subjectLocations);
 
+        return [
+            'primary' => $this->processLocations($subjectLocations),
+            'secondary' => $this->processLocations($accepted)
+        ];
+    }
+
+    /**
+     * Process an array of locations
+     *
+     * @param array $locations Location strings
+     *
+     * @return array
+     */
+    protected function processLocations($locations)
+    {
         $result = [];
         // Try to split address lists like "Helsinki, Kalevankatu 17, 19" to separate
         // entries

@@ -41,7 +41,19 @@ namespace RecordManager\Base\Utils;
  */
 class XslTransformation
 {
-    protected $xslt = null;
+    /**
+     * XSLT Processor
+     *
+     * @var \XSLTProcessor
+     */
+    protected $xslt;
+
+    /**
+     * Transformation name
+     *
+     * @var string
+     */
+    protected $filename;
 
     /**
      * Constructor
@@ -96,13 +108,18 @@ class XslTransformation
             $this->xslt->setParameter('', $options['Parameters']);
         }
 
+        $this->filename = $basePath . '/' . $options['General']['xslt'];
         $style = new \DOMDocument();
-        if ($style->load($basePath . '/' . $options['General']['xslt']) === false) {
+        if ($style->load($this->filename) === false) {
             throw new \Exception(
-                'Could not load ' . $basePath . '/' . $options['General']['xslt']
+                'Could not load ' . $this->filename
             );
         }
-        $this->xslt->importStylesheet($style);
+        if (!$this->xslt->importStylesheet($style)) {
+            throw new \Exception(
+                'Could not import stylesheet ' . $this->filename
+            );
+        }
     }
 
     /**
@@ -129,6 +146,9 @@ class XslTransformation
             }
         }
         $result = $this->xslt->transformToXml($doc);
+        if (null === $result) {
+            throw new \Exception("Transformation resulted in null: $filename");
+        }
         return $result;
     }
 
@@ -173,4 +193,3 @@ class XslTransformation
         return $arr;
     }
 }
-

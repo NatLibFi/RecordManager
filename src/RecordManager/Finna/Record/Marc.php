@@ -579,7 +579,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $access = MetadataUtils::normalize(
                     $this->getFieldSubfields('506', ['f' => 1])
                 );
-                switch (MetadataUtils::normalize($access)) {
+                switch ($access) {
                 case 'unrestricted':
                 case 'unrestrictedonlineaccess':
                     // no restrictions
@@ -645,6 +645,15 @@ class Marc extends \RecordManager\Base\Record\Marc
 
         if ($rights = $this->getUsageRights()) {
             $data['usage_rights_str_mv'] = $rights;
+        }
+
+        if (!empty($data['online_str_mv'])) {
+            $access = MetadataUtils::normalize(
+                $this->getFieldSubfields('506', ['f' => 1])
+            );
+            if ($access !== 'onlineaccesswithauthorization') {
+                $data['free_online_str_mv'] = $data['online_str_mv'];
+            }
         }
 
         return $data;

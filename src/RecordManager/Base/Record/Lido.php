@@ -267,6 +267,8 @@ class Lido extends Base
     /**
      * Get locations for geocoding
      *
+     * Returns an associative array of primary and secondary locations
+     *
      * @return array
      */
     public function getLocations()
@@ -307,7 +309,10 @@ class Lido extends Base
                 }
             }
         }
-        return $locations;
+        return [
+            'primary' => $locations,
+            'secondary' => []
+        ];
     }
 
     /**

@@ -78,7 +78,7 @@ class Ead extends Base
                 ? (string)$this->doc->did->unitid->attributes()->identifier
                 : (string)$this->doc->did->unitid;
         } else {
-            die('No ID found for record: ' . $this->doc->asXML());
+            throw new \Exception('No ID found for record: ' . $this->doc->asXML());
         }
         return urlencode($id);
     }

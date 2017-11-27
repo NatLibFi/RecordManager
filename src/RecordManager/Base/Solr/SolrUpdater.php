@@ -1684,7 +1684,7 @@ class SolrUpdater
             $this->enrich($source, $settings, $metadataRecord, $data);
         }
 
-        $data['id'] = $record['_id'];
+        $data['id'] = $this->createSolrId($record['_id']);
 
         // Record links between host records and component parts
         if ($metadataRecord->getIsComponentPart()) {
@@ -1710,7 +1710,9 @@ class SolrUpdater
             }
             if ($hostRecords) {
                 foreach ($hostRecords as $hostRecord) {
-                    $data['hierarchy_parent_id'][] = $hostRecord['_id'];
+                    $data['hierarchy_parent_id'][] = $this->createSolrId(
+                        $hostRecord['_id']
+                    );
                     $hostMetadataRecord = $this->recordFactory->createRecord(
                         $hostRecord['format'],
                         MetadataUtils::getRecordData($hostRecord, true),
@@ -1734,12 +1736,14 @@ class SolrUpdater
                 as $field
             ) {
                 if (isset($data[$field]) && $data[$field]) {
-                    $data[$field] = $record['source_id'] . '.' . $data[$field];
+                    $data[$field] = $this->createSolrId(
+                        $record['source_id'] . '.' . $data[$field]
+                    );
                 }
             }
         }
         if ($hasComponentParts) {
-            $data['is_hierarchy_id'] = $record['_id'];
+            $data['is_hierarchy_id'] = $this->createSolrId($record['_id']);
             $data['is_hierarchy_title'] = $metadataRecord->getTitle();
         }
 
@@ -2540,5 +2544,23 @@ class SolrUpdater
     public function reconnectDatabase()
     {
         $this->db->reconnectDatabase();
+    }
+
+    /**
+     * Create a Solr id field from a record id
+     *
+     * @param string $recordId Record id including a source prefix
+     *
+     * @return string
+     */
+    protected function createSolrId($recordId)
+    {
+        $parts = explode('.', $recordId, 2);
+        if (isset($parts[1])
+            && !empty($this->settings[$parts[0]]['indexUnprefixedIds'])
+        ) {
+            return $parts[1];
+        }
+        return $recordId;
     }
 }
