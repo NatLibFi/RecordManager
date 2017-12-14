@@ -54,12 +54,15 @@ class SolrUpdate extends AbstractBase
      * @return void
      */
     public function launch($fromDate = null, $sourceId = '', $singleId = '',
-        $noCommit = false
+        $noCommit = false, $trackDatePerServer = false
     ) {
         $updater = new SolrUpdater(
             $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
             $this->dataSourceSettings, $this->recordFactory
         );
-        $updater->updateRecords($fromDate, $sourceId, $singleId, $noCommit, false);
+        $updater->updateRecords(
+            $fromDate, $sourceId, $singleId, $noCommit, false, false, '',
+            $trackDatePerServer
+        );
     }
 }

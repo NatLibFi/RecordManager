@@ -79,6 +79,8 @@ Parameters:
                     (purgedeleted)
 --basepath=path     Use path as the base directory for conf, mappings and
                     transformations directories. Normally automatically determined.
+--dateperserver     Track last update date per Solr server address. Allows updating
+                    multiple servers with their own intervals. (updatesolr)
 
 
 EOT;
@@ -101,11 +103,12 @@ EOT;
         if ($params['func'] == 'updatesolr') {
             $date = isset($params['all'])
                 ? '' : (isset($params['from']) ? $params['from'] : null);
+            $datePerServer = !empty($params['dateperserver']);
 
             $solrUpdate = new \RecordManager\Base\Controller\SolrUpdate(
                 $basePath, $config, true, $verbose
             );
-            $solrUpdate->launch($date, $sources, $single, $noCommit);
+            $solrUpdate->launch($date, $sources, $single, $noCommit, $datePerServer);
         } elseif ($params['func'] == 'comparesolr') {
             $date = isset($params['all'])
                 ? '' : (isset($params['from']) ? $params['from'] : null);

@@ -470,28 +470,36 @@ class SolrUpdater
     /**
      * Update Solr index (merged records and individual records)
      *
-     * @param string|null $fromDate   Starting date for updates (if empty
-     *                                string, last update date stored in the database
-     *                                is used and if null, all records are processed)
-     * @param string      $sourceId   Comma-separated list of source IDs to update,
-     *                                or empty or * for all sources
-     * @param string      $singleId   Process only the record with the given ID
-     * @param bool        $noCommit   If true, changes are not explicitly committed
-     * @param bool        $delete     If true, records in the given $sourceId are all
-     *                                deleted
-     * @param string      $compare    If set, just compare the records with the ones
-     *                                already in the Solr index and write any
-     *                                differences in a file given in this parameter
-     * @param string      $dumpPrefix If specified, the Solr records are dumped into
-     *                                files and not sent to Solr.
+     * @param string|null $fromDate      Starting date for updates (if empty
+     *                                   string, last update date stored in the database
+     *                                   is used and if null, all records are processed)
+     * @param string      $sourceId      Comma-separated list of source IDs to update,
+     *                                   or empty or * for all sources
+     * @param string      $singleId      Process only the record with the given ID
+     * @param bool        $noCommit      If true, changes are not explicitly committed
+     * @param bool        $delete        If true, records in the given $sourceId are all
+     *                                   deleted
+     * @param string      $compare       If set, just compare the records with the ones
+     *                                   already in the Solr index and write any
+     *                                   differences in a file given in this parameter
+     * @param string      $dumpPrefix    If specified, the Solr records are dumped into
+     *                                   files and not sent to Solr.
+     * @param bool        $datePerServer Track last Solr update date per server
+     *                                   address.
      *
      * @return void
      */
     public function updateRecords($fromDate = null, $sourceId = '', $singleId = '',
-        $noCommit = false, $delete = false, $compare = false, $dumpPrefix = ''
+        $noCommit = false, $delete = false, $compare = false, $dumpPrefix = '',
+        $datePerServer = false
     ) {
         if ($compare && $compare != '-') {
             file_put_contents($compare, '');
+        }
+
+        $lastUpdateKey = 'Last Index Update';
+        if ($datePerServer) {
+            $lastUpdateKey .= ' ' . $this->config['Solr']['update_url'];
         }
 
         $this->dumpPrefix = $dumpPrefix;
@@ -522,7 +530,7 @@ class SolrUpdater
             }
 
             if (!isset($fromDate)) {
-                $state = $this->db->getState('Last Index Update');
+                $state = $this->db->getState($lastUpdateKey);
                 if (null !== $state) {
                     $mongoFromDate = $state['value'];
                 } else {
@@ -788,7 +796,7 @@ class SolrUpdater
 
             if (isset($lastIndexingDate) && !$compare) {
                 $state = [
-                    '_id' => 'Last Index Update',
+                    '_id' => $lastUpdateKey,
                     'value' => $lastIndexingDate
                 ];
                 $this->db->saveState($state);
