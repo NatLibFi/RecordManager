@@ -471,21 +471,21 @@ class SolrUpdater
      * Update Solr index (merged records and individual records)
      *
      * @param string|null $fromDate      Starting date for updates (if empty
-     *                                   string, last update date stored in the database
-     *                                   is used and if null, all records are processed)
-     * @param string      $sourceId      Comma-separated list of source IDs to update,
-     *                                   or empty or * for all sources
+     *                                   string, last update date stored in the
+     * database is used and if null, all records are processed)
+     * @param string      $sourceId      Comma-separated list of source IDs to
+     * update, or empty or * for all sources
      * @param string      $singleId      Process only the record with the given ID
-     * @param bool        $noCommit      If true, changes are not explicitly committed
-     * @param bool        $delete        If true, records in the given $sourceId are all
-     *                                   deleted
-     * @param string      $compare       If set, just compare the records with the ones
-     *                                   already in the Solr index and write any
-     *                                   differences in a file given in this parameter
-     * @param string      $dumpPrefix    If specified, the Solr records are dumped into
-     *                                   files and not sent to Solr.
-     * @param bool        $datePerServer Track last Solr update date per server
-     *                                   address.
+     * @param bool        $noCommit      If true, changes are not explicitly
+     * committed
+     * @param bool        $delete        If true, records in the given $sourceId are
+     * all deleted
+     * @param string      $compare       If set, just compare the records with the
+     * ones already in the Solr index and write any differences in a file given in
+     * this parameter
+     * @param string      $dumpPrefix    If specified, the Solr records are dumped
+     * into files and not sent to Solr
+     * @param bool        $datePerServer Track last Solr update date per server url
      *
      * @return void
      */
