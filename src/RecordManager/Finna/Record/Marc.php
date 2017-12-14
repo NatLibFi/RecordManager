@@ -653,6 +653,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             );
             if ($access !== 'onlineaccesswithauthorization') {
                 $data['free_online_str_mv'] = $data['online_str_mv'];
+                $data['free_online_boolean'] = true;
             }
         }
 
