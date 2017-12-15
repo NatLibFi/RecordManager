@@ -119,6 +119,9 @@ class Forward extends \RecordManager\Base\Record\Forward
         if ($urls = $this->getOnlineUrls()) {
             $data['online_boolean'] = true;
             $data['online_str_mv'] = $this->source;
+            // Mark everything free until we know better
+            $data['free_online_boolean'] = true;
+            $data['free_online_str_mv'] = $this->source;
             foreach ($urls as $url) {
                 $data['online_urls_str_mv'][] = json_encode($url);
             }

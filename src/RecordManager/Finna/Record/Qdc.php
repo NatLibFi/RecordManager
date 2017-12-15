@@ -92,6 +92,9 @@ class Qdc extends \RecordManager\Base\Record\Qdc
             ];
             $data['online_boolean'] = true;
             $data['online_str_mv'] = $this->source;
+            // Mark everything free until we know better
+            $data['free_online_boolean'] = true;
+            $data['free_online_str_mv'] = $this->source;
             $data['online_urls_str_mv'][] = json_encode($link);
         }
 
@@ -106,6 +109,9 @@ class Qdc extends \RecordManager\Base\Record\Qdc
             ];
             $data['online_boolean'] = true;
             $data['online_str_mv'] = $this->source;
+            $data['free_online_boolean'] = true;
+            // Mark everything free until we know better
+            $data['free_online_str_mv'] = $this->source;
             $data['online_urls_str_mv'][] = json_encode($link);
             if (strcasecmp($file->attributes()->bundle, 'THUMBNAIL') == 0
                 && !isset($data['thumbnail'])
