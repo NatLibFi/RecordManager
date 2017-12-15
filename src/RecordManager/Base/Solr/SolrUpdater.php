@@ -1252,7 +1252,7 @@ class SolrUpdater
                 $result['deleted'][] = $record['_id'];
                 continue;
             }
-            $data = $this->createSolrArray($record, $mergedComponents);
+            $data = $this->createSolrArray($record, $mergedComponents, $dedupRecord);
             if ($data === false) {
                 continue;
             }
@@ -1583,12 +1583,14 @@ class SolrUpdater
      * @param array   $record           Mongo record
      * @param integer $mergedComponents Number of component parts merged to the
      * record
+     * @param array   $dedupRecord      Mongo dedup record
      *
      * @return array
      * @throws Exception
      */
-    protected function createSolrArray($record, &$mergedComponents)
-    {
+    protected function createSolrArray($record, &$mergedComponents,
+        $dedupRecord = null
+    ) {
         $mergedComponents = 0;
 
         $metadataRecord = $this->recordFactory->createRecord(
@@ -1693,6 +1695,9 @@ class SolrUpdater
         }
 
         $data['id'] = $this->createSolrId($record['_id']);
+        if (null !== $dedupRecord) {
+            $data['dedup_id_str_mv'] = (string)$dedupRecord['_id'];
+        }
 
         // Record links between host records and component parts
         if ($metadataRecord->getIsComponentPart()) {
