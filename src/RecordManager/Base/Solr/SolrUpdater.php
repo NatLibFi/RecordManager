@@ -545,14 +545,16 @@ class SolrUpdater
 
             // Only process merged records if any of the selected sources has
             // deduplication enabled
-            $processDedupRecords = true;
+            $processDedupRecords = null;
             if ($sourceId) {
-                $processDedupRecords = false;
                 $sources = explode(',', $sourceId);
                 foreach ($sources as $source) {
-                    if (strncmp($source, '-', 1) === 0) {
+                    if (strncmp($source, '-', 1) === 0
+                        || '' === trim($source)
+                    ) {
                         continue;
                     }
+                    $processDedupRecords = false;
                     if (isset($this->settings[$source]['dedup'])
                         && $this->settings[$source]['dedup']
                     ) {
@@ -562,7 +564,7 @@ class SolrUpdater
                 }
             }
 
-            if ($processDedupRecords) {
+            if (null === $processDedupRecords || $processDedupRecords) {
                 if (!$delete && $this->threadedMergedRecordUpdate && !$compare) {
                     $this->log->log(
                         'updateRecords',
