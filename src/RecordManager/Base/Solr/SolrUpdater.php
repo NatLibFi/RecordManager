@@ -550,6 +550,9 @@ class SolrUpdater
                 $processDedupRecords = false;
                 $sources = explode(',', $sourceId);
                 foreach ($sources as $source) {
+                    if (strncmp($source, '-', 1) === 0) {
+                        continue;
+                    }
                     if (isset($this->settings[$source]['dedup'])
                         && $this->settings[$source]['dedup']
                     ) {
@@ -650,17 +653,12 @@ class SolrUpdater
                 if (isset($mongoFromDate)) {
                     $params['updated'] = ['$gte' => $mongoFromDate];
                 }
-                if ($sourceId) {
-                    $sources = explode(',', $sourceId);
-                    if (count($sources) == 1) {
-                        $params['source_id'] = $sourceId;
-                    } else {
-                        $sourceParams = [];
-                        foreach ($sources as $source) {
-                            $sourceParams[] = ['source_id' => $source];
-                        }
-                        $params['$or'] = $sourceParams;
-                    }
+                list($sourceOr, $sourceNor) = $this->createSourceFilter($sourceId);
+                if ($sourceOr) {
+                    $params['$or'] = $sourceOr;
+                }
+                if ($sourceNor) {
+                    $params['$nor'] = $sourceNor;
                 }
                 $params['dedup_id'] = ['$exists' => false];
                 $params['update_needed'] = false;
@@ -915,17 +913,12 @@ class SolrUpdater
             if (isset($mongoFromDate)) {
                 $params['updated'] = ['$gte' => $mongoFromDate];
             }
-            if ($sourceId) {
-                $sources = explode(',', $sourceId);
-                if (count($sources) == 1) {
-                    $params['source_id'] = $sourceId;
-                } else {
-                    $sourceParams = [];
-                    foreach ($sources as $source) {
-                        $sourceParams[] = ['source_id' => $source];
-                    }
-                    $params['$or'] = $sourceParams;
-                }
+            list($sourceOr, $sourceNor) = $this->createSourceFilter($sourceId);
+            if ($sourceOr) {
+                $params['$or'] = $sourceOr;
+            }
+            if ($sourceNor) {
+                $params['$nor'] = $sourceNor;
             }
             if (!$delete) {
                 $params['update_needed'] = false;
@@ -2575,5 +2568,43 @@ class SolrUpdater
             return $parts[1];
         }
         return $recordId;
+    }
+
+    /**
+     * Parse source parameter to Mongo selectors
+     *
+     * @param string $sourceIds A single source id or a comma-separated list of
+     * sources or exclusion filters
+     *
+     * @return array of arrays $or and $nor filters
+     */
+    protected function createSourceFilter($sourceIds)
+    {
+        if (!$sourceIds) {
+            return [null, null];
+        }
+        $sources = explode(',', $sourceIds);
+        $sourceParams = [];
+        $sourceExclude = [];
+        foreach ($sources as $source) {
+            if ('' === trim($source)) {
+                continue;
+            }
+            if (strncmp($source, '-', 1) === 0) {
+                if (preg_match('/^-\/(.+)\/$/', $source, $matches)) {
+                    $regex = new \MongoDB\BSON\Regex($matches[1]);
+                    $sourceExclude[] = [
+                        'source_id' => $regex
+                    ];
+                } else {
+                    $sourceExclude[] = [
+                        'source_id' => substr($source, 1)
+                    ];
+                }
+            } else {
+                $sourceParams[] = ['source_id' => $source];
+            }
+        }
+        return [$sourceParams, $sourceExclude];
     }
 }
