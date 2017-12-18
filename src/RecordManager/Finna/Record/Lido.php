@@ -170,6 +170,9 @@ class Lido extends \RecordManager\Base\Record\Lido
         if ($this->getURLs()) {
             $data['online_boolean'] = true;
             $data['online_str_mv'] = $this->source;
+            // Mark everything free until we know better
+            $data['free_online_boolean'] = true;
+            $data['free_online_str_mv'] = $this->source;
         }
 
         $data['location_geo'] = $this->getEventPlaceLocations();

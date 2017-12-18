@@ -891,12 +891,7 @@ class MetadataUtils
         $filename = "$basePath/conf/$filename";
         $lines = file($filename, FILE_IGNORE_NEW_LINES);
         if ($lines === false) {
-            $this->logger->log(
-                'readListFile',
-                "Could not open list file '$filename'",
-                \RecordManager\Base\Utils\Logger::ERROR
-            );
-            return [];
+            throw new \Exception("Could not open list file '$filename'");
         }
         array_walk(
             $lines,

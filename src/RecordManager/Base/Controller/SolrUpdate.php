@@ -43,23 +43,29 @@ class SolrUpdate extends AbstractBase
     /**
      * Send updates to the Solr index
      *
-     * @param string|null $fromDate Starting date for updates (if empty
-     *                              string, last update date stored in the database
-     *                              is used and if null, all records are processed)
-     * @param string      $sourceId Source ID to process, or empty or * for all
-     *                              sources (ignored if record merging is enabled)
-     * @param string      $singleId Process only a record with the given ID
-     * @param bool        $noCommit If true, changes are not explicitly committed
+     * @param string|null $fromDate      Starting date for updates (if empty
+     *                                   string, last update date stored in the
+     * database is used and if null, all records are processed)
+     * @param string      $sourceId      Source ID to process, or empty or * for all
+     *                                   sources (ignored if record merging is
+     * enabled)
+     * @param string      $singleId      Process only a record with the given ID
+     * @param bool        $noCommit      If true, changes are not explicitly
+     * committed
+     * @param bool        $datePerServer Track last Solr update date per server url
      *
      * @return void
      */
     public function launch($fromDate = null, $sourceId = '', $singleId = '',
-        $noCommit = false
+        $noCommit = false, $datePerServer = false
     ) {
         $updater = new SolrUpdater(
             $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
             $this->dataSourceSettings, $this->recordFactory
         );
-        $updater->updateRecords($fromDate, $sourceId, $singleId, $noCommit, false);
+        $updater->updateRecords(
+            $fromDate, $sourceId, $singleId, $noCommit, false, false, '',
+            $datePerServer
+        );
     }
 }
