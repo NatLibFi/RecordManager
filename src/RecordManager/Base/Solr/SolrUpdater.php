@@ -2581,7 +2581,7 @@ class SolrUpdater
     protected function createSourceFilter($sourceIds)
     {
         if (!$sourceIds) {
-            return [null, null];
+            return [null, null];
         }
         $sources = explode(',', $sourceIds);
         $sourceParams = [];
