@@ -50,6 +50,13 @@ class MarkDeleted extends AbstractBase
      */
     public function launch($sourceId, $singleId)
     {
+        if (empty($sourceId)) {
+            $this->logger->log(
+                'markDeleted', "No source id provided", Logger::FATAL
+            );
+            return;
+        }
+
         $this->logger->log('markDeleted', "Creating record list for '$sourceId'");
 
         $params = ['deleted' => false, 'source_id' => $sourceId];
