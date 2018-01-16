@@ -1323,7 +1323,11 @@ class Marc extends Base
         $this->fields['000'] = isset($xml->leader) ? (string)$xml->leader[0] : '';
 
         foreach ($xml->controlfield as $field) {
-            $this->fields[(string)$field['tag']][] = (string)$field;
+            $tag = (string)$field['tag'];
+            if ('000' === $tag) {
+                continue;
+            }
+            $this->fields[$tag][] = (string)$field;
         }
 
         foreach ($xml->datafield as $field) {
