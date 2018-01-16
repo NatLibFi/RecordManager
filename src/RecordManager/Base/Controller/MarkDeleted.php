@@ -28,6 +28,7 @@
 namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Utils\PerformanceCounter;
+use RecordManager\Base\Utils\Logger;
 
 /**
  * Mark Records Deleted
@@ -57,6 +58,8 @@ class MarkDeleted extends AbstractBase
             return;
         }
 
+        $dedupHandler = $this->getDedupHandler();
+
         $this->logger->log('markDeleted', "Creating record list for '$sourceId'");
 
         $params = ['deleted' => false, 'source_id' => $sourceId];
@@ -73,7 +76,7 @@ class MarkDeleted extends AbstractBase
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
             if (isset($record['dedup_id'])) {
-                $this->dedupHandler->removeFromDedupRecord(
+                $dedupHandler->removeFromDedupRecord(
                     $record['dedup_id'], $record['_id']
                 );
                 unset($record['dedup_id']);
