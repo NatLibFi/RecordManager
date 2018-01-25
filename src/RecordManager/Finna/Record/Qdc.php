@@ -129,6 +129,14 @@ class Qdc extends \RecordManager\Base\Record\Qdc
                 '/^(URN:NBN:fi:|URN:ISBN:978-?951|URN:ISBN:951)/i', $identifier
             );
             if ($res) {
+                if (!empty($data['url'])) {
+                    // Check that the identifier is not already listed
+                    foreach ($data['url'] as $url) {
+                        if (stristr($url, $identifier) !== false) {
+                            continue 2;
+                        }
+                    }
+                }
                 $data['url'][] = "http://urn.fi/$identifier";
             }
         }
