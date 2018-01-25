@@ -732,7 +732,7 @@ class MetadataUtils
                     $leadStripped = MetadataUtils::stripLeadingPunctuation(
                         $word
                     );
-                    $stripped = metadataUtils::stripTrailingPunctuation(
+                    $stripped = MetadataUtils::stripTrailingPunctuation(
                         $leadStripped
                     );
                     $nextFirst = isset($titleWords[$i])
