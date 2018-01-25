@@ -568,7 +568,9 @@ class Lido extends Base
     {
         foreach ($this->getEventNodes($event) as $eventNode) {
             if (!empty($eventNode->eventPlace->displayPlace)) {
-                return (string)$eventNode->eventPlace->displayPlace;
+                return MetadataUtils::stripTrailingPunctuation(
+                    (string)$eventNode->eventPlace->displayPlace
+                );
             }
         }
         return '';
@@ -687,7 +689,9 @@ class Lido extends Base
         foreach ($this->getSubjectNodes() as $subject) {
             foreach ($subject->subjectPlace as $place) {
                 if (!empty($place->displayPlace)) {
-                    $results[] = (string) $place->displayPlace;
+                    $results[] = MetadataUtils::stripTrailingPunctuation(
+                        (string)$place->displayPlace
+                    );
                 }
             }
         }
@@ -707,7 +711,9 @@ class Lido extends Base
                 if (!empty($place->place->namePlaceSet)) {
                     foreach ($place->place->namePlaceSet as $set) {
                         if ($set->appellationValue) {
-                            $results[] = (string) $set->appellationValue;
+                            $results[] = MetadataUtils::stripTrailingPunctuation(
+                                (string) $set->appellationValue
+                            );
                         }
                     }
                 }

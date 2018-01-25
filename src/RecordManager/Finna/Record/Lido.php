@@ -407,7 +407,7 @@ class Lido extends \RecordManager\Base\Record\Lido
         $result = array_map(
             function ($s) {
                 $s = preg_replace('/\(.*/', '', $s);
-                return trim($s);
+                return trim(MetadataUtils::stripTrailingPunctuation($s));
             },
             $result
         );
