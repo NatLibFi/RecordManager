@@ -121,7 +121,24 @@ class Qdc extends \RecordManager\Base\Record\Qdc
         }
 
         if ($this->doc->permaddress) {
-            $data['url'] = (string)$this->doc->permaddress[0];
+            $data['url'][] = (string)$this->doc->permaddress[0];
+        }
+
+        foreach ($this->getValues('identifier') as $identifier) {
+            $res = preg_match(
+                '/^(URN:NBN:fi:|URN:ISBN:978-?951|URN:ISBN:951)/i', $identifier
+            );
+            if ($res) {
+                if (!empty($data['url'])) {
+                    // Check that the identifier is not already listed
+                    foreach ($data['url'] as $url) {
+                        if (stristr($url, $identifier) !== false) {
+                            continue 2;
+                        }
+                    }
+                }
+                $data['url'][] = "http://urn.fi/$identifier";
+            }
         }
 
         foreach ($this->doc->coverage as $coverage) {

@@ -166,12 +166,12 @@ class Qdc extends Base
 
         foreach ($this->getValues('identifier') as $identifier) {
             if (preg_match('/^https?/', $identifier)) {
-                $data['url'] = $identifier;
+                $data['url'][] = $identifier;
             }
         }
         foreach ($this->getValues('description') as $description) {
             if (preg_match('/^https?/', $description)) {
-                $data['url'] = $description;
+                $data['url'][] = $description;
             } elseif (preg_match('/^\d+\.\d+$/', $description)) {
                 // Classification, put somewhere?
             } else {
