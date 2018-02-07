@@ -159,6 +159,10 @@ class Ead extends \RecordManager\Base\Record\Ead
             foreach ($this->doc->userestrict->p as $restrict) {
                 if (strstr((string)$restrict, 'No known copyright restrictions')) {
                     return ['No known copyright restrictions'];
+                } elseif (strncasecmp((string)$restrict, 'CC', 2) === 0
+                    || strncasecmp((string)$restrict, 'Public', 6) === 0
+                ) {
+                    return (string)$restrict;
                 }
             }
         }
@@ -167,6 +171,10 @@ class Ead extends \RecordManager\Base\Record\Ead
             foreach ($this->doc->accessrestrict->p as $restrict) {
                 if (strstr((string)$restrict, 'No known copyright restrictions')) {
                     return ['No known copyright restrictions'];
+                } elseif (strncasecmp((string)$restrict, 'CC', 2) === 0
+                    || strncasecmp((string)$restrict, 'Public', 6) === 0
+                ) {
+                    return (string)$restrict;
                 }
             }
         }
