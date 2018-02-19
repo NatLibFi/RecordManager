@@ -1474,4 +1474,50 @@ class Lido extends \RecordManager\Base\Record\Lido
         return (string)$this->doc->lido->administrativeMetadata->recordWrap
             ->recordSource->legalBodyName->appellationValue;
     }
+
+    /**
+     * Return the object type.
+     *
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
+     * #objectWorkTypeWrap
+     * @return string|array
+     */
+    protected function getObjectWorkType()
+    {
+        $result = parent::getObjectWorkType();
+
+        // Check for image links and add a work type for images
+        $imageTypes = [
+            'Kuva', 'Kuva, Valokuva', 'Valokuva', 'dia', 'kuva', 'negatiivi',
+            'photograph', 'valoku', 'valokuva', 'valokuvat'
+        ];
+        if (empty(array_intersect($imageTypes, (array)$result))) {
+            foreach ($this->getResourceSetNodes() as $set) {
+                foreach ($set->resourceRepresentation as $node) {
+                    if (!empty($node->linkResource)) {
+                        $link = trim((string) $node->linkResource);
+                        if (!empty($link)) {
+                            $attributes = $node->attributes();
+                            $type = (string)$attributes->type;
+                            switch ($type) {
+                            case '':
+                            case 'image_thumb':
+                            case 'thumb':
+                            case 'medium':
+                            case 'image_large':
+                            case 'large':
+                            case 'zoomview':
+                            case 'image_master':
+                                $result = (array)$result;
+                                $result[] = 'Kuva';
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
 }

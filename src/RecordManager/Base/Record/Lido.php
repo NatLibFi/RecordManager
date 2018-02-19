@@ -243,7 +243,11 @@ class Lido extends Base
         // "For objects from natural, technical, cultural history e.g. the object
         // name given here and the object type, recorded in the object / work
         // type element are often identical."
-        if (strcasecmp($this->getObjectWorkType(), $title) == 0) {
+        $workType = $this->getObjectWorkType();
+        if (is_array($workType)) {
+            $workType = $workType[0];
+        }
+        if (strcasecmp($workType, $title) == 0) {
             $descriptionWrapDescriptions = [];
             foreach ($this->getObjectDescriptionSetNodes($excludedDescriptions)
                 as $set
@@ -480,7 +484,7 @@ class Lido extends Base
      *
      * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
      * #objectWorkTypeWrap
-     * @return string
+     * @return string|array
      */
     protected function getObjectWorkType()
     {
