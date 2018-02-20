@@ -110,6 +110,11 @@ class Ead extends \RecordManager\Base\Record\Ead
                         // This is sort of special. Make sure to use source instead
                         // of datasource.
                         $data['online_str_mv'] = $data['source_str_mv'];
+                        // Mark everything free until we know better
+                        $data['free_online_boolean'] = true;
+                        // This is sort of special. Make sure to use source instead
+                        // of datasource.
+                        $data['free_online_str_mv'] = $data['source_str_mv'];
                         break;
                     }
                 }
@@ -154,6 +159,10 @@ class Ead extends \RecordManager\Base\Record\Ead
             foreach ($this->doc->userestrict->p as $restrict) {
                 if (strstr((string)$restrict, 'No known copyright restrictions')) {
                     return ['No known copyright restrictions'];
+                } elseif (strncasecmp((string)$restrict, 'CC', 2) === 0
+                    || strncasecmp((string)$restrict, 'Public', 6) === 0
+                ) {
+                    return (string)$restrict;
                 }
             }
         }
@@ -162,6 +171,10 @@ class Ead extends \RecordManager\Base\Record\Ead
             foreach ($this->doc->accessrestrict->p as $restrict) {
                 if (strstr((string)$restrict, 'No known copyright restrictions')) {
                     return ['No known copyright restrictions'];
+                } elseif (strncasecmp((string)$restrict, 'CC', 2) === 0
+                    || strncasecmp((string)$restrict, 'Public', 6) === 0
+                ) {
+                    return (string)$restrict;
                 }
             }
         }

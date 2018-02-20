@@ -328,6 +328,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         foreach ($dlc as $classification) {
             $data['classification_txt_mv'][] = 'dlc '
                 . mb_strtolower(str_replace(' ', '', $classification), 'UTF-8');
+            $data['classification_txt_mv'][] = "dlc $classification";
         }
         $nlm = $this->getFieldsSubfields(
             [[self::GET_NORMAL, '060', ['a' => 1, 'b' => 1]]]
@@ -335,6 +336,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         foreach ($nlm as $classification) {
             $data['classification_txt_mv'][] = 'nlm '
                 . mb_strtolower(str_replace(' ', '', $classification), 'UTF-8');
+            $data['classification_txt_mv'][] = "nlm $classification";
         }
         foreach ($this->getFields('084') as $field) {
             $source = $this->getSubfield($field, '2');
@@ -342,6 +344,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             if ($source) {
                 $data['classification_txt_mv'][] = "$source "
                     . mb_strtolower(str_replace(' ', '', $classification), 'UTF-8');
+                $data['classification_txt_mv'][] = "$source $classification";
             }
             // Major genre
             if ($source == 'ykl' && (!isset($data['major_genre_str_mv'])
@@ -363,7 +366,6 @@ class Marc extends \RecordManager\Base\Record\Marc
                     $data['major_genre_str_mv'] = 'nonfiction';
                     break;
                 }
-            } elseif ($source == 'udk') {
             }
         }
 
@@ -653,6 +655,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             );
             if ($access !== 'onlineaccesswithauthorization') {
                 $data['free_online_str_mv'] = $data['online_str_mv'];
+                $data['free_online_boolean'] = true;
             }
         }
 

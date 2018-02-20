@@ -470,28 +470,36 @@ class SolrUpdater
     /**
      * Update Solr index (merged records and individual records)
      *
-     * @param string|null $fromDate   Starting date for updates (if empty
-     *                                string, last update date stored in the database
-     *                                is used and if null, all records are processed)
-     * @param string      $sourceId   Comma-separated list of source IDs to update,
-     *                                or empty or * for all sources
-     * @param string      $singleId   Process only the record with the given ID
-     * @param bool        $noCommit   If true, changes are not explicitly committed
-     * @param bool        $delete     If true, records in the given $sourceId are all
-     *                                deleted
-     * @param string      $compare    If set, just compare the records with the ones
-     *                                already in the Solr index and write any
-     *                                differences in a file given in this parameter
-     * @param string      $dumpPrefix If specified, the Solr records are dumped into
-     *                                files and not sent to Solr.
+     * @param string|null $fromDate      Starting date for updates (if empty
+     *                                   string, last update date stored in the
+     * database is used and if null, all records are processed)
+     * @param string      $sourceId      Comma-separated list of source IDs to
+     * update, or empty or * for all sources
+     * @param string      $singleId      Process only the record with the given ID
+     * @param bool        $noCommit      If true, changes are not explicitly
+     * committed
+     * @param bool        $delete        If true, records in the given $sourceId are
+     * all deleted
+     * @param string      $compare       If set, just compare the records with the
+     * ones already in the Solr index and write any differences in a file given in
+     * this parameter
+     * @param string      $dumpPrefix    If specified, the Solr records are dumped
+     * into files and not sent to Solr
+     * @param bool        $datePerServer Track last Solr update date per server url
      *
      * @return void
      */
     public function updateRecords($fromDate = null, $sourceId = '', $singleId = '',
-        $noCommit = false, $delete = false, $compare = false, $dumpPrefix = ''
+        $noCommit = false, $delete = false, $compare = false, $dumpPrefix = '',
+        $datePerServer = false
     ) {
         if ($compare && $compare != '-') {
             file_put_contents($compare, '');
+        }
+
+        $lastUpdateKey = 'Last Index Update';
+        if ($datePerServer) {
+            $lastUpdateKey .= ' ' . $this->config['Solr']['update_url'];
         }
 
         $this->dumpPrefix = $dumpPrefix;
@@ -522,7 +530,7 @@ class SolrUpdater
             }
 
             if (!isset($fromDate)) {
-                $state = $this->db->getState('Last Index Update');
+                $state = $this->db->getState($lastUpdateKey);
                 if (null !== $state) {
                     $mongoFromDate = $state['value'];
                 } else {
@@ -539,9 +547,14 @@ class SolrUpdater
             // deduplication enabled
             $processDedupRecords = true;
             if ($sourceId) {
-                $processDedupRecords = false;
                 $sources = explode(',', $sourceId);
                 foreach ($sources as $source) {
+                    if (strncmp($source, '-', 1) === 0
+                        || '' === trim($source)
+                    ) {
+                        continue;
+                    }
+                    $processDedupRecords = false;
                     if (isset($this->settings[$source]['dedup'])
                         && $this->settings[$source]['dedup']
                     ) {
@@ -642,17 +655,12 @@ class SolrUpdater
                 if (isset($mongoFromDate)) {
                     $params['updated'] = ['$gte' => $mongoFromDate];
                 }
-                if ($sourceId) {
-                    $sources = explode(',', $sourceId);
-                    if (count($sources) == 1) {
-                        $params['source_id'] = $sourceId;
-                    } else {
-                        $sourceParams = [];
-                        foreach ($sources as $source) {
-                            $sourceParams[] = ['source_id' => $source];
-                        }
-                        $params['$or'] = $sourceParams;
-                    }
+                list($sourceOr, $sourceNor) = $this->createSourceFilter($sourceId);
+                if ($sourceOr) {
+                    $params['$or'] = $sourceOr;
+                }
+                if ($sourceNor) {
+                    $params['$nor'] = $sourceNor;
                 }
                 $params['dedup_id'] = ['$exists' => false];
                 $params['update_needed'] = false;
@@ -788,7 +796,7 @@ class SolrUpdater
 
             if (isset($lastIndexingDate) && !$compare) {
                 $state = [
-                    '_id' => 'Last Index Update',
+                    '_id' => $lastUpdateKey,
                     'value' => $lastIndexingDate
                 ];
                 $this->db->saveState($state);
@@ -907,17 +915,12 @@ class SolrUpdater
             if (isset($mongoFromDate)) {
                 $params['updated'] = ['$gte' => $mongoFromDate];
             }
-            if ($sourceId) {
-                $sources = explode(',', $sourceId);
-                if (count($sources) == 1) {
-                    $params['source_id'] = $sourceId;
-                } else {
-                    $sourceParams = [];
-                    foreach ($sources as $source) {
-                        $sourceParams[] = ['source_id' => $source];
-                    }
-                    $params['$or'] = $sourceParams;
-                }
+            list($sourceOr, $sourceNor) = $this->createSourceFilter($sourceId);
+            if ($sourceOr) {
+                $params['$or'] = $sourceOr;
+            }
+            if ($sourceNor) {
+                $params['$nor'] = $sourceNor;
             }
             if (!$delete) {
                 $params['update_needed'] = false;
@@ -1244,7 +1247,7 @@ class SolrUpdater
                 $result['deleted'][] = $record['_id'];
                 continue;
             }
-            $data = $this->createSolrArray($record, $mergedComponents);
+            $data = $this->createSolrArray($record, $mergedComponents, $dedupRecord);
             if ($data === false) {
                 continue;
             }
@@ -1575,12 +1578,14 @@ class SolrUpdater
      * @param array   $record           Mongo record
      * @param integer $mergedComponents Number of component parts merged to the
      * record
+     * @param array   $dedupRecord      Mongo dedup record
      *
      * @return array
      * @throws Exception
      */
-    protected function createSolrArray($record, &$mergedComponents)
-    {
+    protected function createSolrArray($record, &$mergedComponents,
+        $dedupRecord = null
+    ) {
         $mergedComponents = 0;
 
         $metadataRecord = $this->recordFactory->createRecord(
@@ -1685,6 +1690,9 @@ class SolrUpdater
         }
 
         $data['id'] = $this->createSolrId($record['_id']);
+        if (null !== $dedupRecord) {
+            $data['dedup_id_str_mv'] = (string)$dedupRecord['_id'];
+        }
 
         // Record links between host records and component parts
         if ($metadataRecord->getIsComponentPart()) {
@@ -2562,5 +2570,43 @@ class SolrUpdater
             return $parts[1];
         }
         return $recordId;
+    }
+
+    /**
+     * Parse source parameter to Mongo selectors
+     *
+     * @param string $sourceIds A single source id or a comma-separated list of
+     * sources or exclusion filters
+     *
+     * @return array of arrays $or and $nor filters
+     */
+    protected function createSourceFilter($sourceIds)
+    {
+        if (!$sourceIds) {
+            return [null, null];
+        }
+        $sources = explode(',', $sourceIds);
+        $sourceParams = [];
+        $sourceExclude = [];
+        foreach ($sources as $source) {
+            if ('' === trim($source)) {
+                continue;
+            }
+            if (strncmp($source, '-', 1) === 0) {
+                if (preg_match('/^-\/(.+)\/$/', $source, $matches)) {
+                    $regex = new \MongoDB\BSON\Regex($matches[1]);
+                    $sourceExclude[] = [
+                        'source_id' => $regex
+                    ];
+                } else {
+                    $sourceExclude[] = [
+                        'source_id' => substr($source, 1)
+                    ];
+                }
+            } else {
+                $sourceParams[] = ['source_id' => $source];
+            }
+        }
+        return [$sourceParams, $sourceExclude];
     }
 }

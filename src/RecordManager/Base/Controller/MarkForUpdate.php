@@ -1,6 +1,6 @@
 <?php
 /**
- * Mark Records Deleted
+ * Mark Records For Solr Update
  *
  * PHP version 5
  *
@@ -31,7 +31,7 @@ use RecordManager\Base\Utils\PerformanceCounter;
 use RecordManager\Base\Utils\Logger;
 
 /**
- * Mark Records Deleted
+ * Mark Records For Solr Update
  *
  * @category DataManagement
  * @package  RecordManager
@@ -39,7 +39,7 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class MarkDeleted extends AbstractBase
+class MarkForUpdate extends AbstractBase
 {
     /**
      * Mark deleted records of a single data source
@@ -53,16 +53,16 @@ class MarkDeleted extends AbstractBase
     {
         if (empty($sourceId)) {
             $this->logger->log(
-                'markDeleted', "No source id provided", Logger::FATAL
+                'markForUpdate', "No source id provided", Logger::FATAL
             );
             return;
         }
 
-        $dedupHandler = $this->getDedupHandler();
+        $this->logger->log('markForUpdate', "Creating record list for '$sourceId'");
 
-        $this->logger->log('markDeleted', "Creating record list for '$sourceId'");
-
-        $params = ['deleted' => false, 'source_id' => $sourceId];
+        $params = [
+            'deleted' => false, 'update_needed' => false, 'source_id' => $sourceId
+        ];
         if ($singleId) {
             $params['_id'] = $singleId;
         }
@@ -71,41 +71,31 @@ class MarkDeleted extends AbstractBase
         $count = 0;
 
         $this->logger->log(
-            'markDeleted', "Marking deleted $total records from '$sourceId'"
+            'markForUpdate', "Marking $total records for update from '$sourceId'"
         );
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
-            if (isset($record['dedup_id'])) {
-                $dedupHandler->removeFromDedupRecord(
-                    $record['dedup_id'], $record['_id']
-                );
-                unset($record['dedup_id']);
-            }
-            $record['deleted'] = true;
-            $record['updated'] = $this->db->getTimestamp();
-            $this->db->saveRecord($record);
+            $this->db->updateRecord(
+                $record['_id'],
+                [
+                    'updated' => $this->db->getTimestamp()
+                ]
+            );
 
             ++$count;
             if ($count % 1000 == 0) {
                 $pc->add($count);
                 $avg = $pc->getSpeed();
                 $this->logger->log(
-                    'markDeleted',
-                    "$count records marked deleted from '$sourceId', "
+                    'markForUpdate',
+                    "$count records marked for update from '$sourceId', "
                     . "$avg records/sec"
                 );
             }
         }
         $this->logger->log(
-            'markDeleted',
-            "Completed with $count records marked deleted from '$sourceId'"
+            'markForUpdate',
+            "Completed with $count records marked for update from '$sourceId'"
         );
-
-        $this->logger->log(
-            'markDeleted',
-            "Deleting last harvest date from data source '$sourceId'"
-        );
-        $this->db->deleteState("Last Harvest Date $sourceId");
-        $this->logger->log('markDeleted', "Marking of $sourceId completed");
     }
 }

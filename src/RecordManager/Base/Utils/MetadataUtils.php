@@ -375,22 +375,23 @@ class MetadataUtils
     /**
      * Strip trailing spaces and punctuation characters from a string
      *
-     * @param string $str String to strip
+     * @param string $str        String to strip
+     * @param string $additional Additional chars to strip
      *
      * @return string
      */
-    public static function stripTrailingPunctuation($str)
+    public static function stripTrailingPunctuation($str, $additional = '')
     {
-        $str = rtrim($str, ' /:;,=([');
+        $str = rtrim($str, ' /:;,=([' . $additional);
 
-        // Don't replace an initial letter (e.g. string "Smith, A.") followed by
-        // period
+        // Don't replace an initial letter followed by period
+        // (e.g. string "Smith, A.")
         if (substr($str, -1) == '.' && substr($str, -3, 1) != ' ') {
             $p = strrpos($str, ' ');
             if ($p > 0) {
-                $lastWord = substr($str, $p + 1);
+                $lastWord = substr($str, $p + 1, -1);
             } else {
-                $lastWord = $str;
+                $lastWord = substr($str, 0, -1);
             }
             if (!is_numeric($lastWord)
                 && !in_array(strtolower($lastWord), MetadataUtils::$abbreviations)
@@ -732,7 +733,7 @@ class MetadataUtils
                     $leadStripped = MetadataUtils::stripLeadingPunctuation(
                         $word
                     );
-                    $stripped = metadataUtils::stripTrailingPunctuation(
+                    $stripped = MetadataUtils::stripTrailingPunctuation(
                         $leadStripped
                     );
                     $nextFirst = isset($titleWords[$i])
@@ -891,12 +892,7 @@ class MetadataUtils
         $filename = "$basePath/conf/$filename";
         $lines = file($filename, FILE_IGNORE_NEW_LINES);
         if ($lines === false) {
-            $this->logger->log(
-                'readListFile',
-                "Could not open list file '$filename'",
-                \RecordManager\Base\Utils\Logger::ERROR
-            );
-            return [];
+            throw new \Exception("Could not open list file '$filename'");
         }
         array_walk(
             $lines,

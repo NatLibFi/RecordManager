@@ -51,14 +51,14 @@ Parameters:
 
 --func              renormalize|deduplicate|updatesolr|dump|dumpsolr|markdeleted
                     |deletesource|deletesolr|optimizesolr|count|checkdedup
-                    |comparesolr|purgedeleted|markdedup
+                    |comparesolr|purgedeleted|markdedup|markforupdate
 --source            Source ID to process (separate multiple sources with commas)
 --all               Process all records regardless of their state (deduplicate,
                     markdedup)
                     or date (updatesolr)
 --from              Override the date from which to run the update (updatesolr)
 --single            Process only the given record id (deduplicate, updatesolr, dump,
-                    markdeleted)
+                    markdeleted, markforupdate)
 --nocommit          Don't ask Solr to commit the changes (updatesolr)
 --field             Field to analyze (count)
 --force             Force deletesource to proceed even if deduplication is enabled
@@ -79,6 +79,8 @@ Parameters:
                     (purgedeleted)
 --basepath=path     Use path as the base directory for conf, mappings and
                     transformations directories. Normally automatically determined.
+--dateperserver     Track last update date per Solr server address. Allows updating
+                    multiple servers with their own intervals. (updatesolr)
 
 
 EOT;
@@ -101,11 +103,12 @@ EOT;
         if ($params['func'] == 'updatesolr') {
             $date = isset($params['all'])
                 ? '' : (isset($params['from']) ? $params['from'] : null);
+            $datePerServer = !empty($params['dateperserver']);
 
             $solrUpdate = new \RecordManager\Base\Controller\SolrUpdate(
                 $basePath, $config, true, $verbose
             );
-            $solrUpdate->launch($date, $sources, $single, $noCommit);
+            $solrUpdate->launch($date, $sources, $single, $noCommit, $datePerServer);
         } elseif ($params['func'] == 'comparesolr') {
             $date = isset($params['all'])
                 ? '' : (isset($params['from']) ? $params['from'] : null);
@@ -210,6 +213,13 @@ EOT;
                         : 0,
                         $source
                     );
+                    break;
+                case 'markforupdate':
+                    $markForUpdate
+                        = new \RecordManager\Base\Controller\MarkForUpdate(
+                            $basePath, $config, true, $verbose
+                        );
+                    $markForUpdate->launch($source, $single);
                     break;
                 default:
                     echo 'Unknown func: ' . $params['func'] . "\n";

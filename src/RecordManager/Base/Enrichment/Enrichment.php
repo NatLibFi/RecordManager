@@ -194,7 +194,7 @@ class Enrichment
                         // Progressively longer delay
                         $retryWait *= 2;
                     }
-                    $this->log->log(
+                    $this->logger->log(
                         'getExternalData',
                         "HTTP request for '$url' failed (" . $e->getMessage()
                         . "), retrying in {$retryWait} seconds...",
@@ -209,7 +209,7 @@ class Enrichment
                 $code = $response->getStatus();
                 if ($code >= 300 && $code != 404 && !in_array($code, $ignoreErrors)
                 ) {
-                    $this->log->log(
+                    $this->logger->log(
                         'getExternalData',
                         "HTTP request for '$url' failed ($code), retrying "
                         . "in {$this->retryWait} seconds...",

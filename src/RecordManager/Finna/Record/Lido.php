@@ -170,6 +170,9 @@ class Lido extends \RecordManager\Base\Record\Lido
         if ($this->getURLs()) {
             $data['online_boolean'] = true;
             $data['online_str_mv'] = $this->source;
+            // Mark everything free until we know better
+            $data['free_online_boolean'] = true;
+            $data['free_online_str_mv'] = $this->source;
         }
 
         $data['location_geo'] = $this->getEventPlaceLocations();
@@ -404,7 +407,7 @@ class Lido extends \RecordManager\Base\Record\Lido
         $result = array_map(
             function ($s) {
                 $s = preg_replace('/\(.*/', '', $s);
-                return trim($s);
+                return trim(MetadataUtils::stripTrailingPunctuation($s));
             },
             $result
         );
@@ -1470,5 +1473,51 @@ class Lido extends \RecordManager\Base\Record\Lido
         }
         return (string)$this->doc->lido->administrativeMetadata->recordWrap
             ->recordSource->legalBodyName->appellationValue;
+    }
+
+    /**
+     * Return the object type.
+     *
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
+     * #objectWorkTypeWrap
+     * @return string|array
+     */
+    protected function getObjectWorkType()
+    {
+        $result = parent::getObjectWorkType();
+
+        // Check for image links and add a work type for images
+        $imageTypes = [
+            'Kuva', 'Kuva, Valokuva', 'Valokuva', 'dia', 'kuva', 'negatiivi',
+            'photograph', 'valoku', 'valokuva', 'valokuvat'
+        ];
+        if (empty(array_intersect($imageTypes, (array)$result))) {
+            foreach ($this->getResourceSetNodes() as $set) {
+                foreach ($set->resourceRepresentation as $node) {
+                    if (!empty($node->linkResource)) {
+                        $link = trim((string) $node->linkResource);
+                        if (!empty($link)) {
+                            $attributes = $node->attributes();
+                            $type = (string)$attributes->type;
+                            switch ($type) {
+                            case '':
+                            case 'image_thumb':
+                            case 'thumb':
+                            case 'medium':
+                            case 'image_large':
+                            case 'large':
+                            case 'zoomview':
+                            case 'image_master':
+                                $result = (array)$result;
+                                $result[] = 'Kuva';
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $result;
     }
 }
