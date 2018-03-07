@@ -14,6 +14,8 @@ articles = articles.lst
 ;dedup_handler = "\RecordManager\Base\Deduplication\DedupHandler"
 ; Whether to convert all language strings to lower case. Default is true.
 ;lowercase_language_strings = true
+; Directory for temporary files (default is system's temp directory)
+;temp_dir = /tmp
 
 ; These settings control the OAI-PMH harvester
 [Harvesting]
