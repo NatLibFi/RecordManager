@@ -462,4 +462,30 @@ class Base
         $class = end($classParts);
         $this->log->log($class, $msg, $level);
     }
+
+    /**
+     * Get file name for a temporary file
+     *
+     * @param string $prefix File name prefix
+     * @param string $suffix File name suffix
+     *
+     * @return void
+     */
+    protected function getTempFileName($prefix, $suffix)
+    {
+        $tmpDir = !empty($this->config['Site']['temp_dir'])
+            ? $this->config['Site']['temp_dir'] : sys_get_temp_dir();
+
+        $attempt = 1;
+        do {
+            $tmpName = $tmpDir . DIRECTORY_SEPARATOR . $prefix . getmypid()
+                . mt_rand() . $suffix;
+            $fp = @fopen($tmpName, 'x');
+        } while (!$fp && ++$attempt < 100);
+        if (!$fp) {
+            throw new \Exception("Could not create temp file $tmpName");
+        }
+        fclose($fp);
+        return $tmpName;
+    }
 }
