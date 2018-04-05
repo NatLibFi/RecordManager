@@ -184,9 +184,27 @@ class Lido extends \RecordManager\Base\Record\Lido
             $data['usage_rights_str_mv'] = $rights;
         }
 
-        $allfields[] = $this->getRecordSourceOrganization();
+        $data['author_facet'] = array_merge(
+            isset($data['author']) ? (array)$data['author'] : [],
+            isset($data['author2']) ? (array)$data['author2'] : [],
+            isset($data['author_corporate']) ? (array)$data['author_corporate'] : []
+        );
 
         return $data;
+    }
+
+    /**
+     * Get all XML fields
+     *
+     * @param SimpleXMLElement $xml The XML document
+     *
+     * @return array
+     */
+    protected function getAllFields($xml)
+    {
+        $allfields = parent::getAllFields($xml);
+        $allfields[] = $this->getRecordSourceOrganization();
+        return $allfields;
     }
 
     /**

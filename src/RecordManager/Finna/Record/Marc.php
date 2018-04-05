@@ -659,6 +659,21 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
 
+        // Author facet
+        $primaryAuthors = $this->getPrimaryAuthorsFacet();
+        $secondaryAuthors = $this->getSecondaryAuthorsFacet();
+        $corporateAuthors = $this->getCorporateAuthorsFacet();
+        $data['author_facet'] = array_map(
+            function ($s) {
+                return preg_replace('/\s+/', ' ', $s);
+            },
+            array_merge(
+                $primaryAuthors['names'],
+                $secondaryAuthors['names'],
+                $corporateAuthors['names']
+            )
+        );
+
         return $data;
     }
 
@@ -1420,6 +1435,24 @@ class Marc extends \RecordManager\Base\Record\Marc
     }
 
     /**
+     * Get primary authors for faceting
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthorsFacet()
+    {
+        $fieldSpecs = [
+            '100' => ['a' => 1, 'b' => 1, 'c' => 1],
+            '700' => [
+                'a' => 1, 'q' => 1, 'b' => 1, 'c' => 1
+            ]
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs, $this->primaryAuthorRelators, ['100']
+        );
+    }
+
+    /**
      * Get secondary authors
      *
      * @return array
@@ -1430,6 +1463,24 @@ class Marc extends \RecordManager\Base\Record\Marc
             '100' => ['a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1],
             '700' => [
                 'a' => 1, 'q' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1
+            ]
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs, $this->secondaryAuthorRelators, ['700']
+        );
+    }
+
+    /**
+     * Get secondary authors for faceting
+     *
+     * @return array
+     */
+    protected function getSecondaryAuthorsFacet()
+    {
+        $fieldSpecs = [
+            '100' => ['a' => 1, 'b' => 1, 'c' => 1],
+            '700' => [
+                'a' => 1, 'q' => 1, 'b' => 1, 'c' => 1
             ]
         ];
         return $this->getAuthorsByRelator(
@@ -1449,6 +1500,28 @@ class Marc extends \RecordManager\Base\Record\Marc
             '111' => ['a' => 1, 'b' => 1, 'e' => 1],
             '710' => ['a' => 1, 'b' => 1, 'e' => 1],
             '711' => ['a' => 1, 'b' => 1, 'e' => 1]
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs,
+            array_merge(
+                $this->primaryAuthorRelators, $this->secondaryAuthorRelators
+            ),
+            ['110', '111', '710', '711']
+        );
+    }
+
+    /**
+     * Get corporate authors for faceting
+     *
+     * @return array
+     */
+    protected function getCorporateAuthorsFacet()
+    {
+        $fieldSpecs = [
+            '110' => ['a' => 1, 'b' => 1],
+            '111' => ['a' => 1, 'b' => 1],
+            '710' => ['a' => 1, 'b' => 1],
+            '711' => ['a' => 1, 'b' => 1]
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,

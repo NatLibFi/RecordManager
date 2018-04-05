@@ -127,6 +127,12 @@ class Forward extends \RecordManager\Base\Record\Forward
             }
         }
 
+        $data['author_facet'] = array_merge(
+            isset($data['author']) ? (array)$data['author'] : [],
+            isset($data['author2']) ? (array)$data['author2'] : [],
+            isset($data['author_corporate']) ? (array)$data['author_corporate'] : []
+        );
+
         return $data;
     }
 
