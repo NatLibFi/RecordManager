@@ -530,8 +530,8 @@ class Lido extends Base
     /**
      * Return names of actors associated with specified event
      *
-     * @param string|string[] $event Which events to use (omit to scan all events)
-     * @param string|string[] $role  Which roles to use (omit to scan all roles)
+     * @param string|array $event Which events to use (omit to scan all events)
+     * @param string|array $role  Which roles to use (omit to scan all roles)
      *
      * @return array
      */
@@ -542,14 +542,10 @@ class Lido extends Base
             foreach ($eventNode->eventActor as $actorNode) {
                 foreach ($actorNode->actorInRole as $roleNode) {
                     if (isset($roleNode->actor->nameActorSet->appellationValue)) {
-                        if (empty($role)
-                            || in_array(
-                                mb_strtolower(
-                                    (string)$roleNode->roleActor->term, 'UTF-8'
-                                ),
-                                is_array($role) ? $role : [$role]
-                            )
-                        ) {
+                        $actorRole = MetadataUtils::normalizeRelator(
+                            (string)$roleNode->roleActor->term
+                        );
+                        if (empty($role) || in_array($actorRole, (array)$role)) {
                             $result[] = (string)$roleNode->actor->nameActorSet
                                 ->appellationValue[0];
                         }

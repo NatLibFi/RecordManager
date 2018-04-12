@@ -107,11 +107,16 @@ class Lido extends \RecordManager\Base\Record\Lido
         $data['topic'] = $data['topic_facet'] = $topic;
         // END OF TUUSULA FIX
 
-        $data['artist_str_mv'] = $this->getActors('valmistus', 'taiteilija');
-        $data['photographer_str_mv'] = $this->getActors('valmistus', 'valokuvaaja');
-        $data['finder_str_mv'] = $this->getActors('löytyminen', 'löytäjä');
-        $data['manufacturer_str_mv'] = $this->getActors('valmistus', 'valmistaja');
-        $data['designer_str_mv'] = $this->getActors('suunnittelu', 'suunnittelija');
+        $data['artist_str_mv'] = $this->getActors('valmistus', 'taiteilija', false);
+        $data['photographer_str_mv']
+            = $this->getActors('valmistus', 'valokuvaaja', false);
+        $data['finder_str_mv']
+            = $this->getActors('löytyminen', 'löytäjä', false);
+        $data['manufacturer_str_mv']
+            = $this->getActors('valmistus', 'valmistaja', false);
+        $data['designer_str_mv']
+            = $this->getActors('suunnittelu', 'suunnittelija', false);
+
         // Keep classification_str_mv for backward-compatibility for now
         $data['classification_txt_mv'] = $data['classification_str_mv']
             = $this->getClassifications();
@@ -184,11 +189,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             $data['usage_rights_str_mv'] = $rights;
         }
 
-        $data['author_facet'] = array_merge(
-            isset($data['author']) ? (array)$data['author'] : [],
-            isset($data['author2']) ? (array)$data['author2'] : [],
-            isset($data['author_corporate']) ? (array)$data['author_corporate'] : []
-        );
+        $data['author_facet'] = $this->getActors($this->mainEvent, null, false);
 
         return $data;
     }
@@ -1530,6 +1531,42 @@ class Lido extends \RecordManager\Base\Record\Lido
                                 $result[] = 'Kuva';
                                 break;
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Return names of actors associated with specified event
+     *
+     * @param string|array $event        Which events to use (omit to scan all
+     * events)
+     * @param string|array $role         Which roles to use (omit to scan all roles)
+     * @param bool         $includeRoles Whether to include roles
+     *
+     * @return array
+     */
+    protected function getActors($event = null, $role = null, $includeRoles = true)
+    {
+        $result = [];
+        foreach ($this->getEventNodes($event) as $eventNode) {
+            foreach ($eventNode->eventActor as $actorNode) {
+                foreach ($actorNode->actorInRole as $roleNode) {
+                    if (isset($roleNode->actor->nameActorSet->appellationValue)) {
+                        $actorRole = MetadataUtils::normalizeRelator(
+                            (string)$roleNode->roleActor->term
+                        );
+                        if (empty($role) || in_array($actorRole, (array)$role)) {
+                            $value = (string)$roleNode->actor->nameActorSet
+                                ->appellationValue[0];
+                            if ($includeRoles && $actorRole) {
+                                $value .= ", $actorRole";
+                            }
+                            $result[] = $value;
                         }
                     }
                 }
