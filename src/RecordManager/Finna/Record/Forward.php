@@ -324,7 +324,7 @@ class Forward extends \RecordManager\Base\Record\Forward
             return '';
         }
         $activity = $agent->Activity;
-        $relator = $this->normalizeRelator((string)$activity);
+        $relator = MetadataUtils::normalizeRelator((string)$activity);
         if (($relator == 'A99' || $relator == 'E99')
             && !empty($activity->attributes()->{'finna-activity-text'})
         ) {

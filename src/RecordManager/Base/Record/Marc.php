@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -2232,21 +2232,6 @@ class Marc extends Base
     }
 
     /**
-     * Normalize a relator code
-     *
-     * @param string $relator Relator
-     *
-     * @return string
-     */
-    protected function normalizeRelator($relator)
-    {
-        $relator = trim($relator);
-        $relator = preg_replace('/\p{P}+/u', '', $relator);
-        $relator = mb_strtolower($relator, 'UTF-8');
-        return $relator;
-    }
-
-    /**
      * Normalize relator codes
      *
      * @param array $relators Relators
@@ -2255,7 +2240,10 @@ class Marc extends Base
      */
     protected function normalizeRelators($relators)
     {
-        return array_map([$this, 'normalizeRelator'], $relators);
+        return array_map(
+            ['RecordManager\Base\Utils\MetadataUtils', 'normalizeRelator'],
+            $relators
+        );
     }
 
     /**

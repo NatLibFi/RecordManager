@@ -261,20 +261,6 @@ class Forward extends Base
     }
 
     /**
-     * Normalize a relator code
-     *
-     * @param string $relator Relator
-     *
-     * @return string
-     */
-    protected function normalizeRelator($relator)
-    {
-        $relator = trim($relator);
-        $relator = preg_replace('/\p{P}+/u', '', $relator);
-        return $relator;
-    }
-
-    /**
      * Recursive function to get fields to be indexed in allfields
      *
      * @param string $fields Fields to use (optional)
@@ -339,7 +325,7 @@ class Forward extends Base
      */
     protected function getRelator($agent)
     {
-        return $this->normalizeRelator((string)$agent->Activity);
+        return $MetadataUtils::normalizeRelator((string)$agent->Activity);
     }
 
     /**
