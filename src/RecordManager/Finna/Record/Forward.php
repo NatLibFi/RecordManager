@@ -154,8 +154,8 @@ class Forward extends \RecordManager\Base\Record\Forward
                 if (strstr($laji, 'sarja') !== false || strstr($laji, 'tv') !== false
                 ) {
                     return 'Video';
+                }
             }
-        }
         }
         return 'MotionPicture';
     }
