@@ -1653,9 +1653,6 @@ class SolrUpdater
                 $hasComponentParts = !empty($component);
 
                 $format = $metadataRecord->getFormat();
-                if (is_array($format)) {
-                    $format = $format[0];
-                }
                 $merge = false;
                 if ($settings['componentParts'] == 'merge_all') {
                     $merge = true;
