@@ -1651,11 +1651,11 @@ class SolrUpdater
                 }
                 $component = $this->db ? $this->db->findRecord($params) : null;
                 $hasComponentParts = !empty($component);
-                if ($hasComponentParts) {
-                    $components = $this->db->findRecords($params);
-                }
 
                 $format = $metadataRecord->getFormat();
+                if (is_array($format)) {
+                    $format = $format[0];
+                }
                 $merge = false;
                 if ($settings['componentParts'] == 'merge_all') {
                     $merge = true;
@@ -1666,8 +1666,9 @@ class SolrUpdater
                 ) {
                     $merge = true;
                 }
-                if (!$merge) {
-                    unset($components);
+
+                if ($merge && $hasComponentParts) {
+                    $components = $this->db->findRecords($params);
                 }
             }
         }
