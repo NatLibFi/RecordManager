@@ -140,7 +140,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             foreach ($fields as $field) {
                 if ($this->getIndicator($field, 2) == '1') {
                     $data['publication_place_txt_mv'][]
-                        = metadataUtils::stripTrailingPunctuation(
+                        = MetadataUtils::stripTrailingPunctuation(
                             $this->getSubfield($field, 'a')
                         );
                 }
