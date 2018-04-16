@@ -112,7 +112,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                         $role = $this->getSubfield($field110, 'e');
                     }
                     $data['author_role'][] = $role
-                        ? $MetadataUtils::normalizeRelator($role) : '';
+                        ? MetadataUtils::normalizeRelator($role) : '';
                 }
             }
         }
