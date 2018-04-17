@@ -1938,7 +1938,7 @@ class SolrUpdater
                         // mapping tables
                         if (is_array($building)) {
                             // Predefined hierarchy, add to first element only
-                            if (!empty($building)) {
+                            if (!empty($building)) {
                                 $building[0] = $institutionCode . '/' . $building[0];
                             }
                         } elseif ($building !== '') {
