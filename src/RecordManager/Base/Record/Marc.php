@@ -625,7 +625,19 @@ class Marc extends Base
      */
     public function getLinkingID()
     {
-        return $this->getField('001');
+        $id = $this->getField('001');
+        if ('' === $id && $this->getDriverParam('idIn999', false)) {
+            // Koha style ID fallback
+            $id = $this->getFieldSubfields('999', ['c' => 1]);
+        }
+        if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
+            $source = $this->getField('003');
+            $source = MetadataUtils::stripTrailingPunctuation($source);
+            if ($source) {
+                return "($source)$id";
+            }
+        }
+        return $id;
     }
 
     /**
@@ -659,10 +671,28 @@ class Marc extends Base
             true,
             true
         );
-        return array_map(
+        $ids = array_map(
             ['\RecordManager\Base\Utils\MetadataUtils', 'stripControlCharacters'],
             $ids
         );
+        if ($this->getDriverParam('003InLinkingID', false)) {
+            // Check that the linking ids contain something in parenthesis
+            $record003 = null;
+            foreach ($ids as &$id) {
+                if (strncmp('(', $id, 1) !== 0) {
+                    if (null === $record003) {
+                        $field = $this->getField('003');
+                        $record003 = $field
+                            ? MetadataUtils::stripControlCharacters($field)
+                            : '';
+                    }
+                    if ('' !== $record003) {
+                        $id = "($record003)$id";
+                    }
+                }
+            }
+        }
+        return $ids;
     }
 
     /**

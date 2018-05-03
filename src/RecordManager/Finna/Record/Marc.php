@@ -71,29 +71,6 @@ class Marc extends \RecordManager\Base\Record\Marc
     }
 
     /**
-     * Return record linking ID (typically same as ID) used for links
-     * between records in the data source
-     *
-     * @return string
-     */
-    public function getLinkingID()
-    {
-        $id = $this->getField('001');
-        if ('' === $id && $this->getDriverParam('idIn999', false)) {
-            // Koha style ID fallback
-            $id = $this->getFieldSubfields('999', ['c' => 1]);
-        }
-        if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
-            $source = $this->getField('003');
-            $source = MetadataUtils::stripTrailingPunctuation($source);
-            if ($source) {
-                return "($source)$id";
-            }
-        }
-        return $id;
-    }
-
-    /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
      * @return array
