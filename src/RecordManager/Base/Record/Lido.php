@@ -243,7 +243,11 @@ class Lido extends Base
         // "For objects from natural, technical, cultural history e.g. the object
         // name given here and the object type, recorded in the object / work
         // type element are often identical."
-        if (strcasecmp($this->getObjectWorkType(), $title) == 0) {
+        $workType = $this->getObjectWorkType();
+        if (is_array($workType)) {
+            $workType = $workType[0];
+        }
+        if (strcasecmp($workType, $title) == 0) {
             $descriptionWrapDescriptions = [];
             foreach ($this->getObjectDescriptionSetNodes($excludedDescriptions)
                 as $set
@@ -480,7 +484,7 @@ class Lido extends Base
      *
      * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
      * #objectWorkTypeWrap
-     * @return string
+     * @return string|array
      */
     protected function getObjectWorkType()
     {
@@ -526,8 +530,8 @@ class Lido extends Base
     /**
      * Return names of actors associated with specified event
      *
-     * @param string|string[] $event Which events to use (omit to scan all events)
-     * @param string|string[] $role  Which roles to use (omit to scan all roles)
+     * @param string|array $event Which events to use (omit to scan all events)
+     * @param string|array $role  Which roles to use (omit to scan all roles)
      *
      * @return array
      */
@@ -538,14 +542,10 @@ class Lido extends Base
             foreach ($eventNode->eventActor as $actorNode) {
                 foreach ($actorNode->actorInRole as $roleNode) {
                     if (isset($roleNode->actor->nameActorSet->appellationValue)) {
-                        if (empty($role)
-                            || in_array(
-                                mb_strtolower(
-                                    (string)$roleNode->roleActor->term, 'UTF-8'
-                                ),
-                                is_array($role) ? $role : [$role]
-                            )
-                        ) {
+                        $actorRole = MetadataUtils::normalizeRelator(
+                            (string)$roleNode->roleActor->term
+                        );
+                        if (empty($role) || in_array($actorRole, (array)$role)) {
                             $result[] = (string)$roleNode->actor->nameActorSet
                                 ->appellationValue[0];
                         }

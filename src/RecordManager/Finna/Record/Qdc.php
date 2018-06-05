@@ -172,6 +172,12 @@ class Qdc extends \RecordManager\Base\Record\Qdc
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
 
+        $data['author_facet'] = array_merge(
+            isset($data['author']) ? (array)$data['author'] : [],
+            isset($data['author2']) ? (array)$data['author2'] : [],
+            isset($data['author_corporate']) ? (array)$data['author_corporate'] : []
+        );
+
         return $data;
     }
 

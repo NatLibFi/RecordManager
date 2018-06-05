@@ -1651,9 +1651,6 @@ class SolrUpdater
                 }
                 $component = $this->db ? $this->db->findRecord($params) : null;
                 $hasComponentParts = !empty($component);
-                if ($hasComponentParts) {
-                    $components = $this->db->findRecords($params);
-                }
 
                 $format = $metadataRecord->getFormat();
                 $merge = false;
@@ -1666,8 +1663,9 @@ class SolrUpdater
                 ) {
                     $merge = true;
                 }
-                if (!$merge) {
-                    unset($components);
+
+                if ($merge && $hasComponentParts) {
+                    $components = $this->db->findRecords($params);
                 }
             }
         }
@@ -1938,7 +1936,12 @@ class SolrUpdater
                     foreach ($data['building'] as &$building) {
                         // Allow also empty values that might result from
                         // mapping tables
-                        if ($building !== '') {
+                        if (is_array($building)) {
+                            // Predefined hierarchy, add to first element only
+                            if (!empty($building)) {
+                                $building[0] = $institutionCode . '/' . $building[0];
+                            }
+                        } elseif ($building !== '') {
                             $building = "$institutionCode/$building";
                         }
                     }

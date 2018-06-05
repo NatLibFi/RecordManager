@@ -118,7 +118,7 @@ class LidoRecordDriverTest extends RecordDriverTest
 
         $this->assertEquals(['12 x 17 cm, 12 cm'], $fields['measurements']);
 
-        $this->assertEquals(['Hintze Harry'], $fields['author']);
+        $this->assertEquals(['Hintze Harry, kuvaaja'], $fields['author']);
     }
 
     /**
@@ -175,7 +175,7 @@ class LidoRecordDriverTest extends RecordDriverTest
 
         $this->assertContains('maalaus', $fields['format']);
 
-        $this->assertEquals(['Salokivi, Santeri'], $fields['author']);
+        $this->assertEquals(['Salokivi, Santeri, taiteilija'], $fields['author']);
         $this->assertEquals('[1911-01-01 TO 1911-12-31]', $fields['creation_daterange']);
     }
 
@@ -215,7 +215,7 @@ class LidoRecordDriverTest extends RecordDriverTest
 
         $this->assertContains('maalaus', $fields['format']);
 
-        $this->assertEquals(['Halonen, Pekka'], $fields['author']);
+        $this->assertEquals(['Halonen, Pekka, taiteilija'], $fields['author']);
         $this->assertEquals('[1930-01-01 TO 1930-12-31]', $fields['creation_daterange']);
     }
 

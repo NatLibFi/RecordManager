@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -625,7 +625,19 @@ class Marc extends Base
      */
     public function getLinkingID()
     {
-        return $this->getField('001');
+        $id = $this->getField('001');
+        if ('' === $id && $this->getDriverParam('idIn999', false)) {
+            // Koha style ID fallback
+            $id = $this->getFieldSubfields('999', ['c' => 1]);
+        }
+        if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
+            $source = $this->getField('003');
+            $source = MetadataUtils::stripTrailingPunctuation($source);
+            if ($source) {
+                return "($source)$id";
+            }
+        }
+        return $id;
     }
 
     /**
@@ -659,10 +671,28 @@ class Marc extends Base
             true,
             true
         );
-        return array_map(
+        $ids = array_map(
             ['\RecordManager\Base\Utils\MetadataUtils', 'stripControlCharacters'],
             $ids
         );
+        if ($this->getDriverParam('003InLinkingID', false)) {
+            // Check that the linking ids contain something in parenthesis
+            $record003 = null;
+            foreach ($ids as &$id) {
+                if (strncmp('(', $id, 1) !== 0) {
+                    if (null === $record003) {
+                        $field = $this->getField('003');
+                        $record003 = $field
+                            ? MetadataUtils::stripControlCharacters($field)
+                            : '';
+                    }
+                    if ('' !== $record003) {
+                        $id = "($record003)$id";
+                    }
+                }
+            }
+        }
+        return $ids;
     }
 
     /**
@@ -2232,21 +2262,6 @@ class Marc extends Base
     }
 
     /**
-     * Normalize a relator code
-     *
-     * @param string $relator Relator
-     *
-     * @return string
-     */
-    protected function normalizeRelator($relator)
-    {
-        $relator = trim($relator);
-        $relator = preg_replace('/\p{P}+/u', '', $relator);
-        $relator = mb_strtolower($relator, 'UTF-8');
-        return $relator;
-    }
-
-    /**
      * Normalize relator codes
      *
      * @param array $relators Relators
@@ -2255,7 +2270,10 @@ class Marc extends Base
      */
     protected function normalizeRelators($relators)
     {
-        return array_map([$this, 'normalizeRelator'], $relators);
+        return array_map(
+            ['RecordManager\Base\Utils\MetadataUtils', 'normalizeRelator'],
+            $relators
+        );
     }
 
     /**

@@ -127,6 +127,17 @@ class Forward extends \RecordManager\Base\Record\Forward
             }
         }
 
+        $data['author_facet'] = array_merge(
+            isset($data['author']) ? (array)$data['author'] : [],
+            isset($data['author2']) ? (array)$data['author2'] : [],
+            isset($data['author_corporate']) ? (array)$data['author_corporate'] : []
+        );
+
+        if (!empty($data['thumbnail'])) {
+            $data['format'] = (array)$data['format'];
+            $data['format'][] = 'Image';
+        }
+
         return $data;
     }
 
@@ -318,7 +329,7 @@ class Forward extends \RecordManager\Base\Record\Forward
             return '';
         }
         $activity = $agent->Activity;
-        $relator = $this->normalizeRelator((string)$activity);
+        $relator = MetadataUtils::normalizeRelator((string)$activity);
         if (($relator == 'A99' || $relator == 'E99')
             && !empty($activity->attributes()->{'finna-activity-text'})
         ) {
@@ -335,13 +346,28 @@ class Forward extends \RecordManager\Base\Record\Forward
      */
     protected function getThumbnail()
     {
-        foreach ($this->getMainElement()->ProductionEvent as $event) {
-            $attributes = $event->ProductionEventType->attributes();
-            if ($attributes->{'elokuva-elonet-materiaali-kuva-url'}) {
-                return (string)$attributes->{'elokuva-elonet-materiaali-kuva-url'};
+        foreach ($this->getAllMainElements() as $record) {
+            foreach ($record->ProductionEvent as $event) {
+                $attributes = $event->ProductionEventType->attributes();
+                if ($attributes->{'elokuva-elonet-materiaali-kuva-url'}) {
+                    return (string)$attributes
+                        ->{'elokuva-elonet-materiaali-kuva-url'};
+                }
             }
         }
         return '';
+    }
+
+    /**
+     * Get all metadata elements
+     *
+     * @return SimpleXMLElement
+     */
+    protected function getAllMainElements()
+    {
+        $nodes = (array)$this->doc->children();
+        $node = reset($nodes);
+        return is_array($node) ? $node : [$node];
     }
 
     /**

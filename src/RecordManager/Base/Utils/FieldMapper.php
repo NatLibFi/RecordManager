@@ -177,7 +177,7 @@ class FieldMapper
         if (is_array($value)) {
             // Map array parts (predefined hierarchy) separately
             $newValue = [];
-            foreach ($value as $i => &$v) {
+            foreach ($value as $i => $v) {
                 $v = $this->mapValue($v, $mappingFile, $i);
                 if ('' === $v) {
                     // If we get an empty string from any level, stop here
