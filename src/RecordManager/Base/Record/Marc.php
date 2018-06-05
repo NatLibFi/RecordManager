@@ -1113,7 +1113,7 @@ class Marc extends Base
                     $soundTech = strtoupper(substr($contents, 13, 1));
                     if ($soundTech == 'D'
                         || ($size == 'G' && $material == 'M')
-                     ) {
+                    ) {
                          return 'CD';
                     }
                     return 'SoundDisc';
