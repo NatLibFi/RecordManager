@@ -1106,10 +1106,17 @@ class Marc extends Base
             case 'R':
                 return 'SensorImage';
             case 'S':
-                $soundTech = strtoupper(substr($contents, 13, 1));
                 switch ($formatCode2) {
                 case 'D':
-                    return $soundTech == 'D' ? 'CD' : 'SoundDisc';
+                    $size = strtoupper(substr($contents, 6, 1));
+                    $material = strtoupper(substr($contents, 10, 1));
+                    $soundTech = strtoupper(substr($contents, 13, 1));
+                    if ($soundTech == 'D'
+                        || ($size == 'G' && $material == 'M')
+                     ) {
+                         return 'CD';
+                    }
+                    return 'SoundDisc';
                 case 'S':
                     return 'SoundCassette';
                 default:
