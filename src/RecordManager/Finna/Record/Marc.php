@@ -368,14 +368,17 @@ class Marc extends \RecordManager\Base\Record\Marc
         foreach ($data['issn'] as &$value) {
             $value = str_replace('-', '', $value);
         }
-        $data['other_issn_str_mv'] = $this->getFieldsSubfields(
-            [
-                [self::GET_NORMAL, '440', ['x' => 1]],
-                [self::GET_NORMAL, '480', ['x' => 1]],
-                [self::GET_NORMAL, '730', ['x' => 1]],
-                [self::GET_NORMAL, '776', ['x' => 1]]
-            ]
-        );
+        $data['other_issn_isn_mv'] = $data['other_issn_str_mv']
+            = $this->getFieldsSubfields(
+                [
+                    [self::GET_NORMAL, '440', ['x' => 1]],
+                    [self::GET_NORMAL, '480', ['x' => 1]],
+                    [self::GET_NORMAL, '490', ['x' => 1]],
+                    [self::GET_NORMAL, '730', ['x' => 1]],
+                    [self::GET_NORMAL, '776', ['x' => 1]],
+                    [self::GET_NORMAL, '830', ['x' => 1]]
+                ]
+            );
         foreach ($data['other_issn_str_mv'] as &$value) {
             $value = str_replace('-', '', $value);
         }
