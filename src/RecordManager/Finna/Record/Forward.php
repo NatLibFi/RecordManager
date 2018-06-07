@@ -133,10 +133,12 @@ class Forward extends \RecordManager\Base\Record\Forward
             isset($data['author_corporate']) ? (array)$data['author_corporate'] : []
         );
 
+        /*
         if (!empty($data['thumbnail'])) {
             $data['format'] = (array)$data['format'];
             $data['format'][] = 'Image';
         }
+        */
 
         return $data;
     }
