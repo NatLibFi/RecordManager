@@ -1504,7 +1504,7 @@ class Lido extends \RecordManager\Base\Record\Lido
     protected function getObjectWorkType()
     {
         $result = parent::getObjectWorkType();
-
+        /*
         // Check for image links and add a work type for images
         $imageTypes = [
             'Kuva', 'Kuva, Valokuva', 'Valokuva', 'dia', 'kuva', 'negatiivi',
@@ -1535,7 +1535,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                     }
                 }
             }
-        }
+        }*/
 
         return $result;
     }
