@@ -80,7 +80,7 @@ class Qdc extends \RecordManager\Base\Record\Qdc
             // Ignore too long fields. Require at least one dot surrounded by valid
             // characters or a familiar scheme
             if (strlen($url) > 4096
-                || (!preg_match('/[A-Za-z0-9]\.[A-Za-z0-9]/', $url)
+                || (!preg_match('/^[A-Za-z0-9]\.[A-Za-z0-9]$/', $url)
                 && !preg_match('/^(http|ftp)s?:\/\//', $url))
             ) {
                 continue;
