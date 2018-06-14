@@ -335,6 +335,11 @@ class SolrUpdater
     protected $fieldMapper = null;
 
     /**
+     * Whether to track last update date per server's update url
+     */
+    protected $datePerServer;
+
+    /**
      * Constructor
      *
      * @param MongoDB       $db                 Database connection
@@ -419,6 +424,8 @@ class SolrUpdater
                 Logger::WARNING
             );
         }
+        $this->datePerServer
+            = !empty($config['Solr']['track_updates_per_update_url']);
 
         if (isset($config['HTTP'])) {
             $this->httpParams += $config['HTTP'];
@@ -498,7 +505,7 @@ class SolrUpdater
         }
 
         $lastUpdateKey = 'Last Index Update';
-        if ($datePerServer) {
+        if ($datePerServer || $this->datePerServer) {
             $lastUpdateKey .= ' ' . $this->config['Solr']['update_url'];
         }
 
