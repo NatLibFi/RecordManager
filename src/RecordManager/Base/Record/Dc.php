@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -107,7 +107,7 @@ class Dc extends Base
 
         $doc = $this->doc;
         $data['recordtype'] = 'dc';
-        $data['ctrlnum'] = (string)$doc->recordID;
+        $data['ctrlnum'] = trim((string)$doc->recordID);
         $data['fullrecord'] = $doc->asXML();
 
         // allfields
@@ -121,7 +121,7 @@ class Dc extends Base
 
         // language
         $languages = [];
-        foreach (explode(' ', (string)$doc->language) as $language) {
+        foreach (explode(' ', trim((string)$doc->language)) as $language) {
             foreach (str_split($language, 3) as $code) {
                 $languages[] = $code;
             }
@@ -130,7 +130,7 @@ class Dc extends Base
 
         $data['format'] = (string)$doc->type;
         $data['author'] = MetadataUtils::stripTrailingPunctuation(
-            (string)$doc->creator
+            trim((string)$doc->creator)
         );
         $data['author2'] = $this->getValues('contributor');
 
@@ -145,8 +145,11 @@ class Dc extends Base
         }
         $data['title_sort'] = $this->getTitle(true);
 
-        $data['publisher']
-            = [MetadataUtils::stripTrailingPunctuation((string)$doc->publisher)];
+        $data['publisher'] = [
+            MetadataUtils::stripTrailingPunctuation(
+                trim((string)$doc->publisher)
+            )
+        ];
         $data['publishDate'] = $this->getPublicationYear();
 
         $data['isbn'] = $this->getISBNs();
@@ -178,7 +181,7 @@ class Dc extends Base
      */
     public function getFullTitle()
     {
-        return (string)$this->doc->title;
+        return trim((string)$this->doc->title);
     }
 
     /**
@@ -210,7 +213,7 @@ class Dc extends Base
      */
     public function getMainAuthor()
     {
-        return (string)$this->doc->creator;
+        return trim((string)$this->doc->creator);
     }
 
     /**
@@ -222,7 +225,7 @@ class Dc extends Base
     {
         $arr = [];
         foreach ($this->doc->identifier as $identifier) {
-            $identifier = str_replace('-', '', $identifier);
+            $identifier = str_replace('-', '', trim($identifier));
             if (!preg_match('{([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
                 continue;
             }
@@ -264,7 +267,7 @@ class Dc extends Base
      */
     public function getFormat()
     {
-        return $this->doc->type ? (string)$this->doc->type : 'Other';
+        return $this->doc->type ? trim((string)$this->doc->type) : 'Other';
     }
 
     /**
@@ -275,6 +278,7 @@ class Dc extends Base
     public function getPublicationYear()
     {
         foreach ($this->doc->date as $date) {
+            $date = trim((string)$date);
             if (preg_match('{^(\d{4})$}', $date)) {
                 return (string)$date;
             }
@@ -303,7 +307,9 @@ class Dc extends Base
     {
         $values = [];
         foreach ($this->doc->{$tag} as $value) {
-            $values[] = MetadataUtils::stripTrailingPunctuation((string)$value);
+            $values[] = MetadataUtils::stripTrailingPunctuation(
+                trim((string)$value)
+            );
         }
         return $values;
     }

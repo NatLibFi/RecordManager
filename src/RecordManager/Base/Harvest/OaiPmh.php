@@ -559,7 +559,8 @@ class OaiPmh extends Base
             $id = $this->extractID($header);
 
             // Save the current record, either as a deleted or as a regular record:
-            if (strcasecmp($header->getAttribute('status'), 'deleted') == 0) {
+            $status = strtolower((string)$header->getAttribute('status'));
+            if ($status === 'deleted') {
                 call_user_func($this->callback, $this->source, $id, true, null);
                 $this->deletedRecords++;
             } else {

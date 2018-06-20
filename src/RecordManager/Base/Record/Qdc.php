@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -73,7 +73,7 @@ class Qdc extends Base
      */
     public function getID()
     {
-        return (string)$this->doc->recordID[0];
+        return trim((string)$this->doc->recordID[0]);
     }
 
     /**
@@ -107,26 +107,26 @@ class Qdc extends Base
 
         $doc = $this->doc;
         $data['recordtype'] = 'qdc';
-        $data['ctrlnum'] = (string)$doc->recordID;
+        $data['ctrlnum'] = trim((string)$doc->recordID);
         $data['fullrecord'] = $doc->asXML();
 
         // allfields
         $allFields = [];
         foreach ($doc->children() as $tag => $field) {
-            $allFields[] = (string)$field;
+            $allFields[] = trim((string)$field);
         }
         $data['allfields'] = $allFields;
 
         // language
         $languages = [];
-        foreach (explode(' ', (string)$doc->language) as $language) {
+        foreach (explode(' ', trim((string)$doc->language)) as $language) {
             foreach (str_split($language, 3) as $code) {
                 $languages[] = $code;
             }
         }
         $data['language'] = MetadataUtils::normalizeLanguageStrings($languages);
 
-        $data['format'] = (string)$doc->type;
+        $data['format'] = trim((string)$doc->type);
         foreach ($this->getValues('creator') as $author) {
             $data['author'][]
                 = MetadataUtils::stripTrailingPunctuation($author);
@@ -143,7 +143,7 @@ class Qdc extends Base
             if (!isset($data['title'])
                 && $title->attributes()->{'type'} !== 'alternative'
             ) {
-                $data['title'] = $data['title_full'] = (string)$title;
+                $data['title'] = $data['title_full'] = trim((string)$title);
                 $titleParts = explode(' : ', $data['title']);
                 if (!empty($titleParts)) {
                     $data['title_short'] = $titleParts[0];
@@ -152,12 +152,12 @@ class Qdc extends Base
                     }
                 }
             } else {
-                $data['title_alt'][] = (string)$title;
+                $data['title_alt'][] = trim((string)$title);
             }
         }
         $data['title_sort'] = $this->getTitle(true);
 
-        $data['publisher'] = [(string)$doc->publisher];
+        $data['publisher'] = [trim((string)$doc->publisher)];
         $data['publishDate'] = $this->getPublicationYear();
 
         $data['isbn'] = $this->getISBNs();
@@ -189,7 +189,7 @@ class Qdc extends Base
      */
     public function getFullTitle()
     {
-        return (string)$this->doc->title;
+        return trim((string)$this->doc->title);
     }
 
     /**
@@ -221,7 +221,7 @@ class Qdc extends Base
      */
     public function getMainAuthor()
     {
-        return (string)$this->doc->creator;
+        return trim((string)$this->doc->creator);
     }
 
     /**
@@ -234,7 +234,7 @@ class Qdc extends Base
         $arr = [];
         foreach ([$this->doc->identifier, $this->doc->isFormatOf] as $field) {
             foreach ($field as $identifier) {
-                $identifier = str_replace('-', '', $identifier);
+                $identifier = str_replace('-', '', trim($identifier));
                 if (!preg_match('{^([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
                     continue;
                 }
@@ -278,7 +278,7 @@ class Qdc extends Base
      */
     public function getFormat()
     {
-        return $this->doc->type ? (string)$this->doc->type : 'Unknown';
+        return $this->doc->type ? trim((string)$this->doc->type) : 'Unknown';
     }
 
     /**
@@ -289,11 +289,13 @@ class Qdc extends Base
     public function getPublicationYear()
     {
         foreach ($this->doc->date as $date) {
+            $date = trim($date);
             if (preg_match('{^(\d{4})$}', $date)) {
                 return (string)$date;
             }
         }
         foreach ($this->doc->issued as $date) {
+            $date = trim($date);
             if (preg_match('{^(\d{4})$}', $date)) {
                 return (string)$date;
             }
@@ -322,7 +324,7 @@ class Qdc extends Base
     {
         $values = [];
         foreach ($this->doc->{$tag} as $value) {
-            $values[] = (string)$value;
+            $values[] = trim((string)$value);
         }
         return $values;
     }
