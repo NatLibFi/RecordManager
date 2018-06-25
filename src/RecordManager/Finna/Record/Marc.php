@@ -425,7 +425,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         $fields = $this->getFields('856');
         foreach ($fields as $field) {
             $ind2 = $this->getIndicator($field, 2);
-            $sub3 = $this->getSubfield($field, 3);
+            $sub3 = $this->getSubfield($field, '3');
             if (($ind2 == '0' || $ind2 == '1') && !$sub3) {
                 $url = trim($this->getSubfield($field, 'u'));
                 if (!$url) {
