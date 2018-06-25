@@ -2310,10 +2310,10 @@ class Marc extends Base
                 }
                 $terms = $this->getSubfields($field, $subfieldList);
                 if (isset($this->fields['880'])
-                    && $sub6 = $this->getSubfield($field, ['6' => 1])
+                    && $sub6 = $this->getSubfield($field, '6')
                 ) {
-                    $terms = array_merge(
-                        $terms,
+                    $terms .= ' ' . implode(
+                        ' ',
                         $this->getAlternateScriptSubfields(
                             $tag, $sub6, $subfieldList
                         )
