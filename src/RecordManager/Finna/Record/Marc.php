@@ -68,6 +68,38 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $this->fields['245'][0]['s'][] = ['n' => $enum];
             }
         }
+
+        // Koha record normalization
+        if ($this->getDriverParam('kohaNormalization', false)) {
+            // Convert items to holdings
+            $holdings = [];
+            foreach ($this->getFields('952') as $field952) {
+                $key = [];
+                $holding = [];
+                foreach (['b', 'c', 'h', 'o'] as $code) {
+                    $value = $this->getSubfield($field952, $code);
+                    $key[] = $value;
+                    if ('' !== $value) {
+                        $holding[] = [$code => $value];
+                    }
+                }
+                $holdings[implode('//', $key)] = $holding;
+            }
+            $this->fields['952'] = [];
+            foreach ($holdings as $holding) {
+                $this->fields['952'][] = [
+                    'i1' => ' ',
+                    'i2' => ' ',
+                    's' => $holding
+                ];
+            }
+            // Verify that 001 exists
+            if ('' === $this->getField('001')) {
+                if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
+                   $this->fields['001'] = $id;
+                }
+            }
+        }
     }
 
     /**

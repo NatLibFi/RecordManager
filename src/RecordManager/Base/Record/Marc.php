@@ -1648,7 +1648,7 @@ class Marc extends Base
             return '';
         }
         foreach ($field['s'] as $subfield) {
-            if (key($subfield) == $code) {
+            if ((string)key($subfield) === (string)$code) {
                 return current($subfield);
             }
         }
