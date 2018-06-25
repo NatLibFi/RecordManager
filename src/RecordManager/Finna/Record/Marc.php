@@ -96,7 +96,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             // Verify that 001 exists
             if ('' === $this->getField('001')) {
                 if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
-                   $this->fields['001'] = $id;
+                    $this->fields['001'] = $id;
                 }
             }
         }
