@@ -225,6 +225,24 @@ class Qdc extends Base
     }
 
     /**
+     * Dedup: Return unique IDs (control numbers)
+     *
+     * @return array
+     */
+    public function getUniqueIDs()
+    {
+        $arr = [];
+        foreach ($this->doc->identifier as $identifier) {
+            $identifier = strtolower(trim((string)$identifier));
+            if (strncmp('urn:', $identifier, 4) === 0) {
+                $arr[] = '(urn)' . MetadataUtils::normalize($identifier);
+            }
+        }
+
+        return array_unique($arr);
+    }
+
+    /**
      * Dedup: Return ISBNs in ISBN-13 format without dashes
      *
      * @return array
