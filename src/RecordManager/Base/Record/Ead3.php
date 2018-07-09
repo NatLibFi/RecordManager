@@ -138,7 +138,6 @@ class Ead3 extends Base
             break;
         default:
             $data['title_sub'] = $this->getUnitId();
-            $data['series'] = $this->getSeries();
             if ($doc->{'add-data'}->parent) {
                 $data['series']
                     = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
@@ -149,7 +148,9 @@ class Ead3 extends Base
         $data['title_short'] = $this->getTitle();
         $data['title'] = '';
         if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
-            if ($data['title_sub'] && $data['title_sub'] != $data['title_short']) {
+            if (!empty($data['title_sub'])
+                && $data['title_sub'] != $data['title_short']
+            ) {
                 $data['title'] = $data['title_sub'] . ' ';
             }
         }
@@ -192,7 +193,7 @@ class Ead3 extends Base
     public function getTitle($forFiling = false)
     {
         $title = isset($this->doc->did->unittitle)
-            ? (string)$doc->did->unittitle->attributes()->label
+            ? (string)$this->doc->did->unittitle
             : '';
 
         if ($forFiling) {
@@ -343,7 +344,7 @@ class Ead3 extends Base
     protected function getLanguages()
     {
         $result = [];
-        if ($languages = $doc->did->xpath('langmaterial/language')) {
+        if ($languages = $this->doc->did->xpath('langmaterial/language')) {
             foreach ($languages as $lang) {
                 if (isset($lang->attributes()->langcode)) {
                     $langCode = trim((string)$lang->attributes()->langcode);
@@ -364,7 +365,7 @@ class Ead3 extends Base
     protected function getPhysicalExtent()
     {
         $result = [];
-        if ($extents = $doc->did->xpath('physdesc/extent')) {
+        if ($extents = $this->doc->did->xpath('physdesc/extent')) {
             foreach ($extents as $extent) {
                 if (trim((string)$extent) !== '-') {
                     $result[] = (string)$extent;
