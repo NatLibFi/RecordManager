@@ -152,7 +152,9 @@ class Eaccpf extends Base
                 }
             }
         }
-        return implode(' ', $fields);
+        $fields[] = $this->getHeading();
+        $fields = array_merge($fields, $this->getUseForHeadings());
+        return $fields;
     }
 
     /**
@@ -162,9 +164,10 @@ class Eaccpf extends Base
      */
     protected function getBirthDate()
     {
-        if (!isset($this->doc->cpfDescription->description->existDates->dateSet
-            ->date)
-        ) {
+        $hasDates = isset(
+            $this->doc->cpfDescription->description->existDates->dateSet->date
+        );
+        if (!$hasDates) {
             return '';
         }
         foreach ($this->doc->cpfDescription->description->existDates->dateSet->date
@@ -211,9 +214,10 @@ class Eaccpf extends Base
      */
     protected function getDeathDate()
     {
-        if (!isset($this->doc->cpfDescription->description->existDates->dateSet
-            ->date)
-        ) {
+        $hasDates = isset(
+            $this->doc->cpfDescription->description->existDates->dateSet->date
+        );
+        if (!$hasDates) {
             return '';
         }
         foreach ($this->doc->cpfDescription->description->existDates->dateSet->date

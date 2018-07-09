@@ -59,27 +59,6 @@ class Eaccpf extends \RecordManager\Base\Record\Eaccpf
     }
 
     /**
-     * Get all XML fields
-     *
-     * @return array
-     */
-    protected function getAllFields()
-    {
-        $fields = [];
-        if (!empty($this->doc->control->maintenanceAgency->agencyName)) {
-            $fields[] = (string)$this->doc->control->maintenanceAgency->agencyName;
-        }
-        if (!empty($this->doc->cpfDescription->description->biogHist)) {
-            foreach ($this->doc->cpfDescription->description->biogHist as $hist) {
-                foreach ($hist->p as $p) {
-                    $fields[] = (string)$p;
-                }
-            }
-        }
-        return $fields;
-    }
-
-    /**
      * Get use for headings
      *
      * @return array
@@ -96,10 +75,10 @@ class Eaccpf extends \RecordManager\Base\Record\Eaccpf
             $name1 = '';
             $name2 = '';
             foreach ($entry->nameEntry->part as $part) {
-                $type = $part->attributes()->localType;
-                if ('TONI1' == $type) {
+                $type = (string)$part->attributes()->localType;
+                if ('TONI1' === $type) {
                     $name1 = (string)$part;
-                } elseif ('TONI4' == $type) {
+                } elseif ('TONI4' === $type) {
                     $name2 = (string)$part;
                 }
             }
