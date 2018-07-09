@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -162,15 +162,17 @@ class Eaccpf extends Base
      */
     protected function getBirthDate()
     {
-        if (!isset($this->doc->cpfDescription->description->existDates->dateSet)) {
+        if (!isset($this->doc->cpfDescription->description->existDates->dateSet
+            ->date)
+        ) {
             return '';
         }
-        foreach ($this->doc->cpfDescription->description->existDates->dateSet
+        foreach ($this->doc->cpfDescription->description->existDates->dateSet->date
             as $date
         ) {
             $attrs = $date->attributes();
-            $type = $attrs->localType;
-            if ('http://rdaregistry.info/Elements/a/P50037' == $type) {
+            $type = (string)$attrs->localType;
+            if ('http://rdaregistry.info/Elements/a/P50121' === $type) {
                 $d = (string)$attrs->standardDate;
                 if (MetadataUtils::validateDate($d)) {
                     return $d;
@@ -209,15 +211,17 @@ class Eaccpf extends Base
      */
     protected function getDeathDate()
     {
-        if (!isset($this->doc->cpfDescription->description->existDates->dateSet)) {
+        if (!isset($this->doc->cpfDescription->description->existDates->dateSet
+            ->date)
+        ) {
             return '';
         }
-        foreach ($this->doc->cpfDescription->description->existDates->dateSet
+        foreach ($this->doc->cpfDescription->description->existDates->dateSet->date
             as $date
         ) {
             $attrs = $date->attributes();
-            $type = $attrs->localType;
-            if ('http://rdaregistry.info/Elements/a/P50038' == $type) {
+            $type = (string)$attrs->localType;
+            if ('http://rdaregistry.info/Elements/a/P50120' === $type) {
                 $d = (string)$attrs->standardDate;
                 if (MetadataUtils::validateDate($d)) {
                     return $d;
@@ -370,9 +374,6 @@ class Eaccpf extends Base
      */
     protected function getRecordSource()
     {
-        if (!isset($this->doc->cpfDescription->identity->entityType)) {
-            throw new \Exception('entityType not defined');
-        }
         return isset($this->doc->control->sources->source->sourceEntry)
             ? (string)$this->doc->control->sources->source->sourceEntry
             : $this->source;
@@ -386,7 +387,7 @@ class Eaccpf extends Base
     protected function getRecordType()
     {
         if (!isset($this->doc->cpfDescription->identity->entityType)) {
-            throw new \Exception('entityType not defined');
+            return 'undefined';
         }
         return (string)$this->doc->cpfDescription->identity->entityType;
     }
