@@ -75,15 +75,8 @@ class Ead3 extends Base
         ) {
             return (string)$this->doc->{'add-data'}->attributes()->identifier;
         }
-        if (isset($this->doc->did->unitid)) {
-            foreach ($this->doc->did->unitid as $i) {
-                if ($i->attributes()->label == 'Tekninen') {
-                    $id = $i->attributes()->identifier
-                        ? (string)$i->attributes()->identifier
-                        : (string)$this->doc->did->unitid;
-
-                }
-            }
+        if (isset($this->doc->control->recordid)) {
+            $id = (string)$this->doc->control->recordid;
         } else {
             throw new \Exception('No ID found for record: ' . $this->doc->asXML());
         }
@@ -173,6 +166,44 @@ class Ead3 extends Base
         $data = array_merge($data, $this->getHierarchyFields());
 
         return $data;
+    }
+
+    /**
+     * Return format from predefined values
+     *
+     * @return string
+     */
+    public function getFormat()
+    {
+        $genre = $this->doc->xpath('controlaccess/genreform/part');
+        return (string)($genre ? $genre[0] : $this->doc->attributes()->level);
+    }
+
+    /**
+     * Return record title
+     *
+     * @param bool $forFiling Whether the title is to be used in filing
+     * (e.g. sorting, non-filing characters should be removed)
+     *
+     * @return string
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function getTitle($forFiling = false)
+    {
+        $title = isset($this->doc->did->unittitle)
+            ? (string)$doc->did->unittitle->attributes()->label
+            : '';
+
+        if ($forFiling) {
+            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = MetadataUtils::stripLeadingArticle($title);
+            // Again, just in case stripping the article affected this
+            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = mb_strtolower($title, 'UTF-8');
+        }
+
+        return $title;
     }
 
     /**
@@ -293,17 +324,6 @@ class Ead3 extends Base
     }
 
     /**
-     * Get format
-     *
-     * @return string
-     */
-    protected function getFormat()
-    {
-        $genre = $this->doc->xpath('controlaccess/genreform/part');
-        return (string)($genre ? $genre[0] : $this->doc->attributes()->level);
-    }
-
-    /**
      * Get institution
      *
      * @return string
@@ -312,18 +332,6 @@ class Ead3 extends Base
     {
         return isset($this->doc->did->repository->corpname->part)
             ? (string)$this->doc->did->repository->corpname->part
-            : '';
-    }
-
-    /**
-     * Get title
-     *
-     * @return string
-     */
-    protected function getTitle()
-    {
-        return isset($this->doc->did->unittitle)
-            ? (string)$doc->did->unittitle->attributes()->label
             : '';
     }
 

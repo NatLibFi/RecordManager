@@ -188,7 +188,7 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
             if ($ancestorDid) {
                 // Append any ancestor did's
                 foreach (array_reverse($ancestorDid) as $did) {
-                    $this->appendXML($record, $did, $nonInheritedFields);
+                    $this->appendXML($record, $did, $this->nonInheritedFields);
                 }
             }
 
@@ -238,7 +238,7 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                     }
                 }
 
-                if ($prependParentTitleWithUnitId) {
+                if ($this->prependParentTitleWithUnitId) {
                     $pid = implode(
                         '+', $parentDid->xpath('unitid[@label="Analoginen"]')
                     );
