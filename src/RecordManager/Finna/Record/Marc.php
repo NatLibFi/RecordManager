@@ -68,29 +68,38 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $this->fields['245'][0]['s'][] = ['n' => $enum];
             }
         }
-    }
 
-    /**
-     * Return record linking ID (typically same as ID) used for links
-     * between records in the data source
-     *
-     * @return string
-     */
-    public function getLinkingID()
-    {
-        $id = $this->getField('001');
-        if ('' === $id && $this->getDriverParam('idIn999', false)) {
-            // Koha style ID fallback
-            $id = $this->getFieldSubfields('999', ['c' => 1]);
-        }
-        if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
-            $source = $this->getField('003');
-            $source = MetadataUtils::stripTrailingPunctuation($source);
-            if ($source) {
-                return "($source)$id";
+        // Koha record normalization
+        if ($this->getDriverParam('kohaNormalization', false)) {
+            // Convert items to holdings
+            $holdings = [];
+            foreach ($this->getFields('952') as $field952) {
+                $key = [];
+                $holding = [];
+                foreach (['b', 'c', 'h', 'o'] as $code) {
+                    $value = $this->getSubfield($field952, $code);
+                    $key[] = $value;
+                    if ('' !== $value) {
+                        $holding[] = [$code => $value];
+                    }
+                }
+                $holdings[implode('//', $key)] = $holding;
+            }
+            $this->fields['952'] = [];
+            foreach ($holdings as $holding) {
+                $this->fields['952'][] = [
+                    'i1' => ' ',
+                    'i2' => ' ',
+                    's' => $holding
+                ];
+            }
+            // Verify that 001 exists
+            if ('' === $this->getField('001')) {
+                if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
+                    $this->fields['001'] = $id;
+                }
             }
         }
-        return $id;
     }
 
     /**
@@ -111,8 +120,8 @@ class Marc extends \RecordManager\Base\Record\Marc
                     if (!$role) {
                         $role = $this->getSubfield($field110, 'e');
                     }
-                    $data['author_role'][] = $role ? $this->normalizeRelator($role)
-                        : '-';
+                    $data['author_role'][] = $role
+                        ? MetadataUtils::normalizeRelator($role) : '';
                 }
             }
         }
@@ -140,7 +149,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             foreach ($fields as $field) {
                 if ($this->getIndicator($field, 2) == '1') {
                     $data['publication_place_txt_mv'][]
-                        = metadataUtils::stripTrailingPunctuation(
+                        = MetadataUtils::stripTrailingPunctuation(
                             $this->getSubfield($field, 'a')
                         );
                 }
@@ -391,14 +400,17 @@ class Marc extends \RecordManager\Base\Record\Marc
         foreach ($data['issn'] as &$value) {
             $value = str_replace('-', '', $value);
         }
-        $data['other_issn_str_mv'] = $this->getFieldsSubfields(
-            [
-                [self::GET_NORMAL, '440', ['x' => 1]],
-                [self::GET_NORMAL, '480', ['x' => 1]],
-                [self::GET_NORMAL, '730', ['x' => 1]],
-                [self::GET_NORMAL, '776', ['x' => 1]]
-            ]
-        );
+        $data['other_issn_isn_mv'] = $data['other_issn_str_mv']
+            = $this->getFieldsSubfields(
+                [
+                    [self::GET_NORMAL, '440', ['x' => 1]],
+                    [self::GET_NORMAL, '480', ['x' => 1]],
+                    [self::GET_NORMAL, '490', ['x' => 1]],
+                    [self::GET_NORMAL, '730', ['x' => 1]],
+                    [self::GET_NORMAL, '776', ['x' => 1]],
+                    [self::GET_NORMAL, '830', ['x' => 1]]
+                ]
+            );
         foreach ($data['other_issn_str_mv'] as &$value) {
             $value = str_replace('-', '', $value);
         }
@@ -413,7 +425,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         $fields = $this->getFields('856');
         foreach ($fields as $field) {
             $ind2 = $this->getIndicator($field, 2);
-            $sub3 = $this->getSubfield($field, 3);
+            $sub3 = $this->getSubfield($field, '3');
             if (($ind2 == '0' || $ind2 == '1') && !$sub3) {
                 $url = trim($this->getSubfield($field, 'u'));
                 if (!$url) {
@@ -658,6 +670,21 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $data['free_online_boolean'] = true;
             }
         }
+
+        // Author facet
+        $primaryAuthors = $this->getPrimaryAuthorsFacet();
+        $secondaryAuthors = $this->getSecondaryAuthorsFacet();
+        $corporateAuthors = $this->getCorporateAuthorsFacet();
+        $data['author_facet'] = array_map(
+            function ($s) {
+                return preg_replace('/\s+/', ' ', $s);
+            },
+            array_merge(
+                $primaryAuthors['names'],
+                $secondaryAuthors['names'],
+                $corporateAuthors['names']
+            )
+        );
 
         return $data;
     }
@@ -1420,6 +1447,24 @@ class Marc extends \RecordManager\Base\Record\Marc
     }
 
     /**
+     * Get primary authors for faceting
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthorsFacet()
+    {
+        $fieldSpecs = [
+            '100' => ['a' => 1, 'b' => 1, 'c' => 1],
+            '700' => [
+                'a' => 1, 'q' => 1, 'b' => 1, 'c' => 1
+            ]
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs, $this->primaryAuthorRelators, ['100']
+        );
+    }
+
+    /**
      * Get secondary authors
      *
      * @return array
@@ -1430,6 +1475,24 @@ class Marc extends \RecordManager\Base\Record\Marc
             '100' => ['a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1],
             '700' => [
                 'a' => 1, 'q' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1
+            ]
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs, $this->secondaryAuthorRelators, ['700']
+        );
+    }
+
+    /**
+     * Get secondary authors for faceting
+     *
+     * @return array
+     */
+    protected function getSecondaryAuthorsFacet()
+    {
+        $fieldSpecs = [
+            '100' => ['a' => 1, 'b' => 1, 'c' => 1],
+            '700' => [
+                'a' => 1, 'q' => 1, 'b' => 1, 'c' => 1
             ]
         ];
         return $this->getAuthorsByRelator(
@@ -1449,6 +1512,28 @@ class Marc extends \RecordManager\Base\Record\Marc
             '111' => ['a' => 1, 'b' => 1, 'e' => 1],
             '710' => ['a' => 1, 'b' => 1, 'e' => 1],
             '711' => ['a' => 1, 'b' => 1, 'e' => 1]
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs,
+            array_merge(
+                $this->primaryAuthorRelators, $this->secondaryAuthorRelators
+            ),
+            ['110', '111', '710', '711']
+        );
+    }
+
+    /**
+     * Get corporate authors for faceting
+     *
+     * @return array
+     */
+    protected function getCorporateAuthorsFacet()
+    {
+        $fieldSpecs = [
+            '110' => ['a' => 1, 'b' => 1],
+            '111' => ['a' => 1, 'b' => 1],
+            '710' => ['a' => 1, 'b' => 1],
+            '711' => ['a' => 1, 'b' => 1]
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,

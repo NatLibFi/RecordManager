@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2017.
+ * Copyright (C) The National Library of Finland 2012-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -76,11 +76,11 @@ class Qdc extends \RecordManager\Base\Record\Qdc
         }
 
         foreach ($this->doc->relation as $relation) {
-            $url = (string)$relation;
+            $url = trim((string)$relation);
             // Ignore too long fields. Require at least one dot surrounded by valid
             // characters or a familiar scheme
             if (strlen($url) > 4096
-                || (!preg_match('/[A-Za-z0-9]\.[A-Za-z0-9]/', $url)
+                || (!preg_match('/^[A-Za-z0-9]\.[A-Za-z0-9]$/', $url)
                 && !preg_match('/^(http|ftp)s?:\/\//', $url))
             ) {
                 continue;
@@ -100,11 +100,11 @@ class Qdc extends \RecordManager\Base\Record\Qdc
 
         foreach ($this->doc->file as $file) {
             $url = (string)$file->attributes()->href
-                ? (string)$file->attributes()->href
-                : (string)$file;
+                ? trim((string)$file->attributes()->href)
+                : trim((string)$file);
             $link = [
                 'url' => $url,
-                'text' => (string)$file->attributes()->name,
+                'text' => trim((string)$file->attributes()->name),
                 'source' => $this->source
             ];
             $data['online_boolean'] = true;
@@ -121,7 +121,7 @@ class Qdc extends \RecordManager\Base\Record\Qdc
         }
 
         if ($this->doc->permaddress) {
-            $data['url'][] = (string)$this->doc->permaddress[0];
+            $data['url'][] = trim((string)$this->doc->permaddress[0]);
         }
 
         foreach ($this->getValues('identifier') as $identifier) {
@@ -145,7 +145,7 @@ class Qdc extends \RecordManager\Base\Record\Qdc
             $attrs = $coverage->attributes();
             if ($attrs->type == 'geocoding') {
                 $match = preg_match(
-                    '/([\d\.]+)\s*,\s*([\d\.]+)/', (string)$coverage, $matches
+                    '/([\d\.]+)\s*,\s*([\d\.]+)/', trim((string)$coverage), $matches
                 );
                 if ($match) {
                     if ($attrs->format == 'lon,lat') {
@@ -171,6 +171,12 @@ class Qdc extends \RecordManager\Base\Record\Qdc
 
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
+
+        $data['author_facet'] = array_merge(
+            isset($data['author']) ? (array)$data['author'] : [],
+            isset($data['author2']) ? (array)$data['author2'] : [],
+            isset($data['author_corporate']) ? (array)$data['author_corporate'] : []
+        );
 
         return $data;
     }
@@ -203,7 +209,7 @@ class Qdc extends \RecordManager\Base\Record\Qdc
         }
         $result = [];
         foreach ($this->doc->rights as $rights) {
-            $result[] = (string)$rights;
+            $result[] = trim((string)$rights);
         }
         return $result;
     }

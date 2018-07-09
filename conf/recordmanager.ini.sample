@@ -14,6 +14,8 @@ articles = articles.lst
 ;dedup_handler = "\RecordManager\Base\Deduplication\DedupHandler"
 ; Whether to convert all language strings to lower case. Default is true.
 ;lowercase_language_strings = true
+; Directory for temporary files (default is system's temp directory)
+;temp_dir = /tmp
 
 ; These settings control the OAI-PMH harvester
 [Harvesting]
@@ -51,6 +53,8 @@ admin_url = http://localhost:8080/solr/admin
 max_commit_interval = 1000000
 username =
 password =
+; Whether to track last update date per update_url. Default is false.
+;track_updates_per_update_url = true
 ; Hierarchical facets. These facet fields have special handling that makes them
 ; compatible with VuFind's hierarchical facets. The levels in a hierarchical facets
 ; are delimited with a slash, e.g. "MainLibrary/Fiction"

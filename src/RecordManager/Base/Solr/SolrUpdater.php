@@ -335,6 +335,11 @@ class SolrUpdater
     protected $fieldMapper = null;
 
     /**
+     * Whether to track last update date per server's update url
+     */
+    protected $datePerServer;
+
+    /**
      * Constructor
      *
      * @param MongoDB       $db                 Database connection
@@ -419,6 +424,8 @@ class SolrUpdater
                 Logger::WARNING
             );
         }
+        $this->datePerServer
+            = !empty($config['Solr']['track_updates_per_update_url']);
 
         if (isset($config['HTTP'])) {
             $this->httpParams += $config['HTTP'];
@@ -498,7 +505,7 @@ class SolrUpdater
         }
 
         $lastUpdateKey = 'Last Index Update';
-        if ($datePerServer) {
+        if ($datePerServer || $this->datePerServer) {
             $lastUpdateKey .= ' ' . $this->config['Solr']['update_url'];
         }
 
@@ -1651,9 +1658,6 @@ class SolrUpdater
                 }
                 $component = $this->db ? $this->db->findRecord($params) : null;
                 $hasComponentParts = !empty($component);
-                if ($hasComponentParts) {
-                    $components = $this->db->findRecords($params);
-                }
 
                 $format = $metadataRecord->getFormat();
                 $merge = false;
@@ -1666,8 +1670,9 @@ class SolrUpdater
                 ) {
                     $merge = true;
                 }
-                if (!$merge) {
-                    unset($components);
+
+                if ($merge && $hasComponentParts) {
+                    $components = $this->db->findRecords($params);
                 }
             }
         }
@@ -1938,7 +1943,12 @@ class SolrUpdater
                     foreach ($data['building'] as &$building) {
                         // Allow also empty values that might result from
                         // mapping tables
-                        if ($building !== '') {
+                        if (is_array($building)) {
+                            // Predefined hierarchy, add to first element only
+                            if (!empty($building)) {
+                                $building[0] = $institutionCode . '/' . $building[0];
+                            }
+                        } elseif ($building !== '') {
                             $building = "$institutionCode/$building";
                         }
                     }

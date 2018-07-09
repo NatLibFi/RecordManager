@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -877,6 +877,21 @@ class MetadataUtils
             $languages = strtolower($languages);
         }
         return $languages;
+    }
+
+    /**
+     * Normalize a relator code (role)
+     *
+     * @param string $relator Relator code
+     *
+     * @return string
+     */
+    public static function normalizeRelator($relator)
+    {
+        $relator = trim($relator);
+        $relator = preg_replace('/\p{P}+/u', '', $relator);
+        $relator = mb_strtolower($relator, 'UTF-8');
+        return $relator;
     }
 
     /**

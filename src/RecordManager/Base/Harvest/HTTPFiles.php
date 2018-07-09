@@ -117,10 +117,19 @@ class HTTPFiles extends Base
                 $data = $this->preTransform($data);
             }
 
+            $tempFile = $this->getTempFileName('http-harvest-', '.xml');
+            if (file_put_contents($tempFile, $data) === false) {
+                $this->message(
+                    "Could not write to $tempFile\n", false, Logger::FATAL
+                );
+                throw new \Exception("Could not write to $tempFile");
+            }
+            $data = '';
+
             $xml = new \XMLReader();
             $saveUseErrors = libxml_use_internal_errors(true);
             libxml_clear_errors();
-            $result = $xml->XML($data);
+            $result = $xml->open($tempFile, null, LIBXML_PARSEHUGE);
             if ($result === false || libxml_get_last_error() !== false) {
                 // Assuming it's a character encoding issue, this might help...
                 $this->message(
@@ -128,9 +137,23 @@ class HTTPFiles extends Base
                     false,
                     Logger::WARNING
                 );
+                $data = file_get_contents($tempFile);
+                if (false === $data) {
+                    $this->message(
+                        "Could not read from $tempFile\n", false, Logger::FATAL
+                    );
+                    throw new \Exception("Could not read from $tempFile");
+                }
                 $data = iconv('UTF-8', 'UTF-8//IGNORE', $data);
+                if (file_put_contents($tempFile, $data) === false) {
+                    $this->message(
+                        "Could not write to $tempFile\n", false, Logger::FATAL
+                    );
+                    throw new \Exception("Could not write to $tempFile");
+                }
+                $data = '';
                 libxml_clear_errors();
-                $result = $xml->XML($data);
+                $result = $xml->open($tempFile);
             }
             if ($result === false || libxml_get_last_error() !== false) {
                 libxml_use_internal_errors($saveUseErrors);
@@ -150,6 +173,12 @@ class HTTPFiles extends Base
             libxml_use_internal_errors($saveUseErrors);
 
             $this->processRecords($xml);
+            $xml->close();
+            if (!unlink($tempFile)) {
+                $this->message(
+                    "Could not remove $tempFile\n", false, Logger::ERROR
+                );
+            }
 
             $this->reportResults();
         }
