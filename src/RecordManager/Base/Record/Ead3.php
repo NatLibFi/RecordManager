@@ -176,8 +176,10 @@ class Ead3 extends Base
      */
     public function getFormat()
     {
-        $genre = $this->doc->xpath('controlaccess/genreform/part');
-        return (string)($genre ? $genre[0] : $this->doc->attributes()->level);
+        if (isset($this->doc->did->controlaccess->genreform->part)) {
+            return (string)$this->doc->did->controlaccess->genreform->part;
+        }
+        return (string)$this->doc->attributes()->level;
     }
 
     /**
@@ -236,8 +238,8 @@ class Ead3 extends Base
     protected function getAuthors()
     {
         $result = [];
-        if ($names = $this->doc->xpath('controlaccess/name')) {
-            foreach ($names as $name) {
+        if (isset($this->doc->did->controlaccess->name)) {
+            foreach ($this->doc->did->controlaccess->name as $name) {
                 foreach ($name->part as $part) {
                     $result[] = trim((string)$part);
                 }
@@ -254,18 +256,17 @@ class Ead3 extends Base
     protected function getCorporateAuthors()
     {
         $result = [];
-        if ($names = $this->doc->xpath('controlaccess/corpname')) {
-            foreach ($names as $name) {
-                $result[] = trim((string)$name);
+        if (isset($this->doc->did->controlaccess->corpname)) {
+            foreach ($this->doc->did->controlaccess->corpname as $corpname) {
+                $result[] = trim((string)$corpname);
             }
         }
 
-        if ($names = $this->doc->xpath('origination/name')) {
-            foreach ($names as $name) {
+        if (isset($this->doc->did->origination->name)) {
+            foreach ($this->doc->did->origination->name as $name) {
                 foreach ($name->part as $part) {
-                    $data['author_corporate'][] = trim((string)$part);
+                    $result[] = trim((string)$part);
                 }
-
             }
         }
         return $result;
@@ -295,12 +296,12 @@ class Ead3 extends Base
     protected function getGeographicTopics()
     {
         $result = [];
-        if ($geoNames = $this->doc->xpath('controlaccess/geogname')) {
-            $names = [];
-            foreach ($geoNames as $name) {
-                if (trim((string)$name) !== '-') {
-                    $result[] = trim((string)$name);
-                }
+        if (!isset($this->doc->did->controlaccess->geogname)) {
+            return $result;
+        }
+        foreach ($this->doc->did->controlaccess->geogname as $name) {
+            if (trim((string)$name) !== '-') {
+                $result[] = trim((string)$name);
             }
         }
         return $result;
@@ -313,15 +314,16 @@ class Ead3 extends Base
      */
     protected function getTopics()
     {
-        $topics = [];
-        if ($subjects = $this->doc->xpath('controlaccess/subject')) {
-            foreach ($subjects as $subject) {
-                if (trim((string)$subject) !== '-') {
-                    $topics[] = trim((string)$subject);
-                }
+        $result = [];
+        if (!isset($this->doc->did->controlaccess->subject)) {
+            return $result;
+        }
+        foreach ($this->doc->did->controlaccess->subject as $subject) {
+            if (trim((string)$subject) !== '-') {
+                $result[] = trim((string)$subject);
             }
         }
-        return $topics;
+        return $reslt;
     }
 
     /**
@@ -344,13 +346,14 @@ class Ead3 extends Base
     protected function getLanguages()
     {
         $result = [];
-        if ($languages = $this->doc->did->xpath('langmaterial/language')) {
-            foreach ($languages as $lang) {
-                if (isset($lang->attributes()->langcode)) {
-                    $langCode = trim((string)$lang->attributes()->langcode);
-                    if ($langCode != '') {
-                        $result[] = $langCode;
-                    }
+        if (!isset($this->doc->did->langmaterial->language)) {
+            return $result;
+        }
+        foreach ($this->doc->did->langmaterial->language as $lang) {
+            if (isset($lang->attributes()->langcode)) {
+                $langCode = trim((string)$lang->attributes()->langcode);
+                if ($langCode != '') {
+                    $result[] = $langCode;
                 }
             }
         }
@@ -365,11 +368,12 @@ class Ead3 extends Base
     protected function getPhysicalExtent()
     {
         $result = [];
-        if ($extents = $this->doc->did->xpath('physdesc/extent')) {
-            foreach ($extents as $extent) {
-                if (trim((string)$extent) !== '-') {
-                    $result[] = (string)$extent;
-                }
+        if (!isset($this->doc->did->physdesc->extent)) {
+            return $result;
+        }
+        foreach ($this->doc->did->physdesc->extent as $extent) {
+            if (trim((string)$extent) !== '-') {
+                $result[] = (string)$extent;
             }
         }
         return $result;

@@ -193,6 +193,9 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
 
+        $data['author_id_str_mv'] = $this->getAuthorIds();
+        $data['author_corporate_id_str_mv'] = $this->getCorporateAuthorIds();
+
         return $data;
     }
 
@@ -224,16 +227,17 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     protected function getAuthors()
     {
         $result = [];
-        if ($names = $this->doc->xpath('controlaccess/name')) {
-            foreach ($names as $name) {
-                // relator juttu?
-                if (strpos((string) $name->attributes()->relator, 'Tekij')) {
-                    foreach ($name->part as $part) {
-                        if ($part->attributes()->localtype) {
-                            // TODO: ???
-                        } else {
-                            $result[] = trim((string)$part);
-                        }
+        if (!isset($this->doc->did->controlaccess->name)) {
+            return $result;
+        }
+        foreach ($this->doc->did->controlaccess->name as $name) {
+            // TODO: relator-arvot?
+            if (strpos((string) $name->attributes()->relator, 'Tekij')) {
+                foreach ($name->part as $part) {
+                    if ($part->attributes()->localtype) {
+                        // TODO: ???
+                    } else {
+                        $result[] = trim((string)$part);
                     }
                 }
             }
@@ -242,27 +246,36 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     }
 
     /**
-     * Get corporate authors
+     * Get author identifiers
      *
      * @return array
      */
-    protected function getCorporateAuthors()
+    protected function getAuthorIds()
     {
         $result = [];
-        if ($names = $this->doc->xpath('controlaccess/corpname')) {
-            foreach ($names as $name) {
-                $result[] = trim((string)$name);
+        if (isset($this->doc->did->controlaccess->name)) {
+            foreach ($this->doc->did->controlaccess->name as $name) {
+                if (isset($name->attributes()->identifier)) {
+                    $result[] = (string)$name->attributes()->identifier;
+                }
             }
         }
+        return $result;
+    }
 
-        if ($names = $this->doc->xpath('origination/name')) {
-            foreach ($names as $name) {
-                foreach ($name->part as $part) {
-                    $data['author_corporate'][] = trim((string)$part);
-                    $data['author_corporate_id_str_mv'][]
-                        = (string)$name->attributes()->identifier;
+    /**
+     * Get corporate author identifiers
+     *
+     * @return array
+     */
+    protected function getCorporateAuthorIds()
+    {
+        $result = [];
+        if (isset($this->doc->did->origination->name)) {
+            foreach ($this->doc->did->origination->name as $name) {
+                if (isset($name->attributes()->identifier)) {
+                    $result[] = (string)$name->attributes()->identifier;
                 }
-
             }
         }
         return $result;

@@ -114,7 +114,9 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
         }
 
         $this->archiveSubTitle
-            = (string)$this->doc->control->filedesc->titlestmt->subtitle;
+            = isset($this->doc->control->filedesc->titlestmt->subtitle)
+                ? (string)$this->doc->control->filedesc->titlestmt->subtitle
+                : '';
     }
 
     /**
