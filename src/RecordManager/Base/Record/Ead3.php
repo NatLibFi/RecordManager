@@ -118,7 +118,8 @@ class Ead3 extends Base
         $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($doc->asXML());
         $data['allfields'] = $this->getAllFields($doc);
         $data['description'] = $this->getDescription();
-        $data['author'] = $data['author_sort'] = $this->getAuthors();
+        $data['author'] = $this->getAuthors();
+        $data['author_sort'] = reset($data['author']);
         $data['author_corporate'] = $this->getCorporateAuthors();
         $data['author2'] = $this->getSecondaryAuthors();
         $data['geographic'] = $data['geographic_facet']
