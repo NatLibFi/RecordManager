@@ -227,20 +227,32 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     protected function getAuthors()
     {
         $result = [];
-        if (!isset($this->doc->did->controlaccess->name)) {
+        if (!isset($this->doc->relations->relation)) {
             return $result;
         }
-        foreach ($this->doc->did->controlaccess->name as $name) {
-            // TODO: relator-arvot?
-            if (strpos((string) $name->attributes()->relator, 'Tekij')) {
-                foreach ($name->part as $part) {
-                    if ($part->attributes()->localtype) {
-                        // TODO: ???
-                    } else {
-                        $result[] = trim((string)$part);
-                    }
-                }
+
+        foreach ($this->doc->relations->relation as $relation) {
+            $type = (string)$relation->attributes()->relationtype;
+            if ('cpfrelation' !== $type) {
+                continue;
             }
+            $role = (string)$relation->attributes()->arcrole;
+            switch ($role) {
+            case '':
+            case 'http://www.rdaregistry.info/Elements/u/P60672':
+            case 'http://www.rdaregistry.info/Elements/u/P60434':
+                $role = 'aut';
+                break;
+            case 'http://www.rdaregistry.info/Elements/u/P60429':
+                $role = 'pht';
+                break;
+            default:
+                $role = '';
+            }
+            if ('' === $role) {
+                continue;
+            }
+            $result[] = trim((string)$relation->relationentry);
         }
         return $result;
     }
@@ -253,12 +265,32 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     protected function getAuthorIds()
     {
         $result = [];
-        if (isset($this->doc->did->controlaccess->name)) {
-            foreach ($this->doc->did->controlaccess->name as $name) {
-                if (isset($name->attributes()->identifier)) {
-                    $result[] = (string)$name->attributes()->identifier;
-                }
+        if (!isset($this->doc->relations->relation)) {
+            return $result;
+        }
+
+        foreach ($this->doc->relations->relation as $relation) {
+            $type = (string)$relation->attributes()->relationtype;
+            if ('cpfrelation' !== $type) {
+                continue;
             }
+            $role = (string)$relation->attributes()->arcrole;
+            switch ($role) {
+            case '':
+            case 'http://www.rdaregistry.info/Elements/u/P60672':
+            case 'http://www.rdaregistry.info/Elements/u/P60434':
+                $role = 'aut';
+                break;
+            case 'http://www.rdaregistry.info/Elements/u/P60429':
+                $role = 'pht';
+                break;
+            default:
+                $role = '';
+            }
+            if ('' === $role) {
+                continue;
+            }
+            $result[] = (string)$relation->attributes()->href;
         }
         return $result;
     }
