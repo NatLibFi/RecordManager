@@ -610,7 +610,7 @@ class Marc extends Base
     public function getID()
     {
         if ($this->getDriverParam('idIn999', false)) {
-            if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
+            if ($id = $this->getFieldSubfield('999', 'c')) {
                 return $id;
             }
         }
@@ -628,7 +628,7 @@ class Marc extends Base
         $id = $this->getField('001');
         if ('' === $id && $this->getDriverParam('idIn999', false)) {
             // Koha style ID fallback
-            $id = $this->getFieldSubfields('999', ['c' => 1]);
+            $id = $this->getFieldSubfield('999', 'c');
         }
         if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
             $source = $this->getField('003');
@@ -1728,6 +1728,39 @@ class Marc extends Base
             $subfields = MetadataUtils::stripTrailingPunctuation($subfields);
         }
         return $subfields;
+    }
+
+    /**
+     * Get first occurrence of the requested subfield
+     *
+     * @param string  $tag                      Field to get
+     * @param string  $code                     Subfield to get
+     * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
+     * from the result
+     *
+     * @return string
+     */
+    protected function getFieldSubfield($tag, $code,
+        $stripTrailingPunctuation = true
+    ) {
+        if (!isset($this->fields[$tag])) {
+            return '';
+        }
+        foreach ($this->fields[$tag] as $field) {
+            if (!isset($field['s'])) {
+                continue;
+            }
+            foreach ($field['s'] as $subfield) {
+                if (key($subfield) === $code) {
+                    $result = current($subfield);
+                    if ($stripTrailingPunctuation) {
+                        $result = MetadataUtils::stripTrailingPunctuation($result);
+                    }
+                    return $result;
+                }
+            }
+        }
+        return '';
     }
 
     /**
