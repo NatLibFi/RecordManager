@@ -508,7 +508,8 @@ class MetadataUtils
             // Since strtotime is quite clever in interpreting bad dates too, convert
             // back to make sure the interpretation was correct.
             $resultDate = strtotime($date);
-            return gmdate('Y-m-d', $resultDate) == $date ? $resultDate : false;
+            $convertedDate = date('Y-m-d', $resultDate);
+            return $convertedDate == $date ? $resultDate : false;
         }
         return false;
     }
