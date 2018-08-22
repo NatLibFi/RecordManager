@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2017.
+ * Copyright (C) The National Library of Finland 2012-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -258,6 +258,14 @@ class SolrUpdater
     ];
 
     /**
+     * Fields that are analyzed when scoring records for merging order
+     */
+    protected $scoredFields = [
+        'title', 'author', 'author2', 'author_corporate', 'topic', 'contents',
+        'series', 'genre', 'era', 'allfields', 'publisher'
+    ];
+
+    /**
      * Field used for warnings about metadata
      *
      * @var string
@@ -390,6 +398,12 @@ class SolrUpdater
                 = explode(',', $config['Solr']['single_fields']);
         }
         $this->singleFields = array_flip($this->singleFields);
+
+        if (isset($config['Solr']['scored_fields'])) {
+            $this->scoredFields
+                = explode(',', $config['Solr']['scored_fields']);
+        }
+        $this->scoredFields = array_flip($this->scoredFields);
 
         if (isset($config['Solr']['warnings_field'])) {
             $this->warningsField = $config['Solr']['warnings_field'];
@@ -1259,9 +1273,9 @@ class SolrUpdater
                 continue;
             }
             $result['mergedComponents'] += $mergedComponents;
-            $merged = $this->mergeRecords($merged, $data);
             $children[] = ['mongo' => $record, 'solr' => $data];
         }
+        $merged = $this->mergeRecords($children);
 
         if (count($children) == 0) {
             $this->log->log(
@@ -1738,6 +1752,15 @@ class SolrUpdater
                         $data['container_title'] = $hostTitle;
                     }
                 }
+                // If there's only a single title, add any reference to it. In any
+                // other case we can't be sure which one is which.
+                if (!empty($data['hierarchy_parent_title'])
+                    && count($data['hierarchy_parent_title']) === 1
+                ) {
+                    if ($hostRef = $metadataRecord->getContainerReference()) {
+                        $data['hierarchy_parent_title'][0] .= " $hostRef";
+                    }
+                }
             }
             $data['container_volume'] = $metadataRecord->getVolume();
             $data['container_issue'] = $metadataRecord->getIssue();
@@ -1963,50 +1986,93 @@ class SolrUpdater
     }
 
     /**
-     * Merge two Solr records
+     * Merge Solr records into a merged record
      *
-     * @param string[] $merged Merged (base) record
-     * @param string[] $add    Record to merge into $merged
+     * @param array $records Array of records to merge including the Mongo record and
+     * Solr array
      *
-     * @return array Resulting merged record
+     * @return array Merged Solr array
      */
-    protected function mergeRecords($merged, $add)
+    protected function mergeRecords($records)
     {
-        if (empty($merged)) {
-            $merged['local_ids_str_mv'] = [$add['id']];
-        } else {
-            $merged['local_ids_str_mv'][] = $add['id'];
+        // Analyze the records to find the best record to be used as the base
+        foreach ($records as &$record) {
+            $fieldCount = 0;
+            $capsRatio = 0;
+            $titleLen = isset($record['solr']['title'])
+                ? strlen($record['solr']['title']) : '';
+            foreach ($record['solr'] as $key => $field) {
+                if (!isset($this->scoredFields[$key])) {
+                    continue;
+                }
+                foreach ((array)$field as $content) {
+                    ++$fieldCount;
+
+                    $contentLower = mb_strtolower($content, 'UTF-8');
+                    $similar = similar_text($content, $contentLower);
+                    // Use normal strlen since similar_text doesn't support MB
+                    $length = strlen($content);
+                    $capsRatio += 1 - $similar / $length;
+                }
+            }
+            $baseScore = $fieldCount + $titleLen;
+            $capsRatio /= $fieldCount;
+            $record['score'] = 0 == $capsRatio ? $fieldCount
+                : $baseScore / $capsRatio;
         }
-        foreach ($add as $key => $value) {
-            $authorSpecial = $key == 'author'
-                && isset($this->mergedFields['author=author2']);
-            if (substr($key, -3, 3) == '_mv' || isset($this->mergedFields[$key])
-                || ($authorSpecial && isset($merged['author'])
-                && $merged['author'] !== $value)
-            ) {
-                if ($authorSpecial) {
-                    $key = 'author2';
+        unset($record);
+
+        // Sort records
+        usort(
+            $records,
+            function ($a, $b) {
+                return $b['score'] - $a['score'];
+            }
+        );
+
+        $merged = [];
+
+        foreach ($records as $record) {
+            $add = $record['solr'];
+
+            if (empty($merged)) {
+                $merged['local_ids_str_mv'] = [$add['id']];
+            } else {
+                $merged['local_ids_str_mv'][] = $add['id'];
+            }
+            foreach ($add as $key => $value) {
+                $authorSpecial = $key == 'author'
+                    && isset($this->mergedFields['author=author2']);
+                if (substr($key, -3, 3) == '_mv' || isset($this->mergedFields[$key])
+                    || ($authorSpecial && isset($merged['author'])
+                    && $merged['author'] !== $value)
+                ) {
+                    if ($authorSpecial) {
+                        $key = 'author2';
+                    }
+                    if (!isset($merged[$key])) {
+                        $merged[$key] = [];
+                    } elseif (!is_array($merged[$key])) {
+                        $merged[$key] = [$merged[$key]];
+                    }
+                    $values = is_array($value) ? $value : [$value];
+                    $merged[$key] = array_values(
+                        array_merge($merged[$key], $values)
+                    );
+                } elseif (isset($this->singleFields[$key])
+                    || ($authorSpecial && !isset($merged[$key]))
+                ) {
+                    if (empty($merged[$key])) {
+                        $merged[$key] = $value;
+                    }
+                } elseif ($key == 'allfields') {
+                    if (!isset($merged['allfields'])) {
+                        $merged['allfields'] = [];
+                    }
+                    $merged['allfields'] = array_values(
+                        array_merge($merged['allfields'], $add['allfields'])
+                    );
                 }
-                if (!isset($merged[$key])) {
-                    $merged[$key] = [];
-                } elseif (!is_array($merged[$key])) {
-                    $merged[$key] = [$merged[$key]];
-                }
-                $values = is_array($value) ? $value : [$value];
-                $merged[$key] = array_values(array_merge($merged[$key], $values));
-            } elseif (isset($this->singleFields[$key])
-                || ($authorSpecial && !isset($merged[$key]))
-            ) {
-                if (empty($merged[$key])) {
-                    $merged[$key] = $value;
-                }
-            } elseif ($key == 'allfields') {
-                if (!isset($merged['allfields'])) {
-                    $merged['allfields'] = [];
-                }
-                $merged['allfields'] = array_values(
-                    array_merge($merged['allfields'], $add['allfields'])
-                );
             }
         }
 

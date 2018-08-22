@@ -64,6 +64,8 @@ password =
 ;merged_fields = institution,collection,my_local_field_str_mv
 ; Fields that are added to the merged record if they don't already exist
 ;single_fields = title,publishDateSort
+; Fields that are used for scoring when selecting the base record for a merged record
+;scored_fields = title,author,publisher,topic
 ; Field to use for record warnings about problems with the metadata
 ;warnings_field = warnings_str_mv
 ; Whether to put record format in allfields
