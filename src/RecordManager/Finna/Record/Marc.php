@@ -72,11 +72,17 @@ class Marc extends \RecordManager\Base\Record\Marc
         // Koha record normalization
         if ($this->getDriverParam('kohaNormalization', false)) {
             // Convert items to holdings
+            $useHome = $this->getDriverParam('kohaUseHomeBranch', false);
             $holdings = [];
             foreach ($this->getFields('952') as $field952) {
                 $key = [];
                 $holding = [];
-                foreach (['b', 'c', 'h', 'o'] as $code) {
+                $branch = $this->getSubfield($field952, $useHome ? 'a' : 'b');
+                $key[] = $branch;
+                // Always use subfield 'b' for location regardless of where it came
+                // from
+                $holding[] = ['b' => $branch];
+                foreach (['c', 'h', 'o'] as $code) {
                     $value = $this->getSubfield($field952, $code);
                     $key[] = $value;
                     if ('' !== $value) {
