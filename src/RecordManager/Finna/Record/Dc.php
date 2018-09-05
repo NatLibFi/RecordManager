@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2017.
+ * Copyright (C) The National Library of Finland 2012-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -75,6 +75,8 @@ class Dc extends \RecordManager\Base\Record\Dc
             isset($data['author2']) ? (array)$data['author2'] : [],
             isset($data['author_corporate']) ? (array)$data['author_corporate'] : []
         );
+
+        $data['format_ext_str_mv'] = $data['format'];
 
         return $data;
     }

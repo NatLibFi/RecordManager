@@ -343,6 +343,13 @@ class SolrUpdater
     protected $fieldMapper = null;
 
     /**
+     * Field mapper class name
+     *
+     * @var string
+     */
+    protected $fieldMapperClass = '\RecordManager\Base\Utils\FieldMapper';
+
+    /**
      * Whether to track last update date per server's update url
      */
     protected $datePerServer;
@@ -443,6 +450,10 @@ class SolrUpdater
 
         if (isset($config['HTTP'])) {
             $this->httpParams += $config['HTTP'];
+        }
+
+        if (!empty($config['Solr']['field_mapper'])) {
+            $this->fieldMapperClass = $config['Solr']['field_mapper'];
         }
 
         // Load settings
@@ -1581,7 +1592,7 @@ class SolrUpdater
         }
 
         // Create field mapper
-        $this->fieldMapper = new FieldMapper(
+        $this->fieldMapper = new $this->fieldMapperClass(
             $this->basePath,
             array_merge(
                 isset($this->config['DefaultMappings'])
