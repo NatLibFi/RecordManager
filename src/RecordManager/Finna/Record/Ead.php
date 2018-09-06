@@ -150,7 +150,10 @@ class Ead extends \RecordManager\Base\Record\Ead
             isset($data['author_corporate']) ? (array)$data['author_corporate'] : []
         );
 
-        $data['format_ext_str_mv'] = $data['format'];
+        $data['format_ext_str_mv'] = (array)$data['format'];
+        if ($this->hasImages()) {
+            $data['format_ext_str_mv'][] = 'Image';
+        }
 
         return $data;
     }
@@ -300,5 +303,28 @@ class Ead extends \RecordManager\Base\Record\Ead
         }
 
         return [$startDate, $endDate];
+    }
+
+    /**
+     * Check if the record has image links (full images)
+     *
+     * @return bool
+     */
+    protected function hasImages()
+    {
+        if (isset($this->doc->did->daogrp)) {
+            foreach ($this->doc->did->daogrp as $daogrp) {
+                if (!isset($daogrp->daoloc)) {
+                    continue;
+                }
+                foreach ($daogrp->daoloc as $daoloc) {
+                    $role = $daoloc->attributes()->{'role'};
+                    if (in_array($role, ['image_full', 'image_reference'])) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 }
