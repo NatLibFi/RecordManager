@@ -2011,7 +2011,7 @@ class SolrUpdater
             $fieldCount = 0;
             $capsRatio = 0;
             $titleLen = isset($record['solr']['title'])
-                ? strlen($record['solr']['title']) : '';
+                ? strlen($record['solr']['title']) : 0;
             foreach ($record['solr'] as $key => $field) {
                 if (!isset($this->scoredFields[$key])) {
                     continue;
