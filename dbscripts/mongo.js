@@ -8,5 +8,5 @@ db.record.createIndex({updated: 1});
 db.record.createIndex({linking_id: 1});
 db.record.createIndex({main_id: 1}, {sparse: true});
 db.record.createIndex({source_id: 1, update_needed: 1});
-db.dedup.createIndex({updated: 1});
+db.dedup.createIndex({changed: 1});
 // Only for OAI-PMH provider: db.record.createIndex({source_id: 1, updated: 1});
