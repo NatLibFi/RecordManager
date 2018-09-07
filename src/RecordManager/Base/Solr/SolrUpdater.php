@@ -1017,11 +1017,14 @@ class SolrUpdater
                 'processMerged',
                 "Creating queue collection $collectionName (from $from, stage 1/2)"
             );
-
-            $prevId = null;
+print_r($params);
+            $mergeIds = [];
             $count = 0;
             $totalMergeCount = 0;
-            $records = $this->db->findRecords($params);
+            $records = $this->db->findRecords(
+                $params,
+                ['projection' => ['dedup_id' => 1, 'update_needed' => 1]]
+            );
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
                     $this->log->log(
@@ -1041,14 +1044,15 @@ class SolrUpdater
                     );
                 }
 
-                if (!isset($prevId) || $prevId != $id) {
-                    $this->db->addIdToQueue($collectionName, $id);
+                if (!in_array($id, $mergeIds)) {
+                    $mergeIds[] = $id;
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
+                        $this->db->addIdsToQueue($collectionName, $mergeIds);
+                        $mergeIds = [];
                         $this->log->log('processMerged', "$count id's processed");
                     }
                 }
-                $prevId = $id;
             }
             $this->log->log('processMerged', "$count id's processed");
 
@@ -1080,18 +1084,22 @@ class SolrUpdater
                     exit(1);
                 }
                 $id = $record['_id'];
-                if (!isset($prevId) || $prevId != $id) {
-                    $this->db->addIdToQueue($collectionName, $id);
-
+                if (!in_array($id, $mergeIds)) {
+                    $mergeIds[] = $id;
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
+                        $this->db->addIdsToQueue($collectionName, $mergeIds);
+                        $mergeIds = [];
                         $this->log->log(
                             'processMerged',
                             "$count merge record id's processed"
                         );
                     }
                 }
-                $prevId = $id;
+            }
+            if (!empty($mergeIds)) {
+                $this->db->addIdsToQueue($collectionName, $mergeIds);
+                $mergeIds = [];
             }
             $this->log->log(
                 'processMerged',
