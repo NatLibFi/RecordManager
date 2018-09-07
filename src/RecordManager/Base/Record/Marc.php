@@ -1451,7 +1451,8 @@ class Marc extends Base
             if (strlen($tag) != 3) {
                 $this->logger->log(
                     'Marc',
-                    "Invalid field tag: '$tag', id " . $this->getField('001'),
+                    "Invalid field tag: '$tag', record {$this->source}."
+                    . $this->getID(),
                     Logger::ERROR
                 );
                 $this->storeWarning("invalid field tag '$tag'");

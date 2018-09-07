@@ -343,6 +343,13 @@ class SolrUpdater
     protected $fieldMapper = null;
 
     /**
+     * Field mapper class name
+     *
+     * @var string
+     */
+    protected $fieldMapperClass = '\RecordManager\Base\Utils\FieldMapper';
+
+    /**
      * Whether to track last update date per server's update url
      */
     protected $datePerServer;
@@ -443,6 +450,10 @@ class SolrUpdater
 
         if (isset($config['HTTP'])) {
             $this->httpParams += $config['HTTP'];
+        }
+
+        if (!empty($config['Solr']['field_mapper'])) {
+            $this->fieldMapperClass = $config['Solr']['field_mapper'];
         }
 
         // Load settings
@@ -1010,7 +1021,10 @@ class SolrUpdater
             $prevId = null;
             $count = 0;
             $totalMergeCount = 0;
-            $records = $this->db->findRecords($params);
+            $records = $this->db->findRecords(
+                $params,
+                ['projection' => ['dedup_id' => 1, 'update_needed' => 1]]
+            );
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
                     $this->log->log(
@@ -1581,7 +1595,7 @@ class SolrUpdater
         }
 
         // Create field mapper
-        $this->fieldMapper = new FieldMapper(
+        $this->fieldMapper = new $this->fieldMapperClass(
             $this->basePath,
             array_merge(
                 isset($this->config['DefaultMappings'])
@@ -2000,7 +2014,7 @@ class SolrUpdater
             $fieldCount = 0;
             $capsRatio = 0;
             $titleLen = isset($record['solr']['title'])
-                ? strlen($record['solr']['title']) : '';
+                ? strlen($record['solr']['title']) : 0;
             foreach ($record['solr'] as $key => $field) {
                 if (!isset($this->scoredFields[$key])) {
                     continue;

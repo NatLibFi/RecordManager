@@ -178,6 +178,8 @@ class Qdc extends \RecordManager\Base\Record\Qdc
             isset($data['author_corporate']) ? (array)$data['author_corporate'] : []
         );
 
+        $data['format_ext_str_mv'] = $data['format'];
+
         return $data;
     }
 

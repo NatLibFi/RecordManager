@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2017.
+ * Copyright (C) The National Library of Finland 2012-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -102,7 +102,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             // Verify that 001 exists
             if ('' === $this->getField('001')) {
                 if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
-                    $this->fields['001'] = $id;
+                    $this->fields['001'] = [$id];
                 }
             }
         }
@@ -691,6 +691,8 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $corporateAuthors['names']
             )
         );
+
+        $data['format_ext_str_mv'] = $data['format'];
 
         return $data;
     }

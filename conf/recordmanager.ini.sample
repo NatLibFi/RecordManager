@@ -90,6 +90,8 @@ unicode_normalization_form = NFKC
 ; Whether to use a separate thread for updating merged records. Allows merged and
 ; single record update to run in parallel.
 ;threaded_merged_record_update = true
+; Field mapper class. Default is "\RecordManager\Base\Utils\FieldMapper".
+;field_mapper = "\RecordManager\Finna\Utils\FieldMapper"
 
 [OAI-PMH]
 ; Repository name returned in the Identify response
