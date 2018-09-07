@@ -1018,7 +1018,7 @@ class SolrUpdater
                 "Creating queue collection $collectionName (from $from, stage 1/2)"
             );
 
-            $mergeIds = [];
+            $prevId = null;
             $count = 0;
             $totalMergeCount = 0;
             $records = $this->db->findRecords(
@@ -1044,15 +1044,14 @@ class SolrUpdater
                     );
                 }
 
-                if (!in_array($id, $mergeIds)) {
-                    $mergeIds[] = $id;
+                if (!isset($prevId) || $prevId != $id) {
+                    $this->db->addIdToQueue($collectionName, $id);
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
-                        $this->db->addIdsToQueue($collectionName, $mergeIds);
-                        $mergeIds = [];
                         $this->log->log('processMerged', "$count id's processed");
                     }
                 }
+                $prevId = $id;
             }
             $this->log->log('processMerged', "$count id's processed");
 
@@ -1084,22 +1083,18 @@ class SolrUpdater
                     exit(1);
                 }
                 $id = $record['_id'];
-                if (!in_array($id, $mergeIds)) {
-                    $mergeIds[] = $id;
+                if (!isset($prevId) || $prevId != $id) {
+                    $this->db->addIdToQueue($collectionName, $id);
+
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
-                        $this->db->addIdsToQueue($collectionName, $mergeIds);
-                        $mergeIds = [];
                         $this->log->log(
                             'processMerged',
                             "$count merge record id's processed"
                         );
                     }
                 }
-            }
-            if (!empty($mergeIds)) {
-                $this->db->addIdsToQueue($collectionName, $mergeIds);
-                $mergeIds = [];
+                $prevId = $id;
             }
             $this->log->log(
                 'processMerged',

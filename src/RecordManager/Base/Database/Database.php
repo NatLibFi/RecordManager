@@ -537,32 +537,6 @@ class Database
     }
 
     /**
-     * Add record IDs to a queue collection
-     *
-     * @param string $collectionName The queue collection name
-     * @param array  $ids            IDs to add
-     *
-     * @return void
-     */
-    public function addIdsToQueue($collectionName, $ids)
-    {
-        $bulk = new \MongoDB\Driver\BulkWrite();
-        $params = [
-            'multi' => false,
-            'upsert' => true
-        ];
-        foreach ($ids as $id) {
-            $record = [
-                '_id' => $id
-            ];
-            $bulk->update($record, $record, $params);
-        }
-        $manager = $this->mongoClient->getManager();
-        $concern = new \MongoDB\Driver\WriteConcern(0);
-        $res = $manager->executeBulkWrite("db.$collectionName", $bulk, $concern);
-    }
-
-    /**
      * Get IDs in queue
      *
      * @param string $collectionName The queue collection name
