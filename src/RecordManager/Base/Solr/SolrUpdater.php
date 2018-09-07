@@ -1017,7 +1017,7 @@ class SolrUpdater
                 'processMerged',
                 "Creating queue collection $collectionName (from $from, stage 1/2)"
             );
-print_r($params);
+
             $mergeIds = [];
             $count = 0;
             $totalMergeCount = 0;
