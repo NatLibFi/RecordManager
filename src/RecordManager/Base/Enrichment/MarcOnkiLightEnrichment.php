@@ -50,6 +50,13 @@ class MarcOnkiLightEnrichment extends Enrichment
     protected $onkiLightBaseURL;
 
     /**
+     * Whitelist of URL prefixes to try to fetch
+     *
+     * @var array
+     */
+    protected $urlPrefixWhitelist;
+
+    /**
      * Constructor
      *
      * @param Database $db     Database connection (for cache)
@@ -64,6 +71,11 @@ class MarcOnkiLightEnrichment extends Enrichment
             = isset($this->config['MarcOnkiLightEnrichment']['base_url'])
             ? $this->config['MarcOnkiLightEnrichment']['base_url']
             : '';
+
+        $this->urlPrefixWhitelist
+            = isset($this->config['MarcOnkiLightEnrichment']['url_prefix_whitelist'])
+            ? (array)$this->config['MarcOnkiLightEnrichment']['url_prefix_whitelist']
+            : [];
     }
 
     /**
@@ -119,6 +131,24 @@ class MarcOnkiLightEnrichment extends Enrichment
 
                 $url = $this->onkiLightBaseURL . '/data?format=application/json&uri='
                     . urlencode($id);
+            } else {
+                // Check that the URL prefix matches that of the whitelisted ones
+                $match = false;
+                foreach ($this->urlPrefixWhitelist as $prefix) {
+                    if (strncmp($url, $prefix, strlen($prefix)) === 0) {
+                        $match = true;
+                        break;
+                    }
+                }
+                if (!$match) {
+                    $this->logger->log(
+                        'enrichField',
+                        "Ignoring non-whitelisted URI '$url', record $sourceId."
+                        . $record->getId(),
+                        Logger::DEBUG
+                    );
+                    continue;
+                }
             }
             $data = $this->getExternalData(
                 $url, $id, ['Accept' => 'application/json']
