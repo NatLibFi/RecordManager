@@ -266,6 +266,15 @@ class SolrUpdater
     ];
 
     /**
+     * Fields handled as containing building data
+     *
+     * @var array
+     */
+    protected $buildingFields = [
+        'building'
+    ];
+
+    /**
      * Field used for warnings about metadata
      *
      * @var string
@@ -395,22 +404,23 @@ class SolrUpdater
         $this->buildingHierarchy = in_array('building', $this->hierarchicalFacets);
 
         if (isset($config['Solr']['merged_fields'])) {
-            $this->mergedFields
-                = explode(',', $config['Solr']['merged_fields']);
+            $this->mergedFields = explode(',', $config['Solr']['merged_fields']);
         }
         $this->mergedFields = array_flip($this->mergedFields);
 
         if (isset($config['Solr']['single_fields'])) {
-            $this->singleFields
-                = explode(',', $config['Solr']['single_fields']);
+            $this->singleFields = explode(',', $config['Solr']['single_fields']);
         }
         $this->singleFields = array_flip($this->singleFields);
 
         if (isset($config['Solr']['scored_fields'])) {
-            $this->scoredFields
-                = explode(',', $config['Solr']['scored_fields']);
+            $this->scoredFields = explode(',', $config['Solr']['scored_fields']);
         }
         $this->scoredFields = array_flip($this->scoredFields);
+
+        if (isset($config['Solr']['building_fields'])) {
+            $this->buildingFields = explode(',', $config['Solr']['building_fields']);
+        }
 
         if (isset($config['Solr']['warnings_field'])) {
             $this->warningsField = $config['Solr']['warnings_field'];
@@ -1975,26 +1985,28 @@ class SolrUpdater
             break;
         }
         if ($institutionCode) {
-            if (isset($data['building']) && $data['building']) {
-                if (is_array($data['building'])) {
-                    foreach ($data['building'] as &$building) {
-                        // Allow also empty values that might result from
-                        // mapping tables
-                        if (is_array($building)) {
-                            // Predefined hierarchy, add to first element only
-                            if (!empty($building)) {
-                                $building[0] = $institutionCode . '/' . $building[0];
+            foreach ($this->buildingFields as $field) {
+                if (!empty($data[$field])) {
+                    if (is_array($data[$field])) {
+                        foreach ($data[$field] as &$building) {
+                            // Allow also empty values that might result from
+                            // mapping tables
+                            if (is_array($building)) {
+                                // Predefined hierarchy, add to first element only
+                                if (!empty($building)) {
+                                    $building[0]
+                                        = $institutionCode . '/' . $building[0];
+                                }
+                            } elseif ($building !== '') {
+                                $building = "$institutionCode/$building";
                             }
-                        } elseif ($building !== '') {
-                            $building = "$institutionCode/$building";
                         }
+                    } else {
+                        $data[$field] = $institutionCode . '/' . $data['building'];
                     }
                 } else {
-                    $data['building']
-                        = $institutionCode . '/' . $data['building'];
+                    $data[$field] = [$institutionCode];
                 }
-            } else {
-                $data['building'] = [$institutionCode];
             }
         }
     }
