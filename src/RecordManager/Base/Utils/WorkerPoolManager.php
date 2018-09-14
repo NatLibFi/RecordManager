@@ -210,11 +210,11 @@ class WorkerPoolManager
                     $this->writeSocket(
                         $childSocket, ['exception' => $e->getMessage()]
                     );
-                socket_close($childSocket);
-                exit(1);
+                    socket_close($childSocket);
+                    exit(1);
+                }
             }
         }
-    }
     }
 
     /**
