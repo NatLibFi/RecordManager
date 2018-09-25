@@ -161,6 +161,7 @@ class Qdc extends Base
         $data['publishDate'] = $this->getPublicationYear();
 
         $data['isbn'] = $this->getISBNs();
+        $data['issn'] = $this->getISSNs();
 
         $data['topic'] = $data['topic_facet'] = $this->getValues('subject');
 
@@ -267,6 +268,21 @@ class Qdc extends Base
         }
 
         return array_unique($arr);
+    }
+
+    /**
+    * Dedup: Return ISSNs
+    *
+    * @return array
+    */
+    public function getISSNs()
+    {
+        $fields = $this->doc->xpath('relation[@type="issn"]');
+        if (! empty($fields)) {
+            return [(string)$fields[0]];
+        } else {
+            return [];
+        }
     }
 
     /**
