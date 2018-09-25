@@ -277,12 +277,17 @@ class Qdc extends Base
     */
     public function getISSNs()
     {
-        $fields = $this->doc->xpath('relation[@type="issn"]');
-        if (! empty($fields)) {
-            return [(string)$fields[0]];
-        } else {
+        if (!isset($this->doc->relation)) {
             return [];
         }
+
+        $result = [];
+        foreach ($this->doc->relation as $rel) {
+            if ((string)$rel->attributes()->{'type'} === 'issn') {
+                $result[] = trim((string)$rel);
+            }
+        }
+        return $result;
     }
 
     /**
