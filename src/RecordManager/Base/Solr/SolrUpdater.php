@@ -2004,7 +2004,7 @@ class SolrUpdater
                     } else {
                         $data[$field] = $institutionCode . '/' . $data['building'];
                     }
-                } else {
+                } elseif ('building' === $field) {
                     $data[$field] = [$institutionCode];
                 }
             }
