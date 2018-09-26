@@ -74,6 +74,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             // Convert items to holdings
             $useHome = $this->getDriverParam('kohaUseHomeBranch', false);
             $holdings = [];
+            $availableBuildings = [];
             foreach ($this->getFields('952') as $field952) {
                 $key = [];
                 $holding = [];
@@ -89,10 +90,38 @@ class Marc extends \RecordManager\Base\Record\Marc
                         $holding[] = [$code => $value];
                     }
                 }
-                $holdings[implode('//', $key)] = $holding;
+
+                // Availability
+                static $subfieldsExist = [
+                    '0', // Withdrawn
+                    '1', // Lost
+                    '4', // Damaged
+                    'q', // Due date
+                ];
+                $available = true;
+                foreach ($subfieldsExist as $code) {
+                    if ($this->getSubfield($field952, $code)) {
+                        $available = false;
+                        break;
+                    }
+                }
+                if ($available) {
+                    $status = $this->getSubfield($field952, '7'); // Not for loan
+                    $available = $status === '0' || $status === '1';
+                }
+
+                $key = implode('//', $key);
+                if ($available) {
+                    $availableBuildings[$key] = 1;
+                }
+
+                $holdings[$key] = $holding;
             }
             $this->fields['952'] = [];
-            foreach ($holdings as $holding) {
+            foreach ($holdings as $key => $holding) {
+                if (isset($availableBuildings[$key])) {
+                    $holding[] = ['9' => 1];
+                }
                 $this->fields['952'][] = [
                     'i1' => ' ',
                     'i2' => ' ',
@@ -693,6 +722,12 @@ class Marc extends \RecordManager\Base\Record\Marc
         );
 
         $data['format_ext_str_mv'] = $data['format'];
+
+        $availableBuildings = $this->getAvailableItemsBuildings();
+        if ($availableBuildings) {
+            $data['building_available_str_mv'] = $availableBuildings;
+            $data['source_available_str_mv'] = $this->source;
+        }
 
         return $data;
     }
@@ -1569,5 +1604,28 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
         return $result;
+    }
+
+    /**
+     * Get locations for available items (from Koha 952 fields)
+     *
+     * @return array
+     */
+    protected function getAvailableItemsBuildings()
+    {
+        $building = [];
+        if ($this->getDriverParam('holdingsInBuilding', true)) {
+            foreach ($this->getFields('952') as $field) {
+                $available = $this->getSubfield($field, '9');
+                if (!$available) {
+                    continue;
+                }
+                $location = $this->getSubfield($field, 'b');
+                if ($location) {
+                    $building[] = $location;
+                }
+            }
+        }
+        return $building;
     }
 }

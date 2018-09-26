@@ -70,6 +70,22 @@ class FieldMapper extends \RecordManager\Base\Utils\FieldMapper
                 $settings['mappingFiles']['format_ext_str_mv']
                     = $settings['mappingFiles']['format'];
             }
+
+            if (empty($settings['mappingFiles']['building_available_str_mv'])
+                && !empty($settings['mappingFiles']['building'])
+            ) {
+                $settings['mappingFiles']['building_available_str_mv']
+                    = $settings['mappingFiles']['building'];
+                $mappings = &$settings['mappingFiles']['building_available_str_mv'];
+                foreach ($mappings as &$mapping) {
+                    if (isset($mapping['map']['##empty'])) {
+                        unset($mapping['map']['##empty']);
+                    }
+                    if (isset($mapping['map']['##emptyarray'])) {
+                        unset($mapping['map']['##emptyarray']);
+                    }
+                }
+            }
         }
     }
 
