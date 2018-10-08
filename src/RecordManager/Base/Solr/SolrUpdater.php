@@ -2002,7 +2002,7 @@ class SolrUpdater
                             }
                         }
                     } else {
-                        $data[$field] = $institutionCode . '/' . $data['building'];
+                        $data[$field] = $institutionCode . '/' . $data[$field];
                     }
                 } elseif ('building' === $field) {
                     $data[$field] = [$institutionCode];
