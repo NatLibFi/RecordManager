@@ -130,7 +130,8 @@ error_email     =
 ; See https://pear.php.net/manual/en/package.http.http-request2.config.php for
 ; documentation on the valid parameters.
 [HTTP]
-;adapter = "\HTTP_Request2_Adapter_Curl"
+;follow_redirects = true
+;adapter = "HTTP_Request2_Adapter_Curl"
 ;ssl_verify_peer = false
 
 [MarcRecord]
