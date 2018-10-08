@@ -78,174 +78,22 @@ class FieldMapper extends \RecordManager\Base\Utils\FieldMapper
                     = $settings['mappingFiles']['building'];
                 $mappings = &$settings['mappingFiles']['building_available_str_mv'];
                 foreach ($mappings as &$mapping) {
-                    if (isset($mapping['map']['##empty'])) {
-                        unset($mapping['map']['##empty']);
-                    }
-                    if (isset($mapping['map']['##emptyarray'])) {
-                        unset($mapping['map']['##emptyarray']);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Map source format to Solr format
-     *
-     * @param string $source Source ID
-     * @param string $format Format
-     *
-     * @return string Mapped format string
-     */
-    public function mapFormat($source, $format)
-    {
-        $settings = $this->settings[$source];
-
-        if (isset($settings['mappingFiles']['format'])) {
-            $mappingFile = $settings['mappingFiles']['format'];
-            $map = $mappingFile[0]['map'];
-            if (!empty($format)) {
-                $format = $this->mapValue($format, $mappingFile);
-                return is_array($format) ? $format[0] : $format;
-            } elseif (isset($map['##empty'])) {
-                return $map['##empty'];
-            } elseif (isset($map['##emptyarray'])) {
-                return $map['##emptyarray'];
-            }
-        }
-        return $format;
-    }
-
-    /**
-     * Map all fields in an array
-     *
-     * @param string $source Source ID
-     * @param array  $data   Fields to process
-     *
-     * @return array
-     */
-    public function mapValues($source, $data)
-    {
-        $settings = $this->settings[$source];
-        foreach ($settings['mappingFiles'] as $field => $mappingFile) {
-            if (isset($data[$field]) && !empty($data[$field])) {
-                if (is_array($data[$field])) {
-                    $newValues = [];
-                    foreach ($data[$field] as $value) {
-                        $replacement = $this->mapValue($value, $mappingFile);
-                        if (is_array($replacement)) {
-                            $newValues = array_merge($newValues, $replacement);
-                        } else {
-                            $newValues[] = $replacement;
+                    if (isset($mapping['map']['##empty'])
+                        || isset($mapping['map']['##emptyarray'])
+                    ) {
+                        // map is a reference to a shared cache object, break it
+                        $map = $mapping['map'];
+                        unset($mapping['map']);
+                        $mapping['map'] = $map;
+                        if (isset($mapping['map']['##empty'])) {
+                            unset($mapping['map']['##empty']);
+                        }
+                        if (isset($mapping['map']['##emptyarray'])) {
+                            unset($mapping['map']['##emptyarray']);
                         }
                     }
-                    if (null !== $newValues) {
-                        $data[$field] = array_values(array_unique($newValues));
-                    }
-                } else {
-                    $data[$field] = $this->mapValue($data[$field], $mappingFile);
-                }
-            } elseif (isset($mappingFile[0]['map']['##empty'])) {
-                $data[$field] = $mappingFile[0]['map']['##empty'];
-            } elseif (isset($mappingFile[0]['map']['##emptyarray'])) {
-                $data[$field] = [$mappingFile[0]['map']['##emptyarray']];
-            }
-        }
-        return $data;
-    }
-
-    /**
-     * Map a value using a mapping file
-     *
-     * @param mixed $value       Value to map
-     * @param array $mappingFile Mapping file
-     * @param int   $index       Mapping index for sub-entry mappings
-     *
-     * @return mixed
-     */
-    protected function mapValue($value, $mappingFile, $index = 0)
-    {
-        if (is_array($value)) {
-            // Map array parts (predefined hierarchy) separately
-            $newValue = [];
-            foreach ($value as $i => $v) {
-                $v = $this->mapValue($v, $mappingFile, $i);
-                if ('' === $v) {
-                    // If we get an empty string from any level, stop here
-                    break;
-                }
-                $newValue[] = $v;
-            }
-            return implode('/', $newValue);
-        }
-        $map = isset($mappingFile[$index]['map']) ? $mappingFile[$index]['map']
-            : $mappingFile[0]['map'];
-        $type = isset($mappingFile[$index]['type'])
-            ? $mappingFile[$index]['type'] : $mappingFile[0]['type'];
-        if ('regexp' == $type) {
-            foreach ($map as $pattern => $replacement) {
-                $pattern = addcslashes($pattern, '/');
-                $newValue = preg_replace(
-                    "/$pattern/u", $replacement, $value, -1, $count
-                );
-                if ($count > 0) {
-                    return $newValue;
-                }
-            }
-            return $value;
-        }
-        $replacement = $value;
-        if (isset($map[$value])) {
-            $replacement = $map[$value];
-        } elseif (isset($map['##default'])) {
-            $replacement = $map['##default'];
-        }
-        return $replacement;
-    }
-
-    /**
-     * Read a mapping file (two strings separated by ' = ' per line)
-     *
-     * @param string $filename Mapping file name
-     *
-     * @throws Exception
-     * @return array Mappings
-     */
-    protected function readMappingFile($filename)
-    {
-        $mappings = [];
-        $handle = fopen($filename, 'r');
-        if (!$handle) {
-            throw new \Exception("Could not open mapping file '$filename'");
-        }
-        $lineno = 0;
-        while (($line = fgets($handle))) {
-            ++$lineno;
-            $line = rtrim($line);
-            if (!$line || $line[0] == ';') {
-                continue;
-            }
-            $values = explode(' = ', $line, 2);
-            if (!isset($values[1])) {
-                if (strstr($line, ' =') === false) {
-                    fclose($handle);
-                    throw new \Exception(
-                        "Unable to parse mapping file '$filename' line "
-                        . "(no ' = ' found): ($lineno) $line"
-                    );
-                }
-                $values = explode(' =', $line, 2);
-                $mappings[$values[0]] = '';
-            } else {
-                $key = trim($values[0]);
-                if (substr($key, -2) == '[]') {
-                    $mappings[substr($key, 0, -2)][] = $values[1];
-                } else {
-                    $mappings[$key] = $values[1];
                 }
             }
         }
-        fclose($handle);
-        return $mappings;
     }
 }
