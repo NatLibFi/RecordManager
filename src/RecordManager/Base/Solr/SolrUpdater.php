@@ -1993,10 +1993,9 @@ class SolrUpdater
                             // Allow also empty values that might result from
                             // mapping tables
                             if (is_array($building)) {
-                                // Predefined hierarchy, add to first element only
+                                // Predefined hierarchy, prepend to it
                                 if (!empty($building)) {
-                                    $building[0]
-                                        = $institutionCode . '/' . $building[0];
+                                    array_unshift($building, $institutionCode);
                                 }
                             } elseif ($building !== '') {
                                 $building = "$institutionCode/$building";
