@@ -1860,7 +1860,8 @@ class SolrUpdater
                 if ($datavalue === '') {
                     continue;
                 }
-                $values = explode('/', $datavalue);
+                $values = is_array($datavalue) ? $datavalue
+                    : explode('/', $datavalue);
                 $hierarchyString = '';
                 for ($i = 0; $i < count($values); $i++) {
                     $hierarchyString .= '/' . $values[$i];
