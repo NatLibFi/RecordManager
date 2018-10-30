@@ -191,9 +191,6 @@ class Forward extends Base
                 $data['title_alt'][] = $titleText;
             }
         }
-        if ($publishDate) {
-            $data['title'] .= " ($publishDate)";
-        }
         $data['title_short'] = $data['title_full'] = $data['title'];
         $data['title_sort'] = MetadataUtils::stripLeadingPunctuation(
             MetadataUtils::stripLeadingArticle($data['title'])
