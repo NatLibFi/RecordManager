@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2017.
+ * Copyright (C) The National Library of Finland 2012-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -72,21 +72,56 @@ class Marc extends \RecordManager\Base\Record\Marc
         // Koha record normalization
         if ($this->getDriverParam('kohaNormalization', false)) {
             // Convert items to holdings
+            $useHome = $this->getDriverParam('kohaUseHomeBranch', false);
             $holdings = [];
+            $availableBuildings = [];
             foreach ($this->getFields('952') as $field952) {
                 $key = [];
                 $holding = [];
-                foreach (['b', 'c', 'h', 'o'] as $code) {
+                $branch = $this->getSubfield($field952, $useHome ? 'a' : 'b');
+                $key[] = $branch;
+                // Always use subfield 'b' for location regardless of where it came
+                // from
+                $holding[] = ['b' => $branch];
+                foreach (['c', 'h', 'o'] as $code) {
                     $value = $this->getSubfield($field952, $code);
                     $key[] = $value;
                     if ('' !== $value) {
                         $holding[] = [$code => $value];
                     }
                 }
-                $holdings[implode('//', $key)] = $holding;
+
+                // Availability
+                static $subfieldsExist = [
+                    '0', // Withdrawn
+                    '1', // Lost
+                    '4', // Damaged
+                    'q', // Due date
+                ];
+                $available = true;
+                foreach ($subfieldsExist as $code) {
+                    if ($this->getSubfield($field952, $code)) {
+                        $available = false;
+                        break;
+                    }
+                }
+                if ($available) {
+                    $status = $this->getSubfield($field952, '7'); // Not for loan
+                    $available = $status === '0' || $status === '1';
+                }
+
+                $key = implode('//', $key);
+                if ($available) {
+                    $availableBuildings[$key] = 1;
+                }
+
+                $holdings[$key] = $holding;
             }
             $this->fields['952'] = [];
-            foreach ($holdings as $holding) {
+            foreach ($holdings as $key => $holding) {
+                if (isset($availableBuildings[$key])) {
+                    $holding[] = ['9' => 1];
+                }
                 $this->fields['952'][] = [
                     'i1' => ' ',
                     'i2' => ' ',
@@ -96,7 +131,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             // Verify that 001 exists
             if ('' === $this->getField('001')) {
                 if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
-                    $this->fields['001'] = $id;
+                    $this->fields['001'] = [$id];
                 }
             }
         }
@@ -685,6 +720,14 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $corporateAuthors['names']
             )
         );
+
+        $data['format_ext_str_mv'] = $data['format'];
+
+        $availableBuildings = $this->getAvailableItemsBuildings();
+        if ($availableBuildings) {
+            $data['building_available_str_mv'] = $availableBuildings;
+            $data['source_available_str_mv'] = $this->source;
+        }
 
         return $data;
     }
@@ -1561,5 +1604,28 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
         return $result;
+    }
+
+    /**
+     * Get locations for available items (from Koha 952 fields)
+     *
+     * @return array
+     */
+    protected function getAvailableItemsBuildings()
+    {
+        $building = [];
+        if ($this->getDriverParam('holdingsInBuilding', true)) {
+            foreach ($this->getFields('952') as $field) {
+                $available = $this->getSubfield($field, '9');
+                if (!$available) {
+                    continue;
+                }
+                $location = $this->getSubfield($field, 'b');
+                if ($location) {
+                    $building[] = $location;
+                }
+            }
+        }
+        return $building;
     }
 }

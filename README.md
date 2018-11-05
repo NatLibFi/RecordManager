@@ -6,6 +6,14 @@ See the [RecordManager wiki](https://github.com/NatLibFi/RecordManager/wiki) for
 
 For a stable version, see the stable branch.
 
+## General Installation
+
+- PHP 7.x is required.
+- Composer is required for dependencies. Run `composer install` in the directory where RecordManager is installed.
+- The following PHP modules are required: xml, xslt, mbstring, intl
+- The following PECL module is required: mongodb
+
+
 ## Installation notes on CentOS 7
 
 These are quick instructions on how to set up RecordManager. Please refer to the [wiki pages](https://github.com/NatLibFi/RecordManager/wiki) for more information on the configuration and setup of RecordManager.
@@ -52,7 +60,7 @@ These are quick instructions on how to set up RecordManager. Please refer to the
 
 - Copy RecordManager to /usr/local/RecordManager/
 
-- Run composer install to install PHP dependencies
+- Run `composer install` to install PHP dependencies
 
 - Create indexes with dbscripts/mongo.js
 

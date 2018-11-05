@@ -36,10 +36,10 @@ require_once 'cmdline.php';
  */
 function main($argv)
 {
-    $basePath = __DIR__;
+    $params = parseArgs($argv);
+    $basePath = !empty($params['basepath']) ? $params['basepath'] : __DIR__;
     $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
 
-    $params = parseArgs($argv);
     $config = applyConfigOverrides($params, $config);
 
     if (empty($params['file'])) {
@@ -72,6 +72,8 @@ Parameters:
 --dedupid=...       deduped = Add dedup id's to records that have duplicates
                     always  = Always add dedup id's to the records
                     Otherwise dedup id's are not added to the records
+--basepath=path     Use path as the base directory for conf, mappings and
+                    transformations directories. Normally automatically determined.
 
 
 EOT;

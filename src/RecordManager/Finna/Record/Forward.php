@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2016-2017.
+ * Copyright (C) The National Library of Finland 2016-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -133,12 +133,10 @@ class Forward extends \RecordManager\Base\Record\Forward
             isset($data['author_corporate']) ? (array)$data['author_corporate'] : []
         );
 
-        /*
+        $data['format_ext_str_mv'] = (array)$data['format'];
         if (!empty($data['thumbnail'])) {
-            $data['format'] = (array)$data['format'];
-            $data['format'][] = 'Image';
+            $data['format_ext_str_mv'][] = 'Image';
         }
-        */
 
         return $data;
     }

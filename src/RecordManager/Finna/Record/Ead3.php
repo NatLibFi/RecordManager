@@ -1,6 +1,6 @@
 <?php
 /**
- * Ead record class
+ * EAD 3 Record Class
  *
  * PHP version 5
  *
@@ -22,6 +22,7 @@
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -31,17 +32,18 @@ use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
- * Ead record class
+ * EAD 3 Record Class
  *
- * This is a class for processing EAD records.
+ * EAD 3 records with Finna specific functionality
  *
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Ead extends \RecordManager\Base\Record\Ead
+class Ead3 extends \RecordManager\Base\Record\Ead3
 {
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
@@ -56,6 +58,7 @@ class Ead extends \RecordManager\Base\Record\Ead
         $unitDateRange = $this->parseDateRange((string)$doc->did->unitdate);
         $data['search_daterange_mv'] = $data['unit_daterange']
             = MetadataUtils::dateRangeToStr($unitDateRange);
+
         if ($unitDateRange) {
             $data['main_date_str'] = MetadataUtils::extractYear($unitDateRange[0]);
             $data['main_date'] = $this->validateDate($unitDateRange[0]);
@@ -110,27 +113,41 @@ class Ead extends \RecordManager\Base\Record\Ead
                         // This is sort of special. Make sure to use source instead
                         // of datasource.
                         $data['online_str_mv'] = $data['source_str_mv'];
-                        // Mark everything free until we know better
-                        $data['free_online_boolean'] = true;
-                        // This is sort of special. Make sure to use source instead
-                        // of datasource.
-                        $data['free_online_str_mv'] = $data['source_str_mv'];
                         break;
                     }
                 }
             }
         }
 
-        if (isset($doc->did->unitid)) {
-            $data['identifier'] = (string)$doc->did->unitid;
+        if ($this->doc->did->unitid) {
+            foreach ($this->doc->did->unitid as $i) {
+                if ($i->attributes()->label == 'Analoginen') {
+                    $idstr = (string) $i;
+                    $p = strpos($idstr, '/');
+                    $analogID = $p > 0
+                        ? substr($idstr, $p + 1)
+                        : $idstr;
+
+                    $data['identifier'] = $analogID;
+                }
+            }
         }
+
         if (isset($doc->did->dimensions)) {
             // display measurements
             $data['measurements'] = (string)$doc->did->dimensions;
         }
 
         if (isset($doc->did->physdesc)) {
-            $data['material'] = (string)$doc->did->physdesc;
+            foreach ($doc->did->physdesc as $physdesc) {
+                if (isset($physdesc->attributes()->label)) {
+                    $material[] = (string) $physdesc . ' '
+                        . $physdesc->attributes()->label;
+                } else {
+                    $material[] = (string) $physdesc;
+                }
+            }
+            $data['material'] = $material;
         }
 
         if (isset($doc->did->userestrict->p)) {
@@ -144,18 +161,158 @@ class Ead extends \RecordManager\Base\Record\Ead
             $data['usage_rights_str_mv'] = $rights;
         }
 
-        $data['author_facet'] = array_merge(
-            isset($data['author']) ? (array)$data['author'] : [],
-            isset($data['author2']) ? (array)$data['author2'] : [],
-            isset($data['author_corporate']) ? (array)$data['author_corporate'] : []
-        );
-
-        $data['format_ext_str_mv'] = (array)$data['format'];
-        if ($this->hasImages()) {
-            $data['format_ext_str_mv'][] = 'Image';
+        if (isset($doc->controlaccess->name)) {
+            $data['author'] = [];
+            $data['author_role'] = [];
+            $data['author_variant'] = [];
+            foreach ($doc->controlaccess->name as $name) {
+                foreach ($name->part as $part) {
+                    switch ($part->attributes()->localtype) {
+                    case 'Ensisijainen nimi':
+                        $data['author'][] = (string)$part;
+                        break;
+                    case 'Vaihtoehtoinen nimi':
+                    case 'Vanhentunut nimi':
+                        $data['author_variant'][] = (string)$part;
+                        break;
+                    }
+                    if (isset($name->attributes()->relator)) {
+                        $data['author_role'][]
+                            = (string)$name->attributes()->relator;
+                    }
+                }
+            }
         }
 
+        if (isset($doc->index->index->indexentry)) {
+            foreach ($doc->index->index->indexentry as $indexentry) {
+                if (isset($indexentry->name->part)) {
+                    // TODO: vain eka part, localtypelliset paremmin pois?
+                    $data['contents'][] = (string) $indexentry->name->part;
+                }
+            }
+        }
+
+        $data['author_id_str_mv'] = $this->getAuthorIds();
+        $data['author_corporate_id_str_mv'] = $this->getCorporateAuthorIds();
+
+        $data['format_ext_str_mv'] = $data['format'];
+
         return $data;
+    }
+
+    /**
+     * Get unit id
+     *
+     * @return string
+     */
+    protected function getUnitId()
+    {
+        if (isset($doc->did->unitid)) {
+            foreach ($doc->did->unitid as $i) {
+                if ($i->attributes()->label == 'Analoginen') {
+                    $idstr = (string)$i;
+                    $p = strpos($idstr, '/');
+                    return $p > 0
+                        ? substr($idstr, $p + 1) : $idstr;
+                }
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Get authors
+     *
+     * @return array
+     */
+    protected function getAuthors()
+    {
+        $result = [];
+        if (!isset($this->doc->relations->relation)) {
+            return $result;
+        }
+
+        foreach ($this->doc->relations->relation as $relation) {
+            $type = (string)$relation->attributes()->relationtype;
+            if ('cpfrelation' !== $type) {
+                continue;
+            }
+            $role = (string)$relation->attributes()->arcrole;
+            switch ($role) {
+            case '':
+            case 'http://www.rdaregistry.info/Elements/u/P60672':
+            case 'http://www.rdaregistry.info/Elements/u/P60434':
+                $role = 'aut';
+                break;
+            case 'http://www.rdaregistry.info/Elements/u/P60429':
+                $role = 'pht';
+                break;
+            default:
+                $role = '';
+            }
+            if ('' === $role) {
+                continue;
+            }
+            $result[] = trim((string)$relation->relationentry);
+        }
+        return $result;
+    }
+
+    /**
+     * Get author identifiers
+     *
+     * @return array
+     */
+    protected function getAuthorIds()
+    {
+        $result = [];
+        if (!isset($this->doc->relations->relation)) {
+            return $result;
+        }
+
+        foreach ($this->doc->relations->relation as $relation) {
+            $type = (string)$relation->attributes()->relationtype;
+            if ('cpfrelation' !== $type) {
+                continue;
+            }
+            $role = (string)$relation->attributes()->arcrole;
+            switch ($role) {
+            case '':
+            case 'http://www.rdaregistry.info/Elements/u/P60672':
+            case 'http://www.rdaregistry.info/Elements/u/P60434':
+                $role = 'aut';
+                break;
+            case 'http://www.rdaregistry.info/Elements/u/P60429':
+                $role = 'pht';
+                break;
+            default:
+                $role = '';
+            }
+            if ('' === $role) {
+                continue;
+            }
+            $result[] = (string)$relation->attributes()->href;
+        }
+        return $result;
+    }
+
+    /**
+     * Get corporate author identifiers
+     *
+     * @return array
+     */
+    protected function getCorporateAuthorIds()
+    {
+        $result = [];
+        if (isset($this->doc->did->origination->name)) {
+            foreach ($this->doc->did->origination->name as $name) {
+                if (isset($name->attributes()->identifier)) {
+                    $result[] = (string)$name->attributes()->identifier;
+                }
+            }
+        }
+        return $result;
     }
 
     /**
@@ -169,11 +326,7 @@ class Ead extends \RecordManager\Base\Record\Ead
         if (isset($this->doc->userestrict->p)) {
             foreach ($this->doc->userestrict->p as $restrict) {
                 if (strstr((string)$restrict, 'No known copyright restrictions')) {
-                    return ['No known copyright restrictions'];
-                } elseif (strncasecmp((string)$restrict, 'CC', 2) === 0
-                    || strncasecmp((string)$restrict, 'Public', 6) === 0
-                ) {
-                    return (string)$restrict;
+                    return [];
                 }
             }
         }
@@ -181,11 +334,7 @@ class Ead extends \RecordManager\Base\Record\Ead
         if (isset($this->doc->accessrestrict->p)) {
             foreach ($this->doc->accessrestrict->p as $restrict) {
                 if (strstr((string)$restrict, 'No known copyright restrictions')) {
-                    return ['No known copyright restrictions'];
-                } elseif (strncasecmp((string)$restrict, 'CC', 2) === 0
-                    || strncasecmp((string)$restrict, 'Public', 6) === 0
-                ) {
-                    return (string)$restrict;
+                    return [];
                 }
             }
         }
@@ -236,11 +385,11 @@ class Ead extends \RecordManager\Base\Record\Ead
             $endDate = $endYear . '-' . $endMonth . '-01';
             try {
                 $d = new \DateTime($endDate);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->logger->log(
-                    'Ead',
+                    'Ead3',
                     "Failed to parse date $endDate, record {$this->source}."
-                        . $this->getID(),
+                    . $this->getID(),
                     Logger::WARNING
                 );
                 $this->storeWarning('invalid end date');
@@ -269,11 +418,11 @@ class Ead extends \RecordManager\Base\Record\Ead
             $endDate = $year . '-' . $month . '-01';
             try {
                 $d = new \DateTime($endDate);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $this->logger->log(
-                    'Ead',
+                    'Ead3',
                     "Failed to parse date $endDate, record {$this->source}."
-                        . $this->getID(),
+                    . $this->getID(),
                     Logger::WARNING
                 );
                 $this->storeWarning('invalid end date');
@@ -293,9 +442,9 @@ class Ead extends \RecordManager\Base\Record\Ead
 
         if (strtotime($startDate) > strtotime($endDate)) {
             $this->logger->log(
-                'Ead',
-                "Invalid date range {$startDate} - {$endDate}, record "
-                    . "{$this->source}." . $this->getID(),
+                'Ead3',
+                "Invalid date range {$startDate} - {$endDate}, record " .
+                "{$this->source}." . $this->getID(),
                 Logger::WARNING
             );
             $this->storeWarning('invalid date range');
@@ -303,28 +452,5 @@ class Ead extends \RecordManager\Base\Record\Ead
         }
 
         return [$startDate, $endDate];
-    }
-
-    /**
-     * Check if the record has image links (full images)
-     *
-     * @return bool
-     */
-    protected function hasImages()
-    {
-        if (isset($this->doc->did->daogrp)) {
-            foreach ($this->doc->did->daogrp as $daogrp) {
-                if (!isset($daogrp->daoloc)) {
-                    continue;
-                }
-                foreach ($daogrp->daoloc as $daoloc) {
-                    $role = $daoloc->attributes()->{'role'};
-                    if (in_array($role, ['image_full', 'image_reference'])) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
     }
 }

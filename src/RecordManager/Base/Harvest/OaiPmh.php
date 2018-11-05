@@ -7,7 +7,7 @@
  * PHP version 5
  *
  * Copyright (c) Demian Katz 2010.
- * Copyright (c) The National Library of Finland 2011-2017.
+ * Copyright (c) The National Library of Finland 2011-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -127,6 +127,8 @@ class OaiPmh extends Base
      */
     protected $xml = null;
 
+    protected $sameResumptionTokenLimit = 100;
+
     /**
      * Constructor.
      *
@@ -181,6 +183,10 @@ class OaiPmh extends Base
         }
         if (isset($settings['ignoreNoRecordsMatch'])) {
             $this->ignoreNoRecordsMatch = $settings['ignoreNoRecordsMatch'];
+        }
+        if (isset($settings['sameResumptionTokenLimit'])) {
+            $this->sameResumptionTokenLimit
+                = $settings['sameResumptionTokenLimit'];
         }
 
         $this->identifyServer();
@@ -249,9 +255,11 @@ class OaiPmh extends Base
         }
 
         // Keep harvesting as long as a resumption token is provided:
+        $this->resetSafeguard();
         while ($token !== false) {
             $this->reportResults();
             $token = $this->getRecordsByToken($token);
+            $this->safeguard($token);
         }
         $this->reportResults();
     }
@@ -276,11 +284,47 @@ class OaiPmh extends Base
         }
 
         // Keep harvesting as long as a resumption token is provided:
+        $this->resetSafeguard();
         while ($token !== false) {
             $this->reportListIdentifiersResults();
             $token = $this->getIdentifiersByToken($token);
+            $this->safeguard($token);
         }
         $this->reportListIdentifiersResults();
+    }
+
+    /**
+     * Reset safeguard
+     *
+     * @return void
+     */
+    protected function resetSafeguard()
+    {
+        $this->lastResumptionToken = '';
+        $this->sameResumptionTokenCount = 0;
+    }
+
+    /**
+     * Safeguard against broken repositories that don't return records and
+     * return the same resumption token over and over again
+     *
+     * @param string $resumptionToken Latest resumption token
+     *
+     * @return void
+     */
+    protected function safeguard($resumptionToken)
+    {
+        if ($this->lastResumptionToken === $resumptionToken
+            && ++$this->sameResumptionTokenCount > $this->sameResumptionTokenLimit
+        ) {
+            throw new \Exception(
+                "{$this->source}: same resumptionToken received"
+                . " $sameResumptionTokenCount times without records,"
+                . ' aborting'
+            );
+        } else {
+            $this->sameResumptionTokenCount = 0;
+        }
     }
 
     /**

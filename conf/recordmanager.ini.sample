@@ -64,6 +64,11 @@ password =
 ;merged_fields = institution,collection,my_local_field_str_mv
 ; Fields that are added to the merged record if they don't already exist
 ;single_fields = title,publishDateSort
+; Fields that are used for scoring when selecting the base record for a merged record
+;scored_fields = title,author,publisher,topic
+; Fields that are handled as containing building data (e.g. affected by the
+; institutionInBuilding setting in datasources.ini)
+;building_fields = "building,building_available_str_mv"
 ; Field to use for record warnings about problems with the metadata
 ;warnings_field = warnings_str_mv
 ; Whether to put record format in allfields
@@ -88,6 +93,8 @@ unicode_normalization_form = NFKC
 ; Whether to use a separate thread for updating merged records. Allows merged and
 ; single record update to run in parallel.
 ;threaded_merged_record_update = true
+; Field mapper class. Default is "\RecordManager\Base\Utils\FieldMapper".
+;field_mapper = "\RecordManager\Finna\Utils\FieldMapper"
 
 [OAI-PMH]
 ; Repository name returned in the Identify response
@@ -123,7 +130,8 @@ error_email     =
 ; See https://pear.php.net/manual/en/package.http.http-request2.config.php for
 ; documentation on the valid parameters.
 [HTTP]
-;adapter = "\HTTP_Request2_Adapter_Curl"
+;follow_redirects = true
+;adapter = "HTTP_Request2_Adapter_Curl"
 ;ssl_verify_peer = false
 
 [MarcRecord]

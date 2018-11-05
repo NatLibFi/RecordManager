@@ -53,8 +53,8 @@ class Harvest extends AbstractBase
      * @param string      $startResumptionToken Override OAI-PMH resumptionToken to
      * resume interrupted harvesting process (note
      *                                     that tokens may have a limited lifetime)
-     * @param string      $exclude              Source ID's to exclude whe using '*'
-     * for repository
+     * @param string      $exclude              Source ID's to exclude from
+     * harvesting
      * @param bool|string $reharvest            Whether to consider this a full
      * reharvest where sets may have changed
      *                                          (deletes records not received during
@@ -101,9 +101,7 @@ class Harvest extends AbstractBase
                 if ($repository && $repository != '*' && $source != $repository) {
                     continue;
                 }
-                if ((!$repository || $repository == '*')
-                    && in_array($source, $excludedSources)
-                ) {
+                if (in_array($source, $excludedSources)) {
                     continue;
                 }
                 if (empty($source) || empty($settings) || !isset($settings['url'])) {

@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2017.
+ * Copyright (C) The National Library of Finland 2012-2018.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -190,6 +190,8 @@ class Lido extends \RecordManager\Base\Record\Lido
         }
 
         $data['author_facet'] = $this->getActors($this->mainEvent, null, false);
+
+        $data['format_ext_str_mv'] = $this->getObjectWorkTypes();
 
         return $data;
     }
@@ -1495,16 +1497,16 @@ class Lido extends \RecordManager\Base\Record\Lido
     }
 
     /**
-     * Return the object type.
+     * Return the object types
      *
      * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
      * #objectWorkTypeWrap
      * @return string|array
      */
-    protected function getObjectWorkType()
+    protected function getObjectWorkTypes()
     {
-        $result = parent::getObjectWorkType();
-        /*
+        $result = [$this->getObjectWorkType()];
+
         // Check for image links and add a work type for images
         $imageTypes = [
             'Kuva', 'Kuva, Valokuva', 'Valokuva', 'dia', 'kuva', 'negatiivi',
@@ -1535,7 +1537,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                     }
                 }
             }
-        }*/
+        }
 
         return $result;
     }

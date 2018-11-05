@@ -529,7 +529,7 @@ class Database
      * @param string $collectionName The queue collection name
      * @param string $id             ID to add
      *
-     * @return bool
+     * @return void
      */
     public function addIdToQueue($collectionName, $id)
     {

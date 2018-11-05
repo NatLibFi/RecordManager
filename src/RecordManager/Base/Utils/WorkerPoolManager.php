@@ -387,8 +387,13 @@ class WorkerPoolManager
             $except = null;
             $res = socket_select($read, $write, $except, $block ? 1000 : 0);
             if (false === $res) {
+                $error = socket_last_error();
+                if (SOCKET_EINTR === $error) {
+                    // Retry after an interrupted system call
+                    continue;
+                }
                 throw new \Exception(
-                    'socket_select failed: ' . socket_strerror(socket_last_error())
+                    'socket_select failed: ' . socket_strerror($error)
                 );
             }
             if (0 === $res) {
