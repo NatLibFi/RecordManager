@@ -213,6 +213,8 @@ trait StoreRecordTrait
             $dbRecord['format'] = $settings['format'];
             $dbRecord['original_data'] = $originalData;
             $dbRecord['normalized_data'] = $normalizedData;
+            $hostSourceIds = !empty($settings['__hostRecordSourceId'])
+                ? $settings['__hostRecordSourceId'] : [$sourceId];
             if ($settings['dedup']) {
                 // If this is a host record, mark it to be deduplicated.
                 // If this is a component part, mark its host record to be
@@ -225,7 +227,7 @@ trait StoreRecordTrait
                 } else {
                     $this->db->updateRecords(
                         [
-                            'source_id' => $sourceId,
+                            'source_id' => ['$in' => $hostSourceIds],
                             'linking_id' => ['$in' => (array)$hostIDs]
                         ],
                         ['update_needed' => true]
@@ -247,7 +249,7 @@ trait StoreRecordTrait
                 // Mark host records updated too
                 $this->db->updateRecords(
                     [
-                        'source_id' => $sourceId,
+                        'source_id' => ['$in' => $hostSourceIds],
                         'linking_id' => ['$in' => (array)$hostIDs]
                     ],
                     ['updated' => $this->db->getTimestamp()]

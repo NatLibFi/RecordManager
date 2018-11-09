@@ -86,6 +86,7 @@
 ;                         extrafields[] = sector_str_mv:library
 ; driverParams[]        An array of extra parameters that can be used to customize record driver behavior
 ; enrichments[]         An array of enrichment class names that can be used to enrich records
+; componentPartSourceId[] An array defining linked sources that are used to fetch component parts from this source
 
 ; OAI-PMH Provider Specific settings:
 ; transformation_to_{fmt}
