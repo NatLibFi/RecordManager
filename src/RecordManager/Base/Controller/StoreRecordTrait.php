@@ -282,8 +282,8 @@ trait StoreRecordTrait
     /**
      * Delete records with an OAI identifier
      *
-     * @param string $sourceId   Source ID
-     * @param string $oaiID      ID of the record as received from OAI-PMH
+     * @param string $sourceId Source ID
+     * @param string $oaiID    ID of the record as received from OAI-PMH
      *
      * @return int Count of records deleted
      */
