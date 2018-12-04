@@ -1044,6 +1044,22 @@ class Marc extends \RecordManager\Base\Record\Marc
     }
 
     /**
+     * Check if the record is suppressed.
+     *
+     * @return bool
+     */
+    public function getSuppressed()
+    {
+        if ($this->getDriverParam('kohaNormalization', false)) {
+            foreach ($this->getFields('942') as $field942) {
+                $suppressed = $this->getSubfield($field942, 'n');
+                return (bool)$suppressed;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Return usage rights if any
      *
      * @return array ['restricted'] or a more specific id if restricted,

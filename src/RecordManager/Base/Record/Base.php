@@ -408,6 +408,16 @@ class Base
     }
 
     /**
+     * Check if the record is suppressed.
+     *
+     * @return bool
+     */
+    public function getSuppressed()
+    {
+        return false;
+    }
+
+    /**
      * Return a parameter specified in driverParams[] of datasources.ini
      *
      * @param string $parameter Parameter name
