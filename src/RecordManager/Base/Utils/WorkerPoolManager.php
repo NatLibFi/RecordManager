@@ -462,6 +462,7 @@ class WorkerPoolManager
 
         $msgLen = strlen($message);
         $written = 0;
+        $startTime = microtime(true);
         while (true) {
             $read = null;
             $write = [$socket];
@@ -470,6 +471,11 @@ class WorkerPoolManager
             if (false === $res) {
                 throw new \Exception(
                     'socket_select failed: ' . socket_strerror(socket_last_error())
+                );
+            }
+            if (microtime(true) - $startTime > 60) {
+                throw new \Exception(
+                    'writeSocket timed out after 60 seconds'
                 );
             }
             if (0 === $res) {
