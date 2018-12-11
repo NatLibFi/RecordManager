@@ -314,16 +314,17 @@ class OaiPmh extends Base
      */
     protected function safeguard($resumptionToken)
     {
-        if ($this->lastResumptionToken === $resumptionToken
-            && ++$this->sameResumptionTokenCount > $this->sameResumptionTokenLimit
-        ) {
-            throw new \Exception(
-                "{$this->source}: same resumptionToken received"
-                . " $sameResumptionTokenCount times without records,"
-                . ' aborting'
-            );
+        if ($this->lastResumptionToken === $resumptionToken) {
+            if (++$this->sameResumptionTokenCount >= $this->sameResumptionTokenLimit
+            ) {
+                throw new \Exception(
+                    "{$this->source}: same resumptionToken received"
+                    . " {$this->sameResumptionTokenCount} times, aborting"
+                );
+            }
         } else {
             $this->sameResumptionTokenCount = 0;
+            $this->lastResumptionToken = $resumptionToken;
         }
     }
 
