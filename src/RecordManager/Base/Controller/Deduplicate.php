@@ -223,6 +223,7 @@ class Deduplicate extends AbstractBase
                 $this->logger->log(
                     'deduplicate', 'Exception: ' . $e->getMessage(), Logger::FATAL
                 );
+                throw $e;
             }
             if ($this->terminate) {
                 $this->logger->log('deduplicate', 'Termination upon request');
