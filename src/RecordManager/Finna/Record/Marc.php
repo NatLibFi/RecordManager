@@ -510,14 +510,17 @@ class Marc extends \RecordManager\Base\Record\Marc
         // Shelving location in building_sub_str_mv
         $subBuilding = $this->getDriverParam('subBuilding', '');
         if ($subBuilding) {
+            if ('1' === $subBuilding) { // true
+                $subBuilding = 'c';
+            }
             foreach ($this->getFields('852') as $field) {
-                $location = $this->getSubfield($field, 'c');
+                $location = $this->getSubfield($field, $subBuilding);
                 if ('' !== $location) {
                     $data['building_sub_str_mv'][] = $location;
                 }
             }
             foreach ($this->getFields('952') as $field) {
-                $location = $this->getSubfield($field, 'c');
+                $location = $this->getSubfield($field, $subBuilding);
                 if ('' !== $location) {
                     $data['building_sub_str_mv'][] = $location;
                 }
