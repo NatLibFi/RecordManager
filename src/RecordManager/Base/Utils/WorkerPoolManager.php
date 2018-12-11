@@ -341,11 +341,11 @@ class WorkerPoolManager
                 if ($worker['active']) {
                     $result = $this->readSocket($worker['socket']);
                     if (null !== $result) {
-                        $worker['active'] = false;
                         if (!empty($result['exception'])) {
                             throw new \Exception($result['exception']);
                         }
                         $this->results[$poolId][] = $result['r'];
+                        $worker['active'] = false;
                     }
                 }
             }
