@@ -2415,11 +2415,11 @@ class SolrUpdater
         }
         foreach ($data as $collectionName => $collection) {
             foreach ($collection['shards'] as $shardName => $shard) {
-                if ('active' !== $shard['state']) {
+                if ('active' !== $shard['state'] && 'inactive' !== $shard['state']) {
                     $this->log->log(
                         'checkClusterState',
                         "Collection $collectionName shard $shardName:"
-                        . " Not in active state: {$shard['state']}",
+                        . " Not in usable state: {$shard['state']}",
                         Logger::WARNING
                     );
                     $this->clusterState = 'degraded';
