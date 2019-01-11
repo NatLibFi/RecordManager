@@ -160,45 +160,7 @@ class Ead extends Base
             );
         }
 
-        if ($geoNames = $doc->xpath('controlaccess/geogname')) {
-            $names = [];
-            foreach ($geoNames as $el) {
-                if (!isset($el->part) && !isset($el->geographiccoordinates)) {
-                    // Text node with location name
-                    if (trim((string)$el) !== '-') {
-                        $names[] = trim((string)$el);
-                    }
-                    continue;
-                }
-
-                // Node with 'part' and/or 'geographiccoordinates' childnodes
-                if (isset($el->part)) {
-                    foreach ($el->part as $name) {
-                        if (trim((string)$name) !== '-') {
-                            $names[] = trim((string)$name);
-                        }
-                    }
-                }
-                if (isset($el->geographiccoordinates)) {
-                    $attr = $el->geographiccoordinates->attributes();
-                    if (isset($attr->coordinatesystem)
-                        && (string)$attr->coordinatesystem === 'WGS84'
-                    ) {
-                        $coordinates = array_map(
-                            'trim',
-                            explode(',', (string)$el->geographiccoordinates)
-                        );
-                        if (count($coordinates) !== 2) {
-                            continue;
-                        }
-                        list($lat, $lon) = $coordinates;
-                        $data['location_geo'] = "POINT(${lon} ${lat})";
-                        $data['center_coords'] = "${lon} ${lat}";
-                    }
-                }
-            }
-            $data['geographic'] = $data['geographic_facet'] = $names;
-        }
+        $data = array_merge($data, $this->getGeographicData());
 
         if ($subjects = $doc->xpath('controlaccess/subject')) {
             $topics = [];
@@ -325,5 +287,57 @@ class Ead extends Base
             }
         }
         return $allFields;
+    }
+
+    /**
+     * Get geographic data
+     * (geographic, geographic_facet, location_geo, center_coords)
+     *
+     * @return array
+     */
+    protected function getGeographicData()
+    {
+        $data = $names = [];
+        if ($geoNames = $this->doc->xpath('controlaccess/geogname')) {
+            foreach ($geoNames as $el) {
+                if (!isset($el->part) && !isset($el->geographiccoordinates)) {
+                    // Text node with location name
+                    if (trim((string)$el) !== '-') {
+                        $names[] = trim((string)$el);
+                    }
+                    continue;
+                }
+                
+                // Node with 'part' and/or 'geographiccoordinates' childnodes
+                if (isset($el->part)) {
+                    foreach ($el->part as $name) {
+                        if (trim((string)$name) !== '-') {
+                            $names[] = trim((string)$name);
+                        }
+                    }
+                }
+                if (isset($el->geographiccoordinates)) {
+                    $attr = $el->geographiccoordinates->attributes();
+                    if (isset($attr->coordinatesystem)
+                        && (string)$attr->coordinatesystem === 'WGS84'
+                    ) {
+                        $coordinates = array_map(
+                            'trim',
+                            explode(',', (string)$el->geographiccoordinates)
+                        );
+                        if (count($coordinates) !== 2) {
+                            continue;
+                        }
+                        list($lat, $lon) = $coordinates;
+                        $data['location_geo'] = "POINT(${lon} ${lat})";
+                        $data['center_coords'] = "${lon} ${lat}";
+                    }
+                }
+            }
+        }
+        if (!empty($names)) {
+            $data['geographic'] = $data['geographic_facet'] = $names;
+        }
+        return $data;
     }
 }
