@@ -298,40 +298,48 @@ class Ead extends Base
     protected function getGeographicData()
     {
         $data = $names = [];
-        if ($geoNames = $this->doc->xpath('controlaccess/geogname')) {
-            foreach ($geoNames as $el) {
-                if (!isset($el->part) && !isset($el->geographiccoordinates)) {
-                    // Text node with location name
-                    if (trim((string)$el) !== '-') {
-                        $names[] = trim((string)$el);
-                    }
-                    continue;
+
+        
+
+        $geoNames = [];
+        foreach ($this->doc->controlaccess as $el) {
+            foreach ($el->geogname as $name) {
+                $geoNames[] = $name;
+            }
+        }
+        
+        foreach ($geoNames as $el) {
+            if (!isset($el->part) && !isset($el->geographiccoordinates)) {
+                // Text node with location name
+                if (trim((string)$el) !== '-') {
+                    $names[] = trim((string)$el);
                 }
-                
-                // Node with 'part' and/or 'geographiccoordinates' childnodes
-                if (isset($el->part)) {
-                    foreach ($el->part as $name) {
-                        if (trim((string)$name) !== '-') {
-                            $names[] = trim((string)$name);
-                        }
+                continue;
+            }
+            
+            // Node with 'part' and/or 'geographiccoordinates' childnodes
+            if (isset($el->part)) {
+                foreach ($el->part as $name) {
+                    if (trim((string)$name) !== '-') {
+                        $names[] = trim((string)$name);
                     }
                 }
-                if (isset($el->geographiccoordinates)) {
-                    $attr = $el->geographiccoordinates->attributes();
-                    if (isset($attr->coordinatesystem)
-                        && (string)$attr->coordinatesystem === 'WGS84'
-                    ) {
-                        $coordinates = array_map(
-                            'trim',
-                            explode(',', (string)$el->geographiccoordinates)
-                        );
-                        if (count($coordinates) !== 2) {
-                            continue;
-                        }
-                        list($lat, $lon) = $coordinates;
-                        $data['location_geo'] = "POINT(${lon} ${lat})";
-                        $data['center_coords'] = "${lon} ${lat}";
+            }
+            if (isset($el->geographiccoordinates)) {
+                $attr = $el->geographiccoordinates->attributes();
+                if (isset($attr->coordinatesystem)
+                    && (string)$attr->coordinatesystem === 'WGS84'
+                ) {
+                    $coordinates = array_map(
+                        'trim',
+                        explode(',', (string)$el->geographiccoordinates)
+                    );
+                    if (count($coordinates) !== 2) {
+                        continue;
                     }
+                    list($lat, $lon) = $coordinates;
+                    $data['location_geo'] = "POINT(${lon} ${lat})";
+                    $data['center_coords'] = "${lon} ${lat}";
                 }
             }
         }
