@@ -297,11 +297,8 @@ class Ead extends Base
      */
     protected function getGeographicData()
     {
-        $data = $names = [];
+        $data = $names = $geoNames = [];
 
-        
-
-        $geoNames = [];
         foreach ($this->doc->controlaccess as $el) {
             foreach ($el->geogname as $name) {
                 $geoNames[] = $name;
