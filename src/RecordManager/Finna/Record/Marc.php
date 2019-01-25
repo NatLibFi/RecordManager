@@ -1667,29 +1667,45 @@ class Marc extends \RecordManager\Base\Record\Marc
         $titleFields = [
             '130' => ['n' => 1],
             '240' => ['n' => 1],
-            '245' => ['b' => 1, 'n' => 1]
+            '245' => ['b' => 1, 'n' => 1],
+            '246' => ['b' => 1, 'n' => 1],
+            '247' => ['b' => 1, 'n' => 1],
         ];
 
         $authors = [];
+        $authorsAltScript = [];
         $titles = [];
+        $titlesAltScript = [];
 
         foreach ($authorFields as $tag => $subfields) {
-            $author = $this->getFieldSubfields($tag, $subfields);
-            if ($author) {
+            $auths = $this->getFieldsSubfields(
+                [[self::GET_BOTH, $tag, $subfields]],
+                true,
+                false
+            );
+            if (isset($auths[0])) {
                 $authors[] = [
                     'type' => 'author',
-                    'value' => $author
+                    'value' => $auths[0]
                 ];
-                break;
             }
+            if (isset($auths[1])) {
+                $authorsAltScript[] = [
+                    'type' => 'author',
+                    'value' => $auths[1]
+                ];
+            }
+            break;
         }
 
         foreach ($titleFields as $tag => $subfields) {
             $field = $this->getField($tag);
             $title = '';
+            $altTitles = [];
+            $ind = '130' === $tag ? 1 : 2;
             if ($field && !empty($field['s'])) {
                 $title = $this->getSubfield($field, 'a');
-                $nonfiling = $this->getIndicator($field, '130' === $tag ? 1 : 2);
+                $nonfiling = $this->getIndicator($field, $ind);
                 if ($nonfiling > 0) {
                     $title = substr($title, $nonfiling);
                 }
@@ -1697,14 +1713,39 @@ class Marc extends \RecordManager\Base\Record\Marc
                 if ($rest) {
                     $title .= " $rest";
                 }
+                $sub6 = $this->getSubfield($field, '6');
+                if ($sub6) {
+                    $sub6 = "$tag-" . substr($sub6, 4, 2);
+                    foreach ($this->getFields('880') as $f880) {
+                        if (strncmp($this->getSubfield($f880, '6'), $sub6, 6) != 0) {
+                            continue;
+                        }
+                        $altTitle = $this->getSubfield($f880, 'a');
+                        $nonfiling = $this->getIndicator($f880, $ind);
+                        if ($nonfiling > 0) {
+                            $altTitle = substr($altTitle, $nonfiling);
+                        }
+                        $rest = $this->getSubfields($f880, $subfields);
+                        if ($rest) {
+                            $altTitle .= " $rest";
+                        }
+                        if ($altTitle) {
+                            $altTitles[] = $altTitle;
+                        }
+                    }
+                }
             }
-            if ('130' === $tag && !$title) {
-                return [];
-            }
+            $titleType = '130' === $tag ? 'uniform' : 'title';
             if ($title) {
                 $titles[] = [
-                    'type' => '130' === $tag ? 'uniform' : 'title',
+                    'type' => $titleType,
                     'value' => $title
+                ];
+            }
+            foreach ($altTitles as $altTitle) {
+                $titlesAltScript[] = [
+                    'type' => $titleType,
+                    'value' => $altTitle
                 ];
             }
         }
@@ -1713,6 +1754,6 @@ class Marc extends \RecordManager\Base\Record\Marc
             return [];
         }
 
-        return compact('authors', 'titles');
+        return compact('authors', 'authorsAltScript', 'titles', 'titlesAltScript');
     }
 }

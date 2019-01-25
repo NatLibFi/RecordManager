@@ -1955,6 +1955,23 @@ class SolrUpdater
                     }
                 }
             }
+            foreach ($workIds['titlesAltScript'] as $titleData) {
+                $title = MetadataUtils::normalizeKey(
+                    $titleData['value'],
+                    $this->unicodeNormalizationForm
+                );
+                if ('uniform' === $titleData['type']) {
+                    $keys[] = "UT $title";
+                } else {
+                    foreach ($workIds['authorsAltScript'] as $authorData) {
+                        $author = MetadataUtils::normalizeKey(
+                            $authorData['value'],
+                            $this->unicodeNormalizationForm
+                        );
+                        $keys[] = "AT $author $title";
+                    }
+                }
+            }
             if ($keys) {
                 $data['work_keys_str_mv'] = $keys;
             }
