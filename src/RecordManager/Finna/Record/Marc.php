@@ -1683,19 +1683,19 @@ class Marc extends \RecordManager\Base\Record\Marc
                 true,
                 false
             );
-            if (isset($auths[0])) {
-                $authors[] = [
-                    'type' => 'author',
-                    'value' => $auths[0]
-                ];
-            }
             if (isset($auths[1])) {
                 $authorsAltScript[] = [
                     'type' => 'author',
                     'value' => $auths[1]
                 ];
             }
-            break;
+            if (isset($auths[0])) {
+                $authors[] = [
+                    'type' => 'author',
+                    'value' => $auths[0]
+                ];
+                break;
+            }
         }
 
         foreach ($titleFields as $tag => $subfields) {
