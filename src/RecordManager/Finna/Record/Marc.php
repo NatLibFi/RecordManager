@@ -628,8 +628,8 @@ class Marc extends \RecordManager\Base\Record\Marc
                         }
                     }
                 }
-                $access = MetadataUtils::normalize(
-                    $this->getFieldSubfields('506', ['f' => 1])
+                $access = MetadataUtils::normalizeKey(
+                    $this->getFieldSubfields('506', ['f' => 1]), 'NFKC'
                 );
                 switch ($access) {
                 case 'unrestricted':
@@ -700,8 +700,8 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         if (!empty($data['online_str_mv'])) {
-            $access = MetadataUtils::normalize(
-                $this->getFieldSubfields('506', ['f' => 1])
+            $access = MetadataUtils::normalizeKey(
+                $this->getFieldSubfields('506', ['f' => 1]), 'NFKC'
             );
             if ($access !== 'onlineaccesswithauthorization') {
                 $data['free_online_str_mv'] = $data['online_str_mv'];

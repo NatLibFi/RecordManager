@@ -360,8 +360,17 @@ class SolrUpdater
 
     /**
      * Whether to track last update date per server's update url
+     *
+     * @var bool
      */
     protected $datePerServer;
+
+    /**
+     * UNICODE normalization form
+     *
+     * @var string
+     */
+    protected $unicodeNormalizationForm;
 
     /**
      * Constructor
@@ -465,6 +474,10 @@ class SolrUpdater
         if (!empty($config['Solr']['field_mapper'])) {
             $this->fieldMapperClass = $config['Solr']['field_mapper'];
         }
+
+        $this->unicodeNormalizationForm
+            = isset($config['Solr']['unicode_normalization_form'])
+            ? $config['Solr']['unicode_normalization_form'] : '';
 
         // Load settings
         $this->initDatasources($dataSourceSettings);
@@ -1911,7 +1924,9 @@ class SolrUpdater
                 $data['allfields'][] = str_replace(
                     ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
                     ['ax', 'bx', 'cx', 'dx', 'ex', 'fx', 'gx', 'hx', 'ix', 'jx'],
-                    MetadataUtils::normalize($format)
+                    MetadataUtils::normalizeKey(
+                        $format, $this->unicodeNormalizationForm
+                    )
                 );
             }
         }
