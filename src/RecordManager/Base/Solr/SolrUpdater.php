@@ -1935,6 +1935,31 @@ class SolrUpdater
             $data['hidden_component_boolean'] = true;
         }
 
+        // Work identification keys
+        if ($workIds = $metadataRecord->getWorkIdentificationData()) {
+            $keys = [];
+            foreach ($workIds['titles'] as $titleData) {
+                $title = MetadataUtils::normalizeKey(
+                    $titleData['value'],
+                    $this->unicodeNormalizationForm
+                );
+                if ('uniform' === $titleData['type']) {
+                    $keys[] = "UT $title";
+                } else {
+                    foreach ($workIds['authors'] as $authorData) {
+                        $author = MetadataUtils::normalizeKey(
+                            $authorData['value'],
+                            $this->unicodeNormalizationForm
+                        );
+                        $keys[] = "AT $author $title";
+                    }
+                }
+            }
+            if ($keys) {
+                $data['work_keys_str_mv'] = $keys;
+            }
+        }
+
         foreach ($data as $key => &$values) {
             if (is_array($values)) {
                 foreach ($values as $key => &$value) {

@@ -1647,4 +1647,71 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
         return $building;
     }
+
+    /**
+     * Get key data that can be used to identify expressions of a work
+     *
+     * @return array Associative array of authors and titles
+     */
+    public function getWorkIdentificationData()
+    {
+        $authorFields = [
+            '100' => ['a' => 1, 'b' => 1],
+            '110' => ['a' => 1, 'b' => 1],
+            '111' => ['a' => 1, 'c' => 1],
+            '700' => ['a' => 1, 'b' => 1],
+            '710' => ['a' => 1, 'b' => 1],
+            '711' => ['a' => 1, 'c' => 1]
+        ];
+        $titleFields = [
+            '130' => ['n' => 1],
+            '240' => ['n' => 1],
+            '245' => ['b' => 1, 'n' => 1]
+        ];
+
+        $authors = [];
+        $titles = [];
+
+        foreach ($authorFields as $tag => $subfields) {
+            $author = $this->getFieldSubfields($tag, $subfields);
+            if ($author) {
+                $authors[] = [
+                    'type' => 'author',
+                    'value' => $author
+                ];
+                break;
+            }
+        }
+
+        foreach ($titleFields as $tag => $subfields) {
+            $field = $this->getField($tag);
+            $title = '';
+            if ($field && !empty($field['s'])) {
+                $title = $this->getSubfield($field, 'a');
+                $nonfiling = $this->getIndicator($field, '130' === $tag ? 1 : 2);
+                if ($nonfiling > 0) {
+                    $title = substr($title, $nonfiling);
+                }
+                $rest = $this->getSubfields($field, $subfields);
+                if ($rest) {
+                    $title .= " $rest";
+                }
+            }
+            if ('130' === $tag && !$title) {
+                return [];
+            }
+            if ($title) {
+                $titles[] = [
+                    'type' => '130' === $tag ? 'uniform' : 'title',
+                    'value' => $title
+                ];
+            }
+        }
+
+        if (!$titles) {
+            return [];
+        }
+
+        return compact('authors', 'titles');
+    }
 }
