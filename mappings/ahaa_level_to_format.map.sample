@@ -1,0 +1,36 @@
+; genreform ---------------------------------------------------
+Document/Arkisto = Document/ArchiveFonds
+Document/Kokoelma = Document/ArchiveCollection
+Document/Määrittämätön = Document/OtherCollection
+Other/Määrittämätön = Other/Other
+
+
+;Jatkuva julkaisu = Other/ContinuouslyUpdatedResource
+Elävä kuva = Video/Elävä kuva XXX
+Kuva = Image/Image
+Kuva/Valokuva = Image/Photo
+Kuva/Maalaus = Image/Painting
+Kuva/Kartta = Map/Map
+Kuva/Piirustus = Image/Drawing
+Kuva/Painokuva = Image/Painokuva XXX
+Kuva/Tekninen piirustus = Image/Drawing
+
+Mikrofilmi = Other/Microfilm
+Teksti = OtherText/Text
+Teksti/Teksti = OtherText/Text
+Teksti/Kirje = OtherText/Letter
+Teksti/Käsikirjoitus = OtherText/Manuscript
+Teksti/Määrittämätön = OtherText/Text
+Teksti/Lehtileikkeet ja pienpainatteet = Other/Print
+
+Ääni = Sound/Ääni XXX
+Ääni/Äänite = Sound/SoundRecording
+Ääni/Haastattelu = Sound/Haastattelu XXX
+Ääni/Radio-ohjelma = Sound/Radio XXX
+
+Määrittämätön = Other/Other
+
+;##default = Other/Other
+
+
+

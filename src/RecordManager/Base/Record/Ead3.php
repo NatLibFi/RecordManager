@@ -177,10 +177,46 @@ class Ead3 extends Base
      */
     public function getFormat()
     {
-        if (isset($this->doc->did->controlaccess->genreform->part)) {
-            return (string)$this->doc->did->controlaccess->genreform->part;
+        $level1 = $level2 = null;
+        
+        if ((string)$this->doc->attributes()->level === 'fonds') {
+            $level1 = 'Document';
         }
-        return (string)$this->doc->attributes()->level;
+
+        if (isset($this->doc->controlaccess->genreform)) {
+            foreach ($this->doc->controlaccess->genreform as $genreform) {
+                $format = null;
+                foreach ($genreform->part as $part) {
+                    $attributes = $part->attributes();
+                    if (isset($attributes->lang)
+                        && (string)$attributes->lang === 'fin'
+                    ) {
+                        $format = (string)$part;
+                        break;
+                    }
+                }
+                
+                if (!$format) {
+                    continue;
+                }
+                
+                $attr = $genreform->attributes();
+                if (isset($attr->encodinganalog)) {
+                    $type = (string)$attr->encodinganalog;
+                    if ($type === 'ahaa:AI08') {
+                        if ($level1 === null) {
+                            $level1 = $format;
+                        } else {
+                            $level2 = $format;
+                        }
+                    } elseif ($type === 'ahaa:AI57') {
+                        $level2 = $format;
+                    }
+                }
+            }
+        }
+        
+        return $level2 ? "$level1/$level2" : $level1;
     }
 
     /**
