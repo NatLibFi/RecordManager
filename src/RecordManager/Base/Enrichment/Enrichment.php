@@ -241,7 +241,7 @@ class Enrichment
             if ($try > 1) {
                 $this->logger->log(
                     'getExternalData',
-                    "HTTP request for '$url' succeeded after $try retries",
+                    "HTTP request for '$url' succeeded on $try attempt",
                     Logger::WARNING
                 );
             }
