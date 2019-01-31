@@ -102,6 +102,20 @@ class Enrichment
     ];
 
     /**
+     * Number of requests handled
+     *
+     * @var int
+     */
+    protected $requestsHandled = 0;
+
+    /**
+     * Time all successful requests have taken
+     *
+     * @var float
+     */
+    protected $requestsDuration = 0;
+
+    /**
      * Constructor
      *
      * @param Database $db     Database connection (for cache)
@@ -186,8 +200,11 @@ class Enrichment
                 $this->request->setHeader($headers);
             }
 
+            $duration = 0;
             try {
+                $startTime = microtime(true);
                 $response = $this->request->send();
+                $duration = microtime(true) - $startTime;
             } catch (\Exception $e) {
                 if ($try < $this->maxTries) {
                     if ($retryWait < 30) {
@@ -226,6 +243,18 @@ class Enrichment
                     'getExternalData',
                     "HTTP request for '$url' succeeded after $try retries",
                     Logger::WARNING
+                );
+            }
+            $this->requestsHandled++;
+            $this->requestsDuration += $duration;
+            if ($this->requestsHandled % 1000 === 0) {
+                $average
+                    = floor($this->requestsDuration / $this->requestsHandled * 1000);
+                $this->logger->log(
+                    'getExternalData',
+                    "{$this->requestsHandled} HTTP requests completed,"
+                    . " average time for a request $average ms",
+                    Logger::INFO
                 );
             }
             break;
