@@ -168,24 +168,24 @@ class Enrichment
             return $cached['data'];
         }
 
-        if (is_null($this->request)) {
-            $this->request = new \HTTP_Request2(
-                $url,
-                \HTTP_Request2::METHOD_GET,
-                $this->httpParams
-            );
-            $this->request->setHeader('Connection', 'Keep-Alive');
-            $this->request->setHeader('User-Agent', 'RecordManager');
-        } else {
-            $this->request->setUrl($url);
-        }
-        if ($headers) {
-            $this->request->setHeader($headers);
-        }
-
         $retryWait = $this->retryWait;
         $response = null;
         for ($try = 1; $try <= $this->maxTries; $try++) {
+            if (is_null($this->request)) {
+                $this->request = new \HTTP_Request2(
+                    $url,
+                    \HTTP_Request2::METHOD_GET,
+                    $this->httpParams
+                );
+                $this->request->setHeader('Connection', 'Keep-Alive');
+                $this->request->setHeader('User-Agent', 'RecordManager');
+            } else {
+                $this->request->setUrl($url);
+            }
+            if ($headers) {
+                $this->request->setHeader($headers);
+            }
+
             try {
                 $response = $this->request->send();
             } catch (\Exception $e) {
@@ -197,9 +197,10 @@ class Enrichment
                     $this->logger->log(
                         'getExternalData',
                         "HTTP request for '$url' failed (" . $e->getMessage()
-                        . "), retrying in {$retryWait} seconds...",
+                        . "), retrying in {$retryWait} seconds (retry $try)...",
                         Logger::WARNING
                     );
+                    $this->request = null;
                     sleep($retryWait);
                     continue;
                 }
@@ -212,12 +213,20 @@ class Enrichment
                     $this->logger->log(
                         'getExternalData',
                         "HTTP request for '$url' failed ($code), retrying "
-                        . "in {$this->retryWait} seconds...",
+                        . "in {$this->retryWait} seconds (retry $try)...",
                         Logger::WARNING
                     );
+                    $this->request = null;
                     sleep($this->retryWait);
                     continue;
                 }
+            }
+            if ($try > 1) {
+                $this->logger->log(
+                    'getExternalData',
+                    "HTTP request for '$url' succeeded after $try retries",
+                    Logger::WARNING
+                );
             }
             break;
         }
