@@ -370,9 +370,18 @@ class Ead3 extends Base
      */
     protected function getInstitution()
     {
-        return isset($this->doc->did->repository->corpname->part)
-            ? (string)$this->doc->did->repository->corpname->part
-            : '';
+        if (isset($this->doc->did->repository->corpname)) {
+            foreach ($this->doc->did->repository->corpname as $corpname) {
+                if ($name = $this->getDisplayName($corpname)) {
+                    return $name;
+                }
+            }
+            if ($name = $this->getDisplayName($this->doc->did->repository->corpname)
+            ) {
+                return $name;
+            }
+        }
+        return '';
     }
 
     /**
@@ -506,5 +515,34 @@ class Ead3 extends Base
             }
         }
         return $allFields;
+    }
+
+    protected function getDisplayName($node, $language = 'fi')
+    {
+        if (! isset($node->part)) {
+            return null;
+        }
+        $language = $this->mapLanguageCode($language);
+        foreach ($node->part->attributes() as $key => $val) {
+            if ($language === null
+                || ($key === 'lang' && (string)$val === $language)
+            ) {
+                return (string)$node->part;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Convert Finna language codes to EAD3 codes.
+     *
+     * @param string $languageCode Language code
+     *
+     * @return string
+     */
+    protected function mapLanguageCode($languageCode)
+    {
+        $langMap = ['fi' => 'fin', 'sv' => 'swe', 'en-gb' => 'eng'];
+        return $langMap[$languageCode] ?? $languageCode;
     }
 }
