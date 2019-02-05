@@ -1666,7 +1666,7 @@ class Marc extends Base
      *
      * @return array Subfields
      */
-    protected function getSubfieldsArray($field, $codes)
+    public function getSubfieldsArray($field, $codes)
     {
         $data = [];
         if (!$field || !isset($field['s']) || !is_array($field['s'])) {

@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2018.
+ * Copyright (C) The National Library of Finland 2012-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -51,6 +51,29 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected $illustrationStrings = [
         'ill.', 'illus.', 'kuv.', 'kuvitettu', 'illustrated'
     ];
+
+    /**
+     * Extra data to be included in allfields e.g. from component parts
+     *
+     * @var array
+     */
+    protected $extraAllFields = [];
+
+    /**
+     * Set record data
+     *
+     * @param string $source Source ID
+     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
+     * file import)
+     * @param string $data   Metadata
+     *
+     * @return void
+     */
+    public function setData($source, $oaiID, $data)
+    {
+        $this->extraAllFields = [];
+        parent::setData($source, $oaiID, $data);
+    }
 
     /**
      * Normalize the record (optional)
@@ -864,6 +887,13 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
             }
 
+            foreach ($marc->getFields('031') as $field031) {
+                foreach ($marc->getSubfieldsArray($field031, ['t' => 1]) as $lyrics)
+                {
+                    $this->extraAllFields[] = $lyrics;
+                }
+            }
+
             $newField = [
                 'i1' => ' ',
                 'i2' => ' ',
@@ -893,13 +923,19 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $newField['s'][] = ['g' => $addTitle];
             }
             foreach ($languages as $language) {
-                $newField['s'][] = ['h' => $language];
+                if ('|||' !== $language) {
+                    $newField['s'][] = ['h' => $language];
+                }
             }
             foreach ($originalLanguages as $language) {
-                $newField['s'][] = ['i' => $language];
+                if ('|||' !== $language) {
+                    $newField['s'][] = ['i' => $language];
+                }
             }
             foreach ($subtitleLanguages as $language) {
-                $newField['s'][] = ['j' => $language];
+                if ('|||' !== $language) {
+                    $newField['s'][] = ['j' => $language];
+                }
             }
             foreach ($identifiers as $identifier) {
                 $newField['s'][] = ['k' => $identifier];
@@ -1271,6 +1307,9 @@ class Marc extends \RecordManager\Base\Record\Marc
                     }
                 }
             }
+        }
+        if ($this->extraAllFields) {
+            $allFields = array_merge($allFields, $this->extraAllFields);
         }
         $allFields = array_map(
             function ($str) {
