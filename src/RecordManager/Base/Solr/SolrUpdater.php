@@ -1789,15 +1789,6 @@ class SolrUpdater
                         $data['container_title'] = $hostTitle;
                     }
                 }
-                // If there's only a single title, add any reference to it. In any
-                // other case we can't be sure which one is which.
-                if (!empty($data['hierarchy_parent_title'])
-                    && count($data['hierarchy_parent_title']) === 1
-                ) {
-                    if ($hostRef = $metadataRecord->getContainerReference()) {
-                        $data['hierarchy_parent_title'][0] .= " $hostRef";
-                    }
-                }
             }
             $data['container_volume'] = $metadataRecord->getVolume();
             $data['container_issue'] = $metadataRecord->getIssue();
