@@ -888,8 +888,8 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
 
             foreach ($marc->getFields('031') as $field031) {
-                foreach ($marc->getSubfieldsArray($field031, ['t' => 1]) as $lyrics)
-                {
+                foreach ($marc->getSubfieldsArray($field031, ['t' => 1]) as $lyrics
+                ) {
                     $this->extraAllFields[] = $lyrics;
                 }
             }
