@@ -628,8 +628,8 @@ class Marc extends \RecordManager\Base\Record\Marc
                         }
                     }
                 }
-                $access = MetadataUtils::normalize(
-                    $this->getFieldSubfields('506', ['f' => 1])
+                $access = MetadataUtils::normalizeKey(
+                    $this->getFieldSubfields('506', ['f' => 1]), 'NFKC'
                 );
                 switch ($access) {
                 case 'unrestricted':
@@ -700,8 +700,8 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         if (!empty($data['online_str_mv'])) {
-            $access = MetadataUtils::normalize(
-                $this->getFieldSubfields('506', ['f' => 1])
+            $access = MetadataUtils::normalizeKey(
+                $this->getFieldSubfields('506', ['f' => 1]), 'NFKC'
             );
             if ($access !== 'onlineaccesswithauthorization') {
                 $data['free_online_str_mv'] = $data['online_str_mv'];
@@ -1647,5 +1647,113 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
         return $building;
+    }
+
+    /**
+     * Get key data that can be used to identify expressions of a work
+     *
+     * @return array Associative array of authors and titles
+     */
+    public function getWorkIdentificationData()
+    {
+        $authorFields = [
+            '100' => ['a' => 1, 'b' => 1],
+            '110' => ['a' => 1, 'b' => 1],
+            '111' => ['a' => 1, 'c' => 1],
+            '700' => ['a' => 1, 'b' => 1],
+            '710' => ['a' => 1, 'b' => 1],
+            '711' => ['a' => 1, 'c' => 1]
+        ];
+        $titleFields = [
+            '130' => ['n' => 1],
+            '240' => ['n' => 1],
+            '245' => ['b' => 1, 'n' => 1],
+            '246' => ['b' => 1, 'n' => 1],
+            '247' => ['b' => 1, 'n' => 1],
+        ];
+
+        $authors = [];
+        $authorsAltScript = [];
+        $titles = [];
+        $titlesAltScript = [];
+
+        foreach ($authorFields as $tag => $subfields) {
+            $auths = $this->getFieldsSubfields(
+                [[self::GET_BOTH, $tag, $subfields]],
+                true,
+                false
+            );
+            if (isset($auths[1])) {
+                $authorsAltScript[] = [
+                    'type' => 'author',
+                    'value' => $auths[1]
+                ];
+            }
+            if (isset($auths[0])) {
+                $authors[] = [
+                    'type' => 'author',
+                    'value' => $auths[0]
+                ];
+                break;
+            }
+        }
+
+        foreach ($titleFields as $tag => $subfields) {
+            $field = $this->getField($tag);
+            $title = '';
+            $altTitles = [];
+            $ind = '130' === $tag ? 1 : 2;
+            if ($field && !empty($field['s'])) {
+                $title = $this->getSubfield($field, 'a');
+                $nonfiling = $this->getIndicator($field, $ind);
+                if ($nonfiling > 0) {
+                    $title = substr($title, $nonfiling);
+                }
+                $rest = $this->getSubfields($field, $subfields);
+                if ($rest) {
+                    $title .= " $rest";
+                }
+                $sub6 = $this->getSubfield($field, '6');
+                if ($sub6) {
+                    $sub6 = "$tag-" . substr($sub6, 4, 2);
+                    foreach ($this->getFields('880') as $f880) {
+                        if (strncmp($this->getSubfield($f880, '6'), $sub6, 6) != 0) {
+                            continue;
+                        }
+                        $altTitle = $this->getSubfield($f880, 'a');
+                        $nonfiling = $this->getIndicator($f880, $ind);
+                        if ($nonfiling > 0) {
+                            $altTitle = substr($altTitle, $nonfiling);
+                        }
+                        $rest = $this->getSubfields($f880, $subfields);
+                        if ($rest) {
+                            $altTitle .= " $rest";
+                        }
+                        if ($altTitle) {
+                            $altTitles[] = $altTitle;
+                        }
+                    }
+                }
+            }
+            $titleType = '130' === $tag ? 'uniform' : 'title';
+            if ($title) {
+                $titles[] = [
+                    'type' => $titleType,
+                    'value' => $title
+                ];
+            }
+            foreach ($altTitles as $altTitle) {
+                $titlesAltScript[] = [
+                    'type' => $titleType,
+                    'value' => $altTitle
+                ];
+            }
+        }
+
+        if (!$titles) {
+            return [];
+        }
+
+        return compact('authors', 'authorsAltScript', 'titles', 'titlesAltScript');
     }
 }

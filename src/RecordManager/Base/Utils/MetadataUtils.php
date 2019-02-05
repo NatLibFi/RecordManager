@@ -99,6 +99,27 @@ class MetadataUtils
     protected static $lowercaseLanguageStrings = true;
 
     /**
+     * Normalization character folding table
+     *
+     * @var array
+     */
+    protected static $foldingTable = [
+        'Š' => 'S', 'š' => 's', 'Ž' => 'Z', 'ž' => 'z', 'À' => 'A',
+        'Á' => 'A', 'Â' => 'A', 'Ã' => 'A', 'Ä' => 'A', 'Å' => 'A',
+        'Æ' => 'A', 'Ç' => 'C', 'È' => 'E', 'É' => 'E', 'Ê' => 'E',
+        'Ë' => 'E', 'Ì' => 'I', 'Í' => 'I', 'Î' => 'I', 'Ï' => 'I',
+        'Ñ' => 'N', 'Ò' => 'O', 'Ó' => 'O', 'Ô' => 'O', 'Õ' => 'O',
+        'Ö' => 'O', 'Ø' => 'O', 'Ù' => 'U', 'Ú' => 'U', 'Û' => 'U',
+        'Ü' => 'U', 'Ý' => 'Y', 'Þ' => 'B', 'ß' => 'Ss', 'à' => 'a',
+        'á' => 'a', 'â' => 'a', 'ã' => 'a', 'ä' => 'a', 'å' => 'a',
+        'æ' => 'a', 'ç' => 'c', 'è' => 'e', 'é' => 'e', 'ê' => 'e',
+        'ë' => 'e', 'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
+        'ð' => 'o', 'ñ' => 'n', 'ò' => 'o', 'ó' => 'o', 'ô' => 'o',
+        'õ' => 'o', 'ö' => 'o', 'ø' => 'o', 'ù' => 'u', 'ú' => 'u',
+        'û' => 'u', 'ü' => 'u', 'ý' => 'y', 'þ' => 'b', 'ÿ' => 'y'
+    ];
+
+    /**
      * Set the logger
      *
      * @param \RecordManager\Base\Utils\Logger $logger Logger
@@ -122,7 +143,7 @@ class MetadataUtils
     {
         if (isset($config['Site']['full_title_prefixes'])) {
             self::$fullTitlePrefixes = array_map(
-                ['\RecordManager\Base\Utils\MetadataUtils', 'normalize'],
+                ['\RecordManager\Base\Utils\MetadataUtils', 'normalizeKey'],
                 file(
                     "$basePath/conf/{$config['Site']['full_title_prefixes']}",
                     FILE_IGNORE_NEW_LINES
@@ -161,6 +182,20 @@ class MetadataUtils
             = isset($config['Site']['lowercase_language_strings'])
             ? $config['Site']['lowercase_language_strings']
             : true;
+
+        if (!empty($config['Site']['folding_ignore_characters'])) {
+            $chars = preg_split(
+                '//u',
+                $config['Site']['folding_ignore_characters'],
+                null,
+                PREG_SPLIT_NO_EMPTY
+            );
+            foreach ($chars as $c) {
+                if (isset(self::$foldingTable[$c])) {
+                    unset(self::$foldingTable[$c]);
+                }
+            }
+        }
     }
 
     /**
@@ -214,16 +249,19 @@ class MetadataUtils
      * Create a normalized title key for dedup
      *
      * @param string $title Title
+     * @param string $form  UNICODE normalization form
      *
      * @return string
      */
-    public static function createTitleKey($title)
+    public static function createTitleKey($title, $form)
     {
         $full = false;
         if (isset(MetadataUtils::$fullTitlePrefixes)) {
-            $normalTitle = MetadataUtils::normalize($title);
+            $normalTitle = MetadataUtils::normalizeKey($title);
             foreach (MetadataUtils::$fullTitlePrefixes as $prefix) {
-                if (strncmp($normalTitle, $prefix, strlen($prefix)) === 0) {
+                if ($prefix
+                    && strncmp($normalTitle, $prefix, strlen($prefix)) === 0
+                ) {
                     $full = true;
                     break;
                 }
@@ -247,43 +285,30 @@ class MetadataUtils
                 break;
             }
         }
-        return MetadataUtils::normalize($key);
+        return MetadataUtils::normalizeKey($key, $form);
     }
 
     /**
-     * Normalize a string for comparison
+     * Normalize a string for comparison while using lowercasing and configured
+     * UNICODE normalization form.
      *
-     * @param string $str String to be normalized
+     * @param string $str  String to be normalized
+     * @param string $form UNICODE normalization form to use
      *
      * @return string
      */
-    public static function normalize($str)
+    public static function normalizeKey($str, $form = 'NFKC')
     {
-        $unwanted_array = [
-            'Š' => 'S', 'š' => 's', 'Ž' => 'Z', 'ž' => 'z', 'À' => 'A',
-            'Á' => 'A', 'Â' => 'A', 'Ã' => 'A', /*'Ä'=>'A', 'Å'=>'A',*/
-            'Æ' => 'A', 'Ç' => 'C', 'È' => 'E', 'É' => 'E', 'Ê' => 'E',
-            'Ë' => 'E', 'Ì' => 'I', 'Í' => 'I', 'Î' => 'I', 'Ï' => 'I',
-            'Ñ' => 'N', 'Ò' => 'O', 'Ó' => 'O', 'Ô' => 'O', 'Õ' => 'O',
-            /*'Ö'=>'O',*/ 'Ø' => 'O', 'Ù' => 'U', 'Ú' => 'U', 'Û' => 'U',
-            'Ü' => 'U', 'Ý' => 'Y', 'Þ' => 'B', 'ß' => 'Ss', 'à' => 'a',
-            'á' => 'a', 'â' => 'a', 'ã' => 'a', /*'ä'=>'a', 'å'=>'a',*/
-            'æ' => 'a', 'ç' => 'c', 'è' => 'e', 'é' => 'e', 'ê' => 'e',
-            'ë' => 'e', 'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
-            'ð' => 'o', 'ñ' => 'n', 'ò' => 'o', 'ó' => 'o', 'ô' => 'o',
-            'õ' => 'o', /*'ö'=>'o',*/ 'ø' => 'o', 'ù' => 'u', 'ú' => 'u',
-            'û' => 'u', 'ü' => 'u', 'ý' => 'y', 'þ' => 'b', 'ÿ' => 'y'
-        ];
-        $str = strtr($str, $unwanted_array);
-        $str = utf8_decode($str);
+        $str = MetadataUtils::normalizeUnicode($str, 'NFKC');
+        $str = strtr($str, self::$foldingTable);
         $str = preg_replace(
-            // @codingStandardsIgnoreLine
-            '/[\x00-\x20\x21-\x2F\x3A-\x40\x7B-\xC3\xC6-\xD5\xD7-\xE3\xE6-\xF5\xF7-\xFF]/',
-            '',
-            $str
+            '/[\x00-\x20\x21-\x2F\x3A-\x40,\x5B-\x60,\x7B-\x7F]/', '', $str
         );
-        $str = mb_strtolower(trim($str));
-        return utf8_encode($str);
+        if ('NFKC' !== $form) {
+            $str = MetadataUtils::normalizeUnicode($str, $form);
+        }
+        $str = mb_strtolower(trim($str), 'UTF-8');
+        return $str;
     }
 
     /**
@@ -659,13 +684,14 @@ class MetadataUtils
     /**
      * Normalize string to one of the UNICODE normalization forms
      *
-     * @param string $str String to normalize
+     * @param string $str  String to normalize
+     * @param string $form Normalization form
      *
      * @return string Normalized string
      */
-    public static function normalizeUnicode($str)
+    public static function normalizeUnicode($str, $form = null)
     {
-        switch (self::$unicodeNormalizationForm) {
+        switch ($form) {
         case 'NFC':
             $str = \Normalizer::normalize($str, \Normalizer::FORM_C);
             break;

@@ -86,14 +86,21 @@ class DedupHandler
      *
      * @var FieldMapper
      */
-    protected $fieldMapper = null;
+    protected $fieldMapper;
 
     /**
      * Data source settings
      *
      * @var array
      */
-    protected $dataSourceSettings = [];
+    protected $dataSourceSettings;
+
+    /**
+     * Unicode normalization form for keys
+     *
+     * @var string
+     */
+    protected $normalizationForm;
 
     /**
      * Constructor
@@ -114,6 +121,9 @@ class DedupHandler
         $this->recordFactory = $recordFactory;
         $this->verbose = $verbose;
         $this->dataSourceSettings = $settings;
+        $this->normalizationForm
+            = isset($mainConfig['Site']['unicode_normalization_form'])
+            ? $mainConfig['Site']['unicode_normalization_form'] : 'NFKC';
 
         $this->fieldMapper = new FieldMapper(
             $basePath,
@@ -186,7 +196,7 @@ class DedupHandler
         $result = false;
 
         $keys = [MetadataUtils::createTitleKey(
-            $metadataRecord->getTitle(true)
+            $metadataRecord->getTitle(true), $this->normalizationForm
         )];
         if (!isset($record['title_keys'])
             || !is_array($record['title_keys'])
@@ -605,8 +615,12 @@ class DedupHandler
             return false;
         }
 
-        $origTitle = MetadataUtils::normalize($origRecord->getTitle(true));
-        $cTitle = MetadataUtils::normalize($cRecord->getTitle(true));
+        $origTitle = MetadataUtils::normalizeKey(
+            $origRecord->getTitle(true), $this->normalizationForm
+        );
+        $cTitle = MetadataUtils::normalizeKey(
+            $cRecord->getTitle(true), $this->normalizationForm
+        );
         if (!$origTitle || !$cTitle) {
             // No title match without title...
             if ($this->verbose) {
@@ -624,8 +638,12 @@ class DedupHandler
             return false;
         }
 
-        $origAuthor = MetadataUtils::normalize($origRecord->getMainAuthor());
-        $cAuthor = MetadataUtils::normalize($cRecord->getMainAuthor());
+        $origAuthor = MetadataUtils::normalizeKey(
+            $origRecord->getMainAuthor(), $this->normalizationForm
+        );
+        $cAuthor = MetadataUtils::normalizeKey(
+            $cRecord->getMainAuthor(), $this->normalizationForm
+        );
         $authorLev = 0;
         if ($origAuthor || $cAuthor) {
             if (!$origAuthor || !$cAuthor) {

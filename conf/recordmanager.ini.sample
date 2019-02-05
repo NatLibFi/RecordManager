@@ -16,6 +16,13 @@ articles = articles.lst
 ;lowercase_language_strings = true
 ; Directory for temporary files (default is system's temp directory)
 ;temp_dir = /tmp
+; Which normalization form to use for UNICODE normalization when creating search keys
+; e.g. for deduplication. Default is NFKC. See http://unicode.org/reports/tr15/ for
+; more information.
+unicode_normalization_form = NFKC
+; Which characters to keep intact when folding characters for normalized keys.
+; e.g. folding_ignore_characters = 'åäöÅÄÖ'
+;folding_ignore_characters = ''
 
 ; These settings control the OAI-PMH harvester
 [Harvesting]
@@ -73,6 +80,9 @@ password =
 ;warnings_field = warnings_str_mv
 ; Whether to put record format in allfields
 ;format_in_allfields = true
+; Which normalization form to use for UNICODE normalization when indexing records.
+; Default is to not perform normalization. See http://unicode.org/reports/tr15/ for
+; more information.
 unicode_normalization_form = NFKC
 ; Maximum number of tries to send an update to Solr. Default is 15.
 ;max_update_tries = 5

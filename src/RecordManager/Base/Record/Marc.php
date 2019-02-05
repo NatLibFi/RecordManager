@@ -877,10 +877,12 @@ class Marc extends Base
     public function getUniqueIDs()
     {
         $arr = [];
+        $form = isset($this->config['Site']['unicode_normalization_form'])
+            ? $this->config['Site']['unicode_normalization_form'] : 'NFKC';
         $nbn = $this->getField('015');
         if ($nbn) {
-            $nr = MetadataUtils::normalize(
-                strtok($this->getSubfield($nbn, 'a'), ' ')
+            $nr = MetadataUtils::normalizeKey(
+                strtok($this->getSubfield($nbn, 'a'), ' '), $form
             );
             $src = $this->getSubfield($nbn, '2');
             if ($src && $nr) {
@@ -889,8 +891,8 @@ class Marc extends Base
         }
         $nba = $this->getField('016');
         if ($nba) {
-            $nr = MetadataUtils::normalize(
-                strtok($this->getSubfield($nba, 'a'), ' ')
+            $nr = MetadataUtils::normalizeKey(
+                strtok($this->getSubfield($nba, 'a'), ' '), $form
             );
             $src = $this->getSubfield($nba, '2');
             if ($src && $nr) {
@@ -899,8 +901,8 @@ class Marc extends Base
         }
         $id = $this->getField('024');
         if ($id) {
-            $nr = MetadataUtils::normalize(
-                strtok($this->getSubfield($id, 'a'), ' ')
+            $nr = MetadataUtils::normalizeKey(
+                strtok($this->getSubfield($id, 'a'), ' '), $form
             );
             switch ($this->getIndicator($id, 1)) {
             case '0':
@@ -1471,7 +1473,7 @@ class Marc extends Base
                 } else {
                     // Additional normalization here so that we don't break ISO2709
                     // directory in SolrUpdater
-                    $fieldStr = MetadataUtils::normalizeUnicode($field);
+                    $fieldStr = MetadataUtils::normalizeUnicode($field, 'NFKC');
                 }
                 $fieldStr .= self::END_OF_FIELD;
                 $len = strlen($fieldStr);
