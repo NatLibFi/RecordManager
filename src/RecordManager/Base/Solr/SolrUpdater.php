@@ -1971,7 +1971,9 @@ class SolrUpdater
         foreach ($data as $key => &$values) {
             if (is_array($values)) {
                 foreach ($values as $key => &$value) {
-                    $value = MetadataUtils::normalizeUnicode($value);
+                    $value = MetadataUtils::normalizeUnicode(
+                        $value, $this->unicodeNormalizationForm
+                    );
                     if (empty($value) || $value === 0 || $value === 0.0
                         || $value === '0'
                     ) {
@@ -1980,7 +1982,9 @@ class SolrUpdater
                 }
                 $values = array_values(array_unique($values));
             } elseif ($key != 'fullrecord') {
-                $values = MetadataUtils::normalizeUnicode($values);
+                $values = MetadataUtils::normalizeUnicode(
+                    $values, $this->unicodeNormalizationForm
+                );
             }
             if (empty($values) || $values === 0 || $values === 0.0 || $values === '0'
             ) {
