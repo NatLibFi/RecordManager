@@ -689,7 +689,7 @@ class MetadataUtils
      *
      * @return string Normalized string
      */
-    public static function normalizeUnicode($str, $form = null)
+    public static function normalizeUnicode($str, $form)
     {
         switch ($form) {
         case 'NFC':
