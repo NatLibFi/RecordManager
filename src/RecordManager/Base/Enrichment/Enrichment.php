@@ -102,18 +102,18 @@ class Enrichment
     ];
 
     /**
-     * Number of requests handled
+     * Number of requests handled per host
      *
-     * @var int
+     * @var array
      */
-    protected $requestsHandled = 0;
+    protected $requestsHandled = [];
 
     /**
-     * Time all successful requests have taken
+     * Time all successful requests have taken per host
      *
-     * @var float
+     * @var array
      */
-    protected $requestsDuration = 0;
+    protected $requestsDuration = [];
 
     /**
      * Constructor
@@ -182,6 +182,11 @@ class Enrichment
             return $cached['data'];
         }
 
+        $host = parse_url($url, PHP_URL_HOST);
+        $port = parse_url($url, PHP_URL_PORT);
+        if ($port) {
+            $host .= ":$port";
+        }
         $retryWait = $this->retryWait;
         $response = null;
         for ($try = 1; $try <= $this->maxTries; $try++) {
@@ -245,15 +250,22 @@ class Enrichment
                     Logger::WARNING
                 );
             }
-            $this->requestsHandled++;
-            $this->requestsDuration += $duration;
-            if ($this->requestsHandled % 1000 === 0) {
-                $average
-                    = floor($this->requestsDuration / $this->requestsHandled * 1000);
+            if (isset($this->requestsHandled[$host])) {
+                $this->requestsHandled[$host]++;
+                $this->requestsDuration[$host] += $duration;
+            } else {
+                $this->requestsHandled[$host] = 1;
+                $this->requestsDuration[$host] = $duration;
+            }
+            if ($this->requestsHandled[$host] % 1000 === 0) {
+                $average = floor(
+                    $this->requestsDuration[$host] / $this->requestsHandled[$host]
+                    * 1000
+                );
                 $this->logger->log(
                     'getExternalData',
-                    "{$this->requestsHandled} HTTP requests completed,"
-                    . " average time for a request $average ms",
+                    "{$this->requestsHandled[$host]} HTTP requests completed"
+                    . " for $host, average time for a request $average ms",
                     Logger::INFO
                 );
             }
