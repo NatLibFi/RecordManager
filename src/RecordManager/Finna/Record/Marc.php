@@ -106,7 +106,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 // Always use subfield 'b' for location regardless of where it came
                 // from
                 $holding[] = ['b' => $branch];
-                foreach (['c', 'h', 'o'] as $code) {
+                foreach (['c', 'h', 'o', '8'] as $code) {
                     $value = $this->getSubfield($field952, $code);
                     $key[] = $value;
                     if ('' !== $value) {
@@ -1332,6 +1332,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         $building = [];
         if ($this->getDriverParam('holdingsInBuilding', true)) {
             $useSub = $this->getDriverParam('subLocationInBuilding', '');
+            $itemSub = $this->getDriverParam('itemSubLocationInBuilding', $useSub);
             foreach ($this->getFields('852') as $field) {
                 $location = $this->getSubfield($field, 'b');
                 if ($location) {
@@ -1344,7 +1345,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             foreach ($this->getFields('952') as $field) {
                 $location = $this->getSubfield($field, 'b');
                 if ($location) {
-                    if ($useSub && $sub = $this->getSubfield($field, $useSub)) {
+                    if ($itemSub && $sub = $this->getSubfield($field, $itemSub)) {
                         $location = [$location, $sub];
                     }
                     $building[] = $location;
