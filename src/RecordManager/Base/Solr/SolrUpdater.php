@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2018.
+ * Copyright (C) The National Library of Finland 2012-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -258,6 +258,13 @@ class SolrUpdater
     ];
 
     /**
+     * Fields to copy back from the merged record to all the child records
+     *
+     * @var array
+     */
+    protected $copyFromMergedRecord = [];
+
+    /**
      * Fields that are analyzed when scoring records for merging order
      */
     protected $scoredFields = [
@@ -416,6 +423,11 @@ class SolrUpdater
             $this->mergedFields = explode(',', $config['Solr']['merged_fields']);
         }
         $this->mergedFields = array_flip($this->mergedFields);
+
+        if (isset($config['Solr']['copy_from_merged_record'])) {
+            $this->copyFromMergedRecord
+                = explode(',', $config['Solr']['copy_from_merged_record']);
+        }
 
         if (isset($config['Solr']['single_fields'])) {
             $this->singleFields = explode(',', $config['Solr']['single_fields']);
@@ -1313,6 +1325,7 @@ class SolrUpdater
             $children[] = ['mongo' => $record, 'solr' => $data];
         }
         $merged = $this->mergeRecords($children);
+        $this->copyMergedDataToChildren($merged, $children);
 
         if (count($children) == 0) {
             $this->log->log(
@@ -2158,6 +2171,31 @@ class SolrUpdater
     }
 
     /**
+     * Copy configured fields from merged record to children
+     *
+     * @param array $merged  Merged record
+     * @param array $records Array of child records
+     *
+     * @return void
+     */
+    protected function copyMergedDataToChildren($merged, &$records)
+    {
+        foreach ($this->copyFromMergedRecord as $copyField) {
+            if (empty($merged[$copyField])) {
+                continue;
+            }
+            foreach ($records as &$child) {
+                $child['solr'][$copyField] = array_unique(
+                    array_merge(
+                        (array)($child['solr'][$copyField] ?? []),
+                        (array)$merged[$copyField]
+                    )
+                );
+            }
+        }
+    }
+
+    /**
      * Compare given record with the already one in Solr
      *
      * @param array  $record  Record
@@ -2621,7 +2659,7 @@ class SolrUpdater
     }
 
     /**
-     * Enrich record according to the data source settings
+     * Enrich record according to the global and data source settings
      *
      * @param string $source   Source ID
      * @param array  $settings Data source settings
@@ -2632,19 +2670,23 @@ class SolrUpdater
      */
     protected function enrich($source, $settings, $record, &$data)
     {
-        if (isset($settings['enrichments'])) {
-            foreach ($settings['enrichments'] as $enrichment) {
-                if (!isset($this->enrichments[$enrichment])) {
-                    $className = $enrichment;
-                    if (strpos($className, '\\') === false) {
-                        $className = "\RecordManager\Base\Enrichment\\$className";
-                    }
-                    $this->enrichments[$enrichment] = new $className(
-                        $this->db, $this->log, $this->config
-                    );
+        $enrichments = array_unique(
+            array_merge(
+                (array)($this->config['Solr']['enrichment'] ?? []),
+                (array)($settings['enrichments'] ?? [])
+            )
+        );
+        foreach ($enrichments as $enrichment) {
+            if (!isset($this->enrichments[$enrichment])) {
+                $className = $enrichment;
+                if (strpos($className, '\\') === false) {
+                    $className = "\RecordManager\Base\Enrichment\\$className";
                 }
-                $this->enrichments[$enrichment]->enrich($source, $record, $data);
+                $this->enrichments[$enrichment] = new $className(
+                    $this->db, $this->log, $this->config
+                );
             }
+            $this->enrichments[$enrichment]->enrich($source, $record, $data);
         }
     }
 
