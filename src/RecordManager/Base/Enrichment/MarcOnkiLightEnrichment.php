@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2014.
+ * Copyright (C) The National Library of Finland 2014-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -57,6 +57,14 @@ class MarcOnkiLightEnrichment extends Enrichment
     protected $urlPrefixWhitelist;
 
     /**
+     * Whitelist of URI prefixes for which to process other vocabularies with
+     * exact matches
+     *
+     * @var array
+     */
+    protected $uriPrefixExactMatches;
+
+    /**
      * Constructor
      *
      * @param Database $db     Database connection (for cache)
@@ -75,6 +83,14 @@ class MarcOnkiLightEnrichment extends Enrichment
         $this->urlPrefixWhitelist
             = isset($this->config['MarcOnkiLightEnrichment']['url_prefix_whitelist'])
             ? (array)$this->config['MarcOnkiLightEnrichment']['url_prefix_whitelist']
+            : [];
+
+        $this->uriPrefixExactMatches
+            = isset(
+                $this->config['MarcOnkiLightEnrichment']['uri_prefix_exact_matches']
+            )
+            ? (array)$this->config['MarcOnkiLightEnrichment']
+                ['uri_prefix_exact_matches']
             : [];
     }
 
@@ -158,6 +174,7 @@ class MarcOnkiLightEnrichment extends Enrichment
                 if (!isset($data['graph'])) {
                     continue;
                 }
+
                 foreach ($data['graph'] as $item) {
                     if (!isset($item['type'])) {
                         continue;
@@ -173,42 +190,57 @@ class MarcOnkiLightEnrichment extends Enrichment
                         $solrArray[$solrField][] = $item['altLabel']['value'];
                     }
 
-                    if (!empty($item['skos:exactMatch']['uri'])) {
-                        $matchURL = $matchId = $item['skos:exactMatch']['uri'];
-                        if (strncmp($matchURL, 'http', 4) !== 0) {
-                            $matchURL = $this->onkiLightBaseURL
-                                . '/data?format=application/json&uri='
-                                . urlencode($matchId);
+                    // Check whether to process other exactMatch vocabularies
+                    $exactMatches = false;
+                    if (!empty($item['exactMatch'])) {
+                        foreach ($this->uriPrefixExactMatches as $prefix) {
+                            if (strncmp($item['uri'], $prefix, strlen($prefix)) === 0
+                            ) {
+                                $exactMatches = true;
+                                break;
+                            }
                         }
-                        $matchData = $this->getExternalData(
-                            $matchURL, $matchId,
-                            ['Accept' => 'application/json']
-                        );
-                        if (!$matchData) {
-                            continue;
-                        }
-                        $matchData = json_decode($matchData, true);
-                        if (!isset($matchData['graph'])) {
-                            continue;
-                        }
-                        foreach ($matchData['graph'] as $matchItem) {
-                            if ($matchItem['uri'] != $matchId) {
+                    }
+
+                    if ($exactMatches) {
+                        foreach ($item['exactMatch'] as $exactMatch) {
+                            $matchURL = $matchId = $exactMatch['uri'];
+                            if (strncmp($matchURL, 'http', 4) !== 0) {
+                                $matchURL = $this->onkiLightBaseURL
+                                    . '/data?format=application/json&uri='
+                                    . urlencode($matchId);
+                            }
+                            $matchData = $this->getExternalData(
+                                $matchURL, $matchId,
+                                ['Accept' => 'application/json']
+                            );
+                            if (!$matchData) {
                                 continue;
                             }
-                            if (is_array($matchItem['type'])) {
-                                if (!in_array('skos:Concept', $matchItem['type'])) {
+                            $matchData = json_decode($matchData, true);
+                            if (!isset($matchData['graph'])) {
+                                continue;
+                            }
+                            foreach ($matchData['graph'] as $matchItem) {
+                                if ($matchItem['uri'] != $matchId) {
                                     continue;
                                 }
-                            } elseif ($matchItem['type'] != 'skos:Concept') {
-                                continue;
-                            }
-                            if (isset($matchItem['altLabel']['value'])) {
-                                $solrArray[$solrField][]
-                                    = $matchItem['altLabel']['value'];
-                            }
-                            if (isset($matchItem['prefLabel']['value'])) {
-                                $solrArray[$solrField][]
-                                    = $matchItem['prefLabel']['value'];
+                                if (is_array($matchItem['type'])) {
+                                    if (!in_array('skos:Concept', $matchItem['type'])
+                                    ) {
+                                        continue;
+                                    }
+                                } elseif ($matchItem['type'] != 'skos:Concept') {
+                                    continue;
+                                }
+                                if (isset($matchItem['altLabel']['value'])) {
+                                    $solrArray[$solrField][]
+                                        = $matchItem['altLabel']['value'];
+                                }
+                                if (isset($matchItem['prefLabel']['value'])) {
+                                    $solrArray[$solrField][]
+                                        = $matchItem['prefLabel']['value'];
+                                }
                             }
                         }
                     }
