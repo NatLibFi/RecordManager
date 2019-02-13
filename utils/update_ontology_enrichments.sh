@@ -14,12 +14,16 @@ DIR=$(dirname "$0")
 URL=$1
 DATABASE=$2
 COLLECTION=$3
+for TMPDIR in "$TMPDIR" "$TMP" /var/tmp /tmp
+do
+    test -d "$TMPDIR" && break
+done
 
-curl -s -H "Accept: text/csv" --data @${DIR}/fetch_yso.post ${URL} > yso.csv
-mongoimport --quiet -d ${DATABASE} -c ${COLLECTION} --file yso.csv --type=csv --headerline --mode=upsert
+curl -s -H "Accept: text/csv" --data @${DIR}/fetch_yso.post ${URL} > ${TMPDIR}yso.csv
+mongoimport --quiet -d ${DATABASE} -c ${COLLECTION} --file ${TMPDIR}yso.csv --type=csv --headerline --mode=upsert
 
-curl -s -H "Accept: text/csv" --data @${DIR}/fetch_ysa.post ${URL} > ysa.csv
-mongoimport --quiet -d ${DATABASE} -c ${COLLECTION} --file ysa.csv --type=csv --headerline --mode=upsert
+curl -s -H "Accept: text/csv" --data @${DIR}/fetch_ysa.post ${URL} > ${TMPDIR}ysa.csv
+mongoimport --quiet -d ${DATABASE} -c ${COLLECTION} --file ${TMPDIR}ysa.csv --type=csv --headerline --mode=upsert
 
-curl -s -H "Accept: text/csv" --data @${DIR}/fetch_allars.post ${URL} > allars.csv
-mongoimport --quiet -d ${DATABASE} -c ${COLLECTION} --file allars.csv --type=csv --headerline --mode=upsert
+curl -s -H "Accept: text/csv" --data @${DIR}/fetch_allars.post ${URL} > ${TMPDIR}allars.csv
+mongoimport --quiet -d ${DATABASE} -c ${COLLECTION} --file ${TMPDIR}allars.csv --type=csv --headerline --mode=upsert
