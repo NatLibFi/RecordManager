@@ -128,15 +128,20 @@ class Ead3 extends Base
         $data['format'] = $this->getFormat();
         $data['institution'] = $this->getInstitution();
 
+        // TODO: check title_sub
         switch ($data['format']) {
-        case 'fonds':
+        case 'Document/Arkisto':
             break;
-        case 'collection':
+        case 'Document/Kokoelma':
             break;
+        case 'Document/Määrittämätön':
+            break;
+
+            /*
         case 'series':
         case 'subseries':
             $data['title_sub'] = $this->getUnitId();
-            break;
+            break;*/
         default:
             $data['title_sub'] = $this->getUnitId();
             if ($doc->{'add-data'}->parent) {
@@ -483,11 +488,15 @@ class Ead3 extends Base
                 = (string)$this->doc->{'add-data'}->{'parent'}->attributes()->{'id'};
             $data['hierarchy_parent_title']
                 = (string)$this->doc->{'add-data'}->{'parent'}->attributes()->title;
+            //$data['is_hierarchy_id'] = $this->getID();
+            //$data['is_hierarchy_title'] = 'foio' . $this->getTitle();
+
+            
         } else {
             $data['is_hierarchy_id'] = $data['hierarchy_top_id'] = $this->getID();
             $data['is_hierarchy_title'] = $data['hierarchy_top_title']
-                = isset($doc->did->unittitle)
-                    ? (string)$doc->did->unittitle->attributes()->label
+                = isset($this->doc->did->unittitle)
+                    ? (string)$this->doc->did->unittitle->attributes()->label
                     : '';
         }
 
