@@ -166,6 +166,17 @@ class MarcOnkiLightEnrichment extends Enrichment
                     continue;
                 }
             }
+
+            $localData = $this->db->findOntologyEnrichment(['_id' => $url]);
+            if ($localData) {
+                $solrArray[$solrField] = array_merge(
+                    $solrArray[$solrField],
+                    explode('|', $localData['prefLabels']),
+                    explode('|', $localData['altLabels'])
+                );
+                continue;
+            }
+
             $data = $this->getExternalData(
                 $url, $id, ['Accept' => 'application/json']
             );

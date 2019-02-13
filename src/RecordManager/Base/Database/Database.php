@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (c) The National Library of Finland 2017.
+ * Copyright (c) The National Library of Finland 2017-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -112,6 +112,13 @@ class Database
     protected $uriCacheCollection = 'uriCache';
 
     /**
+     * Ontology enrichment collection name
+     *
+     * @var string
+     */
+    protected $ontologyEnrichmentCollection = 'ontologyEnrichment';
+
+    /**
      * Constructor.
      *
      * @param string $url      Database connection URL
@@ -133,6 +140,10 @@ class Database
         }
         if (!empty($settings['uri_cache_collection'])) {
             $this->uriCacheCollection = $settings['uri_cache_collection'];
+        }
+        if (!empty($settings['ontology_enrichment_collection'])) {
+            $this->ontologyEnrichmentCollection
+                = $settings['ontology_enrichment_collection'];
         }
 
         $this->mongoUrl = $url;
@@ -571,6 +582,21 @@ class Database
     public function saveUriCache($record)
     {
         return $this->saveMongoRecord($this->uriCacheCollection, $record);
+    }
+
+    /**
+     * Find a single ontology enrichment record
+     *
+     * @param array $filter  Search filter
+     * @param array $options Options such as sorting
+     *
+     * @return array|null
+     */
+    public function findOntologyEnrichment($filter, $options = [])
+    {
+        return $this->findMongoRecord(
+            $this->ontologyEnrichmentCollection, $filter, $options
+        );
     }
 
     /**
