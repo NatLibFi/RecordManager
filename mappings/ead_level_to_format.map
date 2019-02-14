@@ -1,9 +1,9 @@
 collection = Document/ArchiveCollection
-series = Document/ArchiveSeries
+series = Other/Other
 fonds = Document/ArchiveFonds
-item = Document/ArchiveItem
-digitized_collection = Document/DigitizedArchiveCollection
-digitized_series = Document/DigitizedArchiveSeries
-digitized_fonds = Document/DigitizedArchiveFonds
-digitized_item = Document/DigitizedArchiveItem
+item = OtherText/Text
+digitized_collection = Document/ArchiveCollection
+digitized_series = Other/Other
+digitized_fonds = Document/ArchiveFonds
+digitized_item = OtherText/Text
 ##default = Document/Other
