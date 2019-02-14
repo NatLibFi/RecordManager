@@ -165,21 +165,37 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $data['author'] = [];
             $data['author_role'] = [];
             $data['author_variant'] = [];
+            $data['author_facet'] = [];
             foreach ($doc->controlaccess->name as $name) {
                 foreach ($name->part as $part) {
+                    $role = null;
+                    if (isset($name->attributes()->relator)) {
+                        // TODO translate role label
+                        $role = (string)$name->attributes()->relator; 
+                    }
+
                     switch ($part->attributes()->localtype) {
                     case 'Ensisijainen nimi':
-                        $data['author'][] = (string)$part;
+                        $data['author'][]
+                            = $this->getNameWithRole((string)$part, $role);
+                        if (! isset($part->attributes()->lang)
+                            || (string)$part->attributes()->lang === 'fin'
+                        ) {
+                            $data['author_facet'][] = (string)$part;
+                        }
                         break;
+                    case 'Varianttinimi':
                     case 'Vaihtoehtoinen nimi':
-                    case 'Vanhentunut nimi':
-                        $data['author_variant'][] = (string)$part;
+                    case 'Vanhentunut nimi':                        
+                        $data['author_variant'][]
+                            = $this->getNameWithRole((string)$part, $role);
                         break;
                     }
+                    /*
                     if (isset($name->attributes()->relator)) {
                         $data['author_role'][]
                             = (string)$name->attributes()->relator;
-                    }
+                            }*/
                 }
             }
         }
@@ -452,5 +468,12 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         }
 
         return [$startDate, $endDate];
+    }
+
+    protected function getNameWithRole($name, $role = null)
+    {
+        return $role
+            ? "$name " . strtolower($role)
+            : $name;
     }
 }
