@@ -109,10 +109,10 @@ class MusicBrainzEnrichment extends Enrichment
                 default:
                     $type = 'catno';
                 }
-                $query = "$type:\"$id\"";
+                $query = "$type:\"" . addcslashes($id, "\"\\") . "\"";
                 if ('catno' === $type) {
                     $query .= ' AND releaseaccent:"'
-                        . addcslashes($solrArray['title_short'], '"')
+                        . addcslashes($solrArray['title_short'], "\"\\")
                         . '"';
                 }
                 $mbIds = array_merge($mbIds, $this->getMBIDs($query));
@@ -120,8 +120,9 @@ class MusicBrainzEnrichment extends Enrichment
         }
         foreach ($record->getFields('028') as $field028) {
             if ($id = $this->sanitizeId($record->getSubfield($field028, 'a'))) {
-                $query = "catno:\"$id\" AND releaseaccent:\""
-                    . addcslashes($solrArray['title_short'], '"')
+                $query = "catno:\"" . addcslashes($id, "\"\\")
+                    . "\" AND releaseaccent:\""
+                    . addcslashes($solrArray['title_short'], "\"\\")
                     . '"';
                 $mbIds = array_merge($mbIds, $this->getMBIDs($query));
             }
@@ -131,9 +132,9 @@ class MusicBrainzEnrichment extends Enrichment
             if (isset($parts[1])) {
                 $author = $parts[1] . ' ' . $parts[0];
             }
-            $query = 'artistname:"' . addcslashes($author, '"')
+            $query = 'artistname:"' . addcslashes($author, "\"\\")
                 . '" AND releaseaccent:"'
-                . addcslashes($solrArray['title_short'], '"')
+                . addcslashes($solrArray['title_short'], "\"\\")
                 . '"';
             $mbIds = $this->getMBIDs($query, true);
         }
