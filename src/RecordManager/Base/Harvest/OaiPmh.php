@@ -687,7 +687,7 @@ class OaiPmh extends Base
     /**
      * Harvest records via OAI-PMH using date and set.
      *
-     * @return mixed        Resumption token if provided, false if finished
+     * @return mixed Resumption token if provided, false if finished
      */
     protected function getRecordsByDate()
     {
@@ -729,6 +729,10 @@ class OaiPmh extends Base
         if (empty($params)) {
             $params = ['metadataPrefix' => $this->metadata];
         }
+        if (!empty($this->set)) {
+            $params['set'] = $this->set;
+        }
+
         $this->xml = $this->sendRequest('ListIdentifiers', $params);
 
         // Process headers

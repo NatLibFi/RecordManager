@@ -280,6 +280,27 @@ trait StoreRecordTrait
     }
 
     /**
+     * Mark a record deleted
+     *
+     * @param array $record Record
+     *
+     * @return void
+     */
+    public function markRecordDeleted($record)
+    {
+        if (isset($record['dedup_id'])) {
+            $this->dedupHandler->removeFromDedupRecord(
+                $record['dedup_id'], $record['_id']
+            );
+            unset($record['dedup_id']);
+        }
+        $record['deleted'] = true;
+        $record['updated'] = $this->db->getTimestamp();
+        $record['update_needed'] = false;
+        $this->db->saveRecord($record);
+    }
+
+    /**
      * Delete records with an OAI identifier
      *
      * @param string $sourceId Source ID
@@ -296,16 +317,7 @@ trait StoreRecordTrait
         );
         $count = 0;
         foreach ($records as $record) {
-            if (isset($record['dedup_id'])) {
-                $this->dedupHandler->removeFromDedupRecord(
-                    $record['dedup_id'], $record['_id']
-                );
-                unset($record['dedup_id']);
-            }
-            $record['deleted'] = true;
-            $record['updated'] = $this->db->getTimestamp();
-            $record['update_needed'] = false;
-            $this->db->saveRecord($record);
+            $this->markRecordDeleted($record);
             ++$count;
         }
         return $count;
