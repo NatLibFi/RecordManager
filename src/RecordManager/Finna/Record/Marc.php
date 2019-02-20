@@ -972,6 +972,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $this->getFieldSubfields('509', ['a' => 1])
             );
             switch (strtolower($field509a)) {
+            case 'kandidaatintutkielma':
             case 'kandidaatintyö':
             case 'kandidatarbete':
                 return 'BachelorsThesis';
