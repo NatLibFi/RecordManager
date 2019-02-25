@@ -40,12 +40,12 @@ Teksti/Teksti = OtherText/Text
 Ääni/Radio-ohjelma = Sound/NonmusicalRecordingProgram
 Ääni/Tapahtumatallenne = Sound/EventRecording
 
-Video/Elävä kuva = Video/Other
-Video/Haastattelu = Video/Interview
-Video/TV-ohjelma = Video/TvProgram
-Video/Tapahtumatallenne = Video/EventRecording
+Elävä kuva = Video/Other
+Elävä kuva/Haastattelu = Video/Interview
+Elävä kuva/TV-ohjelma = Video/TvProgram
+Elävä kuva/Tapahtumatallenne = Video/EventRecording
 
-Määrittämätön = Other/Other
+Määrittämätön = Other/Undefined
 
 
 ;##default = Other/Other
