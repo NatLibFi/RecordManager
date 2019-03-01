@@ -106,7 +106,7 @@ class Qdc extends Base
         $data = [];
 
         $doc = $this->doc;
-        $data['recordtype'] = 'qdc';
+        $data['record_format'] = $data['recordtype'] = 'qdc';
         $data['ctrlnum'] = trim((string)$doc->recordID);
         $data['fullrecord'] = $doc->asXML();
 

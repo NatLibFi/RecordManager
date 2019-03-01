@@ -113,7 +113,7 @@ class Ead extends Base
         $data = [];
 
         $doc = $this->doc;
-        $data['recordtype'] = 'ead';
+        $data['record_format'] = $data['recordtype'] = 'ead';
         $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
         $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($doc->asXML());
         $data['allfields'] = $this->getAllFields($doc);
@@ -304,7 +304,7 @@ class Ead extends Base
                 $geoNames[] = $name;
             }
         }
-        
+
         foreach ($geoNames as $el) {
             if (!isset($el->part) && !isset($el->geographiccoordinates)) {
                 // Text node with location name
@@ -313,7 +313,7 @@ class Ead extends Base
                 }
                 continue;
             }
-            
+
             // Node with 'part' and/or 'geographiccoordinates' childnodes
             if (isset($el->part)) {
                 foreach ($el->part as $name) {

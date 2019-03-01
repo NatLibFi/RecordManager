@@ -1405,7 +1405,7 @@ class SolrUpdater
                 $result['deleted'][] = $mergedId;
             } else {
                 $merged['id'] = $mergedId;
-                $merged['recordtype'] = 'merged';
+                $merged['record_format'] = $merged['recordtype'] = 'merged';
                 $merged['merged_boolean'] = true;
 
                 if ($this->verbose) {
@@ -1892,7 +1892,11 @@ class SolrUpdater
             $all = [];
             foreach ($data as $key => $field) {
                 if (in_array(
-                    $key, ['fullrecord', 'thumbnail', 'id', 'recordtype', 'ctrlnum']
+                    $key,
+                    [
+                        'fullrecord', 'thumbnail', 'id', 'recordtype',
+                        'record_format', 'ctrlnum'
+                    ]
                 )
                 ) {
                     continue;
