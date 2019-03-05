@@ -259,15 +259,21 @@ class Ead3 extends Base
     protected function getDescription()
     {
         if (!empty($this->doc->scopecontent)) {
-            if (!empty($this->doc->scopecontent->p)) {
-                // Join all p-elements into a flat string.
-                $desc = [];
-                foreach ($this->doc->scopecontent->p as $p) {
-                    $desc[] = trim((string)$p);
+            $desc = [];
+            foreach ($this->doc->scopecontent as $el) {
+                if (isset($el->attributes()->encodinganalog)) {
+                    continue;
                 }
+                if (! isset($el->head) || (string)$el->head !== 'Tietosisältö') {
+                    continue;
+                }
+                foreach ($el->p as $p) {
+                    $desc[] = trim(html_entity_decode((string)$el->p));
+                }
+            }
+            if (!empty($desc)) {
                 return implode('   /   ', $desc);
             }
-            return (string)$this->doc->scopecontent;
         }
         return '';
     }
