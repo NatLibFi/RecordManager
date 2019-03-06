@@ -100,21 +100,14 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         $data['datasource_str_mv'] = $this->source;
 
         // Digitized?
-        if ($doc->did->daogrp) {
-            if (in_array($data['format'], ['collection', 'series', 'fonds', 'item'])
-            ) {
-                $data['format'] = 'digitized_' . $data['format'];
-            }
-
-            if ($this->doc->did->daogrp->daoloc) {
-                foreach ($this->doc->did->daogrp->daoloc as $daoloc) {
-                    if ($daoloc->attributes()->{'href'}) {
-                        $data['online_boolean'] = true;
-                        // This is sort of special. Make sure to use source instead
-                        // of datasource.
-                        $data['online_str_mv'] = $data['source_str_mv'];
-                        break;
-                    }
+        if (isset($this->doc->did->daoset->dao)) {
+            foreach ($this->doc->did->daoset->dao as $dao) {
+                if ($dao->attributes()->{'href'}) {
+                    $data['online_boolean'] = true;
+                    // This is sort of special. Make sure to use source instead
+                    // of datasource.
+                    $data['online_str_mv'] = $data['source_str_mv'];
+                    break;
                 }
             }
         }
