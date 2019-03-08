@@ -367,7 +367,10 @@ class Ead3 extends Base
             return $result;
         }
         foreach ($this->doc->controlaccess->subject as $subject) {
-            if (isset($subject->part)
+            $attr = $subject->attributes();
+            if (isset($attr->relator)
+                && (string)$attr->relator === 'aihe'
+                && isset($subject->part)
                 && ('' !== ($subject = trim((string)$subject->part)))
             ) {
                 $result[] = $subject;
