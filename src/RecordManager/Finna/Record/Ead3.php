@@ -207,6 +207,8 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
 
         $data['format_ext_str_mv'] = $data['format'];
 
+        $data['topic_uri_str_mv'] = $this->getTopicURIs();
+
         return $data;
     }
 
@@ -469,4 +471,29 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             ? "$name " . strtolower($role)
             : $name;
     }
+
+    /**
+     * Get topics URIs
+     *
+     * @return array
+     */
+    protected function getTopicURIs()
+    {
+        $result = [];
+        if (!isset($this->doc->controlaccess->subject)) {
+            return $result;
+        }
+        foreach ($this->doc->controlaccess->subject as $subject) {
+            $attr = $subject->attributes();
+            if (isset($attr->relator)
+                && (string)$attr->relator === 'aihe'
+                && isset($attr->identifier)
+                && ('' !== ($id = trim((string)$attr->identifier)))
+            ) {
+                $result[] = $id;
+            }
+        }
+        return array_unique($result);
+    }
+
 }
