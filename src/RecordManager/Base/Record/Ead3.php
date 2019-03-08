@@ -363,15 +363,17 @@ class Ead3 extends Base
     protected function getTopics()
     {
         $result = [];
-        if (!isset($this->doc->did->controlaccess->subject)) {
+        if (!isset($this->doc->controlaccess->subject)) {
             return $result;
         }
-        foreach ($this->doc->did->controlaccess->subject as $subject) {
-            if (trim((string)$subject) !== '-') {
-                $result[] = trim((string)$subject);
+        foreach ($this->doc->controlaccess->subject as $subject) {
+            if (isset($subject->part)
+                && ('' !== ($subject = trim((string)$subject->part)))
+            ) {
+                $result[] = $subject;
             }
         }
-        return $reslt;
+        return $result;
     }
 
     /**
