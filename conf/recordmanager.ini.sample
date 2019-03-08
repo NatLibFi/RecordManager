@@ -69,6 +69,9 @@ password =
 ;merge_records = true
 ; Fields that are merged when creating the merged record
 ;merged_fields = institution,collection,my_local_field_str_mv
+; Fields that are copied down to all records in a dedup group if the values do not
+; already exist
+;copy_from_merged_record = mbid_str_mv
 ; Fields that are added to the merged record if they don't already exist
 ;single_fields = title,publishDateSort
 ; Fields that are used for scoring when selecting the base record for a merged record
@@ -105,6 +108,9 @@ unicode_normalization_form = NFKC
 ;threaded_merged_record_update = true
 ; Field mapper class. Default is "\RecordManager\Base\Utils\FieldMapper".
 ;field_mapper = "\RecordManager\Finna\Utils\FieldMapper"
+; Enrichments used with all data sources
+;enrichment[] = NominatimGeocoder
+;enrichment[] = MusicBrainzEnrichment
 
 [OAI-PMH]
 ; Repository name returned in the Identify response
@@ -201,3 +207,18 @@ error_email     =
 ; Term transformations regular expressions applied if a match is not found
 search[] = '([^\s]+ st)\.'
 replace[] = '\1 street'
+
+[MarcOnkiLightEnrichment]
+; Service base URL
+;base_url = "http://api.somewhere/rest/v1"
+; URL prefixes to process
+;url_prefix_whitelist[] = "http://somewhere/"
+; URI prefixes where exact matches in other vocabularies are also retrieved
+;uri_prefix_exact_matches[] = "http://somewhere/vocab/"
+
+[MusicBrainzEnrichment]
+; Note that you need to add the following line to any data source in datasources.ini
+; for it to actually use the enrichment:
+; enrichments[] = MusicBrainzEnrichment
+; Base url for the MusicBrainz server.
+;url = "http://localhost:5000"

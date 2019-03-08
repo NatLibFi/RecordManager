@@ -106,7 +106,7 @@ class Dc extends Base
         $data = [];
 
         $doc = $this->doc;
-        $data['recordtype'] = 'dc';
+        $data['record_format'] = $data['recordtype'] = 'dc';
         $data['ctrlnum'] = trim((string)$doc->recordID);
         $data['fullrecord'] = $doc->asXML();
 

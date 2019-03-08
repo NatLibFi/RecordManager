@@ -282,7 +282,7 @@ class Marc extends Base
     public function toSolrArray()
     {
         $data = [];
-        $data['recordtype'] = 'marc';
+        $data['record_format'] = $data['recordtype'] = 'marc';
 
         // Add source prefix to IDs in link fields
         $fields = ['760', '762', '765', '767', '770', '772', '773', '774',
@@ -1666,7 +1666,7 @@ class Marc extends Base
      *
      * @return array Subfields
      */
-    protected function getSubfieldsArray($field, $codes)
+    public function getSubfieldsArray($field, $codes)
     {
         $data = [];
         if (!$field || !isset($field['s']) || !is_array($field['s'])) {

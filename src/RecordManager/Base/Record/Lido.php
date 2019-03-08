@@ -125,7 +125,7 @@ class Lido extends Base
     {
         $data = [];
 
-        $data['recordtype'] = 'lido';
+        $data['record_format'] = $data['recordtype'] = 'lido';
         $lang = $this->getDefaultLanguage();
         $title = $this->getTitle(false, $lang);
         if ($this->getDriverParam('splitTitles', false)) {
@@ -412,16 +412,32 @@ class Lido extends Base
             $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
                 ->repositoryWrap->repositorySet
         );
+        if (!$empty) {
+            foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap
+                ->repositoryWrap->repositorySet as $set
+            ) {
+                if (!empty($set->repositoryName->legalBodyName->appellationValue)) {
+                    return (string)$set->repositoryName->legalBodyName
+                        ->appellationValue;
+                }
+            }
+        }
+
+        $empty = empty(
+            $this->doc->lido->administrativeMetadata->recordWrap
+                ->recordSource
+        );
         if ($empty) {
             return '';
         }
-        foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap
-            ->repositoryWrap->repositorySet as $set
+        foreach ($this->doc->lido->administrativeMetadata->recordWrap
+            ->recordSource as $source
         ) {
-            if (!empty($set->repositoryName->legalBodyName->appellationValue)) {
-                return (string)$set->repositoryName->legalBodyName->appellationValue;
+            if (!empty($source->legalBodyName->appellationValue)) {
+                return (string)$source->legalBodyName->appellationValue;
             }
         }
+
         return '';
     }
 

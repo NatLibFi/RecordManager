@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2018.
+ * Copyright (C) The National Library of Finland 2012-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -53,6 +53,29 @@ class Marc extends \RecordManager\Base\Record\Marc
     ];
 
     /**
+     * Extra data to be included in allfields e.g. from component parts
+     *
+     * @var array
+     */
+    protected $extraAllFields = [];
+
+    /**
+     * Set record data
+     *
+     * @param string $source Source ID
+     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
+     * file import)
+     * @param string $data   Metadata
+     *
+     * @return void
+     */
+    public function setData($source, $oaiID, $data)
+    {
+        $this->extraAllFields = [];
+        parent::setData($source, $oaiID, $data);
+    }
+
+    /**
      * Normalize the record (optional)
      *
      * @return void
@@ -83,7 +106,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 // Always use subfield 'b' for location regardless of where it came
                 // from
                 $holding[] = ['b' => $branch];
-                foreach (['c', 'h', 'o'] as $code) {
+                foreach (['c', 'h', 'o', '8'] as $code) {
                     $value = $this->getSubfield($field952, $code);
                     $key[] = $value;
                     if ('' !== $value) {
@@ -864,6 +887,13 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
             }
 
+            foreach ($marc->getFields('031') as $field031) {
+                foreach ($marc->getSubfieldsArray($field031, ['t' => 1]) as $lyrics
+                ) {
+                    $this->extraAllFields[] = $lyrics;
+                }
+            }
+
             $newField = [
                 'i1' => ' ',
                 'i2' => ' ',
@@ -893,13 +923,19 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $newField['s'][] = ['g' => $addTitle];
             }
             foreach ($languages as $language) {
-                $newField['s'][] = ['h' => $language];
+                if ('|||' !== $language) {
+                    $newField['s'][] = ['h' => $language];
+                }
             }
             foreach ($originalLanguages as $language) {
-                $newField['s'][] = ['i' => $language];
+                if ('|||' !== $language) {
+                    $newField['s'][] = ['i' => $language];
+                }
             }
             foreach ($subtitleLanguages as $language) {
-                $newField['s'][] = ['j' => $language];
+                if ('|||' !== $language) {
+                    $newField['s'][] = ['j' => $language];
+                }
             }
             foreach ($identifiers as $identifier) {
                 $newField['s'][] = ['k' => $identifier];
@@ -936,6 +972,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $this->getFieldSubfields('509', ['a' => 1])
             );
             switch (strtolower($field509a)) {
+            case 'kandidaatintutkielma':
             case 'kandidaatintyö':
             case 'kandidatarbete':
                 return 'BachelorsThesis';
@@ -1216,6 +1253,11 @@ class Marc extends \RecordManager\Base\Record\Marc
             '015' => ['q' => 1, 'z' => 1, '2' => 1, '6' => 1, '8' => 1],
             '024' => ['c' => 1, 'd' => 1, 'z' => 1, '6' => 1, '8' => 1],
             '027' => ['z' => 1, '6' => 1, '8' => 1],
+            '031' => [
+                'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1, 'g' => 1, 'm' => 1,
+                'n' => 1, 'o' => 1, 'p' => 1, 'q' => 1, 'r' => 1, 's' => 1, 'u' => 1,
+                'y' => 1, 'z' => 1, '2' => 1, '6' => 1, '8' => 1
+            ],
             '650' => ['0' => 1, '2' => 1, '6' => 1, '8' => 1],
             '100' => ['4' => 1],
             '700' => ['4' => 1],
@@ -1249,7 +1291,10 @@ class Marc extends \RecordManager\Base\Record\Marc
             if (($tag >= 100 && $tag < 841 && !isset($fieldFilter[$tag]))
                 || in_array(
                     $tag,
-                    ['015', '024', '025', '026', '027', '028', '880', '952', '979']
+                    [
+                        '015', '024', '025', '026', '027', '028', '031', '880',
+                        '952', '979'
+                    ]
                 )
             ) {
                 foreach ($fields as $field) {
@@ -1263,6 +1308,9 @@ class Marc extends \RecordManager\Base\Record\Marc
                     }
                 }
             }
+        }
+        if ($this->extraAllFields) {
+            $allFields = array_merge($allFields, $this->extraAllFields);
         }
         $allFields = array_map(
             function ($str) {
@@ -1285,6 +1333,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         $building = [];
         if ($this->getDriverParam('holdingsInBuilding', true)) {
             $useSub = $this->getDriverParam('subLocationInBuilding', '');
+            $itemSub = $this->getDriverParam('itemSubLocationInBuilding', $useSub);
             foreach ($this->getFields('852') as $field) {
                 $location = $this->getSubfield($field, 'b');
                 if ($location) {
@@ -1297,7 +1346,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             foreach ($this->getFields('952') as $field) {
                 $location = $this->getSubfield($field, 'b');
                 if ($location) {
-                    if ($useSub && $sub = $this->getSubfield($field, $useSub)) {
+                    if ($itemSub && $sub = $this->getSubfield($field, $itemSub)) {
                         $location = [$location, $sub];
                     }
                     $building[] = $location;

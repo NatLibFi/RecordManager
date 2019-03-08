@@ -104,6 +104,7 @@ class Eaccpf extends Base
     {
         $data = [];
 
+        $data['record_format'] = 'eaccpf';
         $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($this->doc->asXML());
         $data['allfields'] = $this->getAllFields();
         $data['source'] = $this->getRecordSource();

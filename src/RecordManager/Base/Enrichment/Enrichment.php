@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2014-2017.
+ * Copyright (C) The National Library of Finland 2014-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -102,6 +102,20 @@ class Enrichment
     ];
 
     /**
+     * Number of requests handled per host
+     *
+     * @var array
+     */
+    protected $requestsHandled = [];
+
+    /**
+     * Time all successful requests have taken per host
+     *
+     * @var array
+     */
+    protected $requestsDuration = [];
+
+    /**
      * Constructor
      *
      * @param Database $db     Database connection (for cache)
@@ -168,26 +182,34 @@ class Enrichment
             return $cached['data'];
         }
 
-        if (is_null($this->request)) {
-            $this->request = new \HTTP_Request2(
-                $url,
-                \HTTP_Request2::METHOD_GET,
-                $this->httpParams
-            );
-            $this->request->setHeader('Connection', 'Keep-Alive');
-            $this->request->setHeader('User-Agent', 'RecordManager');
-        } else {
-            $this->request->setUrl($url);
+        $host = parse_url($url, PHP_URL_HOST);
+        $port = parse_url($url, PHP_URL_PORT);
+        if ($port) {
+            $host .= ":$port";
         }
-        if ($headers) {
-            $this->request->setHeader($headers);
-        }
-
         $retryWait = $this->retryWait;
         $response = null;
         for ($try = 1; $try <= $this->maxTries; $try++) {
+            if (is_null($this->request)) {
+                $this->request = new \HTTP_Request2(
+                    $url,
+                    \HTTP_Request2::METHOD_GET,
+                    $this->httpParams
+                );
+                $this->request->setHeader('Connection', 'Keep-Alive');
+                $this->request->setHeader('User-Agent', 'RecordManager');
+            } else {
+                $this->request->setUrl($url);
+            }
+            if ($headers) {
+                $this->request->setHeader($headers);
+            }
+
+            $duration = 0;
             try {
+                $startTime = microtime(true);
                 $response = $this->request->send();
+                $duration = microtime(true) - $startTime;
             } catch (\Exception $e) {
                 if ($try < $this->maxTries) {
                     if ($retryWait < 30) {
@@ -197,9 +219,10 @@ class Enrichment
                     $this->logger->log(
                         'getExternalData',
                         "HTTP request for '$url' failed (" . $e->getMessage()
-                        . "), retrying in {$retryWait} seconds...",
+                        . "), retrying in {$retryWait} seconds (retry $try)...",
                         Logger::WARNING
                     );
+                    $this->request = null;
                     sleep($retryWait);
                     continue;
                 }
@@ -212,12 +235,39 @@ class Enrichment
                     $this->logger->log(
                         'getExternalData',
                         "HTTP request for '$url' failed ($code), retrying "
-                        . "in {$this->retryWait} seconds...",
+                        . "in {$this->retryWait} seconds (retry $try)...",
                         Logger::WARNING
                     );
+                    $this->request = null;
                     sleep($this->retryWait);
                     continue;
                 }
+            }
+            if ($try > 1) {
+                $this->logger->log(
+                    'getExternalData',
+                    "HTTP request for '$url' succeeded on attempt $try",
+                    Logger::WARNING
+                );
+            }
+            if (isset($this->requestsHandled[$host])) {
+                $this->requestsHandled[$host]++;
+                $this->requestsDuration[$host] += $duration;
+            } else {
+                $this->requestsHandled[$host] = 1;
+                $this->requestsDuration[$host] = $duration;
+            }
+            if ($this->requestsHandled[$host] % 1000 === 0) {
+                $average = floor(
+                    $this->requestsDuration[$host] / $this->requestsHandled[$host]
+                    * 1000
+                );
+                $this->logger->log(
+                    'getExternalData',
+                    "{$this->requestsHandled[$host]} HTTP requests completed"
+                    . " for $host, average time for a request $average ms",
+                    Logger::INFO
+                );
             }
             break;
         }
@@ -234,6 +284,8 @@ class Enrichment
                 [
                     '_id' => $id,
                     'timestamp' => $this->db->getTimestamp(),
+                    'url' => $url,
+                    'headers' => $headers,
                     'data' => $data
                 ]
             );
