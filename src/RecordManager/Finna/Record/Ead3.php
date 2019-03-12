@@ -591,26 +591,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     }
 
     /**
-     * Get thumbnail
-     *
-     * @return string
-     */
-    protected function getThumbnail()
-    {
-        $nodes = isset($this->doc->did->daogrp)
-            ? $this->doc->did->daogrp->xpath('daoloc[@role="image_thumbnail"]')
-            : null;
-        if ($nodes) {
-            // store first thumbnail
-            $node = $nodes[0];
-            if (isset($node->attributes()->href)) {
-                return (string)$node->attributes()->href;
-            }
-        }
-        return '';
-    }
-
-    /**
      * Get institution
      *
      * @return string

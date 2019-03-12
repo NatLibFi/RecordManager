@@ -363,6 +363,26 @@ class Ead3 extends Base
     }
 
     /**
+     * Get thumbnail
+     *
+     * @return string
+     */
+    protected function getThumbnail()
+    {
+        $nodes = isset($this->doc->did->daogrp)
+            ? $this->doc->did->daogrp->xpath('daoloc[@role="image_thumbnail"]')
+            : null;
+        if ($nodes) {
+            // store first thumbnail
+            $node = $nodes[0];
+            if (isset($node->attributes()->href)) {
+                return (string)$node->attributes()->href;
+            }
+        }
+        return '';
+    }
+
+    /**
      * Get unit id
      *
      * @return string
