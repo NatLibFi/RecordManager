@@ -48,6 +48,27 @@ use RecordManager\Base\Utils\MetadataUtils;
 class Ead3 extends \RecordManager\Base\Record\Ead3
 {
     /**
+     * Archive fonds format
+     *
+     * @return string
+     */
+    protected $fondsType = 'Document/Arkisto';
+
+    /**
+     * Archive collection format
+     *
+     * @return string
+     */
+    protected $collectionType = 'Document/Kokoelma';
+
+    /**
+     * Undefined format type
+     *
+     * @return string
+     */
+    protected $undefinedType = 'Document/Määrittämätön';
+
+    /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
      * @return array
@@ -57,23 +78,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         $data = parent::toSolrArray();
         $doc = $this->doc;
 
-        switch ($data['format']) {
-        case 'Document/Arkisto':
-            break;
-        case 'Document/Kokoelma':
-            break;
-        case 'Document/Määrittämätön':
-            break;
-
-        default:
-            $data['title_sub'] = $this->getUnitId();
-            if ($doc->{'add-data'}->parent) {
-                $data['series']
-                    = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
-            }
-            break;
-        }
-                
         $unitDateRange = $this->parseDateRange((string)$doc->did->unitdate);
         $data['search_daterange_mv'] = $data['unit_daterange']
             = MetadataUtils::dateRangeToStr($unitDateRange);
