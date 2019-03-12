@@ -166,7 +166,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                     $role = null;
                     if (isset($name->attributes()->relator)) {
                         // TODO translate role label
-                        $role = (string)$name->attributes()->relator; 
+                        $role = (string)$name->attributes()->relator;
                     }
 
                     switch ($part->attributes()->localtype) {
@@ -181,7 +181,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                         break;
                     case 'Varianttinimi':
                     case 'Vaihtoehtoinen nimi':
-                    case 'Vanhentunut nimi':                        
+                    case 'Vanhentunut nimi':
                         $data['author_variant'][]
                             = $this->getNameWithRole((string)$part, $role);
                         break;
