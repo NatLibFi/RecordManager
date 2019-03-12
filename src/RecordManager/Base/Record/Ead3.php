@@ -130,23 +130,6 @@ class Ead3 extends Base
         $data['format'] = $this->getFormat();
         $data['institution'] = $this->getInstitution();
 
-        switch ($data['format']) {
-        case 'Document/Arkisto':
-            break;
-        case 'Document/Kokoelma':
-            break;
-        case 'Document/Määrittämätön':
-            break;
-
-        default:
-            $data['title_sub'] = $this->getUnitId();
-            if ($doc->{'add-data'}->parent) {
-                $data['series']
-                    = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
-            }
-            break;
-        }
-
         $data['title_short'] = $this->getTitle();
         $data['title'] = '';
         if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
@@ -169,55 +152,6 @@ class Ead3 extends Base
         $data = array_merge($data, $this->getHierarchyFields());
 
         return $data;
-    }
-
-    /**
-     * Return format from predefined values
-     *
-     * @return string
-     */
-    public function getFormat()
-    {
-        $level1 = $level2 = null;
-        
-        if ((string)$this->doc->attributes()->level === 'fonds') {
-            $level1 = 'Document';
-        }
-
-        if (isset($this->doc->controlaccess->genreform)) {
-            foreach ($this->doc->controlaccess->genreform as $genreform) {
-                $format = null;
-                foreach ($genreform->part as $part) {
-                    $attributes = $part->attributes();
-                    if (isset($attributes->lang)
-                        && (string)$attributes->lang === 'fin'
-                    ) {
-                        $format = (string)$part;
-                        break;
-                    }
-                }
-                
-                if (!$format) {
-                    continue;
-                }
-                
-                $attr = $genreform->attributes();
-                if (isset($attr->encodinganalog)) {
-                    $type = (string)$attr->encodinganalog;
-                    if ($type === 'ahaa:AI08') {
-                        if ($level1 === null) {
-                            $level1 = $format;
-                        } else {
-                            $level2 = $format;
-                        }
-                    } elseif ($type === 'ahaa:AI57') {
-                        $level2 = $format;
-                    }
-                }
-            }
-        }
-        
-        return $level2 ? "$level1/$level2" : $level1;
     }
 
     /**
@@ -245,33 +179,6 @@ class Ead3 extends Base
         }
 
         return $title;
-    }
-
-    /**
-     *  Get description
-     *
-     * @return string
-     */
-    protected function getDescription()
-    {
-        if (!empty($this->doc->scopecontent)) {
-            $desc = [];
-            foreach ($this->doc->scopecontent as $el) {
-                if (isset($el->attributes()->encodinganalog)) {
-                    continue;
-                }
-                if (! isset($el->head) || (string)$el->head !== 'Tietosisältö') {
-                    continue;
-                }
-                foreach ($el->p as $p) {
-                    $desc[] = trim(html_entity_decode((string)$el->p));
-                }
-            }
-            if (!empty($desc)) {
-                return implode('   /   ', $desc);
-            }
-        }
-        return '';
     }
 
     /**
@@ -352,52 +259,6 @@ class Ead3 extends Base
     }
 
     /**
-     * Get topics
-     *
-     * @return array
-     */
-    protected function getTopics()
-    {
-        $result = [];
-        if (!isset($this->doc->controlaccess->subject)) {
-            return $result;
-        }
-        foreach ($this->doc->controlaccess->subject as $subject) {
-            $attr = $subject->attributes();
-            if (isset($attr->relator)
-                && (string)$attr->relator === 'aihe'
-                && isset($subject->part)
-                && ('' !== ($subject = trim((string)$subject->part)))
-            ) {
-                $result[] = $subject;
-            }
-        }
-        return $result;
-    }
-
-    /**
-     * Get institution
-     *
-     * @return string
-     */
-    protected function getInstitution()
-    {
-        if (isset($this->doc->did->repository->corpname)) {
-            foreach ($this->doc->did->repository->corpname as $node) {
-                if (! isset($node->part)) {
-                    continue;
-                }
-                foreach ($node->part->attributes() as $key => $val) {
-                    if ($key === 'lang' && (string)$val === 'fin') {
-                        return (string)$node->part;
-                    }
-                }
-            }
-        }
-        return '';
-    }
-
-    /**
      * Get languages
      *
      * @return array
@@ -436,26 +297,6 @@ class Ead3 extends Base
             }
         }
         return $result;
-    }
-
-    /**
-     * Get thumbnail
-     *
-     * @return string
-     */
-    protected function getThumbnail()
-    {
-        $nodes = isset($this->doc->did->daogrp)
-            ? $this->doc->did->daogrp->xpath('daoloc[@role="image_thumbnail"]')
-            : null;
-        if ($nodes) {
-            // store first thumbnail
-            $node = $nodes[0];
-            if (isset($node->attributes()->href)) {
-                return (string)$node->attributes()->href;
-            }
-        }
-        return '';
     }
 
     /**
