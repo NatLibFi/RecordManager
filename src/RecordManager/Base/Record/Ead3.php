@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2017.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -23,7 +23,6 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
- * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -40,7 +39,6 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
- * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -155,6 +153,19 @@ class Ead3 extends Base
     }
 
     /**
+     * Return format from predefined values
+     *
+     * @return string
+     */
+    public function getFormat()
+    {
+        if (isset($this->doc->did->controlaccess->genreform->part)) {
+            return (string)$this->doc->did->controlaccess->genreform->part;
+        }
+        return (string)$this->doc->attributes()->level;
+    }
+
+    /**
      * Return record title
      *
      * @param bool $forFiling Whether the title is to be used in filing
@@ -179,6 +190,27 @@ class Ead3 extends Base
         }
 
         return $title;
+    }
+
+    /**
+     *  Get description
+     *
+     * @return string
+     */
+    protected function getDescription()
+    {
+        if (!empty($this->doc->scopecontent)) {
+            if (!empty($this->doc->scopecontent->p)) {
+                // Join all p-elements into a flat string.
+                $desc = [];
+                foreach ($this->doc->scopecontent->p as $p) {
+                    $desc[] = trim((string)$p);
+                }
+                return implode('   /   ', $desc);
+            }
+            return (string)$this->doc->scopecontent;
+        }
+        return '';
     }
 
     /**
@@ -256,6 +288,37 @@ class Ead3 extends Base
             }
         }
         return $result;
+    }
+
+    /**
+     * Get topics
+     *
+     * @return array
+     */
+    protected function getTopics()
+    {
+        $result = [];
+        if (!isset($this->doc->did->controlaccess->subject)) {
+            return $result;
+        }
+        foreach ($this->doc->did->controlaccess->subject as $subject) {
+            if (trim((string)$subject) !== '-') {
+                $result[] = trim((string)$subject);
+            }
+        }
+        return $reslt;
+    }
+
+    /**
+     * Get institution
+     *
+     * @return string
+     */
+    protected function getInstitution()
+    {
+        return isset($this->doc->did->repository->corpname->part)
+            ? (string)$this->doc->did->repository->corpname->part
+            : '';
     }
 
     /**
