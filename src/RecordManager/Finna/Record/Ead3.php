@@ -193,7 +193,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (isset($doc->index->index->indexentry)) {
             foreach ($doc->index->index->indexentry as $indexentry) {
                 if (isset($indexentry->name->part)) {
-                    // TODO: vain eka part, localtypelliset paremmin pois?
                     $data['contents'][] = (string) $indexentry->name->part;
                 }
             }

@@ -130,7 +130,6 @@ class Ead3 extends Base
         $data['format'] = $this->getFormat();
         $data['institution'] = $this->getInstitution();
 
-        // TODO: check title_sub
         switch ($data['format']) {
         case 'Document/Arkisto':
             break;
