@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -23,6 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -39,6 +40,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -137,11 +139,6 @@ class Ead3 extends Base
         case 'Document/Määrittämätön':
             break;
 
-            /*
-        case 'series':
-        case 'subseries':
-            $data['title_sub'] = $this->getUnitId();
-            break;*/
         default:
             $data['title_sub'] = $this->getUnitId();
             if ($doc->{'add-data'}->parent) {
@@ -387,14 +384,15 @@ class Ead3 extends Base
     protected function getInstitution()
     {
         if (isset($this->doc->did->repository->corpname)) {
-            foreach ($this->doc->did->repository->corpname as $corpname) {
-                if ($name = $this->getDisplayName($corpname)) {
-                    return $name;
+            foreach ($this->doc->did->repository->corpname as $node) {
+                if (! isset($node->part)) {
+                    continue;
                 }
-            }
-            if ($name = $this->getDisplayName($this->doc->did->repository->corpname)
-            ) {
-                return $name;
+                foreach ($node->part->attributes() as $key => $val) {
+                    if ($key === 'lang' && (string)$val === 'fin') {
+                        return (string)$node->part;
+                    }
+                }
             }
         }
         return '';
@@ -499,10 +497,6 @@ class Ead3 extends Base
                 = (string)$this->doc->{'add-data'}->{'parent'}->attributes()->{'id'};
             $data['hierarchy_parent_title']
                 = (string)$this->doc->{'add-data'}->{'parent'}->attributes()->title;
-            //$data['is_hierarchy_id'] = $this->getID();
-            //$data['is_hierarchy_title'] = 'foio' . $this->getTitle();
-
-            
         } else {
             $data['is_hierarchy_id'] = $data['hierarchy_top_id'] = $this->getID();
             $data['is_hierarchy_title'] = $data['hierarchy_top_title']
@@ -535,34 +529,5 @@ class Ead3 extends Base
             }
         }
         return $allFields;
-    }
-
-    protected function getDisplayName($node, $language = 'fi')
-    {
-        if (! isset($node->part)) {
-            return null;
-        }
-        $language = $this->mapLanguageCode($language);
-        foreach ($node->part->attributes() as $key => $val) {
-            if ($language === null
-                || ($key === 'lang' && (string)$val === $language)
-            ) {
-                return (string)$node->part;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Convert Finna language codes to EAD3 codes.
-     *
-     * @param string $languageCode Language code
-     *
-     * @return string
-     */
-    protected function mapLanguageCode($languageCode)
-    {
-        $langMap = ['fi' => 'fin', 'sv' => 'swe', 'en-gb' => 'eng'];
-        return $langMap[$languageCode] ?? $languageCode;
     }
 }

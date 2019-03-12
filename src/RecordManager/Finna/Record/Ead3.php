@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2018.
+ * Copyright (C) The National Library of Finland 2012-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -23,6 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -40,6 +41,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -184,11 +186,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                             = $this->getNameWithRole((string)$part, $role);
                         break;
                     }
-                    /*
-                    if (isset($name->attributes()->relator)) {
-                        $data['author_role'][]
-                            = (string)$name->attributes()->relator;
-                            }*/
                 }
             }
         }
@@ -465,6 +462,14 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         return [$startDate, $endDate];
     }
 
+    /**
+     * Return author name with role.
+     *
+     * @param string $name Name
+     * @param string $role Role
+     *
+     * @return string
+     */
     protected function getNameWithRole($name, $role = null)
     {
         return $role
