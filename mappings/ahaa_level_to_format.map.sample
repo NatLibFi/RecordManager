@@ -9,6 +9,11 @@ Other/Määrittämätön = Other/Undefined
 
 Data = Other/Data
 
+Elävä kuva = Video/Other
+Elävä kuva/Haastattelu = Video/Interview
+Elävä kuva/TV-ohjelma = Video/TvProgram
+Elävä kuva/Tapahtumatallenne = Video/EventRecording
+
 Esine = PhysicalObject
 
 Kuva = Image/Image
@@ -39,11 +44,6 @@ Teksti/Teksti = OtherText/Text
 Ääni/Musiikki = Sound/MusicRecording
 Ääni/Radio-ohjelma = Sound/NonmusicalRecordingProgram
 Ääni/Tapahtumatallenne = Sound/EventRecording
-
-Elävä kuva = Video/Other
-Elävä kuva/Haastattelu = Video/Interview
-Elävä kuva/TV-ohjelma = Video/TvProgram
-Elävä kuva/Tapahtumatallenne = Video/EventRecording
 
 Määrittämätön = Other/Undefined
 
