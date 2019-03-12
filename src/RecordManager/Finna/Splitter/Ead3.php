@@ -143,15 +143,12 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
 
             if ($record->did->unitid) {
                 foreach ($record->did->unitid as $i) {
-                    if ($i->attributes()->label == 'Tekninen') {
-                        $unitId = urlencode(
-                            $i->attributes()->identifier
-                                ? (string)$i->attributes()->identifier
-                                : (string)$record->did->unitid
-                        );
-
+                    $attr = $i->attributes();
+                    if ($attr->label == 'Tekninen' && isset($attr->identifier)) {
+                        $unitId = urlencode((string)$attr->identifier);
                         if ($unitId != $this->archiveId) {
                             $unitId = $this->archiveId . '_' . $unitId;
+                            break;
                         }
                     }
                 }
