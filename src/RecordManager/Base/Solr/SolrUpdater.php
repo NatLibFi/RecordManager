@@ -1354,6 +1354,7 @@ class SolrUpdater
             }
 
             $result['records'][] = $child['solr'];
+            $result['deleted'][] = $dedupRecord['_id'];
         } else {
             foreach ($children as $child) {
                 $child['solr']['merged_child_boolean'] = true;
