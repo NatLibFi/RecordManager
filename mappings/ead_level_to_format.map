@@ -1,9 +1,0 @@
-collection = Document/ArchiveCollection
-series = Other/Undefined
-fonds = Document/ArchiveFonds
-item = OtherText/Text
-digitized_collection = Document/ArchiveCollection
-digitized_series = Other/Undefined
-digitized_fonds = Document/ArchiveFonds
-digitized_item = OtherText/Text
-##default = Document/Other
