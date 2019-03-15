@@ -42,43 +42,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Ead3 extends Base
+class Ead3 extends Ead
 {
-    /**
-     * Archive fonds format
-     *
-     * @return string
-     */
-    protected $fondsType = 'fonds';
-
-    /**
-     * Archive collection format
-     *
-     * @return string
-     */
-    protected $collectionType = 'collection';
-
-    /**
-     * Archive series format
-     *
-     * @return string
-     */
-    protected $seriesType = 'series';
-
-    /**
-     * Archive subseries format
-     *
-     * @return string
-     */
-    protected $subseriesType = 'series';
-
-    /**
-     * Undefined format type
-     *
-     * @return string
-     */
-    protected $undefinedType = null;
-
     /**
      * XMl record
      *
@@ -167,24 +132,8 @@ class Ead3 extends Base
         $data['topic'] = $data['topic_facet'] = $this->getTopics();
         $data['format'] = $this->getFormat();
         $data['institution'] = $this->getInstitution();
-
-        switch ($data['format']) {
-        case $this->fondsType:
-        case $this->collectionType:
-        case $this->undefinedType:
-            break;
-        case $this->seriesType:
-        case $this->subseriesType:
-            $data['title_sub'] = $this->getSubtitle();
-            break;
-        default:
-            $data['title_sub'] = $this->getSubtitle();
-            if ($doc->{'add-data'}->parent) {
-                $data['series'] = $this->getSeries();
-            }
-            break;
-        }
-
+        $data['series'] = $this->getSeries();
+        $data['title_sub'] = $this->getSubtitle();
         $data['title_short'] = $this->getTitle();
         $data['title'] = '';
         if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
@@ -207,26 +156,6 @@ class Ead3 extends Base
         $data = array_merge($data, $this->getHierarchyFields());
 
         return $data;
-    }
-
-    /**
-     * Return subtitle
-     *
-     * @return string
-     */
-    public function getSubtitle()
-    {
-        $this->getUnitId();
-    }
-
-    /**
-     * Return series title
-     *
-     * @return string
-     */
-    public function getSeries()
-    {
-        return (string)$this->doc->{'add-data'}->parent->attributes()->unittitle;
     }
 
     /**

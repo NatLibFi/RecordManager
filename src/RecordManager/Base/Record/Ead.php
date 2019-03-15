@@ -45,6 +45,41 @@ class Ead extends Base
     protected $doc = null;
 
     /**
+     * Archive fonds format
+     *
+     * @return string
+     */
+    protected $fondsType = 'fonds';
+
+    /**
+     * Archive collection format
+     *
+     * @return string
+     */
+    protected $collectionType = 'collection';
+
+    /**
+     * Archive series format
+     *
+     * @return string
+     */
+    protected $seriesType = 'series';
+
+    /**
+     * Archive subseries format
+     *
+     * @return string
+     */
+    protected $subseriesType = 'subseries';
+
+    /**
+     * Undefined type
+     *
+     * @return string
+     */
+    protected $undefinedType = null;
+
+    /**
      * Set record data
      *
      * @param string $source Source ID
@@ -182,26 +217,8 @@ class Ead extends Base
                 : $doc->did->repository);
         }
 
-        $data['title_sub'] = '';
-
-        switch ($data['format']) {
-        case 'fonds':
-            break;
-        case 'collection':
-            break;
-        case 'series':
-        case 'subseries':
-            $data['title_sub'] = (string)$doc->did->unitid;
-            break;
-        default:
-            $data['title_sub'] = (string)$doc->did->unitid;
-            if ($doc->{'add-data'}->parent) {
-                $data['series']
-                    = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
-            }
-            break;
-        }
-
+        $data['series'] = $this->getSeries();
+        $data['title_sub'] = $this->getSubtitle();        
         $data['title_short'] = (string)$doc->did->unittitle;
         $data['title'] = '';
         if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
@@ -266,6 +283,66 @@ class Ead extends Base
         return $data;
     }
 
+    /**
+     * Return subtitle
+     *
+     * @return string
+     */
+    protected function getSubtitle()
+    {
+        switch ($this->getFormat()) {
+        case $this->fondsType:
+        case $this->collectionType:
+            return '';
+        }
+                
+        return $this->getUnitId(); 
+    }
+
+    /**
+     * Return series title
+     *
+     * @return string
+     */
+    protected function getSeries()
+    {
+        switch ($this->getFormat()) {
+        case $this->fondsType:
+        case $this->collectionType:
+        case $this->seriesType:
+        case $this->subseriesType:
+        case $this->undefinedType:        
+            return '';
+        }
+
+        $addData = $this->doc->{'add-data'};
+        if ($addData->parent) {
+            $parentAttr = $addData->parent->attributes();
+            if ($this->doc->{'add-data'}->archive) {
+                // Check that parent is not top-level record (archive)
+                $archiveAttr = $addData->archive->attributes();
+                if (isset($parentAttr->id) && isset($archiveAttr->id)
+                    && (string)$parentAttr->id === (string)$archiveAttr->id
+                ) {
+                    return '';
+                }
+            }
+            return (string)$parentAttr->title;
+        }        
+
+        return '';
+    }
+
+    /**
+     * Get unit id
+     *
+     * @return string
+     */
+    protected function getUnitId()
+    {
+        return (string)$this->doc->did->unitid;
+    }
+    
     /**
      * Get all XML fields
      *

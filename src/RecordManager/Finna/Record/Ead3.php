@@ -66,7 +66,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      *
      * @return string
      */
-    protected $undefinedType = 'Document/Määrittämätön';
+    protected $undefinedType = 'Määrittämätön';
 
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
@@ -230,19 +230,28 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     }
 
     /**
+     * Return subtitle
+     *
+     * @return string
+     */
+    protected function getSubtitle()
+    {
+        // TODO return subtitle id when available in metadata
+        return '';
+    }
+    
+    /**
      * Get unit id
      *
      * @return string
      */
     protected function getUnitId()
     {
-        if (isset($doc->did->unitid)) {
-            foreach ($doc->did->unitid as $i) {
-                if ($i->attributes()->label == 'Analoginen') {
-                    $idstr = (string)$i;
-                    $p = strpos($idstr, '/');
-                    return $p > 0
-                        ? substr($idstr, $p + 1) : $idstr;
+        if (isset($this->doc->did->unitid)) {
+            foreach ($this->doc->did->unitid as $i) {
+                $attr = $i->attributes();
+                if ($attr->label == 'Tekninen' && isset($attr->identifier)) {
+                    return (string)$attr->identifier;
                 }
             }
         }
