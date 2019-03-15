@@ -45,13 +45,6 @@ use RecordManager\Base\Utils\MetadataUtils;
 class Ead3 extends Ead
 {
     /**
-     * XMl record
-     *
-     * @return string
-     */
-    protected $doc = null;
-
-    /**
      * Set record data
      *
      * @param string $source Source ID
