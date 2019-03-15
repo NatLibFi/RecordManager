@@ -207,8 +207,7 @@ class Ead extends Base
             $data['topic'] = $data['topic_facet'] = $topics;
         }
 
-        $genre = $doc->xpath('controlaccess/genreform');
-        $data['format'] = (string) ($genre ? $genre[0] : $doc->attributes()->level);
+        $data['format'] = $this->getFormat();
 
         if (isset($doc->did->repository)) {
             $data['institution']
@@ -281,6 +280,17 @@ class Ead extends Base
         }
 
         return $data;
+    }
+
+    /**
+     * Return format from predefined values
+     *
+     * @return string
+     */
+    public function getFormat()
+    {
+        $genre = $this->doc->xpath('controlaccess/genreform');
+        return (string) ($genre ? $genre[0] : $this->doc->attributes()->level);
     }
 
     /**
