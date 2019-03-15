@@ -236,7 +236,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      */
     protected function getSubtitle()
     {
-        // TODO return subtitle id when available in metadata
+        // TODO return series id when available in metadata
         return '';
     }
     
