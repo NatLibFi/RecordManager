@@ -218,7 +218,7 @@ class Ead extends Base
         }
 
         $data['series'] = $this->getSeries();
-        $data['title_sub'] = $this->getSubtitle();        
+        $data['title_sub'] = $this->getSubtitle();
         $data['title_short'] = (string)$doc->did->unittitle;
         $data['title'] = '';
         if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
@@ -296,7 +296,7 @@ class Ead extends Base
             return '';
         }
                 
-        return $this->getUnitId(); 
+        return $this->getUnitId();
     }
 
     /**
@@ -311,7 +311,7 @@ class Ead extends Base
         case $this->collectionType:
         case $this->seriesType:
         case $this->subseriesType:
-        case $this->undefinedType:        
+        case $this->undefinedType:
             return '';
         }
 
@@ -328,7 +328,7 @@ class Ead extends Base
                 }
             }
             return (string)$parentAttr->title;
-        }        
+        }
 
         return '';
     }
