@@ -300,9 +300,11 @@ class Ead extends Base
      */
     protected function getSubtitle()
     {
-        switch ($this->getFormat()) {
-        case $this->fondsType:
-        case $this->collectionType:
+        $noSubtitleFormats = [
+            $this->fondsType,
+            $this->collectionType
+        ];
+        if (in_array($this->getFormat(), $noSubtitleFormats)) {
             return '';
         }
                 
@@ -316,12 +318,15 @@ class Ead extends Base
      */
     protected function getSeries()
     {
-        switch ($this->getFormat()) {
-        case $this->fondsType:
-        case $this->collectionType:
-        case $this->seriesType:
-        case $this->subseriesType:
-        case $this->undefinedType:
+        $nonSeriesFormats = [
+            $this->fondsType,
+            $this->collectionType,
+            $this->seriesType,
+            $this->subseriesType,
+            $this->undefinedType
+        ];
+
+        if (in_array($this->getFormat(), $nonSeriesFormats)) {
             return '';
         }
 
