@@ -42,10 +42,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Ead3 extends Base
+class Ead3 extends Ead
 {
-    protected $doc = null;
-
     /**
      * Set record data
      *
@@ -127,25 +125,8 @@ class Ead3 extends Base
         $data['topic'] = $data['topic_facet'] = $this->getTopics();
         $data['format'] = $this->getFormat();
         $data['institution'] = $this->getInstitution();
-
-        switch ($data['format']) {
-        case 'fonds':
-            break;
-        case 'collection':
-            break;
-        case 'series':
-        case 'subseries':
-            $data['title_sub'] = $this->getUnitId();
-            break;
-        default:
-            $data['title_sub'] = $this->getUnitId();
-            if ($doc->{'add-data'}->parent) {
-                $data['series']
-                    = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
-            }
-            break;
-        }
-
+        $data['series'] = $this->getSeries();
+        $data['title_sub'] = $this->getSubtitle();
         $data['title_short'] = $this->getTitle();
         $data['title'] = '';
         if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
@@ -441,8 +422,8 @@ class Ead3 extends Base
         } else {
             $data['is_hierarchy_id'] = $data['hierarchy_top_id'] = $this->getID();
             $data['is_hierarchy_title'] = $data['hierarchy_top_title']
-                = isset($doc->did->unittitle)
-                    ? (string)$doc->did->unittitle->attributes()->label
+                = isset($this->doc->did->unittitle)
+                    ? (string)$this->doc->did->unittitle->attributes()->label
                     : '';
         }
 

@@ -45,6 +45,41 @@ class Ead extends Base
     protected $doc = null;
 
     /**
+     * Archive fonds format
+     *
+     * @return string
+     */
+    protected $fondsType = 'fonds';
+
+    /**
+     * Archive collection format
+     *
+     * @return string
+     */
+    protected $collectionType = 'collection';
+
+    /**
+     * Archive series format
+     *
+     * @return string
+     */
+    protected $seriesType = 'series';
+
+    /**
+     * Archive subseries format
+     *
+     * @return string
+     */
+    protected $subseriesType = 'subseries';
+
+    /**
+     * Undefined type
+     *
+     * @return string
+     */
+    protected $undefinedType = null;
+
+    /**
      * Set record data
      *
      * @param string $source Source ID
@@ -172,8 +207,7 @@ class Ead extends Base
             $data['topic'] = $data['topic_facet'] = $topics;
         }
 
-        $genre = $doc->xpath('controlaccess/genreform');
-        $data['format'] = (string) ($genre ? $genre[0] : $doc->attributes()->level);
+        $data['format'] = $this->getFormat();
 
         if (isset($doc->did->repository)) {
             $data['institution']
@@ -182,26 +216,8 @@ class Ead extends Base
                 : $doc->did->repository);
         }
 
-        $data['title_sub'] = '';
-
-        switch ($data['format']) {
-        case 'fonds':
-            break;
-        case 'collection':
-            break;
-        case 'series':
-        case 'subseries':
-            $data['title_sub'] = (string)$doc->did->unitid;
-            break;
-        default:
-            $data['title_sub'] = (string)$doc->did->unitid;
-            if ($doc->{'add-data'}->parent) {
-                $data['series']
-                    = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
-            }
-            break;
-        }
-
+        $data['series'] = $this->getSeries();
+        $data['title_sub'] = $this->getSubtitle();
         $data['title_short'] = (string)$doc->did->unittitle;
         $data['title'] = '';
         if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
@@ -266,6 +282,82 @@ class Ead extends Base
         return $data;
     }
 
+    /**
+     * Return format from predefined values
+     *
+     * @return string
+     */
+    public function getFormat()
+    {
+        $genre = $this->doc->xpath('controlaccess/genreform');
+        return (string) ($genre ? $genre[0] : $this->doc->attributes()->level);
+    }
+
+    /**
+     * Return subtitle
+     *
+     * @return string
+     */
+    protected function getSubtitle()
+    {
+        $noSubtitleFormats = [
+            $this->fondsType,
+            $this->collectionType
+        ];
+        if (in_array($this->getFormat(), $noSubtitleFormats)) {
+            return '';
+        }
+                
+        return $this->getUnitId();
+    }
+
+    /**
+     * Return series title
+     *
+     * @return string
+     */
+    protected function getSeries()
+    {
+        $nonSeriesFormats = [
+            $this->fondsType,
+            $this->collectionType,
+            $this->seriesType,
+            $this->subseriesType,
+            $this->undefinedType
+        ];
+
+        if (in_array($this->getFormat(), $nonSeriesFormats)) {
+            return '';
+        }
+
+        $addData = $this->doc->{'add-data'};
+        if ($addData->parent) {
+            $parentAttr = $addData->parent->attributes();
+            if ($this->doc->{'add-data'}->archive) {
+                // Check that parent is not top-level record (archive)
+                $archiveAttr = $addData->archive->attributes();
+                if (isset($parentAttr->id) && isset($archiveAttr->id)
+                    && (string)$parentAttr->id === (string)$archiveAttr->id
+                ) {
+                    return '';
+                }
+            }
+            return (string)$parentAttr->title;
+        }
+
+        return '';
+    }
+
+    /**
+     * Get unit id
+     *
+     * @return string
+     */
+    protected function getUnitId()
+    {
+        return (string)$this->doc->did->unitid;
+    }
+    
     /**
      * Get all XML fields
      *
