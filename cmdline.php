@@ -5,7 +5,7 @@
  * PHP version 5
  *
  * Copyright (C) Patrick Fisher 2009
- * Copyright (C) The National Library of Finland 2011-2013.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -52,6 +52,27 @@ if (!empty(getenv('RECMAN_PROFILE'))) {
 
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/src/RecordManager/Base/Autoloader.php';
+
+/**
+ * Load the main configuration
+ *
+ * @param string $basePath Base path
+ *
+ * @return array
+ */
+function loadMainConfig($basePath)
+{
+    $filename = $basePath . '/conf/recordmanager.ini';
+    $result = parse_ini_file($filename, true);
+    if (false === $result) {
+        $error = error_get_last();
+        $message = $error['message'] ?? 'unknown error occurred';
+        throw new \Exception(
+            "Could not load configuration from file '$filename': $message"
+        );
+    }
+    return $result;
+}
 
 /**
  * Apply any configuration overrides defined on command line

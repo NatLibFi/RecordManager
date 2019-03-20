@@ -275,6 +275,13 @@ abstract class AbstractBase
     protected function readDataSourceSettings($filename)
     {
         $settings = parse_ini_file($filename, true);
+        if (false === $settings) {
+            $error = error_get_last();
+            $message = $error['message'] ?? 'unknown error occurred';
+            throw new \Exception(
+                "Could not load data source settings from file '$filename': $message"
+            );
+        }
 
         // Check for linked data sources and store information to the linked sources
         // too

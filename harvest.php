@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2016.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -39,9 +39,7 @@ function main($argv)
 {
     $params = parseArgs($argv);
     $basePath = !empty($params['basepath']) ? $params['basepath'] : __DIR__;
-    $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
-
-    $config = applyConfigOverrides($params, $config);
+    $config = applyConfigOverrides($params, loadMainConfig($basePath));
 
     if (empty($params['source']) || !is_string($params['source'])) {
         echo <<<EOT
