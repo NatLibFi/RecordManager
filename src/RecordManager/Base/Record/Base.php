@@ -202,10 +202,12 @@ class Base
      * Merge component parts to this record
      *
      * @param MongoCollection $componentParts Component parts to be merged
+     * @param MongoDate|null  $changeDate     Latest timestamp for the component part
+     * set
      *
      * @return void
      */
-    public function mergeComponentParts($componentParts)
+    public function mergeComponentParts($componentParts, &$changeDate)
     {
     }
 

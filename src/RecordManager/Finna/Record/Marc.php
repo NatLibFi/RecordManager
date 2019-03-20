@@ -762,14 +762,19 @@ class Marc extends \RecordManager\Base\Record\Marc
      * Merge component parts to this record
      *
      * @param MongoCollection $componentParts Component parts to be merged
+     * @param MongoDate|null  $changeDate     Latest timestamp for the component part
+     * set
      *
      * @return int Count of records merged
      */
-    public function mergeComponentParts($componentParts)
+    public function mergeComponentParts($componentParts, &$changeDate)
     {
         $count = 0;
         $parts = [];
         foreach ($componentParts as $componentPart) {
+            if (null === $changeDate || $changeDate < $componentPart['date']) {
+                $changeDate = $componentPart['date'];
+            }
             $data = MetadataUtils::getRecordData($componentPart, true);
             $marc = new Marc(
                 $this->logger, $this->config, $this->dataSourceSettings
@@ -1751,7 +1756,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             $field = $this->getField($tag);
             $title = '';
             $altTitles = [];
-            $ind = '130' === $tag ? 1 : 2;
+            $ind = '130' == $tag ? 1 : 2;
             if ($field && !empty($field['s'])) {
                 $title = $this->getSubfield($field, 'a');
                 $nonfiling = $this->getIndicator($field, $ind);
@@ -1784,7 +1789,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                     }
                 }
             }
-            $titleType = '130' === $tag ? 'uniform' : 'title';
+            $titleType = '130' == $tag ? 'uniform' : 'title';
             if ($title) {
                 $titles[] = [
                     'type' => $titleType,

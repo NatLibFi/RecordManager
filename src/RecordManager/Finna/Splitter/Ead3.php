@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2017.
+ * Copyright (C) The National Library of Finland 2012-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -23,6 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -37,6 +38,7 @@ namespace RecordManager\Finna\Splitter;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
 */
@@ -143,15 +145,12 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
 
             if ($record->did->unitid) {
                 foreach ($record->did->unitid as $i) {
-                    if ($i->attributes()->label == 'Tekninen') {
-                        $unitId = urlencode(
-                            $i->attributes()->identifier
-                                ? (string)$i->attributes()->identifier
-                                : (string)$record->did->unitid
-                        );
-
+                    $attr = $i->attributes();
+                    if ($attr->label == 'Tekninen' && isset($attr->identifier)) {
+                        $unitId = urlencode((string)$attr->identifier);
                         if ($unitId != $this->archiveId) {
                             $unitId = $this->archiveId . '_' . $unitId;
+                            break;
                         }
                     }
                 }

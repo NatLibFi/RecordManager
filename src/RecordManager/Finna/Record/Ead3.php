@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2018.
+ * Copyright (C) The National Library of Finland 2012-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -23,6 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -40,11 +41,33 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 class Ead3 extends \RecordManager\Base\Record\Ead3
 {
+    /**
+     * Archive fonds format
+     *
+     * @return string
+     */
+    protected $fondsType = 'Document/Arkisto';
+
+    /**
+     * Archive collection format
+     *
+     * @return string
+     */
+    protected $collectionType = 'Document/Kokoelma';
+
+    /**
+     * Undefined format type
+     *
+     * @return string
+     */
+    protected $undefinedType = 'Määrittämätön';
+
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
@@ -100,21 +123,14 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         $data['datasource_str_mv'] = $this->source;
 
         // Digitized?
-        if ($doc->did->daogrp) {
-            if (in_array($data['format'], ['collection', 'series', 'fonds', 'item'])
-            ) {
-                $data['format'] = 'digitized_' . $data['format'];
-            }
-
-            if ($this->doc->did->daogrp->daoloc) {
-                foreach ($this->doc->did->daogrp->daoloc as $daoloc) {
-                    if ($daoloc->attributes()->{'href'}) {
-                        $data['online_boolean'] = true;
-                        // This is sort of special. Make sure to use source instead
-                        // of datasource.
-                        $data['online_str_mv'] = $data['source_str_mv'];
-                        break;
-                    }
+        if (isset($this->doc->did->daoset->dao)) {
+            foreach ($this->doc->did->daoset->dao as $dao) {
+                if ($dao->attributes()->{'href'}) {
+                    $data['online_boolean'] = true;
+                    // This is sort of special. Make sure to use source instead
+                    // of datasource.
+                    $data['online_str_mv'] = $data['source_str_mv'];
+                    break;
                 }
             }
         }
@@ -165,20 +181,31 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $data['author'] = [];
             $data['author_role'] = [];
             $data['author_variant'] = [];
+            $data['author_facet'] = [];
             foreach ($doc->controlaccess->name as $name) {
                 foreach ($name->part as $part) {
+                    $role = null;
+                    if (isset($name->attributes()->relator)) {
+                        // TODO translate role label
+                        $role = (string)$name->attributes()->relator;
+                    }
+
                     switch ($part->attributes()->localtype) {
                     case 'Ensisijainen nimi':
-                        $data['author'][] = (string)$part;
+                        $data['author'][]
+                            = $this->getNameWithRole((string)$part, $role);
+                        if (! isset($part->attributes()->lang)
+                            || (string)$part->attributes()->lang === 'fin'
+                        ) {
+                            $data['author_facet'][] = (string)$part;
+                        }
                         break;
+                    case 'Varianttinimi':
                     case 'Vaihtoehtoinen nimi':
                     case 'Vanhentunut nimi':
-                        $data['author_variant'][] = (string)$part;
+                        $data['author_variant'][]
+                            = $this->getNameWithRole((string)$part, $role);
                         break;
-                    }
-                    if (isset($name->attributes()->relator)) {
-                        $data['author_role'][]
-                            = (string)$name->attributes()->relator;
                     }
                 }
             }
@@ -187,7 +214,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (isset($doc->index->index->indexentry)) {
             foreach ($doc->index->index->indexentry as $indexentry) {
                 if (isset($indexentry->name->part)) {
-                    // TODO: vain eka part, localtypelliset paremmin pois?
                     $data['contents'][] = (string) $indexentry->name->part;
                 }
             }
@@ -198,9 +224,22 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
 
         $data['format_ext_str_mv'] = $data['format'];
 
+        $data['topic_uri_str_mv'] = $this->getTopicURIs();
+
         return $data;
     }
 
+    /**
+     * Return subtitle
+     *
+     * @return string
+     */
+    protected function getSubtitle()
+    {
+        // TODO return series id when available in metadata
+        return '';
+    }
+    
     /**
      * Get unit id
      *
@@ -208,13 +247,11 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      */
     protected function getUnitId()
     {
-        if (isset($doc->did->unitid)) {
-            foreach ($doc->did->unitid as $i) {
-                if ($i->attributes()->label == 'Analoginen') {
-                    $idstr = (string)$i;
-                    $p = strpos($idstr, '/');
-                    return $p > 0
-                        ? substr($idstr, $p + 1) : $idstr;
+        if (isset($this->doc->did->unitid)) {
+            foreach ($this->doc->did->unitid as $i) {
+                $attr = $i->attributes();
+                if ($attr->label == 'Tekninen' && isset($attr->identifier)) {
+                    return (string)$attr->identifier;
                 }
             }
         }
@@ -452,5 +489,166 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         }
 
         return [$startDate, $endDate];
+    }
+
+    /**
+     * Return author name with role.
+     *
+     * @param string $name Name
+     * @param string $role Role
+     *
+     * @return string
+     */
+    protected function getNameWithRole($name, $role = null)
+    {
+        return $role
+            ? "$name " . strtolower($role)
+            : $name;
+    }
+
+    /**
+     * Get topics URIs
+     *
+     * @return array
+     */
+    protected function getTopicURIs()
+    {
+        $result = [];
+        if (!isset($this->doc->controlaccess->subject)) {
+            return $result;
+        }
+        foreach ($this->doc->controlaccess->subject as $subject) {
+            $attr = $subject->attributes();
+            if (isset($attr->relator)
+                && (string)$attr->relator === 'aihe'
+                && isset($attr->identifier)
+                && ('' !== ($id = trim((string)$attr->identifier)))
+            ) {
+                $result[] = $id;
+            }
+        }
+        return array_unique($result);
+    }
+
+    /**
+     * Return format from predefined values
+     *
+     * @return string
+     */
+    public function getFormat()
+    {
+        $level1 = $level2 = null;
+        
+        if ((string)$this->doc->attributes()->level === 'fonds') {
+            $level1 = 'Document';
+        }
+
+        if (isset($this->doc->controlaccess->genreform)) {
+            foreach ($this->doc->controlaccess->genreform as $genreform) {
+                $format = null;
+                foreach ($genreform->part as $part) {
+                    $attributes = $part->attributes();
+                    if (isset($attributes->lang)
+                        && (string)$attributes->lang === 'fin'
+                    ) {
+                        $format = (string)$part;
+                        break;
+                    }
+                }
+                
+                if (!$format) {
+                    continue;
+                }
+                
+                $attr = $genreform->attributes();
+                if (isset($attr->encodinganalog)) {
+                    $type = (string)$attr->encodinganalog;
+                    if ($type === 'ahaa:AI08') {
+                        if ($level1 === null) {
+                            $level1 = $format;
+                        } else {
+                            $level2 = $format;
+                        }
+                    } elseif ($type === 'ahaa:AI57') {
+                        $level2 = $format;
+                    }
+                }
+            }
+        }
+        
+        return $level2 ? "$level1/$level2" : $level1;
+    }
+
+    /**
+     * Get topics
+     *
+     * @return array
+     */
+    protected function getTopics()
+    {
+        $result = [];
+        if (!isset($this->doc->controlaccess->subject)) {
+            return $result;
+        }
+        foreach ($this->doc->controlaccess->subject as $subject) {
+            $attr = $subject->attributes();
+            if (isset($attr->relator)
+                && (string)$attr->relator === 'aihe'
+                && isset($subject->part)
+                && ('' !== ($subject = trim((string)$subject->part)))
+            ) {
+                $result[] = $subject;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Get institution
+     *
+     * @return string
+     */
+    protected function getInstitution()
+    {
+        if (isset($this->doc->did->repository->corpname)) {
+            foreach ($this->doc->did->repository->corpname as $node) {
+                if (! isset($node->part)) {
+                    continue;
+                }
+                foreach ($node->part->attributes() as $key => $val) {
+                    if ($key === 'lang' && (string)$val === 'fin') {
+                        return (string)$node->part;
+                    }
+                }
+            }
+        }
+        return '';
+    }
+
+    /**
+     *  Get description
+     *
+     * @return string
+     */
+    protected function getDescription()
+    {
+        if (!empty($this->doc->scopecontent)) {
+            $desc = [];
+            foreach ($this->doc->scopecontent as $el) {
+                if (isset($el->attributes()->encodinganalog)) {
+                    continue;
+                }
+                if (! isset($el->head) || (string)$el->head !== 'Tietosisältö') {
+                    continue;
+                }
+                foreach ($el->p as $p) {
+                    $desc[] = trim(html_entity_decode((string)$el->p));
+                }
+            }
+            if (!empty($desc)) {
+                return implode('   /   ', $desc);
+            }
+        }
+        return '';
     }
 }

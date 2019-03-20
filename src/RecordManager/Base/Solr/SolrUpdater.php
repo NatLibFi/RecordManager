@@ -1354,6 +1354,7 @@ class SolrUpdater
             }
 
             $result['records'][] = $child['solr'];
+            $result['deleted'][] = $dedupRecord['_id'];
         } else {
             foreach ($children as $child) {
                 $child['solr']['merged_child_boolean'] = true;
@@ -1742,7 +1743,14 @@ class SolrUpdater
         }
 
         if ($hasComponentParts && isset($components)) {
-            $mergedComponents += $metadataRecord->mergeComponentParts($components);
+            $changeDate = null;
+            $mergedComponents += $metadataRecord->mergeComponentParts(
+                $components, $changeDate
+            );
+            // Use latest date as the host record date
+            if (null !== $changeDate && $changeDate > $record['date']) {
+                $record['date'] = $changeDate;
+            }
         }
         if (isset($settings['solrTransformationXSLT'])) {
             $params = [
