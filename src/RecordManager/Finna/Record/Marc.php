@@ -1756,7 +1756,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             $field = $this->getField($tag);
             $title = '';
             $altTitles = [];
-            $ind = '130' === $tag ? 1 : 2;
+            $ind = '130' == $tag ? 1 : 2;
             if ($field && !empty($field['s'])) {
                 $title = $this->getSubfield($field, 'a');
                 $nonfiling = $this->getIndicator($field, $ind);
@@ -1789,7 +1789,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                     }
                 }
             }
-            $titleType = '130' === $tag ? 'uniform' : 'title';
+            $titleType = '130' == $tag ? 'uniform' : 'title';
             if ($title) {
                 $titles[] = [
                     'type' => $titleType,
