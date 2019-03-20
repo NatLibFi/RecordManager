@@ -408,6 +408,26 @@ class Base
     }
 
     /**
+     * Check if the record is suppressed.
+     *
+     * @return bool
+     */
+    public function getSuppressed()
+    {
+        return false;
+    }
+
+    /**
+     * Get key data that can be used to identify expressions of a work
+     *
+     * @return array Associative array of authors and titles
+     */
+    public function getWorkIdentificationData()
+    {
+        return [];
+    }
+
+    /**
      * Return a parameter specified in driverParams[] of datasources.ini
      *
      * @param string $parameter Parameter name

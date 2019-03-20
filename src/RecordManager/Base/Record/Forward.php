@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2016-2017.
+ * Copyright (C) The National Library of Finland 2016-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -56,7 +56,7 @@ class Forward extends Base
      * @var array
      */
     protected $primaryAuthorRelators = [
-        'A00', 'A03', 'A06', 'A50', 'A99'
+        'd02', 'a00', 'a03', 'a06', 'a50', 'a99'
     ];
 
     /**
@@ -65,7 +65,7 @@ class Forward extends Base
      * @var array
      */
     protected $secondaryAuthorRelators = [
-        'D01', 'D02', 'E01', 'F01', 'F02'
+        'd01', 'e01', 'f01', 'f02'
     ];
 
     /**
@@ -179,7 +179,7 @@ class Forward extends Base
         $data = [];
 
         $doc = $this->getMainElement();
-        $data['recordtype'] = 'forward';
+        $data['record_format'] = $data['recordtype'] = 'forward';
         $data['ctrlnum'] = $this->getID();
         $data['fullrecord'] = $this->toXML();
         $publishDate = (string)$doc->YearOfReference;
@@ -190,9 +190,6 @@ class Forward extends Base
             if ($titleText != $data['title']) {
                 $data['title_alt'][] = $titleText;
             }
-        }
-        if ($publishDate) {
-            $data['title'] .= " ($publishDate)";
         }
         $data['title_short'] = $data['title_full'] = $data['title'];
         $data['title_sort'] = MetadataUtils::stripLeadingPunctuation(
@@ -214,7 +211,30 @@ class Forward extends Base
         $data['url'] = $this->getUrls();
         $data['thumbnail'] = $this->getThumbnail();
 
-        $primaryAuthors = $this->getPrimaryAuthors();
+        $unsortedPrimaryAuthors = $this->getPrimaryAuthors();
+        // Make sure directors are first of the primary authors
+        $directors = $others = [
+            'names' => [],
+            'ids' => [],
+            'relators' => []
+        ];
+        foreach ($unsortedPrimaryAuthors['relators'] as $i => $relator) {
+            if ('d02' === $relator) {
+                $directors['names'][] = $unsortedPrimaryAuthors['names'][$i];
+                $directors['ids'][] = $unsortedPrimaryAuthors['ids'][$i];
+                $directors['relators'][] = $unsortedPrimaryAuthors['relators'][$i];
+            } else {
+                $others['names'][] = $unsortedPrimaryAuthors['names'][$i];
+                $others['ids'][] = $unsortedPrimaryAuthors['ids'][$i];
+                $others['relators'][] = $unsortedPrimaryAuthors['relators'][$i];
+            }
+        }
+        $primaryAuthors = [
+            'names' => array_merge($directors['names'], $others['names']),
+            'ids' => array_merge($directors['ids'], $others['ids']),
+            'relators' => array_merge($directors['relators'], $others['relators'])
+        ];
+
         $data['author'] = $primaryAuthors['names'];
         // Support for author_variant is currently not implemented
         $data['author_role'] = $primaryAuthors['relators'];

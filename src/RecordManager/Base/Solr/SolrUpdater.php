@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2018.
+ * Copyright (C) The National Library of Finland 2012-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -258,6 +258,13 @@ class SolrUpdater
     ];
 
     /**
+     * Fields to copy back from the merged record to all the child records
+     *
+     * @var array
+     */
+    protected $copyFromMergedRecord = [];
+
+    /**
      * Fields that are analyzed when scoring records for merging order
      */
     protected $scoredFields = [
@@ -360,8 +367,17 @@ class SolrUpdater
 
     /**
      * Whether to track last update date per server's update url
+     *
+     * @var bool
      */
     protected $datePerServer;
+
+    /**
+     * UNICODE normalization form
+     *
+     * @var string
+     */
+    protected $unicodeNormalizationForm;
 
     /**
      * Constructor
@@ -407,6 +423,11 @@ class SolrUpdater
             $this->mergedFields = explode(',', $config['Solr']['merged_fields']);
         }
         $this->mergedFields = array_flip($this->mergedFields);
+
+        if (isset($config['Solr']['copy_from_merged_record'])) {
+            $this->copyFromMergedRecord
+                = explode(',', $config['Solr']['copy_from_merged_record']);
+        }
 
         if (isset($config['Solr']['single_fields'])) {
             $this->singleFields = explode(',', $config['Solr']['single_fields']);
@@ -465,6 +486,10 @@ class SolrUpdater
         if (!empty($config['Solr']['field_mapper'])) {
             $this->fieldMapperClass = $config['Solr']['field_mapper'];
         }
+
+        $this->unicodeNormalizationForm
+            = isset($config['Solr']['unicode_normalization_form'])
+            ? $config['Solr']['unicode_normalization_form'] : '';
 
         // Load settings
         $this->initDatasources($dataSourceSettings);
@@ -1300,6 +1325,7 @@ class SolrUpdater
             $children[] = ['mongo' => $record, 'solr' => $data];
         }
         $merged = $this->mergeRecords($children);
+        $this->copyMergedDataToChildren($merged, $children);
 
         if (count($children) == 0) {
             $this->log->log(
@@ -1379,7 +1405,7 @@ class SolrUpdater
                 $result['deleted'][] = $mergedId;
             } else {
                 $merged['id'] = $mergedId;
-                $merged['recordtype'] = 'merged';
+                $merged['record_format'] = $merged['recordtype'] = 'merged';
                 $merged['merged_boolean'] = true;
 
                 if ($this->verbose) {
@@ -1776,15 +1802,6 @@ class SolrUpdater
                         $data['container_title'] = $hostTitle;
                     }
                 }
-                // If there's only a single title, add any reference to it. In any
-                // other case we can't be sure which one is which.
-                if (!empty($data['hierarchy_parent_title'])
-                    && count($data['hierarchy_parent_title']) === 1
-                ) {
-                    if ($hostRef = $metadataRecord->getContainerReference()) {
-                        $data['hierarchy_parent_title'][0] .= " $hostRef";
-                    }
-                }
             }
             $data['container_volume'] = $metadataRecord->getVolume();
             $data['container_issue'] = $metadataRecord->getIssue();
@@ -1875,7 +1892,11 @@ class SolrUpdater
             $all = [];
             foreach ($data as $key => $field) {
                 if (in_array(
-                    $key, ['fullrecord', 'thumbnail', 'id', 'recordtype', 'ctrlnum']
+                    $key,
+                    [
+                        'fullrecord', 'thumbnail', 'id', 'recordtype',
+                        'record_format', 'ctrlnum'
+                    ]
                 )
                 ) {
                     continue;
@@ -1911,7 +1932,9 @@ class SolrUpdater
                 $data['allfields'][] = str_replace(
                     ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
                     ['ax', 'bx', 'cx', 'dx', 'ex', 'fx', 'gx', 'hx', 'ix', 'jx'],
-                    MetadataUtils::normalize($format)
+                    MetadataUtils::normalizeKey(
+                        $format, $this->unicodeNormalizationForm
+                    )
                 );
             }
         }
@@ -1920,10 +1943,54 @@ class SolrUpdater
             $data['hidden_component_boolean'] = true;
         }
 
+        // Work identification keys
+        if ($workIds = $metadataRecord->getWorkIdentificationData()) {
+            $keys = [];
+            foreach ($workIds['titles'] as $titleData) {
+                $title = MetadataUtils::normalizeKey(
+                    $titleData['value'],
+                    $this->unicodeNormalizationForm
+                );
+                if ('uniform' === $titleData['type']) {
+                    $keys[] = "UT $title";
+                } else {
+                    foreach ($workIds['authors'] as $authorData) {
+                        $author = MetadataUtils::normalizeKey(
+                            $authorData['value'],
+                            $this->unicodeNormalizationForm
+                        );
+                        $keys[] = "AT $author $title";
+                    }
+                }
+            }
+            foreach ($workIds['titlesAltScript'] as $titleData) {
+                $title = MetadataUtils::normalizeKey(
+                    $titleData['value'],
+                    $this->unicodeNormalizationForm
+                );
+                if ('uniform' === $titleData['type']) {
+                    $keys[] = "UT $title";
+                } else {
+                    foreach ($workIds['authorsAltScript'] as $authorData) {
+                        $author = MetadataUtils::normalizeKey(
+                            $authorData['value'],
+                            $this->unicodeNormalizationForm
+                        );
+                        $keys[] = "AT $author $title";
+                    }
+                }
+            }
+            if ($keys) {
+                $data['work_keys_str_mv'] = $keys;
+            }
+        }
+
         foreach ($data as $key => &$values) {
             if (is_array($values)) {
                 foreach ($values as $key => &$value) {
-                    $value = MetadataUtils::normalizeUnicode($value);
+                    $value = MetadataUtils::normalizeUnicode(
+                        $value, $this->unicodeNormalizationForm
+                    );
                     if (empty($value) || $value === 0 || $value === 0.0
                         || $value === '0'
                     ) {
@@ -1932,7 +1999,9 @@ class SolrUpdater
                 }
                 $values = array_values(array_unique($values));
             } elseif ($key != 'fullrecord') {
-                $values = MetadataUtils::normalizeUnicode($values);
+                $values = MetadataUtils::normalizeUnicode(
+                    $values, $this->unicodeNormalizationForm
+                );
             }
             if (empty($values) || $values === 0 || $values === 0.0 || $values === '0'
             ) {
@@ -2103,6 +2172,31 @@ class SolrUpdater
         }
 
         return $merged;
+    }
+
+    /**
+     * Copy configured fields from merged record to children
+     *
+     * @param array $merged  Merged record
+     * @param array $records Array of child records
+     *
+     * @return void
+     */
+    protected function copyMergedDataToChildren($merged, &$records)
+    {
+        foreach ($this->copyFromMergedRecord as $copyField) {
+            if (empty($merged[$copyField])) {
+                continue;
+            }
+            foreach ($records as &$child) {
+                $child['solr'][$copyField] = array_unique(
+                    array_merge(
+                        (array)($child['solr'][$copyField] ?? []),
+                        (array)$merged[$copyField]
+                    )
+                );
+            }
+        }
     }
 
     /**
@@ -2415,11 +2509,11 @@ class SolrUpdater
         }
         foreach ($data as $collectionName => $collection) {
             foreach ($collection['shards'] as $shardName => $shard) {
-                if ('active' !== $shard['state']) {
+                if ('active' !== $shard['state'] && 'inactive' !== $shard['state']) {
                     $this->log->log(
                         'checkClusterState',
                         "Collection $collectionName shard $shardName:"
-                        . " Not in active state: {$shard['state']}",
+                        . " Not in usable state: {$shard['state']}",
                         Logger::WARNING
                     );
                     $this->clusterState = 'degraded';
@@ -2569,7 +2663,7 @@ class SolrUpdater
     }
 
     /**
-     * Enrich record according to the data source settings
+     * Enrich record according to the global and data source settings
      *
      * @param string $source   Source ID
      * @param array  $settings Data source settings
@@ -2580,19 +2674,23 @@ class SolrUpdater
      */
     protected function enrich($source, $settings, $record, &$data)
     {
-        if (isset($settings['enrichments'])) {
-            foreach ($settings['enrichments'] as $enrichment) {
-                if (!isset($this->enrichments[$enrichment])) {
-                    $className = $enrichment;
-                    if (strpos($className, '\\') === false) {
-                        $className = "\RecordManager\Base\Enrichment\\$className";
-                    }
-                    $this->enrichments[$enrichment] = new $className(
-                        $this->db, $this->log, $this->config
-                    );
+        $enrichments = array_unique(
+            array_merge(
+                (array)($this->config['Solr']['enrichment'] ?? []),
+                (array)($settings['enrichments'] ?? [])
+            )
+        );
+        foreach ($enrichments as $enrichment) {
+            if (!isset($this->enrichments[$enrichment])) {
+                $className = $enrichment;
+                if (strpos($className, '\\') === false) {
+                    $className = "\RecordManager\Base\Enrichment\\$className";
                 }
-                $this->enrichments[$enrichment]->enrich($source, $record, $data);
+                $this->enrichments[$enrichment] = new $className(
+                    $this->db, $this->log, $this->config
+                );
             }
+            $this->enrichments[$enrichment]->enrich($source, $record, $data);
         }
     }
 

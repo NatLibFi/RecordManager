@@ -63,31 +63,12 @@ trait StoreRecordTrait
             throw new \Exception('Dedup handler missing');
         }
 
-        $settings = $this->dataSourceSettings[$sourceId];
         if ($deleted && !empty($oaiID)) {
-            // A single OAI-PMH record may have been split to multiple records. Find
-            // all occurrences.
-            $records = $this->db->findRecords(
-                ['source_id' => $sourceId, 'oai_id' => $oaiID]
-            );
-            $count = 0;
-            foreach ($records as $record) {
-                if (isset($record['dedup_id'])) {
-                    $this->dedupHandler->removeFromDedupRecord(
-                        $record['dedup_id'], $record['_id']
-                    );
-                    unset($record['dedup_id']);
-                }
-                $record['deleted'] = true;
-                $record['updated'] = $this->db->getTimestamp();
-                $record['update_needed'] = false;
-                $this->db->saveRecord($record);
-                ++$count;
-            }
-            return $count;
+            return $this->deleteByOaiId($sourceId, $oaiID);
         }
 
         $dataArray = [];
+        $settings = $this->dataSourceSettings[$sourceId];
         if ($settings['recordSplitter']) {
             if ($this->verbose) {
                 echo "Splitting records\n";
@@ -174,6 +155,12 @@ trait StoreRecordTrait
                 }
                 $id = $oaiID;
             }
+
+            // If the record is suppressed, mark it deleted
+            if (!$deleted && $metadataRecord->getSuppressed()) {
+                $deleted = true;
+            }
+
             $this->previousStoredId = $id;
             $id = $settings['idPrefix'] . '.' . $id;
             $hostIDs = $metadataRecord->getHostRecordIDs();
@@ -213,24 +200,36 @@ trait StoreRecordTrait
             $dbRecord['format'] = $settings['format'];
             $dbRecord['original_data'] = $originalData;
             $dbRecord['normalized_data'] = $normalizedData;
+            $hostSourceIds = !empty($settings['__hostRecordSourceId'])
+                ? $settings['__hostRecordSourceId'] : [$sourceId];
             if ($settings['dedup']) {
-                // If this is a host record, mark it to be deduplicated.
-                // If this is a component part, mark its host record to be
-                // deduplicated.
-                if (!$hostIDs) {
-                    $dbRecord['update_needed']
-                        = $this->dedupHandler->updateDedupCandidateKeys(
-                            $dbRecord, $metadataRecord
+                if ($dbRecord['deleted']) {
+                    if (isset($dbRecord['dedup_id'])) {
+                        $this->dedupHandler->removeFromDedupRecord(
+                            $dbRecord['dedup_id'], $dbRecord['_id']
                         );
-                } else {
-                    $this->db->updateRecords(
-                        [
-                            'source_id' => $sourceId,
-                            'linking_id' => ['$in' => (array)$hostIDs]
-                        ],
-                        ['update_needed' => true]
-                    );
+                        unset($dbRecord['dedup_id']);
+                    }
                     $dbRecord['update_needed'] = false;
+                } else {
+                    // If this is a host record, mark it to be deduplicated.
+                    // If this is a component part, mark its host record to be
+                    // deduplicated.
+                    if (!$hostIDs) {
+                        $dbRecord['update_needed']
+                            = $this->dedupHandler->updateDedupCandidateKeys(
+                                $dbRecord, $metadataRecord
+                            );
+                    } else {
+                        $this->db->updateRecords(
+                            [
+                                'source_id' => ['$in' => $hostSourceIds],
+                                'linking_id' => ['$in' => (array)$hostIDs]
+                            ],
+                            ['update_needed' => true]
+                        );
+                        $dbRecord['update_needed'] = false;
+                    }
                 }
             } else {
                 if (isset($dbRecord['title_keys'])) {
@@ -247,7 +246,7 @@ trait StoreRecordTrait
                 // Mark host records updated too
                 $this->db->updateRecords(
                     [
-                        'source_id' => $sourceId,
+                        'source_id' => ['$in' => $hostSourceIds],
                         'linking_id' => ['$in' => (array)$hostIDs]
                     ],
                     ['updated' => $this->db->getTimestamp()]
@@ -277,6 +276,50 @@ trait StoreRecordTrait
             );
         }
 
+        return $count;
+    }
+
+    /**
+     * Mark a record deleted
+     *
+     * @param array $record Record
+     *
+     * @return void
+     */
+    public function markRecordDeleted($record)
+    {
+        if (isset($record['dedup_id'])) {
+            $this->dedupHandler->removeFromDedupRecord(
+                $record['dedup_id'], $record['_id']
+            );
+            unset($record['dedup_id']);
+        }
+        $record['deleted'] = true;
+        $record['updated'] = $this->db->getTimestamp();
+        $record['update_needed'] = false;
+        $this->db->saveRecord($record);
+    }
+
+    /**
+     * Delete records with an OAI identifier
+     *
+     * @param string $sourceId Source ID
+     * @param string $oaiID    ID of the record as received from OAI-PMH
+     *
+     * @return int Count of records deleted
+     */
+    protected function deleteByOaiId($sourceId, $oaiID)
+    {
+        // A single OAI-PMH record may have been split to multiple records. Find
+        // all occurrences.
+        $records = $this->db->findRecords(
+            ['source_id' => $sourceId, 'oai_id' => $oaiID]
+        );
+        $count = 0;
+        foreach ($records as $record) {
+            $this->markRecordDeleted($record);
+            ++$count;
+        }
         return $count;
     }
 }

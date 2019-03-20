@@ -106,7 +106,7 @@ class Qdc extends Base
         $data = [];
 
         $doc = $this->doc;
-        $data['recordtype'] = 'qdc';
+        $data['record_format'] = $data['recordtype'] = 'qdc';
         $data['ctrlnum'] = trim((string)$doc->recordID);
         $data['fullrecord'] = $doc->asXML();
 
@@ -233,10 +233,12 @@ class Qdc extends Base
     public function getUniqueIDs()
     {
         $arr = [];
+        $form = isset($this->config['Site']['unicode_normalization_form'])
+            ? $this->config['Site']['unicode_normalization_form'] : 'NFKC';
         foreach ($this->doc->identifier as $identifier) {
             $identifier = strtolower(trim((string)$identifier));
             if (strncmp('urn:', $identifier, 4) === 0) {
-                $arr[] = '(urn)' . MetadataUtils::normalize($identifier);
+                $arr[] = '(urn)' . MetadataUtils::normalizeKey($identifier, $form);
             }
         }
 

@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2018.
+ * Copyright (C) The National Library of Finland 2012-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -53,6 +53,29 @@ class Marc extends \RecordManager\Base\Record\Marc
     ];
 
     /**
+     * Extra data to be included in allfields e.g. from component parts
+     *
+     * @var array
+     */
+    protected $extraAllFields = [];
+
+    /**
+     * Set record data
+     *
+     * @param string $source Source ID
+     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
+     * file import)
+     * @param string $data   Metadata
+     *
+     * @return void
+     */
+    public function setData($source, $oaiID, $data)
+    {
+        $this->extraAllFields = [];
+        parent::setData($source, $oaiID, $data);
+    }
+
+    /**
      * Normalize the record (optional)
      *
      * @return void
@@ -83,7 +106,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 // Always use subfield 'b' for location regardless of where it came
                 // from
                 $holding[] = ['b' => $branch];
-                foreach (['c', 'h', 'o'] as $code) {
+                foreach (['c', 'h', 'o', '8'] as $code) {
                     $value = $this->getSubfield($field952, $code);
                     $key[] = $value;
                     if ('' !== $value) {
@@ -510,14 +533,17 @@ class Marc extends \RecordManager\Base\Record\Marc
         // Shelving location in building_sub_str_mv
         $subBuilding = $this->getDriverParam('subBuilding', '');
         if ($subBuilding) {
+            if ('1' === $subBuilding) { // true
+                $subBuilding = 'c';
+            }
             foreach ($this->getFields('852') as $field) {
-                $location = $this->getSubfield($field, 'c');
+                $location = $this->getSubfield($field, $subBuilding);
                 if ('' !== $location) {
                     $data['building_sub_str_mv'][] = $location;
                 }
             }
             foreach ($this->getFields('952') as $field) {
-                $location = $this->getSubfield($field, 'c');
+                $location = $this->getSubfield($field, $subBuilding);
                 if ('' !== $location) {
                     $data['building_sub_str_mv'][] = $location;
                 }
@@ -625,8 +651,8 @@ class Marc extends \RecordManager\Base\Record\Marc
                         }
                     }
                 }
-                $access = MetadataUtils::normalize(
-                    $this->getFieldSubfields('506', ['f' => 1])
+                $access = MetadataUtils::normalizeKey(
+                    $this->getFieldSubfields('506', ['f' => 1]), 'NFKC'
                 );
                 switch ($access) {
                 case 'unrestricted':
@@ -697,8 +723,8 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         if (!empty($data['online_str_mv'])) {
-            $access = MetadataUtils::normalize(
-                $this->getFieldSubfields('506', ['f' => 1])
+            $access = MetadataUtils::normalizeKey(
+                $this->getFieldSubfields('506', ['f' => 1]), 'NFKC'
             );
             if ($access !== 'onlineaccesswithauthorization') {
                 $data['free_online_str_mv'] = $data['online_str_mv'];
@@ -861,6 +887,13 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
             }
 
+            foreach ($marc->getFields('031') as $field031) {
+                foreach ($marc->getSubfieldsArray($field031, ['t' => 1]) as $lyrics
+                ) {
+                    $this->extraAllFields[] = $lyrics;
+                }
+            }
+
             $newField = [
                 'i1' => ' ',
                 'i2' => ' ',
@@ -890,13 +923,19 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $newField['s'][] = ['g' => $addTitle];
             }
             foreach ($languages as $language) {
-                $newField['s'][] = ['h' => $language];
+                if ('|||' !== $language) {
+                    $newField['s'][] = ['h' => $language];
+                }
             }
             foreach ($originalLanguages as $language) {
-                $newField['s'][] = ['i' => $language];
+                if ('|||' !== $language) {
+                    $newField['s'][] = ['i' => $language];
+                }
             }
             foreach ($subtitleLanguages as $language) {
-                $newField['s'][] = ['j' => $language];
+                if ('|||' !== $language) {
+                    $newField['s'][] = ['j' => $language];
+                }
             }
             foreach ($identifiers as $identifier) {
                 $newField['s'][] = ['k' => $identifier];
@@ -933,6 +972,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $this->getFieldSubfields('509', ['a' => 1])
             );
             switch (strtolower($field509a)) {
+            case 'kandidaatintutkielma':
             case 'kandidaatintyö':
             case 'kandidatarbete':
                 return 'BachelorsThesis';
@@ -1041,6 +1081,22 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
         return '';
+    }
+
+    /**
+     * Check if the record is suppressed.
+     *
+     * @return bool
+     */
+    public function getSuppressed()
+    {
+        if ($this->getDriverParam('kohaNormalization', false)) {
+            foreach ($this->getFields('942') as $field942) {
+                $suppressed = $this->getSubfield($field942, 'n');
+                return (bool)$suppressed;
+            }
+        }
+        return false;
     }
 
     /**
@@ -1197,6 +1253,11 @@ class Marc extends \RecordManager\Base\Record\Marc
             '015' => ['q' => 1, 'z' => 1, '2' => 1, '6' => 1, '8' => 1],
             '024' => ['c' => 1, 'd' => 1, 'z' => 1, '6' => 1, '8' => 1],
             '027' => ['z' => 1, '6' => 1, '8' => 1],
+            '031' => [
+                'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1, 'g' => 1, 'm' => 1,
+                'n' => 1, 'o' => 1, 'p' => 1, 'q' => 1, 'r' => 1, 's' => 1, 'u' => 1,
+                'y' => 1, 'z' => 1, '2' => 1, '6' => 1, '8' => 1
+            ],
             '650' => ['0' => 1, '2' => 1, '6' => 1, '8' => 1],
             '100' => ['4' => 1],
             '700' => ['4' => 1],
@@ -1230,7 +1291,10 @@ class Marc extends \RecordManager\Base\Record\Marc
             if (($tag >= 100 && $tag < 841 && !isset($fieldFilter[$tag]))
                 || in_array(
                     $tag,
-                    ['015', '024', '025', '026', '027', '028', '880', '952', '979']
+                    [
+                        '015', '024', '025', '026', '027', '028', '031', '880',
+                        '952', '979'
+                    ]
                 )
             ) {
                 foreach ($fields as $field) {
@@ -1244,6 +1308,9 @@ class Marc extends \RecordManager\Base\Record\Marc
                     }
                 }
             }
+        }
+        if ($this->extraAllFields) {
+            $allFields = array_merge($allFields, $this->extraAllFields);
         }
         $allFields = array_map(
             function ($str) {
@@ -1266,6 +1333,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         $building = [];
         if ($this->getDriverParam('holdingsInBuilding', true)) {
             $useSub = $this->getDriverParam('subLocationInBuilding', '');
+            $itemSub = $this->getDriverParam('itemSubLocationInBuilding', $useSub);
             foreach ($this->getFields('852') as $field) {
                 $location = $this->getSubfield($field, 'b');
                 if ($location) {
@@ -1278,7 +1346,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             foreach ($this->getFields('952') as $field) {
                 $location = $this->getSubfield($field, 'b');
                 if ($location) {
-                    if ($useSub && $sub = $this->getSubfield($field, $useSub)) {
+                    if ($itemSub && $sub = $this->getSubfield($field, $itemSub)) {
                         $location = [$location, $sub];
                     }
                     $building[] = $location;
@@ -1503,7 +1571,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             ]
         ];
         return $this->getAuthorsByRelator(
-            $fieldSpecs, $this->primaryAuthorRelators, ['100']
+            $fieldSpecs, $this->primaryAuthorRelators, ['100'], false
         );
     }
 
@@ -1539,7 +1607,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             ]
         ];
         return $this->getAuthorsByRelator(
-            $fieldSpecs, $this->secondaryAuthorRelators, ['700']
+            $fieldSpecs, $this->secondaryAuthorRelators, ['700'], false
         );
     }
 
@@ -1561,7 +1629,8 @@ class Marc extends \RecordManager\Base\Record\Marc
             array_merge(
                 $this->primaryAuthorRelators, $this->secondaryAuthorRelators
             ),
-            ['110', '111', '710', '711']
+            ['110', '111', '710', '711'],
+            false
         );
     }
 
@@ -1627,5 +1696,113 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
         return $building;
+    }
+
+    /**
+     * Get key data that can be used to identify expressions of a work
+     *
+     * @return array Associative array of authors and titles
+     */
+    public function getWorkIdentificationData()
+    {
+        $authorFields = [
+            '100' => ['a' => 1, 'b' => 1],
+            '110' => ['a' => 1, 'b' => 1],
+            '111' => ['a' => 1, 'c' => 1],
+            '700' => ['a' => 1, 'b' => 1],
+            '710' => ['a' => 1, 'b' => 1],
+            '711' => ['a' => 1, 'c' => 1]
+        ];
+        $titleFields = [
+            '130' => ['n' => 1],
+            '240' => ['n' => 1],
+            '245' => ['b' => 1, 'n' => 1],
+            '246' => ['b' => 1, 'n' => 1],
+            '247' => ['b' => 1, 'n' => 1],
+        ];
+
+        $authors = [];
+        $authorsAltScript = [];
+        $titles = [];
+        $titlesAltScript = [];
+
+        foreach ($authorFields as $tag => $subfields) {
+            $auths = $this->getFieldsSubfields(
+                [[self::GET_BOTH, $tag, $subfields]],
+                true,
+                false
+            );
+            if (isset($auths[1])) {
+                $authorsAltScript[] = [
+                    'type' => 'author',
+                    'value' => $auths[1]
+                ];
+            }
+            if (isset($auths[0])) {
+                $authors[] = [
+                    'type' => 'author',
+                    'value' => $auths[0]
+                ];
+                break;
+            }
+        }
+
+        foreach ($titleFields as $tag => $subfields) {
+            $field = $this->getField($tag);
+            $title = '';
+            $altTitles = [];
+            $ind = '130' === $tag ? 1 : 2;
+            if ($field && !empty($field['s'])) {
+                $title = $this->getSubfield($field, 'a');
+                $nonfiling = $this->getIndicator($field, $ind);
+                if ($nonfiling > 0) {
+                    $title = substr($title, $nonfiling);
+                }
+                $rest = $this->getSubfields($field, $subfields);
+                if ($rest) {
+                    $title .= " $rest";
+                }
+                $sub6 = $this->getSubfield($field, '6');
+                if ($sub6) {
+                    $sub6 = "$tag-" . substr($sub6, 4, 2);
+                    foreach ($this->getFields('880') as $f880) {
+                        if (strncmp($this->getSubfield($f880, '6'), $sub6, 6) != 0) {
+                            continue;
+                        }
+                        $altTitle = $this->getSubfield($f880, 'a');
+                        $nonfiling = $this->getIndicator($f880, $ind);
+                        if ($nonfiling > 0) {
+                            $altTitle = substr($altTitle, $nonfiling);
+                        }
+                        $rest = $this->getSubfields($f880, $subfields);
+                        if ($rest) {
+                            $altTitle .= " $rest";
+                        }
+                        if ($altTitle) {
+                            $altTitles[] = $altTitle;
+                        }
+                    }
+                }
+            }
+            $titleType = '130' === $tag ? 'uniform' : 'title';
+            if ($title) {
+                $titles[] = [
+                    'type' => $titleType,
+                    'value' => $title
+                ];
+            }
+            foreach ($altTitles as $altTitle) {
+                $titlesAltScript[] = [
+                    'type' => $titleType,
+                    'value' => $altTitle
+                ];
+            }
+        }
+
+        if (!$titles) {
+            return [];
+        }
+
+        return compact('authors', 'authorsAltScript', 'titles', 'titlesAltScript');
     }
 }

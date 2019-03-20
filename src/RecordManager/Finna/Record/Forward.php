@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2016-2018.
+ * Copyright (C) The National Library of Finland 2016-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -48,8 +48,8 @@ class Forward extends \RecordManager\Base\Record\Forward
      * @var array
      */
     protected $primaryAuthorRelators = [
-        'A00', 'A01', 'A02', 'A03', 'A05', 'A06', 'A08', 'A09', 'A10', 'A11', 'A12',
-        'A13', 'A31', 'A38', 'A43', 'A50', 'A99',
+        'd02', 'a00', 'a01', 'a02', 'a03', 'a05', 'a06', 'a08', 'a09', 'a10', 'a11',
+        'a12', 'a13', 'a31', 'a38', 'a43', 'a50', 'a99',
         // Some of these are from Marc
         'adp', 'aud', 'chr', 'cmm', 'cmp', 'cre', 'dub', 'inv'
     ];
@@ -60,8 +60,8 @@ class Forward extends \RecordManager\Base\Record\Forward
      * @var array
      */
     protected $secondaryAuthorRelators = [
-        'D01', 'D02', 'D99', 'E01', 'E02', 'E03', 'E04', 'E05', 'E06', 'E08',
-        'F01', 'F02', 'F99', 'ctb', 'exp', 'rce', 'wst', 'sds', 'oth',
+        'd01', 'd99', 'e01', 'e02', 'e03', 'e04', 'e05', 'e06', 'e08',
+        'f01', 'f02', 'f99', 'ctb', 'exp', 'rce', 'wst', 'sds', 'oth',
         // These are copied from Marc
         'act', 'anm', 'ann', 'arr', 'acp', 'ar', 'ard', 'aft', 'aud', 'aui', 'aus',
         'bjd', 'bpd', 'cll', 'ctg', 'chr', 'cng', 'clb', 'clr', 'cmm', 'cwt', 'com',
@@ -330,7 +330,7 @@ class Forward extends \RecordManager\Base\Record\Forward
         }
         $activity = $agent->Activity;
         $relator = MetadataUtils::normalizeRelator((string)$activity);
-        if (($relator == 'A99' || $relator == 'E99')
+        if (($relator == 'a99' || $relator == 'e99')
             && !empty($activity->attributes()->{'finna-activity-text'})
         ) {
             $relator = (string)$activity->attributes()->{'finna-activity-text'};

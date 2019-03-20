@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2015
+ * Copyright (C) The National Library of Finland 2015-2019
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -54,6 +53,34 @@ class MetadataUtilsTest extends AbstractTest
         );
         $this->assertEquals(
             'A 11 12', MetadataUtils::createSortableString('A  1   2')
+        );
+    }
+
+    /**
+     * Tests for normalizeKey
+     *
+     * @return void
+     */
+    public function testNormalizeKey()
+    {
+        $this->assertEquals(
+            'abc', MetadataUtils::normalizeKey('A -.*B  C', 'NFKC')
+        );
+
+        $this->assertEquals(
+            'oaaoaauie', MetadataUtils::normalizeKey('ÖÄÅöäåüïé', 'NFKC')
+        );
+
+        MetadataUtils::setConfig(
+            [
+                'Site' => [
+                    'folding_ignore_characters' => 'åäöÅÄÖ',
+                ],
+            ],
+            '.'
+        );
+        $this->assertEquals(
+            'öäåöäåui', MetadataUtils::normalizeKey('ÖÄÅöäåüï', 'NFKC')
         );
     }
 }

@@ -16,6 +16,13 @@ articles = articles.lst
 ;lowercase_language_strings = true
 ; Directory for temporary files (default is system's temp directory)
 ;temp_dir = /tmp
+; Which normalization form to use for UNICODE normalization when creating search keys
+; e.g. for deduplication. Default is NFKC. See http://unicode.org/reports/tr15/ for
+; more information.
+unicode_normalization_form = NFKC
+; Which characters to keep intact when folding characters for normalized keys.
+; e.g. folding_ignore_characters = 'åäöÅÄÖ'
+;folding_ignore_characters = ''
 
 ; These settings control the OAI-PMH harvester
 [Harvesting]
@@ -62,6 +69,9 @@ password =
 ;merge_records = true
 ; Fields that are merged when creating the merged record
 ;merged_fields = institution,collection,my_local_field_str_mv
+; Fields that are copied down to all records in a dedup group if the values do not
+; already exist
+;copy_from_merged_record = mbid_str_mv
 ; Fields that are added to the merged record if they don't already exist
 ;single_fields = title,publishDateSort
 ; Fields that are used for scoring when selecting the base record for a merged record
@@ -73,6 +83,9 @@ password =
 ;warnings_field = warnings_str_mv
 ; Whether to put record format in allfields
 ;format_in_allfields = true
+; Which normalization form to use for UNICODE normalization when indexing records.
+; Default is to not perform normalization. See http://unicode.org/reports/tr15/ for
+; more information.
 unicode_normalization_form = NFKC
 ; Maximum number of tries to send an update to Solr. Default is 15.
 ;max_update_tries = 5
@@ -95,6 +108,9 @@ unicode_normalization_form = NFKC
 ;threaded_merged_record_update = true
 ; Field mapper class. Default is "\RecordManager\Base\Utils\FieldMapper".
 ;field_mapper = "\RecordManager\Finna\Utils\FieldMapper"
+; Enrichments used with all data sources
+;enrichment[] = NominatimGeocoder
+;enrichment[] = MusicBrainzEnrichment
 
 [OAI-PMH]
 ; Repository name returned in the Identify response
@@ -191,3 +207,18 @@ error_email     =
 ; Term transformations regular expressions applied if a match is not found
 search[] = '([^\s]+ st)\.'
 replace[] = '\1 street'
+
+[MarcOnkiLightEnrichment]
+; Service base URL
+;base_url = "http://api.somewhere/rest/v1"
+; URL prefixes to process
+;url_prefix_whitelist[] = "http://somewhere/"
+; URI prefixes where exact matches in other vocabularies are also retrieved
+;uri_prefix_exact_matches[] = "http://somewhere/vocab/"
+
+[MusicBrainzEnrichment]
+; Note that you need to add the following line to any data source in datasources.ini
+; for it to actually use the enrichment:
+; enrichments[] = MusicBrainzEnrichment
+; Base url for the MusicBrainz server.
+;url = "http://localhost:5000"
