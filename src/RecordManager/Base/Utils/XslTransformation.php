@@ -68,8 +68,11 @@ class XslTransformation
     {
         $options = parse_ini_file("$basePath/$configFile", true);
         if (false === $options) {
+            $error = error_get_last();
+            $message = $error['message'] ?? 'unknown error occurred';
             throw new \Exception(
-                "Could not load or parse ini file '$basePath/$configFile'"
+                "Could not load or parse ini file '$basePath/$configFile': "
+                . $message
             );
         }
 

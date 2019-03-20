@@ -1590,8 +1590,16 @@ class SolrUpdater
     protected function initDatasources($dataSourceSettings = null)
     {
         if (null === $dataSourceSettings) {
-            $dataSourceSettings
-                = parse_ini_file("{$this->basePath}/conf/datasources.ini", true);
+            $filename = "{$this->basePath}/conf/datasources.ini";
+            $dataSourceSettings = parse_ini_file($filename, true);
+            if (false === $dataSourceSettings) {
+                $error = error_get_last();
+                $message = $error['message'] ?? 'unknown error occurred';
+                throw new \Exception(
+                    "Could not load data source settings from file '$filename':"
+                    . $message
+                );
+            }
         }
         $this->settings = [];
         foreach ($dataSourceSettings as $source => $settings) {

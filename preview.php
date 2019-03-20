@@ -41,7 +41,15 @@ if (!preg_match('/^[\w_]*$/', $format) || !preg_match('/^[\w_]*$/', $source)) {
 }
 
 $basePath = __DIR__;
-$config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
+$filename = $basePath . '/conf/recordmanager.ini';
+$config = parse_ini_file($filename, true);
+if (false === $config) {
+    $error = error_get_last();
+    $message = $error['message'] ?? 'unknown error occurred';
+    throw new \Exception(
+        "Could not load configuration from file '$filename': $message"
+    );
+}
 $createPreview = new \RecordManager\Base\Controller\CreatePreview(
     $basePath, $config
 );
