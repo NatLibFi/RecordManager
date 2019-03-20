@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -26,6 +26,8 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 namespace RecordManager\Base\Controller;
+
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Record storage trait
@@ -244,13 +246,15 @@ trait StoreRecordTrait
                 $dbRecord['update_needed'] = false;
 
                 // Mark host records updated too
-                $this->db->updateRecords(
-                    [
-                        'source_id' => ['$in' => $hostSourceIds],
-                        'linking_id' => ['$in' => (array)$hostIDs]
-                    ],
-                    ['updated' => $this->db->getTimestamp()]
-                );
+                if ($hostIDs) {
+                    $this->db->updateRecords(
+                        [
+                            'source_id' => ['$in' => $hostSourceIds],
+                            'linking_id' => ['$in' => (array)$hostIDs]
+                        ],
+                        ['updated' => $this->db->getTimestamp()]
+                    );
+                }
             }
             $this->db->saveRecord($dbRecord);
             ++$count;
@@ -298,6 +302,28 @@ trait StoreRecordTrait
         $record['updated'] = $this->db->getTimestamp();
         $record['update_needed'] = false;
         $this->db->saveRecord($record);
+
+        // Mark host records updated too
+        $sourceId = $record['source_id'];
+        $settings = $this->dataSourceSettings[$sourceId];
+        $metadataRecord = $this->recordFactory->createRecord(
+            $record['format'],
+            MetadataUtils::getRecordData($record, true),
+            $record['oai_id'],
+            $sourceId
+        );
+        $hostIDs = $metadataRecord->getHostRecordIDs();
+        if ($hostIDs) {
+            $hostSourceIds = !empty($settings['__hostRecordSourceId'])
+                ? $settings['__hostRecordSourceId'] : [$sourceId];
+            $this->db->updateRecords(
+                [
+                    'source_id' => ['$in' => $hostSourceIds],
+                    'linking_id' => ['$in' => (array)$hostIDs]
+                ],
+                ['updated' => $this->db->getTimestamp()]
+            );
+        }
     }
 
     /**
