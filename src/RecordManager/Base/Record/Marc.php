@@ -339,7 +339,7 @@ class Marc extends Base
                         "Discarding invalid coordinates $longitude,$latitude " .
                         "decoded from w=$westOrig, e=$eastOrig, n=$northOrig, " .
                         "s=$southOrig, record {$this->source}." . $this->getID(),
-                        Logger::WARNING
+                        Logger::DEBUG
                     );
                     $this->storeWarning('invalid coordinates in 034');
                 } else {
@@ -1805,7 +1805,7 @@ class Marc extends Base
                         'Marc', "Subfields missing in field $tag"
                         . ", record {$this->source}." .
                         $this->getID(),
-                        Logger::WARNING
+                        Logger::DEBUG
                     );
                     $this->storeWarning("missing subfields in $tag");
                     continue;
@@ -1815,7 +1815,7 @@ class Marc extends Base
                         'Marc', "Invalid subfields in field $tag"
                         . ", record {$this->source}." .
                         $this->getID(),
-                        Logger::ERROR
+                        Logger::DEBUG
                     );
                     $this->storeWarning("invalid subfields in $tag");
                     continue;
@@ -2024,7 +2024,7 @@ class Marc extends Base
             $this->logger->log(
                 'Marc', "Subfields missing in field: " .
                 print_r($field, true) . ", record {$this->source}." .
-                $this->getID(), Logger::WARNING
+                $this->getID(), Logger::DEBUG
             );
             $this->storeWarning('missing subfields');
             return [];

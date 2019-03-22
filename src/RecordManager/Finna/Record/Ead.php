@@ -241,7 +241,7 @@ class Ead extends \RecordManager\Base\Record\Ead
                     'Ead',
                     "Failed to parse date $endDate, record {$this->source}."
                         . $this->getID(),
-                    Logger::WARNING
+                    Logger::DEBUG
                 );
                 $this->storeWarning('invalid end date');
                 return null;
@@ -274,7 +274,7 @@ class Ead extends \RecordManager\Base\Record\Ead
                     'Ead',
                     "Failed to parse date $endDate, record {$this->source}."
                         . $this->getID(),
-                    Logger::WARNING
+                    Logger::DEBUG
                 );
                 $this->storeWarning('invalid end date');
                 return null;
@@ -296,7 +296,7 @@ class Ead extends \RecordManager\Base\Record\Ead
                 'Ead',
                 "Invalid date range {$startDate} - {$endDate}, record "
                     . "{$this->source}." . $this->getID(),
-                Logger::WARNING
+                Logger::DEBUG
             );
             $this->storeWarning('invalid date range');
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';

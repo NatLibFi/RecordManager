@@ -322,7 +322,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                         "Discarding invalid coordinates $west,$north decoded from "
                         . "w=$westOrig, e=$eastOrig, n=$northOrig, s=$southOrig, "
                         . "record {$this->source}." . $this->getID(),
-                        Logger::WARNING
+                        Logger::DEBUG
                     );
                     $this->storeWarning('invalid coordinates in 034');
                 } else {
@@ -336,7 +336,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                                 . "decoded from w=$westOrig, e=$eastOrig, "
                                 . "n=$northOrig, s=$southOrig, record "
                                 . "{$this->source}." . $this->getID(),
-                                Logger::WARNING
+                                Logger::DEBUG
                             );
                             $this->storeWarning('invalid coordinates in 034');
                         } else {
@@ -1211,7 +1211,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                     'Marc',
                     "Invalid date range {$startDate} - {$endDate}, record "
                     . "{$this->source}." . $this->getID(),
-                    Logger::WARNING
+                    Logger::DEBUG
                 );
                 $this->storeWarning('invalid date range in 008');
                 $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
