@@ -140,7 +140,7 @@ class MarcOnkiLightEnrichment extends Enrichment
                         'enrichField',
                         "Ignoring invalid URI '$id', record $sourceId."
                         . $record->getId(),
-                        Logger::WARNING
+                        Logger::DEBUG
                     );
                     continue;
                 }
