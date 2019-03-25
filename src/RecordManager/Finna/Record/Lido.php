@@ -682,7 +682,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                     'Lido',
                     "Invalid date range {$startDate} - {$endDate}, record "
                     . "{$this->source}." . $this->getID(),
-                    Logger::WARNING
+                    Logger::DEBUG
                 );
                 $endDate = $startDate;
                 $this->storeWarning('invalid date range');
@@ -752,7 +752,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                         'Lido',
                         "Failed to parse date $date, record {$this->source}."
                         . $this->getID(),
-                        Logger::WARNING
+                        Logger::DEBUG
                     );
                     $this->storeWarning('invalid date');
                     return null;
@@ -810,7 +810,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                     'Lido',
                     "GML Polygon missing outer boundary, record "
                     . "{$this->source}." . $this->getID(),
-                    Logger::WARNING
+                    Logger::DEUBG
                 );
                 $this->storeWarning('gml polygon missing outer boundary');
                 return '';
@@ -836,7 +836,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                     'Lido',
                     "GML LineString missing coordinates, record "
                     . "{$this->source}." . $this->getID(),
-                    Logger::WARNING
+                    Logger::DEBUG
                 );
                 $this->storeWarning('gml linestring missing coordinates');
                 return '';
@@ -855,7 +855,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                         'Lido',
                         "Empty pos in GML point, record "
                         . "{$this->source}." . $this->getID(),
-                        Logger::WARNING
+                        Logger::DEBUG
                     );
                     $this->storeWarning('empty gml pos in point');
                 }
@@ -867,7 +867,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                         'Lido',
                         "Empty coordinates in GML point, record "
                         . "{$this->source}." . $this->getID(),
-                        Logger::WARNING
+                        Logger::DEBUG
                     );
                     $this->storeWarning('empty gml coordinates in point');
                     return '';
@@ -878,7 +878,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                     'Lido',
                     "GML Point does not contain pos or coordinates, record "
                     . "{$this->source}." . $this->getID(),
-                    Logger::WARNING
+                    Logger::DEBUG
                 );
                 $this->storeWarning('gml point missing data');
                 return '';
@@ -892,7 +892,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                     'Lido',
                     "Discarding invalid coordinates '$lat,$lon', record "
                     . "{$this->source}." . $this->getID(),
-                    Logger::WARNING
+                    Logger::DEBUG
                 );
                 $this->storeWarning('invalid gml coordinates');
                 return '';
@@ -1054,7 +1054,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                     'Lido',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
-                    Logger::WARNING
+                    Logger::DEBUG
                 );
                 $this->storeWarning('invalid end date');
                 return null;
@@ -1127,7 +1127,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                     'Lido',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
-                    Logger::WARNING
+                    Logger::DEBUG
                 );
                 $this->storeWarning('invalid end date');
                 return null;
@@ -1152,7 +1152,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                     'Lido',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
-                    Logger::WARNING
+                    Logger::DEBUG
                 );
                 $this->storeWarning('invalid end date');
                 return null;
@@ -1183,7 +1183,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                     'Lido',
                     "Failed to parse date $endDate, record {$this->source}."
                     . $this->getID(),
-                    Logger::WARNING
+                    Logger::DEBUG
                 );
                 $this->storeWarning('invalid end date');
                 return null;
@@ -1380,7 +1380,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                 'Lido',
                 "Invalid date range {$startDate} - {$endDate} parsed from "
                 . "'$input', record {$this->source}." . $this->getID(),
-                Logger::WARNING
+                Logger::DEBUG
             );
             $this->storeWarning('invalid date range');
             if ($start !== false) {
@@ -1395,7 +1395,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                 'Lido',
                 "Invalid date range {$startDate} - {$endDate} parsed from '$input', "
                 . "record {$this->source}." . $this->getID(),
-                Logger::WARNING
+                Logger::DEBUG
             );
             $this->storeWarning('invalid date range');
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
