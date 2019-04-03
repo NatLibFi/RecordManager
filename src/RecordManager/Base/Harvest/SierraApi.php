@@ -481,20 +481,24 @@ class SierraApi extends Base
             if (!isset($varField['marcTag']) || $varField['marcTag'] == '852') {
                 continue;
             }
+            // Make sure the tag has three characters
+            $marcTag = substr('000' . trim($varField['marcTag']), -3);
             if (isset($varField['subfields'])) {
-                $subfields = [];
-                foreach ($varField['subfields'] as $subfield) {
-                    $subfields[] = [
-                        $subfield['tag'] => $subfield['content']
+                if ($marcTag >= 10) {
+                    $subfields = [];
+                    foreach ($varField['subfields'] as $subfield) {
+                        $subfields[] = [
+                            $subfield['tag'] => $subfield['content']
+                        ];
+                    }
+                    $marc[$marcTag][] = [
+                        'i1' => $varField['ind1'],
+                        'i2' => $varField['ind2'],
+                        's' => $subfields
                     ];
                 }
-                $marc[$varField['marcTag']][] = [
-                    'i1' => $varField['ind1'],
-                    'i2' => $varField['ind2'],
-                    's' => $subfields
-                ];
             } else {
-                $marc[$varField['marcTag']][] = $varField['content'];
+                $marc[$marcTag][] = $varField['content'];
             }
         }
 
