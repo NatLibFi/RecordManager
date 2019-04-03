@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -101,11 +101,14 @@ class MarkDeleted extends AbstractBase
             "Completed with $count records marked deleted from '$sourceId'"
         );
 
-        $this->logger->log(
-            'markDeleted',
-            "Deleting last harvest date from data source '$sourceId'"
-        );
-        $this->db->deleteState("Last Harvest Date $sourceId");
+        if (!$singleId) {
+            $this->logger->log(
+                'markDeleted',
+                "Deleting last harvest date from data source '$sourceId'"
+            );
+            $this->db->deleteState("Last Harvest Date $sourceId");
+        }
+
         $this->logger->log('markDeleted', "Marking of $sourceId completed");
     }
 }
