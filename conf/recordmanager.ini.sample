@@ -36,7 +36,7 @@ unicode_normalization_form = NFKC
 ; url = mongodb://{username}:{password}@localhost
 ;url = mongodb://localhost
 ; Use a unix socket like below, if possible. It can be an order of magnitude faster than TCP/IP.
-url = mongodb:///tmp/mongodb-27017.sock
+url = "mongodb://%2Ftmp%2Fmongodb-27017.sock"
 ; Database to use
 database = recman
 ; Whether to ask MongoDB for counts of records to be processed. Can be really slow.
