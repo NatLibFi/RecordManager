@@ -60,7 +60,14 @@ These are quick instructions on how to set up RecordManager. Please refer to the
 
 - Copy RecordManager to /usr/local/RecordManager/
 
-- Run `composer install` to install PHP dependencies
+- Install composer
+
+    Copy installer script from: https://getcomposer.org/doc/faqs/how-to-install-composer-programmatically.md and insert it into a script, eg.
+    
+      vim install_composer
+      ./install_composer.sh
+      
+- Run `composer.phar install` to install PHP dependencies
 
 - Create indexes with dbscripts/mongo.js
 
