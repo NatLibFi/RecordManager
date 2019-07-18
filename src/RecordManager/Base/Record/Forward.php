@@ -143,7 +143,7 @@ class Forward extends Base
         $doc = $this->getMainElement();
         $id = (string)$doc->Identifier;
         $attributes = $doc->Identifier->attributes();
-        if ($attributes->IDTypeName) {
+        if (!empty($attributes->IDTypeName)) {
             $id = (string)$attributes->IDTypeName . '_' . $id;
         }
         return $id;

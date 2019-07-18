@@ -605,7 +605,7 @@ class SolrUpdater
                 }
             }
             $from = isset($mongoFromDate)
-                ? $mongoFromDate->toDatetime()->format('Y-m-d H:i:s')
+                ? $mongoFromDate->toDatetime()->format('Y-m-d H:i:s\Z')
                 : 'the beginning';
             // Take the last indexing date now and store it when done
             $lastIndexingDate = $this->db->getTimestamp();
@@ -1027,7 +1027,7 @@ class SolrUpdater
         );
 
         $from = isset($mongoFromDate)
-            ? $mongoFromDate->toDateTime()->format('Y-m-d H:i:s')
+            ? $mongoFromDate->toDateTime()->format('Y-m-d H:i:s\Z')
             : 'the beginning';
 
         if (!$collectionName) {

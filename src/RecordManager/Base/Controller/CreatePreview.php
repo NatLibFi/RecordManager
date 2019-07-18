@@ -146,4 +146,26 @@ class CreatePreview extends AbstractBase
 
         return $preview->create($record);
     }
+
+    /**
+     * Get a list of valid data sources
+     *
+     * @return array
+     */
+    public function getDataSources($format = '')
+    {
+        $result = [];
+        foreach ($this->dataSourceSettings as $id => $config) {
+            if ($format && $config['format'] !== $format) {
+                continue;
+            }
+            $result[] = [
+                'id' => $id,
+                'format' => $config['format'] ?? '',
+                'institution' => $config['institution']
+            ];
+        }
+
+        return $result;
+    }
 }

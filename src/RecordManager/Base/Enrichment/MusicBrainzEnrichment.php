@@ -127,17 +127,6 @@ class MusicBrainzEnrichment extends Enrichment
                 $mbIds = array_merge($mbIds, $this->getMBIDs($query));
             }
         }
-        if (!$mbIds && ($author = $record->getMainAuthor())) {
-            $parts = explode(', ', $author, 2);
-            if (isset($parts[1])) {
-                $author = $parts[1] . ' ' . $parts[0];
-            }
-            $query = 'artistname:"' . addcslashes($author, "\"\\")
-                . '" AND releaseaccent:"'
-                . addcslashes($solrArray['title_short'], "\"\\")
-                . '"';
-            $mbIds = $this->getMBIDs($query, true);
-        }
         if ($mbIds) {
             $solrArray['mbid_str_mv'] = $mbIds;
         }
