@@ -150,6 +150,8 @@ class CreatePreview extends AbstractBase
     /**
      * Get a list of valid data sources
      *
+     * @param string $format Optional limit to specific format
+     *
      * @return array
      */
     public function getDataSources($format = '')
