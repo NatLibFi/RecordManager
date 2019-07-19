@@ -93,7 +93,7 @@ class Ead extends Base
     {
         parent::setData($source, $oaiID, $data);
 
-        $this->doc = simplexml_load_string($data);
+        $this->doc = $this->parseXMLRecord($data);
     }
 
     /**
@@ -307,7 +307,7 @@ class Ead extends Base
         if (in_array($this->getFormat(), $noSubtitleFormats)) {
             return '';
         }
-                
+
         return $this->getUnitId();
     }
 
@@ -357,7 +357,7 @@ class Ead extends Base
     {
         return (string)$this->doc->did->unitid;
     }
-    
+
     /**
      * Get all XML fields
      *

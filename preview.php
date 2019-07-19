@@ -50,16 +50,26 @@ if ($func === 'get_sources') {
     $record = $createPreview->getDataSources($_REQUEST['format'] ?? '');
 } else {
     if (!isset($_REQUEST['source']) || !isset($_REQUEST['data'])) {
-        die('Missing parameters');
+        http_response_code(400);
+        echo json_encode(['error_message' => 'Missing parameters']);
+        return;
     }
     $format = $_REQUEST['format'] ?? '';
     $source = $_REQUEST['source'] ?? '';
 
-    if (!preg_match('/^[\w_]*$/', $format) || !preg_match('/^[\w_]*$/', $source)) {
-        die('Invalid parameters');
+    if (!preg_match('/^[\w_]*$/', $format) || !preg_match('/^[\w_-]*$/', $source)) {
+        http_response_code(400);
+        echo json_encode(['error_message' => 'Invalid parameters']);
+        return;
     }
 
-    $record = $createPreview->launch($_REQUEST['data'], $format, $source);
+    try {
+        $record = $createPreview->launch($_REQUEST['data'], $format, $source);
+    } catch (\Exception $e) {
+        http_response_code(400);
+        echo json_encode(['error_message' => $e->getMessage()]);
+        return;
+    }
 }
 
 header('Content-Type: application/json');

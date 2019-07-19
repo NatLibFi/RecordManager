@@ -58,7 +58,7 @@ class Qdc extends Base
     {
         parent::setData($source, $oaiID, $data);
 
-        $this->doc = simplexml_load_string($data);
+        $this->doc = $this->parseXMLRecord($data);
         if (empty($this->doc->recordID)) {
             $p = strpos($oaiID, ':');
             $p = strpos($oaiID, ':', $p + 1);

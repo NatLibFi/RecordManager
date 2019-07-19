@@ -67,8 +67,24 @@ trait PreTransformationTrait
                 '', 'id_prefix', $settings['idPrefix']
             );
         }
-        $doc = new \DOMDocument();
-        $doc->loadXML($data, LIBXML_PARSEHUGE);
+        $saveUseErrors = libxml_use_internal_errors(true);
+        try {
+            libxml_clear_errors();
+            $doc = new \DOMDocument();
+            if ($doc->loadXML($data, LIBXML_PARSEHUGE) === false) {
+                $errors = libxml_get_errors();
+                $messageParts = [];
+                foreach ($errors as $error) {
+                    $messageParts[] = '[' . $error->line . ':' . $error->column
+                        . '] Error ' . $error->code . ': ' . $error->message;
+                }
+                throw new \Exception(implode("\n", $messageParts));
+            }
+            libxml_use_internal_errors($saveUseErrors);
+        } catch (\Exception $e) {
+            libxml_use_internal_errors($saveUseErrors);
+            throw $e;
+        }
         return $settings['preXSLT']->transformToXml($doc);
     }
 }

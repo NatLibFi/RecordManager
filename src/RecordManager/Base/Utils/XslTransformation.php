@@ -136,9 +136,23 @@ class XslTransformation
      */
     public function transform($data, $params = null)
     {
-        $doc = new \DOMDocument();
-        if ($doc->loadXML($data) === false) {
-            throw new \Exception("Invalid XML: $data");
+        $saveUseErrors = libxml_use_internal_errors(true);
+        try {
+            libxml_clear_errors();
+            $doc = new \DOMDocument();
+            if ($doc->loadXML($data) === false) {
+                $errors = libxml_get_errors();
+                $messageParts = [];
+                foreach ($errors as $error) {
+                    $messageParts[] = '[' . $error->line . ':' . $error->column
+                        . '] Error ' . $error->code . ': ' . $error->message;
+                }
+                throw new \Exception(implode("\n", $messageParts));
+            }
+            libxml_use_internal_errors($saveUseErrors);
+        } catch (\Exception $e) {
+            libxml_use_internal_errors($saveUseErrors);
+            throw $e;
         }
         if (isset($params)) {
             $this->xslt->setParameter('', $params);
