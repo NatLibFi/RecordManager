@@ -101,7 +101,7 @@ class CreatePreview extends AbstractBase
         }
 
         if ($settings['preTransformation']) {
-            $metadata = $this->pretransform($metadata);
+            $metadata = $this->pretransform($metadata, $source);
         }
 
         $timestamp = $this->db->getTimestamp();

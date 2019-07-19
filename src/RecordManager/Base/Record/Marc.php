@@ -1349,10 +1349,7 @@ class Marc extends Base
         } else {
             $marc = '<?xml version="1.0" encoding="utf-8"?>' . "\n\n$marc";
         }
-        $xml = simplexml_load_string($marc);
-        if ($xml === false) {
-            throw new \Exception('MarcRecord: failed to parse from XML');
-        }
+        $xml = $this->parseXMLRecord($marc);
 
         // Move to the record element if we were given a collection
         if ($xml->record) {
