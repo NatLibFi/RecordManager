@@ -283,7 +283,7 @@ class Lido extends Base
             foreach ($this->getEventNodes($event) as $eventNode) {
                 // If there is already gml in the record, don't return anything for
                 // geocoding
-                if (!empty($ventNode->eventPlace->gml)) {
+                if (!empty($eventNode->eventPlace->gml)) {
                     return [];
                 }
                 $hasValue = !empty(
