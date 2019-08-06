@@ -52,9 +52,10 @@ class Deduplicate extends AbstractBase
      * Find duplicate records and give them dedup keys
      *
      * @param string $sourceId   Source ID to process, or empty or * for all sources
-     * where dedup is enabled
+     *                           where dedup is enabled
      * @param bool   $allRecords If true, process all records regardless of their
-     * status (otherwise only freshly imported or updated records are processed)
+     *                           status (otherwise only freshly imported or updated
+     *                           records are processed)
      * @param string $singleId   Process only a record with the given ID
      * @param bool   $markOnly   If true, just mark the records for deduplication
      *

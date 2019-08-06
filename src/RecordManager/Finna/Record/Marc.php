@@ -64,7 +64,7 @@ class Marc extends \RecordManager\Base\Record\Marc
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -764,7 +764,7 @@ class Marc extends \RecordManager\Base\Record\Marc
      *
      * @param MongoCollection $componentParts Component parts to be merged
      * @param MongoDate|null  $changeDate     Latest timestamp for the component part
-     * set
+     *                                        set
      *
      * @return int Count of records merged
      */

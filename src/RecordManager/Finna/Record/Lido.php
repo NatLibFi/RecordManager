@@ -214,7 +214,8 @@ class Lido extends \RecordManager\Base\Record\Lido
      * Return record title
      *
      * @param bool     $forFiling            Whether the title is to be used in
-     * filing (e.g. sorting, non-filing characters should be removed)
+     *                                       filing (e.g. sorting, non-filing
+     *                                       characters should be removed)
      * @param string   $lang                 Language
      * @param string[] $excludedDescriptions Description types to exclude
      *
@@ -576,7 +577,8 @@ class Lido extends \RecordManager\Base\Record\Lido
      * Return subjects associated with object.
      *
      * @param string[] $exclude List of subject types to exclude (defaults to 'aihe'
-     * and 'iconclass' since they don't contain human readable terms)
+     *                          and 'iconclass' since they don't contain human
+     *                          readable terms)
      *
      * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
      * #subjectComplexType
@@ -1546,7 +1548,7 @@ class Lido extends \RecordManager\Base\Record\Lido
      * Return names of actors associated with specified event
      *
      * @param string|array $event        Which events to use (omit to scan all
-     * events)
+     *                                   events)
      * @param string|array $role         Which roles to use (omit to scan all roles)
      * @param bool         $includeRoles Whether to include roles
      *
