@@ -551,21 +551,18 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
 
-        // Collection code from holdings/items
-        $collectionField = $this->getDriverParam('collectionField', '');
-        $itemCollectionField
-            = $this->getDriverParam('itemCollectionField', $collectionField);
-        if ($collectionField) {
-            foreach ($this->getFields('852') as $field) {
-                $collection = $this->getSubfield($field, $collectionField);
-                if ('' !== $collection) {
-                    $data['collection'][] = $collection;
-                }
-            }
-            foreach ($this->getFields('952') as $field) {
-                $collection = $this->getSubfield($field, $itemCollectionField);
-                if ('' !== $collection) {
-                    $data['collection'][] = $collection;
+        // Collection code from MARC fields
+        $collectionFields = $this->getDriverParam('collectionFields', '');
+        if ($collectionFields) {
+            foreach (explode(':', $collectionFields) as $fieldSpec) {
+                $fieldTag = substr($fieldSpec, 0, 3);
+                $subfields = array_flip(str_split(substr($fieldSpec, 3)));
+                foreach ($this->getFields($fieldTag) as $field) {
+                    $subfieldArray
+                        = $this->getSubfieldsArray($field, $subfields);
+                    foreach ($subfieldArray as $subfield) {
+                        $data['collection'] = $subfield;
+                    }
                 }
             }
         }
