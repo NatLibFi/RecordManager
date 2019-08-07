@@ -539,19 +539,21 @@ class SolrUpdater
      *
      * @param string|null $fromDate      Starting date for updates (if empty
      *                                   string, last update date stored in the
-     * database is used and if null, all records are processed)
+     *                                   database is used and if null, all records
+     *                                   are processed)
      * @param string      $sourceId      Comma-separated list of source IDs to
-     * update, or empty or * for all sources
+     *                                   update, or empty or * for all sources
      * @param string      $singleId      Process only the record with the given ID
      * @param bool        $noCommit      If true, changes are not explicitly
-     * committed
+     *                                   committed
      * @param bool        $delete        If true, records in the given $sourceId are
-     * all deleted
+     *                                   all deleted
      * @param string      $compare       If set, just compare the records with the
-     * ones already in the Solr index and write any differences in a file given in
-     * this parameter
+     *                                   ones already in the Solr index and write any
+     *                                   differences in a file given in this
+     *                                   parameter
      * @param string      $dumpPrefix    If specified, the Solr records are dumped
-     * into files and not sent to Solr
+     *                                   into files and not sent to Solr
      * @param bool        $datePerServer Track last Solr update date per server url
      *
      * @return void
@@ -815,7 +817,7 @@ class SolrUpdater
                     if (0 !== $pid) {
                         $exitCode = $pid > 0 ? pcntl_wexitstatus($status)
                             : $this->workerPoolManager
-                                ->getExternalProcessExitCode($childPid);
+                            ->getExternalProcessExitCode($childPid);
                         $childPid = null;
                         if ($exitCode == 1) {
                             $needCommit = true;
@@ -1583,7 +1585,7 @@ class SolrUpdater
      * Initialize or reload data source settings
      *
      * @param array $dataSourceSettings Optional data source settings to use instead
-     * of reading them from the ini file
+     *                                  of reading them from the ini file
      *
      * @return void
      */
@@ -1657,7 +1659,7 @@ class SolrUpdater
      *
      * @param array   $record           Mongo record
      * @param integer $mergedComponents Number of component parts merged to the
-     * record
+     *                                  record
      * @param array   $dedupRecord      Mongo dedup record
      *
      * @return array
@@ -2100,7 +2102,7 @@ class SolrUpdater
      * Merge Solr records into a merged record
      *
      * @param array $records Array of records to merge including the Mongo record and
-     * Solr array
+     *                       Solr array
      *
      * @return array Merged Solr array
      */
@@ -2734,7 +2736,7 @@ class SolrUpdater
      *
      * @param array $data   Record data to print
      * @param bool  $return If true, the pretty-printed record is returned instead
-     * of being echoed to screen.
+     *                      of being echoed to screen.
      *
      * @return string
      */
@@ -2792,7 +2794,7 @@ class SolrUpdater
      * Parse source parameter to Mongo selectors
      *
      * @param string $sourceIds A single source id or a comma-separated list of
-     * sources or exclusion filters
+     *                          sources or exclusion filters
      *
      * @return array of arrays $or and $nor filters
      */

@@ -143,7 +143,7 @@ class Forward extends \RecordManager\Base\Record\Forward
 
     /**
      * Return format from predefined values
-      *
+     *
      * @return string
      */
     public function getFormat()
@@ -189,7 +189,7 @@ class Forward extends \RecordManager\Base\Record\Forward
      *
      * @param MongoCollection $componentParts Component parts to be merged
      * @param MongoDate|null  $changeDate     Latest timestamp for the component part
-     * set
+     *                                        set
      *
      * @return int Count of records merged
      */

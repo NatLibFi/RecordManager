@@ -448,7 +448,7 @@ class Database
      * Check for an existing queue collection with the given parameters
      *
      * @param string $hash           Hash of parameters used to identify the
-     * collection
+     *                               collection
      * @param string $fromDate       Timestamp of processing start date
      * @param int    $lastRecordTime Newest record timestamp
      *
@@ -470,7 +470,7 @@ class Database
      * Create a new temporary queue collection for the given parameters
      *
      * @param string $hash           Hash of parameters used to identify the
-     * collection
+     *                               collection
      * @param string $fromDate       Timestamp of processing start date
      * @param int    $lastRecordTime Newest record timestamp
      *

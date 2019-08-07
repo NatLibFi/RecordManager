@@ -52,15 +52,16 @@ class Export extends AbstractBase
      * @param string $fromCreateDate  Starting date of creation (e.g. 2011-12-24)
      * @param string $untilCreateDate Ending date of creation (e.g. 2011-12-24)
      * @param int    $skipRecords     Export only one per each $skipRecords records
-     * for a sample set
+     *                                for a sample set
      * @param string $sourceId        Source ID to export, or empty or * for all
      * @param string $singleId        Export only a record with the given ID
      * @param string $xpath           Optional XPath expression to limit the export
-     * with
+     *                                with
      * @param bool   $sortDedup       Whether to sort the records by dedup id
      * @param string $addDedupId      When to add dedup id to each record
-     * ('deduped' = when the record has duplicates, 'always' = even if the record
-     * doesn't have duplicates, otherwise never)
+     *                                ('deduped' = when the record has duplicates,
+     *                                'always' = even if the record doesn't have
+     *                                duplicates, otherwise never)
      *
      * @return void
      */

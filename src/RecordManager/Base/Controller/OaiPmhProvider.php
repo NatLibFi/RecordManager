@@ -89,7 +89,8 @@ class OaiPmhProvider extends AbstractBase
      * @param string $basePath Base directory
      * @param array  $config   Main configuration
      * @param bool   $console  Specify whether RecordManager is executed on the
-     * console so that log output is also output to the console.
+     *                         console so that log output is also output to the
+     *                         console
      * @param bool   $verbose  Whether verbose output is enabled
      */
     public function __construct($basePath, $config, $console = false,
@@ -734,7 +735,8 @@ EOT;
      * @param array   $record          Mongo record
      * @param string  $format          Metadata format
      * @param boolean $includeMetadata Whether to include record data
-     * (or only header). Metadata is never returned for deleted records.
+     *                                 (or only header). Metadata is never returned
+     *                                 for deleted records.
      *
      * @return boolean|string
      */

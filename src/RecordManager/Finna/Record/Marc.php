@@ -64,7 +64,7 @@ class Marc extends \RecordManager\Base\Record\Marc
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -532,10 +532,11 @@ class Marc extends \RecordManager\Base\Record\Marc
 
         // Shelving location in building_sub_str_mv
         $subBuilding = $this->getDriverParam('subBuilding', '');
+        if ('1' === $subBuilding) { // true
+            $subBuilding = 'c';
+        }
+        $itemSubBuilding = $this->getDriverParam('itemSubBuilding', $subBuilding);
         if ($subBuilding) {
-            if ('1' === $subBuilding) { // true
-                $subBuilding = 'c';
-            }
             foreach ($this->getFields('852') as $field) {
                 $location = $this->getSubfield($field, $subBuilding);
                 if ('' !== $location) {
@@ -543,9 +544,25 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
             }
             foreach ($this->getFields('952') as $field) {
-                $location = $this->getSubfield($field, $subBuilding);
+                $location = $this->getSubfield($field, $itemSubBuilding);
                 if ('' !== $location) {
                     $data['building_sub_str_mv'][] = $location;
+                }
+            }
+        }
+
+        // Collection code from MARC fields
+        $collectionFields = $this->getDriverParam('collectionFields', '');
+        if ($collectionFields) {
+            foreach (explode(':', $collectionFields) as $fieldSpec) {
+                $fieldTag = substr($fieldSpec, 0, 3);
+                $subfields = array_flip(str_split(substr($fieldSpec, 3)));
+                foreach ($this->getFields($fieldTag) as $field) {
+                    $subfieldArray
+                        = $this->getSubfieldsArray($field, $subfields);
+                    foreach ($subfieldArray as $subfield) {
+                        $data['collection'] = $subfield;
+                    }
                 }
             }
         }
@@ -763,7 +780,7 @@ class Marc extends \RecordManager\Base\Record\Marc
      *
      * @param MongoCollection $componentParts Component parts to be merged
      * @param MongoDate|null  $changeDate     Latest timestamp for the component part
-     * set
+     *                                        set
      *
      * @return int Count of records merged
      */

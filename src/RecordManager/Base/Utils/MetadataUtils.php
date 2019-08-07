@@ -617,7 +617,7 @@ class MetadataUtils
      *
      * @param array $record     Database record
      * @param bool  $normalized Whether to return the original (false) or
-     * normalized (true) record
+     *                          normalized (true) record
      *
      * @return string Metadata as a string
      */
