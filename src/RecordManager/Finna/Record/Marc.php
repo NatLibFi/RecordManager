@@ -551,6 +551,25 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
 
+        // Collection code from holdings/items
+        $collectionField = $this->getDriverParam('collectionField', '');
+        $itemCollectionField
+            = $this->getDriverParam('itemCollectionField', $collectionField);
+        if ($collectionField) {
+            foreach ($this->getFields('852') as $field) {
+                $collection = $this->getSubfield($field, $collectionField);
+                if ('' !== $collection) {
+                    $data['collection'][] = $collection;
+                }
+            }
+            foreach ($this->getFields('952') as $field) {
+                $collection = $this->getSubfield($field, $itemCollectionField);
+                if ('' !== $collection) {
+                    $data['collection'][] = $collection;
+                }
+            }
+        }
+
         // Access restrictions
         if ($restrictions = $this->getAccessRestrictions()) {
             $data['restricted_str'] = $restrictions;
