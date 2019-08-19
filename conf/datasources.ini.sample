@@ -92,6 +92,8 @@
 ; transformation_to_{fmt}
 ;                       XSL Transformation used to convert records from the original format to the requested format. E.g. if records are stored in MARC format,
 ;                       transformation_to_ese=marc2ese.properties could be used to transform the MARC records to ESE format.
+; ignoreOaiIdInProvider Whether to ignore original harvested OAI identifier (true / false). Useful e.g. when the original source repository uses bad identifiers
+;                       or a record splitter is used to split a single records to multiple smaller parts.
 
 ; SAMPLE CONFIGURATION FOR OPEN JOURNAL SYSTEMS
 ;[OJS]
