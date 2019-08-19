@@ -747,17 +747,19 @@ EOT;
             $format = $this->formats[$format]['format'];
         }
         $metadata = '';
+        $source = $record['source_id'];
+        $datasource = $this->dataSourceSettings[$source];
+        $oaiId = empty($datasource['ignoreOaiIdInProvider'])
+            ? $record['oai_id'] : '';
         if ($includeMetadata && !$record['deleted']) {
             $metadataRecord = $this->recordFactory->createRecord(
                 $record['format'],
                 MetadataUtils::getRecordData($record, true),
-                $record['oai_id'],
+                $oaiId,
                 $record['source_id']
             );
             $metadata = $metadataRecord->toXML();
             $key = "transformation_to_{$format}";
-            $source = $record['source_id'];
-            $datasource = $this->dataSourceSettings[$source];
             if ($sourceFormat != $format || isset($datasource[$key])) {
                 if (!isset($datasource[$key])) {
                     $this->error('cannotDisseminateFormat', '');
@@ -799,8 +801,8 @@ EOT;
         }
 
         $id = $this->escape(
-            !empty($record['oai_id'])
-            ? $record['oai_id']
+            !empty($oaiId)
+            ? $oaiId
             : $this->idPrefix . $record['_id']
         );
         $date = $this->toOaiDate($record['updated']->toDateTime()->getTimestamp());
