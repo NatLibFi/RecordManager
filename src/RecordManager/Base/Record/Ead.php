@@ -197,9 +197,7 @@ class Ead extends Base
 
         $data = array_merge($data, $this->getGeographicData());
 
-        if ($subjects = $this->getTopics()) {
-            $data['topic'] = $data['topic_facet'] = $subjects['topics'] ?? [];
-        }
+        $data['topic'] = $data['topic_facet'] = $this->getTopics();
 
         $data['format'] = $this->getFormat();
 
@@ -288,29 +286,49 @@ class Ead extends Base
     }
 
     /**
-     * Get topics and topic URIs.
-     *
-     * Returns an array with keys:
-     * - 'topics' array Topic labels
-     * - 'ids'    array Topic URIs
+     * Get topics.
      *
      * @return array
      */
     public function getTopics()
     {
+        return $this->getTopicTerms(false);
+    }
+
+    /**
+     * Get topic URIs.
+     *
+     * @return array
+     */
+    public function getTopicURIs()
+    {
+        return $this->getTopicTerms(true);
+    }
+
+    /**
+     * Get topic labels or URIs.
+     *
+     * @param boolean $uri Whether to return topic URIs or labels.
+     *
+     * @return array
+     */
+    protected function getTopicTerms($uri = false)
+    {
         if ($subjects = $this->doc->xpath('controlaccess/subject')) {
-            $topics = $topicIds = [];
+            $result = [];
             foreach ($subjects as $subject) {
-                $id = $label = trim((string)$subject);
-                if ($label === '-') {
-                    continue;
-                }
-                $topics[]  = $label;
-                if ($subject->attributes()->href) {
-                    $topicIds[] = (string)$subject->attributes()->href;
+                if (!$uri) {
+                    $label = trim((string)$subject);
+                    if ($label !== '-') {
+                        $result[] = $label;
+                    }
+                } else {
+                    if ($subject->attributes()->href) {
+                        $result[] = (string)$subject->attributes()->href;
+                    }
                 }
             }
-            return ['topics' => $topics, 'ids' => $topicIds];
+            return $result;
         }
         return [];
     }
