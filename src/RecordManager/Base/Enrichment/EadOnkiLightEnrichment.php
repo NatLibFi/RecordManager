@@ -1,6 +1,6 @@
 <?php
 /**
- * MarcOnkiLightEnrichment Class
+ * EadOnkiLightEnrichment Class
  *
  * PHP version 5
  *
@@ -21,7 +21,6 @@
  *
  * @category DataManagement
  * @package  RecordManager
- * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
@@ -31,18 +30,17 @@ namespace RecordManager\Base\Enrichment;
 use RecordManager\Base\Utils\Logger;
 
 /**
- * MarcOnkiLightEnrichment Class
+ * EadOnkiLightEnrichment Class
  *
- * This is a class for enrichment of MARC records from an ONKI Light source.
+ * This is a class for enrichment of EAD records from an ONKI Light source.
  *
  * @category DataManagement
  * @package  RecordManager
- * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class MarcOnkiLightEnrichment extends OnkiLightEnrichment
+class EadOnkiLightEnrichment extends OnkiLightEnrichment
 {
     /**
      * Enrich the record and return any additions in solrArray
@@ -55,14 +53,11 @@ class MarcOnkiLightEnrichment extends OnkiLightEnrichment
      */
     public function enrich($sourceId, $record, &$solrArray)
     {
-        $fields = ['650' => 'topic', '651' => 'geographic'];
-        foreach ($fields as $marcField => $solrField) {
-            foreach ($record->getFields($marcField) as $recField) {
-                $id = $record->getSubfield($recField, '0');
-                if (!$id) {
-                    continue;
-                }
-                $this->enrichField($sourceId, $record, $solrArray, $id, $solrField);
+        if ($subjects = $record->getTopics()) {
+            foreach ($subjects['ids'] ?? [] as $id) {
+                $this->enrichField(
+                    $sourceId, $record, $solrArray, $id, 'topic2'
+                );
             }
         }
     }
