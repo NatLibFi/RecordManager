@@ -208,7 +208,7 @@ error_email     =
 search[] = '([^\s]+ st)\.'
 replace[] = '\1 street'
 
-[MarcOnkiLightEnrichment]
+[OnkiLightEnrichment]
 ; Service base URL
 ;base_url = "http://api.somewhere/rest/v1"
 ; URL prefixes to process

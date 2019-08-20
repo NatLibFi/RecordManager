@@ -197,15 +197,7 @@ class Ead extends Base
 
         $data = array_merge($data, $this->getGeographicData());
 
-        if ($subjects = $doc->xpath('controlaccess/subject')) {
-            $topics = [];
-            foreach ($subjects as $subject) {
-                if (trim((string)$subject) !== '-') {
-                    $topics[] = trim((string)$subject);
-                }
-            }
-            $data['topic'] = $data['topic_facet'] = $topics;
-        }
+        $data['topic'] = $data['topic_facet'] = $this->getTopics();
 
         $data['format'] = $this->getFormat();
 
@@ -291,6 +283,54 @@ class Ead extends Base
     {
         $genre = $this->doc->xpath('controlaccess/genreform');
         return (string) ($genre ? $genre[0] : $this->doc->attributes()->level);
+    }
+
+    /**
+     * Get topics.
+     *
+     * @return array
+     */
+    public function getTopics()
+    {
+        return $this->getTopicTerms(false);
+    }
+
+    /**
+     * Get topic URIs.
+     *
+     * @return array
+     */
+    public function getTopicURIs()
+    {
+        return $this->getTopicTerms(true);
+    }
+
+    /**
+     * Get topic labels or URIs.
+     *
+     * @param boolean $uri Whether to return topic URIs or labels.
+     *
+     * @return array
+     */
+    protected function getTopicTerms($uri = false)
+    {
+        if ($subjects = $this->doc->xpath('controlaccess/subject')) {
+            $result = [];
+            foreach ($subjects as $subject) {
+                if (!$uri) {
+                    $label = trim((string)$subject);
+                    if ($label !== '-') {
+                        $result[] = $label;
+                    }
+                } else {
+                    if ($subject->attributes()->href) {
+                        $result[] = (string)$subject->attributes()->href;
+                    }
+                }
+            }
+            return $result;
+        }
+        return [];
     }
 
     /**
