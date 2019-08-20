@@ -152,7 +152,7 @@ class OnkiLightEnrichment extends Enrichment
 
         $url = $this->getOnkiUrl($id);
 
-        $localData = false; //$this->db->findOntologyEnrichment(['_id' => $url]);
+        $localData = $this->db->findOntologyEnrichment(['_id' => $url]);
         if ($localData) {
             $solrArray[$solrField] = array_merge(
                 $solrArray[$solrField],
@@ -197,7 +197,6 @@ class OnkiLightEnrichment extends Enrichment
                             break;
                         }
                     }
-                    $exactMatches = true;
                 }
 
                 if ($exactMatches) {
