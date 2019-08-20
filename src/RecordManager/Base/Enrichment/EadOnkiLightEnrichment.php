@@ -56,7 +56,7 @@ class EadOnkiLightEnrichment extends OnkiLightEnrichment
         if ($subjects = $record->getTopics()) {
             foreach ($subjects['ids'] ?? [] as $id) {
                 $this->enrichField(
-                    $sourceId, $record, $solrArray, $id, 'topic2'
+                    $sourceId, $record, $solrArray, $id, 'topic'
                 );
             }
         }
