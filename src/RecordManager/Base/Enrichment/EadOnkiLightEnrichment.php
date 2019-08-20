@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Enrichment;
 
-use RecordManager\Base\Utils\Logger;
-
 /**
  * EadOnkiLightEnrichment Class
  *
