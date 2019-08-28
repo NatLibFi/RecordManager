@@ -201,7 +201,11 @@ class OnkiLightEnrichment extends Enrichment
 
                 if ($exactMatches) {
                     foreach ($item['exactMatch'] as $exactMatch) {
-                        $matchURL = $matchId = $exactMatch['uri'];
+                        $uri = $exactMatch['uri'] ?? null;
+                        if (!$uri) {
+                            continue;
+                        }
+                        $matchURL = $matchId = $uri;
                         $matchURL = $this->getOnkiUrl($matchId);
                         $matchData = $this->getExternalData(
                             $matchURL, $matchId,
@@ -215,7 +219,7 @@ class OnkiLightEnrichment extends Enrichment
                             continue;
                         }
                         foreach ($matchData['graph'] as $matchItem) {
-                            if ($matchItem['uri'] != $matchId) {
+                            if (($matchItem['uri'] ?? null) != $matchId) {
                                 continue;
                             }
                             if (is_array($matchItem['type'])) {
