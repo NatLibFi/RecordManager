@@ -989,11 +989,19 @@ class Marc extends \RecordManager\Base\Record\Marc
         if (isset($this->fields['502'])) {
             return 'Dissertation';
         }
+        $dissType = '';
         if (isset($this->fields['509'])) {
-            $field509a = MetadataUtils::stripTrailingPunctuation(
+            $dissType = MetadataUtils::stripTrailingPunctuation(
                 $this->getFieldSubfields('509', ['a' => 1])
             );
-            switch (strtolower($field509a)) {
+        }
+        if (!$dissType && isset($this->fields['920'])) {
+            $dissType = MetadataUtils::stripTrailingPunctuation(
+                $this->getFieldSubfields('920', ['a' => 1])
+            );
+        }
+        if ($dissType) {
+            switch (strtolower($dissType)) {
             case 'kandidaatintutkielma':
             case 'kandidaatintyö':
             case 'kandidatarbete':
