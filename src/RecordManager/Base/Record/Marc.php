@@ -1180,6 +1180,11 @@ class Marc extends Base
             return 'Manuscript';
         }
 
+        $field008 = $this->getField('008');
+        if (!$online) {
+            $online = substr($field008, 23, 1) === 'o';
+        }
+
         // check the Leader at position 7
         $leaderBit = substr($leader, 7, 1);
         switch (strtoupper($leaderBit)) {
@@ -1194,7 +1199,6 @@ class Marc extends Base
         // Serial
         case 'S':
             // Look in 008 to determine what type of Continuing Resource
-            $field008 = $this->getField('008');
             $formatCode = strtoupper(substr($field008, 21, 1));
             switch ($formatCode) {
             case 'N':
