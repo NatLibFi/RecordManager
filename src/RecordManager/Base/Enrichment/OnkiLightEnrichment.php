@@ -150,9 +150,7 @@ class OnkiLightEnrichment extends Enrichment
             return;
         }
 
-        $url = $this->getOnkiUrl($id);
-
-        $localData = $this->db->findOntologyEnrichment(['_id' => $url]);
+        $localData = $this->db->findOntologyEnrichment(['_id' => $id]);
         if ($localData) {
             $solrArray[$solrField] = array_merge(
                 $solrArray[$solrField],
@@ -162,6 +160,7 @@ class OnkiLightEnrichment extends Enrichment
             return;
         }
 
+        $url = $this->getOnkiUrl($id);
         $data = $this->getExternalData(
             $url, $id, ['Accept' => 'application/json']
         );
