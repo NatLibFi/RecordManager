@@ -149,8 +149,14 @@ class Forward extends \RecordManager\Base\Record\Forward
     public function getFormat()
     {
         foreach ($this->getMainElement()->ProductionEvent as $event) {
-            if (null !== ($event->ProductionEventType->attributes()->{'elokuva-laji1fin'})) {
-                $laji = mb_strtolower((string)$event->ProductionEventType->attributes()->{'elokuva-laji1fin'}, 'UTF-8');
+            if (!isset($event->ProductionEventType)) {
+                continue;
+            }
+            $type = $event->ProductionEventType;
+            if (null !== ($type->attributes()->{'elokuva-laji1fin'})) {
+                $laji = mb_strtolower(
+                    (string)$type->attributes()->{'elokuva-laji1fin'}, 'UTF-8'
+                );
                 switch ($laji) {
                 case 'lyhyt':
                     return 'VideoShort';
