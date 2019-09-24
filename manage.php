@@ -196,9 +196,11 @@ EOT;
                 case 'purgedeleted':
                     if (!isset($params['force']) || !$params['force']) {
                         echo <<<EOT
-Purging of deleted records means that any further Solr updates don't include these
-deletions. Use the --force parameter to indicate that this is ok. No records have
-been purged.
+Purging of deleted records means that RecordManager no longer has any knowledge of
+them. They cannot be included in e.g. Solr updates or OAI-PMH responses.
+Use the --force parameter to indicate that this is ok.
+
+No records have been purged.
 
 EOT;
                         exit(1);

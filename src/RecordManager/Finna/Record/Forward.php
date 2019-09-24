@@ -149,15 +149,25 @@ class Forward extends \RecordManager\Base\Record\Forward
     public function getFormat()
     {
         foreach ($this->getMainElement()->ProductionEvent as $event) {
-            if (isset($event->elokuva_laji2fin)) {
-                $laji = mb_strtolower((string)$event->elokuva_laji2fin, 'UTF-8');
-                if (strstr($laji, 'sarja') !== false || strstr($laji, 'tv') !== false
-                ) {
-                    return 'Video';
+            if (!isset($event->ProductionEventType)) {
+                continue;
+            }
+            $type = $event->ProductionEventType;
+            if (null !== ($type->attributes()->{'elokuva-laji1fin'})) {
+                $laji = mb_strtolower(
+                    (string)$type->attributes()->{'elokuva-laji1fin'}, 'UTF-8'
+                );
+                switch ($laji) {
+                case 'lyhyt':
+                    return 'VideoShort';
+                case 'pitkä':
+                    return 'VideoFeature';
+                case 'kooste':
+                    return 'VideoCompilation';
                 }
             }
         }
-        return 'MotionPicture';
+        return 'Video';
     }
 
     /**
@@ -267,7 +277,19 @@ class Forward extends \RecordManager\Base\Record\Forward
      */
     protected function getGenres()
     {
-        return [$this->getProductionEventAttribute('elokuva-genre')];
+        $result[] = $this->getProductionEventAttribute('elokuva-genre');
+
+        foreach ($this->getMainElement()->ProductionEvent as $event) {
+            if (null !== ($event->elokuva_laji2fin)) {
+                $parts = explode(',', $event->elokuva_laji2fin);
+
+                foreach ($parts as $part) {
+                        $result[] = trim($part);
+                }
+            }
+        }
+
+        return $result;
     }
 
     /**
