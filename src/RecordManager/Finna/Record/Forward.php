@@ -275,9 +275,10 @@ class Forward extends \RecordManager\Base\Record\Forward
      *
      * @return array
      */
+    
     protected function getGenres()
     {
-        $result[] = $this->getProductionEventAttribute('elokuva-genre');
+        $result = $this->getProductionEventAttribute('elokuva-genre');
 
         foreach ($this->getMainElement()->ProductionEvent as $event) {
             if (null !== ($event->elokuva_laji2fin)) {
@@ -289,7 +290,7 @@ class Forward extends \RecordManager\Base\Record\Forward
             }
         }
 
-        return $result;
+       return $result;
     }
 
     /**
@@ -330,17 +331,18 @@ class Forward extends \RecordManager\Base\Record\Forward
      *
      * @param string $attribute Attribute name
      *
-     * @return string
+     * @return array
      */
     protected function getProductionEventAttribute($attribute)
     {
+        $result = [];
         foreach ($this->getMainElement()->ProductionEvent as $event) {
             $attributes = $event->ProductionEventType->attributes();
             if (!empty($attributes{$attribute})) {
-                return (string)$attributes{$attribute};
+                $result[] = (string)$attributes{$attribute};
             }
         }
-        return '';
+        return $result;
     }
 
     /**
