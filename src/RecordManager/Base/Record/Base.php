@@ -416,6 +416,33 @@ class Base
      */
     public function getSuppressed()
     {
+        $filters = $this->dataSourceSettings[$this->source]['suppressOnField'] ?? [];
+        if ($filters) {
+            $solrFields = $this->toSolrArray();
+            foreach ($filters as $field => $filter) {
+                if (!isset($solrFields[$field])) {
+                    continue;
+                }
+                foreach ((array)$solrFields[$field] as $value) {
+                    if (strncmp($value, '/', 1) === 0
+                        && strncmp($value, '/', -1) === 0
+                    ) {
+                        $res = preg_match($filter, $value);
+                        if (false === $res) {
+                            $this->logger->log(
+                                'Failed to parse filter regexp: ' . $filter,
+                                Logger::ERROR
+                            );
+                        }
+                    } else {
+                        $res = in_array($value, explode('|', $filter));
+                    }
+                    if ($res) {
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
