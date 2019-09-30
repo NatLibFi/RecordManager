@@ -1120,6 +1120,9 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     public function getSuppressed()
     {
+        if (parent::getSuppressed()) {
+            return true;
+        }
         if ($this->getDriverParam('kohaNormalization', false)) {
             foreach ($this->getFields('942') as $field942) {
                 $suppressed = $this->getSubfield($field942, 'n');
