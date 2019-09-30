@@ -72,7 +72,8 @@ Parameters:
 --dumpprefix        File name prefix to use when dumping records (dumpsolr). Default
                     is "dumpsolr".
 --mapped            If set, use values only after any mapping files are processed
-                    when counting records (count)
+                    when counting records (count). If set to false, disable mappings
+                    when dumping records (dumpsolr).
 --daystokeep=days   How many last days to keep when purging deleted records
                     (purgedeleted)
 --basepath=path     Use path as the base directory for conf, mappings and
@@ -121,11 +122,13 @@ EOT;
                 ? '' : (isset($params['from']) ? $params['from'] : null);
             $dumpPrefix = isset($params['dumpprefix'])
                 ? $params['dumpprefix'] : 'dumpsolr';
+            $mapped = isset($params['mapped'])
+                ? ('false' !== $params['mapped']) : true;
 
             $solrDump = new \RecordManager\Base\Controller\SolrDump(
                 $basePath, $config, true, $verbose
             );
-            $solrDump->launch($dumpPrefix, $date, $sources, $single);
+            $solrDump->launch($dumpPrefix, $date, $sources, $single, $mapped);
         } else {
             foreach (explode(',', $sources) as $source) {
                 switch ($params['func']) {
