@@ -380,6 +380,13 @@ class SolrUpdater
     protected $unicodeNormalizationForm;
 
     /**
+     * Shard statuses considered normal in cluster state check
+     *
+     * @var array
+     */
+    protected $normalShardStatuses = ['active', 'inactive', 'construction'];
+
+    /**
      * Constructor
      *
      * @param MongoDB       $db                 Database connection
@@ -2527,7 +2534,7 @@ class SolrUpdater
         }
         foreach ($data as $collectionName => $collection) {
             foreach ($collection['shards'] as $shardName => $shard) {
-                if ('active' !== $shard['state'] && 'inactive' !== $shard['state']) {
+                if (!in_array($shard['state'], $this->normalShardStatuses)) {
                     $this->log->log(
                         'checkClusterState',
                         "Collection $collectionName shard $shardName:"
