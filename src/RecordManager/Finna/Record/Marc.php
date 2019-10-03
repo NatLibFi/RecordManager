@@ -167,6 +167,20 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
             }
         }
+
+        if ($alma) {
+            // Add a prefixed id to field 090 to indicate that the record is from
+            // Alma. Used at least with OpenURL.
+            $id = $this->getField('001');
+            $this->fields['090'][] = [
+                'i1' => ' ',
+                'i2' => ' ',
+                's' => [
+                    ['a' => "(Alma)$id"]
+                ]
+            ];
+            ksort($this->fields);
+        }
     }
 
     /**
