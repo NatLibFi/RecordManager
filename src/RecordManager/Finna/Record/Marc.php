@@ -92,8 +92,10 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
 
-        // Koha record normalization
-        if ($this->getDriverParam('kohaNormalization', false)) {
+        // Koha and Alma record normalization
+        $koha = $this->getDriverParam('kohaNormalization', false);
+        $alma = $this->getDriverParam('almaNormalization', false);
+        if ($koha || $alma) {
             // Convert items to holdings
             $useHome = $this->getDriverParam('kohaUseHomeBranch', false);
             $holdings = [];
@@ -114,23 +116,27 @@ class Marc extends \RecordManager\Base\Record\Marc
                     }
                 }
 
-                // Availability
-                static $subfieldsExist = [
-                    '0', // Withdrawn
-                    '1', // Lost
-                    '4', // Damaged
-                    'q', // Due date
-                ];
-                $available = true;
-                foreach ($subfieldsExist as $code) {
-                    if ($this->getSubfield($field952, $code)) {
-                        $available = false;
-                        break;
+                if ($alma) {
+                    $available = $this->getSubfield($field952, '1') == 1;
+                } else {
+                    // Availability
+                    static $subfieldsExist = [
+                        '0', // Withdrawn
+                        '1', // Lost
+                        '4', // Damaged
+                        'q', // Due date
+                    ];
+                    $available = true;
+                    foreach ($subfieldsExist as $code) {
+                        if ($this->getSubfield($field952, $code)) {
+                            $available = false;
+                            break;
+                        }
                     }
-                }
-                if ($available) {
-                    $status = $this->getSubfield($field952, '7'); // Not for loan
-                    $available = $status === '0' || $status === '1';
+                    if ($available) {
+                        $status = $this->getSubfield($field952, '7'); // Not for loan
+                        $available = $status === '0' || $status === '1';
+                    }
                 }
 
                 $key = implode('//', $key);
@@ -151,6 +157,9 @@ class Marc extends \RecordManager\Base\Record\Marc
                     's' => $holding
                 ];
             }
+        }
+
+        if ($koha) {
             // Verify that 001 exists
             if ('' === $this->getField('001')) {
                 if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
