@@ -1031,7 +1031,7 @@ class SolrUpdater
 
         $collectionName = $this->db->getExistingQueueCollection(
             md5(json_encode($params)),
-            isset($fromDate) ? date('Ymd', strtotime($fromDate)) : 0,
+            isset($mongoFromDate) ? $mongoFromDate->toDateTime()->format('U') : '0',
             $lastRecordTime
         );
 
@@ -1054,7 +1054,8 @@ class SolrUpdater
 
             $collectionName = $this->db->getNewQueueCollection(
                 md5(json_encode($params)),
-                isset($fromDate) ? date('Ymd', strtotime($fromDate)) : 0,
+                isset($mongoFromDate)
+                    ? $mongoFromDate->toDateTime()->format('U') : 0,
                 $lastRecordTime
             );
             $this->log->log(

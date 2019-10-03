@@ -28,6 +28,7 @@
  */
 namespace RecordManager\Base\Enrichment;
 
+use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -127,7 +128,11 @@ class OnkiLightEnrichment extends Enrichment
     protected function enrichField($sourceId, $record, &$solrArray,
         $id, $solrField
     ) {
+        // Clean up any invalid characters from the id
+        $id = str_replace(['|', '!', '"', '#', '€', '$', '%', '&'], [], $id);
+
         $solrArray[$solrField . '_uri_str_mv'][] = $id;
+
         // Fetch alternate language expressions
         $url = $id;
 
@@ -253,8 +258,11 @@ class OnkiLightEnrichment extends Enrichment
      */
     protected function getOnkiUrl($id)
     {
-        return $this->onkiLightBaseURL
-            . '/data?format=application/json&uri='
-            . urlencode($id);
+        $url = $this->onkiLightBaseURL;
+        if (substr($url, -1) !== '/') {
+            $url .= '/';
+        }
+        $url .= 'data?format=application/json&uri=' . urlencode($id);
+        return $url;
     }
 }
