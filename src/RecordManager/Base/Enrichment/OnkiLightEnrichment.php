@@ -129,7 +129,11 @@ class OnkiLightEnrichment extends Enrichment
         $id, $solrField
     ) {
         // Clean up any invalid characters from the id
-        $id = str_replace(['|', '!', '"', '#', '€', '$', '%', '&'], [], $id);
+        $id = str_replace(
+            ['|', '!', '"', '#', '€', '$', '%', '&', '<', '>'],
+            [],
+            $id
+        );
 
         $solrArray[$solrField . '_uri_str_mv'][] = $id;
 
@@ -167,7 +171,7 @@ class OnkiLightEnrichment extends Enrichment
 
         $url = $this->getOnkiUrl($id);
         $data = $this->getExternalData(
-            $url, $id, ['Accept' => 'application/json']
+            $url, $id, ['Accept' => 'application/json'], [500]
         );
 
         if ($data) {
