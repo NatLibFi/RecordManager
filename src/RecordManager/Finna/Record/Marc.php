@@ -97,7 +97,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         $alma = $this->getDriverParam('almaNormalization', false);
         if ($koha || $alma) {
             // Convert items to holdings
-            $useHome = $this->getDriverParam('kohaUseHomeBranch', false);
+            $useHome = $koha && $this->getDriverParam('kohaUseHomeBranch', false);
             $holdings = [];
             $availableBuildings = [];
             foreach ($this->getFields('952') as $field952) {
