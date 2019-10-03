@@ -1402,9 +1402,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         );
         foreach ($ebraryLocs as $field) {
             if (strncmp($field, 'ebr', 3) == 0 && is_numeric(substr($field, 3))) {
-                if (!isset($data['building'])
-                    || !in_array('EbraryDynamic', $data['building'])
-                ) {
+                if (!in_array('EbraryDynamic', $building)) {
                     $building[] = 'EbraryDynamic';
                 }
             }

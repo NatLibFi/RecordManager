@@ -305,7 +305,7 @@ class Ead3 extends Ead
                 $result[] = trim((string)$subject);
             }
         }
-        return $reslt;
+        return $result;
     }
 
     /**
