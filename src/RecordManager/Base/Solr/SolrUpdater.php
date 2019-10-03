@@ -831,8 +831,7 @@ class SolrUpdater
                         } elseif ($exitCode || null === $exitCode) {
                             $this->log->log(
                                 'updateRecords',
-                                "Merged record update process failed, "
-                                . "aborting",
+                                'Merged record update process failed, aborting',
                                 Logger::ERROR
                             );
                             throw new \Exception(
@@ -901,6 +900,15 @@ class SolrUpdater
                         if (null !== $exitCode) {
                             if (1 === $exitCode) {
                                 $needCommit = true;
+                            } elseif ($exitCode || null === $exitCode) {
+                                $this->log->log(
+                                    'updateRecords',
+                                    'Merged record update process failed, aborting',
+                                    Logger::ERROR
+                                );
+                                throw new \Exception(
+                                    'Merged record update process failed'
+                                );
                             }
                         } else {
                             $this->log->log(
