@@ -510,7 +510,7 @@ class Base
     /**
      * Prepend authority ID with namespace.
      *
-     * @param string[] $ids Array of authoroty ids
+     * @param string[] $ids Array of authority ids
      *
      * @return string[]
      */
