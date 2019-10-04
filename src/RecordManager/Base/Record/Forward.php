@@ -328,9 +328,10 @@ class Forward extends Base
     }
 
     /**
-     * Get authors by relator codes
+     * Get all authors or authors by relator codes.
      *
-     * @param array $relators Allowed relators
+     * @param array $relators List of allowed relators, or an empty list
+     * to return all authors.
      *
      * @return array Array keyed by 'names' for author names, 'ids' for author ids
      * and 'relators' for relator codes
