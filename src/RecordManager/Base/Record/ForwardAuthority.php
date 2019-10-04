@@ -230,7 +230,7 @@ class ForwardAuthority extends Base
                 if (isset($d->AgentDateEventType)) {
                     $dateType = (int)$d->AgentDateEventType;
                     $date = (string)$d->DateText;
-                    $place =  (string)$d->LocationName;
+                    $place = (string)$d->LocationName;
                     if (($type === 'birth' && $dateType === 51)
                         || ($type == 'death' && $dateType === 52)
                     ) {

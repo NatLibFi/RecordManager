@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Finna\Record;
 
-use RecordManager\Base\Utils\MetadataUtils;
-
 /**
  * Forward authority Record Class
  *
