@@ -88,25 +88,6 @@ class Forward extends \RecordManager\Base\Record\Forward
     ];
 
     /**
-     * Relator to RDA role mapping.
-     *
-     * @var array
-     */
-    protected $roleMap = [
-        'A00' => 'oth',
-        'A03' => 'aus',
-        'A06' => 'cmp',
-        'A50' => 'aud',
-        'A99' => 'oth',
-        'D01' => 'fmp',
-        'D02' => 'drt',
-        'E01' => 'act',
-        'E10' => 'pro',
-        'F01' => 'cng',
-        'F02' => 'flm'
-    ];
-
-    /**
      * ELONET role to RDA role mapping.
      *
      * @var array
@@ -413,11 +394,8 @@ class Forward extends \RecordManager\Base\Record\Forward
             if ($relator) {
                 $relator = $this->elonetRoleMap[$relator] ?? $relator;
             }
-        } else {
-            $relator = $this->roleMap[strtoupper($relator)] ?? $relator;
         }
         return $relator;
-
     }
 
     /**

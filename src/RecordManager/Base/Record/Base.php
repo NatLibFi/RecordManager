@@ -537,7 +537,7 @@ class Base
      */
     protected function formatAuthorIdWithRole($id, $role)
     {
-        return $id . chr(9) .$role;
+        return "{$id}###{$role}";
     }
 
     /**
