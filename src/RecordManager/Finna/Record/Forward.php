@@ -88,6 +88,45 @@ class Forward extends \RecordManager\Base\Record\Forward
     ];
 
     /**
+     * Relator to RDA role mapping.
+     *
+     * @var array
+     */
+    protected $roleMap = [
+        'A00' => 'oth',
+        'A03' => 'aus',
+        'A06' => 'cmp',
+        'A50' => 'aud',
+        'A99' => 'oth',
+        'D01' => 'fmp',
+        'D02' => 'drt',
+        'E01' => 'act',
+        'E10' => 'pro',
+        'F01' => 'cng',
+        'F02' => 'flm'
+    ];
+
+    /**
+     * ELONET role to RDA role mapping.
+     *
+     * @var array
+     */
+    protected $elonetRoleMap = [
+        'dialogi' => 'aud',
+        'lavastus' => 'std',
+        'lavastaja' => 'std',
+        'puvustus' => 'cst',
+        'tuotannon suunnittelu' => 'prs',
+        'tuotantopäällikkö' => 'pmn',
+        'muusikko' => 'mus',
+        'selostaja' => 'spk',
+        'valokuvaaja' => 'pht',
+        'valonmääritys' => 'lgd',
+        'vastaava tuottaja' => 'pro',
+        'äänitys' => 'rce'
+    ];
+
+    /**
      * Primary language to use
      *
      * @var string
@@ -359,11 +398,23 @@ class Forward extends \RecordManager\Base\Record\Forward
             return '';
         }
         $activity = $agent->Activity;
-        $relator = strtolower(MetadataUtils::normalizeRelator((string)$activity));
-        if (($relator == 'a99' || $relator == 'e99')
-            && !empty($activity->attributes()->{'finna-activity-text'})
-        ) {
-            $relator = (string)$activity->attributes()->{'finna-activity-text'};
+        $relator = MetadataUtils::normalizeRelator((string)$activity);
+        if (in_array($relator, ['a00', 'a08', 'a99', 'd99', 'e04', 'e99'])) {
+            $relator = null;
+            foreach (
+                ['finna-activity-text', 'tehtava', 'elokuva-elotekija-tehtava']
+                as $field
+            ) {
+                if (!empty($activity->attributes()->{$field})) {
+                    $relator = (string)$activity->attributes()->{$field};
+                    break;
+                }
+            }
+            if ($relator) {
+                $relator = $this->elonetRoleMap[$relator] ?? $relator;
+            }
+        } else {
+            $relator = $this->roleMap[strtoupper($relator)] ?? $relator;
         }
         return $relator;
 
