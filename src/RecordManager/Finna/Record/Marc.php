@@ -92,10 +92,12 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
 
-        // Koha record normalization
-        if ($this->getDriverParam('kohaNormalization', false)) {
+        // Koha and Alma record normalization
+        $koha = $this->getDriverParam('kohaNormalization', false);
+        $alma = $this->getDriverParam('almaNormalization', false);
+        if ($koha || $alma) {
             // Convert items to holdings
-            $useHome = $this->getDriverParam('kohaUseHomeBranch', false);
+            $useHome = $koha && $this->getDriverParam('kohaUseHomeBranch', false);
             $holdings = [];
             $availableBuildings = [];
             foreach ($this->getFields('952') as $field952) {
@@ -114,23 +116,27 @@ class Marc extends \RecordManager\Base\Record\Marc
                     }
                 }
 
-                // Availability
-                static $subfieldsExist = [
-                    '0', // Withdrawn
-                    '1', // Lost
-                    '4', // Damaged
-                    'q', // Due date
-                ];
-                $available = true;
-                foreach ($subfieldsExist as $code) {
-                    if ($this->getSubfield($field952, $code)) {
-                        $available = false;
-                        break;
+                if ($alma) {
+                    $available = $this->getSubfield($field952, '1') == 1;
+                } else {
+                    // Availability
+                    static $subfieldsExist = [
+                        '0', // Withdrawn
+                        '1', // Lost
+                        '4', // Damaged
+                        'q', // Due date
+                    ];
+                    $available = true;
+                    foreach ($subfieldsExist as $code) {
+                        if ($this->getSubfield($field952, $code)) {
+                            $available = false;
+                            break;
+                        }
                     }
-                }
-                if ($available) {
-                    $status = $this->getSubfield($field952, '7'); // Not for loan
-                    $available = $status === '0' || $status === '1';
+                    if ($available) {
+                        $status = $this->getSubfield($field952, '7'); // Not for loan
+                        $available = $status === '0' || $status === '1';
+                    }
                 }
 
                 $key = implode('//', $key);
@@ -151,12 +157,29 @@ class Marc extends \RecordManager\Base\Record\Marc
                     's' => $holding
                 ];
             }
+        }
+
+        if ($koha) {
             // Verify that 001 exists
             if ('' === $this->getField('001')) {
                 if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
                     $this->fields['001'] = [$id];
                 }
             }
+        }
+
+        if ($alma) {
+            // Add a prefixed id to field 090 to indicate that the record is from
+            // Alma. Used at least with OpenURL.
+            $id = $this->getField('001');
+            $this->fields['090'][] = [
+                'i1' => ' ',
+                'i2' => ' ',
+                's' => [
+                    ['a' => "(Alma)$id"]
+                ]
+            ];
+            ksort($this->fields);
         }
     }
 
@@ -1120,6 +1143,9 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     public function getSuppressed()
     {
+        if (parent::getSuppressed()) {
+            return true;
+        }
         if ($this->getDriverParam('kohaNormalization', false)) {
             foreach ($this->getFields('942') as $field942) {
                 $suppressed = $this->getSubfield($field942, 'n');
@@ -1390,9 +1416,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         );
         foreach ($ebraryLocs as $field) {
             if (strncmp($field, 'ebr', 3) == 0 && is_numeric(substr($field, 3))) {
-                if (!isset($data['building'])
-                    || !in_array('EbraryDynamic', $data['building'])
-                ) {
+                if (!in_array('EbraryDynamic', $building)) {
                     $building[] = 'EbraryDynamic';
                 }
             }

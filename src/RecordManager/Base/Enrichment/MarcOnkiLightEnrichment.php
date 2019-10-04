@@ -53,6 +53,9 @@ class MarcOnkiLightEnrichment extends OnkiLightEnrichment
      */
     public function enrich($sourceId, $record, &$solrArray)
     {
+        if (!($record instanceof \RecordManager\Base\Record\Marc)) {
+            return;
+        }
         $fields = ['650' => 'topic', '651' => 'geographic'];
         foreach ($fields as $marcField => $solrField) {
             foreach ($record->getFields($marcField) as $recField) {

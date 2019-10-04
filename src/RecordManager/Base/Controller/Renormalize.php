@@ -99,9 +99,14 @@ class Renormalize extends AbstractBase
                     $record['source_id']
                 );
                 $metadataRecord->normalize();
+
+                if ($metadataRecord->getSuppressed()) {
+                    $record['deleted'] = true;
+                }
+
                 $hostIDs = $metadataRecord->getHostRecordIDs();
                 $normalizedData = $metadataRecord->serialize();
-                if ($settings['dedup'] && !$hostIDs) {
+                if ($settings['dedup'] && !$hostIDs && !$record['deleted']) {
                     $record['update_needed'] = $dedupHandler
                         ->updateDedupCandidateKeys($record, $metadataRecord);
                 } else {

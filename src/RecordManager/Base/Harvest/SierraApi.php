@@ -188,6 +188,29 @@ class SierraApi extends Base
             $apiParams['offset'] += $apiParams['limit'];
         } while ($count > 0);
 
+        // Sierra doesn't support time portion for deleted records, and apparently
+        // their updatedDate doesn't necessarily change when the record is deleted.
+        // If we have a date range, harvest deleted records for the whole dates
+        // separately.
+        if (!empty($this->startDate) || !empty($this->endDate)) {
+            $startDate = !empty($this->startDate) ? substr($this->startDate, 0, 10)
+                : '';
+            $endDate = !empty($this->endDate) ? substr($this->endDate, 0, 10) : '';
+            unset($apiParams['updatedDate']);
+            $apiParams['deletedDate'] = "[$startDate,$endDate]";
+            $apiParams['offset'] = 0;
+            $this->message("Incremental harvest of deletions: $startDate-$endDate");
+            $this->initHarvest($callback);
+
+            // Keep harvesting as long as a records are received:
+            do {
+                $response = $this->sendRequest(['v3', 'bibs'], $apiParams);
+                $count = $this->processResponse($response->getBody());
+                $this->reportResults();
+                $apiParams['offset'] += $apiParams['limit'];
+            } while ($count > 0);
+        }
+
         if (empty($this->endDate)) {
             $this->saveLastHarvestedDate(
                 gmdate('Y-m-d\TH:i:s\Z', $harvestStartTime)

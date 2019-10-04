@@ -380,6 +380,13 @@ class SolrUpdater
     protected $unicodeNormalizationForm;
 
     /**
+     * Shard statuses considered normal in cluster state check
+     *
+     * @var array
+     */
+    protected $normalShardStatuses = ['active', 'inactive', 'construction'];
+
+    /**
      * Constructor
      *
      * @param MongoDB       $db                 Database connection
@@ -824,8 +831,7 @@ class SolrUpdater
                         } elseif ($exitCode || null === $exitCode) {
                             $this->log->log(
                                 'updateRecords',
-                                "Merged record update process failed, "
-                                . "aborting",
+                                'Merged record update process failed, aborting',
                                 Logger::ERROR
                             );
                             throw new \Exception(
@@ -894,6 +900,15 @@ class SolrUpdater
                         if (null !== $exitCode) {
                             if (1 === $exitCode) {
                                 $needCommit = true;
+                            } elseif ($exitCode || null === $exitCode) {
+                                $this->log->log(
+                                    'updateRecords',
+                                    'Merged record update process failed, aborting',
+                                    Logger::ERROR
+                                );
+                                throw new \Exception(
+                                    'Merged record update process failed'
+                                );
                             }
                         } else {
                             $this->log->log(
@@ -1024,7 +1039,7 @@ class SolrUpdater
 
         $collectionName = $this->db->getExistingQueueCollection(
             md5(json_encode($params)),
-            isset($fromDate) ? date('Ymd', strtotime($fromDate)) : 0,
+            isset($mongoFromDate) ? $mongoFromDate->toDateTime()->format('U') : '0',
             $lastRecordTime
         );
 
@@ -1047,7 +1062,8 @@ class SolrUpdater
 
             $collectionName = $this->db->getNewQueueCollection(
                 md5(json_encode($params)),
-                isset($fromDate) ? date('Ymd', strtotime($fromDate)) : 0,
+                isset($mongoFromDate)
+                    ? $mongoFromDate->toDateTime()->format('U') : 0,
                 $lastRecordTime
             );
             $this->log->log(
@@ -2527,7 +2543,7 @@ class SolrUpdater
         }
         foreach ($data as $collectionName => $collection) {
             foreach ($collection['shards'] as $shardName => $shard) {
-                if ('active' !== $shard['state'] && 'inactive' !== $shard['state']) {
+                if (!in_array($shard['state'], $this->normalShardStatuses)) {
                     $this->log->log(
                         'checkClusterState',
                         "Collection $collectionName shard $shardName:"

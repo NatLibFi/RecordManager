@@ -27,6 +27,7 @@
  */
 namespace RecordManager\Base\Enrichment;
 
+use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 

@@ -51,6 +51,11 @@ class EadOnkiLightEnrichment extends OnkiLightEnrichment
      */
     public function enrich($sourceId, $record, &$solrArray)
     {
+        if (!($record instanceof \RecordManager\Base\Record\Ead)
+            && !($record instanceof \RecordManager\Base\Record\Ead3)
+        ) {
+            return;
+        }
         foreach ($record->getTopicURIs() as $id) {
             $this->enrichField(
                 $sourceId, $record, $solrArray, $id, 'topic'

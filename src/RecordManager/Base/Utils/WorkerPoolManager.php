@@ -211,7 +211,7 @@ class WorkerPoolManager
                         $childSocket, ['exception' => $e->getMessage()]
                     );
                     socket_close($childSocket);
-                    exit(1);
+                    exit(255);
                 }
             }
         }
