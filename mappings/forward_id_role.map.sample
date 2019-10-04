@@ -40,3 +40,17 @@
 (.(^###))*###f01 = ${1}###cng
 (.(^###))*###f02 = ${1}###edt
 (.(^###))*###f99 = ${1}###rce
+
+(.(^###))*###dialogi = ${1}###aud,
+(.(^###))*###kuvaaja = ${1}###cng,
+(.(^###))*###lavastus = ${1}###std,
+(.(^###))*###lavastaja = ${1}###std,
+(.(^###))*###puvustus = ${1}###cst,
+(.(^###))*###tuotannon suunnittelu = ${1}###prs,
+(.(^###))*###tuotantopäällikkö = ${1}###pmn,
+(.(^###))*###muusikko = ${1}###mus,
+(.(^###))*###selostaja = ${1}###spk,
+(.(^###))*###valokuvaaja = ${1}###pht,
+(.(^###))*###valonmääritys = ${1}###lgd,
+(.(^###))*###vastaava tuottaja = ${1}###pro,
+(.(^###))*###äänitys = ${1}###rce

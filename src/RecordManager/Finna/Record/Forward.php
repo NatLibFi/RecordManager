@@ -88,26 +88,6 @@ class Forward extends \RecordManager\Base\Record\Forward
     ];
 
     /**
-     * ELONET role to RDA role mapping.
-     *
-     * @var array
-     */
-    protected $elonetRoleMap = [
-        'dialogi' => 'aud',
-        'lavastus' => 'std',
-        'lavastaja' => 'std',
-        'puvustus' => 'cst',
-        'tuotannon suunnittelu' => 'prs',
-        'tuotantopäällikkö' => 'pmn',
-        'muusikko' => 'mus',
-        'selostaja' => 'spk',
-        'valokuvaaja' => 'pht',
-        'valonmääritys' => 'lgd',
-        'vastaava tuottaja' => 'pro',
-        'äänitys' => 'rce'
-    ];
-
-    /**
      * Primary language to use
      *
      * @var string
@@ -390,9 +370,6 @@ class Forward extends \RecordManager\Base\Record\Forward
                     $relator = (string)$activity->attributes()->{$field};
                     break;
                 }
-            }
-            if ($relator) {
-                $relator = $this->elonetRoleMap[$relator] ?? $relator;
             }
         }
         return $relator;
