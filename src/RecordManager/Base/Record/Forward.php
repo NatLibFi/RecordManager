@@ -331,7 +331,7 @@ class Forward extends Base
      * Get all authors or authors by relator codes.
      *
      * @param array $relators List of allowed relators, or an empty list
-     * to return all authors.
+     *                        to return all authors.
      *
      * @return array
      */
