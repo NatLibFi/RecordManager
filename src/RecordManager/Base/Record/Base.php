@@ -508,6 +508,39 @@ class Base
     }
 
     /**
+     * Prepend authority ID with namespace.
+     *
+     * @param string[] $ids Array of authoroty ids
+     *
+     * @return string[]
+     */
+    protected function addNamespaceToAuthRecord($ids)
+    {
+        if (!is_array($ids)) {
+            $ids = [$ids];
+        }
+        return array_map(
+            function ($id) {
+                return $this->source . ".$id";
+            },
+            $ids
+        );
+    }
+
+    /**
+     * Combine author id and role into a string that can be indexed.
+     *
+     * @param string $id   Id
+     * @param string $role Role
+     *
+     * @return string
+     */
+    protected function formatAuthorIdWithRole($id, $role)
+    {
+        return $id . chr(9) .$role;
+    }
+
+    /**
      * Parse an XML record from string to a SimpleXML object
      *
      * @param string $xml XML string

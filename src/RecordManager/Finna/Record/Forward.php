@@ -84,7 +84,7 @@ class Forward extends \RecordManager\Base\Record\Forward
      * @var array
      */
     protected $corporateAuthorRelators = [
-        'E10', 'dst', 'prn', 'fnd', 'lbr'
+        'e10', 'dst', 'prn', 'fnd', 'lbr'
     ];
 
     /**
@@ -242,12 +242,12 @@ class Forward extends \RecordManager\Base\Record\Forward
      * @return array Array keyed by 'names' for author names, 'ids' for author ids
      * and 'relators' for relator codes
      */
-    protected function getAuthorsByRelator($relators)
+    protected function getAuthorsByRelator($relators = [])
     {
-        $result = ['names' => [], 'ids' => [], 'relators' => []];
+        $result = ['names' => [], 'ids' => [], 'relators' => [], 'idRoles' => []];
         foreach ($this->getMainElement()->HasAgent as $agent) {
             $relator = $this->getRelator($agent);
-            if (!in_array($relator, $relators)) {
+            if (!empty($relators) && !in_array($relator, $relators)) {
                 continue;
             }
             $name = (string)$agent->AgentName;
@@ -263,6 +263,9 @@ class Forward extends \RecordManager\Base\Record\Forward
                 . (string)$agent->AgentIdentifier->IDValue;
             if ($id != ':') {
                 $result['ids'][] = $id;
+                $result['idRoles'][]
+                    = $this->formatAuthorIdWithRole($id, $relator);
+
             }
             $result['relators'][] = $relator;
         }
@@ -356,7 +359,7 @@ class Forward extends \RecordManager\Base\Record\Forward
             return '';
         }
         $activity = $agent->Activity;
-        $relator = MetadataUtils::normalizeRelator((string)$activity);
+        $relator = strtolower(MetadataUtils::normalizeRelator((string)$activity));
         if (($relator == 'a99' || $relator == 'e99')
             && !empty($activity->attributes()->{'finna-activity-text'})
         ) {
