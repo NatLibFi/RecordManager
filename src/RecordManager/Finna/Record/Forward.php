@@ -275,7 +275,6 @@ class Forward extends \RecordManager\Base\Record\Forward
      *
      * @return array
      */
-    
     protected function getGenres()
     {
         $result = $this->getProductionEventAttribute('elokuva-genre');
@@ -289,8 +288,7 @@ class Forward extends \RecordManager\Base\Record\Forward
                 }
             }
         }
-
-       return $result;
+        return $result;
     }
 
     /**
