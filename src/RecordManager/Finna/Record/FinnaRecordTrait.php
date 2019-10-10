@@ -1,6 +1,6 @@
 <?php
 /**
- * Forward authority Record Class
+ * Finna record trait.
  *
  * PHP version 5
  *
@@ -28,9 +28,7 @@
 namespace RecordManager\Finna\Record;
 
 /**
- * Forward authority Record Class
- *
- * This is a class for processing Forward records for an authority index.
+ * Finna record trait.
  *
  * @category DataManagement
  * @package  RecordManager
@@ -38,39 +36,38 @@ namespace RecordManager\Finna\Record;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class ForwardAuthority extends \RecordManager\Base\Record\ForwardAuthority
+trait FinnaRecordTrait
 {
-    use FinnaAuthorityRecordTrait;
+    /**
+     * Prepend authority ID with namespace.
+     *
+     * @param string[] $ids Array of authority ids
+     *
+     * @return string[]
+     */
+    protected function addNamespaceToAuthRecord($ids)
+    {
+        if (!is_array($ids)) {
+            $ids = [$ids];
+        }
+        return array_map(
+            function ($id) {
+                return $this->source . ".$id";
+            },
+            $ids
+        );
+    }
 
     /**
-     * Get occupations
+     * Combine author id and role into a string that can be indexed.
      *
-     * @return array
+     * @param string $id   Id
+     * @param string $role Role
+     *
+     * @return string
      */
-    protected function getOccupations()
+    protected function formatAuthorIdWithRole($id, $role)
     {
-        $doc = $this->getMainElement();
-
-        $result = [];
-        if (isset($doc->ProfessionalAffiliation)) {
-            $label = '';
-            if (isset($doc->ProfessionalAffiliation->Affiliation)) {
-                $label = (string)$doc->ProfessionalAffiliation->Affiliation;
-                $attr = $doc->ProfessionalAffiliation->attributes();
-                if (isset($attr->{'henkilo-kokoonpano-tyyppi'})) {
-                    $label .=
-                        ' (' . (string)$attr->{'henkilo-kokoonpano-tyyppi'} . ')';
-                }
-            }
-            if (isset($doc->ProfessionalAffiliation->ProfessionalPosition)) {
-                $position
-                    = (string)$doc->ProfessionalAffiliation->ProfessionalPosition;
-                $label = $label
-                    ? $label .= ": $position"
-                    : $position;
-            }
-            $result[] = $label;
-        }
-        return $result;
+        return "{$id}###{$role}";
     }
 }

@@ -42,6 +42,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Forward extends \RecordManager\Base\Record\Forward
 {
+    use FinnaRecordTrait;
     /**
      * Default primary author relator codes, may be overridden in configuration.
      *
@@ -139,6 +140,23 @@ class Forward extends \RecordManager\Base\Record\Forward
         }
 
         $data['building'] = $this->getBuilding();
+
+        $primaryAuthors = $this->getPrimaryAuthorsExtended();
+
+        $data['author_id_str_mv']
+            = $this->addNamespaceToAuthRecord($primaryAuthors['ids']);
+        $data['author_id_role_str_mv']
+            = $this->addNamespaceToAuthRecord($primaryAuthors['idRoles']);
+
+        $allAuthors = $this->getAuthorsByRelator();
+        $data['author2_id_str_mv']
+            = $this->addNamespaceToAuthRecord($allAuthors['ids']);
+        $data['author2_id_role_str_mv']
+            = $this->addNamespaceToAuthRecord($allAuthors['idRoles']);
+
+        $corporateAuthors = $this->getCorporateAuthors();
+        $data['author_corporate_id_str_mv']
+            = $this->addNamespaceToAuthRecord($corporateAuthors['ids']);
 
         return $data;
     }
@@ -273,6 +291,38 @@ class Forward extends \RecordManager\Base\Record\Forward
         }
 
         return $result;
+    }
+
+    /**
+     * Get primary authors with names and relators.
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthorsExtended()
+    {
+        $unsortedPrimaryAuthors = parent::getPrimaryAuthorsExtended();
+
+        // Make sure directors are first of the primary authors
+        $directors = $others = [
+            'ids' => [],
+            'idRoles' => []
+        ];
+
+        foreach ($unsortedPrimaryAuthors['relators'] as $i => $relator) {
+            if ('d02' === $relator) {
+                $directors['ids'][] = $unsortedPrimaryAuthors['ids'][$i] ?? null;
+                $directors['idRoles'][]
+                    = $unsortedPrimaryAuthors['idRoles'][$i] ?? null;
+            } else {
+                $others['ids'][] = $unsortedPrimaryAuthors['ids'][$i] ?? null;
+                $others['idRoles'][]
+                    = $unsortedPrimaryAuthors['idRoles'][$i] ?? null;
+            }
+        }
+        $unsortedPrimaryAuthors['ids'] = array_merge($directors['ids'], $others['ids']);
+        $unsortedPrimaryAuthors['idRoles'] = array_merge($directors['idRoles'], $others['idRoles']);
+
+        return $unsortedPrimaryAuthors;
     }
 
     /**

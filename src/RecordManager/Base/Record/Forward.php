@@ -211,41 +211,8 @@ class Forward extends Base
         $data['url'] = $this->getUrls();
         $data['thumbnail'] = $this->getThumbnail();
 
-        $unsortedPrimaryAuthors = $this->getPrimaryAuthors();
-        // Make sure directors are first of the primary authors
-        $directors = $others = [
-            'names' => [],
-            'ids' => [],
-            'relators' => [],
-            'idRoles' => []
-        ];
-        foreach ($unsortedPrimaryAuthors['relators'] as $i => $relator) {
-            if ('d02' === $relator) {
-                $directors['names'][] = $unsortedPrimaryAuthors['names'][$i];
-                $directors['ids'][] = $unsortedPrimaryAuthors['ids'][$i] ?? null;
-                $directors['idRoles'][]
-                    = $unsortedPrimaryAuthors['idRoles'][$i] ?? null;
-                $directors['relators'][] = $unsortedPrimaryAuthors['relators'][$i];
-            } else {
-                $others['names'][] = $unsortedPrimaryAuthors['names'][$i];
-                $others['ids'][] = $unsortedPrimaryAuthors['ids'][$i] ?? null;
-                $others['idRoles'][]
-                    = $unsortedPrimaryAuthors['idRoles'][$i] ?? null;
-                $others['relators'][] = $unsortedPrimaryAuthors['relators'][$i];
-            }
-        }
-        $primaryAuthors = [
-            'names' => array_merge($directors['names'], $others['names']),
-            'ids' => array_merge($directors['ids'], $others['ids']),
-            'relators' => array_merge($directors['relators'], $others['relators']),
-            'idRoles' => array_merge($directors['idRoles'], $others['idRoles'])
-        ];
-
+        $primaryAuthors = $this->getPrimaryAuthorsExtended();
         $data['author'] = $primaryAuthors['names'];
-        $data['author_id_str_mv']
-            = $this->addNamespaceToAuthRecord($primaryAuthors['ids']);
-        $data['author_id_role_str_mv']
-            = $this->addNamespaceToAuthRecord($primaryAuthors['idRoles']);
 
         // Support for author_variant is currently not implemented
         $data['author_role'] = $primaryAuthors['relators'];
@@ -258,16 +225,8 @@ class Forward extends Base
         // Support for author2_variant is currently not implemented
         $data['author2_role'] = $secondaryAuthors['relators'];
 
-        $allAuthors = $this->getAuthorsByRelator();
-        $data['author2_id_str_mv']
-            = $this->addNamespaceToAuthRecord($allAuthors['ids']);
-        $data['author2_id_role_str_mv']
-            = $this->addNamespaceToAuthRecord($allAuthors['idRoles']);
-
         $corporateAuthors = $this->getCorporateAuthors();
         $data['author_corporate'] = $corporateAuthors['names'];
-        $data['author_corporate_id_str_mv']
-            = $this->addNamespaceToAuthRecord($corporateAuthors['ids']);
         $data['author_corporate_role'] = $corporateAuthors['relators'];
 
         $data['geographic'] = $data['geographic_facet']
@@ -337,7 +296,7 @@ class Forward extends Base
      */
     protected function getAuthorsByRelator($relators = [])
     {
-        $result = ['names' => [], 'ids' => [], 'relators' => [], 'idRoles' => []];
+        $result = ['names' => [], 'ids' => [], 'relators' => []];
         foreach ($this->getMainElement()->HasAgent as $agent) {
             $relator = $this->getRelator($agent);
             if (!empty($relators) && !in_array($relator, $relators)) {
@@ -348,8 +307,6 @@ class Forward extends Base
                 . (string)$agent->AgentIdentifier->IDValue;
             if ($id != ':') {
                 $result['ids'][] = $id;
-                $result['idRoles'][]
-                    = $this->formatAuthorIdWithRole($id, $relator);
             }
             $result['relators'][] = $relator;
         }
@@ -397,6 +354,34 @@ class Forward extends Base
     protected function getCorporateAuthors()
     {
         return $this->getAuthorsByRelator($this->corporateAuthorRelators);
+    }
+
+    /**
+     * Get primary authors with names and relators.
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthorsExtended()
+    {
+        $unsortedPrimaryAuthors = $this->getPrimaryAuthors();
+        // Make sure directors are first of the primary authors
+        $directors = $others = [
+            'names' => [],
+            'relators' => [],
+        ];
+        foreach ($unsortedPrimaryAuthors['relators'] as $i => $relator) {
+            if ('d02' === $relator) {
+                $directors['names'][] = $unsortedPrimaryAuthors['names'][$i];
+                $directors['relators'][] = $unsortedPrimaryAuthors['relators'][$i];
+            } else {
+                $others['names'][] = $unsortedPrimaryAuthors['names'][$i];
+                $others['relators'][] = $unsortedPrimaryAuthors['relators'][$i];
+            }
+        }
+        return [
+            'names' => array_merge($directors['names'], $others['names']),
+            'relators' => array_merge($directors['relators'], $others['relators']),
+        ];
     }
 
     /**
