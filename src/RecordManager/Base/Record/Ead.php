@@ -286,16 +286,6 @@ class Ead extends Base
     }
 
     /**
-     * Get topics.
-     *
-     * @return array
-     */
-    public function getTopics()
-    {
-        return $this->getTopicTerms(false);
-    }
-
-    /**
      * Get topic URIs.
      *
      * @return array
@@ -303,6 +293,16 @@ class Ead extends Base
     public function getTopicURIs()
     {
         return $this->getTopicTerms(true);
+    }
+
+    /**
+     * Get topics.
+     *
+     * @return array
+     */
+    protected function getTopics()
+    {
+        return $this->getTopicTerms(false);
     }
 
     /**
