@@ -319,8 +319,10 @@ class Forward extends \RecordManager\Base\Record\Forward
                     = $unsortedPrimaryAuthors['idRoles'][$i] ?? null;
             }
         }
-        $unsortedPrimaryAuthors['ids'] = array_merge($directors['ids'], $others['ids']);
-        $unsortedPrimaryAuthors['idRoles'] = array_merge($directors['idRoles'], $others['idRoles']);
+        $unsortedPrimaryAuthors['ids']
+            = array_merge($directors['ids'], $others['ids']);
+        $unsortedPrimaryAuthors['idRoles']
+            = array_merge($directors['idRoles'], $others['idRoles']);
 
         return $unsortedPrimaryAuthors;
     }
