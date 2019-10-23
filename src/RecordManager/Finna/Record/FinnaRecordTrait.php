@@ -45,7 +45,7 @@ trait FinnaRecordTrait
      *
      * @return string[]
      */
-    protected function addNamespaceToAuthRecord($ids)
+    protected function addNamespaceToAuthorityIds($ids)
     {
         if (!is_array($ids)) {
             $ids = [$ids];

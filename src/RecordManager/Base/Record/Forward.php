@@ -211,7 +211,7 @@ class Forward extends Base
         $data['url'] = $this->getUrls();
         $data['thumbnail'] = $this->getThumbnail();
 
-        $primaryAuthors = $this->getPrimaryAuthorsExtended();
+        $primaryAuthors = $this->getPrimaryAuthorsSorted();
         $data['author'] = $primaryAuthors['names'];
 
         // Support for author_variant is currently not implemented
@@ -357,11 +357,11 @@ class Forward extends Base
     }
 
     /**
-     * Get primary authors with names and relators.
+     * Get sorted primary authors with names and relators.
      *
      * @return array
      */
-    protected function getPrimaryAuthorsExtended()
+    protected function getPrimaryAuthorsSorted()
     {
         $unsortedPrimaryAuthors = $this->getPrimaryAuthors();
         // Make sure directors are first of the primary authors

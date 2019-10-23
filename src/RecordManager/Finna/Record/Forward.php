@@ -141,22 +141,22 @@ class Forward extends \RecordManager\Base\Record\Forward
 
         $data['building'] = $this->getBuilding();
 
-        $primaryAuthors = $this->getPrimaryAuthorsExtended();
+        $primaryAuthors = $this->getPrimaryAuthorsSorted();
 
         $data['author_id_str_mv']
-            = $this->addNamespaceToAuthRecord($primaryAuthors['ids']);
+            = $this->addNamespaceToAuthorityIds($primaryAuthors['ids']);
         $data['author_id_role_str_mv']
-            = $this->addNamespaceToAuthRecord($primaryAuthors['idRoles']);
+            = $this->addNamespaceToAuthorityIds($primaryAuthors['idRoles']);
 
         $allAuthors = $this->getAuthorsByRelator();
         $data['author2_id_str_mv']
-            = $this->addNamespaceToAuthRecord($allAuthors['ids']);
+            = $this->addNamespaceToAuthorityIds($allAuthors['ids']);
         $data['author2_id_role_str_mv']
-            = $this->addNamespaceToAuthRecord($allAuthors['idRoles']);
+            = $this->addNamespaceToAuthorityIds($allAuthors['idRoles']);
 
         $corporateAuthors = $this->getCorporateAuthors();
         $data['author_corporate_id_str_mv']
-            = $this->addNamespaceToAuthRecord($corporateAuthors['ids']);
+            = $this->addNamespaceToAuthorityIds($corporateAuthors['ids']);
 
         return $data;
     }
@@ -298,9 +298,9 @@ class Forward extends \RecordManager\Base\Record\Forward
      *
      * @return array
      */
-    protected function getPrimaryAuthorsExtended()
+    protected function getPrimaryAuthorsSorted()
     {
-        $unsortedPrimaryAuthors = parent::getPrimaryAuthorsExtended();
+        $unsortedPrimaryAuthors = parent::getPrimaryAuthorsSorted();
 
         // Make sure directors are first of the primary authors
         $directors = $others = [
