@@ -42,6 +42,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Forward extends \RecordManager\Base\Record\Forward
 {
+    use FinnaRecordTrait;
     /**
      * Default primary author relator codes, may be overridden in configuration.
      *
@@ -84,7 +85,7 @@ class Forward extends \RecordManager\Base\Record\Forward
      * @var array
      */
     protected $corporateAuthorRelators = [
-        'E10', 'dst', 'prn', 'fnd', 'lbr'
+        'e10', 'dst', 'prn', 'fnd', 'lbr'
     ];
 
     /**
@@ -139,6 +140,23 @@ class Forward extends \RecordManager\Base\Record\Forward
         }
 
         $data['building'] = $this->getBuilding();
+
+        $primaryAuthors = $this->getPrimaryAuthorsSorted();
+
+        $data['author_id_str_mv']
+            = $this->addNamespaceToAuthorityIds($primaryAuthors['ids']);
+        $data['author_id_role_str_mv']
+            = $this->addNamespaceToAuthorityIds($primaryAuthors['idRoles']);
+
+        $allAuthors = $this->getAuthorsByRelator();
+        $data['author2_id_str_mv']
+            = $this->addNamespaceToAuthorityIds($allAuthors['ids']);
+        $data['author2_id_role_str_mv']
+            = $this->addNamespaceToAuthorityIds($allAuthors['idRoles']);
+
+        $corporateAuthors = $this->getCorporateAuthors();
+        $data['author_corporate_id_str_mv']
+            = $this->addNamespaceToAuthorityIds($corporateAuthors['ids']);
 
         return $data;
     }
@@ -237,19 +255,19 @@ class Forward extends \RecordManager\Base\Record\Forward
     }
 
     /**
-     * Get authors by relator codes
+     * Get all authors or authors by relator codes.
      *
-     * @param array $relators Allowed relators
+     * @param array $relators List of allowed relators, or an empty list
+     *                        to return all authors.
      *
-     * @return array Array keyed by 'names' for author names, 'ids' for author ids
-     * and 'relators' for relator codes
+     * @return array
      */
-    protected function getAuthorsByRelator($relators)
+    protected function getAuthorsByRelator($relators = [])
     {
-        $result = ['names' => [], 'ids' => [], 'relators' => []];
+        $result = ['names' => [], 'ids' => [], 'relators' => [], 'idRoles' => []];
         foreach ($this->getMainElement()->HasAgent as $agent) {
             $relator = $this->getRelator($agent);
-            if (!in_array($relator, $relators)) {
+            if (!empty($relators) && !in_array($relator, $relators)) {
                 continue;
             }
             $name = (string)$agent->AgentName;
@@ -265,11 +283,48 @@ class Forward extends \RecordManager\Base\Record\Forward
                 . (string)$agent->AgentIdentifier->IDValue;
             if ($id != ':') {
                 $result['ids'][] = $id;
+                $result['idRoles'][]
+                    = $this->formatAuthorIdWithRole($id, $relator);
+
             }
             $result['relators'][] = $relator;
         }
 
         return $result;
+    }
+
+    /**
+     * Get primary authors with names and relators.
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthorsSorted()
+    {
+        $unsortedPrimaryAuthors = parent::getPrimaryAuthorsSorted();
+
+        // Make sure directors are first of the primary authors
+        $directors = $others = [
+            'ids' => [],
+            'idRoles' => []
+        ];
+
+        foreach ($unsortedPrimaryAuthors['relators'] as $i => $relator) {
+            if ('d02' === $relator) {
+                $directors['ids'][] = $unsortedPrimaryAuthors['ids'][$i] ?? null;
+                $directors['idRoles'][]
+                    = $unsortedPrimaryAuthors['idRoles'][$i] ?? null;
+            } else {
+                $others['ids'][] = $unsortedPrimaryAuthors['ids'][$i] ?? null;
+                $others['idRoles'][]
+                    = $unsortedPrimaryAuthors['idRoles'][$i] ?? null;
+            }
+        }
+        $unsortedPrimaryAuthors['ids']
+            = array_merge($directors['ids'], $others['ids']);
+        $unsortedPrimaryAuthors['idRoles']
+            = array_merge($directors['idRoles'], $others['idRoles']);
+
+        return $unsortedPrimaryAuthors;
     }
 
     /**
@@ -359,13 +414,19 @@ class Forward extends \RecordManager\Base\Record\Forward
         }
         $activity = $agent->Activity;
         $relator = MetadataUtils::normalizeRelator((string)$activity);
-        if (($relator == 'a99' || $relator == 'e99')
-            && !empty($activity->attributes()->{'finna-activity-text'})
-        ) {
-            $relator = (string)$activity->attributes()->{'finna-activity-text'};
+        if (in_array($relator, ['a00', 'a08', 'a99', 'd99', 'e04', 'e99'])) {
+            $relator = null;
+            foreach (
+                ['finna-activity-text', 'tehtava', 'elokuva-elotekija-tehtava']
+                as $field
+            ) {
+                if (!empty($activity->attributes()->{$field})) {
+                    $relator = (string)$activity->attributes()->{$field};
+                    break;
+                }
+            }
         }
         return $relator;
-
     }
 
     /**
