@@ -271,41 +271,56 @@ class Ead3 extends Ead
     }
 
     /**
-     * Get geographic topics
-     *
-     * @return array
-     */
-    protected function getGeographicTopics()
-    {
-        $result = [];
-        if (!isset($this->doc->did->controlaccess->geogname)) {
-            return $result;
-        }
-        foreach ($this->doc->did->controlaccess->geogname as $name) {
-            if (trim((string)$name) !== '-') {
-                $result[] = trim((string)$name);
-            }
-        }
-        return $result;
-    }
-
-    /**
      * Get topics
      *
      * @return array
      */
     protected function getTopics()
     {
+        return $this->getTopicsHelper('subject');
+    }
+
+    /**
+     * Get geographic topics
+     *
+     * @return array
+     */
+    protected function getGeographicTopics()
+    {
+        return $this->getTopicsHelper('geogname');
+    }
+
+    /**
+     * Helper function for getting topics
+     *
+     * @param string      $nodeName Name of node that contains the topic terms
+     * @param string|null $relator  Value of topic node relator-attribute
+     * @param boolean     $URIs     Return topic URI instead of label?
+     *
+     * @return array
+     */
+    protected function getTopicsHelper($nodeName, $relator = null, $URIs = false)
+    {
         $result = [];
-        if (!isset($this->doc->did->controlaccess->subject)) {
+        if (!isset($this->doc->controlaccess->{$nodeName})) {
             return $result;
         }
-        foreach ($this->doc->did->controlaccess->subject as $subject) {
-            if (trim((string)$subject) !== '-') {
-                $result[] = trim((string)$subject);
+
+        foreach ($this->doc->controlaccess->{$nodeName} as $node) {
+            $attr = $node->attributes();
+            if ((!$relator || (string)$attr->relator === $relator)) {
+                $topic = null;
+                if (!$URIs && isset($node->part)) {
+                    $topic = (string)$node->part;
+                } else if (isset($attr->identifier)) {
+                    $topic = (string)$attr->identifier;
+                }
+                if ('' !== ($topic = trim($topic))) {
+                    $result[] = $topic;
+                }
             }
         }
-        return $result;
+        return array_unique($result);
     }
 
     /**

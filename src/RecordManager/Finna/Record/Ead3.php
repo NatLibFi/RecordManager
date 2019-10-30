@@ -134,6 +134,11 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 }
             }
         }
+        if (isset($data['online_boolean'])
+            && !isset($this->doc->accessrestrict->p)
+        ) {
+            $data['free_online_boolean'] = true;
+        }
 
         if ($this->doc->did->unitid) {
             foreach ($this->doc->did->unitid as $i) {
@@ -225,6 +230,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         $data['format_ext_str_mv'] = $data['format'];
 
         $data['topic_uri_str_mv'] = $this->getTopicURIs();
+        $data['geographic_uri_str_mv'] = $this->getGeographicTopicURIs();
 
         return $data;
     }
@@ -511,23 +517,22 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      *
      * @return array
      */
-    protected function getTopicURIs()
+    public function getTopicURIs()
     {
-        $result = [];
-        if (!isset($this->doc->controlaccess->subject)) {
-            return $result;
-        }
-        foreach ($this->doc->controlaccess->subject as $subject) {
-            $attr = $subject->attributes();
-            if (isset($attr->relator)
-                && (string)$attr->relator === 'aihe'
-                && isset($attr->identifier)
-                && ('' !== ($id = trim((string)$attr->identifier)))
-            ) {
-                $result[] = $id;
-            }
-        }
-        return array_unique($result);
+        return $this->getTopicsHelper('subject', 'aihe', true);
+    }
+
+    /**
+     * Get geographic topics URIs
+     *
+     * @return array
+     */
+    protected function getGeographicTopicURIs()
+    {
+        return array_merge(
+            $this->getTopicsHelper('geogname', 'aihe', true),
+            $this->getTopicsHelper('geogname', 'alueellinen kattavuus', true)
+        );
     }
 
     /**
@@ -586,21 +591,20 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      */
     protected function getTopics()
     {
-        $result = [];
-        if (!isset($this->doc->controlaccess->subject)) {
-            return $result;
-        }
-        foreach ($this->doc->controlaccess->subject as $subject) {
-            $attr = $subject->attributes();
-            if (isset($attr->relator)
-                && (string)$attr->relator === 'aihe'
-                && isset($subject->part)
-                && ('' !== ($subject = trim((string)$subject->part)))
-            ) {
-                $result[] = $subject;
-            }
-        }
-        return $result;
+        return $this->getTopicsHelper('subject', 'aihe');
+    }
+
+    /**
+     * Get geographic topics
+     *
+     * @return array
+     */
+    protected function getGeographicTopics()
+    {
+        return array_merge(
+            $this->getTopicsHelper('geogname', 'aihe'),
+            $this->getTopicsHelper('geogname', 'alueellinen kattavuus')
+        );
     }
 
     /**
@@ -610,15 +614,20 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      */
     protected function getInstitution()
     {
-        if (isset($this->doc->did->repository->corpname)) {
-            foreach ($this->doc->did->repository->corpname as $node) {
-                if (! isset($node->part)) {
+        if (isset($this->doc->did->repository)) {
+            foreach ($this->doc->did->repository as $repo) {
+                $attr = $repo->attributes();
+                if (! isset($attr->encodinganalog)
+                    || 'ahaa:AI42' !== (string)$attr->encodinganalog
+                ) {
                     continue;
                 }
-                foreach ($node->part->attributes() as $key => $val) {
-                    if ($key === 'lang' && (string)$val === 'fin') {
-                        return (string)$node->part;
+                foreach ($repo->corpname as $node) {
+                    $attr = $node->attributes();
+                    if (! isset($attr->identifier)) {
+                        continue;
                     }
+                    return (string)$attr->identifier;
                 }
             }
         }
