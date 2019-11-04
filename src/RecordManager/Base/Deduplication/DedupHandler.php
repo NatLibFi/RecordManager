@@ -319,10 +319,7 @@ class DedupHandler
                     }
                     ++$candidateCount;
                     // Verify the candidate has not been deduped with this source yet
-                    if (isset($candidate['dedup_id'])
-                        && (!isset($record['dedup_id'])
-                        || $candidate['dedup_id'] != $record['dedup_id'])
-                    ) {
+                    if (isset($candidate['dedup_id'])) {
                         if ($this->db->findRecord(
                             [
                                 'dedup_id' => $candidate['dedup_id'],
