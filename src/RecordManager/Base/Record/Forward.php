@@ -211,31 +211,9 @@ class Forward extends Base
         $data['url'] = $this->getUrls();
         $data['thumbnail'] = $this->getThumbnail();
 
-        $unsortedPrimaryAuthors = $this->getPrimaryAuthors();
-        // Make sure directors are first of the primary authors
-        $directors = $others = [
-            'names' => [],
-            'ids' => [],
-            'relators' => []
-        ];
-        foreach ($unsortedPrimaryAuthors['relators'] as $i => $relator) {
-            if ('d02' === $relator) {
-                $directors['names'][] = $unsortedPrimaryAuthors['names'][$i];
-                $directors['ids'][] = $unsortedPrimaryAuthors['ids'][$i];
-                $directors['relators'][] = $unsortedPrimaryAuthors['relators'][$i];
-            } else {
-                $others['names'][] = $unsortedPrimaryAuthors['names'][$i];
-                $others['ids'][] = $unsortedPrimaryAuthors['ids'][$i];
-                $others['relators'][] = $unsortedPrimaryAuthors['relators'][$i];
-            }
-        }
-        $primaryAuthors = [
-            'names' => array_merge($directors['names'], $others['names']),
-            'ids' => array_merge($directors['ids'], $others['ids']),
-            'relators' => array_merge($directors['relators'], $others['relators'])
-        ];
-
+        $primaryAuthors = $this->getPrimaryAuthorsSorted();
         $data['author'] = $primaryAuthors['names'];
+
         // Support for author_variant is currently not implemented
         $data['author_role'] = $primaryAuthors['relators'];
         if (isset($primaryAuthors['names'][0])) {
@@ -309,19 +287,19 @@ class Forward extends Base
     }
 
     /**
-     * Get authors by relator codes
+     * Get all authors or authors by relator codes.
      *
-     * @param array $relators Allowed relators
+     * @param array $relators List of allowed relators, or an empty list
+     *                        to return all authors.
      *
-     * @return array Array keyed by 'names' for author names, 'ids' for author ids
-     * and 'relators' for relator codes
+     * @return array
      */
-    protected function getAuthorsByRelator($relators)
+    protected function getAuthorsByRelator($relators = [])
     {
         $result = ['names' => [], 'ids' => [], 'relators' => []];
         foreach ($this->getMainElement()->HasAgent as $agent) {
             $relator = $this->getRelator($agent);
-            if (!in_array($relator, $relators)) {
+            if (!empty($relators) && !in_array($relator, $relators)) {
                 continue;
             }
             $result['names'][] = (string)$agent->AgentName;
@@ -345,7 +323,7 @@ class Forward extends Base
      */
     protected function getRelator($agent)
     {
-        return $MetadataUtils::normalizeRelator((string)$agent->Activity);
+        return MetadataUtils::normalizeRelator((string)$agent->Activity);
     }
 
     /**
@@ -376,6 +354,34 @@ class Forward extends Base
     protected function getCorporateAuthors()
     {
         return $this->getAuthorsByRelator($this->corporateAuthorRelators);
+    }
+
+    /**
+     * Get sorted primary authors with names and relators.
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthorsSorted()
+    {
+        $unsortedPrimaryAuthors = $this->getPrimaryAuthors();
+        // Make sure directors are first of the primary authors
+        $directors = $others = [
+            'names' => [],
+            'relators' => [],
+        ];
+        foreach ($unsortedPrimaryAuthors['relators'] as $i => $relator) {
+            if ('d02' === $relator) {
+                $directors['names'][] = $unsortedPrimaryAuthors['names'][$i];
+                $directors['relators'][] = $unsortedPrimaryAuthors['relators'][$i];
+            } else {
+                $others['names'][] = $unsortedPrimaryAuthors['names'][$i];
+                $others['relators'][] = $unsortedPrimaryAuthors['relators'][$i];
+            }
+        }
+        return [
+            'names' => array_merge($directors['names'], $others['names']),
+            'relators' => array_merge($directors['relators'], $others['relators']),
+        ];
     }
 
     /**
