@@ -564,7 +564,7 @@ class Lido extends Base
             }
             $term = $set->resourceType->term;
             if (in_array(strtolower($term), $this->allowedOnlineFormats)) {
-                foreach($set->resourceRepresentation as $node) {
+                foreach ($set->resourceRepresentation as $node) {
                     if (!empty($node->linkResource)) {
                         $link = trim((string) $node->linkResource);
                         if (!empty($link)) {
