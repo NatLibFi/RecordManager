@@ -850,7 +850,9 @@ class Lido extends \RecordManager\Base\Record\Lido
         }
 
         if (!empty($gml->Point)) {
-            if (isset($gml->Point->pos)) {
+            $lat = null;
+            $lon = null;
+            if (!empty($gml->Point->pos)) {
                 $coordinates = trim((string)$gml->Point->pos);
                 if (!$coordinates) {
                     $this->logger->log(
@@ -861,7 +863,11 @@ class Lido extends \RecordManager\Base\Record\Lido
                     );
                     $this->storeWarning('empty gml pos in point');
                 }
-                list($lat, $lon) = explode(' ', (string)$coordinates, 2);
+                $latlon = explode(' ', (string)$coordinates, 2);
+                if (isset($latlon[1])) {
+                    $lat = $latlon[0];
+                    $lon = $latlon[1];
+                }
             } elseif (isset($gml->Point->coordinates)) {
                 $coordinates = trim((string)$gml->Point->coordinates);
                 if (!$coordinates) {
@@ -874,8 +880,13 @@ class Lido extends \RecordManager\Base\Record\Lido
                     $this->storeWarning('empty gml coordinates in point');
                     return '';
                 }
-                list($lat, $lon) = explode(',', (string)$coordinates, 2);
-            } else {
+                $latlon = explode(',', (string)$coordinates, 2);
+                if (isset($latlon[1])) {
+                    $lat = $latlon[0];
+                    $lon = $latlon[1];
+                }
+            }
+            if (null === $lat || null === $lon) {
                 $this->logger->log(
                     'Lido',
                     "GML Point does not contain pos or coordinates, record "
