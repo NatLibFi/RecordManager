@@ -70,6 +70,13 @@ class Lido extends Base
     ];
 
     /**
+     * Allowed online url resource formats
+     */
+    protected $allowedOnlineFormats = [
+        '3d'
+    ];
+
+    /**
      * Set record data
      *
      * @param string $source Source ID
@@ -536,6 +543,40 @@ class Lido extends Base
                     $link = trim((string) $node->linkResource);
                     if (!empty($link)) {
                         $results[] = $link;
+                    }
+                }
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Return online urls for resources
+     *
+     * @return array
+     */
+    protected function getOnlineUrls()
+    {
+        $results = [];
+        foreach ($this->getResourceSetNodes() as $set) {
+            if (!isset($set->resourceType->term)) {
+                continue;
+            }
+            $term = $set->resourceType->term;
+            if (in_array(strtolower($term, $this->allowedOnlineFormats))) {
+                foreach($set->resourceRepresentation as $node) {
+                    if (!empty($node->linkResource)) {
+                        $link = trim((string) $node->linkResource);
+                        if (!empty($link)) {
+                            $result = [
+                                'url' => $link,
+                                'format' => isset($node->formatResource)
+                                    ? trim($node->formatResource)
+                                    : 'format_undefined'
+                            ];
+                   
+                            $results[] = $result;
+                        }
                     }
                 }
             }

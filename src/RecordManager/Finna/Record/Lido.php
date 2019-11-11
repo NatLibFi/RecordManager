@@ -180,6 +180,15 @@ class Lido extends \RecordManager\Base\Record\Lido
             $data['free_online_str_mv'] = $this->source;
         }
 
+        foreach ($this->getOnlineUrls() as $url) {
+            $link = [
+                'url' => $url['format'],
+                'format' => $url['format'],
+                'source' => $this->source
+            ];
+            $data['online_urls_str_mv'][] = json_encode($link);
+        }
+
         $data['location_geo'] = $this->getEventPlaceLocations();
         $data['center_coords']
             = MetadataUtils::getCenterCoordinates($data['location_geo']);
