@@ -182,7 +182,7 @@ class Lido extends \RecordManager\Base\Record\Lido
 
         foreach ($this->getOnlineUrls() as $url) {
             $link = [
-                'url' => $url['format'],
+                'url' => $url['url'],
                 'format' => $url['format'],
                 'source' => $this->source
             ];
