@@ -140,18 +140,27 @@ class DedupHandler
     public function checkDedupRecord($dedupRecord)
     {
         $results = [];
+        $sources = [];
         foreach ((array)$dedupRecord['ids'] as $id) {
             $record = $this->db->getRecord($id);
+            $sourceAlreadyExists = false;
+            if ($record) {
+                $source = $record['source_id'];
+                $sourceAlreadyExists = isset($sources[$source]);
+                $sources[$source] = true;
+            }
             if (!$record
+                || $sourceAlreadyExists
                 || $dedupRecord['deleted']
                 || $record['deleted']
                 || count($dedupRecord['ids']) < 2
                 || !isset($record['dedup_id'])
                 || $record['dedup_id'] != $dedupRecord['_id']
             ) {
-                $this->removeFromDedupRecord($dedupRecord['_id'], $id);
                 if (!$record) {
                     $reason = 'record does not exist';
+                } elseif ($sourceAlreadyExists) {
+                    $reason = 'already deduplicated with a record from same source';
                 } elseif ($dedupRecord['deleted']) {
                     $reason = 'dedup record deleted';
                 } elseif ($record['deleted']) {
@@ -164,6 +173,7 @@ class DedupHandler
                     $reason
                         = "record linked with dedup record '{$record['dedup_id']}'";
                 }
+                $this->removeFromDedupRecord($dedupRecord['_id'], $id);
                 $this->db->updateRecords(
                     ['_id' => $id, 'deleted' => false],
                     ['update_needed' => true],
@@ -174,6 +184,43 @@ class DedupHandler
             }
         }
         return $results;
+    }
+
+    /**
+     * Verify record links
+     *
+     * @param array $record Record
+     *
+     * @return string Fix message or empty string for no problems
+     */
+    public function checkRecordLinks($record)
+    {
+        if (empty($record['dedup_id'])) {
+            return '';
+        }
+        $id = $record['_id'];
+        $dedupRecord = $this->db->getDedup($record['dedup_id']);
+
+        if (!$dedupRecord) {
+            $this->db->updateRecords(
+                ['_id' => $id, 'deleted' => false],
+                ['update_needed' => true],
+                ['dedup_id' => 1]
+            );
+            return "Removed dedup_id {$record['dedup_id']} from record"
+                . " $id (dedup record does not exist";
+        }
+
+        if (!in_array($id, (array)$dedupRecord['ids'])) {
+            $this->db->updateRecords(
+                ['_id' => $id, 'deleted' => false],
+                ['update_needed' => true],
+                ['dedup_id' => 1]
+            );
+            return "Removed dedup_id {$record['dedup_id']} from record"
+                . " $id (dedup record does not contain the id";
+        }
+        return '';
     }
 
     /**
