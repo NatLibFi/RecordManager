@@ -72,8 +72,15 @@ class Lido extends Base
     /**
      * Allowed online url resource formats
      */
-    protected $allowedOnlineFormats = [
+    protected $allowedOnlineTerms = [
         '3d', '3d model'
+    ];
+
+    /**
+     * List of allowed model extensions to be listed in online url data field
+     */
+    protected $modelExtensions = [
+        'gltf', '3d-pdf'
     ];
 
     /**
@@ -563,19 +570,24 @@ class Lido extends Base
                 continue;
             }
             $term = $set->resourceType->term;
-            if (in_array(strtolower($term), $this->allowedOnlineFormats)) {
+            if (in_array(strtolower($term), $this->allowedOnlineTerms)) {
                 foreach ($set->resourceRepresentation as $node) {
                     if (!empty($node->linkResource)) {
                         $link = trim((string) $node->linkResource);
                         if (!empty($link)) {
-                            $result = [
-                                'url' => $link,
-                                'format' => isset($node->formatResource)
-                                    ? trim($node->formatResource)
-                                    : 'format_undefined'
-                            ];
-                   
-                            $results[] = $result;
+                            $format = isset($node->linkResource->formatResource)
+                                ? trim((string) $node->linkResource->formatResource)
+                                : '';
+                            if (!empty($format)
+                                && in_array(strtolower($format), $this->modelExtensions)
+                            ) {
+                                $result = [
+                                    'url' => $link,
+                                    'format' => $format
+                                ];
+                       
+                                $results[] = $result;
+                            }
                         }
                     }
                 }
