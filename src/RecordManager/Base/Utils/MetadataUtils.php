@@ -922,6 +922,19 @@ class MetadataUtils
     }
 
     /**
+     * Extract record source from an ID
+     *
+     * @param string $id Record ID
+     *
+     * @return string
+     */
+    public static function getSourceFromId($id)
+    {
+        $parts = explode('.', $id, 2);
+        return $parts[0];
+    }
+
+    /**
      * Read a list file into an array
      *
      * @param string $basePath Base path
