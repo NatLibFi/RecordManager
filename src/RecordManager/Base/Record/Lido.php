@@ -579,7 +579,8 @@ class Lido extends Base
                                 ? trim((string) $node->linkResource->formatResource)
                                 : '';
                             if (!empty($format)
-                                && in_array(strtolower($format), $this->modelExtensions)
+                                && in_array(strtolower($format),
+                                    $this->modelExtensions)
                             ) {
                                 $result = [
                                     'url' => $link,
