@@ -73,7 +73,7 @@ class Lido extends Base
      * Allowed online url resource formats
      */
     protected $allowedOnlineFormats = [
-        '3d'
+        '3d', '3d model'
     ];
 
     /**
