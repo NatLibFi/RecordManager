@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -73,13 +73,6 @@ class DedupHandler
      * @var bool
      */
     protected $verbose;
-
-    /**
-     * Array used to track keys that result in too many candidates
-     *
-     * @var array
-     */
-    protected $tooManyCandidatesKeys = [];
 
     /**
      * FieldMapper for format mapping
@@ -318,14 +311,13 @@ class DedupHandler
                         }
                     }
                     ++$candidateCount;
+
                     // Verify the candidate has not been deduped with this source yet
-                    if (isset($candidate['dedup_id'])
-                        && (!isset($record['dedup_id'])
-                        || $candidate['dedup_id'] != $record['dedup_id'])
-                    ) {
+                    $candidateDedupId = (string)($candidate['dedup_id'] ?? '');
+                    if ($candidateDedupId) {
                         if ($this->db->findRecord(
                             [
-                                'dedup_id' => $candidate['dedup_id'],
+                                'dedup_id' => $candidateDedupId,
                                 'source_id' => $record['source_id']
                             ]
                         )
@@ -338,10 +330,7 @@ class DedupHandler
                         }
                     }
 
-                    if (++$processed > 1000
-                        || (isset($this->tooManyCandidatesKeys["$type=$keyPart"])
-                        && $processed > 100)
-                    ) {
+                    if (++$processed > 100) {
                         // Too many candidates, give up..
                         $this->log->log(
                             'dedupRecord',
@@ -349,10 +338,6 @@ class DedupHandler
                             . " with key '$keyPart'",
                             Logger::DEBUG
                         );
-                        if (count($this->tooManyCandidatesKeys) > 2000) {
-                            array_shift($this->tooManyCandidatesKeys);
-                        }
-                        $this->tooManyCandidatesKeys["$type=$keyPart"] = 1;
                         break;
                     }
 
@@ -707,13 +692,14 @@ class DedupHandler
             'update_needed' => false
         ];
         if (!empty($rec2['dedup_id'])) {
-            if (isset($rec1['dedup_id']) && $rec1['dedup_id'] != $rec2['dedup_id']) {
-                $this->removeFromDedupRecord($rec1['dedup_id'], $rec1['_id']);
-            }
             if (!$this->addToDedupRecord($rec2['dedup_id'], $rec1['_id'])) {
+                $this->removeFromDedupRecord($rec2['dedup_id'], $rec2['_id']);
                 $rec2['dedup_id'] = $this->createDedupRecord(
                     $rec1['_id'], $rec2['_id']
                 );
+            }
+            if (isset($rec1['dedup_id']) && $rec1['dedup_id'] != $rec2['dedup_id']) {
+                $this->removeFromDedupRecord($rec1['dedup_id'], $rec1['_id']);
             }
             $setValues['dedup_id'] = $rec1['dedup_id'] = $rec2['dedup_id'];
         } else {
@@ -782,6 +768,12 @@ class DedupHandler
         $record = $this->db->findDedup(['_id' => $dedupId, 'deleted' => false]);
         if (!$record) {
             return false;
+        }
+        $source = MetadataUtils::getSourceFromId($id);
+        foreach ((array)$record['ids'] as $existingId) {
+            if ($source === MetadataUtils::getSourceFromId($existingId)) {
+                return false;
+            }
         }
         if (!in_array($id, (array)$record['ids'])) {
             $record['changed'] = $this->db->getTimestamp();
