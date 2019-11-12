@@ -71,6 +71,8 @@ class Lido extends Base
 
     /**
      * Allowed online url resource types
+     * 
+     * @var array
      */
     protected $allowedOnlineTerms = [
         '3d', '3d model'
@@ -78,6 +80,8 @@ class Lido extends Base
 
     /**
      * List of allowed model extensions to be listed in online url data field
+     * 
+     * @var array
      */
     protected $modelExtensions = [
         'gltf', '3d-pdf'
