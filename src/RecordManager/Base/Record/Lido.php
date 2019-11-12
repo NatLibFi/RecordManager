@@ -70,7 +70,7 @@ class Lido extends Base
     ];
 
     /**
-     * Allowed online url resource formats
+     * Allowed online url resource types
      */
     protected $allowedOnlineTerms = [
         '3d', '3d model'
