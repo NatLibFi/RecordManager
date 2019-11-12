@@ -53,7 +53,7 @@ class CheckDedup extends AbstractBase
 
         $dedupHandler = $this->getDedupHandler();
 
-        $params = ['_id' => 'dsadf'];
+        $params = [];
         if ($singleId) {
             $record = $this->db->getRecord($singleId);
             if (!$record) {
