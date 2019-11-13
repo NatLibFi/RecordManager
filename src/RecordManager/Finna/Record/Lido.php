@@ -69,6 +69,24 @@ class Lido extends \RecordManager\Base\Record\Lido
     ];
 
     /**
+     * Terms which are considered as obtainable online
+     * 
+     * @var array
+     */
+    protected $onlineTerms = [
+        '3d', '3d model'
+    ];
+
+    /**
+     * List of allowed model extensions to be listed in online url data field
+     * 
+     * @var array
+     */
+    protected $modelExtensions = [
+        'gltf', '3d-pdf'
+    ];
+
+    /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
      * @return array
@@ -172,7 +190,7 @@ class Lido extends \RecordManager\Base\Record\Lido
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
 
-        if ($this->getURLs()) {
+        if ($this->getUrls()) {
             $data['online_boolean'] = true;
             $data['online_str_mv'] = $this->source;
             // Mark everything free until we know better
@@ -181,12 +199,7 @@ class Lido extends \RecordManager\Base\Record\Lido
         }
 
         foreach ($this->getOnlineUrls() as $url) {
-            $link = [
-                'url' => $url['url'],
-                'format' => $url['format'],
-                'source' => $this->source
-            ];
-            $data['online_urls_str_mv'][] = json_encode($link);
+            $data['online_urls_str_mv'][] = json_encode($url);
         }
 
         $data['location_geo'] = $this->getEventPlaceLocations();
@@ -233,6 +246,52 @@ class Lido extends \RecordManager\Base\Record\Lido
         $excludedDescriptions = ['provenance']
     ) {
         return parent::getTitle($forFiling, $lang, ['provenienssi']);
+    }
+
+    /**
+     * Return online urls for resources
+     *
+     * @return array
+     */
+    protected function getOnlineUrls()
+    {
+        $results = [];
+        foreach ($this->getResourceSetNodes() as $set) {
+            if (!isset($set->resourceType->term)) {
+                continue;
+            }
+            $term = trim((string)$set->resourceType->term);
+
+            if (in_array(strtolower($term), $this->allowedOnlineTerms)) {
+                foreach ($set->resourceRepresentation as $node) {
+                    if (!empty($node->linkResource)) {
+                        $link = trim((string) $node->linkResource);
+                        if (!empty($link)) {
+                            $format = isset($node->linkResource->formatResource)
+                                ? trim((string) $node->linkResource->formatResource)
+                                : '';
+                            if (!empty($format)
+                                && in_array(
+                                    strtolower($format), $this->modelExtensions
+                                )
+                            ) {
+                                $type = isset($node['type'])
+                                    ? trim((string)$node['type'])
+                                    : '';
+                                $result = [
+                                    'url' => $link,
+                                    'format' => $format,
+                                    'type' => $type
+                                ];
+
+                                $results[] = $result;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return $results;
     }
 
     /**

@@ -70,24 +70,6 @@ class Lido extends Base
     ];
 
     /**
-     * Allowed online url resource types
-     * 
-     * @var array
-     */
-    protected $allowedOnlineTerms = [
-        '3d', '3d model'
-    ];
-
-    /**
-     * List of allowed model extensions to be listed in online url data field
-     * 
-     * @var array
-     */
-    protected $modelExtensions = [
-        'gltf', '3d-pdf'
-    ];
-
-    /**
      * Set record data
      *
      * @param string $source Source ID
@@ -554,47 +536,6 @@ class Lido extends Base
                     $link = trim((string) $node->linkResource);
                     if (!empty($link)) {
                         $results[] = $link;
-                    }
-                }
-            }
-        }
-        return $results;
-    }
-
-    /**
-     * Return online urls for resources
-     *
-     * @return array
-     */
-    protected function getOnlineUrls()
-    {
-        $results = [];
-        foreach ($this->getResourceSetNodes() as $set) {
-            if (!isset($set->resourceType->term)) {
-                continue;
-            }
-            $term = $set->resourceType->term;
-            if (in_array(strtolower($term), $this->allowedOnlineTerms)) {
-                foreach ($set->resourceRepresentation as $node) {
-                    if (!empty($node->linkResource)) {
-                        $link = trim((string) $node->linkResource);
-                        if (!empty($link)) {
-                            $format = isset($node->linkResource->formatResource)
-                                ? trim((string) $node->linkResource->formatResource)
-                                : '';
-                            if (!empty($format)
-                                && in_array(
-                                    strtolower($format), $this->modelExtensions
-                                )
-                            ) {
-                                $result = [
-                                    'url' => $link,
-                                    'format' => $format
-                                ];
-                       
-                                $results[] = $result;
-                            }
-                        }
                     }
                 }
             }
