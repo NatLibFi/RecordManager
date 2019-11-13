@@ -190,16 +190,16 @@ class Lido extends \RecordManager\Base\Record\Lido
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
 
-        if ($this->getUrls()) {
+        if ($this->getURLS()) {
             $data['online_boolean'] = true;
             $data['online_str_mv'] = $this->source;
             // Mark everything free until we know better
             $data['free_online_boolean'] = true;
             $data['free_online_str_mv'] = $this->source;
-        }
 
-        foreach ($this->getOnlineUrls() as $url) {
-            $data['online_urls_str_mv'][] = json_encode($url);
+            foreach ($this->getOnlineUrls() as $url) {
+                $data['online_urls_str_mv'][] = json_encode($url);
+            }
         }
 
         $data['location_geo'] = $this->getEventPlaceLocations();
