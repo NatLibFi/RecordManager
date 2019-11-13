@@ -262,7 +262,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             }
             $term = trim((string)$set->resourceType->term);
 
-            if (in_array(strtolower($term), $this->allowedOnlineTerms)) {
+            if (in_array(strtolower($term), $this->onlineTerms)) {
                 foreach ($set->resourceRepresentation as $node) {
                     if (!empty($node->linkResource)) {
                         $link = trim((string) $node->linkResource);
