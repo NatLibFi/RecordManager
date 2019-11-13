@@ -190,14 +190,14 @@ class Lido extends \RecordManager\Base\Record\Lido
         $data['source_str_mv'] = $this->source;
         $data['datasource_str_mv'] = $this->source;
 
-        if ($this->getURLS()) {
+        if ($this->getURLs()) {
             $data['online_boolean'] = true;
             $data['online_str_mv'] = $this->source;
             // Mark everything free until we know better
             $data['free_online_boolean'] = true;
             $data['free_online_str_mv'] = $this->source;
 
-            foreach ($this->getOnlineUrls() as $url) {
+            foreach ($this->getOnlineURLs() as $url) {
                 $data['online_urls_str_mv'][] = json_encode($url);
             }
         }
@@ -253,7 +253,7 @@ class Lido extends \RecordManager\Base\Record\Lido
      *
      * @return array
      */
-    protected function getOnlineUrls()
+    protected function getOnlineURLs()
     {
         $results = [];
         foreach ($this->getResourceSetNodes() as $set) {
