@@ -68,7 +68,7 @@ class ForwardAuthority extends Base
     public function getID()
     {
         $doc = $this->getMainElement();
-        return (string)$doc->AgentIdentifier->IDTypeName . ':'
+        return (string)$doc->AgentIdentifier->IDTypeName . '_'
             . (string)$doc->AgentIdentifier->IDValue;
     }
 
