@@ -279,9 +279,9 @@ class Forward extends \RecordManager\Base\Record\Forward
                 }
             }
             $result['names'][] = $name;
-            $id = (string)$agent->AgentIdentifier->IDTypeName . ':'
+            $id = (string)$agent->AgentIdentifier->IDTypeName . '_'
                 . (string)$agent->AgentIdentifier->IDValue;
-            if ($id != ':') {
+            if ($id != '_') {
                 $result['ids'][] = $id;
                 $result['idRoles'][]
                     = $this->formatAuthorIdWithRole($id, $relator);
