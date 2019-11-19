@@ -1769,7 +1769,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         ];
         $titleFields = [
             '130' => ['n' => 1],
-            '240' => ['n' => 1],
+            '240' => ['n' => 1, 'm' => 1, 'r' => 1],
             '245' => ['b' => 1, 'n' => 1],
             '246' => ['b' => 1, 'n' => 1],
             '247' => ['b' => 1, 'n' => 1],

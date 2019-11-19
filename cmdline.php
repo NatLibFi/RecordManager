@@ -38,15 +38,11 @@ ini_set('display_errors', '1');
 // command line by providing XHProf location, e.g.
 // RECMAN_PROFILE=http://localhost/xhprof php manage.php ...
 if (!empty(getenv('RECMAN_PROFILE'))) {
-    if (extension_loaded('xhprof')) {
-        xhprof_enable();
-        register_shutdown_function('finishProfiling');
-    } else if (extension_loaded('tideways')) {
-        tideways_enable();
+    if (extension_loaded('tideways_xhprof')) {
+        tideways_xhprof_enable();
         register_shutdown_function('finishProfiling');
     } else {
-        echo 'WARNING: No xhprof or tideways extension available, profiling'
-            . " disabled\n";
+        echo "WARNING: No tideways_xhprof extension available, profiling disabled\n";
     }
 }
 
@@ -181,7 +177,7 @@ function releaseLock($handle)
  */
 function finishProfiling()
 {
-    $xhprofData = extension_loaded('xhprof') ? xhprof_disable() : tideways_disable();
+    $xhprofData = tideways_xhprof_disable();
     $xhprofRunId = uniqid();
     $suffix = 'recman';
     $dir = ini_get('xhprof.output_dir');

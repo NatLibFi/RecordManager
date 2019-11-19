@@ -739,7 +739,6 @@ class SolrUpdater
                     $params['$nor'] = $sourceNor;
                 }
                 $params['dedup_id'] = ['$exists' => false];
-                $params['update_needed'] = false;
             }
             $records = $this->db->findRecords($params);
             $total = $this->db->countRecords($params);
@@ -1006,9 +1005,6 @@ class SolrUpdater
             if ($sourceNor) {
                 $params['$nor'] = $sourceNor;
             }
-            if (!$delete) {
-                $params['update_needed'] = false;
-            }
             $params['dedup_id'] = ['$exists' => true];
         }
 
@@ -1076,7 +1072,7 @@ class SolrUpdater
             $totalMergeCount = 0;
             $records = $this->db->findRecords(
                 $params,
-                ['projection' => ['dedup_id' => 1, 'update_needed' => 1]]
+                ['projection' => ['dedup_id' => 1]]
             );
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
@@ -1088,14 +1084,6 @@ class SolrUpdater
                     exit(1);
                 }
                 $id = $record['dedup_id'];
-                if (isset($record['update_needed']) && $record['update_needed']) {
-                    $this->log->log(
-                        'processMerged',
-                        "Record {$record['_id']} needs deduplication and would not"
-                        . " be processed in a normal update",
-                        Logger::WARNING
-                    );
-                }
 
                 if (!isset($prevId) || $prevId != $id) {
                     $this->db->addIdToQueue($collectionName, $id);
@@ -1452,15 +1440,6 @@ class SolrUpdater
             'records' => [],
             'mergedComponents' => 0
         ];
-
-        if (isset($record['update_needed']) && $record['update_needed']) {
-            $this->log->log(
-                'processSingleRecord',
-                "Record {$record['_id']} needs deduplication and would not"
-                . " be processed in a normal update",
-                Logger::WARNING
-            );
-        }
 
         if ($record['deleted']) {
             $result['deleted'][] = (string)$record['_id'];

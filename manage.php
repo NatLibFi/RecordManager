@@ -56,7 +56,7 @@ Parameters:
                     or date (updatesolr)
 --from              Override the date from which to run the update (updatesolr)
 --single            Process only the given record id (deduplicate, updatesolr, dump,
-                    markdeleted, markforupdate)
+                    markdeleted, markforupdate, checkdedup)
 --nocommit          Don't ask Solr to commit the changes (updatesolr)
 --field             Field to analyze (count)
 --force             Force deletesource to proceed even if deduplication is enabled
@@ -194,7 +194,7 @@ EOT;
                     $checkDedup = new \RecordManager\Base\Controller\CheckDedup(
                         $basePath, $config, true, $verbose
                     );
-                    $checkDedup->launch();
+                    $checkDedup->launch($single);
                     break;
                 case 'purgedeleted':
                     if (!isset($params['force']) || !$params['force']) {

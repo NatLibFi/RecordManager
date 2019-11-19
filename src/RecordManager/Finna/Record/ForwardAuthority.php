@@ -40,8 +40,6 @@ namespace RecordManager\Finna\Record;
  */
 class ForwardAuthority extends \RecordManager\Base\Record\ForwardAuthority
 {
-    use FinnaAuthorityRecordTrait;
-
     /**
      * Get occupations
      *
