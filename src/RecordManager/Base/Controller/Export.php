@@ -151,7 +151,6 @@ class Export extends AbstractBase
                             => $this->db->getTimestamp(strtotime($untilCreateDate))
                     ];
                 }
-                $params['update_needed'] = false;
                 if ($sourceId && $sourceId !== '*') {
                     $sources = explode(',', $sourceId);
                     if (count($sources) == 1) {
