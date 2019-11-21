@@ -387,6 +387,83 @@ class SolrUpdater
     protected $normalShardStatuses = ['active', 'inactive', 'construction'];
 
     /**
+     * Solr field for dedup id
+     *
+     * @var string
+     */
+    protected $dedupIdField = 'dedup_id_str_mv';
+
+    /**
+     * Solr field for container title
+     *
+     * @var string
+     */
+    protected $containerTitleField = 'container_title';
+
+    /**
+     * Solr field for container volume
+     *
+     * @var string
+     */
+    protected $containerVolumeField = 'container_volume';
+
+    /**
+     * Solr field for container issue
+     *
+     * @var string
+     */
+    protected $containerIssueField = 'container_issue';
+
+    /**
+     * Solr field for container start page
+     *
+     * @var string
+     */
+    protected $containerStartPageField = 'container_start_page';
+
+    /**
+     * Solr field for container reference
+     *
+     * @var string
+     */
+    protected $containerReferenceField = 'container_reference';
+
+    /**
+     * Solr field for "is hierarchy id"
+     *
+     * @var string
+     */
+    protected $isHierarchyIdField = 'is_hierarchy_id';
+
+    /**
+     * Solr field for "is hierarchy title"
+     *
+     * @var string
+     */
+    protected $isHierarchyTitleField = 'is_hierarchy_title';
+
+    /**
+     * Solr field for hierarchy top id
+     *
+     * @var string
+     */
+    protected $hierarchyTopIdField = 'hierarchy_top_id';
+
+    /**
+     * Solr field for hierarchy parent id
+     *
+     * @var string
+     */
+    protected $hierarchyParentIdField = 'hierarchy_parent_id';
+
+    /**
+     * Solr field for hierarchy parent title
+     *
+     * @var string
+     */
+    protected $hierarchyParentTitleField = 'hierarchy_parent_title';
+
+    /**
      * Constructor
      *
      * @param MongoDB       $db                 Database connection
@@ -497,6 +574,42 @@ class SolrUpdater
         $this->unicodeNormalizationForm
             = isset($config['Solr']['unicode_normalization_form'])
             ? $config['Solr']['unicode_normalization_form'] : '';
+
+        $fields = $config['Solr Fields'] ?? [];
+
+        if (isset($fields['dedup_id'])) {
+            $this->dedupIdField = $fields['dedup_id'];
+        }
+        if (isset($fields['container_title'])) {
+            $this->containerTitleField = $fields['container_title'];
+        }
+        if (isset($fields['container_volume'])) {
+            $this->containerVolumeField = $fields['container_volume'];
+        }
+        if (isset($fields['container_issue'])) {
+            $this->containerIssueField = $fields['container_issue'];
+        }
+        if (isset($fields['container_start_page'])) {
+            $this->containerStartPageField = $fields['container_start_page'];
+        }
+        if (isset($fields['container_reference'])) {
+            $this->containerReferenceField = $fields['container_reference'];
+        }
+        if (isset($fields['is_hierarchy_id'])) {
+            $this->isHierarchyIdField = $fields['is_hierarchy_id'];
+        }
+        if (isset($fields['is_hierarchy_title'])) {
+            $this->isHierarchyTitleField = $fields['is_hierarchy_title'];
+        }
+        if (isset($fields['hierarchy_top_id'])) {
+            $this->hierarchyTopIdField = $fields['hierarchy_top_id'];
+        }
+        if (isset($fields['hierarchy_parent_id'])) {
+            $this->hierarchyParentIdField = $fields['hierarchy_parent_id'];
+        }
+        if (isset($fields['hierarchy_parent_title'])) {
+            $this->hierarchyParentTitleField = $fields['hierarchy_parent_title'];
+        }
 
         // Load settings
         $this->initDatasources($dataSourceSettings);
@@ -1772,8 +1885,8 @@ class SolrUpdater
         }
 
         $data['id'] = $this->createSolrId($record['_id']);
-        if (null !== $dedupRecord) {
-            $data['dedup_id_str_mv'] = (string)$dedupRecord['_id'];
+        if (null !== $dedupRecord && $this->dedupIdField) {
+            $data[$this->dedupIdField] = (string)$dedupRecord['_id'];
         }
 
         // Record links between host records and component parts
@@ -1795,14 +1908,18 @@ class SolrUpdater
                         Logger::WARNING
                     );
                     $warnings[] = 'host record missing';
-                    $data['container_title'] = $metadataRecord->getContainerTitle();
+                    if ($this->containerTitleField) {
+                        $data[$this->containerTitleField]
+                            = $metadataRecord->getContainerTitle();
+                    }
                 }
             }
             if ($hostRecords) {
                 foreach ($hostRecords as $hostRecord) {
-                    $data['hierarchy_parent_id'][] = $this->createSolrId(
-                        $hostRecord['_id']
-                    );
+                    if ($this->hierarchyParentIdField) {
+                        $data[$this->hierarchyParentIdField][]
+                            = $this->createSolrId($hostRecord['_id']);
+                    }
                     $hostMetadataRecord = $this->recordFactory->createRecord(
                         $hostRecord['format'],
                         MetadataUtils::getRecordData($hostRecord, true),
@@ -1810,21 +1927,41 @@ class SolrUpdater
                         $hostRecord['source_id']
                     );
                     $hostTitle = $hostMetadataRecord->getTitle();
-                    $data['hierarchy_parent_title'][] = $hostTitle;
-                    if (empty($data['container_title'])) {
-                        $data['container_title'] = $hostTitle;
+                    if ($this->hierarchyParentTitleField) {
+                        $data[$this->hierarchyParentTitleField][] = $hostTitle;
+                    }
+                    if ($this->containerTitleField
+                        && empty($data[$this->containerTitleField])
+                    ) {
+                        $data[$this->containerTitleField] = $hostTitle;
                     }
                 }
             }
-            $data['container_volume'] = $metadataRecord->getVolume();
-            $data['container_issue'] = $metadataRecord->getIssue();
-            $data['container_start_page'] = $metadataRecord->getStartPage();
-            $data['container_reference'] = $metadataRecord->getContainerReference();
+            if ($this->containerVolumeField) {
+                $data[$this->containerVolumeField] = $metadataRecord->getVolume();
+            }
+            if ($this->containerIssueField) {
+                $data[$this->containerIssueField] = $metadataRecord->getIssue();
+            }
+            if ($this->containerStartPageField) {
+                $data[$this->containerStartPageField]
+                    = $metadataRecord->getStartPage();
+            }
+            if ($this->containerReferenceField) {
+                $data[$this->containerReferenceField]
+                    = $metadataRecord->getContainerReference();
+            }
         } else {
             // Add prefixes to hierarchy linking fields
-            foreach (['hierarchy_top_id', 'hierarchy_parent_id', 'is_hierarchy_id']
-                as $field
-            ) {
+            $hierarchyFields = [
+                $this->hierarchyTopIdField,
+                $this->hierarchyParentIdField,
+                $this->isHierarchyIdField
+            ];
+            foreach ($hierarchyFields as $field) {
+                if (!$field) {
+                    continue;
+                }
                 if (isset($data[$field]) && $data[$field]) {
                     $data[$field] = $this->createSolrId(
                         $record['source_id'] . '.' . $data[$field]
@@ -1833,11 +1970,16 @@ class SolrUpdater
             }
         }
         if ($hasComponentParts) {
-            $data['is_hierarchy_id'] = $this->createSolrId($record['_id']);
-            $data['is_hierarchy_title'] = $metadataRecord->getTitle();
+            if ($this->isHierarchyIdField) {
+                $data[$this->isHierarchyIdField]
+                    = $this->createSolrId($record['_id']);
+            }
+            if ($this->isHierarchyTitleField) {
+                $data[$this->isHierarchyTitleField] = $metadataRecord->getTitle();
+            }
         }
 
-        if (!isset($data['institution']) && isset($settings['institution'])) {
+        if (!isset($data['institution']) && !empty($settings['institution'])) {
             $data['institution'] = $settings['institution'];
         }
 
