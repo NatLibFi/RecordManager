@@ -43,6 +43,8 @@ use RecordManager\Base\Utils\MetadataUtils;
 class Forward extends \RecordManager\Base\Record\Forward
 {
     use FinnaRecordTrait;
+    use ForwardRecordTrait;
+
     /**
      * Default primary author relator codes, may be overridden in configuration.
      *
@@ -212,46 +214,6 @@ class Forward extends \RecordManager\Base\Record\Forward
             }
         }
         return [];
-    }
-
-    /**
-     * Merge component parts to this record
-     *
-     * @param MongoCollection $componentParts Component parts to be merged
-     * @param MongoDate|null  $changeDate     Latest timestamp for the component part
-     *                                        set
-     *
-     * @return int Count of records merged
-     */
-    public function mergeComponentParts($componentParts, &$changeDate)
-    {
-        $count = 0;
-        $parts = [];
-        foreach ($componentParts as $componentPart) {
-            if (null === $changeDate || $changeDate < $componentPart['date']) {
-                $changeDate = $componentPart['date'];
-            }
-            $data = MetadataUtils::getRecordData($componentPart, true);
-            $xml = simplexml_load_string($data);
-            foreach ($xml->children() as $child) {
-                $parts[] = [
-                    'xml' => $child,
-                    'order' => empty($child->Title->PartDesignation->Value)
-                        ? 0 : (int)$child->Title->PartDesignation->Value
-                ];
-            }
-            ++$count;
-        }
-        usort(
-            $parts,
-            function ($a, $b) {
-                return $a['order'] - $b['order'];
-            }
-        );
-        foreach ($parts as $part) {
-            $this->appendXml($this->doc, $part['xml']);
-        }
-        return $count;
     }
 
     /**
@@ -542,31 +504,6 @@ class Forward extends \RecordManager\Base\Record\Forward
                 && (string)$event->attributes()->{'elonet-tag'} === 'skftunniste'
             ) {
                 return 'skf';
-            }
-        }
-    }
-
-    /**
-     * Recursively append XML
-     *
-     * @param SimpleXMLElement $simplexml Node to append to
-     * @param SimpleXMLElement $append    Node to be appended
-     *
-     * @return void
-     */
-    protected function appendXml(&$simplexml, $append)
-    {
-        if ($append !== null) {
-            $name = $append->getName();
-            // addChild doesn't encode & ...
-            $data = (string)$append;
-            $data = str_replace('&', '&amp;', $data);
-            $xml = $simplexml->addChild($name, $data);
-            foreach ($append->attributes() as $key => $value) {
-                 $xml->addAttribute($key, $value);
-            }
-            foreach ($append->children() as $child) {
-                $this->appendXML($xml, $child);
             }
         }
     }
