@@ -49,7 +49,7 @@ class Eaccpf extends Base
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -58,7 +58,7 @@ class Eaccpf extends Base
     {
         parent::setData($source, $oaiID, $data);
 
-        $this->doc = simplexml_load_string($data);
+        $this->doc = $this->parseXMLRecord($data);
     }
 
     /**

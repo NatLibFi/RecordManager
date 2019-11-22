@@ -483,7 +483,7 @@ class OaiPmh extends Base
      *
      * @param string $xml        OAI-PMH response XML
      * @param bool   $resumption Whether this is a request made with a
-     * resumptionToken
+     *                           resumptionToken
      *
      * @return DOMDocument Response as DOM
      * @throws Exception

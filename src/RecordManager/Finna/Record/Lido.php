@@ -214,7 +214,8 @@ class Lido extends \RecordManager\Base\Record\Lido
      * Return record title
      *
      * @param bool     $forFiling            Whether the title is to be used in
-     * filing (e.g. sorting, non-filing characters should be removed)
+     *                                       filing (e.g. sorting, non-filing
+     *                                       characters should be removed)
      * @param string   $lang                 Language
      * @param string[] $excludedDescriptions Description types to exclude
      *
@@ -576,7 +577,8 @@ class Lido extends \RecordManager\Base\Record\Lido
      * Return subjects associated with object.
      *
      * @param string[] $exclude List of subject types to exclude (defaults to 'aihe'
-     * and 'iconclass' since they don't contain human readable terms)
+     *                          and 'iconclass' since they don't contain human
+     *                          readable terms)
      *
      * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
      * #subjectComplexType
@@ -848,7 +850,9 @@ class Lido extends \RecordManager\Base\Record\Lido
         }
 
         if (!empty($gml->Point)) {
-            if (isset($gml->Point->pos)) {
+            $lat = null;
+            $lon = null;
+            if (!empty($gml->Point->pos)) {
                 $coordinates = trim((string)$gml->Point->pos);
                 if (!$coordinates) {
                     $this->logger->log(
@@ -859,7 +863,11 @@ class Lido extends \RecordManager\Base\Record\Lido
                     );
                     $this->storeWarning('empty gml pos in point');
                 }
-                list($lat, $lon) = explode(' ', (string)$coordinates, 2);
+                $latlon = explode(' ', (string)$coordinates, 2);
+                if (isset($latlon[1])) {
+                    $lat = $latlon[0];
+                    $lon = $latlon[1];
+                }
             } elseif (isset($gml->Point->coordinates)) {
                 $coordinates = trim((string)$gml->Point->coordinates);
                 if (!$coordinates) {
@@ -872,8 +880,13 @@ class Lido extends \RecordManager\Base\Record\Lido
                     $this->storeWarning('empty gml coordinates in point');
                     return '';
                 }
-                list($lat, $lon) = explode(',', (string)$coordinates, 2);
-            } else {
+                $latlon = explode(',', (string)$coordinates, 2);
+                if (isset($latlon[1])) {
+                    $lat = $latlon[0];
+                    $lon = $latlon[1];
+                }
+            }
+            if (null === $lat || null === $lon) {
                 $this->logger->log(
                     'Lido',
                     "GML Point does not contain pos or coordinates, record "
@@ -1546,7 +1559,7 @@ class Lido extends \RecordManager\Base\Record\Lido
      * Return names of actors associated with specified event
      *
      * @param string|array $event        Which events to use (omit to scan all
-     * events)
+     *                                   events)
      * @param string|array $role         Which roles to use (omit to scan all roles)
      * @param bool         $includeRoles Whether to include roles
      *

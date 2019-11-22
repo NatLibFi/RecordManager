@@ -1,10 +1,10 @@
 <?php
 /**
- * MarcOnkiLightEnrichment Class
+ * Finna record trait.
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2014-2019.
+ * Copyright (C) The National Library of Finland 2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -21,50 +21,53 @@
  *
  * @category DataManagement
  * @package  RecordManager
- * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Base\Enrichment;
+namespace RecordManager\Finna\Record;
 
 /**
- * MarcOnkiLightEnrichment Class
- *
- * This is a class for enrichment of MARC records from an ONKI Light source.
+ * Finna record trait.
  *
  * @category DataManagement
  * @package  RecordManager
- * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class MarcOnkiLightEnrichment extends OnkiLightEnrichment
+trait FinnaRecordTrait
 {
     /**
-     * Enrich the record and return any additions in solrArray
+     * Prepend authority ID with namespace.
      *
-     * @param string $sourceId  Source ID
-     * @param object $record    Metadata Record
-     * @param array  $solrArray Metadata to be sent to Solr
+     * @param string[] $ids Array of authority ids
      *
-     * @return void
+     * @return string[]
      */
-    public function enrich($sourceId, $record, &$solrArray)
+    protected function addNamespaceToAuthorityIds($ids)
     {
-        if (!($record instanceof \RecordManager\Base\Record\Marc)) {
-            return;
+        if (!is_array($ids)) {
+            $ids = [$ids];
         }
-        $fields = ['650' => 'topic', '651' => 'geographic'];
-        foreach ($fields as $marcField => $solrField) {
-            foreach ($record->getFields($marcField) as $recField) {
-                if ($id = $record->getSubfield($recField, '0')) {
-                    $this->enrichField(
-                        $sourceId, $record, $solrArray, $id, $solrField
-                    );
-                }
-            }
-        }
+        return array_map(
+            function ($id) {
+                return $this->source . ".$id";
+            },
+            $ids
+        );
+    }
+
+    /**
+     * Combine author id and role into a string that can be indexed.
+     *
+     * @param string $id   Id
+     * @param string $role Role
+     *
+     * @return string
+     */
+    protected function formatAuthorIdWithRole($id, $role)
+    {
+        return "{$id}###{$role}";
     }
 }

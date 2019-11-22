@@ -45,13 +45,14 @@ class SolrUpdate extends AbstractBase
      *
      * @param string|null $fromDate      Starting date for updates (if empty
      *                                   string, last update date stored in the
-     * database is used and if null, all records are processed)
+     *                                   database is used and if null, all records
+     *                                   are processed)
      * @param string      $sourceId      Source ID to process, or empty or * for all
      *                                   sources (ignored if record merging is
-     * enabled)
+     *                                   enabled)
      * @param string      $singleId      Process only a record with the given ID
      * @param bool        $noCommit      If true, changes are not explicitly
-     * committed
+     *                                   committed
      * @param bool        $datePerServer Track last Solr update date per server url
      *
      * @return void

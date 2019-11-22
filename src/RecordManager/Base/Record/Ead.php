@@ -84,7 +84,7 @@ class Ead extends Base
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -93,7 +93,7 @@ class Ead extends Base
     {
         parent::setData($source, $oaiID, $data);
 
-        $this->doc = simplexml_load_string($data);
+        $this->doc = $this->parseXMLRecord($data);
     }
 
     /**
@@ -197,15 +197,7 @@ class Ead extends Base
 
         $data = array_merge($data, $this->getGeographicData());
 
-        if ($subjects = $doc->xpath('controlaccess/subject')) {
-            $topics = [];
-            foreach ($subjects as $subject) {
-                if (trim((string)$subject) !== '-') {
-                    $topics[] = trim((string)$subject);
-                }
-            }
-            $data['topic'] = $data['topic_facet'] = $topics;
-        }
+        $data['topic'] = $data['topic_facet'] = $this->getTopics();
 
         $data['format'] = $this->getFormat();
 
@@ -294,6 +286,54 @@ class Ead extends Base
     }
 
     /**
+     * Get topic URIs.
+     *
+     * @return array
+     */
+    public function getTopicURIs()
+    {
+        return $this->getTopicTerms(true);
+    }
+
+    /**
+     * Get topics.
+     *
+     * @return array
+     */
+    protected function getTopics()
+    {
+        return $this->getTopicTerms(false);
+    }
+
+    /**
+     * Get topic labels or URIs.
+     *
+     * @param boolean $uri Whether to return topic URIs or labels.
+     *
+     * @return array
+     */
+    protected function getTopicTerms($uri = false)
+    {
+        if ($subjects = $this->doc->xpath('controlaccess/subject')) {
+            $result = [];
+            foreach ($subjects as $subject) {
+                if (!$uri) {
+                    $label = trim((string)$subject);
+                    if ($label !== '-') {
+                        $result[] = $label;
+                    }
+                } else {
+                    if ($subject->attributes()->href) {
+                        $result[] = (string)$subject->attributes()->href;
+                    }
+                }
+            }
+            return $result;
+        }
+        return [];
+    }
+
+    /**
      * Return subtitle
      *
      * @return string
@@ -307,7 +347,7 @@ class Ead extends Base
         if (in_array($this->getFormat(), $noSubtitleFormats)) {
             return '';
         }
-                
+
         return $this->getUnitId();
     }
 
@@ -357,7 +397,7 @@ class Ead extends Base
     {
         return (string)$this->doc->did->unitid;
     }
-    
+
     /**
      * Get all XML fields
      *

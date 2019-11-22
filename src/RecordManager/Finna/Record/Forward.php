@@ -42,6 +42,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Forward extends \RecordManager\Base\Record\Forward
 {
+    use FinnaRecordTrait;
     /**
      * Default primary author relator codes, may be overridden in configuration.
      *
@@ -84,7 +85,7 @@ class Forward extends \RecordManager\Base\Record\Forward
      * @var array
      */
     protected $corporateAuthorRelators = [
-        'E10', 'dst', 'prn', 'fnd', 'lbr'
+        'e10', 'dst', 'prn', 'fnd', 'lbr'
     ];
 
     /**
@@ -108,7 +109,7 @@ class Forward extends \RecordManager\Base\Record\Forward
             $data['main_date_str'] = $year;
             $data['main_date'] = $this->validateDate("$year-01-01T00:00:00Z");
             $data['search_daterange_mv'][] = $data['publication_daterange']
-                = metadataUtils::dateRangeToStr(
+                = MetadataUtils::dateRangeToStr(
                     ["$year-01-01T00:00:00Z", "$year-12-31T23:59:59Z"]
                 );
         }
@@ -138,26 +139,55 @@ class Forward extends \RecordManager\Base\Record\Forward
             $data['format_ext_str_mv'][] = 'Image';
         }
 
+        $data['building'] = $this->getBuilding();
+
+        $primaryAuthors = $this->getPrimaryAuthorsSorted();
+
+        $data['author_id_str_mv']
+            = $this->addNamespaceToAuthorityIds($primaryAuthors['ids']);
+        $data['author_id_role_str_mv']
+            = $this->addNamespaceToAuthorityIds($primaryAuthors['idRoles']);
+
+        $allAuthors = $this->getAuthorsByRelator();
+        $data['author2_id_str_mv']
+            = $this->addNamespaceToAuthorityIds($allAuthors['ids']);
+        $data['author2_id_role_str_mv']
+            = $this->addNamespaceToAuthorityIds($allAuthors['idRoles']);
+
+        $corporateAuthors = $this->getCorporateAuthors();
+        $data['author_corporate_id_str_mv']
+            = $this->addNamespaceToAuthorityIds($corporateAuthors['ids']);
+
         return $data;
     }
 
     /**
      * Return format from predefined values
-      *
+     *
      * @return string
      */
     public function getFormat()
     {
         foreach ($this->getMainElement()->ProductionEvent as $event) {
-            if (isset($event->elokuva_laji2fin)) {
-                $laji = mb_strtolower((string)$event->elokuva_laji2fin, 'UTF-8');
-                if (strstr($laji, 'sarja') !== false || strstr($laji, 'tv') !== false
-                ) {
-                    return 'Video';
+            if (!isset($event->ProductionEventType)) {
+                continue;
+            }
+            $type = $event->ProductionEventType;
+            if (null !== ($type->attributes()->{'elokuva-laji1fin'})) {
+                $laji = mb_strtolower(
+                    (string)$type->attributes()->{'elokuva-laji1fin'}, 'UTF-8'
+                );
+                switch ($laji) {
+                case 'lyhyt':
+                    return 'VideoShort';
+                case 'pitkä':
+                    return 'VideoFeature';
+                case 'kooste':
+                    return 'VideoCompilation';
                 }
             }
         }
-        return 'MotionPicture';
+        return 'Video';
     }
 
     /**
@@ -189,7 +219,7 @@ class Forward extends \RecordManager\Base\Record\Forward
      *
      * @param MongoCollection $componentParts Component parts to be merged
      * @param MongoDate|null  $changeDate     Latest timestamp for the component part
-     * set
+     *                                        set
      *
      * @return int Count of records merged
      */
@@ -225,19 +255,19 @@ class Forward extends \RecordManager\Base\Record\Forward
     }
 
     /**
-     * Get authors by relator codes
+     * Get all authors or authors by relator codes.
      *
-     * @param array $relators Allowed relators
+     * @param array $relators List of allowed relators, or an empty list
+     *                        to return all authors.
      *
-     * @return array Array keyed by 'names' for author names, 'ids' for author ids
-     * and 'relators' for relator codes
+     * @return array
      */
-    protected function getAuthorsByRelator($relators)
+    protected function getAuthorsByRelator($relators = [])
     {
-        $result = ['names' => [], 'ids' => [], 'relators' => []];
+        $result = ['names' => [], 'ids' => [], 'relators' => [], 'idRoles' => []];
         foreach ($this->getMainElement()->HasAgent as $agent) {
             $relator = $this->getRelator($agent);
-            if (!in_array($relator, $relators)) {
+            if (!empty($relators) && !in_array($relator, $relators)) {
                 continue;
             }
             $name = (string)$agent->AgentName;
@@ -249,15 +279,53 @@ class Forward extends \RecordManager\Base\Record\Forward
                 }
             }
             $result['names'][] = $name;
-            $id = (string)$agent->AgentIdentifier->IDTypeName . ':'
+            $id = (string)$agent->AgentIdentifier->IDTypeName . '_'
                 . (string)$agent->AgentIdentifier->IDValue;
-            if ($id != ':') {
+            if ($id != '_') {
                 $result['ids'][] = $id;
+                if ($relator) {
+                    $result['idRoles'][]
+                        = $this->formatAuthorIdWithRole($id, $relator);
+                }
             }
             $result['relators'][] = $relator;
         }
 
         return $result;
+    }
+
+    /**
+     * Get primary authors with names and relators.
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthorsSorted()
+    {
+        $unsortedPrimaryAuthors = parent::getPrimaryAuthorsSorted();
+
+        // Make sure directors are first of the primary authors
+        $directors = $others = [
+            'ids' => [],
+            'idRoles' => []
+        ];
+
+        foreach ($unsortedPrimaryAuthors['relators'] as $i => $relator) {
+            if ('d02' === $relator) {
+                $directors['ids'][] = $unsortedPrimaryAuthors['ids'][$i] ?? null;
+                $directors['idRoles'][]
+                    = $unsortedPrimaryAuthors['idRoles'][$i] ?? null;
+            } else {
+                $others['ids'][] = $unsortedPrimaryAuthors['ids'][$i] ?? null;
+                $others['idRoles'][]
+                    = $unsortedPrimaryAuthors['idRoles'][$i] ?? null;
+            }
+        }
+        $unsortedPrimaryAuthors['ids']
+            = array_merge($directors['ids'], $others['ids']);
+        $unsortedPrimaryAuthors['idRoles']
+            = array_merge($directors['idRoles'], $others['idRoles']);
+
+        return $unsortedPrimaryAuthors;
     }
 
     /**
@@ -267,7 +335,18 @@ class Forward extends \RecordManager\Base\Record\Forward
      */
     protected function getGenres()
     {
-        return [$this->getProductionEventAttribute('elokuva-genre')];
+        $result = $this->getProductionEventAttribute('elokuva-genre');
+
+        foreach ($this->getMainElement()->ProductionEvent as $event) {
+            if (null !== ($event->elokuva_laji2fin)) {
+                $parts = explode(',', $event->elokuva_laji2fin);
+
+                foreach ($parts as $part) {
+                        $result[] = trim($part);
+                }
+            }
+        }
+        return $result;
     }
 
     /**
@@ -308,17 +387,18 @@ class Forward extends \RecordManager\Base\Record\Forward
      *
      * @param string $attribute Attribute name
      *
-     * @return string
+     * @return array
      */
     protected function getProductionEventAttribute($attribute)
     {
+        $result = [];
         foreach ($this->getMainElement()->ProductionEvent as $event) {
             $attributes = $event->ProductionEventType->attributes();
             if (!empty($attributes{$attribute})) {
-                return (string)$attributes{$attribute};
+                $result[] = (string)$attributes{$attribute};
             }
         }
-        return '';
+        return $result;
     }
 
     /**
@@ -335,13 +415,22 @@ class Forward extends \RecordManager\Base\Record\Forward
         }
         $activity = $agent->Activity;
         $relator = MetadataUtils::normalizeRelator((string)$activity);
-        if (($relator == 'a99' || $relator == 'e99')
-            && !empty($activity->attributes()->{'finna-activity-text'})
-        ) {
-            $relator = (string)$activity->attributes()->{'finna-activity-text'};
+        if (in_array($relator, ['a00', 'a08', 'a99', 'd99', 'e04', 'e99'])) {
+            $relator = null;
+            foreach (
+                ['finna-activity-text', 'tehtava', 'elokuva-elotekija-tehtava']
+                as $field
+            ) {
+                if (!empty($activity->attributes()->{$field})) {
+                    $label = trim((string)$activity->attributes()->{$field});
+                    if (!in_array($label, ['', '"'])) {
+                        $relator = $label;
+                        break;
+                    }
+                }
+            }
         }
         return $relator;
-
     }
 
     /**
@@ -439,6 +528,22 @@ class Forward extends \RecordManager\Base\Record\Forward
             }
         }
         return $results;
+    }
+
+    /**
+     * Get the building field
+     *
+     * @return array
+     */
+    protected function getBuilding()
+    {
+        foreach ($this->getMainElement()->ProductionEvent as $event) {
+            if (null !== $event->attributes()->{'elonet-tag'}
+                && (string)$event->attributes()->{'elonet-tag'} === 'skftunniste'
+            ) {
+                return 'skf';
+            }
+        }
     }
 
     /**

@@ -1,10 +1,10 @@
 <?php
 /**
- * MarcOnkiLightEnrichment Class
+ * Forward authority Record Class
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2014-2019.
+ * Copyright (C) The National Library of Finland 2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -21,50 +21,54 @@
  *
  * @category DataManagement
  * @package  RecordManager
- * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Base\Enrichment;
+namespace RecordManager\Finna\Record;
 
 /**
- * MarcOnkiLightEnrichment Class
+ * Forward authority Record Class
  *
- * This is a class for enrichment of MARC records from an ONKI Light source.
+ * This is a class for processing Forward records for an authority index.
  *
  * @category DataManagement
  * @package  RecordManager
- * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class MarcOnkiLightEnrichment extends OnkiLightEnrichment
+class ForwardAuthority extends \RecordManager\Base\Record\ForwardAuthority
 {
     /**
-     * Enrich the record and return any additions in solrArray
+     * Get occupations
      *
-     * @param string $sourceId  Source ID
-     * @param object $record    Metadata Record
-     * @param array  $solrArray Metadata to be sent to Solr
-     *
-     * @return void
+     * @return array
      */
-    public function enrich($sourceId, $record, &$solrArray)
+    protected function getOccupations()
     {
-        if (!($record instanceof \RecordManager\Base\Record\Marc)) {
-            return;
-        }
-        $fields = ['650' => 'topic', '651' => 'geographic'];
-        foreach ($fields as $marcField => $solrField) {
-            foreach ($record->getFields($marcField) as $recField) {
-                if ($id = $record->getSubfield($recField, '0')) {
-                    $this->enrichField(
-                        $sourceId, $record, $solrArray, $id, $solrField
-                    );
+        $doc = $this->getMainElement();
+
+        $result = [];
+        if (isset($doc->ProfessionalAffiliation)) {
+            $label = '';
+            if (isset($doc->ProfessionalAffiliation->Affiliation)) {
+                $label = (string)$doc->ProfessionalAffiliation->Affiliation;
+                $attr = $doc->ProfessionalAffiliation->attributes();
+                if (isset($attr->{'henkilo-kokoonpano-tyyppi'})) {
+                    $label .=
+                        ' (' . (string)$attr->{'henkilo-kokoonpano-tyyppi'} . ')';
                 }
             }
+            if (isset($doc->ProfessionalAffiliation->ProfessionalPosition)) {
+                $position
+                    = (string)$doc->ProfessionalAffiliation->ProfessionalPosition;
+                $label = $label
+                    ? $label .= ": $position"
+                    : $position;
+            }
+            $result[] = $label;
         }
+        return $result;
     }
 }

@@ -82,7 +82,7 @@ class Logger
      * @param string $context Context of the log message (e.g. current function)
      * @param string $msg     Actual message
      * @param int    $level   Message level used to filter logged messages. Default
-     * is INFO (3)
+     *                        is INFO (3)
      *
      * @return void
      */

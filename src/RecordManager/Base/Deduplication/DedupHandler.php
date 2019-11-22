@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -75,13 +75,6 @@ class DedupHandler
     protected $verbose;
 
     /**
-     * Array used to track keys that result in too many candidates
-     *
-     * @var array
-     */
-    protected $tooManyCandidatesKeys = [];
-
-    /**
      * FieldMapper for format mapping
      *
      * @var FieldMapper
@@ -147,18 +140,27 @@ class DedupHandler
     public function checkDedupRecord($dedupRecord)
     {
         $results = [];
+        $sources = [];
         foreach ((array)$dedupRecord['ids'] as $id) {
             $record = $this->db->getRecord($id);
+            $sourceAlreadyExists = false;
+            if ($record) {
+                $source = $record['source_id'];
+                $sourceAlreadyExists = isset($sources[$source]);
+                $sources[$source] = true;
+            }
             if (!$record
+                || $sourceAlreadyExists
                 || $dedupRecord['deleted']
                 || $record['deleted']
                 || count($dedupRecord['ids']) < 2
                 || !isset($record['dedup_id'])
                 || $record['dedup_id'] != $dedupRecord['_id']
             ) {
-                $this->removeFromDedupRecord($dedupRecord['_id'], $id);
                 if (!$record) {
                     $reason = 'record does not exist';
+                } elseif ($sourceAlreadyExists) {
+                    $reason = 'already deduplicated with a record from same source';
                 } elseif ($dedupRecord['deleted']) {
                     $reason = 'dedup record deleted';
                 } elseif ($record['deleted']) {
@@ -171,6 +173,7 @@ class DedupHandler
                     $reason
                         = "record linked with dedup record '{$record['dedup_id']}'";
                 }
+                $this->removeFromDedupRecord($dedupRecord['_id'], $id);
                 $this->db->updateRecords(
                     ['_id' => $id, 'deleted' => false],
                     ['update_needed' => true],
@@ -181,6 +184,43 @@ class DedupHandler
             }
         }
         return $results;
+    }
+
+    /**
+     * Verify record links
+     *
+     * @param array $record Record
+     *
+     * @return string Fix message or empty string for no problems
+     */
+    public function checkRecordLinks($record)
+    {
+        if (empty($record['dedup_id'])) {
+            return '';
+        }
+        $id = $record['_id'];
+        $dedupRecord = $this->db->getDedup($record['dedup_id']);
+
+        if (!$dedupRecord) {
+            $this->db->updateRecords(
+                ['_id' => $id, 'deleted' => false],
+                ['update_needed' => true],
+                ['dedup_id' => 1]
+            );
+            return "Removed dedup_id {$record['dedup_id']} from record"
+                . " $id (dedup record does not exist";
+        }
+
+        if (!in_array($id, (array)$dedupRecord['ids'])) {
+            $this->db->updateRecords(
+                ['_id' => $id, 'deleted' => false],
+                ['update_needed' => true],
+                ['dedup_id' => 1]
+            );
+            return "Removed dedup_id {$record['dedup_id']} from record"
+                . " $id (dedup record does not contain the id";
+        }
+        return '';
     }
 
     /**
@@ -318,14 +358,13 @@ class DedupHandler
                         }
                     }
                     ++$candidateCount;
+
                     // Verify the candidate has not been deduped with this source yet
-                    if (isset($candidate['dedup_id'])
-                        && (!isset($record['dedup_id'])
-                        || $candidate['dedup_id'] != $record['dedup_id'])
-                    ) {
+                    $candidateDedupId = (string)($candidate['dedup_id'] ?? '');
+                    if ($candidateDedupId) {
                         if ($this->db->findRecord(
                             [
-                                'dedup_id' => $candidate['dedup_id'],
+                                'dedup_id' => $candidateDedupId,
                                 'source_id' => $record['source_id']
                             ]
                         )
@@ -338,10 +377,7 @@ class DedupHandler
                         }
                     }
 
-                    if (++$processed > 1000
-                        || (isset($this->tooManyCandidatesKeys["$type=$keyPart"])
-                        && $processed > 100)
-                    ) {
+                    if (++$processed > 100) {
                         // Too many candidates, give up..
                         $this->log->log(
                             'dedupRecord',
@@ -349,10 +385,6 @@ class DedupHandler
                             . " with key '$keyPart'",
                             Logger::DEBUG
                         );
-                        if (count($this->tooManyCandidatesKeys) > 2000) {
-                            array_shift($this->tooManyCandidatesKeys);
-                        }
-                        $this->tooManyCandidatesKeys["$type=$keyPart"] = 1;
                         break;
                     }
 
@@ -707,13 +739,14 @@ class DedupHandler
             'update_needed' => false
         ];
         if (!empty($rec2['dedup_id'])) {
-            if (isset($rec1['dedup_id']) && $rec1['dedup_id'] != $rec2['dedup_id']) {
-                $this->removeFromDedupRecord($rec1['dedup_id'], $rec1['_id']);
-            }
             if (!$this->addToDedupRecord($rec2['dedup_id'], $rec1['_id'])) {
+                $this->removeFromDedupRecord($rec2['dedup_id'], $rec2['_id']);
                 $rec2['dedup_id'] = $this->createDedupRecord(
                     $rec1['_id'], $rec2['_id']
                 );
+            }
+            if (isset($rec1['dedup_id']) && $rec1['dedup_id'] != $rec2['dedup_id']) {
+                $this->removeFromDedupRecord($rec1['dedup_id'], $rec1['_id']);
             }
             $setValues['dedup_id'] = $rec1['dedup_id'] = $rec2['dedup_id'];
         } else {
@@ -782,6 +815,12 @@ class DedupHandler
         $record = $this->db->findDedup(['_id' => $dedupId, 'deleted' => false]);
         if (!$record) {
             return false;
+        }
+        $source = MetadataUtils::getSourceFromId($id);
+        foreach ((array)$record['ids'] as $existingId) {
+            if ($source === MetadataUtils::getSourceFromId($existingId)) {
+                return false;
+            }
         }
         if (!in_array($id, (array)$record['ids'])) {
             $record['changed'] = $this->db->getTimestamp();

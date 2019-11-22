@@ -74,7 +74,7 @@ class Lido extends Base
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -83,7 +83,7 @@ class Lido extends Base
     {
         parent::setData($source, $oaiID, $data);
 
-        $this->doc = simplexml_load_string($data);
+        $this->doc = $this->parseXMLRecord($data);
     }
 
     /**
@@ -210,7 +210,8 @@ class Lido extends Base
      * Return record title
      *
      * @param bool     $forFiling            Whether the title is to be used in
-     * filing (e.g. sorting, non-filing characters should be removed)
+     *                                       filing (e.g. sorting, non-filing
+     *                                       characters should be removed)
      * @param string   $lang                 Language
      * @param string[] $excludedDescriptions Description types to exclude
      *
@@ -282,7 +283,7 @@ class Lido extends Base
             foreach ($this->getEventNodes($event) as $eventNode) {
                 // If there is already gml in the record, don't return anything for
                 // geocoding
-                if (!empty($ventNode->eventPlace->gml)) {
+                if (!empty($eventNode->eventPlace->gml)) {
                     return [];
                 }
                 $hasValue = !empty(
@@ -672,7 +673,8 @@ class Lido extends Base
      * Return subjects associated with object.
      *
      * @param string[] $exclude List of subject types to exclude (defaults to
-     * 'iconclass' since it doesn't contain human readable terms)
+     *                          'iconclass' since it doesn't contain human readable
+     *                          terms)
      *
      * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
      * #subjectComplexType

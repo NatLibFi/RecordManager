@@ -64,7 +64,7 @@ class Marc extends \RecordManager\Base\Record\Marc
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -92,10 +92,12 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
 
-        // Koha record normalization
-        if ($this->getDriverParam('kohaNormalization', false)) {
+        // Koha and Alma record normalization
+        $koha = $this->getDriverParam('kohaNormalization', false);
+        $alma = $this->getDriverParam('almaNormalization', false);
+        if ($koha || $alma) {
             // Convert items to holdings
-            $useHome = $this->getDriverParam('kohaUseHomeBranch', false);
+            $useHome = $koha && $this->getDriverParam('kohaUseHomeBranch', false);
             $holdings = [];
             $availableBuildings = [];
             foreach ($this->getFields('952') as $field952) {
@@ -114,23 +116,27 @@ class Marc extends \RecordManager\Base\Record\Marc
                     }
                 }
 
-                // Availability
-                static $subfieldsExist = [
-                    '0', // Withdrawn
-                    '1', // Lost
-                    '4', // Damaged
-                    'q', // Due date
-                ];
-                $available = true;
-                foreach ($subfieldsExist as $code) {
-                    if ($this->getSubfield($field952, $code)) {
-                        $available = false;
-                        break;
+                if ($alma) {
+                    $available = $this->getSubfield($field952, '1') == 1;
+                } else {
+                    // Availability
+                    static $subfieldsExist = [
+                        '0', // Withdrawn
+                        '1', // Lost
+                        '4', // Damaged
+                        'q', // Due date
+                    ];
+                    $available = true;
+                    foreach ($subfieldsExist as $code) {
+                        if ($this->getSubfield($field952, $code)) {
+                            $available = false;
+                            break;
+                        }
                     }
-                }
-                if ($available) {
-                    $status = $this->getSubfield($field952, '7'); // Not for loan
-                    $available = $status === '0' || $status === '1';
+                    if ($available) {
+                        $status = $this->getSubfield($field952, '7'); // Not for loan
+                        $available = $status === '0' || $status === '1';
+                    }
                 }
 
                 $key = implode('//', $key);
@@ -151,12 +157,29 @@ class Marc extends \RecordManager\Base\Record\Marc
                     's' => $holding
                 ];
             }
+        }
+
+        if ($koha) {
             // Verify that 001 exists
             if ('' === $this->getField('001')) {
                 if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
                     $this->fields['001'] = [$id];
                 }
             }
+        }
+
+        if ($alma) {
+            // Add a prefixed id to field 090 to indicate that the record is from
+            // Alma. Used at least with OpenURL.
+            $id = $this->getField('001');
+            $this->fields['090'][] = [
+                'i1' => ' ',
+                'i2' => ' ',
+                's' => [
+                    ['a' => "(Alma)$id"]
+                ]
+            ];
+            ksort($this->fields);
         }
     }
 
@@ -532,10 +555,11 @@ class Marc extends \RecordManager\Base\Record\Marc
 
         // Shelving location in building_sub_str_mv
         $subBuilding = $this->getDriverParam('subBuilding', '');
+        if ('1' === $subBuilding) { // true
+            $subBuilding = 'c';
+        }
+        $itemSubBuilding = $this->getDriverParam('itemSubBuilding', $subBuilding);
         if ($subBuilding) {
-            if ('1' === $subBuilding) { // true
-                $subBuilding = 'c';
-            }
             foreach ($this->getFields('852') as $field) {
                 $location = $this->getSubfield($field, $subBuilding);
                 if ('' !== $location) {
@@ -543,9 +567,25 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
             }
             foreach ($this->getFields('952') as $field) {
-                $location = $this->getSubfield($field, $subBuilding);
+                $location = $this->getSubfield($field, $itemSubBuilding);
                 if ('' !== $location) {
                     $data['building_sub_str_mv'][] = $location;
+                }
+            }
+        }
+
+        // Collection code from MARC fields
+        $collectionFields = $this->getDriverParam('collectionFields', '');
+        if ($collectionFields) {
+            foreach (explode(':', $collectionFields) as $fieldSpec) {
+                $fieldTag = substr($fieldSpec, 0, 3);
+                $subfields = array_flip(str_split(substr($fieldSpec, 3)));
+                foreach ($this->getFields($fieldTag) as $field) {
+                    $subfieldArray
+                        = $this->getSubfieldsArray($field, $subfields);
+                    foreach ($subfieldArray as $subfield) {
+                        $data['collection'] = $subfield;
+                    }
                 }
             }
         }
@@ -763,7 +803,7 @@ class Marc extends \RecordManager\Base\Record\Marc
      *
      * @param MongoCollection $componentParts Component parts to be merged
      * @param MongoDate|null  $changeDate     Latest timestamp for the component part
-     * set
+     *                                        set
      *
      * @return int Count of records merged
      */
@@ -972,11 +1012,19 @@ class Marc extends \RecordManager\Base\Record\Marc
         if (isset($this->fields['502'])) {
             return 'Dissertation';
         }
+        $dissType = '';
         if (isset($this->fields['509'])) {
-            $field509a = MetadataUtils::stripTrailingPunctuation(
+            $dissType = MetadataUtils::stripTrailingPunctuation(
                 $this->getFieldSubfields('509', ['a' => 1])
             );
-            switch (strtolower($field509a)) {
+        }
+        if (!$dissType && isset($this->fields['920'])) {
+            $dissType = MetadataUtils::stripTrailingPunctuation(
+                $this->getFieldSubfields('920', ['a' => 1])
+            );
+        }
+        if ($dissType) {
+            switch (strtolower($dissType)) {
             case 'kandidaatintutkielma':
             case 'kandidaatintyö':
             case 'kandidatarbete':
@@ -1095,6 +1143,9 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     public function getSuppressed()
     {
+        if (parent::getSuppressed()) {
+            return true;
+        }
         if ($this->getDriverParam('kohaNormalization', false)) {
             foreach ($this->getFields('942') as $field942) {
                 $suppressed = $this->getSubfield($field942, 'n');
@@ -1365,9 +1416,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         );
         foreach ($ebraryLocs as $field) {
             if (strncmp($field, 'ebr', 3) == 0 && is_numeric(substr($field, 3))) {
-                if (!isset($data['building'])
-                    || !in_array('EbraryDynamic', $data['building'])
-                ) {
+                if (!in_array('EbraryDynamic', $building)) {
                     $building[] = 'EbraryDynamic';
                 }
             }
@@ -1720,7 +1769,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         ];
         $titleFields = [
             '130' => ['n' => 1],
-            '240' => ['n' => 1],
+            '240' => ['n' => 1, 'm' => 1, 'r' => 1],
             '245' => ['b' => 1, 'n' => 1],
             '246' => ['b' => 1, 'n' => 1],
             '247' => ['b' => 1, 'n' => 1],

@@ -380,6 +380,90 @@ class SolrUpdater
     protected $unicodeNormalizationForm;
 
     /**
+     * Shard statuses considered normal in cluster state check
+     *
+     * @var array
+     */
+    protected $normalShardStatuses = ['active', 'inactive', 'construction'];
+
+    /**
+     * Solr field for dedup id
+     *
+     * @var string
+     */
+    protected $dedupIdField = 'dedup_id_str_mv';
+
+    /**
+     * Solr field for container title
+     *
+     * @var string
+     */
+    protected $containerTitleField = 'container_title';
+
+    /**
+     * Solr field for container volume
+     *
+     * @var string
+     */
+    protected $containerVolumeField = 'container_volume';
+
+    /**
+     * Solr field for container issue
+     *
+     * @var string
+     */
+    protected $containerIssueField = 'container_issue';
+
+    /**
+     * Solr field for container start page
+     *
+     * @var string
+     */
+    protected $containerStartPageField = 'container_start_page';
+
+    /**
+     * Solr field for container reference
+     *
+     * @var string
+     */
+    protected $containerReferenceField = 'container_reference';
+
+    /**
+     * Solr field for "is hierarchy id"
+     *
+     * @var string
+     */
+    protected $isHierarchyIdField = 'is_hierarchy_id';
+
+    /**
+     * Solr field for "is hierarchy title"
+     *
+     * @var string
+     */
+    protected $isHierarchyTitleField = 'is_hierarchy_title';
+
+    /**
+     * Solr field for hierarchy top id
+     *
+     * @var string
+     */
+    protected $hierarchyTopIdField = 'hierarchy_top_id';
+
+    /**
+     * Solr field for hierarchy parent id
+     *
+     * @var string
+     */
+    protected $hierarchyParentIdField = 'hierarchy_parent_id';
+
+    /**
+     * Solr field for hierarchy parent title
+     *
+     * @var string
+     */
+    protected $hierarchyParentTitleField = 'hierarchy_parent_title';
+
+    /**
      * Constructor
      *
      * @param MongoDB       $db                 Database connection
@@ -491,6 +575,42 @@ class SolrUpdater
             = isset($config['Solr']['unicode_normalization_form'])
             ? $config['Solr']['unicode_normalization_form'] : '';
 
+        $fields = $config['Solr Fields'] ?? [];
+
+        if (isset($fields['dedup_id'])) {
+            $this->dedupIdField = $fields['dedup_id'];
+        }
+        if (isset($fields['container_title'])) {
+            $this->containerTitleField = $fields['container_title'];
+        }
+        if (isset($fields['container_volume'])) {
+            $this->containerVolumeField = $fields['container_volume'];
+        }
+        if (isset($fields['container_issue'])) {
+            $this->containerIssueField = $fields['container_issue'];
+        }
+        if (isset($fields['container_start_page'])) {
+            $this->containerStartPageField = $fields['container_start_page'];
+        }
+        if (isset($fields['container_reference'])) {
+            $this->containerReferenceField = $fields['container_reference'];
+        }
+        if (isset($fields['is_hierarchy_id'])) {
+            $this->isHierarchyIdField = $fields['is_hierarchy_id'];
+        }
+        if (isset($fields['is_hierarchy_title'])) {
+            $this->isHierarchyTitleField = $fields['is_hierarchy_title'];
+        }
+        if (isset($fields['hierarchy_top_id'])) {
+            $this->hierarchyTopIdField = $fields['hierarchy_top_id'];
+        }
+        if (isset($fields['hierarchy_parent_id'])) {
+            $this->hierarchyParentIdField = $fields['hierarchy_parent_id'];
+        }
+        if (isset($fields['hierarchy_parent_title'])) {
+            $this->hierarchyParentTitleField = $fields['hierarchy_parent_title'];
+        }
+
         // Load settings
         $this->initDatasources($dataSourceSettings);
     }
@@ -539,19 +659,21 @@ class SolrUpdater
      *
      * @param string|null $fromDate      Starting date for updates (if empty
      *                                   string, last update date stored in the
-     * database is used and if null, all records are processed)
+     *                                   database is used and if null, all records
+     *                                   are processed)
      * @param string      $sourceId      Comma-separated list of source IDs to
-     * update, or empty or * for all sources
+     *                                   update, or empty or * for all sources
      * @param string      $singleId      Process only the record with the given ID
      * @param bool        $noCommit      If true, changes are not explicitly
-     * committed
+     *                                   committed
      * @param bool        $delete        If true, records in the given $sourceId are
-     * all deleted
+     *                                   all deleted
      * @param string      $compare       If set, just compare the records with the
-     * ones already in the Solr index and write any differences in a file given in
-     * this parameter
+     *                                   ones already in the Solr index and write any
+     *                                   differences in a file given in this
+     *                                   parameter
      * @param string      $dumpPrefix    If specified, the Solr records are dumped
-     * into files and not sent to Solr
+     *                                   into files and not sent to Solr
      * @param bool        $datePerServer Track last Solr update date per server url
      *
      * @return void
@@ -730,7 +852,6 @@ class SolrUpdater
                     $params['$nor'] = $sourceNor;
                 }
                 $params['dedup_id'] = ['$exists' => false];
-                $params['update_needed'] = false;
             }
             $records = $this->db->findRecords($params);
             $total = $this->db->countRecords($params);
@@ -815,15 +936,14 @@ class SolrUpdater
                     if (0 !== $pid) {
                         $exitCode = $pid > 0 ? pcntl_wexitstatus($status)
                             : $this->workerPoolManager
-                                ->getExternalProcessExitCode($childPid);
+                            ->getExternalProcessExitCode($childPid);
                         $childPid = null;
                         if ($exitCode == 1) {
                             $needCommit = true;
                         } elseif ($exitCode || null === $exitCode) {
                             $this->log->log(
                                 'updateRecords',
-                                "Merged record update process failed, "
-                                . "aborting",
+                                'Merged record update process failed, aborting',
                                 Logger::ERROR
                             );
                             throw new \Exception(
@@ -892,6 +1012,15 @@ class SolrUpdater
                         if (null !== $exitCode) {
                             if (1 === $exitCode) {
                                 $needCommit = true;
+                            } elseif ($exitCode || null === $exitCode) {
+                                $this->log->log(
+                                    'updateRecords',
+                                    'Merged record update process failed, aborting',
+                                    Logger::ERROR
+                                );
+                                throw new \Exception(
+                                    'Merged record update process failed'
+                                );
                             }
                         } else {
                             $this->log->log(
@@ -989,9 +1118,6 @@ class SolrUpdater
             if ($sourceNor) {
                 $params['$nor'] = $sourceNor;
             }
-            if (!$delete) {
-                $params['update_needed'] = false;
-            }
             $params['dedup_id'] = ['$exists' => true];
         }
 
@@ -1022,7 +1148,7 @@ class SolrUpdater
 
         $collectionName = $this->db->getExistingQueueCollection(
             md5(json_encode($params)),
-            isset($fromDate) ? date('Ymd', strtotime($fromDate)) : 0,
+            isset($mongoFromDate) ? $mongoFromDate->toDateTime()->format('U') : '0',
             $lastRecordTime
         );
 
@@ -1045,7 +1171,8 @@ class SolrUpdater
 
             $collectionName = $this->db->getNewQueueCollection(
                 md5(json_encode($params)),
-                isset($fromDate) ? date('Ymd', strtotime($fromDate)) : 0,
+                isset($mongoFromDate)
+                    ? $mongoFromDate->toDateTime()->format('U') : 0,
                 $lastRecordTime
             );
             $this->log->log(
@@ -1058,7 +1185,7 @@ class SolrUpdater
             $totalMergeCount = 0;
             $records = $this->db->findRecords(
                 $params,
-                ['projection' => ['dedup_id' => 1, 'update_needed' => 1]]
+                ['projection' => ['dedup_id' => 1]]
             );
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
@@ -1070,14 +1197,6 @@ class SolrUpdater
                     exit(1);
                 }
                 $id = $record['dedup_id'];
-                if (isset($record['update_needed']) && $record['update_needed']) {
-                    $this->log->log(
-                        'processMerged',
-                        "Record {$record['_id']} needs deduplication and would not"
-                        . " be processed in a normal update",
-                        Logger::WARNING
-                    );
-                }
 
                 if (!isset($prevId) || $prevId != $id) {
                     $this->db->addIdToQueue($collectionName, $id);
@@ -1435,15 +1554,6 @@ class SolrUpdater
             'mergedComponents' => 0
         ];
 
-        if (isset($record['update_needed']) && $record['update_needed']) {
-            $this->log->log(
-                'processSingleRecord',
-                "Record {$record['_id']} needs deduplication and would not"
-                . " be processed in a normal update",
-                Logger::WARNING
-            );
-        }
-
         if ($record['deleted']) {
             $result['deleted'][] = (string)$record['_id'];
         } else {
@@ -1583,7 +1693,7 @@ class SolrUpdater
      * Initialize or reload data source settings
      *
      * @param array $dataSourceSettings Optional data source settings to use instead
-     * of reading them from the ini file
+     *                                  of reading them from the ini file
      *
      * @return void
      */
@@ -1657,7 +1767,7 @@ class SolrUpdater
      *
      * @param array   $record           Mongo record
      * @param integer $mergedComponents Number of component parts merged to the
-     * record
+     *                                  record
      * @param array   $dedupRecord      Mongo dedup record
      *
      * @return array
@@ -1775,8 +1885,8 @@ class SolrUpdater
         }
 
         $data['id'] = $this->createSolrId($record['_id']);
-        if (null !== $dedupRecord) {
-            $data['dedup_id_str_mv'] = (string)$dedupRecord['_id'];
+        if (null !== $dedupRecord && $this->dedupIdField) {
+            $data[$this->dedupIdField] = (string)$dedupRecord['_id'];
         }
 
         // Record links between host records and component parts
@@ -1798,14 +1908,18 @@ class SolrUpdater
                         Logger::WARNING
                     );
                     $warnings[] = 'host record missing';
-                    $data['container_title'] = $metadataRecord->getContainerTitle();
+                    if ($this->containerTitleField) {
+                        $data[$this->containerTitleField]
+                            = $metadataRecord->getContainerTitle();
+                    }
                 }
             }
             if ($hostRecords) {
                 foreach ($hostRecords as $hostRecord) {
-                    $data['hierarchy_parent_id'][] = $this->createSolrId(
-                        $hostRecord['_id']
-                    );
+                    if ($this->hierarchyParentIdField) {
+                        $data[$this->hierarchyParentIdField][]
+                            = $this->createSolrId($hostRecord['_id']);
+                    }
                     $hostMetadataRecord = $this->recordFactory->createRecord(
                         $hostRecord['format'],
                         MetadataUtils::getRecordData($hostRecord, true),
@@ -1813,21 +1927,41 @@ class SolrUpdater
                         $hostRecord['source_id']
                     );
                     $hostTitle = $hostMetadataRecord->getTitle();
-                    $data['hierarchy_parent_title'][] = $hostTitle;
-                    if (empty($data['container_title'])) {
-                        $data['container_title'] = $hostTitle;
+                    if ($this->hierarchyParentTitleField) {
+                        $data[$this->hierarchyParentTitleField][] = $hostTitle;
+                    }
+                    if ($this->containerTitleField
+                        && empty($data[$this->containerTitleField])
+                    ) {
+                        $data[$this->containerTitleField] = $hostTitle;
                     }
                 }
             }
-            $data['container_volume'] = $metadataRecord->getVolume();
-            $data['container_issue'] = $metadataRecord->getIssue();
-            $data['container_start_page'] = $metadataRecord->getStartPage();
-            $data['container_reference'] = $metadataRecord->getContainerReference();
+            if ($this->containerVolumeField) {
+                $data[$this->containerVolumeField] = $metadataRecord->getVolume();
+            }
+            if ($this->containerIssueField) {
+                $data[$this->containerIssueField] = $metadataRecord->getIssue();
+            }
+            if ($this->containerStartPageField) {
+                $data[$this->containerStartPageField]
+                    = $metadataRecord->getStartPage();
+            }
+            if ($this->containerReferenceField) {
+                $data[$this->containerReferenceField]
+                    = $metadataRecord->getContainerReference();
+            }
         } else {
             // Add prefixes to hierarchy linking fields
-            foreach (['hierarchy_top_id', 'hierarchy_parent_id', 'is_hierarchy_id']
-                as $field
-            ) {
+            $hierarchyFields = [
+                $this->hierarchyTopIdField,
+                $this->hierarchyParentIdField,
+                $this->isHierarchyIdField
+            ];
+            foreach ($hierarchyFields as $field) {
+                if (!$field) {
+                    continue;
+                }
                 if (isset($data[$field]) && $data[$field]) {
                     $data[$field] = $this->createSolrId(
                         $record['source_id'] . '.' . $data[$field]
@@ -1836,11 +1970,16 @@ class SolrUpdater
             }
         }
         if ($hasComponentParts) {
-            $data['is_hierarchy_id'] = $this->createSolrId($record['_id']);
-            $data['is_hierarchy_title'] = $metadataRecord->getTitle();
+            if ($this->isHierarchyIdField) {
+                $data[$this->isHierarchyIdField]
+                    = $this->createSolrId($record['_id']);
+            }
+            if ($this->isHierarchyTitleField) {
+                $data[$this->isHierarchyTitleField] = $metadataRecord->getTitle();
+            }
         }
 
-        if (!isset($data['institution']) && isset($settings['institution'])) {
+        if (!isset($data['institution']) && !empty($settings['institution'])) {
             $data['institution'] = $settings['institution'];
         }
 
@@ -2100,7 +2239,7 @@ class SolrUpdater
      * Merge Solr records into a merged record
      *
      * @param array $records Array of records to merge including the Mongo record and
-     * Solr array
+     *                       Solr array
      *
      * @return array Merged Solr array
      */
@@ -2525,7 +2664,7 @@ class SolrUpdater
         }
         foreach ($data as $collectionName => $collection) {
             foreach ($collection['shards'] as $shardName => $shard) {
-                if ('active' !== $shard['state'] && 'inactive' !== $shard['state']) {
+                if (!in_array($shard['state'], $this->normalShardStatuses)) {
                     $this->log->log(
                         'checkClusterState',
                         "Collection $collectionName shard $shardName:"
@@ -2734,7 +2873,7 @@ class SolrUpdater
      *
      * @param array $data   Record data to print
      * @param bool  $return If true, the pretty-printed record is returned instead
-     * of being echoed to screen.
+     *                      of being echoed to screen.
      *
      * @return string
      */
@@ -2792,7 +2931,7 @@ class SolrUpdater
      * Parse source parameter to Mongo selectors
      *
      * @param string $sourceIds A single source id or a comma-separated list of
-     * sources or exclusion filters
+     *                          sources or exclusion filters
      *
      * @return array of arrays $or and $nor filters
      */

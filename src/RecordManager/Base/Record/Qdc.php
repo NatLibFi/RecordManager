@@ -49,7 +49,7 @@ class Qdc extends Base
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -58,7 +58,7 @@ class Qdc extends Base
     {
         parent::setData($source, $oaiID, $data);
 
-        $this->doc = simplexml_load_string($data);
+        $this->doc = $this->parseXMLRecord($data);
         if (empty($this->doc->recordID)) {
             $p = strpos($oaiID, ':');
             $p = strpos($oaiID, ':', $p + 1);
@@ -197,7 +197,7 @@ class Qdc extends Base
      * Dedup: Return record title
      *
      * @param bool $forFiling Whether the title is to be used in filing
-     * (e.g. sorting, non-filing characters should be removed)
+     *                        (e.g. sorting, non-filing characters should be removed)
      *
      * @return string
      */
@@ -273,10 +273,10 @@ class Qdc extends Base
     }
 
     /**
-    * Dedup: Return ISSNs
-    *
-    * @return array
-    */
+     * Dedup: Return ISSNs
+     *
+     * @return array
+     */
     public function getISSNs()
     {
         if (!isset($this->doc->relation)) {

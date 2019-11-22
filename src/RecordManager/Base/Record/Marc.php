@@ -129,7 +129,7 @@ class Marc extends Base
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -463,7 +463,7 @@ class Marc extends Base
             foreach ($fields as $field) {
                 if ($this->getIndicator($field, 2) == '1') {
                     $data['publisher'] = [
-                        metadataUtils::stripTrailingPunctuation(
+                        MetadataUtils::stripTrailingPunctuation(
                             $this->getSubfield($field, 'b')
                         )
                     ];
@@ -696,10 +696,10 @@ class Marc extends Base
     }
 
     /**
-    * Component parts: get the volume that contains this component part
-    *
-    * @return string
-    */
+     * Component parts: get the volume that contains this component part
+     *
+     * @return string
+     */
     public function getVolume()
     {
         $field773g = $this->getFieldSubfields('773', ['g' => 1]);
@@ -1180,6 +1180,11 @@ class Marc extends Base
             return 'Manuscript';
         }
 
+        $field008 = $this->getField('008');
+        if (!$online) {
+            $online = substr($field008, 23, 1) === 'o';
+        }
+
         // check the Leader at position 7
         $leaderBit = substr($leader, 7, 1);
         switch (strtoupper($leaderBit)) {
@@ -1194,7 +1199,6 @@ class Marc extends Base
         // Serial
         case 'S':
             // Look in 008 to determine what type of Continuing Resource
-            $field008 = $this->getField('008');
             $formatCode = strtoupper(substr($field008, 21, 1));
             switch ($formatCode) {
             case 'N':
@@ -1349,10 +1353,7 @@ class Marc extends Base
         } else {
             $marc = '<?xml version="1.0" encoding="utf-8"?>' . "\n\n$marc";
         }
-        $xml = simplexml_load_string($marc);
-        if ($xml === false) {
-            throw new \Exception('MarcRecord: failed to parse from XML');
-        }
+        $xml = $this->parseXMLRecord($marc);
 
         // Move to the record element if we were given a collection
         if ($xml->record) {
@@ -1700,9 +1701,9 @@ class Marc extends Base
      *
      * @param string  $tag                      Field to get
      * @param array   $codes                    Optional array with keys of accepted
-     * subfields
+     *                                          subfields
      * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
-     * from the results
+     *                                          from the results
      *
      * @return string Concatenated subfields (space-separated)
      */
@@ -1739,7 +1740,7 @@ class Marc extends Base
      * @param string  $tag                      Field to get
      * @param string  $code                     Subfield to get
      * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
-     * from the result
+     *                                          from the result
      *
      * @return string
      */
@@ -1780,9 +1781,9 @@ class Marc extends Base
      * @param array   $fieldspecs               Fields to get
      * @param boolean $firstOnly                Return only first matching field
      * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
-     * from the results
+     *                                          from the results
      * @param boolean $splitSubfields           Whether to split subfields to
-     * separate array items
+     *                                          separate array items
      *
      * @return array Subfields
      */
@@ -1909,10 +1910,10 @@ class Marc extends Base
      *
      * @param string  $tag            Field code
      * @param string  $sub6           Subfield 6 in original script identifying the
-     * alt field
+     *                                alt field
      * @param array   $codes          Array of subfield codes in keys
      * @param boolean $splitSubfields Whether to split subfields to separate array
-     * items
+     *                                items
      *
      * @return array
      */
@@ -2011,7 +2012,7 @@ class Marc extends Base
      *
      * @param array $field  Field
      * @param array $filter Optional array with keys of subfields codes to be
-     * excluded
+     *                      excluded
      *
      * @return array All subfields
      */
@@ -2324,7 +2325,7 @@ class Marc extends Base
      * @param array $relators          Allowed relators
      * @param array $noRelatorRequired Field that is accepted if it doesn't have a
      * @param bool  $altScript         Whether to return also alternate scripts
-     * relator
+     *                                 relator
      *
      * @return array Array keyed by 'names' for author names, 'fuller' for fuller
      * forms and 'relators' for relator codes

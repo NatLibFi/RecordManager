@@ -47,18 +47,20 @@ class Harvest extends AbstractBase
      *
      * @param string      $repository           Source ID to harvest
      * @param string      $harvestFromDate      Override start date (otherwise
-     * harvesting is done from the previous harvest date)
+     *                                          harvesting is done from the previous
+     *                                          harvest date)
      * @param string      $harvestUntilDate     Override end date (otherwise
-     * current date is used)
+     *                                          current date is used)
      * @param string      $startResumptionToken Override OAI-PMH resumptionToken to
-     * resume interrupted harvesting process (note
-     *                                     that tokens may have a limited lifetime)
+     *                                          resume interrupted harvesting process
+     *                                          (note that tokens may have a limited
+     *                                          lifetime)
      * @param string      $exclude              Source ID's to exclude from
-     * harvesting
+     *                                          harvesting
      * @param bool|string $reharvest            Whether to consider this a full
-     * reharvest where sets may have changed
+     *                                          reharvest where sets may have changed
      *                                          (deletes records not received during
-     * this harvesting)
+     *                                          this harvesting)
      *
      * @return void
      * @throws Exception

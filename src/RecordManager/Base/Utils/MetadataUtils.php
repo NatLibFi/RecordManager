@@ -617,7 +617,7 @@ class MetadataUtils
      *
      * @param array $record     Database record
      * @param bool  $normalized Whether to return the original (false) or
-     * normalized (true) record
+     *                          normalized (true) record
      *
      * @return string Metadata as a string
      */
@@ -778,7 +778,7 @@ class MetadataUtils
                         && !preg_match('/.+\-\w{1,2}\.$/', $word)
                         && !preg_match('/^\w\.\w\.$/', $word) // initials
                     ) {
-                        return  metadataUtils::stripTrailingPunctuation(
+                        return MetadataUtils::stripTrailingPunctuation(
                             implode(' ', array_splice($titleWords, 0, $i))
                         );
                     }
@@ -919,6 +919,19 @@ class MetadataUtils
         $relator = preg_replace('/\p{P}+/u', '', $relator);
         $relator = mb_strtolower($relator, 'UTF-8');
         return $relator;
+    }
+
+    /**
+     * Extract record source from an ID
+     *
+     * @param string $id Record ID
+     *
+     * @return string
+     */
+    public static function getSourceFromId($id)
+    {
+        $parts = explode('.', $id, 2);
+        return $parts[0];
     }
 
     /**

@@ -104,7 +104,7 @@ class Base
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -203,7 +203,7 @@ class Base
      *
      * @param MongoCollection $componentParts Component parts to be merged
      * @param MongoDate|null  $changeDate     Latest timestamp for the component part
-     * set
+     *                                        set
      *
      * @return void
      */
@@ -215,7 +215,7 @@ class Base
      * Return record title
      *
      * @param bool $forFiling Whether the title is to be used in filing
-     * (e.g. sorting, non-filing characters should be removed)
+     *                        (e.g. sorting, non-filing characters should be removed)
      *
      * @return string
      *
@@ -327,10 +327,10 @@ class Base
     }
 
     /**
-    * Dedup: Return ISSNs
-    *
-    * @return array
-    */
+     * Dedup: Return ISSNs
+     *
+     * @return array
+     */
     public function getISSNs()
     {
         return [];
@@ -416,6 +416,33 @@ class Base
      */
     public function getSuppressed()
     {
+        $filters = $this->dataSourceSettings[$this->source]['suppressOnField'] ?? [];
+        if ($filters) {
+            $solrFields = $this->toSolrArray();
+            foreach ($filters as $field => $filter) {
+                if (!isset($solrFields[$field])) {
+                    continue;
+                }
+                foreach ((array)$solrFields[$field] as $value) {
+                    if (strncmp($value, '/', 1) === 0
+                        && strncmp($value, '/', -1) === 0
+                    ) {
+                        $res = preg_match($filter, $value);
+                        if (false === $res) {
+                            $this->logger->log(
+                                'Failed to parse filter regexp: ' . $filter,
+                                Logger::ERROR
+                            );
+                        }
+                    } else {
+                        $res = in_array($value, explode('|', $filter));
+                    }
+                    if ($res) {
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
@@ -478,5 +505,36 @@ class Base
             return $dateString;
         }
         return '';
+    }
+
+    /**
+     * Parse an XML record from string to a SimpleXML object
+     *
+     * @param string $xml XML string
+     *
+     * @return SimpleXMLElement
+     * @throws \Exception
+     */
+    protected function parseXMLRecord($xml)
+    {
+        $saveUseErrors = libxml_use_internal_errors(true);
+        try {
+            libxml_clear_errors();
+            $doc = simplexml_load_string($xml);
+            if (false === $doc) {
+                $errors = libxml_get_errors();
+                $messageParts = [];
+                foreach ($errors as $error) {
+                    $messageParts[] = '[' . $error->line . ':' . $error->column
+                        . '] Error ' . $error->code . ': ' . $error->message;
+                }
+                throw new \Exception(implode("\n", $messageParts));
+            }
+            libxml_use_internal_errors($saveUseErrors);
+            return $doc;
+        } catch (\Exception $e) {
+            libxml_use_internal_errors($saveUseErrors);
+            throw $e;
+        }
     }
 }

@@ -49,7 +49,7 @@ class Ead3 extends Ead
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -58,7 +58,7 @@ class Ead3 extends Ead
     {
         parent::setData($source, $oaiID, $data);
 
-        $this->doc = simplexml_load_string($data);
+        $this->doc = $this->parseXMLRecord($data);
     }
 
     /**
@@ -168,7 +168,7 @@ class Ead3 extends Ead
      * Return record title
      *
      * @param bool $forFiling Whether the title is to be used in filing
-     * (e.g. sorting, non-filing characters should be removed)
+     *                        (e.g. sorting, non-filing characters should be removed)
      *
      * @return string
      *
@@ -305,7 +305,7 @@ class Ead3 extends Ead
                 $result[] = trim((string)$subject);
             }
         }
-        return $reslt;
+        return $result;
     }
 
     /**
