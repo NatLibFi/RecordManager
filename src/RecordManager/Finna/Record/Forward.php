@@ -109,7 +109,7 @@ class Forward extends \RecordManager\Base\Record\Forward
             $data['main_date_str'] = $year;
             $data['main_date'] = $this->validateDate("$year-01-01T00:00:00Z");
             $data['search_daterange_mv'][] = $data['publication_daterange']
-                = metadataUtils::dateRangeToStr(
+                = MetadataUtils::dateRangeToStr(
                     ["$year-01-01T00:00:00Z", "$year-12-31T23:59:59Z"]
                 );
         }
@@ -283,9 +283,10 @@ class Forward extends \RecordManager\Base\Record\Forward
                 . (string)$agent->AgentIdentifier->IDValue;
             if ($id != '_') {
                 $result['ids'][] = $id;
-                $result['idRoles'][]
-                    = $this->formatAuthorIdWithRole($id, $relator);
-
+                if ($relator) {
+                    $result['idRoles'][]
+                        = $this->formatAuthorIdWithRole($id, $relator);
+                }
             }
             $result['relators'][] = $relator;
         }
@@ -421,8 +422,11 @@ class Forward extends \RecordManager\Base\Record\Forward
                 as $field
             ) {
                 if (!empty($activity->attributes()->{$field})) {
-                    $relator = (string)$activity->attributes()->{$field};
-                    break;
+                    $label = trim((string)$activity->attributes()->{$field});
+                    if (!in_array($label, ['', '"'])) {
+                        $relator = $label;
+                        break;
+                    }
                 }
             }
         }

@@ -112,6 +112,22 @@ unicode_normalization_form = NFKC
 ;enrichment[] = NominatimGeocoder
 ;enrichment[] = MusicBrainzEnrichment
 
+; The following section can be used to change the Solr fields used when indexing
+; records, particularly for hierarchical records. Any field can also be set to empty
+; to disable it.
+;[Solr Fields]
+;dedup_id = dedup_id_str_mv
+;container_title = container_title
+;container_volume = container_volume
+;container_issue = container_issue
+;container_start_page = container_start_page
+;container_reference = container_reference
+;is_hierarchy_id = is_hierarchy_id
+;is_hierarchy_title = is_hierarchy_title
+;hierarchy_top_id = hierarchy_top_id
+;hierarchy_parent_id = hierarchy_parent_id
+;hierarchy_parent_title = hierarchy_parent_title
+
 [OAI-PMH]
 ; Repository name returned in the Identify response
 repository_name = OAI-PMH Repository
