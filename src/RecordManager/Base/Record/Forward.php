@@ -345,7 +345,7 @@ class Forward extends Base
      */
     protected function getRelator($agent)
     {
-        return $MetadataUtils::normalizeRelator((string)$agent->Activity);
+        return MetadataUtils::normalizeRelator((string)$agent->Activity);
     }
 
     /**

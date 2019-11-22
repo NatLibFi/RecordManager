@@ -463,7 +463,7 @@ class Marc extends Base
             foreach ($fields as $field) {
                 if ($this->getIndicator($field, 2) == '1') {
                     $data['publisher'] = [
-                        metadataUtils::stripTrailingPunctuation(
+                        MetadataUtils::stripTrailingPunctuation(
                             $this->getSubfield($field, 'b')
                         )
                     ];

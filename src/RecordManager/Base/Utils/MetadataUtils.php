@@ -778,7 +778,7 @@ class MetadataUtils
                         && !preg_match('/.+\-\w{1,2}\.$/', $word)
                         && !preg_match('/^\w\.\w\.$/', $word) // initials
                     ) {
-                        return  metadataUtils::stripTrailingPunctuation(
+                        return MetadataUtils::stripTrailingPunctuation(
                             implode(' ', array_splice($titleWords, 0, $i))
                         );
                     }
