@@ -514,21 +514,23 @@ class Forward extends \RecordManager\Base\Record\Forward
         $onlineVideoTypes = $this->getOnlineVideoTypes();
 
         foreach (is_array($records) ? $records : [$records] as $record) {
-            $titleMatch = isset($record->Title->TitleText)
+            $videoMatch = isset($record->Title->TitleText)
                 && substr((string)$record->Title->TitleText, -4) === '.mp4';
-            $videoTypeMatch = false;
+
             $videoType = 'elokuva';
             $description = '';
             if (isset($record->Title->PartDesignation->Value)) {
                 $attributes = $record->Title->PartDesignation->Value->attributes();
                 if (!empty($attributes{'video-tyyppi'})) {
                     $videoType = (string)$attributes{'video-tyyppi'};
-                    $videoTypeMatch
-                        = in_array(strtolower($videoType), $onlineVideoTypes);
+                    if (!$videoMatch) {
+                        $videoMatch
+                            = in_array(strtolower($videoType), $onlineVideoTypes);
+                    }
                 }
                 $description = (string)$attributes->{'video-lisatieto'};
             }
-            if (!$titleMatch && !$videoTypeMatch) {
+            if (!$videoMatch) {
                 continue;
             }
 
