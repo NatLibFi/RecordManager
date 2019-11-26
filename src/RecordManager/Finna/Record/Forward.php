@@ -22,6 +22,7 @@
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Juha Luoma <juha.luoma@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -37,6 +38,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Juha Luoma <juha.luoma@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -94,6 +96,15 @@ class Forward extends \RecordManager\Base\Record\Forward
      * @var string
      */
     protected $primaryLanguage = 'fi';
+
+    /**
+     * Video type list for online urls
+     * 
+     * @var array
+     */
+    protected $onlineVideoTypes = [
+        'elokuva', 'elokuvaklippi'
+    ];
 
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
@@ -500,22 +511,29 @@ class Forward extends \RecordManager\Base\Record\Forward
         $results = [];
         $records = $this->doc->children();
         $records = reset($records);
+        $onlineVideoTypes = $this->getOnlineVideoTypes();
+
         foreach (is_array($records) ? $records : [$records] as $record) {
-            if (!isset($record->Title->TitleText)
-                || substr((string)$record->Title->TitleText, -4) !== '.mp4'
-            ) {
-                $attrs = $record->Identifier->attributes();
-                continue;
-            }
+            $videoMatch = isset($record->Title->TitleText)
+                && substr((string)$record->Title->TitleText, -4) === '.mp4';
+
             $videoType = 'elokuva';
             $description = '';
             if (isset($record->Title->PartDesignation->Value)) {
                 $attributes = $record->Title->PartDesignation->Value->attributes();
                 if (!empty($attributes{'video-tyyppi'})) {
                     $videoType = (string)$attributes{'video-tyyppi'};
+                    if (!$videoMatch) {
+                        $videoMatch
+                            = in_array(strtolower($videoType), $onlineVideoTypes);
+                    }
                 }
                 $description = (string)$attributes->{'video-lisatieto'};
             }
+            if (!$videoMatch) {
+                continue;
+            }
+
             foreach ($record->ProductionEvent as $event) {
                 $attributes = $event->ProductionEventType->attributes();
                 $url = (string)$attributes
@@ -528,6 +546,19 @@ class Forward extends \RecordManager\Base\Record\Forward
             }
         }
         return $results;
+    }
+
+    /**
+     * Get online video types
+     * 
+     * @return array
+     */
+    protected function getOnlineVideoTypes()
+    {
+        $onlineVideoTypes = $this->getDriverParam('onlineVideoTypes', '');
+        return empty($onlineVideoTypes)
+            ? $this->onlineVideoTypes
+            : explode(',', $onlineVideoTypes);
     }
 
     /**
