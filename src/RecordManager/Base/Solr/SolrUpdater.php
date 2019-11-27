@@ -1626,10 +1626,13 @@ class SolrUpdater
                     $this->log->log(
                         'countValues',
                         "No settings found for data source '$source'",
-                        Logger::FATAL
+                        Logger::ERROR
                     );
-                    throw new \Exception(
-                        'countValues', "No settings found for data source '$source'"
+                    $this->log->log(
+                        'countValues',
+                        "No settings found for data source '$source', record "
+                        . $record['_id'],
+                        Logger::ERROR
                     );
                 }
             }
@@ -1770,20 +1773,13 @@ class SolrUpdater
      *                                  record
      * @param array   $dedupRecord      Mongo dedup record
      *
-     * @return array
+     * @return array|false
      * @throws Exception
      */
     protected function createSolrArray($record, &$mergedComponents,
         $dedupRecord = null
     ) {
         $mergedComponents = 0;
-
-        $metadataRecord = $this->recordFactory->createRecord(
-            $record['format'],
-            MetadataUtils::getRecordData($record, true),
-            $record['oai_id'],
-            $record['source_id']
-        );
 
         $source = $record['source_id'];
         if (!isset($this->settings[$source])) {
@@ -1794,12 +1790,20 @@ class SolrUpdater
                 $this->log->log(
                     'createSolrArray',
                     "No settings found for data source '$source', record "
-                    . "{$record['_id']}: " . $this->prettyPrint($record, true),
-                    Logger::FATAL
+                    . $record['_id'],
+                    Logger::ERROR
                 );
-                throw new \Exception("No settings found for data source '$source'");
+                return false;
             }
         }
+
+        $metadataRecord = $this->recordFactory->createRecord(
+            $record['format'],
+            MetadataUtils::getRecordData($record, true),
+            $record['oai_id'],
+            $record['source_id']
+        );
+
         $settings = $this->settings[$source];
         $hiddenComponent = MetadataUtils::isHiddenComponentPart(
             $settings, $record, $metadataRecord
