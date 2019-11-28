@@ -176,7 +176,7 @@ class Deduplicate extends AbstractBase
                     'deduplicate', "Processing $total records for '$source'"
                 );
                 foreach ($records as $record) {
-                    if (empty($record['update_needed'])) {
+                    if (!$singleId && empty($record['update_needed'])) {
                         continue;
                     }
                     if ($this->terminate) {
