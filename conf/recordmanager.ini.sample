@@ -167,11 +167,9 @@ error_email     =
 ;ssl_verify_peer = false
 
 [MarcRecord]
-; The following settings can be used to override the default RDA relator codes that
-; are used to classify authors between primary, secondary and others (that are not
-; indexed)
+; The following setting can be used to override the default RDA relator codes that
+; are used to classify authors between primary and secondary
 ;primary_author_relators = "adp,aut,cmp"
-;secondary_author_relators = "act,anm,ann,arr"
 
 [ForwardRecord]
 ; The following settings can be used to override the default relator codes that

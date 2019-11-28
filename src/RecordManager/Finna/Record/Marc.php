@@ -1643,7 +1643,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             ]
         ];
         return $this->getAuthorsByRelator(
-            $fieldSpecs, $this->secondaryAuthorRelators, ['700']
+            $fieldSpecs, $this->primaryAuthorRelators, ['700'], true, true
         );
     }
 
@@ -1661,7 +1661,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             ]
         ];
         return $this->getAuthorsByRelator(
-            $fieldSpecs, $this->secondaryAuthorRelators, ['700'], false
+            $fieldSpecs, $this->primaryAuthorRelators, ['700'], false, true
         );
     }
 
@@ -1680,9 +1680,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,
-            array_merge(
-                $this->primaryAuthorRelators, $this->secondaryAuthorRelators
-            ),
+            [],
             ['110', '111', '710', '711'],
             false
         );
@@ -1703,9 +1701,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,
-            array_merge(
-                $this->primaryAuthorRelators, $this->secondaryAuthorRelators
-            ),
+            [],
             ['110', '111', '710', '711']
         );
     }
