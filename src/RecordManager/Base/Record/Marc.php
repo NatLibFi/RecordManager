@@ -74,27 +74,6 @@ class Marc extends Base
     ];
 
     /**
-     * Default secondary author relator codes, may be overridden in configuration
-     *
-     * @var array
-     */
-    protected $secondaryAuthorRelators = [
-        'act', 'anm', 'ann', 'arr', 'acp', 'ar', 'ard', 'aft', 'aud', 'aui', 'aus',
-        'bjd', 'bpd', 'cll', 'ctg', 'chr', 'cng', 'clb', 'clr', 'cmm', 'cwt', 'com',
-        'cpl', 'cpt', 'cpe', 'ccp', 'cnd', 'cos', 'cot', 'coe', 'cts', 'ctt', 'cte',
-        'ctb', 'crp', 'cst', 'cov', 'cur', 'dnc', 'dtc', 'dto', 'dfd', 'dft', 'dfe',
-        'dln', 'dpc', 'dsr', 'drt', 'dis', 'drm', 'edt', 'elt', 'egr', 'etr', 'fac',
-        'fld', 'flm', 'frg', 'ilu', 'ill', 'ins', 'itr', 'ivr', 'ldr', 'lsa', 'led',
-        'lil', 'lit', 'lie', 'lel', 'let', 'lee', 'lbt', 'lgd', 'ltg', 'lyr', 'mrb',
-        'mte', 'msd', 'mus', 'nrt', 'opn', 'org', 'pta', 'pth', 'prf', 'pht', 'ptf',
-        'ptt', 'pte', 'prt', 'pop', 'prm', 'pro', 'pmn', 'prd', 'prg', 'pdr', 'pbd',
-        'ppt', 'ren', 'rpt', 'rth', 'rtm', 'res', 'rsp', 'rst', 'rse', 'rpy', 'rsg',
-        'rev', 'rbr', 'sce', 'sad', 'scr', 'scl', 'spy', 'std', 'sng', 'sds', 'spk',
-        'stm', 'str', 'stl', 'sht', 'ths', 'trl', 'tyd', 'tyg', 'vdg', 'voc', 'wde',
-        'wdc', 'wam'
-    ];
-
-    /**
      * Strings in field 300 that signify that the work is illustrated.
      *
      * @var string
@@ -115,11 +94,6 @@ class Marc extends Base
         if (isset($config['MarcRecord']['primary_author_relators'])) {
             $this->primaryAuthorRelators = explode(
                 ',', $config['MarcRecord']['primary_author_relators']
-            );
-        }
-        if (isset($config['MarcRecord']['secondary_author_relators'])) {
-            $this->secondaryAuthorRelators = explode(
-                ',', $config['MarcRecord']['secondary_author_relators']
             );
         }
     }
@@ -2324,14 +2298,17 @@ class Marc extends Base
      * @param array $fieldSpecs        Fields to retrieve
      * @param array $relators          Allowed relators
      * @param array $noRelatorRequired Field that is accepted if it doesn't have a
+     *                                 relator
      * @param bool  $altScript         Whether to return also alternate scripts
+     *                                 relator
+     * @param bool  $invertMatch       Return authors that DON'T HAVE an allowed
      *                                 relator
      *
      * @return array Array keyed by 'names' for author names, 'fuller' for fuller
      * forms and 'relators' for relator codes
      */
     protected function getAuthorsByRelator($fieldSpecs, $relators,
-        $noRelatorRequired, $altScript = true
+        $noRelatorRequired, $altScript = true, $invertMatch = false
     ) {
         $result = ['names' => [], 'fuller' => [], 'relators' => []];
         foreach ($fieldSpecs as $tag => $subfieldList) {
@@ -2339,11 +2316,22 @@ class Marc extends Base
                 $fieldRelators = $this->normalizeRelators(
                     $this->getSubfieldsArray($field, ['4' => 1, 'e' => 1])
                 );
-                if (!empty($fieldRelators) || !in_array($tag, $noRelatorRequired)) {
-                    if (empty(array_intersect($relators, $fieldRelators))) {
-                        continue;
+
+                $match = empty($relators);
+                if (!$match) {
+                    $match = empty($fieldRelators)
+                        && in_array($tag, $noRelatorRequired);
+                }
+                if (!$match) {
+                    $match = !empty(array_intersect($relators, $fieldRelators));
+                    if ($invertMatch) {
+                        $match = !$match;
                     }
                 }
+                if (!$match) {
+                    continue;
+                }
+
                 $terms = $this->getSubfields($field, $subfieldList);
                 if ($altScript
                     && isset($this->fields['880'])
@@ -2408,7 +2396,7 @@ class Marc extends Base
             ]
         ];
         return $this->getAuthorsByRelator(
-            $fieldSpecs, $this->secondaryAuthorRelators, ['700']
+            $fieldSpecs, $this->primaryAuthorRelators, ['700'], true, true
         );
     }
 
@@ -2427,9 +2415,7 @@ class Marc extends Base
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,
-            array_merge(
-                $this->primaryAuthorRelators, $this->secondaryAuthorRelators
-            ),
+            [],
             ['110', '111', '710', '711']
         );
     }
