@@ -369,7 +369,9 @@ class HTTPFiles extends Base
                     $this->message("$count records processed", true);
                 }
             }
-            $xml->next($this->recordElem);
+            if (false === $xml->next($this->recordElem)) {
+                break;
+            }
         }
     }
 
