@@ -218,6 +218,18 @@ class WorkerPoolManager
     }
 
     /**
+     * Check if a worker pool exists
+     *
+     * @param string $poolId Pool id
+     *
+     * @return bool
+     */
+    public function hasWorkerPool($poolId)
+    {
+        return !empty($this->workerPools[$poolId]);
+    }
+
+    /**
      * Add a request to the queue
      *
      * @param string $poolId Pool id
@@ -229,6 +241,9 @@ class WorkerPoolManager
         $args = func_get_args();
         array_shift($args);
         if (empty($this->workerPools[$poolId])) {
+            if (!isset($this->workerPoolRunMethods[$poolId])) {
+                throw new \Exception("addRequest: Invalid worker pool $poolId");
+            }
             // Synchronous operation
             $this->results[$poolId][] = call_user_func_array(
                 $this->workerPoolRunMethods[$poolId],

@@ -1106,7 +1106,6 @@ class SolrUpdater
         if ($singleId) {
             $params['_id'] = $singleId;
             $params['dedup_id'] = ['$exists' => true];
-            $lastIndexingDate = null;
         } else {
             if (isset($mongoFromDate)) {
                 $params['updated'] = ['$gte' => $mongoFromDate];
@@ -2269,10 +2268,14 @@ class SolrUpdater
                     $capsRatio += 1 - $similar / $length;
                 }
             }
-            $baseScore = $fieldCount + $titleLen;
-            $capsRatio /= $fieldCount;
-            $record['score'] = 0 == $capsRatio ? $fieldCount
-                : $baseScore / $capsRatio;
+            if (0 === $fieldCount) {
+                $record['score'] = 0;
+            } else {
+                $baseScore = $fieldCount + $titleLen;
+                $capsRatio /= $fieldCount;
+                $record['score'] = 0 == $capsRatio ? $fieldCount
+                    : $baseScore / $capsRatio;
+            }
         }
         unset($record);
 
@@ -2786,10 +2789,14 @@ class SolrUpdater
         $this->bufferedDeletions[] = '"delete":{"id":"' . $id . '"}';
         if (count($this->bufferedDeletions) >= 1000) {
             $request = "{" . implode(',', $this->bufferedDeletions) . "}";
-            $this->workerPoolManager->addRequest(
-                'solr',
-                $request
-            );
+            if ($this->workerPoolManager->hasWorkerPool('solr')) {
+                $this->workerPoolManager->addRequest(
+                    'solr',
+                    $request
+                );
+            } else {
+                $this->solrRequest($request);
+            }
             $this->bufferedDeletions = [];
             return true;
         }
