@@ -1036,12 +1036,17 @@ class SolrUpdater
                 }
             }
 
+            $this->log->log(
+                'updateRecords',
+                'Waiting for any pending requests to complete...'
+            );
+            $this->workerPoolManager->waitUntilDone('solr');
+            $this->log->log(
+                'updateRecords',
+                'All requests complete'
+            );
+
             if (!$noCommit && $needCommit && !$compare && !$this->dumpPrefix) {
-                $this->log->log(
-                    'updateRecords',
-                    'Waiting for any pending requests to complete...'
-                );
-                $this->workerPoolManager->waitUntilDone('solr');
                 $this->log->log('updateRecords', 'Final commit...');
                 $this->solrRequest('{ "commit": {} }', 3600);
                 $this->log->log('updateRecords', 'Commit complete');
