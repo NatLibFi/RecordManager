@@ -496,18 +496,6 @@ class DedupHandler
             }
             $dedupRecord['changed'] = $this->db->getTimestamp();
             $this->db->saveDedup($dedupRecord);
-
-            // Mark remaining records to be processed again as this change may affect
-            // their preferred dedup group
-            if (!$dedupRecord['deleted']) {
-                $this->db->updateRecords(
-                    [
-                        '_id' => ['$in' => $dedupRecord['ids']],
-                        'deleted' => false
-                    ],
-                    ['update_needed' => true]
-                );
-            }
         }
     }
 

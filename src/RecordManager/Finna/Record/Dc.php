@@ -61,7 +61,7 @@ class Dc extends \RecordManager\Base\Record\Dc
 
         if ($range = $this->getPublicationDateRange()) {
             $data['search_daterange_mv'][] = $data['publication_daterange']
-                = metadataUtils::dateRangeToStr($range);
+                = MetadataUtils::dateRangeToStr($range);
         }
 
         // language, take only first

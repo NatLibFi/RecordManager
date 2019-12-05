@@ -460,7 +460,8 @@ class Base
      * Return a parameter specified in driverParams[] of datasources.ini
      *
      * @param string $parameter Parameter name
-     * @param bool   $default   Default value if the parameter is not set
+     * @param mixed  $default   Default value to return if value is not set
+     *                          defaults to true
      *
      * @return mixed Value
      */
