@@ -2269,10 +2269,14 @@ class SolrUpdater
                     $capsRatio += 1 - $similar / $length;
                 }
             }
-            $baseScore = $fieldCount + $titleLen;
-            $capsRatio /= $fieldCount;
-            $record['score'] = 0 == $capsRatio ? $fieldCount
-                : $baseScore / $capsRatio;
+            if (0 === $fieldCount) {
+                $record['score'] = 0;
+            } else {
+                $baseScore = $fieldCount + $titleLen;
+                $capsRatio /= $fieldCount;
+                $record['score'] = 0 == $capsRatio ? $fieldCount
+                    : $baseScore / $capsRatio;
+            }
         }
         unset($record);
 
