@@ -78,11 +78,25 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         $data = parent::toSolrArray();
         $doc = $this->doc;
 
-        $unitDateRange = $this->parseDateRange((string)$doc->did->unitdate);
-        $data['search_daterange_mv'] = $data['unit_daterange']
-            = MetadataUtils::dateRangeToStr($unitDateRange);
+        $unitDateRange = null;
+        if (isset($doc->did->unitdate)) {
+            foreach ($doc->did->unitdate as $unitdate) {
+                $attributes = $unitdate->attributes();
+                if ($attributes->label
+                    && (string)$attributes->label === 'Ajallinen kattavuus'
+                ) {
+                    $unitDateRange = $this->parseDateRange(
+                        (string)$unitdate->attributes()->normal
+                    );
+                    break;
+                }
+            }
+        }
 
         if ($unitDateRange) {
+            $data['search_daterange_mv'][] = $data['unit_daterange']
+                = MetadataUtils::dateRangeToStr($unitDateRange);
+
             $data['main_date_str'] = MetadataUtils::extractYear($unitDateRange[0]);
             $data['main_date'] = $this->validateDate($unitDateRange[0]);
             // Append year range to title (only years, not the full dates)
@@ -393,93 +407,73 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      */
     protected function parseDateRange($input)
     {
-        if (!$input || $input == '-') {
+        if (!$input || $input == '-' || false === strpos($input, '/')) {
             return null;
         }
 
-        if (true
-            && preg_match(
-                '/(\d\d?).(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d?).(\d\d\d\d)/',
-                $input,
-                $matches
-            ) > 0
+        $yearLimits = ['0000', '9999'];
+
+        list($start, $end) = explode('/', $input);
+
+        $parseDate = function (
+            $date, $defaultYear = '0', $defaultMonth = '01', $defaultDay = '01',
+            $hour = '00:00:00'
         ) {
-            $startYear = $matches[3];
-            $startMonth = sprintf('%02d', $matches[2]);
-            $startDay = sprintf('%02d', $matches[1]);
-            $startDate = $startYear . '-' . $startMonth . '-' . $startDay
-                . 'T00:00:00Z';
-            $endYear = $matches[6];
-            $endMonth = sprintf('%02d', $matches[5]);
-            $endDay = sprintf('%02d', $matches[4]);
-            $endDate = $endYear . '-' . $endMonth . '-' . $endDay . 'T23:59:59Z';
-        } elseif (true
-            && preg_match(
-                '/(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d\d\d)/', $input, $matches
-            ) > 0
-        ) {
-            $startYear = $matches[2];
-            $startMonth = sprintf('%02d', $matches[1]);
-            $startDay = '01';
-            $startDate = $startYear . '-' . $startMonth . '-' . $startDay
-                . 'T00:00:00Z';
-            $endYear = $matches[4];
-            $endMonth = sprintf('%02d', $matches[3]);
-            $endDate = $endYear . '-' . $endMonth . '-01';
+            // Set year/month/day to defaults
+            $year = str_repeat($defaultYear, 4);
+            $month = $defaultMonth;
+            $day = $defaultDay;
+            if (!in_array($date, ['open', 'unknown'])) {
+                $parts = explode('-', $date);
+                $year = str_replace('u', $defaultYear, $parts[0]);
+
+                if (isset($parts[1]) && $parts[1] !== 'uu') {
+                    $month = $parts[1];
+                }
+
+                if (isset($parts[2]) && $parts[2] !== 'uu') {
+                    $day = $parts[2];
+                }
+            }
+
+            if (null === $day) {
+                // Set day to last day of month if default day was not given
+                $day = date('t', strtotime("{$year}-{$month}"));
+            }
+
+            $date =  sprintf(
+                '%04d-%02d-%02dT%sZ',
+                $year, $month, $day, $hour
+            );
+
             try {
-                $d = new \DateTime($endDate);
+                $d = new \DateTime($date);
             } catch (Exception $e) {
-                $this->logger->log(
-                    'Ead3',
-                    "Failed to parse date $endDate, record {$this->source}."
-                    . $this->getID(),
-                    Logger::DEBUG
-                );
-                $this->storeWarning('invalid end date');
                 return null;
             }
-            $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
-        } elseif (preg_match('/(\d\d\d\d) ?- ?(\d\d\d\d)/', $input, $matches) > 0) {
-            $startDate = $matches[1] . '-01-01T00:00:00Z';
-            $endDate = $matches[2] . '-12-31T00:00:00Z';
-        } elseif (preg_match('/(\d\d\d\d)-(\d\d?)-(\d\d?)/', $input, $matches) > 0) {
-            $year = $matches[1];
-            $month = sprintf('%02d', $matches[2]);
-            $day = sprintf('%02d', $matches[3]);
-            $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
-            $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
-        } elseif (preg_match('/(\d\d?).(\d\d?).(\d\d\d\d)/', $input, $matches) > 0) {
-            $year = $matches[3];
-            $month = sprintf('%02d', $matches[2]);
-            $day = sprintf('%02d', $matches[1]);
-            $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
-            $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
-        } elseif (preg_match('/(\d\d?)\.(\d\d\d\d)/', $input, $matches) > 0) {
-            $year = $matches[2];
-            $month = sprintf('%02d', $matches[1]);
-            $startDate = $year . '-' . $month . '-01' . 'T00:00:00Z';
-            $endDate = $year . '-' . $month . '-01';
-            try {
-                $d = new \DateTime($endDate);
-            } catch (Exception $e) {
-                $this->logger->log(
-                    'Ead3',
-                    "Failed to parse date $endDate, record {$this->source}."
-                    . $this->getID(),
-                    Logger::DEBUG
-                );
-                $this->storeWarning('invalid end date');
-                return null;
-            }
-            $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
-        } elseif (preg_match('/(\d+) ?- ?(\d+)/', $input, $matches) > 0) {
-            $startDate = $matches[1] . '-01-01T00:00:00Z';
-            $endDate = $matches[2] . '-12-31T00:00:00Z';
-        } elseif (preg_match('/(\d\d\d\d)/', $input, $matches) > 0) {
-            $year = $matches[1];
-            $startDate = $year . '-01-01T00:00:00Z';
-            $endDate = $year . '-12-31T23:59:59Z';
-        } else {
+
+            return $date;
+        };
+
+        if (null === ($startDate = $parseDate($start))) {
+            $this->logger->log(
+                'Ead3',
+                "Failed to parse startDate $start, record {$this->source}."
+                . $this->getID(),
+                Logger::DEBUG
+            );
+            $this->storeWarning('invalid start date');
+            return null;
+        }
+
+        if (null === ($endDate = $parseDate($end, '9', '12', null, '23:59:59'))) {
+            $this->logger->log(
+                'Ead3',
+                "Failed to parse endDate $end, record {$this->source}."
+                . $this->getID(),
+                Logger::DEBUG
+            );
+            $this->storeWarning('invalid end date');
             return null;
         }
 
