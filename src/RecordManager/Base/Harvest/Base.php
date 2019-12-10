@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (c) The National Library of Finland 2011-2017.
+ * Copyright (c) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -29,6 +29,7 @@ namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\XslTransformation;
 
 /**
@@ -400,7 +401,7 @@ class Base
         $doc = new \DOMDocument();
         $saveUseErrors = libxml_use_internal_errors(true);
         libxml_clear_errors();
-        $result = $doc->loadXML($xml, LIBXML_PARSEHUGE);
+        $result = MetadataUtils::loadXML($xml, $doc);
         if ($result === false || libxml_get_last_error() !== false) {
             $this->message(
                 'Invalid XML received, trying encoding fix...',
@@ -409,7 +410,7 @@ class Base
             );
             $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
             libxml_clear_errors();
-            $result = $doc->loadXML($xml, LIBXML_PARSEHUGE);
+            $result = MetadataUtils::loadXML($xml, $doc);
         }
         if ($result === false || libxml_get_last_error() !== false) {
             libxml_use_internal_errors($saveUseErrors);

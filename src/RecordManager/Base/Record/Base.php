@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -521,7 +521,7 @@ class Base
         $saveUseErrors = libxml_use_internal_errors(true);
         try {
             libxml_clear_errors();
-            $doc = simplexml_load_string($xml);
+            $doc = MetadataUtils::loadXML($xml);
             if (false === $doc) {
                 $errors = libxml_get_errors();
                 $messageParts = [];

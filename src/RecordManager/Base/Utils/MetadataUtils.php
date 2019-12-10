@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2018.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -932,6 +932,22 @@ class MetadataUtils
     {
         $parts = explode('.', $id, 2);
         return $parts[0];
+    }
+
+    /**
+     * Load XML into DOM or SimpleXMLElement (if $dom is null)
+     *
+     * @param string       $xml     XML
+     * @param \DomDocument $dom     DOM
+     * @param int          $options Additional libxml options (LIBXML_PARSEHUGE and
+     *                              LIBXML_COMPACT are set by default)
+     *
+     * @return \SimpleXMLElement|\DomDocument|bool
+     */
+    public static function loadXML($xml, $dom = null, $options = 0)
+    {
+        $options |= LIBXML_PARSEHUGE | LIBXML_COMPACT;
+        return XmlSecurity::scan($xml, $dom, $options);
     }
 
     /**

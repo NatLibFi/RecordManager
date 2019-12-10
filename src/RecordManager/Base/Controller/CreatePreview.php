@@ -28,6 +28,7 @@
 namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Solr\PreviewCreator;
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Create Preview Record
@@ -111,7 +112,7 @@ class CreatePreview extends AbstractBase
 
         if ('marc' !== $format && substr(trim($metadata), 0, 1) === '<') {
             $doc = new \DOMDocument();
-            if ($doc->loadXML($metadata, LIBXML_PARSEHUGE)) {
+            if (MetadataUtils::loadXML($metadata, $doc)) {
                 $root = $doc->childNodes->item(0);
                 if (in_array($root->nodeName, ['records', 'collection'])) {
                     // This is a collection of records, get the first one
@@ -198,7 +199,7 @@ class CreatePreview extends AbstractBase
     protected function oaipmhTransform($metadata, $transformation)
     {
         $doc = new \DOMDocument();
-        if (!$doc->loadXML($metadata, LIBXML_PARSEHUGE)) {
+        if (!MetadataUtils::loadXML($metadata, $doc)) {
             throw new \Exception(
                 'Could not parse XML record'
             );

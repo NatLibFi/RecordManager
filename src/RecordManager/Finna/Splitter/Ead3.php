@@ -95,7 +95,7 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
      */
     public function setData($data)
     {
-        $this->doc = simplexml_load_string($data, null, LIBXML_PARSEHUGE);
+        $this->doc = \RecordManager\Base\Utils\MetadataUtils::loadXML($data);
         $this->recordNodes = $this->doc->xpath('archdesc | archdesc/dsc//*[@level]');
         $this->recordCount = count($this->recordNodes);
         $this->currentPos = 0;

@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -26,6 +26,8 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 namespace RecordManager\Base\Controller;
+
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Pre-transformation trait
@@ -71,7 +73,7 @@ trait PreTransformationTrait
         try {
             libxml_clear_errors();
             $doc = new \DOMDocument();
-            if ($doc->loadXML($data, LIBXML_PARSEHUGE) === false) {
+            if (MetadataUtils::loadXML($data, $doc) === false) {
                 $errors = libxml_get_errors();
                 $messageParts = [];
                 foreach ($errors as $error) {
