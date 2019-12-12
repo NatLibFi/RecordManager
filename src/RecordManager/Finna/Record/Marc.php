@@ -770,6 +770,18 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $data['free_online_str_mv'] = $data['online_str_mv'];
                 $data['free_online_boolean'] = true;
             }
+        } else {
+            // Check online availability from carrier type. This is intentionally
+            // done after the free check above, since these records seem to often not
+            // have the 506 field.
+            $fields = $this->getFields('338');
+            foreach ($fields as $field) {
+                $b = $this->getSubfield($field, 'b');
+                if ('cr' === $b) {
+                    $data['online_boolean'] = true;
+                    $data['online_str_mv'] = $this->source;
+                }
+            }
         }
 
         // Author facet
