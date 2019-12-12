@@ -254,7 +254,7 @@ class Forward extends Base
     public function getMainAuthor()
     {
         $authors = $this->getPrimaryAuthorsSorted();
-        return $authors ? $authors['names'][0] : '';
+        return isset($authors['names'][0]) ? $authors['names'][0] : '';
     }
 
     /**
