@@ -324,7 +324,10 @@ class DedupHandler
                 if ($this->verbose) {
                     echo "Search: '$keyPart'\n";
                 }
-                $candidates = $this->db->findRecords([$type => $keyPart]);
+                $candidates = $this->db->findRecords(
+                    [$type => $keyPart],
+                    ['sort' => ['created' => 1]]
+                );
                 $processed = 0;
                 // Go through the candidates, try to match
                 $matchRecord = null;
