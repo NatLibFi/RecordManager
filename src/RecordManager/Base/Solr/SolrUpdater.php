@@ -730,7 +730,11 @@ class SolrUpdater
                 ? $mongoFromDate->toDatetime()->format('Y-m-d H:i:s\Z')
                 : 'the beginning';
             // Take the last indexing date now and store it when done
-            $lastIndexingDate = $this->db->getTimestamp();
+            if (!$sourceId && !$singleId && !isset($mongoFromDate)) {
+                $lastIndexingDate = $this->db->getTimestamp();
+            } else {
+                $lastIndexingDate = null;
+            }
 
             // Only process merged records if any of the selected sources has
             // deduplication enabled
@@ -981,15 +985,15 @@ class SolrUpdater
 
             $this->flushUpdateBuffer();
 
+            if ($count > 0) {
+                $needCommit = true;
+            }
             if (isset($lastIndexingDate) && !$compare) {
                 $state = [
                     '_id' => $lastUpdateKey,
                     'value' => $lastIndexingDate
                 ];
                 $this->db->saveState($state);
-            }
-            if ($count > 0) {
-                $needCommit = true;
             }
             $this->log->log(
                 'updateRecords',
@@ -1045,6 +1049,16 @@ class SolrUpdater
                 'updateRecords',
                 'All requests complete'
             );
+
+            $this->flushUpdateBuffer();
+
+            if (isset($lastIndexingDate) && !$compare) {
+                $state = [
+                    '_id' => $lastUpdateKey,
+                    'value' => $lastIndexingDate
+                ];
+                $this->db->saveState($state);
+            }
 
             if (!$noCommit && $needCommit && !$compare && !$this->dumpPrefix) {
                 $this->log->log('updateRecords', 'Final commit...');
