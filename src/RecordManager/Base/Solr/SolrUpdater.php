@@ -1848,7 +1848,7 @@ class SolrUpdater
                 }
             } else {
                 $params = [
-                    'host_record_id' => $record['linking_id'],
+                    'host_record_id' => ['$in' => (array)$record['linking_id']],
                     'deleted' => false
                 ];
                 if (!empty($settings['componentPartSourceId'])) {

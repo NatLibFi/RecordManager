@@ -129,14 +129,14 @@ class Base
     }
 
     /**
-     * Return record linking ID (typically same as ID) used for links
+     * Return record linking IDs (typically same as ID) used for links
      * between records in the data source
      *
-     * @return string
+     * @return array
      */
-    public function getLinkingID()
+    public function getLinkingIDs()
     {
-        return $this->getID();
+        return [$this->getID()];
     }
 
     /**

@@ -592,12 +592,12 @@ class Marc extends Base
     }
 
     /**
-     * Return record linking ID (typically same as ID) used for links
+     * Return record linking IDs (typically same as ID) used for links
      * between records in the data source
      *
-     * @return string
+     * @return array
      */
-    public function getLinkingID()
+    public function getLinkingIDs()
     {
         $id = $this->getField('001');
         if ('' === $id && $this->getDriverParam('idIn999', false)) {
@@ -608,10 +608,21 @@ class Marc extends Base
             $source = $this->getField('003');
             $source = MetadataUtils::stripTrailingPunctuation($source);
             if ($source) {
-                return "($source)$id";
+                $id = "($source)$id";
             }
         }
-        return $id;
+        $results = [$id];
+
+        $cns = $this->getFieldsSubfields(
+            [
+                [self::GET_NORMAL, '035', ['a' => 1]]
+            ]
+        );
+        if ($cns) {
+            $results = array_merge($results, $cns);
+        }
+
+        return $results;
     }
 
     /**
