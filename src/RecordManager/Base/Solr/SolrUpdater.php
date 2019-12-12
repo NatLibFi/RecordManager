@@ -2123,7 +2123,7 @@ class SolrUpdater
         // Work identification keys
         if ($workIds = $metadataRecord->getWorkIdentificationData()) {
             $keys = [];
-            foreach ($workIds['titles'] as $titleData) {
+            foreach ($workIds['titles'] ?? [] as $titleData) {
                 $title = MetadataUtils::normalizeKey(
                     $titleData['value'],
                     $this->unicodeNormalizationForm
@@ -2131,7 +2131,7 @@ class SolrUpdater
                 if ('uniform' === $titleData['type']) {
                     $keys[] = "UT $title";
                 } else {
-                    foreach ($workIds['authors'] as $authorData) {
+                    foreach ($workIds['authors'] ?? [] as $authorData) {
                         $author = MetadataUtils::normalizeKey(
                             $authorData['value'],
                             $this->unicodeNormalizationForm
@@ -2140,7 +2140,7 @@ class SolrUpdater
                     }
                 }
             }
-            foreach ($workIds['titlesAltScript'] as $titleData) {
+            foreach ($workIds['titlesAltScript'] ?? [] as $titleData) {
                 $title = MetadataUtils::normalizeKey(
                     $titleData['value'],
                     $this->unicodeNormalizationForm
@@ -2148,7 +2148,7 @@ class SolrUpdater
                 if ('uniform' === $titleData['type']) {
                     $keys[] = "UT $title";
                 } else {
-                    foreach ($workIds['authorsAltScript'] as $authorData) {
+                    foreach ($workIds['authorsAltScript'] ?? [] as $authorData) {
                         $author = MetadataUtils::normalizeKey(
                             $authorData['value'],
                             $this->unicodeNormalizationForm

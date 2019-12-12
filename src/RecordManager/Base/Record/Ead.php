@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -293,6 +293,23 @@ class Ead extends Base
     public function getTopicURIs()
     {
         return $this->getTopicTerms(true);
+    }
+
+    /**
+     * Dedup: Return main author (format: Last, First)
+     *
+     * @return string
+     */
+    public function getMainAuthor()
+    {
+        if ($names = $this->doc->xpath('controlaccess/persname')) {
+            foreach ($names as $name) {
+                if (trim((string)$name) !== '-') {
+                    return trim((string)$name);
+                }
+            }
+        }
+        return trim((string)$this->doc->creator);
     }
 
     /**

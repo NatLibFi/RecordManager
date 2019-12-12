@@ -247,6 +247,17 @@ class Forward extends Base
     }
 
     /**
+     * Dedup: Return main author (format: Last, First)
+     *
+     * @return string
+     */
+    public function getMainAuthor()
+    {
+        $authors = $this->getPrimaryAuthorsSorted();
+        return $authors ? $authors['names'][0] : '';
+    }
+
+    /**
      * Get the main metadata element
      *
      * @return SimpleXMLElement

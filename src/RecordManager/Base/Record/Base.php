@@ -449,11 +449,40 @@ class Base
     /**
      * Get key data that can be used to identify expressions of a work
      *
-     * @return array Associative array of authors and titles
+     * Returns an associative array like this:
+     *
+     * [
+     *   'titles' => [
+     *     ['type' => 'title', 'value' => 'Title'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title']
+     *    ],
+     *   'authors' => [
+     *     ['type' => 'author', 'value' => 'Name 1'],
+     *     ['type' => 'author', 'value' => 'Name 2']
+     *   ],
+     *   'titlesAltScript' => [
+     *     ['type' => 'title', 'value' => 'Title in alternate script'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
+     *   ],
+     *   'authorsAltScript' => [
+     *     ['type' => 'author', 'value' => 'Name 1 in alternate script'],
+     *     ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *   ]
+     * ]
+     *
+     * @return array
      */
     public function getWorkIdentificationData()
     {
-        return [];
+        $titles = [];
+        $authors = [];
+        if ($title = $this->getTitle(true)) {
+            $titles[] = ['type' => 'title', 'value' => $title];
+        }
+        if ($author = $this->getMainAuthor()) {
+            $authors[] = ['type' => 'author', 'value' => $author];
+        }
+        return compact('titles', 'authors');
     }
 
     /**
