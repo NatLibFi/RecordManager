@@ -208,7 +208,7 @@ class DedupHandler
                 ['dedup_id' => 1]
             );
             return "Removed dedup_id {$record['dedup_id']} from record"
-                . " $id (dedup record does not exist";
+                . " $id (dedup record does not exist)";
         }
 
         if (!in_array($id, (array)$dedupRecord['ids'])) {
@@ -218,7 +218,7 @@ class DedupHandler
                 ['dedup_id' => 1]
             );
             return "Removed dedup_id {$record['dedup_id']} from record"
-                . " $id (dedup record does not contain the id";
+                . " $id (dedup record does not contain the id)";
         }
         return '';
     }
