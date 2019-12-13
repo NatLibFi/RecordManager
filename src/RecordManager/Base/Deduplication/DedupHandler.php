@@ -324,7 +324,10 @@ class DedupHandler
                 if ($this->verbose) {
                     echo "Search: '$keyPart'\n";
                 }
-                $candidates = $this->db->findRecords([$type => $keyPart]);
+                $candidates = $this->db->findRecords(
+                    [$type => $keyPart],
+                    ['sort' => ['created' => 1]]
+                );
                 $processed = 0;
                 // Go through the candidates, try to match
                 $matchRecord = null;
@@ -917,15 +920,18 @@ class DedupHandler
     /**
      * Get component parts in a sorted array
      *
-     * @param string $sourceId     Source ID
-     * @param string $hostRecordId Host record ID (doesn't include source id)
+     * @param string       $sourceId     Source ID
+     * @param string|array $hostRecordId Host record IDs (doesn't include source id)
      *
      * @return array Array of component parts
      */
     protected function getComponentPartsSorted($sourceId, $hostRecordId)
     {
         $componentsIter = $this->db->findRecords(
-            ['source_id' => $sourceId, 'host_record_id' => $hostRecordId]
+            [
+                'source_id' => $sourceId,
+                'host_record_id' => ['$in' => (array)$hostRecordId]
+            ]
         );
         $components = [];
         foreach ($componentsIter as $component) {

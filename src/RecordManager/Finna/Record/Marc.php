@@ -770,6 +770,18 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $data['free_online_str_mv'] = $data['online_str_mv'];
                 $data['free_online_boolean'] = true;
             }
+        } else {
+            // Check online availability from carrier type. This is intentionally
+            // done after the free check above, since these records seem to often not
+            // have the 506 field.
+            $fields = $this->getFields('338');
+            foreach ($fields as $field) {
+                $b = $this->getSubfield($field, 'b');
+                if ('cr' === $b) {
+                    $data['online_boolean'] = true;
+                    $data['online_str_mv'] = $this->source;
+                }
+            }
         }
 
         // Author facet
@@ -1751,7 +1763,28 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Get key data that can be used to identify expressions of a work
      *
-     * @return array Associative array of authors and titles
+     * Returns an associative array like this:
+     *
+     * [
+     *   'titles' => [
+     *     ['type' => 'title', 'value' => 'Title'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title']
+     *    ],
+     *   'authors' => [
+     *     ['type' => 'author', 'value' => 'Name 1'],
+     *     ['type' => 'author', 'value' => 'Name 2']
+     *   ],
+     *   'titlesAltScript' => [
+     *     ['type' => 'title', 'value' => 'Title in alternate script'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
+     *   ],
+     *   'authorsAltScript' => [
+     *     ['type' => 'author', 'value' => 'Name 1 in alternate script'],
+     *     ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *   ]
+     * ]
+     *
+     * @return array
      */
     public function getWorkIdentificationData()
     {

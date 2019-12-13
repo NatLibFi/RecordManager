@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -188,7 +188,7 @@ class Export extends AbstractBase
                 );
                 if ($xpath) {
                     $xml = $metadataRecord->toXML();
-                    $xpathResult = simplexml_load_string($xml)->xpath($xpath);
+                    $xpathResult = MetadataUtils::loadXML($xml)->xpath($xpath);
                     if ($xpathResult === false) {
                         throw new \Exception(
                             "Failed to evaluate XPath expression '$xpath'"

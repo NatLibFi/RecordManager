@@ -390,6 +390,17 @@ class Lido extends \RecordManager\Base\Record\Lido
     }
 
     /**
+     * Dedup: Return main author (format: Last, First)
+     *
+     * @return string
+     */
+    public function getMainAuthor()
+    {
+        $authors = $this->getActors($this->mainEvent, null, false);
+        return $authors ? $authors[0] : '';
+    }
+
+    /**
      * Process an array of locations
      *
      * @param array $locations Location strings
@@ -812,7 +823,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                     'Lido',
                     "GML Polygon missing outer boundary, record "
                     . "{$this->source}." . $this->getID(),
-                    Logger::DEUBG
+                    Logger::DEBUG
                 );
                 $this->storeWarning('gml polygon missing outer boundary');
                 return '';

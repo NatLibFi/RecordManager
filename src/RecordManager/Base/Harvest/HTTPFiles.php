@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (c) The National Library of Finland 2011-2017.
+ * Copyright (c) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -29,6 +29,7 @@ namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\XmlSecurity;
 
 /**
  * HTTPFiles Class
@@ -110,6 +111,7 @@ class HTTPFiles extends Base
         $this->message('Files to harvest: ' . count($fileList));
         foreach ($fileList as $file) {
             $data = $this->retrieveFile($file);
+            XmlSecurity::heuristicScanString($data);
 
             $this->message('Processing the records...', true);
 

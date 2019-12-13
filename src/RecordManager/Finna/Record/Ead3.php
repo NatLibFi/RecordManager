@@ -511,7 +511,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      *
      * @return array
      */
-    protected function getTopicURIs()
+    public function getTopicURIs()
     {
         $result = [];
         if (!isset($this->doc->controlaccess->subject)) {

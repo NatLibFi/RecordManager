@@ -33,7 +33,7 @@ namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
-
+use RecordManager\Base\Utils\MetadataUtils;
 /**
  * OaiPmh Class
  *
@@ -123,10 +123,16 @@ class OaiPmh extends Base
     /**
      * Current response being processed
      *
-     * @var DOMDocument
+     * @var \DOMDocument
      */
     protected $xml = null;
 
+    /**
+     * Safety limit for abort if the same resumption token with no new results is
+     * received with subsequent calls.
+     *
+     * @var int
+     */
     protected $sameResumptionTokenLimit = 100;
 
     /**
@@ -468,7 +474,7 @@ class OaiPmh extends Base
     protected function loadXML($xml)
     {
         $doc = new \DOMDocument();
-        if (!$doc->loadXML($xml, LIBXML_PARSEHUGE)) {
+        if (!MetadataUtils::loadXML($xml, $doc)) {
             return false;
         }
         if (null !== $this->preXslt) {
@@ -796,7 +802,7 @@ class OaiPmh extends Base
      * @param DOMNode $xml      The XML Node
      * @param string  $nodeName Node to get
      *
-     * @return DOMNode | false  Result node or false if not found
+     * @return \DOMNode|false  Result node or false if not found
      */
     protected function getSingleNode($xml, $nodeName)
     {

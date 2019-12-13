@@ -190,7 +190,7 @@ trait StoreRecordTrait
             }
             $dbRecord['oai_id'] = $oaiID;
             $dbRecord['deleted'] = $deleted;
-            $dbRecord['linking_id'] = $metadataRecord->getLinkingID();
+            $dbRecord['linking_id'] = $metadataRecord->getLinkingIDs();
             if ($mainID) {
                 $dbRecord['main_id'] = $mainID;
             }

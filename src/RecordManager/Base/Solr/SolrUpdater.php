@@ -730,7 +730,11 @@ class SolrUpdater
                 ? $mongoFromDate->toDatetime()->format('Y-m-d H:i:s\Z')
                 : 'the beginning';
             // Take the last indexing date now and store it when done
-            $lastIndexingDate = $this->db->getTimestamp();
+            if (!$sourceId && !$singleId && !isset($mongoFromDate)) {
+                $lastIndexingDate = $this->db->getTimestamp();
+            } else {
+                $lastIndexingDate = null;
+            }
 
             // Only process merged records if any of the selected sources has
             // deduplication enabled
@@ -981,15 +985,15 @@ class SolrUpdater
 
             $this->flushUpdateBuffer();
 
+            if ($count > 0) {
+                $needCommit = true;
+            }
             if (isset($lastIndexingDate) && !$compare) {
                 $state = [
                     '_id' => $lastUpdateKey,
                     'value' => $lastIndexingDate
                 ];
                 $this->db->saveState($state);
-            }
-            if ($count > 0) {
-                $needCommit = true;
             }
             $this->log->log(
                 'updateRecords',
@@ -1045,6 +1049,16 @@ class SolrUpdater
                 'updateRecords',
                 'All requests complete'
             );
+
+            $this->flushUpdateBuffer();
+
+            if (isset($lastIndexingDate) && !$compare) {
+                $state = [
+                    '_id' => $lastUpdateKey,
+                    'value' => $lastIndexingDate
+                ];
+                $this->db->saveState($state);
+            }
 
             if (!$noCommit && $needCommit && !$compare && !$this->dumpPrefix) {
                 $this->log->log('updateRecords', 'Final commit...');
@@ -1834,7 +1848,7 @@ class SolrUpdater
                 }
             } else {
                 $params = [
-                    'host_record_id' => $record['linking_id'],
+                    'host_record_id' => ['$in' => (array)$record['linking_id']],
                     'deleted' => false
                 ];
                 if (!empty($settings['componentPartSourceId'])) {
@@ -2109,7 +2123,7 @@ class SolrUpdater
         // Work identification keys
         if ($workIds = $metadataRecord->getWorkIdentificationData()) {
             $keys = [];
-            foreach ($workIds['titles'] as $titleData) {
+            foreach ($workIds['titles'] ?? [] as $titleData) {
                 $title = MetadataUtils::normalizeKey(
                     $titleData['value'],
                     $this->unicodeNormalizationForm
@@ -2117,7 +2131,7 @@ class SolrUpdater
                 if ('uniform' === $titleData['type']) {
                     $keys[] = "UT $title";
                 } else {
-                    foreach ($workIds['authors'] as $authorData) {
+                    foreach ($workIds['authors'] ?? [] as $authorData) {
                         $author = MetadataUtils::normalizeKey(
                             $authorData['value'],
                             $this->unicodeNormalizationForm
@@ -2126,7 +2140,7 @@ class SolrUpdater
                     }
                 }
             }
-            foreach ($workIds['titlesAltScript'] as $titleData) {
+            foreach ($workIds['titlesAltScript'] ?? [] as $titleData) {
                 $title = MetadataUtils::normalizeKey(
                     $titleData['value'],
                     $this->unicodeNormalizationForm
@@ -2134,7 +2148,7 @@ class SolrUpdater
                 if ('uniform' === $titleData['type']) {
                     $keys[] = "UT $title";
                 } else {
-                    foreach ($workIds['authorsAltScript'] as $authorData) {
+                    foreach ($workIds['authorsAltScript'] ?? [] as $authorData) {
                         $author = MetadataUtils::normalizeKey(
                             $authorData['value'],
                             $this->unicodeNormalizationForm

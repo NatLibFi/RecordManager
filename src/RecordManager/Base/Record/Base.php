@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -129,14 +129,14 @@ class Base
     }
 
     /**
-     * Return record linking ID (typically same as ID) used for links
+     * Return record linking IDs (typically same as ID) used for links
      * between records in the data source
      *
-     * @return string
+     * @return array
      */
-    public function getLinkingID()
+    public function getLinkingIDs()
     {
-        return $this->getID();
+        return [$this->getID()];
     }
 
     /**
@@ -449,11 +449,40 @@ class Base
     /**
      * Get key data that can be used to identify expressions of a work
      *
-     * @return array Associative array of authors and titles
+     * Returns an associative array like this:
+     *
+     * [
+     *   'titles' => [
+     *     ['type' => 'title', 'value' => 'Title'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title']
+     *    ],
+     *   'authors' => [
+     *     ['type' => 'author', 'value' => 'Name 1'],
+     *     ['type' => 'author', 'value' => 'Name 2']
+     *   ],
+     *   'titlesAltScript' => [
+     *     ['type' => 'title', 'value' => 'Title in alternate script'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
+     *   ],
+     *   'authorsAltScript' => [
+     *     ['type' => 'author', 'value' => 'Name 1 in alternate script'],
+     *     ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *   ]
+     * ]
+     *
+     * @return array
      */
     public function getWorkIdentificationData()
     {
-        return [];
+        $titles = [];
+        $authors = [];
+        if ($title = $this->getTitle(true)) {
+            $titles[] = ['type' => 'title', 'value' => $title];
+        }
+        if ($author = $this->getMainAuthor()) {
+            $authors[] = ['type' => 'author', 'value' => $author];
+        }
+        return compact('titles', 'authors');
     }
 
     /**
@@ -521,7 +550,7 @@ class Base
         $saveUseErrors = libxml_use_internal_errors(true);
         try {
             libxml_clear_errors();
-            $doc = simplexml_load_string($xml);
+            $doc = MetadataUtils::loadXML($xml);
             if (false === $doc) {
                 $errors = libxml_get_errors();
                 $messageParts = [];
