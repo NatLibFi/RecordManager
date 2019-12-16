@@ -49,7 +49,7 @@ class XmlSecurity extends \ZendXml\Security
      * @throws \Exception\RuntimeException If entity expansion or external entity
      * declaration was discovered.
      */
-    protected static function heuristicScanString($xml)
+    public static function heuristicScanString($xml)
     {
         static::heuristicScan($xml);
     }
