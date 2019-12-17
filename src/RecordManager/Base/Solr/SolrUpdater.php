@@ -730,7 +730,7 @@ class SolrUpdater
                 ? $mongoFromDate->toDatetime()->format('Y-m-d H:i:s\Z')
                 : 'the beginning';
             // Take the last indexing date now and store it when done
-            if (!$sourceId && !$singleId && !isset($mongoFromDate)) {
+            if (!$sourceId && !$singleId && !isset($fromDate)) {
                 $lastIndexingDate = $this->db->getTimestamp();
             } else {
                 $lastIndexingDate = null;
