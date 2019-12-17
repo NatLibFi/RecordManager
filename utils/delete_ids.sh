@@ -15,13 +15,16 @@ IDFILE=$2
 
 IDLIST=""
 IDCOUNT=0
+LISTCOUNT=0
 
 while read -r line; do
   IDCOUNT=$[$IDCOUNT+1]
+  LISTCOUNT=$[$LISTCOUNT+1]
   IDLIST="${IDLIST}<id>$line</id>"
-  if [ ${#IDLIST} -gt 65535 ]; then
+  if [ ${LISTCOUNT} -ge 1000 ]; then
     curl -X POST ${SOLR_URL} -H "Content-Type: text/xml" --data-binary "<delete>${IDLIST}</delete>"
     IDLIST=""
+    LISTCOUNT=0
     echo "${IDCOUNT} IDs deleted"
   fi
 done < "${IDFILE}"
