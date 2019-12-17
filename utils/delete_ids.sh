@@ -20,7 +20,7 @@ IDCOUNT=0
 while read -r line; do
   IDCOUNT=$[$IDCOUNT+1]
   IDLIST="${IDLIST}<id>$line</id>"
-  if [ ${#IDLIST} -gt 2000 ]; then
+  if [ ${#IDLIST} -gt 65535 ]; then
     curl -X POST "http://${SOLR}/solr/${COLLECTION}/update" -H "Content-Type: text/xml" --data-binary "<delete>${IDLIST}</delete>"
     IDLIST=""
     echo "${IDCOUNT} IDs deleted"
