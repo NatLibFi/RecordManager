@@ -235,9 +235,20 @@ class DedupHandler
     {
         $result = false;
 
-        $keys = [MetadataUtils::createTitleKey(
-            $metadataRecord->getTitle(true), $this->normalizationForm
-        )];
+        $title = $metadataRecord->getTitle(true);
+        $author = $metadataRecord->getMainAuthor();
+        if ($title && $author) {
+            $authorParts = preg_split('/,\s/', $author);
+            $keys = [
+                MetadataUtils::createTitleKey($title, $this->normalizationForm)
+                . ' '
+                . MetadataUtils::normalizeKey(
+                    $authorParts[0], $this->normalizationForm
+                )
+            ];
+        } else {
+            $keys = [];
+        }
         if (!isset($record['title_keys'])
             || !is_array($record['title_keys'])
             || array_diff($record['title_keys'], $keys)
