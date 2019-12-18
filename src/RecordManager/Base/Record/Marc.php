@@ -911,6 +911,10 @@ class Marc extends Base
             default:
                 $src = '';
             }
+            // Ignore any invalid ISMN
+            if ('ismn' === $src && !preg_match('{([0-9]{13})}', $nr)) {
+                $nr = '';
+            }
             if ($src && $nr) {
                 $arr[] = "($src)$nr";
             }
