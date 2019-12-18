@@ -303,140 +303,221 @@ class DedupHandler
         }
 
         $origRecord = null;
-        $matchRecord = null;
+        $matchRecords = [];
         $candidateCount = 0;
 
-        $keyArray = isset($record['title_keys']) ? (array)$record['title_keys'] : [];
-        $ISBNArray = isset($record['isbn_keys']) ? (array)$record['isbn_keys'] : [];
-        $IDArray = isset($record['id_keys']) ? (array)$record['id_keys'] : [];
+        $titleArray = isset($record['title_keys'])
+            ? array_filter((array)$record['title_keys']) : [];
+        $isbnArray = isset($record['isbn_keys'])
+            ? array_filter((array)$record['isbn_keys']) : [];
+        $idArray = isset($record['id_keys'])
+            ? array_filter((array)$record['id_keys']) : [];
 
-        $allKeys = [
-            'isbn_keys' => $ISBNArray,
-            'id_keys' => $IDArray,
-            'title_keys' => $keyArray
+        $rules = [
+            [
+                'type' => 'isbn_keys',
+                'keys' => $isbnArray,
+                'filters' => ['dedup_id' => ['$exists' => true]]
+            ],
+            [
+                'type' => 'id_keys',
+                'keys' => $idArray,
+                'filters' => ['dedup_id' => ['$exists' => true]]
+            ],
+            [
+                'type' => 'isbn_keys',
+                'keys' => $isbnArray,
+                'filters' => ['dedup_id' => ['$exists' => false]]
+            ],
+            [
+                'type' => 'id_keys',
+                'keys' => $idArray,
+                'filters' => ['dedup_id' => ['$exists' => false]]
+            ],
+            [
+                'type' => 'title_keys',
+                'keys' => $titleArray,
+                'filters' => ['dedup_id' => ['$exists' => true]]
+            ],
+            [
+                'type' => 'title_keys',
+                'keys' => $titleArray,
+                'filters' => ['dedup_id' => ['$exists' => false]]
+            ],
         ];
-        foreach ($allKeys as $type => $array) {
-            foreach ($array as $keyPart) {
-                if (!$keyPart) {
-                    continue;
-                }
 
-                if ($this->verbose) {
-                    echo "Search: '$keyPart'\n";
-                }
-                $candidates = $this->db->findRecords(
-                    [$type => $keyPart],
-                    ['sort' => ['created' => 1]]
-                );
-                $processed = 0;
-                // Go through the candidates, try to match
-                $matchRecord = null;
-                foreach ($candidates as $candidate) {
-                    // Don't dedup with this source or deleted.
-                    // It's faster to check here than in find!
-                    if ($candidate['deleted']
-                        || $candidate['source_id'] == $record['source_id']
-                    ) {
-                        continue;
-                    }
+        foreach ($rules as $rule) {
+            if (!$rule['keys']) {
+                continue;
+            }
+            $type = $rule['type'];
 
-                    // Don't bother with id or title dedup if ISBN dedup already
-                    // failed
-                    if ($type != 'isbn_keys') {
-                        if (isset($candidate['isbn_keys'])) {
-                            $sameKeys = array_intersect(
-                                $ISBNArray, (array)$candidate['isbn_keys']
-                            );
-                            if ($sameKeys) {
-                                continue;
-                            }
-                        }
-                        if ($type != 'id_keys' && isset($candidate['id_keys'])) {
-                            $sameKeys = array_intersect(
-                                $IDArray, (array)$candidate['id_keys']
-                            );
-                            if ($sameKeys) {
-                                continue;
-                            }
-                        }
-                    }
-                    ++$candidateCount;
-
-                    // Verify the candidate has not been deduped with this source yet
-                    $candidateDedupId = (string)($candidate['dedup_id'] ?? '');
-                    if ($candidateDedupId) {
-                        if ($this->db->findRecord(
-                            [
-                                'dedup_id' => $candidateDedupId,
-                                'source_id' => $record['source_id']
-                            ]
-                        )
-                        ) {
-                            if ($this->verbose) {
-                                echo "Candidate {$candidate['_id']} "
-                                    . "already deduplicated\n";
-                            }
+            if ($this->verbose) {
+                echo "Search: $type => [" . implode(', ', $rule['keys']) . "]\n";
+            }
+            $params = [
+                $type => ['$in' => $rule['keys']],
+                'deleted' => false,
+                'source_id' => ['$ne' => $record['source_id']]
+            ];
+            if (!empty($rule['filters'])) {
+                $params += $rule['filters'];
+            }
+            $candidates = $this->db->findRecords(
+                $params,
+                [
+                    'sort' => ['created' => 1],
+                    'limit' => 101
+                ]
+            );
+            $processed = 0;
+            // Go through the candidates, try to match
+            foreach ($candidates as $candidate) {
+                // Don't bother with id or title dedup if ISBN dedup already
+                // failed
+                if ($type != 'isbn_keys') {
+                    if (isset($candidate['isbn_keys'])) {
+                        $sameKeys = array_intersect(
+                            $isbnArray, (array)$candidate['isbn_keys']
+                        );
+                        if ($sameKeys) {
                             continue;
                         }
                     }
-
-                    if (++$processed > 100) {
-                        // Too many candidates, give up..
-                        $this->log->log(
-                            'dedupRecord',
-                            "Too many candidates for record " . $record['_id']
-                            . " with key '$keyPart'",
-                            Logger::DEBUG
+                    if ($type != 'id_keys' && isset($candidate['id_keys'])) {
+                        $sameKeys = array_intersect(
+                            $idArray, (array)$candidate['id_keys']
                         );
-                        break;
-                    }
-
-                    if (!isset($origRecord)) {
-                        $origRecord = $this->recordFactory->createRecord(
-                            $record['format'],
-                            MetadataUtils::getRecordData($record, true),
-                            $record['oai_id'],
-                            $record['source_id']
-                        );
-                    }
-                    if ($this->matchRecords($record, $origRecord, $candidate)) {
-                        if ($this->verbose && ($processed > 300
-                            || microtime(true) - $startTime > 0.7)
-                        ) {
-                            echo "Found match $type=$keyPart with candidate "
-                                . "$processed in " . (microtime(true) - $startTime)
-                                . "\n";
+                        if ($sameKeys) {
+                            continue;
                         }
-                        $matchRecord = $candidate;
-                        break 3;
                     }
                 }
-                if ($this->verbose
-                    && ($processed > 300 || microtime(true) - $startTime > 0.7)
-                ) {
-                    echo "No match $type=$keyPart with $processed candidates in "
-                        . (microtime(true) - $startTime) . "\n";
+                ++$candidateCount;
+
+                // Verify the candidate has not been deduped with this source yet
+                $candidateDedupId = (string)($candidate['dedup_id'] ?? '');
+                if ($candidateDedupId) {
+                    // Check if we already have a candidate with the same dedup id
+                    foreach ($matchRecords as $matchRecord) {
+                        if (!empty($matchRecord['dedup_id'])
+                            && (string)$matchRecord['dedup_id'] === $candidateDedupId
+                        ) {
+                            continue 2;
+                        }
+                    }
+                    if ($this->db->findRecord(
+                        [
+                            'dedup_id' => $candidateDedupId,
+                            'source_id' => $record['source_id']
+                        ]
+                    )
+                    ) {
+                        if ($this->verbose) {
+                            echo "Candidate {$candidate['_id']} "
+                                . "already deduplicated\n";
+                        }
+                        continue;
+                    }
+                }
+
+                if (++$processed > 100) {
+                    // Too many candidates, give up..
+                    $this->log->log(
+                        'dedupRecord',
+                        "Too many candidates for record " . $record['_id']
+                        . " with $type => [" . implode(', ', $rule['keys']) . ']',
+                        Logger::DEBUG
+                    );
+                    break;
+                }
+
+                if (!isset($origRecord)) {
+                    $origRecord = $this->recordFactory->createRecord(
+                        $record['format'],
+                        MetadataUtils::getRecordData($record, true),
+                        $record['oai_id'],
+                        $record['source_id']
+                    );
+                }
+                if ($this->matchRecords($record, $origRecord, $candidate)) {
+                    if ($this->verbose && ($processed > 300
+                        || microtime(true) - $startTime > 0.7)
+                    ) {
+                        echo "Found match $type with candidate "
+                            . "$processed in " . (microtime(true) - $startTime)
+                            . "\n";
+                    }
+                    $matchRecords[] = $candidate;
                 }
             }
         }
 
         if ($this->verbose && microtime(true) - $startTime > 0.2) {
             echo "Candidate search among $candidateCount records ("
-                . ($matchRecord ? 'success' : 'failure') . ") completed in "
+                . count($matchRecords) . " matches) completed in "
                 . (microtime(true) - $startTime) . "\n";
         }
 
-        if ($matchRecord) {
-            $this->markDuplicates($record, $matchRecord);
-
-            if ($this->verbose && microtime(true) - $startTime > 0.2) {
-                echo "DedupRecord among $candidateCount records ("
-                    . ($matchRecord ? 'success' : 'failure') . ") completed in "
-                    . (microtime(true) - $startTime) . "\n";
+        if ($matchRecords) {
+            // Select the candidate with most records in the dedup group (if any)
+            $bestMatch = null;
+            $bestMatchRecords = 0;
+            if (count($matchRecords) > 1) {
+                $bestMatchCandidates = [];
+                $dedupIdKeys = [];
+                foreach ($matchRecords as $matchRecord) {
+                    $dedupId = !empty($matchRecord['dedup_id']) ?
+                        (string)$matchRecord['dedup_id'] : '';
+                    if ($dedupId && !isset($bestMatchCandidates[$dedupId])
+                    ) {
+                        $bestMatchCandidates[$dedupId] = $matchRecord;
+                        $dedupIdKeys[] = $matchRecord['dedup_id'];
+                    }
+                }
+                if (count($bestMatchCandidates) > 1) {
+                    $dedupRecords = $this->db->findDedups(
+                        [
+                            '_id' => ['$in' => $dedupIdKeys],
+                            'deleted' => false
+                        ]
+                    );
+                    $bestDedupId = '';
+                    foreach ($dedupRecords as $dedupRecord) {
+                        $cnt = count($dedupRecord['ids']);
+                        $dedupId = (string)$dedupRecord['_id'];
+                        if ($cnt > $bestMatchRecords || '' === $bestDedupId
+                            || ($cnt === $bestMatchRecords
+                            && strcmp($bestDedupId, $dedupId) > 0)
+                        ) {
+                            $bestMatchRecords = $cnt;
+                            $bestDedupId = $dedupId;
+                        }
+                    }
+                    if ($bestDedupId) {
+                        $bestMatch = $bestMatchCandidates[$bestDedupId];
+                    }
+                }
             }
+            if ($this->verbose) {
+                if ($bestMatchRecords) {
+                    echo "DedupRecord among $candidateCount candidates found a match"
+                        . " with $bestMatchRecords existing members in "
+                        . (microtime(true) - $startTime) . "\n";
+                } else {
+                    echo "DedupRecord among $candidateCount candidates found a match"
+                        . ' in ' . (microtime(true) - $startTime) . "\n";
+                }
+            }
+
+            if (null === $bestMatch) {
+                $bestMatch = $matchRecords[0];
+            }
+            $this->markDuplicates($record, $bestMatch);
 
             return true;
         }
+
         if (isset($record['dedup_id']) || $record['update_needed']) {
             if (isset($record['dedup_id'])) {
                 $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
@@ -448,9 +529,8 @@ class DedupHandler
         }
 
         if ($this->verbose && microtime(true) - $startTime > 0.2) {
-            echo "DedupRecord among $candidateCount records ("
-                . ($matchRecord ? 'success' : 'failure')
-                . ") completed in " . (microtime(true) - $startTime) . "\n";
+            echo "DedupRecord among $candidateCount records did not find a match"
+                . " in " . (microtime(true) - $startTime) . "\n";
         }
 
         return false;
