@@ -94,34 +94,41 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         }
 
         if ($unitDateRange) {
+            $startDateUnknown = $unitDateRange['startDateUnknown'];
+            $unitDateRange = $unitDateRange['date'];
+
             $data['search_daterange_mv'][] = $data['unit_daterange']
                 = MetadataUtils::dateRangeToStr($unitDateRange);
 
             $data['main_date_str'] = MetadataUtils::extractYear($unitDateRange[0]);
             $data['main_date'] = $this->validateDate($unitDateRange[0]);
-            // Append year range to title (only years, not the full dates)
-            $startYear = MetadataUtils::extractYear($unitDateRange[0]);
-            $endYear = MetadataUtils::extractYear($unitDateRange[1]);
-            $yearRange = '';
-            if ($startYear != '-9999') {
-                $yearRange = $startYear;
-            }
-            if ($endYear != $startYear) {
-                $yearRange .= '-';
-                if ($endYear != '9999') {
-                    $yearRange .= $endYear;
+
+            if (!$startDateUnknown) {
+                // When startDate is not known, Append year range to title
+                // (only years, not the full dates)
+                $startYear = MetadataUtils::extractYear($unitDateRange[0]);
+                $endYear = MetadataUtils::extractYear($unitDateRange[1]);
+                $yearRange = '';
+                if ($startYear != '-9999') {
+                    $yearRange = $startYear;
                 }
-            }
-            if ($yearRange) {
-                $len = strlen($yearRange);
-                foreach (
-                    ['title_full', 'title_sort', 'title', 'title_short']
-                    as $field
-                ) {
-                    if (substr($data[$field], -$len) != $yearRange
-                        && substr($data[$field], -$len - 2) != "($yearRange)"
+                if ($endYear != $startYear) {
+                    $yearRange .= '-';
+                    if ($endYear != '9999') {
+                        $yearRange .= $endYear;
+                    }
+                }
+                if ($yearRange) {
+                    $len = strlen($yearRange);
+                    foreach (
+                        ['title_full', 'title_sort', 'title', 'title_short']
+                        as $field
                     ) {
-                        $data[$field] .= " ($yearRange)";
+                        if (substr($data[$field], -$len) != $yearRange
+                            && substr($data[$field], -$len - 2) != "($yearRange)"
+                        ) {
+                            $data[$field] .= " ($yearRange)";
+                        }
                     }
                 }
             }
@@ -419,6 +426,8 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $date, $defaultYear = '0', $defaultMonth = '01', $defaultDay = '01',
             $hour = '00:00:00'
         ) {
+            $unknownDate = false;
+
             // Set year/month/day to defaults
             $year = str_repeat($defaultYear, 4);
             $month = $defaultMonth;
@@ -434,6 +443,8 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 if (isset($parts[2]) && $parts[2] !== 'uu') {
                     $day = $parts[2];
                 }
+            } else {
+                $unknownDate = true;
             }
 
             if (null === $day) {
@@ -452,7 +463,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 return null;
             }
 
-            return $date;
+            return ['date' => $date, 'unknown' => $unknownDate];
         };
 
         if (null === ($startDate = $parseDate($start))) {
@@ -477,6 +488,11 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             return null;
         }
 
+        $startDateUnknown = $startDate['unknown'];
+
+        $startDate = $startDate['date'];
+        $endDate = $endDate['date'];
+
         if (strtotime($startDate) > strtotime($endDate)) {
             $this->logger->log(
                 'Ead3',
@@ -488,7 +504,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
         }
 
-        return [$startDate, $endDate];
+        return [
+            'date' => [$startDate, $endDate],
+            'startDateUnknown' => $startDateUnknown
+        ];
     }
 
     /**
