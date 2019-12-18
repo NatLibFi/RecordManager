@@ -45,14 +45,17 @@ trait FinnaRecordTrait
      *
      * @return string[]
      */
-    protected function addNamespaceToAuthorityIds($ids)
+    protected function addNamespaceToAuthorityIds($ids, $type = '*')
     {
+        $ns = $this->dataSourceSettings[$this->source]['authority'][$type]
+            ?? $this->source;
+
         if (!is_array($ids)) {
             $ids = [$ids];
         }
         return array_map(
-            function ($id) {
-                return $this->source . ".$id";
+            function ($id) use ($ns) {
+                return "{$ns}.{$id}";
             },
             $ids
         );

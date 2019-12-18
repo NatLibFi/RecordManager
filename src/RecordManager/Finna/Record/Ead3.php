@@ -47,6 +47,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Ead3 extends \RecordManager\Base\Record\Ead3
 {
+    use FinnaRecordTrait;
+
     /**
      * Archive fonds format
      *
@@ -208,33 +210,62 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $data['author_role'] = [];
             $data['author_variant'] = [];
             $data['author_facet'] = [];
+            $authorIds = $authorIdRoles = $author2Ids = $author2IdRoles = [];
             foreach ($doc->controlaccess->name as $name) {
                 foreach ($name->part as $part) {
-                    $role = null;
-                    if (isset($name->attributes()->relator)) {
+                    $id = $role = null;
+                    $attr = $name->attributes();
+                    if (isset($attr->relator)) {
                         // TODO translate role label
                         $role = (string)$name->attributes()->relator;
+                    }
+                    if (isset($attr->identifier)) {
+                        $id = (string)$name->attributes()->identifier;
                     }
 
                     switch ($part->attributes()->localtype) {
                     case 'Ensisijainen nimi':
-                        $data['author'][]
-                            = $this->getNameWithRole((string)$part, $role);
+                        $data['author'][] = (string)$part;
                         if (! isset($part->attributes()->lang)
                             || (string)$part->attributes()->lang === 'fin'
                         ) {
                             $data['author_facet'][] = (string)$part;
                         }
+                        if ($id) {
+                            $authorIds[] = $author2Ids[] = $id;
+                            if ($role) {
+                                $authorIdRoles[] = $author2IdRoles[]
+                                    = $this->formatAuthorIdWithRole($id, $role);
+                            }
+                        }
                         break;
                     case 'Varianttinimi':
                     case 'Vaihtoehtoinen nimi':
                     case 'Vanhentunut nimi':
-                        $data['author_variant'][]
-                            = $this->getNameWithRole((string)$part, $role);
+                        $data['author_variant'][] = (string)$part;
+
+                        if ($id) {
+                            $author2Ids[] = $id;
+                            if ($role) {
+                                $author2IdRoles[]
+                                    = $this->formatAuthorIdWithRole($id, $role);
+                            }
+                        }
+
                         break;
                     }
                 }
             }
+
+            $data['author_id_str_mv']
+                = $this->addNamespaceToAuthorityIds($authorIds);
+            $data['author_id_roles_str_mv']
+                = $this->addNamespaceToAuthorityIds($authorIdRoles);
+
+            $data['author2_id_str_mv']
+                = $this->addNamespaceToAuthorityIds($author2Ids);
+            $data['author2_id_role_str_mv']
+                = $this->addNamespaceToAuthorityIds($author2IdRoles);
         }
 
         if (isset($doc->index->index->indexentry)) {
@@ -283,44 +314,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
         return '';
-    }
-
-    /**
-     * Get authors
-     *
-     * @return array
-     */
-    protected function getAuthors()
-    {
-        $result = [];
-        if (!isset($this->doc->relations->relation)) {
-            return $result;
-        }
-
-        foreach ($this->doc->relations->relation as $relation) {
-            $type = (string)$relation->attributes()->relationtype;
-            if ('cpfrelation' !== $type) {
-                continue;
-            }
-            $role = (string)$relation->attributes()->arcrole;
-            switch ($role) {
-            case '':
-            case 'http://www.rdaregistry.info/Elements/u/P60672':
-            case 'http://www.rdaregistry.info/Elements/u/P60434':
-                $role = 'aut';
-                break;
-            case 'http://www.rdaregistry.info/Elements/u/P60429':
-                $role = 'pht';
-                break;
-            default:
-                $role = '';
-            }
-            if ('' === $role) {
-                continue;
-            }
-            $result[] = trim((string)$relation->relationentry);
-        }
-        return $result;
     }
 
     /**
