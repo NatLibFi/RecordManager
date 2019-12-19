@@ -367,7 +367,7 @@ class DedupHandler
                 echo "Search: $type => [" . implode(', ', $rule['keys']) . "]\n";
             }
             $params = [
-                $type => ['$in' => $rule['keys']],
+                $type => ['$in' => (array)$rule['keys']],
                 'deleted' => false,
                 'source_id' => ['$ne' => $record['source_id']]
             ];
