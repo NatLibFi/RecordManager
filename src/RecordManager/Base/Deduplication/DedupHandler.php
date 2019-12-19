@@ -318,11 +318,11 @@ class DedupHandler
         $candidateCount = 0;
 
         $titleArray = isset($record['title_keys'])
-            ? array_filter((array)$record['title_keys']) : [];
+            ? array_values(array_filter((array)$record['title_keys'])) : [];
         $isbnArray = isset($record['isbn_keys'])
-            ? array_filter((array)$record['isbn_keys']) : [];
+            ? array_values(array_filter((array)$record['isbn_keys'])) : [];
         $idArray = isset($record['id_keys'])
-            ? array_filter((array)$record['id_keys']) : [];
+            ? array_values(array_filter((array)$record['id_keys'])) : [];
 
         $rules = [
             [
