@@ -900,7 +900,9 @@ class DedupHandler
         }
         $source = MetadataUtils::getSourceFromId($id);
         foreach ((array)$record['ids'] as $existingId) {
-            if ($source === MetadataUtils::getSourceFromId($existingId)) {
+            if ($id !== $existingId
+                && $source === MetadataUtils::getSourceFromId($existingId)
+            ) {
                 return false;
             }
         }
