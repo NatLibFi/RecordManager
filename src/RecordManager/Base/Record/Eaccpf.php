@@ -294,12 +294,11 @@ class Eaccpf extends Base
      */
     protected function getHeading()
     {
-        if (!isset($this->doc->cpfDescription->identity->nameEntry->part)) {
-            return '';
-        }
         $name1 = '';
         $name2 = '';
-        foreach ($this->doc->cpfDescription->identity->nameEntry->part as $part) {
+        foreach (($this->doc->cpfDescription->identity->nameEntry->part ?? [])
+            as $part
+        ) {
             $type = $part->attributes()->localType;
             if ('TONI1' == $type) {
                 $name1 = (string)$part;
@@ -307,7 +306,17 @@ class Eaccpf extends Base
                 $name2 = (string)$part;
             }
         }
-        return trim("$name1 $name2");
+        if (empty($name1) && empty($name2)) {
+            if ($usefor = $this->getUseForHeadings()) {
+                return $usefor[0];
+            } else {
+                return '';
+            }
+        } elseif (!empty($name1) && !empty($name2)) {
+            return trim("$name1 $name2");
+        } else {
+            return !empty($name1) ? $name1 : $name2;
+        }
     }
 
     /**
@@ -322,6 +331,38 @@ class Eaccpf extends Base
         }
         $attrs = $this->doc->cpfDescription->identity->nameEntry->attributes();
         return (string)$attrs->language;
+    }
+
+    /**
+     * Get use for headings
+     *
+     * @return string[]
+     */
+    protected function getUseForHeadings()
+    {
+        if (!isset($this->doc->cpfDescription->identity->nameEntryParallel)) {
+            return [];
+        }
+        foreach ($this->doc->cpfDescription->identity->nameEntryParallel as $entry) {
+            if (!isset($entry->nameEntry->part)) {
+                continue;
+            }
+            $name1 = '';
+            $name2 = '';
+            foreach ($entry->nameEntry->part as $part) {
+                $type = $part->attributes()->localType;
+                if ('TONI1' == $type) {
+                    $name1 = (string)$part;
+                } elseif ('TONI4' == $type) {
+                    $name2 = (string)$part;
+                }
+            }
+            $s = trim("$name1 $name2");
+            if ($s) {
+                $result[] = $s;
+            }
+        }
+        return implode(' ', $result);
     }
 
     /**
@@ -397,35 +438,4 @@ class Eaccpf extends Base
         return (string)$this->doc->cpfDescription->identity->entityType;
     }
 
-    /**
-     * Get use for headings
-     *
-     * @return string
-     */
-    protected function getUseForHeadings()
-    {
-        if (!isset($this->doc->cpfDescription->identity->nameEntryParallel)) {
-            return [];
-        }
-        foreach ($this->doc->cpfDescription->identity->nameEntryParallel as $entry) {
-            if (!isset($entry->nameEntry->part)) {
-                continue;
-            }
-            $name1 = '';
-            $name2 = '';
-            foreach ($entry->nameEntry->part as $part) {
-                $type = $part->attributes()->localType;
-                if ('TONI1' == $type) {
-                    $name1 = (string)$part;
-                } elseif ('TONI4' == $type) {
-                    $name2 = (string)$part;
-                }
-            }
-            $s = trim("$name1 $name2");
-            if ($s) {
-                $result[] = $s;
-            }
-        }
-        return implode(' ', $result);
-    }
 }
