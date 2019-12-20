@@ -424,7 +424,7 @@ class DedupHandler
                     }
                     if ($this->db->findRecord(
                         [
-                            'dedup_id' => $candidateDedupId,
+                            'dedup_id' => $candidate['dedup_id'],
                             'source_id' => $record['source_id']
                         ]
                     )
