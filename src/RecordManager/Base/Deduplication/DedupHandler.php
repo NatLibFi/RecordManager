@@ -432,7 +432,7 @@ class DedupHandler
                     }
                 }
 
-                if (++$processed > 100) {
+                if (++$processed > 1000) {
                     // Too many candidates, give up..
                     $this->log->log(
                         'dedupRecord',
@@ -461,6 +461,9 @@ class DedupHandler
                     }
                     $matchRecords[] = $candidate;
                 }
+            }
+            if ($matchRecords) {
+                break;
             }
         }
 
