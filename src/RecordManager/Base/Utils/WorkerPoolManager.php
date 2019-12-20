@@ -494,7 +494,7 @@ class WorkerPoolManager
                 );
             }
             if (0 === $res) {
-                usleep(10);
+                usleep(100);
                 continue;
             }
             $written = socket_write($socket, $message, $msgLen);
