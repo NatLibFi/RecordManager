@@ -174,6 +174,11 @@ class DedupHandler
                         = "record linked with dedup record '{$record['dedup_id']}'";
                 }
                 $this->removeFromDedupRecord($dedupRecord['_id'], $id);
+                if (isset($record['dedup_id'])
+                    && $record['dedup_id'] != $dedupRecord['_id']
+                ) {
+                    $this->removeFromDedupRecord($record['dedup_id'], $id);
+                }
                 $this->db->updateRecords(
                     ['_id' => $id, 'deleted' => false],
                     ['update_needed' => true],
