@@ -206,9 +206,14 @@ class WorkerPoolManager
                     }
                 } catch (\Exception $e) {
                     echo 'Fatal: Worker ' . getmypid()
-                        . " exception in pool $poolId: " . $e->getMessage() . "\n";
+                        . " exception in pool $poolId: " . $e->getMessage()
+                        . "\nStack trace: " . $e->getTraceAsString();
                     $this->writeSocket(
-                        $childSocket, ['exception' => $e->getMessage()]
+                        $childSocket,
+                        [
+                            'exception' => $e->getMessage() . "\nStack trace: "
+                            . $e->getTraceAsString()
+                        ]
                     );
                     socket_close($childSocket);
                     exit(255);
