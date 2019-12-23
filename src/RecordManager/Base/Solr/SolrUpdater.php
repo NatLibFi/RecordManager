@@ -776,7 +776,7 @@ class SolrUpdater
                     if (null !== $childPid) {
                         $this->reconnectDatabase();
                     }
-                    $this->InitWorkerPoolManager();
+                    $this->initWorkerPoolManager();
                     try {
                         $needCommit = $this->processMerged(
                             isset($mongoFromDate) ? $mongoFromDate : null,
