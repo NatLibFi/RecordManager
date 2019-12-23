@@ -1031,7 +1031,9 @@ class DedupHandler
         $componentsIter = $this->db->findRecords(
             [
                 'source_id' => $sourceId,
-                'host_record_id' => ['$in' => (array)$hostRecordId]
+                'host_record_id' => [
+                    '$in' => array_values((array)$hostRecordId)
+                ]
             ]
         );
         $components = [];

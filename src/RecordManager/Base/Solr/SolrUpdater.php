@@ -776,7 +776,7 @@ class SolrUpdater
                     if (null !== $childPid) {
                         $this->reconnectDatabase();
                     }
-                    $this->InitWorkerPoolManager();
+                    $this->initWorkerPoolManager();
                     try {
                         $needCommit = $this->processMerged(
                             isset($mongoFromDate) ? $mongoFromDate : null,
@@ -1848,7 +1848,9 @@ class SolrUpdater
                 }
             } else {
                 $params = [
-                    'host_record_id' => ['$in' => (array)$record['linking_id']],
+                    'host_record_id' => [
+                        '$in' => array_values((array)$record['linking_id'])
+                    ],
                     'deleted' => false
                 ];
                 if (!empty($settings['componentPartSourceId'])) {
@@ -1914,11 +1916,13 @@ class SolrUpdater
         // Record links between host records and component parts
         if ($metadataRecord->getIsComponentPart()) {
             $hostRecords = [];
-            if ($this->db && isset($record['host_record_id'])) {
+            if ($this->db && !empty($record['host_record_id'])) {
                 $hostRecords = $this->db->findRecords(
                     [
                         'source_id' => $record['source_id'],
-                        'linking_id' => ['$in' => (array)$record['host_record_id']]
+                        'linking_id' => [
+                            '$in' => array_values((array)$record['host_record_id'])
+                        ]
                     ]
                 );
                 if (!$hostRecords) {
