@@ -1711,6 +1711,88 @@ class SolrUpdater
     }
 
     /**
+     * Check Solr index for orphaned records
+     *
+     * @return void
+     */
+    public function checkIndexedRecords()
+    {
+        $request = $this->initSolrRequest();
+        $request->setMethod(\HTTP_Request2::METHOD_GET);
+        $baseUrl = $this->config['Solr']['search_url']
+            . '?q=*:*&sort=id+asc&wt=json&fl=id,record_format&rows=1000';
+
+        $this->initBufferedUpdate();
+        $count = 0;
+        $orphanRecordCount = 0;
+        $orphanDedupCount = 0;
+        $lastDisplayedCount = 0;
+        $pc = new PerformanceCounter();
+        $lastCursorMark = '';
+        $cursorMark = '*';
+        while ($cursorMark && $cursorMark !== $lastCursorMark) {
+            $url = $baseUrl . '&cursorMark=' . urlencode($cursorMark);
+            $request->setUrl($url);
+            $response = $request->send();
+            if ($response->getStatus() != 200) {
+                $this->log->log(
+                    'SolrCheck',
+                    "Could not scroll cursor mark (url $url), status code "
+                    . $response->getStatus()
+                );
+                throw new \Exception('Solr request failed');
+            }
+            $json = json_decode($response->getBody(), true);
+            $records = $json['response']['docs'];
+
+            foreach ($records as $record) {
+                $id = $record['id'];
+                if ('merged' === $record['record_format']) {
+                    $dbRecord = $this->db->getDedup($id);
+                } else {
+                    $dbRecord = $this->db->getRecord($id);
+                }
+                if (!$dbRecord || !empty($dbRecord['deleted'])) {
+                    $this->bufferedDelete($id);
+                    ++$orphanRecordCount;
+                    if ('merged' === $record['record_format']) {
+                        ++$orphanDedupCount;
+                    }
+                }
+            }
+
+            $count += count($records);
+            $lastCursorMark = $cursorMark;
+            $cursorMark = $json['nextCursorMark'];
+            if ($count >= $lastDisplayedCount + 1000) {
+                $lastDisplayedCount = $count;
+                $pc->add($count);
+                $avg = $pc->getSpeed();
+                $this->log->log(
+                    'checkIndexedRecords',
+                    "$count records checked with $orphanRecordCount orphaned records"
+                    . " (of which $orphanDedupCount dedup records) deleted,"
+                    . " $avg records/sec"
+                );
+            }
+        }
+        $this->flushUpdateBuffer();
+
+        $this->log->log(
+            'checkIndexedRecords',
+            "$count records checked with $orphanRecordCount orphaned records"
+            . " (of which $orphanDedupCount dedup records) deleted,"
+            . " $avg records/sec"
+        );
+
+        if ($orphanRecordCount) {
+            $this->log->log('checkIndexedRecords', 'Final commit...');
+            $this->solrRequest('{ "commit": {} }', 3600);
+            $this->log->log('checkIndexedRecords', 'Commit complete');
+        }
+    }
+
+    /**
      * Initialize or reload data source settings
      *
      * @param array $dataSourceSettings Optional data source settings to use instead
@@ -2812,7 +2894,9 @@ class SolrUpdater
         $this->bufferedDeletions[] = '"delete":{"id":"' . $id . '"}';
         if (count($this->bufferedDeletions) >= 1000) {
             $request = "{" . implode(',', $this->bufferedDeletions) . "}";
-            if ($this->workerPoolManager->hasWorkerPool('solr')) {
+            if (null !== $this->workerPoolManager
+                && $this->workerPoolManager->hasWorkerPool('solr')
+            ) {
                 $this->workerPoolManager->addRequest(
                     'solr',
                     $request
