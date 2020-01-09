@@ -537,6 +537,7 @@ class DedupHandler
             return true;
         }
 
+        // No match found
         if (isset($record['dedup_id']) || $record['update_needed']) {
             if (isset($record['dedup_id'])) {
                 $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
@@ -842,6 +843,7 @@ class DedupHandler
         } else {
             if (!empty($rec1['dedup_id'])) {
                 if (!$this->addToDedupRecord($rec1['dedup_id'], $rec2['_id'])) {
+                    $this->removeFromDedupRecord($rec1['dedup_id'], $rec1['_id']);
                     $rec1['dedup_id'] = $this->createDedupRecord(
                         $rec1['_id'], $rec2['_id']
                     );
@@ -857,17 +859,17 @@ class DedupHandler
                 . "with dedup id {$rec2['dedup_id']}\n";
         }
 
+        $this->db->updateRecords(
+            ['_id' => ['$in' => [$rec1['_id'], $rec2['_id']]]],
+            $setValues
+        );
+
         if (!isset($rec1['host_record_id'])) {
             $count = $this->dedupComponentParts($rec1);
             if ($this->verbose && $count > 0) {
                 echo "Deduplicated $count component parts for {$rec1['_id']}\n";
             }
         }
-
-        $this->db->updateRecords(
-            ['_id' => ['$in' => [$rec1['_id'], $rec2['_id']]]],
-            $setValues
-        );
     }
 
     /**
