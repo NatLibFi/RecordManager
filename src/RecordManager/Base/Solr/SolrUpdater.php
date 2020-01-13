@@ -1760,7 +1760,7 @@ class SolrUpdater
 
             foreach ($records as $record) {
                 $id = $record['id'];
-                if ('merged' === $record['record_format']) {
+                if ('merged' === $record['record_format'] ?? $record['recordtype']) {
                     $dbRecord = $this->db->getDedup($id);
                 } else {
                     $dbRecord = $this->db->getRecord($id);
