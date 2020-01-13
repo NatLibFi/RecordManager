@@ -983,7 +983,19 @@ class SolrUpdater
                 usleep(10);
             }
 
+            // Flush update buffer and wait for any subsequent pending Solr updates
+            // to complete.
             $this->flushUpdateBuffer();
+
+            $this->log->log(
+                'updateRecords',
+                'Waiting for any pending requests to complete...'
+            );
+            $this->workerPoolManager->waitUntilDone('solr');
+            $this->log->log(
+                'updateRecords',
+                'All requests complete'
+            );
 
             if ($count > 0) {
                 $needCommit = true;
@@ -1039,18 +1051,6 @@ class SolrUpdater
                     sleep(1);
                 }
             }
-
-            $this->log->log(
-                'updateRecords',
-                'Waiting for any pending requests to complete...'
-            );
-            $this->workerPoolManager->waitUntilDone('solr');
-            $this->log->log(
-                'updateRecords',
-                'All requests complete'
-            );
-
-            $this->flushUpdateBuffer();
 
             if (isset($lastIndexingDate) && !$compare) {
                 $state = [
@@ -1398,8 +1398,21 @@ class SolrUpdater
         }
 
         if (!$compare) {
+            // Flush update buffer and wait for any subsequent pending Solr updates
+            // to complete.
             $this->flushUpdateBuffer();
+
+            $this->log->log(
+                'processMerged',
+                'Waiting for any pending requests to complete...'
+            );
+            $this->workerPoolManager->waitUntilDone('solr');
+            $this->log->log(
+                'processMerged',
+                'All requests complete'
+            );
         }
+
         $this->log->log(
             'processMerged',
             "Total $count merged records (of which $deleted deleted) with "
