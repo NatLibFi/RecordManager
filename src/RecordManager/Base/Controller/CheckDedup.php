@@ -114,11 +114,15 @@ class CheckDedup extends AbstractBase
         } else {
             $params['dedup_id'] = ['$exists' => true];
         }
-        $records = $this->db->findRecords($params);
+        $records = $this->db->findRecords(
+            $params,
+            ['projection' => ['_id' => 1]]
+        );
         $count = 0;
         $fixed = 0;
         $pc = new PerformanceCounter();
-        foreach ($records as $record) {
+        foreach ($records as $recordId) {
+            $record = $this->db->getRecord($recordId['_id']);
             $result = $dedupHandler->checkRecordLinks($record);
             if ($result) {
                 ++$fixed;
