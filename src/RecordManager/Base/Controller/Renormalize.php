@@ -120,6 +120,9 @@ class Renormalize extends AbstractBase
                         unset($record['id_keys']);
                     }
                     if (isset($record['dedup_id'])) {
+                        $dedupHandler->removeFromDedupRecord(
+                            $record['dedup_id'], $record['_id']
+                        );
                         unset($record['dedup_id']);
                     }
                     $record['update_needed'] = false;
