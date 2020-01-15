@@ -222,7 +222,7 @@ class Database
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
-     * @return MongoDB\Driver\Cursor
+     * @return \MongoDB\Driver\Cursor
      */
     public function findRecords($filter, $options = [])
     {
@@ -366,7 +366,7 @@ class Database
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
-     * @return MongoDB\Driver\Cursor
+     * @return \MongoDB\Driver\Cursor
      */
     public function findDedups($filter, $options = [])
     {
@@ -552,7 +552,7 @@ class Database
      *
      * @param string $collectionName The queue collection name
      *
-     * @return MongoDB\Driver\Cursor
+     * @return \MongoDB\Driver\Cursor
      */
     public function getQueuedIds($collectionName)
     {
@@ -633,7 +633,7 @@ class Database
      * @param array  $filter     Search filter
      * @param array  $options    Options such as sorting
      *
-     * @return MongoDB\Driver\Cursor
+     * @return \MongoDB\Driver\Cursor
      */
     protected function findMongoRecords($collection, $filter, $options)
     {

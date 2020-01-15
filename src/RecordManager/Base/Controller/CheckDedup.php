@@ -73,11 +73,16 @@ class CheckDedup extends AbstractBase
 
         $this->logger->log('checkDedupRecords', 'Checking dedup records');
 
-        $dedupRecords = $this->db->findDedups($params);
+        $dedupRecords = $this->db->findDedups(
+            $params,
+            ['projection' => ['_id' => 1]]
+        );
         $count = 0;
         $fixed = 0;
         $pc = new PerformanceCounter();
-        foreach ($dedupRecords as $dedupRecord) {
+        foreach ($dedupRecords as $dedupRecordId) {
+            // Avoid stale data by reading the record just before processing
+            $dedupRecord = $this->db->getDedup($dedupRecordId['_id']);
             $results = $dedupHandler->checkDedupRecord($dedupRecord);
             if ($results) {
                 $fixed += count($results);
@@ -109,11 +114,15 @@ class CheckDedup extends AbstractBase
         } else {
             $params['dedup_id'] = ['$exists' => true];
         }
-        $records = $this->db->findRecords($params);
+        $records = $this->db->findRecords(
+            $params,
+            ['projection' => ['_id' => 1]]
+        );
         $count = 0;
         $fixed = 0;
         $pc = new PerformanceCounter();
-        foreach ($records as $record) {
+        foreach ($records as $recordId) {
+            $record = $this->db->getRecord($recordId['_id']);
             $result = $dedupHandler->checkRecordLinks($record);
             if ($result) {
                 ++$fixed;

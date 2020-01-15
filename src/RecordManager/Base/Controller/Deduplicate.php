@@ -167,7 +167,10 @@ class Deduplicate extends AbstractBase
                 } else {
                     $params['update_needed'] = true;
                 }
-                $records = $this->db->findRecords($params);
+                $records = $this->db->findRecords(
+                    $params,
+                    ['projection' => ['_id' => 1]]
+                );
                 $total = $this->db->countRecords($params);
                 $count = 0;
                 $deduped = 0;
@@ -175,7 +178,8 @@ class Deduplicate extends AbstractBase
                 $this->logger->log(
                     'deduplicate', "Processing $total records for '$source'"
                 );
-                foreach ($records as $record) {
+                foreach ($records as $recordId) {
+                    $record = $this->db->getRecord($recordId['_id']);
                     if (!$singleId && empty($record['update_needed'])) {
                         continue;
                     }

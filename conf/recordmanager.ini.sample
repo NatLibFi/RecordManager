@@ -165,6 +165,8 @@ error_email     =
 ;follow_redirects = true
 ;adapter = "HTTP_Request2_Adapter_Curl"
 ;ssl_verify_peer = false
+; Socks proxy:
+;proxy = "socks5://localhost:1099"
 
 [MarcRecord]
 ; The following setting can be used to override the default RDA relator codes that
