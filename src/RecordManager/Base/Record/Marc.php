@@ -867,7 +867,7 @@ class Marc extends Base
         $nbn = $this->getField('015');
         if ($nbn) {
             $nr = MetadataUtils::normalizeKey(
-                strtok($this->getSubfield($nbn, 'a'), ' '), $form
+                $this->getSubfield($nbn, 'a'), $form
             );
             $src = $this->getSubfield($nbn, '2');
             if ($src && $nr) {
@@ -877,7 +877,7 @@ class Marc extends Base
         $nba = $this->getField('016');
         if ($nba) {
             $nr = MetadataUtils::normalizeKey(
-                strtok($this->getSubfield($nba, 'a'), ' '), $form
+                $this->getSubfield($nba, 'a'), $form
             );
             $src = $this->getSubfield($nba, '2');
             if ($src && $nr) {
@@ -887,7 +887,7 @@ class Marc extends Base
         $id = $this->getField('024');
         if ($id) {
             $nr = MetadataUtils::normalizeKey(
-                strtok($this->getSubfield($id, 'a'), ' '), $form
+                $this->getSubfield($id, 'a'), $form
             );
             switch ($this->getIndicator($id, 1)) {
             case '0':
