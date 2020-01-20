@@ -44,6 +44,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Marc extends Base
 {
+    use \RecordManager\Finna\Record\FinnaRecordTrait;
+
     const SUBFIELD_INDICATOR = "\x1F";
     const END_OF_FIELD = "\x1E";
     const END_OF_RECORD = "\x1D";
@@ -353,10 +355,14 @@ class Marc extends Base
         // Support for author2_variant is currently not implemented
         $data['author2_role'] = $secondaryAuthors['relators'];
         $data['author2_fuller'] = $secondaryAuthors['fuller'];
+        $data['author2_id_str_mv']
+            = $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']);
 
         $corporateAuthors = $this->getCorporateAuthors();
         $data['author_corporate'] = $corporateAuthors['names'];
         $data['author_corporate_role'] = $corporateAuthors['relators'];
+        $data['author_corporate_id_str_mv']
+            = $this->addNamespaceToAuthorityIds($corporateAuthors['ids']);
 
         $data['author_additional'] = $this->getFieldsSubfields(
             [
@@ -2325,7 +2331,7 @@ class Marc extends Base
     protected function getAuthorsByRelator($fieldSpecs, $relators,
         $noRelatorRequired, $altScript = true, $invertMatch = false
     ) {
-        $result = ['names' => [], 'fuller' => [], 'relators' => []];
+        $result = ['names' => [], 'fuller' => [], 'relators' => [], 'ids' => []];
         foreach ($fieldSpecs as $tag => $subfieldList) {
             foreach ($this->getFields($tag) as $field) {
                 $fieldRelators = $this->normalizeRelators(
@@ -2372,6 +2378,9 @@ class Marc extends Base
                     $result['relators'][] = reset($fieldRelators);
                 } else {
                     $result['relators'][] = '-';
+                }
+                if ($termId = $this->getSubField($field, '0')) {
+                    $result['ids'][] = $termId;
                 }
             }
         }

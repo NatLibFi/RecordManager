@@ -1,10 +1,10 @@
 <?php
 /**
- * Finna record trait.
+ * Marc authority Record Class
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2019.
+ * Copyright (C) The National Library of Finland 2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,7 +28,9 @@
 namespace RecordManager\Finna\Record;
 
 /**
- * Finna record trait.
+ * Marc authority Record Class
+ *
+ * This is a class for processing Forward records for an authority index.
  *
  * @category DataManagement
  * @package  RecordManager
@@ -36,41 +38,6 @@ namespace RecordManager\Finna\Record;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-trait FinnaRecordTrait
+class MarcAuthority extends \RecordManager\Base\Record\MarcAuthority
 {
-    /**
-     * Prepend authority ID with namespace.
-     *
-     * @param string[] $ids Array of authority ids
-     *
-     * @return string[]
-     */
-    protected function addNamespaceToAuthorityIds($ids, $type = '*')
-    {
-        if (!is_array($ids)) {
-            $ids = [$ids];
-        }
-        $ns = $this->dataSourceSettings[$this->source]['authority'][$type]
-            ?? $this->source;
-
-        return array_map(
-            function ($id) use ($ns) {
-                return "{$ns}.{$id}";
-            },
-            $ids
-        );
-    }
-
-    /**
-     * Combine author id and role into a string that can be indexed.
-     *
-     * @param string $id   Id
-     * @param string $role Role
-     *
-     * @return string
-     */
-    protected function formatAuthorIdWithRole($id, $role)
-    {
-        return "{$id}###{$role}";
-    }
 }
