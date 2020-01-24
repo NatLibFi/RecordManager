@@ -129,9 +129,10 @@ class MarcAuthority extends Marc
     {
         $result = [];
         foreach ($this->getFields('372') as $field) {
-            if ($activity = $this->getSubfield($field, 'a')) {
-                $result[] = $activity;
-            }
+            $result = array_merge(
+                $result,
+                $this->getSubfieldsArray($field, ['a' => 1])
+            );
         }
         return $result;
     }
@@ -209,6 +210,9 @@ class MarcAuthority extends Marc
      */
     protected function formatDate($date, $format = 'j.n.Y')
     {
+        if (false === (strpos($date, '-'))) {
+            return $date;
+        }
         if (false === ($time = strtotime($date))) {
             return $date;
         }
