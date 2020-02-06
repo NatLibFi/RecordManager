@@ -254,7 +254,13 @@ class Forward extends Base
     public function getMainAuthor()
     {
         $authors = $this->getPrimaryAuthorsSorted();
-        return isset($authors['names'][0]) ? $authors['names'][0] : '';
+        $author = isset($authors['names'][0]) ? $authors['names'][0] : '';
+        if ($author) {
+            if (strpos($author, ',') === false) {
+                $author = MetadataUtils::convertAuthorLastFirst($author);
+            }
+        }
+        return $author;
     }
 
     /**
@@ -454,7 +460,13 @@ class Forward extends Base
     public function getTitle($forFiling = false)
     {
         $doc = $this->getMainElement();
-        return (string)$doc->IdentifyingTitle;
+        $title = (string)$doc->IdentifyingTitle;
+
+        if ($forFiling) {
+            $title = MetadataUtils::stripLeadingArticle($title);
+        }
+
+        return $title;
     }
 
     /**
