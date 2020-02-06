@@ -184,7 +184,7 @@ class Forward extends Base
         $data['fullrecord'] = $this->toXML();
         $publishDate = (string)$doc->YearOfReference;
         $data['publishDate'] = $publishDate;
-        $data['title'] = (string)$doc->IdentifyingTitle;
+        $data['title'] = $this->getTitle();
         foreach ($doc->Title as $title) {
             $titleText = (string)$title->TitleText;
             if ($titleText != $data['title']) {
@@ -439,6 +439,22 @@ class Forward extends Base
             }
         }
         return $results;
+    }
+
+    /**
+     * Return record title
+     *
+     * @param bool $forFiling Whether the title is to be used in filing
+     *                        (e.g. sorting, non-filing characters should be removed)
+     *
+     * @return string
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function getTitle($forFiling = false)
+    {
+        $doc = $this->getMainElement();
+        return (string)$doc->IdentifyingTitle;
     }
 
     /**
