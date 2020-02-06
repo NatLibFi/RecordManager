@@ -951,6 +951,23 @@ class MetadataUtils
     }
 
     /**
+     * Convert author name in "First Last" format to "Last, First"
+     *
+     * @param string $author Author name
+     *
+     * @return string
+     */
+    public static function convertAuthorLastFirst($author)
+    {
+        $p = strrpos($author, ' ');
+        if ($p > 0) {
+            $author = substr($author, $p + 1) . ', '
+                . substr($author, 0, $p);
+        }
+        return $author;
+    }
+
+    /**
      * Read a list file into an array
      *
      * @param string $basePath Base path

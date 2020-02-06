@@ -833,11 +833,7 @@ class Marc extends Base
             $author = $this->getSubfield($f100, 'a');
             $order = $this->getIndicator($f100, 1);
             if ($order == 0 && strpos($author, ',') === false) {
-                $p = strrpos($author, ' ');
-                if ($p > 0) {
-                    $author = substr($author, $p + 1) . ', '
-                        . substr($author, 0, $p);
-                }
+                $author = MetadataUtils::convertAuthorLastFirst($author);
             }
             return MetadataUtils::stripTrailingPunctuation($author);
         }
