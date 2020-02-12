@@ -127,6 +127,7 @@ unicode_normalization_form = NFKC
 ;hierarchy_top_id = hierarchy_top_id
 ;hierarchy_parent_id = hierarchy_parent_id
 ;hierarchy_parent_title = hierarchy_parent_title
+;work_keys = work_keys_str_mv
 
 [OAI-PMH]
 ; Repository name returned in the Identify response
