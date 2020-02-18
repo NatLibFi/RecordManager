@@ -570,16 +570,32 @@ class Lido extends \RecordManager\Base\Record\Lido
 
         // Also read in "description of subject" which contains data suitable for
         // this field
+        $title = str_replace([',', ';'], ' ', $this->getTitle());
+        if ($this->getDriverParam('splitTitles', false)) {
+            $titlePart = MetadataUtils::splitTitle($title);
+            if ($titlePart) {
+                $title = $titlePart;
+            }
+        }
+        $title = str_replace([',', ';'], ' ', $title);
         $subjectDescriptions = [];
         foreach ($this->getSubjectSetNodes() as $set) {
-            if (mb_strtolower($set->displaySubject['label'], 'UTF-8') == 'aihe') {
+            $subject = $set->displaySubject;
+            $label = $subject['label'];
+            $checkTitle = str_replace([',', ';'], ' ', (string)$subject) != $title;
+            if ((null === $label || 'aihe' === mb_strtolower($label, 'UTF-8'))
+                && $checkTitle
+            ) {
                 $subjectDescriptions[] = (string) $set->displaySubject;
             }
         }
 
         return trim(
             implode(
-                ' ', array_merge($descriptionWrapDescriptions, $subjectDescriptions)
+                ' ',
+                array_unique(
+                    array_merge($subjectDescriptions, $descriptionWrapDescriptions)
+                )
             )
         );
     }
