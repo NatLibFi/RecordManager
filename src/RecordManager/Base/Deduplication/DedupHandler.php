@@ -432,7 +432,7 @@ class DedupHandler
                     if ($existingDuplicate) {
                         if ($this->verbose) {
                             echo "Candidate {$candidate['_id']}"
-                                . ' already deduplicated with'
+                                . ' already deduplicated with '
                                 . $existingDuplicate['_id'] . "\n";
                         }
                         continue;
