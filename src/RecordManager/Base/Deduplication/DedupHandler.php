@@ -422,16 +422,18 @@ class DedupHandler
                             continue 2;
                         }
                     }
-                    if ($this->db->findRecord(
+                    $existingDuplicate = $this->db->findRecord(
                         [
                             'dedup_id' => $candidate['dedup_id'],
-                            'source_id' => $record['source_id']
+                            'source_id' => $record['source_id'],
+                            '_id' => ['$ne' => $record['_id']]
                         ]
-                    )
-                    ) {
+                    );
+                    if ($existingDuplicate) {
                         if ($this->verbose) {
-                            echo "Candidate {$candidate['_id']} "
-                                . "already deduplicated\n";
+                            echo "Candidate {$candidate['_id']}"
+                                . ' already deduplicated with'
+                                . $existingDuplicate['_id'] . "\n";
                         }
                         continue;
                     }
