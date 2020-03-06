@@ -1398,29 +1398,7 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     protected function getBuilding()
     {
-        $building = [];
-        if ($this->getDriverParam('holdingsInBuilding', true)) {
-            $useSub = $this->getDriverParam('subLocationInBuilding', '');
-            $itemSub = $this->getDriverParam('itemSubLocationInBuilding', $useSub);
-            foreach ($this->getFields('852') as $field) {
-                $location = $this->getSubfield($field, 'b');
-                if ($location) {
-                    if ($useSub && $sub = $this->getSubfield($field, $useSub)) {
-                        $location = [$location, $sub];
-                    }
-                    $building[] = $location;
-                }
-            }
-            foreach ($this->getFields('952') as $field) {
-                $location = $this->getSubfield($field, 'b');
-                if ($location) {
-                    if ($itemSub && $sub = $this->getSubfield($field, $itemSub)) {
-                        $location = [$location, $sub];
-                    }
-                    $building[] = $location;
-                }
-            }
-        }
+        $building = parent::getBuilding();
 
         // Ebrary location
         $ebraryLocs = $this->getFieldsSubfields(
@@ -1435,6 +1413,30 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         return $building;
+    }
+
+    /**
+     * Get default fields used to populate the building field
+     *
+     * @return array
+     */
+    protected function getDefaultBuildingFields()
+    {
+        $useSub = $this->getDriverParam('subLocationInBuilding', '');
+        $itemSub = $this
+            ->getDriverParam('itemSubLocationInBuilding', $useSub);
+        return [
+            [
+                'field' => '852',
+                'loc' => 'b',
+                'sub' => $useSub,
+            ],
+            [
+                'field' => '952',
+                'loc' => 'b',
+                'sub' => $itemSub,
+            ],
+        ];
     }
 
     /**

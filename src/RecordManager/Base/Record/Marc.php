@@ -1304,7 +1304,40 @@ class Marc extends Base
     protected function getBuilding()
     {
         $building = [];
-        if ($this->getDriverParam('holdingsInBuilding', true)) {
+        $buildingFieldSpec = $this->getDriverParam('buildingFields', false);
+        if ($this->getDriverParam('holdingsInBuilding', true)
+            || false !== $buildingFieldSpec
+        ) {
+            $buildingFieldSpec = $this->getDriverParam('buildingFields', false);
+            if (false === $buildingFieldSpec) {
+                $buildingFields = $this->getDefaultBuildingFields();
+            } else {
+                $buildingFields = [];
+                $parts = explode(':', $buildingFieldSpec);
+                foreach ($parts as $part) {
+                    $buildingFields[] = [
+                        'field' => substr($part, 0, 3),
+                        'loc' => substr($part, 3, 1),
+                        'sub' => substr($part, 4, 1),
+                    ];
+                }
+            }
+
+            foreach ($buildingFields as $buildingField) {
+                foreach ($this->getFields($buildingField['field']) as $field) {
+                    $location = $this->getSubfield($field, $buildingField['loc']);
+                    if ($location) {
+                        $subLocField = $buildingField['sub'];
+                        if ($subLocField
+                            && $sub = $this->getSubfield($field, $subLocField)
+                        ) {
+                            $location = [$location, $sub];
+                        }
+                        $building[] = $location;
+                    }
+                }
+            }
+
             $useSub = $this->getDriverParam('subLocationInBuilding', '');
             foreach ($this->getFields('852') as $field) {
                 $location = $this->getSubfield($field, 'b');
@@ -1317,6 +1350,23 @@ class Marc extends Base
             }
         }
         return $building;
+    }
+
+    /**
+     * Get default fields used to populate the building field
+     *
+     * @return array
+     */
+    protected function getDefaultBuildingFields()
+    {
+        $useSub = $this->getDriverParam('subLocationInBuilding', '');
+        return [
+            [
+                'field' => '852',
+                'loc' => 'b',
+                'sub' => $useSub,
+            ],
+        ];
     }
 
     /**
