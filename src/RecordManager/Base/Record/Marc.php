@@ -1337,17 +1337,6 @@ class Marc extends Base
                     }
                 }
             }
-
-            $useSub = $this->getDriverParam('subLocationInBuilding', '');
-            foreach ($this->getFields('852') as $field) {
-                $location = $this->getSubfield($field, 'b');
-                if ($location) {
-                    if ($useSub && $sub = $this->getSubfield($field, $useSub)) {
-                        $location = [$location, $sub];
-                    }
-                    $building[] = $location;
-                }
-            }
         }
         return $building;
     }
