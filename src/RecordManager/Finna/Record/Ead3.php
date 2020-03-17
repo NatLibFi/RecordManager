@@ -550,7 +550,11 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     {
         $level1 = $level2 = null;
 
-        if ((string)$this->doc->attributes()->level === 'fonds') {
+        if (in_array(
+            (string)$this->doc->attributes()->level,
+            ['fonds', 'series', 'subseries']
+        )
+        ) {
             $level1 = 'Document';
         }
 
