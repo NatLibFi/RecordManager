@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2019.
+ * Copyright (C) The National Library of Finland 2012-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -464,6 +464,13 @@ class SolrUpdater
     protected $hierarchyParentTitleField = 'hierarchy_parent_title';
 
     /**
+     * Solr field for work identification keys
+     *
+     * @var string
+     */
+    protected $workKeysField = 'work_keys_str_mv';
+
+    /**
      * Constructor
      *
      * @param MongoDB       $db                 Database connection
@@ -609,6 +616,9 @@ class SolrUpdater
         }
         if (isset($fields['hierarchy_parent_title'])) {
             $this->hierarchyParentTitleField = $fields['hierarchy_parent_title'];
+        }
+        if (isset($fields['work_keys'])) {
+            $this->workKeysField = $fields['work_keys'];
         }
 
         // Load settings
@@ -2220,7 +2230,9 @@ class SolrUpdater
         }
 
         // Work identification keys
-        if ($workIds = $metadataRecord->getWorkIdentificationData()) {
+        if ($this->workKeysField
+            && $workIds = $metadataRecord->getWorkIdentificationData()
+        ) {
             $keys = [];
             foreach ($workIds['titles'] ?? [] as $titleData) {
                 $title = MetadataUtils::normalizeKey(
@@ -2257,7 +2269,7 @@ class SolrUpdater
                 }
             }
             if ($keys) {
-                $data['work_keys_str_mv'] = $keys;
+                $data[$this->workKeysField] = $keys;
             }
         }
 

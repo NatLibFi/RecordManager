@@ -422,16 +422,18 @@ class DedupHandler
                             continue 2;
                         }
                     }
-                    if ($this->db->findRecord(
+                    $existingDuplicate = $this->db->findRecord(
                         [
                             'dedup_id' => $candidate['dedup_id'],
-                            'source_id' => $record['source_id']
+                            'source_id' => $record['source_id'],
+                            '_id' => ['$ne' => $record['_id']]
                         ]
-                    )
-                    ) {
+                    );
+                    if ($existingDuplicate) {
                         if ($this->verbose) {
-                            echo "Candidate {$candidate['_id']} "
-                                . "already deduplicated\n";
+                            echo "Candidate {$candidate['_id']}"
+                                . ' already deduplicated with '
+                                . $existingDuplicate['_id'] . "\n";
                         }
                         continue;
                     }
@@ -532,7 +534,7 @@ class DedupHandler
             if (null === $bestMatch) {
                 $bestMatch = $matchRecords[0];
             }
-            $this->markDuplicates($record, $bestMatch);
+            $this->markDuplicates($record['_id'], $bestMatch['_id']);
 
             return true;
         }
@@ -806,20 +808,44 @@ class DedupHandler
     /**
      * Mark two records as duplicates
      *
-     * @param array $rec1 Mongo record for which a duplicate was searched
-     * @param array $rec2 Mongo record for the found duplicate
+     * @param array $id1 Mongo record id for which a duplicate was searched
+     * @param array $id2 Mongo record id for the found duplicate
      *
      * @return void
      */
-    protected function markDuplicates($rec1, $rec2)
+    protected function markDuplicates($id1, $id2)
     {
         // Reread the original record just in case it has changed in the meantime.
-        $origRec1 = $rec1;
-        $rec1 = $this->db->findRecord(['_id' => $rec1['_id'], 'deleted' => false]);
+        $rec1 = $this->db->getRecord($id1);
+        $rec2 = $this->db->getRecord($id2);
         if (null === $rec1) {
             $this->log->log(
                 'markDuplicates',
-                "Record {$origRec1['_id']} is no longer available",
+                "Record $id1 is no longer available",
+                Logger::WARNING
+            );
+            return;
+        }
+        if ($rec1['deleted']) {
+            $this->log->log(
+                'markDuplicates',
+                "Record $id1 has been deleted in the meanwhile",
+                Logger::WARNING
+            );
+            return;
+        }
+        if (null === $rec2) {
+            $this->log->log(
+                'markDuplicates',
+                "Record $id1 is no longer available",
+                Logger::WARNING
+            );
+            return;
+        }
+        if ($rec2['deleted']) {
+            $this->log->log(
+                'markDuplicates',
+                "Record $id2 has been deleted in the meanwhile",
                 Logger::WARNING
             );
             return;
@@ -1006,7 +1032,7 @@ class DedupHandler
                 $idx = -1;
                 foreach ($components1 as $component1) {
                     $component2 = $components2[++$idx];
-                    $this->markDuplicates($component1, $component2);
+                    $this->markDuplicates($component1['_id'], $component2['_id']);
                     ++$marked;
                 }
                 break;
