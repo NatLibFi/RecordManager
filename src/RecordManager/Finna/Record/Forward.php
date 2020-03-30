@@ -171,6 +171,8 @@ class Forward extends \RecordManager\Base\Record\Forward
         $data['author_corporate_id_str_mv']
             = $this->addNamespaceToAuthorityIds($corporateAuthors['ids']);
 
+        $data['question_category_str_mv'] = $this->getQuestionCategories();
+
         return $data;
     }
 
@@ -537,5 +539,27 @@ class Forward extends \RecordManager\Base\Record\Forward
                 return 'skf';
             }
         }
+    }
+
+    /**
+     * Get question categories
+     * 
+     * @return array
+     */
+    protected function getQuestionCategories()
+    {
+        $result = [];
+        $categories = array_merge(
+            $this->getProductionEventAttribute('elokuva-elotiedonkeruu-henkilotyyppi'), 
+            $this->getProductionEventAttribute('elokuva-elotiedonkeruu-kuvauspaikka')
+        );
+        foreach ($categories as $category) {
+            $parts = explode(';', $category);
+
+            foreach ($parts as $part) {
+                $result[] = $part;
+            }
+        }
+        return $result;
     }
 }
