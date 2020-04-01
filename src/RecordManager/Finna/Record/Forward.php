@@ -554,11 +554,7 @@ class Forward extends \RecordManager\Base\Record\Forward
             $this->getProductionEventAttribute('elokuva-elotiedonkeruu-kuvauspaikka')
         );
         foreach ($categories as $category) {
-            $parts = explode(';', $category);
-
-            foreach ($parts as $part) {
-                $result[] = $part;
-            }
+            $result = array_merge($result, explode(';', $category));
         }
         return $result;
     }
