@@ -42,8 +42,6 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Dc extends Base
 {
-    use FullTextTrait;
-
     protected $doc = null;
 
     /**
@@ -105,7 +103,7 @@ class Dc extends Base
      */
     public function toSolrArray()
     {
-        $data = $this->getFullTextFields($this->doc);
+        $data = [];
 
         $doc = $this->doc;
         $data['record_format'] = $data['recordtype'] = 'dc';
