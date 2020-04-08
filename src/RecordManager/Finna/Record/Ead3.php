@@ -80,22 +80,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         $data = parent::toSolrArray();
         $doc = $this->doc;
 
-        $unitDateRange = null;
-        if (isset($doc->did->unitdate)) {
-            foreach ($doc->did->unitdate as $unitdate) {
-                $attributes = $unitdate->attributes();
-                if ($attributes->label
-                    && (string)$attributes->label === 'Ajallinen kattavuus'
-                ) {
-                    $unitDateRange = $this->parseDateRange(
-                        (string)$unitdate->attributes()->normal
-                    );
-                    break;
-                }
-            }
-        }
-
-        if ($unitDateRange) {
+        if ($unitDateRange = $this->getDaterange()) {
             $startDateUnknown = $unitDateRange['startDateUnknown'];
             $unitDateRange = $unitDateRange['date'];
 
@@ -396,6 +381,29 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
         return ['restricted'];
+    }
+
+    /**
+     * Get date range.
+     *
+     * @return NULL|array
+     */
+    protected function getDaterange()
+    {
+        if (isset($this->doc->did->unitdate)) {
+            foreach ($this->doc->did->unitdate as $unitdate) {
+                $attributes = $unitdate->attributes();
+                if ($attributes->label
+                    && (string)$attributes->label === 'Ajallinen kattavuus'
+                ) {
+                    return $this->parseDateRange(
+                        (string)$unitdate->attributes()->normal
+                    );
+                    break;
+                }
+            }
+        }
+        return null;
     }
 
     /**
