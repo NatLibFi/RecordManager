@@ -550,7 +550,9 @@ class Forward extends \RecordManager\Base\Record\Forward
     {
         $result = [];
         $categories = array_merge(
-            $this->getProductionEventAttribute('elokuva-elotiedonkeruu-henkilotyyppi'), 
+            $this->getProductionEventAttribute(
+                'elokuva-elotiedonkeruu-henkilotyyppi'
+            ),
             $this->getProductionEventAttribute('elokuva-elotiedonkeruu-kuvauspaikka')
         );
         foreach ($categories as $category) {

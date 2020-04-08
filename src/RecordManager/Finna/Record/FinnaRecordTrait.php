@@ -41,7 +41,8 @@ trait FinnaRecordTrait
     /**
      * Prepend authority ID with namespace.
      *
-     * @param string[] $ids Array of authority ids
+     * @param string[] $ids  Array of authority ids
+     * @param string   $type Authority type
      *
      * @return string[]
      */

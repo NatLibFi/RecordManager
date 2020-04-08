@@ -106,7 +106,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $data['main_date'] = $this->validateDate($unitDateRange[0]);
 
             if (!$startDateUnknown) {
-                // When startDate is not known, Append year range to title
+                // When startDate is known, Append year range to title
                 // (only years, not the full dates)
                 $startYear = MetadataUtils::extractYear($unitDateRange[0]);
                 $endYear = MetadataUtils::extractYear($unitDateRange[1]);
@@ -445,7 +445,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 $day = date('t', strtotime("{$year}-{$month}"));
             }
 
-            $date =  sprintf(
+            $date = sprintf(
                 '%04d-%02d-%02dT%sZ',
                 $year, $month, $day, $hour
             );
