@@ -201,7 +201,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                     $id = $role = null;
                     $attr = $name->attributes();
                     if (isset($attr->relator)) {
-                        // TODO translate role label
                         $role = (string)$name->attributes()->relator;
                     }
                     if (isset($attr->identifier)) {
@@ -228,7 +227,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                     case 'Vaihtoehtoinen nimi':
                     case 'Vanhentunut nimi':
                         $data['author_variant'][] = (string)$part;
-
                         if ($id) {
                             $author2Ids[] = $id;
                             if ($role) {
