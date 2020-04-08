@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -23,6 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -39,6 +40,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
