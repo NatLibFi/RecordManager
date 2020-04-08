@@ -120,6 +120,9 @@ class Renormalize extends AbstractBase
                         unset($record['id_keys']);
                     }
                     if (isset($record['dedup_id'])) {
+                        $dedupHandler->removeFromDedupRecord(
+                            $record['dedup_id'], $record['_id']
+                        );
                         unset($record['dedup_id']);
                     }
                     $record['update_needed'] = false;
@@ -131,7 +134,7 @@ class Renormalize extends AbstractBase
                 } else {
                     $record['normalized_data'] = $normalizedData;
                 }
-                $record['linking_id'] = $metadataRecord->getLinkingID();
+                $record['linking_id'] = $metadataRecord->getLinkingIDs();
                 if ($hostIDs) {
                     $record['host_record_id'] = $hostIDs;
                 } elseif (isset($record['host_record_id'])) {

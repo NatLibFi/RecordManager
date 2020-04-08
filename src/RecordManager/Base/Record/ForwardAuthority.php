@@ -57,7 +57,7 @@ class ForwardAuthority extends Base
     public function setData($source, $oaiID, $data)
     {
         parent::setData($source, $oaiID, $data);
-        $this->doc = simplexml_load_string($data);
+        $this->doc = MetadataUtils::loadXML($data);
     }
 
     /**

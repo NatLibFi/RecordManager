@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2012-2019.
+ * Copyright (C) The National Library of Finland 2012-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -464,6 +464,13 @@ class SolrUpdater
     protected $hierarchyParentTitleField = 'hierarchy_parent_title';
 
     /**
+     * Solr field for work identification keys
+     *
+     * @var string
+     */
+    protected $workKeysField = 'work_keys_str_mv';
+
+    /**
      * Constructor
      *
      * @param MongoDB       $db                 Database connection
@@ -610,6 +617,9 @@ class SolrUpdater
         if (isset($fields['hierarchy_parent_title'])) {
             $this->hierarchyParentTitleField = $fields['hierarchy_parent_title'];
         }
+        if (isset($fields['work_keys'])) {
+            $this->workKeysField = $fields['work_keys'];
+        }
 
         // Load settings
         $this->initDatasources($dataSourceSettings);
@@ -730,7 +740,11 @@ class SolrUpdater
                 ? $mongoFromDate->toDatetime()->format('Y-m-d H:i:s\Z')
                 : 'the beginning';
             // Take the last indexing date now and store it when done
-            $lastIndexingDate = $this->db->getTimestamp();
+            if (!$sourceId && !$singleId && !isset($fromDate)) {
+                $lastIndexingDate = $this->db->getTimestamp();
+            } else {
+                $lastIndexingDate = null;
+            }
 
             // Only process merged records if any of the selected sources has
             // deduplication enabled
@@ -772,7 +786,7 @@ class SolrUpdater
                     if (null !== $childPid) {
                         $this->reconnectDatabase();
                     }
-                    $this->InitWorkerPoolManager();
+                    $this->initWorkerPoolManager();
                     try {
                         $needCommit = $this->processMerged(
                             isset($mongoFromDate) ? $mongoFromDate : null,
@@ -979,17 +993,29 @@ class SolrUpdater
                 usleep(10);
             }
 
+            // Flush update buffer and wait for any subsequent pending Solr updates
+            // to complete.
             $this->flushUpdateBuffer();
 
+            $this->log->log(
+                'updateRecords',
+                'Waiting for any pending requests to complete...'
+            );
+            $this->workerPoolManager->waitUntilDone('solr');
+            $this->log->log(
+                'updateRecords',
+                'All requests complete'
+            );
+
+            if ($count > 0) {
+                $needCommit = true;
+            }
             if (isset($lastIndexingDate) && !$compare) {
                 $state = [
                     '_id' => $lastUpdateKey,
                     'value' => $lastIndexingDate
                 ];
                 $this->db->saveState($state);
-            }
-            if ($count > 0) {
-                $needCommit = true;
             }
             $this->log->log(
                 'updateRecords',
@@ -1036,12 +1062,15 @@ class SolrUpdater
                 }
             }
 
+            if (isset($lastIndexingDate) && !$compare) {
+                $state = [
+                    '_id' => $lastUpdateKey,
+                    'value' => $lastIndexingDate
+                ];
+                $this->db->saveState($state);
+            }
+
             if (!$noCommit && $needCommit && !$compare && !$this->dumpPrefix) {
-                $this->log->log(
-                    'updateRecords',
-                    'Waiting for any pending requests to complete...'
-                );
-                $this->workerPoolManager->waitUntilDone('solr');
                 $this->log->log('updateRecords', 'Final commit...');
                 $this->solrRequest('{ "commit": {} }', 3600);
                 $this->log->log('updateRecords', 'Commit complete');
@@ -1106,7 +1135,6 @@ class SolrUpdater
         if ($singleId) {
             $params['_id'] = $singleId;
             $params['dedup_id'] = ['$exists' => true];
-            $lastIndexingDate = null;
         } else {
             if (isset($mongoFromDate)) {
                 $params['updated'] = ['$gte' => $mongoFromDate];
@@ -1380,8 +1408,21 @@ class SolrUpdater
         }
 
         if (!$compare) {
+            // Flush update buffer and wait for any subsequent pending Solr updates
+            // to complete.
             $this->flushUpdateBuffer();
+
+            $this->log->log(
+                'processMerged',
+                'Waiting for any pending requests to complete...'
+            );
+            $this->workerPoolManager->waitUntilDone('solr');
+            $this->log->log(
+                'processMerged',
+                'All requests complete'
+            );
         }
+
         $this->log->log(
             'processMerged',
             "Total $count merged records (of which $deleted deleted) with "
@@ -1693,6 +1734,88 @@ class SolrUpdater
     }
 
     /**
+     * Check Solr index for orphaned records
+     *
+     * @return void
+     */
+    public function checkIndexedRecords()
+    {
+        $request = $this->initSolrRequest();
+        $request->setMethod(\HTTP_Request2::METHOD_GET);
+        $baseUrl = $this->config['Solr']['search_url']
+            . '?q=*:*&sort=id+asc&wt=json&fl=id,record_format&rows=1000';
+
+        $this->initBufferedUpdate();
+        $count = 0;
+        $orphanRecordCount = 0;
+        $orphanDedupCount = 0;
+        $lastDisplayedCount = 0;
+        $pc = new PerformanceCounter();
+        $lastCursorMark = '';
+        $cursorMark = '*';
+        while ($cursorMark && $cursorMark !== $lastCursorMark) {
+            $url = $baseUrl . '&cursorMark=' . urlencode($cursorMark);
+            $request->setUrl($url);
+            $response = $request->send();
+            if ($response->getStatus() != 200) {
+                $this->log->log(
+                    'SolrCheck',
+                    "Could not scroll cursor mark (url $url), status code "
+                    . $response->getStatus()
+                );
+                throw new \Exception('Solr request failed');
+            }
+            $json = json_decode($response->getBody(), true);
+            $records = $json['response']['docs'];
+
+            foreach ($records as $record) {
+                $id = $record['id'];
+                if ('merged' === $record['record_format'] ?? $record['recordtype']) {
+                    $dbRecord = $this->db->getDedup($id);
+                } else {
+                    $dbRecord = $this->db->getRecord($id);
+                }
+                if (!$dbRecord || !empty($dbRecord['deleted'])) {
+                    $this->bufferedDelete($id);
+                    ++$orphanRecordCount;
+                    if ('merged' === $record['record_format']) {
+                        ++$orphanDedupCount;
+                    }
+                }
+            }
+
+            $count += count($records);
+            $lastCursorMark = $cursorMark;
+            $cursorMark = $json['nextCursorMark'];
+            if ($count >= $lastDisplayedCount + 1000) {
+                $lastDisplayedCount = $count;
+                $pc->add($count);
+                $avg = $pc->getSpeed();
+                $this->log->log(
+                    'checkIndexedRecords',
+                    "$count records checked with $orphanRecordCount orphaned records"
+                    . " (of which $orphanDedupCount dedup records) deleted,"
+                    . " $avg records/sec"
+                );
+            }
+        }
+        $this->flushUpdateBuffer();
+
+        $this->log->log(
+            'checkIndexedRecords',
+            "$count records checked with $orphanRecordCount orphaned records"
+            . " (of which $orphanDedupCount dedup records) deleted,"
+            . " $avg records/sec"
+        );
+
+        if ($orphanRecordCount) {
+            $this->log->log('checkIndexedRecords', 'Final commit...');
+            $this->solrRequest('{ "commit": {} }', 3600);
+            $this->log->log('checkIndexedRecords', 'Commit complete');
+        }
+    }
+
+    /**
      * Initialize or reload data source settings
      *
      * @param array $dataSourceSettings Optional data source settings to use instead
@@ -1830,7 +1953,9 @@ class SolrUpdater
                 }
             } else {
                 $params = [
-                    'host_record_id' => $record['linking_id'],
+                    'host_record_id' => [
+                        '$in' => array_values((array)$record['linking_id'])
+                    ],
                     'deleted' => false
                 ];
                 if (!empty($settings['componentPartSourceId'])) {
@@ -1896,11 +2021,13 @@ class SolrUpdater
         // Record links between host records and component parts
         if ($metadataRecord->getIsComponentPart()) {
             $hostRecords = [];
-            if ($this->db && isset($record['host_record_id'])) {
+            if ($this->db && !empty($record['host_record_id'])) {
                 $hostRecords = $this->db->findRecords(
                     [
                         'source_id' => $record['source_id'],
-                        'linking_id' => ['$in' => (array)$record['host_record_id']]
+                        'linking_id' => [
+                            '$in' => array_values((array)$record['host_record_id'])
+                        ]
                     ]
                 );
                 if (!$hostRecords) {
@@ -2103,9 +2230,11 @@ class SolrUpdater
         }
 
         // Work identification keys
-        if ($workIds = $metadataRecord->getWorkIdentificationData()) {
+        if ($this->workKeysField
+            && $workIds = $metadataRecord->getWorkIdentificationData()
+        ) {
             $keys = [];
-            foreach ($workIds['titles'] as $titleData) {
+            foreach ($workIds['titles'] ?? [] as $titleData) {
                 $title = MetadataUtils::normalizeKey(
                     $titleData['value'],
                     $this->unicodeNormalizationForm
@@ -2113,7 +2242,7 @@ class SolrUpdater
                 if ('uniform' === $titleData['type']) {
                     $keys[] = "UT $title";
                 } else {
-                    foreach ($workIds['authors'] as $authorData) {
+                    foreach ($workIds['authors'] ?? [] as $authorData) {
                         $author = MetadataUtils::normalizeKey(
                             $authorData['value'],
                             $this->unicodeNormalizationForm
@@ -2122,7 +2251,7 @@ class SolrUpdater
                     }
                 }
             }
-            foreach ($workIds['titlesAltScript'] as $titleData) {
+            foreach ($workIds['titlesAltScript'] ?? [] as $titleData) {
                 $title = MetadataUtils::normalizeKey(
                     $titleData['value'],
                     $this->unicodeNormalizationForm
@@ -2130,7 +2259,7 @@ class SolrUpdater
                 if ('uniform' === $titleData['type']) {
                     $keys[] = "UT $title";
                 } else {
-                    foreach ($workIds['authorsAltScript'] as $authorData) {
+                    foreach ($workIds['authorsAltScript'] ?? [] as $authorData) {
                         $author = MetadataUtils::normalizeKey(
                             $authorData['value'],
                             $this->unicodeNormalizationForm
@@ -2140,7 +2269,7 @@ class SolrUpdater
                 }
             }
             if ($keys) {
-                $data['work_keys_str_mv'] = $keys;
+                $data[$this->workKeysField] = $keys;
             }
         }
 
@@ -2269,10 +2398,14 @@ class SolrUpdater
                     $capsRatio += 1 - $similar / $length;
                 }
             }
-            $baseScore = $fieldCount + $titleLen;
-            $capsRatio /= $fieldCount;
-            $record['score'] = 0 == $capsRatio ? $fieldCount
-                : $baseScore / $capsRatio;
+            if (0 === $fieldCount) {
+                $record['score'] = 0;
+            } else {
+                $baseScore = $fieldCount + $titleLen;
+                $capsRatio /= $fieldCount;
+                $record['score'] = 0 == $capsRatio ? $fieldCount
+                    : $baseScore / $capsRatio;
+            }
         }
         unset($record);
 
@@ -2786,10 +2919,16 @@ class SolrUpdater
         $this->bufferedDeletions[] = '"delete":{"id":"' . $id . '"}';
         if (count($this->bufferedDeletions) >= 1000) {
             $request = "{" . implode(',', $this->bufferedDeletions) . "}";
-            $this->workerPoolManager->addRequest(
-                'solr',
-                $request
-            );
+            if (null !== $this->workerPoolManager
+                && $this->workerPoolManager->hasWorkerPool('solr')
+            ) {
+                $this->workerPoolManager->addRequest(
+                    'solr',
+                    $request
+                );
+            } else {
+                $this->solrRequest($request);
+            }
             $this->bufferedDeletions = [];
             return true;
         }

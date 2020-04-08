@@ -321,6 +321,17 @@ class Lido extends Base
     }
 
     /**
+     * Dedup: Return main author (format: Last, First)
+     *
+     * @return string
+     */
+    public function getMainAuthor()
+    {
+        $authors = $this->getActors($this->mainEvent);
+        return $authors ? $authors[0] : '';
+    }
+
+    /**
      * Get the last sublocation (partOfPlace) of a place
      *
      * @param simpleXMLElement $place Place element

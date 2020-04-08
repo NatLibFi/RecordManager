@@ -48,7 +48,7 @@ Usage: $argv[0] --func=... [...]
 Parameters:
 
 --func              renormalize|deduplicate|updatesolr|dump|dumpsolr|markdeleted
-                    |deletesource|deletesolr|optimizesolr|count|checkdedup
+                    |deletesource|deletesolr|optimizesolr|count|checkdedup|checksolr
                     |comparesolr|purgedeleted|markdedup|markforupdate
 --source            Source ID to process (separate multiple sources with commas)
 --all               Process all records regardless of their state (deduplicate,
@@ -129,6 +129,11 @@ EOT;
                 $basePath, $config, true, $verbose
             );
             $solrDump->launch($dumpPrefix, $date, $sources, $single, $mapped);
+        } elseif ($params['func'] == 'checksolr') {
+            $solrCheck = new \RecordManager\Base\Controller\SolrCheck(
+                $basePath, $config, true, $verbose
+            );
+            $solrCheck->launch();
         } else {
             foreach (explode(',', $sources) as $source) {
                 switch ($params['func']) {

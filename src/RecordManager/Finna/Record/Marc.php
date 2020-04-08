@@ -770,6 +770,18 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $data['free_online_str_mv'] = $data['online_str_mv'];
                 $data['free_online_boolean'] = true;
             }
+        } else {
+            // Check online availability from carrier type. This is intentionally
+            // done after the free check above, since these records seem to often not
+            // have the 506 field.
+            $fields = $this->getFields('338');
+            foreach ($fields as $field) {
+                $b = $this->getSubfield($field, 'b');
+                if ('cr' === $b) {
+                    $data['online_boolean'] = true;
+                    $data['online_str_mv'] = $this->source;
+                }
+            }
         }
 
         // Author facet
@@ -1386,29 +1398,7 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     protected function getBuilding()
     {
-        $building = [];
-        if ($this->getDriverParam('holdingsInBuilding', true)) {
-            $useSub = $this->getDriverParam('subLocationInBuilding', '');
-            $itemSub = $this->getDriverParam('itemSubLocationInBuilding', $useSub);
-            foreach ($this->getFields('852') as $field) {
-                $location = $this->getSubfield($field, 'b');
-                if ($location) {
-                    if ($useSub && $sub = $this->getSubfield($field, $useSub)) {
-                        $location = [$location, $sub];
-                    }
-                    $building[] = $location;
-                }
-            }
-            foreach ($this->getFields('952') as $field) {
-                $location = $this->getSubfield($field, 'b');
-                if ($location) {
-                    if ($itemSub && $sub = $this->getSubfield($field, $itemSub)) {
-                        $location = [$location, $sub];
-                    }
-                    $building[] = $location;
-                }
-            }
-        }
+        $building = parent::getBuilding();
 
         // Ebrary location
         $ebraryLocs = $this->getFieldsSubfields(
@@ -1423,6 +1413,30 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         return $building;
+    }
+
+    /**
+     * Get default fields used to populate the building field
+     *
+     * @return array
+     */
+    protected function getDefaultBuildingFields()
+    {
+        $useSub = $this->getDriverParam('subLocationInBuilding', '');
+        $itemSub = $this
+            ->getDriverParam('itemSubLocationInBuilding', $useSub);
+        return [
+            [
+                'field' => '852',
+                'loc' => 'b',
+                'sub' => $useSub,
+            ],
+            [
+                'field' => '952',
+                'loc' => 'b',
+                'sub' => $itemSub,
+            ],
+        ];
     }
 
     /**
@@ -1751,7 +1765,28 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Get key data that can be used to identify expressions of a work
      *
-     * @return array Associative array of authors and titles
+     * Returns an associative array like this:
+     *
+     * [
+     *   'titles' => [
+     *     ['type' => 'title', 'value' => 'Title'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title']
+     *    ],
+     *   'authors' => [
+     *     ['type' => 'author', 'value' => 'Name 1'],
+     *     ['type' => 'author', 'value' => 'Name 2']
+     *   ],
+     *   'titlesAltScript' => [
+     *     ['type' => 'title', 'value' => 'Title in alternate script'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
+     *   ],
+     *   'authorsAltScript' => [
+     *     ['type' => 'author', 'value' => 'Name 1 in alternate script'],
+     *     ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *   ]
+     * ]
+     *
+     * @return array
      */
     public function getWorkIdentificationData()
     {
@@ -1764,8 +1799,9 @@ class Marc extends \RecordManager\Base\Record\Marc
             '711' => ['a' => 1, 'c' => 1]
         ];
         $titleFields = [
-            '130' => ['n' => 1],
-            '240' => ['n' => 1, 'm' => 1, 'r' => 1],
+            '130' => ['n' => 1, 'p' => 1],
+            '730' => ['n' => 1, 'p' => 1],
+            '240' => ['n' => 1, 'p' => 1, 'm' => 1, 'r' => 1],
             '245' => ['b' => 1, 'n' => 1],
             '246' => ['b' => 1, 'n' => 1],
             '247' => ['b' => 1, 'n' => 1],
@@ -1801,7 +1837,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             $field = $this->getField($tag);
             $title = '';
             $altTitles = [];
-            $ind = '130' == $tag ? 1 : 2;
+            $ind = ('130' == $tag || '730' == $tag) ? 1 : 2;
             if ($field && !empty($field['s'])) {
                 $title = $this->getSubfield($field, 'a');
                 $nonfiling = $this->getIndicator($field, $ind);
@@ -1834,7 +1870,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                     }
                 }
             }
-            $titleType = '130' == $tag ? 'uniform' : 'title';
+            $titleType = ('130' == $tag || '730' == $tag) ? 'uniform' : 'title';
             if ($title) {
                 $titles[] = [
                     'type' => $titleType,

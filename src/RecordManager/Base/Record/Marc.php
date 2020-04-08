@@ -592,12 +592,12 @@ class Marc extends Base
     }
 
     /**
-     * Return record linking ID (typically same as ID) used for links
+     * Return record linking IDs (typically same as ID) used for links
      * between records in the data source
      *
-     * @return string
+     * @return array
      */
-    public function getLinkingID()
+    public function getLinkingIDs()
     {
         $id = $this->getField('001');
         if ('' === $id && $this->getDriverParam('idIn999', false)) {
@@ -608,10 +608,21 @@ class Marc extends Base
             $source = $this->getField('003');
             $source = MetadataUtils::stripTrailingPunctuation($source);
             if ($source) {
-                return "($source)$id";
+                $id = "($source)$id";
             }
         }
-        return $id;
+        $results = [$id];
+
+        $cns = $this->getFieldsSubfields(
+            [
+                [self::GET_NORMAL, '035', ['a' => 1]]
+            ]
+        );
+        if ($cns) {
+            $results = array_merge($results, $cns);
+        }
+
+        return $results;
     }
 
     /**
@@ -822,11 +833,7 @@ class Marc extends Base
             $author = $this->getSubfield($f100, 'a');
             $order = $this->getIndicator($f100, 1);
             if ($order == 0 && strpos($author, ',') === false) {
-                $p = strrpos($author, ' ');
-                if ($p > 0) {
-                    $author = substr($author, $p + 1) . ', '
-                        . substr($author, 0, $p);
-                }
+                $author = MetadataUtils::convertAuthorLastFirst($author);
             }
             return MetadataUtils::stripTrailingPunctuation($author);
         }
@@ -856,7 +863,7 @@ class Marc extends Base
         $nbn = $this->getField('015');
         if ($nbn) {
             $nr = MetadataUtils::normalizeKey(
-                strtok($this->getSubfield($nbn, 'a'), ' '), $form
+                $this->getSubfield($nbn, 'a'), $form
             );
             $src = $this->getSubfield($nbn, '2');
             if ($src && $nr) {
@@ -866,7 +873,7 @@ class Marc extends Base
         $nba = $this->getField('016');
         if ($nba) {
             $nr = MetadataUtils::normalizeKey(
-                strtok($this->getSubfield($nba, 'a'), ' '), $form
+                $this->getSubfield($nba, 'a'), $form
             );
             $src = $this->getSubfield($nba, '2');
             if ($src && $nr) {
@@ -876,7 +883,7 @@ class Marc extends Base
         $id = $this->getField('024');
         if ($id) {
             $nr = MetadataUtils::normalizeKey(
-                strtok($this->getSubfield($id, 'a'), ' '), $form
+                $this->getSubfield($id, 'a'), $form
             );
             switch ($this->getIndicator($id, 1)) {
             case '0':
@@ -899,6 +906,10 @@ class Marc extends Base
                 break;
             default:
                 $src = '';
+            }
+            // Ignore any invalid ISMN
+            if ('ismn' === $src && !preg_match('{([0-9]{13})}', $nr)) {
+                $nr = '';
             }
             if ($src && $nr) {
                 $arr[] = "($src)$nr";
@@ -1293,19 +1304,58 @@ class Marc extends Base
     protected function getBuilding()
     {
         $building = [];
-        if ($this->getDriverParam('holdingsInBuilding', true)) {
-            $useSub = $this->getDriverParam('subLocationInBuilding', '');
-            foreach ($this->getFields('852') as $field) {
-                $location = $this->getSubfield($field, 'b');
-                if ($location) {
-                    if ($useSub && $sub = $this->getSubfield($field, $useSub)) {
-                        $location = [$location, $sub];
+        $buildingFieldSpec = $this->getDriverParam('buildingFields', false);
+        if ($this->getDriverParam('holdingsInBuilding', true)
+            || false !== $buildingFieldSpec
+        ) {
+            $buildingFieldSpec = $this->getDriverParam('buildingFields', false);
+            if (false === $buildingFieldSpec) {
+                $buildingFields = $this->getDefaultBuildingFields();
+            } else {
+                $buildingFields = [];
+                $parts = explode(':', $buildingFieldSpec);
+                foreach ($parts as $part) {
+                    $buildingFields[] = [
+                        'field' => substr($part, 0, 3),
+                        'loc' => substr($part, 3, 1),
+                        'sub' => substr($part, 4, 1),
+                    ];
+                }
+            }
+
+            foreach ($buildingFields as $buildingField) {
+                foreach ($this->getFields($buildingField['field']) as $field) {
+                    $location = $this->getSubfield($field, $buildingField['loc']);
+                    if ($location) {
+                        $subLocField = $buildingField['sub'];
+                        if ($subLocField
+                            && $sub = $this->getSubfield($field, $subLocField)
+                        ) {
+                            $location = [$location, $sub];
+                        }
+                        $building[] = $location;
                     }
-                    $building[] = $location;
                 }
             }
         }
         return $building;
+    }
+
+    /**
+     * Get default fields used to populate the building field
+     *
+     * @return array
+     */
+    protected function getDefaultBuildingFields()
+    {
+        $useSub = $this->getDriverParam('subLocationInBuilding', '');
+        return [
+            [
+                'field' => '852',
+                'loc' => 'b',
+                'sub' => $useSub,
+            ],
+        ];
     }
 
     /**

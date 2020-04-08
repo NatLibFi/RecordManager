@@ -184,7 +184,7 @@ class Forward extends Base
         $data['fullrecord'] = $this->toXML();
         $publishDate = (string)$doc->YearOfReference;
         $data['publishDate'] = $publishDate;
-        $data['title'] = (string)$doc->IdentifyingTitle;
+        $data['title'] = $this->getTitle();
         foreach ($doc->Title as $title) {
             $titleText = (string)$title->TitleText;
             if ($titleText != $data['title']) {
@@ -244,6 +244,23 @@ class Forward extends Base
         $data['allfields'] = $this->getAllFields();
 
         return $data;
+    }
+
+    /**
+     * Dedup: Return main author (format: Last, First)
+     *
+     * @return string
+     */
+    public function getMainAuthor()
+    {
+        $authors = $this->getPrimaryAuthorsSorted();
+        $author = isset($authors['names'][0]) ? $authors['names'][0] : '';
+        if ($author) {
+            if (strpos($author, ',') === false) {
+                $author = MetadataUtils::convertAuthorLastFirst($author);
+            }
+        }
+        return $author;
     }
 
     /**
@@ -428,6 +445,28 @@ class Forward extends Base
             }
         }
         return $results;
+    }
+
+    /**
+     * Return record title
+     *
+     * @param bool $forFiling Whether the title is to be used in filing
+     *                        (e.g. sorting, non-filing characters should be removed)
+     *
+     * @return string
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function getTitle($forFiling = false)
+    {
+        $doc = $this->getMainElement();
+        $title = (string)$doc->IdentifyingTitle;
+
+        if ($forFiling) {
+            $title = MetadataUtils::stripLeadingArticle($title);
+        }
+
+        return $title;
     }
 
     /**

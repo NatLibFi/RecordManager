@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -189,6 +189,17 @@ class Ead3 extends Ead
         }
 
         return $title;
+    }
+
+    /**
+     * Dedup: Return main author (format: Last, First)
+     *
+     * @return string
+     */
+    public function getMainAuthor()
+    {
+        $authors = $this->getAuthors();
+        return isset($authors[0]) ? $authors[0] : '';
     }
 
     /**
