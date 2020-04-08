@@ -336,38 +336,6 @@ class Eaccpf extends Base
     }
 
     /**
-     * Get use for headings
-     *
-     * @return string[]
-     */
-    protected function getUseForHeadings()
-    {
-        if (!isset($this->doc->cpfDescription->identity->nameEntryParallel)) {
-            return [];
-        }
-        foreach ($this->doc->cpfDescription->identity->nameEntryParallel as $entry) {
-            if (!isset($entry->nameEntry->part)) {
-                continue;
-            }
-            $name1 = '';
-            $name2 = '';
-            foreach ($entry->nameEntry->part as $part) {
-                $type = $part->attributes()->localType;
-                if ('TONI1' == $type) {
-                    $name1 = (string)$part;
-                } elseif ('TONI4' == $type) {
-                    $name2 = (string)$part;
-                }
-            }
-            $s = trim("$name1 $name2");
-            if ($s) {
-                $result[] = $s;
-            }
-        }
-        return implode(' ', $result);
-    }
-
-    /**
      * Get occupations
      *
      * @return array
@@ -440,4 +408,35 @@ class Eaccpf extends Base
         return (string)$this->doc->cpfDescription->identity->entityType;
     }
 
+    /**
+     * Get use for headings
+     *
+     * @return string[]
+     */
+    protected function getUseForHeadings()
+    {
+        if (!isset($this->doc->cpfDescription->identity->nameEntryParallel)) {
+            return [];
+        }
+        foreach ($this->doc->cpfDescription->identity->nameEntryParallel as $entry) {
+            if (!isset($entry->nameEntry->part)) {
+                continue;
+            }
+            $name1 = '';
+            $name2 = '';
+            foreach ($entry->nameEntry->part as $part) {
+                $type = $part->attributes()->localType;
+                if ('TONI1' == $type) {
+                    $name1 = (string)$part;
+                } elseif ('TONI4' == $type) {
+                    $name2 = (string)$part;
+                }
+            }
+            $s = trim("$name1 $name2");
+            if ($s) {
+                $result[] = $s;
+            }
+        }
+        return implode(' ', $result);
+    }
 }
