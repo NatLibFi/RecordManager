@@ -83,6 +83,7 @@ class MarcAuthority extends Marc
         $data['birth_place'] = $this->getFieldSubField('370', 'a');
         $data['death_place'] = $this->getFieldSubField('370', 'b');
         $data['country'] = $this->getFieldSubfield('370', 'c');
+        $data['related_places_str_mv'] = $this->getRelatedPlaces();
         
         $data['field_of_activity'] = $this->getFieldsOfActivity();
         $data['occupation'] = $this->getOccupations();
@@ -162,6 +163,21 @@ class MarcAuthority extends Marc
                 $this->getFieldSubField('410', 'a', true),
                 $this->getFieldSubField('410', 'b', true),
                 $this->getFieldSubField('510', 'a', true)
+            ]
+        );
+    }
+
+    /**
+     * Get related places
+     *
+     * @return array
+     */
+    protected function getRelatedPlaces()
+    {
+        return array_unique(
+            [
+                $this->getFieldSubField('370', 'e', true),
+                $this->getFieldSubField('370', 'f', true)
             ]
         );
     }
