@@ -145,8 +145,20 @@ class MarcAuthority extends Marc
      */
     protected function getHeading()
     {
-        $name = $this->getFieldSubField('100', 'a', true);
-        return !empty($name) ? $name : $this->getFieldSubField('110', 'a', true);
+        if ($name = $this->getFieldSubFields('100', 'a', true)) {
+            return rtrim($name, ' .');
+        }
+        if ($field = $this->getFields('110')) {
+            if (!$sub = $this->getSubfield($field[0], 'a')) {
+                return '';
+            }
+            $fields = [$sub];
+            $fields = array_merge(
+                $fields, $this->getSubfieldsArray($field[0], ['b' => true])
+            );
+            return implode(' / ', $this->trimFields($fields));
+        }
+        return '';
     }
 
     /**
@@ -156,14 +168,16 @@ class MarcAuthority extends Marc
      */
     protected function getUseForHeadings()
     {
-        return array_unique(
-            [
-                $this->getHeading(),
-                $this->getFieldSubField('400', 'a', true),
-                $this->getFieldSubField('410', 'a', true),
-                $this->getFieldSubField('410', 'b', true),
-                $this->getFieldSubField('510', 'a', true)
-            ]
+        return $this->trimFields(
+            array_unique(
+                [
+                    $this->getHeading(),
+                    $this->getFieldSubField('400', 'a', true),
+                    $this->getFieldSubField('410', 'a', true),
+                    $this->getFieldSubField('410', 'b', true),
+                    $this->getFieldSubField('510', 'a', true)
+                ]
+            )
         );
     }
 
@@ -234,5 +248,22 @@ class MarcAuthority extends Marc
         }
         return date($format, $time);
         
+    }
+
+    /**
+     * Strip characters from the end of field values.
+     *
+     * @param array  $fields Field values.
+     * @param string $mask   Character mask.
+     *
+     * @return array
+     */
+    protected function trimFields($fields, $mask = '. ')
+    {
+        return array_map(
+            function ($field) use ($mask) {
+                return rtrim($field, $mask);
+            }, $fields
+        );
     }
 }
