@@ -1,10 +1,10 @@
 <?php
 /**
- * Finna record trait.
+ * Enrich Marc biblio records with data from authority index.
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2019.
+ * Copyright (C) The National Library of Finland 2014-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,10 +25,13 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Finna\Record;
+namespace RecordManager\Base\Enrichment;
+
+use RecordManager\Base\Database\Database;
+use RecordManager\Base\Utils\Logger;
 
 /**
- * Finna record trait.
+ * Enrich Marc biblio records with data from authority index.
  *
  * @category DataManagement
  * @package  RecordManager
@@ -36,54 +39,29 @@ namespace RecordManager\Finna\Record;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-trait FinnaRecordTrait
+class MarcSolrAuthEnrichment extends SolrAuthEnrichment
 {
     /**
-     * Get authority record namespace.
+     * Enrich the record and return any additions in solrArray
      *
-     * @param string $type Authority type
+     * @param string $sourceId  Source ID
+     * @param object $record    Metadata Record
+     * @param array  $solrArray Metadata to be sent to Solr
      *
-     * @return string
+     * @throws Exception
+     * @return void
      */
-    public function getAuthorityNamespace($type = '*')
+    public function enrich($sourceId, $record, &$solrArray)
     {
-        return $this->dataSourceSettings[$this->source]['authority'][$type]
-            ?? $this->source;
-    }
-
-    /**
-     * Prepend authority ID with namespace.
-     *
-     * @param string[] $ids  Array of authority ids
-     * @param string   $type Authority type
-     *
-     * @return string[]
-     */
-    protected function addNamespaceToAuthorityIds($ids, $type = '*')
-    {
-        if (!is_array($ids)) {
-            $ids = [$ids];
+        if (!($record instanceof \RecordManager\Base\Record\Marc)) {
+            return;
         }
-        $ns = $this->getAuthorityNamespace($type);
-
-        return array_map(
-            function ($id) use ($ns) {
-                return "{$ns}.{$id}";
-            },
-            $ids
-        );
-    }
-    
-    /**
-     * Combine author id and role into a string that can be indexed.
-     *
-     * @param string $id   Id
-     * @param string $role Role
-     *
-     * @return string
-     */
-    protected function formatAuthorIdWithRole($id, $role)
-    {
-        return "{$id}###{$role}";
-    }
+        $fields = $record->toSolrArray();
+        foreach ($fields['author2_id_str_mv'] ?? [] as $id) {
+            list($source, $id) = explode('.', $id, 2);
+            $this->enrichField(
+                $sourceId, $record, $solrArray, $id, 'author_variant'
+            );
+        }
+    }        
 }

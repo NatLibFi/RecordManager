@@ -110,6 +110,24 @@ class MarcAuthority extends Marc
      *
      * @return array
      */
+    public function getAlternativeNames()
+    {
+        $result = [];
+        foreach (['400', '410', '500', '510'] as $code) {
+            foreach ($this->getFields($code) as $field) {
+                if ($activity = $this->getSubfield($field, 'a')) {
+                    $result[] = $activity;
+                }
+            }
+        }
+        return $this->trimFields(array_unique($result));
+    }
+
+    /**
+     * Get fields of activity
+     *
+     * @return array
+     */
     protected function getOccupations()
     {
         $result = [];
@@ -145,7 +163,7 @@ class MarcAuthority extends Marc
      */
     protected function getHeading()
     {
-        if ($name = $this->getFieldSubFields('100', 'a', true)) {
+        if ($name = $this->getFieldSubField('100', 'a', true)) {
             return rtrim($name, ' .');
         }
         if ($field = $this->getFields('110')) {
@@ -164,21 +182,11 @@ class MarcAuthority extends Marc
     /**
      * Get use for headings
      *
-     * @return string
+     * @return array
      */
-    protected function getUseForHeadings()
+    public function getUseForHeadings()
     {
-        return $this->trimFields(
-            array_unique(
-                [
-                    $this->getHeading(),
-                    $this->getFieldSubField('400', 'a', true),
-                    $this->getFieldSubField('410', 'a', true),
-                    $this->getFieldSubField('410', 'b', true),
-                    $this->getFieldSubField('510', 'a', true)
-                ]
-            )
-        );
+        return $this->getAlternativeNames();
     }
 
     /**
@@ -262,7 +270,7 @@ class MarcAuthority extends Marc
     {
         return array_map(
             function ($field) use ($mask) {
-                return rtrim($field, $mask);
+                return MetadataUtils::stripTrailingPunctuation($field, $mask);
             }, $fields
         );
     }

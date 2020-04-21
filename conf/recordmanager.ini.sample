@@ -239,3 +239,7 @@ replace[] = '\1 street'
 ; enrichments[] = MusicBrainzEnrichment
 ; Base url for the MusicBrainz server.
 ;url = "http://localhost:5000"
+
+[SolrAuthEnrichment]
+; Solr select URL.
+;select_url = "http://localhost:8080/solr/authority2/select"

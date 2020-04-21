@@ -28,6 +28,7 @@
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\Database;
+use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -116,17 +117,27 @@ class Enrichment
     protected $requestsDuration = [];
 
     /**
+     * Record factory.
+     *
+     * @var RecordFactory
+     */
+    protected $recordFactory;
+
+    /**
      * Constructor
      *
-     * @param Database $db     Database connection (for cache)
-     * @param Logger   $logger Logger
-     * @param array    $config Main configuration
+     * @param Database      $db            Database connection (for cache)
+     * @param Logger        $logger        Logger
+     * @param array         $config        Main configuration
+     * @param RecordFactory $recordFactory Record factory
      */
-    public function __construct(Database $db, Logger $logger, $config)
-    {
+    public function __construct(
+        Database $db, Logger $logger, $config, RecordFactory $recordFactory
+    ) {
         $this->db = $db;
         $this->logger = $logger;
         $this->config = $config;
+        $this->recordFactory = $recordFactory;
 
         $this->maxCacheAge = isset($config['Enrichment']['cache_expiration'])
             ? $config['Enrichment']['cache_expiration'] * 60
