@@ -87,6 +87,9 @@
 ; driverParams[]        An array of extra parameters that can be used to customize record driver behavior
 ; enrichments[]         An array of enrichment class names that can be used to enrich records
 ; componentPartSourceId[] An array defining linked sources that are used to fetch component parts from this source
+; authority[<type>]     Map to authority index sources where <type> is authority record type
+;                       (corporateBody, person) or * for any;
+; authority_id_regex[<type>] Regex for whitelisting allowed authority ids
 
 ; OAI-PMH Provider Specific settings:
 ; transformation_to_{fmt}
