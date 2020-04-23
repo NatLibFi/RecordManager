@@ -73,7 +73,7 @@ class MarcAuthority extends Marc
 
         $heading = $this->getHeading();
         $data['heading'] = $data['heading_keywords'] = $heading;
-        $data['use_for'] = $this->getUseForHeadings();
+        $data['use_for'] = $data['use_for_keywords'] = $this->getUseForHeadings();
 
         $data['record_type'] = $this->getRecordType();
 
@@ -108,12 +108,16 @@ class MarcAuthority extends Marc
     /**
      * Get fields of activity
      *
+     * @param array $additional List of additional fields to return 
+     *
      * @return array
      */
-    public function getAlternativeNames()
+    public function getAlternativeNames($additional = [])
     {
         $result = [];
-        foreach (['400', '410', '500', '510'] as $code) {
+        foreach (array_merge(['400', '410', '500', '510'], $additional)
+            as $code
+        ) {
             foreach ($this->getFields($code) as $field) {
                 if ($activity = $this->getSubfield($field, 'a')) {
                     $result[] = $activity;
@@ -166,15 +170,17 @@ class MarcAuthority extends Marc
         if ($name = $this->getFieldSubField('100', 'a', true)) {
             return rtrim($name, ' .');
         }
-        if ($field = $this->getFields('110')) {
-            if (!$sub = $this->getSubfield($field[0], 'a')) {
-                return '';
+        foreach (['110', '111'] as $code) {
+            if ($field = $this->getFields($code)) {
+                if (!$sub = $this->getSubfield($field[0], 'a')) {
+                    continue;
+                }
+                $fields = [$sub];
+                $fields = array_merge(
+                    $fields, $this->getSubfieldsArray($field[0], ['b' => true])
+                );
+                return implode(' / ', $this->trimFields($fields));
             }
-            $fields = [$sub];
-            $fields = array_merge(
-                $fields, $this->getSubfieldsArray($field[0], ['b' => true])
-            );
-            return implode(' / ', $this->trimFields($fields));
         }
         return '';
     }
@@ -186,7 +192,7 @@ class MarcAuthority extends Marc
      */
     public function getUseForHeadings()
     {
-        return $this->getAlternativeNames();
+        return $this->getAlternativeNames(['411']);
     }
 
     /**

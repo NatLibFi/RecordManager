@@ -357,6 +357,8 @@ class Marc extends Base
         $data['author2_fuller'] = $secondaryAuthors['fuller'];
         $data['author2_id_str_mv']
             = $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']);
+        $data['author2_id_role_str_mv']
+            = $this->addNamespaceToAuthorityIds($secondaryAuthors['idRoles']);
 
         $corporateAuthors = $this->getCorporateAuthors();
         $data['author_corporate'] = $corporateAuthors['names'];
@@ -2366,7 +2368,10 @@ class Marc extends Base
     protected function getAuthorsByRelator($fieldSpecs, $relators,
         $noRelatorRequired, $altScript = true, $invertMatch = false
     ) {
-        $result = ['names' => [], 'fuller' => [], 'relators' => [], 'ids' => []];
+        $result = [
+            'names' => [], 'fuller' => [], 'relators' => [],
+            'ids' => [], 'idRoles' => []
+        ];
         foreach ($fieldSpecs as $tag => $subfieldList) {
             foreach ($this->getFields($tag) as $field) {
                 $fieldRelators = $this->normalizeRelators(
@@ -2414,8 +2419,15 @@ class Marc extends Base
                 } else {
                     $result['relators'][] = '-';
                 }
-                if ($termId = $this->getSubField($field, '0')) {
-                    $result['ids'][] = $termId;
+                if ($authId = $this->getSubField($field, '0')) {
+                    $result['ids'][] = $authId;
+                    if ($role = $this->getSubField($field, 'e')) {
+                        $result['idRoles'][]
+                            = $this->formatAuthorIdWithRole(
+                                $authId,
+                                MetaDataUtils::stripTrailingPunctuation($role, '. ')
+                            );
+                    }
                 }
             }
         }
