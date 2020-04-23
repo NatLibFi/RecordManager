@@ -62,9 +62,9 @@ class SolrAuthEnrichment extends Enrichment
      * @param array         $config        Main configuration
      * @param RecordFactory $recordFactory Record factory
      */
-    public function __construct($db, $logger, $config, $recordFactory)
+    public function __construct($db, $logger, $config)
     {
-        parent::__construct($db, $logger, $config, $recordFactory);
+        parent::__construct($db, $logger, $config);
 
         $this->solrURL = $this->config['SolrAuthEnrichment']['select_url'] ?? '';
     }
@@ -87,23 +87,27 @@ class SolrAuthEnrichment extends Enrichment
     /**
      * Enrich the record and return any additions in solrArray
      *
-     * @param string $sourceId  Source ID
-     * @param object $record    Record
-     * @param array  $solrArray Metadata to be sent to Solr
-     * @param string $id        Onki id
-     * @param string $solrField Target Solr field
+     * @param string $sourceId           Source ID
+     * @param object $record             Record
+     * @param array  $solrArray          Metadata to be sent to Solr
+     * @param string $id                 Onki id
+     * @param string $solrField          Target Solr field
+     * @param bool   $includeInAllfields Whether to include the enriched
+     * value also in allFields
      *
      * @return void
      */
     protected function enrichField($sourceId, $record, &$solrArray,
-        $id, $solrField
+        $id, $solrField, $includeInAllfields = false
     ) {
         $localData = $this->db->findOntologyEnrichment(['_id' => $id]);
         if ($localData) {
             $solrArray[$solrField]
                 = array_merge($solrArray[$solrField], $localData);
-            $solrArray['allfields']
-                = array_merge($solrArray['allfield'], $localData);
+            if ($includeInAllfields) {
+                $solrArray['allfields']
+                    = array_merge($solrArray['allfield'], $localData);
+            }
             return;
         }
 
@@ -136,8 +140,10 @@ class SolrAuthEnrichment extends Enrichment
                 if ($altNames = $authRecord->getAlternativeNames()) {
                     $solrArray[$solrField]
                         = array_merge($solrArray[$solrField] ?? [], $altNames);
-                    $solrArray['allfields']
-                        = array_merge($solrArray['allfields'], $altNames);
+                    if ($includeInAllfields) {
+                        $solrArray['allfields']
+                            = array_merge($solrArray['allfields'], $altNames);
+                    }
                 }
                 break;
             }

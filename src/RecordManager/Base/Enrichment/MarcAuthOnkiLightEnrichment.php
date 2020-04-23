@@ -1,6 +1,6 @@
 <?php
 /**
- * Enrich Marc biblio records with data from authority index.
+ * Enrich Marc authority records with data from ONKI Light.
  *
  * PHP version 5
  *
@@ -31,7 +31,7 @@ use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
 
 /**
- * Enrich Marc biblio records with data from authority index.
+ * Enrich Marc authority records with data from ONKI Light.
  *
  * @category DataManagement
  * @package  RecordManager
@@ -39,7 +39,7 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class MarcSolrAuthEnrichment extends SolrAuthEnrichment
+class MarcAuthOnkiLightEnrichment extends OnkiLightEnrichment
 {
     /**
      * Enrich the record and return any additions in solrArray
@@ -56,12 +56,12 @@ class MarcSolrAuthEnrichment extends SolrAuthEnrichment
         if (!($record instanceof \RecordManager\Base\Record\Marc)) {
             return;
         }
-        $fields = $record->toSolrArray();
-        foreach ($fields['author2_id_str_mv'] ?? [] as $id) {
-            list($source, $id) = explode('.', $id, 2);
-            $this->enrichField(
-                $sourceId, $record, $solrArray, $id, 'author_variant', true
-            );
+        foreach ($record->getFields('374') as $recField) {
+            if ($id = $record->getSubfield($recField, '0')) {
+                $this->enrichField(
+                    $sourceId, $record, $solrArray, $id, 'occupation_str_mv', true
+                );
+            }
         }
     }        
 }

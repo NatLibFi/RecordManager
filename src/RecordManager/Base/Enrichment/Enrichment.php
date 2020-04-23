@@ -132,12 +132,11 @@ class Enrichment
      * @param RecordFactory $recordFactory Record factory
      */
     public function __construct(
-        Database $db, Logger $logger, $config, RecordFactory $recordFactory
+        Database $db, Logger $logger, $config
     ) {
         $this->db = $db;
         $this->logger = $logger;
         $this->config = $config;
-        $this->recordFactory = $recordFactory;
 
         $this->maxCacheAge = isset($config['Enrichment']['cache_expiration'])
             ? $config['Enrichment']['cache_expiration'] * 60
@@ -152,6 +151,18 @@ class Enrichment
         if (isset($config['HTTP'])) {
             $this->httpParams += $config['HTTP'];
         }
+    }
+
+    /**
+     * Set record factory.
+     *
+     * @param RecordFactory $factory Record factory
+     *
+     * @return void
+     */
+    public function setRecordFactory(RecordFactory $factory)
+    {
+        $this->recordFactory = $factory;
     }
 
     /**
