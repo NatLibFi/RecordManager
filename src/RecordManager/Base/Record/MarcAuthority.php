@@ -194,7 +194,7 @@ class MarcAuthority extends Marc
      */
     public function getUseForHeadings()
     {
-        return $this->getAlternativeNames(['411']);
+        return $this->getAlternativeNames(['111', '411', '511']);
     }
 
     /**
@@ -229,11 +229,7 @@ class MarcAuthority extends Marc
      */
     protected function getRecordType()
     {
-        if ($this->isPerson()) {
-            return 'Personal Name';
-        }
-        $name = $this->getFieldSubField('368', 'a');
-        return !empty($name) ? $name : 'Corporate Name';
+        return $this->isPerson() ? 'Personal Name' : 'Corporate Name';
     }
 
     /**
