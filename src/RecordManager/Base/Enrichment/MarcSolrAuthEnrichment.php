@@ -57,7 +57,7 @@ class MarcSolrAuthEnrichment extends SolrAuthEnrichment
             return;
         }
 
-        $idRegex = $record->getDriverParam('MarcSolrAuthEnrichmentId');
+        $idRegex = $record->getDriverParam('MarcSolrAuthEnrichmentId', null);
 
         $fields = $record->toSolrArray();
         foreach ($fields['author2_id_str_mv'] ?? [] as $id) {
