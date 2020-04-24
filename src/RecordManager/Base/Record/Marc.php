@@ -355,16 +355,16 @@ class Marc extends Base
         // Support for author2_variant is currently not implemented
         $data['author2_role'] = $secondaryAuthors['relators'];
         $data['author2_fuller'] = $secondaryAuthors['fuller'];
-        $data['author2_id_str_mv']
-            = $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']);
-        $data['author2_id_role_str_mv']
-            = $this->addNamespaceToAuthorityIds($secondaryAuthors['idRoles']);
 
         $corporateAuthors = $this->getCorporateAuthors();
         $data['author_corporate'] = $corporateAuthors['names'];
         $data['author_corporate_role'] = $corporateAuthors['relators'];
-        $data['author_corporate_id_str_mv']
-            = $this->addNamespaceToAuthorityIds($corporateAuthors['ids']);
+
+        $data['author2_id_str_mv']
+            = array_merge(
+                $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']),
+                $this->addNamespaceToAuthorityIds($corporateAuthors['ids'])
+            );
 
         $data['author_additional'] = $this->getFieldsSubfields(
             [
