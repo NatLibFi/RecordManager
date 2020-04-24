@@ -77,8 +77,10 @@ class MarcAuthority extends Marc
 
         $data['record_type'] = $this->getRecordType();
 
-        $data['birth_date'] = $this->formatDate($this->getFieldSubField('046', 'f'));
-        $data['death_date'] = $this->formatDate($this->getFieldSubField('046', 'g'));
+        $data['birth_date']
+            = MetadataUtils::extractYear($this->getFieldSubField('046', 'f'));
+        $data['death_date']
+            = MetadataUtils::extractYear($this->getFieldSubField('046', 'g'));
 
         $data['birth_place'] = $this->getFieldSubField('370', 'a');
         $data['death_place'] = $this->getFieldSubField('370', 'b');
@@ -242,26 +244,6 @@ class MarcAuthority extends Marc
     protected function isPerson()
     {
         return !empty($this->getField('100'));
-    }
-
-    /**
-     * Format date
-     *
-     * @param string $date   Date
-     * @param string $format Format of converted date
-     *
-     * @return string
-     */
-    protected function formatDate($date, $format = 'Y')
-    {
-        if (false === (strpos($date, '-'))) {
-            return $date;
-        }
-        if (false === ($time = strtotime($date))) {
-            return $date;
-        }
-        return date($format, $time);
-        
     }
 
     /**
