@@ -494,7 +494,7 @@ class Base
      *
      * @return mixed Value
      */
-    protected function getDriverParam($parameter, $default = true)
+    public function getDriverParam($parameter, $default = true)
     {
         if (!isset($this->dataSourceSettings[$this->source]['driverParams'])
         ) {

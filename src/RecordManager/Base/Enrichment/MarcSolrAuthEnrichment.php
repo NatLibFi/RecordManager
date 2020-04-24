@@ -56,9 +56,17 @@ class MarcSolrAuthEnrichment extends SolrAuthEnrichment
         if (!($record instanceof \RecordManager\Base\Record\Marc)) {
             return;
         }
+
+        $idRegex = $record->getDriverParam('MarcSolrAuthEnrichmentId');
+
         $fields = $record->toSolrArray();
         foreach ($fields['author2_id_str_mv'] ?? [] as $id) {
             list($source, $id) = explode('.', $id, 2);
+
+            if ($idRegex && 1 !== preg_match($idRegex, $id)) {
+                continue;
+            }
+
             $this->enrichField(
                 $sourceId, $record, $solrArray, $id, 'author_variant', true
             );
