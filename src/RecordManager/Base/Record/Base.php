@@ -486,6 +486,16 @@ class Base
     }
 
     /**
+     * Return datasource settings.
+     *
+     * @return array
+     */
+    public function getDataSourceSettings()
+    {
+        return $this->dataSourceSettings[$this->source];
+    }
+
+    /**
      * Return a parameter specified in driverParams[] of datasources.ini
      *
      * @param string $parameter Parameter name
@@ -494,7 +504,7 @@ class Base
      *
      * @return mixed Value
      */
-    public function getDriverParam($parameter, $default = true)
+    protected function getDriverParam($parameter, $default = true)
     {
         if (!isset($this->dataSourceSettings[$this->source]['driverParams'])
         ) {

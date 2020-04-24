@@ -90,7 +90,8 @@
 ; authority[<type>]     Map to authority index sources where <type> is authority record type
 ;                       (corporateBody, person) or * for any;
 ; authority_id_regex[<type>] Regex for whitelisting allowed authority ids
-
+:                            (used when indexing authority ids and when enriching biblio records with MarcSolsrAuthEnrichment)
+;
 ; OAI-PMH Provider Specific settings:
 ; transformation_to_{fmt}
 ;                       XSL Transformation used to convert records from the original format to the requested format. E.g. if records are stored in MARC format,

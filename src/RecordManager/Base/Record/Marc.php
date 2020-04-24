@@ -366,6 +366,12 @@ class Marc extends Base
                 $this->addNamespaceToAuthorityIds($corporateAuthors['ids'])
             );
 
+        $data['author2_id_role_str_mv']
+            = array_merge(
+                $this->addNamespaceToAuthorityIds($secondaryAuthors['idRoles']),
+                $this->addNamespaceToAuthorityIds($corporateAuthors['idRoles'])
+            );
+
         $data['author_additional'] = $this->getFieldsSubfields(
             [
                 [self::GET_BOTH, '505', ['r' => 1]]
