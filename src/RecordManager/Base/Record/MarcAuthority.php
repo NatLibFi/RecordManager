@@ -252,7 +252,7 @@ class MarcAuthority extends Marc
      *
      * @return string
      */
-    protected function formatDate($date, $format = 'j.n.Y')
+    protected function formatDate($date, $format = 'Y')
     {
         if (false === (strpos($date, '-'))) {
             return $date;
