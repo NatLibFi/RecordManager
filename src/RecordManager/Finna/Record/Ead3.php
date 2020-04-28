@@ -219,8 +219,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
 
-        $data['author_id_str_mv'] = $this->getAuthorIds();
-        $data['author_corporate_id_str_mv'] = $this->getCorporateAuthorIds();
+        $data['author_id_str_mv'] = array_merge(
+            $this->getAuthorIds(),
+            $this->getCorporateAuthorIds()
+        );
 
         $data['format_ext_str_mv'] = $data['format'];
 
