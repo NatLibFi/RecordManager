@@ -808,7 +808,6 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         // Additional authority ids
-        //echo(var_export($this->getFields('600'), true));
         foreach ($this->getFields('700') as $field) {
             if ($id = $this->getSubField($field, '0')) {
                 $data['author2_id_str_mv']
