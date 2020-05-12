@@ -1,6 +1,6 @@
 <?php
 /**
- * Enrich biblio records with data from authority index.
+ * Enrich biblio records with authority record data.
  *
  * PHP version 5
  *
@@ -32,9 +32,10 @@ use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
 
 /**
- * Enrich biblio records with data from authority index.
+ * Enrich biblio records with authority record data.
  *
- * This is a base class for enrichment from authority record index.
+ * This is a base class for enrichment from authority record data.
+ * Authority records are retrieved from Mongo.
  * Record drivers need to implement the 'enrich' method
  * (i.e. call enrichField with an URI and name of the Solr-field to enrich).
  *
@@ -45,14 +46,14 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class SolrAuthEnrichment extends Enrichment
+class AuthEnrichment extends Enrichment
 {
     /**
-     * Solr url
+     * Database
      *
-     * @var string
+     * @var Database
      */
-    protected $solrURL;
+    protected $db;
 
     /**
      * Constructor
@@ -60,13 +61,26 @@ class SolrAuthEnrichment extends Enrichment
      * @param Database      $db            Database connection (for cache)
      * @param Logger        $logger        Logger
      * @param array         $config        Main configuration
-     * @param RecordFactory $recordFactory Record factory
      */
     public function __construct($db, $logger, $config)
     {
         parent::__construct($db, $logger, $config);
 
-        $this->solrURL = $this->config['SolrAuthEnrichment']['select_url'] ?? '';
+        $url = $config['AuthorityEnrichment']['url']
+            ?? $config['Mongo']['url'];
+        $database = $config['AuthorityEnrichment']['database']
+            ?? $config['Mongo']['database'];
+
+        try {
+            $this->db = new Database($url, $database, $config['Mongo']);
+        } catch (\Exception $e) {
+            $this->logger->log(
+                'startup',
+                'Failed to connect to MongoDB: ' . $e->getMessage(),
+                Logger::FATAL
+            );
+            throw $e;
+        }
     }
 
     /**
@@ -110,65 +124,34 @@ class SolrAuthEnrichment extends Enrichment
             }
             return;
         }
+        $recAuthSource = $record->getAuthorityNamespace();
 
-        $url = $this->getSolrUrl($id);
-        try {
-            $data = $this->getExternalData(
-                $url, $id, ['Accept' => 'application/json'], [500]
-            );
-        } catch (\Exception $e) {
-            $this->logger->log(
-                'enrichField',
-                "Failed to fetch external data '$url', record $sourceId."
-                . $record->getId(),
-                Logger::ERROR
-            );
+        if (!$data = $this->db->getRecord($recAuthSource . '.' . $id)) {
             return;
         }
-      
-        if ($data) {
-            $data = json_decode($data, true);
-            if (!($data['response']['docs'] ?? [])) {
-                return;
-            }
 
-            $recAuthSource = $record->getAuthorityNamespace();
+        $doc = $data['original_data'];
+        $source = $data['source_id'];
 
-            foreach ($data['response']['docs'] as $doc) {
-                $source = $doc['source_str_mv'][0];
-                $authRecord = $this->recordFactory->createRecord(
-                    $doc['record_format'],
-                    $doc['fullrecord'],
-                    $id,
-                    $source
-                );
+        if ($source !== $recAuthSource) {
+            return;
+        }
 
-                if ($source !== $recAuthSource) {
-                    continue;
-                }
-
-                if ($altNames = $authRecord->getAlternativeNames()) {
-                    $solrArray[$solrField]
-                        = array_merge($solrArray[$solrField] ?? [], $altNames);
-                    if ($includeInAllfields) {
-                        $solrArray['allfields']
-                            = array_merge($solrArray['allfields'], $altNames);
-                    }
-                }
-                break;
+        $authRecord = $this->recordFactory->createRecord(
+            $data['format'],
+            $data['original_data'],
+            $id,
+            $source
+        );
+            
+            
+        if ($altNames = $authRecord->getAlternativeNames()) {
+            $solrArray[$solrField]
+                = array_merge($solrArray[$solrField] ?? [], $altNames);
+            if ($includeInAllfields) {
+                $solrArray['allfields']
+                    = array_merge($solrArray['allfields'], $altNames);
             }
         }
-    }
-
-    /**
-     * Return Solr url.
-     *
-     * @param string $id Solr record id
-     *
-     * @return string
-     */
-    protected function getSolrUrl($id)
-    {
-        return $this->solrURL . '?q=id_str_mv:' . addcslashes($id, '()');
     }
 }

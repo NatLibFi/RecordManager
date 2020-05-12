@@ -1,6 +1,6 @@
 <?php
 /**
- * Enrich Marc biblio records with data from authority index.
+ * Enrich Marc biblio records with authority record data.
  *
  * PHP version 5
  *
@@ -31,7 +31,7 @@ use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
 
 /**
- * Enrich Marc biblio records with data from authority index.
+ * Enrich Marc biblio records with authority record data.
  *
  * @category DataManagement
  * @package  RecordManager
@@ -39,7 +39,7 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class MarcSolrAuthEnrichment extends SolrAuthEnrichment
+class MarcAuthEnrichment extends AuthEnrichment
 {
     /**
      * Enrich the record and return any additions in solrArray
