@@ -42,6 +42,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Qdc extends Base
 {
+    use FullTextTrait;
+
     protected $doc = null;
 
     /**
@@ -103,7 +105,7 @@ class Qdc extends Base
      */
     public function toSolrArray()
     {
-        $data = [];
+        $data = $this->getFullTextFields($this->doc);
 
         $doc = $this->doc;
         $data['record_format'] = $data['recordtype'] = 'qdc';
