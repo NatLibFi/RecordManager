@@ -240,6 +240,9 @@ replace[] = '\1 street'
 ; Base url for the MusicBrainz server.
 ;url = "http://localhost:5000"
 
-[SolrAuthEnrichment]
-; Solr select URL.
-;select_url = "http://localhost:8080/solr/authority2/select"
+[AuthorityEnrichment]
+; Mongo url and database for authority records.
+; Fallbacks to settings defined in Mongo-section.
+; url = ""
+; database = ""
+
