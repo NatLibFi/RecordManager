@@ -42,6 +42,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Qdc extends Base
 {
+    use FullTextTrait;
+
     protected $doc = null;
 
     /**
@@ -103,7 +105,7 @@ class Qdc extends Base
      */
     public function toSolrArray()
     {
-        $data = [];
+        $data = $this->getFullTextFields($this->doc);
 
         $doc = $this->doc;
         $data['record_format'] = $data['recordtype'] = 'qdc';
@@ -333,12 +335,16 @@ class Qdc extends Base
             $date = trim($date);
             if (preg_match('{^(\d{4})$}', $date)) {
                 return (string)$date;
+            } elseif (preg_match('{^(\d{4})-}', $date, $matches)) {
+                return (string)$matches[1];         
             }
         }
         foreach ($this->doc->issued as $date) {
             $date = trim($date);
             if (preg_match('{^(\d{4})$}', $date)) {
                 return (string)$date;
+            } elseif (preg_match('{^(\d{4})-}', $date, $matches)) {
+                return (string)$matches[1];         
             }
         }
         return '';

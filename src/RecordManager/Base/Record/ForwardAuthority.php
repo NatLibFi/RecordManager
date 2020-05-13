@@ -106,7 +106,7 @@ class ForwardAuthority extends Base
         $data['allfields'] = $this->getAllFields();
         $data['source'] = $this->getRecordSource();
         $data['record_type'] = $this->getRecordType();
-        $data['heading'] = $data['heading_keywords'] = $this->getHeading();
+        $data['heading'] = $this->getHeading();
         $data['use_for'] = $this->getUseForHeadings();
         $data['birth_date'] = $this->getBirthDate();
         $data['death_date'] = $this->getDeathDate();
