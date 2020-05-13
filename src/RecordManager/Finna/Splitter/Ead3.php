@@ -102,11 +102,14 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
 
         $this->agency
             = (string)$this->doc->control->maintenanceagency->agencycode;
-        $this->archiveId = urlencode(
-            (string)($this->doc->control->recordid
-                ? $this->doc->control->recordid
-                : $this->doc->control->recordid)
-        );
+
+        foreach ($this->doc->archdesc->did->unitid as $i) {
+            $attr = $i->attributes();
+            if ($attr->label == 'Tekninen' && isset($attr->identifier)) {
+                $this->archiveId = urlencode((string)$attr->identifier);
+                break;
+            }
+        }
 
         $this->archiveTitle
             = (string)$this->doc->control->filedesc->titlestmt->titleproper;
