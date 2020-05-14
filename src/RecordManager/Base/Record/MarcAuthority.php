@@ -229,7 +229,7 @@ class MarcAuthority extends Marc
      */
     protected function getRecordType()
     {
-        return $this->isPerson() ? 'Personal Name' : 'Corporate Name';
+        return $this->isPerson() ? 'Personal Name' : 'Community Name';
     }
 
     /**
