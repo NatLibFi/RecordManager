@@ -190,6 +190,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $data['usage_rights_str_mv'] = $rights;
         }
 
+        $corporateAuthorIds = $this->getCorporateAuthorIds();
         if (isset($doc->controlaccess->name)) {
             $data['author'] = [];
             $data['author_role'] = [];
@@ -240,13 +241,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 }
             }
 
-            $data['author_id_str_mv']
-                = $this->addNamespaceToAuthorityIds($authorIds);
-            $data['author_id_roles_str_mv']
-                = $this->addNamespaceToAuthorityIds($authorIdRoles);
-
             $data['author2_id_str_mv']
-                = $this->addNamespaceToAuthorityIds($author2Ids);
+                = $this->addNamespaceToAuthorityIds(
+                    array_unique(array_merge($corporateAuthorIds, $author2Ids))
+                );
             $data['author2_id_role_str_mv']
                 = $this->addNamespaceToAuthorityIds($author2IdRoles);
         }
@@ -258,9 +256,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 }
             }
         }
-
-        $data['author_id_str_mv'] = $this->getAuthorIds();
-        $data['author_corporate_id_str_mv'] = $this->getCorporateAuthorIds();
 
         $data['format_ext_str_mv'] = $data['format'];
 
