@@ -27,9 +27,6 @@
  */
 namespace RecordManager\Base\Enrichment;
 
-use RecordManager\Base\Database\Database;
-use RecordManager\Base\Utils\Logger;
-
 /**
  * Enrich Marc biblio records with authority record data.
  *
@@ -66,5 +63,5 @@ class MarcAuthEnrichment extends AuthEnrichment
                 $sourceId, $record, $solrArray, $id, 'author_variant', true
             );
         }
-    }        
+    }
 }

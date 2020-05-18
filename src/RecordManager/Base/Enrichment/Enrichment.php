@@ -126,10 +126,9 @@ class Enrichment
     /**
      * Constructor
      *
-     * @param Database      $db            Database connection (for cache)
-     * @param Logger        $logger        Logger
-     * @param array         $config        Main configuration
-     * @param RecordFactory $recordFactory Record factory
+     * @param Database $db     Database connection (for cache)
+     * @param Logger   $logger Logger
+     * @param array    $config Main configuration
      */
     public function __construct(
         Database $db, Logger $logger, $config

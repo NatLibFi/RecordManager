@@ -27,9 +27,6 @@
  */
 namespace RecordManager\Base\Enrichment;
 
-use RecordManager\Base\Database\Database;
-use RecordManager\Base\Utils\Logger;
-
 /**
  * Enrich Marc authority records with data from ONKI Light.
  *
@@ -63,5 +60,5 @@ class MarcAuthOnkiLightEnrichment extends OnkiLightEnrichment
                 );
             }
         }
-    }        
+    }
 }

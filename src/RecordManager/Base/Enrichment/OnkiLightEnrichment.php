@@ -123,7 +123,7 @@ class OnkiLightEnrichment extends Enrichment
      * @param string $id                 Onki id
      * @param string $solrField          Target Solr field
      * @param bool   $includeInAllfields Whether to include the enriched
-     * value also in allFields
+     *                                   value also in allFields
      *
      * @return void
      */

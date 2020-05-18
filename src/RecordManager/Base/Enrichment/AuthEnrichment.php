@@ -58,9 +58,9 @@ class AuthEnrichment extends Enrichment
     /**
      * Constructor
      *
-     * @param Database      $db            Database connection (for cache)
-     * @param Logger        $logger        Logger
-     * @param array         $config        Main configuration
+     * @param Database $db     Database connection (for cache)
+     * @param Logger   $logger Logger
+     * @param array    $config Main configuration
      */
     public function __construct($db, $logger, $config)
     {
@@ -107,7 +107,7 @@ class AuthEnrichment extends Enrichment
      * @param string $id                 Onki id
      * @param string $solrField          Target Solr field
      * @param bool   $includeInAllfields Whether to include the enriched
-     * value also in allFields
+     *                                   value also in allFields
      *
      * @return void
      */
@@ -143,7 +143,6 @@ class AuthEnrichment extends Enrichment
             $id,
             $source
         );
-            
             
         if ($altNames = $authRecord->getAlternativeNames()) {
             $solrArray[$solrField]

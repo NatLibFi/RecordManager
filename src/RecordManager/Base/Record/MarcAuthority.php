@@ -46,7 +46,7 @@ class MarcAuthority extends Marc
      * Return record ID (local)
      *
      * @return string
-     */    
+     */
     public function getID()
     {
         return $this->getFieldSubfield('035', 'a');
@@ -92,7 +92,6 @@ class MarcAuthority extends Marc
 
         $data['datasource_str_mv'] = $data['source_str_mv'] = $this->source;
 
-        
         $data['id_str_mv'] = [$this->getID()];
 
         foreach ($this->getFields('024') as $otherId) {
