@@ -588,9 +588,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
 
-        $level1 = $level1 ?? 'Document';
-        $level2 = $level2 ?? 'Other';
-
         return $level2 ? "$level1/$level2" : $level1;
     }
 
