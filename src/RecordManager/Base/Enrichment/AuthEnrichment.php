@@ -37,7 +37,7 @@ use RecordManager\Base\Utils\Logger;
  *
  * This is a base class for enrichment from authority record data.
  * Authority records are retrieved from Mongo.
- * Record drivers need to implement the 'enrich' method
+ * Subclasses need to implement the 'enrich' method
  * (i.e. call enrichField with an URI and name of the Solr-field to enrich).
  *
  * @category DataManagement
