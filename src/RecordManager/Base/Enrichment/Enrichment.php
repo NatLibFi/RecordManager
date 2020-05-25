@@ -42,7 +42,7 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Enrichment
+abstract class Enrichment
 {
     /**
      * Database
@@ -126,16 +126,19 @@ class Enrichment
     /**
      * Constructor
      *
-     * @param Database $db     Database connection (for cache)
-     * @param Logger   $logger Logger
-     * @param array    $config Main configuration
+     * @param Database      $db            Database connection (for cache)
+     * @param Logger        $logger        Logger
+     * @param array         $config        Main configuration
+     * @param RecordFactory $recordFactory Record factory
      */
     public function __construct(
-        Database $db, Logger $logger, $config
+        Database $db, Logger $logger, array $config,
+        RecordFactory $recordFactory
     ) {
         $this->db = $db;
         $this->logger = $logger;
         $this->config = $config;
+        $this->recordFactory = $recordFactory;
 
         $this->maxCacheAge = isset($config['Enrichment']['cache_expiration'])
             ? $config['Enrichment']['cache_expiration'] * 60
@@ -153,18 +156,6 @@ class Enrichment
     }
 
     /**
-     * Set record factory.
-     *
-     * @param RecordFactory $factory Record factory
-     *
-     * @return void
-     */
-    public function setRecordFactory(RecordFactory $factory)
-    {
-        $this->recordFactory = $factory;
-    }
-
-    /**
      * Enrich the record and return any additions in solrArray
      *
      * @param string $sourceId  Source ID
@@ -173,10 +164,7 @@ class Enrichment
      *
      * @return void
      */
-    public function enrich($sourceId, $record, &$solrArray)
-    {
-        // Implemented in child classes
-    }
+    abstract public function enrich($sourceId, $record, &$solrArray);
 
     /**
      * A helper function that retrieves external metadata and caches it

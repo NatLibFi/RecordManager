@@ -2985,9 +2985,8 @@ class SolrUpdater
                     $className = "\RecordManager\Base\Enrichment\\$className";
                 }
                 $enricher = new $className(
-                    $this->db, $this->log, $this->config
+                    $this->db, $this->log, $this->config, $this->recordFactory
                 );
-                $enricher->setRecordFactory($this->recordFactory);
                 $this->enrichments[$enrichment] = $enricher;
             }
             $this->enrichments[$enrichment]->enrich($source, $record, $data);

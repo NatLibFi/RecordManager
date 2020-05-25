@@ -29,6 +29,7 @@
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\Database;
+use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -46,7 +47,7 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class AuthEnrichment extends Enrichment
+abstract class AuthEnrichment extends Enrichment
 {
     /**
      * Database
@@ -58,13 +59,16 @@ class AuthEnrichment extends Enrichment
     /**
      * Constructor
      *
-     * @param Database $db     Database connection (for cache)
-     * @param Logger   $logger Logger
-     * @param array    $config Main configuration
+     * @param Database      $db            Database connection (for cache)
+     * @param Logger        $logger        Logger
+     * @param array         $config        Main configuration
+     * @param RecordFactory $recordFactory Record factory
      */
-    public function __construct($db, $logger, $config)
-    {
-        parent::__construct($db, $logger, $config);
+    public function __construct(
+        Database $db, Logger $logger, array $config,
+        RecordFactory $recordFactory
+    ) {
+        parent::__construct($db, $logger, $config, $recordFactory);
 
         $url = $config['AuthorityEnrichment']['url']
             ?? $config['Mongo']['url'];
@@ -76,26 +80,11 @@ class AuthEnrichment extends Enrichment
         } catch (\Exception $e) {
             $this->logger->log(
                 'startup',
-                'Failed to connect to MongoDB: ' . $e->getMessage(),
+                'Failed to connect to authority MongoDB: ' . $e->getMessage(),
                 Logger::FATAL
             );
             throw $e;
         }
-    }
-
-    /**
-     * Enrich the record and return any additions in solrArray
-     *
-     * @param string $sourceId  Source ID
-     * @param object $record    Metadata Record
-     * @param array  $solrArray Metadata to be sent to Solr
-     *
-     * @throws Exception
-     * @return void
-     */
-    public function enrich($sourceId, $record, &$solrArray)
-    {
-        // Implemented in record drivers
     }
 
     /**
