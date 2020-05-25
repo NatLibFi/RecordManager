@@ -360,12 +360,7 @@ class Marc extends Base
         $data['author_corporate'] = $corporateAuthors['names'];
         $data['author_corporate_role'] = $corporateAuthors['relators'];
 
-        $data['author2_id_str_mv']
-            = array_merge(
-                $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']),
-                $this->addNamespaceToAuthorityIds($corporateAuthors['ids'])
-            );
-
+        $data['author2_id_str_mv'] = $this->getAuthorIds();
         $data['author2_id_role_str_mv']
             = array_merge(
                 $this->addNamespaceToAuthorityIds($secondaryAuthors['idRoles']),
@@ -588,6 +583,22 @@ class Marc extends Base
         // TODO: dewey fields and OCLC numbers
 
         return $data;
+    }
+
+    /**
+     * Return author ids that are indexed to author2_id_str_mv
+     *
+     * @return array
+     */
+    public function getAuthorIds()
+    {
+        $secondaryAuthors = $this->getSecondaryAuthors();
+        $corporateAuthors = $this->getCorporateAuthors();
+
+        return array_merge(
+            $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']),
+            $this->addNamespaceToAuthorityIds($corporateAuthors['ids'])
+        );
     }
 
     /**

@@ -808,12 +808,6 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         // Additional authority ids
-        foreach ($this->getFields('700') as $field) {
-            if ($id = $this->getSubField($field, '0')) {
-                $data['author2_id_str_mv']
-                    += $this->addNamespaceToAuthorityIds([$id]);
-            }
-        }
         foreach ($this->getFields('600') as $field) {
             if ($id = $this->getSubField($field, '0')) {
                 $data['topic_id_str_mv']
@@ -821,6 +815,23 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
         return $data;
+    }
+
+    /**
+     * Return author ids that are indexed to author2_id_str_mv
+     *
+     * @return array
+     */
+    public function getAuthorIds()
+    {
+        $ids = parent::getAuthorIds();
+
+        foreach ($this->getFields('700') as $field) {
+            if ($id = $this->getSubField($field, '0')) {
+                $ids[] = $this->addNamespaceToAuthorityIds([$id]);
+            }
+        }
+        return $ids;
     }
 
     /**
