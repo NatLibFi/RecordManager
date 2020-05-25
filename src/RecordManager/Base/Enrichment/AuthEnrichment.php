@@ -93,7 +93,7 @@ abstract class AuthEnrichment extends Enrichment
      * @param string $sourceId           Source ID
      * @param object $record             Record
      * @param array  $solrArray          Metadata to be sent to Solr
-     * @param string $id                 Onki id
+     * @param string $id                 Authority record id
      * @param string $solrField          Target Solr field
      * @param bool   $includeInAllfields Whether to include the enriched
      *                                   value also in allFields
@@ -103,16 +103,6 @@ abstract class AuthEnrichment extends Enrichment
     protected function enrichField($sourceId, $record, &$solrArray,
         $id, $solrField, $includeInAllfields = false
     ) {
-        $localData = $this->db->findOntologyEnrichment(['_id' => $id]);
-        if ($localData) {
-            $solrArray[$solrField]
-                = array_merge($solrArray[$solrField], $localData);
-            if ($includeInAllfields) {
-                $solrArray['allfields']
-                    = array_merge($solrArray['allfield'], $localData);
-            }
-            return;
-        }
         $recAuthSource = $record->getAuthorityNamespace();
 
         if (!$data = $this->db->getRecord($recAuthSource . '.' . $id)) {
