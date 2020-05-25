@@ -2984,10 +2984,9 @@ class SolrUpdater
                 if (strpos($className, '\\') === false) {
                     $className = "\RecordManager\Base\Enrichment\\$className";
                 }
-                $enricher = new $className(
+                $this->enrichments[$enrichment] = new $className(
                     $this->db, $this->log, $this->config, $this->recordFactory
                 );
-                $this->enrichments[$enrichment] = $enricher;
             }
             $this->enrichments[$enrichment]->enrich($source, $record, $data);
         }
