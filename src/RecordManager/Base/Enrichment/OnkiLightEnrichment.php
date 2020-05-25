@@ -189,7 +189,7 @@ class OnkiLightEnrichment extends Enrichment
                 'enrichField',
                 "Failed to fetch external data '$url', record $sourceId."
                 . $record->getId(),
-                Logger::ERROR
+                Logger::DEBUG
             );
             return;
         }
