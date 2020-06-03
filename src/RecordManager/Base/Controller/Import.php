@@ -112,7 +112,6 @@ class Import extends AbstractBase
         $recordXPath = $settings['recordXPath'];
         $count = 0;
         $currentPath = [];
-        $nodes = 0;
         while ($xml->read()) {
             if ($xml->nodeType !== \XMLReader::ELEMENT) {
                 continue;

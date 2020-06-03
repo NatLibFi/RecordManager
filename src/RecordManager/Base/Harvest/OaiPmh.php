@@ -33,7 +33,6 @@ namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
-use RecordManager\Base\Utils\MetadataUtils;
 /**
  * OaiPmh Class
  *
@@ -174,18 +173,20 @@ class OaiPmh extends Base
             $this->debugLog = $settings['debuglog'];
         }
         if (isset($settings['oaipmhTransformation'])) {
-            $style = new \DOMDocument();
-            $loadResult = $style->load(
-                "$basePath/transformations/" . $settings['oaipmhTransformation']
-            );
-            if (false === $loadResult) {
-                throw new \Exception(
-                    "Could not load $basePath/transformations/"
-                    . $settings['oaipmhTransformation']
-                );
+            foreach ((array)$settings['oaipmhTransformation'] as $transformation) {
+                $style = new \DOMDocument();
+                $loadResult
+                    = $style->load("$basePath/transformations/$transformation");
+                if (false === $loadResult) {
+                    throw new \Exception(
+                        "Could not load $basePath/transformations/$transformation"
+                    );
+                }
+                $xslt = new \XSLTProcessor();
+                $xslt->importStylesheet($style);
+                $xslt->setParameter('', 'source_id', $source);
+                $this->preXslt[] = $xslt;
             }
-            $this->preXslt = new \XSLTProcessor();
-            $this->preXslt->importStylesheet($style);
         }
         if (isset($settings['ignoreNoRecordsMatch'])) {
             $this->ignoreNoRecordsMatch = $settings['ignoreNoRecordsMatch'];
@@ -465,25 +466,6 @@ class OaiPmh extends Base
     }
 
     /**
-     * Load XML into a DOM
-     *
-     * @param string $xml XML string
-     *
-     * @return DOMDocument
-     */
-    protected function loadXML($xml)
-    {
-        $doc = new \DOMDocument();
-        if (!MetadataUtils::loadXML($xml, $doc)) {
-            return false;
-        }
-        if (null !== $this->preXslt) {
-            return $this->preXslt->transformToDoc($doc);
-        }
-        return $doc;
-    }
-
-    /**
      * Process an OAI-PMH response into a SimpleXML object.
      * Throw exception if an error is detected.
      *
@@ -496,42 +478,18 @@ class OaiPmh extends Base
      */
     protected function processResponse($xml, $resumption)
     {
-        // Parse the XML:
-        $saveUseErrors = libxml_use_internal_errors(true);
-        libxml_clear_errors();
-        $result = $this->loadXML($xml);
-        if ($result === false || libxml_get_last_error() !== false) {
-            // Assuming it's a character encoding issue, this might help...
-            $this->message(
-                'Invalid XML received, trying to fix the encoding',
-                false,
-                Logger::WARNING
-            );
-            $fixedXml = mb_convert_encoding($xml, 'UTF-8', 'UTF-8');
-            libxml_clear_errors();
-            $result = $this->loadXML($fixedXml);
-        }
-        if ($result === false || libxml_get_last_error() !== false) {
-            $errors = '';
-            foreach (libxml_get_errors() as $error) {
-                if ($errors) {
-                    $errors .= '; ';
-                }
-                $errors .= 'Error ' . $error->code . ' at '
-                    . $error->line . ':' . $error->column . ': '
-                    . str_replace(["\n", "\r"], '', $error->message);
-            }
-            libxml_use_internal_errors($saveUseErrors);
+        try {
+            $result = $this->preTransform($xml, true);
+        } catch (\Exception $e) {
             $tempfile = $this->getTempFileName('oai-pmh-error-', '.xml');
             file_put_contents($tempfile, $xml);
             $this->message(
-                "Could not parse XML response: $errors. XML stored in $tempfile",
+                "Invalid XML stored in $tempfile",
                 false,
                 Logger::ERROR
             );
             throw new \Exception("{$this->source}: Failed to parse XML response");
         }
-        libxml_use_internal_errors($saveUseErrors);
 
         // Detect errors and throw an exception if one is found:
         $error = $this->getSingleNode($result, 'error');
@@ -799,10 +757,10 @@ class OaiPmh extends Base
     /**
      * Get the first XML child node with the given name
      *
-     * @param DOMNode $xml      The XML Node
-     * @param string  $nodeName Node to get
+     * @param \DOMElement $xml      The XML Node
+     * @param string      $nodeName Node to get
      *
-     * @return \DOMNode|false  Result node or false if not found
+     * @return \DOMElement|false  Result node or false if not found
      */
     protected function getSingleNode($xml, $nodeName)
     {
@@ -817,8 +775,8 @@ class OaiPmh extends Base
      * Traverse all children and collect those nodes that
      * have the tagname specified in $tagName. Non-recursive
      *
-     * @param DOMNode $element DOM Element
-     * @param string  $tagName Tag to get
+     * @param \DOMElement $element DOM Element
+     * @param string      $tagName Tag to get
      *
      * @return array
      */
