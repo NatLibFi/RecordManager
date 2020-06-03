@@ -336,7 +336,7 @@ class Qdc extends Base
             if (preg_match('{^(\d{4})$}', $date)) {
                 return (string)$date;
             } elseif (preg_match('{^(\d{4})-}', $date, $matches)) {
-                return (string)$matches[1];         
+                return (string)$matches[1];
             }
         }
         foreach ($this->doc->issued as $date) {
@@ -344,7 +344,7 @@ class Qdc extends Base
             if (preg_match('{^(\d{4})$}', $date)) {
                 return (string)$date;
             } elseif (preg_match('{^(\d{4})-}', $date, $matches)) {
-                return (string)$matches[1];         
+                return (string)$matches[1];
             }
         }
         return '';
