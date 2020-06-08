@@ -76,7 +76,7 @@ class Marc extends Base
     /**
      * Strings in field 300 that signify that the work is illustrated.
      *
-     * @var string
+     * @var array
      */
     protected $illustrationStrings = ['ill.', 'illus.'];
 
