@@ -9,6 +9,7 @@ before_script:
   - echo "extension = mongodb.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - phpenv config-rm xdebug.ini
   - phpenv rehash
+  - pecl install mongodb
   - composer install
 
 cache:
