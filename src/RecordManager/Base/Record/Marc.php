@@ -2,7 +2,7 @@
 /**
  * Marc record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2018.
  *
@@ -76,7 +76,7 @@ class Marc extends Base
     /**
      * Strings in field 300 that signify that the work is illustrated.
      *
-     * @var string
+     * @var array
      */
     protected $illustrationStrings = ['ill.', 'illus.'];
 
@@ -1101,7 +1101,7 @@ class Marc extends Base
                     if ($soundTech == 'D'
                         || ($size == 'G' && $material == 'M')
                     ) {
-                         return 'CD';
+                        return 'CD';
                     }
                     return 'SoundDisc';
                 case 'S':
@@ -2105,8 +2105,7 @@ class Marc extends Base
                 foreach ($fields as $field) {
                     $subfields = $this->getAllSubfields(
                         $field,
-                        isset($subfieldFilter[$tag])
-                        ? $subfieldFilter[$tag] : ['6' => 1, '8' => 1]
+                        $subfieldFilter[$tag] ?? ['6' => 1, '8' => 1]
                     );
                     if ($subfields) {
                         $allFields = array_merge($allFields, $subfields);

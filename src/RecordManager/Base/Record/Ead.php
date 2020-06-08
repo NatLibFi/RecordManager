@@ -2,7 +2,7 @@
 /**
  * Ead record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2019.
  *
@@ -203,7 +203,7 @@ class Ead extends Base
 
         if (isset($doc->did->repository)) {
             $data['institution']
-                = (string) (isset($doc->did->repository->corpname)
+                = (string)(isset($doc->did->repository->corpname)
                 ? $doc->did->repository->corpname
                 : $doc->did->repository);
         }
@@ -282,7 +282,7 @@ class Ead extends Base
     public function getFormat()
     {
         $genre = $this->doc->xpath('controlaccess/genreform');
-        return (string) ($genre ? $genre[0] : $this->doc->attributes()->level);
+        return (string)($genre ? $genre[0] : $this->doc->attributes()->level);
     }
 
     /**

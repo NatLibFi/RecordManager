@@ -2,7 +2,7 @@
 /**
  * Base class for record drivers
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2019.
  *
@@ -482,7 +482,9 @@ class Base
         if ($author = $this->getMainAuthor()) {
             $authors[] = ['type' => 'author', 'value' => $author];
         }
-        return compact('titles', 'authors');
+        $titlesAltScript = [];
+        $authorsAltScript = [];
+        return compact('titles', 'authors', 'titlesAltScript', 'authorsAltScript');
     }
 
     /**
@@ -507,7 +509,7 @@ class Base
             )
         );
 
-        return isset($iniValues[$parameter]) ? $iniValues[$parameter] : $default;
+        return $iniValues[$parameter] ?? $default;
     }
 
     /**

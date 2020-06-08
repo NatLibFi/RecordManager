@@ -2,7 +2,7 @@
 /**
  * EAD 3 Record Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2019.
  *
@@ -199,7 +199,7 @@ class Ead3 extends Ead
     public function getMainAuthor()
     {
         $authors = $this->getAuthors();
-        return isset($authors[0]) ? $authors[0] : '';
+        return $authors[0] ?? '';
     }
 
     /**

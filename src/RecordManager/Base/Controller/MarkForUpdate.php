@@ -2,7 +2,7 @@
 /**
  * Mark Records For Solr Update
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2017.
  *
@@ -27,8 +27,8 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Utils\PerformanceCounter;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\PerformanceCounter;
 
 /**
  * Mark Records For Solr Update

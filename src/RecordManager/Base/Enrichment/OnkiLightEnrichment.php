@@ -2,7 +2,7 @@
 /**
  * OnkiLightEnrichment Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2014-2019.
  *
@@ -94,8 +94,7 @@ class OnkiLightEnrichment extends Enrichment
             = isset(
                 $this->config['OnkiLightEnrichment']['uri_prefix_exact_matches']
             )
-            ? (array)$this->config['OnkiLightEnrichment']
-                ['uri_prefix_exact_matches']
+            ? (array)$this->config['OnkiLightEnrichment']['uri_prefix_exact_matches']
             : [];
     }
 
@@ -169,7 +168,9 @@ class OnkiLightEnrichment extends Enrichment
             return;
         }
 
-        $url = $this->getOnkiUrl($id);
+        if (!($url = $this->getOnkiUrl($id))) {
+            return;
+        }
         $data = $this->getExternalData(
             $url, $id, ['Accept' => 'application/json'], [500]
         );
@@ -213,8 +214,10 @@ class OnkiLightEnrichment extends Enrichment
                         if (!$uri) {
                             continue;
                         }
-                        $matchURL = $matchId = $uri;
-                        $matchURL = $this->getOnkiUrl($matchId);
+                        $matchId = $uri;
+                        if (!($matchURL = $this->getOnkiUrl($matchId))) {
+                            continue;
+                        }
                         $matchData = $this->getExternalData(
                             $matchURL, $matchId,
                             ['Accept' => 'application/json']
@@ -263,6 +266,9 @@ class OnkiLightEnrichment extends Enrichment
     protected function getOnkiUrl($id)
     {
         $url = $this->onkiLightBaseURL;
+        if (!$url) {
+            return '';
+        }
         if (substr($url, -1) !== '/') {
             $url .= '/';
         }

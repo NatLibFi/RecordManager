@@ -2,7 +2,7 @@
 /**
  * Metadata Preview Front-End
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Eero Heikkinen 2013.
  * Copyright (C) The National Library of Finland 2013.

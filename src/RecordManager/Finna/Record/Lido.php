@@ -2,7 +2,7 @@
 /**
  * Lido record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2012-2018.
  *
@@ -528,7 +528,7 @@ class Lido extends \RecordManager\Base\Record\Lido
         $material = '';
         foreach ($this->getEventNodes($eventType) as $node) {
             if (!empty($node->eventMaterialsTech->displayMaterialsTech)) {
-                $material = (string) $node->eventMaterialsTech->displayMaterialsTech;
+                $material = (string)$node->eventMaterialsTech->displayMaterialsTech;
                 break;
             }
         }
@@ -558,7 +558,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             as $set
         ) {
             foreach ($set->descriptiveNoteValue as $descriptiveNoteValue) {
-                $descriptionWrapDescriptions[] = (string) $descriptiveNoteValue;
+                $descriptionWrapDescriptions[] = (string)$descriptiveNoteValue;
             }
         }
         if ($descriptionWrapDescriptions
@@ -586,7 +586,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             if ((null === $label || 'aihe' === mb_strtolower($label, 'UTF-8'))
                 && $checkTitle
             ) {
-                $subjectDescriptions[] = (string) $set->displaySubject;
+                $subjectDescriptions[] = (string)$set->displaySubject;
             }
         }
 
@@ -981,8 +981,8 @@ class Lido extends \RecordManager\Base\Record\Lido
             'kivikausi' => ['-8600-01-01T00:00:00Z', '-1501-12-31T23:59:59Z'],
             'pronssikausi'
                 => ['-1500-01-01T00:00:00Z', '-0501-12-31T23:59:59Z'],
-            'rautakausi' => ['-0500-01-01T00:00:00Z' ,'1299-12-31T23:59:59Z'],
-            'keskiaika' => ['1300-01-01T00:00:00Z' ,'1550-12-31T23:59:59Z'],
+            'rautakausi' => ['-0500-01-01T00:00:00Z','1299-12-31T23:59:59Z'],
+            'keskiaika' => ['1300-01-01T00:00:00Z','1550-12-31T23:59:59Z'],
             'ajoittamaton' => null,
             'tuntematon' => null
         ];
@@ -1512,7 +1512,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             ->rightsWorkSet as $set
         ) {
             if (!empty($set->rightsHolder->legalBodyName->appellationValue)) {
-                return (string) $set->rightsHolder->legalBodyName->appellationValue;
+                return (string)$set->rightsHolder->legalBodyName->appellationValue;
             }
         }
         return '';
@@ -1556,7 +1556,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             foreach ($this->getResourceSetNodes() as $set) {
                 foreach ($set->resourceRepresentation as $node) {
                     if (!empty($node->linkResource)) {
-                        $link = trim((string) $node->linkResource);
+                        $link = trim((string)$node->linkResource);
                         if (!empty($link)) {
                             $attributes = $node->attributes();
                             $type = (string)$attributes->type;

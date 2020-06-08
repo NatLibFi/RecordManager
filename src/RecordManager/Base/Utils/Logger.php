@@ -2,7 +2,7 @@
 /**
  * Logging Utility
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2012.
  *
@@ -61,10 +61,8 @@ class Logger
      */
     public function __construct($config)
     {
-        $this->logLevel = isset($config['Log']['log_level'])
-            ? $config['Log']['log_level'] : 0;
-        $this->logFile = isset($config['Log']['log_file'])
-            ? $config['Log']['log_file'] : '';
+        $this->logLevel = $config['Log']['log_level'] ?? 0;
+        $this->logFile = $config['Log']['log_file'] ?? '';
         if (isset($config['Log']['max_file_size'])) {
             $this->maxFileSize = $config['Log']['max_file_size'];
         }
@@ -159,4 +157,3 @@ class Logger
         return '???';
     }
 }
-

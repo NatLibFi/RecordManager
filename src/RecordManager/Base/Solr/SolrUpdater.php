@@ -2,7 +2,7 @@
 /**
  * SolrUpdater Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2012-2020.
  *
@@ -27,13 +27,13 @@
  */
 namespace RecordManager\Base\Solr;
 
+use MongoDB\BSON\UTCDateTime;
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\PerformanceCounter;
 use RecordManager\Base\Utils\WorkerPoolManager;
-use MongoDB\BSON\UTCDateTime;
 
 if (function_exists('pcntl_async_signals')) {
     pcntl_async_signals(true);
@@ -493,9 +493,8 @@ class SolrUpdater
         $this->verbose = $verbose;
         $this->recordFactory = $recordFactory;
 
-        $this->journalFormats = isset($config['Solr']['journal_formats'])
-            ? $config['Solr']['journal_formats']
-            : ['Journal', 'Serial', 'Newspaper'];
+        $this->journalFormats = $config['Solr']['journal_formats']
+            ?? ['Journal', 'Serial', 'Newspaper'];
 
         $this->eJournalFormats = isset($config['Solr']['ejournal_formats'])
             ? $config['Solr']['journal_formats']
@@ -538,27 +537,18 @@ class SolrUpdater
             $this->warningsField = $config['Solr']['warnings_field'];
         }
 
-        $this->commitInterval = isset($config['Solr']['max_commit_interval'])
-            ? $config['Solr']['max_commit_interval'] : 50000;
-        $this->maxUpdateRecords = isset($config['Solr']['max_update_records'])
-            ? $config['Solr']['max_update_records'] : 5000;
-        $this->maxUpdateSize = isset($config['Solr']['max_update_size'])
-            ? $config['Solr']['max_update_size'] : 1024;
+        $this->commitInterval = $config['Solr']['max_commit_interval'] ?? 50000;
+        $this->maxUpdateRecords = $config['Solr']['max_update_records'] ?? 5000;
+        $this->maxUpdateSize = $config['Solr']['max_update_size'] ?? 1024;
         $this->maxUpdateSize *= 1024;
-        $this->maxUpdateTries = isset($config['Solr']['max_update_tries'])
-            ? $config['Solr']['max_update_tries'] : 15;
-        $this->updateRetryWait = isset($config['Solr']['update_retry_wait'])
-            ? $config['Solr']['update_retry_wait'] : 60;
-        $this->recordWorkers = isset($config['Solr']['record_workers'])
-            ? $config['Solr']['record_workers'] : 0;
-        $this->solrUpdateWorkers = isset($config['Solr']['solr_update_workers'])
-            ? $config['Solr']['solr_update_workers'] : 0;
+        $this->maxUpdateTries = $config['Solr']['max_update_tries'] ?? 15;
+        $this->updateRetryWait = $config['Solr']['update_retry_wait'] ?? 60;
+        $this->recordWorkers = $config['Solr']['record_workers'] ?? 0;
+        $this->solrUpdateWorkers = $config['Solr']['solr_update_workers'] ?? 0;
         $this->threadedMergedRecordUpdate
-            = isset($config['Solr']['threaded_merged_record_update'])
-                ? $config['Solr']['threaded_merged_record_update'] : false;
+            = $config['Solr']['threaded_merged_record_update'] ?? false;
         $this->clusterStateCheckInterval
-            = isset($config['Solr']['cluster_state_check_interval'])
-                ? $config['Solr']['cluster_state_check_interval'] : 0;
+            = $config['Solr']['cluster_state_check_interval'] ?? 0;
         if (empty($config['Solr']['admin_url'])) {
             $this->clusterStateCheckInterval = 0;
             $this->log->log(
@@ -579,8 +569,7 @@ class SolrUpdater
         }
 
         $this->unicodeNormalizationForm
-            = isset($config['Solr']['unicode_normalization_form'])
-            ? $config['Solr']['unicode_normalization_form'] : '';
+            = $config['Solr']['unicode_normalization_form'] ?? '';
 
         $fields = $config['Solr Fields'] ?? [];
 
@@ -789,7 +778,7 @@ class SolrUpdater
                     $this->initWorkerPoolManager();
                     try {
                         $needCommit = $this->processMerged(
-                            isset($mongoFromDate) ? $mongoFromDate : null,
+                            $mongoFromDate ?? null,
                             $sourceId,
                             $singleId,
                             $noCommit,
@@ -1849,8 +1838,7 @@ class SolrUpdater
                 = isset($settings['componentParts']) && $settings['componentParts']
                     ? $settings['componentParts'] : 'as_is';
             $this->settings[$source]['indexMergedParts']
-                = isset($settings['indexMergedParts'])
-                    ? $settings['indexMergedParts'] : true;
+                = $settings['indexMergedParts'] ?? true;
             $this->settings[$source]['solrTransformationXSLT']
                 = isset($settings['solrTransformation'])
                     && $settings['solrTransformation']
@@ -2320,8 +2308,7 @@ class SolrUpdater
      */
     protected function addInstitutionToBuilding(&$data, $source, $settings)
     {
-        $useInstitution = isset($settings['institutionInBuilding'])
-            ? $settings['institutionInBuilding'] : 'institution';
+        $useInstitution = $settings['institutionInBuilding'] ?? 'institution';
         switch ($useInstitution) {
         case 'driver':
             $institutionCode = $data['institution'];
@@ -2338,8 +2325,7 @@ class SolrUpdater
                 : '/' . $source;
             break;
         default:
-            $institutionCode = isset($settings['institution'])
-                ? $settings['institution'] : '';
+            $institutionCode = $settings['institution'] ?? '';
             break;
         }
         if ($institutionCode) {
@@ -2539,9 +2525,8 @@ class SolrUpdater
         }
 
         $solrResponse = json_decode($response->getBody(), true);
-        $solrRecord = isset($solrResponse['response']['docs'][0])
-            ? $solrResponse['response']['docs'][0]
-            : [];
+        $solrRecord = $solrResponse['response']['docs'][0]
+            ?? [];
 
         $differences = '';
         $allFields = array_unique(
@@ -2555,17 +2540,8 @@ class SolrUpdater
             ) {
                 $valueDiffs = '';
 
-                $values = isset($record[$field])
-                    ? is_array($record[$field])
-                        ? $record[$field]
-                        : [$record[$field]]
-                    : [];
-
-                $solrValues = isset($solrRecord[$field])
-                    ? is_array($solrRecord[$field])
-                        ? $solrRecord[$field]
-                        : [$solrRecord[$field]]
-                    : [];
+                $values = (array)($record[$field] ?? []);
+                $solrValues = (array)($solrRecord[$field] ?? []);
 
                 foreach ($solrValues as $solrValue) {
                     if (!in_array($solrValue, $values)) {

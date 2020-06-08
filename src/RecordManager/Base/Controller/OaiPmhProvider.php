@@ -2,7 +2,7 @@
 /**
  * OAI-PMH Provider
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2012-2017.
  *
@@ -173,7 +173,7 @@ class OaiPmhProvider extends AbstractBase
             die();
         }
         $xml = $this->createRecord($record, $prefix, true);
-        print <<<EOT
+        echo <<<EOT
   <GetRecord>
 $xml
   </GetRecord>
@@ -193,7 +193,7 @@ EOT;
         $admin = $this->escape($this->config['OAI-PMH']['admin_email']);
         $earliestDate = $this->toOaiDate($this->getEarliestDateStamp());
 
-        print <<<EOT
+        echo <<<EOT
 <Identify>
   <repositoryName>$name</repositoryName>
   <baseURL>$base</baseURL>
@@ -287,7 +287,7 @@ EOT;
         foreach ($records as $record) {
             ++$count;
             if ($count == 1) {
-                print <<<EOT
+                echo <<<EOT
   <$verb>
 
 EOT;
@@ -306,7 +306,7 @@ EOT;
                         ]
                     )
                 );
-                print <<<EOT
+                echo <<<EOT
     <resumptionToken cursor="$position">$token</resumptionToken>
 
 EOT;
@@ -316,7 +316,7 @@ EOT;
             if ($xml === false) {
                 break;
             }
-            print $xml;
+            echo $xml;
         }
 
         if ($count == 0) {
@@ -325,7 +325,7 @@ EOT;
             die();
         }
 
-        print <<<EOT
+        echo <<<EOT
   </$verb>
 
 EOT;
@@ -372,7 +372,7 @@ EOT;
             }
         }
 
-        print <<<EOT
+        echo <<<EOT
   <ListMetadataFormats>
 
 EOT;
@@ -385,7 +385,7 @@ EOT;
                     $schema = $settings['schema'];
                     $namespace = $settings['namespace'];
 
-                    print <<<EOT
+                    echo <<<EOT
     <metadataFormat>
       <metadataPrefix>$prefix</metadataPrefix>
       <schema>$schema</schema>
@@ -397,7 +397,7 @@ EOT;
                 }
             }
         }
-        print <<<EOT
+        echo <<<EOT
   </ListMetadataFormats>
 
 EOT;
@@ -410,7 +410,7 @@ EOT;
      */
     protected function listSets()
     {
-        print <<<EOT
+        echo <<<EOT
   <ListSets>
 
 EOT;
@@ -419,7 +419,7 @@ EOT;
             $id = $this->escape($id);
             $name = $this->escape($set['name']);
 
-            print <<<EOT
+            echo <<<EOT
     <set>
       <setSpec>$id</setSpec>
       <setName>$name</setName>
@@ -427,7 +427,7 @@ EOT;
 EOT;
         }
 
-        print <<<EOT
+        echo <<<EOT
   </ListSets>
 EOT;
     }
@@ -444,7 +444,7 @@ EOT;
     {
         $code = $this->escape($code);
         $message = $this->escape($message);
-        print "  <error code=\"$code\">$message</error>\n";
+        echo "  <error code=\"$code\">$message</error>\n";
         $this->log("$code - $message", Logger::ERROR);
     }
 
@@ -468,7 +468,7 @@ EOT;
             }
         }
 
-        print <<<EOT
+        echo <<<EOT
 <?xml version="1.0" encoding="UTF-8"?>
 <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -487,7 +487,7 @@ EOT;
      */
     protected function printSuffix()
     {
-        print "</OAI-PMH>\n";
+        echo "</OAI-PMH>\n";
     }
 
     /**
@@ -532,7 +532,7 @@ EOT;
      */
     protected function getParam($param)
     {
-        return isset($_REQUEST[$param]) ? $_REQUEST[$param] : '';
+        return $_REQUEST[$param] ?? '';
     }
 
     /**
@@ -642,8 +642,8 @@ EOT;
                         $key, ['verb', 'from', 'until', 'set', 'metadataPrefix']
                     );
                     if (!$validVerb) {
-                            $this->error('badArgument', 'Illegal argument');
-                            return false;
+                        $this->error('badArgument', 'Illegal argument');
+                        return false;
                     }
                 }
             }

@@ -2,7 +2,7 @@
 /**
  * Ead record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2012-2018.
  *
@@ -92,8 +92,7 @@ class Ead extends \RecordManager\Base\Record\Ead
             $data['hierarchy_sequence_str'] = $data['hierarchy_sequence'];
         }
 
-        $data['source_str_mv'] = isset($data['institution'])
-            ? $data['institution'] : $this->source;
+        $data['source_str_mv'] = $data['institution'] ?? $this->source;
         $data['datasource_str_mv'] = $this->source;
 
         // Digitized?
