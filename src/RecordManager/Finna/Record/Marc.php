@@ -596,7 +596,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $ismn = $this->getSubfield($field024, 'a');
                 $ismn = str_replace('-', '', $ismn);
                 if (!preg_match('{([0-9]{13})}', $ismn, $matches)) {
-                    continue;
+                    continue 2;
                 }
                 $data['ismn_isn_mv'][] = $matches[1];
                 break;
@@ -604,7 +604,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $ean = $this->getSubfield($field024, 'a');
                 $ean = str_replace('-', '', $ean);
                 if (!preg_match('{([0-9]{13})}', $ean, $matches)) {
-                    continue;
+                    continue 2;
                 }
                 $data['ean_isn_mv'][] = $matches[1];
                 break;
