@@ -51,7 +51,7 @@ abstract class RecordDriverTest extends AbstractTest
      *
      * @return void
      */
-    public function setUp()
+    public function setUp(): void
     {
         if (empty($this->driver)) {
             $this->markTestIncomplete('Record driver needs to be set in subclass.');

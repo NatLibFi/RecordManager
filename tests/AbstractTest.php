@@ -35,6 +35,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-abstract class AbstractTest extends PHPUnit_Framework_TestCase
+abstract class AbstractTest extends \PHPUnit\Framework\TestCase
 {
 }
