@@ -122,11 +122,11 @@ class Base
     protected $unchangedRecords = 0;
 
     /**
-     * Transformation applied to the OAI-PMH responses before processing
+     * Transformations applied to the responses before processing
      *
-     * @var \XsltProcessor
+     * @var \XSLTProcessor[]
      */
-    protected $preXslt = null;
+    protected $preXslt = [];
 
     /**
      * Record handling callback
@@ -199,13 +199,14 @@ class Base
         }
 
         if (!empty($settings['preTransformation'])) {
-            $style = new \DOMDocument();
-            $style->load(
-                $basePath . '/transformations/' . $settings['preTransformation']
-            );
-            $this->preXslt = new \XSLTProcessor();
-            $this->preXslt->importStylesheet($style);
-            $this->preXslt->setParameter('', 'source_id', $this->source);
+            foreach ((array)$settings['preTransformation'] as $transformation) {
+                $style = new \DOMDocument();
+                $style->load("$basePath/transformations/$transformation");
+                $xslt = new \XSLTProcessor();
+                $xslt->importStylesheet($style);
+                $xslt->setParameter('', 'source_id', $this->source);
+                $this->preXslt[] = $xslt;
+            }
         }
 
         if (isset($config['Harvesting']['max_tries'])) {
@@ -390,12 +391,13 @@ class Base
     /**
      * Do pre-transformation
      *
-     * @param string $xml XML to transform
+     * @param string $xml       XML to transform
+     * @param bool   $returnDoc Whether to return DOM document instead of string
      *
-     * @return string Transformed XML
+     * @return string|\DOMDocument Transformed XML
      * @throws Exception
      */
-    protected function preTransform($xml)
+    protected function preTransform($xml, $returnDoc = false)
     {
         $doc = new \DOMDocument();
         $saveUseErrors = libxml_use_internal_errors(true);
@@ -426,7 +428,11 @@ class Base
         }
         libxml_use_internal_errors($saveUseErrors);
 
-        return $this->preXslt->transformToXml($doc);
+        foreach ($this->preXslt as $xslt) {
+            $doc = $xslt->transformToDoc($doc);
+        }
+
+        return $returnDoc ? $doc : $doc->saveXML();
     }
 
     /**
