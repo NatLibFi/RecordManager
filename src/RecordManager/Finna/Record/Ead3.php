@@ -421,7 +421,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $endDate = $endYear . '-' . $endMonth . '-01';
             try {
                 $d = new \DateTime($endDate);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 $this->logger->log(
                     'Ead3',
                     "Failed to parse date $endDate, record {$this->source}."
@@ -454,7 +454,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $endDate = $year . '-' . $month . '-01';
             try {
                 $d = new \DateTime($endDate);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 $this->logger->log(
                     'Ead3',
                     "Failed to parse date $endDate, record {$this->source}."

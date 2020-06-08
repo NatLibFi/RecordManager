@@ -803,7 +803,7 @@ class OaiPmh extends Base
      * @param DOMNode $xml      The XML Node
      * @param string  $nodeName Node to get
      *
-     * @return \DOMNode|false  Result node or false if not found
+     * @return \DOMElement|false  Result node or false if not found
      */
     protected function getSingleNode($xml, $nodeName)
     {

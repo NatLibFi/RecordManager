@@ -30,7 +30,6 @@ namespace RecordManager\Base\Harvest;
 use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
-use RecordManager\Base\Utils\XslTransformation;
 
 /**
  * Harvesting Base Class
@@ -125,7 +124,7 @@ class Base
     /**
      * Transformation applied to the OAI-PMH responses before processing
      *
-     * @var XslTransformation
+     * @var \XsltProcessor
      */
     protected $preXslt = null;
 

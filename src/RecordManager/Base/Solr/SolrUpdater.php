@@ -2540,17 +2540,8 @@ class SolrUpdater
             ) {
                 $valueDiffs = '';
 
-                $values = isset($record[$field])
-                    ? is_array($record[$field])
-                        ? $record[$field]
-                        : [$record[$field]]
-                    : [];
-
-                $solrValues = isset($solrRecord[$field])
-                    ? is_array($solrRecord[$field])
-                        ? $solrRecord[$field]
-                        : [$solrRecord[$field]]
-                    : [];
+                $values = (array)($record[$field] ?? []);
+                $solrValues = (array)($solrRecord[$field] ?? []);
 
                 foreach ($solrValues as $solrValue) {
                     if (!in_array($solrValue, $values)) {

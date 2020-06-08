@@ -400,7 +400,7 @@ class Eaccpf extends Base
     /**
      * Get use for headings
      *
-     * @return string
+     * @return array
      */
     protected function getUseForHeadings()
     {

@@ -208,11 +208,9 @@ class MetadataUtils
             return false;
         }
 
-        $sum_of_digits = 38 + 3 * ($isbn{0} + $isbn{2} + $isbn{4} + $isbn{6}
-            + $isbn{8}) + $isbn{1}
-        + $isbn{3}
-        + $isbn{5}
-        + $isbn{7};
+        $sum_of_digits = 38 + 3 * ($isbn[0] + $isbn[2] + $isbn[4] + $isbn[6]
+            + $isbn[8])
+            + $isbn[1] + $isbn[3] + $isbn[5] + $isbn[7];
 
         $check_digit = (10 - ($sum_of_digits % 10)) % 10;
 
