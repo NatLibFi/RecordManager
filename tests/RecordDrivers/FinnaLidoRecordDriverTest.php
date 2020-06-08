@@ -48,7 +48,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testMusketti1()
     {
-        $fields = $this->processSample('musketti1.xml');
+        $fields = $this->createRecord('musketti1.xml')->toSolrArray();
 
         $this->assertContains('metalli', $fields['material']);
         $this->assertContains('kupari', $fields['material']);
@@ -98,7 +98,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testMusketti2()
     {
-        $fields = $this->processSample('musketti2.xml');
+        $fields = $this->createRecord('musketti2.xml')->toSolrArray();
 
         $this->assertContains('valokuva', $fields['classification_txt_mv']);
 
@@ -128,7 +128,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testLusto1()
     {
-        $fields = $this->processSample('lusto1.xml');
+        $fields = $this->createRecord('lusto1.xml')->toSolrArray();
 
         $this->assertContains('E01025:3', $fields['identifier']);
 
@@ -154,7 +154,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testVtm1()
     {
-        $fields = $this->processSample('vtm1.xml');
+        $fields = $this->createRecord('vtm1.xml')->toSolrArray();
 
         $this->assertContains('kangas', $fields['material']);
         $this->assertContains('öljy', $fields['material']);
@@ -186,7 +186,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testTuusula1()
     {
-        $fields = $this->processSample('tuusula1.xml');
+        $fields = $this->createRecord('tuusula1.xml')->toSolrArray();
 
         $this->assertContains('kangas', $fields['material']);
         $this->assertContains('pahvi', $fields['material']);
@@ -226,7 +226,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testDesign1()
     {
-        $fields = $this->processSample('design1.xml');
+        $fields = $this->createRecord('design1.xml')->toSolrArray();
 
         $this->assertContains('Kuva', $fields['format']);
 

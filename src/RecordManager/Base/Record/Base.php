@@ -482,7 +482,9 @@ class Base
         if ($author = $this->getMainAuthor()) {
             $authors[] = ['type' => 'author', 'value' => $author];
         }
-        return compact('titles', 'authors');
+        $titlesAltScript = [];
+        $authorsAltScript = [];
+        return compact('titles', 'authors', 'titlesAltScript', 'authorsAltScript');
     }
 
     /**

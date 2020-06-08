@@ -39,8 +39,12 @@ use RecordManager\Base\Utils\Logger;
  */
 abstract class RecordDriverTest extends AbstractTest
 {
-    // Override this from subclass
-    protected $driver;
+    /**
+     * Record driver class. Override from a subclass.
+     *
+     * @var object
+     */
+    protected $driver = null;
 
     /**
      * Standard setup method.
@@ -55,13 +59,13 @@ abstract class RecordDriverTest extends AbstractTest
     }
 
     /**
-     * Process a sample record
+     * Create a sample record driver
      *
      * @param string $sample Sample record file
      *
-     * @return array SOLR record array
+     * @return object
      */
-    protected function processSample($sample)
+    protected function createRecord($sample)
     {
         $logger = $this->createMock(Logger::class);
         $recordFactory = new RecordFactory($logger, [], []);
@@ -69,6 +73,30 @@ abstract class RecordDriverTest extends AbstractTest
         $record = $recordFactory->createRecord(
             $this->driver, $sample, '__unit_test_no_id__', '__unit_test_no_source__'
         );
-        return $record->toSolrArray();
+        return $record;
+    }
+
+    /**
+     * Compare two arrays
+     *
+     * This makes any errors easier to understand than using assertEquals on the
+     * arrays.
+     *
+     * @param array  $expected Expected values
+     * @param array  $provided Provided values
+     * @param string $method   Method tested (for output messages)
+     *
+     * @return void
+     */
+    protected function compareArray($expected, $provided, $method)
+    {
+        foreach ($expected as $key => $value) {
+            $this->assertEquals(
+                $value, $provided[$key] ?? null, "[$method] Compare field $key"
+            );
+        }
+        $this->assertEquals(
+            count($expected), count($provided), "[$method] Field count equal"
+        );
     }
 }
