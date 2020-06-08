@@ -2,7 +2,7 @@
 /**
  * Nominatim Geocoder Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2013-2016.
  *
@@ -148,8 +148,7 @@ class NominatimGeocoder extends Enrichment
     {
         parent::__construct($db, $logger, $config);
 
-        $settings = isset($config['NominatimGeocoder'])
-            ? $config['NominatimGeocoder'] : [];
+        $settings = $config['NominatimGeocoder'] ?? [];
         if (!isset($settings['url']) || !$settings['url']) {
             throw new \Exception('url must be specified for Nominatim');
         }

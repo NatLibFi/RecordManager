@@ -2,7 +2,7 @@
 /**
  * MetadataUtils Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2019.
  *
@@ -160,28 +160,24 @@ class MetadataUtils
             ? self::readListFile($basePath, $config['Site']['articles']) : [];
 
         self::$articleFormats
-            = isset($config['Solr']['article_formats'])
-            ? $config['Solr']['article_formats']
-            : ['Article'];
+            = $config['Solr']['article_formats']
+            ?? ['Article'];
 
         $eArticleFormats
-            = isset($config['Solr']['earticle_formats'])
-            ? $config['Solr']['earticle_formats']
-            : ['eArticle'];
+            = $config['Solr']['earticle_formats']
+            ?? ['eArticle'];
 
         self::$allArticleFormats = array_merge(
             self::$articleFormats, $eArticleFormats
         );
 
         self::$unicodeNormalizationForm
-            = isset($config['Solr']['unicode_normalization_form'])
-            ? $config['Solr']['unicode_normalization_form']
-            : '';
+            = $config['Solr']['unicode_normalization_form']
+            ?? '';
 
         self::$lowercaseLanguageStrings
-            = isset($config['Site']['lowercase_language_strings'])
-            ? $config['Site']['lowercase_language_strings']
-            : true;
+            = $config['Site']['lowercase_language_strings']
+            ?? true;
 
         if (!empty($config['Site']['folding_ignore_characters'])) {
             $chars = preg_split(
@@ -492,6 +488,7 @@ class MetadataUtils
         return array_intersect_key($array, array_unique($map));
         //return array_intersect_key($array, array_unique(array_map('strtolower', $array)));
     }
+
     // @codingStandardsIgnoreEnd
 
     /**

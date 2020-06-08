@@ -2,7 +2,7 @@
 /**
  * Deduplication Handler
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2019.
  *
@@ -115,16 +115,13 @@ class DedupHandler
         $this->verbose = $verbose;
         $this->dataSourceSettings = $settings;
         $this->normalizationForm
-            = isset($mainConfig['Site']['unicode_normalization_form'])
-            ? $mainConfig['Site']['unicode_normalization_form'] : 'NFKC';
+            = $mainConfig['Site']['unicode_normalization_form'] ?? 'NFKC';
 
         $this->fieldMapper = new FieldMapper(
             $basePath,
             array_merge(
-                isset($mainConfig['DefaultMappings'])
-                ? $mainConfig['DefaultMappings'] : [],
-                isset($mainConfig['Default Mappings'])
-                ? $mainConfig['Default Mappings'] : []
+                $mainConfig['DefaultMappings'] ?? [],
+                $mainConfig['Default Mappings'] ?? []
             ),
             $settings
         );

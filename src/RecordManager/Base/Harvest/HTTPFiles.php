@@ -2,7 +2,7 @@
 /**
  * HTTP-based File Harvesting Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (c) The National Library of Finland 2011-2019.
  *
@@ -241,7 +241,7 @@ class HTTPFiles extends Base
             }
             break;
         }
-        $code = is_null($response) ? 999 : $response->getStatus();
+        $code = null === $response ? 999 : $response->getStatus();
         if ($code >= 300) {
             $this->message("Request '$urlStr' failed: $code", false, Logger::FATAL);
             throw new \Exception("Request failed: $code");
@@ -332,7 +332,7 @@ class HTTPFiles extends Base
             }
             break;
         }
-        $code = is_null($response) ? 999 : $response->getStatus();
+        $code = null === $response ? 999 : $response->getStatus();
         if ($code >= 300) {
             $this->message("Request '$urlStr' failed: $code", false, Logger::FATAL);
             throw new \Exception("Request failed: $code");
@@ -446,4 +446,3 @@ class HTTPFiles extends Base
     {
     }
 }
-

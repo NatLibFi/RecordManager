@@ -2,7 +2,7 @@
 /**
  * EAD 3 Record Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2012-2019.
  *
@@ -118,8 +118,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $data['hierarchy_sequence_str'] = $data['hierarchy_sequence'];
         }
 
-        $data['source_str_mv'] = isset($data['institution'])
-            ? $data['institution'] : $this->source;
+        $data['source_str_mv'] = $data['institution'] ?? $this->source;
         $data['datasource_str_mv'] = $this->source;
 
         // Digitized?
@@ -138,7 +137,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if ($this->doc->did->unitid) {
             foreach ($this->doc->did->unitid as $i) {
                 if ($i->attributes()->label == 'Analoginen') {
-                    $idstr = (string) $i;
+                    $idstr = (string)$i;
                     $p = strpos($idstr, '/');
                     $analogID = $p > 0
                         ? substr($idstr, $p + 1)
@@ -157,10 +156,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (isset($doc->did->physdesc)) {
             foreach ($doc->did->physdesc as $physdesc) {
                 if (isset($physdesc->attributes()->label)) {
-                    $material[] = (string) $physdesc . ' '
+                    $material[] = (string)$physdesc . ' '
                         . $physdesc->attributes()->label;
                 } else {
-                    $material[] = (string) $physdesc;
+                    $material[] = (string)$physdesc;
                 }
             }
             $data['material'] = $material;
@@ -214,7 +213,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (isset($doc->index->index->indexentry)) {
             foreach ($doc->index->index->indexentry as $indexentry) {
                 if (isset($indexentry->name->part)) {
-                    $data['contents'][] = (string) $indexentry->name->part;
+                    $data['contents'][] = (string)$indexentry->name->part;
                 }
             }
         }

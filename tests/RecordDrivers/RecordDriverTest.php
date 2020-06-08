@@ -2,7 +2,7 @@
 /**
  * Generic Record Driver test class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Eero Heikkinen 2013.
  *
@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 
@@ -50,8 +49,9 @@ abstract class RecordDriverTest extends AbstractTest
      */
     public function setUp()
     {
-        if(empty($this->driver))
+        if (empty($this->driver)) {
             $this->markTestIncomplete('Record driver needs to be set in subclass.');
+        }
     }
 
     /**

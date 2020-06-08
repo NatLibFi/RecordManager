@@ -2,7 +2,7 @@
 /**
  * Base class for record drivers
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2019.
  *
@@ -507,7 +507,7 @@ class Base
             )
         );
 
-        return isset($iniValues[$parameter]) ? $iniValues[$parameter] : $default;
+        return $iniValues[$parameter] ?? $default;
     }
 
     /**

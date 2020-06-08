@@ -2,7 +2,7 @@
 /**
  * Forward record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2016-2019.
  *
@@ -317,7 +317,7 @@ class Forward extends \RecordManager\Base\Record\Forward
                 $parts = explode(',', $event->elokuva_laji2fin);
 
                 foreach ($parts as $part) {
-                        $result[] = trim($part);
+                    $result[] = trim($part);
                 }
             }
         }

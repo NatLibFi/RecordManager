@@ -161,7 +161,7 @@ trait FullTextTrait
             break;
         }
 
-        $code = is_null($response) ? 999 : $response->getStatus();
+        $code = null === $response ? 999 : $response->getStatus();
         if ($code >= 300) {
             throw new \Exception("Failed to fetch full text url '$url': $code");
         }
@@ -170,5 +170,4 @@ trait FullTextTrait
 
         return $data;
     }
-
 }

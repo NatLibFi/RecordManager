@@ -2,7 +2,7 @@
 /**
  * Harvesting Base Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (c) The National Library of Finland 2011-2019.
  *

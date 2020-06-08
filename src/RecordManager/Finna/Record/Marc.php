@@ -2,7 +2,7 @@
 /**
  * Marc record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2012-2019.
  *
@@ -1347,8 +1347,8 @@ class Marc extends \RecordManager\Base\Record\Marc
                 foreach ($fields as $field) {
                     $subfields = $this->getAllSubfields(
                         $field,
-                        isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag]
-                        : ['0' => 1, '6' => 1, '8' => 1]
+                        $subfieldFilter[$tag]
+                        ?? ['0' => 1, '6' => 1, '8' => 1]
                     );
                     if ($subfields) {
                         $allFields = array_merge($allFields, $subfields);

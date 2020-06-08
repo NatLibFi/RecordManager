@@ -2,7 +2,7 @@
 /**
  * Ead Splitter
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2012-2019.
  *
@@ -293,5 +293,4 @@ class Ead
             }
         }
     }
-
 }

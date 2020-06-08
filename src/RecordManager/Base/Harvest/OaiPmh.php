@@ -4,7 +4,7 @@
  *
  * Based on harvest-oai.php in VuFind
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (c) Demian Katz 2010.
  * Copyright (c) The National Library of Finland 2011-2019.
@@ -34,6 +34,7 @@ namespace RecordManager\Base\Harvest;
 use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
+
 /**
  * OaiPmh Class
  *

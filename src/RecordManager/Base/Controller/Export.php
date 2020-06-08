@@ -2,7 +2,7 @@
 /**
  * Export
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2019.
  *
@@ -28,8 +28,8 @@
 namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Database\Database;
-use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Export
@@ -215,15 +215,13 @@ class Export extends AbstractBase
                     }
                     if ($addDedupId == 'always') {
                         $metadataRecord->addDedupKeyToMetadata(
-                            isset($record['dedup_id'])
-                            ? $record['dedup_id']
-                            : $record['_id']
+                            $record['dedup_id']
+                            ?? $record['_id']
                         );
                     } elseif ($addDedupId == 'deduped') {
                         $metadataRecord->addDedupKeyToMetadata(
-                            isset($record['dedup_id'])
-                            ? $record['dedup_id']
-                            : ''
+                            $record['dedup_id']
+                            ?? ''
                         );
                     }
                     $xml = $metadataRecord->toXML();
