@@ -237,29 +237,8 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
 
-        $data['subtitle_lng_str_mv'] = $this->getFieldsSubfields(
-            [
-                [self::GET_NORMAL, '041', ['j' => 1]],
-                // 979j = component part subtitle language
-                [self::GET_NORMAL, '979', ['j' => 1]]
-            ],
-            false, true, true
-        );
-        $data['subtitle_lng_str_mv'] = MetadataUtils::normalizeLanguageStrings(
-            $data['subtitle_lng_str_mv']
-        );
-
-        $data['original_lng_str_mv'] = $this->getFieldsSubfields(
-            [
-                [self::GET_NORMAL, '041', ['h' => 1]],
-                // 979i = component part original language
-                [self::GET_NORMAL, '979', ['i' => 1]]
-            ],
-            false, true, true
-        );
-        $data['original_lng_str_mv'] = MetadataUtils::normalizeLanguageStrings(
-            $data['original_lng_str_mv']
-        );
+        $data['subtitle_lng_str_mv'] = $this->getSubtitleLanguages();
+        $data['original_lng_str_mv'] = $this->getOriginalLanguages();
 
         // 979cd = component part authors
         // 900, 910, 911 = Finnish reference field
@@ -1890,5 +1869,51 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         return compact('authors', 'authorsAltScript', 'titles', 'titlesAltScript');
+    }
+
+    /**
+     * Get original languages in normalized form
+     *
+     * @return array
+     */
+    protected function getOriginalLanguages()
+    {
+        // 041h - Language code of original
+        $languages = $this->getFieldsSubfields(
+            [
+                [self::GET_NORMAL, '041', ['h' => 1]],
+                // 979i = component part original language
+                [self::GET_NORMAL, '979', ['i' => 1]]
+            ],
+            false, true, true
+        );
+        // If not a translation, take also language from 041a and 041d.
+        foreach ($this->getFields('041') as $f041) {
+            if ($this->getIndicator($f041, 1) === '0') {
+                foreach ($this->getSubfieldsArray($f041, ['a' => 1, 'd' => 1]) as $s
+                ) {
+                    $languages[] = $s;
+                }
+            }
+        }
+        return MetadataUtils::normalizeLanguageStrings($languages);
+    }
+
+    /**
+     * Get subtitle languages in normalized form
+     *
+     * @return array
+     */
+    protected function getSubtitleLanguages()
+    {
+        $languages = $this->getFieldsSubfields(
+            [
+                [self::GET_NORMAL, '041', ['j' => 1]],
+                // 979j = component part subtitle language
+                [self::GET_NORMAL, '979', ['j' => 1]]
+            ],
+            false, true, true
+        );
+        return MetadataUtils::normalizeLanguageStrings($languages);
     }
 }
