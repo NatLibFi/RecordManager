@@ -101,7 +101,7 @@ class Forward extends \RecordManager\Base\Record\Forward
 
     /**
      * Video type list for online urls
-     * 
+     *
      * @var array
      */
     protected $onlineVideoTypes = [
@@ -510,7 +510,7 @@ class Forward extends \RecordManager\Base\Record\Forward
 
     /**
      * Get online video types
-     * 
+     *
      * @return array
      */
     protected function getOnlineVideoTypes()
@@ -539,7 +539,7 @@ class Forward extends \RecordManager\Base\Record\Forward
 
     /**
      * Get question categories
-     * 
+     *
      * @return array
      */
     protected function getQuestionCategories()
@@ -549,9 +549,7 @@ class Forward extends \RecordManager\Base\Record\Forward
             $this->getProductionEventAttribute(
                 'elokuva-elotiedonkeruu-henkilotyyppi'
             ),
-            $this->getProductionEventAttribute(
-                'elokuva-elotiedonkeruu-kuvauspaikka'
-            )
+            $this->getProductionEventAttribute('elokuva-elotiedonkeruu-kuvauspaikka')
         );
         foreach ($categories as $category) {
             $result = array_merge($result, explode(';', $category));
