@@ -1,8 +1,8 @@
 <?php
 /**
- * NDL LIDO Record Driver Test Class
+ * Finna LIDO Record Driver Test Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Eero Heikkinen 2013.
  * Copyright (C) The National Library of Finland 2017.
@@ -29,7 +29,7 @@
  */
 
 /**
- * NDL LIDO Record Driver Test Class
+ * Finna LIDO Record Driver Test Class
  *
  * @category DataManagement
  * @package  RecordManager
@@ -37,7 +37,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class LidoRecordDriverTest extends RecordDriverTest
+class FinnaLidoRecordDriverTest extends RecordDriverTest
 {
     protected $driver = '\RecordManager\Finna\Record\Lido';
 
