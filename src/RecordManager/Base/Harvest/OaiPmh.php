@@ -7,7 +7,7 @@
  * PHP version 7
  *
  * Copyright (c) Demian Katz 2010.
- * Copyright (c) The National Library of Finland 2011-2019.
+ * Copyright (c) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -248,16 +248,16 @@ class OaiPmh extends Base
         $this->initHarvest($callback);
 
         if ($this->resumptionToken) {
-            $this->message('Incremental harvest from given resumptionToken');
+            $this->infoMsg('Incremental harvest from given resumptionToken');
             $token = $this->getRecordsByToken($this->resumptionToken);
         } else {
             // Start harvesting at the requested date:
             if (!empty($this->startDate)) {
-                $this->message(
+                $this->infoMsg(
                     'Incremental harvest from timestamp ' . $this->startDate
                 );
             } else {
-                $this->message('Initial harvest for all records');
+                $this->infoMsg('Initial harvest for all records');
             }
             $token = $this->getRecordsByDate();
         }
@@ -284,10 +284,10 @@ class OaiPmh extends Base
         $this->initHarvest($callback);
 
         if ($this->resumptionToken) {
-            $this->message('Incremental listing from given resumptionToken');
+            $this->infoMsg('Incremental listing from given resumptionToken');
             $token = $this->getIdentifiersByToken($this->resumptionToken);
         } else {
-            $this->message('Listing all identifiers');
+            $this->infoMsg('Listing all identifiers');
             $token = $this->getIdentifiers();
         }
 
@@ -343,7 +343,7 @@ class OaiPmh extends Base
      */
     protected function reportResults()
     {
-        $this->message(
+        $this->infoMsg(
             'Harvested ' . $this->changedRecords . ' normal records and '
             . $this->deletedRecords . ' deleted records from ' . $this->source
         );
@@ -356,7 +356,7 @@ class OaiPmh extends Base
      */
     protected function reportListIdentifiersResults()
     {
-        $this->message(
+        $this->infoMsg(
             'Listed ' . $this->changedRecords . ' normal records and '
             . $this->deletedRecords . ' deleted records from ' . $this->source
         );
@@ -416,24 +416,20 @@ class OaiPmh extends Base
 
         // Perform request and throw an exception on error:
         for ($try = 1; $try <= $this->maxTries; $try++) {
-            $this->message("Sending request: $urlStr", true);
+            $this->infoMsg("Sending request: $urlStr");
             try {
                 $response = $request->send();
                 $code = $response->getStatus();
                 if ($code >= 300) {
                     if ($try < $this->maxTries) {
-                        $this->message(
+                        $this->warningMsg(
                             "Request '$urlStr' failed ($code), retrying in "
-                            . "{$this->retryWait} seconds...",
-                            false,
-                            Logger::WARNING
+                            . "{$this->retryWait} seconds..."
                         );
                         sleep($this->retryWait);
                         continue;
                     }
-                    $this->message(
-                        "Request '$urlStr' failed: $code", false, Logger::FATAL
-                    );
+                    $this->fatalMsg("Request '$urlStr' failed: $code");
                     throw new \Exception("{$this->source}: Request failed: $code");
                 }
 
@@ -451,11 +447,9 @@ class OaiPmh extends Base
                 );
             } catch (\Exception $e) {
                 if ($try < $this->maxTries) {
-                    $this->message(
+                    $this->warningMsg(
                         "Request '$urlStr' failed (" . $e->getMessage()
-                        . "), retrying in {$this->retryWait} seconds...",
-                        false,
-                        Logger::WARNING
+                        . "), retrying in {$this->retryWait} seconds..."
                     );
                     sleep($this->retryWait);
                     continue;
@@ -484,11 +478,7 @@ class OaiPmh extends Base
         } catch (\Exception $e) {
             $tempfile = $this->getTempFileName('oai-pmh-error-', '.xml');
             file_put_contents($tempfile, $xml);
-            $this->message(
-                "Invalid XML stored in $tempfile",
-                false,
-                Logger::ERROR
-            );
+            $this->errorMsg("Invalid XML stored in $tempfile");
             throw new \Exception("{$this->source}: Failed to parse XML response");
         }
 
@@ -500,11 +490,7 @@ class OaiPmh extends Base
                 || $code != 'noRecordsMatch'
             ) {
                 $value = $result->saveXML($error);
-                $this->message(
-                    "OAI-PMH server returned error $code ($value)",
-                    false,
-                    Logger::ERROR
-                );
+                $this->errorMsg("OAI-PMH server returned error $code ($value)");
                 throw new \Exception(
                     "{$this->source}: OAI-PMH error -- code: $code, " .
                     "value: $value\n"
@@ -552,7 +538,7 @@ class OaiPmh extends Base
     protected function processRecords($records)
     {
         $count = count($records);
-        $this->message("Processing $count records", true);
+        $this->infoMsg("Processing $count records");
 
         // Loop through the records:
         foreach ($records as $record) {
@@ -560,7 +546,7 @@ class OaiPmh extends Base
 
             // Bypass the record if the record is missing its header:
             if ($header === false) {
-                $this->message("Record header missing", false, Logger::ERROR);
+                $this->errorMsg('Record header missing');
                 echo $this->xml->saveXML($record) . "\n";
                 continue;
             }
@@ -576,18 +562,12 @@ class OaiPmh extends Base
             } else {
                 $recordMetadata = $this->getSingleNode($record, 'metadata');
                 if ($recordMetadata === false) {
-                    $this->message(
-                        "No metadata tag found for record $id", false, Logger::ERROR
-                    );
+                    $this->errorMsg("No metadata tag found for record $id");
                     continue;
                 }
                 $recordNode = $this->getSingleNode($recordMetadata, '*');
                 if ($recordNode === false) {
-                    $this->message(
-                        "No metadata fields found for record $id",
-                        false,
-                        Logger::ERROR
-                    );
+                    $this->errorMsg("No metadata fields found for record $id");
                     continue;
                 }
                 // Add namespaces to the record element
@@ -737,7 +717,7 @@ class OaiPmh extends Base
      */
     protected function processIdentifiers($headers)
     {
-        $this->message('Processing ' . count($headers) . ' identifiers', true);
+        $this->infoMsg('Processing ' . count($headers) . ' identifiers');
 
         // Loop through the records:
         foreach ($headers as $header) {
@@ -799,7 +779,7 @@ class OaiPmh extends Base
      */
     protected function identifyServer()
     {
-        $this->message('Identifying server');
+        $this->infoMsg('Identifying server');
         $response = $this->sendRequest('Identify');
         if ($this->granularity == 'auto') {
             $identify = $this->getSingleNode($response, 'Identify');
@@ -822,12 +802,12 @@ class OaiPmh extends Base
             $this->granularity = trim(
                 $granularity->nodeValue
             );
-            $this->message("Detected date granularity: {$this->granularity}");
+            $this->infoMsg("Detected date granularity: {$this->granularity}");
         }
         $this->serverDate = $this->normalizeDate(
             $this->getSingleNode($response, 'responseDate')->nodeValue
         );
-        $this->message(
+        $this->infoMsg(
             'Current server date: ' . date('Y-m-d\TH:i:s\Z', $this->serverDate)
         );
     }

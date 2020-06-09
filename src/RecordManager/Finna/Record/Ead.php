@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2018.
+ * Copyright (C) The National Library of Finland 2012-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,7 +27,6 @@
  */
 namespace RecordManager\Finna\Record;
 
-use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -236,11 +235,10 @@ class Ead extends \RecordManager\Base\Record\Ead
             try {
                 $d = new \DateTime($endDate);
             } catch (\Exception $e) {
-                $this->logger->log(
+                $this->logger->logDebug(
                     'Ead',
                     "Failed to parse date $endDate, record {$this->source}."
-                        . $this->getID(),
-                    Logger::DEBUG
+                        . $this->getID()
                 );
                 $this->storeWarning('invalid end date');
                 return null;
@@ -269,11 +267,10 @@ class Ead extends \RecordManager\Base\Record\Ead
             try {
                 $d = new \DateTime($endDate);
             } catch (\Exception $e) {
-                $this->logger->log(
+                $this->logger->logDebug(
                     'Ead',
                     "Failed to parse date $endDate, record {$this->source}."
-                        . $this->getID(),
-                    Logger::DEBUG
+                        . $this->getID()
                 );
                 $this->storeWarning('invalid end date');
                 return null;
@@ -291,11 +288,10 @@ class Ead extends \RecordManager\Base\Record\Ead
         }
 
         if (strtotime($startDate) > strtotime($endDate)) {
-            $this->logger->log(
+            $this->logger->logDebug(
                 'Ead',
                 "Invalid date range {$startDate} - {$endDate}, record "
-                    . "{$this->source}." . $this->getID(),
-                Logger::DEBUG
+                    . "{$this->source}." . $this->getID()
             );
             $this->storeWarning('invalid date range');
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';

@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -49,7 +49,8 @@ class CheckDedup extends AbstractBase
      */
     public function launch($singleId = '')
     {
-        $this->logger->log('checkDedupRecords', 'Checking dedup record consistency');
+        $this->logger
+            ->logInfo('checkDedupRecords', 'Checking dedup record consistency');
 
         $dedupHandler = $this->getDedupHandler();
 
@@ -57,13 +58,13 @@ class CheckDedup extends AbstractBase
         if ($singleId) {
             $record = $this->db->getRecord($singleId);
             if (!$record) {
-                $this->logger->log(
+                $this->logger->logInfo(
                     'checkDedupRecords', 'No record found with the given ID'
                 );
                 return;
             }
             if (empty($record['dedup_id'])) {
-                $this->logger->log(
+                $this->logger->logInfo(
                     'checkDedupRecords', "Record $singleId not deduplicated"
                 );
                 return;
@@ -71,7 +72,7 @@ class CheckDedup extends AbstractBase
             $params['_id'] = $record['dedup_id'];
         }
 
-        $this->logger->log('checkDedupRecords', 'Checking dedup records');
+        $this->logger->logInfo('checkDedupRecords', 'Checking dedup records');
 
         $dedupRecords = $this->db->findDedups(
             $params,
@@ -87,26 +88,26 @@ class CheckDedup extends AbstractBase
             if ($results) {
                 $fixed += count($results);
                 foreach ($results as $result) {
-                    $this->logger->log('checkDedupRecords', $result);
+                    $this->logger->logInfo('checkDedupRecords', $result);
                 }
             }
             ++$count;
             if ($count % 1000 == 0) {
                 $pc->add($count);
                 $avg = $pc->getSpeed();
-                $this->logger->log(
+                $this->logger->logInfo(
                     'checkDedupRecords',
                     "$count records checked with $fixed links fixed, "
                     . "$avg records/sec"
                 );
             }
         }
-        $this->logger->log(
+        $this->logger->logInfo(
             'checkDedupRecords',
             "Completed dedup check with $count records checked, $fixed links fixed"
         );
 
-        $this->logger->log('checkDedupRecords', 'Checking record links');
+        $this->logger->logInfo('checkDedupRecords', 'Checking record links');
 
         $params = [];
         if ($singleId) {
@@ -126,20 +127,20 @@ class CheckDedup extends AbstractBase
             $result = $dedupHandler->checkRecordLinks($record);
             if ($result) {
                 ++$fixed;
-                $this->logger->log('checkDedupRecords', $result);
+                $this->logger->logInfo('checkDedupRecords', $result);
             }
             ++$count;
             if ($count % 1000 == 0) {
                 $pc->add($count);
                 $avg = $pc->getSpeed();
-                $this->logger->log(
+                $this->logger->logInfo(
                     'checkDedupRecords',
                     "$count links checked with $fixed links fixed, "
                     . "$avg records/sec"
                 );
             }
         }
-        $this->logger->log(
+        $this->logger->logInfo(
             'checkDedupRecords',
             "Completed link check with $count records checked, $fixed links fixed"
         );

@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2014-2019.
+ * Copyright (C) The National Library of Finland 2014-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -214,11 +214,10 @@ class Enrichment
                         // Progressively longer delay
                         $retryWait *= 2;
                     }
-                    $this->logger->log(
+                    $this->logger->logWarning(
                         'getExternalData',
                         "HTTP request for '$url' failed (" . $e->getMessage()
-                        . "), retrying in {$retryWait} seconds (retry $try)...",
-                        Logger::WARNING
+                            . "), retrying in {$retryWait} seconds (retry $try)..."
                     );
                     $this->request = null;
                     sleep($retryWait);
@@ -230,11 +229,10 @@ class Enrichment
                 $code = $response->getStatus();
                 if ($code >= 300 && $code != 404 && !in_array($code, $ignoreErrors)
                 ) {
-                    $this->logger->log(
+                    $this->logger->logWarning(
                         'getExternalData',
                         "HTTP request for '$url' failed ($code), retrying "
-                        . "in {$this->retryWait} seconds (retry $try)...",
-                        Logger::WARNING
+                            . "in {$this->retryWait} seconds (retry $try)..."
                     );
                     $this->request = null;
                     sleep($this->retryWait);
@@ -242,10 +240,9 @@ class Enrichment
                 }
             }
             if ($try > 1) {
-                $this->logger->log(
+                $this->logger->logWarning(
                     'getExternalData',
-                    "HTTP request for '$url' succeeded on attempt $try",
-                    Logger::WARNING
+                    "HTTP request for '$url' succeeded on attempt $try"
                 );
             }
             if (isset($this->requestsHandled[$host])) {
@@ -260,11 +257,10 @@ class Enrichment
                     $this->requestsDuration[$host] / $this->requestsHandled[$host]
                     * 1000
                 );
-                $this->logger->log(
+                $this->logger->logInfo(
                     'getExternalData',
                     "{$this->requestsHandled[$host]} HTTP requests completed"
-                    . " for $host, average time for a request $average ms",
-                    Logger::INFO
+                        . " for $host, average time for a request $average ms"
                 );
             }
             break;

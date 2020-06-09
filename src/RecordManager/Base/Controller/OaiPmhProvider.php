@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2017.
+ * Copyright (C) The National Library of Finland 2012-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Database\Database;
-use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\XslTransformation;
 
@@ -445,7 +443,7 @@ EOT;
         $code = $this->escape($code);
         $message = $this->escape($message);
         echo "  <error code=\"$code\">$message</error>\n";
-        $this->log("$code - $message", Logger::ERROR);
+        $this->logError("$code - $message");
     }
 
     /**
@@ -715,18 +713,17 @@ EOT;
     }
 
     /**
-     * Write a message to log
+     * Write an error message to log
      *
      * @param string $message Message
-     * @param int    $level   Log level for the message
      *
      * @return void
      */
-    protected function log($message, $level = Logger::INFO)
+    protected function logError($message)
     {
         $message = '[' . $_SERVER['REMOTE_ADDR'] . '] ' . $message . ' (request: '
             . $_SERVER['QUERY_STRING'] . ')';
-        $this->logger->log('OaiPmhProvider', $message, $level);
+        $this->logger->logError('OaiPmhProvider', $message);
     }
 
     /**

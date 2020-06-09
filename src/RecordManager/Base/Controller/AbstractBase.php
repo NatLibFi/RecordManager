@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -133,10 +133,9 @@ abstract class AbstractBase
                 $config['Mongo']
             );
         } catch (\Exception $e) {
-            $this->logger->log(
+            $this->logger->logFatal(
                 'startup',
-                'Failed to connect to MongoDB: ' . $e->getMessage(),
-                Logger::FATAL
+                'Failed to connect to MongoDB: ' . $e->getMessage()
             );
             throw $e;
         }
@@ -159,16 +158,15 @@ abstract class AbstractBase
     {
         foreach ($this->dataSourceSettings as $source => &$settings) {
             if (!isset($settings['institution'])) {
-                $this->logger->log(
+                $this->logger->logFatal(
                     'initSourceSettings',
-                    "institution not set for $source",
-                    Logger::FATAL
+                    "institution not set for $source"
                 );
                 throw new \Exception("Error: institution not set for $source\n");
             }
             if (!isset($settings['format'])) {
-                $this->logger->log(
-                    'initSourceSettings', "format not set for $source", Logger::FATAL
+                $this->logger->logFatal(
+                    'initSourceSettings', "format not set for $source"
                 );
                 throw new \Exception("Error: format not set for $source\n");
             }

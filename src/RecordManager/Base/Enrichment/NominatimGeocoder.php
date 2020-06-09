@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2013-2016.
+ * Copyright (C) The National Library of Finland 2013-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -344,10 +344,9 @@ class NominatimGeocoder extends Enrichment
         );
         $places = json_decode($response, true);
         if (null === $places) {
-            $this->logger->log(
+            $this->logger->logError(
                 'NominatimGeocoder',
-                "Could not decode Nominatim response (request: $url): $response",
-                Logger::ERROR
+                "Could not decode Nominatim response (request: $url): $response"
             );
             return [];
         }

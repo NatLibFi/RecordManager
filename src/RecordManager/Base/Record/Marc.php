@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2018.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -308,12 +308,12 @@ class Marc extends Base
                 if (($longitude < -180 || $longitude > 180)
                     || ($latitude < -90 || $latitude > 90)
                 ) {
-                    $this->logger->log(
+                    $this->logger->logDebug(
                         'Marc',
-                        "Discarding invalid coordinates $longitude,$latitude " .
-                        "decoded from w=$westOrig, e=$eastOrig, n=$northOrig, " .
-                        "s=$southOrig, record {$this->source}." . $this->getID(),
-                        Logger::DEBUG
+                        "Discarding invalid coordinates $longitude,$latitude "
+                            . "decoded from w=$westOrig, e=$eastOrig, n=$northOrig, "
+                            . "s=$southOrig, record {$this->source}."
+                            . $this->getID()
                     );
                     $this->storeWarning('invalid coordinates in 034');
                 } else {
@@ -1476,11 +1476,10 @@ class Marc extends Base
                 continue;
             }
             if (strlen($tag) != 3) {
-                $this->logger->log(
+                $this->logger->logError(
                     'Marc',
                     "Invalid field tag: '$tag', record {$this->source}."
-                    . $this->getID(),
-                    Logger::ERROR
+                        . $this->getID()
                 );
                 $this->storeWarning("invalid field tag '$tag'");
                 continue;
@@ -1635,11 +1634,10 @@ class Marc extends Base
         switch ($indicator) {
         case 1:
             if (!isset($field['i1'])) {
-                $this->logger->log(
+                $this->logger->logError(
                     'Marc',
                     'Indicator 1 missing from field:' . print_r($field, true)
-                    . ", record {$this->source}." . $this->getID(),
-                    Logger::ERROR
+                        . ", record {$this->source}." . $this->getID()
                 );
                 $this->storeWarning('indicator 1 missing');
                 return ' ';
@@ -1647,11 +1645,10 @@ class Marc extends Base
             return $field['i1'];
         case 2:
             if (!isset($field['i2'])) {
-                $this->logger->log(
+                $this->logger->logError(
                     'Marc',
                     'Indicator 2 missing from field:' . print_r($field, true)
-                    . ", record {$this->source}." . $this->getID(),
-                    Logger::ERROR
+                        . ", record {$this->source}." . $this->getID()
                 );
                 $this->storeWarning('indicator 2 missing');
                 return ' ';
@@ -1826,21 +1823,19 @@ class Marc extends Base
 
             foreach ($this->fields[$tag] as $field) {
                 if (!isset($field['s'])) {
-                    $this->logger->log(
-                        'Marc', "Subfields missing in field $tag"
-                        . ", record {$this->source}." .
-                        $this->getID(),
-                        Logger::DEBUG
+                    $this->logger->logDebug(
+                        'Marc',
+                        "Subfields missing in field $tag, record {$this->source}."
+                            . $this->getID()
                     );
                     $this->storeWarning("missing subfields in $tag");
                     continue;
                 }
                 if (!is_array($field['s'])) {
-                    $this->logger->log(
-                        'Marc', "Invalid subfields in field $tag"
-                        . ", record {$this->source}." .
-                        $this->getID(),
-                        Logger::DEBUG
+                    $this->logger->logDebug(
+                        'Marc',
+                        "Invalid subfields in field $tag, record {$this->source}."
+                            . $this->getID()
                     );
                     $this->storeWarning("invalid subfields in $tag");
                     continue;
@@ -2046,19 +2041,20 @@ class Marc extends Base
             return '';
         }
         if (!isset($field['s'])) {
-            $this->logger->log(
-                'Marc', "Subfields missing in field: " .
-                print_r($field, true) . ", record {$this->source}." .
-                $this->getID(), Logger::DEBUG
+            $this->logger->logDebug(
+                'Marc',
+                "Subfields missing in field: " . print_r($field, true)
+                    . ", record {$this->source}." . $this->getID()
             );
             $this->storeWarning('missing subfields');
             return [];
         }
         if (!is_array($field['s'])) {
-            $this->logger->log(
-                'Marc', 'Invalid subfields in field: ' .
-                print_r($field, true) . ", record {$this->source}." .
-                $this->getID(), Logger::ERROR
+            $this->logger->logError(
+                'Marc',
+                'Invalid subfields in field: '
+                    . print_r($field, true) . ", record {$this->source}."
+                    . $this->getID()
             );
             $this->storeWarning('invalid subfields');
             return [];

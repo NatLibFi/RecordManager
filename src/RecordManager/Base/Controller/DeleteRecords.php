@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Database\Database;
-use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\PerformanceCounter;
 
 /**
@@ -56,18 +54,16 @@ class DeleteRecords extends AbstractBase
             $settings = $this->dataSourceSettings[$sourceId];
             if (isset($settings['dedup']) && $settings['dedup']) {
                 if ($force) {
-                    $this->logger->log(
+                    $this->logger->logWarning(
                         'deleteRecords',
                         "Deduplication enabled for '$sourceId' but deletion forced "
-                        . " - may lead to orphaned dedup records",
-                        Logger::WARNING
+                        . " - may lead to orphaned dedup records"
                     );
                 } else {
-                    $this->logger->log(
+                    $this->logger->logError(
                         'deleteRecords',
                         "Deduplication enabled for '$sourceId', aborting "
-                        . "(use markdeleted instead)",
-                        Logger::ERROR
+                        . "(use markdeleted instead)"
                     );
                     return;
                 }
@@ -76,14 +72,15 @@ class DeleteRecords extends AbstractBase
 
         $params = [];
         $params['source_id'] = $sourceId;
-        $this->logger->log('deleteRecords', "Creating record list for '$sourceId'");
+        $this->logger
+            ->logInfo('deleteRecords', "Creating record list for '$sourceId'");
 
         $params = ['source_id' => $sourceId];
         $records = $this->db->findRecords($params);
         $total = $this->db->countRecords($params);
         $count = 0;
 
-        $this->logger->log(
+        $this->logger->logInfo(
             'deleteRecords', "Deleting $total records from '$sourceId'"
         );
         $pc = new PerformanceCounter();
@@ -99,21 +96,21 @@ class DeleteRecords extends AbstractBase
             if ($count % 1000 == 0) {
                 $pc->add($count);
                 $avg = $pc->getSpeed();
-                $this->logger->log(
+                $this->logger->logInfo(
                     'deleteRecords',
                     "$count records deleted from '$sourceId', $avg records/sec"
                 );
             }
         }
-        $this->logger->log(
+        $this->logger->logInfo(
             'deleteRecords', "Completed with $count records deleted from '$sourceId'"
         );
 
-        $this->logger->log(
+        $this->logger->logInfo(
             'deleteRecords',
             "Deleting last harvest date from data source '$sourceId'"
         );
         $this->db->deleteState("Last Harvest Date $sourceId");
-        $this->logger->log('deleteRecords', "Deletion of $sourceId completed");
+        $this->logger->logInfo('deleteRecords', "Deletion of $sourceId completed");
     }
 }

@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2011-2019.
+ * Copyright (c) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -404,11 +404,7 @@ class Base
         libxml_clear_errors();
         $result = MetadataUtils::loadXML($xml, $doc);
         if ($result === false || libxml_get_last_error() !== false) {
-            $this->message(
-                'Invalid XML received, trying encoding fix...',
-                false,
-                Logger::WARNING
-            );
+            $this->warningMsg('Invalid XML received, trying encoding fix...');
             $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
             libxml_clear_errors();
             $result = MetadataUtils::loadXML($xml, $doc);
@@ -423,7 +419,7 @@ class Base
                 $errors .= 'Error ' . $error->code . ' at ' . $error->line . ':'
                     . $error->column . ': ' . $error->message;
             }
-            $this->message("Could not parse XML: $errors\n", false, Logger::FATAL);
+            $this->fatalMsg("Could not parse XML: $errors");
             throw new \Exception("Failed to parse XML");
         }
         libxml_use_internal_errors($saveUseErrors);
@@ -442,7 +438,7 @@ class Base
      */
     protected function reportResults()
     {
-        $this->message(
+        $this->infoMsg(
             'Harvested ' . $this->changedRecords . ' updated, '
             . $this->unchangedRecords . ' unchanged and '
             . $this->deletedRecords . ' deleted records'
@@ -450,23 +446,98 @@ class Base
     }
 
     /**
-     * Log a message and display on console in verbose mode.
+     * Format log message
      *
-     * @param string $msg     Message
-     * @param bool   $verbose Flag telling whether this is considered verbose output
-     * @param int    $level   Logging level
+     * @param string $msg Log message
+     *
+     * @return string
+     */
+    protected function formatLogMessage($msg)
+    {
+        return "[{$this->source}] $msg";
+    }
+
+    /**
+     * Get class name for logging
+     *
+     * @return string
+     */
+    protected function getLogClass()
+    {
+        $classParts = explode('\\', get_class($this));
+        $class = end($classParts);
+
+        return $class;
+    }
+
+    /**
+     * Print a message if in verbose mode
+     *
+     * @param string $msg Message
      *
      * @return void
      */
-    protected function message($msg, $verbose = false, $level = Logger::INFO)
+    protected function printVerboseMsg($msg)
     {
-        $msg = "[{$this->source}] $msg";
         if ($this->verbose) {
             echo "$msg\n";
         }
-        $classParts = explode('\\', get_class($this));
-        $class = end($classParts);
-        $this->log->log($class, $msg, $level);
+    }
+
+    /**
+     * Log a message and display on console in verbose mode.
+     *
+     * @param string $msg Message
+     *
+     * @return void
+     */
+    protected function infoMsg($msg)
+    {
+        $msg = $this->formatLogMessage($msg);
+        $this->printVerboseMsg($msg);
+        $this->log->logInfo($this->getLogClass(), $msg);
+    }
+
+    /**
+     * Log an error and display on console in verbose mode.
+     *
+     * @param string $msg Message
+     *
+     * @return void
+     */
+    protected function errorMsg($msg)
+    {
+        $msg = $this->formatLogMessage($msg);
+        $this->printVerboseMsg($msg);
+        $this->log->logError($this->getLogClass(), $msg);
+    }
+
+    /**
+     * Log a warning and display on console in verbose mode.
+     *
+     * @param string $msg Message
+     *
+     * @return void
+     */
+    protected function warningMsg($msg)
+    {
+        $msg = $this->formatLogMessage($msg);
+        $this->printVerboseMsg($msg);
+        $this->log->logWarning($this->getLogClass(), $msg);
+    }
+
+    /**
+     * Log a fatal error and display on console in verbose mode.
+     *
+     * @param string $msg Message
+     *
+     * @return void
+     */
+    protected function fatalMsg($msg)
+    {
+        $msg = $this->formatLogMessage($msg);
+        $this->printVerboseMsg($msg);
+        $this->log->logFatal($this->getLogClass(), $msg);
     }
 
     /**

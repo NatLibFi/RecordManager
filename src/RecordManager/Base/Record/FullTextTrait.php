@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Record;
 
-use RecordManager\Base\Utils\Logger;
-
 /**
  * Trait for handling full text
  *
@@ -125,11 +123,10 @@ trait FullTextTrait
                         // Progressively longer delay
                         $retryWait *= 2;
                     }
-                    $this->logger->log(
+                    $this->logger->logWarning(
                         'getUrl',
                         "HTTP request for '$url' failed (" . $e->getMessage()
-                        . "), retrying in {$retryWait} seconds (retry $try)...",
-                        Logger::WARNING
+                            . "), retrying in {$retryWait} seconds (retry $try)..."
                     );
                     $this->request = null;
                     sleep($retryWait);
@@ -140,11 +137,10 @@ trait FullTextTrait
             if ($try < $maxTries) {
                 $code = $response->getStatus();
                 if ($code >= 300 && $code != 404) {
-                    $this->logger->log(
+                    $this->logger->logWarning(
                         'getUrl',
                         "HTTP request for '$url' failed ($code), retrying "
-                        . "in {$retryWait} seconds (retry $try)...",
-                        Logger::WARNING
+                            . "in {$retryWait} seconds (retry $try)..."
                     );
                     $this->request = null;
                     sleep($retryWait);
@@ -152,10 +148,9 @@ trait FullTextTrait
                 }
             }
             if ($try > 1) {
-                $this->logger->log(
+                $this->logger->logWarning(
                     'getUrl',
-                    "HTTP request for '$url' succeeded on attempt $try",
-                    Logger::WARNING
+                    "HTTP request for '$url' succeeded on attempt $try"
                 );
             }
             break;

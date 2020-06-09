@@ -183,9 +183,9 @@ class SierraApi extends Base
             $startDate = !empty($this->startDate) ? $this->startDate : '';
             $endDate = !empty($this->endDate) ? $this->endDate : '';
             $apiParams['updatedDate'] = "[$startDate,$endDate]";
-            $this->message("Incremental harvest: $startDate-$endDate");
+            $this->infoMsg("Incremental harvest: $startDate-$endDate");
         } else {
-            $this->message('Initial harvest for all records');
+            $this->infoMsg('Initial harvest for all records');
         }
 
         // Keep harvesting as long as a records are received:
@@ -207,7 +207,7 @@ class SierraApi extends Base
             unset($apiParams['updatedDate']);
             $apiParams['deletedDate'] = "[$startDate,$endDate]";
             $apiParams['offset'] = 0;
-            $this->message("Incremental harvest of deletions: $startDate-$endDate");
+            $this->infoMsg("Incremental harvest of deletions: $startDate-$endDate");
             $this->initHarvest($callback);
 
             // Keep harvesting as long as a records are received:
@@ -241,17 +241,15 @@ class SierraApi extends Base
                 throw new \Exception("Could not parse server date header: $date");
             }
             $result = $dateTime->getTimestamp();
-            $this->message(
+            $this->infoMsg(
                 'Current server date: ' . gmdate('Y-m-d\TH:i:s\Z', $result)
             );
             return $result;
         }
         $result = time();
-        $this->message(
+        $this->warningMsg(
             'Could not find server date, using local date: '
-            . gmdate('Y-m-d\TH:i:s\Z', $result),
-            false,
-            Logger::WARNING
+            . gmdate('Y-m-d\TH:i:s\Z', $result)
         );
         return $result;
     }
@@ -298,7 +296,7 @@ class SierraApi extends Base
         // Perform request and throw an exception on error:
         $maxTries = $this->maxTries;
         for ($try = 1; $try <= $maxTries; $try++) {
-            $this->message("Sending request: $urlStr", true);
+            $this->infoMsg("Sending request: $urlStr");
             try {
                 $response = $request->send();
                 $code = $response->getStatus();
@@ -306,7 +304,7 @@ class SierraApi extends Base
                     return $response;
                 }
                 if ($code == 401) {
-                    $this->message('Renewing access token');
+                    $this->infoMsg('Renewing access token');
                     $this->renewAccessToken();
                     $request->setHeader(
                         'Authorization', "Bearer {$this->accessToken}"
@@ -317,30 +315,24 @@ class SierraApi extends Base
                 }
                 if ($code >= 300) {
                     if ($try < $this->maxTries) {
-                        $this->message(
+                        $this->warningMsg(
                             "Request '$urlStr' failed ($code: "
                             . $response->getBody() . '), retrying in '
-                            . "{$this->retryWait} seconds...",
-                            false,
-                            Logger::WARNING
+                            . "{$this->retryWait} seconds..."
                         );
                         sleep($this->retryWait);
                         continue;
                     }
-                    $this->message(
-                        "Request '$urlStr' failed: $code", false, Logger::FATAL
-                    );
+                    $this->fatalMsg("Request '$urlStr' failed: $code");
                     throw new \Exception("{$this->source}: Request failed: $code");
                 }
 
                 return $response;
             } catch (\Exception $e) {
                 if ($try < $this->maxTries) {
-                    $this->message(
+                    $this->warningMsg(
                         "Request '$urlStr' failed (" . $e->getMessage()
-                        . "), retrying in {$this->retryWait} seconds...",
-                        false,
-                        Logger::WARNING
+                        . "), retrying in {$this->retryWait} seconds..."
                     );
                     sleep($this->retryWait);
                     continue;
@@ -362,18 +354,16 @@ class SierraApi extends Base
      */
     protected function processResponse($response)
     {
-        $this->message('Processing received records', true);
+        $this->infoMsg('Processing received records');
         if (empty($response)) {
             return 0;
         }
         $json = json_decode($response, true);
         if (isset($json['ErrorCodes'])) {
-            $this->message(
+            $this->errorMsg(
                 'Sierra API returned error: '
                 . $json['ErrorCodes']['code'] . ' ' . $json['ErrorCodes']['name']
-                . ': ' . $json['ErrorCodes']['description'],
-                false,
-                Logger::ERROR
+                . ': ' . $json['ErrorCodes']['description']
             );
             throw new \Exception(
                 '{$this->source}: Server returned error: '
@@ -434,25 +424,23 @@ class SierraApi extends Base
 
         // Perform request and throw an exception on error:
         for ($try = 1; $try <= $this->maxTries; $try++) {
-            $this->message("Sending request: $apiUrl", true);
+            $this->infoMsg("Sending request: $apiUrl");
             try {
                 $response = $request->send();
                 $code = $response->getStatus();
                 if ($code >= 300) {
                     if ($try < $this->maxTries) {
-                        $this->message(
+                        $this->warningMsg(
                             "Request '$apiUrl' failed ($code: "
                             . $response->getBody() . '), retrying in'
-                            . " {$this->retryWait} seconds...",
-                            false,
-                            Logger::WARNING
+                            . " {$this->retryWait} seconds..."
                         );
                         sleep($this->retryWait);
                         continue;
                     }
-                    $this->message(
+                    $this->fatalMsg(
                         "Request '$apiUrl' failed ($code: " . $response->getBody()
-                        . ')', false, Logger::FATAL
+                        . ')'
                     );
                     throw new \Exception("{$this->source}: Request failed: $code");
                 }
@@ -467,11 +455,9 @@ class SierraApi extends Base
                 break;
             } catch (\Exception $e) {
                 if ($try < $this->maxTries) {
-                    $this->message(
+                    $this->warningMsg(
                         "Request '$apiUrl' failed (" . $e->getMessage()
-                        . "), retrying in {$this->retryWait} seconds...",
-                        false,
-                        Logger::WARNING
+                        . "), retrying in {$this->retryWait} seconds..."
                     );
                     sleep($this->retryWait);
                     continue;
@@ -559,11 +545,7 @@ class SierraApi extends Base
         $marc['001'] = [$id];
 
         if (empty($marc['000'])) {
-            $this->log->log(
-                'convertVarFieldsToMarcArray',
-                "No leader found for record $id in {$this->source}",
-                Logger::WARNING
-            );
+            $this->warningMsg("No leader found for record $id in {$this->source}");
             $marc['000'] = '00000nam  2200000   4500';
         }
 
@@ -603,7 +585,7 @@ class SierraApi extends Base
      */
     protected function reportResults()
     {
-        $this->message(
+        $this->infoMsg(
             'Harvested ' . $this->changedRecords . ' normal and '
             . $this->deletedRecords . ' deleted records'
         );
