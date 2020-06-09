@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,7 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\PerformanceCounter;
 
 /**
@@ -52,13 +51,12 @@ class MarkForUpdate extends AbstractBase
     public function launch($sourceId, $singleId)
     {
         if (empty($sourceId)) {
-            $this->logger->log(
-                'markForUpdate', "No source id provided", Logger::FATAL
-            );
+            $this->logger->logFatal('markForUpdate', 'No source id provided');
             return;
         }
 
-        $this->logger->log('markForUpdate', "Creating record list for '$sourceId'");
+        $this->logger
+            ->logInfo('markForUpdate', "Creating record list for '$sourceId'");
 
         $params = [
             'deleted' => false, 'update_needed' => false, 'source_id' => $sourceId
@@ -70,7 +68,7 @@ class MarkForUpdate extends AbstractBase
         $total = $this->db->countRecords($params);
         $count = 0;
 
-        $this->logger->log(
+        $this->logger->logInfo(
             'markForUpdate', "Marking $total records for update from '$sourceId'"
         );
         $pc = new PerformanceCounter();
@@ -86,14 +84,14 @@ class MarkForUpdate extends AbstractBase
             if ($count % 1000 == 0) {
                 $pc->add($count);
                 $avg = $pc->getSpeed();
-                $this->logger->log(
+                $this->logger->logInfo(
                     'markForUpdate',
                     "$count records marked for update from '$sourceId', "
                     . "$avg records/sec"
                 );
             }
         }
-        $this->logger->log(
+        $this->logger->logInfo(
             'markForUpdate',
             "Completed with $count records marked for update from '$sourceId'"
         );

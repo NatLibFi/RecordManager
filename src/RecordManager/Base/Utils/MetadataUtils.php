@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -864,10 +864,9 @@ class MetadataUtils
                 $item = \geoPHP::load($wkt, 'wkt');
             } catch (\Exception $e) {
                 if (null !== self::$logger) {
-                    self::$logger->log(
+                    self::$logger->logError(
                         'getCenterCoordinates',
-                        "Could not parse WKT '$wkt': " . $e->getMessage(),
-                        \RecordManager\Base\Utils\Logger::ERROR
+                        "Could not parse WKT '$wkt': " . $e->getMessage()
                     );
                 }
                 return [];

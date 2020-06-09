@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2012.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -75,6 +75,71 @@ class Logger
     }
 
     /**
+     * Write a debug message to the log
+     *
+     * @param string $context Context of the log message (e.g. current function)
+     * @param string $msg     Actual message
+     *
+     * @return void
+     */
+    public function logDebug($context, $msg)
+    {
+        $this->log($context, $msg, Logger::DEBUG);
+    }
+
+    /**
+     * Write an error message to the log
+     *
+     * @param string $context Context of the log message (e.g. current function)
+     * @param string $msg     Actual message
+     *
+     * @return void
+     */
+    public function logError($context, $msg)
+    {
+        $this->log($context, $msg, Logger::ERROR);
+    }
+
+    /**
+     * Write a fatal error message to the log
+     *
+     * @param string $context Context of the log message (e.g. current function)
+     * @param string $msg     Actual message
+     *
+     * @return void
+     */
+    public function logFatal($context, $msg)
+    {
+        $this->log($context, $msg, Logger::FATAL);
+    }
+
+    /**
+     * Write an info message to the log
+     *
+     * @param string $context Context of the log message (e.g. current function)
+     * @param string $msg     Actual message
+     *
+     * @return void
+     */
+    public function logInfo($context, $msg)
+    {
+        $this->log($context, $msg, Logger::WARNING);
+    }
+
+    /**
+     * Write a warning message to the log
+     *
+     * @param string $context Context of the log message (e.g. current function)
+     * @param string $msg     Actual message
+     *
+     * @return void
+     */
+    public function logWarning($context, $msg)
+    {
+        $this->log($context, $msg, Logger::WARNING);
+    }
+
+    /**
      * Write a message to the log
      *
      * @param string $context Context of the log message (e.g. current function)
@@ -84,7 +149,7 @@ class Logger
      *
      * @return void
      */
-    public function log($context, $msg, $level = Logger::INFO)
+    protected function log($context, $msg, $level = Logger::INFO)
     {
         if ($this->logLevel < $level) {
             return;

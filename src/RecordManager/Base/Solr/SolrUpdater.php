@@ -551,10 +551,9 @@ class SolrUpdater
             = $config['Solr']['cluster_state_check_interval'] ?? 0;
         if (empty($config['Solr']['admin_url'])) {
             $this->clusterStateCheckInterval = 0;
-            $this->log->log(
+            $this->log->logWarning(
                 'SolrUpdater',
-                'admin_url not defined, cluster state check disabled',
-                Logger::WARNING
+                'admin_url not defined, cluster state check disabled'
             );
         }
         $this->datePerServer
@@ -700,12 +699,12 @@ class SolrUpdater
         $childPid = null;
         try {
             if ($this->recordWorkers) {
-                $this->log->log(
+                $this->log->logInfo(
                     'updateRecords', "Using {$this->recordWorkers} record workers"
                 );
             }
             if ($this->solrUpdateWorkers) {
-                $this->log->log(
+                $this->log->logInfo(
                     'updateRecords',
                     "Using {$this->solrUpdateWorkers} Solr workers"
                 );
@@ -758,7 +757,7 @@ class SolrUpdater
 
             if ($processDedupRecords) {
                 if (!$delete && $this->threadedMergedRecordUpdate && !$compare) {
-                    $this->log->log(
+                    $this->log->logInfo(
                         'updateRecords',
                         'Running merged and individual record processing in'
                         . ' parallel'
@@ -793,12 +792,11 @@ class SolrUpdater
                             exit($needCommit ? 1 : 0);
                         }
                     } catch (\Exception $e) {
-                        $this->log->log(
+                        $this->log->logError(
                             'updateRecords',
                             'Exception from merged record processing: '
-                            . $e->getMessage() . ' at ' . $e->getFile() . ':'
-                            . $e->getLine(),
-                            Logger::ERROR
+                                . $e->getMessage() . ' at ' . $e->getFile() . ':'
+                                . $e->getLine()
                         );
                         if (null === $childPid) {
                             throw $e;
@@ -835,7 +833,7 @@ class SolrUpdater
             // Reconnect MongoDB to be sure it's used just by us
             $this->reconnectDatabase();
 
-            $this->log->log(
+            $this->log->logInfo(
                 'updateRecords', "Creating individual record list (from $from)"
             );
             $params = [];
@@ -863,15 +861,15 @@ class SolrUpdater
             $mergedComponents = 0;
             $deleted = 0;
             if ($noCommit) {
-                $this->log->log(
+                $this->log->logInfo(
                     'updateRecords',
                     "$initVerb $total individual records (with no forced commits)"
                 );
             } else {
-                $this->log->log(
+                $this->log->logInfo(
                     'updateRecords',
                     "$initVerb $total individual records (max commit interval "
-                    . "{$this->commitInterval} records)"
+                        . "{$this->commitInterval} records)"
                 );
             }
             $pc = new PerformanceCounter();
@@ -879,7 +877,7 @@ class SolrUpdater
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
                     if ($childPid) {
-                        $this->log->log(
+                        $this->log->logInfo(
                             'updateRecords',
                             'Waiting for child process to terminate...'
                         );
@@ -891,7 +889,7 @@ class SolrUpdater
                             sleep(1);
                         }
                     }
-                    $this->log->log(
+                    $this->log->logInfo(
                         'updateRecords',
                         'Termination upon request (individual record handler)'
                     );
@@ -926,10 +924,11 @@ class SolrUpdater
                     $lastDisplayedCount = $count;
                     $pc->add($count);
                     $avg = $pc->getSpeed();
-                    $this->log->log(
+                    $this->log->logInfo(
                         'updateRecords',
-                        "$count individual records (of which $deleted deleted) with "
-                        . "$mergedComponents merged parts $verb, $avg records/sec"
+                        "$count individual records (of which $deleted deleted) with"
+                            . " $mergedComponents merged parts $verb, $avg"
+                            . ' records/sec'
                     );
                 }
 
@@ -944,10 +943,9 @@ class SolrUpdater
                         if ($exitCode == 1) {
                             $needCommit = true;
                         } elseif ($exitCode || null === $exitCode) {
-                            $this->log->log(
+                            $this->log->logError(
                                 'updateRecords',
-                                'Merged record update process failed, aborting',
-                                Logger::ERROR
+                                'Merged record update process failed, aborting'
                             );
                             throw new \Exception(
                                 'Merged record update process failed'
@@ -986,12 +984,12 @@ class SolrUpdater
             // to complete.
             $this->flushUpdateBuffer();
 
-            $this->log->log(
+            $this->log->logInfo(
                 'updateRecords',
                 'Waiting for any pending requests to complete...'
             );
             $this->workerPoolManager->waitUntilDone('solr');
-            $this->log->log(
+            $this->log->logInfo(
                 'updateRecords',
                 'All requests complete'
             );
@@ -1006,7 +1004,7 @@ class SolrUpdater
                 ];
                 $this->db->saveState($state);
             }
-            $this->log->log(
+            $this->log->logInfo(
                 'updateRecords',
                 "Total $count individual records (of which $deleted deleted) with "
                 . "$mergedComponents merged parts $verb"
@@ -1028,20 +1026,18 @@ class SolrUpdater
                             if (1 === $exitCode) {
                                 $needCommit = true;
                             } elseif ($exitCode || null === $exitCode) {
-                                $this->log->log(
+                                $this->log->logError(
                                     'updateRecords',
-                                    'Merged record update process failed, aborting',
-                                    Logger::ERROR
+                                    'Merged record update process failed, aborting'
                                 );
                                 throw new \Exception(
                                     'Merged record update process failed'
                                 );
                             }
                         } else {
-                            $this->log->log(
+                            $this->log->logError(
                                 'updateRecords',
-                                'Could not get merged record handler results',
-                                Logger::ERROR
+                                'Could not get merged record handler results'
                             );
                             $needCommit = true;
                         }
@@ -1060,16 +1056,15 @@ class SolrUpdater
             }
 
             if (!$noCommit && $needCommit && !$compare && !$this->dumpPrefix) {
-                $this->log->log('updateRecords', 'Final commit...');
+                $this->log->logInfo('updateRecords', 'Final commit...');
                 $this->solrRequest('{ "commit": {} }', 3600);
-                $this->log->log('updateRecords', 'Commit complete');
+                $this->log->logInfo('updateRecords', 'Commit complete');
             }
         } catch (\Exception $e) {
-            $this->log->log(
+            $this->log->logFatal(
                 'updateRecords',
                 'Exception: ' . $e->getMessage() . ' at ' . $e->getFile() . ':'
-                . $e->getLine(),
-                Logger::FATAL
+                    . $e->getLine()
             );
             if ($childPid) {
                 // Kill the child process too
@@ -1140,7 +1135,7 @@ class SolrUpdater
 
         $record = $this->db->findRecord([], ['sort' => ['updated' => -1]]);
         if (empty($record)) {
-            $this->log->log('processMerged', 'No records found');
+            $this->log->logInfo('processMerged', 'No records found');
             return;
         }
 
@@ -1149,17 +1144,16 @@ class SolrUpdater
         $res = $this->db->cleanupQueueCollections($lastRecordTime);
 
         if ($res['removed']) {
-            $this->log->log(
+            $this->log->logInfo(
                 'processMerged',
                 'Cleanup: dropped old queue collections: '
                     . implode(', ', $res['removed'])
             );
         }
         if ($res['failed']) {
-            $this->log->log(
+            $this->log->logWarning(
                 'processMerged',
-                'Failed to drop collections: ' . implode(', ', $res['failed']),
-                Logger::WARNING
+                'Failed to drop collections: ' . implode(', ', $res['failed'])
             );
         }
 
@@ -1178,9 +1172,9 @@ class SolrUpdater
             unset($this->terminate);
             if (function_exists('pcntl_signal')) {
                 pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
-                $this->log->log('updateRecords', 'Interrupt handler set');
+                $this->log->logInfo('updateRecords', 'Interrupt handler set');
             } else {
-                $this->log->log(
+                $this->log->logInfo(
                     'updateRecords',
                     'Could not set an interrupt handler -- pcntl not available'
                 );
@@ -1192,7 +1186,7 @@ class SolrUpdater
                     ? $mongoFromDate->toDateTime()->format('U') : 0,
                 $lastRecordTime
             );
-            $this->log->log(
+            $this->log->logInfo(
                 'processMerged',
                 "Creating queue collection $collectionName (from $from, stage 1/2)"
             );
@@ -1206,7 +1200,7 @@ class SolrUpdater
             );
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
-                    $this->log->log(
+                    $this->log->logInfo(
                         'processMerged',
                         'Termination upon request (queue collection creation)'
                     );
@@ -1219,14 +1213,15 @@ class SolrUpdater
                     $this->db->addIdToQueue($collectionName, $id);
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
-                        $this->log->log('processMerged', "$count id's processed");
+                        $this->log
+                            ->logInfo('processMerged', "$count id's processed");
                     }
                 }
                 $prevId = $id;
             }
-            $this->log->log('processMerged', "$count id's processed");
+            $this->log->logInfo('processMerged', "$count id's processed");
 
-            $this->log->log(
+            $this->log->logInfo(
                 'processMerged',
                 "Creating queue collection $collectionName"
                 . " (from $from, stage 2/2)"
@@ -1237,11 +1232,10 @@ class SolrUpdater
             } elseif (isset($mongoFromDate)) {
                 $dedupParams['changed'] = ['$gte' => $mongoFromDate];
             } else {
-                $this->log->log(
+                $this->log->logWarning(
                     'processMerged',
                     'Processing all merge records -- this may be a lengthy process'
-                    . ' if deleted records have not been purged regularly',
-                    Logger::WARNING
+                        . ' if deleted records have not been purged regularly'
                 );
             }
 
@@ -1249,7 +1243,7 @@ class SolrUpdater
             $count = 0;
             foreach ($records as $record) {
                 if (isset($this->terminate)) {
-                    $this->log->log('processMerged', 'Termination upon request');
+                    $this->log->logInfo('processMerged', 'Termination upon request');
                     $this->db->dropQueueCollection($collectionName);
                     exit(1);
                 }
@@ -1259,7 +1253,7 @@ class SolrUpdater
 
                     ++$totalMergeCount;
                     if (++$count % 10000 == 0) {
-                        $this->log->log(
+                        $this->log->logInfo(
                             'processMerged',
                             "$count merge record id's processed"
                         );
@@ -1267,7 +1261,7 @@ class SolrUpdater
                 }
                 $prevId = $id;
             }
-            $this->log->log(
+            $this->log->logInfo(
                 'processMerged',
                 "$count merge record id's processed"
             );
@@ -1276,12 +1270,12 @@ class SolrUpdater
                 $collectionName = $this->db
                     ->finalizeQueueCollection($collectionName);
             }
-            $this->log->log(
+            $this->log->logInfo(
                 'processMerged',
                 "Queue collection $collectionName complete"
             );
         } else {
-            $this->log->log(
+            $this->log->logInfo(
                 'processMerged',
                 "Using existing queue collection $collectionName"
             );
@@ -1301,12 +1295,12 @@ class SolrUpdater
         $deleted = 0;
         $this->initBufferedUpdate();
         if ($noCommit) {
-            $this->log->log(
+            $this->log->logInfo(
                 'processMerged',
                 "$initVerb the merged records (with no forced commits)"
             );
         } else {
-            $this->log->log(
+            $this->log->logInfo(
                 'processMerged',
                 "$initVerb the merged records (max commit interval "
                 . "{$this->commitInterval} records)"
@@ -1360,7 +1354,7 @@ class SolrUpdater
                 $lastDisplayedCount = $count;
                 $pc->add($count);
                 $avg = $pc->getSpeed();
-                $this->log->log(
+                $this->log->logInfo(
                     'processMerged',
                     "$count merged records (of which $deleted deleted) with "
                     . "$mergedComponents merged parts $verb, $avg records/sec"
@@ -1401,18 +1395,18 @@ class SolrUpdater
             // to complete.
             $this->flushUpdateBuffer();
 
-            $this->log->log(
+            $this->log->logInfo(
                 'processMerged',
                 'Waiting for any pending requests to complete...'
             );
             $this->workerPoolManager->waitUntilDone('solr');
-            $this->log->log(
+            $this->log->logInfo(
                 'processMerged',
                 'All requests complete'
             );
         }
 
-        $this->log->log(
+        $this->log->logInfo(
             'processMerged',
             "Total $count merged records (of which $deleted deleted) with "
             . "$mergedComponents merged parts $verb"
@@ -1439,10 +1433,9 @@ class SolrUpdater
         ];
         $dedupRecord = $this->db->getDedup($dedupId);
         if (empty($dedupRecord)) {
-            $this->log->log(
+            $this->log->logError(
                 'processDedupRecord',
-                "Dedup record with id $dedupId missing",
-                Logger::ERROR
+                "Dedup record with id $dedupId missing"
             );
             return $result;
         }
@@ -1477,11 +1470,10 @@ class SolrUpdater
         $this->copyMergedDataToChildren($merged, $children);
 
         if (count($children) == 0) {
-            $this->log->log(
+            $this->log->logInfo(
                 'processMerged',
                 "Found no records with dedup id: $dedupId, ids: "
-                . implode(',', (array)$dedupRecord['ids']),
-                Logger::INFO
+                    . implode(',', (array)$dedupRecord['ids'])
             );
             $result['deleted'][] = $dedupRecord['_id'];
         } elseif (count($children) == 1) {
@@ -1489,11 +1481,10 @@ class SolrUpdater
             // when a data source is being deleted...
             $child = $children[0];
             if (!$delete) {
-                $this->log->log(
+                $this->log->logWarning(
                     'processMerged',
                     'Found a single record with a dedup id: '
-                    . $child['solr']['id'],
-                    Logger::WARNING
+                        . $child['solr']['id']
                 );
             }
             if ($this->verbose) {
@@ -1543,10 +1534,9 @@ class SolrUpdater
                     MetadataUtils::array_iunique($merged['allfields'])
                 );
             } else {
-                $this->log->log(
+                $this->log->logWarning(
                     'processMerged',
-                    "allfields missing in merged record for dedup key $dedupId",
-                    Logger::WARNING
+                    "allfields missing in merged record for dedup key $dedupId"
                 );
             }
 
@@ -1637,13 +1627,13 @@ class SolrUpdater
      */
     public function countValues($sourceId, $field, $mapped = false)
     {
-        $this->log->log('countValues', "Creating record list");
+        $this->log->logInfo('countValues', "Creating record list");
         $params = ['deleted' => false];
         if ($sourceId) {
             $params['source_id'] = $sourceId;
         }
         $records = $this->db->findRecords($params);
-        $this->log->log('countValues', "Counting values");
+        $this->log->logInfo('countValues', "Counting values");
         $values = [];
         $count = 0;
         foreach ($records as $record) {
@@ -1653,16 +1643,14 @@ class SolrUpdater
                 // during a long run
                 $this->initDatasources();
                 if (!isset($this->settings[$source])) {
-                    $this->log->log(
+                    $this->log->logError(
                         'countValues',
-                        "No settings found for data source '$source'",
-                        Logger::ERROR
+                        "No settings found for data source '$source'"
                     );
-                    $this->log->log(
+                    $this->log->logError(
                         'countValues',
                         "No settings found for data source '$source', record "
-                        . $record['_id'],
-                        Logger::ERROR
+                            . $record['_id']
                     );
                 }
             }
@@ -1704,7 +1692,7 @@ class SolrUpdater
             }
             ++$count;
             if ($count % 1000 == 0) {
-                $this->log->log('countValues', "$count records processed");
+                $this->log->logInfo('countValues', "$count records processed");
                 if ($this->verbose) {
                     echo "Current list:\n";
                     arsort($values, SORT_NUMERIC);
@@ -1747,10 +1735,10 @@ class SolrUpdater
             $request->setUrl($url);
             $response = $request->send();
             if ($response->getStatus() != 200) {
-                $this->log->log(
+                $this->log->logInfo(
                     'SolrCheck',
                     "Could not scroll cursor mark (url $url), status code "
-                    . $response->getStatus()
+                        . $response->getStatus()
                 );
                 throw new \Exception('Solr request failed');
             }
@@ -1780,17 +1768,17 @@ class SolrUpdater
                 $lastDisplayedCount = $count;
                 $pc->add($count);
                 $avg = $pc->getSpeed();
-                $this->log->log(
+                $this->log->logInfo(
                     'checkIndexedRecords',
                     "$count records checked with $orphanRecordCount orphaned records"
-                    . " (of which $orphanDedupCount dedup records) deleted,"
-                    . " $avg records/sec"
+                        . " (of which $orphanDedupCount dedup records) deleted,"
+                        . " $avg records/sec"
                 );
             }
         }
         $this->flushUpdateBuffer();
 
-        $this->log->log(
+        $this->log->logInfo(
             'checkIndexedRecords',
             "$count records checked with $orphanRecordCount orphaned records"
             . " (of which $orphanDedupCount dedup records) deleted,"
@@ -1798,9 +1786,9 @@ class SolrUpdater
         );
 
         if ($orphanRecordCount) {
-            $this->log->log('checkIndexedRecords', 'Final commit...');
+            $this->log->logInfo('checkIndexedRecords', 'Final commit...');
             $this->solrRequest('{ "commit": {} }', 3600);
-            $this->log->log('checkIndexedRecords', 'Commit complete');
+            $this->log->logInfo('checkIndexedRecords', 'Commit complete');
         }
     }
 
@@ -1898,11 +1886,10 @@ class SolrUpdater
             // during a long run
             $this->initDatasources();
             if (!isset($this->settings[$source])) {
-                $this->log->log(
+                $this->log->logError(
                     'createSolrArray',
                     "No settings found for data source '$source', record "
-                    . $record['_id'],
-                    Logger::ERROR
+                        . $record['_id']
                 );
                 return false;
             }
@@ -1932,10 +1919,9 @@ class SolrUpdater
             // Fetch info whether component parts exist and need to be merged
             if (!$record['linking_id']) {
                 if ($this->db) {
-                    $this->log->log(
+                    $this->log->logError(
                         'createSolrArray',
-                        "linking_id missing for record '{$record['_id']}'",
-                        Logger::ERROR
+                        "linking_id missing for record '{$record['_id']}'"
                     );
                     $warnings[] = 'linking_id missing';
                 }
@@ -2019,12 +2005,11 @@ class SolrUpdater
                     ]
                 );
                 if (!$hostRecords) {
-                    $this->log->log(
+                    $this->log->logWarning(
                         'createSolrArray',
                         "Any of host records ["
-                        . implode(', ', (array)$record['host_record_id'])
-                        . "] not found for record '" . $record['_id'] . "'",
-                        Logger::WARNING
+                            . implode(', ', (array)$record['host_record_id'])
+                            . "] not found for record '" . $record['_id'] . "'"
                     );
                     $warnings[] = 'host record missing';
                     if ($this->containerTitleField) {
@@ -2516,10 +2501,10 @@ class SolrUpdater
 
         $response = $this->request->send();
         if ($response->getStatus() != 200) {
-            $this->log->log(
+            $this->log->logInfo(
                 'compareWithSolrRecord',
                 "Could not fetch record (url $url), status code "
-                . $response->getStatus()
+                    . $response->getStatus()
             );
             return;
         }
@@ -2636,11 +2621,10 @@ class SolrUpdater
                 $response = $this->request->send();
             } catch (\Exception $e) {
                 if ($try < $maxTries) {
-                    $this->log->log(
+                    $this->log->logWarning(
                         'solrRequest',
                         'Solr server request failed (' . $e->getMessage()
-                        . "), retrying in {$this->updateRetryWait} seconds...",
-                        Logger::WARNING
+                            . "), retrying in {$this->updateRetryWait} seconds..."
                     );
                     sleep($this->updateRetryWait);
                     continue;
@@ -2650,11 +2634,10 @@ class SolrUpdater
             if ($try < $maxTries) {
                 $code = null === $response ? 999 : $response->getStatus();
                 if ($code >= 300) {
-                    $this->log->log(
+                    $this->log->logWarning(
                         'solrRequest',
                         "Solr server request failed ($code), retrying in "
-                        . "{$this->updateRetryWait} seconds...",
-                        Logger::WARNING
+                            . "{$this->updateRetryWait} seconds..."
                     );
                     sleep($this->updateRetryWait);
                     continue;
@@ -2692,20 +2675,18 @@ class SolrUpdater
             if ('error' === $state) {
                 ++$errors;
                 if ($errors > $this->maxUpdateTries) {
-                    $this->log->log(
+                    $this->log->logError(
                         'waitForClusterStateOk',
                         "Cluster state check failed after {$this->maxUpdateTries}"
-                        . ' attempts',
-                        Logger::ERROR
+                            . ' attempts'
                     );
                     return false;
                 }
             }
-            $this->log->log(
+            $this->log->logWarning(
                 'waitForClusterStateOk',
                 'Retrying cluster state check in'
-                . " {$this->clusterStateCheckInterval} seconds...",
-                Logger::WARNING
+                    . " {$this->clusterStateCheckInterval} seconds..."
             );
             sleep($this->clusterStateCheckInterval);
         }
@@ -2735,10 +2716,9 @@ class SolrUpdater
         try {
             $response = $request->send();
         } catch (\Exception $e) {
-            $this->log->log(
+            $this->log->logError(
                 'checkClusterState',
-                "Solr admin request '$url' failed (" . $e->getMessage() . ')',
-                Logger::ERROR
+                "Solr admin request '$url' failed (" . $e->getMessage() . ')'
             );
             $this->clusterState = 'error';
             return 'error';
@@ -2746,31 +2726,28 @@ class SolrUpdater
 
         $code = null === $response ? 999 : $response->getStatus();
         if (200 !== $code) {
-            $this->log->log(
+            $this->log->logError(
                 'checkClusterState',
-                "Solr admin request '$url' failed ($code)",
-                Logger::ERROR
+                "Solr admin request '$url' failed ($code)"
             );
             $this->clusterState = 'error';
             return 'error';
         }
         $state = json_decode($response->getBody(), true);
         if (null === $state) {
-            $this->log->log(
+            $this->log->logError(
                 'checkClusterState',
                 'Unable to decode zookeeper status from response: '
-                . (null !== $response ? $response->getBody() : ''),
-                Logger::ERROR
+                    . (null !== $response ? $response->getBody() : '')
             );
             $this->clusterState = 'error';
             return 'error';
         }
         $data = json_decode($state['znode']['data'], true);
         if (null === $data) {
-            $this->log->log(
+            $this->log->logError(
                 'checkClusterState',
-                'Unable to decode node data from ' . $state['znode']['data'],
-                Logger::ERROR
+                'Unable to decode node data from ' . $state['znode']['data']
             );
             $this->clusterState = 'error';
             return 'error';
@@ -2778,23 +2755,21 @@ class SolrUpdater
         foreach ($data as $collectionName => $collection) {
             foreach ($collection['shards'] as $shardName => $shard) {
                 if (!in_array($shard['state'], $this->normalShardStatuses)) {
-                    $this->log->log(
+                    $this->log->logWarning(
                         'checkClusterState',
                         "Collection $collectionName shard $shardName:"
-                        . " Not in usable state: {$shard['state']}",
-                        Logger::WARNING
+                            . " Not in usable state: {$shard['state']}"
                     );
                     $this->clusterState = 'degraded';
                     return 'degraded';
                 }
                 foreach ($shard['replicas'] as $replica) {
                     if ('active' !== $replica['state']) {
-                        $this->log->log(
+                        $this->log->logWarning(
                             'checkClusterState',
                             "Collection $collectionName shard $shardName: Core"
                             . " {$replica['core']} at {$replica['node_name']}"
-                            . " not in active state: {$replica['state']}",
-                            Logger::WARNING
+                            . " not in active state: {$replica['state']}"
                         );
                         $this->clusterState = 'degraded';
                         return 'degraded';
@@ -2834,10 +2809,9 @@ class SolrUpdater
 
         $jsonData = json_encode($data, JSON_PARTIAL_OUTPUT_ON_ERROR);
         if ($jsonData === false) {
-            $this->log->log(
+            $this->log->logFatal(
                 'bufferedUpdate',
-                'Could not convert to JSON: ' . var_export($data, true),
-                Logger::FATAL
+                'Could not convert to JSON: ' . var_export($data, true)
             );
             throw new \Exception('Could not convert record to JSON');
         }
@@ -2869,13 +2843,13 @@ class SolrUpdater
         }
         if (!$noCommit && !$this->dumpPrefix && $count % $this->commitInterval == 0
         ) {
-            $this->log->log(
+            $this->log->logInfo(
                 'bufferedUpdate', 'Waiting for any pending requests to complete...'
             );
             $this->workerPoolManager->waitUntilDone('solr');
-            $this->log->log('bufferedUpdate', 'Intermediate commit...');
+            $this->log->logInfo('bufferedUpdate', 'Intermediate commit...');
             $this->solrRequest('{ "commit": {} }', 3600);
-            $this->log->log('bufferedUpdate', 'Intermediate commit complete');
+            $this->log->logInfo('bufferedUpdate', 'Intermediate commit complete');
         }
         return $result;
     }

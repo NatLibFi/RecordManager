@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -438,11 +438,10 @@ class DedupHandler
 
                 if (++$processed > 1000) {
                     // Too many candidates, give up..
-                    $this->log->log(
+                    $this->log->logDebug(
                         'dedupRecord',
-                        "Too many candidates for record " . $record['_id']
-                        . " with $type => [" . implode(', ', $rule['keys']) . ']',
-                        Logger::DEBUG
+                        'Too many candidates for record ' . $record['_id']
+                            . " with $type => [" . implode(', ', $rule['keys']) . ']'
                     );
                     break;
                 }
@@ -567,10 +566,9 @@ class DedupHandler
     {
         $dedupRecord = $this->db->getDedup($dedupId);
         if (!$dedupRecord) {
-            $this->log->log(
+            $this->log->logError(
                 'removeFromDedupRecord',
-                "Found dangling reference to dedup record $dedupId",
-                Logger::ERROR
+                "Found dangling reference to dedup record $dedupId"
             );
             return;
         }
@@ -816,34 +814,30 @@ class DedupHandler
         $rec1 = $this->db->getRecord($id1);
         $rec2 = $this->db->getRecord($id2);
         if (null === $rec1) {
-            $this->log->log(
+            $this->log->logWarning(
                 'markDuplicates',
-                "Record $id1 is no longer available",
-                Logger::WARNING
+                "Record $id1 is no longer available"
             );
             return;
         }
         if ($rec1['deleted']) {
-            $this->log->log(
+            $this->log->logWarning(
                 'markDuplicates',
-                "Record $id1 has been deleted in the meanwhile",
-                Logger::WARNING
+                "Record $id1 has been deleted in the meanwhile"
             );
             return;
         }
         if (null === $rec2) {
-            $this->log->log(
+            $this->log->logWarning(
                 'markDuplicates',
-                "Record $id1 is no longer available",
-                Logger::WARNING
+                "Record $id1 is no longer available"
             );
             return;
         }
         if ($rec2['deleted']) {
-            $this->log->log(
+            $this->log->logWarning(
                 'markDuplicates',
-                "Record $id2 has been deleted in the meanwhile",
-                Logger::WARNING
+                "Record $id2 has been deleted in the meanwhile"
             );
             return;
         }
@@ -964,9 +958,9 @@ class DedupHandler
             echo "Deduplicating component parts\n";
         }
         if (!$hostRecord['linking_id']) {
-            $this->log->log(
-                'dedupComponentParts', 'Linking ID missing from record '
-                . $hostRecord['_id'], Logger::ERROR
+            $this->log->logError(
+                'dedupComponentParts',
+                'Linking ID missing from record ' . $hostRecord['_id']
             );
             return 0;
         }

@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,7 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\PerformanceCounter;
 
 /**
@@ -52,15 +51,14 @@ class MarkDeleted extends AbstractBase
     public function launch($sourceId, $singleId)
     {
         if (empty($sourceId)) {
-            $this->logger->log(
-                'markDeleted', "No source id provided", Logger::FATAL
-            );
+            $this->logger->logFatal('markDeleted', 'No source id provided');
             return;
         }
 
         $dedupHandler = $this->getDedupHandler();
 
-        $this->logger->log('markDeleted', "Creating record list for '$sourceId'");
+        $this->logger
+            ->logInfo('markDeleted', "Creating record list for '$sourceId'");
 
         $params = ['deleted' => false, 'source_id' => $sourceId];
         if ($singleId) {
@@ -70,7 +68,7 @@ class MarkDeleted extends AbstractBase
         $total = $this->db->countRecords($params);
         $count = 0;
 
-        $this->logger->log(
+        $this->logger->logInfo(
             'markDeleted', "Marking deleted $total records from '$sourceId'"
         );
         $pc = new PerformanceCounter();
@@ -89,26 +87,26 @@ class MarkDeleted extends AbstractBase
             if ($count % 1000 == 0) {
                 $pc->add($count);
                 $avg = $pc->getSpeed();
-                $this->logger->log(
+                $this->logger->logInfo(
                     'markDeleted',
                     "$count records marked deleted from '$sourceId', "
                     . "$avg records/sec"
                 );
             }
         }
-        $this->logger->log(
+        $this->logger->logInfo(
             'markDeleted',
             "Completed with $count records marked deleted from '$sourceId'"
         );
 
         if (!$singleId) {
-            $this->logger->log(
+            $this->logger->logInfo(
                 'markDeleted',
                 "Deleting last harvest date from data source '$sourceId'"
             );
             $this->db->deleteState("Last Harvest Date $sourceId");
         }
 
-        $this->logger->log('markDeleted', "Marking of $sourceId completed");
+        $this->logger->logInfo('markDeleted', "Marking of $sourceId completed");
     }
 }
