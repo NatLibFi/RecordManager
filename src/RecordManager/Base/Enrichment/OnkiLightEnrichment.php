@@ -187,11 +187,10 @@ class OnkiLightEnrichment extends Enrichment
                 $url, $id, ['Accept' => 'application/json'], [500]
             );
         } catch (\Exception $e) {
-            $this->logger->log(
+            $this->logger->logDebug(
                 'enrichField',
                 "Failed to fetch external data '$url', record $sourceId."
-                . $record->getId(),
-                Logger::DEBUG
+                . $record->getId()
             );
             return;
         }

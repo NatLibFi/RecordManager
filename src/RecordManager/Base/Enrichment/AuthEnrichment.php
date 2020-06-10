@@ -78,10 +78,9 @@ abstract class AuthEnrichment extends Enrichment
         try {
             $this->db = new Database($url, $database, $config['Mongo']);
         } catch (\Exception $e) {
-            $this->logger->log(
+            $this->logger->logFatal(
                 'startup',
-                'Failed to connect to authority MongoDB: ' . $e->getMessage(),
-                Logger::FATAL
+                'Failed to connect to authority MongoDB: ' . $e->getMessage()
             );
             throw $e;
         }
