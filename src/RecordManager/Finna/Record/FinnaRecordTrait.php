@@ -80,7 +80,7 @@ trait FinnaRecordTrait
             $ids
         );
     }
-    
+
     /**
      * Check if the given authority is allowed to be used in linking.
      *

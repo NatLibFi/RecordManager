@@ -179,7 +179,7 @@ class OnkiLightEnrichment extends Enrichment
 
         $url = $this->getOnkiUrl($id);
         if (!($url = $this->getOnkiUrl($id))) {
-             return;
+            return;
         }
 
         try {

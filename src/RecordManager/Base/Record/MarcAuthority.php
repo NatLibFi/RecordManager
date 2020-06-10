@@ -51,7 +51,7 @@ class MarcAuthority extends Marc
     {
         return $this->getFieldSubfield('035', 'a');
     }
-    
+
     /**
      * Return fields to be indexed in Solr
      *
@@ -86,7 +86,7 @@ class MarcAuthority extends Marc
         $data['death_place'] = $this->getFieldSubField('370', 'b');
         $data['country'] = $this->getFieldSubfield('370', 'c');
         $data['related_places_str_mv'] = $this->getRelatedPlaces();
-        
+
         $data['field_of_activity'] = $this->getFieldsOfActivity();
         $data['occupation'] = $this->getOccupations();
 
@@ -102,14 +102,14 @@ class MarcAuthority extends Marc
             }
             $data['id_str_mv'][] = sprintf('(%s)%s', $idSource, $idVal);
         }
-        
+
         return $data;
     }
 
     /**
      * Get fields of activity
      *
-     * @param array $additional List of additional fields to return 
+     * @param array $additional List of additional fields to return
      *
      * @return array
      */

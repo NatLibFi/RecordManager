@@ -121,7 +121,7 @@ abstract class AuthEnrichment extends Enrichment
             $id,
             $source
         );
-            
+
         if ($altNames = $authRecord->getAlternativeNames()) {
             $solrArray[$solrField]
                 = array_merge($solrArray[$solrField] ?? [], $altNames);
