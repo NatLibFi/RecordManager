@@ -113,6 +113,8 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'author2_fuller' => [],
             'author_corporate' => [],
             'author_corporate_role' => [],
+            'author2_id_str_mv' => [],
+            'author2_id_role_str_mv' => [],
             'author_additional' => [],
             'title' => 'Tutki ja kirjoita',
             'title_sub' => '',
@@ -317,6 +319,8 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             ],
             'author_corporate_role' => [
             ],
+            'author2_id_str_mv' => [],
+            'author2_id_role_str_mv' => [],
             'author_additional' => [
             ],
             'title' => 'Biological psychology',
