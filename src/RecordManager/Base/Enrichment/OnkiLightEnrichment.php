@@ -2,9 +2,9 @@
 /**
  * OnkiLightEnrichment Class
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2014-2019.
+ * Copyright (C) The National Library of Finland 2014-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -98,8 +98,7 @@ class OnkiLightEnrichment extends Enrichment
             = isset(
                 $this->config['OnkiLightEnrichment']['uri_prefix_exact_matches']
             )
-            ? (array)$this->config['OnkiLightEnrichment']
-                ['uri_prefix_exact_matches']
+            ? (array)$this->config['OnkiLightEnrichment']['uri_prefix_exact_matches']
             : [];
     }
 
@@ -156,11 +155,10 @@ class OnkiLightEnrichment extends Enrichment
         }
 
         if (!$match) {
-            $this->logger->log(
+            $this->logger->logDebug(
                 'enrichField',
                 "Ignoring non-whitelisted URI '$url', record $sourceId."
-                . $record->getId(),
-                Logger::DEBUG
+                    . $record->getId()
             );
             return;
         }

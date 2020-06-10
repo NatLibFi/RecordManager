@@ -2,7 +2,7 @@
 /**
  * Forward record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2016-2019.
  *
@@ -313,7 +313,7 @@ class Forward extends \RecordManager\Base\Record\Forward
                 $parts = explode(',', $event->elokuva_laji2fin);
 
                 foreach ($parts as $part) {
-                        $result[] = trim($part);
+                    $result[] = trim($part);
                 }
             }
         }
@@ -365,8 +365,8 @@ class Forward extends \RecordManager\Base\Record\Forward
         $result = [];
         foreach ($this->getMainElement()->ProductionEvent as $event) {
             $attributes = $event->ProductionEventType->attributes();
-            if (!empty($attributes{$attribute})) {
-                $result[] = (string)$attributes{$attribute};
+            if (!empty($attributes->{$attribute})) {
+                $result[] = (string)$attributes->{$attribute};
             }
         }
         return $result;
@@ -481,8 +481,8 @@ class Forward extends \RecordManager\Base\Record\Forward
             $description = '';
             if (isset($record->Title->PartDesignation->Value)) {
                 $attributes = $record->Title->PartDesignation->Value->attributes();
-                if (!empty($attributes{'video-tyyppi'})) {
-                    $videoType = (string)$attributes{'video-tyyppi'};
+                if (!empty($attributes->{'video-tyyppi'})) {
+                    $videoType = (string)$attributes->{'video-tyyppi'};
                     if (!$videoMatch) {
                         $videoMatch
                             = in_array(strtolower($videoType), $onlineVideoTypes);

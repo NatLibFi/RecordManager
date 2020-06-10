@@ -2,9 +2,9 @@
 /**
  * Marc record class
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2019.
+ * Copyright (C) The National Library of Finland 2012-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,7 +27,6 @@
  */
 namespace RecordManager\Finna\Record;
 
-use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -319,12 +318,11 @@ class Marc extends \RecordManager\Base\Record\Marc
 
             if (!is_nan($west) && !is_nan($north)) {
                 if (($west < -180 || $west > 180) || ($north < -90 || $north > 90)) {
-                    $this->logger->log(
+                    $this->logger->logDebug(
                         'Marc',
                         "Discarding invalid coordinates $west,$north decoded from "
-                        . "w=$westOrig, e=$eastOrig, n=$northOrig, s=$southOrig, "
-                        . "record {$this->source}." . $this->getID(),
-                        Logger::DEBUG
+                            . "w=$westOrig, e=$eastOrig, n=$northOrig, s=$southOrig,"
+                            . " record {$this->source}." . $this->getID()
                     );
                     $this->storeWarning('invalid coordinates in 034');
                 } else {
@@ -332,13 +330,12 @@ class Marc extends \RecordManager\Base\Record\Marc
                         if ($east < -180 || $east > 180 || $south < -90
                             || $south > 90
                         ) {
-                            $this->logger->log(
+                            $this->logger->logDebug(
                                 'Marc',
                                 "Discarding invalid coordinates $east,$south "
-                                . "decoded from w=$westOrig, e=$eastOrig, "
-                                . "n=$northOrig, s=$southOrig, record "
-                                . "{$this->source}." . $this->getID(),
-                                Logger::DEBUG
+                                    . "decoded from w=$westOrig, e=$eastOrig, "
+                                    . "n=$northOrig, s=$southOrig, record "
+                                    . "{$this->source}." . $this->getID()
                             );
                             $this->storeWarning('invalid coordinates in 034');
                         } else {
@@ -596,7 +593,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $ismn = $this->getSubfield($field024, 'a');
                 $ismn = str_replace('-', '', $ismn);
                 if (!preg_match('{([0-9]{13})}', $ismn, $matches)) {
-                    continue;
+                    continue 2; // foreach
                 }
                 $data['ismn_isn_mv'][] = $matches[1];
                 break;
@@ -604,7 +601,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $ean = $this->getSubfield($field024, 'a');
                 $ean = str_replace('-', '', $ean);
                 if (!preg_match('{([0-9]{13})}', $ean, $matches)) {
-                    continue;
+                    continue 2; // foreach
                 }
                 $data['ean_isn_mv'][] = $matches[1];
                 break;
@@ -932,7 +929,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                     $ismn = $marc->getSubfield($field024, 'a');
                     $ismn = str_replace('-', '', $ismn);
                     if (!preg_match('{([0-9]{13})}', $ismn, $matches)) {
-                        continue;
+                        continue 2; // foreach
                     }
                     $identifiers[] = 'ISMN ' . $matches[1];
                     break;
@@ -940,7 +937,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                     $ean = $marc->getSubfield($field024, 'a');
                     $ean = str_replace('-', '', $ean);
                     if (!preg_match('{([0-9]{13})}', $ean, $matches)) {
-                        continue;
+                        continue 2; // foreach
                     }
                     $identifiers[] = 'EAN ' . $matches[1];
                     break;
@@ -1273,11 +1270,10 @@ class Marc extends \RecordManager\Base\Record\Marc
             && MetadataUtils::validateISO8601Date($endDate) !== false
         ) {
             if ($endDate < $startDate) {
-                $this->logger->log(
+                $this->logger->logDebug(
                     'Marc',
                     "Invalid date range {$startDate} - {$endDate}, record "
-                    . "{$this->source}." . $this->getID(),
-                    Logger::DEBUG
+                        . "{$this->source}." . $this->getID()
                 );
                 $this->storeWarning('invalid date range in 008');
                 $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
@@ -1371,8 +1367,8 @@ class Marc extends \RecordManager\Base\Record\Marc
                 foreach ($fields as $field) {
                     $subfields = $this->getAllSubfields(
                         $field,
-                        isset($subfieldFilter[$tag]) ? $subfieldFilter[$tag]
-                        : ['0' => 1, '6' => 1, '8' => 1]
+                        $subfieldFilter[$tag]
+                        ?? ['0' => 1, '6' => 1, '8' => 1]
                     );
                     if ($subfields) {
                         $allFields = array_merge($allFields, $subfields);

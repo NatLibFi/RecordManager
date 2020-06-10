@@ -2,7 +2,7 @@
 /**
  * XML Security Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2019.
  *
@@ -38,7 +38,7 @@ namespace RecordManager\Base\Utils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class XmlSecurity extends \ZendXml\Security
+class XmlSecurity extends \Laminas\Xml\Security
 {
     /**
      * Heuristic scan to detect entity in XML

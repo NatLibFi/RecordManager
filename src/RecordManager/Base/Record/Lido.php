@@ -2,7 +2,7 @@
 /**
  * Lido record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2017.
  *
@@ -225,9 +225,9 @@ class Lido extends Base
         foreach ($this->getTitleSetNodes() as $set) {
             foreach ($set->appellationValue as $appellationValue) {
                 if ($lang == null || $appellationValue['lang'] == $lang) {
-                    $titles[] = (string) $appellationValue;
+                    $titles[] = (string)$appellationValue;
                 }
-                $allTitles[] = (string) $appellationValue;
+                $allTitles[] = (string)$appellationValue;
             }
         }
         // Fallback to use any title in case none found with the specified language
@@ -374,7 +374,7 @@ class Lido extends Base
         ) {
             foreach ($set->displayObjectMeasurements as $measurements
             ) {
-                $value = trim((string) $measurements);
+                $value = trim((string)$measurements);
                 if ($value) {
                     $results[] = $value;
                 }
@@ -405,7 +405,7 @@ class Lido extends Base
             ->repositoryWrap->repositorySet as $set
         ) {
             if (!empty($set->workID)) {
-                return (string) $set->workID;
+                return (string)$set->workID;
             }
         }
         return '';
@@ -475,7 +475,7 @@ class Lido extends Base
             ->objectDescriptionWrap->objectDescriptionSet as $set
         ) {
             foreach ($set->descriptiveNoteValue as $descriptiveNoteValue) {
-                $description[] = (string) $descriptiveNoteValue;
+                $description[] = (string)$descriptiveNoteValue;
             }
         }
 
@@ -500,7 +500,7 @@ class Lido extends Base
         foreach ($this->getEventNodes() as $event) {
             foreach ($event->culture as $culture) {
                 if ($culture->term) {
-                    $results[] = (string) $culture->term;
+                    $results[] = (string)$culture->term;
                 }
             }
         }
@@ -528,7 +528,7 @@ class Lido extends Base
             ->objectWorkTypeWrap->objectWorkType as $type
         ) {
             if (!empty($type->term)) {
-                return (string) $type->term;
+                return (string)$type->term;
             }
         }
         return '';
@@ -545,7 +545,7 @@ class Lido extends Base
         foreach ($this->getResourceSetNodes() as $set) {
             foreach ($set->resourceRepresentation as $node) {
                 if (!empty($node->linkResource)) {
-                    $link = trim((string) $node->linkResource);
+                    $link = trim((string)$node->linkResource);
                     if (!empty($link)) {
                         $results[] = $link;
                     }
@@ -632,7 +632,7 @@ class Lido extends Base
     {
         foreach ($this->getRelatedWorkSetNodes($relatedWorkRelType) as $set) {
             if (!empty($set->relatedWork->displayObject)) {
-                return (string) $set->relatedWork->displayObject;
+                return (string)$set->relatedWork->displayObject;
             }
         }
         return '';
@@ -697,7 +697,7 @@ class Lido extends Base
         foreach ($this->getSubjectNodes($exclude) as $subject) {
             foreach ($subject->subjectConcept as $concept) {
                 foreach ($concept->term as $term) {
-                    $str = trim((string) $term);
+                    $str = trim((string)$term);
                     if ($str !== '') {
                         $results[] = $str;
                     }
@@ -741,7 +741,7 @@ class Lido extends Base
                     foreach ($place->place->namePlaceSet as $set) {
                         if ($set->appellationValue) {
                             $results[] = MetadataUtils::stripTrailingPunctuation(
-                                (string) $set->appellationValue, '.'
+                                (string)$set->appellationValue, '.'
                             );
                         }
                     }
@@ -770,13 +770,13 @@ class Lido extends Base
                 foreach ($eventMaterialsTech->displayMaterialsTech
                     as $displayMaterialsTech
                 ) {
-                    $displayTerms[] = trim((string) $displayMaterialsTech);
+                    $displayTerms[] = trim((string)$displayMaterialsTech);
                 }
                 foreach ($eventMaterialsTech->materialsTech as $materialsTech) {
                     foreach ($materialsTech->termMaterialsTech as $termMaterialsTech
                     ) {
                         foreach ($termMaterialsTech->term as $term) {
-                            $results[] = (string) $term;
+                            $results[] = (string)$term;
                         }
                     }
                 }
@@ -927,7 +927,7 @@ class Lido extends Base
                     $eventTypes = [];
                     if (!empty($eventNode->eventType->term)) {
                         foreach ($eventNode->eventType->term as $term) {
-                            $eventTypes[] = mb_strtolower((string) $term, 'UTF-8');
+                            $eventTypes[] = mb_strtolower((string)$term, 'UTF-8');
                         }
                     }
                     if (true

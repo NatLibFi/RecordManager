@@ -2,7 +2,7 @@
 /**
  * Autoloader
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (c) The National Library of Finland 2017.
  *

@@ -2,9 +2,9 @@
 /**
  * Purge deleted records
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -62,7 +62,7 @@ class PurgeDeleted extends AbstractBase
         if ($sourceId) {
             $params['source_id'] = $sourceId;
         }
-        $this->logger->log(
+        $this->logger->logInfo(
             'purgeDeletedRecords',
             "Creating record list$dateStr" . ($sourceId ? " for '$sourceId'" : '')
         );
@@ -70,7 +70,7 @@ class PurgeDeleted extends AbstractBase
         $total = $this->db->countRecords($params);
         $count = 0;
 
-        $this->logger->log('purgeDeletedRecords', "Purging $total records");
+        $this->logger->logInfo('purgeDeletedRecords', "Purging $total records");
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
             $this->db->deleteRecord($record['_id']);
@@ -78,18 +78,18 @@ class PurgeDeleted extends AbstractBase
             if ($count % 1000 == 0) {
                 $pc->add($count);
                 $avg = $pc->getSpeed();
-                $this->logger->log(
+                $this->logger->logInfo(
                     'purgeDeletedRecords',
                     "$count records purged, $avg records/sec"
                 );
             }
         }
-        $this->logger->log(
+        $this->logger->logInfo(
             'purgeDeletedRecords', "Total $count records purged"
         );
 
         if ($sourceId) {
-            $this->logger->log(
+            $this->logger->logInfo(
                 'purgeDeletedRecords', 'Source specified -- skipping dedup records'
             );
             return;
@@ -100,14 +100,15 @@ class PurgeDeleted extends AbstractBase
         if ($daysToKeep) {
             $params['changed'] = ['$lt' => $this->db->getTimestamp($date)];
         }
-        $this->logger->log(
+        $this->logger->logInfo(
             'purgeDeletedRecords', "Creating dedup record list$dateStr"
         );
         $records = $this->db->findDedups($params);
         $total = $this->db->countDedups($params);
         $count = 0;
 
-        $this->logger->log('purgeDeletedRecords', "Purging $total dedup records");
+        $this->logger
+            ->logInfo('purgeDeletedRecords', "Purging $total dedup records");
         $pc = new PerformanceCounter();
         foreach ($records as $record) {
             $this->db->deleteDedup($record['_id']);
@@ -115,13 +116,13 @@ class PurgeDeleted extends AbstractBase
             if ($count % 1000 == 0) {
                 $pc->add($count);
                 $avg = $pc->getSpeed();
-                $this->logger->log(
+                $this->logger->logInfo(
                     'purgeDeletedRecords',
                     "$count dedup records purged, $avg records/sec"
                 );
             }
         }
-        $this->logger->log(
+        $this->logger->logInfo(
             'purgeDeletedRecords', "Total $count dedup records purged"
         );
     }

@@ -2,7 +2,7 @@
 /**
  * Preview Creator
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Eero Heikkinen, The National Board of Antiquities 2013.
  * Copyright (C) The National Library of Finland 2012-2017.

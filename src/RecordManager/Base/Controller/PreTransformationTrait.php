@@ -2,7 +2,7 @@
 /**
  * Pre-transformation trait
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2019.
  *
@@ -52,22 +52,30 @@ trait PreTransformationTrait
     protected function pretransform($data, $source)
     {
         $settings = &$this->dataSourceSettings[$source];
+        // Shortcut
+        if (!empty($settings['preTransformation'])) {
+            return $data;
+        }
+
         if (!isset($settings['preXSLT'])) {
-            $style = new \DOMDocument();
-            $style->load(
-                $this->basePath . '/transformations/'
-                . $settings['preTransformation']
-            );
-            $settings['preXSLT'] = new \XSLTProcessor();
-            $settings['preXSLT']->importStylesheet($style);
-            $settings['preXSLT']->setParameter('', 'source_id', $source);
-            $settings['preXSLT']->setParameter(
-                '', 'institution', $settings['institution']
-            );
-            $settings['preXSLT']->setParameter('', 'format', $settings['format']);
-            $settings['preXSLT']->setParameter(
-                '', 'id_prefix', $settings['idPrefix']
-            );
+            $settings['preXSLT'] = [];
+            foreach ((array)$settings['preTransformation'] as $transformation) {
+                $style = new \DOMDocument();
+                $style->load(
+                    $this->basePath . '/transformations/' . $transformation
+                );
+                $xslt = new \XSLTProcessor();
+                $xslt->importStylesheet($style);
+                $xslt->setParameter('', 'source_id', $source);
+                $xslt->setParameter(
+                    '', 'institution', $settings['institution']
+                );
+                $xslt->setParameter('', 'format', $settings['format']);
+                $xslt->setParameter(
+                    '', 'id_prefix', $settings['idPrefix']
+                );
+                $settings['preXSLT'][] = $xslt;
+            }
         }
         $saveUseErrors = libxml_use_internal_errors(true);
         try {
@@ -87,6 +95,9 @@ trait PreTransformationTrait
             libxml_use_internal_errors($saveUseErrors);
             throw $e;
         }
-        return $settings['preXSLT']->transformToXml($doc);
+        foreach ($settings['preXSLT'] as $xslt) {
+            $doc = $xslt->transformToDoc($doc);
+        }
+        return $doc->saveXML();
     }
 }

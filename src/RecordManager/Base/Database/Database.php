@@ -2,7 +2,7 @@
 /**
  * Database access class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (c) The National Library of Finland 2017-2019.
  *
@@ -428,7 +428,7 @@ class Database
                 continue;
             }
             $nameParts = explode('_', $collection);
-            $collTime = isset($nameParts[4]) ? $nameParts[4] : null;
+            $collTime = $nameParts[4] ?? null;
             if (is_numeric($collTime)
                 && $collTime != $lastRecordTime
                 && $collTime < time() - 60 * 60 * 24 * 7
