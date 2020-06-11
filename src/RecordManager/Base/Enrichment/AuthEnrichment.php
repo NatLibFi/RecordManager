@@ -105,7 +105,7 @@ abstract class AuthEnrichment extends Enrichment
     ) {
         $recAuthSource = $record->getAuthorityNamespace();
 
-        if (!$data = $this->db->getRecord($recAuthSource . '.' . $id)) {
+        if (!($data = $this->db->getRecord($recAuthSource . '.' . $id))) {
             return;
         }
 
