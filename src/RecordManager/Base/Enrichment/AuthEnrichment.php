@@ -108,7 +108,6 @@ abstract class AuthEnrichment extends Enrichment
             return;
         }
 
-        $doc = $data['original_data'];
         $source = $data['source_id'];
 
         if ($source !== $recAuthSource) {
