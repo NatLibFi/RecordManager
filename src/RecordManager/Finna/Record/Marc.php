@@ -804,7 +804,7 @@ class Marc extends \RecordManager\Base\Record\Marc
 
         foreach ($this->getFields('700') as $field) {
             if ($id = $this->getSubField($field, '0')) {
-                $ids[] = $this->addNamespaceToAuthorityIds([$id]);
+                $ids = array_merge($ids, $this->addNamespaceToAuthorityIds([$id]));
             }
         }
         return $ids;
