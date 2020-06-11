@@ -123,7 +123,7 @@ class Logger
      */
     public function logInfo($context, $msg)
     {
-        $this->log($context, $msg, Logger::WARNING);
+        $this->log($context, $msg, Logger::INFO);
     }
 
     /**
