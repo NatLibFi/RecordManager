@@ -783,7 +783,31 @@ class Marc extends \RecordManager\Base\Record\Marc
             $data['source_available_str_mv'] = $this->source;
         }
 
+        // Additional authority ids
+        foreach ($this->getFields('600') as $field) {
+            if ($id = $this->getSubField($field, '0')) {
+                $data['topic_id_str_mv']
+                    = $this->addNamespaceToAuthorityIds([$id]);
+            }
+        }
         return $data;
+    }
+
+    /**
+     * Return author ids that are indexed to author2_id_str_mv
+     *
+     * @return array
+     */
+    public function getAuthorIds()
+    {
+        $ids = parent::getAuthorIds();
+
+        foreach ($this->getFields('700') as $field) {
+            if ($id = $this->getSubField($field, '0')) {
+                $ids[] = $this->addNamespaceToAuthorityIds([$id]);
+            }
+        }
+        return $ids;
     }
 
     /**
@@ -1664,13 +1688,14 @@ class Marc extends \RecordManager\Base\Record\Marc
         $fieldSpecs = [
             '110' => ['a' => 1, 'b' => 1, 'e' => 1],
             '111' => ['a' => 1, 'b' => 1, 'e' => 1],
+            '610' => ['a' => 1],
             '710' => ['a' => 1, 'b' => 1, 'e' => 1],
             '711' => ['a' => 1, 'b' => 1, 'e' => 1]
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,
             [],
-            ['110', '111', '710', '711'],
+            ['110', '111', '610', '710', '711'],
             false
         );
     }

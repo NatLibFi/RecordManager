@@ -108,8 +108,8 @@ class ForwardAuthority extends Base
         $data['record_type'] = $this->getRecordType();
         $data['heading'] = $this->getHeading();
         $data['use_for'] = $this->getUseForHeadings();
-        $data['birth_date'] = $this->getBirthDate();
-        $data['death_date'] = $this->getDeathDate();
+        $data['birth_date'] = MetadataUtils::extractYear($this->getBirthDate());
+        $data['death_date'] = MetadataUtils::extractYear($this->getDeathDate());
         $data['birth_place'] = $this->getBirthPlace();
         $data['death_place'] = $this->getDeathPlace();
         $data['related_place'] = $this->getRelatedPlaces();

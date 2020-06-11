@@ -44,6 +44,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Marc extends Base
 {
+    use \RecordManager\Finna\Record\FinnaRecordTrait;
+
     const SUBFIELD_INDICATOR = "\x1F";
     const END_OF_FIELD = "\x1E";
     const END_OF_RECORD = "\x1D";
@@ -358,6 +360,13 @@ class Marc extends Base
         $data['author_corporate'] = $corporateAuthors['names'];
         $data['author_corporate_role'] = $corporateAuthors['relators'];
 
+        $data['author2_id_str_mv'] = $this->getAuthorIds();
+        $data['author2_id_role_str_mv']
+            = array_merge(
+                $this->addNamespaceToAuthorityIds($secondaryAuthors['idRoles']),
+                $this->addNamespaceToAuthorityIds($corporateAuthors['idRoles'])
+            );
+
         $data['author_additional'] = $this->getFieldsSubfields(
             [
                 [self::GET_BOTH, '505', ['r' => 1]]
@@ -574,6 +583,22 @@ class Marc extends Base
         // TODO: dewey fields and OCLC numbers
 
         return $data;
+    }
+
+    /**
+     * Return author ids that are indexed to author2_id_str_mv
+     *
+     * @return array
+     */
+    public function getAuthorIds()
+    {
+        $secondaryAuthors = $this->getSecondaryAuthors();
+        $corporateAuthors = $this->getCorporateAuthors();
+
+        return array_merge(
+            $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']),
+            $this->addNamespaceToAuthorityIds($corporateAuthors['ids'])
+        );
     }
 
     /**
@@ -2355,7 +2380,10 @@ class Marc extends Base
     protected function getAuthorsByRelator($fieldSpecs, $relators,
         $noRelatorRequired, $altScript = true, $invertMatch = false
     ) {
-        $result = ['names' => [], 'fuller' => [], 'relators' => []];
+        $result = [
+            'names' => [], 'fuller' => [], 'relators' => [],
+            'ids' => [], 'idRoles' => []
+        ];
         foreach ($fieldSpecs as $tag => $subfieldList) {
             foreach ($this->getFields($tag) as $field) {
                 $fieldRelators = $this->normalizeRelators(
@@ -2402,6 +2430,16 @@ class Marc extends Base
                     $result['relators'][] = reset($fieldRelators);
                 } else {
                     $result['relators'][] = '-';
+                }
+                if ($authId = $this->getSubField($field, '0')) {
+                    $result['ids'][] = $authId;
+                    if ($role = $this->getSubField($field, 'e')) {
+                        $result['idRoles'][]
+                            = $this->formatAuthorIdWithRole(
+                                $authId,
+                                MetaDataUtils::stripTrailingPunctuation($role, '. ')
+                            );
+                    }
                 }
             }
         }

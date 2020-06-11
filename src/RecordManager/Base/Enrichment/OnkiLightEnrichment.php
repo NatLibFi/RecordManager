@@ -29,6 +29,7 @@
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\Database;
+use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -72,13 +73,16 @@ class OnkiLightEnrichment extends Enrichment
     /**
      * Constructor
      *
-     * @param Database $db     Database connection (for cache)
-     * @param Logger   $logger Logger
-     * @param array    $config Main configuration
+     * @param Database      $db            Database connection (for cache)
+     * @param Logger        $logger        Logger
+     * @param array         $config        Main configuration
+     * @param RecordFactory $recordFactory Record factory
      */
-    public function __construct($db, $logger, $config)
-    {
-        parent::__construct($db, $logger, $config);
+    public function __construct(
+        Database $db, Logger $logger, array $config,
+        RecordFactory $recordFactory
+    ) {
+        parent::__construct($db, $logger, $config, $recordFactory);
 
         $this->onkiLightBaseURL
             = isset($this->config['OnkiLightEnrichment']['base_url'])
@@ -116,16 +120,18 @@ class OnkiLightEnrichment extends Enrichment
     /**
      * Enrich the record and return any additions in solrArray
      *
-     * @param string $sourceId  Source ID
-     * @param object $record    Record
-     * @param array  $solrArray Metadata to be sent to Solr
-     * @param string $id        Onki id
-     * @param string $solrField Target Solr field
+     * @param string $sourceId           Source ID
+     * @param object $record             Record
+     * @param array  $solrArray          Metadata to be sent to Solr
+     * @param string $id                 Onki id
+     * @param string $solrField          Target Solr field
+     * @param bool   $includeInAllfields Whether to include the enriched
+     *                                   value also in allFields
      *
      * @return void
      */
     protected function enrichField($sourceId, $record, &$solrArray,
-        $id, $solrField
+        $id, $solrField, $includeInAllfields = false
     ) {
         // Clean up any invalid characters from the id
         $id = str_replace(
@@ -159,20 +165,35 @@ class OnkiLightEnrichment extends Enrichment
 
         $localData = $this->db->findOntologyEnrichment(['_id' => $id]);
         if ($localData) {
-            $solrArray[$solrField] = array_merge(
-                $solrArray[$solrField],
+            $values = array_merge(
                 explode('|', $localData['prefLabels']),
                 explode('|', $localData['altLabels'])
             );
+            $solrArray[$solrField] = array_merge($solrArray[$solrField], $values);
+            if ($includeInAllfields) {
+                $solrArray['allfields']
+                    = array_merge($solrArray['allfields'], $values);
+            }
             return;
         }
 
+        $url = $this->getOnkiUrl($id);
         if (!($url = $this->getOnkiUrl($id))) {
             return;
         }
-        $data = $this->getExternalData(
-            $url, $id, ['Accept' => 'application/json'], [500]
-        );
+
+        try {
+            $data = $this->getExternalData(
+                $url, $id, ['Accept' => 'application/json'], [500]
+            );
+        } catch (\Exception $e) {
+            $this->logger->logDebug(
+                'enrichField',
+                "Failed to fetch external data '$url', record $sourceId."
+                . $record->getId()
+            );
+            return;
+        }
 
         if ($data) {
             $data = json_decode($data, true);
@@ -191,8 +212,13 @@ class OnkiLightEnrichment extends Enrichment
                 } elseif ($item['type'] != 'skos:Concept') {
                     continue;
                 }
-                if ($item['uri'] == $id && isset($item['altLabel']['value'])) {
-                    $solrArray[$solrField][] = $item['altLabel']['value'];
+                if ($item['uri'] == $id
+                    && $val = $item['altLabel']['value'] ?? null
+                ) {
+                    $solrArray[$solrField][] = $val;
+                    if ($includeInAllfields) {
+                        $solrArray['allfields'][] = $val;
+                    }
                 }
 
                 // Check whether to process other exactMatch vocabularies
@@ -209,7 +235,9 @@ class OnkiLightEnrichment extends Enrichment
 
                 if ($exactMatches) {
                     foreach ($item['exactMatch'] as $exactMatch) {
-                        $uri = $exactMatch['uri'] ?? null;
+                        $uri = is_array($exactMatch)
+                            ? ($exactMatch['uri'] ?? null)
+                            : $exactMatch;
                         if (!$uri) {
                             continue;
                         }
@@ -232,6 +260,9 @@ class OnkiLightEnrichment extends Enrichment
                             if (($matchItem['uri'] ?? null) != $matchId) {
                                 continue;
                             }
+                            if (!isset($matchItem['type'])) {
+                                continue;
+                            }
                             if (is_array($matchItem['type'])) {
                                 if (!in_array('skos:Concept', $matchItem['type'])
                                 ) {
@@ -240,13 +271,29 @@ class OnkiLightEnrichment extends Enrichment
                             } elseif ($matchItem['type'] != 'skos:Concept') {
                                 continue;
                             }
-                            if (isset($matchItem['altLabel']['value'])) {
-                                $solrArray[$solrField][]
-                                    = $matchItem['altLabel']['value'];
+
+                            foreach ((array)($matchItem['altLabel'] ?? [])
+                                as $label
+                            ) {
+                                if (!$val = $label['value'] ?? null) {
+                                    continue;
+                                }
+                                $solrArray[$solrField][] = $val;
+                                if ($includeInAllfields) {
+                                    $solrArray['allfields'][] = $val;
+                                }
                             }
-                            if (isset($matchItem['prefLabel']['value'])) {
-                                $solrArray[$solrField][]
-                                    = $matchItem['prefLabel']['value'];
+
+                            foreach ((array)($matchItem['prefLabel'] ?? [])
+                                as $label
+                            ) {
+                                if (!$val = $label['value'] ?? null) {
+                                    continue;
+                                }
+                                $solrArray[$solrField][] = $val;
+                                if ($includeInAllfields) {
+                                    $solrArray['allfields'][] = $val;
+                                }
                             }
                         }
                     }
