@@ -1,0 +1,106 @@
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+<record>
+  <leader>01168cam a22003254i 4500</leader>
+  <controlfield tag="001">1234</controlfield>
+  <controlfield tag="005">20200415114518.0</controlfield>
+  <controlfield tag="008">010727s2001    xxu|||||||||||000 ||eng||</controlfield>
+  <datafield tag="020" ind1=" " ind2=" ">
+    <subfield code="a">0-534-51409-X</subfield>
+    <subfield code="q">sidottu</subfield>
+  </datafield>
+  <datafield tag="020" ind1=" " ind2=" ">
+    <subfield code="a">0-534-51400-6</subfield>
+    <subfield code="q">nidottu</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+    <subfield code="a">1558192</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+    <subfield code="a">FCC002608043</subfield>
+  </datafield>
+  <datafield tag="041" ind1="0" ind2=" ">
+    <subfield code="a">eng</subfield>
+  </datafield>
+  <datafield tag="100" ind1="1" ind2=" ">
+    <subfield code="a">Kalat, James W.</subfield>
+  </datafield>
+  <datafield tag="245" ind1="1" ind2="0">
+    <subfield code="a">Biological psychology /</subfield>
+    <subfield code="c">James W. Kalat.</subfield>
+  </datafield>
+  <datafield tag="250" ind1=" " ind2=" ">
+    <subfield code="a">7th ed.</subfield>
+  </datafield>
+  <datafield tag="260" ind1=" " ind2=" ">
+    <subfield code="a">Belmont, CA :</subfield>
+    <subfield code="b">Wadsworth,</subfield>
+    <subfield code="c">cop. 2001.</subfield>
+  </datafield>
+  <datafield tag="300" ind1=" " ind2=" ">
+    <subfield code="a">xxiii, 551 sivua :</subfield>
+    <subfield code="b">kuvitettu +</subfield>
+    <subfield code="e">CD-ROM -levy.</subfield>
+  </datafield>
+  <datafield tag="336" ind1=" " ind2=" ">
+    <subfield code="a">teksti</subfield>
+    <subfield code="b">txt</subfield>
+    <subfield code="2">rdacontent</subfield>
+  </datafield>
+  <datafield tag="337" ind1=" " ind2=" ">
+    <subfield code="a">käytettävissä ilman laitetta</subfield>
+    <subfield code="b">n</subfield>
+    <subfield code="2">rdamedia</subfield>
+  </datafield>
+  <datafield tag="338" ind1=" " ind2=" ">
+    <subfield code="a">nide</subfield>
+    <subfield code="b">nc</subfield>
+    <subfield code="2">rdacarrier</subfield>
+  </datafield>
+  <datafield tag="500" ind1=" " ind2=" ">
+    <subfield code="a">Liitteenä CD-ROM.</subfield>
+  </datafield>
+  <datafield tag="593" ind1=" " ind2=" ">
+    <subfield code="a">&amp;12een</subfield>
+    <subfield code="b">&amp;käytt&amp;tdk</subfield>
+    <subfield code="x">&amp;vanha&amp;painos</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+    <subfield code="a">neuropsykologia</subfield>
+    <subfield code="2">yso/fin</subfield>
+    <subfield code="0">http://www.yso.fi/onto/yso/p14664</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+    <subfield code="a">biopsykologia</subfield>
+    <subfield code="2">yso/fin</subfield>
+    <subfield code="0">http://www.yso.fi/onto/yso/p9372</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+    <subfield code="a">neuropsykologi</subfield>
+    <subfield code="2">yso/swe</subfield>
+    <subfield code="0">http://www.yso.fi/onto/yso/p14664</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+    <subfield code="a">biopsykologi</subfield>
+    <subfield code="2">yso/swe</subfield>
+    <subfield code="0">http://www.yso.fi/onto/yso/p9372</subfield>
+  </datafield>
+  <datafield tag="850" ind1=" " ind2=" ">
+    <subfield code="a">FI-Hc</subfield>
+    <subfield code="a">FI-Hk</subfield>
+  </datafield>
+  <datafield tag="852" ind1="8" ind2=" ">
+    <subfield code="a">L</subfield>
+    <subfield code="b">123</subfield>
+    <subfield code="h">L 616.8</subfield>
+    <subfield code="i">Kalat</subfield>
+    <subfield code="9">TEST</subfield>
+  </datafield>
+  <datafield tag="852" ind1="8" ind2=" ">
+    <subfield code="a">Ll</subfield>
+    <subfield code="b">234</subfield>
+    <subfield code="h">Ll Course</subfield>
+    <subfield code="i">Kalat</subfield>
+    <subfield code="9">TEST</subfield>
+  </datafield>
+</record>
+</collection>

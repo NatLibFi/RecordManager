@@ -1,8 +1,8 @@
 <?php
 /**
- * NDL LIDO Record Driver Test Class
+ * Finna LIDO Record Driver Test Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Eero Heikkinen 2013.
  * Copyright (C) The National Library of Finland 2017.
@@ -29,7 +29,7 @@
  */
 
 /**
- * NDL LIDO Record Driver Test Class
+ * Finna LIDO Record Driver Test Class
  *
  * @category DataManagement
  * @package  RecordManager
@@ -37,7 +37,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class LidoRecordDriverTest extends RecordDriverTest
+class FinnaLidoRecordDriverTest extends RecordDriverTest
 {
     protected $driver = '\RecordManager\Finna\Record\Lido';
 
@@ -48,7 +48,7 @@ class LidoRecordDriverTest extends RecordDriverTest
      */
     public function testMusketti1()
     {
-        $fields = $this->processSample('musketti1.xml');
+        $fields = $this->createRecord('musketti1.xml')->toSolrArray();
 
         $this->assertContains('metalli', $fields['material']);
         $this->assertContains('kupari', $fields['material']);
@@ -84,7 +84,7 @@ class LidoRecordDriverTest extends RecordDriverTest
 
         $this->assertEquals('Seurasaaren ulkomuseon kokoelmat', $fields['collection']);
 
-        $this->assertContains('esine', $fields['format']);
+        $this->assertEquals('esine', $fields['format']);
 
         $this->assertContains('Utsjoki, Lappi', $fields['allfields']);
         $this->assertContains('teollinen tuote', $fields['allfields']);
@@ -98,11 +98,11 @@ class LidoRecordDriverTest extends RecordDriverTest
      */
     public function testMusketti2()
     {
-        $fields = $this->processSample('musketti2.xml');
+        $fields = $this->createRecord('musketti2.xml')->toSolrArray();
 
         $this->assertContains('valokuva', $fields['classification_txt_mv']);
 
-        $this->assertContains('kuva', $fields['format']);
+        $this->assertEquals('kuva', $fields['format']);
 
         $this->assertContains('12 x 17 cm, 12 cm', $fields['measurements']);
 
@@ -128,9 +128,9 @@ class LidoRecordDriverTest extends RecordDriverTest
      */
     public function testLusto1()
     {
-        $fields = $this->processSample('lusto1.xml');
+        $fields = $this->createRecord('lusto1.xml')->toSolrArray();
 
-        $this->assertContains('E01025:3', $fields['identifier']);
+        $this->assertEquals('E01025:3', $fields['identifier']);
 
         $this->assertContains('muovi, metalli', $fields['material']);
 
@@ -140,9 +140,9 @@ class LidoRecordDriverTest extends RecordDriverTest
         $this->assertContains('metsänviljely', $fields['topic']);
         $this->assertContains('metsätalous', $fields['topic']);
 
-        $this->assertContains('[1980-01-01 TO 1999-12-31]', $fields['creation_daterange']);
+        $this->assertEquals('[1980-01-01 TO 1999-12-31]', $fields['creation_daterange']);
 
-        $this->assertContains('Esine', $fields['format']);
+        $this->assertEquals('Esine', $fields['format']);
 
         $this->assertContains('pituus 65 cm, leveys 55 cm, korkeus enimmillään 26 cm', $fields['measurements']);
     }
@@ -154,7 +154,7 @@ class LidoRecordDriverTest extends RecordDriverTest
      */
     public function testVtm1()
     {
-        $fields = $this->processSample('vtm1.xml');
+        $fields = $this->createRecord('vtm1.xml')->toSolrArray();
 
         $this->assertContains('kangas', $fields['material']);
         $this->assertContains('öljy', $fields['material']);
@@ -173,7 +173,7 @@ class LidoRecordDriverTest extends RecordDriverTest
 
         $this->assertEquals('Richter', $fields['collection']);
 
-        $this->assertContains('maalaus', $fields['format']);
+        $this->assertEquals('maalaus', $fields['format']);
 
         $this->assertEquals(['Salokivi, Santeri, taiteilija'], $fields['author']);
         $this->assertEquals('[1911-01-01 TO 1911-12-31]', $fields['creation_daterange']);
@@ -186,7 +186,7 @@ class LidoRecordDriverTest extends RecordDriverTest
      */
     public function testTuusula1()
     {
-        $fields = $this->processSample('tuusula1.xml');
+        $fields = $this->createRecord('tuusula1.xml')->toSolrArray();
 
         $this->assertContains('kangas', $fields['material']);
         $this->assertContains('pahvi', $fields['material']);
@@ -213,7 +213,7 @@ class LidoRecordDriverTest extends RecordDriverTest
 
         $this->assertContains('Pystymetsän Pekka. Pekka Halosen maalauksia vuosilta 1887-1932. Halosenniemi, Tuusula 17.4.-17.10.2010', $fields['exhibition_str_mv']);
 
-        $this->assertContains('maalaus', $fields['format']);
+        $this->assertEquals('maalaus', $fields['format']);
 
         $this->assertEquals(['Halonen, Pekka, taiteilija'], $fields['author']);
         $this->assertEquals('[1930-01-01 TO 1930-12-31]', $fields['creation_daterange']);
@@ -226,9 +226,9 @@ class LidoRecordDriverTest extends RecordDriverTest
      */
     public function testDesign1()
     {
-        $fields = $this->processSample('design1.xml');
+        $fields = $this->createRecord('design1.xml')->toSolrArray();
 
-        $this->assertContains('Kuva', $fields['format']);
+        $this->assertEquals('Kuva', $fields['format']);
 
         $this->assertRegExp('/aterimet/', $fields['title']);
         $this->assertRegExp('/lusikka, haarukka, veitsi/', $fields['title']);

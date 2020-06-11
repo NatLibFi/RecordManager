@@ -2,7 +2,7 @@
 /**
  * Qdc record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2018.
  *
@@ -42,6 +42,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Qdc extends Base
 {
+    use FullTextTrait;
+
     protected $doc = null;
 
     /**
@@ -103,7 +105,7 @@ class Qdc extends Base
      */
     public function toSolrArray()
     {
-        $data = [];
+        $data = $this->getFullTextFields($this->doc);
 
         $doc = $this->doc;
         $data['record_format'] = $data['recordtype'] = 'qdc';
@@ -334,7 +336,7 @@ class Qdc extends Base
             if (preg_match('{^(\d{4})$}', $date)) {
                 return (string)$date;
             } elseif (preg_match('{^(\d{4})-}', $date, $matches)) {
-                return (string)$matches[1];         
+                return (string)$matches[1];
             }
         }
         foreach ($this->doc->issued as $date) {
@@ -342,7 +344,7 @@ class Qdc extends Base
             if (preg_match('{^(\d{4})$}', $date)) {
                 return (string)$date;
             } elseif (preg_match('{^(\d{4})-}', $date, $matches)) {
-                return (string)$matches[1];         
+                return (string)$matches[1];
             }
         }
         return '';

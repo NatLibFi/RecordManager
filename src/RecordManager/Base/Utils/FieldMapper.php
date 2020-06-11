@@ -2,7 +2,7 @@
 /**
  * Field value mapper
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2012-2017.
  *
@@ -83,7 +83,7 @@ class FieldMapper
                 foreach ((array)$values as $value) {
                     $parts = explode(',', $value, 2);
                     $filename = $parts[0];
-                    $type = isset($parts[1]) ? $parts[1] : 'normal';
+                    $type = $parts[1] ?? 'normal';
                     if (!isset(self::$mapCache[$filename])) {
                         self::$mapCache[$filename] = $this->readMappingFile(
                             $basePath . '/mappings/' . $filename
@@ -187,10 +187,9 @@ class FieldMapper
             }
             return implode('/', $newValue);
         }
-        $map = isset($mappingFile[$index]['map']) ? $mappingFile[$index]['map']
-            : $mappingFile[0]['map'];
-        $type = isset($mappingFile[$index]['type'])
-            ? $mappingFile[$index]['type'] : $mappingFile[0]['type'];
+        $map = $mappingFile[$index]['map']
+            ?? $mappingFile[0]['map'];
+        $type = $mappingFile[$index]['type'] ?? $mappingFile[0]['type'];
         if ('regexp' == $type) {
             foreach ($map as $pattern => $replacement) {
                 $pattern = addcslashes($pattern, '/');

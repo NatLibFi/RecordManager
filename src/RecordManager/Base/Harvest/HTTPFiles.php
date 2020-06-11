@@ -2,9 +2,9 @@
 /**
  * HTTP-based File Harvesting Class
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2011-2019.
+ * Copyright (c) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -103,17 +103,17 @@ class HTTPFiles extends Base
         $this->initHarvest($callback);
 
         if (isset($this->startDate)) {
-            $this->message('Incremental harvest from timestamp ' . $this->startDate);
+            $this->infoMsg('Incremental harvest from timestamp ' . $this->startDate);
         } else {
-            $this->message('Initial harvest for all records');
+            $this->infoMsg('Initial harvest for all records');
         }
         $fileList = $this->retrieveFileList();
-        $this->message('Files to harvest: ' . count($fileList));
+        $this->infoMsg('Files to harvest: ' . count($fileList));
         foreach ($fileList as $file) {
             $data = $this->retrieveFile($file);
             XmlSecurity::heuristicScanString($data);
 
-            $this->message('Processing the records...', true);
+            $this->infoMsg('Processing the records...');
 
             if (null !== $this->preXslt) {
                 $data = $this->preTransform($data);
@@ -121,9 +121,7 @@ class HTTPFiles extends Base
 
             $tempFile = $this->getTempFileName('http-harvest-', '.xml');
             if (file_put_contents($tempFile, $data) === false) {
-                $this->message(
-                    "Could not write to $tempFile\n", false, Logger::FATAL
-                );
+                $this->fatalMsg("Could not write to $tempFile");
                 throw new \Exception("Could not write to $tempFile");
             }
             $data = '';
@@ -134,23 +132,15 @@ class HTTPFiles extends Base
             $result = $xml->open($tempFile, null, LIBXML_PARSEHUGE);
             if ($result === false || libxml_get_last_error() !== false) {
                 // Assuming it's a character encoding issue, this might help...
-                $this->message(
-                    'Invalid XML received, trying encoding fix...',
-                    false,
-                    Logger::WARNING
-                );
+                $this->warningMsg('Invalid XML received, trying encoding fix...');
                 $data = file_get_contents($tempFile);
                 if (false === $data) {
-                    $this->message(
-                        "Could not read from $tempFile\n", false, Logger::FATAL
-                    );
+                    $this->fatalMsg("Could not read from $tempFile");
                     throw new \Exception("Could not read from $tempFile");
                 }
                 $data = iconv('UTF-8', 'UTF-8//IGNORE', $data);
                 if (file_put_contents($tempFile, $data) === false) {
-                    $this->message(
-                        "Could not write to $tempFile\n", false, Logger::FATAL
-                    );
+                    $this->fatalMsg("Could not write to $tempFile");
                     throw new \Exception("Could not write to $tempFile");
                 }
                 $data = '';
@@ -167,9 +157,7 @@ class HTTPFiles extends Base
                     $errors .= 'Error ' . $error->code . ' at ' . $error->line
                         . ':' . $error->column . ': ' . $error->message;
                 }
-                $this->message(
-                    "Could not parse XML response: $errors\n", false, Logger::FATAL
-                );
+                $this->fatalMsg("Could not parse XML response: $errors");
                 throw new \Exception("Failed to parse XML response");
             }
             libxml_use_internal_errors($saveUseErrors);
@@ -177,9 +165,7 @@ class HTTPFiles extends Base
             $this->processRecords($xml);
             $xml->close();
             if (!unlink($tempFile)) {
-                $this->message(
-                    "Could not remove $tempFile\n", false, Logger::ERROR
-                );
+                $this->errorMsg("Could not remove $tempFile");
             }
 
             $this->reportResults();
@@ -206,7 +192,7 @@ class HTTPFiles extends Base
 
         $url = $request->getURL();
         $urlStr = $url->getURL();
-        $this->message("Sending request: $urlStr", true);
+        $this->infoMsg("Sending request: $urlStr");
 
         // Perform request and throw an exception on error:
         $response = null;
@@ -215,11 +201,9 @@ class HTTPFiles extends Base
                 $response = $request->send();
             } catch (\Exception $e) {
                 if ($try < 5) {
-                    $this->message(
+                    $this->warningMsg(
                         "Request '$urlStr' failed (" . $e->getMessage()
-                        . "), retrying in 30 seconds...",
-                        false,
-                        Logger::WARNING
+                        . "), retrying in 30 seconds..."
                     );
                     sleep(30);
                     continue;
@@ -229,11 +213,9 @@ class HTTPFiles extends Base
             if ($try < 5) {
                 $code = $response->getStatus();
                 if ($code >= 300) {
-                    $this->message(
+                    $this->warningMsg(
                         "Request '$urlStr' failed ($code), "
-                        . "retrying in 30 seconds...",
-                        false,
-                        Logger::WARNING
+                        . "retrying in 30 seconds..."
                     );
                     sleep(30);
                     continue;
@@ -241,9 +223,9 @@ class HTTPFiles extends Base
             }
             break;
         }
-        $code = is_null($response) ? 999 : $response->getStatus();
+        $code = null === $response ? 999 : $response->getStatus();
         if ($code >= 300) {
-            $this->message("Request '$urlStr' failed: $code", false, Logger::FATAL);
+            $this->fatalMsg("Request '$urlStr' failed: $code");
             throw new \Exception("Request failed: $code");
         }
 
@@ -261,9 +243,7 @@ class HTTPFiles extends Base
             $filename = $match[1];
             $date = $this->getFileDate($filename, $responseStr);
             if ($date === false) {
-                $this->message(
-                    "Invalid filename date in '$filename'", false, Logger::WARNING
-                );
+                $this->warningMsg("Invalid filename date in '$filename'");
                 continue;
             }
             if ($date > $this->startDate
@@ -297,7 +277,7 @@ class HTTPFiles extends Base
 
         $url = $request->getURL();
         $urlStr = $url->getURL();
-        $this->message("Sending request: $urlStr", true);
+        $this->infoMsg("Sending request: $urlStr");
 
         // Perform request and throw an exception on error:
         $response = null;
@@ -306,11 +286,9 @@ class HTTPFiles extends Base
                 $response = $request->send();
             } catch (\Exception $e) {
                 if ($try < 5) {
-                    $this->message(
+                    $this->warningMsg(
                         "Request '$urlStr' failed (" . $e->getMessage()
-                        . "), retrying in 30 seconds...",
-                        false,
-                        Logger::WARNING
+                        . "), retrying in 30 seconds..."
                     );
                     sleep(30);
                     continue;
@@ -320,11 +298,9 @@ class HTTPFiles extends Base
             if ($try < 5) {
                 $code = $response->getStatus();
                 if ($code >= 300) {
-                    $this->message(
+                    $this->warningMsg(
                         "Request '$urlStr' failed ($code), retrying in "
-                        . "30 seconds...",
-                        false,
-                        Logger::WARNING
+                        . "30 seconds..."
                     );
                     sleep(30);
                     continue;
@@ -332,9 +308,9 @@ class HTTPFiles extends Base
             }
             break;
         }
-        $code = is_null($response) ? 999 : $response->getStatus();
+        $code = null === $response ? 999 : $response->getStatus();
         if ($code >= 300) {
-            $this->message("Request '$urlStr' failed: $code", false, Logger::FATAL);
+            $this->fatalMsg("Request '$urlStr' failed: $code");
             throw new \Exception("Request failed: $code");
         }
 
@@ -358,17 +334,13 @@ class HTTPFiles extends Base
             ++$count;
             $expanded = $xml->expand();
             if ($expanded === false) {
-                $this->message(
-                    'Failed to expand node: ' . $xml->readOuterXml(),
-                    false,
-                    Logger::ERROR
-                );
+                $this->errorMsg('Failed to expand node: ' . $xml->readOuterXml());
             } else {
                 $this->processRecord(
                     simplexml_import_dom($doc->importNode($expanded, true)), $count
                 );
                 if ($count % 1000 == 0) {
-                    $this->message("$count records processed", true);
+                    $this->infoMsg("$count records processed");
                 }
             }
             if (false === $xml->next($this->recordElem)) {
@@ -389,11 +361,7 @@ class HTTPFiles extends Base
     {
         $id = $this->extractID($record);
         if ($id === false) {
-            $this->message(
-                "No ID found in record $recNum: " . $record->asXML(),
-                false,
-                Logger::ERROR
-            );
+            $this->errorMsg("No ID found in record $recNum: " . $record->asXML());
             return;
         }
         $oaiId = $this->createOaiId($this->source, $id);
@@ -446,4 +414,3 @@ class HTTPFiles extends Base
     {
     }
 }
-

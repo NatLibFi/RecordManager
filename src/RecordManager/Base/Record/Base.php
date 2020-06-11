@@ -2,9 +2,9 @@
 /**
  * Base class for record drivers
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -429,9 +429,9 @@ class Base
                     ) {
                         $res = preg_match($filter, $value);
                         if (false === $res) {
-                            $this->logger->log(
-                                'Failed to parse filter regexp: ' . $filter,
-                                Logger::ERROR
+                            $this->logger->logError(
+                                'getSuppressed',
+                                "Failed to parse filter regexp: $filter"
                             );
                         }
                     } else {
@@ -482,7 +482,9 @@ class Base
         if ($author = $this->getMainAuthor()) {
             $authors[] = ['type' => 'author', 'value' => $author];
         }
-        return compact('titles', 'authors');
+        $titlesAltScript = [];
+        $authorsAltScript = [];
+        return compact('titles', 'authors', 'titlesAltScript', 'authorsAltScript');
     }
 
     /**
@@ -507,7 +509,7 @@ class Base
             )
         );
 
-        return isset($iniValues[$parameter]) ? $iniValues[$parameter] : $default;
+        return $iniValues[$parameter] ?? $default;
     }
 
     /**

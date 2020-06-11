@@ -2,9 +2,9 @@
 /**
  * Nominatim Geocoder Class
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2013-2016.
+ * Copyright (C) The National Library of Finland 2013-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -148,8 +148,7 @@ class NominatimGeocoder extends Enrichment
     {
         parent::__construct($db, $logger, $config);
 
-        $settings = isset($config['NominatimGeocoder'])
-            ? $config['NominatimGeocoder'] : [];
+        $settings = $config['NominatimGeocoder'] ?? [];
         if (!isset($settings['url']) || !$settings['url']) {
             throw new \Exception('url must be specified for Nominatim');
         }
@@ -345,10 +344,9 @@ class NominatimGeocoder extends Enrichment
         );
         $places = json_decode($response, true);
         if (null === $places) {
-            $this->logger->log(
+            $this->logger->logError(
                 'NominatimGeocoder',
-                "Could not decode Nominatim response (request: $url): $response",
-                Logger::ERROR
+                "Could not decode Nominatim response (request: $url): $response"
             );
             return [];
         }

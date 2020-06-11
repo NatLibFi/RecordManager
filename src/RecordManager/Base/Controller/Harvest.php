@@ -2,9 +2,9 @@
 /**
  * Harvest
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -26,8 +26,6 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 namespace RecordManager\Base\Controller;
-
-use RecordManager\Base\Utils\Logger;
 
 /**
  * Harvest
@@ -70,10 +68,9 @@ class Harvest extends AbstractBase
         $reharvest = false
     ) {
         if (empty($this->dataSourceSettings)) {
-            $this->logger->log(
+            $this->logger->logFatal(
                 'harvest',
-                'Please add data source settings to datasources.ini',
-                Logger::FATAL
+                'Please add data source settings to datasources.ini'
             );
             throw new \Exception('Data source settings missing in datasources.ini');
         }
@@ -83,11 +80,10 @@ class Harvest extends AbstractBase
         $this->dedupHandler = $this->getDedupHandler();
 
         if ($reharvest && !is_string($reharvest) && $startResumptionToken) {
-            $this->logger->log(
+            $this->logger->logFatal(
                 'harvest',
                 'Reharvest start date must be specified when used with the'
-                . ' resumption token override option',
-                Logger::FATAL
+                    . ' resumption token override option'
             );
             throw new \Exception(
                 'Reharvest start date must be specified when used with the'
@@ -109,7 +105,7 @@ class Harvest extends AbstractBase
                 if (empty($source) || empty($settings) || !isset($settings['url'])) {
                     continue;
                 }
-                $this->logger->log(
+                $this->logger->logInfo(
                     'harvest',
                     "Harvesting from '{$source}'"
                     . ($reharvest ? ' (full reharvest)' : '')
@@ -145,7 +141,7 @@ class Harvest extends AbstractBase
                         } else {
                             $dateThreshold = $this->db->getTimestamp();
                         }
-                        $this->logger->log(
+                        $this->logger->logInfo(
                             'harvest',
                             'Reharvest date threshold: '
                             . $dateThreshold->toDatetime()->format('Y-m-d H:i:s')
@@ -190,15 +186,14 @@ class Harvest extends AbstractBase
 
                     if ($reharvest) {
                         if ($harvest->getHarvestedRecordCount() == 0) {
-                            $this->logger->log(
+                            $this->logger->logFatal(
                                 'harvest',
                                 "No records received from '$source' during"
-                                . ' reharvesting -- assuming an error and skipping'
-                                . ' marking records deleted',
-                                Logger::FATAL
+                                    . ' reharvesting -- assuming an error and'
+                                    . ' skipping marking records deleted'
                             );
                         } else {
-                            $this->logger->log(
+                            $this->logger->logInfo(
                                 'harvest',
                                 'Marking deleted all records not received during'
                                 . ' the harvesting'
@@ -220,12 +215,13 @@ class Harvest extends AbstractBase
                                     $this->markRecordDeleted($record);
                                 }
                                 if (++$count % 1000 == 0) {
-                                    $this->logger->log(
+                                    $this->logger->logInfo(
                                         'harvest', "Deleted $count records"
                                     );
                                 }
                             }
-                            $this->logger->log('harvest', "Deleted $count records");
+                            $this->logger
+                                ->logInfo('harvest', "Deleted $count records");
                         }
                     }
 
@@ -256,7 +252,7 @@ class Harvest extends AbstractBase
                                 $interval
                                     = round((time() - $state['value']) / 3600 / 24);
                                 if ($interval < $deletions[1]) {
-                                    $this->logger->log(
+                                    $this->logger->logInfo(
                                         'harvest',
                                         "Not processing deletions, $interval days"
                                         . ' since last time'
@@ -267,23 +263,25 @@ class Harvest extends AbstractBase
                         }
 
                         if ($processDeletions) {
-                            $this->logger->log(
+                            $this->logger->logInfo(
                                 'harvest',
                                 'Processing deletions' . (isset($interval)
                                     ? " ($interval days since last time)" : '')
                             );
 
-                            $this->logger->log('harvest', 'Unmarking records');
+                            $this->logger->logInfo('harvest', 'Unmarking records');
                             $this->db->updateRecords(
                                 ['source_id' => $source, 'deleted' => false],
                                 [],
                                 ['mark' => 1]
                             );
 
-                            $this->logger->log('harvest', 'Fetching identifiers');
+                            $this->logger
+                                ->logInfo('harvest', 'Fetching identifiers');
                             $harvest->listIdentifiers([$this, 'markRecord']);
 
-                            $this->logger->log('harvest', 'Marking deleted records');
+                            $this->logger
+                                ->logInfo('harvest', 'Marking deleted records');
 
                             $records = $this->db->findRecords(
                                 [
@@ -298,12 +296,13 @@ class Harvest extends AbstractBase
                                     $source, $record['oai_id'], true, ''
                                 );
                                 if (++$count % 1000 == 0) {
-                                    $this->logger->log(
+                                    $this->logger->logInfo(
                                         'harvest', "Deleted $count records"
                                     );
                                 }
                             }
-                            $this->logger->log('harvest', "Deleted $count records");
+                            $this->logger
+                                ->logInfo('harvest', "Deleted $count records");
 
                             $state = [
                                 '_id' => "Last Deletion Processing Time $source",
@@ -313,13 +312,11 @@ class Harvest extends AbstractBase
                         }
                     }
                 }
-                $this->logger->log(
+                $this->logger->logInfo(
                     'harvest', "Harvesting from '{$source}' completed"
                 );
             } catch (\Exception $e) {
-                $this->logger->log(
-                    'harvest', 'Exception: ' . $e->getMessage(), Logger::FATAL
-                );
+                $this->logger->logFatal('harvest', 'Exception: ' . $e->getMessage());
             }
         }
     }

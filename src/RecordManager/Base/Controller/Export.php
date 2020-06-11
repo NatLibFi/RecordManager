@@ -2,9 +2,9 @@
 /**
  * Export
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,9 +27,7 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\MetadataUtils;
-use RecordManager\Base\Utils\Logger;
 
 /**
  * Export
@@ -96,7 +94,7 @@ class Export extends AbstractBase
         );
 
         try {
-            $this->logger->log('exportRecords', 'Creating record list');
+            $this->logger->logInfo('exportRecords', 'Creating record list');
 
             $params = [];
             if ($singleId) {
@@ -173,9 +171,9 @@ class Export extends AbstractBase
             $count = 0;
             $deduped = 0;
             $deleted = 0;
-            $this->logger->log('exportRecords', "Exporting $total records");
+            $this->logger->logInfo('exportRecords', "Exporting $total records");
             if ($skipRecords) {
-                $this->logger->log(
+                $this->logger->logInfo(
                     'exportRecords', "(1 per each $skipRecords records)"
                 );
             }
@@ -215,15 +213,13 @@ class Export extends AbstractBase
                     }
                     if ($addDedupId == 'always') {
                         $metadataRecord->addDedupKeyToMetadata(
-                            isset($record['dedup_id'])
-                            ? $record['dedup_id']
-                            : $record['_id']
+                            $record['dedup_id']
+                            ?? $record['_id']
                         );
                     } elseif ($addDedupId == 'deduped') {
                         $metadataRecord->addDedupKeyToMetadata(
-                            isset($record['dedup_id'])
-                            ? $record['dedup_id']
-                            : ''
+                            $record['dedup_id']
+                            ?? ''
                         );
                     }
                     $xml = $metadataRecord->toXML();
@@ -231,21 +227,21 @@ class Export extends AbstractBase
                     file_put_contents($file, $xml . "\n", FILE_APPEND);
                 }
                 if ($count % 1000 == 0) {
-                    $this->logger->log(
+                    $this->logger->logInfo(
                         'exportRecords',
                         "$count records (of which $deduped deduped, $deleted "
                         . "deleted) exported"
                     );
                 }
             }
-            $this->logger->log(
+            $this->logger->logInfo(
                 'exportRecords',
                 "Completed with $count records (of which $deduped deduped, $deleted "
                 . "deleted) exported"
             );
         } catch (\Exception $e) {
-            $this->logger->log(
-                'exportRecords', 'Exception: ' . $e->getMessage(), Logger::FATAL
+            $this->logger->logFatal(
+                'exportRecords', 'Exception: ' . $e->getMessage()
             );
         }
         file_put_contents($file, "</collection>\n", FILE_APPEND);

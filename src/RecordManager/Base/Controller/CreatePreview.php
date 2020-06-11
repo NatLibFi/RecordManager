@@ -2,7 +2,7 @@
 /**
  * Create Preview Record
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2019.
  *
@@ -191,12 +191,12 @@ class CreatePreview extends AbstractBase
     /**
      * Perform OAI-PMH transformation for the record
      *
-     * @param string $metadata       Record metadata
-     * @param string $transformation XSL transformation
+     * @param string       $metadata        Record metadata
+     * @param string|array $transformations XSL transformations
      *
      * @return string
      */
-    protected function oaipmhTransform($metadata, $transformation)
+    protected function oaipmhTransform($metadata, $transformations)
     {
         $doc = new \DOMDocument();
         if (!MetadataUtils::loadXML($metadata, $doc)) {
@@ -204,18 +204,20 @@ class CreatePreview extends AbstractBase
                 'Could not parse XML record'
             );
         }
-        $style = new \DOMDocument();
-        $loadResult = $style->load(
-            $this->basePath . "/transformations/$transformation"
-        );
-        if (false === $loadResult) {
-            throw new \Exception(
-                'Could not load configured OAI-PMH transformation'
+        foreach ((array)$transformations as $transformation) {
+            $style = new \DOMDocument();
+            $loadResult = $style->load(
+                $this->basePath . "/transformations/$transformation"
             );
+            if (false === $loadResult) {
+                throw new \Exception(
+                    'Could not load configured OAI-PMH transformation'
+                );
+            }
+            $preXslt = new \XSLTProcessor();
+            $preXslt->importStylesheet($style);
+            $doc = $preXslt->transformToDoc($doc);
         }
-        $preXslt = new \XSLTProcessor();
-        $preXslt->importStylesheet($style);
-        $record = $preXslt->transformToDoc($doc);
-        return $record->saveXML();
+        return $doc->saveXML();
     }
 }

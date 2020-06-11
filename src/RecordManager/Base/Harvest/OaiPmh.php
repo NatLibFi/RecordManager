@@ -4,10 +4,10 @@
  *
  * Based on harvest-oai.php in VuFind
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (c) Demian Katz 2010.
- * Copyright (c) The National Library of Finland 2011-2019.
+ * Copyright (c) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -33,7 +33,7 @@ namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\Logger;
-use RecordManager\Base\Utils\MetadataUtils;
+
 /**
  * OaiPmh Class
  *
@@ -174,18 +174,20 @@ class OaiPmh extends Base
             $this->debugLog = $settings['debuglog'];
         }
         if (isset($settings['oaipmhTransformation'])) {
-            $style = new \DOMDocument();
-            $loadResult = $style->load(
-                "$basePath/transformations/" . $settings['oaipmhTransformation']
-            );
-            if (false === $loadResult) {
-                throw new \Exception(
-                    "Could not load $basePath/transformations/"
-                    . $settings['oaipmhTransformation']
-                );
+            foreach ((array)$settings['oaipmhTransformation'] as $transformation) {
+                $style = new \DOMDocument();
+                $loadResult
+                    = $style->load("$basePath/transformations/$transformation");
+                if (false === $loadResult) {
+                    throw new \Exception(
+                        "Could not load $basePath/transformations/$transformation"
+                    );
+                }
+                $xslt = new \XSLTProcessor();
+                $xslt->importStylesheet($style);
+                $xslt->setParameter('', 'source_id', $source);
+                $this->preXslt[] = $xslt;
             }
-            $this->preXslt = new \XSLTProcessor();
-            $this->preXslt->importStylesheet($style);
         }
         if (isset($settings['ignoreNoRecordsMatch'])) {
             $this->ignoreNoRecordsMatch = $settings['ignoreNoRecordsMatch'];
@@ -246,16 +248,16 @@ class OaiPmh extends Base
         $this->initHarvest($callback);
 
         if ($this->resumptionToken) {
-            $this->message('Incremental harvest from given resumptionToken');
+            $this->infoMsg('Incremental harvest from given resumptionToken');
             $token = $this->getRecordsByToken($this->resumptionToken);
         } else {
             // Start harvesting at the requested date:
             if (!empty($this->startDate)) {
-                $this->message(
+                $this->infoMsg(
                     'Incremental harvest from timestamp ' . $this->startDate
                 );
             } else {
-                $this->message('Initial harvest for all records');
+                $this->infoMsg('Initial harvest for all records');
             }
             $token = $this->getRecordsByDate();
         }
@@ -282,10 +284,10 @@ class OaiPmh extends Base
         $this->initHarvest($callback);
 
         if ($this->resumptionToken) {
-            $this->message('Incremental listing from given resumptionToken');
+            $this->infoMsg('Incremental listing from given resumptionToken');
             $token = $this->getIdentifiersByToken($this->resumptionToken);
         } else {
-            $this->message('Listing all identifiers');
+            $this->infoMsg('Listing all identifiers');
             $token = $this->getIdentifiers();
         }
 
@@ -341,7 +343,7 @@ class OaiPmh extends Base
      */
     protected function reportResults()
     {
-        $this->message(
+        $this->infoMsg(
             'Harvested ' . $this->changedRecords . ' normal records and '
             . $this->deletedRecords . ' deleted records from ' . $this->source
         );
@@ -354,7 +356,7 @@ class OaiPmh extends Base
      */
     protected function reportListIdentifiersResults()
     {
-        $this->message(
+        $this->infoMsg(
             'Listed ' . $this->changedRecords . ' normal records and '
             . $this->deletedRecords . ' deleted records from ' . $this->source
         );
@@ -414,24 +416,20 @@ class OaiPmh extends Base
 
         // Perform request and throw an exception on error:
         for ($try = 1; $try <= $this->maxTries; $try++) {
-            $this->message("Sending request: $urlStr", true);
+            $this->infoMsg("Sending request: $urlStr");
             try {
                 $response = $request->send();
                 $code = $response->getStatus();
                 if ($code >= 300) {
                     if ($try < $this->maxTries) {
-                        $this->message(
+                        $this->warningMsg(
                             "Request '$urlStr' failed ($code), retrying in "
-                            . "{$this->retryWait} seconds...",
-                            false,
-                            Logger::WARNING
+                            . "{$this->retryWait} seconds..."
                         );
                         sleep($this->retryWait);
                         continue;
                     }
-                    $this->message(
-                        "Request '$urlStr' failed: $code", false, Logger::FATAL
-                    );
+                    $this->fatalMsg("Request '$urlStr' failed: $code");
                     throw new \Exception("{$this->source}: Request failed: $code");
                 }
 
@@ -449,11 +447,9 @@ class OaiPmh extends Base
                 );
             } catch (\Exception $e) {
                 if ($try < $this->maxTries) {
-                    $this->message(
+                    $this->warningMsg(
                         "Request '$urlStr' failed (" . $e->getMessage()
-                        . "), retrying in {$this->retryWait} seconds...",
-                        false,
-                        Logger::WARNING
+                        . "), retrying in {$this->retryWait} seconds..."
                     );
                     sleep($this->retryWait);
                     continue;
@@ -462,25 +458,6 @@ class OaiPmh extends Base
             }
         }
         throw new \Exception("{$this->source}: Request failed");
-    }
-
-    /**
-     * Load XML into a DOM
-     *
-     * @param string $xml XML string
-     *
-     * @return DOMDocument
-     */
-    protected function loadXML($xml)
-    {
-        $doc = new \DOMDocument();
-        if (!MetadataUtils::loadXML($xml, $doc)) {
-            return false;
-        }
-        if (null !== $this->preXslt) {
-            return $this->preXslt->transformToDoc($doc);
-        }
-        return $doc;
     }
 
     /**
@@ -496,42 +473,14 @@ class OaiPmh extends Base
      */
     protected function processResponse($xml, $resumption)
     {
-        // Parse the XML:
-        $saveUseErrors = libxml_use_internal_errors(true);
-        libxml_clear_errors();
-        $result = $this->loadXML($xml);
-        if ($result === false || libxml_get_last_error() !== false) {
-            // Assuming it's a character encoding issue, this might help...
-            $this->message(
-                'Invalid XML received, trying to fix the encoding',
-                false,
-                Logger::WARNING
-            );
-            $fixedXml = mb_convert_encoding($xml, 'UTF-8', 'UTF-8');
-            libxml_clear_errors();
-            $result = $this->loadXML($fixedXml);
-        }
-        if ($result === false || libxml_get_last_error() !== false) {
-            $errors = '';
-            foreach (libxml_get_errors() as $error) {
-                if ($errors) {
-                    $errors .= '; ';
-                }
-                $errors .= 'Error ' . $error->code . ' at '
-                    . $error->line . ':' . $error->column . ': '
-                    . str_replace(["\n", "\r"], '', $error->message);
-            }
-            libxml_use_internal_errors($saveUseErrors);
+        try {
+            $result = $this->preTransform($xml, true);
+        } catch (\Exception $e) {
             $tempfile = $this->getTempFileName('oai-pmh-error-', '.xml');
             file_put_contents($tempfile, $xml);
-            $this->message(
-                "Could not parse XML response: $errors. XML stored in $tempfile",
-                false,
-                Logger::ERROR
-            );
+            $this->errorMsg("Invalid XML stored in $tempfile");
             throw new \Exception("{$this->source}: Failed to parse XML response");
         }
-        libxml_use_internal_errors($saveUseErrors);
 
         // Detect errors and throw an exception if one is found:
         $error = $this->getSingleNode($result, 'error');
@@ -541,11 +490,7 @@ class OaiPmh extends Base
                 || $code != 'noRecordsMatch'
             ) {
                 $value = $result->saveXML($error);
-                $this->message(
-                    "OAI-PMH server returned error $code ($value)",
-                    false,
-                    Logger::ERROR
-                );
+                $this->errorMsg("OAI-PMH server returned error $code ($value)");
                 throw new \Exception(
                     "{$this->source}: OAI-PMH error -- code: $code, " .
                     "value: $value\n"
@@ -593,7 +538,7 @@ class OaiPmh extends Base
     protected function processRecords($records)
     {
         $count = count($records);
-        $this->message("Processing $count records", true);
+        $this->infoMsg("Processing $count records");
 
         // Loop through the records:
         foreach ($records as $record) {
@@ -601,7 +546,7 @@ class OaiPmh extends Base
 
             // Bypass the record if the record is missing its header:
             if ($header === false) {
-                $this->message("Record header missing", false, Logger::ERROR);
+                $this->errorMsg('Record header missing');
                 echo $this->xml->saveXML($record) . "\n";
                 continue;
             }
@@ -617,18 +562,12 @@ class OaiPmh extends Base
             } else {
                 $recordMetadata = $this->getSingleNode($record, 'metadata');
                 if ($recordMetadata === false) {
-                    $this->message(
-                        "No metadata tag found for record $id", false, Logger::ERROR
-                    );
+                    $this->errorMsg("No metadata tag found for record $id");
                     continue;
                 }
                 $recordNode = $this->getSingleNode($recordMetadata, '*');
                 if ($recordNode === false) {
-                    $this->message(
-                        "No metadata fields found for record $id",
-                        false,
-                        Logger::ERROR
-                    );
+                    $this->errorMsg("No metadata fields found for record $id");
                     continue;
                 }
                 // Add namespaces to the record element
@@ -778,7 +717,7 @@ class OaiPmh extends Base
      */
     protected function processIdentifiers($headers)
     {
-        $this->message('Processing ' . count($headers) . ' identifiers', true);
+        $this->infoMsg('Processing ' . count($headers) . ' identifiers');
 
         // Loop through the records:
         foreach ($headers as $header) {
@@ -799,10 +738,10 @@ class OaiPmh extends Base
     /**
      * Get the first XML child node with the given name
      *
-     * @param DOMNode $xml      The XML Node
-     * @param string  $nodeName Node to get
+     * @param \DOMElement $xml      The XML Node
+     * @param string      $nodeName Node to get
      *
-     * @return \DOMNode|false  Result node or false if not found
+     * @return \DOMElement|false  Result node or false if not found
      */
     protected function getSingleNode($xml, $nodeName)
     {
@@ -817,8 +756,8 @@ class OaiPmh extends Base
      * Traverse all children and collect those nodes that
      * have the tagname specified in $tagName. Non-recursive
      *
-     * @param DOMNode $element DOM Element
-     * @param string  $tagName Tag to get
+     * @param \DOMElement $element DOM Element
+     * @param string      $tagName Tag to get
      *
      * @return array
      */
@@ -840,7 +779,7 @@ class OaiPmh extends Base
      */
     protected function identifyServer()
     {
-        $this->message('Identifying server');
+        $this->infoMsg('Identifying server');
         $response = $this->sendRequest('Identify');
         if ($this->granularity == 'auto') {
             $identify = $this->getSingleNode($response, 'Identify');
@@ -863,12 +802,12 @@ class OaiPmh extends Base
             $this->granularity = trim(
                 $granularity->nodeValue
             );
-            $this->message("Detected date granularity: {$this->granularity}");
+            $this->infoMsg("Detected date granularity: {$this->granularity}");
         }
         $this->serverDate = $this->normalizeDate(
             $this->getSingleNode($response, 'responseDate')->nodeValue
         );
-        $this->message(
+        $this->infoMsg(
             'Current server date: ' . date('Y-m-d\TH:i:s\Z', $this->serverDate)
         );
     }

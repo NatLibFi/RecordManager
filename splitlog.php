@@ -1,9 +1,9 @@
 <?php
 /**
  * Command line program to split a harvesting debug log to a set of
- * importable files. 
+ * importable files.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Ere Maijala 2012.
  *
@@ -29,10 +29,10 @@
 require_once 'cmdline.php';
 
 /**
- * Main function 
- * 
+ * Main function
+ *
  * @param string[] $argv Program parameters
- * 
+ *
  * @return void
  */
 function main($argv)

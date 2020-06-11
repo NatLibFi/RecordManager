@@ -2,9 +2,9 @@
 /**
  * Solr Index Check
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2019.
+ * Copyright (C) The National Library of Finland 2019-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -54,8 +54,8 @@ class SolrCheck extends AbstractBase
             $this->dataSourceSettings, $this->recordFactory
         );
 
-        $this->logger->log('SolrCheck', 'Checking Solr index');
+        $this->logger->logInfo('SolrCheck', 'Checking Solr index');
         $updater->checkIndexedRecords();
-        $this->logger->log('SolrCheck', 'Solr check completed');
+        $this->logger->logInfo('SolrCheck', 'Solr check completed');
     }
 }

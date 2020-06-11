@@ -3,6 +3,7 @@ language: php
 php:
   - 7.2
   - 7.3
+  - 7.4
 
 before_script:
   - echo "extension = mongodb.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
@@ -17,4 +18,4 @@ cache:
     - .php_cs.cache
 
 script:
-  - vendor/bin/phing phpunit phpcs php-cs-fixer-dryrun -Dphp-cs-fixer-extra-params="--cache-file=.php_cs.cache/.php_cs.cache"
+  - vendor/bin/phing phpunit phpcs php-cs-fixer-dryrun

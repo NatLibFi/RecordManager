@@ -2,9 +2,9 @@
 /**
  * Enrichment Class
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2014-2019.
+ * Copyright (C) The National Library of Finland 2014-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -131,12 +131,10 @@ class Enrichment
         $this->maxCacheAge = isset($config['Enrichment']['cache_expiration'])
             ? $config['Enrichment']['cache_expiration'] * 60
             : 86400;
-        $this->maxTries = isset($config['Enrichment']['max_tries'])
-            ? $config['Enrichment']['max_tries']
-            : 90;
-        $this->retryWait = isset($config['Enrichment']['retry_wait'])
-            ? $config['Enrichment']['retry_wait']
-            : 5;
+        $this->maxTries = $config['Enrichment']['max_tries']
+            ?? 90;
+        $this->retryWait = $config['Enrichment']['retry_wait']
+            ?? 5;
 
         if (isset($config['HTTP'])) {
             $this->httpParams += $config['HTTP'];
@@ -190,7 +188,7 @@ class Enrichment
         $retryWait = $this->retryWait;
         $response = null;
         for ($try = 1; $try <= $this->maxTries; $try++) {
-            if (is_null($this->request)) {
+            if (null === $this->request) {
                 $this->request = new \HTTP_Request2(
                     $url,
                     \HTTP_Request2::METHOD_GET,
@@ -216,11 +214,10 @@ class Enrichment
                         // Progressively longer delay
                         $retryWait *= 2;
                     }
-                    $this->logger->log(
+                    $this->logger->logWarning(
                         'getExternalData',
                         "HTTP request for '$url' failed (" . $e->getMessage()
-                        . "), retrying in {$retryWait} seconds (retry $try)...",
-                        Logger::WARNING
+                            . "), retrying in {$retryWait} seconds (retry $try)..."
                     );
                     $this->request = null;
                     sleep($retryWait);
@@ -232,11 +229,10 @@ class Enrichment
                 $code = $response->getStatus();
                 if ($code >= 300 && $code != 404 && !in_array($code, $ignoreErrors)
                 ) {
-                    $this->logger->log(
+                    $this->logger->logWarning(
                         'getExternalData',
                         "HTTP request for '$url' failed ($code), retrying "
-                        . "in {$this->retryWait} seconds (retry $try)...",
-                        Logger::WARNING
+                            . "in {$this->retryWait} seconds (retry $try)..."
                     );
                     $this->request = null;
                     sleep($this->retryWait);
@@ -244,10 +240,9 @@ class Enrichment
                 }
             }
             if ($try > 1) {
-                $this->logger->log(
+                $this->logger->logWarning(
                     'getExternalData',
-                    "HTTP request for '$url' succeeded on attempt $try",
-                    Logger::WARNING
+                    "HTTP request for '$url' succeeded on attempt $try"
                 );
             }
             if (isset($this->requestsHandled[$host])) {
@@ -262,17 +257,16 @@ class Enrichment
                     $this->requestsDuration[$host] / $this->requestsHandled[$host]
                     * 1000
                 );
-                $this->logger->log(
+                $this->logger->logInfo(
                     'getExternalData',
                     "{$this->requestsHandled[$host]} HTTP requests completed"
-                    . " for $host, average time for a request $average ms",
-                    Logger::INFO
+                        . " for $host, average time for a request $average ms"
                 );
             }
             break;
         }
 
-        $code = is_null($response) ? 999 : $response->getStatus();
+        $code = null === $response ? 999 : $response->getStatus();
         if ($code >= 300 && $code != 404 && !in_array($code, $ignoreErrors)) {
             throw new \Exception("Enrichment failed to fetch '$url': $code");
         }
