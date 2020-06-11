@@ -117,7 +117,6 @@ class ForwardAuthority extends Base
         $data['occupation'] = $this->getOccupations();
         $data['language'] = $this->getHeadingLanguage();
         $data['datasource_str_mv'] = $data['source_str_mv'] = $this->source;
-        $data['id_str_mv'] = [$this->getID()];
 
         return $data;
     }

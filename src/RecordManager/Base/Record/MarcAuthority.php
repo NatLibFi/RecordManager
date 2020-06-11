@@ -92,17 +92,6 @@ class MarcAuthority extends Marc
 
         $data['datasource_str_mv'] = $data['source_str_mv'] = $this->source;
 
-        $data['id_str_mv'] = [$this->getID()];
-
-        foreach ($this->getFields('024') as $otherId) {
-            $idSource = $this->getSubField($otherId, '2');
-            $idVal = $this->getSubField($otherId, 'a');
-            if (empty($idSource) || empty($idVal)) {
-                continue;
-            }
-            $data['id_str_mv'][] = sprintf('(%s)%s', $idSource, $idVal);
-        }
-
         return $data;
     }
 
