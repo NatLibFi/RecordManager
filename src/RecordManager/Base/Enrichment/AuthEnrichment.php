@@ -51,11 +51,11 @@ use RecordManager\Base\Utils\MetadataUtils;
 abstract class AuthEnrichment extends Enrichment
 {
     /**
-     * Database
+     * Authority database
      *
      * @var Database
      */
-    protected $db;
+    protected $authorityDb;
 
     /**
      * Constructor
@@ -77,7 +77,7 @@ abstract class AuthEnrichment extends Enrichment
             ?? $config['Mongo']['database'];
 
         try {
-            $this->db = new Database($url, $database, $config['Mongo']);
+            $this->authorityDb = new Database($url, $database, $config['Mongo']);
         } catch (\Exception $e) {
             $this->logger->logFatal(
                 'startup',
@@ -105,7 +105,7 @@ abstract class AuthEnrichment extends Enrichment
     ) {
         $recAuthSource = $record->getAuthorityNamespace();
 
-        if (!($data = $this->db->getRecord($recAuthSource . '.' . $id))) {
+        if (!($data = $this->authorityDb->getRecord($recAuthSource . '.' . $id))) {
             return;
         }
 
