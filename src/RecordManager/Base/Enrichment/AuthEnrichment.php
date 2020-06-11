@@ -31,6 +31,7 @@ namespace RecordManager\Base\Enrichment;
 use RecordManager\Base\Database\Database;
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Enrich biblio records with authority record data.
@@ -116,7 +117,7 @@ abstract class AuthEnrichment extends Enrichment
 
         $authRecord = $this->recordFactory->createRecord(
             $data['format'],
-            $data['original_data'],
+            MetadataUtils::getRecordData($data, true),
             $id,
             $source
         );
