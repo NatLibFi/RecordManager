@@ -123,6 +123,8 @@ class MarcRecordDriverTest extends RecordDriverTest
             ],
             'author_corporate_role' => [
             ],
+            'author2_id_str_mv' => [],
+            'author2_id_role_str_mv' => [],
             'author_additional' => [
             ],
             'title' => 'Tutki ja kirjoita',
@@ -310,6 +312,8 @@ class MarcRecordDriverTest extends RecordDriverTest
             ],
             'author_corporate_role' => [
             ],
+            'author2_id_str_mv' => [],
+            'author2_id_role_str_mv' => [],
             'author_additional' => [
             ],
             'title' => 'Biological psychology',

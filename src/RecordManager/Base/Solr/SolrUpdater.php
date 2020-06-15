@@ -2248,14 +2248,14 @@ class SolrUpdater
 
         foreach ($data as $key => &$values) {
             if (is_array($values)) {
-                foreach ($values as $key => &$value) {
+                foreach ($values as $key2 => &$value) {
                     $value = MetadataUtils::normalizeUnicode(
                         $value, $this->unicodeNormalizationForm
                     );
                     if (empty($value) || $value === 0 || $value === 0.0
                         || $value === '0'
                     ) {
-                        unset($values[$key]);
+                        unset($values[$key2]);
                     }
                 }
                 $values = array_values(array_unique($values));
@@ -2935,7 +2935,7 @@ class SolrUpdater
                     $className = "\RecordManager\Base\Enrichment\\$className";
                 }
                 $this->enrichments[$enrichment] = new $className(
-                    $this->db, $this->log, $this->config
+                    $this->db, $this->log, $this->config, $this->recordFactory
                 );
             }
             $this->enrichments[$enrichment]->enrich($source, $record, $data);
