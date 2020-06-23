@@ -100,7 +100,7 @@ class Lrmi extends Qdc
 
 
         
-        $languages = [(string)$doc->inLanguage ?? ''];
+        $languages = [];
 
         // Materials
         if (isset($doc->material)) {
