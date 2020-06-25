@@ -68,7 +68,7 @@ class Lrmi extends Qdc
             }
         }
         $data['format'] = $data['format_ext_str_mv'] = 'LearningMaterial';
-        //$data['record_format'] = $data['recordtype'] = 'lrmi';
+        $data['record_format'] = $data['recordtype'] = 'lrmi';
 
         $topics = $topicIds = [];
 
