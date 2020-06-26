@@ -139,6 +139,9 @@ class Lrmi extends Qdc
         $data['educational_aim_str_mv']
             = $this->getAlignmentObjects('teaches');
 
+        $data['educational_subject_str_mv']
+            = $this->getAlignmentObjects('educationalSubject');
+
         foreach ($doc->type as $type) {
             $data['educational_material_type_str_mv'][] = (string)$type;
         }
