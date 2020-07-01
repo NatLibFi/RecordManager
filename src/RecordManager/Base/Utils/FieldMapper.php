@@ -190,17 +190,22 @@ class FieldMapper
         $map = $mappingFile[$index]['map']
             ?? $mappingFile[0]['map'];
         $type = $mappingFile[$index]['type'] ?? $mappingFile[0]['type'];
-        if ('regexp' == $type) {
+        if ('regexp' === $type || 'regexp-multi' === $type) {
+            $newValues = [];
+            $all = 'regexp-multi' === $type;
             foreach ($map as $pattern => $replacement) {
                 $pattern = addcslashes($pattern, '/');
                 $newValue = preg_replace(
                     "/$pattern/u", $replacement, $value, -1, $count
                 );
                 if ($count > 0) {
-                    return $newValue;
+                    if (!$all) {
+                        return $newValue;
+                    }
+                    $newValues[] = $newValue;
                 }
             }
-            return $value;
+            return $newValues;
         }
         $replacement = $value;
         if (isset($map[$value])) {
