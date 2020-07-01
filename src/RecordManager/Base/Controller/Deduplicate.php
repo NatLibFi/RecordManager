@@ -2,9 +2,9 @@
 /**
  * Deduplication
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,7 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\PerformanceCounter;
 
 /**
@@ -52,9 +51,10 @@ class Deduplicate extends AbstractBase
      * Find duplicate records and give them dedup keys
      *
      * @param string $sourceId   Source ID to process, or empty or * for all sources
-     * where dedup is enabled
+     *                           where dedup is enabled
      * @param bool   $allRecords If true, process all records regardless of their
-     * status (otherwise only freshly imported or updated records are processed)
+     *                           status (otherwise only freshly imported or updated
+     *                           records are processed)
      * @param string $singleId   Process only a record with the given ID
      * @param bool   $markOnly   If true, just mark the records for deduplication
      *
@@ -69,9 +69,9 @@ class Deduplicate extends AbstractBase
         // Install a signal handler so that we can exit cleanly if interrupted
         if (function_exists('pcntl_signal')) {
             pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
-            $this->logger->log('deduplicate', 'Interrupt handler set');
+            $this->logger->logInfo('deduplicate', 'Interrupt handler set');
         } else {
-            $this->logger->log(
+            $this->logger->logInfo(
                 'deduplicate',
                 'Could not set an interrupt handler -- pcntl not available'
             );
@@ -89,7 +89,7 @@ class Deduplicate extends AbstractBase
                 ) {
                     continue;
                 }
-                $this->logger->log(
+                $this->logger->logInfo(
                     'deduplicate', "Marking all records for processing in '$source'"
                 );
                 $records = $this->db->findRecords(
@@ -103,7 +103,7 @@ class Deduplicate extends AbstractBase
                 $count = 0;
                 foreach ($records as $record) {
                     if ($this->terminate) {
-                        $this->logger->log(
+                        $this->logger->logInfo(
                             'deduplicate', 'Termination upon request'
                         );
                         exit(1);
@@ -120,22 +120,23 @@ class Deduplicate extends AbstractBase
                         if ($this->verbose) {
                             echo "\n";
                         }
-                        $this->logger->log(
+                        $this->logger->logInfo(
                             'deduplicate',
                             "$count records marked for processing in '$source', "
-                            . "$avg records/sec"
+                                . "$avg records/sec"
                         );
                     }
                 }
                 if ($this->terminate) {
-                    $this->logger->log('deduplicate', 'Termination upon request');
+                    $this->logger
+                        ->logInfo('deduplicate', 'Termination upon request');
                     exit(1);
                 }
 
-                $this->logger->log(
+                $this->logger->logInfo(
                     'deduplicate',
                     "Completed with $count records marked for processing "
-                    . " in '$source'"
+                        . " in '$source'"
                 );
             }
             if ($markOnly) {
@@ -154,10 +155,10 @@ class Deduplicate extends AbstractBase
                     continue;
                 }
 
-                $this->logger->log(
+                $this->logger->logInfo(
                     'deduplicate',
                     "Creating record list for '$source'"
-                    . ($allRecords ? ' (all records)' : '')
+                        . ($allRecords ? ' (all records)' : '')
                 );
 
                 $params = ['source_id' => $source];
@@ -166,17 +167,24 @@ class Deduplicate extends AbstractBase
                 } else {
                     $params['update_needed'] = true;
                 }
-                $records = $this->db->findRecords($params);
+                $records = $this->db->findRecords(
+                    $params,
+                    ['projection' => ['_id' => 1]]
+                );
                 $total = $this->db->countRecords($params);
                 $count = 0;
                 $deduped = 0;
                 $pc = new PerformanceCounter();
-                $this->logger->log(
+                $this->logger->logInfo(
                     'deduplicate', "Processing $total records for '$source'"
                 );
-                foreach ($records as $record) {
+                foreach ($records as $recordId) {
+                    $record = $this->db->getRecord($recordId['_id']);
+                    if (!$singleId && empty($record['update_needed'])) {
+                        continue;
+                    }
                     if ($this->terminate) {
-                        $this->logger->log(
+                        $this->logger->logInfo(
                             'deduplicate', 'Termination upon request'
                         );
                         exit(1);
@@ -203,30 +211,31 @@ class Deduplicate extends AbstractBase
                         if ($this->verbose) {
                             echo "\n";
                         }
-                        $this->logger->log(
+                        $this->logger->logInfo(
                             'deduplicate',
                             "$count records processed for '$source', $deduped "
-                            . "deduplicated, $avg records/sec"
+                                . "deduplicated, $avg records/sec"
                         );
                     }
                 }
                 if ($this->terminate) {
-                    $this->logger->log('deduplicate', 'Termination upon request');
+                    $this->logger
+                        ->logInfo('deduplicate', 'Termination upon request');
                     exit(1);
                 }
-                $this->logger->log(
+                $this->logger->logInfo(
                     'deduplicate',
                     "Completed with $count records processed for '$source', "
                     . "$deduped deduplicated"
                 );
             } catch (\Exception $e) {
-                $this->logger->log(
-                    'deduplicate', 'Exception: ' . $e->getMessage(), Logger::FATAL
+                $this->logger->logFatal(
+                    'deduplicate', 'Exception: ' . $e->getMessage()
                 );
                 throw $e;
             }
             if ($this->terminate) {
-                $this->logger->log('deduplicate', 'Termination upon request');
+                $this->logger->logInfo('deduplicate', 'Termination upon request');
                 exit(1);
             }
         }

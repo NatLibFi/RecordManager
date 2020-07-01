@@ -2,9 +2,9 @@
 /**
  * Pre-transformation trait
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -26,6 +26,8 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 namespace RecordManager\Base\Controller;
+
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Pre-transformation trait
@@ -50,25 +52,52 @@ trait PreTransformationTrait
     protected function pretransform($data, $source)
     {
         $settings = &$this->dataSourceSettings[$source];
-        if (!isset($settings['preXSLT'])) {
-            $style = new \DOMDocument();
-            $style->load(
-                $this->basePath . '/transformations/'
-                . $settings['preTransformation']
-            );
-            $settings['preXSLT'] = new \XSLTProcessor();
-            $settings['preXSLT']->importStylesheet($style);
-            $settings['preXSLT']->setParameter('', 'source_id', $source);
-            $settings['preXSLT']->setParameter(
-                '', 'institution', $settings['institution']
-            );
-            $settings['preXSLT']->setParameter('', 'format', $settings['format']);
-            $settings['preXSLT']->setParameter(
-                '', 'id_prefix', $settings['idPrefix']
-            );
+        // Shortcut
+        if (!empty($settings['preTransformation'])) {
+            return $data;
         }
-        $doc = new \DOMDocument();
-        $doc->loadXML($data, LIBXML_PARSEHUGE);
-        return $settings['preXSLT']->transformToXml($doc);
+
+        if (!isset($settings['preXSLT'])) {
+            $settings['preXSLT'] = [];
+            foreach ((array)$settings['preTransformation'] as $transformation) {
+                $style = new \DOMDocument();
+                $style->load(
+                    $this->basePath . '/transformations/' . $transformation
+                );
+                $xslt = new \XSLTProcessor();
+                $xslt->importStylesheet($style);
+                $xslt->setParameter('', 'source_id', $source);
+                $xslt->setParameter(
+                    '', 'institution', $settings['institution']
+                );
+                $xslt->setParameter('', 'format', $settings['format']);
+                $xslt->setParameter(
+                    '', 'id_prefix', $settings['idPrefix']
+                );
+                $settings['preXSLT'][] = $xslt;
+            }
+        }
+        $saveUseErrors = libxml_use_internal_errors(true);
+        try {
+            libxml_clear_errors();
+            $doc = new \DOMDocument();
+            if (MetadataUtils::loadXML($data, $doc) === false) {
+                $errors = libxml_get_errors();
+                $messageParts = [];
+                foreach ($errors as $error) {
+                    $messageParts[] = '[' . $error->line . ':' . $error->column
+                        . '] Error ' . $error->code . ': ' . $error->message;
+                }
+                throw new \Exception(implode("\n", $messageParts));
+            }
+            libxml_use_internal_errors($saveUseErrors);
+        } catch (\Exception $e) {
+            libxml_use_internal_errors($saveUseErrors);
+            throw $e;
+        }
+        foreach ($settings['preXSLT'] as $xslt) {
+            $doc = $xslt->transformToDoc($doc);
+        }
+        return $doc->saveXML();
     }
 }

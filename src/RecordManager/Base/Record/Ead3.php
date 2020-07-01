@@ -2,9 +2,9 @@
 /**
  * EAD 3 Record Class
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -42,16 +42,14 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Ead3 extends Base
+class Ead3 extends Ead
 {
-    protected $doc = null;
-
     /**
      * Set record data
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -60,7 +58,7 @@ class Ead3 extends Base
     {
         parent::setData($source, $oaiID, $data);
 
-        $this->doc = simplexml_load_string($data);
+        $this->doc = $this->parseXMLRecord($data);
     }
 
     /**
@@ -127,25 +125,8 @@ class Ead3 extends Base
         $data['topic'] = $data['topic_facet'] = $this->getTopics();
         $data['format'] = $this->getFormat();
         $data['institution'] = $this->getInstitution();
-
-        switch ($data['format']) {
-        case 'fonds':
-            break;
-        case 'collection':
-            break;
-        case 'series':
-        case 'subseries':
-            $data['title_sub'] = $this->getUnitId();
-            break;
-        default:
-            $data['title_sub'] = $this->getUnitId();
-            if ($doc->{'add-data'}->parent) {
-                $data['series']
-                    = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
-            }
-            break;
-        }
-
+        $data['series'] = $this->getSeries();
+        $data['title_sub'] = $this->getSubtitle();
         $data['title_short'] = $this->getTitle();
         $data['title'] = '';
         if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
@@ -187,7 +168,7 @@ class Ead3 extends Base
      * Return record title
      *
      * @param bool $forFiling Whether the title is to be used in filing
-     * (e.g. sorting, non-filing characters should be removed)
+     *                        (e.g. sorting, non-filing characters should be removed)
      *
      * @return string
      *
@@ -208,6 +189,17 @@ class Ead3 extends Base
         }
 
         return $title;
+    }
+
+    /**
+     * Dedup: Return main author (format: Last, First)
+     *
+     * @return string
+     */
+    public function getMainAuthor()
+    {
+        $authors = $this->getAuthors();
+        return $authors[0] ?? '';
     }
 
     /**
@@ -324,7 +316,7 @@ class Ead3 extends Base
                 $result[] = trim((string)$subject);
             }
         }
-        return $reslt;
+        return $result;
     }
 
     /**
@@ -441,8 +433,8 @@ class Ead3 extends Base
         } else {
             $data['is_hierarchy_id'] = $data['hierarchy_top_id'] = $this->getID();
             $data['is_hierarchy_title'] = $data['hierarchy_top_title']
-                = isset($doc->did->unittitle)
-                    ? (string)$doc->did->unittitle->attributes()->label
+                = isset($this->doc->did->unittitle)
+                    ? (string)$this->doc->did->unittitle->attributes()->label
                     : '';
         }
 

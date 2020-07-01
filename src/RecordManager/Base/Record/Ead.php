@@ -2,9 +2,9 @@
 /**
  * Ead record class
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -45,11 +45,46 @@ class Ead extends Base
     protected $doc = null;
 
     /**
+     * Archive fonds format
+     *
+     * @return string
+     */
+    protected $fondsType = 'fonds';
+
+    /**
+     * Archive collection format
+     *
+     * @return string
+     */
+    protected $collectionType = 'collection';
+
+    /**
+     * Archive series format
+     *
+     * @return string
+     */
+    protected $seriesType = 'series';
+
+    /**
+     * Archive subseries format
+     *
+     * @return string
+     */
+    protected $subseriesType = 'subseries';
+
+    /**
+     * Undefined type
+     *
+     * @return string
+     */
+    protected $undefinedType = null;
+
+    /**
      * Set record data
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -58,7 +93,7 @@ class Ead extends Base
     {
         parent::setData($source, $oaiID, $data);
 
-        $this->doc = simplexml_load_string($data);
+        $this->doc = $this->parseXMLRecord($data);
     }
 
     /**
@@ -162,46 +197,19 @@ class Ead extends Base
 
         $data = array_merge($data, $this->getGeographicData());
 
-        if ($subjects = $doc->xpath('controlaccess/subject')) {
-            $topics = [];
-            foreach ($subjects as $subject) {
-                if (trim((string)$subject) !== '-') {
-                    $topics[] = trim((string)$subject);
-                }
-            }
-            $data['topic'] = $data['topic_facet'] = $topics;
-        }
+        $data['topic'] = $data['topic_facet'] = $this->getTopics();
 
-        $genre = $doc->xpath('controlaccess/genreform');
-        $data['format'] = (string) ($genre ? $genre[0] : $doc->attributes()->level);
+        $data['format'] = $this->getFormat();
 
         if (isset($doc->did->repository)) {
             $data['institution']
-                = (string) (isset($doc->did->repository->corpname)
+                = (string)(isset($doc->did->repository->corpname)
                 ? $doc->did->repository->corpname
                 : $doc->did->repository);
         }
 
-        $data['title_sub'] = '';
-
-        switch ($data['format']) {
-        case 'fonds':
-            break;
-        case 'collection':
-            break;
-        case 'series':
-        case 'subseries':
-            $data['title_sub'] = (string)$doc->did->unitid;
-            break;
-        default:
-            $data['title_sub'] = (string)$doc->did->unitid;
-            if ($doc->{'add-data'}->parent) {
-                $data['series']
-                    = (string)$doc->{'add-data'}->parent->attributes()->unittitle;
-            }
-            break;
-        }
-
+        $data['series'] = $this->getSeries();
+        $data['title_sub'] = $this->getSubtitle();
         $data['title_short'] = (string)$doc->did->unittitle;
         $data['title'] = '';
         if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
@@ -264,6 +272,147 @@ class Ead extends Base
         }
 
         return $data;
+    }
+
+    /**
+     * Return format from predefined values
+     *
+     * @return string
+     */
+    public function getFormat()
+    {
+        $genre = $this->doc->xpath('controlaccess/genreform');
+        return (string)($genre ? $genre[0] : $this->doc->attributes()->level);
+    }
+
+    /**
+     * Get topic URIs.
+     *
+     * @return array
+     */
+    public function getTopicURIs()
+    {
+        return $this->getTopicTerms(true);
+    }
+
+    /**
+     * Dedup: Return main author (format: Last, First)
+     *
+     * @return string
+     */
+    public function getMainAuthor()
+    {
+        if ($names = $this->doc->xpath('controlaccess/persname')) {
+            foreach ($names as $name) {
+                if (trim((string)$name) !== '-') {
+                    return trim((string)$name);
+                }
+            }
+        }
+        return trim((string)$this->doc->creator);
+    }
+
+    /**
+     * Get topics.
+     *
+     * @return array
+     */
+    protected function getTopics()
+    {
+        return $this->getTopicTerms(false);
+    }
+
+    /**
+     * Get topic labels or URIs.
+     *
+     * @param boolean $uri Whether to return topic URIs or labels.
+     *
+     * @return array
+     */
+    protected function getTopicTerms($uri = false)
+    {
+        if ($subjects = $this->doc->xpath('controlaccess/subject')) {
+            $result = [];
+            foreach ($subjects as $subject) {
+                if (!$uri) {
+                    $label = trim((string)$subject);
+                    if ($label !== '-') {
+                        $result[] = $label;
+                    }
+                } else {
+                    if ($subject->attributes()->href) {
+                        $result[] = (string)$subject->attributes()->href;
+                    }
+                }
+            }
+            return $result;
+        }
+        return [];
+    }
+
+    /**
+     * Return subtitle
+     *
+     * @return string
+     */
+    protected function getSubtitle()
+    {
+        $noSubtitleFormats = [
+            $this->fondsType,
+            $this->collectionType
+        ];
+        if (in_array($this->getFormat(), $noSubtitleFormats)) {
+            return '';
+        }
+
+        return $this->getUnitId();
+    }
+
+    /**
+     * Return series title
+     *
+     * @return string
+     */
+    protected function getSeries()
+    {
+        $nonSeriesFormats = [
+            $this->fondsType,
+            $this->collectionType,
+            $this->seriesType,
+            $this->subseriesType,
+            $this->undefinedType
+        ];
+
+        if (in_array($this->getFormat(), $nonSeriesFormats)) {
+            return '';
+        }
+
+        $addData = $this->doc->{'add-data'};
+        if ($addData->parent) {
+            $parentAttr = $addData->parent->attributes();
+            if ($this->doc->{'add-data'}->archive) {
+                // Check that parent is not top-level record (archive)
+                $archiveAttr = $addData->archive->attributes();
+                if (isset($parentAttr->id) && isset($archiveAttr->id)
+                    && (string)$parentAttr->id === (string)$archiveAttr->id
+                ) {
+                    return '';
+                }
+            }
+            return (string)$parentAttr->title;
+        }
+
+        return '';
+    }
+
+    /**
+     * Get unit id
+     *
+     * @return string
+     */
+    protected function getUnitId()
+    {
+        return (string)$this->doc->did->unitid;
     }
 
     /**

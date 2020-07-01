@@ -2,7 +2,7 @@
 /**
  * Metadata Preview Front-End
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Eero Heikkinen 2013.
  * Copyright (C) The National Library of Finland 2013.
@@ -30,23 +30,47 @@
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/src/RecordManager/Base/Autoloader.php';
 
-if (!isset($_REQUEST['source']) || !isset($_REQUEST['data'])) {
-    die('Missing parameters');
-}
-$format = isset($_REQUEST['format']) ? $_REQUEST['format'] : '';
-$source = isset($_REQUEST['source']) ? $_REQUEST['source'] : '';
-
-if (!preg_match('/^[\w_]*$/', $format) || !preg_match('/^[\w_]*$/', $source)) {
-    die('Invalid parameters');
-}
-
 $basePath = __DIR__;
-$config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
+$filename = $basePath . '/conf/recordmanager.ini';
+$config = parse_ini_file($filename, true);
+if (false === $config) {
+    $error = error_get_last();
+    $message = $error['message'] ?? 'unknown error occurred';
+    throw new \Exception(
+        "Could not load configuration from file '$filename': $message"
+    );
+}
+
 $createPreview = new \RecordManager\Base\Controller\CreatePreview(
     $basePath, $config
 );
 
-$record = $createPreview->launch($_REQUEST['data'], $format, $source);
+$func = $_REQUEST['func'] ?? '';
+if ($func === 'get_sources') {
+    $record = $createPreview->getDataSources($_REQUEST['format'] ?? '');
+} else {
+    if (!isset($_REQUEST['source']) || !isset($_REQUEST['data'])) {
+        http_response_code(400);
+        echo json_encode(['error_message' => 'Missing parameters']);
+        return;
+    }
+    $format = $_REQUEST['format'] ?? '';
+    $source = $_REQUEST['source'] ?? '';
+
+    if (!preg_match('/^[\w_]*$/', $format) || !preg_match('/^[\w_-]*$/', $source)) {
+        http_response_code(400);
+        echo json_encode(['error_message' => 'Invalid parameters']);
+        return;
+    }
+
+    try {
+        $record = $createPreview->launch($_REQUEST['data'], $format, $source);
+    } catch (\Exception $e) {
+        http_response_code(400);
+        echo json_encode(['error_message' => $e->getMessage()]);
+        return;
+    }
+}
 
 header('Content-Type: application/json');
 echo json_encode($record);

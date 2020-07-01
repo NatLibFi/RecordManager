@@ -2,9 +2,9 @@
 /**
  * Create Preview Record
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,6 +28,7 @@
 namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Solr\PreviewCreator;
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Create Preview Record
@@ -48,7 +49,8 @@ class CreatePreview extends AbstractBase
      * @param string $basePath Base directory
      * @param array  $config   Main configuration
      * @param bool   $console  Specify whether RecordManager is executed on the
-     * console so that log output is also output to the console.
+     *                         console so that log output is also output to the
+     *                         console
      * @param bool   $verbose  Whether verbose output is enabled
      */
     public function __construct($basePath, $config, $console = false,
@@ -101,7 +103,22 @@ class CreatePreview extends AbstractBase
         }
 
         if ($settings['preTransformation']) {
-            $metadata = $this->pretransform($metadata);
+            $metadata = $this->pretransform($metadata, $source);
+        } elseif (!empty($settings['oaipmhTransformation'])) {
+            $metadata = $this->oaipmhTransform(
+                $metadata, $settings['oaipmhTransformation']
+            );
+        }
+
+        if ('marc' !== $format && substr(trim($metadata), 0, 1) === '<') {
+            $doc = new \DOMDocument();
+            if (MetadataUtils::loadXML($metadata, $doc)) {
+                $root = $doc->childNodes->item(0);
+                if (in_array($root->nodeName, ['records', 'collection'])) {
+                    // This is a collection of records, get the first one
+                    $metadata = $doc->saveXML($root->childNodes->item(0));
+                }
+            }
         }
 
         $timestamp = $this->db->getTimestamp();
@@ -145,5 +162,62 @@ class CreatePreview extends AbstractBase
         );
 
         return $preview->create($record);
+    }
+
+    /**
+     * Get a list of valid data sources
+     *
+     * @param string $format Optional limit to specific format
+     *
+     * @return array
+     */
+    public function getDataSources($format = '')
+    {
+        $result = [];
+        foreach ($this->dataSourceSettings as $id => $config) {
+            if ($format && $config['format'] !== $format) {
+                continue;
+            }
+            $result[] = [
+                'id' => $id,
+                'format' => $config['format'] ?? '',
+                'institution' => $config['institution']
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Perform OAI-PMH transformation for the record
+     *
+     * @param string       $metadata        Record metadata
+     * @param string|array $transformations XSL transformations
+     *
+     * @return string
+     */
+    protected function oaipmhTransform($metadata, $transformations)
+    {
+        $doc = new \DOMDocument();
+        if (!MetadataUtils::loadXML($metadata, $doc)) {
+            throw new \Exception(
+                'Could not parse XML record'
+            );
+        }
+        foreach ((array)$transformations as $transformation) {
+            $style = new \DOMDocument();
+            $loadResult = $style->load(
+                $this->basePath . "/transformations/$transformation"
+            );
+            if (false === $loadResult) {
+                throw new \Exception(
+                    'Could not load configured OAI-PMH transformation'
+                );
+            }
+            $preXslt = new \XSLTProcessor();
+            $preXslt->importStylesheet($style);
+            $doc = $preXslt->transformToDoc($doc);
+        }
+        return $doc->saveXML();
     }
 }

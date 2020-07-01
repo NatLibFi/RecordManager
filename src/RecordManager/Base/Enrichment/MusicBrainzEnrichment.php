@@ -2,7 +2,7 @@
 /**
  * MusicBrainzEnrichment Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2019.
  *
@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Base\Enrichment;
 
+use RecordManager\Base\Database\Database;
+use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -53,13 +55,16 @@ class MusicBrainzEnrichment extends Enrichment
     /**
      * Constructor
      *
-     * @param Database $db     Database connection (for cache)
-     * @param Logger   $logger Logger
-     * @param array    $config Main configuration
+     * @param Database      $db            Database connection (for cache)
+     * @param Logger        $logger        Logger
+     * @param array         $config        Main configuration
+     * @param RecordFactory $recordFactory Record factory
      */
-    public function __construct($db, $logger, $config)
-    {
-        parent::__construct($db, $logger, $config);
+    public function __construct(
+        Database $db, Logger $logger, array $config,
+        RecordFactory $recordFactory
+    ) {
+        parent::__construct($db, $logger, $config, $recordFactory);
 
         $this->baseURL
             = isset($this->config['MusicBrainzEnrichment']['url'])
@@ -126,17 +131,6 @@ class MusicBrainzEnrichment extends Enrichment
                     . '"';
                 $mbIds = array_merge($mbIds, $this->getMBIDs($query));
             }
-        }
-        if (!$mbIds && ($author = $record->getMainAuthor())) {
-            $parts = explode(', ', $author, 2);
-            if (isset($parts[1])) {
-                $author = $parts[1] . ' ' . $parts[0];
-            }
-            $query = 'artistname:"' . addcslashes($author, "\"\\")
-                . '" AND releaseaccent:"'
-                . addcslashes($solrArray['title_short'], "\"\\")
-                . '"';
-            $mbIds = $this->getMBIDs($query, true);
         }
         if ($mbIds) {
             $solrArray['mbid_str_mv'] = $mbIds;

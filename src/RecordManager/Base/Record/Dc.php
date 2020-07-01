@@ -2,7 +2,7 @@
 /**
  * Dublin Core record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2018.
  *
@@ -42,6 +42,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Dc extends Base
 {
+    use FullTextTrait;
+
     protected $doc = null;
 
     /**
@@ -49,7 +51,7 @@ class Dc extends Base
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -58,7 +60,7 @@ class Dc extends Base
     {
         parent::setData($source, $oaiID, $data);
 
-        $this->doc = simplexml_load_string($data);
+        $this->doc = $this->parseXMLRecord($data);
         if (empty($this->doc->recordID)) {
             $p = strpos($oaiID, ':');
             $p = strpos($oaiID, ':', $p + 1);
@@ -103,7 +105,7 @@ class Dc extends Base
      */
     public function toSolrArray()
     {
-        $data = [];
+        $data = $this->getFullTextFields($this->doc);
 
         $doc = $this->doc;
         $data['record_format'] = $data['recordtype'] = 'dc';
@@ -188,7 +190,7 @@ class Dc extends Base
      * Dedup: Return record title
      *
      * @param bool $forFiling Whether the title is to be used in filing
-     * (e.g. sorting, non-filing characters should be removed)
+     *                        (e.g. sorting, non-filing characters should be removed)
      *
      * @return string
      */

@@ -2,7 +2,7 @@
 /**
  * SFX Export File Harvesting Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (c) The National Library of Finland 2011-2017.
  *
@@ -116,4 +116,3 @@ class Sfx extends HTTPFiles
         return $status != '-';
     }
 }
-

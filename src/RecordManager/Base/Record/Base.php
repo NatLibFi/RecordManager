@@ -2,9 +2,9 @@
 /**
  * Base class for record drivers
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -104,7 +104,7 @@ class Base
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -129,14 +129,14 @@ class Base
     }
 
     /**
-     * Return record linking ID (typically same as ID) used for links
+     * Return record linking IDs (typically same as ID) used for links
      * between records in the data source
      *
-     * @return string
+     * @return array
      */
-    public function getLinkingID()
+    public function getLinkingIDs()
     {
-        return $this->getID();
+        return [$this->getID()];
     }
 
     /**
@@ -202,10 +202,12 @@ class Base
      * Merge component parts to this record
      *
      * @param MongoCollection $componentParts Component parts to be merged
+     * @param MongoDate|null  $changeDate     Latest timestamp for the component part
+     *                                        set
      *
      * @return void
      */
-    public function mergeComponentParts($componentParts)
+    public function mergeComponentParts($componentParts, &$changeDate)
     {
     }
 
@@ -213,7 +215,7 @@ class Base
      * Return record title
      *
      * @param bool $forFiling Whether the title is to be used in filing
-     * (e.g. sorting, non-filing characters should be removed)
+     *                        (e.g. sorting, non-filing characters should be removed)
      *
      * @return string
      *
@@ -325,10 +327,10 @@ class Base
     }
 
     /**
-    * Dedup: Return ISSNs
-    *
-    * @return array
-    */
+     * Dedup: Return ISSNs
+     *
+     * @return array
+     */
     public function getISSNs()
     {
         return [];
@@ -414,24 +416,93 @@ class Base
      */
     public function getSuppressed()
     {
+        $filters = $this->dataSourceSettings[$this->source]['suppressOnField'] ?? [];
+        if ($filters) {
+            $solrFields = $this->toSolrArray();
+            foreach ($filters as $field => $filter) {
+                if (!isset($solrFields[$field])) {
+                    continue;
+                }
+                foreach ((array)$solrFields[$field] as $value) {
+                    if (strncmp($value, '/', 1) === 0
+                        && strncmp($value, '/', -1) === 0
+                    ) {
+                        $res = preg_match($filter, $value);
+                        if (false === $res) {
+                            $this->logger->logError(
+                                'getSuppressed',
+                                "Failed to parse filter regexp: $filter"
+                            );
+                        }
+                    } else {
+                        $res = in_array($value, explode('|', $filter));
+                    }
+                    if ($res) {
+                        return true;
+                    }
+                }
+            }
+        }
         return false;
     }
 
     /**
      * Get key data that can be used to identify expressions of a work
      *
-     * @return array Associative array of authors and titles
+     * Returns an associative array like this:
+     *
+     * [
+     *   'titles' => [
+     *     ['type' => 'title', 'value' => 'Title'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title']
+     *    ],
+     *   'authors' => [
+     *     ['type' => 'author', 'value' => 'Name 1'],
+     *     ['type' => 'author', 'value' => 'Name 2']
+     *   ],
+     *   'titlesAltScript' => [
+     *     ['type' => 'title', 'value' => 'Title in alternate script'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
+     *   ],
+     *   'authorsAltScript' => [
+     *     ['type' => 'author', 'value' => 'Name 1 in alternate script'],
+     *     ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *   ]
+     * ]
+     *
+     * @return array
      */
     public function getWorkIdentificationData()
     {
-        return [];
+        $titles = [];
+        $authors = [];
+        if ($title = $this->getTitle(true)) {
+            $titles[] = ['type' => 'title', 'value' => $title];
+        }
+        if ($author = $this->getMainAuthor()) {
+            $authors[] = ['type' => 'author', 'value' => $author];
+        }
+        $titlesAltScript = [];
+        $authorsAltScript = [];
+        return compact('titles', 'authors', 'titlesAltScript', 'authorsAltScript');
+    }
+
+    /**
+     * Return datasource settings.
+     *
+     * @return array
+     */
+    public function getDataSourceSettings()
+    {
+        return $this->dataSourceSettings[$this->source];
     }
 
     /**
      * Return a parameter specified in driverParams[] of datasources.ini
      *
      * @param string $parameter Parameter name
-     * @param bool   $default   Default value if the parameter is not set
+     * @param mixed  $default   Default value to return if value is not set
+     *                          defaults to true
      *
      * @return mixed Value
      */
@@ -448,7 +519,7 @@ class Base
             )
         );
 
-        return isset($iniValues[$parameter]) ? $iniValues[$parameter] : $default;
+        return $iniValues[$parameter] ?? $default;
     }
 
     /**
@@ -476,5 +547,36 @@ class Base
             return $dateString;
         }
         return '';
+    }
+
+    /**
+     * Parse an XML record from string to a SimpleXML object
+     *
+     * @param string $xml XML string
+     *
+     * @return SimpleXMLElement
+     * @throws \Exception
+     */
+    protected function parseXMLRecord($xml)
+    {
+        $saveUseErrors = libxml_use_internal_errors(true);
+        try {
+            libxml_clear_errors();
+            $doc = MetadataUtils::loadXML($xml);
+            if (false === $doc) {
+                $errors = libxml_get_errors();
+                $messageParts = [];
+                foreach ($errors as $error) {
+                    $messageParts[] = '[' . $error->line . ':' . $error->column
+                        . '] Error ' . $error->code . ': ' . $error->message;
+                }
+                throw new \Exception(implode("\n", $messageParts));
+            }
+            libxml_use_internal_errors($saveUseErrors);
+            return $doc;
+        } catch (\Exception $e) {
+            libxml_use_internal_errors($saveUseErrors);
+            throw $e;
+        }
     }
 }

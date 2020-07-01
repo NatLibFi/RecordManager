@@ -2,7 +2,7 @@
 /**
  * LcCallNumber tests
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2015
  *
@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-use \RecordManager\Base\Utils\LcCallNumber;
+use RecordManager\Base\Utils\LcCallNumber;
 
 /**
  * LcCallNumber tests

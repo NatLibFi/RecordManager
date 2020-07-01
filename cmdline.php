@@ -2,10 +2,10 @@
 /**
  * Command Line Utility Functions
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Patrick Fisher 2009
- * Copyright (C) The National Library of Finland 2011-2013.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -38,20 +38,37 @@ ini_set('display_errors', '1');
 // command line by providing XHProf location, e.g.
 // RECMAN_PROFILE=http://localhost/xhprof php manage.php ...
 if (!empty(getenv('RECMAN_PROFILE'))) {
-    if (extension_loaded('xhprof')) {
-        xhprof_enable();
-        register_shutdown_function('finishProfiling');
-    } else if (extension_loaded('tideways')) {
-        tideways_enable();
+    if (extension_loaded('tideways_xhprof')) {
+        tideways_xhprof_enable();
         register_shutdown_function('finishProfiling');
     } else {
-        echo 'WARNING: No xhprof or tideways extension available, profiling'
-            . " disabled\n";
+        echo "WARNING: No tideways_xhprof extension available, profiling disabled\n";
     }
 }
 
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/src/RecordManager/Base/Autoloader.php';
+
+/**
+ * Load the main configuration
+ *
+ * @param string $basePath Base path
+ *
+ * @return array
+ */
+function loadMainConfig($basePath)
+{
+    $filename = $basePath . '/conf/recordmanager.ini';
+    $result = parse_ini_file($filename, true);
+    if (false === $result) {
+        $error = error_get_last();
+        $message = $error['message'] ?? 'unknown error occurred';
+        throw new \Exception(
+            "Could not load configuration from file '$filename': $message"
+        );
+    }
+    return $result;
+}
 
 /**
  * Apply any configuration overrides defined on command line
@@ -160,7 +177,7 @@ function releaseLock($handle)
  */
 function finishProfiling()
 {
-    $xhprofData = extension_loaded('xhprof') ? xhprof_disable() : tideways_disable();
+    $xhprofData = tideways_xhprof_disable();
     $xhprofRunId = uniqid();
     $suffix = 'recman';
     $dir = ini_get('xhprof.output_dir');

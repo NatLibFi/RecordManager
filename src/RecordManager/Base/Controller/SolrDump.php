@@ -2,7 +2,7 @@
 /**
  * Solr Updater
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2017.
  *
@@ -50,12 +50,17 @@ class SolrDump extends AbstractBase
      * @param string      $sourceId   Source ID to process, or empty or * for all
      *                                sources (ignored if record merging is enabled)
      * @param string      $singleId   Process only a record with the given ID
+     * @param bool        $mapValues  Whether to use mappings for the values
      *
      * @return void
      */
     public function launch($dumpPrefix, $fromDate = null, $sourceId = '',
-        $singleId = ''
+        $singleId = '', $mapValues = true
     ) {
+        if (!$mapValues) {
+            $this->config['Solr']['field_mapper']
+                = '\RecordManager\Base\Utils\NoOpFieldMapper';
+        }
         $updater = new SolrUpdater(
             $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
             $this->dataSourceSettings, $this->recordFactory

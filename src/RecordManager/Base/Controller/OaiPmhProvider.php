@@ -2,9 +2,9 @@
 /**
  * OAI-PMH Provider
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2017.
+ * Copyright (C) The National Library of Finland 2012-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Database\Database;
-use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\XslTransformation;
 
@@ -89,7 +87,8 @@ class OaiPmhProvider extends AbstractBase
      * @param string $basePath Base directory
      * @param array  $config   Main configuration
      * @param bool   $console  Specify whether RecordManager is executed on the
-     * console so that log output is also output to the console.
+     *                         console so that log output is also output to the
+     *                         console
      * @param bool   $verbose  Whether verbose output is enabled
      */
     public function __construct($basePath, $config, $console = false,
@@ -172,7 +171,7 @@ class OaiPmhProvider extends AbstractBase
             die();
         }
         $xml = $this->createRecord($record, $prefix, true);
-        print <<<EOT
+        echo <<<EOT
   <GetRecord>
 $xml
   </GetRecord>
@@ -192,7 +191,7 @@ EOT;
         $admin = $this->escape($this->config['OAI-PMH']['admin_email']);
         $earliestDate = $this->toOaiDate($this->getEarliestDateStamp());
 
-        print <<<EOT
+        echo <<<EOT
 <Identify>
   <repositoryName>$name</repositoryName>
   <baseURL>$base</baseURL>
@@ -286,7 +285,7 @@ EOT;
         foreach ($records as $record) {
             ++$count;
             if ($count == 1) {
-                print <<<EOT
+                echo <<<EOT
   <$verb>
 
 EOT;
@@ -305,7 +304,7 @@ EOT;
                         ]
                     )
                 );
-                print <<<EOT
+                echo <<<EOT
     <resumptionToken cursor="$position">$token</resumptionToken>
 
 EOT;
@@ -315,7 +314,7 @@ EOT;
             if ($xml === false) {
                 break;
             }
-            print $xml;
+            echo $xml;
         }
 
         if ($count == 0) {
@@ -324,7 +323,7 @@ EOT;
             die();
         }
 
-        print <<<EOT
+        echo <<<EOT
   </$verb>
 
 EOT;
@@ -371,7 +370,7 @@ EOT;
             }
         }
 
-        print <<<EOT
+        echo <<<EOT
   <ListMetadataFormats>
 
 EOT;
@@ -384,7 +383,7 @@ EOT;
                     $schema = $settings['schema'];
                     $namespace = $settings['namespace'];
 
-                    print <<<EOT
+                    echo <<<EOT
     <metadataFormat>
       <metadataPrefix>$prefix</metadataPrefix>
       <schema>$schema</schema>
@@ -396,7 +395,7 @@ EOT;
                 }
             }
         }
-        print <<<EOT
+        echo <<<EOT
   </ListMetadataFormats>
 
 EOT;
@@ -409,7 +408,7 @@ EOT;
      */
     protected function listSets()
     {
-        print <<<EOT
+        echo <<<EOT
   <ListSets>
 
 EOT;
@@ -418,7 +417,7 @@ EOT;
             $id = $this->escape($id);
             $name = $this->escape($set['name']);
 
-            print <<<EOT
+            echo <<<EOT
     <set>
       <setSpec>$id</setSpec>
       <setName>$name</setName>
@@ -426,7 +425,7 @@ EOT;
 EOT;
         }
 
-        print <<<EOT
+        echo <<<EOT
   </ListSets>
 EOT;
     }
@@ -443,8 +442,8 @@ EOT;
     {
         $code = $this->escape($code);
         $message = $this->escape($message);
-        print "  <error code=\"$code\">$message</error>\n";
-        $this->log("$code - $message", Logger::ERROR);
+        echo "  <error code=\"$code\">$message</error>\n";
+        $this->logError("$code - $message");
     }
 
     /**
@@ -467,7 +466,7 @@ EOT;
             }
         }
 
-        print <<<EOT
+        echo <<<EOT
 <?xml version="1.0" encoding="UTF-8"?>
 <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -486,7 +485,7 @@ EOT;
      */
     protected function printSuffix()
     {
-        print "</OAI-PMH>\n";
+        echo "</OAI-PMH>\n";
     }
 
     /**
@@ -531,7 +530,7 @@ EOT;
      */
     protected function getParam($param)
     {
-        return isset($_REQUEST[$param]) ? $_REQUEST[$param] : '';
+        return $_REQUEST[$param] ?? '';
     }
 
     /**
@@ -641,8 +640,8 @@ EOT;
                         $key, ['verb', 'from', 'until', 'set', 'metadataPrefix']
                     );
                     if (!$validVerb) {
-                            $this->error('badArgument', 'Illegal argument');
-                            return false;
+                        $this->error('badArgument', 'Illegal argument');
+                        return false;
                     }
                 }
             }
@@ -714,18 +713,17 @@ EOT;
     }
 
     /**
-     * Write a message to log
+     * Write an error message to log
      *
      * @param string $message Message
-     * @param int    $level   Log level for the message
      *
      * @return void
      */
-    protected function log($message, $level = Logger::INFO)
+    protected function logError($message)
     {
         $message = '[' . $_SERVER['REMOTE_ADDR'] . '] ' . $message . ' (request: '
             . $_SERVER['QUERY_STRING'] . ')';
-        $this->logger->log('OaiPmhProvider', $message, $level);
+        $this->logger->logError('OaiPmhProvider', $message);
     }
 
     /**
@@ -734,7 +732,8 @@ EOT;
      * @param array   $record          Mongo record
      * @param string  $format          Metadata format
      * @param boolean $includeMetadata Whether to include record data
-     * (or only header). Metadata is never returned for deleted records.
+     *                                 (or only header). Metadata is never returned
+     *                                 for deleted records.
      *
      * @return boolean|string
      */
@@ -745,17 +744,19 @@ EOT;
             $format = $this->formats[$format]['format'];
         }
         $metadata = '';
+        $source = $record['source_id'];
+        $datasource = $this->dataSourceSettings[$source];
+        $oaiId = empty($datasource['ignoreOaiIdInProvider'])
+            ? $record['oai_id'] : '';
         if ($includeMetadata && !$record['deleted']) {
             $metadataRecord = $this->recordFactory->createRecord(
                 $record['format'],
                 MetadataUtils::getRecordData($record, true),
-                $record['oai_id'],
+                $oaiId,
                 $record['source_id']
             );
             $metadata = $metadataRecord->toXML();
             $key = "transformation_to_{$format}";
-            $source = $record['source_id'];
-            $datasource = $this->dataSourceSettings[$source];
             if ($sourceFormat != $format || isset($datasource[$key])) {
                 if (!isset($datasource[$key])) {
                     $this->error('cannotDisseminateFormat', '');
@@ -797,8 +798,8 @@ EOT;
         }
 
         $id = $this->escape(
-            !empty($record['oai_id'])
-            ? $record['oai_id']
+            !empty($oaiId)
+            ? $oaiId
             : $this->idPrefix . $record['_id']
         );
         $date = $this->toOaiDate($record['updated']->toDateTime()->getTimestamp());

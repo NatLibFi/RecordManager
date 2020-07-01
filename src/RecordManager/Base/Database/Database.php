@@ -2,7 +2,7 @@
 /**
  * Database access class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (c) The National Library of Finland 2017-2019.
  *
@@ -222,7 +222,7 @@ class Database
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
-     * @return MongoDB\Driver\Cursor
+     * @return \MongoDB\Driver\Cursor
      */
     public function findRecords($filter, $options = [])
     {
@@ -366,7 +366,7 @@ class Database
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
-     * @return MongoDB\Driver\Cursor
+     * @return \MongoDB\Driver\Cursor
      */
     public function findDedups($filter, $options = [])
     {
@@ -428,7 +428,7 @@ class Database
                 continue;
             }
             $nameParts = explode('_', $collection);
-            $collTime = isset($nameParts[4]) ? $nameParts[4] : null;
+            $collTime = $nameParts[4] ?? null;
             if (is_numeric($collTime)
                 && $collTime != $lastRecordTime
                 && $collTime < time() - 60 * 60 * 24 * 7
@@ -448,7 +448,7 @@ class Database
      * Check for an existing queue collection with the given parameters
      *
      * @param string $hash           Hash of parameters used to identify the
-     * collection
+     *                               collection
      * @param string $fromDate       Timestamp of processing start date
      * @param int    $lastRecordTime Newest record timestamp
      *
@@ -470,7 +470,7 @@ class Database
      * Create a new temporary queue collection for the given parameters
      *
      * @param string $hash           Hash of parameters used to identify the
-     * collection
+     *                               collection
      * @param string $fromDate       Timestamp of processing start date
      * @param int    $lastRecordTime Newest record timestamp
      *
@@ -552,7 +552,7 @@ class Database
      *
      * @param string $collectionName The queue collection name
      *
-     * @return MongoDB\Driver\Cursor
+     * @return \MongoDB\Driver\Cursor
      */
     public function getQueuedIds($collectionName)
     {
@@ -633,7 +633,7 @@ class Database
      * @param array  $filter     Search filter
      * @param array  $options    Options such as sorting
      *
-     * @return MongoDB\Driver\Cursor
+     * @return \MongoDB\Driver\Cursor
      */
     protected function findMongoRecords($collection, $filter, $options)
     {

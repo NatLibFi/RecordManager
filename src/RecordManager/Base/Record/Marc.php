@@ -2,9 +2,9 @@
 /**
  * Marc record class
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2018.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -44,6 +44,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Marc extends Base
 {
+    use \RecordManager\Finna\Record\FinnaRecordTrait;
+
     const SUBFIELD_INDICATOR = "\x1F";
     const END_OF_FIELD = "\x1E";
     const END_OF_RECORD = "\x1D";
@@ -74,30 +76,9 @@ class Marc extends Base
     ];
 
     /**
-     * Default secondary author relator codes, may be overridden in configuration
-     *
-     * @var array
-     */
-    protected $secondaryAuthorRelators = [
-        'act', 'anm', 'ann', 'arr', 'acp', 'ar', 'ard', 'aft', 'aud', 'aui', 'aus',
-        'bjd', 'bpd', 'cll', 'ctg', 'chr', 'cng', 'clb', 'clr', 'cmm', 'cwt', 'com',
-        'cpl', 'cpt', 'cpe', 'ccp', 'cnd', 'cos', 'cot', 'coe', 'cts', 'ctt', 'cte',
-        'ctb', 'crp', 'cst', 'cov', 'cur', 'dnc', 'dtc', 'dto', 'dfd', 'dft', 'dfe',
-        'dln', 'dpc', 'dsr', 'drt', 'dis', 'drm', 'edt', 'elt', 'egr', 'etr', 'fac',
-        'fld', 'flm', 'frg', 'ilu', 'ill', 'ins', 'itr', 'ivr', 'ldr', 'lsa', 'led',
-        'lil', 'lit', 'lie', 'lel', 'let', 'lee', 'lbt', 'lgd', 'ltg', 'lyr', 'mrb',
-        'mte', 'msd', 'mus', 'nrt', 'opn', 'org', 'pta', 'pth', 'prf', 'pht', 'ptf',
-        'ptt', 'pte', 'prt', 'pop', 'prm', 'pro', 'pmn', 'prd', 'prg', 'pdr', 'pbd',
-        'ppt', 'ren', 'rpt', 'rth', 'rtm', 'res', 'rsp', 'rst', 'rse', 'rpy', 'rsg',
-        'rev', 'rbr', 'sce', 'sad', 'scr', 'scl', 'spy', 'std', 'sng', 'sds', 'spk',
-        'stm', 'str', 'stl', 'sht', 'ths', 'trl', 'tyd', 'tyg', 'vdg', 'voc', 'wde',
-        'wdc', 'wam'
-    ];
-
-    /**
      * Strings in field 300 that signify that the work is illustrated.
      *
-     * @var string
+     * @var array
      */
     protected $illustrationStrings = ['ill.', 'illus.'];
 
@@ -117,11 +98,6 @@ class Marc extends Base
                 ',', $config['MarcRecord']['primary_author_relators']
             );
         }
-        if (isset($config['MarcRecord']['secondary_author_relators'])) {
-            $this->secondaryAuthorRelators = explode(
-                ',', $config['MarcRecord']['secondary_author_relators']
-            );
-        }
     }
 
     /**
@@ -129,7 +105,7 @@ class Marc extends Base
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -334,12 +310,12 @@ class Marc extends Base
                 if (($longitude < -180 || $longitude > 180)
                     || ($latitude < -90 || $latitude > 90)
                 ) {
-                    $this->logger->log(
+                    $this->logger->logDebug(
                         'Marc',
-                        "Discarding invalid coordinates $longitude,$latitude " .
-                        "decoded from w=$westOrig, e=$eastOrig, n=$northOrig, " .
-                        "s=$southOrig, record {$this->source}." . $this->getID(),
-                        Logger::WARNING
+                        "Discarding invalid coordinates $longitude,$latitude "
+                            . "decoded from w=$westOrig, e=$eastOrig, n=$northOrig, "
+                            . "s=$southOrig, record {$this->source}."
+                            . $this->getID()
                     );
                     $this->storeWarning('invalid coordinates in 034');
                 } else {
@@ -383,6 +359,13 @@ class Marc extends Base
         $corporateAuthors = $this->getCorporateAuthors();
         $data['author_corporate'] = $corporateAuthors['names'];
         $data['author_corporate_role'] = $corporateAuthors['relators'];
+
+        $data['author2_id_str_mv'] = $this->getAuthorIds();
+        $data['author2_id_role_str_mv']
+            = array_merge(
+                $this->addNamespaceToAuthorityIds($secondaryAuthors['idRoles']),
+                $this->addNamespaceToAuthorityIds($corporateAuthors['idRoles'])
+            );
 
         $data['author_additional'] = $this->getFieldsSubfields(
             [
@@ -463,7 +446,7 @@ class Marc extends Base
             foreach ($fields as $field) {
                 if ($this->getIndicator($field, 2) == '1') {
                     $data['publisher'] = [
-                        metadataUtils::stripTrailingPunctuation(
+                        MetadataUtils::stripTrailingPunctuation(
                             $this->getSubfield($field, 'b')
                         )
                     ];
@@ -603,6 +586,22 @@ class Marc extends Base
     }
 
     /**
+     * Return author ids that are indexed to author2_id_str_mv
+     *
+     * @return array
+     */
+    public function getAuthorIds()
+    {
+        $secondaryAuthors = $this->getSecondaryAuthors();
+        $corporateAuthors = $this->getCorporateAuthors();
+
+        return array_merge(
+            $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']),
+            $this->addNamespaceToAuthorityIds($corporateAuthors['ids'])
+        );
+    }
+
+    /**
      * Return record ID (local)
      *
      * @return string
@@ -618,12 +617,12 @@ class Marc extends Base
     }
 
     /**
-     * Return record linking ID (typically same as ID) used for links
+     * Return record linking IDs (typically same as ID) used for links
      * between records in the data source
      *
-     * @return string
+     * @return array
      */
-    public function getLinkingID()
+    public function getLinkingIDs()
     {
         $id = $this->getField('001');
         if ('' === $id && $this->getDriverParam('idIn999', false)) {
@@ -634,10 +633,21 @@ class Marc extends Base
             $source = $this->getField('003');
             $source = MetadataUtils::stripTrailingPunctuation($source);
             if ($source) {
-                return "($source)$id";
+                $id = "($source)$id";
             }
         }
-        return $id;
+        $results = [$id];
+
+        $cns = $this->getFieldsSubfields(
+            [
+                [self::GET_NORMAL, '035', ['a' => 1]]
+            ]
+        );
+        if ($cns) {
+            $results = array_merge($results, $cns);
+        }
+
+        return $results;
     }
 
     /**
@@ -696,10 +706,10 @@ class Marc extends Base
     }
 
     /**
-    * Component parts: get the volume that contains this component part
-    *
-    * @return string
-    */
+     * Component parts: get the volume that contains this component part
+     *
+     * @return string
+     */
     public function getVolume()
     {
         $field773g = $this->getFieldSubfields('773', ['g' => 1]);
@@ -848,11 +858,7 @@ class Marc extends Base
             $author = $this->getSubfield($f100, 'a');
             $order = $this->getIndicator($f100, 1);
             if ($order == 0 && strpos($author, ',') === false) {
-                $p = strrpos($author, ' ');
-                if ($p > 0) {
-                    $author = substr($author, $p + 1) . ', '
-                        . substr($author, 0, $p);
-                }
+                $author = MetadataUtils::convertAuthorLastFirst($author);
             }
             return MetadataUtils::stripTrailingPunctuation($author);
         }
@@ -882,7 +888,7 @@ class Marc extends Base
         $nbn = $this->getField('015');
         if ($nbn) {
             $nr = MetadataUtils::normalizeKey(
-                strtok($this->getSubfield($nbn, 'a'), ' '), $form
+                $this->getSubfield($nbn, 'a'), $form
             );
             $src = $this->getSubfield($nbn, '2');
             if ($src && $nr) {
@@ -892,7 +898,7 @@ class Marc extends Base
         $nba = $this->getField('016');
         if ($nba) {
             $nr = MetadataUtils::normalizeKey(
-                strtok($this->getSubfield($nba, 'a'), ' '), $form
+                $this->getSubfield($nba, 'a'), $form
             );
             $src = $this->getSubfield($nba, '2');
             if ($src && $nr) {
@@ -902,7 +908,7 @@ class Marc extends Base
         $id = $this->getField('024');
         if ($id) {
             $nr = MetadataUtils::normalizeKey(
-                strtok($this->getSubfield($id, 'a'), ' '), $form
+                $this->getSubfield($id, 'a'), $form
             );
             switch ($this->getIndicator($id, 1)) {
             case '0':
@@ -925,6 +931,10 @@ class Marc extends Base
                 break;
             default:
                 $src = '';
+            }
+            // Ignore any invalid ISMN
+            if ('ismn' === $src && !preg_match('{([0-9]{13})}', $nr)) {
+                $nr = '';
             }
             if ($src && $nr) {
                 $arr[] = "($src)$nr";
@@ -1116,7 +1126,7 @@ class Marc extends Base
                     if ($soundTech == 'D'
                         || ($size == 'G' && $material == 'M')
                     ) {
-                         return 'CD';
+                        return 'CD';
                     }
                     return 'SoundDisc';
                 case 'S':
@@ -1180,6 +1190,11 @@ class Marc extends Base
             return 'Manuscript';
         }
 
+        $field008 = $this->getField('008');
+        if (!$online) {
+            $online = substr($field008, 23, 1) === 'o';
+        }
+
         // check the Leader at position 7
         $leaderBit = substr($leader, 7, 1);
         switch (strtoupper($leaderBit)) {
@@ -1194,7 +1209,6 @@ class Marc extends Base
         // Serial
         case 'S':
             // Look in 008 to determine what type of Continuing Resource
-            $field008 = $this->getField('008');
             $formatCode = strtoupper(substr($field008, 21, 1));
             switch ($formatCode) {
             case 'N':
@@ -1315,19 +1329,58 @@ class Marc extends Base
     protected function getBuilding()
     {
         $building = [];
-        if ($this->getDriverParam('holdingsInBuilding', true)) {
-            $useSub = $this->getDriverParam('subLocationInBuilding', '');
-            foreach ($this->getFields('852') as $field) {
-                $location = $this->getSubfield($field, 'b');
-                if ($location) {
-                    if ($useSub && $sub = $this->getSubfield($field, $useSub)) {
-                        $location = [$location, $sub];
+        $buildingFieldSpec = $this->getDriverParam('buildingFields', false);
+        if ($this->getDriverParam('holdingsInBuilding', true)
+            || false !== $buildingFieldSpec
+        ) {
+            $buildingFieldSpec = $this->getDriverParam('buildingFields', false);
+            if (false === $buildingFieldSpec) {
+                $buildingFields = $this->getDefaultBuildingFields();
+            } else {
+                $buildingFields = [];
+                $parts = explode(':', $buildingFieldSpec);
+                foreach ($parts as $part) {
+                    $buildingFields[] = [
+                        'field' => substr($part, 0, 3),
+                        'loc' => substr($part, 3, 1),
+                        'sub' => substr($part, 4, 1),
+                    ];
+                }
+            }
+
+            foreach ($buildingFields as $buildingField) {
+                foreach ($this->getFields($buildingField['field']) as $field) {
+                    $location = $this->getSubfield($field, $buildingField['loc']);
+                    if ($location) {
+                        $subLocField = $buildingField['sub'];
+                        if ($subLocField
+                            && $sub = $this->getSubfield($field, $subLocField)
+                        ) {
+                            $location = [$location, $sub];
+                        }
+                        $building[] = $location;
                     }
-                    $building[] = $location;
                 }
             }
         }
         return $building;
+    }
+
+    /**
+     * Get default fields used to populate the building field
+     *
+     * @return array
+     */
+    protected function getDefaultBuildingFields()
+    {
+        $useSub = $this->getDriverParam('subLocationInBuilding', '');
+        return [
+            [
+                'field' => '852',
+                'loc' => 'b',
+                'sub' => $useSub,
+            ],
+        ];
     }
 
     /**
@@ -1349,10 +1402,7 @@ class Marc extends Base
         } else {
             $marc = '<?xml version="1.0" encoding="utf-8"?>' . "\n\n$marc";
         }
-        $xml = simplexml_load_string($marc);
-        if ($xml === false) {
-            throw new \Exception('MarcRecord: failed to parse from XML');
-        }
+        $xml = $this->parseXMLRecord($marc);
 
         // Move to the record element if we were given a collection
         if ($xml->record) {
@@ -1451,11 +1501,10 @@ class Marc extends Base
                 continue;
             }
             if (strlen($tag) != 3) {
-                $this->logger->log(
+                $this->logger->logError(
                     'Marc',
                     "Invalid field tag: '$tag', record {$this->source}."
-                    . $this->getID(),
-                    Logger::ERROR
+                        . $this->getID()
                 );
                 $this->storeWarning("invalid field tag '$tag'");
                 continue;
@@ -1610,11 +1659,10 @@ class Marc extends Base
         switch ($indicator) {
         case 1:
             if (!isset($field['i1'])) {
-                $this->logger->log(
+                $this->logger->logError(
                     'Marc',
                     'Indicator 1 missing from field:' . print_r($field, true)
-                    . ", record {$this->source}." . $this->getID(),
-                    Logger::ERROR
+                        . ", record {$this->source}." . $this->getID()
                 );
                 $this->storeWarning('indicator 1 missing');
                 return ' ';
@@ -1622,11 +1670,10 @@ class Marc extends Base
             return $field['i1'];
         case 2:
             if (!isset($field['i2'])) {
-                $this->logger->log(
+                $this->logger->logError(
                     'Marc',
                     'Indicator 2 missing from field:' . print_r($field, true)
-                    . ", record {$this->source}." . $this->getID(),
-                    Logger::ERROR
+                        . ", record {$this->source}." . $this->getID()
                 );
                 $this->storeWarning('indicator 2 missing');
                 return ' ';
@@ -1700,9 +1747,9 @@ class Marc extends Base
      *
      * @param string  $tag                      Field to get
      * @param array   $codes                    Optional array with keys of accepted
-     * subfields
+     *                                          subfields
      * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
-     * from the results
+     *                                          from the results
      *
      * @return string Concatenated subfields (space-separated)
      */
@@ -1739,7 +1786,7 @@ class Marc extends Base
      * @param string  $tag                      Field to get
      * @param string  $code                     Subfield to get
      * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
-     * from the result
+     *                                          from the result
      *
      * @return string
      */
@@ -1780,9 +1827,9 @@ class Marc extends Base
      * @param array   $fieldspecs               Fields to get
      * @param boolean $firstOnly                Return only first matching field
      * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
-     * from the results
+     *                                          from the results
      * @param boolean $splitSubfields           Whether to split subfields to
-     * separate array items
+     *                                          separate array items
      *
      * @return array Subfields
      */
@@ -1801,21 +1848,19 @@ class Marc extends Base
 
             foreach ($this->fields[$tag] as $field) {
                 if (!isset($field['s'])) {
-                    $this->logger->log(
-                        'Marc', "Subfields missing in field $tag"
-                        . ", record {$this->source}." .
-                        $this->getID(),
-                        Logger::WARNING
+                    $this->logger->logDebug(
+                        'Marc',
+                        "Subfields missing in field $tag, record {$this->source}."
+                            . $this->getID()
                     );
                     $this->storeWarning("missing subfields in $tag");
                     continue;
                 }
                 if (!is_array($field['s'])) {
-                    $this->logger->log(
-                        'Marc', "Invalid subfields in field $tag"
-                        . ", record {$this->source}." .
-                        $this->getID(),
-                        Logger::ERROR
+                    $this->logger->logDebug(
+                        'Marc',
+                        "Invalid subfields in field $tag, record {$this->source}."
+                            . $this->getID()
                     );
                     $this->storeWarning("invalid subfields in $tag");
                     continue;
@@ -1909,10 +1954,10 @@ class Marc extends Base
      *
      * @param string  $tag            Field code
      * @param string  $sub6           Subfield 6 in original script identifying the
-     * alt field
+     *                                alt field
      * @param array   $codes          Array of subfield codes in keys
      * @param boolean $splitSubfields Whether to split subfields to separate array
-     * items
+     *                                items
      *
      * @return array
      */
@@ -2011,7 +2056,7 @@ class Marc extends Base
      *
      * @param array $field  Field
      * @param array $filter Optional array with keys of subfields codes to be
-     * excluded
+     *                      excluded
      *
      * @return array All subfields
      */
@@ -2021,19 +2066,20 @@ class Marc extends Base
             return '';
         }
         if (!isset($field['s'])) {
-            $this->logger->log(
-                'Marc', "Subfields missing in field: " .
-                print_r($field, true) . ", record {$this->source}." .
-                $this->getID(), Logger::WARNING
+            $this->logger->logDebug(
+                'Marc',
+                "Subfields missing in field: " . print_r($field, true)
+                    . ", record {$this->source}." . $this->getID()
             );
             $this->storeWarning('missing subfields');
             return [];
         }
         if (!is_array($field['s'])) {
-            $this->logger->log(
-                'Marc', 'Invalid subfields in field: ' .
-                print_r($field, true) . ", record {$this->source}." .
-                $this->getID(), Logger::ERROR
+            $this->logger->logError(
+                'Marc',
+                'Invalid subfields in field: '
+                    . print_r($field, true) . ", record {$this->source}."
+                    . $this->getID()
             );
             $this->storeWarning('invalid subfields');
             return [];
@@ -2080,8 +2126,7 @@ class Marc extends Base
                 foreach ($fields as $field) {
                     $subfields = $this->getAllSubfields(
                         $field,
-                        isset($subfieldFilter[$tag])
-                        ? $subfieldFilter[$tag] : ['6' => 1, '8' => 1]
+                        $subfieldFilter[$tag] ?? ['6' => 1, '8' => 1]
                     );
                     if ($subfields) {
                         $allFields = array_merge($allFields, $subfields);
@@ -2323,26 +2368,43 @@ class Marc extends Base
      * @param array $fieldSpecs        Fields to retrieve
      * @param array $relators          Allowed relators
      * @param array $noRelatorRequired Field that is accepted if it doesn't have a
+     *                                 relator
      * @param bool  $altScript         Whether to return also alternate scripts
-     * relator
+     *                                 relator
+     * @param bool  $invertMatch       Return authors that DON'T HAVE an allowed
+     *                                 relator
      *
      * @return array Array keyed by 'names' for author names, 'fuller' for fuller
      * forms and 'relators' for relator codes
      */
     protected function getAuthorsByRelator($fieldSpecs, $relators,
-        $noRelatorRequired, $altScript = true
+        $noRelatorRequired, $altScript = true, $invertMatch = false
     ) {
-        $result = ['names' => [], 'fuller' => [], 'relators' => []];
+        $result = [
+            'names' => [], 'fuller' => [], 'relators' => [],
+            'ids' => [], 'idRoles' => []
+        ];
         foreach ($fieldSpecs as $tag => $subfieldList) {
             foreach ($this->getFields($tag) as $field) {
                 $fieldRelators = $this->normalizeRelators(
                     $this->getSubfieldsArray($field, ['4' => 1, 'e' => 1])
                 );
-                if (!empty($fieldRelators) || !in_array($tag, $noRelatorRequired)) {
-                    if (empty(array_intersect($relators, $fieldRelators))) {
-                        continue;
+
+                $match = empty($relators);
+                if (!$match) {
+                    $match = empty($fieldRelators)
+                        && in_array($tag, $noRelatorRequired);
+                }
+                if (!$match) {
+                    $match = !empty(array_intersect($relators, $fieldRelators));
+                    if ($invertMatch) {
+                        $match = !$match;
                     }
                 }
+                if (!$match) {
+                    continue;
+                }
+
                 $terms = $this->getSubfields($field, $subfieldList);
                 if ($altScript
                     && isset($this->fields['880'])
@@ -2368,6 +2430,16 @@ class Marc extends Base
                     $result['relators'][] = reset($fieldRelators);
                 } else {
                     $result['relators'][] = '-';
+                }
+                if ($authId = $this->getSubField($field, '0')) {
+                    $result['ids'][] = $authId;
+                    if ($role = $this->getSubField($field, 'e')) {
+                        $result['idRoles'][]
+                            = $this->formatAuthorIdWithRole(
+                                $authId,
+                                MetaDataUtils::stripTrailingPunctuation($role, '. ')
+                            );
+                    }
                 }
             }
         }
@@ -2407,7 +2479,7 @@ class Marc extends Base
             ]
         ];
         return $this->getAuthorsByRelator(
-            $fieldSpecs, $this->secondaryAuthorRelators, ['700']
+            $fieldSpecs, $this->primaryAuthorRelators, ['700'], true, true
         );
     }
 
@@ -2426,9 +2498,7 @@ class Marc extends Base
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,
-            array_merge(
-                $this->primaryAuthorRelators, $this->secondaryAuthorRelators
-            ),
+            [],
             ['110', '111', '710', '711']
         );
     }

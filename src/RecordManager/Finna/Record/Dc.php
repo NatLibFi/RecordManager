@@ -2,7 +2,7 @@
 /**
  * Dc record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2012-2018.
  *
@@ -61,7 +61,7 @@ class Dc extends \RecordManager\Base\Record\Dc
 
         if ($range = $this->getPublicationDateRange()) {
             $data['search_daterange_mv'][] = $data['publication_daterange']
-                = metadataUtils::dateRangeToStr($range);
+                = MetadataUtils::dateRangeToStr($range);
         }
 
         // language, take only first

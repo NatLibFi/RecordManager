@@ -4,7 +4,6 @@
   <property name="package"  value="${phing.project.name}" override="true" />
   <property name="builddir" value="${tmp}/build/${phing.project.name}" override="true" />
   <property name="srcdir"   value="${project.basedir}" override="true" />
-  <property name="php-cs-fixers" value="no_spaces_after_function_name,no_trailing_whitespace,no_unused_imports,lowercase_keywords,encoding,no_spaces_inside_parenthesis,no_closing_tag,visibility_required,no_empty_statement,no_extra_consecutive_blank_lines,no_blank_lines_after_class_opening,no_blank_lines_after_phpdoc,binary_operator_spaces,no_singleline_whitespace_before_semicolons,ternary_operator_spaces,phpdoc_no_access,no_leading_import_slash" />
   <property name="php-cs-fixer-extra-params" value=""/>
 
   <!-- Main Target -->
@@ -30,9 +29,9 @@
 
   <!-- php-cs-fixer (first task applies fixes, second task simply checks if they are needed) -->
   <target name="php-cs-fixer">
-    <exec command="${srcdir}/vendor/bin/php-cs-fixer fix ${srcdir}/src/RecordManager --rules=${php-cs-fixers} --verbose ${php-cs-fixer-extra-params}" passthru="true" escape="false" />
+    <exec command="${srcdir}/vendor/bin/php-cs-fixer fix --config=${srcdir}/tests/recordmanager.php_cs -vvv" passthru="true" escape="false" />
   </target>
   <target name="php-cs-fixer-dryrun">
-    <exec command="${srcdir}/vendor/bin/php-cs-fixer fix ${srcdir}/src/RecordManager --rules=${php-cs-fixers} --dry-run --verbose --diff ${php-cs-fixer-extra-params}" passthru="true" escape="false" checkreturn="true" />
+    <exec command="${srcdir}/vendor/bin/php-cs-fixer fix --config=${srcdir}/tests/recordmanager.php_cs -vvv --dry-run --diff" passthru="true" escape="false" checkreturn="true" />
   </target>
 </project>

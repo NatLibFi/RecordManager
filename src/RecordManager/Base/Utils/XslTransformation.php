@@ -2,7 +2,7 @@
 /**
  * XSL Transformation Handler
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2012.
  *
@@ -64,12 +64,15 @@ class XslTransformation
      *
      * @throws Exception
      */
-    public function __construct($basePath, $configFile, $params = null)
+    public function __construct($basePath, $configFile, $params = [])
     {
         $options = parse_ini_file("$basePath/$configFile", true);
         if (false === $options) {
+            $error = error_get_last();
+            $message = $error['message'] ?? 'unknown error occurred';
             throw new \Exception(
-                "Could not load or parse ini file '$basePath/$configFile'"
+                "Could not load or parse ini file '$basePath/$configFile': "
+                . $message
             );
         }
 
@@ -101,7 +104,7 @@ class XslTransformation
         }
 
         // Load parameters
-        if (isset($params)) {
+        if ($params) {
             $this->xslt->setParameter('', $params);
         }
         if (isset($options['Parameters'])) {
@@ -131,23 +134,34 @@ class XslTransformation
      * @return string XML
      * @throws Exception
      */
-    public function transform($data, $params = null)
+    public function transform($data, $params = [])
     {
-        $doc = new \DOMDocument();
-        if ($doc->loadXML($data) === false) {
-            throw new \Exception("Invalid XML: $data");
-        }
-        if (isset($params)) {
-            $this->xslt->setParameter('', $params);
-        }
-        if (isset($params)) {
-            foreach ($params as $key => $value) {
-                $this->xslt->setParameter('', $key, '');
+        $saveUseErrors = libxml_use_internal_errors(true);
+        try {
+            libxml_clear_errors();
+            $doc = new \DOMDocument();
+            if ($doc->loadXML($data) === false) {
+                $errors = libxml_get_errors();
+                $messageParts = [];
+                foreach ($errors as $error) {
+                    $messageParts[] = '[' . $error->line . ':' . $error->column
+                        . '] Error ' . $error->code . ': ' . $error->message;
+                }
+                throw new \Exception(implode("\n", $messageParts));
             }
+            libxml_use_internal_errors($saveUseErrors);
+        } catch (\Exception $e) {
+            libxml_use_internal_errors($saveUseErrors);
+            throw $e;
+        }
+        if ($params) {
+            $this->xslt->setParameter('', $params);
         }
         $result = $this->xslt->transformToXml($doc);
         if (null === $result) {
-            throw new \Exception("Transformation resulted in null: $filename");
+            throw new \Exception(
+                'Transformation resulted in null: ' . $this->filename
+            );
         }
         return $result;
     }
@@ -161,9 +175,9 @@ class XslTransformation
      * @return array
      * @throws Exception
      */
-    public function transformToSolrArray($data, $params = null)
+    public function transformToSolrArray($data, $params = [])
     {
-        if (isset($params)) {
+        if ($params) {
             $this->xslt->setParameter('', $params);
         }
         $doc = new \DOMDocument();

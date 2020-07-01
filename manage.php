@@ -2,9 +2,9 @@
 /**
  * Command line interface for Record Manager
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -39,9 +39,7 @@ function main($argv)
 {
     $params = parseArgs($argv);
     $basePath = !empty($params['basepath']) ? $params['basepath'] : __DIR__;
-    $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
-
-    $config = applyConfigOverrides($params, $config);
+    $config = applyConfigOverrides($params, loadMainConfig($basePath));
 
     if (empty($params['func']) || !is_string($params['func'])) {
         echo <<<EOT
@@ -50,7 +48,7 @@ Usage: $argv[0] --func=... [...]
 Parameters:
 
 --func              renormalize|deduplicate|updatesolr|dump|dumpsolr|markdeleted
-                    |deletesource|deletesolr|optimizesolr|count|checkdedup
+                    |deletesource|deletesolr|optimizesolr|count|checkdedup|checksolr
                     |comparesolr|purgedeleted|markdedup|markforupdate
 --source            Source ID to process (separate multiple sources with commas)
 --all               Process all records regardless of their state (deduplicate,
@@ -58,7 +56,7 @@ Parameters:
                     or date (updatesolr)
 --from              Override the date from which to run the update (updatesolr)
 --single            Process only the given record id (deduplicate, updatesolr, dump,
-                    markdeleted, markforupdate)
+                    markdeleted, markforupdate, checkdedup)
 --nocommit          Don't ask Solr to commit the changes (updatesolr)
 --field             Field to analyze (count)
 --force             Force deletesource to proceed even if deduplication is enabled
@@ -74,7 +72,8 @@ Parameters:
 --dumpprefix        File name prefix to use when dumping records (dumpsolr). Default
                     is "dumpsolr".
 --mapped            If set, use values only after any mapping files are processed
-                    when counting records (count)
+                    when counting records (count). If set to false, disable mappings
+                    when dumping records (dumpsolr).
 --daystokeep=days   How many last days to keep when purging deleted records
                     (purgedeleted)
 --basepath=path     Use path as the base directory for conf, mappings and
@@ -123,11 +122,18 @@ EOT;
                 ? '' : (isset($params['from']) ? $params['from'] : null);
             $dumpPrefix = isset($params['dumpprefix'])
                 ? $params['dumpprefix'] : 'dumpsolr';
+            $mapped = isset($params['mapped'])
+                ? ('false' !== $params['mapped']) : true;
 
             $solrDump = new \RecordManager\Base\Controller\SolrDump(
                 $basePath, $config, true, $verbose
             );
-            $solrDump->launch($dumpPrefix, $date, $sources, $single);
+            $solrDump->launch($dumpPrefix, $date, $sources, $single, $mapped);
+        } elseif ($params['func'] == 'checksolr') {
+            $solrCheck = new \RecordManager\Base\Controller\SolrCheck(
+                $basePath, $config, true, $verbose
+            );
+            $solrCheck->launch();
         } else {
             foreach (explode(',', $sources) as $source) {
                 switch ($params['func']) {
@@ -193,14 +199,16 @@ EOT;
                     $checkDedup = new \RecordManager\Base\Controller\CheckDedup(
                         $basePath, $config, true, $verbose
                     );
-                    $checkDedup->launch();
+                    $checkDedup->launch($single);
                     break;
                 case 'purgedeleted':
                     if (!isset($params['force']) || !$params['force']) {
                         echo <<<EOT
-Purging of deleted records means that any further Solr updates don't include these
-deletions. Use the --force parameter to indicate that this is ok. No records have
-been purged.
+Purging of deleted records means that RecordManager no longer has any knowledge of
+them. They cannot be included in e.g. Solr updates or OAI-PMH responses.
+Use the --force parameter to indicate that this is ok.
+
+No records have been purged.
 
 EOT;
                         exit(1);

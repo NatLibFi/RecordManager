@@ -2,9 +2,9 @@
 /**
  * Record Manager controller base class
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -105,7 +105,8 @@ abstract class AbstractBase
      * @param string $basePath Base directory
      * @param array  $config   Main configuration
      * @param bool   $console  Specify whether RecordManager is executed on the
-     * console so that log output is also output to the console.
+     *                         console so that log output is also output to the
+     *                         console
      * @param bool   $verbose  Whether verbose output is enabled
      */
     public function __construct($basePath, $config, $console = false,
@@ -132,10 +133,9 @@ abstract class AbstractBase
                 $config['Mongo']
             );
         } catch (\Exception $e) {
-            $this->logger->log(
+            $this->logger->logFatal(
                 'startup',
-                'Failed to connect to MongoDB: ' . $e->getMessage(),
-                Logger::FATAL
+                'Failed to connect to MongoDB: ' . $e->getMessage()
             );
             throw $e;
         }
@@ -158,16 +158,15 @@ abstract class AbstractBase
     {
         foreach ($this->dataSourceSettings as $source => &$settings) {
             if (!isset($settings['institution'])) {
-                $this->logger->log(
+                $this->logger->logFatal(
                     'initSourceSettings',
-                    "institution not set for $source",
-                    Logger::FATAL
+                    "institution not set for $source"
                 );
                 throw new \Exception("Error: institution not set for $source\n");
             }
             if (!isset($settings['format'])) {
-                $this->logger->log(
-                    'initSourceSettings', "format not set for $source", Logger::FATAL
+                $this->logger->logFatal(
+                    'initSourceSettings', "format not set for $source"
                 );
                 throw new \Exception("Error: format not set for $source\n");
             }
@@ -275,6 +274,13 @@ abstract class AbstractBase
     protected function readDataSourceSettings($filename)
     {
         $settings = parse_ini_file($filename, true);
+        if (false === $settings) {
+            $error = error_get_last();
+            $message = $error['message'] ?? 'unknown error occurred';
+            throw new \Exception(
+                "Could not load data source settings from file '$filename': $message"
+            );
+        }
 
         // Check for linked data sources and store information to the linked sources
         // too

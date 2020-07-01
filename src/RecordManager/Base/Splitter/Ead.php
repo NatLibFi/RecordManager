@@ -2,9 +2,9 @@
 /**
  * Ead Splitter
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2017.
+ * Copyright (C) The National Library of Finland 2012-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -37,7 +37,7 @@ namespace RecordManager\Base\Splitter;
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
-*/
+ */
 class Ead
 {
     /**
@@ -91,7 +91,7 @@ class Ead
      */
     public function setData($data)
     {
-        $this->doc = simplexml_load_string($data, null, LIBXML_PARSEHUGE);
+        $this->doc = \RecordManager\Base\Utils\MetadataUtils::loadXML($data);
         $this->recordNodes = $this->doc->xpath('archdesc | archdesc/dsc//*[@level]');
         $this->recordCount = count($this->recordNodes);
         $this->currentPos = 0;
@@ -293,5 +293,4 @@ class Ead
             }
         }
     }
-
 }

@@ -2,9 +2,9 @@
 /**
  * Nominatim Geocoder Class
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2013-2016.
+ * Copyright (C) The National Library of Finland 2013-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Base\Enrichment;
 
+use RecordManager\Base\Database\Database;
+use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -139,16 +141,18 @@ class NominatimGeocoder extends Enrichment
     /**
      * Constructor
      *
-     * @param Database $db     Database connection (for cache)
-     * @param Logger   $logger Logger
-     * @param array    $config Main configuration
+     * @param Database      $db            Database connection (for cache)
+     * @param Logger        $logger        Logger
+     * @param array         $config        Main configuration
+     * @param RecordFactory $recordFactory Record factory
      */
-    public function __construct($db, $logger, $config)
-    {
-        parent::__construct($db, $logger, $config);
+    public function __construct(
+        Database $db, Logger $logger, array $config,
+        RecordFactory $recordFactory
+    ) {
+        parent::__construct($db, $logger, $config, $recordFactory);
 
-        $settings = isset($config['NominatimGeocoder'])
-            ? $config['NominatimGeocoder'] : [];
+        $settings = $config['NominatimGeocoder'] ?? [];
         if (!isset($settings['url']) || !$settings['url']) {
             throw new \Exception('url must be specified for Nominatim');
         }
@@ -344,10 +348,9 @@ class NominatimGeocoder extends Enrichment
         );
         $places = json_decode($response, true);
         if (null === $places) {
-            $this->logger->log(
+            $this->logger->logError(
                 'NominatimGeocoder',
-                "Could not decode Nominatim response (request: $url): $response",
-                Logger::ERROR
+                "Could not decode Nominatim response (request: $url): $response"
             );
             return [];
         }

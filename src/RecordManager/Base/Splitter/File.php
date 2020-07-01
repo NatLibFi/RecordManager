@@ -2,9 +2,9 @@
 /**
  * XML File Splitter
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -74,7 +74,7 @@ class File
     {
         if (is_string($data)) {
             $this->xmlDoc = new \DOMDocument();
-            $this->xmlDoc->loadXML($data, LIBXML_PARSEHUGE);
+            \RecordManager\Base\Utils\MetadataUtils::loadXML($data, $this->xmlDoc);
         } else {
             $this->xmlDoc = $data;
         }

@@ -2,7 +2,7 @@
 /**
  * Forward record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2016-2019.
  *
@@ -22,6 +22,7 @@
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Juha Luoma <juha.luoma@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -37,11 +38,15 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Juha Luoma <juha.luoma@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 class Forward extends \RecordManager\Base\Record\Forward
 {
+    use FinnaRecordTrait;
+    use ForwardRecordTrait;
+
     /**
      * Default primary author relator codes, may be overridden in configuration.
      *
@@ -84,7 +89,7 @@ class Forward extends \RecordManager\Base\Record\Forward
      * @var array
      */
     protected $corporateAuthorRelators = [
-        'E10', 'dst', 'prn', 'fnd', 'lbr'
+        'e10', 'dst', 'prn', 'fnd', 'lbr'
     ];
 
     /**
@@ -93,6 +98,15 @@ class Forward extends \RecordManager\Base\Record\Forward
      * @var string
      */
     protected $primaryLanguage = 'fi';
+
+    /**
+     * Video type list for online urls
+     *
+     * @var array
+     */
+    protected $onlineVideoTypes = [
+        'elokuva', 'elokuvaklippi'
+    ];
 
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
@@ -108,7 +122,7 @@ class Forward extends \RecordManager\Base\Record\Forward
             $data['main_date_str'] = $year;
             $data['main_date'] = $this->validateDate("$year-01-01T00:00:00Z");
             $data['search_daterange_mv'][] = $data['publication_daterange']
-                = metadataUtils::dateRangeToStr(
+                = MetadataUtils::dateRangeToStr(
                     ["$year-01-01T00:00:00Z", "$year-12-31T23:59:59Z"]
                 );
         }
@@ -138,26 +152,53 @@ class Forward extends \RecordManager\Base\Record\Forward
             $data['format_ext_str_mv'][] = 'Image';
         }
 
+        $data['building'] = $this->getBuilding();
+
+        $primaryAuthors = $this->getPrimaryAuthorsSorted();
+
+        $data['author_id_str_mv']
+            = $this->addNamespaceToAuthorityIds($primaryAuthors['ids']);
+        $data['author_id_role_str_mv']
+            = $this->addNamespaceToAuthorityIds($primaryAuthors['idRoles']);
+
+        $allAuthors = $this->getAuthorsByRelator();
+        $data['author2_id_str_mv']
+            = $this->addNamespaceToAuthorityIds($allAuthors['ids']);
+        $data['author2_id_role_str_mv']
+            = $this->addNamespaceToAuthorityIds($allAuthors['idRoles']);
+
+        $data['question_category_str_mv'] = $this->getQuestionCategories();
+
         return $data;
     }
 
     /**
      * Return format from predefined values
-      *
+     *
      * @return string
      */
     public function getFormat()
     {
         foreach ($this->getMainElement()->ProductionEvent as $event) {
-            if (isset($event->elokuva_laji2fin)) {
-                $laji = mb_strtolower((string)$event->elokuva_laji2fin, 'UTF-8');
-                if (strstr($laji, 'sarja') !== false || strstr($laji, 'tv') !== false
-                ) {
-                    return 'Video';
+            if (!isset($event->ProductionEventType)) {
+                continue;
+            }
+            $type = $event->ProductionEventType;
+            if (null !== ($type->attributes()->{'elokuva-laji1fin'})) {
+                $laji = mb_strtolower(
+                    (string)$type->attributes()->{'elokuva-laji1fin'}, 'UTF-8'
+                );
+                switch ($laji) {
+                case 'lyhyt':
+                    return 'VideoShort';
+                case 'pitkä':
+                    return 'VideoFeature';
+                case 'kooste':
+                    return 'VideoCompilation';
                 }
             }
         }
-        return 'MotionPicture';
+        return 'Video';
     }
 
     /**
@@ -185,54 +226,19 @@ class Forward extends \RecordManager\Base\Record\Forward
     }
 
     /**
-     * Merge component parts to this record
+     * Get all authors or authors by relator codes.
      *
-     * @param MongoCollection $componentParts Component parts to be merged
+     * @param array $relators List of allowed relators, or an empty list
+     *                        to return all authors.
      *
-     * @return int Count of records merged
+     * @return array
      */
-    public function mergeComponentParts($componentParts)
+    protected function getAuthorsByRelator($relators = [])
     {
-        $count = 0;
-        $parts = [];
-        foreach ($componentParts as $componentPart) {
-            $data = MetadataUtils::getRecordData($componentPart, true);
-            $xml = simplexml_load_string($data);
-            foreach ($xml->children() as $child) {
-                $parts[] = [
-                    'xml' => $child,
-                    'order' => empty($child->Title->PartDesignation->Value)
-                        ? 0 : (int)$child->Title->PartDesignation->Value
-                ];
-            }
-            ++$count;
-        }
-        usort(
-            $parts,
-            function ($a, $b) {
-                return $a['order'] - $b['order'];
-            }
-        );
-        foreach ($parts as $part) {
-            $this->appendXml($this->doc, $part['xml']);
-        }
-        return $count;
-    }
-
-    /**
-     * Get authors by relator codes
-     *
-     * @param array $relators Allowed relators
-     *
-     * @return array Array keyed by 'names' for author names, 'ids' for author ids
-     * and 'relators' for relator codes
-     */
-    protected function getAuthorsByRelator($relators)
-    {
-        $result = ['names' => [], 'ids' => [], 'relators' => []];
+        $result = ['names' => [], 'ids' => [], 'relators' => [], 'idRoles' => []];
         foreach ($this->getMainElement()->HasAgent as $agent) {
             $relator = $this->getRelator($agent);
-            if (!in_array($relator, $relators)) {
+            if (!empty($relators) && !in_array($relator, $relators)) {
                 continue;
             }
             $name = (string)$agent->AgentName;
@@ -244,15 +250,53 @@ class Forward extends \RecordManager\Base\Record\Forward
                 }
             }
             $result['names'][] = $name;
-            $id = (string)$agent->AgentIdentifier->IDTypeName . ':'
+            $id = (string)$agent->AgentIdentifier->IDTypeName . '_'
                 . (string)$agent->AgentIdentifier->IDValue;
-            if ($id != ':') {
+            if ($id != '_') {
                 $result['ids'][] = $id;
+                if ($relator) {
+                    $result['idRoles'][]
+                        = $this->formatAuthorIdWithRole($id, $relator);
+                }
             }
             $result['relators'][] = $relator;
         }
 
         return $result;
+    }
+
+    /**
+     * Get primary authors with names and relators.
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthorsSorted()
+    {
+        $unsortedPrimaryAuthors = parent::getPrimaryAuthorsSorted();
+
+        // Make sure directors are first of the primary authors
+        $directors = $others = [
+            'ids' => [],
+            'idRoles' => []
+        ];
+
+        foreach ($unsortedPrimaryAuthors['relators'] as $i => $relator) {
+            if ('d02' === $relator) {
+                $directors['ids'][] = $unsortedPrimaryAuthors['ids'][$i] ?? null;
+                $directors['idRoles'][]
+                    = $unsortedPrimaryAuthors['idRoles'][$i] ?? null;
+            } else {
+                $others['ids'][] = $unsortedPrimaryAuthors['ids'][$i] ?? null;
+                $others['idRoles'][]
+                    = $unsortedPrimaryAuthors['idRoles'][$i] ?? null;
+            }
+        }
+        $unsortedPrimaryAuthors['ids']
+            = array_merge($directors['ids'], $others['ids']);
+        $unsortedPrimaryAuthors['idRoles']
+            = array_merge($directors['idRoles'], $others['idRoles']);
+
+        return $unsortedPrimaryAuthors;
     }
 
     /**
@@ -262,7 +306,18 @@ class Forward extends \RecordManager\Base\Record\Forward
      */
     protected function getGenres()
     {
-        return [$this->getProductionEventAttribute('elokuva-genre')];
+        $result = $this->getProductionEventAttribute('elokuva-genre');
+
+        foreach ($this->getMainElement()->ProductionEvent as $event) {
+            if (null !== ($event->elokuva_laji2fin)) {
+                $parts = explode(',', $event->elokuva_laji2fin);
+
+                foreach ($parts as $part) {
+                    $result[] = trim($part);
+                }
+            }
+        }
+        return $result;
     }
 
     /**
@@ -303,17 +358,18 @@ class Forward extends \RecordManager\Base\Record\Forward
      *
      * @param string $attribute Attribute name
      *
-     * @return string
+     * @return array
      */
     protected function getProductionEventAttribute($attribute)
     {
+        $result = [];
         foreach ($this->getMainElement()->ProductionEvent as $event) {
             $attributes = $event->ProductionEventType->attributes();
-            if (!empty($attributes{$attribute})) {
-                return (string)$attributes{$attribute};
+            if (!empty($attributes->{$attribute})) {
+                $result[] = (string)$attributes->{$attribute};
             }
         }
-        return '';
+        return $result;
     }
 
     /**
@@ -330,13 +386,22 @@ class Forward extends \RecordManager\Base\Record\Forward
         }
         $activity = $agent->Activity;
         $relator = MetadataUtils::normalizeRelator((string)$activity);
-        if (($relator == 'a99' || $relator == 'e99')
-            && !empty($activity->attributes()->{'finna-activity-text'})
-        ) {
-            $relator = (string)$activity->attributes()->{'finna-activity-text'};
+        if (in_array($relator, ['a00', 'a08', 'a99', 'd99', 'e04', 'e99'])) {
+            $relator = null;
+            foreach (
+                ['finna-activity-text', 'tehtava', 'elokuva-elotekija-tehtava']
+                as $field
+            ) {
+                if (!empty($activity->attributes()->{$field})) {
+                    $label = trim((string)$activity->attributes()->{$field});
+                    if (!in_array($label, ['', '"'])) {
+                        $relator = $label;
+                        break;
+                    }
+                }
+            }
         }
         return $relator;
-
     }
 
     /**
@@ -406,22 +471,29 @@ class Forward extends \RecordManager\Base\Record\Forward
         $results = [];
         $records = $this->doc->children();
         $records = reset($records);
+        $onlineVideoTypes = $this->getOnlineVideoTypes();
+
         foreach (is_array($records) ? $records : [$records] as $record) {
-            if (!isset($record->Title->TitleText)
-                || substr((string)$record->Title->TitleText, -4) !== '.mp4'
-            ) {
-                $attrs = $record->Identifier->attributes();
-                continue;
-            }
+            $videoMatch = isset($record->Title->TitleText)
+                && substr((string)$record->Title->TitleText, -4) === '.mp4';
+
             $videoType = 'elokuva';
             $description = '';
             if (isset($record->Title->PartDesignation->Value)) {
                 $attributes = $record->Title->PartDesignation->Value->attributes();
-                if (!empty($attributes{'video-tyyppi'})) {
-                    $videoType = (string)$attributes{'video-tyyppi'};
+                if (!empty($attributes->{'video-tyyppi'})) {
+                    $videoType = (string)$attributes->{'video-tyyppi'};
+                    if (!$videoMatch) {
+                        $videoMatch
+                            = in_array(strtolower($videoType), $onlineVideoTypes);
+                    }
                 }
                 $description = (string)$attributes->{'video-lisatieto'};
             }
+            if (!$videoMatch) {
+                continue;
+            }
+
             foreach ($record->ProductionEvent as $event) {
                 $attributes = $event->ProductionEventType->attributes();
                 $url = (string)$attributes
@@ -437,27 +509,51 @@ class Forward extends \RecordManager\Base\Record\Forward
     }
 
     /**
-     * Recursively append XML
+     * Get online video types
      *
-     * @param SimpleXMLElement $simplexml Node to append to
-     * @param SimpleXMLElement $append    Node to be appended
-     *
-     * @return void
+     * @return array
      */
-    protected function appendXml(&$simplexml, $append)
+    protected function getOnlineVideoTypes()
     {
-        if ($append !== null) {
-            $name = $append->getName();
-            // addChild doesn't encode & ...
-            $data = (string)$append;
-            $data = str_replace('&', '&amp;', $data);
-            $xml = $simplexml->addChild($name, $data);
-            foreach ($append->attributes() as $key => $value) {
-                 $xml->addAttribute($key, $value);
-            }
-            foreach ($append->children() as $child) {
-                $this->appendXML($xml, $child);
+        $onlineVideoTypes = $this->getDriverParam('onlineVideoTypes', '');
+        return empty($onlineVideoTypes)
+            ? $this->onlineVideoTypes
+            : explode(',', $onlineVideoTypes);
+    }
+
+    /**
+     * Get the building field
+     *
+     * @return array
+     */
+    protected function getBuilding()
+    {
+        foreach ($this->getMainElement()->ProductionEvent as $event) {
+            if (null !== $event->attributes()->{'elonet-tag'}
+                && (string)$event->attributes()->{'elonet-tag'} === 'skftunniste'
+            ) {
+                return 'skf';
             }
         }
+    }
+
+    /**
+     * Get question categories
+     *
+     * @return array
+     */
+    protected function getQuestionCategories()
+    {
+        $result = [];
+        $categories = array_merge(
+            $this->getProductionEventAttribute(
+                'elokuva-elotiedonkeruu-henkilotyyppi'
+            ),
+            $this->getProductionEventAttribute('elokuva-elotiedonkeruu-kuvauspaikka')
+        );
+        foreach ($categories as $category) {
+            $result = array_merge($result, explode(';', $category));
+        }
+        return $result;
     }
 }

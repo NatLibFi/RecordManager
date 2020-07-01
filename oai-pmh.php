@@ -2,7 +2,7 @@
 /**
  * OAI-PMH Provider Front-End
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Ere Maijala 2012.
  *
@@ -40,7 +40,15 @@ require_once __DIR__ . '/src/RecordManager/Base/Autoloader.php';
 function main()
 {
     $basePath = __DIR__;
-    $config = parse_ini_file($basePath . '/conf/recordmanager.ini', true);
+    $filename = $basePath . '/conf/recordmanager.ini';
+    $config = parse_ini_file($filename, true);
+    if (false === $config) {
+        $error = error_get_last();
+        $message = $error['message'] ?? 'unknown error occurred';
+        throw new \Exception(
+            "Could not load configuration from file '$filename': $message"
+        );
+    }
 
     $provider = new \RecordManager\Base\Controller\OaiPmhProvider(
         $basePath, $config

@@ -2,9 +2,9 @@
 /**
  * Lido record class
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2018.
+ * Copyright (C) The National Library of Finland 2012-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,7 +27,6 @@
  */
 namespace RecordManager\Finna\Record;
 
-use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -214,7 +213,8 @@ class Lido extends \RecordManager\Base\Record\Lido
      * Return record title
      *
      * @param bool     $forFiling            Whether the title is to be used in
-     * filing (e.g. sorting, non-filing characters should be removed)
+     *                                       filing (e.g. sorting, non-filing
+     *                                       characters should be removed)
      * @param string   $lang                 Language
      * @param string[] $excludedDescriptions Description types to exclude
      *
@@ -389,6 +389,17 @@ class Lido extends \RecordManager\Base\Record\Lido
     }
 
     /**
+     * Dedup: Return main author (format: Last, First)
+     *
+     * @return string
+     */
+    public function getMainAuthor()
+    {
+        $authors = $this->getActors($this->mainEvent, null, false);
+        return $authors ? $authors[0] : '';
+    }
+
+    /**
      * Process an array of locations
      *
      * @param array $locations Location strings
@@ -516,7 +527,7 @@ class Lido extends \RecordManager\Base\Record\Lido
         $material = '';
         foreach ($this->getEventNodes($eventType) as $node) {
             if (!empty($node->eventMaterialsTech->displayMaterialsTech)) {
-                $material = (string) $node->eventMaterialsTech->displayMaterialsTech;
+                $material = (string)$node->eventMaterialsTech->displayMaterialsTech;
                 break;
             }
         }
@@ -546,7 +557,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             as $set
         ) {
             foreach ($set->descriptiveNoteValue as $descriptiveNoteValue) {
-                $descriptionWrapDescriptions[] = (string) $descriptiveNoteValue;
+                $descriptionWrapDescriptions[] = (string)$descriptiveNoteValue;
             }
         }
         if ($descriptionWrapDescriptions
@@ -558,16 +569,32 @@ class Lido extends \RecordManager\Base\Record\Lido
 
         // Also read in "description of subject" which contains data suitable for
         // this field
+        $title = str_replace([',', ';'], ' ', $this->getTitle());
+        if ($this->getDriverParam('splitTitles', false)) {
+            $titlePart = MetadataUtils::splitTitle($title);
+            if ($titlePart) {
+                $title = $titlePart;
+            }
+        }
+        $title = str_replace([',', ';'], ' ', $title);
         $subjectDescriptions = [];
         foreach ($this->getSubjectSetNodes() as $set) {
-            if (mb_strtolower($set->displaySubject['label'], 'UTF-8') == 'aihe') {
-                $subjectDescriptions[] = (string) $set->displaySubject;
+            $subject = $set->displaySubject;
+            $label = $subject['label'];
+            $checkTitle = str_replace([',', ';'], ' ', (string)$subject) != $title;
+            if ((null === $label || 'aihe' === mb_strtolower($label, 'UTF-8'))
+                && $checkTitle
+            ) {
+                $subjectDescriptions[] = (string)$set->displaySubject;
             }
         }
 
         return trim(
             implode(
-                ' ', array_merge($descriptionWrapDescriptions, $subjectDescriptions)
+                ' ',
+                array_unique(
+                    array_merge($subjectDescriptions, $descriptionWrapDescriptions)
+                )
             )
         );
     }
@@ -576,7 +603,8 @@ class Lido extends \RecordManager\Base\Record\Lido
      * Return subjects associated with object.
      *
      * @param string[] $exclude List of subject types to exclude (defaults to 'aihe'
-     * and 'iconclass' since they don't contain human readable terms)
+     *                          and 'iconclass' since they don't contain human
+     *                          readable terms)
      *
      * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
      * #subjectComplexType
@@ -678,11 +706,10 @@ class Lido extends \RecordManager\Base\Record\Lido
     ) {
         if ($startDate) {
             if ($endDate < $startDate) {
-                $this->logger->log(
+                $this->logger->logDebug(
                     'Lido',
                     "Invalid date range {$startDate} - {$endDate}, record "
-                    . "{$this->source}." . $this->getID(),
-                    Logger::WARNING
+                    . "{$this->source}." . $this->getID()
                 );
                 $endDate = $startDate;
                 $this->storeWarning('invalid date range');
@@ -748,11 +775,10 @@ class Lido extends \RecordManager\Base\Record\Lido
                 try {
                     $d = new \DateTime($date . '-01');
                 } catch (\Exception $e) {
-                    $this->logger->log(
+                    $this->logger->logDebug(
                         'Lido',
                         "Failed to parse date $date, record {$this->source}."
-                        . $this->getID(),
-                        Logger::WARNING
+                        . $this->getID()
                     );
                     $this->storeWarning('invalid date');
                     return null;
@@ -806,11 +832,10 @@ class Lido extends \RecordManager\Base\Record\Lido
     {
         if (!empty($gml->Polygon)) {
             if (empty($gml->Polygon->outerBoundaryIs->LinearRing->coordinates)) {
-                $this->logger->log(
+                $this->logger->logDebug(
                     'Lido',
                     "GML Polygon missing outer boundary, record "
-                    . "{$this->source}." . $this->getID(),
-                    Logger::WARNING
+                        . "{$this->source}." . $this->getID()
                 );
                 $this->storeWarning('gml polygon missing outer boundary');
                 return '';
@@ -832,11 +857,10 @@ class Lido extends \RecordManager\Base\Record\Lido
 
         if (!empty($gml->LineString)) {
             if (empty($gml->LineString->coordinates)) {
-                $this->logger->log(
+                $this->logger->logDebug(
                     'Lido',
                     "GML LineString missing coordinates, record "
-                    . "{$this->source}." . $this->getID(),
-                    Logger::WARNING
+                        . "{$this->source}." . $this->getID()
                 );
                 $this->storeWarning('gml linestring missing coordinates');
                 return '';
@@ -848,37 +872,45 @@ class Lido extends \RecordManager\Base\Record\Lido
         }
 
         if (!empty($gml->Point)) {
-            if (isset($gml->Point->pos)) {
+            $lat = null;
+            $lon = null;
+            if (!empty($gml->Point->pos)) {
                 $coordinates = trim((string)$gml->Point->pos);
                 if (!$coordinates) {
-                    $this->logger->log(
+                    $this->logger->logDebug(
                         'Lido',
                         "Empty pos in GML point, record "
-                        . "{$this->source}." . $this->getID(),
-                        Logger::WARNING
+                            . "{$this->source}." . $this->getID()
                     );
                     $this->storeWarning('empty gml pos in point');
                 }
-                list($lat, $lon) = explode(' ', (string)$coordinates, 2);
+                $latlon = explode(' ', (string)$coordinates, 2);
+                if (isset($latlon[1])) {
+                    $lat = $latlon[0];
+                    $lon = $latlon[1];
+                }
             } elseif (isset($gml->Point->coordinates)) {
                 $coordinates = trim((string)$gml->Point->coordinates);
                 if (!$coordinates) {
-                    $this->logger->log(
+                    $this->logger->logDebug(
                         'Lido',
                         "Empty coordinates in GML point, record "
-                        . "{$this->source}." . $this->getID(),
-                        Logger::WARNING
+                            . "{$this->source}." . $this->getID()
                     );
                     $this->storeWarning('empty gml coordinates in point');
                     return '';
                 }
-                list($lat, $lon) = explode(',', (string)$coordinates, 2);
-            } else {
-                $this->logger->log(
+                $latlon = explode(',', (string)$coordinates, 2);
+                if (isset($latlon[1])) {
+                    $lat = $latlon[0];
+                    $lon = $latlon[1];
+                }
+            }
+            if (null === $lat || null === $lon) {
+                $this->logger->logDebug(
                     'Lido',
                     "GML Point does not contain pos or coordinates, record "
-                    . "{$this->source}." . $this->getID(),
-                    Logger::WARNING
+                        . "{$this->source}." . $this->getID()
                 );
                 $this->storeWarning('gml point missing data');
                 return '';
@@ -888,11 +920,10 @@ class Lido extends \RecordManager\Base\Record\Lido
             if ('' === $lat || '' === $lon || $lat < -90 || $lat > 90 || $lon < -180
                 || $lon > 180
             ) {
-                $this->logger->log(
+                $this->logger->logDebug(
                     'Lido',
                     "Discarding invalid coordinates '$lat,$lon', record "
-                    . "{$this->source}." . $this->getID(),
-                    Logger::WARNING
+                        . "{$this->source}." . $this->getID()
                 );
                 $this->storeWarning('invalid gml coordinates');
                 return '';
@@ -941,8 +972,8 @@ class Lido extends \RecordManager\Base\Record\Lido
             'kivikausi' => ['-8600-01-01T00:00:00Z', '-1501-12-31T23:59:59Z'],
             'pronssikausi'
                 => ['-1500-01-01T00:00:00Z', '-0501-12-31T23:59:59Z'],
-            'rautakausi' => ['-0500-01-01T00:00:00Z' ,'1299-12-31T23:59:59Z'],
-            'keskiaika' => ['1300-01-01T00:00:00Z' ,'1550-12-31T23:59:59Z'],
+            'rautakausi' => ['-0500-01-01T00:00:00Z','1299-12-31T23:59:59Z'],
+            'keskiaika' => ['1300-01-01T00:00:00Z','1550-12-31T23:59:59Z'],
             'ajoittamaton' => null,
             'tuntematon' => null
         ];
@@ -1050,11 +1081,10 @@ class Lido extends \RecordManager\Base\Record\Lido
             try {
                 $d = new \DateTime($endDate);
             } catch (\Exception $e) {
-                $this->logger->log(
+                $this->logger->logDebug(
                     'Lido',
                     "Failed to parse date $endDate, record {$this->source}."
-                    . $this->getID(),
-                    Logger::WARNING
+                        . $this->getID()
                 );
                 $this->storeWarning('invalid end date');
                 return null;
@@ -1123,11 +1153,10 @@ class Lido extends \RecordManager\Base\Record\Lido
                 $d = new \DateTime($endDate);
                 $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
             } catch (\Exception $e) {
-                $this->logger->log(
+                $this->logger->logDebug(
                     'Lido',
                     "Failed to parse date $endDate, record {$this->source}."
-                    . $this->getID(),
-                    Logger::WARNING
+                        . $this->getID()
                 );
                 $this->storeWarning('invalid end date');
                 return null;
@@ -1148,11 +1177,10 @@ class Lido extends \RecordManager\Base\Record\Lido
             try {
                 $d = new \DateTime($endDate);
             } catch (\Exception $e) {
-                $this->logger->log(
+                $this->logger->logDebug(
                     'Lido',
                     "Failed to parse date $endDate, record {$this->source}."
-                    . $this->getID(),
-                    Logger::WARNING
+                        . $this->getID()
                 );
                 $this->storeWarning('invalid end date');
                 return null;
@@ -1179,11 +1207,10 @@ class Lido extends \RecordManager\Base\Record\Lido
                 $d = new \DateTime($endDate);
                 $endDate = $d->format('Y-m-t') . 'T23:59:59Z';
             } catch (\Exception $e) {
-                $this->logger->log(
+                $this->logger->logDebug(
                     'Lido',
                     "Failed to parse date $endDate, record {$this->source}."
-                    . $this->getID(),
-                    Logger::WARNING
+                        . $this->getID()
                 );
                 $this->storeWarning('invalid end date');
                 return null;
@@ -1376,11 +1403,10 @@ class Lido extends \RecordManager\Base\Record\Lido
         $start = MetadataUtils::validateISO8601Date($startDate);
         $end = MetadataUtils::validateISO8601Date($endDate);
         if ($start === false || $end === false) {
-            $this->logger->log(
+            $this->logger->logDebug(
                 'Lido',
                 "Invalid date range {$startDate} - {$endDate} parsed from "
-                . "'$input', record {$this->source}." . $this->getID(),
-                Logger::WARNING
+                    . "'$input', record {$this->source}." . $this->getID()
             );
             $this->storeWarning('invalid date range');
             if ($start !== false) {
@@ -1391,11 +1417,10 @@ class Lido extends \RecordManager\Base\Record\Lido
                 return null;
             }
         } elseif ($start > $end) {
-            $this->logger->log(
+            $this->logger->logDebug(
                 'Lido',
                 "Invalid date range {$startDate} - {$endDate} parsed from '$input', "
-                . "record {$this->source}." . $this->getID(),
-                Logger::WARNING
+                    . "record {$this->source}." . $this->getID()
             );
             $this->storeWarning('invalid date range');
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';
@@ -1472,7 +1497,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             ->rightsWorkSet as $set
         ) {
             if (!empty($set->rightsHolder->legalBodyName->appellationValue)) {
-                return (string) $set->rightsHolder->legalBodyName->appellationValue;
+                return (string)$set->rightsHolder->legalBodyName->appellationValue;
             }
         }
         return '';
@@ -1516,7 +1541,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             foreach ($this->getResourceSetNodes() as $set) {
                 foreach ($set->resourceRepresentation as $node) {
                     if (!empty($node->linkResource)) {
-                        $link = trim((string) $node->linkResource);
+                        $link = trim((string)$node->linkResource);
                         if (!empty($link)) {
                             $attributes = $node->attributes();
                             $type = (string)$attributes->type;
@@ -1546,7 +1571,7 @@ class Lido extends \RecordManager\Base\Record\Lido
      * Return names of actors associated with specified event
      *
      * @param string|array $event        Which events to use (omit to scan all
-     * events)
+     *                                   events)
      * @param string|array $role         Which roles to use (omit to scan all roles)
      * @param bool         $includeRoles Whether to include roles
      *

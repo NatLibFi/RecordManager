@@ -2,9 +2,9 @@
 /**
  * MetadataUtils Class
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2018.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -160,28 +160,24 @@ class MetadataUtils
             ? self::readListFile($basePath, $config['Site']['articles']) : [];
 
         self::$articleFormats
-            = isset($config['Solr']['article_formats'])
-            ? $config['Solr']['article_formats']
-            : ['Article'];
+            = $config['Solr']['article_formats']
+            ?? ['Article'];
 
         $eArticleFormats
-            = isset($config['Solr']['earticle_formats'])
-            ? $config['Solr']['earticle_formats']
-            : ['eArticle'];
+            = $config['Solr']['earticle_formats']
+            ?? ['eArticle'];
 
         self::$allArticleFormats = array_merge(
             self::$articleFormats, $eArticleFormats
         );
 
         self::$unicodeNormalizationForm
-            = isset($config['Solr']['unicode_normalization_form'])
-            ? $config['Solr']['unicode_normalization_form']
-            : '';
+            = $config['Solr']['unicode_normalization_form']
+            ?? '';
 
         self::$lowercaseLanguageStrings
-            = isset($config['Site']['lowercase_language_strings'])
-            ? $config['Site']['lowercase_language_strings']
-            : true;
+            = $config['Site']['lowercase_language_strings']
+            ?? true;
 
         if (!empty($config['Site']['folding_ignore_characters'])) {
             $chars = preg_split(
@@ -212,11 +208,9 @@ class MetadataUtils
             return false;
         }
 
-        $sum_of_digits = 38 + 3 * ($isbn{0} + $isbn{2} + $isbn{4} + $isbn{6}
-            + $isbn{8}) + $isbn{1}
-        + $isbn{3}
-        + $isbn{5}
-        + $isbn{7};
+        $sum_of_digits = 38 + 3 * ($isbn[0] + $isbn[2] + $isbn[4] + $isbn[6]
+            + $isbn[8])
+            + $isbn[1] + $isbn[3] + $isbn[5] + $isbn[7];
 
         $check_digit = (10 - ($sum_of_digits % 10)) % 10;
 
@@ -492,6 +486,7 @@ class MetadataUtils
         return array_intersect_key($array, array_unique($map));
         //return array_intersect_key($array, array_unique(array_map('strtolower', $array)));
     }
+
     // @codingStandardsIgnoreEnd
 
     /**
@@ -617,7 +612,7 @@ class MetadataUtils
      *
      * @param array $record     Database record
      * @param bool  $normalized Whether to return the original (false) or
-     * normalized (true) record
+     *                          normalized (true) record
      *
      * @return string Metadata as a string
      */
@@ -778,7 +773,7 @@ class MetadataUtils
                         && !preg_match('/.+\-\w{1,2}\.$/', $word)
                         && !preg_match('/^\w\.\w\.$/', $word) // initials
                     ) {
-                        return  metadataUtils::stripTrailingPunctuation(
+                        return MetadataUtils::stripTrailingPunctuation(
                             implode(' ', array_splice($titleWords, 0, $i))
                         );
                     }
@@ -869,10 +864,9 @@ class MetadataUtils
                 $item = \geoPHP::load($wkt, 'wkt');
             } catch (\Exception $e) {
                 if (null !== self::$logger) {
-                    self::$logger->log(
+                    self::$logger->logError(
                         'getCenterCoordinates',
-                        "Could not parse WKT '$wkt': " . $e->getMessage(),
-                        \RecordManager\Base\Utils\Logger::ERROR
+                        "Could not parse WKT '$wkt': " . $e->getMessage()
                     );
                 }
                 return [];
@@ -919,6 +913,52 @@ class MetadataUtils
         $relator = preg_replace('/\p{P}+/u', '', $relator);
         $relator = mb_strtolower($relator, 'UTF-8');
         return $relator;
+    }
+
+    /**
+     * Extract record source from an ID
+     *
+     * @param string $id Record ID
+     *
+     * @return string
+     */
+    public static function getSourceFromId($id)
+    {
+        $parts = explode('.', $id, 2);
+        return $parts[0];
+    }
+
+    /**
+     * Load XML into DOM or SimpleXMLElement (if $dom is null)
+     *
+     * @param string       $xml     XML
+     * @param \DomDocument $dom     DOM
+     * @param int          $options Additional libxml options (LIBXML_PARSEHUGE and
+     *                              LIBXML_COMPACT are set by default)
+     *
+     * @return \SimpleXMLElement|\DomDocument|bool
+     */
+    public static function loadXML($xml, $dom = null, $options = 0)
+    {
+        $options |= LIBXML_PARSEHUGE | LIBXML_COMPACT;
+        return XmlSecurity::scan($xml, $dom, $options);
+    }
+
+    /**
+     * Convert author name in "First Last" format to "Last, First"
+     *
+     * @param string $author Author name
+     *
+     * @return string
+     */
+    public static function convertAuthorLastFirst($author)
+    {
+        $p = strrpos($author, ' ');
+        if ($p > 0) {
+            $author = substr($author, $p + 1) . ', '
+                . substr($author, 0, $p);
+        }
+        return $author;
     }
 
     /**

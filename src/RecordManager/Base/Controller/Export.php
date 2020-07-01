@@ -2,9 +2,9 @@
 /**
  * Export
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,9 +27,7 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\MetadataUtils;
-use RecordManager\Base\Utils\Logger;
 
 /**
  * Export
@@ -52,15 +50,16 @@ class Export extends AbstractBase
      * @param string $fromCreateDate  Starting date of creation (e.g. 2011-12-24)
      * @param string $untilCreateDate Ending date of creation (e.g. 2011-12-24)
      * @param int    $skipRecords     Export only one per each $skipRecords records
-     * for a sample set
+     *                                for a sample set
      * @param string $sourceId        Source ID to export, or empty or * for all
      * @param string $singleId        Export only a record with the given ID
      * @param string $xpath           Optional XPath expression to limit the export
-     * with
+     *                                with
      * @param bool   $sortDedup       Whether to sort the records by dedup id
      * @param string $addDedupId      When to add dedup id to each record
-     * ('deduped' = when the record has duplicates, 'always' = even if the record
-     * doesn't have duplicates, otherwise never)
+     *                                ('deduped' = when the record has duplicates,
+     *                                'always' = even if the record doesn't have
+     *                                duplicates, otherwise never)
      *
      * @return void
      */
@@ -95,7 +94,7 @@ class Export extends AbstractBase
         );
 
         try {
-            $this->logger->log('exportRecords', 'Creating record list');
+            $this->logger->logInfo('exportRecords', 'Creating record list');
 
             $params = [];
             if ($singleId) {
@@ -150,7 +149,6 @@ class Export extends AbstractBase
                             => $this->db->getTimestamp(strtotime($untilCreateDate))
                     ];
                 }
-                $params['update_needed'] = false;
                 if ($sourceId && $sourceId !== '*') {
                     $sources = explode(',', $sourceId);
                     if (count($sources) == 1) {
@@ -173,9 +171,9 @@ class Export extends AbstractBase
             $count = 0;
             $deduped = 0;
             $deleted = 0;
-            $this->logger->log('exportRecords', "Exporting $total records");
+            $this->logger->logInfo('exportRecords', "Exporting $total records");
             if ($skipRecords) {
-                $this->logger->log(
+                $this->logger->logInfo(
                     'exportRecords', "(1 per each $skipRecords records)"
                 );
             }
@@ -188,7 +186,7 @@ class Export extends AbstractBase
                 );
                 if ($xpath) {
                     $xml = $metadataRecord->toXML();
-                    $xpathResult = simplexml_load_string($xml)->xpath($xpath);
+                    $xpathResult = MetadataUtils::loadXML($xml)->xpath($xpath);
                     if ($xpathResult === false) {
                         throw new \Exception(
                             "Failed to evaluate XPath expression '$xpath'"
@@ -215,15 +213,13 @@ class Export extends AbstractBase
                     }
                     if ($addDedupId == 'always') {
                         $metadataRecord->addDedupKeyToMetadata(
-                            isset($record['dedup_id'])
-                            ? $record['dedup_id']
-                            : $record['_id']
+                            $record['dedup_id']
+                            ?? $record['_id']
                         );
                     } elseif ($addDedupId == 'deduped') {
                         $metadataRecord->addDedupKeyToMetadata(
-                            isset($record['dedup_id'])
-                            ? $record['dedup_id']
-                            : ''
+                            $record['dedup_id']
+                            ?? ''
                         );
                     }
                     $xml = $metadataRecord->toXML();
@@ -231,21 +227,21 @@ class Export extends AbstractBase
                     file_put_contents($file, $xml . "\n", FILE_APPEND);
                 }
                 if ($count % 1000 == 0) {
-                    $this->logger->log(
+                    $this->logger->logInfo(
                         'exportRecords',
                         "$count records (of which $deduped deduped, $deleted "
                         . "deleted) exported"
                     );
                 }
             }
-            $this->logger->log(
+            $this->logger->logInfo(
                 'exportRecords',
                 "Completed with $count records (of which $deduped deduped, $deleted "
                 . "deleted) exported"
             );
         } catch (\Exception $e) {
-            $this->logger->log(
-                'exportRecords', 'Exception: ' . $e->getMessage(), Logger::FATAL
+            $this->logger->logFatal(
+                'exportRecords', 'Exception: ' . $e->getMessage()
             );
         }
         file_put_contents($file, "</collection>\n", FILE_APPEND);

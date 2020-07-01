@@ -2,7 +2,7 @@
 /**
  * Fork-based worker pool manager
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2017.
  *
@@ -206,15 +206,32 @@ class WorkerPoolManager
                     }
                 } catch (\Exception $e) {
                     echo 'Fatal: Worker ' . getmypid()
-                        . " exception in pool $poolId: " . $e->getMessage() . "\n";
+                        . " exception in pool $poolId: " . $e->getMessage()
+                        . "\nStack trace: " . $e->getTraceAsString();
                     $this->writeSocket(
-                        $childSocket, ['exception' => $e->getMessage()]
+                        $childSocket,
+                        [
+                            'exception' => $e->getMessage() . "\nStack trace: "
+                            . $e->getTraceAsString()
+                        ]
                     );
                     socket_close($childSocket);
-                    exit(1);
+                    exit(255);
                 }
             }
         }
+    }
+
+    /**
+     * Check if a worker pool exists
+     *
+     * @param string $poolId Pool id
+     *
+     * @return bool
+     */
+    public function hasWorkerPool($poolId)
+    {
+        return !empty($this->workerPools[$poolId]);
     }
 
     /**
@@ -229,6 +246,9 @@ class WorkerPoolManager
         $args = func_get_args();
         array_shift($args);
         if (empty($this->workerPools[$poolId])) {
+            if (!isset($this->workerPoolRunMethods[$poolId])) {
+                throw new \Exception("addRequest: Invalid worker pool $poolId");
+            }
             // Synchronous operation
             $this->results[$poolId][] = call_user_func_array(
                 $this->workerPoolRunMethods[$poolId],
@@ -479,7 +499,7 @@ class WorkerPoolManager
                 );
             }
             if (0 === $res) {
-                usleep(10);
+                usleep(100);
                 continue;
             }
             $written = socket_write($socket, $message, $msgLen);

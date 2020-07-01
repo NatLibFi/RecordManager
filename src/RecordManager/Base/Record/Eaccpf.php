@@ -2,7 +2,7 @@
 /**
  * EAC-CPF Record Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2018.
  *
@@ -49,7 +49,7 @@ class Eaccpf extends Base
      *
      * @param string $source Source ID
      * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     * file import)
+     *                       file import)
      * @param string $data   Metadata
      *
      * @return void
@@ -58,7 +58,7 @@ class Eaccpf extends Base
     {
         parent::setData($source, $oaiID, $data);
 
-        $this->doc = simplexml_load_string($data);
+        $this->doc = $this->parseXMLRecord($data);
     }
 
     /**
@@ -71,7 +71,7 @@ class Eaccpf extends Base
         if (!isset($this->doc->control->recordId)) {
             throw new \Exception('No ID found for record: ' . $this->doc->asXML());
         }
-        $id = (string) $this->doc->control->recordId;
+        $id = (string)$this->doc->control->recordId;
         return urlencode($id);
     }
 
@@ -400,7 +400,7 @@ class Eaccpf extends Base
     /**
      * Get use for headings
      *
-     * @return string
+     * @return array
      */
     protected function getUseForHeadings()
     {
