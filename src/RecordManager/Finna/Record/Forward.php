@@ -169,6 +169,10 @@ class Forward extends \RecordManager\Base\Record\Forward
 
         $data['question_category_str_mv'] = $this->getQuestionCategories();
 
+        $languages = $this->getLanguages();
+        $data['language']
+            = MetadataUtils::normalizeLanguageStrings($languages);
+
         return $data;
     }
 
@@ -553,6 +557,29 @@ class Forward extends \RecordManager\Base\Record\Forward
         );
         foreach ($categories as $category) {
             $result = array_merge($result, explode(';', $category));
+        }
+        return $result;
+    }
+
+    /**
+     * Get languages of all videos
+     *
+     * @return array
+     */
+    public function getLanguages()
+    {
+        $result = [];
+        $records = $this->doc->children();
+        $records = reset($records);
+        foreach (is_array($records) ? $records : [$records] as $record) {
+            foreach ($record->ProductionEvent as $event) {
+                $attributes = $event->ProductionEventType->attributes();
+                if (!empty($attributes->{'elokuva-elonet-materiaali-video-kieli'})) {
+                    $language = (string)$attributes
+                        ->{'elokuva-elonet-materiaali-video-kieli'};
+                    $result = array_merge($result, explode(',', $language));
+                }
+            }
         }
         return $result;
     }
