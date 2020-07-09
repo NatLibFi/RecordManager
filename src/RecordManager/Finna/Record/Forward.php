@@ -173,6 +173,10 @@ class Forward extends \RecordManager\Base\Record\Forward
         $data['language']
             = MetadataUtils::normalizeLanguageStrings($languages);
 
+        $subtitles = $this->getSubtitleLanguages();
+        $data['subtitle_lng_str_mv']
+            = MetadataUtils::normalizeLanguageStrings($subtitles);
+
         return $data;
     }
 
@@ -367,10 +371,12 @@ class Forward extends \RecordManager\Base\Record\Forward
     protected function getProductionEventAttribute($attribute)
     {
         $result = [];
-        foreach ($this->getMainElement()->ProductionEvent as $event) {
-            $attributes = $event->ProductionEventType->attributes();
-            if (!empty($attributes->{$attribute})) {
-                $result[] = (string)$attributes->{$attribute};
+        foreach ($this->getAllMainElements() as $record) {
+            foreach ($record->ProductionEvent as $event) {
+                $attributes = $event->ProductionEventType->attributes();
+                if (!empty($attributes->{$attribute})) {
+                    $result[] = (string)$attributes->{$attribute};
+                }
             }
         }
         return $result;
@@ -569,17 +575,26 @@ class Forward extends \RecordManager\Base\Record\Forward
     public function getLanguages()
     {
         $result = [];
-        $records = $this->doc->children();
-        $records = reset($records);
-        foreach (is_array($records) ? $records : [$records] as $record) {
-            foreach ($record->ProductionEvent as $event) {
-                $attributes = $event->ProductionEventType->attributes();
-                if (!empty($attributes->{'elokuva-elonet-materiaali-video-kieli'})) {
-                    $language = (string)$attributes
-                        ->{'elokuva-elonet-materiaali-video-kieli'};
-                    $result = array_merge($result, explode(',', $language));
-                }
-            }
+        $attrName = 'elokuva-elonet-materiaali-video-kieli';
+        $languages = $this->getProductionEventAttribute($attrName);
+        foreach ($languages as $language) {
+            $result = array_merge($result, explode(',', $language));
+        }
+        return $result;
+    }
+
+    /**
+     * Get languages of all video subtitles
+     *
+     * @return array
+     */
+    public function getSubtitleLanguages()
+    {
+        $result = [];
+        $attrName = 'elokuva-elonet-materiaali-video-alatekstikieli';
+        $languages = $this->getProductionEventAttribute($attrName);
+        foreach ($languages as $language) {
+            $result = array_merge($result, explode(',', $language));
         }
         return $result;
     }
