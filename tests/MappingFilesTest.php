@@ -147,6 +147,52 @@ class MappingFilesTest extends AbstractTest
     }
 
     /**
+     * Tests for regexp mapping files
+     *
+     * @return void
+     */
+    public function testRegexpNoDefaultMappingFile()
+    {
+        $fieldMapper = $this->getFieldMapper();
+
+        $mapping = [
+            [
+                'type' => 'regexp',
+                'map' => $this->callProtected(
+                   $fieldMapper,
+                   'readMappingFile',
+                   [__DIR__ . '/samples/building-regexp-no-default.map']
+                )
+            ]
+        ];
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['val1', $mapping]
+        );
+        $this->assertEquals('val/1', $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['val', $mapping]
+        );
+        $this->assertEquals('string', $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['!21!', $mapping]
+        );
+        $this->assertEquals('!21!', $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['21!', $mapping]
+        );
+        $this->assertEquals('!', $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['21', $mapping]
+        );
+        $this->assertEquals('', $result);
+    }
+
+    /**
      * Tests for regexp multi mapping files
      *
      * @return void
@@ -179,7 +225,7 @@ class MappingFilesTest extends AbstractTest
         $result = $this->callProtected(
             $fieldMapper, 'mapValue', ['!21!', $mapping]
         );
-        $this->assertEquals([], $result);
+        $this->assertEquals('def', $result);
 
         $result = $this->callProtected(
             $fieldMapper, 'mapValue', ['21!', $mapping]
