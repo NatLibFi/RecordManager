@@ -109,13 +109,17 @@ class Forward extends \RecordManager\Base\Record\Forward
     ];
 
     /**
-     * Return fields to be indexed in Solr (an alternative to an XSL transformation)
+     * Return fields to be indexed in Solr
+     *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
      *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
-        $data = parent::toSolrArray();
+        $data = parent::toSolrArray($db);
 
         if (isset($data['publishDate'])) {
             $year = MetadataUtils::extractYear($data['publishDate']);

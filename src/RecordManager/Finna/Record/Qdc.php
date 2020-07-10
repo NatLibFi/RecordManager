@@ -43,13 +43,17 @@ use RecordManager\Base\Utils\MetadataUtils;
 class Qdc extends \RecordManager\Base\Record\Qdc
 {
     /**
-     * Return fields to be indexed in Solr (an alternative to an XSL transformation)
+     * Return fields to be indexed in Solr
+     *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
      *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
-        $data = parent::toSolrArray();
+        $data = parent::toSolrArray($db);
 
         // Nonstandard author fields
         $authors = $this->getValues('author');

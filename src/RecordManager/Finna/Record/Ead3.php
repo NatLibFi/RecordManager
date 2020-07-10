@@ -68,13 +68,17 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     protected $undefinedType = 'Määrittämätön';
 
     /**
-     * Return fields to be indexed in Solr (an alternative to an XSL transformation)
+     * Return fields to be indexed in Solr
+     *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
      *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
-        $data = parent::toSolrArray();
+        $data = parent::toSolrArray($db);
         $doc = $this->doc;
 
         $unitDateRange = $this->parseDateRange((string)$doc->did->unitdate);
