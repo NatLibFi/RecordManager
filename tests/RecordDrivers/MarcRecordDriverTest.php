@@ -454,7 +454,7 @@ class MarcRecordDriverTest extends RecordDriverTest
                 null
             ]
         ];
-        $db->expects($this->exactly(4))
+        $db->expects($this->exactly(5))
             ->method('findRecord')
             ->will($this->returnValueMap($map));
 
