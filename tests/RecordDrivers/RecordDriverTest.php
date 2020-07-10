@@ -61,14 +61,15 @@ abstract class RecordDriverTest extends AbstractTest
     /**
      * Create a sample record driver
      *
-     * @param string $sample Sample record file
+     * @param string $sample   Sample record file
+     * @param array  $dsConfig Datasource config
      *
      * @return object
      */
-    protected function createRecord($sample)
+    protected function createRecord($sample, $dsConfig = [])
     {
         $logger = $this->createMock(Logger::class);
-        $recordFactory = new RecordFactory($logger, [], []);
+        $recordFactory = new RecordFactory($logger, [], $dsConfig);
         $sample = file_get_contents(__DIR__ . '/../samples/' . $sample);
         $record = $recordFactory->createRecord(
             $this->driver, $sample, '__unit_test_no_id__', '__unit_test_no_source__'

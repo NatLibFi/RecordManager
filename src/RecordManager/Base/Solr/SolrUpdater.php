@@ -64,7 +64,7 @@ class SolrUpdater
     /**
      * Database
      *
-     * @var Database
+     * @var \RecordManager\Base\Database\Database
      */
     protected $db;
 
@@ -1675,7 +1675,7 @@ class SolrUpdater
                     $data = $settings['solrTransformationXSLT']
                         ->transformToSolrArray($metadataRecord->toXML(), $params);
                 } else {
-                    $data = $metadataRecord->toSolrArray();
+                    $data = $metadataRecord->toSolrArray($this->db);
                     $this->enrich($source, $settings, $metadataRecord, $data);
                 }
             }
@@ -1983,7 +1983,7 @@ class SolrUpdater
             $data = $settings['solrTransformationXSLT']
                 ->transformToSolrArray($metadataRecord->toXML(), $params);
         } else {
-            $data = $metadataRecord->toSolrArray();
+            $data = $metadataRecord->toSolrArray($this->db);
             $this->enrich($source, $settings, $metadataRecord, $data);
         }
 

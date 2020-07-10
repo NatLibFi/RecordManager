@@ -251,33 +251,60 @@ class Marc extends Base
     }
 
     /**
-     * Return fields to be indexed in Solr (an alternative to an XSL transformation)
+     * Return fields to be indexed in Solr
+     *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
      *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
         $data = [];
         $data['record_format'] = $data['recordtype'] = 'marc';
 
-        // Add source prefix to IDs in link fields
+        // Try to find matches for IDs in link fields
         $fields = ['760', '762', '765', '767', '770', '772', '773', '774',
             '775', '776', '777', '780', '785', '786', '787'];
         foreach ($fields as $code) {
-            if (isset($this->fields[$code])) {
-                foreach ($this->fields[$code] as &$marcfield) {
-                    if (isset($marcfield['s'])) {
-                        foreach ($marcfield['s'] as &$marcsubfield) {
-                            if (key($marcsubfield) == 'w') {
-                                $marcsubfield = [
-                                    'w' => $this->idPrefix . '.'
-                                    . current($marcsubfield)
-                                ];
-                            }
+            // Make sure not to use null coalescing with references. That won't work.
+            if (!isset($this->fields[$code])) {
+                continue;
+            }
+            foreach ($this->fields[$code] as &$marcfield) {
+                // Make sure not to use null coalescing with references. That won't
+                // work.
+                if (!isset($marcfield['s'])) {
+                    continue;
+                }
+                foreach ($marcfield['s'] as &$marcsubfield) {
+                    if (key($marcsubfield) == 'w') {
+                        $targetId = current($marcsubfield);
+                        $targetRecord = null;
+                        if ($db) {
+                            $linkingId = $this->createLinkingId($targetId);
+                            $targetRecord = $db->findRecord(
+                                [
+                                    'source_id' => $this->source,
+                                    'linking_id' => $linkingId
+                                ],
+                                ['projection' => ['_id' => 1]]
+                            );
                         }
+                        if ($targetRecord) {
+                            $targetId = $targetRecord['_id'];
+                        } else {
+                            $targetId = $this->idPrefix . '.' . $targetId;
+                        }
+                        $marcsubfield = [
+                            'w' => $targetId
+                        ];
                     }
                 }
+                unset($marcsubfield);
             }
+            unset($marcfield);
         }
 
         // building
@@ -629,13 +656,7 @@ class Marc extends Base
             // Koha style ID fallback
             $id = $this->getFieldSubfield('999', 'c');
         }
-        if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
-            $source = $this->getField('003');
-            $source = MetadataUtils::stripTrailingPunctuation($source);
-            if ($source) {
-                $id = "($source)$id";
-            }
-        }
+        $id = $this->createLinkingId($id);
         $results = [$id];
 
         $cns = $this->getFieldsSubfields(
@@ -648,6 +669,25 @@ class Marc extends Base
         }
 
         return $results;
+    }
+
+    /**
+     * Create a linking id from record id
+     *
+     * @param string $id Record id
+     *
+     * @return string
+     */
+    protected function createLinkingId($id)
+    {
+        if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
+            $source = $this->getField('003');
+            $source = MetadataUtils::stripTrailingPunctuation($source);
+            if ($source) {
+                $id = "($source)$id";
+            }
+        }
+        return $id;
     }
 
     /**
