@@ -291,6 +291,16 @@ class Marc extends Base
                                 ],
                                 ['projection' => ['_id' => 1]]
                             );
+                            // Try with the original id if no exact match
+                            if (!$targetRecord && $targetId !== $linkingId) {
+                                $targetRecord = $db->findRecord(
+                                    [
+                                        'source_id' => $this->source,
+                                        'linking_id' => $targetId
+                                    ],
+                                    ['projection' => ['_id' => 1]]
+                                );
+                            }
                         }
                         if ($targetRecord) {
                             $targetId = $targetRecord['_id'];
