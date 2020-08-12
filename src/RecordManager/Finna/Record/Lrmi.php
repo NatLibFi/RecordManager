@@ -87,18 +87,20 @@ class Lrmi extends Qdc
         $data['topic_uri_str_mv']
             = array_merge($data['topic_uri_str_mv'] ?? [], $topicIds);
 
-
         if (isset($doc->author)) {
             $authors = [];
             foreach ($doc->author as $author) {
-                if (isset($author->person) && isset($author->person->name)) {
-                    $authors[] = trim((string)$author->person->name);
+                if (!isset($author->person)) {
+                    continue;
+                }
+                foreach ($author->person as $person) {
+                    if (isset($person->name)) {
+                        $authors[] = trim((string)$person->name);
+                    }
                 }
             }
             $data['author2'] = $data['author_facet'] = $authors;
         }
-
-
         
         $languages = [];
 
