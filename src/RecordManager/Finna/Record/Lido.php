@@ -1652,8 +1652,10 @@ class Lido extends \RecordManager\Base\Record\Lido
      */
     protected function getOldIdentifier()
     {
-        if (!isset($this->doc->lido->administrativeMetadata->recordWrap->recordInfoSet)
-        ) {
+        $isset = isset(
+            $this->doc->lido->administrativeMetadata->recordWrap->recordInfoSet
+        );
+        if (!$isset) {
             return '';
         }
 
@@ -1663,7 +1665,9 @@ class Lido extends \RecordManager\Base\Record\Lido
             if (isset($set->recordInfoID)) {
                 $info = $set->recordInfoID;
                 $attributes = $info->attributes();
-                if (isset($attributes->type) && 'knp' === (string)$attributes->type) {
+                if (isset($attributes->type)
+                    && 'knp' === (string)$attributes->type
+                ) {
                     return (string)$info;
                 }
             }
