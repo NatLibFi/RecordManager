@@ -211,6 +211,10 @@ class Lido extends \RecordManager\Base\Record\Lido
         $data['hierarchy_parent_title']
             = $this->getRelatedWorks($this->relatedWorkRelationTypesExtended);
 
+        if ($oldId = $this->getOldIdentifier()) {
+            $data['old_id_str_mv'] = $oldId;
+        }
+
         return $data;
     }
 
@@ -1639,5 +1643,31 @@ class Lido extends \RecordManager\Base\Record\Lido
         }
 
         return $result;
+    }
+
+    /**
+     * Return record old identifier.
+     *
+     * @return string
+     */
+    protected function getOldIdentifier()
+    {
+        if (!isset($this->doc->lido->administrativeMetadata->recordWrap->recordInfoSet)
+        ) {
+            return '';
+        }
+
+        foreach ($this->doc->lido->administrativeMetadata->recordWrap->recordInfoSet
+            as $set
+        ) {
+            if (isset($set->recordInfoID)) {
+                $info = $set->recordInfoID;
+                $attributes = $info->attributes();
+                if (isset($attributes->type) && 'knp' === (string)$attributes->type) {
+                    return (string)$info;
+                }
+            }
+        }
+        return '';
     }
 }
