@@ -1652,10 +1652,10 @@ class Lido extends \RecordManager\Base\Record\Lido
      */
     protected function getOldIdentifier()
     {
-        $isset = isset(
+        $hasValue = isset(
             $this->doc->lido->administrativeMetadata->recordWrap->recordInfoSet
         );
-        if (!$isset) {
+        if (!$hasValue) {
             return '';
         }
 
