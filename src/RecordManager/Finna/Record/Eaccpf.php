@@ -2,7 +2,7 @@
 /**
  * EAC-CPF Record Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2018.
  *
@@ -43,11 +43,15 @@ class Eaccpf extends \RecordManager\Base\Record\Eaccpf
     /**
      * Return fields to be indexed in Solr
      *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
+     *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
-        $data = parent::toSolrArray();
+        $data = parent::toSolrArray($db);
 
         $data['record_format'] = 'eaccpf';
 

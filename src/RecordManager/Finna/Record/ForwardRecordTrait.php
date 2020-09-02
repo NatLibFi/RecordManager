@@ -2,7 +2,7 @@
 /**
  * Forward record trait.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2019.
  *
@@ -99,7 +99,7 @@ trait ForwardRecordTrait
             $data = str_replace('&', '&amp;', $data);
             $xml = $simplexml->addChild($name, $data);
             foreach ($append->attributes() as $key => $value) {
-                 $xml->addAttribute($key, $value);
+                $xml->addAttribute($key, $value);
             }
             foreach ($append->children() as $child) {
                 $this->appendXML($xml, $child);

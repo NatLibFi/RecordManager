@@ -2,9 +2,9 @@
 /**
  * Import
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -26,9 +26,6 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 namespace RecordManager\Base\Controller;
-
-use RecordManager\Base\Database\Database;
-use RecordManager\Base\Utils\Logger;
 
 /**
  * Import
@@ -61,33 +58,32 @@ class Import extends AbstractBase
         $this->dedupHandler = $this->getDedupHandler();
 
         if (!isset($this->dataSourceSettings[$source])) {
-            $this->logger->log(
+            $this->logger->logFatal(
                 'import',
-                "Settings not found for data source $source",
-                Logger::FATAL
+                "Settings not found for data source $source"
             );
             throw new \Exception("Error: settings not found for $source\n");
         }
         $settings = &$this->dataSourceSettings[$source];
         $count = 0;
         foreach (glob($files) as $file) {
-            $this->logger->log(
+            $this->logger->logInfo(
                 'import', "Loading records from '$file' into '$source'"
             );
 
             if (preg_match('/^[\/\w_:-]+$/', $settings['recordXPath'])) {
                 $count += $this->streamingLoad($file, $source, $delete);
             } else {
-                $this->logger->log(
+                $this->logger->logInfo(
                     'import', "Complex recordXPath, cannot use streaming loader"
                 );
                 $count += $this->fullLoad($file, $source, $delete);
             }
 
-            $this->logger->log('import', "$count records loaded");
+            $this->logger->logInfo('import', "$count records loaded");
         }
 
-        $this->logger->log('import', "Total $count records loaded");
+        $this->logger->logInfo('import', "Total $count records loaded");
         return $count;
     }
 
@@ -112,7 +108,6 @@ class Import extends AbstractBase
         $recordXPath = $settings['recordXPath'];
         $count = 0;
         $currentPath = [];
-        $nodes = 0;
         while ($xml->read()) {
             if ($xml->nodeType !== \XMLReader::ELEMENT) {
                 continue;
@@ -140,10 +135,10 @@ class Import extends AbstractBase
                 $xpath = new \DOMXpath($doc);
                 $xNodes = $xpath->query($settings['oaiIDXPath']);
                 if ($xNodes->length == 0 || !$xNodes->item(0)->nodeValue) {
-                    $this->logger->log(
+                    $this->logger->logFatal(
+                        'streamingLoad',
                         "No OAI ID found with XPath '{$settings['oaiIDXPath']}'"
-                        . ", record: $data",
-                        Logger::FATAL
+                            . ", record: $data"
                     );
                     throw new \Exception(
                         "No OAI ID found with XPath '{$settings['oaiIDXPath']}'"
@@ -157,7 +152,7 @@ class Import extends AbstractBase
                 echo "Stored records: $count\n";
             }
             if ($count % 1000 === 0) {
-                $this->logger->log('import', "$count records loaded");
+                $this->logger->logInfo('import', "$count records loaded");
             }
         }
         return $count;

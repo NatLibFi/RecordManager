@@ -2,7 +2,7 @@
 /**
  * Dublin Core record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2018.
  *
@@ -101,9 +101,13 @@ class Dc extends Base
     /**
      * Return fields to be indexed in Solr
      *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
+     *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
         $data = $this->getFullTextFields($this->doc);
 

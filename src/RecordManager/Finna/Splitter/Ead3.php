@@ -2,7 +2,7 @@
 /**
  * EAD 3 Splitter Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2012-2019.
  *
@@ -162,7 +162,6 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                 if ($unitId == '') {
                     $unitId = urlencode($this->archiveId . '_' . $this->currentPos);
                 }
-
             } else {
                 $unitId = $this->archiveId . '_' . $this->currentPos;
             }
@@ -257,9 +256,7 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                 $parent = $addData->addChild('parent');
                 $parent->addAttribute('id', $parentID);
                 $parent->addAttribute('title', $parentTitle);
-
             } else {
-
                 if ($this->currentPos > 1) {
                     $parent = $addData->addChild('parent');
                     $parent->addAttribute('id', $this->archiveId);

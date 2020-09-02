@@ -2,9 +2,9 @@
 /**
  * Delete Records from Solr
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -52,19 +52,19 @@ class DeleteSolrRecords extends AbstractBase
             $this->dataSourceSettings, $this->recordFactory
         );
         if (!empty($this->config['Solr']['merge_records'])) {
-            $this->logger->log(
+            $this->logger->logInfo(
                 'deleteSolrRecords',
                 "Deleting data source '$sourceId' from merged records via Solr "
-                . "update for merged records"
+                    . 'update for merged records'
             );
             $updater->updateRecords('', $sourceId, '', false, true);
         }
-        $this->logger->log(
+        $this->logger->logInfo(
             'deleteSolrRecords',
             "Deleting data source '$sourceId' directly from Solr"
         );
         $updater->deleteDataSource($sourceId);
-        $this->logger->log(
+        $this->logger->logInfo(
             'deleteSolrRecords', "Deletion of '$sourceId' from Solr completed"
         );
     }

@@ -2,7 +2,7 @@
 /**
  * EAD 3 Record Class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2012-2020.
  *
@@ -29,7 +29,6 @@
  */
 namespace RecordManager\Finna\Record;
 
-use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -71,13 +70,17 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     protected $undefinedType = 'Määrittämätön';
 
     /**
-     * Return fields to be indexed in Solr (an alternative to an XSL transformation)
+     * Return fields to be indexed in Solr
+     *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
      *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
-        $data = parent::toSolrArray();
+        $data = parent::toSolrArray($db);
         $doc = $this->doc;
 
         if ($unitDateRange = $this->getDaterange()) {
@@ -126,8 +129,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $data['hierarchy_sequence_str'] = $data['hierarchy_sequence'];
         }
 
-        $data['source_str_mv'] = isset($data['institution'])
-            ? $data['institution'] : $this->source;
+        $data['source_str_mv'] = $data['institution'] ?? $this->source;
         $data['datasource_str_mv'] = $this->source;
 
         // Digitized?
@@ -151,7 +153,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if ($this->doc->did->unitid) {
             foreach ($this->doc->did->unitid as $i) {
                 if ($i->attributes()->label == 'Analoginen') {
-                    $idstr = (string) $i;
+                    $idstr = (string)$i;
                     $p = strpos($idstr, '/');
                     $analogID = $p > 0
                         ? substr($idstr, $p + 1)
@@ -170,10 +172,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (isset($doc->did->physdesc)) {
             foreach ($doc->did->physdesc as $physdesc) {
                 if (isset($physdesc->attributes()->label)) {
-                    $material[] = (string) $physdesc . ' '
+                    $material[] = (string)$physdesc . ' '
                         . $physdesc->attributes()->label;
                 } else {
-                    $material[] = (string) $physdesc;
+                    $material[] = (string)$physdesc;
                 }
             }
             $data['material'] = $material;
@@ -252,10 +254,15 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (isset($doc->index->index->indexentry)) {
             foreach ($doc->index->index->indexentry as $indexentry) {
                 if (isset($indexentry->name->part)) {
-                    $data['contents'][] = (string) $indexentry->name->part;
+                    $data['contents'][] = (string)$indexentry->name->part;
                 }
             }
         }
+
+        $data['author_id_str_mv'] = array_merge(
+            $this->getAuthorIds(),
+            $this->getCorporateAuthorIds()
+        );
 
         $data['format_ext_str_mv'] = $data['format'];
 
@@ -453,7 +460,13 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
 
             try {
                 $d = new \DateTime($date);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
+                $this->logger->logDebug(
+                    'Ead3',
+                    "Failed to parse date $date, record {$this->source}."
+                    . $this->getID()
+                );
+                $this->storeWarning('invalid date');
                 return null;
             }
 
@@ -488,11 +501,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         $endDate = $endDate['date'];
 
         if (strtotime($startDate) > strtotime($endDate)) {
-            $this->logger->log(
+            $this->logger->logDebug(
                 'Ead3',
                 "Invalid date range {$startDate} - {$endDate}, record " .
-                "{$this->source}." . $this->getID(),
-                Logger::DEBUG
+                "{$this->source}." . $this->getID()
             );
             $this->storeWarning('invalid date range');
             $endDate = substr($startDate, 0, 4) . '-12-31T23:59:59Z';

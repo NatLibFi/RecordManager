@@ -2,7 +2,7 @@
 /**
  * Tests for handling of mapping files
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2017
  *
@@ -25,9 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 use RecordManager\Base\Utils\FieldMapper;
-use RecordManager\Base\Utils\Logger;
 
 /**
  * Mapping file tests
@@ -40,64 +38,6 @@ use RecordManager\Base\Utils\Logger;
  */
 class MappingFilesTest extends AbstractTest
 {
-    /**
-     * Basic mapping
-     *
-     * @var array
-     */
-    protected $basicMapping = [
-        [
-            'type' => 'normal',
-            'map' => [
-                'val1' => 'a/b',
-                'val2' => '',
-                '##default' => 'def'
-            ]
-        ]
-    ];
-
-    /**
-     * Regexp mapping
-     *
-     * @var array
-     */
-    protected $regexpMapping = [
-        [
-            'type' => 'regexp',
-            'map' => [
-                '([a-z]+)(\d)' => '$1/$2',
-                '([a-z]+)' => 'string',
-                '^\d+(.*)$' => '$1',
-                '.+' => 'def'
-            ]
-        ]
-    ];
-
-    /**
-     * Multilevel mapping for hierarchical values
-     *
-     * @var array
-     */
-    protected $multilevelMapping = [
-        [
-            'type' => 'normal',
-            'map' => [
-                'val1' => 'a/b',
-                'val2' => '',
-                '##default' => 'def'
-            ]
-        ],
-        [
-            'type' => 'regexp',
-            'map' => [
-                '([a-z]+)(\d)' => '\1/\2',
-                '([a-z]+)' => 'string',
-                '^\d+(.*)$' => '$1',
-                '.+' => 'def'
-            ]
-        ]
-    ];
-
     /**
      * Data source settings
      *
@@ -114,8 +54,6 @@ class MappingFilesTest extends AbstractTest
         ]
     ];
 
-    // TODO: Add tests for default mappings
-
     /**
      * Tests for basic mapping files
      *
@@ -125,23 +63,39 @@ class MappingFilesTest extends AbstractTest
     {
         $fieldMapper = $this->getFieldMapper();
 
+        $mapping = [
+            [
+                'type' => 'normal',
+                'map' => $this->callProtected(
+                   $fieldMapper,
+                   'readMappingFile',
+                   [__DIR__ . '/samples/building.map']
+                )
+            ]
+        ];
+
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val1', $this->basicMapping]
+            $fieldMapper, 'mapValue', ['val1', $mapping]
         );
         $this->assertEquals('a/b', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val2', $this->basicMapping]
+            $fieldMapper, 'mapValue', ['val2', $mapping]
         );
         $this->assertEquals('', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val3', $this->basicMapping]
+            $fieldMapper, 'mapValue', ['val3', $mapping]
+        );
+        $this->assertEquals(['a', 'b'], $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['val4', $mapping]
         );
         $this->assertEquals('def', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['', $this->basicMapping]
+            $fieldMapper, 'mapValue', ['', $mapping]
         );
         $this->assertEquals('def', $result);
     }
@@ -155,30 +109,133 @@ class MappingFilesTest extends AbstractTest
     {
         $fieldMapper = $this->getFieldMapper();
 
+        $mapping = [
+            [
+                'type' => 'regexp',
+                'map' => $this->callProtected(
+                   $fieldMapper,
+                   'readMappingFile',
+                   [__DIR__ . '/samples/building-regexp.map']
+                )
+            ]
+        ];
+
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val1', $this->regexpMapping]
+            $fieldMapper, 'mapValue', ['val1', $mapping]
         );
         $this->assertEquals('val/1', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val', $this->regexpMapping]
+            $fieldMapper, 'mapValue', ['val', $mapping]
         );
         $this->assertEquals('string', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['!21!', $this->regexpMapping]
+            $fieldMapper, 'mapValue', ['!21!', $mapping]
         );
         $this->assertEquals('def', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['21!', $this->regexpMapping]
+            $fieldMapper, 'mapValue', ['21!', $mapping]
         );
         $this->assertEquals('!', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['21', $this->regexpMapping]
+            $fieldMapper, 'mapValue', ['21', $mapping]
         );
         $this->assertEquals('', $result);
+    }
+
+    /**
+     * Tests for regexp mapping files
+     *
+     * @return void
+     */
+    public function testRegexpNoDefaultMappingFile()
+    {
+        $fieldMapper = $this->getFieldMapper();
+
+        $mapping = [
+            [
+                'type' => 'regexp',
+                'map' => $this->callProtected(
+                   $fieldMapper,
+                   'readMappingFile',
+                   [__DIR__ . '/samples/building-regexp-no-default.map']
+                )
+            ]
+        ];
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['val1', $mapping]
+        );
+        $this->assertEquals('val/1', $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['val', $mapping]
+        );
+        $this->assertEquals('string', $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['!21!', $mapping]
+        );
+        $this->assertEquals('!21!', $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['21!', $mapping]
+        );
+        $this->assertEquals('!', $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['21', $mapping]
+        );
+        $this->assertEquals('', $result);
+    }
+
+    /**
+     * Tests for regexp multi mapping files
+     *
+     * @return void
+     */
+    public function testRegexpMultiMappingFile()
+    {
+        $fieldMapper = $this->getFieldMapper();
+
+        $mapping = [
+            [
+                'type' => 'regexp-multi',
+                'map' => $this->callProtected(
+                   $fieldMapper,
+                   'readMappingFile',
+                   [__DIR__ . '/samples/building-regexp-multi.map']
+                )
+            ]
+        ];
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['val1', $mapping]
+        );
+        $this->assertEquals(['val/1', 'string1'], $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['val', $mapping]
+        );
+        $this->assertEquals(['string'], $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['!21!', $mapping]
+        );
+        $this->assertEquals('def', $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['21!', $mapping]
+        );
+        $this->assertEquals(['!'], $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['21', $mapping]
+        );
+        $this->assertEquals([''], $result);
     }
 
     /**
@@ -190,18 +247,37 @@ class MappingFilesTest extends AbstractTest
     {
         $fieldMapper = $this->getFieldMapper();
 
+        $mapping = [
+            [
+                'type' => 'normal',
+                'map' => $this->callProtected(
+                   $fieldMapper,
+                   'readMappingFile',
+                   [__DIR__ . '/samples/building.map']
+                )
+            ],
+            [
+                'type' => 'regexp',
+                'map' => $this->callProtected(
+                   $fieldMapper,
+                   'readMappingFile',
+                   [__DIR__ . '/samples/building-regexp.map']
+                )
+            ]
+        ];
+
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', [['val1', 'val1'], $this->multilevelMapping]
+            $fieldMapper, 'mapValue', [['val1', 'val1'], $mapping]
         );
         $this->assertEquals('a/b/val/1', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', [['val2', 'val1'], $this->multilevelMapping]
+            $fieldMapper, 'mapValue', [['val2', 'val1'], $mapping]
         );
         $this->assertEquals('', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', [['val1', '21'], $this->multilevelMapping]
+            $fieldMapper, 'mapValue', [['val1', '21'], $mapping]
         );
         $this->assertEquals('a/b', $result);
     }

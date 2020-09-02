@@ -2,7 +2,7 @@
 /**
  * Forward record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2016-2020.
  *
@@ -103,7 +103,7 @@ class Forward extends \RecordManager\Base\Record\Forward
 
     /**
      * Video type list for online urls
-     * 
+     *
      * @var array
      */
     protected $onlineVideoTypes = [
@@ -111,13 +111,17 @@ class Forward extends \RecordManager\Base\Record\Forward
     ];
 
     /**
-     * Return fields to be indexed in Solr (an alternative to an XSL transformation)
+     * Return fields to be indexed in Solr
+     *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
      *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
-        $data = parent::toSolrArray();
+        $data = parent::toSolrArray($db);
 
         if (isset($data['publishDate'])) {
             $year = MetadataUtils::extractYear($data['publishDate']);
@@ -169,11 +173,15 @@ class Forward extends \RecordManager\Base\Record\Forward
         $data['author2_id_role_str_mv']
             = $this->addNamespaceToAuthorityIds($allAuthors['idRoles']);
 
-        $corporateAuthors = $this->getCorporateAuthors();
-        $data['author_corporate_id_str_mv']
-            = $this->addNamespaceToAuthorityIds($corporateAuthors['ids']);
-
         $data['question_category_str_mv'] = $this->getQuestionCategories();
+
+        $languages = $this->getLanguages();
+        $data['language']
+            = MetadataUtils::normalizeLanguageStrings($languages);
+
+        $subtitles = $this->getSubtitleLanguages();
+        $data['subtitle_lng_str_mv']
+            = MetadataUtils::normalizeLanguageStrings($subtitles);
 
         return $data;
     }
@@ -319,7 +327,7 @@ class Forward extends \RecordManager\Base\Record\Forward
                 $parts = explode(',', $event->elokuva_laji2fin);
 
                 foreach ($parts as $part) {
-                        $result[] = trim($part);
+                    $result[] = trim($part);
                 }
             }
         }
@@ -369,10 +377,12 @@ class Forward extends \RecordManager\Base\Record\Forward
     protected function getProductionEventAttribute($attribute)
     {
         $result = [];
-        foreach ($this->getMainElement()->ProductionEvent as $event) {
-            $attributes = $event->ProductionEventType->attributes();
-            if (!empty($attributes{$attribute})) {
-                $result[] = (string)$attributes{$attribute};
+        foreach ($this->getAllMainElements() as $record) {
+            foreach ($record->ProductionEvent as $event) {
+                $attributes = $event->ProductionEventType->attributes();
+                if (!empty($attributes->{$attribute})) {
+                    $result[] = (string)$attributes->{$attribute};
+                }
             }
         }
         return $result;
@@ -487,8 +497,8 @@ class Forward extends \RecordManager\Base\Record\Forward
             $description = '';
             if (isset($record->Title->PartDesignation->Value)) {
                 $attributes = $record->Title->PartDesignation->Value->attributes();
-                if (!empty($attributes{'video-tyyppi'})) {
-                    $videoType = (string)$attributes{'video-tyyppi'};
+                if (!empty($attributes->{'video-tyyppi'})) {
+                    $videoType = (string)$attributes->{'video-tyyppi'};
                     if (!$videoMatch) {
                         $videoMatch
                             = in_array(strtolower($videoType), $onlineVideoTypes);
@@ -516,7 +526,7 @@ class Forward extends \RecordManager\Base\Record\Forward
 
     /**
      * Get online video types
-     * 
+     *
      * @return array
      */
     protected function getOnlineVideoTypes()
@@ -545,7 +555,7 @@ class Forward extends \RecordManager\Base\Record\Forward
 
     /**
      * Get question categories
-     * 
+     *
      * @return array
      */
     protected function getQuestionCategories()
@@ -559,6 +569,38 @@ class Forward extends \RecordManager\Base\Record\Forward
         );
         foreach ($categories as $category) {
             $result = array_merge($result, explode(';', $category));
+        }
+        return $result;
+    }
+
+    /**
+     * Get languages of all videos
+     *
+     * @return array
+     */
+    public function getLanguages()
+    {
+        $result = [];
+        $attrName = 'elokuva-elonet-materiaali-video-kieli';
+        $languages = $this->getProductionEventAttribute($attrName);
+        foreach ($languages as $language) {
+            $result = array_merge($result, explode(',', $language));
+        }
+        return $result;
+    }
+
+    /**
+     * Get languages of all video subtitles
+     *
+     * @return array
+     */
+    public function getSubtitleLanguages()
+    {
+        $result = [];
+        $attrName = 'elokuva-elonet-materiaali-video-alatekstikieli';
+        $languages = $this->getProductionEventAttribute($attrName);
+        foreach ($languages as $language) {
+            $result = array_merge($result, explode(',', $language));
         }
         return $result;
     }

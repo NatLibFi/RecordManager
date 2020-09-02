@@ -2,7 +2,7 @@
 /**
  * Generic Record Driver test class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) Eero Heikkinen 2013.
  *
@@ -25,7 +25,6 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 
@@ -40,35 +39,65 @@ use RecordManager\Base\Utils\Logger;
  */
 abstract class RecordDriverTest extends AbstractTest
 {
-    // Override this from subclass
-    protected $driver;
+    /**
+     * Record driver class. Override from a subclass.
+     *
+     * @var object
+     */
+    protected $driver = null;
 
     /**
      * Standard setup method.
      *
      * @return void
      */
-    public function setUp()
+    public function setUp(): void
     {
-        if(empty($this->driver))
+        if (empty($this->driver)) {
             $this->markTestIncomplete('Record driver needs to be set in subclass.');
+        }
     }
 
     /**
-     * Process a sample record
+     * Create a sample record driver
      *
-     * @param string $sample Sample record file
+     * @param string $sample   Sample record file
+     * @param array  $dsConfig Datasource config
      *
-     * @return array SOLR record array
+     * @return object
      */
-    protected function processSample($sample)
+    protected function createRecord($sample, $dsConfig = [])
     {
         $logger = $this->createMock(Logger::class);
-        $recordFactory = new RecordFactory($logger, [], []);
+        $recordFactory = new RecordFactory($logger, [], $dsConfig);
         $sample = file_get_contents(__DIR__ . '/../samples/' . $sample);
         $record = $recordFactory->createRecord(
             $this->driver, $sample, '__unit_test_no_id__', '__unit_test_no_source__'
         );
-        return $record->toSolrArray();
+        return $record;
+    }
+
+    /**
+     * Compare two arrays
+     *
+     * This makes any errors easier to understand than using assertEquals on the
+     * arrays.
+     *
+     * @param array  $expected Expected values
+     * @param array  $provided Provided values
+     * @param string $method   Method tested (for output messages)
+     *
+     * @return void
+     */
+    protected function compareArray($expected, $provided, $method)
+    {
+        foreach ($expected as $key => $value) {
+            $this->assertEquals(
+                $value, $provided[$key] ?? null, "[$method] Compare field $key"
+            );
+        }
+        $this->assertEquals(
+            count($expected), count($provided), "[$method] Field count equal"
+        );
     }
 }

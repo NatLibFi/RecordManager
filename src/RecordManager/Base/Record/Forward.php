@@ -2,7 +2,7 @@
 /**
  * Forward record class
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2016-2019.
  *
@@ -172,9 +172,13 @@ class Forward extends Base
     /**
      * Return fields to be indexed in Solr
      *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
+     *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
         $data = [];
 
@@ -254,7 +258,7 @@ class Forward extends Base
     public function getMainAuthor()
     {
         $authors = $this->getPrimaryAuthorsSorted();
-        $author = isset($authors['names'][0]) ? $authors['names'][0] : '';
+        $author = $authors['names'][0] ?? '';
         if ($author) {
             if (strpos($author, ',') === false) {
                 $author = MetadataUtils::convertAuthorLastFirst($author);

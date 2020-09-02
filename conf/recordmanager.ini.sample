@@ -239,3 +239,10 @@ replace[] = '\1 street'
 ; enrichments[] = MusicBrainzEnrichment
 ; Base url for the MusicBrainz server.
 ;url = "http://localhost:5000"
+
+[AuthorityEnrichment]
+; Mongo url and database for authority records.
+; Fallbacks to settings defined in Mongo-section.
+; url = ""
+; database = ""
+

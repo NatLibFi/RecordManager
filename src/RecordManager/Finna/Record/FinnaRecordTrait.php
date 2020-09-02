@@ -2,7 +2,7 @@
 /**
  * Finna record trait.
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2020.
  *
@@ -39,7 +39,21 @@ namespace RecordManager\Finna\Record;
 trait FinnaRecordTrait
 {
     /**
+     * Get authority record namespace.
+     *
+     * @param string $type Authority type
+     *
+     * @return string
+     */
+    public function getAuthorityNamespace($type = '*')
+    {
+        return $this->dataSourceSettings[$this->source]['authority'][$type]
+            ?? $this->source;
+    }
+
+    /**
      * Prepend authority ID with namespace.
+     * The ids that do not pass validation are discarded.
      *
      * @param string[] $ids  Array of authority ids
      * @param string   $type Authority type
@@ -54,12 +68,50 @@ trait FinnaRecordTrait
         if (!is_array($ids)) {
             $ids = [$ids];
         }
+        $ids = array_filter(
+            $ids,
+            function ($id) use ($type) {
+                return $this->allowAuthorityIdRegex($id, $type);
+            }
+        );
+        $ns = $this->getAuthorityNamespace($type);
+
         return array_map(
             function ($id) use ($ns) {
                 return "{$ns}.{$id}";
             },
             $ids
         );
+    }
+
+    /**
+     * Check if the given authority is allowed to be used in linking.
+     *
+     * @param string $id   Authority id
+     * @param string $type Authority type
+     *
+     * @return bool
+     */
+    protected function allowAuthorityIdRegex($id, $type)
+    {
+        if (!$regex = $this->getAuthorityIdRegex($type)) {
+            return true;
+        }
+        return 1 === preg_match($regex, $id);
+    }
+
+    /**
+     * Get regex used to validate authority ids.
+     *
+     * @param string $type Authority type
+     *
+     * @return string|null
+     */
+    protected function getAuthorityIdRegex($type = '*')
+    {
+        return $this->dataSourceSettings[$this->source]['authority_id_regex'][$type]
+            ?? $this->dataSourceSettings[$this->source]['authority_id_regex']['*']
+            ?? null;
     }
 
     /**

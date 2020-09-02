@@ -56,8 +56,8 @@
 ; institution           The institution code mapped to the source (required)
 ; recordXPath           xpath expression used when loading records from a file to identify a single record (optional, e.g. //record)
 ; format                Record format in RecordManager
-; oaipmhTransformation  Transformation to be applied to the OAI-PMH responses (e.g. to strip namespaces, optional)
-; preTransformation     Transformation to be applied to files to be imported (e.g. to strip namespaces, optional)
+; oaipmhTransformation[] XSL Transformations to be applied to the OAI-PMH responses (e.g. to strip namespaces, optional)
+; preTransformation[]   XSL Transformations to be applied to files to be imported (e.g. to strip namespaces, optional)
 ; recordSplitterClass   PHP class used to split records in import or OAI-PMH harvest (optional, e.g. to split EAD records to multiple records)
 ; recordSplitter        Transformation (alternative to PHP class above) used to split records in import or OAI-PMH harvest (optional, e.g. to split EAD records to multiple records)
 ; recordSplitterParams[] An array of extra parameters that can be used to customize record splitter behavior. Available options depend on the splitter used.
@@ -87,6 +87,10 @@
 ; driverParams[]        An array of extra parameters that can be used to customize record driver behavior
 ; enrichments[]         An array of enrichment class names that can be used to enrich records
 ; componentPartSourceId[] An array defining linked sources that are used to fetch component parts from this source
+; authority[<type>]     Map to authority index sources where <type> is authority record type
+;                       (corporateBody, person) or * for any;
+; authority_id_regex[<type>] Regex for whitelisting allowed authority ids
+:                            (used when indexing authority ids and when enriching biblio records with MarcAuthEnrichment)
 ; fullTextXPaths        XPath expression denoting full text fields
 ; fullTextUrlXPaths     XPath expression denoting fields that contain URLs to full text content (plain text only at the moment)
 
@@ -172,6 +176,7 @@ institution = SampleInstitution
 type = sierra
 sierraApiKey = "[api_key]"
 sierraApiSecret = "[api_secret]"
+sierraApiVersion = 5
 url = https://kirjtuo1.helmet.fi/iii/sierra-api
 batchSize = 100
 ; Support for asking for non-suppressed records exists with the setting below, but as

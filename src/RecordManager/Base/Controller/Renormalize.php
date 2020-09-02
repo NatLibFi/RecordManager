@@ -2,9 +2,9 @@
 /**
  * Record Renormalization
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -60,7 +60,8 @@ class Renormalize extends AbstractBase
             if (empty($source) || empty($settings)) {
                 continue;
             }
-            $this->logger->log('renormalize', "Creating record list for '$source'");
+            $this->logger
+                ->logInfo('renormalize', "Creating record list for '$source'");
 
             $params = ['deleted' => false];
             if ($singleId) {
@@ -73,7 +74,7 @@ class Renormalize extends AbstractBase
             $total = $this->db->countRecords($params);
             $count = 0;
 
-            $this->logger->log(
+            $this->logger->logInfo(
                 'renormalize', "Processing $total records from '$source'"
             );
             $pc = new PerformanceCounter();
@@ -159,13 +160,13 @@ class Renormalize extends AbstractBase
                 if ($count % 1000 == 0) {
                     $pc->add($count);
                     $avg = $pc->getSpeed();
-                    $this->logger->log(
+                    $this->logger->logInfo(
                         'renormalize',
                         "$count records processed from '$source', $avg records/sec"
                     );
                 }
             }
-            $this->logger->log(
+            $this->logger->logInfo(
                 'renormalize',
                 "Completed with $count records processed from '$source'"
             );

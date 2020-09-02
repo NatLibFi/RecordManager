@@ -2,7 +2,7 @@
 /**
  * XSL Transformation Handler
  *
- * PHP version 5
+ * PHP version 7
  *
  * Copyright (C) The National Library of Finland 2011-2012.
  *
@@ -64,7 +64,7 @@ class XslTransformation
      *
      * @throws Exception
      */
-    public function __construct($basePath, $configFile, $params = null)
+    public function __construct($basePath, $configFile, $params = [])
     {
         $options = parse_ini_file("$basePath/$configFile", true);
         if (false === $options) {
@@ -104,7 +104,7 @@ class XslTransformation
         }
 
         // Load parameters
-        if (isset($params)) {
+        if ($params) {
             $this->xslt->setParameter('', $params);
         }
         if (isset($options['Parameters'])) {
@@ -134,7 +134,7 @@ class XslTransformation
      * @return string XML
      * @throws Exception
      */
-    public function transform($data, $params = null)
+    public function transform($data, $params = [])
     {
         $saveUseErrors = libxml_use_internal_errors(true);
         try {
@@ -154,17 +154,14 @@ class XslTransformation
             libxml_use_internal_errors($saveUseErrors);
             throw $e;
         }
-        if (isset($params)) {
+        if ($params) {
             $this->xslt->setParameter('', $params);
-        }
-        if (isset($params)) {
-            foreach ($params as $key => $value) {
-                $this->xslt->setParameter('', $key, '');
-            }
         }
         $result = $this->xslt->transformToXml($doc);
         if (null === $result) {
-            throw new \Exception("Transformation resulted in null: $filename");
+            throw new \Exception(
+                'Transformation resulted in null: ' . $this->filename
+            );
         }
         return $result;
     }
@@ -178,9 +175,9 @@ class XslTransformation
      * @return array
      * @throws Exception
      */
-    public function transformToSolrArray($data, $params = null)
+    public function transformToSolrArray($data, $params = [])
     {
-        if (isset($params)) {
+        if ($params) {
             $this->xslt->setParameter('', $params);
         }
         $doc = new \DOMDocument();
