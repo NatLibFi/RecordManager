@@ -211,8 +211,8 @@ class Lido extends \RecordManager\Base\Record\Lido
         $data['hierarchy_parent_title']
             = $this->getRelatedWorks($this->relatedWorkRelationTypesExtended);
 
-        if ($oldId = $this->getOldIdentifier()) {
-            $data['old_id_str_mv'] = $oldId;
+        if ($otherId = $this->getOtherIdentifier()) {
+            $data['ctrlnum'] = $otherId;
         }
 
         return $data;
@@ -1646,11 +1646,11 @@ class Lido extends \RecordManager\Base\Record\Lido
     }
 
     /**
-     * Return record old identifier.
+     * Return record other identifier.
      *
      * @return string
      */
-    protected function getOldIdentifier()
+    protected function getOtherIdentifier()
     {
         $hasValue = isset(
             $this->doc->lido->administrativeMetadata->recordWrap->recordInfoSet
@@ -1665,10 +1665,11 @@ class Lido extends \RecordManager\Base\Record\Lido
             if (isset($set->recordInfoID)) {
                 $info = $set->recordInfoID;
                 $attributes = $info->attributes();
-                if (isset($attributes->type)
-                    && 'knp' === (string)$attributes->type
-                ) {
-                    return (string)$info;
+                if (isset($attributes->type)) {
+                    $type = (string)$attributes->type;
+                    if ('knp' === $type) {
+                        return "($type)" . (string)$info;
+                    }
                 }
             }
         }
