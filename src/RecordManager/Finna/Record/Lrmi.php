@@ -45,11 +45,15 @@ use RecordManager\Base\Utils\MetadataUtils;
 class Lrmi extends Qdc
 {
     /**
-     * Return fields to be indexed in Solr (an alternative to an XSL transformation)
+     * Return fields to be indexed in Solr
+     *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
      *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
         $data = parent::toSolrArray();
 
@@ -88,18 +92,25 @@ class Lrmi extends Qdc
             = array_merge($data['topic_uri_str_mv'] ?? [], $topicIds);
 
         if (isset($doc->author)) {
-            $authors = [];
+            $authors = $corporateAuthors = [];
             foreach ($doc->author as $author) {
-                if (!isset($author->person)) {
-                    continue;
-                }
-                foreach ($author->person as $person) {
-                    if (isset($person->name)) {
-                        $authors[] = trim((string)$person->name);
+                if (isset($author->person)) {
+                    foreach ($author->person as $person) {
+                        if (isset($person->name)) {
+                            $authors[] = trim((string)$person->name);
+                        }
+                    }
+                } else if (isset($author->organization)) {
+                    foreach ($author->organization as $organization) {
+                        if (isset($organization->legalName)) {
+                            $corporateAuthors[] = trim((string)$organization->legalName);
+                        }
                     }
                 }
             }
-            $data['author2'] = $data['author_facet'] = $authors;
+            $data['author2'] = $authors;
+            $data['author_corporate'] = $corporateAuthors;
+            $data['author_facet'] = array_merge($authors, $corporateAuthors);
         }
         
         $languages = [];
@@ -148,8 +159,9 @@ class Lrmi extends Qdc
             $data['educational_material_type_str_mv'][] = (string)$type;
         }
 
-        return $data;
+        $data['allfields'] = $this->getAllFields($doc);
 
+        return $data;
     }
 
     /**
@@ -200,5 +212,36 @@ class Lrmi extends Qdc
             }
         }
         return $result;        
+    }
+
+    /**
+     * Get all XML fields
+     *
+     * @param SimpleXMLElement $xml The XML document
+     *
+     * @return array
+     */
+    protected function getAllFields($xml)
+    {
+        $ignoredFields = [
+            'id', 'date', 'dateCreated', 'dateModified', 'inLanguage', 'url',
+            'recordID', 'rights'
+        ];
+
+        $allFields = [];
+        foreach ($xml->children() as $tag => $field) {
+            if (in_array($tag, $ignoredFields)) {
+                continue;
+            }
+            $s = trim((string)$field);
+            if ($s) {
+                $allFields[] = $s;
+            }
+            $s = $this->getAllFields($field);
+            if ($s) {
+                $allFields = array_merge($allFields, $s);
+            }
+        }
+        return $allFields;
     }
 }
