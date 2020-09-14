@@ -1657,6 +1657,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             return [];
         }
 
+        $ids = [];
         foreach ($this->doc->lido->administrativeMetadata->recordWrap->recordInfoSet
             as $set
         ) {
@@ -1665,12 +1666,10 @@ class Lido extends \RecordManager\Base\Record\Lido
                 $attributes = $info->attributes();
                 if (isset($attributes->type)) {
                     $type = (string)$attributes->type;
-                    if ('knp' === $type) {
-                        return ["($type)" . (string)$info];
-                    }
+                    $ids[] = "($type)" . (string)$info;
                 }
             }
         }
-        return [];
+        return $ids;
     }
 }
