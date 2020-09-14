@@ -115,6 +115,9 @@ class Lrmi extends Qdc
         
         $languages = [];
 
+        // Reset url to remove thumbnail (from Qdc-driver)
+        unset($data['url']);
+
         // Materials
         if (isset($doc->material)) {
             $data['online_boolean'] = true;
