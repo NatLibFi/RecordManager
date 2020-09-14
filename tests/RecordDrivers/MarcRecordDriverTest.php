@@ -26,6 +26,8 @@
  * @link     https://github.com/KDK-Alli/RecordManager
  */
 
+use RecordManager\Base\Database\Database;
+
 /**
  * MARC Record Driver Test Class
  *
@@ -406,5 +408,79 @@ class MarcRecordDriverTest extends RecordDriverTest
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
+    }
+
+    /**
+     * Test MARC Record linking
+     *
+     * @return void
+     */
+    public function testMarcLinking()
+    {
+        $db = $this->createMock(Database::class);
+        $map = [
+            [
+                [
+                    'source_id' => '__unit_test_no_source__',
+                    'linking_id' => '(FI-NL)961827'
+                ],
+                [
+                    'projection' => ['_id' => 1]
+                ],
+                [
+                    '_id' => '__unit_test_no_source__.4132317'
+                ]
+            ],
+            [
+                [
+                    'source_id' => '__unit_test_no_source__',
+                    'linking_id' => '961827'
+                ],
+                [
+                    'projection' => ['_id' => 1]
+                ],
+                [
+                    '_id' => '__unit_test_no_source__.4112121'
+                ]
+            ],
+            [
+                [
+                    'source_id' => '__unit_test_no_source__',
+                    'linking_id' => '(FI-NL)xyzzy'
+                ],
+                [
+                    'projection' => ['_id' => 1]
+                ],
+                null
+            ]
+        ];
+        $db->expects($this->exactly(5))
+            ->method('findRecord')
+            ->will($this->returnValueMap($map));
+
+        $record = $this->createRecord('marc_links.xml');
+        $record->toSolrArray($db);
+        $marc776 = $record->getFields('776');
+        $this->assertEquals(2, count($marc776));
+        $w = $record->getSubfield($marc776[0], 'w');
+        $this->assertEquals('__unit_test_no_source__.4112121', $w);
+        $w = $record->getSubfield($marc776[1], 'w');
+        $this->assertEquals('__unit_test_no_source__.xyzzy', $w);
+
+        $record = $this->createRecord(
+            'marc_links.xml',
+            [
+                '__unit_test_no_source__' => [
+                    'driverParams' => ['003InLinkingID=true']
+                ]
+            ]
+        );
+        $record->toSolrArray($db);
+        $marc776 = $record->getFields('776');
+        $this->assertEquals(2, count($marc776));
+        $w = $record->getSubfield($marc776[0], 'w');
+        $this->assertEquals('__unit_test_no_source__.4132317', $w);
+        $w = $record->getSubfield($marc776[1], 'w');
+        $this->assertEquals('__unit_test_no_source__.xyzzy', $w);
     }
 }

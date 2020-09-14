@@ -179,11 +179,15 @@ class FieldMapper
             $newValue = [];
             foreach ($value as $i => $v) {
                 $v = $this->mapValue($v, $mappingFile, $i);
-                if ('' === $v) {
-                    // If we get an empty string from any level, stop here
+                if ('' === $v) {//  || [] === $v) {
+                    // If we get an empty string or array from any level, stop here
                     break;
                 }
-                $newValue[] = $v;
+                if (is_array($v)) {
+                    $newValue = array_merge($newValue, $v);
+                } else {
+                    $newValue[] = $v;
+                }
             }
             return implode('/', $newValue);
         }
@@ -205,7 +209,10 @@ class FieldMapper
                     $newValues[] = $newValue;
                 }
             }
-            return $newValues;
+            if ($newValues) {
+                return $newValues;
+            }
+            return $map['##default'] ?? $value;
         }
         $replacement = $value;
         if (isset($map[$value])) {

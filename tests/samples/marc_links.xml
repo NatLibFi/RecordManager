@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+ <record>
+  <leader>02071cac a22004334i 4500</leader>
+  <controlfield tag="001">1013809</controlfield>
+  <controlfield tag="003">FI-NL</controlfield>
+  <controlfield tag="005">20190710142649.0</controlfield>
+  <controlfield tag="007">cr cn mmmmaada</controlfield>
+  <controlfield tag="008">110831i18101944fi            000 0|fin  </controlfield>
+  <datafield tag="015" ind1=" " ind2=" ">
+   <subfield code="a">fdpp2011008</subfield>
+   <subfield code="2">skl</subfield>
+  </datafield>
+  <datafield tag="024" ind1="7" ind2="0">
+   <subfield code="a">URN:NBN:fi-fdpp2011008</subfield>
+   <subfield code="2">urn</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+   <subfield code="a">FCC006141444</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+   <subfield code="a">1013809</subfield>
+  </datafield>
+  <datafield tag="040" ind1=" " ind2=" ">
+   <subfield code="a">FI-NL</subfield>
+  </datafield>
+  <datafield tag="041" ind1=" " ind2=" ">
+   <subfield code="a">fin</subfield>
+  </datafield>
+  <datafield tag="042" ind1=" " ind2=" ">
+   <subfield code="a">finb</subfield>
+  </datafield>
+  <datafield tag="130" ind1="0" ind2=" ">
+   <subfield code="a">Tieliikenne.</subfield>
+   <subfield code="p">Esitteet ja hinnastot.</subfield>
+  </datafield>
+  <datafield tag="245" ind1="1" ind2="0">
+   <subfield code="a">Moottoriajoneuvojen esitteet ja hinnastot,</subfield>
+   <subfield code="f">1810-1944.</subfield>
+  </datafield>
+  <datafield tag="336" ind1=" " ind2=" ">
+   <subfield code="a">teksti</subfield>
+   <subfield code="b">txt</subfield>
+   <subfield code="2">rdacontent</subfield>
+  </datafield>
+  <datafield tag="337" ind1=" " ind2=" ">
+   <subfield code="a">tietokonekäyttöinen</subfield>
+   <subfield code="b">c</subfield>
+   <subfield code="2">rdamedia</subfield>
+  </datafield>
+  <datafield tag="338" ind1=" " ind2=" ">
+   <subfield code="a">verkkoaineisto</subfield>
+   <subfield code="b">cr</subfield>
+   <subfield code="2">rdacarrier</subfield>
+  </datafield>
+  <datafield tag="506" ind1="0" ind2=" ">
+   <subfield code="a">Aineisto on vapaasti saatavissa.</subfield>
+   <subfield code="f">Unrestricted online access</subfield>
+   <subfield code="2">star</subfield>
+  </datafield>
+  <datafield tag="520" ind1="2" ind2=" ">
+   <subfield code="a">Autojen, moottoripyörien, traktoreiden, perävaunujen ja moottoreiden esitteitä, mainoksia, hinnastoja, huoltokirjoja, käsikirjoja, varaosaluetteloita, hoito-ohjeita, takuu- ja tarkastuskirjoja, teknillisiä selostuksia, rahoitustaulukoita, kauppakirjoja ja takuutodistuksia.</subfield>
+  </datafield>
+  <datafield tag="533" ind1=" " ind2=" ">
+   <subfield code="a">Digitaalinen jäljenne.</subfield>
+   <subfield code="b">Mikkeli :</subfield>
+   <subfield code="c">Kansalliskirjasto / digitointikeskus.</subfield>
+  </datafield>
+  <datafield tag="540" ind1=" " ind2=" ">
+   <subfield code="c">Public domain</subfield>
+   <subfield code="u">https://creativecommons.org/publicdomain/zero/1.0/deed.fi</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">autot</subfield>
+   <subfield code="2">yso/fin</subfield>
+   <subfield code="0">http://www.yso.fi/onto/yso/p1223</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">automerkit</subfield>
+   <subfield code="2">yso/fin</subfield>
+   <subfield code="0">http://www.yso.fi/onto/yso/p7773</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">henkilöautot</subfield>
+   <subfield code="2">yso/fin</subfield>
+   <subfield code="0">http://www.yso.fi/onto/yso/p7308</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">linja-autot</subfield>
+   <subfield code="2">yso/fin</subfield>
+   <subfield code="0">http://www.yso.fi/onto/yso/p6100</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">kuorma-autot</subfield>
+   <subfield code="2">yso/fin</subfield>
+   <subfield code="0">http://www.yso.fi/onto/yso/p16426</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">matkailuautot</subfield>
+   <subfield code="2">yso/fin</subfield>
+   <subfield code="0">http://www.yso.fi/onto/yso/p4378</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">moottoripyörät</subfield>
+   <subfield code="2">yso/fin</subfield>
+   <subfield code="0">http://www.yso.fi/onto/yso/p12483</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">traktorit</subfield>
+   <subfield code="2">yso/fin</subfield>
+   <subfield code="0">http://www.yso.fi/onto/yso/p9230</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">moottoriajoneuvot</subfield>
+   <subfield code="2">yso/fin</subfield>
+   <subfield code="0">http://www.yso.fi/onto/yso/p7774</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">tieliikenne</subfield>
+   <subfield code="2">yso/fin</subfield>
+   <subfield code="0">http://www.yso.fi/onto/yso/p8934</subfield>
+  </datafield>
+  <datafield tag="776" ind1="0" ind2=" ">
+   <subfield code="i">Alkuperäinen aineisto</subfield>
+   <subfield code="o">fpp2011008</subfield>
+   <subfield code="t">Moottoriajoneuvojen esitteet ja hinnastot,</subfield>
+   <subfield code="w">961827</subfield>
+  </datafield>
+  <datafield tag="776" ind1="0" ind2=" ">
+   <subfield code="i">Alkuperäinen aineisto</subfield>
+   <subfield code="o">fpp2011008</subfield>
+   <subfield code="t">Broken link,</subfield>
+   <subfield code="w">xyzzy</subfield>
+  </datafield>
+  <datafield tag="901" ind1=" " ind2=" ">
+   <subfield code="b">506,540</subfield>
+  </datafield>
+  <datafield tag="999" ind1=" " ind2=" ">
+   <subfield code="c">4171512</subfield>
+   <subfield code="d">4171512</subfield>
+  </datafield>
+ </record>
+</collection>

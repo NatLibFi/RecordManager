@@ -68,13 +68,29 @@ class Lido extends \RecordManager\Base\Record\Lido
     ];
 
     /**
-     * Return fields to be indexed in Solr (an alternative to an XSL transformation)
+     * Related work relation types reflecting the terminology in the particular LIDO
+     * records.
+     *
+     * @var string
+     */
+    protected $relatedWorkRelationTypesExtended = [
+        'Kokoelma', 'kokoelma', 'kuuluu kokoelmaan', 'Arkisto', 'arkisto',
+        'Alakokoelma', 'alakokoelma', 'Erityiskokoelma', 'erityiskokoelma',
+        'Hankintaerä', 'hankintaerä'
+    ];
+
+    /**
+     * Return fields to be indexed in Solr
+     *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
      *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
-        $data = parent::toSolrArray();
+        $data = parent::toSolrArray($db);
 
         // Handle sources that contain multiple organisations properly
         if ($this->getDriverParam('institutionInBuilding', false)) {
@@ -191,6 +207,9 @@ class Lido extends \RecordManager\Base\Record\Lido
         $data['author_facet'] = $this->getActors($this->mainEvent, null, false);
 
         $data['format_ext_str_mv'] = $this->getObjectWorkTypes();
+
+        $data['hierarchy_parent_title']
+            = $this->getRelatedWorks($this->relatedWorkRelationTypesExtended);
 
         return $data;
     }
@@ -1597,6 +1616,25 @@ class Lido extends \RecordManager\Base\Record\Lido
                         }
                     }
                 }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Return all related works of the object.
+     *
+     * @param string[] $relatedWorkRelType Which relation types to use
+     *
+     * @return array
+     */
+    protected function getRelatedWorks($relatedWorkRelType)
+    {
+        $result = [];
+        foreach ($this->getRelatedWorkSetNodes($relatedWorkRelType) as $set) {
+            if (!empty($set->relatedWork->displayObject)) {
+                $result[] = (string)$set->relatedWork->displayObject;
             }
         }
 
