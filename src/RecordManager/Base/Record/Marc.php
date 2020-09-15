@@ -262,7 +262,7 @@ class Marc extends Base
     public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
         $data = [];
-        $data['record_format'] = $data['recordtype'] = 'marc';
+        $data['record_format'] = 'marc';
 
         // Try to find matches for IDs in link fields
         $fields = ['760', '762', '765', '767', '770', '772', '773', '774',

@@ -129,7 +129,7 @@ class Lido extends Base
     {
         $data = [];
 
-        $data['record_format'] = $data['recordtype'] = 'lido';
+        $data['record_format'] = 'lido';
         $lang = $this->getDefaultLanguage();
         $title = $this->getTitle(false, $lang);
         if ($this->getDriverParam('splitTitles', false)) {

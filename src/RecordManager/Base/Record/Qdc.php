@@ -112,7 +112,7 @@ class Qdc extends Base
         $data = $this->getFullTextFields($this->doc);
 
         $doc = $this->doc;
-        $data['record_format'] = $data['recordtype'] = 'qdc';
+        $data['record_format'] = 'qdc';
         $data['ctrlnum'] = trim((string)$doc->recordID);
         $data['fullrecord'] = $doc->asXML();
 

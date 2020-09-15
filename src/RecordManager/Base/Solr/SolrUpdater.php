@@ -1545,7 +1545,7 @@ class SolrUpdater
                 $result['deleted'][] = $mergedId;
             } else {
                 $merged['id'] = $mergedId;
-                $merged['record_format'] = $merged['recordtype'] = 'merged';
+                $merged['record_format'] = 'merged';
                 $merged['merged_boolean'] = true;
 
                 if ($this->verbose) {
