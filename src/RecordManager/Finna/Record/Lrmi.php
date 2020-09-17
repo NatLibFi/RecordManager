@@ -160,8 +160,7 @@ class Lrmi extends Qdc
             = $this->getAlignmentObjects('educationalSubject');
 
         foreach ($doc->type as $type) {
-            $data['educational_material_type_str_mv'][]
-                = MetadataUtils::ucFirst((string)$type);
+            $data['educational_material_type_str_mv'][] = (string)$type;
         }
 
         $data['allfields'] = $this->getAllFields($doc);
