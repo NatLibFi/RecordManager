@@ -39,6 +39,20 @@ namespace RecordManager\Base\Record;
 trait FullTextTrait
 {
     /**
+     * Number of requests handled per host
+     *
+     * @var array
+     */
+    protected static $requestsHandled = [];
+
+    /**
+     * Time all successful requests have taken per host
+     *
+     * @var array
+     */
+    protected static $requestsDuration = [];
+
+    /**
      * Get full text fields for a given document
      *
      * @param SimpleXMLElement $doc Document
@@ -98,6 +112,12 @@ trait FullTextTrait
             $httpParams += $this->config['HTTP'];
         }
 
+        $host = parse_url($url, PHP_URL_HOST);
+        $port = parse_url($url, PHP_URL_PORT);
+        if ($port) {
+            $host .= ":$port";
+        }
+
         $response = null;
         for ($try = 1; $try <= $maxTries; $try++) {
             if (!isset($this->request)) {
@@ -153,11 +173,29 @@ trait FullTextTrait
                     "HTTP request for '$url' succeeded on attempt $try"
                 );
             }
+            if (isset(static::$requestsHandled[$host])) {
+                static::$requestsHandled[$host]++;
+                static::$requestsDuration[$host] += $duration;
+            } else {
+                static::$requestsHandled[$host] = 1;
+                static::$requestsDuration[$host] = $duration;
+            }
+            if (static::$requestsHandled[$host] % 1000 === 0) {
+                $average = floor(
+                    static::$requestsDuration[$host] / static::$requestsHandled[$host]
+                    * 1000
+                );
+                $this->logger->logInfo(
+                    'getUrl',
+                    static::$requestsHandled[$host] . ' HTTP requests completed'
+                        . " for $host, average time for a request $average ms"
+                );
+            }
             break;
         }
 
         $code = null === $response ? 999 : $response->getStatus();
-        if ($code >= 300) {
+        if ($code >= 300 && $code != 404) {
             throw new \Exception("Failed to fetch full text url '$url': $code");
         }
 
