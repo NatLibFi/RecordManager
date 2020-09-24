@@ -123,7 +123,6 @@ class Lrmi extends Qdc
         if (isset($doc->material)) {
             $data['online_boolean'] = true;
             $data['online_str_mv'] = $this->source;
-            // TODO: free?
             $data['free_online_boolean'] = true;
             $data['free_online_str_mv'] = $this->source;
 
@@ -145,7 +144,6 @@ class Lrmi extends Qdc
             = MetadataUtils::normalizeLanguageStrings(array_unique($languages));
         
         // Facets
-        // TODO: use dynamic fields for now...
         foreach ($doc->educationalAudience as $audience) {
             $data['educational_audience_str_mv'][]
                 = (string)$audience->educationalRole;
