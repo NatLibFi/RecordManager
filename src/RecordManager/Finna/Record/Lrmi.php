@@ -33,7 +33,7 @@ use RecordManager\Base\Utils\MetadataUtils;
 /**
  * Lrmi record class
  *
- * This is a class for processing Qualified Dublin Core records.
+ * This is a class for processing Lrmi records.
  *
  * @category DataManagement
  * @package  RecordManager
