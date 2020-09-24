@@ -39,6 +39,27 @@ namespace RecordManager\Base\Record;
 trait FullTextTrait
 {
     /**
+     * Number of requests handled per host
+     *
+     * @var array
+     */
+    protected static $requestsHandled = [];
+
+    /**
+     * Time all successful requests have taken per host
+     *
+     * @var array
+     */
+    protected static $requestsDuration = [];
+
+    /**
+     * Sum of sizes of all successful responses per host
+     *
+     * @var array
+     */
+    protected static $requestsSize = [];
+
+    /**
      * Get full text fields for a given document
      *
      * @param SimpleXMLElement $doc Document
@@ -98,7 +119,14 @@ trait FullTextTrait
             $httpParams += $this->config['HTTP'];
         }
 
+        $host = parse_url($url, PHP_URL_HOST);
+        $port = parse_url($url, PHP_URL_PORT);
+        if ($port) {
+            $host .= ":$port";
+        }
+
         $response = null;
+        $body = '';
         for ($try = 1; $try <= $maxTries; $try++) {
             if (!isset($this->request)) {
                 $this->urlRequest = new \HTTP_Request2(
@@ -153,16 +181,38 @@ trait FullTextTrait
                     "HTTP request for '$url' succeeded on attempt $try"
                 );
             }
+            $body = $response->getBody();
+            if (isset(static::$requestsHandled[$host])) {
+                static::$requestsHandled[$host]++;
+                static::$requestsDuration[$host] += $duration;
+                static::$requestsSize[$host] += strlen($body);
+            } else {
+                static::$requestsHandled[$host] = 1;
+                static::$requestsDuration[$host] = $duration;
+                static::$requestsSize[$host] = strlen($body);
+            }
+            if (static::$requestsHandled[$host] % 1000 === 0) {
+                $average = floor(
+                    static::$requestsDuration[$host]
+                    / static::$requestsHandled[$host]
+                    * 1000
+                );
+                $this->logger->logInfo(
+                    'getUrl',
+                    static::$requestsHandled[$host] . ' HTTP requests completed'
+                        . " for $host, average time for a request $average ms"
+                        . ', ' . round(static::$requestsSize[$host] / 1024 / 1024, 2)
+                        . ' MB received'
+                );
+            }
             break;
         }
 
         $code = null === $response ? 999 : $response->getStatus();
-        if ($code >= 300) {
+        if ($code >= 300 && $code != 404) {
             throw new \Exception("Failed to fetch full text url '$url': $code");
         }
 
-        $data = $code < 300 ? $response->getBody() : '';
-
-        return $data;
+        return $body;
     }
 }

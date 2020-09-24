@@ -183,7 +183,7 @@ class Forward extends Base
         $data = [];
 
         $doc = $this->getMainElement();
-        $data['record_format'] = $data['recordtype'] = 'forward';
+        $data['record_format'] = 'forward';
         $data['ctrlnum'] = $this->getID();
         $data['fullrecord'] = $this->toXML();
         $publishDate = (string)$doc->YearOfReference;
