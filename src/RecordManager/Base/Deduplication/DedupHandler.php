@@ -596,6 +596,18 @@ class DedupHandler
             }
             $dedupRecord['changed'] = $this->db->getTimestamp();
             $this->db->saveDedup($dedupRecord);
+
+            if (!empty($dedupRecord['ids'])) {
+                // Mark other records in the group to be checked since the update
+                // could affect the preferred dedup group
+                $this->db->updateRecords(
+                    [
+                        '_id' => ['$in' => $dedupRecord['ids']],
+                        'deleted' => false,
+                    ],
+                    ['update_needed' => true]
+                );
+            }
         }
     }
 
