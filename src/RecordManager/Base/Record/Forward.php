@@ -296,9 +296,10 @@ class Forward extends Base
             if (in_array($tag, $this->filterFromAllFields)) {
                 continue;
             }
-            $results[] = MetadataUtils::stripTrailingPunctuation(
-                trim((string)$field)
-            );
+            $s = trim((string)$field);
+            if ($s && ($s = MetadataUtils::stripTrailingPunctuation($s))) {
+                $results[] = $s;
+            }
             $subs = $this->getAllFields($field->children());
             if ($subs) {
                 $results = array_merge($results, $subs);
