@@ -51,7 +51,6 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
         unset($fields['fullrecord']);
 
         $expected = [
-            'recordtype' => 'marc',
             'record_format' => 'marc',
             'building' => [
                 0 => '150',
@@ -261,7 +260,6 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
         unset($fields['fullrecord']);
 
         $expected = [
-            'recordtype' => 'marc',
             'record_format' => 'marc',
             'building' => [
                 0 => '123',
