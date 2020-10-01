@@ -483,6 +483,11 @@ class Base
         if ($title = $this->getTitle(true)) {
             $titles[] = ['type' => 'title', 'value' => $title];
         }
+        if (($titleNonSorting = $this->getTitle(false))
+            && $title !== $titleNonSorting
+        ) {
+            $titles[] = ['type' => 'title', 'value' => $titleNonSorting];
+        }
         if ($author = $this->getMainAuthor()) {
             $authors[] = ['type' => 'author', 'value' => $author];
         }
