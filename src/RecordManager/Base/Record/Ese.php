@@ -105,7 +105,7 @@ class Ese extends Base
         $data = [];
 
         $doc = $this->doc;
-        $data['record_format'] = $data['recordtype'] = 'ese';
+        $data['record_format'] = 'ese';
         $data['ctrlnum'] = (string)$doc->recordID;
         $data['fullrecord'] = $doc->asXML();
 

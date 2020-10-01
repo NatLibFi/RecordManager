@@ -92,6 +92,16 @@ class Lido extends \RecordManager\Base\Record\Lido
     {
         $data = parent::toSolrArray($db);
 
+        $data['identifier'] = $this->getIdentifier();
+
+        // This is just the display measurements! There's also the more granular
+        // form, which could be useful for some interesting things eg. sorting by
+        // size
+        $data['measurements'] = $this->getMeasurements();
+
+        $data['culture'] = $this->getCulture();
+        $data['rights'] = $this->getRights();
+
         // Handle sources that contain multiple organisations properly
         if ($this->getDriverParam('institutionInBuilding', false)) {
             $institutionParts = explode('/', $data['institution']);
@@ -210,6 +220,8 @@ class Lido extends \RecordManager\Base\Record\Lido
 
         $data['hierarchy_parent_title']
             = $this->getRelatedWorks($this->relatedWorkRelationTypesExtended);
+
+        $data['ctrlnum'] = $this->getOtherIdentifiers();
 
         return $data;
     }
@@ -1639,5 +1651,136 @@ class Lido extends \RecordManager\Base\Record\Lido
         }
 
         return $result;
+    }
+
+    /**
+     * Return record other identifiers.
+     *
+     * @return array
+     */
+    protected function getOtherIdentifiers()
+    {
+        $hasValue = isset(
+            $this->doc->lido->administrativeMetadata->recordWrap->recordInfoSet
+        );
+        if (!$hasValue) {
+            return [];
+        }
+
+        $ids = [];
+        foreach ($this->doc->lido->administrativeMetadata->recordWrap->recordInfoSet
+            as $set
+        ) {
+            if (isset($set->recordInfoID)) {
+                $info = $set->recordInfoID;
+                $attributes = $info->attributes();
+                if (isset($attributes->type)) {
+                    $type = (string)$attributes->type;
+                    $ids[] = "($type)" . (string)$info;
+                }
+            }
+        }
+        return $ids;
+    }
+
+    /**
+     * Return the object identifier. This is "an unambiguous numeric or alphanumeric
+     * identification number, assigned to the object by the institution of custody."
+     * (usually differs from a technical database id)
+     *
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
+     * #repositorySetComplexType
+     * @return string
+     */
+    protected function getIdentifier()
+    {
+        $nodeExists = !empty(
+            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
+                ->repositoryWrap->repositorySet
+        );
+        if (!$nodeExists) {
+            return '';
+        }
+        foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap
+            ->repositoryWrap->repositorySet as $set
+        ) {
+            if (!empty($set->workID)) {
+                return (string)$set->workID;
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Return the object measurements. Only the display element is used currently
+     * until processing more granular data is needed.
+     *
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
+     * #objectMeasurementsSetComplexType
+     * @return string
+     */
+    protected function getMeasurements()
+    {
+        $nodeExists = !empty(
+            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
+                ->objectMeasurementsWrap->objectMeasurementsSet
+        );
+        if (!$nodeExists) {
+            return '';
+        }
+        $results = [];
+        foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap
+            ->objectMeasurementsWrap->objectMeasurementsSet as $set
+        ) {
+            foreach ($set->displayObjectMeasurements as $measurements
+            ) {
+                $value = trim((string)$measurements);
+                if ($value) {
+                    $results[] = $value;
+                }
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Return all the cultures associated with an object.
+     *
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
+     * #eventComplexType
+     * @return array
+     */
+    protected function getCulture()
+    {
+        $results = [];
+        foreach ($this->getEventNodes() as $event) {
+            foreach ($event->culture as $culture) {
+                if ($culture->term) {
+                    $results[] = (string)$culture->term;
+                }
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Return the rights of the object.
+     *
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
+     * #rightsComplexType
+     * @return string
+     */
+    protected function getRights()
+    {
+        foreach ($this->getResourceSetNodes() as $set) {
+            $empty = empty(
+                $set->rightsResource->rightsHolder->legalBodyName->appellationValue
+            );
+            if (!$empty) {
+                return (string)$set->rightsResource->rightsHolder->legalBodyName
+                    ->appellationValue;
+            }
+        }
+        return '';
     }
 }

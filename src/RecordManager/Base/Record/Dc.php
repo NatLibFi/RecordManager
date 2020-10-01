@@ -112,7 +112,7 @@ class Dc extends Base
         $data = $this->getFullTextFields($this->doc);
 
         $doc = $this->doc;
-        $data['record_format'] = $data['recordtype'] = 'dc';
+        $data['record_format'] = 'dc';
         $data['ctrlnum'] = trim((string)$doc->recordID);
         $data['fullrecord'] = $doc->asXML();
 

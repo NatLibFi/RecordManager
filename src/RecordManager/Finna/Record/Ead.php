@@ -43,6 +43,20 @@ use RecordManager\Base\Utils\MetadataUtils;
 class Ead extends \RecordManager\Base\Record\Ead
 {
     /**
+     * Field for geographic data
+     *
+     * @var string
+     */
+    protected $geoField = 'location_geo';
+
+    /**
+     * Field for geographic center coordinates
+     *
+     * @var string
+     */
+    protected $geoCenterField = 'center_coords';
+
+    /**
      * Return fields to be indexed in Solr
      *
      * @param \RecordManager\Base\Database\Database $db Database connection. Omit to

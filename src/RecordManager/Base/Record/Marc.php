@@ -262,7 +262,7 @@ class Marc extends Base
     public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
         $data = [];
-        $data['record_format'] = $data['recordtype'] = 'marc';
+        $data['record_format'] = 'marc';
 
         // Try to find matches for IDs in link fields
         $fields = ['760', '762', '765', '767', '770', '772', '773', '774',
@@ -400,6 +400,7 @@ class Marc extends Base
         $data['author2_id_str_mv'] = $this->getAuthorIds();
         $data['author2_id_role_str_mv']
             = array_merge(
+                $this->addNamespaceToAuthorityIds($primaryAuthors['idRoles']),
                 $this->addNamespaceToAuthorityIds($secondaryAuthors['idRoles']),
                 $this->addNamespaceToAuthorityIds($corporateAuthors['idRoles'])
             );
@@ -629,10 +630,12 @@ class Marc extends Base
      */
     public function getAuthorIds()
     {
+        $primaryAuthors = $this->getPrimaryAuthors();
         $secondaryAuthors = $this->getSecondaryAuthors();
         $corporateAuthors = $this->getCorporateAuthors();
 
         return array_merge(
+            $this->addNamespaceToAuthorityIds($primaryAuthors['ids']),
             $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']),
             $this->addNamespaceToAuthorityIds($corporateAuthors['ids'])
         );
