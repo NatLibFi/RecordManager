@@ -215,7 +215,7 @@ class MarcRecordDriverTest extends RecordDriverTest
             'authors' => [
                 0 => [
                     'type' => 'author',
-                    'value' => 'Hirsjärvi, Sirkka',
+                    'value' => 'Hirsjärvi, Sirkka.',
                 ],
             ],
             'authorsAltScript' => [
@@ -223,7 +223,7 @@ class MarcRecordDriverTest extends RecordDriverTest
             'titles' => [
                 0 => [
                     'type' => 'title',
-                    'value' => 'tutki ja kirjoita / sirkka hirsjärvi, pirkko remes, paula sajavaara',
+                    'value' => 'Tutki ja kirjoita /',
                 ],
             ],
             'titlesAltScript' => [
@@ -398,7 +398,7 @@ class MarcRecordDriverTest extends RecordDriverTest
             'titles' => [
                 0 => [
                     'type' => 'title',
-                    'value' => 'biological psychology / james w. kalat',
+                    'value' => 'Biological psychology /',
                 ],
             ],
             'titlesAltScript' => [
