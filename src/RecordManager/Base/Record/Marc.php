@@ -914,6 +914,14 @@ class Marc extends Base
                 $author = MetadataUtils::convertAuthorLastFirst($author);
             }
             return MetadataUtils::stripTrailingPunctuation($author);
+        } else {
+            $f700 = $this->getField('700');
+            $author = $this->getSubfield($f700, 'a');
+            $order = $this->getIndicator($f700, 1);
+            if ($order == 0 && strpos($author, ',') === false) {
+                $author = MetadataUtils::convertAuthorLastFirst($author);
+            }
+            return MetadataUtils::stripTrailingPunctuation($author);
         }
         return '';
     }
