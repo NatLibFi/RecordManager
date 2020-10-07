@@ -104,7 +104,8 @@ class Lrmi extends Qdc
                 if (isset($author->organization)) {
                     foreach ($author->organization as $organization) {
                         if (isset($organization->legalName)) {
-                            $corporateAuthors[] = trim((string)$organization->legalName);
+                            $corporateAuthors[]
+                                = trim((string)$organization->legalName);
                         }
                     }
                 }
