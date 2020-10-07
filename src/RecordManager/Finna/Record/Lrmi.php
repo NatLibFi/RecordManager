@@ -76,7 +76,6 @@ class Lrmi extends Qdc
 
         $topics = $topicIds = [];
 
-        
         foreach ($this->getTopics() as $topic) {
             $topics[] = $topic['value'];
             if ($id = $topic['id']) {
@@ -114,7 +113,7 @@ class Lrmi extends Qdc
             $data['author_corporate'] = $corporateAuthors;
             $data['author_facet'] = array_merge($authors, $corporateAuthors);
         }
-        
+
         $languages = [];
 
         // Reset url to remove thumbnail (from Qdc-driver)
@@ -140,10 +139,10 @@ class Lrmi extends Qdc
                 }
             }
         }
-        
+
         $data['language']
             = MetadataUtils::normalizeLanguageStrings(array_unique($languages));
-        
+
         // Facets
         foreach ($doc->educationalAudience as $audience) {
             $data['educational_audience_str_mv'][]
@@ -190,7 +189,7 @@ class Lrmi extends Qdc
             if ($id && isset($matches[2])) {
                 $id = 'http://' . $matches[2];
             }
-            
+
             $result[] = compact('value', 'id');
         }
         return $result;
@@ -214,7 +213,7 @@ class Lrmi extends Qdc
                 $result[] = (string)$obj->targetName;
             }
         }
-        return $result;        
+        return $result;
     }
 
     /**
