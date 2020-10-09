@@ -245,24 +245,20 @@ class FieldMapper
             if (!$line || $line[0] == ';') {
                 continue;
             }
-            $values = explode(' = ', $line, 2);
-            if (!isset($values[1])) {
-                if (strstr($line, ' =') === false) {
-                    fclose($handle);
-                    throw new \Exception(
-                        "Unable to parse mapping file '$filename' line "
-                        . "(no ' = ' found): ($lineno) $line"
-                    );
-                }
-                $values = explode(' =', $line, 2);
-                $mappings[$values[0]] = '';
+            $parts = explode('=', $line, 2);
+            if (!isset($parts[1])) {
+                fclose($handle);
+                throw new \Exception(
+                    "Unable to parse mapping file '$filename' line "
+                    . "(no ' = ' found): ($lineno) $line"
+                );
+            }
+            $key = trim($parts[0]);
+            $value = trim($parts[1]);
+            if (substr($key, -2) == '[]') {
+                $mappings[substr($key, 0, -2)][] = $value;
             } else {
-                $key = trim($values[0]);
-                if (substr($key, -2) == '[]') {
-                    $mappings[substr($key, 0, -2)][] = $values[1];
-                } else {
-                    $mappings[$key] = $values[1];
-                }
+                $mappings[$key] = $value;
             }
         }
         fclose($handle);
