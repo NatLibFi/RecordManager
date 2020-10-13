@@ -47,7 +47,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa()
     {
         // 1985-02-02/1995-12-01
-        $fields = $this->processSample('ahaa.xml');
+        $fields = $this->createRecord('ahaa.xml')->toSolrArray();
         $this->assertContains(
             '[1985-02-02 TO 1995-12-01]',
             $fields['search_daterange_mv']
@@ -62,7 +62,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa2()
     {
         // 1985-02/1995-12
-        $fields = $this->processSample('ahaa2.xml');
+        $fields = $this->createRecord('ahaa2.xml')->toSolrArray();
         $this->assertContains(
             '[1985-02-01 TO 1995-12-31]',
             $fields['search_daterange_mv']
@@ -77,7 +77,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa3()
     {
         // 1985-02/1995-11
-        $fields = $this->processSample('ahaa3.xml');
+        $fields = $this->createRecord('ahaa3.xml')->toSolrArray();
         $this->assertContains(
             '[1985-02-01 TO 1995-11-30]',
             $fields['search_daterange_mv']
@@ -92,7 +92,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa4()
     {
         // 1985/1995
-        $fields = $this->processSample('ahaa4.xml');
+        $fields = $this->createRecord('ahaa4.xml')->toSolrArray();
         $this->assertContains(
             '[1985-01-01 TO 1995-12-31]',
             $fields['search_daterange_mv']
@@ -107,7 +107,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa5()
     {
         // uuuu-uu-10/1995-05-uu
-        $fields = $this->processSample('ahaa5.xml');
+        $fields = $this->createRecord('ahaa5.xml')->toSolrArray();
         $this->assertContains(
             '[0000-01-10 TO 1995-05-31]',
             $fields['search_daterange_mv']
@@ -122,7 +122,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa6()
     {
         // unknown/open
-        $fields = $this->processSample('ahaa6.xml');
+        $fields = $this->createRecord('ahaa6.xml')->toSolrArray();
         $this->assertContains(
             '[0000-01-01 TO 9999-12-31]',
             $fields['search_daterange_mv']
@@ -137,7 +137,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa8()
     {
         // uuuu-12-uu/unknown
-        $fields = $this->processSample('ahaa8.xml');
+        $fields = $this->createRecord('ahaa8.xml')->toSolrArray();
         $this->assertContains(
             '[0000-12-01 TO 9999-12-31]',
             $fields['search_daterange_mv']
@@ -152,7 +152,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa9()
     {
         // 1900/1940-03-02
-        $fields = $this->processSample('ahaa9.xml');
+        $fields = $this->createRecord('ahaa9.xml')->toSolrArray();
         $this->assertContains(
             '[1900-01-01 TO 1940-03-02]',
             $fields['search_daterange_mv']
@@ -167,7 +167,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa10()
     {
         // 195u/1960-01-01
-        $fields = $this->processSample('ahaa10.xml');
+        $fields = $this->createRecord('ahaa10.xml')->toSolrArray();
         $this->assertContains(
             '[1950-01-01 TO 1960-01-01]',
             $fields['search_daterange_mv']
@@ -182,7 +182,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa11()
     {
         // uu5u-11-05/u960-01-01
-        $fields = $this->processSample('ahaa11.xml');
+        $fields = $this->createRecord('ahaa11.xml')->toSolrArray();
         $this->assertContains(
             '[0050-11-05 TO 9960-01-01]',
             $fields['search_daterange_mv']
