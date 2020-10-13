@@ -329,7 +329,7 @@ class Ead3 extends Ead
                 $topic = null;
                 if (!$URIs && isset($node->part)) {
                     $topic = (string)$node->part;
-                } else if (isset($attr->identifier)) {
+                } elseif (isset($attr->identifier)) {
                     $topic = (string)$attr->identifier;
                 }
                 if ('' !== ($topic = trim($topic))) {
