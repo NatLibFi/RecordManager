@@ -27,6 +27,7 @@
  */
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Generic Record Driver Test Class
@@ -56,6 +57,16 @@ abstract class RecordDriverTest extends AbstractTest
         if (empty($this->driver)) {
             $this->markTestIncomplete('Record driver needs to be set in subclass.');
         }
+
+        MetadataUtils::setConfig(
+            [
+                'Site' =>
+                    [
+                        'articles' => 'articles.lst'
+                    ]
+            ],
+            __DIR__ . '/../configs/recorddrivertest'
+        );
     }
 
     /**
