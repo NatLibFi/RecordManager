@@ -2068,7 +2068,8 @@ class SolrUpdater
                 }
                 if (isset($data[$field]) && $data[$field]) {
                     $data[$field] = $this->createSolrId(
-                        $record['source_id'] . '.' . $data[$field]
+                        ($settings['idPrefix'] ?? $record['source_id'])
+                        . '.' . $data[$field]
                     );
                 }
             }
