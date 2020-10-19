@@ -1308,19 +1308,17 @@ class Marc extends Base
     {
         $field = $this->getField('260');
         if ($field) {
-            $year = $this->getSubfield($field, 'c');
-            $matches = [];
-            if ($year && preg_match('/(\d{4})/', $year, $matches)) {
-                return $matches[1];
+            $year = $this->extractYear($this->getSubfield($field, 'c'));
+            if ($year) {
+                return $year;
             }
         }
         $fields = $this->getFields('264');
         foreach ($fields as $field) {
             if ($this->getIndicator($field, 2) == '1') {
-                $year = $this->getSubfield($field, 'c');
-                $matches = [];
-                if ($year && preg_match('/(\d{4})/', $year, $matches)) {
-                    return $matches[1];
+                $year = $this->extractYear($this->getSubfield($field, 'c'));
+                if ($year) {
+                    return $year;
                 }
             }
         }
@@ -1329,10 +1327,8 @@ class Marc extends Base
             return '';
         }
         $year = substr($field008, 7, 4);
-        if ($year && $year != '0000' && $year != '9999'
-            && preg_match('/(\d{4})/', $year)
-        ) {
-            return $year;
+        if ($year && $year != '0000' && $year != '9999') {
+            return $this->extractYear($year);
         }
         return '';
     }
@@ -2691,5 +2687,26 @@ class Marc extends Base
         }
 
         return compact('authors', 'authorsAltScript', 'titles', 'titlesAltScript');
+    }
+
+    /**
+     * Extract a year from a field such as publication date.
+     *
+     * @param string $field Field
+     *
+     * @return string
+     */
+    protected function extractYear($field)
+    {
+        // First look for a year in brackets
+        if (preg_match('/\[(\d{4})\]/', $field, $matches)) {
+            return $matches[1];
+        }
+        // Then look for any year
+        if (preg_match('/(\d{4})/', $field, $matches)) {
+            return $matches[1];
+        }
+
+        return '';
     }
 }
