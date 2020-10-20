@@ -1,10 +1,10 @@
 <?php
 /**
- * MetadataUtils tests
+ * LcCallNumber tests
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2015-2019
+ * Copyright (C) The National Library of Finland 2015
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,10 +25,12 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-use RecordManager\Base\Utils\MetadataUtils;
+namespace RecordManager\Test;
+
+use RecordManager\Base\Utils\LcCallNumber;
 
 /**
- * MetadataUtils tests
+ * LcCallNumber tests
  *
  * @category DataManagement
  * @package  RecordManager
@@ -36,51 +38,28 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class MetadataUtilsTest extends AbstractTest
+class LcCallNumberTest extends AbstractTest
 {
     /**
-     * Tests for createSortableString
+     * Tests for call number handling
      *
      * @return void
      */
-    public function testCreateSortableString()
+    public function testCallNumber()
     {
+        $cn = new LcCallNumber('AC901.M5 vol. 1013, no. 8');
+        $this->assertTrue($cn->isValid());
         $this->assertEquals(
-            'A 3123', MetadataUtils::createSortableString('A 123')
-        );
-        $this->assertEquals(
-            'A 3123 18 ABC', MetadataUtils::createSortableString('A 123 8 abc')
-        );
-        $this->assertEquals(
-            'A 11 12', MetadataUtils::createSortableString('A  1   2')
-        );
-    }
-
-    /**
-     * Tests for normalizeKey
-     *
-     * @return void
-     */
-    public function testNormalizeKey()
-    {
-        $this->assertEquals(
-            'abc', MetadataUtils::normalizeKey('A -.*B  C', 'NFKC')
+            'AC 3901', $cn->getSortKey()
         );
 
+        $cn = new LcCallNumber('GV1101 .D7 1980');
+        $this->assertTrue($cn->isValid());
         $this->assertEquals(
-            'oaaoaauie', MetadataUtils::normalizeKey('ÖÄÅöäåüïé', 'NFKC')
+            'GV 41101', $cn->getSortKey()
         );
 
-        MetadataUtils::setConfig(
-            [
-                'Site' => [
-                    'folding_ignore_characters' => 'åäöÅÄÖ',
-                ],
-            ],
-            '.'
-        );
-        $this->assertEquals(
-            'öäåöäåui', MetadataUtils::normalizeKey('ÖÄÅöäåüï', 'NFKC')
-        );
+        $cn = new LcCallNumber('XV1101 .D7 1980');
+        $this->assertFalse($cn->isValid());
     }
 }

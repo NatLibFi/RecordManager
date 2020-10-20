@@ -25,6 +25,8 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
+namespace RecordManager\Test;
+
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Solr\PreviewCreator;
 use RecordManager\Base\Utils\Logger;
