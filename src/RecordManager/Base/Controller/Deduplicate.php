@@ -98,7 +98,8 @@ class Deduplicate extends AbstractBase
                     [
                         'source_id' => $source,
                         'host_record_id' => ['$exists' => false],
-                        'deleted' => false
+                        'deleted' => false,
+                        'suppressed' => ['$in' => [null, false]],
                     ]
                 );
                 $pc = new PerformanceCounter();

@@ -1453,7 +1453,7 @@ class SolrUpdater
             if (in_array($record['source_id'], $this->nonIndexedSources)) {
                 continue;
             }
-            if ($record['deleted']
+            if ($record['deleted'] || ($record['suppressed'] ?? false)
                 || ($sourceId && $delete && $record['source_id'] == $sourceId)
             ) {
                 $result['deleted'][] = $record['_id'];
@@ -1574,7 +1574,7 @@ class SolrUpdater
             'mergedComponents' => 0
         ];
 
-        if ($record['deleted']) {
+        if ($record['deleted'] || ($record['suppressed'] ?? false)) {
             $result['deleted'][] = (string)$record['_id'];
         } else {
             $data = $this->createSolrArray($record, $mergedComponents);

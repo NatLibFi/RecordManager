@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -49,14 +49,15 @@ Parameters:
 
 --func              renormalize|deduplicate|updatesolr|dump|dumpsolr|markdeleted
                     |deletesource|deletesolr|optimizesolr|count|checkdedup|checksolr
-                    |comparesolr|purgedeleted|markdedup|markforupdate
+                    |comparesolr|purgedeleted|markdedup|markforupdate|suppress
+                    |unsuppress
 --source            Source ID to process (separate multiple sources with commas)
 --all               Process all records regardless of their state (deduplicate,
                     markdedup)
                     or date (updatesolr)
 --from              Override the date from which to run the update (updatesolr)
 --single            Process only the given record id (deduplicate, updatesolr, dump,
-                    markdeleted, markforupdate, checkdedup)
+                    markdeleted, markforupdate, checkdedup, suppress, unsuppress)
 --nocommit          Don't ask Solr to commit the changes (updatesolr)
 --field             Field to analyze (count)
 --force             Force deletesource to proceed even if deduplication is enabled
@@ -228,6 +229,18 @@ EOT;
                             $basePath, $config, true, $verbose
                         );
                     $markForUpdate->launch($source, $single);
+                    break;
+                case 'suppress':
+                    $suppress = new \RecordManager\Base\Controller\Suppress(
+                        $basePath, $config, true, $verbose
+                    );
+                    $suppress->launch($source, $single);
+                    break;
+                case 'unsuppress':
+                    $unsuppress = new \RecordManager\Base\Controller\Unsuppress(
+                        $basePath, $config, true, $verbose
+                    );
+                    $unsuppress->launch($source, $single);
                     break;
                 default:
                     echo 'Unknown func: ' . $params['func'] . "\n";
