@@ -1183,6 +1183,7 @@ class SolrUpdater
             unset($this->terminate);
             if (function_exists('pcntl_signal')) {
                 pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
+                pcntl_signal(SIGTERM, [$this, 'sigIntHandler']);
                 $this->log->logInfo('updateRecords', 'Interrupt handler set');
             } else {
                 $this->log->logInfo(
