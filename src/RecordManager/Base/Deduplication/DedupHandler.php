@@ -306,7 +306,7 @@ class DedupHandler
      */
     public function dedupRecord($record)
     {
-        if ($record['deleted']) {
+        if ($record['deleted'] || ($record['suppressed'] ?? false)) {
             if (isset($record['dedup_id'])) {
                 $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
                 unset($record['dedup_id']);
@@ -378,7 +378,8 @@ class DedupHandler
             $params = [
                 $type => ['$in' => $rule['keys']],
                 'deleted' => false,
-                'source_id' => ['$ne' => $record['source_id']]
+                'suppressed' => ['$in' => [null, false]],
+                'source_id' => ['$ne' => $record['source_id']],
             ];
             if (!empty($rule['filters'])) {
                 $params += $rule['filters'];
@@ -591,7 +592,11 @@ class DedupHandler
                 $dedupRecord['deleted'] = true;
 
                 $this->db->updateRecords(
-                    ['_id' => $otherId, 'deleted' => false],
+                    [
+                        '_id' => $otherId,
+                        'deleted' => false,
+                        'suppressed' => ['$in' => [null, false]],
+                    ],
                     ['update_needed' => true],
                     ['dedup_id' => 1]
                 );
@@ -611,6 +616,7 @@ class DedupHandler
                     [
                         '_id' => ['$in' => $dedupRecord['ids']],
                         'deleted' => false,
+                        'suppressed' => ['$in' => [null, false]],
                     ],
                     ['update_needed' => true]
                 );
@@ -839,10 +845,10 @@ class DedupHandler
             );
             return;
         }
-        if ($rec1['deleted']) {
+        if ($rec1['deleted'] || ($rec1['suppressed'] ?? false)) {
             $this->log->logWarning(
                 'markDuplicates',
-                "Record $id1 has been deleted in the meanwhile"
+                "Record $id1 has been deleted or suppressed in the meanwhile"
             );
             return;
         }
@@ -853,10 +859,10 @@ class DedupHandler
             );
             return;
         }
-        if ($rec2['deleted']) {
+        if ($rec2['deleted'] || ($rec2['suppressed'] ?? false)) {
             $this->log->logWarning(
                 'markDuplicates',
-                "Record $id2 has been deleted in the meanwhile"
+                "Record $id2 has been deleted or suppressed in the meanwhile"
             );
             return;
         }
@@ -992,7 +998,11 @@ class DedupHandler
         // component parts match
         $marked = 0;
         $otherRecords = $this->db->findRecords(
-            ['dedup_id' => $hostRecord['dedup_id'], 'deleted' => false]
+            [
+                'dedup_id' => $hostRecord['dedup_id'],
+                'deleted' => false,
+                'suppressed' => ['$in' => [null, false]],
+            ]
         );
         foreach ($otherRecords as $otherRecord) {
             if ($otherRecord['source_id'] == $hostRecord['source_id']) {
