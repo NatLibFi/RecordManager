@@ -1717,8 +1717,7 @@ class SolrUpdater
      */
     public function checkIndexedRecords()
     {
-        $request = $this->initSolrRequest();
-        $request->setMethod(\HTTP_Request2::METHOD_GET);
+        $request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
         $baseUrl = $this->config['Solr']['search_url']
             . '?q=*:*&sort=id+asc&wt=json&fl=id,record_format&rows=1000';
 
@@ -2494,8 +2493,7 @@ class SolrUpdater
             throw new \Exception('search_url not set in ini file Solr section');
         }
 
-        $this->request = $this->initSolrRequest();
-        $this->request->setMethod(\HTTP_Request2::METHOD_GET);
+        $this->request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
         $url = $this->config['Solr']['search_url'];
         $url .= '?q=id:"' . urlencode($record['id']) . '"&wt=json';
         $this->request->setUrl($url);
@@ -2559,15 +2557,16 @@ class SolrUpdater
     /**
      * Initialize a Solr request object
      *
-     * @param int $timeout Timeout in seconds (optional)
+     * @param string $method  HTTP method
+     * @param int    $timeout Timeout in seconds (optional)
      *
      * @return \HTTP_Request2
      */
-    protected function initSolrRequest($timeout = null)
+    protected function initSolrRequest($method, $timeout = null)
     {
         $request = new \HTTP_Request2(
             $this->config['Solr']['update_url'],
-            \HTTP_Request2::METHOD_POST,
+            $method,
             $this->httpParams
         );
         if ($timeout !== null) {
@@ -2600,7 +2599,8 @@ class SolrUpdater
     public function solrRequest($body, $timeout = null)
     {
         if (null === $this->request) {
-            $this->request = $this->initSolrRequest($timeout);
+            $this->request
+                = $this->initSolrRequest(\HTTP_Request2::METHOD_POST, $timeout);
         }
 
         if (!$this->waitForClusterStateOk()) {
@@ -2710,7 +2710,7 @@ class SolrUpdater
             return $this->clusterState;
         }
         $this->lastClusterStateCheck = time();
-        $request = $this->initSolrRequest();
+        $request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
         $url = $this->config['Solr']['admin_url'] . '/zookeeper'
             . '?wt=json&detail=true&path=%2Fclusterstate.json&view=graph';
         $request->setUrl($url);
