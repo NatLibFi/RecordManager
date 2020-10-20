@@ -471,6 +471,14 @@ class SolrUpdater
     protected $workKeysField = 'work_keys_str_mv';
 
     /**
+     * Maximum field lengths. Key is a regular expression. __default__ is applied
+     * unless overridden. 0 as the value means the field length is unlimited.
+     *
+     * @var array
+     */
+    protected $maxFieldLengths = [];
+
+    /**
      * Constructor
      *
      * @param MongoDB       $db                 Database connection
@@ -607,6 +615,9 @@ class SolrUpdater
         }
         if (isset($fields['work_keys'])) {
             $this->workKeysField = $fields['work_keys'];
+        }
+        if (isset($config['Solr Field Limits'])) {
+            $this->maxFieldLengths = $config['Solr Field Limits'];
         }
 
         // Load settings
@@ -2252,6 +2263,7 @@ class SolrUpdater
                     $value = MetadataUtils::normalizeUnicode(
                         $value, $this->unicodeNormalizationForm
                     );
+                    $value = $this->trimFieldLength($key, $value);
                     if (empty($value) || $value === 0 || $value === 0.0
                         || $value === '0'
                     ) {
@@ -2263,6 +2275,7 @@ class SolrUpdater
                 $values = MetadataUtils::normalizeUnicode(
                     $values, $this->unicodeNormalizationForm
                 );
+                $values = $this->trimFieldLength($key, $values);
             }
             if (empty($values) || $values === 0 || $values === 0.0 || $values === '0'
             ) {
@@ -3061,5 +3074,64 @@ class SolrUpdater
             }
         }
         return [$sourceParams, $sourceExclude];
+    }
+
+    /**
+     * Trim fields to their maximum lengths according to the configuration
+     *
+     * @param string $field Field
+     * @param string $value Value to trim
+     *
+     * @return string
+     */
+    protected function trimFieldLength($field, $value)
+    {
+        if (empty($this->maxFieldLengths)) {
+            return $value;
+        }
+
+        $foundLimit = null;
+        foreach ($this->maxFieldLengths as $key => $limit) {
+            if ('__default__' === $key) {
+                continue;
+            }
+            if ($field === $key) {
+                $foundLimit = $limit;
+                break;
+            }
+            $left = strncmp('*', $key, 1) === 0;
+            if ($left) {
+                $key = substr($key, 1);
+            }
+            $right = substr($key, -1) === '*';
+            if ($right) {
+                $key = substr($key, 0, -1);
+            }
+
+            if ($left && $right) {
+                if (strpos($field, $key) !== false) {
+                    $foundLimit = $limit;
+                    break;
+                }
+            } elseif ($left) {
+                if ($key === substr($field, -strlen($key))) {
+                    $foundLimit = $limit;
+                    break;
+                }
+            } elseif ($right) {
+                if (strncmp($key, $field, strlen($key)) === 0) {
+                    $foundLimit = $limit;
+                    break;
+                }
+            }
+        }
+
+        if (null == $foundLimit) {
+            $foundLimit = $this->maxFieldLengths['__default__'] ?? null;
+        }
+        if ($foundLimit) {
+            $value = mb_substr($value, 0, $foundLimit, 'UTF-8');
+        }
+        return $value;
     }
 }
