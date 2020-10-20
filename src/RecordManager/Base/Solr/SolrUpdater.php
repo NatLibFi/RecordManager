@@ -2574,6 +2574,10 @@ class SolrUpdater
         }
         $request->setHeader('Connection', 'Keep-Alive');
         $request->setHeader('User-Agent', 'RecordManager');
+        // At least some combinations of PHP + curl cause both Transfer-Encoding and
+        // Content-Length to be set in certain cases. Set follow_redirects to true to
+        // invoke the PHP workaround in the curl adapter.
+        $request->setConfig('follow_redirects', true);
         if (isset($this->config['Solr']['username'])
             && isset($this->config['Solr']['password'])
         ) {
