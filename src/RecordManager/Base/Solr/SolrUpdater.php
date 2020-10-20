@@ -1573,7 +1573,7 @@ class SolrUpdater
     /**
      * Process a single record and return results
      *
-     * @param string $record Record
+     * @param array $record Record
      *
      * @return array
      */
