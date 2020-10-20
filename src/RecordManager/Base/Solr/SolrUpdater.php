@@ -2733,7 +2733,7 @@ class SolrUpdater
         if (200 !== $code) {
             $this->log->logError(
                 'checkClusterState',
-                "Solr admin request '$url' failed ($code)"
+                "Solr admin request '$url' failed ($code): " . $response->getBody()
             );
             $this->clusterState = 'error';
             return 'error';
