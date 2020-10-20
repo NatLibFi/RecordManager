@@ -1430,13 +1430,24 @@ class Marc extends Base
     protected function getDefaultBuildingFields()
     {
         $useSub = $this->getDriverParam('subLocationInBuilding', '');
-        return [
+        $fields = [
             [
                 'field' => '852',
                 'loc' => 'b',
                 'sub' => $useSub,
             ],
         ];
+        if ($this->getDriverParam('kohaNormalization', false)
+            || $this->getDriverParam('almaNormalization', false)
+        ) {
+            $itemSub = $this->getDriverParam('itemSubLocationInBuilding', $useSub);
+            $fields[] = [
+                'field' => '952',
+                'loc' => 'b',
+                'sub' => $itemSub,
+            ];
+        }
+        return $fields;
     }
 
     /**
@@ -2687,6 +2698,127 @@ class Marc extends Base
         }
 
         return compact('authors', 'authorsAltScript', 'titles', 'titlesAltScript');
+    }
+
+    /**
+     * Normalize the record (optional)
+     *
+     * @return void
+     */
+    public function normalize()
+    {
+        // Koha and Alma record normalization. For Alma normalization to work,
+        // item information must be mapped in the enrichments for the publishing
+        // process so that it's similar to what Koha does:
+        // [x] Add Items Information
+        //   Repeatable field: 952
+        //   Barcode subfield: p
+        //   Item status subfield: 1
+        //   Enumeration A subfield: h
+        //   Enumeration B subfield: h
+        //   Chronology I subfield: h
+        //   Chronology J subfield: h
+        //   Permanent library subfield: a
+        //   Permanent location subfield: a
+        //   Current library subfield: b
+        //   Current location subfield: c
+        //   Call number subfield: o
+        //   Public note subfield: z
+        //   Due back date subfield: q
+        //
+        // See https://www.kiwi.fi/x/vAALC for illustration.
+        //
+        // Note that if kohaNormalization or almaNormalization is enabled, the
+        // "building" field in Solr is populated from both 852 and 952. This can be
+        // overridden with the buildingFields driver param.
+        $koha = $this->getDriverParam('kohaNormalization', false);
+        $alma = $this->getDriverParam('almaNormalization', false);
+        if ($koha || $alma) {
+            // Convert items to holdings
+            $useHome = $koha && $this->getDriverParam('kohaUseHomeBranch', false);
+            $holdings = [];
+            $availableBuildings = [];
+            foreach ($this->getFields('952') as $field952) {
+                $key = [];
+                $holding = [];
+                $branch = $this->getSubfield($field952, $useHome ? 'a' : 'b');
+                $key[] = $branch;
+                // Always use subfield 'b' for location regardless of where it came
+                // from
+                $holding[] = ['b' => $branch];
+                foreach (['c', 'h', 'o', '8'] as $code) {
+                    $value = $this->getSubfield($field952, $code);
+                    $key[] = $value;
+                    if ('' !== $value) {
+                        $holding[] = [$code => $value];
+                    }
+                }
+
+                if ($alma) {
+                    $available = $this->getSubfield($field952, '1') == 1;
+                } else {
+                    // Availability
+                    static $subfieldsExist = [
+                        '0', // Withdrawn
+                        '1', // Lost
+                        '4', // Damaged
+                        'q', // Due date
+                    ];
+                    $available = true;
+                    foreach ($subfieldsExist as $code) {
+                        if ($this->getSubfield($field952, $code)) {
+                            $available = false;
+                            break;
+                        }
+                    }
+                    if ($available) {
+                        $status = $this->getSubfield($field952, '7'); // Not for loan
+                        $available = $status === '0' || $status === '1';
+                    }
+                }
+
+                $key = implode('//', $key);
+                if ($available) {
+                    $availableBuildings[$key] = 1;
+                }
+
+                $holdings[$key] = $holding;
+            }
+            $this->fields['952'] = [];
+            foreach ($holdings as $key => $holding) {
+                if (isset($availableBuildings[$key])) {
+                    $holding[] = ['9' => 1];
+                }
+                $this->fields['952'][] = [
+                    'i1' => ' ',
+                    'i2' => ' ',
+                    's' => $holding
+                ];
+            }
+        }
+
+        if ($koha) {
+            // Verify that 001 exists
+            if ('' === $this->getField('001')) {
+                if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
+                    $this->fields['001'] = [$id];
+                }
+            }
+        }
+
+        if ($alma) {
+            // Add a prefixed id to field 090 to indicate that the record is from
+            // Alma. Used at least with OpenURL.
+            $id = $this->getField('001');
+            $this->fields['090'][] = [
+                'i1' => ' ',
+                'i2' => ' ',
+                's' => [
+                    ['a' => "(Alma)$id"]
+                ]
+            ];
+            ksort($this->fields);
+        }
     }
 
     /**
