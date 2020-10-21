@@ -59,22 +59,9 @@ class Lrmi extends Qdc
 
         $doc = $this->doc;
 
-        $subjects = [];
-        $subjectIds = [];
-        foreach ($doc->about as $about) {
-            if (!isset($about->thing->name)) {
-                continue;
-            }
-            $subject = $about->thing;
-            $subjects[] = (string)$subject->name;
-            if ($id = (string)($subject->identifier ?? '')) {
-                $subjectIds[] = $id;
-            }
-        }
         $data['format_ext_str_mv'] = $data['format'];
 
         $topics = $topicIds = [];
-
         foreach ($this->getTopics() as $topic) {
             $topics[] = $topic['value'];
             if ($id = $topic['id']) {
