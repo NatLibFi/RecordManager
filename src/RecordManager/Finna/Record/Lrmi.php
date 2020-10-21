@@ -71,8 +71,6 @@ class Lrmi extends Qdc
         $data['topic_uri_str_mv']
             = array_merge($data['topic_uri_str_mv'] ?? [], $topicIds);
 
-        $data['author2'] = $this->getSecondaryAuthors();
-
         $corporateAuthors = [];
         if (isset($doc->author)) {
             foreach ($doc->author as $author) {
