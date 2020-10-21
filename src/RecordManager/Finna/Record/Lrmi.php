@@ -59,8 +59,6 @@ class Lrmi extends Qdc
 
         $doc = $this->doc;
 
-        $data['format_ext_str_mv'] = $data['format'];
-
         $topics = $topicIds = [];
         foreach ($this->getTopics() as $topic) {
             $topics[] = $topic['value'];
@@ -270,6 +268,17 @@ class Lrmi extends Qdc
      */
     protected function getUrls()
     {
+        return [];
+    }
+
+    /**
+     * Get languages
+     *
+     * @return array
+     */
+    protected function getLanguages()
+    {
+        // Resolved together with doc->material
         return [];
     }
 }

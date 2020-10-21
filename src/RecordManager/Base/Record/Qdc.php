@@ -116,15 +116,7 @@ class Qdc extends Base
         $data['ctrlnum'] = trim((string)$doc->recordID);
         $data['fullrecord'] = $doc->asXML();
         $data['allfields'] = $this->getAllFields();
-
-        // language
-        $languages = [];
-        foreach (explode(' ', trim((string)$doc->language)) as $language) {
-            foreach (str_split($language, 3) as $code) {
-                $languages[] = $code;
-            }
-        }
-        $data['language'] = MetadataUtils::normalizeLanguageStrings($languages);
+        $data['language'] = $this->getLanguages();
 
         $data['format'] = $this->getFormat();
         foreach ($this->getValues('creator') as $author) {
@@ -410,6 +402,22 @@ class Qdc extends Base
             }
         }
         return $urls;
+    }
+
+    /**
+     * Get languages
+     *
+     * @return array
+     */
+    protected function getLanguages()
+    {
+        $languages = [];
+        foreach (explode(' ', trim((string)$this->doc->language)) as $language) {
+            foreach (str_split($language, 3) as $code) {
+                $languages[] = $code;
+            }
+        }
+        return MetadataUtils::normalizeLanguageStrings($languages);
     }
 
     /**
