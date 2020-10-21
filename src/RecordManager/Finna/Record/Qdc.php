@@ -124,27 +124,6 @@ class Qdc extends \RecordManager\Base\Record\Qdc
             }
         }
 
-        if ($this->doc->permaddress) {
-            $data['url'][] = trim((string)$this->doc->permaddress[0]);
-        }
-
-        foreach ($this->getValues('identifier') as $identifier) {
-            $res = preg_match(
-                '/^(URN:NBN:fi:|URN:ISBN:978-?951|URN:ISBN:951)/i', $identifier
-            );
-            if ($res) {
-                if (!empty($data['url'])) {
-                    // Check that the identifier is not already listed
-                    foreach ($data['url'] as $url) {
-                        if (stristr($url, $identifier) !== false) {
-                            continue 2;
-                        }
-                    }
-                }
-                $data['url'][] = "http://urn.fi/$identifier";
-            }
-        }
-
         foreach ($this->doc->coverage as $coverage) {
             $attrs = $coverage->attributes();
             if ($attrs->type == 'geocoding') {
@@ -218,5 +197,37 @@ class Qdc extends \RecordManager\Base\Record\Qdc
             $result[] = trim((string)$rights);
         }
         return $result;
+    }
+
+    /**
+     * Return URLs associated with object
+     *
+     * @return array
+     */
+    protected function getUrls()
+    {
+        $urls = parent::getUrls();
+
+        if ($this->doc->permaddress) {
+            $data['url'][] = trim((string)$this->doc->permaddress[0]);
+        }
+
+        foreach ($this->getValues('identifier') as $identifier) {
+            $res = preg_match(
+                '/^(URN:NBN:fi:|URN:ISBN:978-?951|URN:ISBN:951)/i', $identifier
+            );
+            if ($res) {
+                if (!empty($urls)) {
+                    // Check that the identifier is not already listed
+                    foreach ($urls as $url) {
+                        if (stristr($url, $identifier) !== false) {
+                            continue 2;
+                        }
+                    }
+                }
+                $urls[] = "http://urn.fi/$identifier";
+            }
+        }
+        return $urls;
     }
 }

@@ -134,10 +134,7 @@ class Qdc extends Base
         if (!empty($data['author'])) {
             $data['author_sort'] = $data['author'][0];
         }
-        foreach ($this->getValues('contributor') as $contributor) {
-            $data['author2'][]
-                = MetadataUtils::stripTrailingPunctuation($contributor);
-        }
+        $data['author2'] = $this->getSecondaryAuthors();
 
         foreach ($doc->title as $title) {
             if (!isset($data['title'])
@@ -168,7 +165,7 @@ class Qdc extends Base
 
         foreach ($this->getValues('description') as $description) {
             if (preg_match('/^https?/', $description)) {
-                $data['url'][] = $description;
+                // already added in getUrls
             } elseif (preg_match('/^\d+\.\d+$/', $description)) {
                 // Classification, put somewhere?
             } else {
@@ -219,6 +216,21 @@ class Qdc extends Base
     public function getMainAuthor()
     {
         return trim((string)$this->doc->creator);
+    }
+
+    /**
+     * Get secondary authors
+     *
+     * @return array
+     */
+    protected function getSecondaryAuthors()
+    {
+        $result = [];
+        foreach ($this->getValues('contributor') as $contributor) {
+            $result[]
+                = MetadataUtils::stripTrailingPunctuation($contributor);
+        }
+        return $result;
     }
 
     /**
@@ -379,6 +391,11 @@ class Qdc extends Base
         foreach ($this->getValues('identifier') as $identifier) {
             if (preg_match('/^https?/', $identifier)) {
                 $urls[] = $identifier;
+            }
+        }
+        foreach ($this->getValues('description') as $description) {
+            if (preg_match('/^https?/', $description)) {
+                $urls[] = $description;
             }
         }
         return $urls;

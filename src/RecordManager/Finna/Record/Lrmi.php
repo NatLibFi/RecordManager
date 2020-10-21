@@ -87,16 +87,11 @@ class Lrmi extends Qdc
         $data['topic_uri_str_mv']
             = array_merge($data['topic_uri_str_mv'] ?? [], $topicIds);
 
+        $data['author2'] = $this->getSecondaryAuthors();
+        $corporateAuthors = [];
+
         if (isset($doc->author)) {
-            $authors = $corporateAuthors = [];
             foreach ($doc->author as $author) {
-                if (isset($author->person)) {
-                    foreach ($author->person as $person) {
-                        if (isset($person->name)) {
-                            $authors[] = trim((string)$person->name);
-                        }
-                    }
-                }
                 if (isset($author->organization)) {
                     foreach ($author->organization as $organization) {
                         if (isset($organization->legalName)) {
@@ -106,11 +101,9 @@ class Lrmi extends Qdc
                     }
                 }
             }
-            $data['author2'] = $authors;
             $data['author_corporate'] = $corporateAuthors;
-            $data['author_facet'] = array_merge($authors, $corporateAuthors);
         }
-
+        $data['author_facet'] = array_merge($data['author2'], $corporateAuthors);
 
         $languages = [];
 
@@ -157,6 +150,28 @@ class Lrmi extends Qdc
         }
 
         return $data;
+    }
+
+    /**
+     * Get secondary authors
+     *
+     * @return array
+     */
+    protected function getSecondaryAuthors()
+    {
+        $result = [];
+        if (isset($this->doc->author)) {
+            foreach ($this->doc->author as $author) {
+                if (isset($author->person)) {
+                    foreach ($author->person as $person) {
+                        if (isset($person->name)) {
+                            $result[] = trim((string)$person->name);
+                        }
+                    }
+                }
+            }
+        }
+        return $result;
     }
 
     /**
