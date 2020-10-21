@@ -247,7 +247,7 @@ class Lrmi extends Qdc
         );
         $iterator->rewind();
         $iterator->next();
-        
+
         while ($node = $iterator->current()) {
             $tag = $node->getName();
             $field = trim((string)$node);

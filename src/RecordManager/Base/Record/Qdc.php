@@ -168,7 +168,6 @@ class Qdc extends Base
         return $data;
     }
 
-
     /**
      * Dedup: Return full title (for debugging purposes only)
      *
