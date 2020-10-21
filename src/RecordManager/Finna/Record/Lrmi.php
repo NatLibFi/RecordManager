@@ -91,7 +91,7 @@ class Lrmi extends Qdc
 
         $languages = [];
 
-        // Materials
+        // Materials and languages
         if (isset($doc->material)) {
             $data['online_boolean'] = true;
             $data['online_str_mv'] = $this->source;
