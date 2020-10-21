@@ -209,7 +209,7 @@ class Qdc extends \RecordManager\Base\Record\Qdc
         $urls = parent::getUrls();
 
         if ($this->doc->permaddress) {
-            $data['url'][] = trim((string)$this->doc->permaddress[0]);
+            $urls[] = trim((string)$this->doc->permaddress[0]);
         }
 
         foreach ($this->getValues('identifier') as $identifier) {
