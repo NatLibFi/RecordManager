@@ -129,6 +129,19 @@ unicode_normalization_form = NFKC
 ;hierarchy_parent_title = hierarchy_parent_title
 ;work_keys = work_keys_str_mv
 
+; The following section defines optional length limits for Solr fields.
+; __default__ is applied unless overridden. 0 as the value means the field length is
+; unlimited. * may be used in the beginning or end as a wildcard.
+[Solr Field Limits]
+__default__ = 1024
+fullrecord = 32766
+fulltext = 0
+fulltext_unstemmed = 0
+long_lat = 0
+contents = 0
+description = 0
+*_txt* = 0
+
 [OAI-PMH]
 ; Repository name returned in the Identify response
 repository_name = OAI-PMH Repository

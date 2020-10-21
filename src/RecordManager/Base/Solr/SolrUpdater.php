@@ -471,6 +471,14 @@ class SolrUpdater
     protected $workKeysField = 'work_keys_str_mv';
 
     /**
+     * Maximum field lengths. Key is a regular expression. __default__ is applied
+     * unless overridden. 0 as the value means the field length is unlimited.
+     *
+     * @var array
+     */
+    protected $maxFieldLengths = [];
+
+    /**
      * Constructor
      *
      * @param MongoDB       $db                 Database connection
@@ -607,6 +615,9 @@ class SolrUpdater
         }
         if (isset($fields['work_keys'])) {
             $this->workKeysField = $fields['work_keys'];
+        }
+        if (isset($config['Solr Field Limits'])) {
+            $this->maxFieldLengths = $config['Solr Field Limits'];
         }
 
         // Load settings
@@ -1172,6 +1183,7 @@ class SolrUpdater
             unset($this->terminate);
             if (function_exists('pcntl_signal')) {
                 pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
+                pcntl_signal(SIGTERM, [$this, 'sigIntHandler']);
                 $this->log->logInfo('updateRecords', 'Interrupt handler set');
             } else {
                 $this->log->logInfo(
@@ -1453,7 +1465,7 @@ class SolrUpdater
             if (in_array($record['source_id'], $this->nonIndexedSources)) {
                 continue;
             }
-            if ($record['deleted']
+            if ($record['deleted'] || ($record['suppressed'] ?? false)
                 || ($sourceId && $delete && $record['source_id'] == $sourceId)
             ) {
                 $result['deleted'][] = $record['_id'];
@@ -1562,7 +1574,7 @@ class SolrUpdater
     /**
      * Process a single record and return results
      *
-     * @param string $record Record
+     * @param array $record Record
      *
      * @return array
      */
@@ -1574,7 +1586,7 @@ class SolrUpdater
             'mergedComponents' => 0
         ];
 
-        if ($record['deleted']) {
+        if ($record['deleted'] || ($record['suppressed'] ?? false)) {
             $result['deleted'][] = (string)$record['_id'];
         } else {
             $data = $this->createSolrArray($record, $mergedComponents);
@@ -1717,8 +1729,7 @@ class SolrUpdater
      */
     public function checkIndexedRecords()
     {
-        $request = $this->initSolrRequest();
-        $request->setMethod(\HTTP_Request2::METHOD_GET);
+        $request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
         $baseUrl = $this->config['Solr']['search_url']
             . '?q=*:*&sort=id+asc&wt=json&fl=id,record_format&rows=1000';
 
@@ -2068,7 +2079,8 @@ class SolrUpdater
                 }
                 if (isset($data[$field]) && $data[$field]) {
                     $data[$field] = $this->createSolrId(
-                        $record['source_id'] . '.' . $data[$field]
+                        ($settings['idPrefix'] ?? $record['source_id'])
+                        . '.' . $data[$field]
                     );
                 }
             }
@@ -2252,6 +2264,7 @@ class SolrUpdater
                     $value = MetadataUtils::normalizeUnicode(
                         $value, $this->unicodeNormalizationForm
                     );
+                    $value = $this->trimFieldLength($key, $value);
                     if (empty($value) || $value === 0 || $value === 0.0
                         || $value === '0'
                     ) {
@@ -2263,6 +2276,7 @@ class SolrUpdater
                 $values = MetadataUtils::normalizeUnicode(
                     $values, $this->unicodeNormalizationForm
                 );
+                $values = $this->trimFieldLength($key, $values);
             }
             if (empty($values) || $values === 0 || $values === 0.0 || $values === '0'
             ) {
@@ -2493,8 +2507,7 @@ class SolrUpdater
             throw new \Exception('search_url not set in ini file Solr section');
         }
 
-        $this->request = $this->initSolrRequest();
-        $this->request->setMethod(\HTTP_Request2::METHOD_GET);
+        $this->request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
         $url = $this->config['Solr']['search_url'];
         $url .= '?q=id:"' . urlencode($record['id']) . '"&wt=json';
         $this->request->setUrl($url);
@@ -2558,15 +2571,16 @@ class SolrUpdater
     /**
      * Initialize a Solr request object
      *
-     * @param int $timeout Timeout in seconds (optional)
+     * @param string $method  HTTP method
+     * @param int    $timeout Timeout in seconds (optional)
      *
      * @return \HTTP_Request2
      */
-    protected function initSolrRequest($timeout = null)
+    protected function initSolrRequest($method, $timeout = null)
     {
         $request = new \HTTP_Request2(
             $this->config['Solr']['update_url'],
-            \HTTP_Request2::METHOD_POST,
+            $method,
             $this->httpParams
         );
         if ($timeout !== null) {
@@ -2574,6 +2588,10 @@ class SolrUpdater
         }
         $request->setHeader('Connection', 'Keep-Alive');
         $request->setHeader('User-Agent', 'RecordManager');
+        // At least some combinations of PHP + curl cause both Transfer-Encoding and
+        // Content-Length to be set in certain cases. Set follow_redirects to true to
+        // invoke the PHP workaround in the curl adapter.
+        $request->setConfig('follow_redirects', true);
         if (isset($this->config['Solr']['username'])
             && isset($this->config['Solr']['password'])
         ) {
@@ -2599,7 +2617,8 @@ class SolrUpdater
     public function solrRequest($body, $timeout = null)
     {
         if (null === $this->request) {
-            $this->request = $this->initSolrRequest($timeout);
+            $this->request
+                = $this->initSolrRequest(\HTTP_Request2::METHOD_POST, $timeout);
         }
 
         if (!$this->waitForClusterStateOk()) {
@@ -2709,7 +2728,7 @@ class SolrUpdater
             return $this->clusterState;
         }
         $this->lastClusterStateCheck = time();
-        $request = $this->initSolrRequest();
+        $request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
         $url = $this->config['Solr']['admin_url'] . '/zookeeper'
             . '?wt=json&detail=true&path=%2Fclusterstate.json&view=graph';
         $request->setUrl($url);
@@ -2728,7 +2747,7 @@ class SolrUpdater
         if (200 !== $code) {
             $this->log->logError(
                 'checkClusterState',
-                "Solr admin request '$url' failed ($code)"
+                "Solr admin request '$url' failed ($code): " . $response->getBody()
             );
             $this->clusterState = 'error';
             return 'error';
@@ -3056,5 +3075,64 @@ class SolrUpdater
             }
         }
         return [$sourceParams, $sourceExclude];
+    }
+
+    /**
+     * Trim fields to their maximum lengths according to the configuration
+     *
+     * @param string $field Field
+     * @param string $value Value to trim
+     *
+     * @return string
+     */
+    protected function trimFieldLength($field, $value)
+    {
+        if (empty($this->maxFieldLengths)) {
+            return $value;
+        }
+
+        $foundLimit = null;
+        foreach ($this->maxFieldLengths as $key => $limit) {
+            if ('__default__' === $key) {
+                continue;
+            }
+            if ($field === $key) {
+                $foundLimit = $limit;
+                break;
+            }
+            $left = strncmp('*', $key, 1) === 0;
+            if ($left) {
+                $key = substr($key, 1);
+            }
+            $right = substr($key, -1) === '*';
+            if ($right) {
+                $key = substr($key, 0, -1);
+            }
+
+            if ($left && $right) {
+                if (strpos($field, $key) !== false) {
+                    $foundLimit = $limit;
+                    break;
+                }
+            } elseif ($left) {
+                if ($key === substr($field, -strlen($key))) {
+                    $foundLimit = $limit;
+                    break;
+                }
+            } elseif ($right) {
+                if (strncmp($key, $field, strlen($key)) === 0) {
+                    $foundLimit = $limit;
+                    break;
+                }
+            }
+        }
+
+        if (null == $foundLimit) {
+            $foundLimit = $this->maxFieldLengths['__default__'] ?? null;
+        }
+        if ($foundLimit) {
+            $value = mb_substr($value, 0, $foundLimit, 'UTF-8');
+        }
+        return $value;
     }
 }
