@@ -125,7 +125,7 @@ class WorkerPoolManager
             foreach ($this->workerPools as $workers) {
                 foreach ($workers as $worker) {
                     socket_close($worker['socket']);
-                    posix_kill($worker['pid'], SIGTERM);
+                    posix_kill($worker['pid'], SIGHUP);
                 }
             }
         }
