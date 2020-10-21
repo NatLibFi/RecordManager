@@ -1340,8 +1340,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getDefaultBuildingFields()
     {
         $useSub = $this->getDriverParam('subLocationInBuilding', '');
-        $itemSub = $this
-            ->getDriverParam('itemSubLocationInBuilding', $useSub);
+        $itemSub = $this->getDriverParam('itemSubLocationInBuilding', $useSub);
         return [
             [
                 'field' => '852',
