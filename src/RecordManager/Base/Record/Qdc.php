@@ -380,7 +380,7 @@ class Qdc extends Base
         foreach ($this->doc->children() as $tag => $field) {
             $allFields[] = trim((string)$field);
         }
-        return $allfields;
+        return $allFields;
     }
 
     /**
