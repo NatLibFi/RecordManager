@@ -1081,7 +1081,9 @@ class DedupHandler
                 'source_id' => $sourceId,
                 'host_record_id' => [
                     '$in' => array_values((array)$hostRecordId)
-                ]
+                ],
+                'deleted' => false,
+                'suppressed' => ['$in' => [null, false]],
             ]
         );
         $components = [];
