@@ -57,6 +57,9 @@ class Lrmi extends Qdc
     {
         $data = parent::toSolrArray();
 
+        // Reset url to remove thumbnail (from Qdc-driver)
+        unset($data['url']);
+
         $doc = $this->doc;
 
         $subjects = [];
@@ -111,10 +114,8 @@ class Lrmi extends Qdc
             $data['author_facet'] = array_merge($authors, $corporateAuthors);
         }
 
-        $languages = [];
 
-        // Reset url to remove thumbnail (from Qdc-driver)
-        unset($data['url']);
+        $languages = [];
 
         // Materials
         if (isset($doc->material)) {
