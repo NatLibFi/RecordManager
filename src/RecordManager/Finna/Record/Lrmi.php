@@ -159,8 +159,6 @@ class Lrmi extends Qdc
             $data['educational_material_type_str_mv'][] = (string)$type;
         }
 
-        $data['allfields'] = $this->getAllFields($doc);
-
         return $data;
     }
 
@@ -215,33 +213,35 @@ class Lrmi extends Qdc
     }
 
     /**
-     * Get all XML fields
-     *
-     * @param SimpleXMLElement $xml The XML document
+     * Get an array of all fields relevant to allfields search
      *
      * @return array
      */
-    protected function getAllFields($xml)
+    protected function getAllFields()
     {
         $ignoredFields = [
-            'id', 'date', 'dateCreated', 'dateModified', 'inLanguage', 'url',
-            'recordID', 'rights'
+            'format', 'id', 'identifier', 'date', 'dateCreated', 'dateModified',
+            'filesize', 'inLanguage', 'position', 'recordID', 'rights', 'targetUrl',
+            'url'
         ];
 
         $allFields = [];
-        foreach ($xml->children() as $tag => $field) {
-            if (in_array($tag, $ignoredFields)) {
+        $iterator = new \RecursiveIteratorIterator(
+            new \SimpleXMLIterator($this->doc->asXML())
+        );
+        $iterator->rewind();
+        $iterator->next();
+        
+        while ($node = $iterator->current()) {
+            $tag = $node->getName();
+            $field = trim((string)$node);
+            $iterator->next();
+            if (in_array($tag, $ignoredFields) || !$field) {
                 continue;
             }
-            $s = trim((string)$field);
-            if ($s) {
-                $allFields[] = $s;
-            }
-            $s = $this->getAllFields($field);
-            if ($s) {
-                $allFields = array_merge($allFields, $s);
-            }
+            $allFields[] = $field;
         }
+
         return $allFields;
     }
 }

@@ -115,13 +115,7 @@ class Qdc extends Base
         $data['record_format'] = 'qdc';
         $data['ctrlnum'] = trim((string)$doc->recordID);
         $data['fullrecord'] = $doc->asXML();
-
-        // allfields
-        $allFields = [];
-        foreach ($doc->children() as $tag => $field) {
-            $allFields[] = trim((string)$field);
-        }
-        $data['allfields'] = $allFields;
+        $data['allfields'] = $this->getAllFields();
 
         // language
         $languages = [];
@@ -362,6 +356,20 @@ class Qdc extends Base
     public function getPageCount()
     {
         return '';
+    }
+
+    /**
+     * Get an array of all fields relevant to allfields search
+     *
+     * @return array
+     */
+    protected function getAllFields()
+    {
+        $allFields = [];
+        foreach ($this->doc->children() as $tag => $field) {
+            $allFields[] = trim((string)$field);
+        }
+        return $allfields;
     }
 
     /**
