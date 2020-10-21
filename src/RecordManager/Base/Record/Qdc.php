@@ -164,12 +164,8 @@ class Qdc extends Base
         $data['issn'] = $this->getISSNs();
 
         $data['topic'] = $data['topic_facet'] = $this->getValues('subject');
+        $data['url'] = $this->getUrls();
 
-        foreach ($this->getValues('identifier') as $identifier) {
-            if (preg_match('/^https?/', $identifier)) {
-                $data['url'][] = $identifier;
-            }
-        }
         foreach ($this->getValues('description') as $description) {
             if (preg_match('/^https?/', $description)) {
                 $data['url'][] = $description;
@@ -370,6 +366,22 @@ class Qdc extends Base
             $allFields[] = trim((string)$field);
         }
         return $allfields;
+    }
+
+    /**
+     * Return URLs associated with object
+     *
+     * @return array
+     */
+    protected function getUrls()
+    {
+        $urls = [];
+        foreach ($this->getValues('identifier') as $identifier) {
+            if (preg_match('/^https?/', $identifier)) {
+                $urls[] = $identifier;
+            }
+        }
+        return $urls;
     }
 
     /**

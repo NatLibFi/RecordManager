@@ -57,9 +57,6 @@ class Lrmi extends Qdc
     {
         $data = parent::toSolrArray();
 
-        // Reset url to remove thumbnail (from Qdc-driver)
-        unset($data['url']);
-
         $doc = $this->doc;
 
         $subjects = [];
@@ -243,5 +240,15 @@ class Lrmi extends Qdc
         }
 
         return $allFields;
+    }
+
+    /**
+     * Return URLs associated with object
+     *
+     * @return array
+     */
+    protected function getUrls()
+    {
+        return [];
     }
 }
