@@ -921,7 +921,6 @@ class SolrUpdater
                     if (!$compare) {
                         foreach ($result['deleted'] as $id) {
                             ++$deleted;
-                            ++$count;
                             $this->bufferedDelete($id);
                         }
                     }
@@ -934,15 +933,15 @@ class SolrUpdater
                         }
                     }
                 }
-                if ($count >= $lastDisplayedCount + 1000) {
-                    $lastDisplayedCount = $count;
+                if ($count + $deleted >= $lastDisplayedCount + 1000) {
+                    $lastDisplayedCount = $count + $deleted;
                     $pc->add($count);
                     $avg = $pc->getSpeed();
                     $this->log->logInfo(
                         'updateRecords',
-                        "$count individual records (of which $deleted deleted) with"
-                            . " $mergedComponents merged parts $verb, $avg"
-                            . ' records/sec'
+                        "$count individual, $deleted deleted and"
+                            . " $mergedComponents included child records $verb"
+                            . ", $avg records/sec"
                     );
                 }
 
@@ -978,7 +977,6 @@ class SolrUpdater
                     if (!$compare) {
                         foreach ($result['deleted'] as $id) {
                             ++$deleted;
-                            ++$count;
                             $this->bufferedDelete($id);
                         }
                     }
@@ -1018,10 +1016,11 @@ class SolrUpdater
                 ];
                 $this->db->saveState($state);
             }
+
             $this->log->logInfo(
                 'updateRecords',
-                "Total $count individual records (of which $deleted deleted) with "
-                . "$mergedComponents merged parts $verb"
+                "Total $count individual, $deleted deleted and"
+                    . " $mergedComponents included child records $verb"
             );
 
             if ($childPid) {
@@ -1377,14 +1376,14 @@ class SolrUpdater
                     }
                 }
             }
-            if ($count >= $lastDisplayedCount + 1000) {
-                $lastDisplayedCount = $count;
+            if ($count + $deleted >= $lastDisplayedCount + 1000) {
+                $lastDisplayedCount = $count + $deleted;
                 $pc->add($count);
                 $avg = $pc->getSpeed();
                 $this->log->logInfo(
                     'processMerged',
-                    "$count merged records (of which $deleted deleted) with "
-                    . "$mergedComponents merged parts $verb, $avg records/sec"
+                    "$count merged, $deleted deleted and $mergedComponents"
+                        . " included child records $verb, $avg records/sec"
                 );
             }
         }
@@ -1435,8 +1434,8 @@ class SolrUpdater
 
         $this->log->logInfo(
             'processMerged',
-            "Total $count merged records (of which $deleted deleted) with "
-            . "$mergedComponents merged parts $verb"
+            "Total $count merged, $deleted deleted and $mergedComponents"
+                . " included child records $verb"
         );
 
         if (function_exists('pcntl_signal')) {
