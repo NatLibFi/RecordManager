@@ -71,8 +71,7 @@ class Lrmi extends Qdc
                 $subjectIds[] = $id;
             }
         }
-        $data['format'] = $data['format_ext_str_mv'] = 'LearningMaterial';
-        $data['record_format'] = 'lrmi';
+        $data['format_ext_str_mv'] = $data['format'];
 
         $topics = $topicIds = [];
 
@@ -88,8 +87,8 @@ class Lrmi extends Qdc
             = array_merge($data['topic_uri_str_mv'] ?? [], $topicIds);
 
         $data['author2'] = $this->getSecondaryAuthors();
-        $corporateAuthors = [];
 
+        $corporateAuthors = [];
         if (isset($doc->author)) {
             foreach ($doc->author as $author) {
                 if (isset($author->organization)) {
@@ -150,6 +149,26 @@ class Lrmi extends Qdc
         }
 
         return $data;
+    }
+
+    /**
+     * Return format from predefined values
+     *
+     * @return string
+     */
+    public function getFormat()
+    {
+        return 'LearningMaterial';
+    }
+
+    /**
+     * Return record format.
+     *
+     * @return string
+     */
+    public function getRecordFormat()
+    {
+        return 'lrmi';
     }
 
     /**
