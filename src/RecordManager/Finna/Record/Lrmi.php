@@ -82,11 +82,8 @@ class Lrmi extends Qdc
                 $topicIds[] = $id;
             }
         }
-        $data['topic']
-            = array_merge($data['topic'] ?? [], $topics);
-        $data['topic_facet']
-            = array_merge($data['topic_facet'] ?? [], $topics);
-
+        $data['topic'] = array_merge($data['topic'] ?? [], $topics);
+        $data['topic_facet'] = array_merge($data['topic_facet'] ?? [], $topics);
         $data['topic_uri_str_mv']
             = array_merge($data['topic_uri_str_mv'] ?? [], $topicIds);
 
