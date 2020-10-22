@@ -245,7 +245,10 @@ class FieldMapper
             if (!$line || $line[0] == ';') {
                 continue;
             }
-            $parts = explode('=', $line, 2);
+            $parts = explode(' = ', $line, 2);
+            if (!isset($parts[1])) {
+                $parts = explode('=', $line, 2);
+            }
             if (!isset($parts[1])) {
                 fclose($handle);
                 throw new \Exception(
