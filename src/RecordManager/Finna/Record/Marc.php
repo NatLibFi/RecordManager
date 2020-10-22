@@ -954,7 +954,11 @@ class Marc extends \RecordManager\Base\Record\Marc
             );
         }
         if ($dissType) {
-            switch (strtolower($dissType)) {
+            $dissType = mb_strtolower(
+                MetadataUtils::normalizeUnicode($dissType, 'NFKC'),
+                'UTF-8'
+            );
+            switch ($dissType) {
             case 'kandidaatintutkielma':
             case 'kandidaatintyö':
             case 'kandidatarbete':
