@@ -54,6 +54,8 @@ if (function_exists('pcntl_async_signals')) {
  */
 class SolrUpdater
 {
+    use \RecordManager\Base\Utils\ParentProcessCheckTrait;
+
     /**
      * Base path of Record Manager
      *
@@ -793,7 +795,8 @@ class SolrUpdater
                             $singleId,
                             $noCommit,
                             $delete,
-                            $compare
+                            $compare,
+                            null !== $childPid
                         );
                         if (null !== $childPid) {
                             $this->deInitWorkerPoolManager();
@@ -918,7 +921,6 @@ class SolrUpdater
                     if (!$compare) {
                         foreach ($result['deleted'] as $id) {
                             ++$deleted;
-                            ++$count;
                             $this->bufferedDelete($id);
                         }
                     }
@@ -931,15 +933,15 @@ class SolrUpdater
                         }
                     }
                 }
-                if ($count >= $lastDisplayedCount + 1000) {
-                    $lastDisplayedCount = $count;
+                if ($count + $deleted >= $lastDisplayedCount + 1000) {
+                    $lastDisplayedCount = $count + $deleted;
                     $pc->add($count);
                     $avg = $pc->getSpeed();
                     $this->log->logInfo(
                         'updateRecords',
-                        "$count individual records (of which $deleted deleted) with"
-                            . " $mergedComponents merged parts $verb, $avg"
-                            . ' records/sec'
+                        "$count individual, $deleted deleted and"
+                            . " $mergedComponents included child records $verb"
+                            . ", $avg records/sec"
                     );
                 }
 
@@ -975,7 +977,6 @@ class SolrUpdater
                     if (!$compare) {
                         foreach ($result['deleted'] as $id) {
                             ++$deleted;
-                            ++$count;
                             $this->bufferedDelete($id);
                         }
                     }
@@ -1015,10 +1016,11 @@ class SolrUpdater
                 ];
                 $this->db->saveState($state);
             }
+
             $this->log->logInfo(
                 'updateRecords',
-                "Total $count individual records (of which $deleted deleted) with "
-                . "$mergedComponents merged parts $verb"
+                "Total $count individual, $deleted deleted and"
+                    . " $mergedComponents included child records $verb"
             );
 
             if ($childPid) {
@@ -1114,12 +1116,15 @@ class SolrUpdater
      *                                   ones already in the Solr index and write any
      *                                   differences in a file given in this
      *                                   parameter
+     * @param bool        $checkParent   Whether to check that the parent process is
+     *                                   alive
      *
      * @throws Exception
      * @return boolean Whether anything was updated
      */
     protected function processMerged(
-        $mongoFromDate, $sourceId, $singleId, $noCommit, $delete, $compare
+        $mongoFromDate, $sourceId, $singleId, $noCommit, $delete, $compare,
+        $checkParent
     ) {
         $verb = $compare ? 'compared' : ($this->dumpPrefix ? 'dumped' : 'indexed');
         $initVerb = $compare
@@ -1211,6 +1216,9 @@ class SolrUpdater
                 ['projection' => ['dedup_id' => 1]]
             );
             foreach ($records as $record) {
+                if ($checkParent) {
+                    $this->checkParentIsAlive();
+                }
                 if (isset($this->terminate)) {
                     $this->log->logInfo(
                         'processMerged',
@@ -1254,6 +1262,9 @@ class SolrUpdater
             $records = $this->db->findDedups($dedupParams);
             $count = 0;
             foreach ($records as $record) {
+                if ($checkParent) {
+                    $this->checkParentIsAlive();
+                }
                 if (isset($this->terminate)) {
                     $this->log->logInfo('processMerged', 'Termination upon request');
                     $this->db->dropQueueCollection($collectionName);
@@ -1327,6 +1338,9 @@ class SolrUpdater
             [$this, 'reconnectDatabase']
         );
         foreach ($keys as $key) {
+            if ($checkParent) {
+                $this->checkParentIsAlive();
+            }
             if (isset($this->terminate)) {
                 throw new \Exception('Execution termination requested');
             }
@@ -1362,14 +1376,14 @@ class SolrUpdater
                     }
                 }
             }
-            if ($count >= $lastDisplayedCount + 1000) {
-                $lastDisplayedCount = $count;
+            if ($count + $deleted >= $lastDisplayedCount + 1000) {
+                $lastDisplayedCount = $count + $deleted;
                 $pc->add($count);
                 $avg = $pc->getSpeed();
                 $this->log->logInfo(
                     'processMerged',
-                    "$count merged records (of which $deleted deleted) with "
-                    . "$mergedComponents merged parts $verb, $avg records/sec"
+                    "$count merged, $deleted deleted and $mergedComponents"
+                        . " included child records $verb, $avg records/sec"
                 );
             }
         }
@@ -1420,10 +1434,14 @@ class SolrUpdater
 
         $this->log->logInfo(
             'processMerged',
-            "Total $count merged records (of which $deleted deleted) with "
-            . "$mergedComponents merged parts $verb"
+            "Total $count merged, $deleted deleted and $mergedComponents"
+                . " included child records $verb"
         );
-        pcntl_signal(SIGINT, SIG_DFL);
+
+        if (function_exists('pcntl_signal')) {
+            pcntl_signal(SIGINT, SIG_DFL);
+            pcntl_signal(SIGTERM, SIG_DFL);
+        }
         return $count > 0;
     }
 
