@@ -92,6 +92,11 @@ class MappingFilesTest extends AbstractTest
         $this->assertEquals(['a', 'b'], $result);
 
         $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['fi=val4', $mapping]
+        );
+        $this->assertEquals('c', $result);
+
+        $result = $this->callProtected(
             $fieldMapper, 'mapValue', ['val4', $mapping]
         );
         $this->assertEquals('def', $result);
