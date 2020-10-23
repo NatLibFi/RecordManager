@@ -66,6 +66,8 @@ class Lrmi extends Qdc
 
         $doc = $this->doc;
 
+        $data['record_format'] = 'lrmi';
+
         $topics = array_map(
             function ($topic) {
                 return $topic['value'];
@@ -111,16 +113,6 @@ class Lrmi extends Qdc
     public function getFormat()
     {
         return 'LearningMaterial';
-    }
-
-    /**
-     * Return record format.
-     *
-     * @return string
-     */
-    public function getRecordFormat()
-    {
-        return 'lrmi';
     }
 
     /**

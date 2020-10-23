@@ -112,13 +112,13 @@ class Qdc extends Base
         $data = $this->getFullTextFields($this->doc);
 
         $doc = $this->doc;
-        $data['record_format'] = $this->getRecordFormat();
         $data['ctrlnum'] = trim((string)$doc->recordID);
         $data['fullrecord'] = $doc->asXML();
         $data['allfields'] = $this->getAllFields();
         $data['language'] = $this->getLanguages();
 
         $data['format'] = $this->getFormat();
+        $data['record_format'] = 'qdc';
         foreach ($this->getValues('creator') as $author) {
             $data['author'][]
                 = MetadataUtils::stripTrailingPunctuation($author);
@@ -320,16 +320,6 @@ class Qdc extends Base
     public function getFormat()
     {
         return $this->doc->type ? trim((string)$this->doc->type) : 'Unknown';
-    }
-
-    /**
-     * Return record format.
-     *
-     * @return string
-     */
-    public function getRecordFormat()
-    {
-        return 'qdc';
     }
 
     /**
