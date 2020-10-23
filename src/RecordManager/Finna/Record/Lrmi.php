@@ -28,8 +28,6 @@
  */
 namespace RecordManager\Finna\Record;
 
-use RecordManager\Base\Utils\MetadataUtils;
-
 /**
  * Lrmi record class
  *
@@ -42,8 +40,24 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Lrmi extends Qdc
+class Lrmi extends \RecordManager\Base\Record\Lrmi
 {
+    /**
+     * Fields that are not included in allfield.
+     *
+     * @var array
+     */
+    protected $ignored_allfields = [
+        'format', 'id', 'identifier', 'date', 'dateCreated', 'dateModified',
+        'filesize', 'inLanguage', 'position', 'recordID', 'rights', 'targetUrl',
+        'url'
+    ];
+
+    use QdcRecordTrait {
+        toSolrArray as _toSolrArray;
+        getUrls as _getUrls;
+    }
+
     /**
      * Return fields to be indexed in Solr
      *
@@ -55,41 +69,11 @@ class Lrmi extends Qdc
      */
     public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
-        $data = parent::toSolrArray();
+        $data = $this->_toSolrArray();
 
         $doc = $this->doc;
 
-        $topics = $topicIds = [];
-        foreach ($this->getTopics() as $topic) {
-            $topics[] = $topic['value'];
-            if ($id = $topic['id']) {
-                $topicIds[] = $id;
-            }
-        }
-        $data['topic'] = array_merge($data['topic'] ?? [], $topics);
-        $data['topic_facet'] = array_merge($data['topic_facet'] ?? [], $topics);
-        $data['topic_uri_str_mv']
-            = array_merge($data['topic_uri_str_mv'] ?? [], $topicIds);
-
-        $corporateAuthors = [];
-        if (isset($doc->author)) {
-            foreach ($doc->author as $author) {
-                if (isset($author->organization)) {
-                    foreach ($author->organization as $organization) {
-                        if (isset($organization->legalName)) {
-                            $corporateAuthors[]
-                                = trim((string)$organization->legalName);
-                        }
-                    }
-                }
-            }
-            $data['author_corporate'] = $corporateAuthors;
-        }
-        $data['author_facet'] = array_merge($data['author2'], $corporateAuthors);
-
-        $languages = [];
-
-        // Materials and languages
+        // Materials
         if (isset($doc->material)) {
             $data['online_boolean'] = true;
             $data['online_str_mv'] = $this->source;
@@ -97,8 +81,6 @@ class Lrmi extends Qdc
             $data['free_online_str_mv'] = $this->source;
 
             foreach ($doc->material as $material) {
-                $languages[] = (string)$material->inLanguage ?? '';
-
                 if ($url = (string)$material->url ?? '') {
                     $link = [
                         'url' => $url,
@@ -109,9 +91,6 @@ class Lrmi extends Qdc
                 }
             }
         }
-
-        $data['language']
-            = MetadataUtils::normalizeLanguageStrings(array_unique($languages));
 
         // Facets
         foreach ($doc->educationalAudience as $audience) {
@@ -131,132 +110,17 @@ class Lrmi extends Qdc
             $data['educational_material_type_str_mv'][] = (string)$type;
         }
 
-        return $data;
-    }
-
-    /**
-     * Return format from predefined values
-     *
-     * @return string
-     */
-    public function getFormat()
-    {
-        return 'LearningMaterial';
-    }
-
-    /**
-     * Return record format.
-     *
-     * @return string
-     */
-    public function getRecordFormat()
-    {
-        return 'lrmi';
-    }
-
-    /**
-     * Get secondary authors
-     *
-     * @return array
-     */
-    protected function getSecondaryAuthors()
-    {
-        $result = [];
-        if (isset($this->doc->author)) {
-            foreach ($this->doc->author as $author) {
-                if (isset($author->person)) {
-                    foreach ($author->person as $person) {
-                        if (isset($person->name)) {
-                            $result[] = trim((string)$person->name);
-                        }
-                    }
-                }
-            }
-        }
-        return $result;
-    }
-
-    /**
-     * Get topics.
-     *
-     * @return array
-     */
-    public function getTopics()
-    {
-        $result = [];
-        foreach ($this->doc->about as $about) {
-            if (!isset($about->thing->name)) {
-                continue;
-            }
-            $subject = $about->thing;
-            $value = (string)$subject->name;
-            $id = (string)($subject->identifier ?? '');
-
-            if (!preg_match('/(http|https):\/\/(.*)/', $id, $matches)) {
-                $id = null;
-            }
-
-            if ($id && isset($matches[2])) {
-                $id = 'http://' . $matches[2];
-            }
-
-            $result[] = compact('value', 'id');
-        }
-        return $result;
-    }
-
-    /**
-     * Get alignment object.
-     *
-     * @param string $type Type
-     *
-     * @return array
-     */
-    protected function getAlignmentObjects($type)
-    {
-        $result = [];
-        foreach ($this->doc->alignmentObject as $obj) {
-            if (isset($obj->alignmentType)
-                && $type === (string)$obj->alignmentType
-                && isset($obj->targetName)
-            ) {
-                $result[] = (string)$obj->targetName;
-            }
-        }
-        return $result;
-    }
-
-    /**
-     * Get an array of all fields relevant to allfields search
-     *
-     * @return array
-     */
-    protected function getAllFields()
-    {
-        $ignoredFields = [
-            'format', 'id', 'identifier', 'date', 'dateCreated', 'dateModified',
-            'filesize', 'inLanguage', 'position', 'recordID', 'rights', 'targetUrl',
-            'url'
-        ];
-
-        $allFields = [];
-        $iterator = new \RecursiveIteratorIterator(
-            new \SimpleXMLIterator($this->doc->asXML())
+        // Topic ids
+        $data['topic_uri_str_mv'] = array_merge(
+            $data['topic_uri_str_mv'] ?? [],
+            array_map(
+                function ($topic) {
+                    return $topic['id'];
+                }, $this->getTopics()
+            )
         );
-        $iterator->rewind();
-        $iterator->next();
 
-        while ($node = $iterator->current()) {
-            $tag = $node->getName();
-            $field = trim((string)$node);
-            $iterator->next();
-            if (in_array($tag, $ignoredFields) || !$field) {
-                continue;
-            }
-            $allFields[] = $field;
-        }
-
-        return $allFields;
+        return $data;
     }
 
     /**
@@ -266,17 +130,6 @@ class Lrmi extends Qdc
      */
     protected function getUrls()
     {
-        return [];
-    }
-
-    /**
-     * Get languages
-     *
-     * @return array
-     */
-    protected function getLanguages()
-    {
-        // Resolved together with doc->material
         return [];
     }
 }
