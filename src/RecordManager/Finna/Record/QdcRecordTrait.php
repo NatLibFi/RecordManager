@@ -54,17 +54,6 @@ trait QdcRecordTrait
     {
         $data = parent::toSolrArray($db);
 
-        // Nonstandard author fields
-        $authors = $this->getValues('author');
-        if ($authors) {
-            $data['author'] = array_shift($authors);
-            if (isset($data['author2'])) {
-                $data['author2'] = array_merge($authors, $data['author2']);
-            } else {
-                $data['author2'] = $authors;
-            }
-        }
-
         if (isset($data['publishDate'])) {
             $data['main_date_str']
                 = MetadataUtils::extractYear($data['publishDate']);
@@ -162,6 +151,32 @@ trait QdcRecordTrait
         $data['format_ext_str_mv'] = $data['format'];
 
         return $data;
+    }
+
+    /**
+     * Get primary authors
+     *
+     * @return array
+     */
+    public function getPrimaryAuthors()
+    {
+        $authors = $this->getValues('author');
+        if ($authors) {
+            return (array)array_shift($authors);
+        }
+        return parent::getPrimaryAuthors();
+    }
+
+    /**
+     * Get secondary authors
+     *
+     * @return array
+     */
+    protected function getSecondaryAuthors()
+    {
+        return array_merge(
+            parent::getSecondaryAuthors(), $this->getValues('author') ?? []
+        );
     }
 
     /**
