@@ -116,7 +116,7 @@ class Lrmi extends \RecordManager\Base\Record\Lrmi
             array_map(
                 function ($topic) {
                     return $topic['id'];
-                }, $this->getTopics()
+                }, $this->getTopicsExtended()
             )
         );
 

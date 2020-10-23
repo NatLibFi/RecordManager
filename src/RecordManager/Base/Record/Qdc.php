@@ -151,7 +151,7 @@ class Qdc extends Base
         $data['isbn'] = $this->getISBNs();
         $data['issn'] = $this->getISSNs();
 
-        $data['topic'] = $data['topic_facet'] = $this->getValues('subject');
+        $data['topic'] = $data['topic_facet'] = $this->getTopics();
         $data['url'] = $this->getUrls();
 
         foreach ($this->getValues('description') as $description) {
@@ -431,6 +431,16 @@ class Qdc extends Base
             }
         }
         return MetadataUtils::normalizeLanguageStrings($languages);
+    }
+
+    /**
+     * Get topics.
+     *
+     * @return array
+     */
+    public function getTopics()
+    {
+        return $this->getValues('subject');
     }
 
     /**

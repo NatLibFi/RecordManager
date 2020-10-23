@@ -68,14 +68,6 @@ class Lrmi extends Qdc
 
         $data['record_format'] = 'lrmi';
 
-        $topics = array_map(
-            function ($topic) {
-                return $topic['value'];
-            }, $this->getTopics()
-        );
-        $data['topic'] = array_merge($data['topic'] ?? [], $topics);
-        $data['topic_facet'] = array_merge($data['topic_facet'] ?? [], $topics);
-
         $languages = [];
         if (isset($doc->material)) {
             foreach ($doc->material as $material) {
@@ -170,6 +162,20 @@ class Lrmi extends Qdc
      * @return array
      */
     public function getTopics()
+    {
+        return array_map(
+            function ($topic) {
+                return $topic['value'];
+            }, $this->getTopicsExtended()
+        );
+    }
+
+    /**
+     * Get topics with value and id.
+     *
+     * @return array
+     */
+    public function getTopicsExtended()
     {
         $result = [];
         foreach ($this->doc->about as $about) {
