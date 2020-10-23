@@ -424,4 +424,261 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
 
         $this->compareArray($expected, $fields, 'toSolrArray');
     }
+
+    /**
+     * Test MARC Thesis Record handling
+     *
+     * @return void
+     */
+    public function testMarcThesis1()
+    {
+        $record = $this->createRecord(Marc::class, 'marc-thesis1.xml');
+        $fields = $record->toSolrArray();
+        unset($fields['fullrecord']);
+
+        $expected = [
+            'record_format' => 'marc',
+            'building' => [],
+            'lccn' => '',
+            'ctrlnum' => [],
+            'allfields' => [
+                0 => 'Author, Test',
+                1 => 'Thesis Title',
+                2 => 'Test Author',
+                3 => 'Helsinki]',
+                4 => 'Kansalliskirjasto',
+                5 => '2020',
+                6 => 'AMK-opinnäytetypo',
+                7 => 'Sample Program',
+                8 => '2020.',
+                9 => 'AMK-opinnäytetyö',
+                10 => 'Second Sample Program',
+                11 => 'testaus',
+            ],
+            'language' => [
+                0 => 'fin',
+            ],
+            'format' => 'BachelorsThesisPolytechnic',
+            'author' => [
+                0 => 'Author, Test',
+            ],
+            'author_role' => [
+                0 => '-',
+            ],
+            'author_fuller' => [],
+            'author_sort' => 'Author, Test',
+            'author2' => [
+                0 => 'Author, Test',
+            ],
+            'author2_role' => [
+                0 => '-',
+            ],
+            'author2_fuller' => [],
+            'author_corporate' => [],
+            'author_corporate_role' => [],
+            'author2_id_str_mv' => [],
+            'author2_id_role_str_mv' => [],
+            'author_additional' => [],
+            'title' => 'Thesis Title',
+            'title_sub' => '',
+            'title_short' => 'Thesis Title',
+            'title_full' => 'Thesis Title / Test Author',
+            'title_alt' => [],
+            'title_old' => [],
+            'title_new' => [],
+            'title_sort' => 'thesis title / test author',
+            'series' => [],
+            'publisher' => [
+                0 => 'Kansalliskirjasto',
+            ],
+            'publishDateSort' => '2020',
+            'publishDate' => [
+                0 => '2020',
+            ],
+            'physical' => [],
+            'dateSpan' => [],
+            'edition' => '',
+            'contents' => [],
+            'isbn' => [],
+            'issn' => [],
+            'callnumber-first' => '614.8',
+            'callnumber-raw' => [
+                0 => '614.8',
+            ],
+            'callnumber-sort' => '614.8',
+            'topic' => [
+                0 => 'testaus',
+            ],
+            'genre' => [],
+            'geographic' => [],
+            'era' => [],
+            'topic_facet' => [
+                0 => 'testaus',
+            ],
+            'genre_facet' => [],
+            'geographic_facet' => [],
+            'era_facet' => [],
+            'url' => [],
+            'illustrated' => 'Not Illustrated',
+            'main_date_str' => '2020',
+            'main_date' => '2020-01-01T00:00:00Z',
+            'publication_daterange' => '[2020-01-01 TO 2020-12-31]',
+            'search_daterange_mv' => [
+                0 => '[2020-01-01 TO 2020-12-31]',
+            ],
+            'publication_place_txt_mv' => [
+                0 => 'Helsinki',
+            ],
+            'subtitle_lng_str_mv' => [],
+            'original_lng_str_mv' => [],
+            'classification_txt_mv' => [
+                0 => 'udk 614.8',
+            ],
+            'major_genre_str_mv' => 'nonfiction',
+            'classification_str_mv' => [
+                0 => 'udk 614.8',
+            ],
+            'source_str_mv' => '__unit_test_no_source__',
+            'datasource_str_mv' => [
+                0 => '__unit_test_no_source__',
+            ],
+            'other_issn_str_mv' => [],
+            'other_issn_isn_mv' => [],
+            'linking_issn_str_mv' => [],
+            'holdings_txtP_mv' => [],
+            'author_facet' => [
+                0 => 'Author, Test',
+                1 => 'Author, Test',
+            ],
+            'format_ext_str_mv' => 'BachelorsThesisPolytechnic',
+        ];
+
+        $this->compareArray($expected, $fields, 'toSolrArray');
+    }
+
+    /**
+     * Test MARC Thesis Record handling
+     *
+     * @return void
+     */
+    public function testMarcThesis2()
+    {
+        $record = $this->createRecord(Marc::class, 'marc-thesis2.xml');
+        $fields = $record->toSolrArray();
+        unset($fields['fullrecord']);
+
+        $expected = [
+            'record_format' => 'marc',
+            'building' => [],
+            'lccn' => '',
+            'ctrlnum' => [],
+            'allfields' => [
+                0 => 'Author, Test',
+                1 => 'Thesis Title',
+                2 => 'Test Author',
+                3 => 'Helsinki]',
+                4 => 'Kansalliskirjasto',
+                5 => '2020',
+                6 => 'testaus',
+            ],
+            'language' => [
+                0 => 'fin',
+            ],
+            'format' => 'BachelorsThesisPolytechnic',
+            'author' => [
+                0 => 'Author, Test',
+            ],
+            'author_role' => [
+                0 => '-',
+            ],
+            'author_fuller' => [],
+            'author_sort' => 'Author, Test',
+            'author2' => [
+                0 => 'Author, Test',
+            ],
+            'author2_role' => [
+                0 => '-',
+            ],
+            'author2_fuller' => [],
+            'author_corporate' => [],
+            'author_corporate_role' => [],
+            'author2_id_str_mv' => [],
+            'author2_id_role_str_mv' => [],
+            'author_additional' => [],
+            'title' => 'Thesis Title',
+            'title_sub' => '',
+            'title_short' => 'Thesis Title',
+            'title_full' => 'Thesis Title / Test Author',
+            'title_alt' => [],
+            'title_old' => [],
+            'title_new' => [],
+            'title_sort' => 'thesis title / test author',
+            'series' => [],
+            'publisher' => [
+                0 => 'Kansalliskirjasto',
+            ],
+            'publishDateSort' => '2020',
+            'publishDate' => [
+                0 => '2020',
+            ],
+            'physical' => [],
+            'dateSpan' => [],
+            'edition' => '',
+            'contents' => [],
+            'isbn' => [],
+            'issn' => [],
+            'callnumber-first' => '614.8',
+            'callnumber-raw' => [
+                0 => '614.8',
+            ],
+            'callnumber-sort' => '614.8',
+            'topic' => [
+                0 => 'testaus',
+            ],
+            'genre' => [],
+            'geographic' => [],
+            'era' => [],
+            'topic_facet' => [
+                0 => 'testaus',
+            ],
+            'genre_facet' => [],
+            'geographic_facet' => [],
+            'era_facet' => [],
+            'url' => [],
+            'illustrated' => 'Not Illustrated',
+            'main_date_str' => '2020',
+            'main_date' => '2020-01-01T00:00:00Z',
+            'publication_daterange' => '[2020-01-01 TO 2020-12-31]',
+            'search_daterange_mv' => [
+                0 => '[2020-01-01 TO 2020-12-31]',
+            ],
+            'publication_place_txt_mv' => [
+                0 => 'Helsinki',
+            ],
+            'subtitle_lng_str_mv' => [],
+            'original_lng_str_mv' => [],
+            'classification_txt_mv' => [
+                0 => 'udk 614.8',
+            ],
+            'major_genre_str_mv' => 'nonfiction',
+            'classification_str_mv' => [
+                0 => 'udk 614.8',
+            ],
+            'source_str_mv' => '__unit_test_no_source__',
+            'datasource_str_mv' => [
+                0 => '__unit_test_no_source__',
+            ],
+            'other_issn_str_mv' => [],
+            'other_issn_isn_mv' => [],
+            'linking_issn_str_mv' => [],
+            'holdings_txtP_mv' => [],
+            'author_facet' => [
+                0 => 'Author, Test',
+                1 => 'Author, Test',
+            ],
+            'format_ext_str_mv' => 'BachelorsThesisPolytechnic',
+        ];
+
+        $this->compareArray($expected, $fields, 'toSolrArray');
+    }
 }
