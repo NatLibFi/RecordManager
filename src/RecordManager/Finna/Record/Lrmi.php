@@ -55,7 +55,6 @@ class Lrmi extends \RecordManager\Base\Record\Lrmi
 
     use QdcRecordTrait {
         toSolrArray as _toSolrArray;
-        getUrls as _getUrls;
     }
 
     /**
