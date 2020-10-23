@@ -73,7 +73,6 @@ class Lrmi extends Qdc
                 $languages[] = (string)$material->inLanguage ?? '';
             }
         }
-
         $data['language']
             = MetadataUtils::normalizeLanguageStrings(array_unique($languages));
 
