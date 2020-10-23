@@ -1,6 +1,6 @@
 <?php
 /**
- * Lrmi record trait.
+ * Qdc record trait.
  *
  * PHP version 7
  *
