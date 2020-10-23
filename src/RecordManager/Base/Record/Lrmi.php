@@ -63,10 +63,9 @@ class Lrmi extends Qdc
     public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
         $data = parent::toSolrArray();
+        $data['record_format'] = 'lrmi';
 
         $doc = $this->doc;
-
-        $data['record_format'] = 'lrmi';
 
         $languages = [];
         if (isset($doc->material)) {
