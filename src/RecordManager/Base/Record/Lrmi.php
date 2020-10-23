@@ -76,22 +76,6 @@ class Lrmi extends Qdc
         $data['topic'] = array_merge($data['topic'] ?? [], $topics);
         $data['topic_facet'] = array_merge($data['topic_facet'] ?? [], $topics);
 
-        $corporateAuthors = [];
-        if (isset($doc->author)) {
-            foreach ($doc->author as $author) {
-                if (isset($author->organization)) {
-                    foreach ($author->organization as $organization) {
-                        if (isset($organization->legalName)) {
-                            $corporateAuthors[]
-                                = trim((string)$organization->legalName);
-                        }
-                    }
-                }
-            }
-            $data['author_corporate'] = $corporateAuthors;
-        }
-        $data['author_facet'] = array_merge($data['author2'], $corporateAuthors);
-
         $languages = [];
         if (isset($doc->material)) {
             foreach ($doc->material as $material) {
@@ -116,6 +100,26 @@ class Lrmi extends Qdc
     }
 
     /**
+     * Dedup: Return main author (format: Last, First)
+     *
+     * @return string
+     */
+    public function getMainAuthor()
+    {
+        return '';
+    }
+
+    /**
+     * Get primary authors
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthors()
+    {
+        return [];
+    }
+
+    /**
      * Get secondary authors
      *
      * @return array
@@ -129,6 +133,29 @@ class Lrmi extends Qdc
                     foreach ($author->person as $person) {
                         if (isset($person->name)) {
                             $result[] = trim((string)$person->name);
+                        }
+                    }
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Get corporate authors
+     *
+     * @return array
+     */
+    protected function getCorporateAuthors()
+    {
+        $result = [];
+        if (isset($this->doc->author)) {
+            foreach ($this->doc->author as $author) {
+                if (isset($author->organization)) {
+                    foreach ($author->organization as $organization) {
+                        if (isset($organization->legalName)) {
+                            $result[]
+                                = trim((string)$organization->legalName);
                         }
                     }
                 }

@@ -119,14 +119,13 @@ class Qdc extends Base
 
         $data['format'] = $this->getFormat();
         $data['record_format'] = 'qdc';
-        foreach ($this->getValues('creator') as $author) {
-            $data['author'][]
-                = MetadataUtils::stripTrailingPunctuation($author);
-        }
+
+        $data['author'] = $this->getPrimaryAuthors();
+        $data['author2'] = $this->getSecondaryAuthors();
+        $data['author_corporate'] = $this->getCorporateAuthors();
         if (!empty($data['author'])) {
             $data['author_sort'] = $data['author'][0];
         }
-        $data['author2'] = $this->getSecondaryAuthors();
 
         foreach ($doc->title as $title) {
             if (!isset($data['title'])
@@ -211,6 +210,21 @@ class Qdc extends Base
     }
 
     /**
+     * Get primary authors
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthors()
+    {
+        $result = [];
+        foreach ($this->getValues('creator') as $author) {
+            $result[]
+                = MetadataUtils::stripTrailingPunctuation($author);
+        }
+        return $result;
+    }
+
+    /**
      * Get secondary authors
      *
      * @return array
@@ -223,6 +237,16 @@ class Qdc extends Base
                 = MetadataUtils::stripTrailingPunctuation($contributor);
         }
         return $result;
+    }
+
+    /**
+     * Get corporate authors
+     *
+     * @return array
+     */
+    protected function getCorporateAuthors()
+    {
+        return [];
     }
 
     /**
