@@ -1,10 +1,10 @@
 <?php
 /**
- * Qdc record class
+ * LrmiOnkiLightEnrichment Class
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2020.
+ * Copyright (C) The National Library of Finland 2014-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -22,23 +22,48 @@
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Finna\Record;
+namespace RecordManager\Base\Enrichment;
 
 /**
- * Qdc record class
+ * LrmiOnkiLightEnrichment Class
  *
- * This is a class for processing Qualified Dublin Core records.
+ * This is a class for enrichment of MARC records from an ONKI Light source.
  *
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Qdc extends \RecordManager\Base\Record\Qdc
+class LrmiOnkiLightEnrichment extends OnkiLightEnrichment
 {
-    use QdcRecordTrait;
+    /**
+     * Enrich the record and return any additions in solrArray
+     *
+     * @param string $sourceId  Source ID
+     * @param object $record    Metadata Record
+     * @param array  $solrArray Metadata to be sent to Solr
+     *
+     * @return void
+     */
+    public function enrich($sourceId, $record, &$solrArray)
+    {
+        if (!($record instanceof \RecordManager\Finna\Record\Lrmi)) {
+            return;
+        }
+
+        foreach ($record->getTopics() as $topic) {
+            if ($id = $topic['id'] ?? null) {
+                $this->enrichField(
+                    $sourceId, $record, $solrArray,
+                    $id, 'topic'
+                );
+            }
+        }
+    }
 }
