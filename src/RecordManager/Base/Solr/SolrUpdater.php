@@ -1883,8 +1883,10 @@ class SolrUpdater
             }
 
             $this->settings[$source]['extraFields'] = [];
-            if (isset($settings['extrafields'])) {
-                foreach ($settings['extrafields'] as $extraField) {
+            $extraFields = $settings['extraFields'] ?? $settings['extrafields']
+                ?? [];
+            if ($extraFields) {
+                foreach ($extraFields as $extraField) {
                     list($field, $value) = explode(':', $extraField, 2);
                     $this->settings[$source]['extraFields'][] = [$field => $value];
                 }
