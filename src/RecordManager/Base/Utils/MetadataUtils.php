@@ -403,7 +403,15 @@ class MetadataUtils
      */
     public static function stripTrailingPunctuation($str, $additional = '')
     {
-        $str = rtrim($str, ' /:;,=([' . $additional);
+        $basic = ' /:;,=([';
+        if ($additional) {
+            // Use preg_replace for multibyte support
+            $str = preg_replace(
+                '/[' . preg_quote($basic . $additional, '/') . ']*$/u', '', $str
+            );
+        } else {
+            $str = rtrim($str, $basic);
+        }
 
         // Don't replace an initial letter followed by period
         // (e.g. string "Smith, A.")
@@ -447,7 +455,10 @@ class MetadataUtils
         $str,
         $punctuation = " \t\\#*!¡?/:;.,=(['\"´`” ̈"
     ) {
-        return ltrim($str, $punctuation);
+        // Use preg_replace for multibyte support
+        return preg_replace(
+            '/^[' . preg_quote($punctuation, '/') . ']*/u', '', $str
+        );
     }
 
     /**

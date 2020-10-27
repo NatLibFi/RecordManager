@@ -85,4 +85,57 @@ class MetadataUtilsTest extends AbstractTest
             'öäåöäåui', MetadataUtils::normalizeKey('ÖÄÅöäåüï', 'NFKC')
         );
     }
+
+    /**
+     * Test leading punctuation removal
+     *
+     * @return void
+     */
+    public function testStripLeadingPunctuation()
+    {
+        $values = [
+            '.123' => '123',
+            '/ . foo.' => 'foo.',
+            '© 1979' => '© 1979',
+            '-foo' => '-foo',
+        ];
+        foreach ($values as $from => $to) {
+            $this->assertEquals(
+                $to, MetadataUtils::stripLeadingPunctuation($from), $from
+            );
+        }
+
+        $this->assertEquals(
+            'foo', MetadataUtils::stripLeadingPunctuation('foo', '.-')
+        );
+    }
+
+    /**
+     * Test trailing punctuation removal
+     *
+     * @return void
+     */
+    public function testStripTrailingPunctuation()
+    {
+        $values = [
+            '123.' => '123.',
+            'foo /' => 'foo',
+            '1979© ' => '1979©',
+            'foo--' => 'foo--',
+            'bar /:;,=([' => 'bar',
+        ];
+        foreach ($values as $from => $to) {
+            $this->assertEquals(
+                $to, MetadataUtils::stripTrailingPunctuation($from), $from
+            );
+        }
+
+        $this->assertEquals(
+            'foo', MetadataUtils::stripTrailingPunctuation('foo/]', ']')
+        );
+
+        $this->assertEquals(
+            'foo', MetadataUtils::stripTrailingPunctuation('foo/:©', '©')
+        );
+    }
 }
