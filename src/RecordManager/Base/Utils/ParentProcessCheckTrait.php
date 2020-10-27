@@ -1,10 +1,10 @@
 <?php
 /**
- * LcCallNumber tests
+ * Parent process health check trait
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2015
+ * Copyright (C) The National Library of Finland 2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,10 +25,10 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-use RecordManager\Base\Utils\LcCallNumber;
+namespace RecordManager\Base\Utils;
 
 /**
- * LcCallNumber tests
+ * Parent process health check trait
  *
  * @category DataManagement
  * @package  RecordManager
@@ -36,28 +36,37 @@ use RecordManager\Base\Utils\LcCallNumber;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class LcCallNumberTest extends AbstractTest
+trait ParentProcessCheckTrait
 {
     /**
-     * Tests for call number handling
+     * Last time the parent alive check was made
+     *
+     * @var int
+     */
+    protected $lastParentCheckTime = 0;
+
+    /**
+     * Check that the parent process is alive
      *
      * @return void
+     * @throws \Exception
      */
-    public function testCallNumber()
+    protected function checkParentIsAlive()
     {
-        $cn = new LcCallNumber('AC901.M5 vol. 1013, no. 8');
-        $this->assertTrue($cn->isValid());
-        $this->assertEquals(
-            'AC 3901', $cn->getSortKey()
-        );
-
-        $cn = new LcCallNumber('GV1101 .D7 1980');
-        $this->assertTrue($cn->isValid());
-        $this->assertEquals(
-            'GV 41101', $cn->getSortKey()
-        );
-
-        $cn = new LcCallNumber('XV1101 .D7 1980');
-        $this->assertFalse($cn->isValid());
+        $time = microtime(true);
+        if (0 === $this->lastParentCheckTime
+            || $time - $this->lastParentCheckTime > 5
+        ) {
+            $parentPid = posix_getpgrp();
+            if (!posix_kill($parentPid, 0)) {
+                $pid = getmypid();
+                echo "Fatal: worker $pid parent process $parentPid has died"
+                    . " unexpectedly\n";
+                throw new \Exception(
+                    "Parent process $parentPid has died unexpectedly"
+                );
+            }
+            $this->lastParentCheckTime = $time;
+        }
     }
 }

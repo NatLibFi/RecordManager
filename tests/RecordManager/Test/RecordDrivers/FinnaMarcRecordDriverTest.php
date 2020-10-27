@@ -25,6 +25,9 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
+namespace RecordManager\Test\RecordDrivers;
+
+use RecordManager\Finna\Record\Marc;
 
 /**
  * Finna MARC Record Driver Test Class
@@ -37,8 +40,6 @@
  */
 class FinnaMarcRecordDriverTest extends RecordDriverTest
 {
-    protected $driver = '\RecordManager\Finna\Record\Marc';
-
     /**
      * Test MARC Record handling
      *
@@ -46,7 +47,7 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
      */
     public function testMarc1()
     {
-        $record = $this->createRecord('marc1.xml');
+        $record = $this->createRecord(Marc::class, 'marc1.xml');
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -71,7 +72,7 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
                 5 => '17. uud. p.',
                 6 => 'Helsinki',
                 7 => 'Tammi',
-                8 => '2013.',
+                8 => '2345 [2013]',
                 9 => '18. p. 2013',
                 10 => 'oppaat',
                 11 => 'ft: kirjoittaminen',
@@ -255,7 +256,7 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
      */
     public function testMarc2()
     {
-        $record = $this->createRecord('marc2.xml');
+        $record = $this->createRecord(Marc::class, 'marc2.xml');
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 

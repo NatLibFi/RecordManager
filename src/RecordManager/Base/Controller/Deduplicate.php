@@ -71,6 +71,7 @@ class Deduplicate extends AbstractBase
         // Install a signal handler so that we can exit cleanly if interrupted
         if (function_exists('pcntl_signal')) {
             pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
+            pcntl_signal(SIGTERM, [$this, 'sigIntHandler']);
             $this->logger->logInfo('deduplicate', 'Interrupt handler set');
         } else {
             $this->logger->logInfo(

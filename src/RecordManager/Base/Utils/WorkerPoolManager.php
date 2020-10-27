@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2017.
+ * Copyright (C) The National Library of Finland 2017-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -44,6 +44,8 @@ if (function_exists('pcntl_async_signals')) {
  */
 class WorkerPoolManager
 {
+    use ParentProcessCheckTrait;
+
     /**
      * Request queue
      *
@@ -125,7 +127,7 @@ class WorkerPoolManager
             foreach ($this->workerPools as $workers) {
                 foreach ($workers as $worker) {
                     socket_close($worker['socket']);
-                    posix_kill($worker['pid'], SIGTERM);
+                    posix_kill($worker['pid'], SIGHUP);
                 }
             }
         }
@@ -200,9 +202,9 @@ class WorkerPoolManager
                     if (null !== $initMethod) {
                         call_user_func($initMethod);
                     }
-                    while ($request = $this->readSocket($childSocket, true)) {
+                    while ($request = $this->readSocket($childSocket, true, true)) {
                         $result = call_user_func_array($runMethod, $request);
-                        $this->writeSocket($childSocket, ['r' => $result]);
+                        $this->writeSocket($childSocket, ['r' => $result], true);
                     }
                 } catch (\Exception $e) {
                     echo 'Fatal: Worker ' . getmypid()
@@ -213,7 +215,8 @@ class WorkerPoolManager
                         [
                             'exception' => $e->getMessage() . "\nStack trace: "
                             . $e->getTraceAsString()
-                        ]
+                        ],
+                        true
                     );
                     socket_close($childSocket);
                     exit(255);
@@ -392,16 +395,20 @@ class WorkerPoolManager
     /**
      * Read from a socket
      *
-     * @param resource $socket Socket
-     * @param bool     $block  Whether to block waiting for data
+     * @param resource $socket      Socket
+     * @param bool     $block       Whether to block waiting for data
+     * @param bool     $checkParent Whether to chek that the parent process is alive
      *
      * @return mixed
      */
-    public function readSocket($socket, $block = false)
+    public function readSocket($socket, $block = false, $checkParent = false)
     {
         $msgLen = '';
         $received = 0;
         do {
+            if ($checkParent) {
+                $this->checkParentIsAlive();
+            }
             $read = [$socket];
             $write = null;
             $except = null;
@@ -441,6 +448,9 @@ class WorkerPoolManager
         $message = '';
         $received = 0;
         while ($received < $messageLength) {
+            if ($checkParent) {
+                $this->checkParentIsAlive();
+            }
             $buffer = '';
             $result = socket_recv(
                 $socket, $buffer, $messageLength - $received, MSG_WAITALL
@@ -466,12 +476,13 @@ class WorkerPoolManager
     /**
      * Write to a socket
      *
-     * @param resource $socket Socket
-     * @param mixed    $data   Serializable data
+     * @param resource $socket      Socket
+     * @param mixed    $data        Serializable data
+     * @param bool     $checkParent Whether to check that parent process is alive
      *
      * @return bool
      */
-    public function writeSocket($socket, $data)
+    public function writeSocket($socket, $data, $checkParent = false)
     {
         $message = serialize($data);
         $length = strlen($message);
@@ -484,6 +495,9 @@ class WorkerPoolManager
         $written = 0;
         $startTime = microtime(true);
         while (true) {
+            if ($checkParent) {
+                $this->checkParentIsAlive();
+            }
             $read = null;
             $write = [$socket];
             $except = null;
@@ -577,7 +591,7 @@ class WorkerPoolManager
      * Check for any failed workers
      *
      * @return void
-     * @throws Exception
+     * @throws \Exception
      */
     protected function checkForStoppedWorkers()
     {

@@ -612,7 +612,8 @@ class Lido extends \RecordManager\Base\Record\Lido
         foreach ($this->getSubjectSetNodes() as $set) {
             $subject = $set->displaySubject;
             $label = $subject['label'];
-            $checkTitle = str_replace([',', ';'], ' ', (string)$subject) != $title;
+            $checkTitle
+                = trim(str_replace([',', ';'], ' ', (string)$subject)) != $title;
             if ((null === $label || 'aihe' === mb_strtolower($label, 'UTF-8'))
                 && $checkTitle
             ) {
@@ -1646,7 +1647,7 @@ class Lido extends \RecordManager\Base\Record\Lido
         $result = [];
         foreach ($this->getRelatedWorkSetNodes($relatedWorkRelType) as $set) {
             if (!empty($set->relatedWork->displayObject)) {
-                $result[] = (string)$set->relatedWork->displayObject;
+                $result[] = trim((string)$set->relatedWork->displayObject);
             }
         }
 

@@ -279,6 +279,8 @@ class MetadataUtils
                 break;
             }
         }
+        // Limit key length to 200 characters
+        $key = substr($key, 0, 200);
         return MetadataUtils::normalizeKey($key, $form);
     }
 

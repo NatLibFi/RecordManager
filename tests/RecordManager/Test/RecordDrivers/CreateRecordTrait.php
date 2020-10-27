@@ -1,10 +1,11 @@
 <?php
 /**
- * Qdc record class
+ * Trait for creating records
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2020.
+ * Copyright (C) Eero Heikkinen 2013.
+ * Copyright (C) The National Library of Finland 2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -21,24 +22,45 @@
  *
  * @category DataManagement
  * @package  RecordManager
+ * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Finna\Record;
+namespace RecordManager\Test\RecordDrivers;
+
+use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Utils\Logger;
 
 /**
- * Qdc record class
- *
- * This is a class for processing Qualified Dublin Core records.
+ * Trait for creating record
  *
  * @category DataManagement
  * @package  RecordManager
+ * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Qdc extends \RecordManager\Base\Record\Qdc
+trait CreateRecordTrait
 {
-    use QdcRecordTrait;
+    /**
+     * Create a sample record driver
+     *
+     * @param string $class    Record class
+     * @param string $sample   Sample record file
+     * @param array  $dsConfig Datasource config
+     *
+     * @return \RecordManager\Base\Record\Base
+     */
+    protected function createRecord($class, $sample, $dsConfig = [])
+    {
+        $logger = $this->createMock(Logger::class);
+        $recordFactory = new RecordFactory($logger, [], $dsConfig);
+        $sample = file_get_contents(__DIR__ . '/../../../samples/' . $sample);
+        $record = $recordFactory->createRecord(
+            $class, $sample, '__unit_test_no_id__', '__unit_test_no_source__'
+        );
+        return $record;
+    }
 }

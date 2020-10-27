@@ -251,38 +251,45 @@ class DedupHandler
         } else {
             $keys = [];
         }
-        if (!isset($record['title_keys'])
-            || !is_array($record['title_keys'])
-            || array_diff($record['title_keys'], $keys)
-        ) {
+        $oldKeys = (array)($record['title_keys'] ?? []);
+        if (array_diff($oldKeys, $keys)) {
             $record['title_keys'] = $keys;
             $result = true;
         }
-        if (empty($record['title_keys'])) {
+        if (isset($record['title_keys']) && empty($record['title_keys'])) {
             unset($record['title_keys']);
         }
 
         $keys = $metadataRecord->getISBNs();
-        if (!isset($record['isbn_keys'])
-            || !is_array($record['isbn_keys'])
-            || array_diff($record['isbn_keys'], $keys)
-        ) {
+        $oldKeys = (array)($record['isbn_keys'] ?? []);
+        if (array_diff($oldKeys, $keys)) {
             $record['isbn_keys'] = $keys;
             $result = true;
         }
-        if (empty($record['isbn_keys'])) {
+        if (isset($record['isbn_keys']) && empty($record['isbn_keys'])) {
             unset($record['isbn_keys']);
         }
 
         $keys = $metadataRecord->getUniqueIDs();
-        if (!isset($record['id_keys'])
-            || !is_array($record['id_keys'])
-            || array_diff($record['id_keys'], $keys)
-        ) {
+        $keys = array_map(
+            function ($s) {
+                return substr($s, 0, 200);
+            },
+            $keys
+        );
+        $oldKeys = (array)($record['id_keys'] ?? []);
+        if (array_diff($oldKeys, $keys)) {
+            // Make sure bad metadata doesn't result in overly long keys
+            array_map(
+                function ($s) {
+                    return substr($s, 0, 200);
+                },
+                $keys
+            );
             $record['id_keys'] = $keys;
             $result = true;
         }
-        if (empty($record['id_keys'])) {
+        if (isset($record['id_keys']) && empty($record['id_keys'])) {
             unset($record['id_keys']);
         }
 
@@ -1074,7 +1081,9 @@ class DedupHandler
                 'source_id' => $sourceId,
                 'host_record_id' => [
                     '$in' => array_values((array)$hostRecordId)
-                ]
+                ],
+                'deleted' => false,
+                'suppressed' => ['$in' => [null, false]],
             ]
         );
         $components = [];

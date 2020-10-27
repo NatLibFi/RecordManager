@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Finna\Record;
 
+use MongoDB\BSON\UTCDateTime;
+use MongoDB\Collection;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -81,6 +83,8 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     public function normalize()
     {
+        parent::normalize();
+
         // Kyyti enumeration from 362 to title
         if ($this->source == 'kyyti' && isset($this->fields['245'])
             && isset($this->fields['362'])
@@ -89,96 +93,6 @@ class Marc extends \RecordManager\Base\Record\Marc
             if ($enum) {
                 $this->fields['245'][0]['s'][] = ['n' => $enum];
             }
-        }
-
-        // Koha and Alma record normalization
-        $koha = $this->getDriverParam('kohaNormalization', false);
-        $alma = $this->getDriverParam('almaNormalization', false);
-        if ($koha || $alma) {
-            // Convert items to holdings
-            $useHome = $koha && $this->getDriverParam('kohaUseHomeBranch', false);
-            $holdings = [];
-            $availableBuildings = [];
-            foreach ($this->getFields('952') as $field952) {
-                $key = [];
-                $holding = [];
-                $branch = $this->getSubfield($field952, $useHome ? 'a' : 'b');
-                $key[] = $branch;
-                // Always use subfield 'b' for location regardless of where it came
-                // from
-                $holding[] = ['b' => $branch];
-                foreach (['c', 'h', 'o', '8'] as $code) {
-                    $value = $this->getSubfield($field952, $code);
-                    $key[] = $value;
-                    if ('' !== $value) {
-                        $holding[] = [$code => $value];
-                    }
-                }
-
-                if ($alma) {
-                    $available = $this->getSubfield($field952, '1') == 1;
-                } else {
-                    // Availability
-                    static $subfieldsExist = [
-                        '0', // Withdrawn
-                        '1', // Lost
-                        '4', // Damaged
-                        'q', // Due date
-                    ];
-                    $available = true;
-                    foreach ($subfieldsExist as $code) {
-                        if ($this->getSubfield($field952, $code)) {
-                            $available = false;
-                            break;
-                        }
-                    }
-                    if ($available) {
-                        $status = $this->getSubfield($field952, '7'); // Not for loan
-                        $available = $status === '0' || $status === '1';
-                    }
-                }
-
-                $key = implode('//', $key);
-                if ($available) {
-                    $availableBuildings[$key] = 1;
-                }
-
-                $holdings[$key] = $holding;
-            }
-            $this->fields['952'] = [];
-            foreach ($holdings as $key => $holding) {
-                if (isset($availableBuildings[$key])) {
-                    $holding[] = ['9' => 1];
-                }
-                $this->fields['952'][] = [
-                    'i1' => ' ',
-                    'i2' => ' ',
-                    's' => $holding
-                ];
-            }
-        }
-
-        if ($koha) {
-            // Verify that 001 exists
-            if ('' === $this->getField('001')) {
-                if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
-                    $this->fields['001'] = [$id];
-                }
-            }
-        }
-
-        if ($alma) {
-            // Add a prefixed id to field 090 to indicate that the record is from
-            // Alma. Used at least with OpenURL.
-            $id = $this->getField('001');
-            $this->fields['090'][] = [
-                'i1' => ' ',
-                'i2' => ' ',
-                's' => [
-                    ['a' => "(Alma)$id"]
-                ]
-            ];
-            ksort($this->fields);
         }
     }
 
@@ -817,9 +731,9 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Merge component parts to this record
      *
-     * @param MongoCollection $componentParts Component parts to be merged
-     * @param MongoDate|null  $changeDate     Latest timestamp for the component part
-     *                                        set
+     * @param Collection       $componentParts Component parts to be merged
+     * @param UTCDateTime|null $changeDate     Latest timestamp for the component
+     *                                         part set
      *
      * @return int Count of records merged
      */
@@ -1432,8 +1346,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getDefaultBuildingFields()
     {
         $useSub = $this->getDriverParam('subLocationInBuilding', '');
-        $itemSub = $this
-            ->getDriverParam('itemSubLocationInBuilding', $useSub);
+        $itemSub = $this->getDriverParam('itemSubLocationInBuilding', $useSub);
         return [
             [
                 'field' => '852',

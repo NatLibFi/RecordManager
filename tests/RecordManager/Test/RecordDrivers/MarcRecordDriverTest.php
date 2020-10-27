@@ -25,8 +25,10 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
+namespace RecordManager\Test\RecordDrivers;
 
 use RecordManager\Base\Database\Database;
+use RecordManager\Base\Record\Marc;
 
 /**
  * MARC Record Driver Test Class
@@ -39,8 +41,6 @@ use RecordManager\Base\Database\Database;
  */
 class MarcRecordDriverTest extends RecordDriverTest
 {
-    protected $driver = '\RecordManager\Base\Record\Marc';
-
     /**
      * Test MARC Record handling
      *
@@ -48,7 +48,7 @@ class MarcRecordDriverTest extends RecordDriverTest
      */
     public function testMarc1()
     {
-        $record = $this->createRecord('marc1.xml');
+        $record = $this->createRecord(Marc::class, 'marc1.xml');
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -71,7 +71,7 @@ class MarcRecordDriverTest extends RecordDriverTest
                 3 => '17. uud. p.',
                 4 => 'Helsinki',
                 5 => 'Tammi',
-                6 => '2013.',
+                6 => '2345 [2013]',
                 7 => 'teksti',
                 8 => 'txt',
                 9 => 'rdacontent',
@@ -240,7 +240,7 @@ class MarcRecordDriverTest extends RecordDriverTest
      */
     public function testMarc2()
     {
-        $record = $this->createRecord('marc2.xml');
+        $record = $this->createRecord(Marc::class, 'marc2.xml');
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -456,7 +456,7 @@ class MarcRecordDriverTest extends RecordDriverTest
             ->method('findRecord')
             ->will($this->returnValueMap($map));
 
-        $record = $this->createRecord('marc_links.xml');
+        $record = $this->createRecord(Marc::class, 'marc_links.xml');
         $record->toSolrArray($db);
         $marc776 = $record->getFields('776');
         $this->assertEquals(2, count($marc776));
@@ -466,6 +466,7 @@ class MarcRecordDriverTest extends RecordDriverTest
         $this->assertEquals('__unit_test_no_source__.xyzzy', $w);
 
         $record = $this->createRecord(
+            Marc::class,
             'marc_links.xml',
             [
                 '__unit_test_no_source__' => [

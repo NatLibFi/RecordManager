@@ -25,6 +25,8 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
+namespace RecordManager\Test;
+
 use RecordManager\Base\Utils\FieldMapper;
 
 /**
@@ -69,7 +71,7 @@ class MappingFilesTest extends AbstractTest
                 'map' => $this->callProtected(
                    $fieldMapper,
                    'readMappingFile',
-                   [__DIR__ . '/samples/building.map']
+                   [__DIR__ . '/../../samples/building.map']
                 )
             ]
         ];
@@ -120,7 +122,7 @@ class MappingFilesTest extends AbstractTest
                 'map' => $this->callProtected(
                    $fieldMapper,
                    'readMappingFile',
-                   [__DIR__ . '/samples/building-regexp.map']
+                   [__DIR__ . '/../../samples/building-regexp.map']
                 )
             ]
         ];
@@ -166,7 +168,7 @@ class MappingFilesTest extends AbstractTest
                 'map' => $this->callProtected(
                    $fieldMapper,
                    'readMappingFile',
-                   [__DIR__ . '/samples/building-regexp-no-default.map']
+                   [__DIR__ . '/../../samples/building-regexp-no-default.map']
                 )
             ]
         ];
@@ -212,7 +214,7 @@ class MappingFilesTest extends AbstractTest
                 'map' => $this->callProtected(
                    $fieldMapper,
                    'readMappingFile',
-                   [__DIR__ . '/samples/building-regexp-multi.map']
+                   [__DIR__ . '/../../samples/building-regexp-multi.map']
                 )
             ]
         ];
@@ -258,7 +260,7 @@ class MappingFilesTest extends AbstractTest
                 'map' => $this->callProtected(
                    $fieldMapper,
                    'readMappingFile',
-                   [__DIR__ . '/samples/building.map']
+                   [__DIR__ . '/../../samples/building.map']
                 )
             ],
             [
@@ -266,7 +268,7 @@ class MappingFilesTest extends AbstractTest
                 'map' => $this->callProtected(
                    $fieldMapper,
                    'readMappingFile',
-                   [__DIR__ . '/samples/building-regexp.map']
+                   [__DIR__ . '/../../samples/building-regexp.map']
                 )
             ]
         ];
@@ -298,7 +300,7 @@ class MappingFilesTest extends AbstractTest
      */
     protected function callProtected($object, $method, array $arguments = [])
     {
-        $reflectionMethod = new ReflectionMethod($object, $method);
+        $reflectionMethod = new \ReflectionMethod($object, $method);
         $reflectionMethod->setAccessible(true);
         return $reflectionMethod->invokeArgs($object, $arguments);
     }
@@ -310,7 +312,7 @@ class MappingFilesTest extends AbstractTest
      */
     protected function getFieldMapper()
     {
-        $basePath = dirname(__FILE__) . '/configs/mappingfilestest';
+        $basePath = __DIR__ . '/../../configs/mappingfilestest';
         $fieldMapper = new FieldMapper($basePath, [], $this->dataSourceSettings);
 
         return $fieldMapper;
