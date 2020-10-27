@@ -51,10 +51,9 @@ abstract class RecordDriverTest extends \RecordManager\Test\AbstractTest
     {
         MetadataUtils::setConfig(
             [
-                'Site' =>
-                    [
-                        'articles' => 'articles.lst'
-                    ]
+                'Site' => [
+                    'articles' => 'articles.lst'
+                ],
             ],
             __DIR__ . '/../../../configs/recorddrivertest'
         );
