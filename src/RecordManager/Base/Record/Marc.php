@@ -27,6 +27,7 @@
  */
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Utils\DeweyCallNumber;
 use RecordManager\Base\Utils\LcCallNumber;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -102,6 +103,13 @@ class Marc extends Base
      * @var string
      */
     protected $defaultGeoDisplayField = 'long_lat_display';
+
+    protected $oclcNumPatterns = [
+        '/\([Oo][Cc][Oo][Ll][Cc]\)[^0-9]*[0]*([0-9]+)/',
+        '/ocm[0]*([0-9]+)[ ]*[0-9]*/',
+        '/ocn[0]*([0-9]+).*/',
+        '/on[0]*([0-9]+).*/',
+    ];
 
     /**
      * Constructor
@@ -623,7 +631,27 @@ class Marc extends Base
 
         $data['illustrated'] = $this->getIllustrated();
 
-        // TODO: dewey fields and OCLC numbers
+        $deweyFields = $this->getFieldsSubfields(
+            [
+                [self::GET_NORMAL, '082', ['a' => '1']],
+                [self::GET_NORMAL, '083', ['a' => '1']],
+            ]
+        );
+        foreach ($deweyFields as $field) {
+            $deweyCallNumber = new DeweyCallNumber($field);
+            $data['dewey-hundreds'] = $deweyCallNumber->getNumber(100);
+            $data['dewey-tens'] = $deweyCallNumber->getNumber(10);
+            $data['dewey-ones'] = $deweyCallNumber->getNumber(1);
+            $data['dewey-full'] = $deweyCallNumber->getSearchString($deweyFields);
+            if (empty($data['dewey-sort'])) {
+                $data['dewey-sort'] = $deweyCallNumber->getSortKey($deweyFields);
+            }
+            $data['dewey-raw'] = $field;
+        }
+
+        if ($res = $this->getOclcNumbers()) {
+            $data['oclc_num'] = $res;
+        }
 
         return $data;
     }
@@ -2899,6 +2927,39 @@ class Marc extends Base
                         }
                     } else {
                         $result[] = "POINT($west $north)";
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get OCLC numbers
+     *
+     * @return array
+     */
+    protected function getOclcNumbers()
+    {
+        $result = [];
+
+        $ctrlNums = $this->getFieldsSubfields(
+            [
+                [self::GET_NORMAL, '035', ['a' => 1]]
+            ]
+        );
+        foreach ($ctrlNums as $ctrlNum) {
+            $ctrlLc = mb_strtolower($ctrlNum, 'UTF-8');
+            if (strncmp($ctrlLc, '(ocolc)', 7) === 0
+                || strncmp($ctrlLc, 'ocm', 3) === 0
+                || strncmp($ctrlLc, 'ocn', 3) === 0
+                || strncmp($ctrlLc, 'on', 2) === 0
+            ) {
+                foreach ($this->oclcNumPatterns as $pattern) {
+                    if (preg_match($pattern, $ctrlNum, $matches)) {
+                        $result[] = $matches[1];
+                        break;
                     }
                 }
             }

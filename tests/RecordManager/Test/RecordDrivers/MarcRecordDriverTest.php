@@ -573,6 +573,211 @@ class MarcRecordDriverTest extends RecordDriverTest
     }
 
     /**
+     * Test MARC Record handling
+     *
+     * @return void
+     */
+    public function testMarcDewey()
+    {
+        $record = $this->createRecord(Marc::class, 'marc_dewey.xml');
+        $fields = $record->toSolrArray();
+        unset($fields['fullrecord']);
+
+        $expected = [
+            'record_format' => 'marc',
+            'building' => [
+            ],
+            'lccn' => '',
+            'ctrlnum' => [
+                0 => 'FCC016234029',
+                1 => '(OCoLC)123456',
+                2 => 'ocn234567',
+            ],
+            'allfields' => [
+                0 => 'Braudel, Fernand',
+                1 => 'kirjoittaja',
+                2 => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle',
+                3 => 'le possible et l\'impossible',
+                4 => 'Tome 1',
+                5 => 'Les structures du quotidien : le possible et l\'impossible',
+                6 => 'Fernand Braudel',
+                7 => 'Les structures du quotidien',
+                8 => 'Paris',
+                9 => 'Armand Colin',
+                10 => '1979]',
+                11 => '© 1979',
+                12 => '543 sivua',
+                13 => 'kuvitettu',
+                14 => '24 cm',
+                15 => 'teksti',
+                16 => 'txt',
+                17 => 'rdacontent',
+                18 => 'käytettävissä ilman laitetta',
+                19 => 'n',
+                20 => 'rdamedia',
+                21 => 'nide',
+                22 => 'nc',
+                23 => 'rdacarrier',
+                24 => 'Autres tirages : 1980, 1984, 1986, 1988, 1992, 2000.',
+                25 => 'Bibliogr. p. 497-520. Index',
+                26 => 'Moeurs et coutumes',
+                27 => 'Études transculturelles',
+                28 => '1500-1800',
+                29 => 'Sociologie du quotidien',
+                30 => 'Civilisation',
+                31 => 'Histoire',
+                32 => 'Histoire sociale',
+                33 => 'Économie politique',
+                34 => 'Histoire moderne et contemporaine',
+                35 => 'Matérialisme',
+                36 => 'Capitalisme',
+                37 => 'Civilisation moderne',
+                38 => 'Histoire économique',
+                39 => 'Economic history',
+                40 => 'Social history',
+                41 => 'Civilization, Modern',
+                42 => 'History',
+            ],
+            'language' => [
+                0 => 'fre',
+                1 => 'fre',
+            ],
+            'format' => 'Book',
+            'author' => [
+            ],
+            'author_role' => [
+            ],
+            'author_fuller' => [
+            ],
+            'author2' => [
+                0 => 'Braudel, Fernand',
+            ],
+            'author2_role' => [
+                0 => 'kirjoittaja',
+            ],
+            'author2_fuller' => [
+            ],
+            'author_corporate' => [
+            ],
+            'author_corporate_role' => [
+            ],
+            'author2_id_str_mv' => [
+            ],
+            'author2_id_role_str_mv' => [
+            ],
+            'author_additional' => [
+            ],
+            'title' => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle : le possible et l\'impossible. Tome 1, Les structures du quotidien : le possible et l\'impossible',
+            'title_sub' => 'le possible et l\'impossible. Tome 1, Les structures du quotidien : le possible et l\'impossible',
+            'title_short' => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle',
+            'title_full' => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle : le possible et l\'impossible. Tome 1, Les structures du quotidien : le possible et l\'impossible / Fernand Braudel',
+            'title_alt' => [
+            ],
+            'title_old' => [
+            ],
+            'title_new' => [
+            ],
+            'title_sort' => 'civilisation matérielle, économie et capitalisme, xve-xviiie siècle : le possible et l\'impossible. tome 1, les structures du quotidien : le possible et l\'impossible / fernand braudel',
+            'series' => [
+            ],
+            'publisher' => [
+                0 => 'Armand Colin',
+            ],
+            'publishDateSort' => '1979',
+            'publishDate' => [
+                0 => '1979',
+            ],
+            'physical' => [
+                0 => '543 sivua : kuvitettu ; 24 cm',
+            ],
+            'dateSpan' => [
+            ],
+            'edition' => '',
+            'contents' => [
+            ],
+            'isbn' => [
+                0 => '9782200371005',
+            ],
+            'issn' => [
+            ],
+            'callnumber-first' => '',
+            'callnumber-raw' => [
+                0 => '940.',
+                1 => '909.',
+                2 => '909.4.',
+                3 => '330.903.',
+            ],
+            'callnumber-sort' => '',
+            'topic' => [
+                0 => 'Moeurs et coutumes Études transculturelles 1500-1800',
+                1 => 'Sociologie du quotidien Études transculturelles',
+                2 => 'Civilisation Histoire',
+                3 => 'Histoire sociale 1500-1800',
+                4 => 'Économie politique',
+                5 => 'Histoire moderne et contemporaine',
+                6 => 'Matérialisme Histoire',
+                7 => 'Capitalisme Histoire',
+                8 => 'Civilisation moderne Histoire',
+                9 => 'Histoire économique',
+                10 => 'Economic history',
+                11 => 'Social history',
+                12 => 'Civilization, Modern History',
+            ],
+            'genre' => [
+            ],
+            'geographic' => [
+            ],
+            'era' => [
+            ],
+            'topic_facet' => [
+                0 => 'Moeurs et coutumes',
+                1 => 'Sociologie du quotidien',
+                2 => 'Civilisation',
+                3 => 'Histoire sociale',
+                4 => 'Économie politique',
+                5 => 'Histoire moderne et contemporaine',
+                6 => 'Matérialisme',
+                7 => 'Capitalisme',
+                8 => 'Civilisation moderne',
+                9 => 'Histoire économique',
+                10 => 'Economic history',
+                11 => 'Social history',
+                12 => 'Civilization, Modern',
+                13 => 'Études transculturelles',
+                14 => 'Études transculturelles',
+                15 => 'Histoire',
+                16 => 'Histoire',
+                17 => 'Histoire',
+                18 => 'Histoire',
+                19 => 'History',
+            ],
+            'genre_facet' => [
+            ],
+            'geographic_facet' => [
+            ],
+            'era_facet' => [
+                0 => '1500-1800',
+                1 => '1500-1800',
+            ],
+            'url' => [
+            ],
+            'illustrated' => 'Illustrated',
+            'dewey-hundreds' => '300',
+            'dewey-tens' => '330',
+            'dewey-ones' => '330',
+            'dewey-full' => '330.903',
+            'dewey-sort' => '3330.903 ',
+            'dewey-raw' => '330.903',
+            'oclc_num' => [
+                '123456',
+                '234567'
+            ],
+        ];
+
+        $this->compareArray($expected, $fields, 'toSolrArray');
+    }
+
+    /**
      * Test MARC Record linking
      *
      * @return void
