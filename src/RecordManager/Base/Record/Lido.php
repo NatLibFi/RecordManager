@@ -410,7 +410,7 @@ class Lido extends Base
             ->objectDescriptionWrap->objectDescriptionSet as $set
         ) {
             foreach ($set->descriptiveNoteValue as $descriptiveNoteValue) {
-                $description[] = (string)$descriptiveNoteValue;
+                $description[] = trim((string)$descriptiveNoteValue);
             }
         }
 
@@ -511,9 +511,14 @@ class Lido extends Base
     {
         foreach ($this->getEventNodes($event) as $eventNode) {
             if (!empty($eventNode->eventPlace->displayPlace)) {
-                return MetadataUtils::stripTrailingPunctuation(
-                    (string)$eventNode->eventPlace->displayPlace, '.'
+                $str = trim(
+                    MetadataUtils::stripTrailingPunctuation(
+                        (string)$eventNode->eventPlace->displayPlace, '.'
+                    )
                 );
+                if ('' !== $str) {
+                    return $str;
+                }
             }
         }
         return '';
@@ -530,7 +535,10 @@ class Lido extends Base
     {
         foreach ($this->getEventNodes($event) as $eventNode) {
             if (!empty($eventNode->eventDate->displayDate)) {
-                return (string)$eventNode->eventDate->displayDate;
+                $str = trim((string)$eventNode->eventDate->displayDate);
+                if ('' !== $str) {
+                    return $str;
+                }
             }
         }
         return '';
@@ -547,7 +555,7 @@ class Lido extends Base
     {
         foreach ($this->getRelatedWorkSetNodes($relatedWorkRelType) as $set) {
             if (!empty($set->relatedWork->displayObject)) {
-                return (string)$set->relatedWork->displayObject;
+                return trim((string)$set->relatedWork->displayObject);
             }
         }
         return '';
@@ -612,9 +620,14 @@ class Lido extends Base
         foreach ($this->getSubjectNodes() as $subject) {
             foreach ($subject->subjectPlace as $place) {
                 if (!empty($place->displayPlace)) {
-                    $results[] = MetadataUtils::stripTrailingPunctuation(
-                        (string)$place->displayPlace, '.'
+                    $str = trim(
+                        MetadataUtils::stripTrailingPunctuation(
+                            (string)$place->displayPlace, '.'
+                        )
                     );
+                    if ('' !== $str) {
+                        $results[] = $str;
+                    }
                 }
             }
         }
@@ -634,9 +647,14 @@ class Lido extends Base
                 if (!empty($place->place->namePlaceSet)) {
                     foreach ($place->place->namePlaceSet as $set) {
                         if ($set->appellationValue) {
-                            $results[] = MetadataUtils::stripTrailingPunctuation(
-                                (string)$set->appellationValue, '.'
+                            $str = trim(
+                                MetadataUtils::stripTrailingPunctuation(
+                                    (string)$set->appellationValue, '.'
+                                )
                             );
+                            if ('' !== $str) {
+                                $results[] = $str;
+                            }
                         }
                     }
                 }
@@ -967,8 +985,10 @@ class Lido extends Base
             if (empty($relatedWorkRelType)
                 || empty($relatedWorkSetNode->relatedWorkRelType->term)
                 || in_array(
-                    mb_strtolower(
-                        $relatedWorkSetNode->relatedWorkRelType->term, 'UTF-8'
+                    trim(
+                        mb_strtolower(
+                            $relatedWorkSetNode->relatedWorkRelType->term, 'UTF-8'
+                        )
                     ),
                     $relatedWorkRelType
                 )
