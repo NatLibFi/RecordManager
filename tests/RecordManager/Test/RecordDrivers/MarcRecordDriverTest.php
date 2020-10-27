@@ -409,6 +409,170 @@ class MarcRecordDriverTest extends RecordDriverTest
     }
 
     /**
+     * Test MARC Record handling
+     *
+     * @return void
+     */
+    public function testMarcGeo()
+    {
+        $record = $this->createRecord(Marc::class, 'marc_geo.xml');
+        $fields = $record->toSolrArray();
+        unset($fields['fullrecord']);
+
+        $expected = [
+            'record_format' => 'marc',
+            'building' => [
+                0 => '001',
+            ],
+            'long_lat' => [
+                'ENVELOPE(19.5, 24.75, 60.666666666667, 59.8)',
+                'ENVELOPE(19.5, 24.75, 60.666666666667, 59.800277777778)',
+            ],
+            'long_lat_display' => [
+                '19.5 24.75 60.666666666667 59.8',
+                '19.5 24.75 60.666666666667 59.800277777778',
+            ],
+            'lccn' => '',
+            'ctrlnum' => [
+                0 => '(FI-Piki)Ppro837_107786',
+                1 => '(PIKI)Ppro837_107786',
+                2 => '(FI-MELINDA)000963219',
+            ],
+            'allfields' => [
+                0 => 'Suomen tiekartta',
+                1 => 'Vägkarta över Finland',
+                2 => '1.',
+                3 => 'Suomen tiekartta 1',
+                4 => '1:200000',
+                5 => 'Helsinki]',
+                6 => 'Maanmittaushallitus]',
+                7 => '1946.',
+                8 => '1 kartta',
+                9 => 'värillinen',
+                10 => 'taitettuna 26 x 13 cm',
+                11 => 'kartografinen kuva',
+                12 => 'cri',
+                13 => 'rdacontent',
+                14 => 'käytettävissä ilman laitetta',
+                15 => 'n',
+                16 => 'rdamedia',
+                17 => 'arkki',
+                18 => 'nb',
+                19 => 'rdacarrier',
+                20 => 'Ahvenanmaa mittakaavassa 1:400000',
+                21 => 'Kh-kokoelma',
+                22 => 'tiekartat',
+                23 => 'kartat',
+                24 => 'Suomi',
+                25 => 'Turun ja Porin lääni',
+                26 => 'ysa',
+                27 => 'Uudenmaan lääni',
+                28 => 'Ahvenanmaa',
+                29 => 'Maanmittaushallitus',
+            ],
+            'language' => [
+                0 => 'fin',
+                1 => 'fin',
+                2 => 'swe',
+            ],
+            'format' => 'Map',
+            'author' => [
+            ],
+            'author_role' => [
+            ],
+            'author_fuller' => [
+            ],
+            'author2' => [
+            ],
+            'author2_role' => [
+            ],
+            'author2_fuller' => [
+            ],
+            'author_corporate' => [
+                0 => 'Maanmittaushallitus',
+            ],
+            'author_corporate_role' => [
+                0 => '-',
+            ],
+            'author2_id_str_mv' => [
+            ],
+            'author2_id_role_str_mv' => [
+            ],
+            'author_additional' => [
+            ],
+            'title' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
+            'title_sub' => 'Vägkarta över Finland. 1.',
+            'title_short' => 'Suomen tiekartta',
+            'title_full' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
+            'title_alt' => [
+            ],
+            'title_old' => [
+            ],
+            'title_new' => [
+            ],
+            'title_sort' => 'suomen tiekartta = vägkarta över finland. 1.',
+            'series' => [
+            ],
+            'publisher' => [
+                0 => '[Maanmittaushallitus]',
+            ],
+            'publishDateSort' => '1946',
+            'publishDate' => [
+                0 => '1946',
+            ],
+            'physical' => [
+                0 => '1 kartta : värillinen ; taitettuna 26 x 13 cm',
+            ],
+            'dateSpan' => [
+            ],
+            'edition' => '',
+            'contents' => [
+            ],
+            'isbn' => [
+            ],
+            'issn' => [
+            ],
+            'callnumber-first' => '',
+            'callnumber-raw' => [
+                0 => '42.02',
+            ],
+            'callnumber-sort' => '',
+            'topic' => [
+                0 => 'tiekartat',
+                1 => 'kartat Suomi',
+            ],
+            'genre' => [
+            ],
+            'geographic' => [
+                0 => 'Turun ja Porin lääni',
+                1 => 'Uudenmaan lääni',
+                2 => 'Ahvenanmaa',
+            ],
+            'era' => [
+            ],
+            'topic_facet' => [
+                0 => 'tiekartat',
+                1 => 'kartat',
+            ],
+            'genre_facet' => [
+            ],
+            'geographic_facet' => [
+                0 => 'Suomi',
+                1 => 'Turun ja Porin lääni',
+                2 => 'Uudenmaan lääni',
+                3 => 'Ahvenanmaa',
+            ],
+            'era_facet' => [
+            ],
+            'url' => [
+            ],
+            'illustrated' => 'Not Illustrated',
+        ];
+
+        $this->compareArray($expected, $fields, 'toSolrArray');
+    }
+
+    /**
      * Test MARC Record linking
      *
      * @return void

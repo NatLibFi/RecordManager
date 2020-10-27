@@ -880,6 +880,40 @@ class MetadataUtils
     }
 
     /**
+     * Get user-displayable coordinates for a shape
+     *
+     * @param string|array $wkt WKT shape(s)
+     *
+     * @return string Center coordinates
+     */
+    public static function getGeoDisplayField($wkt)
+    {
+        if (!empty($wkt)) {
+            $wkt = is_array($wkt) ? $wkt[0] : $wkt;
+            $expr = '/ENVELOPE\s*\((-?[\d\.]+),\s*(-?[\d\.]+),\s*(-?[\d\.]+),'
+                . '\s*(-?[\d\.]+)\)/i';
+            if (preg_match($expr, $wkt, $matches)) {
+                return $matches[1] . ' ' . $matches[2] . ' ' . $matches[3]
+                    . ' ' . $matches[4];
+            }
+            try {
+                $item = \geoPHP::load($wkt, 'wkt');
+            } catch (\Exception $e) {
+                if (null !== self::$logger) {
+                    self::$logger->logError(
+                        'getCenterCoordinates',
+                        "Could not parse WKT '$wkt': " . $e->getMessage()
+                    );
+                }
+                return [];
+            }
+            $centroid = $item ? $item->centroid() : null;
+            return $centroid ? $centroid->getX() . ' ' . $centroid->getY() : '';
+        }
+        return '';
+    }
+
+    /**
      * Validate and normalize language strings. Return empty string or array if not
      * valid.
      *

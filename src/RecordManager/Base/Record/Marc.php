@@ -83,6 +83,27 @@ class Marc extends Base
     protected $illustrationStrings = ['ill.', 'illus.'];
 
     /**
+     * Default field for geographic coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoField = 'long_lat';
+
+    /**
+     * Default field for geographic center coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoCenterField = '';
+
+    /**
+     * Default field for geographic displayable coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoDisplayField = 'long_lat_display';
+
+    /**
      * Constructor
      *
      * @param Logger $logger             Logger
@@ -320,43 +341,27 @@ class Marc extends Base
         // building
         $data['building'] = $this->getBuilding();
 
-        // long_lat
-        $field = $this->getField('034');
-        if ($field) {
-            $westOrig = $this->getSubfield($field, 'd');
-            $eastOrig = $this->getSubfield($field, 'e');
-            $northOrig = $this->getSubfield($field, 'f');
-            $southOrig = $this->getSubfield($field, 'g');
-            $west = MetadataUtils::coordinateToDecimal($westOrig);
-            $east = MetadataUtils::coordinateToDecimal($eastOrig);
-            $north = MetadataUtils::coordinateToDecimal($northOrig);
-            $south = MetadataUtils::coordinateToDecimal($southOrig);
-
-            if (!is_nan($west) && !is_nan($north)) {
-                if (!is_nan($east)) {
-                    $longitude = ($west + $east) / 2;
-                } else {
-                    $longitude = $west;
+        // Location coordinates
+        if ($geoField = $this->getDriverParam('geoField', $this->defaultGeoField)) {
+            if ($geoLocations = $this->getGeographicLocations()) {
+                $data[$geoField] = $geoLocations;
+                $centerField = $this->getDriverParam(
+                    'geoCenterField', $this->defaultGeoCenterField
+                );
+                if ($centerField) {
+                    foreach ($geoLocations as $geoLocation) {
+                        $data[$centerField][]
+                            = MetadataUtils::getCenterCoordinates($geoLocation);
+                    }
                 }
-
-                if (!is_nan($south)) {
-                    $latitude = ($north + $south) / 2;
-                } else {
-                    $latitude = $north;
-                }
-                if (($longitude < -180 || $longitude > 180)
-                    || ($latitude < -90 || $latitude > 90)
-                ) {
-                    $this->logger->logDebug(
-                        'Marc',
-                        "Discarding invalid coordinates $longitude,$latitude "
-                            . "decoded from w=$westOrig, e=$eastOrig, n=$northOrig, "
-                            . "s=$southOrig, record {$this->source}."
-                            . $this->getID()
-                    );
-                    $this->storeWarning('invalid coordinates in 034');
-                } else {
-                    $data['long_lat'] = "$longitude $latitude";
+                $displayField = $this->getDriverParam(
+                    'geoDisplayField', $this->defaultGeoDisplayField
+                );
+                if ($displayField) {
+                    foreach ($geoLocations as $geoLocation) {
+                        $data[$displayField][]
+                            = MetadataUtils::getGeoDisplayField($geoLocation);
+                    }
                 }
             }
         }
@@ -2840,5 +2845,65 @@ class Marc extends Base
         }
 
         return '';
+    }
+
+    /**
+     * Get geographic locations
+     *
+     * @return array
+     */
+    protected function getGeographicLocations()
+    {
+        $result = [];
+        foreach ($this->getFields('034') as $field) {
+            $westOrig = $this->getSubfield($field, 'd');
+            $eastOrig = $this->getSubfield($field, 'e');
+            $northOrig = $this->getSubfield($field, 'f');
+            $southOrig = $this->getSubfield($field, 'g');
+            $west = MetadataUtils::coordinateToDecimal($westOrig);
+            $east = MetadataUtils::coordinateToDecimal($eastOrig);
+            $north = MetadataUtils::coordinateToDecimal($northOrig);
+            $south = MetadataUtils::coordinateToDecimal($southOrig);
+
+            if (!is_nan($west) && !is_nan($north)) {
+                if (($west < -180 || $west > 180) || ($north < -90 || $north > 90)) {
+                    $this->logger->logDebug(
+                        'Marc',
+                        "Discarding invalid coordinates $west,$north decoded from "
+                            . "w=$westOrig, e=$eastOrig, n=$northOrig, s=$southOrig,"
+                            . " record {$this->source}." . $this->getID()
+                    );
+                    $this->storeWarning('invalid coordinates in 034');
+                } else {
+                    if (!is_nan($east) && !is_nan($south)) {
+                        if ($east < -180 || $east > 180 || $south < -90
+                            || $south > 90
+                        ) {
+                            $this->logger->logDebug(
+                                'Marc',
+                                "Discarding invalid coordinates $east,$south "
+                                    . "decoded from w=$westOrig, e=$eastOrig, "
+                                    . "n=$northOrig, s=$southOrig, record "
+                                    . "{$this->source}." . $this->getID()
+                            );
+                            $this->storeWarning('invalid coordinates in 034');
+                        } else {
+                            // Try to cope with weird coordinate order
+                            if ($north > $south) {
+                                list($north, $south) = [$south, $north];
+                            }
+                            if ($west > $east) {
+                                list($west, $east) = [$east, $west];
+                            }
+                            $result[] = "ENVELOPE($west, $east, $south, $north)";
+                        }
+                    } else {
+                        $result[] = "POINT($west $north)";
+                    }
+                }
+            }
+        }
+
+        return $result;
     }
 }

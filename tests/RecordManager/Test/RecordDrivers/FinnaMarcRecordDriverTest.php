@@ -426,6 +426,201 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
     }
 
     /**
+     * Test MARC Record handling
+     *
+     * @return void
+     */
+    public function testMarcGeo()
+    {
+        $record = $this->createRecord(Marc::class, 'marc_geo.xml');
+        $fields = $record->toSolrArray();
+        unset($fields['fullrecord']);
+
+        $expected = [
+            'record_format' => 'marc',
+            'building' => [
+                0 => '001',
+            ],
+            'lccn' => '',
+            'ctrlnum' => [
+                0 => '(FI-Piki)Ppro837_107786',
+                1 => '(PIKI)Ppro837_107786',
+                2 => '(FI-MELINDA)000963219',
+            ],
+            'allfields' => [
+                0 => 'Suomen tiekartta',
+                1 => 'Vägkarta över Finland',
+                2 => '1.',
+                3 => 'Suomen tiekartta 1',
+                4 => '1:200000',
+                5 => 'Helsinki]',
+                6 => 'Maanmittaushallitus]',
+                7 => '1946.',
+                8 => 'Ahvenanmaa mittakaavassa 1:400000',
+                9 => 'Kh-kokoelma',
+                10 => 'tiekartat',
+                11 => 'kartat',
+                12 => 'Suomi',
+                13 => 'Turun ja Porin lääni',
+                14 => 'ysa',
+                15 => 'Uudenmaan lääni',
+                16 => 'Ahvenanmaa',
+                17 => 'Maanmittaushallitus',
+            ],
+            'language' => [
+                0 => 'fin',
+                1 => 'fin',
+                2 => 'swe',
+            ],
+            'format' => 'Map',
+            'author' => [
+            ],
+            'author_role' => [
+            ],
+            'author_fuller' => [
+            ],
+            'author2' => [
+            ],
+            'author2_role' => [
+            ],
+            'author2_fuller' => [
+            ],
+            'author_corporate' => [
+                0 => 'Maanmittaushallitus',
+            ],
+            'author_corporate_role' => [
+                0 => '-',
+            ],
+            'author2_id_str_mv' => [
+            ],
+            'author2_id_role_str_mv' => [
+            ],
+            'author_additional' => [
+            ],
+            'title' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
+            'title_sub' => 'Vägkarta över Finland. 1.',
+            'title_short' => 'Suomen tiekartta',
+            'title_full' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
+            'title_alt' => [
+                0 => 'Vägkarta över Finland',
+                1 => 'Suomen tiekartta 1',
+            ],
+            'title_old' => [
+            ],
+            'title_new' => [
+            ],
+            'title_sort' => 'suomen tiekartta = vägkarta över finland. 1.',
+            'series' => [
+            ],
+            'publisher' => [
+                0 => '[Maanmittaushallitus]',
+            ],
+            'publishDateSort' => '1946',
+            'publishDate' => [
+                0 => '1946',
+            ],
+            'physical' => [
+                0 => '1 kartta : värillinen ; taitettuna 26 x 13 cm',
+            ],
+            'dateSpan' => [
+            ],
+            'edition' => '',
+            'contents' => [
+            ],
+            'isbn' => [
+            ],
+            'issn' => [
+            ],
+            'callnumber-first' => '42.02',
+            'callnumber-raw' => [
+                0 => '42.02',
+            ],
+            'callnumber-sort' => '42.02',
+            'topic' => [
+                0 => 'tiekartat',
+                1 => 'kartat Suomi',
+            ],
+            'genre' => [
+            ],
+            'geographic' => [
+                0 => 'Turun ja Porin lääni',
+                1 => 'Uudenmaan lääni',
+                2 => 'Ahvenanmaa',
+            ],
+            'era' => [
+            ],
+            'topic_facet' => [
+                0 => 'tiekartat',
+                1 => 'kartat',
+            ],
+            'genre_facet' => [
+            ],
+            'geographic_facet' => [
+                0 => 'Suomi',
+                1 => 'Turun ja Porin lääni',
+                2 => 'Uudenmaan lääni',
+                3 => 'Ahvenanmaa',
+            ],
+            'era_facet' => [
+            ],
+            'url' => [
+            ],
+            'illustrated' => 'Not Illustrated',
+            'main_date_str' => '1946',
+            'main_date' => '1946-01-01T00:00:00Z',
+            'publication_daterange' => '[1946-01-01 TO 1946-12-31]',
+            'search_daterange_mv' => [
+                0 => '[1946-01-01 TO 1946-12-31]',
+            ],
+            'publication_place_txt_mv' => [
+                0 => 'Helsinki',
+            ],
+            'subtitle_lng_str_mv' => [
+            ],
+            'original_lng_str_mv' => [
+                0 => 'fin',
+                1 => 'swe',
+            ],
+            'location_geo' => [
+                'ENVELOPE(19.5, 24.75, 60.666666666667, 59.8)',
+                'ENVELOPE(19.5, 24.75, 60.666666666667, 59.800277777778)',
+            ],
+            'center_coords' => [
+                '22.125 60.233333333333',
+                '22.125 60.233472222223',
+            ],
+            'classification_txt_mv' => [
+                0 => 'ykl 42.02',
+                1 => 'ykl 42.02',
+            ],
+            'major_genre_str_mv' => 'nonfiction',
+            'classification_str_mv' => [
+                0 => 'ykl 42.02',
+                1 => 'ykl 42.02',
+            ],
+            'source_str_mv' => '__unit_test_no_source__',
+            'datasource_str_mv' => [
+                0 => '__unit_test_no_source__',
+            ],
+            'other_issn_str_mv' => [
+            ],
+            'other_issn_isn_mv' => [
+            ],
+            'linking_issn_str_mv' => [
+            ],
+            'holdings_txtP_mv' => [
+                0 => '1 001 __unit_test_no_source__',
+            ],
+            'author_facet' => [
+                0 => 'Maanmittaushallitus',
+            ],
+            'format_ext_str_mv' => 'Map',
+        ];
+
+        $this->compareArray($expected, $fields, 'toSolrArray');
+    }
+
+    /**
      * Test MARC Thesis Record handling
      *
      * @return void
