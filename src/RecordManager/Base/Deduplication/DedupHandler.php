@@ -252,7 +252,7 @@ class DedupHandler
             $keys = [];
         }
         $oldKeys = (array)($record['title_keys'] ?? []);
-        if (array_diff($oldKeys, $keys)) {
+        if (count($oldKeys) !== count($keys) || array_diff($oldKeys, $keys)) {
             $record['title_keys'] = $keys;
             $result = true;
         }
@@ -262,7 +262,7 @@ class DedupHandler
 
         $keys = $metadataRecord->getISBNs();
         $oldKeys = (array)($record['isbn_keys'] ?? []);
-        if (array_diff($oldKeys, $keys)) {
+        if (count($oldKeys) !== count($keys) || array_diff($oldKeys, $keys)) {
             $record['isbn_keys'] = $keys;
             $result = true;
         }
@@ -278,7 +278,7 @@ class DedupHandler
             $keys
         );
         $oldKeys = (array)($record['id_keys'] ?? []);
-        if (array_diff($oldKeys, $keys)) {
+        if (count($oldKeys) !== count($keys) || array_diff($oldKeys, $keys)) {
             // Make sure bad metadata doesn't result in overly long keys
             array_map(
                 function ($s) {
