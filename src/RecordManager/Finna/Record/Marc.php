@@ -673,6 +673,12 @@ class Marc extends \RecordManager\Base\Record\Marc
                     = $this->addNamespaceToAuthorityIds([$id]);
             }
         }
+
+        // Make sure center_coords is single-valued
+        if (!empty($data['center_coords'])) {
+            $data['center_coords'] = $data['center_coords'][0];
+        }
+
         return $data;
     }
 
