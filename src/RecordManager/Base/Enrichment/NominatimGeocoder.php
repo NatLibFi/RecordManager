@@ -125,11 +125,11 @@ class NominatimGeocoder extends Enrichment
     protected $optionalTerms = [];
 
     /**
-     * Blacklist of regular expressions. Matching locations are ignored.
+     * Blocklist of regular expressions. Matching locations are ignored.
      *
      * @var array
      */
-    protected $blacklist = [];
+    protected $blocklist = [];
 
     /**
      * Location transformations
@@ -196,8 +196,11 @@ class NominatimGeocoder extends Enrichment
         if (isset($settings['optional_terms'])) {
             $this->optionalTerms = $settings['optional_terms'];
         }
-        if (isset($settings['blacklist'])) {
-            $this->blacklist = $settings['blacklist'];
+        if (isset($settings['blocklist'])) {
+            $this->blocklist = $settings['blocklist'];
+        } elseif (isset($settings['blacklist'])) {
+            // Kept for back-compatibility
+            $this->blocklist = $settings['blacklist'];
         }
         if (isset($settings['search'])) {
             foreach ($settings['search'] as $index => $search) {
@@ -250,8 +253,8 @@ class NominatimGeocoder extends Enrichment
     {
         $result = false;
         foreach ($locations as $location) {
-            if ($this->blacklist) {
-                foreach ($this->blacklist as $entry) {
+            if ($this->blocklist) {
+                foreach ($this->blocklist as $entry) {
                     if (preg_match("/$entry/i", $location)) {
                         continue 2;
                     }

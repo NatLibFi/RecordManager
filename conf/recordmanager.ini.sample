@@ -234,9 +234,9 @@ dewey-ones = dewey_ones.map
 ; Regexp's for terms that may be ignored in a location string if no match is found
 ;optional_terms[] = 'finland'
 ;optional_terms[] = '[^\s]+ lääni'
-; Blacklist of terms as regular expressions. If a location matches the expression,
+; Blocklist of terms as regular expressions. If a location matches the expression,
 ; it is ignored completely.
-;blacklist[] = '^finland$'
+;blocklist[] = '^finland$'
 ; Term transformations regular expressions applied if a match is not found
 search[] = '([^\s]+ st)\.'
 replace[] = '\1 street'
