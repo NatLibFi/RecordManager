@@ -106,7 +106,8 @@ class Lrmi extends Qdc
      */
     protected function getPrimaryAuthors()
     {
-        return [];
+        $authors = $this->getSecondaryAuthors();
+        return [$authors[0] ?? ''];
     }
 
     /**
