@@ -2903,7 +2903,9 @@ class Marc extends Base
                     );
                     $this->storeWarning('invalid coordinates in 034');
                 } else {
-                    if (!is_nan($east) && !is_nan($south)) {
+                    if (!is_nan($east) && !is_nan($south)
+                        && ($east !== $west || $north !== $south)
+                    ) {
                         if ($east < -180 || $east > 180 || $south < -90
                             || $south > 90
                         ) {
