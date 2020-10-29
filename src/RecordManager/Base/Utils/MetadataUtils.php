@@ -218,7 +218,13 @@ class MetadataUtils
     }
 
     /**
-     * Convert coordinates in [EWSN]DDDMMSS format to decimal
+     * Convert coordinates in different formats to decimal.
+     *
+     * Supported formats (with some intentional leniency):
+     * [EWSN]DDDMMSS[.sss]
+     * [EWSN+-]DDD.DDDDDD
+     * [EWSN]DDDMM.MMMM
+     * [EWSN+-]D[...].D[...]
      *
      * @param string $value Coordinates
      *
@@ -226,10 +232,49 @@ class MetadataUtils
      */
     public static function coordinateToDecimal($value)
     {
+        $value = str_replace(' ', '', $value);
         if ($value === '') {
             return (float)NAN;
         }
-        if (preg_match('/^([eEwWnNsS])(\d{3})(\d{2})(\d{2})/', $value, $matches)) {
+        $match = preg_match(
+            '/^([eEwWnNsS])(\d{3})(\d{2})((\d{2})(\.(\d{3}))?)/', $value, $matches
+        );
+        if ($match) {
+            $dec = $matches[2] + $matches[3] / 60 + $matches[4] / 3600;
+            if (in_array($matches[1], ['w', 'W', 's', 'S'])) {
+                return -$dec;
+            }
+            return $dec;
+        }
+        if (preg_match('/^([eEwWnNsS+-])?(\d{3}\.\d+)/', $value, $matches)) {
+            $dec = (float)$matches[2];
+            if (in_array($matches[1], ['w', 'W', 's', 'S', '-'])) {
+                return -$dec;
+            }
+            return $dec;
+        }
+        if (preg_match('/^([eEwWnNsS])?(\d{3})(\d{2}\.\d+)/', $value, $matches)
+        ) {
+            $dec = (float)$matches[2] + $matches[3] / 60;
+            if (in_array($matches[1], ['w', 'W', 's', 'S'])) {
+                return -$dec;
+            }
+            return $dec;
+        }
+        if (preg_match('/^([eEwWnNsS+-])?(\d+\.\d+)/', $value, $matches)
+        ) {
+            $dec = (float)$matches[2];
+            if (in_array($matches[1], ['w', 'W', 's', 'S', '-'])) {
+                return -$dec;
+            }
+            return $dec;
+        }
+        // Like the first one, but one last try for a value that's missing leading
+        // zeros
+        $match = preg_match(
+            '/^([eEwWnNsS])(\d+)(\d{2})((\d{2})(\.(\d{3}))?)$/', $value, $matches
+        );
+        if ($match) {
             $dec = $matches[2] + $matches[3] / 60 + $matches[4] / 3600;
             if (in_array($matches[1], ['w', 'W', 's', 'S'])) {
                 return -$dec;
