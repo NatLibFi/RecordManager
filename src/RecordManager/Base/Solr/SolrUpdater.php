@@ -2692,6 +2692,8 @@ class SolrUpdater
                         'solrRequest',
                         "Solr server request failed ($code), retrying in "
                             . "{$this->updateRetryWait} seconds..."
+                            . "Beginning of response: "
+                            . substr($response->getBody(), 0, 1000)
                     );
                     sleep($this->updateRetryWait);
                     continue;
