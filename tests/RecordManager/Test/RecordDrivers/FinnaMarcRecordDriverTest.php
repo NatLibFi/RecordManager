@@ -585,10 +585,7 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
                 'ENVELOPE(19.5, 24.75, 60.666666666667, 59.8)',
                 'ENVELOPE(19.5, 24.75, 60.666666666667, 59.800277777778)',
             ],
-            'center_coords' => [
-                '22.125 60.233333333333',
-                '22.125 60.233472222223',
-            ],
+            'center_coords' => '22.125 60.233333333333',
             'classification_txt_mv' => [
                 0 => 'ykl 42.02',
                 1 => 'ykl 42.02',
