@@ -90,13 +90,14 @@ class Lrmi extends Qdc
     }
 
     /**
-     * Dedup: Return main author (format: Last, First)
+     * Return main author (format: Last, First)
      *
      * @return string
      */
     public function getMainAuthor()
     {
-        return '';
+        $authors = $this->getPrimaryAuthors();
+        return $authors[0] ?? '';
     }
 
     /**
