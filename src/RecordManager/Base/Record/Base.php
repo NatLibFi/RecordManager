@@ -293,21 +293,21 @@ class Base
     }
 
     /**
-     * Dedup: Return full title (for debugging purposes only)
+     * Return main author (format: Last, First)
      *
      * @return string
      */
-    public function getFullTitle()
+    public function getMainAuthor()
     {
         return '';
     }
 
     /**
-     * Dedup: Return main author (format: Last, First)
+     * Dedup: Return full title (for debugging purposes only)
      *
      * @return string
      */
-    public function getMainAuthor()
+    public function getFullTitle()
     {
         return '';
     }
