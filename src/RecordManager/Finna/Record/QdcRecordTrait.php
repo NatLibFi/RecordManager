@@ -154,20 +154,6 @@ trait QdcRecordTrait
     }
 
     /**
-     * Get primary authors
-     *
-     * @return array
-     */
-    public function getPrimaryAuthors()
-    {
-        $authors = $this->getValues('author');
-        if ($authors) {
-            return (array)array_shift($authors);
-        }
-        return parent::getPrimaryAuthors();
-    }
-
-    /**
      * Get secondary authors
      *
      * @return array
