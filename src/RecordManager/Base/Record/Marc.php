@@ -45,7 +45,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Marc extends Base
 {
-    use \RecordManager\Finna\Record\FinnaRecordTrait;
+    use AuthoritySupportTrait;
 
     const SUBFIELD_INDICATOR = "\x1F";
     const END_OF_FIELD = "\x1E";
