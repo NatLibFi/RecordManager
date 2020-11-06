@@ -1,6 +1,6 @@
 <?php
 /**
- * Finna record trait.
+ * Authority handling support trait.
  *
  * PHP version 7
  *
@@ -25,10 +25,10 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Finna\Record;
+namespace RecordManager\Base\Record;
 
 /**
- * Finna record trait.
+ * Authority handling support trait.
  *
  * @category DataManagement
  * @package  RecordManager
@@ -36,7 +36,7 @@ namespace RecordManager\Finna\Record;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-trait FinnaRecordTrait
+trait AuthoritySupportTrait
 {
     /**
      * Get authority record namespace.
