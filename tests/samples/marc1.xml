@@ -8,6 +8,10 @@
     <subfield code="a">978-951-31-4836-2</subfield>
     <subfield code="q">nidottu</subfield>
   </datafield>
+  <datafield tag="024" ind1="7" ind2=" ">
+    <subfield code="a">2345</subfield>
+    <subfield code="2">FOO</subfield>
+  </datafield>
   <datafield tag="035" ind1=" " ind2=" ">
     <subfield code="a">FCC005246184</subfield>
   </datafield>
