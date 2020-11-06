@@ -41,7 +41,7 @@ use RecordManager\Base\Utils\PerformanceCounter;
 class DeleteRecords extends AbstractBase
 {
     /**
-     * Delete records of a single data source from the Mongo database
+     * Delete records of a single data source from the database
      *
      * @param string  $sourceId Source ID
      * @param boolean $force    Force deletion even if dedup is enable for the source

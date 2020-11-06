@@ -28,7 +28,7 @@
  */
 namespace RecordManager\Base\Enrichment;
 
-use RecordManager\Base\Database\Database;
+use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 
@@ -190,7 +190,7 @@ class OnkiLightEnrichment extends Enrichment
             $this->logger->logDebug(
                 'enrichField',
                 "Failed to fetch external data '$url', record $sourceId."
-                . $record->getId()
+                . $record->getId() . ': ' . $e->getMessage()
             );
             return;
         }

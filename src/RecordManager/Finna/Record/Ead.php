@@ -27,6 +27,7 @@
  */
 namespace RecordManager\Finna\Record;
 
+use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -59,13 +60,12 @@ class Ead extends \RecordManager\Base\Record\Ead
     /**
      * Return fields to be indexed in Solr
      *
-     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
-     *                                                  avoid database lookups for
-     *                                                  related records.
+     * @param Database $db Database connection. Omit to avoid database lookups for
+     *                     related records.
      *
      * @return array
      */
-    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
+    public function toSolrArray(Database $db = null)
     {
         $data = parent::toSolrArray($db);
         $doc = $this->doc;

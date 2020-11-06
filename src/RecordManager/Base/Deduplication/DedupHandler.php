@@ -27,7 +27,7 @@
  */
 namespace RecordManager\Base\Deduplication;
 
-use RecordManager\Base\Database\Database;
+use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
@@ -106,8 +106,8 @@ class DedupHandler
      * @param array         $settings      Data source settings
      * @param RecordFactory $recordFactory Record factory
      */
-    public function __construct(Database $db, Logger $log, $verbose, $basePath,
-        $mainConfig, $settings, $recordFactory
+    public function __construct(Database $db, Logger $log, $verbose,
+        $basePath, $mainConfig, $settings, $recordFactory
     ) {
         $this->db = $db;
         $this->log = $log;
@@ -608,9 +608,9 @@ class DedupHandler
     /**
      * Check if records are duplicate matches
      *
-     * @param array  $record     Mongo record
+     * @param array  $record     Database record
      * @param object $origRecord Metadata record (from $record)
-     * @param array  $candidate  Candidate Mongo record
+     * @param array  $candidate  Candidate database record
      *
      * @return boolean
      */
@@ -809,8 +809,8 @@ class DedupHandler
     /**
      * Mark two records as duplicates
      *
-     * @param array $id1 Mongo record id for which a duplicate was searched
-     * @param array $id2 Mongo record id for the found duplicate
+     * @param array $id1 Database record id for which a duplicate was searched
+     * @param array $id2 Database record id for the found duplicate
      *
      * @return void
      */
@@ -901,7 +901,7 @@ class DedupHandler
      * @param string $id1 ID of first record
      * @param string $id2 ID of second record
      *
-     * @return MongoId ID of the dedup record
+     * @return mixed ID of the dedup record
      */
     protected function createDedupRecord($id1, $id2)
     {
@@ -954,7 +954,7 @@ class DedupHandler
      * component parts of other records deduplicated with the host record
      * and stops when it finds a set of component parts that match.
      *
-     * @param array $hostRecord Mongo record for the host record
+     * @param array $hostRecord Database record for the host record
      *
      * @return integer Number of component parts deduplicated
      */

@@ -27,7 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\PerformanceCounter;
 
 /**

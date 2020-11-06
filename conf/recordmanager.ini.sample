@@ -32,18 +32,28 @@ unicode_normalization_form = NFKC
 ; Wait time between request attempts in seconds. Default is 30.
 ;retry_wait = 120
 
-[Mongo]
-; url = mongodb://{username}:{password}@localhost
-;url = mongodb://localhost
-; Use a unix socket like below, if possible. It can be an order of magnitude faster than TCP/IP.
-url = "mongodb://%2Ftmp%2Fmongodb-27017.sock"
-; Database to use
+[Database]
+; URL for a MongoDB database.
+; Use a unix socket like below, if possible. It can be an order of magnitude faster
+; than TCP/IP.
+connection = "mongodb://%2Ftmp%2Fmongodb-27017.sock"
+;connection = mongodb://{username}:{password}@localhost
+;connection = mongodb://localhost
+; MongoDB database to use
 database = recman
-; Whether to ask MongoDB for counts of records to be processed. Can be really slow.
+; PDO connection string for a MySQL/MariaDB database (MongoDB is recommended, but
+; MySQL/MariaDB support is provided as an alternative):
+;connection = "mysql:host=localhost;dbname=recman;charset=UTF8"
+; MySQL user name
+;username=recman
+; MySQL password
+;password=topsecret
+; Whether to ask the database for counts of records to be processed. Can be really
+; slow, so not recommended for large collections.
 counts = false
-; Connection timeout in milliseconds. Default is 300 000 ms.
+; MongoDB connection timeout in milliseconds. Default is 300 000 ms.
 ;connect_timeout = 12000000
-; Socket timeout. Default is 300 000 ms.
+; MongoDB socket timeout. Default is 300 000 ms.
 ;socket_timeout = 12000000
 
 [Solr]

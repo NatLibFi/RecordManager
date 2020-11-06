@@ -135,16 +135,14 @@ class Harvest extends AbstractBase
                     $dateThreshold = null;
                     if ($reharvest) {
                         if (is_string($reharvest)) {
-                            $dateThreshold = $this->db->getTimestamp(
-                                strtotime($reharvest)
-                            );
+                            $dateThreshold = strtotime($reharvest);
                         } else {
-                            $dateThreshold = $this->db->getTimestamp();
+                            $dateThreshold = time();
                         }
                         $this->logger->logInfo(
                             'harvest',
                             'Reharvest date threshold: '
-                            . $dateThreshold->toDatetime()->format('Y-m-d H:i:s')
+                            . date('Y-m-d H:i:s', $dateThreshold)
                         );
                     }
 
@@ -202,7 +200,10 @@ class Harvest extends AbstractBase
                                 [
                                     'source_id' => $source,
                                     'deleted' => false,
-                                    'updated' => ['$lt' => $dateThreshold]
+                                    'updated' => [
+                                        '$lt' =>
+                                            $this->db->getTimestamp($dateThreshold)
+                                    ]
                                 ]
                             );
                             $count = 0;

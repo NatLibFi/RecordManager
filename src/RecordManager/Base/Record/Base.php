@@ -27,8 +27,7 @@
  */
 namespace RecordManager\Base\Record;
 
-use MongoDB\BSON\UTCDateTime;
-use MongoDB\Collection;
+use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -193,13 +192,12 @@ class Base
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
-     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
-     *                                                  avoid database lookups for
-     *                                                  related records.
+     * @param Database $db Database connection. Omit to avoid database lookups for
+     *                     related records.
      *
      * @return array
      */
-    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
+    public function toSolrArray(Database $db = null)
     {
         return [];
     }
@@ -207,9 +205,9 @@ class Base
     /**
      * Merge component parts to this record
      *
-     * @param Collection       $componentParts Component parts to be merged
-     * @param UTCDateTime|null $changeDate     Latest timestamp for the component
-     *                                         part set
+     * @param \Traversable $componentParts Component parts to be merged
+     * @param mixed        $changeDate     Latest database timestamp for the
+     *                                     component part set
      *
      * @return void
      */

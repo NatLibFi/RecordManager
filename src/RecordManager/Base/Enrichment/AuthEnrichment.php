@@ -28,7 +28,8 @@
  */
 namespace RecordManager\Base\Enrichment;
 
-use RecordManager\Base\Database\Database;
+use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Database\Factory as DatabaseFactory;
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -37,9 +38,9 @@ use RecordManager\Base\Utils\MetadataUtils;
  * Enrich biblio records with authority record data.
  *
  * This is a base class for enrichment from authority record data.
- * Authority records are retrieved from Mongo.
+ * Authority records are retrieved from the database.
  * Subclasses need to implement the 'enrich' method
- * (i.e. call enrichField with an URI and name of the Solr-field to enrich).
+ * (i.e. call enrichField with an URI and name of the Solr field to enrich).
  *
  * @category DataManagement
  * @package  RecordManager
@@ -71,17 +72,25 @@ abstract class AuthEnrichment extends Enrichment
     ) {
         parent::__construct($db, $logger, $config, $recordFactory);
 
-        $url = $config['AuthorityEnrichment']['url']
-            ?? $config['Mongo']['url'];
-        $database = $config['AuthorityEnrichment']['database']
-            ?? $config['Mongo']['database'];
+        // Back-compatibility checks:
+        $dbConfig = $config['Database'] ?? $config['Mongo'];
+
+        $connection = $config['AuthorityEnrichment']['connection']
+            ?? $config['AuthorityEnrichment']['url'] ?? '';
+        if ($connection) {
+            $dbConfig['connection'] = $connection;
+        }
+
+        if (!empty($config['AuthorityEnrichment']['database'])) {
+            $dbConfig['database'] = $config['AuthorityEnrichment']['database'];
+        }
 
         try {
-            $this->authorityDb = new Database($url, $database, $config['Mongo']);
+            $this->authorityDb = DatabaseFactory::createDatabase($dbConfig);
         } catch (\Exception $e) {
             $this->logger->logFatal(
                 'startup',
-                'Failed to connect to authority MongoDB: ' . $e->getMessage()
+                'Failed to connect to authority database: ' . $e->getMessage()
             );
             throw $e;
         }

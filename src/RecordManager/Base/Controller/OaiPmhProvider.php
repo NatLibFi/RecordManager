@@ -541,13 +541,13 @@ EOT;
     protected function getEarliestDateStamp()
     {
         $record = $this->db->findRecord([], ['sort' => ['updated' => 1]]);
-        return $record['updated']->toDateTime()->getTimestamp();
+        return $this->db->getUnixTime($record['updated']);
     }
 
     /**
      * Get the sets the record belongs to
      *
-     * @param array $record Mongo record
+     * @param array $record Database record
      *
      * @return array
      */
@@ -729,7 +729,7 @@ EOT;
     /**
      * Create record XML
      *
-     * @param array   $record          Mongo record
+     * @param array   $record          Database record
      * @param string  $format          Metadata format
      * @param boolean $includeMetadata Whether to include record data
      *                                 (or only header). Metadata is never returned
@@ -802,7 +802,7 @@ EOT;
             ? $oaiId
             : $this->idPrefix . $record['_id']
         );
-        $date = $this->toOaiDate($record['updated']->toDateTime()->getTimestamp());
+        $date = $this->toOaiDate($this->db->getUnixTime($record['updated']));
         $status = $record['deleted'] ? ' status="deleted"' : '';
 
         $header = <<<EOT

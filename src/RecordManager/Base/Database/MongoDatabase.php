@@ -1,10 +1,10 @@
 <?php
 /**
- * Database access class
+ * MongoDB access class
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2017-2019.
+ * Copyright (c) The National Library of Finland 2017-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,7 +28,7 @@
 namespace RecordManager\Base\Database;
 
 /**
- * Database access class
+ * MongoDB access class
  *
  * This class encapsulates access to the underlying MongoDB database.
  *
@@ -38,29 +38,8 @@ namespace RecordManager\Base\Database;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Database
+class MongoDatabase extends AbstractDatabase
 {
-    /**
-     * Mongo database URL
-     *
-     * @var string
-     */
-    protected $mongoUrl;
-
-    /**
-     * Mongo database name
-     *
-     * @var string
-     */
-    protected $mongoDatabaseName;
-
-    /**
-     * Mongo settings
-     *
-     * @var array
-     */
-    protected $mongoSettings;
-
     /**
      * Mongo Client
      *
@@ -76,105 +55,23 @@ class Database
     protected $db;
 
     /**
-     * Whether to report actual counts. When false, all count methods return 'the'
-     * instead.
-     *
-     * @var bool
-     */
-    protected $counts = false;
-
-    /**
-     * Dedup collection name
-     *
-     * @var string
-     */
-    protected $dedupCollection = 'dedup';
-
-    /**
-     * Record collection name
-     *
-     * @var string
-     */
-    protected $recordCollection = 'record';
-
-    /**
-     * State collection name
-     *
-     * @var string
-     */
-    protected $stateCollection = 'state';
-
-    /**
-     * URI cache collection name
-     *
-     * @var string
-     */
-    protected $uriCacheCollection = 'uriCache';
-
-    /**
-     * Ontology enrichment collection name
-     *
-     * @var string
-     */
-    protected $ontologyEnrichmentCollection = 'ontologyEnrichment';
-
-    /**
-     * Constructor.
-     *
-     * @param string $url      Database connection URL
-     * @param string $database Datatabase name
-     * @param array  $settings Optional database settings
-     *
-     * @throws Exception
-     */
-    public function __construct($url, $database, $settings)
-    {
-        if (!empty($settings['dedup_collection'])) {
-            $this->dedupCollection = $settings['dedup_collection'];
-        }
-        if (!empty($settings['record_collection'])) {
-            $this->recordCollection = $settings['record_collection'];
-        }
-        if (!empty($settings['state_collection'])) {
-            $this->stateCollection = $settings['state_collection'];
-        }
-        if (!empty($settings['uri_cache_collection'])) {
-            $this->uriCacheCollection = $settings['uri_cache_collection'];
-        }
-        if (!empty($settings['ontology_enrichment_collection'])) {
-            $this->ontologyEnrichmentCollection
-                = $settings['ontology_enrichment_collection'];
-        }
-
-        $this->mongoUrl = $url;
-        $this->mongoDatabaseName = $database;
-        $this->mongoSettings = $settings;
-        $this->counts = !empty($settings['counts']);
-
-        $this->reconnectDatabase();
-    }
-
-    /**
      * Open a database connection with the stored parameters
      *
      * @return void
      */
     public function reconnectDatabase()
     {
-        $connectTimeout = isset($this->mongoSettings['connect_timeout'])
-            ? $this->mongoSettings['connect_timeout'] : 300000;
-        $socketTimeout = isset($this->mongoSettings['socket_timeout'])
-            ? $this->mongoSettings['socket_timeout'] : 300000;
-        $url = $this->mongoUrl;
+        $connectTimeout = $this->settings['connect_timeout'] ?? 300000;
+        $socketTimeout = $this->settings['socket_timeout'] ?? 300000;
         $this->mongoClient = new \MongoDB\Client(
-            $url,
+            $this->dsn,
             [
                 'connectTimeoutMS' => (int)$connectTimeout,
                 'socketTimeoutMS' => (int)$socketTimeout,
                 '_xpid' => getmypid()
             ]
         );
-        $this->db = $this->mongoClient->{$this->mongoDatabaseName};
+        $this->db = $this->mongoClient->{$this->databaseName};
     }
 
     /**
@@ -186,9 +83,21 @@ class Database
      */
     public function getTimestamp($time = null)
     {
-        return new \MongoDB\BSON\UTCDateTime(
+        return new UTCDateTime(
             ($time === null ? time() : $time) * 1000
         );
+    }
+
+    /**
+     * Convert a database timestamp to unix time
+     *
+     * @param mixed $timestamp Database timestamp
+     *
+     * @return int
+     */
+    public function getUnixTime($timestamp): int
+    {
+        return $timestamp->toDateTime()->getTimestamp();
     }
 
     /**
@@ -222,7 +131,7 @@ class Database
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
-     * @return \MongoDB\Driver\Cursor
+     * @return \Traversable
      */
     public function findRecords($filter, $options = [])
     {
@@ -449,7 +358,7 @@ class Database
      *
      * @param string $hash           Hash of parameters used to identify the
      *                               collection
-     * @param string $fromDate       Timestamp of processing start date
+     * @param int    $fromDate       Timestamp of processing start date
      * @param int    $lastRecordTime Newest record timestamp
      *
      * @return string
@@ -501,9 +410,9 @@ class Database
         // renameCollection requires admin priviledge
         $res = $this->mongoClient->admin->command(
             [
-                'renameCollection' => $this->mongoDatabaseName . '.'
+                'renameCollection' => $this->databaseName . '.'
                     . $collectionName,
-                'to' => $this->mongoDatabaseName . '.' . $newName
+                'to' => $this->databaseName . '.' . $newName
             ]
         );
         $resArray = $res->toArray();
@@ -639,6 +548,16 @@ class Database
     {
         if (!isset($options['noCursorTimeout'])) {
             $options['noCursorTimeout'] = true;
+        }
+        if ($filter) {
+            array_walk_recursive(
+                $filter,
+                function (&$value) {
+                    if ($value instanceof Regex) {
+                        $value = new \MongoDB\BSON\Regex((string)$value);
+                    }
+                }
+            );
         }
         return $this->db->{$collection}->find($filter, $options);
     }
