@@ -99,10 +99,6 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
     {
         foreach ($parent->children() as $node) {
             if ($node->getName() === sprintf('c%02d', $depth)) {
-                $attr = $node->attributes();
-                if (!isset($attr->level)) {
-                    continue;
-                }
                 $result[] = $node;
                 $this->collectChildNodes($node, $depth+1, $result);
             }
