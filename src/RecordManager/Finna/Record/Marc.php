@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Finna\Record;
 
+use MongoDB\BSON\UTCDateTime;
+use MongoDB\Collection;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -59,6 +61,27 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected $extraAllFields = [];
 
     /**
+     * Default field for geographic coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoField = 'location_geo';
+
+    /**
+     * Default field for geographic center coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoCenterField = 'center_coords';
+
+    /**
+     * Default field for geographic center coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoDisplayField = '';
+
+    /**
      * Set record data
      *
      * @param string $source Source ID
@@ -81,6 +104,8 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     public function normalize()
     {
+        parent::normalize();
+
         // Kyyti enumeration from 362 to title
         if ($this->source == 'kyyti' && isset($this->fields['245'])
             && isset($this->fields['362'])
@@ -89,96 +114,6 @@ class Marc extends \RecordManager\Base\Record\Marc
             if ($enum) {
                 $this->fields['245'][0]['s'][] = ['n' => $enum];
             }
-        }
-
-        // Koha and Alma record normalization
-        $koha = $this->getDriverParam('kohaNormalization', false);
-        $alma = $this->getDriverParam('almaNormalization', false);
-        if ($koha || $alma) {
-            // Convert items to holdings
-            $useHome = $koha && $this->getDriverParam('kohaUseHomeBranch', false);
-            $holdings = [];
-            $availableBuildings = [];
-            foreach ($this->getFields('952') as $field952) {
-                $key = [];
-                $holding = [];
-                $branch = $this->getSubfield($field952, $useHome ? 'a' : 'b');
-                $key[] = $branch;
-                // Always use subfield 'b' for location regardless of where it came
-                // from
-                $holding[] = ['b' => $branch];
-                foreach (['c', 'h', 'o', '8'] as $code) {
-                    $value = $this->getSubfield($field952, $code);
-                    $key[] = $value;
-                    if ('' !== $value) {
-                        $holding[] = [$code => $value];
-                    }
-                }
-
-                if ($alma) {
-                    $available = $this->getSubfield($field952, '1') == 1;
-                } else {
-                    // Availability
-                    static $subfieldsExist = [
-                        '0', // Withdrawn
-                        '1', // Lost
-                        '4', // Damaged
-                        'q', // Due date
-                    ];
-                    $available = true;
-                    foreach ($subfieldsExist as $code) {
-                        if ($this->getSubfield($field952, $code)) {
-                            $available = false;
-                            break;
-                        }
-                    }
-                    if ($available) {
-                        $status = $this->getSubfield($field952, '7'); // Not for loan
-                        $available = $status === '0' || $status === '1';
-                    }
-                }
-
-                $key = implode('//', $key);
-                if ($available) {
-                    $availableBuildings[$key] = 1;
-                }
-
-                $holdings[$key] = $holding;
-            }
-            $this->fields['952'] = [];
-            foreach ($holdings as $key => $holding) {
-                if (isset($availableBuildings[$key])) {
-                    $holding[] = ['9' => 1];
-                }
-                $this->fields['952'][] = [
-                    'i1' => ' ',
-                    'i2' => ' ',
-                    's' => $holding
-                ];
-            }
-        }
-
-        if ($koha) {
-            // Verify that 001 exists
-            if ('' === $this->getField('001')) {
-                if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
-                    $this->fields['001'] = [$id];
-                }
-            }
-        }
-
-        if ($alma) {
-            // Add a prefixed id to field 090 to indicate that the record is from
-            // Alma. Used at least with OpenURL.
-            $id = $this->getField('001');
-            $this->fields['090'][] = [
-                'i1' => ' ',
-                'i2' => ' ',
-                's' => [
-                    ['a' => "(Alma)$id"]
-                ]
-            ];
-            ksort($this->fields);
         }
     }
 
@@ -307,62 +242,6 @@ class Marc extends \RecordManager\Base\Record\Marc
                 )
             )
         );
-
-        // Location coordinates
-        $field = $this->getField('034');
-        if ($field) {
-            $westOrig = $this->getSubfield($field, 'd');
-            $eastOrig = $this->getSubfield($field, 'e');
-            $northOrig = $this->getSubfield($field, 'f');
-            $southOrig = $this->getSubfield($field, 'g');
-            $west = MetadataUtils::coordinateToDecimal($westOrig);
-            $east = MetadataUtils::coordinateToDecimal($eastOrig);
-            $north = MetadataUtils::coordinateToDecimal($northOrig);
-            $south = MetadataUtils::coordinateToDecimal($southOrig);
-
-            if (!is_nan($west) && !is_nan($north)) {
-                if (($west < -180 || $west > 180) || ($north < -90 || $north > 90)) {
-                    $this->logger->logDebug(
-                        'Marc',
-                        "Discarding invalid coordinates $west,$north decoded from "
-                            . "w=$westOrig, e=$eastOrig, n=$northOrig, s=$southOrig,"
-                            . " record {$this->source}." . $this->getID()
-                    );
-                    $this->storeWarning('invalid coordinates in 034');
-                } else {
-                    if (!is_nan($east) && !is_nan($south)) {
-                        if ($east < -180 || $east > 180 || $south < -90
-                            || $south > 90
-                        ) {
-                            $this->logger->logDebug(
-                                'Marc',
-                                "Discarding invalid coordinates $east,$south "
-                                    . "decoded from w=$westOrig, e=$eastOrig, "
-                                    . "n=$northOrig, s=$southOrig, record "
-                                    . "{$this->source}." . $this->getID()
-                            );
-                            $this->storeWarning('invalid coordinates in 034');
-                        } else {
-                            // Try to cope with weird coordinate order
-                            if ($north > $south) {
-                                list($north, $south) = [$south, $north];
-                            }
-                            if ($west > $east) {
-                                list($west, $east) = [$east, $west];
-                            }
-                            $data['location_geo']
-                                = "ENVELOPE($west, $east, $south, $north)";
-                        }
-                    } else {
-                        $data['location_geo'] = "POINT($west $north)";
-                    }
-                }
-            }
-        }
-        if (!empty($data['location_geo'])) {
-            $data['center_coords']
-                = MetadataUtils::getCenterCoordinates($data['location_geo']);
-        }
 
         // Classifications
         foreach ($this->getFields('080') as $field080) {
@@ -794,6 +673,12 @@ class Marc extends \RecordManager\Base\Record\Marc
                     = $this->addNamespaceToAuthorityIds([$id]);
             }
         }
+
+        // Make sure center_coords is single-valued
+        if (!empty($data['center_coords'])) {
+            $data['center_coords'] = $data['center_coords'][0];
+        }
+
         return $data;
     }
 
@@ -817,9 +702,9 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Merge component parts to this record
      *
-     * @param MongoCollection $componentParts Component parts to be merged
-     * @param MongoDate|null  $changeDate     Latest timestamp for the component part
-     *                                        set
+     * @param Collection       $componentParts Component parts to be merged
+     * @param UTCDateTime|null $changeDate     Latest timestamp for the component
+     *                                         part set
      *
      * @return int Count of records merged
      */
@@ -1028,48 +913,54 @@ class Marc extends \RecordManager\Base\Record\Marc
         if (isset($this->fields['502'])) {
             return 'Dissertation';
         }
-        $dissType = '';
+        $dissTypes = [];
         if (isset($this->fields['509'])) {
-            $dissType = MetadataUtils::stripTrailingPunctuation(
-                $this->getFieldSubfields('509', ['a' => 1])
+            $dissTypes = $this->getFieldsSubfields(
+                [[self::GET_NORMAL, '509', ['a' => 1]]]
             );
         }
-        if (!$dissType && isset($this->fields['920'])) {
-            $dissType = MetadataUtils::stripTrailingPunctuation(
-                $this->getFieldSubfields('920', ['a' => 1])
+        if (!$dissTypes && isset($this->fields['920'])) {
+            $dissTypes = $this->getFieldsSubfields(
+                [[self::GET_NORMAL, '920', ['a' => 1]]]
             );
         }
-        if ($dissType) {
-            switch (strtolower($dissType)) {
-            case 'kandidaatintutkielma':
-            case 'kandidaatintyö':
-            case 'kandidatarbete':
-                return 'BachelorsThesis';
-            case 'pro gradu -tutkielma':
-            case 'pro gradu -työ':
-            case 'pro gradu':
-                return 'ProGradu';
-            case 'laudaturtyö':
-            case 'laudaturavh':
-                return 'LaudaturThesis';
-            case 'lisensiaatintyö':
-            case 'lic.avh.':
-                return 'LicentiateThesis';
-            case 'diplomityö':
-            case 'diplomarbete':
-                return 'MastersThesis';
-            case 'erikoistyö':
-            case 'vicenot.ex.':
-                return 'Thesis';
-            case 'lopputyö':
-            case 'rättsnot.ex.':
-                return 'Thesis';
-            case 'amk-opinnäytetyö':
-            case 'yh-examensarbete':
-                return 'BachelorsThesisPolytechnic';
-            case 'ylempi amk-opinnäytetyö':
-            case 'högre yh-examensarbete':
-                return 'MastersThesisPolytechnic';
+        if ($dissTypes) {
+            foreach ($dissTypes as $dissType) {
+                $dissType = mb_strtolower(
+                    MetadataUtils::normalizeUnicode($dissType, 'NFKC'),
+                    'UTF-8'
+                );
+                switch ($dissType) {
+                case 'kandidaatintutkielma':
+                case 'kandidaatintyö':
+                case 'kandidatarbete':
+                    return 'BachelorsThesis';
+                case 'pro gradu -tutkielma':
+                case 'pro gradu -työ':
+                case 'pro gradu':
+                    return 'ProGradu';
+                case 'laudaturtyö':
+                case 'laudaturavh':
+                    return 'LaudaturThesis';
+                case 'lisensiaatintyö':
+                case 'lic.avh.':
+                    return 'LicentiateThesis';
+                case 'diplomityö':
+                case 'diplomarbete':
+                    return 'MastersThesis';
+                case 'erikoistyö':
+                case 'vicenot.ex.':
+                    return 'Thesis';
+                case 'lopputyö':
+                case 'rättsnot.ex.':
+                    return 'Thesis';
+                case 'amk-opinnäytetyö':
+                case 'yh-examensarbete':
+                    return 'BachelorsThesisPolytechnic';
+                case 'ylempi amk-opinnäytetyö':
+                case 'högre yh-examensarbete':
+                    return 'MastersThesisPolytechnic';
+                }
             }
             return 'Thesis';
         }
@@ -1426,8 +1317,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getDefaultBuildingFields()
     {
         $useSub = $this->getDriverParam('subLocationInBuilding', '');
-        $itemSub = $this
-            ->getDriverParam('itemSubLocationInBuilding', $useSub);
+        $itemSub = $this->getDriverParam('itemSubLocationInBuilding', $useSub);
         return [
             [
                 'field' => '852',

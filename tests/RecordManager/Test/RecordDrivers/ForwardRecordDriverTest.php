@@ -25,6 +25,9 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
+namespace RecordManager\Test\RecordDrivers;
+
+use RecordManager\Base\Record\Forward;
 
 /**
  * FORWARD Record Driver Test Class
@@ -37,8 +40,6 @@
  */
 class ForwardRecordDriverTest extends RecordDriverTest
 {
-    protected $driver = '\RecordManager\Base\Record\Forward';
-
     /**
      * Test FORWARD Record handling
      *
@@ -46,7 +47,7 @@ class ForwardRecordDriverTest extends RecordDriverTest
      */
     public function testForward1()
     {
-        $record = $this->createRecord('forward1.xml');
+        $record = $this->createRecord(Forward::class, 'forward1.xml');
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 

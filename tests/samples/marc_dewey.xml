@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+ <record>
+  <leader>01924cam a22005174i 4500</leader>
+  <controlfield tag="001">016234029</controlfield>
+  <controlfield tag="003">FI-MELINDA</controlfield>
+  <controlfield tag="005">20190618144412.0</controlfield>
+  <controlfield tag="008">190618t19791979fr abe fr|||| 001 0 fre c</controlfield>
+  <datafield tag="020" ind1=" " ind2=" ">
+   <subfield code="a">2-200-37100-4</subfield>
+   <subfield code="q">nidottu</subfield>
+  </datafield>
+  <datafield tag="024" ind1="3" ind2="0">
+   <subfield code="a">9782200371005</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+   <subfield code="a">FCC016234029</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+   <subfield code="a">(OCoLC)123456</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+   <subfield code="a">ocn234567</subfield>
+  </datafield>
+  <datafield tag="040" ind1=" " ind2=" ">
+   <subfield code="a">ABES</subfield>
+   <subfield code="b">mul</subfield>
+   <subfield code="e">rda</subfield>
+   <subfield code="d">Fi-X</subfield>
+  </datafield>
+  <datafield tag="041" ind1="0" ind2=" ">
+   <subfield code="a">fre</subfield>
+  </datafield>
+  <datafield tag="082" ind1="0" ind2=" ">
+   <subfield code="a">330.903</subfield>
+   <subfield code="2">22</subfield>
+  </datafield>
+  <datafield tag="084" ind1=" " ind2=" ">
+   <subfield code="a">940.</subfield>
+   <subfield code="2">Dewey</subfield>
+  </datafield>
+  <datafield tag="084" ind1=" " ind2=" ">
+   <subfield code="a">909.</subfield>
+   <subfield code="2">Dewey</subfield>
+  </datafield>
+  <datafield tag="084" ind1=" " ind2=" ">
+   <subfield code="a">909.4.</subfield>
+   <subfield code="2">Dewey</subfield>
+  </datafield>
+  <datafield tag="084" ind1=" " ind2=" ">
+   <subfield code="a">330.903.</subfield>
+   <subfield code="2">Dewey</subfield>
+  </datafield>
+  <datafield tag="100" ind1="1" ind2=" ">
+   <subfield code="a">Braudel, Fernand,</subfield>
+   <subfield code="e">kirjoittaja.</subfield>
+  </datafield>
+  <datafield tag="245" ind1="1" ind2="0">
+   <subfield code="a">Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle :</subfield>
+   <subfield code="b">le possible et l'impossible.</subfield>
+   <subfield code="n">Tome 1,</subfield>
+   <subfield code="p">Les structures du quotidien : le possible et l'impossible /</subfield>
+   <subfield code="c">Fernand Braudel.</subfield>
+  </datafield>
+  <datafield tag="246" ind1="3" ind2="0">
+   <subfield code="a">Les structures du quotidien :</subfield>
+   <subfield code="b">le possible et l'impossible</subfield>
+  </datafield>
+  <datafield tag="264" ind1=" " ind2="1">
+   <subfield code="a">Paris :</subfield>
+   <subfield code="b">Armand Colin.</subfield>
+   <subfield code="c">[1979]</subfield>
+  </datafield>
+  <datafield tag="264" ind1=" " ind2="4">
+   <subfield code="c">© 1979</subfield>
+  </datafield>
+  <datafield tag="300" ind1=" " ind2=" ">
+   <subfield code="a">543 sivua :</subfield>
+   <subfield code="b">kuvitettu ;</subfield>
+   <subfield code="c">24 cm</subfield>
+  </datafield>
+  <datafield tag="336" ind1=" " ind2=" ">
+   <subfield code="a">teksti</subfield>
+   <subfield code="b">txt</subfield>
+   <subfield code="2">rdacontent</subfield>
+  </datafield>
+  <datafield tag="337" ind1=" " ind2=" ">
+   <subfield code="a">käytettävissä ilman laitetta</subfield>
+   <subfield code="b">n</subfield>
+   <subfield code="2">rdamedia</subfield>
+  </datafield>
+  <datafield tag="338" ind1=" " ind2=" ">
+   <subfield code="a">nide</subfield>
+   <subfield code="b">nc</subfield>
+   <subfield code="2">rdacarrier</subfield>
+  </datafield>
+  <datafield tag="500" ind1=" " ind2=" ">
+   <subfield code="a">Autres tirages : 1980, 1984, 1986, 1988, 1992, 2000.</subfield>
+  </datafield>
+  <datafield tag="504" ind1=" " ind2=" ">
+   <subfield code="a">Bibliogr. p. 497-520. Index.</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">Moeurs et coutumes</subfield>
+   <subfield code="x">Études transculturelles</subfield>
+   <subfield code="y">1500-1800.</subfield>
+   <subfield code="2">ram</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">Sociologie du quotidien</subfield>
+   <subfield code="x">Études transculturelles.</subfield>
+   <subfield code="2">ram</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">Civilisation</subfield>
+   <subfield code="x">Histoire.</subfield>
+   <subfield code="2">ram</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">Histoire sociale</subfield>
+   <subfield code="y">1500-1800.</subfield>
+   <subfield code="2">ram</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">Économie politique.</subfield>
+   <subfield code="2">ram</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">Histoire moderne et contemporaine.</subfield>
+   <subfield code="2">ram</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">Matérialisme</subfield>
+   <subfield code="x">Histoire.</subfield>
+   <subfield code="2">ram</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">Capitalisme</subfield>
+   <subfield code="x">Histoire.</subfield>
+   <subfield code="2">ram</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">Civilisation moderne</subfield>
+   <subfield code="x">Histoire.</subfield>
+   <subfield code="2">ram</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">Histoire économique.</subfield>
+   <subfield code="2">ram</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="0">
+   <subfield code="a">Economic history.</subfield>
+   <subfield code="2">lc</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="0">
+   <subfield code="a">Social history.</subfield>
+   <subfield code="2">lc</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="0">
+   <subfield code="a">Civilization, Modern</subfield>
+   <subfield code="x">History.</subfield>
+   <subfield code="2">lc</subfield>
+  </datafield>
+  <datafield tag="942" ind1=" " ind2=" ">
+   <subfield code="1">2019-06-18 14:44:12</subfield>
+  </datafield>
+  <datafield tag="999" ind1=" " ind2=" ">
+   <subfield code="c">2038413</subfield>
+   <subfield code="d">2038413</subfield>
+  </datafield>
+  <datafield tag="952" ind1=" " ind2=" ">
+   <subfield code="b">NRL</subfield>
+   <subfield code="c">VARASTO</subfield>
+   <subfield code="o">N1 19 012044</subfield>
+   <subfield code="9">1</subfield>
+  </datafield>
+ </record>
+</collection>

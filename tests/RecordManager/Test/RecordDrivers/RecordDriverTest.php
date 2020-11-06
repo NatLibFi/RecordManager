@@ -25,8 +25,8 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-use RecordManager\Base\Record\Factory as RecordFactory;
-use RecordManager\Base\Utils\Logger;
+namespace RecordManager\Test\RecordDrivers;
+
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -38,14 +38,9 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-abstract class RecordDriverTest extends AbstractTest
+abstract class RecordDriverTest extends \RecordManager\Test\AbstractTest
 {
-    /**
-     * Record driver class. Override from a subclass.
-     *
-     * @var object
-     */
-    protected $driver = null;
+    use CreateRecordTrait;
 
     /**
      * Standard setup method.
@@ -54,38 +49,14 @@ abstract class RecordDriverTest extends AbstractTest
      */
     public function setUp(): void
     {
-        if (empty($this->driver)) {
-            $this->markTestIncomplete('Record driver needs to be set in subclass.');
-        }
-
         MetadataUtils::setConfig(
             [
-                'Site' =>
-                    [
-                        'articles' => 'articles.lst'
-                    ]
+                'Site' => [
+                    'articles' => 'articles.lst'
+                ],
             ],
-            __DIR__ . '/../configs/recorddrivertest'
+            __DIR__ . '/../../../configs/recorddrivertest'
         );
-    }
-
-    /**
-     * Create a sample record driver
-     *
-     * @param string $sample   Sample record file
-     * @param array  $dsConfig Datasource config
-     *
-     * @return object
-     */
-    protected function createRecord($sample, $dsConfig = [])
-    {
-        $logger = $this->createMock(Logger::class);
-        $recordFactory = new RecordFactory($logger, [], $dsConfig);
-        $sample = file_get_contents(__DIR__ . '/../samples/' . $sample);
-        $record = $recordFactory->createRecord(
-            $this->driver, $sample, '__unit_test_no_id__', '__unit_test_no_source__'
-        );
-        return $record;
     }
 
     /**

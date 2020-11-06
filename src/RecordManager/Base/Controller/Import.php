@@ -66,7 +66,12 @@ class Import extends AbstractBase
         }
         $settings = &$this->dataSourceSettings[$source];
         $count = 0;
-        foreach (glob($files) as $file) {
+        $filelist = glob($files);
+        if (empty($filelist)) {
+            $this->logger->logWarning('import', 'No matching files found');
+            return 0;
+        }
+        foreach ($filelist as $file) {
             $this->logger->logInfo(
                 'import', "Loading records from '$file' into '$source'"
             );

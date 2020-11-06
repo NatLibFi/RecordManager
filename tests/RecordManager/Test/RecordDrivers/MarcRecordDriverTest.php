@@ -25,8 +25,10 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
+namespace RecordManager\Test\RecordDrivers;
 
 use RecordManager\Base\Database\Database;
+use RecordManager\Base\Record\Marc;
 
 /**
  * MARC Record Driver Test Class
@@ -39,8 +41,6 @@ use RecordManager\Base\Database\Database;
  */
 class MarcRecordDriverTest extends RecordDriverTest
 {
-    protected $driver = '\RecordManager\Base\Record\Marc';
-
     /**
      * Test MARC Record handling
      *
@@ -48,7 +48,7 @@ class MarcRecordDriverTest extends RecordDriverTest
      */
     public function testMarc1()
     {
-        $record = $this->createRecord('marc1.xml');
+        $record = $this->createRecord(Marc::class, 'marc1.xml');
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -71,7 +71,7 @@ class MarcRecordDriverTest extends RecordDriverTest
                 3 => '17. uud. p.',
                 4 => 'Helsinki',
                 5 => 'Tammi',
-                6 => '2013.',
+                6 => '2345 [2013]',
                 7 => 'teksti',
                 8 => 'txt',
                 9 => 'rdacontent',
@@ -240,7 +240,7 @@ class MarcRecordDriverTest extends RecordDriverTest
      */
     public function testMarc2()
     {
-        $record = $this->createRecord('marc2.xml');
+        $record = $this->createRecord(Marc::class, 'marc2.xml');
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -409,6 +409,375 @@ class MarcRecordDriverTest extends RecordDriverTest
     }
 
     /**
+     * Test MARC Record handling
+     *
+     * @return void
+     */
+    public function testMarcGeo()
+    {
+        $record = $this->createRecord(Marc::class, 'marc_geo.xml');
+        $fields = $record->toSolrArray();
+        unset($fields['fullrecord']);
+
+        $expected = [
+            'record_format' => 'marc',
+            'building' => [
+                0 => '001',
+            ],
+            'long_lat' => [
+                'ENVELOPE(19.5, 24.75, 60.666666666667, 59.8)',
+                'ENVELOPE(19.5, 24.75, 60.666666666667, 59.800277777778)',
+            ],
+            'long_lat_display' => [
+                '19.5 24.75 60.666666666667 59.8',
+                '19.5 24.75 60.666666666667 59.800277777778',
+            ],
+            'lccn' => '',
+            'ctrlnum' => [
+                0 => '(FI-Piki)Ppro837_107786',
+                1 => '(PIKI)Ppro837_107786',
+                2 => '(FI-MELINDA)000963219',
+            ],
+            'allfields' => [
+                0 => 'Suomen tiekartta',
+                1 => 'Vägkarta över Finland',
+                2 => '1.',
+                3 => 'Suomen tiekartta 1',
+                4 => '1:200000',
+                5 => 'Helsinki]',
+                6 => 'Maanmittaushallitus]',
+                7 => '1946.',
+                8 => '1 kartta',
+                9 => 'värillinen',
+                10 => 'taitettuna 26 x 13 cm',
+                11 => 'kartografinen kuva',
+                12 => 'cri',
+                13 => 'rdacontent',
+                14 => 'käytettävissä ilman laitetta',
+                15 => 'n',
+                16 => 'rdamedia',
+                17 => 'arkki',
+                18 => 'nb',
+                19 => 'rdacarrier',
+                20 => 'Ahvenanmaa mittakaavassa 1:400000',
+                21 => 'Kh-kokoelma',
+                22 => 'tiekartat',
+                23 => 'kartat',
+                24 => 'Suomi',
+                25 => 'Turun ja Porin lääni',
+                26 => 'ysa',
+                27 => 'Uudenmaan lääni',
+                28 => 'Ahvenanmaa',
+                29 => 'Maanmittaushallitus',
+            ],
+            'language' => [
+                0 => 'fin',
+                1 => 'fin',
+                2 => 'swe',
+            ],
+            'format' => 'Map',
+            'author' => [
+            ],
+            'author_role' => [
+            ],
+            'author_fuller' => [
+            ],
+            'author2' => [
+            ],
+            'author2_role' => [
+            ],
+            'author2_fuller' => [
+            ],
+            'author_corporate' => [
+                0 => 'Maanmittaushallitus',
+            ],
+            'author_corporate_role' => [
+                0 => '-',
+            ],
+            'author2_id_str_mv' => [
+            ],
+            'author2_id_role_str_mv' => [
+            ],
+            'author_additional' => [
+            ],
+            'title' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
+            'title_sub' => 'Vägkarta över Finland. 1.',
+            'title_short' => 'Suomen tiekartta',
+            'title_full' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
+            'title_alt' => [
+            ],
+            'title_old' => [
+            ],
+            'title_new' => [
+            ],
+            'title_sort' => 'suomen tiekartta = vägkarta över finland. 1.',
+            'series' => [
+            ],
+            'publisher' => [
+                0 => '[Maanmittaushallitus]',
+            ],
+            'publishDateSort' => '1946',
+            'publishDate' => [
+                0 => '1946',
+            ],
+            'physical' => [
+                0 => '1 kartta : värillinen ; taitettuna 26 x 13 cm',
+            ],
+            'dateSpan' => [
+            ],
+            'edition' => '',
+            'contents' => [
+            ],
+            'isbn' => [
+            ],
+            'issn' => [
+            ],
+            'callnumber-first' => '',
+            'callnumber-raw' => [
+                0 => '42.02',
+            ],
+            'callnumber-sort' => '',
+            'topic' => [
+                0 => 'tiekartat',
+                1 => 'kartat Suomi',
+            ],
+            'genre' => [
+            ],
+            'geographic' => [
+                0 => 'Turun ja Porin lääni',
+                1 => 'Uudenmaan lääni',
+                2 => 'Ahvenanmaa',
+            ],
+            'era' => [
+            ],
+            'topic_facet' => [
+                0 => 'tiekartat',
+                1 => 'kartat',
+            ],
+            'genre_facet' => [
+            ],
+            'geographic_facet' => [
+                0 => 'Suomi',
+                1 => 'Turun ja Porin lääni',
+                2 => 'Uudenmaan lääni',
+                3 => 'Ahvenanmaa',
+            ],
+            'era_facet' => [
+            ],
+            'url' => [
+            ],
+            'illustrated' => 'Not Illustrated',
+        ];
+
+        $this->compareArray($expected, $fields, 'toSolrArray');
+    }
+
+    /**
+     * Test MARC Record handling
+     *
+     * @return void
+     */
+    public function testMarcDewey()
+    {
+        $record = $this->createRecord(Marc::class, 'marc_dewey.xml');
+        $fields = $record->toSolrArray();
+        unset($fields['fullrecord']);
+
+        $expected = [
+            'record_format' => 'marc',
+            'building' => [
+            ],
+            'lccn' => '',
+            'ctrlnum' => [
+                0 => 'FCC016234029',
+                1 => '(OCoLC)123456',
+                2 => 'ocn234567',
+            ],
+            'allfields' => [
+                0 => 'Braudel, Fernand',
+                1 => 'kirjoittaja',
+                2 => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle',
+                3 => 'le possible et l\'impossible',
+                4 => 'Tome 1',
+                5 => 'Les structures du quotidien : le possible et l\'impossible',
+                6 => 'Fernand Braudel',
+                7 => 'Les structures du quotidien',
+                8 => 'Paris',
+                9 => 'Armand Colin',
+                10 => '1979]',
+                11 => '© 1979',
+                12 => '543 sivua',
+                13 => 'kuvitettu',
+                14 => '24 cm',
+                15 => 'teksti',
+                16 => 'txt',
+                17 => 'rdacontent',
+                18 => 'käytettävissä ilman laitetta',
+                19 => 'n',
+                20 => 'rdamedia',
+                21 => 'nide',
+                22 => 'nc',
+                23 => 'rdacarrier',
+                24 => 'Autres tirages : 1980, 1984, 1986, 1988, 1992, 2000.',
+                25 => 'Bibliogr. p. 497-520. Index',
+                26 => 'Moeurs et coutumes',
+                27 => 'Études transculturelles',
+                28 => '1500-1800',
+                29 => 'Sociologie du quotidien',
+                30 => 'Civilisation',
+                31 => 'Histoire',
+                32 => 'Histoire sociale',
+                33 => 'Économie politique',
+                34 => 'Histoire moderne et contemporaine',
+                35 => 'Matérialisme',
+                36 => 'Capitalisme',
+                37 => 'Civilisation moderne',
+                38 => 'Histoire économique',
+                39 => 'Economic history',
+                40 => 'Social history',
+                41 => 'Civilization, Modern',
+                42 => 'History',
+            ],
+            'language' => [
+                0 => 'fre',
+                1 => 'fre',
+            ],
+            'format' => 'Book',
+            'author' => [
+            ],
+            'author_role' => [
+            ],
+            'author_fuller' => [
+            ],
+            'author2' => [
+                0 => 'Braudel, Fernand',
+            ],
+            'author2_role' => [
+                0 => 'kirjoittaja',
+            ],
+            'author2_fuller' => [
+            ],
+            'author_corporate' => [
+            ],
+            'author_corporate_role' => [
+            ],
+            'author2_id_str_mv' => [
+            ],
+            'author2_id_role_str_mv' => [
+            ],
+            'author_additional' => [
+            ],
+            'title' => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle : le possible et l\'impossible. Tome 1, Les structures du quotidien : le possible et l\'impossible',
+            'title_sub' => 'le possible et l\'impossible. Tome 1, Les structures du quotidien : le possible et l\'impossible',
+            'title_short' => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle',
+            'title_full' => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle : le possible et l\'impossible. Tome 1, Les structures du quotidien : le possible et l\'impossible / Fernand Braudel',
+            'title_alt' => [
+            ],
+            'title_old' => [
+            ],
+            'title_new' => [
+            ],
+            'title_sort' => 'civilisation matérielle, économie et capitalisme, xve-xviiie siècle : le possible et l\'impossible. tome 1, les structures du quotidien : le possible et l\'impossible / fernand braudel',
+            'series' => [
+            ],
+            'publisher' => [
+                0 => 'Armand Colin',
+            ],
+            'publishDateSort' => '1979',
+            'publishDate' => [
+                0 => '1979',
+            ],
+            'physical' => [
+                0 => '543 sivua : kuvitettu ; 24 cm',
+            ],
+            'dateSpan' => [
+            ],
+            'edition' => '',
+            'contents' => [
+            ],
+            'isbn' => [
+                0 => '9782200371005',
+            ],
+            'issn' => [
+            ],
+            'callnumber-first' => '',
+            'callnumber-raw' => [
+                0 => '940.',
+                1 => '909.',
+                2 => '909.4.',
+                3 => '330.903.',
+            ],
+            'callnumber-sort' => '',
+            'topic' => [
+                0 => 'Moeurs et coutumes Études transculturelles 1500-1800',
+                1 => 'Sociologie du quotidien Études transculturelles',
+                2 => 'Civilisation Histoire',
+                3 => 'Histoire sociale 1500-1800',
+                4 => 'Économie politique',
+                5 => 'Histoire moderne et contemporaine',
+                6 => 'Matérialisme Histoire',
+                7 => 'Capitalisme Histoire',
+                8 => 'Civilisation moderne Histoire',
+                9 => 'Histoire économique',
+                10 => 'Economic history',
+                11 => 'Social history',
+                12 => 'Civilization, Modern History',
+            ],
+            'genre' => [
+            ],
+            'geographic' => [
+            ],
+            'era' => [
+            ],
+            'topic_facet' => [
+                0 => 'Moeurs et coutumes',
+                1 => 'Sociologie du quotidien',
+                2 => 'Civilisation',
+                3 => 'Histoire sociale',
+                4 => 'Économie politique',
+                5 => 'Histoire moderne et contemporaine',
+                6 => 'Matérialisme',
+                7 => 'Capitalisme',
+                8 => 'Civilisation moderne',
+                9 => 'Histoire économique',
+                10 => 'Economic history',
+                11 => 'Social history',
+                12 => 'Civilization, Modern',
+                13 => 'Études transculturelles',
+                14 => 'Études transculturelles',
+                15 => 'Histoire',
+                16 => 'Histoire',
+                17 => 'Histoire',
+                18 => 'Histoire',
+                19 => 'History',
+            ],
+            'genre_facet' => [
+            ],
+            'geographic_facet' => [
+            ],
+            'era_facet' => [
+                0 => '1500-1800',
+                1 => '1500-1800',
+            ],
+            'url' => [
+            ],
+            'illustrated' => 'Illustrated',
+            'dewey-hundreds' => '300',
+            'dewey-tens' => '330',
+            'dewey-ones' => '330',
+            'dewey-full' => '330.903',
+            'dewey-sort' => '3330.903 ',
+            'dewey-raw' => '330.903',
+            'oclc_num' => [
+                '123456',
+                '234567'
+            ],
+        ];
+
+        $this->compareArray($expected, $fields, 'toSolrArray');
+    }
+
+    /**
      * Test MARC Record linking
      *
      * @return void
@@ -456,7 +825,7 @@ class MarcRecordDriverTest extends RecordDriverTest
             ->method('findRecord')
             ->will($this->returnValueMap($map));
 
-        $record = $this->createRecord('marc_links.xml');
+        $record = $this->createRecord(Marc::class, 'marc_links.xml');
         $record->toSolrArray($db);
         $marc776 = $record->getFields('776');
         $this->assertEquals(2, count($marc776));
@@ -466,6 +835,7 @@ class MarcRecordDriverTest extends RecordDriverTest
         $this->assertEquals('__unit_test_no_source__.xyzzy', $w);
 
         $record = $this->createRecord(
+            Marc::class,
             'marc_links.xml',
             [
                 '__unit_test_no_source__' => [

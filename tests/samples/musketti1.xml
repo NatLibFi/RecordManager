@@ -114,13 +114,13 @@
                         <displaySubject>Kuparinen, mustunut ja kolhiintunut poromiesten käyttämä kahvipannu.</displaySubject>
                         <subject>
                             <subjectConcept>
-                                <term label="Museoalan asiasanasto">taloustarvikkeet</term>
+                                <term label="Museoalan asiasanasto">taloustarvikkeet </term>
                             </subjectConcept>
                             <subjectConcept>
-                                <term label="Yleinen suomalainen asiasanasto">nautintoaineet</term>
+                                <term label="Yleinen suomalainen asiasanasto"> nautintoaineet</term>
                             </subjectConcept>
                             <subjectConcept>
-                                <term label="Yleinen suomalainen asiasanasto">kahvi</term>
+                                <term label="Yleinen suomalainen asiasanasto">kahvi <!-- test --></term>
                             </subjectConcept>
                             <subjectConcept>
                                 <term label="Museoalan asiasanasto">suomalais-ugrilaiset kansat</term>

@@ -251,7 +251,7 @@ class Forward extends Base
     }
 
     /**
-     * Dedup: Return main author (format: Last, First)
+     * Return main author (format: Last, First)
      *
      * @return string
      */

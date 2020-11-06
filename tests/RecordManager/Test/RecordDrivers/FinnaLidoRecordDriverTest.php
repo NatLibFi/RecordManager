@@ -27,6 +27,9 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
+namespace RecordManager\Test\RecordDrivers;
+
+use RecordManager\Finna\Record\Lido;
 
 /**
  * Finna LIDO Record Driver Test Class
@@ -39,8 +42,6 @@
  */
 class FinnaLidoRecordDriverTest extends RecordDriverTest
 {
-    protected $driver = '\RecordManager\Finna\Record\Lido';
-
     /**
      * Test Musketti LIDO record handling
      *
@@ -48,7 +49,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testMusketti1()
     {
-        $fields = $this->createRecord('musketti1.xml')->toSolrArray();
+        $fields = $this->createRecord(Lido::class, 'musketti1.xml')->toSolrArray();
 
         $this->assertContains('metalli', $fields['material']);
         $this->assertContains('kupari', $fields['material']);
@@ -98,27 +99,222 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testMusketti2()
     {
-        $fields = $this->createRecord('musketti2.xml')->toSolrArray();
+        $fields = $this->createRecord(Lido::class, 'musketti2.xml')->toSolrArray();
+        unset($fields['fullrecord']);
 
-        $this->assertContains('valokuva', $fields['classification_txt_mv']);
+        $expected = [
+            'record_format' => 'lido',
+            'title_full' => 'Imatrankoski',
+            'title_short' => 'Imatrankoski',
+            'title' => 'Imatrankoski',
+            'title_sort' => 'Imatrankoski',
+            'format' => 'kuva',
+            'institution' => 'Museoviraston kuva-arkisto/',
+            'author' => [
+                0 => 'Hintze Harry, kuvaaja',
+            ],
+            'author_sort' => 'Hintze Harry, kuvaaja',
+            'topic_facet' => [
+            ],
+            'topic' => [
+            ],
+            'material' => [
+            ],
+            'era_facet' => '1897',
+            'era' => '1897',
+            'geographic_facet' => [
+                0 => 'Imatrankoski, Ruokolahti',
+                1 => 'Imatrankoski',
+                2 => 'Ruokolahti',
+            ],
+            'geographic' => [
+                0 => 'Imatrankoski, Ruokolahti',
+            ],
+            'collection' => 'Kansatieteen kuvakokoelma',
+            'thumbnail' => 'http://muisti.nba.fi/m/4878_1/00013199.jpg',
+            'allfields' => [
+                0 => 'musketti_www.M012:4878:1',
+                1 => 'Museovirasto/MV',
+                2 => 'kuva',
+                3 => 'Museovirasto/MV',
+                4 => 'Museovirasto/MV',
+                5 => 'Museovirasto/MV',
+                6 => 'valokuva',
+                7 => 'Museovirasto/MV',
+                8 => 'Museovirasto/MV',
+                9 => 'Museovirasto/MV',
+                10 => 'Museovirasto/MV',
+                11 => 'Imatrankoski',
+                12 => 'Museovirasto/MV',
+                13 => 'Museovirasto/MV',
+                14 => 'Museovirasto/MV',
+                15 => '33,1.',
+                16 => 'Museovirasto/MV',
+                17 => 'Museovirasto/MV',
+                18 => 'Museovirasto/MV',
+                19 => 'Imatra. val. H.Hintze 1897 Antr.',
+                20 => 'Museovirasto/MV',
+                21 => 'Museovirasto/MV',
+                22 => 'Museovirasto/MV',
+                23 => '33,1.',
+                24 => 'Museovirasto/MV',
+                25 => 'Museovirasto/MV',
+                26 => 'Museovirasto/MV',
+                27 => 'Imatra. 1897',
+                28 => 'Museovirasto/MV',
+                29 => 'Museovirasto/MV',
+                30 => 'Museovirasto/MV',
+                31 => '33,1. Imatra.',
+                32 => 'Museovirasto/MV',
+                33 => 'Museovirasto/MV',
+                34 => 'Museovirasto/MV',
+                35 => 'Museovirasto/MV',
+                36 => 'Museoviraston kuva-arkisto/',
+                37 => 'Museovirasto/MV',
+                38 => 'Museovirasto/MV',
+                39 => 'Museovirasto/MV',
+                40 => '4878:1',
+                41 => 'Museovirasto/MV',
+                42 => 'Museovirasto/MV',
+                43 => 'Museovirasto/MV',
+                44 => 'Museovirasto/MV',
+                45 => 'valmistus',
+                46 => 'Museovirasto/MV',
+                47 => 'Museovirasto/MV',
+                48 => 'Hintze Harry',
+                49 => 'Museovirasto/MV',
+                50 => 'Museovirasto/MV',
+                51 => 'Museovirasto/MV',
+                52 => 'Museovirasto/MV',
+                53 => 'Museovirasto/MV',
+                54 => '1897',
+                55 => 'Museovirasto/MV',
+                56 => '1897',
+                57 => 'Museovirasto/MV',
+                58 => '1897',
+                59 => 'Museovirasto/MV',
+                60 => 'Museovirasto/MV',
+                61 => 'Museovirasto/MV',
+                62 => 'Ruokolahti',
+                63 => 'Museovirasto/MV',
+                64 => 'Museovirasto/MV',
+                65 => 'Museovirasto/MV',
+                66 => 'Museovirasto/MV',
+                67 => 'Museovirasto/MV',
+                68 => 'Imatrankoski',
+                69 => 'Museovirasto/MV',
+                70 => '1897',
+                71 => 'Museovirasto/MV',
+                72 => 'Museovirasto/MV',
+                73 => 'Imatrankoski, Ruokolahti',
+                74 => 'Museovirasto/MV',
+                75 => 'Museovirasto/MV',
+                76 => 'Imatrankoski',
+                77 => 'Museovirasto/MV',
+                78 => 'Museovirasto/MV',
+                79 => 'luonnon paikka',
+                80 => 'Museovirasto/MV',
+                81 => 'Museovirasto/MV',
+                82 => 'Museovirasto/MV',
+                83 => 'Museovirasto/MV',
+                84 => 'Ruokolahti ..',
+                85 => 'Museovirasto/MV',
+                86 => 'Museovirasto/MV',
+                87 => 'kunta/kaupunki (Suomi)',
+                88 => 'Museovirasto/MV',
+                89 => 'Museovirasto/MV',
+                90 => 'Museovirasto/MV',
+                91 => 'Museovirasto/MV',
+                92 => 'Museovirasto/MV',
+                93 => 'Museovirasto/MV',
+                94 => 'Museovirasto/MV',
+                95 => 'Museovirasto/MV',
+                96 => 'Museovirasto/MV',
+                97 => 'Museovirasto',
+                98 => 'Museovirasto/MV',
+                99 => 'Museovirasto/MV',
+                100 => 'Hintze Harry',
+                101 => 'Museovirasto/MV',
+                102 => 'Museovirasto/MV',
+                103 => 'Museovirasto/MV',
+                104 => 'Museovirasto/MV',
+                105 => 'Museovirasto/MV',
+                106 => '4878:1',
+                107 => 'Museovirasto/MV',
+                108 => '4878:1',
+                109 => 'Museovirasto/MV',
+                110 => 'Museovirasto/MV',
+                111 => 'Museovirasto/MV',
+                112 => 'Museovirasto/MV',
+                113 => 'Museovirasto/MV',
+                114 => 'Museovirasto/MV',
+                115 => 'Museovirasto/MV',
+                116 => 'Museovirasto/MV',
+                117 => 'Museovirasto/MV',
+                118 => 'Museovirasto/MV',
+                119 => 'Museovirasto/MV',
+                120 => 'Museovirasto/MV',
+                121 => 'Museovirasto/MV',
+                122 => 'Museovirasto/MV',
+            ],
+            'identifier' => '4878:1',
+            'measurements' => [
+                0 => '12 x 17 cm, 12 cm',
+            ],
+            'culture' => [
+            ],
+            'rights' => 'Museovirasto/MV',
+            'artist_str_mv' => [
+            ],
+            'photographer_str_mv' => [
+            ],
+            'finder_str_mv' => [
+            ],
+            'manufacturer_str_mv' => [
+            ],
+            'designer_str_mv' => [
+            ],
+            'classification_str_mv' => [
+                0 => 'valokuva',
+            ],
+            'classification_txt_mv' => [
+                0 => 'valokuva',
+            ],
+            'exhibition_str_mv' => [
+            ],
+            'main_date_str' => '1897',
+            'main_date' => '1897-01-01T00:00:00Z',
+            'search_daterange_mv' => [
+                0 => '[1897-01-01 TO 1897-12-31]',
+                1 => '[1897-01-01 TO 1897-12-31]',
+            ],
+            'creation_daterange' => '[1897-01-01 TO 1897-12-31]',
+            'source_str_mv' => '__unit_test_no_source__',
+            'datasource_str_mv' => '__unit_test_no_source__',
+            'online_boolean' => true,
+            'online_str_mv' => '__unit_test_no_source__',
+            'free_online_boolean' => true,
+            'free_online_str_mv' => '__unit_test_no_source__',
+            'location_geo' => [
+            ],
+            'center_coords' => '',
+            'usage_rights_str_mv' => [
+                0 => '',
+            ],
+            'author_facet' => [
+                0 => 'Hintze Harry',
+            ],
+            'format_ext_str_mv' => [
+                0 => 'kuva',
+            ],
+            'hierarchy_parent_title' => [
+                0 => 'Kansatieteen kuvakokoelma',
+            ],
+            'ctrlnum' => [
+            ],
+        ];
 
-        $this->assertEquals('kuva', $fields['format']);
-
-        $this->assertContains('12 x 17 cm, 12 cm', $fields['measurements']);
-
-        $this->assertContains('Imatrankoski', $fields['allfields']);
-        $this->assertContains('valokuva', $fields['allfields']);
-
-        // Inscriptions (merkinnät) not indexed
-        // Could they be?
-
-        $this->assertEquals('Museoviraston kuva-arkisto/', $fields['institution']);
-
-        $this->assertEquals('4878:1', $fields['identifier']);
-
-        $this->assertEquals(['12 x 17 cm, 12 cm'], $fields['measurements']);
-
-        $this->assertEquals(['Hintze Harry, kuvaaja'], $fields['author']);
+        $this->compareArray($expected, $fields, 'toSolrArray');
     }
 
     /**
@@ -128,7 +324,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testLusto1()
     {
-        $fields = $this->createRecord('lusto1.xml')->toSolrArray();
+        $fields = $this->createRecord(Lido::class, 'lusto1.xml')->toSolrArray();
 
         $this->assertEquals('E01025:3', $fields['identifier']);
 
@@ -154,7 +350,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testVtm1()
     {
-        $fields = $this->createRecord('vtm1.xml')->toSolrArray();
+        $fields = $this->createRecord(Lido::class, 'vtm1.xml')->toSolrArray();
 
         $this->assertContains('kangas', $fields['material']);
         $this->assertContains('öljy', $fields['material']);
@@ -186,7 +382,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testTuusula1()
     {
-        $fields = $this->createRecord('tuusula1.xml')->toSolrArray();
+        $fields = $this->createRecord(Lido::class, 'tuusula1.xml')->toSolrArray();
 
         $this->assertContains('kangas', $fields['material']);
         $this->assertContains('pahvi', $fields['material']);
@@ -226,7 +422,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testDesign1()
     {
-        $fields = $this->createRecord('design1.xml')->toSolrArray();
+        $fields = $this->createRecord(Lido::class, 'design1.xml')->toSolrArray();
 
         $this->assertEquals('Kuva', $fields['format']);
 

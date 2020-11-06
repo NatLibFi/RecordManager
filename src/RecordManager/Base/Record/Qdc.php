@@ -115,34 +115,16 @@ class Qdc extends Base
         $data['record_format'] = 'qdc';
         $data['ctrlnum'] = trim((string)$doc->recordID);
         $data['fullrecord'] = $doc->asXML();
+        $data['allfields'] = $this->getAllFields();
+        $data['language'] = $this->getLanguages();
 
-        // allfields
-        $allFields = [];
-        foreach ($doc->children() as $tag => $field) {
-            $allFields[] = trim((string)$field);
-        }
-        $data['allfields'] = $allFields;
+        $data['format'] = $this->getFormat();
 
-        // language
-        $languages = [];
-        foreach (explode(' ', trim((string)$doc->language)) as $language) {
-            foreach (str_split($language, 3) as $code) {
-                $languages[] = $code;
-            }
-        }
-        $data['language'] = MetadataUtils::normalizeLanguageStrings($languages);
-
-        $data['format'] = trim((string)$doc->type);
-        foreach ($this->getValues('creator') as $author) {
-            $data['author'][]
-                = MetadataUtils::stripTrailingPunctuation($author);
-        }
+        $data['author'] = $this->getPrimaryAuthors();
+        $data['author2'] = $this->getSecondaryAuthors();
+        $data['author_corporate'] = $this->getCorporateAuthors();
         if (!empty($data['author'])) {
             $data['author_sort'] = $data['author'][0];
-        }
-        foreach ($this->getValues('contributor') as $contributor) {
-            $data['author2'][]
-                = MetadataUtils::stripTrailingPunctuation($contributor);
         }
 
         foreach ($doc->title as $title) {
@@ -169,16 +151,12 @@ class Qdc extends Base
         $data['isbn'] = $this->getISBNs();
         $data['issn'] = $this->getISSNs();
 
-        $data['topic'] = $data['topic_facet'] = $this->getValues('subject');
+        $data['topic'] = $data['topic_facet'] = $this->getTopics();
+        $data['url'] = $this->getUrls();
 
-        foreach ($this->getValues('identifier') as $identifier) {
-            if (preg_match('/^https?/', $identifier)) {
-                $data['url'][] = $identifier;
-            }
-        }
         foreach ($this->getValues('description') as $description) {
             if (preg_match('/^https?/', $description)) {
-                $data['url'][] = $description;
+                // already added in getUrls
             } elseif (preg_match('/^\d+\.\d+$/', $description)) {
                 // Classification, put somewhere?
             } else {
@@ -222,13 +200,53 @@ class Qdc extends Base
     }
 
     /**
-     * Dedup: Return main author (format: Last, First)
+     * Return main author (format: Last, First)
      *
      * @return string
      */
     public function getMainAuthor()
     {
         return trim((string)$this->doc->creator);
+    }
+
+    /**
+     * Get primary authors
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthors()
+    {
+        $result = [];
+        foreach ($this->getValues('creator') as $author) {
+            $result[]
+                = MetadataUtils::stripTrailingPunctuation($author);
+        }
+        return $result;
+    }
+
+    /**
+     * Get secondary authors
+     *
+     * @return array
+     */
+    protected function getSecondaryAuthors()
+    {
+        $result = [];
+        foreach ($this->getValues('contributor') as $contributor) {
+            $result[]
+                = MetadataUtils::stripTrailingPunctuation($contributor);
+        }
+        return $result;
+    }
+
+    /**
+     * Get corporate authors
+     *
+     * @return array
+     */
+    protected function getCorporateAuthors()
+    {
+        return [];
     }
 
     /**
@@ -362,6 +380,67 @@ class Qdc extends Base
     public function getPageCount()
     {
         return '';
+    }
+
+    /**
+     * Get an array of all fields relevant to allfields search
+     *
+     * @return array
+     */
+    protected function getAllFields()
+    {
+        $allFields = [];
+        foreach ($this->doc->children() as $tag => $field) {
+            $allFields[] = trim((string)$field);
+        }
+        return $allFields;
+    }
+
+    /**
+     * Return URLs associated with object
+     *
+     * @return array
+     */
+    protected function getUrls()
+    {
+        $urls = [];
+        foreach ($this->getValues('identifier') as $identifier) {
+            if (preg_match('/^https?/', $identifier)) {
+                $urls[] = $identifier;
+            }
+        }
+        foreach ($this->getValues('description') as $description) {
+            if (preg_match('/^https?/', $description)) {
+                $urls[] = $description;
+            }
+        }
+        return $urls;
+    }
+
+    /**
+     * Get languages
+     *
+     * @return array
+     */
+    protected function getLanguages()
+    {
+        $languages = [];
+        foreach (explode(' ', trim((string)$this->doc->language)) as $language) {
+            foreach (str_split($language, 3) as $code) {
+                $languages[] = $code;
+            }
+        }
+        return MetadataUtils::normalizeLanguageStrings($languages);
+    }
+
+    /**
+     * Get topics.
+     *
+     * @return array
+     */
+    public function getTopics()
+    {
+        return $this->getValues('subject');
     }
 
     /**

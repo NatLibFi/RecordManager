@@ -54,6 +54,8 @@ if (function_exists('pcntl_async_signals')) {
  */
 class SolrUpdater
 {
+    use \RecordManager\Base\Utils\ParentProcessCheckTrait;
+
     /**
      * Base path of Record Manager
      *
@@ -236,13 +238,18 @@ class SolrUpdater
      */
     protected $mergedFields = [
         'institution', 'collection', 'building', 'language', 'physical', 'publisher',
-        'publishDate', 'contents', 'url', 'ctrlnum', 'callnumber-raw',
-        'callnumber-search',
+        'publishDate', 'contents', 'edition', 'description', 'url',
+        'ctrlnum', 'oclc_num',
+        'callnumber-raw', 'callnumber-search',
+        'dewey-hundreds', 'dewey-tens', 'dewey-ones', 'dewey-full', 'dewey-raw',
+        'dewey-search',
         'author', 'author_variant', 'author_role', 'author_fuller', 'author_sort',
         'author2', 'author2_variant', 'author2_role', 'author2_fuller',
         'author_corporate', 'author_corporate_role', 'author_additional',
         'title_alt', 'title_old', 'title_new', 'dateSpan', 'series', 'series2',
-        'topic', 'genre', 'geographic', 'era', 'long_lat', 'isbn', 'issn'
+        'topic', 'genre', 'geographic', 'era',
+        'long_lat', 'long_lat_display', 'long_lat_label',
+        'isbn', 'issn',
     ];
 
     /**
@@ -251,10 +258,20 @@ class SolrUpdater
      * @var array
      */
     protected $singleFields = [
-        'title', 'title_short', 'title_full', 'title_sort', 'author_sort', 'format',
-        'publishDateSort', 'callnumber-first', 'callnumber-subject',
-        'callnumber-label', 'callnumber-sort', 'illustrated', 'first_indexed',
-        'last-indexed'
+        'title', 'title_short', 'title_full', 'title_sort',
+        'author_sort',
+        'format',
+        'thumbnail',
+        'description', 'fulltext',
+        'publishDateSort',
+        'callnumber-first', 'callnumber-subject', 'callnumber-label',
+        'callnumber-sort',
+        'lccn',
+        'dewey-sort',
+        'illustrated',
+        'first_indexed', 'last-indexed',
+        'container_title', 'container_volume', 'container_issue',
+        'container_start_page', 'container_reference',
     ];
 
     /**
@@ -471,6 +488,14 @@ class SolrUpdater
     protected $workKeysField = 'work_keys_str_mv';
 
     /**
+     * Maximum field lengths. Key is a regular expression. __default__ is applied
+     * unless overridden. 0 as the value means the field length is unlimited.
+     *
+     * @var array
+     */
+    protected $maxFieldLengths = [];
+
+    /**
      * Constructor
      *
      * @param MongoDB       $db                 Database connection
@@ -607,6 +632,9 @@ class SolrUpdater
         }
         if (isset($fields['work_keys'])) {
             $this->workKeysField = $fields['work_keys'];
+        }
+        if (isset($config['Solr Field Limits'])) {
+            $this->maxFieldLengths = $config['Solr Field Limits'];
         }
 
         // Load settings
@@ -782,7 +810,8 @@ class SolrUpdater
                             $singleId,
                             $noCommit,
                             $delete,
-                            $compare
+                            $compare,
+                            null !== $childPid
                         );
                         if (null !== $childPid) {
                             $this->deInitWorkerPoolManager();
@@ -907,7 +936,6 @@ class SolrUpdater
                     if (!$compare) {
                         foreach ($result['deleted'] as $id) {
                             ++$deleted;
-                            ++$count;
                             $this->bufferedDelete($id);
                         }
                     }
@@ -920,15 +948,15 @@ class SolrUpdater
                         }
                     }
                 }
-                if ($count >= $lastDisplayedCount + 1000) {
-                    $lastDisplayedCount = $count;
+                if ($count + $deleted >= $lastDisplayedCount + 1000) {
+                    $lastDisplayedCount = $count + $deleted;
                     $pc->add($count);
                     $avg = $pc->getSpeed();
                     $this->log->logInfo(
                         'updateRecords',
-                        "$count individual records (of which $deleted deleted) with"
-                            . " $mergedComponents merged parts $verb, $avg"
-                            . ' records/sec'
+                        "$count individual, $deleted deleted and"
+                            . " $mergedComponents included child records $verb"
+                            . ", $avg records/sec"
                     );
                 }
 
@@ -964,7 +992,6 @@ class SolrUpdater
                     if (!$compare) {
                         foreach ($result['deleted'] as $id) {
                             ++$deleted;
-                            ++$count;
                             $this->bufferedDelete($id);
                         }
                     }
@@ -1004,10 +1031,11 @@ class SolrUpdater
                 ];
                 $this->db->saveState($state);
             }
+
             $this->log->logInfo(
                 'updateRecords',
-                "Total $count individual records (of which $deleted deleted) with "
-                . "$mergedComponents merged parts $verb"
+                "Total $count individual, $deleted deleted and"
+                    . " $mergedComponents included child records $verb"
             );
 
             if ($childPid) {
@@ -1103,12 +1131,15 @@ class SolrUpdater
      *                                   ones already in the Solr index and write any
      *                                   differences in a file given in this
      *                                   parameter
+     * @param bool        $checkParent   Whether to check that the parent process is
+     *                                   alive
      *
      * @throws Exception
      * @return boolean Whether anything was updated
      */
     protected function processMerged(
-        $mongoFromDate, $sourceId, $singleId, $noCommit, $delete, $compare
+        $mongoFromDate, $sourceId, $singleId, $noCommit, $delete, $compare,
+        $checkParent
     ) {
         $verb = $compare ? 'compared' : ($this->dumpPrefix ? 'dumped' : 'indexed');
         $initVerb = $compare
@@ -1172,6 +1203,7 @@ class SolrUpdater
             unset($this->terminate);
             if (function_exists('pcntl_signal')) {
                 pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
+                pcntl_signal(SIGTERM, [$this, 'sigIntHandler']);
                 $this->log->logInfo('updateRecords', 'Interrupt handler set');
             } else {
                 $this->log->logInfo(
@@ -1199,6 +1231,9 @@ class SolrUpdater
                 ['projection' => ['dedup_id' => 1]]
             );
             foreach ($records as $record) {
+                if ($checkParent) {
+                    $this->checkParentIsAlive();
+                }
                 if (isset($this->terminate)) {
                     $this->log->logInfo(
                         'processMerged',
@@ -1242,6 +1277,9 @@ class SolrUpdater
             $records = $this->db->findDedups($dedupParams);
             $count = 0;
             foreach ($records as $record) {
+                if ($checkParent) {
+                    $this->checkParentIsAlive();
+                }
                 if (isset($this->terminate)) {
                     $this->log->logInfo('processMerged', 'Termination upon request');
                     $this->db->dropQueueCollection($collectionName);
@@ -1315,6 +1353,9 @@ class SolrUpdater
             [$this, 'reconnectDatabase']
         );
         foreach ($keys as $key) {
+            if ($checkParent) {
+                $this->checkParentIsAlive();
+            }
             if (isset($this->terminate)) {
                 throw new \Exception('Execution termination requested');
             }
@@ -1350,14 +1391,14 @@ class SolrUpdater
                     }
                 }
             }
-            if ($count >= $lastDisplayedCount + 1000) {
-                $lastDisplayedCount = $count;
+            if ($count + $deleted >= $lastDisplayedCount + 1000) {
+                $lastDisplayedCount = $count + $deleted;
                 $pc->add($count);
                 $avg = $pc->getSpeed();
                 $this->log->logInfo(
                     'processMerged',
-                    "$count merged records (of which $deleted deleted) with "
-                    . "$mergedComponents merged parts $verb, $avg records/sec"
+                    "$count merged, $deleted deleted and $mergedComponents"
+                        . " included child records $verb, $avg records/sec"
                 );
             }
         }
@@ -1408,10 +1449,14 @@ class SolrUpdater
 
         $this->log->logInfo(
             'processMerged',
-            "Total $count merged records (of which $deleted deleted) with "
-            . "$mergedComponents merged parts $verb"
+            "Total $count merged, $deleted deleted and $mergedComponents"
+                . " included child records $verb"
         );
-        pcntl_signal(SIGINT, SIG_DFL);
+
+        if (function_exists('pcntl_signal')) {
+            pcntl_signal(SIGINT, SIG_DFL);
+            pcntl_signal(SIGTERM, SIG_DFL);
+        }
         return $count > 0;
     }
 
@@ -1453,7 +1498,7 @@ class SolrUpdater
             if (in_array($record['source_id'], $this->nonIndexedSources)) {
                 continue;
             }
-            if ($record['deleted']
+            if ($record['deleted'] || ($record['suppressed'] ?? false)
                 || ($sourceId && $delete && $record['source_id'] == $sourceId)
             ) {
                 $result['deleted'][] = $record['_id'];
@@ -1562,7 +1607,7 @@ class SolrUpdater
     /**
      * Process a single record and return results
      *
-     * @param string $record Record
+     * @param array $record Record
      *
      * @return array
      */
@@ -1574,7 +1619,7 @@ class SolrUpdater
             'mergedComponents' => 0
         ];
 
-        if ($record['deleted']) {
+        if ($record['deleted'] || ($record['suppressed'] ?? false)) {
             $result['deleted'][] = (string)$record['_id'];
         } else {
             $data = $this->createSolrArray($record, $mergedComponents);
@@ -1717,8 +1762,7 @@ class SolrUpdater
      */
     public function checkIndexedRecords()
     {
-        $request = $this->initSolrRequest();
-        $request->setMethod(\HTTP_Request2::METHOD_GET);
+        $request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
         $baseUrl = $this->config['Solr']['search_url']
             . '?q=*:*&sort=id+asc&wt=json&fl=id,record_format&rows=1000';
 
@@ -1839,8 +1883,10 @@ class SolrUpdater
             }
 
             $this->settings[$source]['extraFields'] = [];
-            if (isset($settings['extrafields'])) {
-                foreach ($settings['extrafields'] as $extraField) {
+            $extraFields = $settings['extraFields'] ?? $settings['extrafields']
+                ?? [];
+            if ($extraFields) {
+                foreach ($extraFields as $extraField) {
                     list($field, $value) = explode(':', $extraField, 2);
                     $this->settings[$source]['extraFields'][] = [$field => $value];
                 }
@@ -2253,6 +2299,7 @@ class SolrUpdater
                     $value = MetadataUtils::normalizeUnicode(
                         $value, $this->unicodeNormalizationForm
                     );
+                    $value = $this->trimFieldLength($key, $value);
                     if (empty($value) || $value === 0 || $value === 0.0
                         || $value === '0'
                     ) {
@@ -2264,6 +2311,7 @@ class SolrUpdater
                 $values = MetadataUtils::normalizeUnicode(
                     $values, $this->unicodeNormalizationForm
                 );
+                $values = $this->trimFieldLength($key, $values);
             }
             if (empty($values) || $values === 0 || $values === 0.0 || $values === '0'
             ) {
@@ -2494,8 +2542,7 @@ class SolrUpdater
             throw new \Exception('search_url not set in ini file Solr section');
         }
 
-        $this->request = $this->initSolrRequest();
-        $this->request->setMethod(\HTTP_Request2::METHOD_GET);
+        $this->request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
         $url = $this->config['Solr']['search_url'];
         $url .= '?q=id:"' . urlencode($record['id']) . '"&wt=json';
         $this->request->setUrl($url);
@@ -2559,15 +2606,16 @@ class SolrUpdater
     /**
      * Initialize a Solr request object
      *
-     * @param int $timeout Timeout in seconds (optional)
+     * @param string $method  HTTP method
+     * @param int    $timeout Timeout in seconds (optional)
      *
      * @return \HTTP_Request2
      */
-    protected function initSolrRequest($timeout = null)
+    protected function initSolrRequest($method, $timeout = null)
     {
         $request = new \HTTP_Request2(
             $this->config['Solr']['update_url'],
-            \HTTP_Request2::METHOD_POST,
+            $method,
             $this->httpParams
         );
         if ($timeout !== null) {
@@ -2575,6 +2623,10 @@ class SolrUpdater
         }
         $request->setHeader('Connection', 'Keep-Alive');
         $request->setHeader('User-Agent', 'RecordManager');
+        // At least some combinations of PHP + curl cause both Transfer-Encoding and
+        // Content-Length to be set in certain cases. Set follow_redirects to true to
+        // invoke the PHP workaround in the curl adapter.
+        $request->setConfig('follow_redirects', true);
         if (isset($this->config['Solr']['username'])
             && isset($this->config['Solr']['password'])
         ) {
@@ -2600,7 +2652,8 @@ class SolrUpdater
     public function solrRequest($body, $timeout = null)
     {
         if (null === $this->request) {
-            $this->request = $this->initSolrRequest($timeout);
+            $this->request
+                = $this->initSolrRequest(\HTTP_Request2::METHOD_POST, $timeout);
         }
 
         if (!$this->waitForClusterStateOk()) {
@@ -2639,6 +2692,8 @@ class SolrUpdater
                         'solrRequest',
                         "Solr server request failed ($code), retrying in "
                             . "{$this->updateRetryWait} seconds..."
+                            . "Beginning of response: "
+                            . substr($response->getBody(), 0, 1000)
                     );
                     sleep($this->updateRetryWait);
                     continue;
@@ -2710,7 +2765,7 @@ class SolrUpdater
             return $this->clusterState;
         }
         $this->lastClusterStateCheck = time();
-        $request = $this->initSolrRequest();
+        $request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
         $url = $this->config['Solr']['admin_url'] . '/zookeeper'
             . '?wt=json&detail=true&path=%2Fclusterstate.json&view=graph';
         $request->setUrl($url);
@@ -2729,7 +2784,7 @@ class SolrUpdater
         if (200 !== $code) {
             $this->log->logError(
                 'checkClusterState',
-                "Solr admin request '$url' failed ($code)"
+                "Solr admin request '$url' failed ($code): " . $response->getBody()
             );
             $this->clusterState = 'error';
             return 'error';
@@ -3057,5 +3112,64 @@ class SolrUpdater
             }
         }
         return [$sourceParams, $sourceExclude];
+    }
+
+    /**
+     * Trim fields to their maximum lengths according to the configuration
+     *
+     * @param string $field Field
+     * @param string $value Value to trim
+     *
+     * @return string
+     */
+    protected function trimFieldLength($field, $value)
+    {
+        if (empty($this->maxFieldLengths)) {
+            return $value;
+        }
+
+        $foundLimit = null;
+        foreach ($this->maxFieldLengths as $key => $limit) {
+            if ('__default__' === $key) {
+                continue;
+            }
+            if ($field === $key) {
+                $foundLimit = $limit;
+                break;
+            }
+            $left = strncmp('*', $key, 1) === 0;
+            if ($left) {
+                $key = substr($key, 1);
+            }
+            $right = substr($key, -1) === '*';
+            if ($right) {
+                $key = substr($key, 0, -1);
+            }
+
+            if ($left && $right) {
+                if (strpos($field, $key) !== false) {
+                    $foundLimit = $limit;
+                    break;
+                }
+            } elseif ($left) {
+                if ($key === substr($field, -strlen($key))) {
+                    $foundLimit = $limit;
+                    break;
+                }
+            } elseif ($right) {
+                if (strncmp($key, $field, strlen($key)) === 0) {
+                    $foundLimit = $limit;
+                    break;
+                }
+            }
+        }
+
+        if (null == $foundLimit) {
+            $foundLimit = $this->maxFieldLengths['__default__'] ?? null;
+        }
+        if ($foundLimit) {
+            $value = mb_substr($value, 0, $foundLimit, 'UTF-8');
+        }
+        return $value;
     }
 }

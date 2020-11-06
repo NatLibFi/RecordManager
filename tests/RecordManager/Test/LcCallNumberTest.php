@@ -1,10 +1,10 @@
 <?php
 /**
- * Qdc record class
+ * LcCallNumber tests
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2020.
+ * Copyright (C) The National Library of Finland 2015
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,12 +25,12 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Finna\Record;
+namespace RecordManager\Test;
+
+use RecordManager\Base\Utils\LcCallNumber;
 
 /**
- * Qdc record class
- *
- * This is a class for processing Qualified Dublin Core records.
+ * LcCallNumber tests
  *
  * @category DataManagement
  * @package  RecordManager
@@ -38,21 +38,28 @@ namespace RecordManager\Finna\Record;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Qdc extends \RecordManager\Base\Record\Qdc
+class LcCallNumberTest extends AbstractTest
 {
-    use QdcRecordTrait;
-
     /**
-     * Get primary authors
+     * Tests for call number handling
      *
-     * @return array
+     * @return void
      */
-    public function getPrimaryAuthors()
+    public function testCallNumber()
     {
-        $authors = $this->getValues('author');
-        if ($authors) {
-            return (array)array_shift($authors);
-        }
-        return parent::getPrimaryAuthors();
+        $cn = new LcCallNumber('AC901.M5 vol. 1013, no. 8');
+        $this->assertTrue($cn->isValid());
+        $this->assertEquals(
+            'AC 3901', $cn->getSortKey()
+        );
+
+        $cn = new LcCallNumber('GV1101 .D7 1980');
+        $this->assertTrue($cn->isValid());
+        $this->assertEquals(
+            'GV 41101', $cn->getSortKey()
+        );
+
+        $cn = new LcCallNumber('XV1101 .D7 1980');
+        $this->assertFalse($cn->isValid());
     }
 }

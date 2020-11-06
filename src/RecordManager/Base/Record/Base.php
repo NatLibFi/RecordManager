@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Base\Record;
 
+use MongoDB\BSON\UTCDateTime;
+use MongoDB\Collection;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -205,9 +207,9 @@ class Base
     /**
      * Merge component parts to this record
      *
-     * @param MongoCollection $componentParts Component parts to be merged
-     * @param MongoDate|null  $changeDate     Latest timestamp for the component part
-     *                                        set
+     * @param Collection       $componentParts Component parts to be merged
+     * @param UTCDateTime|null $changeDate     Latest timestamp for the component
+     *                                         part set
      *
      * @return void
      */
@@ -291,21 +293,21 @@ class Base
     }
 
     /**
-     * Dedup: Return full title (for debugging purposes only)
+     * Return main author (format: Last, First)
      *
      * @return string
      */
-    public function getFullTitle()
+    public function getMainAuthor()
     {
         return '';
     }
 
     /**
-     * Dedup: Return main author (format: Last, First)
+     * Dedup: Return full title (for debugging purposes only)
      *
      * @return string
      */
-    public function getMainAuthor()
+    public function getFullTitle()
     {
         return '';
     }
