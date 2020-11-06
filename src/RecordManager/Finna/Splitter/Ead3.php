@@ -87,6 +87,29 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
     }
 
     /**
+     * Collect child nodes (with names c01, c02...) from archdesc element.
+     *
+     * @param SimpleXMLElemnt $parent Parent XML node
+     * @param int             $depth  Current depth
+     * @param array           $result Collected child nodes
+     *
+     * @return void
+     */
+    protected function collectChildNodes($parent, $depth, &$result)
+    {
+        foreach ($parent->children() as $node) {
+            if ($node->getName() === sprintf('c%02d', $depth)) {
+                $attr = $node->attributes();
+                if (!isset($attr->level)) {
+                    continue;
+                }
+                $result[] = $node;
+                $this->collectChildNodes($node, $depth+1, $result);
+            }
+        }
+    }
+
+    /**
      * Set metadata
      *
      * @param string $data EAD XML
@@ -96,7 +119,13 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
     public function setData($data)
     {
         $this->doc = \RecordManager\Base\Utils\MetadataUtils::loadXML($data);
-        $this->recordNodes = $this->doc->xpath('archdesc | archdesc/dsc//*[@level]');
+
+        $this->recordNodes = [];
+        foreach ($this->doc->archdesc as $node) {
+            $this->recordNodes[] = $node;
+            $this->collectChildNodes($node->dsc, 1, $this->recordNodes);
+        }
+
         $this->recordCount = count($this->recordNodes);
         $this->currentPos = 0;
 
