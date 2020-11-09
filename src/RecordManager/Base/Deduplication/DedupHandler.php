@@ -324,6 +324,7 @@ class DedupHandler
 
         $origRecord = null;
         $matchRecords = [];
+        $noMatchRecordIds = [];
         $candidateCount = 0;
 
         $titleArray = isset($record['title_keys'])
@@ -394,25 +395,9 @@ class DedupHandler
             $processed = 0;
             // Go through the candidates, try to match
             foreach ($candidates as $candidate) {
-                // Don't bother with id or title dedup if ISBN dedup already
-                // failed
-                if ($type != 'isbn_keys') {
-                    if (isset($candidate['isbn_keys'])) {
-                        $sameKeys = array_intersect(
-                            $isbnArray, (array)$candidate['isbn_keys']
-                        );
-                        if ($sameKeys) {
-                            continue;
-                        }
-                    }
-                    if ($type != 'id_keys' && isset($candidate['id_keys'])) {
-                        $sameKeys = array_intersect(
-                            $idArray, (array)$candidate['id_keys']
-                        );
-                        if ($sameKeys) {
-                            continue;
-                        }
-                    }
+                // Check that we haven't already tried this candidate
+                if (isset($noMatchRecordIds[$candidate['_id']])) {
+                    continue;
                 }
                 ++$candidateCount;
 
@@ -471,6 +456,8 @@ class DedupHandler
                             . "\n";
                     }
                     $matchRecords[] = $candidate;
+                } else {
+                    $noMatchRecordIds[$candidate['_id']] = 1;
                 }
             }
             if ($matchRecords) {
