@@ -271,6 +271,7 @@ class DedupHandler
         }
 
         $keys = $metadataRecord->getUniqueIDs();
+        // Make sure bad metadata doesn't result in overly long keys
         $keys = array_map(
             function ($s) {
                 return substr($s, 0, 200);
@@ -279,13 +280,6 @@ class DedupHandler
         );
         $oldKeys = (array)($record['id_keys'] ?? []);
         if (count($oldKeys) !== count($keys) || array_diff($oldKeys, $keys)) {
-            // Make sure bad metadata doesn't result in overly long keys
-            array_map(
-                function ($s) {
-                    return substr($s, 0, 200);
-                },
-                $keys
-            );
             $record['id_keys'] = $keys;
             $result = true;
         }
