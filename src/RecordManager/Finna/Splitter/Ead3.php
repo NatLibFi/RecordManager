@@ -249,7 +249,7 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
             $parentNode = $this->parentNodes
                 ? $this->parentNodes[count($this->parentNodes)-1] : null;
 
-            if ($parentDid = $parentNode->did) {
+            if ($parentNode && $parentDid = $parentNode->did) {
                 // If parent has add-data, take the generated ID from it
                 $parentAddData = $parentNode->{'add-data'};
 
