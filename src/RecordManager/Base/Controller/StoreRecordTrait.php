@@ -270,7 +270,8 @@ trait StoreRecordTrait
                 [
                     'source_id' => $sourceId,
                     'main_id' => $mainID,
-                    'updated' => ['$lt' => $startTime]
+                    'updated' => ['$lt' => $startTime],
+                    'deleted' => false,
                 ],
                 [
                     'deleted' => true,

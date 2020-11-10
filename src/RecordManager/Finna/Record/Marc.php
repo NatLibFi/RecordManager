@@ -1623,11 +1623,17 @@ class Marc extends \RecordManager\Base\Record\Marc
     {
         $result = parent::getUniqueIDs();
         // Melinda ID
-        $f035 = $this->getField('035');
-        if ($f035) {
-            $id = $this->getSubfield($f035, 'a');
-            if (strncmp($id, 'FCC', 3) === 0 && ctype_digit(substr($id, 3))) {
+        foreach ($this->getFields('035') as $field) {
+            $id = $this->getSubfield($field, 'a');
+            if (strncmp('FCC', $id, 3) === 0) {
+                $idNumber = substr($id, 3);
+                if (ctype_digit($idNumber)) {
+                    $result[] = "(FI-MELINDA)$idNumber";
+                    break;
+                }
+            } elseif (strncmp('(FI-MELINDA)', $id, 12) === 0) {
                 $result[] = $id;
+                break;
             }
         }
         return $result;

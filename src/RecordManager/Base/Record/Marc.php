@@ -1000,9 +1000,7 @@ class Marc extends Base
         }
         $id = $this->getField('024');
         if ($id) {
-            $nr = MetadataUtils::normalizeKey(
-                $this->getSubfield($id, 'a'), $form
-            );
+            $nr = $this->getSubfield($id, 'a');
             switch ($this->getIndicator($id, 1)) {
             case '0':
                 $src = 'istc';
@@ -1015,6 +1013,9 @@ class Marc extends Base
                 break;
             case '3':
                 $src = 'ian';
+                if ($p = strpos($nr, ' ')) {
+                    $nr = substr($nr, 0, $p);
+                }
                 break;
             case '4':
                 $src = 'sici';
@@ -1025,6 +1026,7 @@ class Marc extends Base
             default:
                 $src = '';
             }
+            $nr = MetadataUtils::normalizeKey($nr, $form);
             // Ignore any invalid ISMN
             if ('ismn' === $src && !preg_match('{([0-9]{13})}', $nr)) {
                 $nr = '';
