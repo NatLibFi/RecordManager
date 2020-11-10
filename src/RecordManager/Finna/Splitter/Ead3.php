@@ -60,11 +60,8 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
     protected $nonInheritedFields = [];
 
     protected $doc;
-    protected $archiveNodes;
-    protected $parentNodes;
     protected $recordNodes;
     protected $recordCount;
-    protected $currentArchive = 0;
     protected $currentPos;
 
     protected $agency = '';
@@ -119,34 +116,19 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
     {
         $this->doc = \RecordManager\Base\Utils\MetadataUtils::loadXML($data);
 
-        $this->archiveNodes = [];
-
+        $this->recordNodes = [];
         foreach ($this->doc->archdesc as $node) {
-            $archiveNodes = [$node];
-            $this->collectChildNodes($node->dsc, 1, $archiveNodes);
-            $this->archiveNodes[] = $archiveNodes;
+            $this->recordNodes[] = $node;
+            $this->collectChildNodes($node->dsc, 1, $this->recordNodes);
         }
 
-        $this->initNextArchive();
-    }
-
-    /**
-     * Init next archive to be processed.
-     * Returns false if all archive nodes have been processed.
-     *
-     * @return bool
-     */
-    protected function initNextArchive()
-    {
-        if ($this->currentArchive > count($this->archiveNodes)-1) {
-            return false;
-        }
+        $this->recordCount = count($this->recordNodes);
         $this->currentPos = 0;
 
-        $this->recordNodes = $this->archiveNodes[$this->currentArchive++];
-        $this->recordCount = count($this->recordNodes);
-        $archDesc = $this->recordNodes[0];
-        foreach ($archDesc->did->unitid as $i) {
+        $this->agency
+            = (string)$this->doc->control->maintenanceagency->agencycode;
+
+        foreach ($this->doc->archdesc->did->unitid as $i) {
             $attr = $i->attributes();
             if ($attr->label == 'Tekninen' && isset($attr->identifier)) {
                 $this->archiveId = urlencode((string)$attr->identifier);
@@ -154,10 +136,17 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
             }
         }
 
-        $this->archiveTitle = (string)$archDesc->did->unittitle ?? $this->archiveId;
-        $this->parentNodes = [];
+        $this->archiveTitle
+            = (string)$this->doc->control->filedesc->titlestmt->titleproper;
 
-        return true;
+        if (!$this->archiveTitle) {
+            $this->archiveTitle = $this->archiveId;
+        }
+
+        $this->archiveSubTitle
+            = isset($this->doc->control->filedesc->titlestmt->subtitle)
+                ? (string)$this->doc->control->filedesc->titlestmt->subtitle
+                : '';
     }
 
     /**
@@ -222,10 +211,7 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                 $absolute->addAttribute('subtitle', $this->archiveSubTitle);
             }
 
-            $ancestorDid = [];
-            foreach ($this->parentNodes as $parentNode) {
-                $ancestorDid[] = $parentNode->did;
-            }
+            $ancestorDid = $original->xpath('ancestor::*/did');
 
             if ($ancestorDid) {
                 // Append any ancestor did's
@@ -246,12 +232,11 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                 }
             }
 
-            $parentNode = $this->parentNodes
-                ? $this->parentNodes[count($this->parentNodes)-1] : null;
-
-            if ($parentNode && $parentDid = $parentNode->did) {
+            $parentDid = $original->xpath('parent::*/did');
+            if ($parentDid) {
+                $parentDid = $parentDid[0];
                 // If parent has add-data, take the generated ID from it
-                $parentAddData = $parentNode->{'add-data'};
+                $parentAddData = $original->xpath('parent::*/add-data');
 
                 if ($parentAddData) {
                     $parentID
@@ -281,23 +266,17 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                 }
 
                 if ($this->prependParentTitleWithUnitId) {
-                    foreach ($parentDid->unitid as $unitId) {
-                        $attr = $unitId->attributes();
-                        if ($attr->label !== 'Analoginen') {
-                            continue;
-                        }
-                        $pid = (string)$unitId;
-                        if (preg_match('/\//', $pid)) {
-                            $pid = substr(strrchr($pid, '/'), 1);
-                        }
+                    $pid = implode(
+                        '+', $parentDid->xpath('unitid[@label="Analoginen"]')
+                    );
 
-                        $parentTitle = $pid . ' ' . $parentTitle;
-                        break;
+                    if (preg_match('/\//', $pid)) {
+                        $pid = substr(strrchr($pid, '/'), 1);
                     }
-                } else {
-                    $parentId = $this->archiveId;
-                    $parentTitle = $this->archiveTitle;
+
+                    $parentTitle = $pid . ' ' . $parentTitle;
                 }
+
                 $parent = $addData->addChild('parent');
                 $parent->addAttribute('id', $parentID);
                 $parent->addAttribute('title', $parentTitle);
@@ -308,11 +287,8 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                     $parent->addAttribute('title', $this->archiveTitle);
                 }
             }
-            $this->parentNodes[] = $record;
-            
+
             return $record->asXML();
-        } elseif ($this->initNextArchive()) {
-            return $this->getNextRecord();
         }
 
         return false;
