@@ -45,42 +45,42 @@ class LcCallNumber
      *
      * @var string
      */
-    protected $classification;
+    protected $classification = '';
 
     /**
      * Class Letters
      *
      * @var string
      */
-    protected $letters;
+    protected $letters = '';
 
     /**
      * Digits
      *
      * @var string
      */
-    protected $digits;
+    protected $digits = '';
 
     /**
      * Decimal Part
      *
      * @var string
      */
-    protected $decimal;
+    protected $decimal = '';
 
     /**
      * Cutter
      *
      * @var string
      */
-    protected $cutter;
+    protected $cutter = '';
 
     /**
      * Suffix
      *
      * @var string
      */
-    protected $suffix;
+    protected $suffix = '';
 
     /**
      * Constructor
@@ -107,7 +107,6 @@ class LcCallNumber
         $this->cutter = '';
         if ($rest) {
             $parts = preg_split('/[A-Za-z]\d+/', $rest, 2);
-            print_r($parts);
             if (isset($parts[1])) {
                 $this->suffix = trim($parts[0]);
                 $this->cutter = trim($parts[1]);
@@ -118,8 +117,6 @@ class LcCallNumber
                 $this->classification .= ' ';
             }
             $this->classification .= $this->suffix;
-        } else {
-            $this->suffix = '';
         }
     }
 

@@ -27,6 +27,7 @@
  */
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Utils\DeweyCallNumber;
 use RecordManager\Base\Utils\LcCallNumber;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -44,7 +45,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Marc extends Base
 {
-    use \RecordManager\Finna\Record\FinnaRecordTrait;
+    use AuthoritySupportTrait;
 
     const SUBFIELD_INDICATOR = "\x1F";
     const END_OF_FIELD = "\x1E";
@@ -81,6 +82,34 @@ class Marc extends Base
      * @var array
      */
     protected $illustrationStrings = ['ill.', 'illus.'];
+
+    /**
+     * Default field for geographic coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoField = 'long_lat';
+
+    /**
+     * Default field for geographic center coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoCenterField = '';
+
+    /**
+     * Default field for geographic displayable coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoDisplayField = 'long_lat_display';
+
+    protected $oclcNumPatterns = [
+        '/\([Oo][Cc][Oo][Ll][Cc]\)[^0-9]*[0]*([0-9]+)/',
+        '/ocm[0]*([0-9]+)[ ]*[0-9]*/',
+        '/ocn[0]*([0-9]+).*/',
+        '/on[0]*([0-9]+).*/',
+    ];
 
     /**
      * Constructor
@@ -320,43 +349,27 @@ class Marc extends Base
         // building
         $data['building'] = $this->getBuilding();
 
-        // long_lat
-        $field = $this->getField('034');
-        if ($field) {
-            $westOrig = $this->getSubfield($field, 'd');
-            $eastOrig = $this->getSubfield($field, 'e');
-            $northOrig = $this->getSubfield($field, 'f');
-            $southOrig = $this->getSubfield($field, 'g');
-            $west = MetadataUtils::coordinateToDecimal($westOrig);
-            $east = MetadataUtils::coordinateToDecimal($eastOrig);
-            $north = MetadataUtils::coordinateToDecimal($northOrig);
-            $south = MetadataUtils::coordinateToDecimal($southOrig);
-
-            if (!is_nan($west) && !is_nan($north)) {
-                if (!is_nan($east)) {
-                    $longitude = ($west + $east) / 2;
-                } else {
-                    $longitude = $west;
+        // Location coordinates
+        if ($geoField = $this->getDriverParam('geoField', $this->defaultGeoField)) {
+            if ($geoLocations = $this->getGeographicLocations()) {
+                $data[$geoField] = $geoLocations;
+                $centerField = $this->getDriverParam(
+                    'geoCenterField', $this->defaultGeoCenterField
+                );
+                if ($centerField) {
+                    foreach ($geoLocations as $geoLocation) {
+                        $data[$centerField][]
+                            = MetadataUtils::getCenterCoordinates($geoLocation);
+                    }
                 }
-
-                if (!is_nan($south)) {
-                    $latitude = ($north + $south) / 2;
-                } else {
-                    $latitude = $north;
-                }
-                if (($longitude < -180 || $longitude > 180)
-                    || ($latitude < -90 || $latitude > 90)
-                ) {
-                    $this->logger->logDebug(
-                        'Marc',
-                        "Discarding invalid coordinates $longitude,$latitude "
-                            . "decoded from w=$westOrig, e=$eastOrig, n=$northOrig, "
-                            . "s=$southOrig, record {$this->source}."
-                            . $this->getID()
-                    );
-                    $this->storeWarning('invalid coordinates in 034');
-                } else {
-                    $data['long_lat'] = "$longitude $latitude";
+                $displayField = $this->getDriverParam(
+                    'geoDisplayField', $this->defaultGeoDisplayField
+                );
+                if ($displayField) {
+                    foreach ($geoLocations as $geoLocation) {
+                        $data[$displayField][]
+                            = MetadataUtils::getGeoDisplayField($geoLocation);
+                    }
                 }
             }
         }
@@ -618,7 +631,27 @@ class Marc extends Base
 
         $data['illustrated'] = $this->getIllustrated();
 
-        // TODO: dewey fields and OCLC numbers
+        $deweyFields = $this->getFieldsSubfields(
+            [
+                [self::GET_NORMAL, '082', ['a' => '1']],
+                [self::GET_NORMAL, '083', ['a' => '1']],
+            ]
+        );
+        foreach ($deweyFields as $field) {
+            $deweyCallNumber = new DeweyCallNumber($field);
+            $data['dewey-hundreds'] = $deweyCallNumber->getNumber(100);
+            $data['dewey-tens'] = $deweyCallNumber->getNumber(10);
+            $data['dewey-ones'] = $deweyCallNumber->getNumber(1);
+            $data['dewey-full'] = $deweyCallNumber->getSearchString($deweyFields);
+            if (empty($data['dewey-sort'])) {
+                $data['dewey-sort'] = $deweyCallNumber->getSortKey($deweyFields);
+            }
+            $data['dewey-raw'] = $field;
+        }
+
+        if ($res = $this->getOclcNumbers()) {
+            $data['oclc_num'] = $res;
+        }
 
         return $data;
     }
@@ -900,7 +933,7 @@ class Marc extends Base
     }
 
     /**
-     * Dedup: Return main author (format: Last, First)
+     * Return main author (format: Last, First)
      *
      * @return string
      */
@@ -967,9 +1000,7 @@ class Marc extends Base
         }
         $id = $this->getField('024');
         if ($id) {
-            $nr = MetadataUtils::normalizeKey(
-                $this->getSubfield($id, 'a'), $form
-            );
+            $nr = $this->getSubfield($id, 'a');
             switch ($this->getIndicator($id, 1)) {
             case '0':
                 $src = 'istc';
@@ -982,6 +1013,9 @@ class Marc extends Base
                 break;
             case '3':
                 $src = 'ian';
+                if ($p = strpos($nr, ' ')) {
+                    $nr = substr($nr, 0, $p);
+                }
                 break;
             case '4':
                 $src = 'sici';
@@ -992,6 +1026,7 @@ class Marc extends Base
             default:
                 $src = '';
             }
+            $nr = MetadataUtils::normalizeKey($nr, $form);
             // Ignore any invalid ISMN
             if ('ismn' === $src && !preg_match('{([0-9]{13})}', $nr)) {
                 $nr = '';
@@ -2484,15 +2519,17 @@ class Marc extends Base
                         )
                     );
                 }
-                $fuller = ($tag == '100' || $tag == '700')
-                    ? $this->getSubfields($field, ['q' => 1]) : '';
                 $result['names'][] = MetadataUtils::stripTrailingPunctuation(
                     trim($terms)
                 );
+
+                $fuller = ($tag == '100' || $tag == '700')
+                    ? $this->getSubfields($field, ['q' => 1]) : '';
                 if ($fuller) {
                     $result['fuller'][]
                         = MetadataUtils::stripTrailingPunctuation(trim($fuller));
                 }
+
                 if ($fieldRelators) {
                     $result['relators'][] = reset($fieldRelators);
                 } else {
@@ -2840,5 +2877,100 @@ class Marc extends Base
         }
 
         return '';
+    }
+
+    /**
+     * Get geographic locations
+     *
+     * @return array
+     */
+    protected function getGeographicLocations()
+    {
+        $result = [];
+        foreach ($this->getFields('034') as $field) {
+            $westOrig = $this->getSubfield($field, 'd');
+            $eastOrig = $this->getSubfield($field, 'e');
+            $northOrig = $this->getSubfield($field, 'f');
+            $southOrig = $this->getSubfield($field, 'g');
+            $west = MetadataUtils::coordinateToDecimal($westOrig);
+            $east = MetadataUtils::coordinateToDecimal($eastOrig);
+            $north = MetadataUtils::coordinateToDecimal($northOrig);
+            $south = MetadataUtils::coordinateToDecimal($southOrig);
+
+            if (!is_nan($west) && !is_nan($north)) {
+                if (($west < -180 || $west > 180) || ($north < -90 || $north > 90)) {
+                    $this->logger->logDebug(
+                        'Marc',
+                        "Discarding invalid coordinates $west,$north decoded from "
+                            . "w=$westOrig, e=$eastOrig, n=$northOrig, s=$southOrig,"
+                            . " record {$this->source}." . $this->getID()
+                    );
+                    $this->storeWarning('invalid coordinates in 034');
+                } else {
+                    if (!is_nan($east) && !is_nan($south)
+                        && ($east !== $west || $north !== $south)
+                    ) {
+                        if ($east < -180 || $east > 180 || $south < -90
+                            || $south > 90
+                        ) {
+                            $this->logger->logDebug(
+                                'Marc',
+                                "Discarding invalid coordinates $east,$south "
+                                    . "decoded from w=$westOrig, e=$eastOrig, "
+                                    . "n=$northOrig, s=$southOrig, record "
+                                    . "{$this->source}." . $this->getID()
+                            );
+                            $this->storeWarning('invalid coordinates in 034');
+                        } else {
+                            // Try to cope with weird coordinate order
+                            if ($north > $south) {
+                                list($north, $south) = [$south, $north];
+                            }
+                            if ($west > $east) {
+                                list($west, $east) = [$east, $west];
+                            }
+                            $result[] = "ENVELOPE($west, $east, $south, $north)";
+                        }
+                    } else {
+                        $result[] = "POINT($west $north)";
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get OCLC numbers
+     *
+     * @return array
+     */
+    protected function getOclcNumbers()
+    {
+        $result = [];
+
+        $ctrlNums = $this->getFieldsSubfields(
+            [
+                [self::GET_NORMAL, '035', ['a' => 1]]
+            ]
+        );
+        foreach ($ctrlNums as $ctrlNum) {
+            $ctrlLc = mb_strtolower($ctrlNum, 'UTF-8');
+            if (strncmp($ctrlLc, '(ocolc)', 7) === 0
+                || strncmp($ctrlLc, 'ocm', 3) === 0
+                || strncmp($ctrlLc, 'ocn', 3) === 0
+                || strncmp($ctrlLc, 'on', 2) === 0
+            ) {
+                foreach ($this->oclcNumPatterns as $pattern) {
+                    if (preg_match($pattern, $ctrlNum, $matches)) {
+                        $result[] = $matches[1];
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $result;
     }
 }

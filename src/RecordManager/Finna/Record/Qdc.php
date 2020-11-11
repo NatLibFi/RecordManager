@@ -41,4 +41,18 @@ namespace RecordManager\Finna\Record;
 class Qdc extends \RecordManager\Base\Record\Qdc
 {
     use QdcRecordTrait;
+
+    /**
+     * Get primary authors
+     *
+     * @return array
+     */
+    public function getPrimaryAuthors()
+    {
+        $authors = $this->getValues('author');
+        if ($authors) {
+            return (array)array_shift($authors);
+        }
+        return parent::getPrimaryAuthors();
+    }
 }

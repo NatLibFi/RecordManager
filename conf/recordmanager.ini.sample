@@ -198,6 +198,9 @@ error_email     =
 ; The following section contains default mapping file definitions. Key is the field
 ; name and value is the mapping file name in mappings directory.
 [Default Mappings]
+dewey-hundreds = dewey_hundreds.map
+dewey-tens = dewey_tens.map
+dewey-ones = dewey_ones.map
 ;usage_rights_str_mv = usage_rights.map
 ;language = language_codes.map
 
@@ -231,9 +234,9 @@ error_email     =
 ; Regexp's for terms that may be ignored in a location string if no match is found
 ;optional_terms[] = 'finland'
 ;optional_terms[] = '[^\s]+ lääni'
-; Blacklist of terms as regular expressions. If a location matches the expression,
+; Blocklist of terms as regular expressions. If a location matches the expression,
 ; it is ignored completely.
-;blacklist[] = '^finland$'
+;blocklist[] = '^finland$'
 ; Term transformations regular expressions applied if a match is not found
 search[] = '([^\s]+ st)\.'
 replace[] = '\1 street'

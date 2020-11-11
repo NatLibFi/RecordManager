@@ -238,13 +238,18 @@ class SolrUpdater
      */
     protected $mergedFields = [
         'institution', 'collection', 'building', 'language', 'physical', 'publisher',
-        'publishDate', 'contents', 'url', 'ctrlnum', 'callnumber-raw',
-        'callnumber-search',
+        'publishDate', 'contents', 'edition', 'description', 'url',
+        'ctrlnum', 'oclc_num',
+        'callnumber-raw', 'callnumber-search',
+        'dewey-hundreds', 'dewey-tens', 'dewey-ones', 'dewey-full', 'dewey-raw',
+        'dewey-search',
         'author', 'author_variant', 'author_role', 'author_fuller', 'author_sort',
         'author2', 'author2_variant', 'author2_role', 'author2_fuller',
         'author_corporate', 'author_corporate_role', 'author_additional',
         'title_alt', 'title_old', 'title_new', 'dateSpan', 'series', 'series2',
-        'topic', 'genre', 'geographic', 'era', 'long_lat', 'isbn', 'issn'
+        'topic', 'genre', 'geographic', 'era',
+        'long_lat', 'long_lat_display', 'long_lat_label',
+        'isbn', 'issn',
     ];
 
     /**
@@ -253,10 +258,20 @@ class SolrUpdater
      * @var array
      */
     protected $singleFields = [
-        'title', 'title_short', 'title_full', 'title_sort', 'author_sort', 'format',
-        'publishDateSort', 'callnumber-first', 'callnumber-subject',
-        'callnumber-label', 'callnumber-sort', 'illustrated', 'first_indexed',
-        'last-indexed'
+        'title', 'title_short', 'title_full', 'title_sort',
+        'author_sort',
+        'format',
+        'thumbnail',
+        'description', 'fulltext',
+        'publishDateSort',
+        'callnumber-first', 'callnumber-subject', 'callnumber-label',
+        'callnumber-sort',
+        'lccn',
+        'dewey-sort',
+        'illustrated',
+        'first_indexed', 'last-indexed',
+        'container_title', 'container_volume', 'container_issue',
+        'container_start_page', 'container_reference',
     ];
 
     /**
@@ -1868,8 +1883,10 @@ class SolrUpdater
             }
 
             $this->settings[$source]['extraFields'] = [];
-            if (isset($settings['extrafields'])) {
-                foreach ($settings['extrafields'] as $extraField) {
+            $extraFields = $settings['extraFields'] ?? $settings['extrafields']
+                ?? [];
+            if ($extraFields) {
+                foreach ($extraFields as $extraField) {
                     list($field, $value) = explode(':', $extraField, 2);
                     $this->settings[$source]['extraFields'][] = [$field => $value];
                 }
@@ -2675,6 +2692,8 @@ class SolrUpdater
                         'solrRequest',
                         "Solr server request failed ($code), retrying in "
                             . "{$this->updateRetryWait} seconds..."
+                            . "Beginning of response: "
+                            . substr($response->getBody(), 0, 1000)
                     );
                     sleep($this->updateRetryWait);
                     continue;

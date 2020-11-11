@@ -55,68 +55,68 @@ class MarcRecordDriverTest extends RecordDriverTest
         $expected = [
             'record_format' => 'marc',
             'building' => [
-                0 => '150',
-                1 => '150',
+                '150',
+                '150',
             ],
             'lccn' => '',
             'ctrlnum' => [
-                0 => 'FCC005246184',
-                1 => '378890',
-                2 => '401416',
+                'FCC005246184',
+                '378890',
+                '401416',
             ],
             'allfields' => [
-                0 => 'Hirsjärvi, Sirkka',
-                1 => 'Tutki ja kirjoita',
-                2 => 'Sirkka Hirsjärvi, Pirkko Remes, Paula Sajavaara',
-                3 => '17. uud. p.',
-                4 => 'Helsinki',
-                5 => 'Tammi',
-                6 => '2345 [2013]',
-                7 => 'teksti',
-                8 => 'txt',
-                9 => 'rdacontent',
-                10 => 'käytettävissä ilman laitetta',
-                11 => 'n',
-                12 => 'rdamedia',
-                13 => 'nide',
-                14 => 'nc',
-                15 => 'rdacarrier',
-                16 => '18. p. 2013',
-                17 => 'oppaat',
-                18 => 'ft: kirjoittaminen',
-                19 => 'apurahat',
-                20 => 'tutkimusrahoitus',
-                21 => 'tutkimuspolitiikka',
-                22 => 'opinnäytteet',
-                23 => 'tiedonhaku',
-                24 => 'kielioppaat',
-                25 => 'tutkimustyö',
-                26 => 'tutkimus',
-                27 => 'Remes, Pirkko',
-                28 => 'Sajavaara, Paula',
+                'Hirsjärvi, Sirkka',
+                'Tutki ja kirjoita',
+                'Sirkka Hirsjärvi, Pirkko Remes, Paula Sajavaara',
+                '17. uud. p.',
+                'Helsinki',
+                'Tammi',
+                '2345 [2013]',
+                'teksti',
+                'txt',
+                'rdacontent',
+                'käytettävissä ilman laitetta',
+                'n',
+                'rdamedia',
+                'nide',
+                'nc',
+                'rdacarrier',
+                '18. p. 2013',
+                'oppaat',
+                'ft: kirjoittaminen',
+                'apurahat',
+                'tutkimusrahoitus',
+                'tutkimuspolitiikka',
+                'opinnäytteet',
+                'tiedonhaku',
+                'kielioppaat',
+                'tutkimustyö',
+                'tutkimus',
+                'Remes, Pirkko',
+                'Sajavaara, Paula',
             ],
             'language' => [
-                0 => 'fin',
-                1 => 'fin',
+                'fin',
+                'fin',
             ],
             'format' => 'Book',
             'author' => [
-                0 => 'Hirsjärvi, Sirkka',
+                'Hirsjärvi, Sirkka',
             ],
             'author_role' => [
-                0 => '-',
+                '-',
             ],
             'author_fuller' => [],
             'author_sort' => 'Hirsjärvi, Sirkka',
             'author2' => [
-                0 => 'Hirsjärvi, Sirkka',
-                1 => 'Remes, Pirkko',
-                2 => 'Sajavaara, Paula',
+                'Hirsjärvi, Sirkka',
+                'Remes, Pirkko',
+                'Sajavaara, Paula',
             ],
             'author2_role' => [
-                0 => '-',
-                1 => '-',
-                2 => '-',
+                '-',
+                '-',
+                '-',
             ],
             'author2_fuller' => [
             ],
@@ -142,11 +142,11 @@ class MarcRecordDriverTest extends RecordDriverTest
             'series' => [
             ],
             'publisher' => [
-                0 => 'Tammi',
+                'Tammi',
             ],
             'publishDateSort' => '2013',
             'publishDate' => [
-                0 => '2013',
+                '2013',
             ],
             'physical' => [
             ],
@@ -156,27 +156,27 @@ class MarcRecordDriverTest extends RecordDriverTest
             'contents' => [
             ],
             'isbn' => [
-                0 => '9789513148362',
+                '9789513148362',
             ],
             'issn' => [
             ],
             'callnumber-first' => '',
             'callnumber-raw' => [
-                0 => '38.04',
-                1 => '38.03',
+                '38.04',
+                '38.03',
             ],
             'callnumber-sort' => '',
             'topic' => [
-                0 => 'oppaat',
-                1 => 'ft: kirjoittaminen',
-                2 => 'apurahat',
-                3 => 'tutkimusrahoitus',
-                4 => 'tutkimuspolitiikka',
-                5 => 'opinnäytteet',
-                6 => 'tiedonhaku',
-                7 => 'kielioppaat',
-                8 => 'tutkimustyö',
-                9 => 'tutkimus',
+                'oppaat',
+                'ft: kirjoittaminen',
+                'apurahat',
+                'tutkimusrahoitus',
+                'tutkimuspolitiikka',
+                'opinnäytteet',
+                'tiedonhaku',
+                'kielioppaat',
+                'tutkimustyö',
+                'tutkimus',
             ],
             'genre' => [
             ],
@@ -185,16 +185,16 @@ class MarcRecordDriverTest extends RecordDriverTest
             'era' => [
             ],
             'topic_facet' => [
-                0 => 'oppaat',
-                1 => 'ft: kirjoittaminen',
-                2 => 'apurahat',
-                3 => 'tutkimusrahoitus',
-                4 => 'tutkimuspolitiikka',
-                5 => 'opinnäytteet',
-                6 => 'tiedonhaku',
-                7 => 'kielioppaat',
-                8 => 'tutkimustyö',
-                9 => 'tutkimus',
+                'oppaat',
+                'ft: kirjoittaminen',
+                'apurahat',
+                'tutkimusrahoitus',
+                'tutkimuspolitiikka',
+                'opinnäytteet',
+                'tiedonhaku',
+                'kielioppaat',
+                'tutkimustyö',
+                'tutkimus',
             ],
             'genre_facet' => [
             ],
@@ -213,7 +213,7 @@ class MarcRecordDriverTest extends RecordDriverTest
 
         $expected = [
             'authors' => [
-                0 => [
+                [
                     'type' => 'author',
                     'value' => 'Hirsjärvi, Sirkka.',
                 ],
@@ -221,7 +221,7 @@ class MarcRecordDriverTest extends RecordDriverTest
             'authorsAltScript' => [
             ],
             'titles' => [
-                0 => [
+                [
                     'type' => 'title',
                     'value' => 'Tutki ja kirjoita /',
                 ],
@@ -231,6 +231,8 @@ class MarcRecordDriverTest extends RecordDriverTest
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
+
+        $this->assertEquals(['(FOO)2345'], $record->getUniqueIDs());
     }
 
     /**
@@ -247,64 +249,64 @@ class MarcRecordDriverTest extends RecordDriverTest
         $expected = [
             'record_format' => 'marc',
             'building' => [
-                0 => '123',
-                1 => '234',
+                '123',
+                '234',
             ],
             'lccn' => '',
             'ctrlnum' => [
-                0 => '1558192',
-                1 => 'FCC002608043',
+                '1558192',
+                'FCC002608043',
             ],
             'allfields' => [
-                0 => 'Kalat, James W.',
-                1 => 'Biological psychology',
-                2 => 'James W. Kalat',
-                3 => '7th ed',
-                4 => 'Belmont, CA',
-                5 => 'Wadsworth',
-                6 => 'cop. 2001.',
-                7 => 'xxiii, 551 sivua',
-                8 => 'kuvitettu +',
-                9 => 'CD-ROM -levy',
-                10 => 'teksti',
-                11 => 'txt',
-                12 => 'rdacontent',
-                13 => 'käytettävissä ilman laitetta',
-                14 => 'n',
-                15 => 'rdamedia',
-                16 => 'nide',
-                17 => 'nc',
-                18 => 'rdacarrier',
-                19 => 'Liitteenä CD-ROM',
-                20 => '&12een',
-                21 => '&käytt&tdk',
-                22 => '&vanha&painos',
-                23 => 'neuropsykologia',
-                24 => 'http://www.yso.fi/onto/yso/p14664',
-                25 => 'biopsykologia',
-                26 => 'http://www.yso.fi/onto/yso/p9372',
-                27 => 'neuropsykologi',
-                28 => 'biopsykologi',
+                'Kalat, James W.',
+                'Biological psychology',
+                'James W. Kalat',
+                '7th ed',
+                'Belmont, CA',
+                'Wadsworth',
+                'cop. 2001.',
+                'xxiii, 551 sivua',
+                'kuvitettu +',
+                'CD-ROM -levy',
+                'teksti',
+                'txt',
+                'rdacontent',
+                'käytettävissä ilman laitetta',
+                'n',
+                'rdamedia',
+                'nide',
+                'nc',
+                'rdacarrier',
+                'Liitteenä CD-ROM',
+                '&12een',
+                '&käytt&tdk',
+                '&vanha&painos',
+                'neuropsykologia',
+                'http://www.yso.fi/onto/yso/p14664',
+                'biopsykologia',
+                'http://www.yso.fi/onto/yso/p9372',
+                'neuropsykologi',
+                'biopsykologi',
             ],
             'language' => [
-                0 => 'eng',
-                1 => 'eng',
+                'eng',
+                'eng',
             ],
             'format' => 'Book',
             'author' => [
-                0 => 'Kalat, James W.',
+                'Kalat, James W.',
             ],
             'author_role' => [
-                0 => '-',
+                '-',
             ],
             'author_fuller' => [
             ],
             'author_sort' => 'Kalat, James W.',
             'author2' => [
-                0 => 'Kalat, James W.',
+                'Kalat, James W.',
             ],
             'author2_role' => [
-                0 => '-',
+                '-',
             ],
             'author2_fuller' => [
             ],
@@ -330,14 +332,14 @@ class MarcRecordDriverTest extends RecordDriverTest
             'series' => [
             ],
             'publisher' => [
-                0 => 'Wadsworth',
+                'Wadsworth',
             ],
             'publishDateSort' => '2001',
             'publishDate' => [
-                0 => '2001',
+                '2001',
             ],
             'physical' => [
-                0 => 'xxiii, 551 sivua : kuvitettu + CD-ROM -levy',
+                'xxiii, 551 sivua : kuvitettu + CD-ROM -levy',
             ],
             'dateSpan' => [
             ],
@@ -345,8 +347,8 @@ class MarcRecordDriverTest extends RecordDriverTest
             'contents' => [
             ],
             'isbn' => [
-                0 => '9780534514099',
-                1 => '9780534514006',
+                '9780534514099',
+                '9780534514006',
             ],
             'issn' => [
             ],
@@ -354,10 +356,10 @@ class MarcRecordDriverTest extends RecordDriverTest
             'callnumber-raw' => [
             ],
             'topic' => [
-                0 => 'neuropsykologia',
-                1 => 'biopsykologia',
-                2 => 'neuropsykologi',
-                3 => 'biopsykologi',
+                'neuropsykologia',
+                'biopsykologia',
+                'neuropsykologi',
+                'biopsykologi',
             ],
             'genre' => [
             ],
@@ -366,10 +368,10 @@ class MarcRecordDriverTest extends RecordDriverTest
             'era' => [
             ],
             'topic_facet' => [
-                0 => 'neuropsykologia',
-                1 => 'biopsykologia',
-                2 => 'neuropsykologi',
-                3 => 'biopsykologi',
+                'neuropsykologia',
+                'biopsykologia',
+                'neuropsykologi',
+                'biopsykologi',
             ],
             'genre_facet' => [
             ],
@@ -388,7 +390,7 @@ class MarcRecordDriverTest extends RecordDriverTest
 
         $expected = [
             'authors' => [
-                0 => [
+                [
                     'type' => 'author',
                     'value' => 'Kalat, James W.',
                 ],
@@ -396,7 +398,7 @@ class MarcRecordDriverTest extends RecordDriverTest
             'authorsAltScript' => [
             ],
             'titles' => [
-                0 => [
+                [
                     'type' => 'title',
                     'value' => 'Biological psychology /',
                 ],
@@ -406,6 +408,375 @@ class MarcRecordDriverTest extends RecordDriverTest
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
+    }
+
+    /**
+     * Test MARC Record handling
+     *
+     * @return void
+     */
+    public function testMarcGeo()
+    {
+        $record = $this->createRecord(Marc::class, 'marc_geo.xml');
+        $fields = $record->toSolrArray();
+        unset($fields['fullrecord']);
+
+        $expected = [
+            'record_format' => 'marc',
+            'building' => [
+                '001',
+            ],
+            'long_lat' => [
+                'ENVELOPE(19.5, 24.75, 60.666666666667, 59.8)',
+                'ENVELOPE(19.5, 24.75, 60.666666666667, 59.800277777778)',
+            ],
+            'long_lat_display' => [
+                '19.5 24.75 60.666666666667 59.8',
+                '19.5 24.75 60.666666666667 59.800277777778',
+            ],
+            'lccn' => '',
+            'ctrlnum' => [
+                '(FI-Piki)Ppro837_107786',
+                '(PIKI)Ppro837_107786',
+                '(FI-MELINDA)000963219',
+            ],
+            'allfields' => [
+                'Suomen tiekartta',
+                'Vägkarta över Finland',
+                '1.',
+                'Suomen tiekartta 1',
+                '1:200000',
+                'Helsinki]',
+                'Maanmittaushallitus]',
+                '1946.',
+                '1 kartta',
+                'värillinen',
+                'taitettuna 26 x 13 cm',
+                'kartografinen kuva',
+                'cri',
+                'rdacontent',
+                'käytettävissä ilman laitetta',
+                'n',
+                'rdamedia',
+                'arkki',
+                'nb',
+                'rdacarrier',
+                'Ahvenanmaa mittakaavassa 1:400000',
+                'Kh-kokoelma',
+                'tiekartat',
+                'kartat',
+                'Suomi',
+                'Turun ja Porin lääni',
+                'ysa',
+                'Uudenmaan lääni',
+                'Ahvenanmaa',
+                'Maanmittaushallitus',
+            ],
+            'language' => [
+                'fin',
+                'fin',
+                'swe',
+            ],
+            'format' => 'Map',
+            'author' => [
+            ],
+            'author_role' => [
+            ],
+            'author_fuller' => [
+            ],
+            'author2' => [
+            ],
+            'author2_role' => [
+            ],
+            'author2_fuller' => [
+            ],
+            'author_corporate' => [
+                'Maanmittaushallitus',
+            ],
+            'author_corporate_role' => [
+                '-',
+            ],
+            'author2_id_str_mv' => [
+            ],
+            'author2_id_role_str_mv' => [
+            ],
+            'author_additional' => [
+            ],
+            'title' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
+            'title_sub' => 'Vägkarta över Finland. 1.',
+            'title_short' => 'Suomen tiekartta',
+            'title_full' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
+            'title_alt' => [
+            ],
+            'title_old' => [
+            ],
+            'title_new' => [
+            ],
+            'title_sort' => 'suomen tiekartta = vägkarta över finland. 1.',
+            'series' => [
+            ],
+            'publisher' => [
+                '[Maanmittaushallitus]',
+            ],
+            'publishDateSort' => '1946',
+            'publishDate' => [
+                '1946',
+            ],
+            'physical' => [
+                '1 kartta : värillinen ; taitettuna 26 x 13 cm',
+            ],
+            'dateSpan' => [
+            ],
+            'edition' => '',
+            'contents' => [
+            ],
+            'isbn' => [
+            ],
+            'issn' => [
+            ],
+            'callnumber-first' => '',
+            'callnumber-raw' => [
+                '42.02',
+            ],
+            'callnumber-sort' => '',
+            'topic' => [
+                'tiekartat',
+                'kartat Suomi',
+            ],
+            'genre' => [
+            ],
+            'geographic' => [
+                'Turun ja Porin lääni',
+                'Uudenmaan lääni',
+                'Ahvenanmaa',
+            ],
+            'era' => [
+            ],
+            'topic_facet' => [
+                'tiekartat',
+                'kartat',
+            ],
+            'genre_facet' => [
+            ],
+            'geographic_facet' => [
+                'Suomi',
+                'Turun ja Porin lääni',
+                'Uudenmaan lääni',
+                'Ahvenanmaa',
+            ],
+            'era_facet' => [
+            ],
+            'url' => [
+            ],
+            'illustrated' => 'Not Illustrated',
+        ];
+
+        $this->compareArray($expected, $fields, 'toSolrArray');
+    }
+
+    /**
+     * Test MARC Record handling
+     *
+     * @return void
+     */
+    public function testMarcDewey()
+    {
+        $record = $this->createRecord(Marc::class, 'marc_dewey.xml');
+        $fields = $record->toSolrArray();
+        unset($fields['fullrecord']);
+
+        $expected = [
+            'record_format' => 'marc',
+            'building' => [
+            ],
+            'lccn' => '',
+            'ctrlnum' => [
+                'FCC016234029',
+                '(OCoLC)123456',
+                'ocn234567',
+            ],
+            'allfields' => [
+                'Braudel, Fernand',
+                'kirjoittaja',
+                'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle',
+                'le possible et l\'impossible',
+                'Tome 1',
+                'Les structures du quotidien : le possible et l\'impossible',
+                'Fernand Braudel',
+                'Les structures du quotidien',
+                'Paris',
+                'Armand Colin',
+                '1979]',
+                '© 1979',
+                '543 sivua',
+                'kuvitettu',
+                '24 cm',
+                'teksti',
+                'txt',
+                'rdacontent',
+                'käytettävissä ilman laitetta',
+                'n',
+                'rdamedia',
+                'nide',
+                'nc',
+                'rdacarrier',
+                'Autres tirages : 1980, 1984, 1986, 1988, 1992, 2000.',
+                'Bibliogr. p. 497-520. Index',
+                'Moeurs et coutumes',
+                'Études transculturelles',
+                '1500-1800',
+                'Sociologie du quotidien',
+                'Civilisation',
+                'Histoire',
+                'Histoire sociale',
+                'Économie politique',
+                'Histoire moderne et contemporaine',
+                'Matérialisme',
+                'Capitalisme',
+                'Civilisation moderne',
+                'Histoire économique',
+                'Economic history',
+                'Social history',
+                'Civilization, Modern',
+                'History',
+            ],
+            'language' => [
+                'fre',
+                'fre',
+            ],
+            'format' => 'Book',
+            'author' => [
+            ],
+            'author_role' => [
+            ],
+            'author_fuller' => [
+            ],
+            'author2' => [
+                'Braudel, Fernand',
+            ],
+            'author2_role' => [
+                'kirjoittaja',
+            ],
+            'author2_fuller' => [
+            ],
+            'author_corporate' => [
+            ],
+            'author_corporate_role' => [
+            ],
+            'author2_id_str_mv' => [
+            ],
+            'author2_id_role_str_mv' => [
+            ],
+            'author_additional' => [
+            ],
+            'title' => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle : le possible et l\'impossible. Tome 1, Les structures du quotidien : le possible et l\'impossible',
+            'title_sub' => 'le possible et l\'impossible. Tome 1, Les structures du quotidien : le possible et l\'impossible',
+            'title_short' => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle',
+            'title_full' => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle : le possible et l\'impossible. Tome 1, Les structures du quotidien : le possible et l\'impossible / Fernand Braudel',
+            'title_alt' => [
+            ],
+            'title_old' => [
+            ],
+            'title_new' => [
+            ],
+            'title_sort' => 'civilisation matérielle, économie et capitalisme, xve-xviiie siècle : le possible et l\'impossible. tome 1, les structures du quotidien : le possible et l\'impossible / fernand braudel',
+            'series' => [
+            ],
+            'publisher' => [
+                'Armand Colin',
+            ],
+            'publishDateSort' => '1979',
+            'publishDate' => [
+                '1979',
+            ],
+            'physical' => [
+                '543 sivua : kuvitettu ; 24 cm',
+            ],
+            'dateSpan' => [
+            ],
+            'edition' => '',
+            'contents' => [
+            ],
+            'isbn' => [
+                '9782200371005',
+            ],
+            'issn' => [
+            ],
+            'callnumber-first' => '',
+            'callnumber-raw' => [
+                '940.',
+                '909.',
+                '909.4.',
+                '330.903.',
+            ],
+            'callnumber-sort' => '',
+            'topic' => [
+                'Moeurs et coutumes Études transculturelles 1500-1800',
+                'Sociologie du quotidien Études transculturelles',
+                'Civilisation Histoire',
+                'Histoire sociale 1500-1800',
+                'Économie politique',
+                'Histoire moderne et contemporaine',
+                'Matérialisme Histoire',
+                'Capitalisme Histoire',
+                'Civilisation moderne Histoire',
+                'Histoire économique',
+                'Economic history',
+                'Social history',
+                'Civilization, Modern History',
+            ],
+            'genre' => [
+            ],
+            'geographic' => [
+            ],
+            'era' => [
+            ],
+            'topic_facet' => [
+                'Moeurs et coutumes',
+                'Sociologie du quotidien',
+                'Civilisation',
+                'Histoire sociale',
+                'Économie politique',
+                'Histoire moderne et contemporaine',
+                'Matérialisme',
+                'Capitalisme',
+                'Civilisation moderne',
+                'Histoire économique',
+                'Economic history',
+                'Social history',
+                'Civilization, Modern',
+                'Études transculturelles',
+                'Études transculturelles',
+                'Histoire',
+                'Histoire',
+                'Histoire',
+                'Histoire',
+                'History',
+            ],
+            'genre_facet' => [
+            ],
+            'geographic_facet' => [
+            ],
+            'era_facet' => [
+                '1500-1800',
+                '1500-1800',
+            ],
+            'url' => [
+            ],
+            'illustrated' => 'Illustrated',
+            'dewey-hundreds' => '300',
+            'dewey-tens' => '330',
+            'dewey-ones' => '330',
+            'dewey-full' => '330.903',
+            'dewey-sort' => '3330.903 ',
+            'dewey-raw' => '330.903',
+            'oclc_num' => [
+                '123456',
+                '234567'
+            ],
+        ];
+
+        $this->compareArray($expected, $fields, 'toSolrArray');
     }
 
     /**

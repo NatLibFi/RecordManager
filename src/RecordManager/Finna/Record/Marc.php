@@ -61,6 +61,27 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected $extraAllFields = [];
 
     /**
+     * Default field for geographic coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoField = 'location_geo';
+
+    /**
+     * Default field for geographic center coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoCenterField = 'center_coords';
+
+    /**
+     * Default field for geographic center coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoDisplayField = '';
+
+    /**
      * Set record data
      *
      * @param string $source Source ID
@@ -221,62 +242,6 @@ class Marc extends \RecordManager\Base\Record\Marc
                 )
             )
         );
-
-        // Location coordinates
-        $field = $this->getField('034');
-        if ($field) {
-            $westOrig = $this->getSubfield($field, 'd');
-            $eastOrig = $this->getSubfield($field, 'e');
-            $northOrig = $this->getSubfield($field, 'f');
-            $southOrig = $this->getSubfield($field, 'g');
-            $west = MetadataUtils::coordinateToDecimal($westOrig);
-            $east = MetadataUtils::coordinateToDecimal($eastOrig);
-            $north = MetadataUtils::coordinateToDecimal($northOrig);
-            $south = MetadataUtils::coordinateToDecimal($southOrig);
-
-            if (!is_nan($west) && !is_nan($north)) {
-                if (($west < -180 || $west > 180) || ($north < -90 || $north > 90)) {
-                    $this->logger->logDebug(
-                        'Marc',
-                        "Discarding invalid coordinates $west,$north decoded from "
-                            . "w=$westOrig, e=$eastOrig, n=$northOrig, s=$southOrig,"
-                            . " record {$this->source}." . $this->getID()
-                    );
-                    $this->storeWarning('invalid coordinates in 034');
-                } else {
-                    if (!is_nan($east) && !is_nan($south)) {
-                        if ($east < -180 || $east > 180 || $south < -90
-                            || $south > 90
-                        ) {
-                            $this->logger->logDebug(
-                                'Marc',
-                                "Discarding invalid coordinates $east,$south "
-                                    . "decoded from w=$westOrig, e=$eastOrig, "
-                                    . "n=$northOrig, s=$southOrig, record "
-                                    . "{$this->source}." . $this->getID()
-                            );
-                            $this->storeWarning('invalid coordinates in 034');
-                        } else {
-                            // Try to cope with weird coordinate order
-                            if ($north > $south) {
-                                list($north, $south) = [$south, $north];
-                            }
-                            if ($west > $east) {
-                                list($west, $east) = [$east, $west];
-                            }
-                            $data['location_geo']
-                                = "ENVELOPE($west, $east, $south, $north)";
-                        }
-                    } else {
-                        $data['location_geo'] = "POINT($west $north)";
-                    }
-                }
-            }
-        }
-        if (!empty($data['location_geo'])) {
-            $data['center_coords']
-                = MetadataUtils::getCenterCoordinates($data['location_geo']);
-        }
 
         // Classifications
         foreach ($this->getFields('080') as $field080) {
@@ -708,6 +673,12 @@ class Marc extends \RecordManager\Base\Record\Marc
                     = $this->addNamespaceToAuthorityIds([$id]);
             }
         }
+
+        // Make sure center_coords is single-valued
+        if (!empty($data['center_coords'])) {
+            $data['center_coords'] = $data['center_coords'][0];
+        }
+
         return $data;
     }
 
@@ -1652,11 +1623,17 @@ class Marc extends \RecordManager\Base\Record\Marc
     {
         $result = parent::getUniqueIDs();
         // Melinda ID
-        $f035 = $this->getField('035');
-        if ($f035) {
-            $id = $this->getSubfield($f035, 'a');
-            if (strncmp($id, 'FCC', 3) === 0 && ctype_digit(substr($id, 3))) {
+        foreach ($this->getFields('035') as $field) {
+            $id = $this->getSubfield($field, 'a');
+            if (strncmp('FCC', $id, 3) === 0) {
+                $idNumber = substr($id, 3);
+                if (ctype_digit($idNumber)) {
+                    $result[] = "(FI-MELINDA)$idNumber";
+                    break;
+                }
+            } elseif (strncmp('(FI-MELINDA)', $id, 12) === 0) {
                 $result[] = $id;
+                break;
             }
         }
         return $result;

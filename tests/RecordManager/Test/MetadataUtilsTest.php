@@ -85,4 +85,93 @@ class MetadataUtilsTest extends AbstractTest
             'öäåöäåui', MetadataUtils::normalizeKey('ÖÄÅöäåüï', 'NFKC')
         );
     }
+
+    /**
+     * Test leading punctuation removal
+     *
+     * @return void
+     */
+    public function testStripLeadingPunctuation()
+    {
+        $values = [
+            '.123' => '123',
+            '/ . foo.' => 'foo.',
+            '© 1979' => '© 1979',
+            '-foo' => '-foo',
+        ];
+        foreach ($values as $from => $to) {
+            $this->assertEquals(
+                $to, MetadataUtils::stripLeadingPunctuation($from), $from
+            );
+        }
+
+        $this->assertEquals(
+            'foo', MetadataUtils::stripLeadingPunctuation('foo', '.-')
+        );
+    }
+
+    /**
+     * Test trailing punctuation removal
+     *
+     * @return void
+     */
+    public function testStripTrailingPunctuation()
+    {
+        $values = [
+            '123.' => '123.',
+            'foo /' => 'foo',
+            '1979© ' => '1979©',
+            'foo--' => 'foo--',
+            'bar /:;,=([' => 'bar',
+        ];
+        foreach ($values as $from => $to) {
+            $this->assertEquals(
+                $to, MetadataUtils::stripTrailingPunctuation($from), $from
+            );
+        }
+
+        $this->assertEquals(
+            'foo', MetadataUtils::stripTrailingPunctuation('foo/]', ']')
+        );
+
+        $this->assertEquals(
+            'foo', MetadataUtils::stripTrailingPunctuation('foo/:©', '©')
+        );
+    }
+
+    /**
+     * Test coordinate conversion
+     *
+     * @return void
+     */
+    public function testCoordinateToDecimal()
+    {
+        $values = [
+            '' => 'NAN',
+            ' ' => 'NAN',
+            'W0765200' => -76.866666666667,
+            'e0250831' => 25.141944444444,
+            'e0250831.123' => 25.14197861111111,
+            'E 0250831' => 25.141944444444,
+            'W072.123' => -72.123,
+            '-65.123' => -65.123,
+            '+65.123' => 65.123,
+            'E02508.31' => 25.1385,
+            'N372500' => 37.416666666666664,
+            'E079.533265' => 79.533265,
+            'S012.583377' => -012.583377,
+            '+079.533265' => 79.533265,
+            '-012.583377' => -012.583377,
+            '079.533265' => 79.533265,
+            'E07932.5332' => 79.54222,
+            'E0793235' => 79.54305555555555,
+            'E0793235.575' => 79.54321527777778,
+        ];
+
+        foreach ($values as $from => $to) {
+            $this->assertEquals(
+                $to, MetadataUtils::coordinateToDecimal($from), $from
+            );
+        }
+    }
 }

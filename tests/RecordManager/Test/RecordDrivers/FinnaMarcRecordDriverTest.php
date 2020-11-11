@@ -54,61 +54,63 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
         $expected = [
             'record_format' => 'marc',
             'building' => [
-                0 => '150',
-                1 => '150',
+                '150',
+                '150',
             ],
             'lccn' => '',
             'ctrlnum' => [
-                0 => 'FCC005246184',
-                1 => '378890',
-                2 => '401416',
+                'FCC005246184',
+                '378890',
+                '401416',
             ],
             'allfields' => [
-                0 => '978-951-31-4836-2',
-                1 => '9789513148362',
-                2 => 'Hirsjärvi, Sirkka',
-                3 => 'Tutki ja kirjoita',
-                4 => 'Sirkka Hirsjärvi, Pirkko Remes, Paula Sajavaara',
-                5 => '17. uud. p.',
-                6 => 'Helsinki',
-                7 => 'Tammi',
-                8 => '2345 [2013]',
-                9 => '18. p. 2013',
-                10 => 'oppaat',
-                11 => 'ft: kirjoittaminen',
-                12 => 'apurahat',
-                13 => 'tutkimusrahoitus',
-                14 => 'tutkimuspolitiikka',
-                15 => 'opinnäytteet',
-                16 => 'tiedonhaku',
-                17 => 'kielioppaat',
-                18 => 'tutkimustyö',
-                19 => 'tutkimus',
-                20 => 'Remes, Pirkko',
-                21 => 'Sajavaara, Paula',
+                '978-951-31-4836-2',
+                '9789513148362',
+                '2345',
+                'FOO',
+                'Hirsjärvi, Sirkka',
+                'Tutki ja kirjoita',
+                'Sirkka Hirsjärvi, Pirkko Remes, Paula Sajavaara',
+                '17. uud. p.',
+                'Helsinki',
+                'Tammi',
+                '2345 [2013]',
+                '18. p. 2013',
+                'oppaat',
+                'ft: kirjoittaminen',
+                'apurahat',
+                'tutkimusrahoitus',
+                'tutkimuspolitiikka',
+                'opinnäytteet',
+                'tiedonhaku',
+                'kielioppaat',
+                'tutkimustyö',
+                'tutkimus',
+                'Remes, Pirkko',
+                'Sajavaara, Paula',
             ],
             'language' => [
-                0 => 'fin',
-                1 => 'fin',
+                'fin',
+                'fin',
             ],
             'format' => 'Book',
             'author' => [
-                0 => 'Hirsjärvi, Sirkka',
+                'Hirsjärvi, Sirkka',
             ],
             'author_role' => [
-                0 => '-',
+                '-',
             ],
             'author_fuller' => [],
             'author_sort' => 'Hirsjärvi, Sirkka',
             'author2' => [
-                0 => 'Hirsjärvi, Sirkka',
-                1 => 'Remes, Pirkko',
-                2 => 'Sajavaara, Paula',
+                'Hirsjärvi, Sirkka',
+                'Remes, Pirkko',
+                'Sajavaara, Paula',
             ],
             'author2_role' => [
-                0 => '-',
-                1 => '-',
-                2 => '-',
+                '-',
+                '-',
+                '-',
             ],
             'author2_fuller' => [],
             'author_corporate' => [],
@@ -126,52 +128,52 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'title_sort' => 'tutki ja kirjoita / sirkka hirsjärvi, pirkko remes, paula sajavaara',
             'series' => [],
             'publisher' => [
-                0 => 'Tammi',
+                'Tammi',
             ],
             'publishDateSort' => '2013',
             'publishDate' => [
-                0 => '2013',
+                '2013',
             ],
             'physical' => [],
             'dateSpan' => [],
             'edition' => '17. uud. p.',
             'contents' => [],
             'isbn' => [
-                0 => '9789513148362',
+                '9789513148362',
             ],
             'issn' => [],
             'callnumber-first' => '38.04',
             'callnumber-raw' => [
-                0 => '38.04',
-                1 => '38.03',
+                '38.04',
+                '38.03',
             ],
             'callnumber-sort' => '38.04',
             'topic' => [
-                0 => 'oppaat',
-                1 => 'ft: kirjoittaminen',
-                2 => 'apurahat',
-                3 => 'tutkimusrahoitus',
-                4 => 'tutkimuspolitiikka',
-                5 => 'opinnäytteet',
-                6 => 'tiedonhaku',
-                7 => 'kielioppaat',
-                8 => 'tutkimustyö',
-                9 => 'tutkimus',
+                'oppaat',
+                'ft: kirjoittaminen',
+                'apurahat',
+                'tutkimusrahoitus',
+                'tutkimuspolitiikka',
+                'opinnäytteet',
+                'tiedonhaku',
+                'kielioppaat',
+                'tutkimustyö',
+                'tutkimus',
             ],
             'genre' => [],
             'geographic' => [],
             'era' => [],
             'topic_facet' => [
-                0 => 'oppaat',
-                1 => 'ft: kirjoittaminen',
-                2 => 'apurahat',
-                3 => 'tutkimusrahoitus',
-                4 => 'tutkimuspolitiikka',
-                5 => 'opinnäytteet',
-                6 => 'tiedonhaku',
-                7 => 'kielioppaat',
-                8 => 'tutkimustyö',
-                9 => 'tutkimus',
+                'oppaat',
+                'ft: kirjoittaminen',
+                'apurahat',
+                'tutkimusrahoitus',
+                'tutkimuspolitiikka',
+                'opinnäytteet',
+                'tiedonhaku',
+                'kielioppaat',
+                'tutkimustyö',
+                'tutkimus',
             ],
             'genre_facet' => [],
             'geographic_facet' => [],
@@ -182,43 +184,43 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'main_date' => '2013-01-01T00:00:00Z',
             'publication_daterange' => '[2013-01-01 TO 2013-12-31]',
             'search_daterange_mv' => [
-                0 => '[2013-01-01 TO 2013-12-31]',
+                '[2013-01-01 TO 2013-12-31]',
             ],
             'publication_place_txt_mv' => [
-                0 => 'Helsinki',
+                'Helsinki',
             ],
             'subtitle_lng_str_mv' => [],
             'original_lng_str_mv' => [
-                0 => 'fin',
+                'fin',
             ],
             'classification_txt_mv' => [
-                0 => 'ekl 38.04',
-                1 => 'ekl 38.04',
-                2 => 'ekl 38.03',
-                3 => 'ekl 38.03',
+                'ekl 38.04',
+                'ekl 38.04',
+                'ekl 38.03',
+                'ekl 38.03',
             ],
             'classification_str_mv' => [
-                0 => 'ekl 38.04',
-                1 => 'ekl 38.04',
-                2 => 'ekl 38.03',
-                3 => 'ekl 38.03',
+                'ekl 38.04',
+                'ekl 38.04',
+                'ekl 38.03',
+                'ekl 38.03',
             ],
             'source_str_mv' => '__unit_test_no_source__',
             'datasource_str_mv' => [
-                0 => '__unit_test_no_source__',
+                '__unit_test_no_source__',
             ],
             'other_issn_str_mv' => [],
             'other_issn_isn_mv' => [],
             'linking_issn_str_mv' => [],
             'holdings_txtP_mv' => [
-                0 => 'E 150 38 Hir 18. p. 2013 __unit_test_no_source__',
-                1 => 'E 150 38 Hir 18. p. 2013 __unit_test_no_source__',
+                'E 150 38 Hir 18. p. 2013 __unit_test_no_source__',
+                'E 150 38 Hir 18. p. 2013 __unit_test_no_source__',
             ],
             'author_facet' => [
-                0 => 'Hirsjärvi, Sirkka',
-                1 => 'Hirsjärvi, Sirkka',
-                2 => 'Remes, Pirkko',
-                3 => 'Sajavaara, Paula',
+                'Hirsjärvi, Sirkka',
+                'Hirsjärvi, Sirkka',
+                'Remes, Pirkko',
+                'Sajavaara, Paula',
             ],
             'format_ext_str_mv' => 'Book',
         ];
@@ -229,7 +231,7 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
 
         $expected = [
             'authors' => [
-                0 => [
+                [
                     'type' => 'author',
                     'value' => 'Hirsjärvi, Sirkka.',
                 ],
@@ -237,7 +239,7 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'authorsAltScript' => [
             ],
             'titles' => [
-                0 => [
+                [
                     'type' => 'title',
                     'value' => 'Tutki ja kirjoita /',
                 ],
@@ -247,6 +249,10 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
+
+        $this->assertEquals(
+            ['(FOO)2345', '(FI-MELINDA)005246184'], $record->getUniqueIDs()
+        );
     }
 
     /**
@@ -263,54 +269,54 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
         $expected = [
             'record_format' => 'marc',
             'building' => [
-                0 => '123',
-                1 => '234',
+                '123',
+                '234',
             ],
             'lccn' => '',
             'ctrlnum' => [
-                0 => '1558192',
-                1 => 'FCC002608043',
+                '1558192',
+                'FCC002608043',
             ],
             'allfields' => [
-                0 => '0-534-51409-X',
-                1 => '9780534514099',
-                2 => '0-534-51400-6',
-                3 => '9780534514006',
-                4 => 'Kalat, James W.',
-                5 => 'Biological psychology',
-                6 => 'James W. Kalat',
-                7 => '7th ed',
-                8 => 'Belmont, CA',
-                9 => 'Wadsworth',
-                10 => 'cop. 2001.',
-                11 => 'Liitteenä CD-ROM',
-                12 => '&12een',
-                13 => '&käytt&tdk',
-                14 => '&vanha&painos',
-                15 => 'neuropsykologia',
-                16 => 'biopsykologia',
-                17 => 'neuropsykologi',
-                18 => 'biopsykologi',
+                '0-534-51409-X',
+                '9780534514099',
+                '0-534-51400-6',
+                '9780534514006',
+                'Kalat, James W.',
+                'Biological psychology',
+                'James W. Kalat',
+                '7th ed',
+                'Belmont, CA',
+                'Wadsworth',
+                'cop. 2001.',
+                'Liitteenä CD-ROM',
+                '&12een',
+                '&käytt&tdk',
+                '&vanha&painos',
+                'neuropsykologia',
+                'biopsykologia',
+                'neuropsykologi',
+                'biopsykologi',
             ],
             'language' => [
-                0 => 'eng',
-                1 => 'eng',
+                'eng',
+                'eng',
             ],
             'format' => 'Book',
             'author' => [
-                0 => 'Kalat, James W.',
+                'Kalat, James W.',
             ],
             'author_role' => [
-                0 => '-',
+                '-',
             ],
             'author_fuller' => [
             ],
             'author_sort' => 'Kalat, James W.',
             'author2' => [
-                0 => 'Kalat, James W.',
+                'Kalat, James W.',
             ],
             'author2_role' => [
-                0 => '-',
+                '-',
             ],
             'author2_fuller' => [
             ],
@@ -336,14 +342,14 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'series' => [
             ],
             'publisher' => [
-                0 => 'Wadsworth',
+                'Wadsworth',
             ],
             'publishDateSort' => '2001',
             'publishDate' => [
-                0 => '2001',
+                '2001',
             ],
             'physical' => [
-                0 => 'xxiii, 551 sivua : kuvitettu + CD-ROM -levy',
+                'xxiii, 551 sivua : kuvitettu + CD-ROM -levy',
             ],
             'dateSpan' => [
             ],
@@ -351,8 +357,8 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'contents' => [
             ],
             'isbn' => [
-                0 => '9780534514099',
-                1 => '9780534514006',
+                '9780534514099',
+                '9780534514006',
             ],
             'issn' => [
             ],
@@ -360,10 +366,10 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'callnumber-raw' => [
             ],
             'topic' => [
-                0 => 'neuropsykologia',
-                1 => 'biopsykologia',
-                2 => 'neuropsykologi',
-                3 => 'biopsykologi',
+                'neuropsykologia',
+                'biopsykologia',
+                'neuropsykologi',
+                'biopsykologi',
             ],
             'genre' => [
             ],
@@ -372,10 +378,10 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'era' => [
             ],
             'topic_facet' => [
-                0 => 'neuropsykologia',
-                1 => 'biopsykologia',
-                2 => 'neuropsykologi',
-                3 => 'biopsykologi',
+                'neuropsykologia',
+                'biopsykologia',
+                'neuropsykologi',
+                'biopsykologi',
             ],
             'genre_facet' => [
             ],
@@ -390,19 +396,19 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'main_date' => '2001-01-01T00:00:00Z',
             'publication_daterange' => '[2001-01-01 TO 2001-12-31]',
             'search_daterange_mv' => [
-                0 => '[2001-01-01 TO 2001-12-31]',
+                '[2001-01-01 TO 2001-12-31]',
             ],
             'publication_place_txt_mv' => [
-                0 => 'Belmont, CA',
+                'Belmont, CA',
             ],
             'subtitle_lng_str_mv' => [
             ],
             'original_lng_str_mv' => [
-                0 => 'eng',
+                'eng',
             ],
             'source_str_mv' => '__unit_test_no_source__',
             'datasource_str_mv' => [
-                0 => '__unit_test_no_source__',
+                '__unit_test_no_source__',
             ],
             'other_issn_str_mv' => [
             ],
@@ -411,15 +417,209 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'linking_issn_str_mv' => [
             ],
             'holdings_txtP_mv' => [
-                0 => 'L 123 L 616.8 __unit_test_no_source__',
-                1 => 'Ll 234 Ll Course __unit_test_no_source__',
+                'L 123 L 616.8 __unit_test_no_source__',
+                'Ll 234 Ll Course __unit_test_no_source__',
             ],
             'callnumber-sort' => '',
             'author_facet' => [
-                0 => 'Kalat, James W.',
-                1 => 'Kalat, James W.',
+                'Kalat, James W.',
+                'Kalat, James W.',
             ],
             'format_ext_str_mv' => 'Book',
+        ];
+
+        $this->compareArray($expected, $fields, 'toSolrArray');
+
+        $this->assertEquals(['(FI-MELINDA)002608043'], $record->getUniqueIDs());
+    }
+
+    /**
+     * Test MARC Record handling
+     *
+     * @return void
+     */
+    public function testMarcGeo()
+    {
+        $record = $this->createRecord(Marc::class, 'marc_geo.xml');
+        $fields = $record->toSolrArray();
+        unset($fields['fullrecord']);
+
+        $expected = [
+            'record_format' => 'marc',
+            'building' => [
+                '001',
+            ],
+            'lccn' => '',
+            'ctrlnum' => [
+                '(FI-Piki)Ppro837_107786',
+                '(PIKI)Ppro837_107786',
+                '(FI-MELINDA)000963219',
+            ],
+            'allfields' => [
+                'Suomen tiekartta',
+                'Vägkarta över Finland',
+                '1.',
+                'Suomen tiekartta 1',
+                '1:200000',
+                'Helsinki]',
+                'Maanmittaushallitus]',
+                '1946.',
+                'Ahvenanmaa mittakaavassa 1:400000',
+                'Kh-kokoelma',
+                'tiekartat',
+                'kartat',
+                'Suomi',
+                'Turun ja Porin lääni',
+                'ysa',
+                'Uudenmaan lääni',
+                'Ahvenanmaa',
+                'Maanmittaushallitus',
+            ],
+            'language' => [
+                'fin',
+                'fin',
+                'swe',
+            ],
+            'format' => 'Map',
+            'author' => [
+            ],
+            'author_role' => [
+            ],
+            'author_fuller' => [
+            ],
+            'author2' => [
+            ],
+            'author2_role' => [
+            ],
+            'author2_fuller' => [
+            ],
+            'author_corporate' => [
+                'Maanmittaushallitus',
+            ],
+            'author_corporate_role' => [
+                '-',
+            ],
+            'author2_id_str_mv' => [
+            ],
+            'author2_id_role_str_mv' => [
+            ],
+            'author_additional' => [
+            ],
+            'title' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
+            'title_sub' => 'Vägkarta över Finland. 1.',
+            'title_short' => 'Suomen tiekartta',
+            'title_full' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
+            'title_alt' => [
+                'Vägkarta över Finland',
+                'Suomen tiekartta 1',
+            ],
+            'title_old' => [
+            ],
+            'title_new' => [
+            ],
+            'title_sort' => 'suomen tiekartta = vägkarta över finland. 1.',
+            'series' => [
+            ],
+            'publisher' => [
+                '[Maanmittaushallitus]',
+            ],
+            'publishDateSort' => '1946',
+            'publishDate' => [
+                '1946',
+            ],
+            'physical' => [
+                '1 kartta : värillinen ; taitettuna 26 x 13 cm',
+            ],
+            'dateSpan' => [
+            ],
+            'edition' => '',
+            'contents' => [
+            ],
+            'isbn' => [
+            ],
+            'issn' => [
+            ],
+            'callnumber-first' => '42.02',
+            'callnumber-raw' => [
+                '42.02',
+            ],
+            'callnumber-sort' => '42.02',
+            'topic' => [
+                'tiekartat',
+                'kartat Suomi',
+            ],
+            'genre' => [
+            ],
+            'geographic' => [
+                'Turun ja Porin lääni',
+                'Uudenmaan lääni',
+                'Ahvenanmaa',
+            ],
+            'era' => [
+            ],
+            'topic_facet' => [
+                'tiekartat',
+                'kartat',
+            ],
+            'genre_facet' => [
+            ],
+            'geographic_facet' => [
+                'Suomi',
+                'Turun ja Porin lääni',
+                'Uudenmaan lääni',
+                'Ahvenanmaa',
+            ],
+            'era_facet' => [
+            ],
+            'url' => [
+            ],
+            'illustrated' => 'Not Illustrated',
+            'main_date_str' => '1946',
+            'main_date' => '1946-01-01T00:00:00Z',
+            'publication_daterange' => '[1946-01-01 TO 1946-12-31]',
+            'search_daterange_mv' => [
+                '[1946-01-01 TO 1946-12-31]',
+            ],
+            'publication_place_txt_mv' => [
+                'Helsinki',
+            ],
+            'subtitle_lng_str_mv' => [
+            ],
+            'original_lng_str_mv' => [
+                'fin',
+                'swe',
+            ],
+            'location_geo' => [
+                'ENVELOPE(19.5, 24.75, 60.666666666667, 59.8)',
+                'ENVELOPE(19.5, 24.75, 60.666666666667, 59.800277777778)',
+            ],
+            'center_coords' => '22.125 60.233333333333',
+            'classification_txt_mv' => [
+                'ykl 42.02',
+                'ykl 42.02',
+            ],
+            'major_genre_str_mv' => 'nonfiction',
+            'classification_str_mv' => [
+                'ykl 42.02',
+                'ykl 42.02',
+            ],
+            'source_str_mv' => '__unit_test_no_source__',
+            'datasource_str_mv' => [
+                '__unit_test_no_source__',
+            ],
+            'other_issn_str_mv' => [
+            ],
+            'other_issn_isn_mv' => [
+            ],
+            'linking_issn_str_mv' => [
+            ],
+            'holdings_txtP_mv' => [
+                '1 001 __unit_test_no_source__',
+            ],
+            'author_facet' => [
+                'Maanmittaushallitus',
+            ],
+            'format_ext_str_mv' => 'Map',
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -442,36 +642,36 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'lccn' => '',
             'ctrlnum' => [],
             'allfields' => [
-                0 => 'Author, Test',
-                1 => 'Thesis Title',
-                2 => 'Test Author',
-                3 => 'Helsinki]',
-                4 => 'Kansalliskirjasto',
-                5 => '2020',
-                6 => 'AMK-opinnäytetypo',
-                7 => 'Sample Program',
-                8 => '2020.',
-                9 => 'AMK-opinnäytetyö',
-                10 => 'Second Sample Program',
-                11 => 'testaus',
+                'Author, Test',
+                'Thesis Title',
+                'Test Author',
+                'Helsinki]',
+                'Kansalliskirjasto',
+                '2020',
+                'AMK-opinnäytetypo',
+                'Sample Program',
+                '2020.',
+                'AMK-opinnäytetyö',
+                'Second Sample Program',
+                'testaus',
             ],
             'language' => [
-                0 => 'fin',
+                'fin',
             ],
             'format' => 'BachelorsThesisPolytechnic',
             'author' => [
-                0 => 'Author, Test',
+                'Author, Test',
             ],
             'author_role' => [
-                0 => '-',
+                '-',
             ],
             'author_fuller' => [],
             'author_sort' => 'Author, Test',
             'author2' => [
-                0 => 'Author, Test',
+                'Author, Test',
             ],
             'author2_role' => [
-                0 => '-',
+                '-',
             ],
             'author2_fuller' => [],
             'author_corporate' => [],
@@ -489,11 +689,11 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'title_sort' => 'thesis title / test author',
             'series' => [],
             'publisher' => [
-                0 => 'Kansalliskirjasto',
+                'Kansalliskirjasto',
             ],
             'publishDateSort' => '2020',
             'publishDate' => [
-                0 => '2020',
+                '2020',
             ],
             'physical' => [],
             'dateSpan' => [],
@@ -503,17 +703,17 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'issn' => [],
             'callnumber-first' => '614.8',
             'callnumber-raw' => [
-                0 => '614.8',
+                '614.8',
             ],
             'callnumber-sort' => '614.8',
             'topic' => [
-                0 => 'testaus',
+                'testaus',
             ],
             'genre' => [],
             'geographic' => [],
             'era' => [],
             'topic_facet' => [
-                0 => 'testaus',
+                'testaus',
             ],
             'genre_facet' => [],
             'geographic_facet' => [],
@@ -524,31 +724,31 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'main_date' => '2020-01-01T00:00:00Z',
             'publication_daterange' => '[2020-01-01 TO 2020-12-31]',
             'search_daterange_mv' => [
-                0 => '[2020-01-01 TO 2020-12-31]',
+                '[2020-01-01 TO 2020-12-31]',
             ],
             'publication_place_txt_mv' => [
-                0 => 'Helsinki',
+                'Helsinki',
             ],
             'subtitle_lng_str_mv' => [],
             'original_lng_str_mv' => [],
             'classification_txt_mv' => [
-                0 => 'udk 614.8',
+                'udk 614.8',
             ],
             'major_genre_str_mv' => 'nonfiction',
             'classification_str_mv' => [
-                0 => 'udk 614.8',
+                'udk 614.8',
             ],
             'source_str_mv' => '__unit_test_no_source__',
             'datasource_str_mv' => [
-                0 => '__unit_test_no_source__',
+                '__unit_test_no_source__',
             ],
             'other_issn_str_mv' => [],
             'other_issn_isn_mv' => [],
             'linking_issn_str_mv' => [],
             'holdings_txtP_mv' => [],
             'author_facet' => [
-                0 => 'Author, Test',
-                1 => 'Author, Test',
+                'Author, Test',
+                'Author, Test',
             ],
             'format_ext_str_mv' => 'BachelorsThesisPolytechnic',
         ];
@@ -573,31 +773,31 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'lccn' => '',
             'ctrlnum' => [],
             'allfields' => [
-                0 => 'Author, Test',
-                1 => 'Thesis Title',
-                2 => 'Test Author',
-                3 => 'Helsinki]',
-                4 => 'Kansalliskirjasto',
-                5 => '2020',
-                6 => 'testaus',
+                'Author, Test',
+                'Thesis Title',
+                'Test Author',
+                'Helsinki]',
+                'Kansalliskirjasto',
+                '2020',
+                'testaus',
             ],
             'language' => [
-                0 => 'fin',
+                'fin',
             ],
             'format' => 'BachelorsThesisPolytechnic',
             'author' => [
-                0 => 'Author, Test',
+                'Author, Test',
             ],
             'author_role' => [
-                0 => '-',
+                '-',
             ],
             'author_fuller' => [],
             'author_sort' => 'Author, Test',
             'author2' => [
-                0 => 'Author, Test',
+                'Author, Test',
             ],
             'author2_role' => [
-                0 => '-',
+                '-',
             ],
             'author2_fuller' => [],
             'author_corporate' => [],
@@ -615,11 +815,11 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'title_sort' => 'thesis title / test author',
             'series' => [],
             'publisher' => [
-                0 => 'Kansalliskirjasto',
+                'Kansalliskirjasto',
             ],
             'publishDateSort' => '2020',
             'publishDate' => [
-                0 => '2020',
+                '2020',
             ],
             'physical' => [],
             'dateSpan' => [],
@@ -629,17 +829,17 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'issn' => [],
             'callnumber-first' => '614.8',
             'callnumber-raw' => [
-                0 => '614.8',
+                '614.8',
             ],
             'callnumber-sort' => '614.8',
             'topic' => [
-                0 => 'testaus',
+                'testaus',
             ],
             'genre' => [],
             'geographic' => [],
             'era' => [],
             'topic_facet' => [
-                0 => 'testaus',
+                'testaus',
             ],
             'genre_facet' => [],
             'geographic_facet' => [],
@@ -650,31 +850,31 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
             'main_date' => '2020-01-01T00:00:00Z',
             'publication_daterange' => '[2020-01-01 TO 2020-12-31]',
             'search_daterange_mv' => [
-                0 => '[2020-01-01 TO 2020-12-31]',
+                '[2020-01-01 TO 2020-12-31]',
             ],
             'publication_place_txt_mv' => [
-                0 => 'Helsinki',
+                'Helsinki',
             ],
             'subtitle_lng_str_mv' => [],
             'original_lng_str_mv' => [],
             'classification_txt_mv' => [
-                0 => 'udk 614.8',
+                'udk 614.8',
             ],
             'major_genre_str_mv' => 'nonfiction',
             'classification_str_mv' => [
-                0 => 'udk 614.8',
+                'udk 614.8',
             ],
             'source_str_mv' => '__unit_test_no_source__',
             'datasource_str_mv' => [
-                0 => '__unit_test_no_source__',
+                '__unit_test_no_source__',
             ],
             'other_issn_str_mv' => [],
             'other_issn_isn_mv' => [],
             'linking_issn_str_mv' => [],
             'holdings_txtP_mv' => [],
             'author_facet' => [
-                0 => 'Author, Test',
-                1 => 'Author, Test',
+                'Author, Test',
+                'Author, Test',
             ],
             'format_ext_str_mv' => 'BachelorsThesisPolytechnic',
         ];
