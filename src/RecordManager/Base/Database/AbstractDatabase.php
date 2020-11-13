@@ -60,6 +60,13 @@ abstract class AbstractDatabase implements DatabaseInterface
     protected $settings;
 
     /**
+     * Default page size when iterating a large set of results
+     *
+     * @var int
+     */
+    protected $defaultPageSize = 1000;
+
+    /**
      * Whether to report actual counts. When false, all count methods return 'the'
      * instead.
      *
@@ -193,6 +200,26 @@ abstract class AbstractDatabase implements DatabaseInterface
     abstract public function findRecords($filter, $options = []);
 
     /**
+     * Iterate through records
+     *
+     * Calls callback for each record until exhausted or callback returns false.
+     *
+     * @param array    $filter   Search filter
+     * @param array    $options  Options such as sorting
+     * @param Callable $callback Callback to call for each record
+     * @param array    $params   Optional parameters to pass to the callback
+     *
+     * @return void
+     */
+    public function iterateRecords(array $filter, array $options, callable $callback,
+        array $params = []
+    ): void {
+        $this->iterate(
+            [$this, 'findRecords'], $filter, $options, $callback, $params
+        );
+    }
+
+    /**
      * Count records
      *
      * @param array $filter  Search filter
@@ -299,6 +326,26 @@ abstract class AbstractDatabase implements DatabaseInterface
     abstract public function findDedups($filter, $options = []);
 
     /**
+     * Iterate through dedup records
+     *
+     * Calls callback for each record until exhausted or callback returns false.
+     *
+     * @param array    $filter   Search filter
+     * @param array    $options  Options such as sorting
+     * @param Callable $callback Callback to call for each record
+     * @param array    $params   Optional parameters to pass to the callback
+     *
+     * @return void
+     */
+    public function iterateDedups(array $filter, array $options, callable $callback,
+        array $params = []
+    ): void {
+        $this->iterate(
+            [$this, 'findDedups'], $filter, $options, $callback, $params
+        );
+    }
+
+    /**
      * Count dedup records
      *
      * @param array $filter  Search filter
@@ -395,10 +442,43 @@ abstract class AbstractDatabase implements DatabaseInterface
      * Get IDs in queue
      *
      * @param string $collectionName The queue collection name
+     * @param array  $options        Options such as skip and limit
      *
      * @return \Traversable
      */
-    abstract public function getQueuedIds($collectionName);
+    abstract public function getQueuedIds($collectionName, $options);
+
+    /**
+     * Iterate through queue
+     *
+     * Calls callback for each item until exhausted or callback returns false.
+     *
+     * @param string   $collectionName The queue collection name
+     * @param Callable $callback       Callback to call for each record
+     * @param array    $params         Optional parameters to pass to the callback
+     *
+     * @return void
+     */
+    public function iterateQueue(string $collectionName, callable $callback,
+        array $params = []
+    ):void {
+        $position = 0;
+        $limit = $this->getDefaultPageSize();
+        do {
+            $records = $this->getQueuedIds(
+                $collectionName,
+                ['skip' => $position, 'limit' => $limit]
+            );
+            $more = false;
+            foreach ($records as $record) {
+                $more = true;
+                if ($callback($record, $params) === false) {
+                    return;
+                }
+            }
+            $position += $limit;
+        } while ($more);
+    }
 
     /**
      * Find a single URI cache record
@@ -436,6 +516,40 @@ abstract class AbstractDatabase implements DatabaseInterface
      */
     public function getDefaultPageSize()
     {
-        return 1000;
+        return $this->defaultPageSize;
+    }
+
+    /**
+     * Iterate through records
+     *
+     * Calls callback for each record until exhausted or callback returns false.
+     *
+     * @param Callable $findMethod Method used to find records to iterate
+     * @param array    $filter     Search filter
+     * @param array    $options    Options such as sorting
+     * @param Callable $callback   Callback to call for each record
+     * @param array    $params     Optional parameters to pass to the callback
+     *
+     * @return void
+     */
+    protected function iterate(callable $findMethod, array $filter, array $options,
+        callable $callback, array $params = []
+    ): void {
+        $position = $options['skip'] ?? 0;
+        $limit = $this->getDefaultPageSize();
+        do {
+            $records = $findMethod(
+                $filter,
+                array_merge($options, ['skip' => $position, 'limit' => $limit])
+            );
+            $more = false;
+            foreach ($records as $record) {
+                $more = true;
+                if ($callback($record, $params) === false) {
+                    return;
+                }
+            }
+            $position += $limit;
+        } while ($more);
     }
 }

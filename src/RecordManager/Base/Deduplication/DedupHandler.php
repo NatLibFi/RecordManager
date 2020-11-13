@@ -482,24 +482,27 @@ class DedupHandler
                     }
                 }
                 if (count($bestMatchCandidates) > 1) {
-                    $dedupRecords = $this->db->findDedups(
+                    $bestDedupId = '';
+                    $this->db->iterateDedups(
                         [
                             '_id' => ['$in' => $dedupIdKeys],
                             'deleted' => false
-                        ]
-                    );
-                    $bestDedupId = '';
-                    foreach ($dedupRecords as $dedupRecord) {
-                        $cnt = count($dedupRecord['ids']);
-                        $dedupId = (string)$dedupRecord['_id'];
-                        if ($cnt > $bestMatchRecords || '' === $bestDedupId
-                            || ($cnt === $bestMatchRecords
-                            && strcmp($bestDedupId, $dedupId) > 0)
+                        ],
+                        [],
+                        function ($dedupRecord) use (&$bestMatchRecords,
+                            &$bestDedupId
                         ) {
-                            $bestMatchRecords = $cnt;
-                            $bestDedupId = $dedupId;
+                            $cnt = count($dedupRecord['ids']);
+                            $dedupId = (string)$dedupRecord['_id'];
+                            if ($cnt > $bestMatchRecords || '' === $bestDedupId
+                                || ($cnt === $bestMatchRecords
+                                && strcmp($bestDedupId, $dedupId) > 0)
+                            ) {
+                                $bestMatchRecords = $cnt;
+                                $bestDedupId = $dedupId;
+                            }
                         }
-                    }
+                    );
                     if ($bestDedupId) {
                         $bestMatch = $bestMatchCandidates[$bestDedupId];
                     }
@@ -978,72 +981,78 @@ class DedupHandler
         // Go through all other records with same dedup id and see if their
         // component parts match
         $marked = 0;
-        $otherRecords = $this->db->findRecords(
+        $this->db->iterateRecords(
             [
                 'dedup_id' => $hostRecord['dedup_id'],
                 'deleted' => false,
                 'suppressed' => ['$in' => [null, false]],
-            ]
+            ],
+            [],
+            function ($otherRecord) use ($components1, $component1count, &$marked,
+                $hostRecord
+            ) {
+                if ($otherRecord['source_id'] == $hostRecord['source_id']) {
+                    return true;
+                }
+                $components2 = $this->getComponentPartsSorted(
+                    $otherRecord['source_id'], $otherRecord['linking_id']
+                );
+                $component2count = count($components2);
+
+                if ($component1count != $component2count) {
+                    $allMatch = false;
+                } else {
+                    $allMatch = true;
+                    $idx = -1;
+                    foreach ($components1 as $component1) {
+                        $component2 = $components2[++$idx];
+                        if ($this->verbose) {
+                            echo "Comparing {$component1['_id']} with "
+                                . "{$component2['_id']}\n";
+                        }
+                        if ($this->verbose) {
+                            echo 'Original ' . $component1['_id'] . ":\n"
+                                . MetadataUtils::getRecordData($component1, true)
+                                . "\n";
+                        }
+                        $metadataComponent1 = $this->recordFactory->createRecord(
+                            $component1['format'],
+                            MetadataUtils::getRecordData($component1, true),
+                            $component1['oai_id'],
+                            $component1['source_id']
+                        );
+                        if (!$this->matchRecords(
+                            $component1, $metadataComponent1, $component2
+                        )
+                        ) {
+                            $allMatch = false;
+                            break;
+                        }
+                    }
+                }
+
+                if ($allMatch) {
+                    if ($this->verbose) {
+                        echo microtime(true) . " All component parts match between "
+                            . "{$hostRecord['_id']} and {$otherRecord['_id']}\n";
+                    }
+                    $idx = -1;
+                    foreach ($components1 as $component1) {
+                        $component2 = $components2[++$idx];
+                        $this
+                            ->markDuplicates($component1['_id'], $component2['_id']);
+                        ++$marked;
+                    }
+                    return false;
+                } else {
+                    if ($this->verbose) {
+                        echo microtime(true) . ' Not all component parts match'
+                            . " between {$hostRecord['_id']} and"
+                            . " {$otherRecord['_id']}\n";
+                    }
+                }
+            }
         );
-        foreach ($otherRecords as $otherRecord) {
-            if ($otherRecord['source_id'] == $hostRecord['source_id']) {
-                continue;
-            }
-            $components2 = $this->getComponentPartsSorted(
-                $otherRecord['source_id'], $otherRecord['linking_id']
-            );
-            $component2count = count($components2);
-
-            if ($component1count != $component2count) {
-                $allMatch = false;
-            } else {
-                $allMatch = true;
-                $idx = -1;
-                foreach ($components1 as $component1) {
-                    $component2 = $components2[++$idx];
-                    if ($this->verbose) {
-                        echo "Comparing {$component1['_id']} with "
-                            . "{$component2['_id']}\n";
-                    }
-                    if ($this->verbose) {
-                        echo 'Original ' . $component1['_id'] . ":\n"
-                            . MetadataUtils::getRecordData($component1, true) . "\n";
-                    }
-                    $metadataComponent1 = $this->recordFactory->createRecord(
-                        $component1['format'],
-                        MetadataUtils::getRecordData($component1, true),
-                        $component1['oai_id'],
-                        $component1['source_id']
-                    );
-                    if (!$this->matchRecords(
-                        $component1, $metadataComponent1, $component2
-                    )
-                    ) {
-                        $allMatch = false;
-                        break;
-                    }
-                }
-            }
-
-            if ($allMatch) {
-                if ($this->verbose) {
-                    echo microtime(true) . " All component parts match between "
-                        . "{$hostRecord['_id']} and {$otherRecord['_id']}\n";
-                }
-                $idx = -1;
-                foreach ($components1 as $component1) {
-                    $component2 = $components2[++$idx];
-                    $this->markDuplicates($component1['_id'], $component2['_id']);
-                    ++$marked;
-                }
-                break;
-            } else {
-                if ($this->verbose) {
-                    echo microtime(true) . " Not all component parts match between "
-                        . "{$hostRecord['_id']} and {$otherRecord['_id']}\n";
-                }
-            }
-        }
         return $marked;
     }
 
@@ -1057,7 +1066,8 @@ class DedupHandler
      */
     protected function getComponentPartsSorted($sourceId, $hostRecordId)
     {
-        $componentsIter = $this->db->findRecords(
+        $components = [];
+        $this->db->iterateRecords(
             [
                 'source_id' => $sourceId,
                 'host_record_id' => [
@@ -1065,13 +1075,13 @@ class DedupHandler
                 ],
                 'deleted' => false,
                 'suppressed' => ['$in' => [null, false]],
-            ]
+            ],
+            [],
+            function ($component) use (&$components) {
+                $components[MetadataUtils::createIdSortKey($component['_id'])]
+                    = $component;
+            }
         );
-        $components = [];
-        foreach ($componentsIter as $component) {
-            $components[MetadataUtils::createIdSortKey($component['_id'])]
-                = $component;
-        }
         ksort($components);
         return array_values($components);
     }

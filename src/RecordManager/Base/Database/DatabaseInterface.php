@@ -106,6 +106,22 @@ interface DatabaseInterface
     public function findRecords($filter, $options = []);
 
     /**
+     * Iterate through records
+     *
+     * Calls callback for each record until exhausted or callback returns false.
+     *
+     * @param array    $filter   Search filter
+     * @param array    $options  Options such as sorting
+     * @param Callable $callback Callback to call for each record
+     * @param array    $params   Optional parameters to pass to the callback
+     *
+     * @return void
+     */
+    public function iterateRecords(array $filter, array $options, callable $callback,
+        array $params = []
+    ): void;
+
+    /**
      * Count records
      *
      * @param array $filter  Search filter
@@ -212,6 +228,22 @@ interface DatabaseInterface
     public function findDedups($filter, $options = []);
 
     /**
+     * Iterate through dedup records
+     *
+     * Calls callback for each record until exhausted or callback returns false.
+     *
+     * @param array    $filter   Search filter
+     * @param array    $options  Options such as sorting
+     * @param Callable $callback Callback to call for each record
+     * @param array    $params   Optional parameters to pass to the callback
+     *
+     * @return void
+     */
+    public function iterateDedups(array $filter, array $options, callable $callback,
+        array $params = []
+    ): void;
+
+    /**
      * Count dedup records
      *
      * @param array $filter  Search filter
@@ -305,10 +337,26 @@ interface DatabaseInterface
      * Get IDs in queue
      *
      * @param string $collectionName The queue collection name
+     * @param array  $options        Options such as skip and limit
      *
      * @return \Traversable
      */
-    public function getQueuedIds($collectionName);
+    public function getQueuedIds($collectionName, $options);
+
+    /**
+     * Iterate through queue
+     *
+     * Calls callback for each item until exhausted or callback returns false.
+     *
+     * @param string   $collectionName The queue collection name
+     * @param Callable $callback       Callback to call for each record
+     * @param array    $params         Optional parameters to pass to the callback
+     *
+     * @return void
+     */
+    public function iterateQueue(string $collectionName, callable $callback,
+        array $params = []
+    ): void;
 
     /**
      * Find a single URI cache record

@@ -339,14 +339,15 @@ trait StoreRecordTrait
     {
         // A single OAI-PMH record may have been split to multiple records. Find
         // all occurrences.
-        $records = $this->db->findRecords(
-            ['source_id' => $sourceId, 'oai_id' => $oaiID]
-        );
         $count = 0;
-        foreach ($records as $record) {
-            $this->markRecordDeleted($record);
-            ++$count;
-        }
+        $this->db->iterateRecords(
+            ['source_id' => $sourceId, 'oai_id' => $oaiID],
+            [],
+            function ($record) use (&$count) {
+                $this->markRecordDeleted($record);
+                ++$count;
+            }
+        );
         return $count;
     }
 }

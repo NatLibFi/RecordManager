@@ -95,42 +95,39 @@ class Deduplicate extends AbstractBase
                 $this->logger->logInfo(
                     'deduplicate', "Marking all records for processing in '$source'"
                 );
-                $records = $this->db->findRecords(
-                    [
-                        'source_id' => $source,
-                        'host_record_id' => ['$exists' => false],
-                        'deleted' => false,
-                        'suppressed' => ['$in' => [null, false]],
-                    ]
-                );
+                $filter = [
+                    'source_id' => $source,
+                    'host_record_id' => ['$exists' => false],
+                    'deleted' => false,
+                    'suppressed' => ['$in' => [null, false]],
+                ];
                 $pc = new PerformanceCounter();
                 $count = 0;
-                foreach ($records as $record) {
-                    if ($this->terminate) {
-                        $this->logger->logInfo(
-                            'deduplicate', 'Termination upon request'
-                        );
-                        exit(1);
-                    }
-
-                    $this->db->updateRecord(
-                        $record['_id'], ['update_needed' => true]
-                    );
-
-                    ++$count;
-                    if ($count % 1000 == 0) {
-                        $pc->add($count);
-                        $avg = $pc->getSpeed();
-                        if ($this->verbose) {
-                            echo "\n";
+                $this->db->iterateRecords(
+                    $filter,
+                    [],
+                    function ($record) use ($pc, &$count, $source) {
+                        if ($this->terminate) {
+                            return false;
                         }
-                        $this->logger->logInfo(
-                            'deduplicate',
-                            "$count records marked for processing in '$source', "
-                                . "$avg records/sec"
+
+                        $this->db->updateRecord(
+                            $record['_id'], ['update_needed' => true]
                         );
+
+                        ++$count;
+                        if ($count % 1000 == 0) {
+                            $pc->add($count);
+                            $avg = $pc->getSpeed();
+                            $this->logger->logInfo(
+                                'deduplicate',
+                                "$count records marked for processing in '$source', "
+                                    . "$avg records/sec"
+                            );
+                        }
+                        return true;
                     }
-                }
+                );
                 if ($this->terminate) {
                     $this->logger
                         ->logInfo('deduplicate', 'Termination upon request');
@@ -171,10 +168,6 @@ class Deduplicate extends AbstractBase
                 } else {
                     $params['update_needed'] = true;
                 }
-                $records = $this->db->findRecords(
-                    $params,
-                    ['projection' => ['_id' => 1]]
-                );
                 $total = $this->db->countRecords($params);
                 $count = 0;
                 $deduped = 0;
@@ -182,46 +175,52 @@ class Deduplicate extends AbstractBase
                 $this->logger->logInfo(
                     'deduplicate', "Processing $total records for '$source'"
                 );
-                foreach ($records as $recordId) {
-                    $record = $this->db->getRecord($recordId['_id']);
-                    if (!$singleId && empty($record['update_needed'])) {
-                        continue;
-                    }
-                    if ($this->terminate) {
-                        $this->logger->logInfo(
-                            'deduplicate', 'Termination upon request'
-                        );
-                        exit(1);
-                    }
-                    $startRecordTime = microtime(true);
-                    if ($dedupHandler->dedupRecord($record)) {
-                        if ($this->verbose) {
-                            echo '+';
+                $verbose = $this->verbose;
+                $this->db->iterateRecords(
+                    $params,
+                    [],
+                    function ($record) use ($singleId, $dedupHandler,
+                        &$count, &$deduped, $pc, $source, $verbose
+                    ) {
+                        if (!$singleId && empty($record['update_needed'])) {
+                            return true;
                         }
-                        ++$deduped;
-                    } else {
-                        if ($this->verbose) {
-                            echo '.';
+                        if ($this->terminate) {
+                            return false;
                         }
-                    }
-                    if ($this->verbose && microtime(true) - $startRecordTime > 0.7) {
-                        echo "\nDeduplication of " . $record['_id'] . ' took '
-                            . (microtime(true) - $startRecordTime) . "\n";
-                    }
-                    ++$count;
-                    if ($count % 1000 == 0) {
-                        $pc->add($count);
-                        $avg = $pc->getSpeed();
-                        if ($this->verbose) {
-                            echo "\n";
+                        $startRecordTime = microtime(true);
+                        if ($dedupHandler->dedupRecord($record)) {
+                            if ($verbose) {
+                                echo '+';
+                            }
+                            ++$deduped;
+                        } else {
+                            if ($verbose) {
+                                echo '.';
+                            }
                         }
-                        $this->logger->logInfo(
-                            'deduplicate',
-                            "$count records processed for '$source', $deduped "
-                                . "deduplicated, $avg records/sec"
-                        );
+                        if ($verbose
+                            && microtime(true) - $startRecordTime > 0.7
+                        ) {
+                            echo "\nDeduplication of " . $record['_id'] . ' took '
+                                . (microtime(true) - $startRecordTime) . "\n";
+                        }
+                        ++$count;
+                        if ($count % 1000 == 0) {
+                            $pc->add($count);
+                            $avg = $pc->getSpeed();
+                            if ($this->verbose) {
+                                echo "\n";
+                            }
+                            $this->logger->logInfo(
+                                'deduplicate',
+                                "$count records processed for '$source', $deduped "
+                                    . "deduplicated, $avg records/sec"
+                            );
+                        }
+                        return true;
                     }
-                }
+                );
                 if ($this->terminate) {
                     $this->logger
                         ->logInfo('deduplicate', 'Termination upon request');

@@ -76,32 +76,34 @@ class DeleteRecords extends AbstractBase
             ->logInfo('deleteRecords', "Creating record list for '$sourceId'");
 
         $params = ['source_id' => $sourceId];
-        $records = $this->db->findRecords($params);
         $total = $this->db->countRecords($params);
         $count = 0;
-
         $this->logger->logInfo(
             'deleteRecords', "Deleting $total records from '$sourceId'"
         );
         $pc = new PerformanceCounter();
-        foreach ($records as $record) {
-            if (isset($record['dedup_id'])) {
-                $this->dedupHandler->removeFromDedupRecord(
-                    $record['dedup_id'], $record['_id']
-                );
-            }
-            $this->db->deleteRecord($record['_id']);
+        $this->db->iterateRecords(
+            $params,
+            [],
+            function ($record) use (&$count, $pc, $sourceId) {
+                if (isset($record['dedup_id'])) {
+                    $this->dedupHandler->removeFromDedupRecord(
+                        $record['dedup_id'], $record['_id']
+                    );
+                }
+                $this->db->deleteRecord($record['_id']);
 
-            ++$count;
-            if ($count % 1000 == 0) {
-                $pc->add($count);
-                $avg = $pc->getSpeed();
-                $this->logger->logInfo(
-                    'deleteRecords',
-                    "$count records deleted from '$sourceId', $avg records/sec"
-                );
+                ++$count;
+                if ($count % 1000 == 0) {
+                    $pc->add($count);
+                    $avg = $pc->getSpeed();
+                    $this->logger->logInfo(
+                        'deleteRecords',
+                        "$count records deleted from '$sourceId', $avg records/sec"
+                    );
+                }
             }
-        }
+        );
         $this->logger->logInfo(
             'deleteRecords', "Completed with $count records deleted from '$sourceId'"
         );

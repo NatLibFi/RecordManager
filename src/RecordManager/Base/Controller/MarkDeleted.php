@@ -64,7 +64,6 @@ class MarkDeleted extends AbstractBase
         if ($singleId) {
             $params['_id'] = $singleId;
         }
-        $records = $this->db->findRecords($params);
         $total = $this->db->countRecords($params);
         $count = 0;
 
@@ -72,28 +71,37 @@ class MarkDeleted extends AbstractBase
             'markDeleted', "Marking deleted $total records from '$sourceId'"
         );
         $pc = new PerformanceCounter();
-        foreach ($records as $record) {
-            if (isset($record['dedup_id'])) {
-                $dedupHandler->removeFromDedupRecord(
-                    $record['dedup_id'], $record['_id']
-                );
-                unset($record['dedup_id']);
-            }
-            $record['deleted'] = true;
-            $record['updated'] = $this->db->getTimestamp();
-            $this->db->saveRecord($record);
 
-            ++$count;
-            if ($count % 1000 == 0) {
-                $pc->add($count);
-                $avg = $pc->getSpeed();
-                $this->logger->logInfo(
-                    'markDeleted',
-                    "$count records marked deleted from '$sourceId', "
-                    . "$avg records/sec"
-                );
+        do {
+            // Fetch a set of records at a time since the remaining set will be
+            // changing during this process.
+            $records = $this->db->findRecords($params);
+            $more = false;
+            foreach ($records as $record) {
+                $more = true;
+                if (isset($record['dedup_id'])) {
+                    $dedupHandler->removeFromDedupRecord(
+                        $record['dedup_id'], $record['_id']
+                    );
+                    unset($record['dedup_id']);
+                }
+                $record['deleted'] = true;
+                $record['updated'] = $this->db->getTimestamp();
+                $this->db->saveRecord($record);
+
+                ++$count;
+                if ($count % 1000 == 0) {
+                    $pc->add($count);
+                    $avg = $pc->getSpeed();
+                    $this->logger->logInfo(
+                        'markDeleted',
+                        "$count records marked deleted from '$sourceId', "
+                        . "$avg records/sec"
+                    );
+                }
             }
-        }
+        } while ($more);
+
         $this->logger->logInfo(
             'markDeleted',
             "Completed with $count records marked deleted from '$sourceId'"

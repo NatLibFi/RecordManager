@@ -31,7 +31,7 @@ namespace RecordManager\Base\Database;
  * PDO access class
  *
  * This class encapsulates access to an underlying MySQL, MariaDB or other compatible
- * database.
+ * database. Currently at least the
  *
  * @category DataManagement
  * @package  RecordManager
@@ -47,6 +47,13 @@ class PDODatabase extends AbstractDatabase
      * @var \PDO
      */
     protected $db;
+
+    /**
+     * Whether the database supports MySQL syntax
+     *
+     * @var bool
+     */
+    protected $mysql;
 
     /**
      * Main fields in each table. Automatically filled.
@@ -92,6 +99,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function reconnectDatabase()
     {
+        $this->mysql = strncmp($this->dsn, 'mysql', 5) === 0;
         $this->db = new \PDO(
             $this->dsn,
             $this->settings['username'] ?? '',
@@ -133,7 +141,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function getRecord($id)
     {
-        return $this->getMySQLRecord($this->recordCollection, $id);
+        return $this->getPDORecord($this->recordCollection, $id);
     }
 
     /**
@@ -146,7 +154,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function findRecord($filter, $options = [])
     {
-        return $this->findMySQLRecord($this->recordCollection, $filter, $options);
+        return $this->findPDORecord($this->recordCollection, $filter, $options);
     }
 
     /**
@@ -155,11 +163,11 @@ class PDODatabase extends AbstractDatabase
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
-     * @return \MySQLDB\Driver\Cursor
+     * @return \Traversable
      */
     public function findRecords($filter, $options = [])
     {
-        return $this->findMySQLRecords($this->recordCollection, $filter, $options);
+        return $this->findPDORecords($this->recordCollection, $filter, $options);
     }
 
     /**
@@ -172,7 +180,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function countRecords($filter, $options = [])
     {
-        return $this->countMySQLRecords($this->recordCollection, $filter, $options);
+        return $this->countPDORecords($this->recordCollection, $filter, $options);
     }
 
     /**
@@ -184,7 +192,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function saveRecord($record)
     {
-        return $this->saveMySQLRecord($this->recordCollection, $record);
+        return $this->savePDORecord($this->recordCollection, $record);
     }
 
     /**
@@ -198,7 +206,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function updateRecord($id, $fields, $remove = [])
     {
-        $this->updateMySQLRecord($this->recordCollection, $id, $fields, $remove);
+        $this->updatePDORecord($this->recordCollection, $id, $fields, $remove);
     }
 
     /**
@@ -212,7 +220,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function updateRecords($filter, $fields, $remove = [])
     {
-        $this->updateMySQLRecords(
+        $this->updatePDORecords(
             $this->recordCollection, $filter, $fields, $remove
         );
     }
@@ -226,7 +234,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function deleteRecord($id)
     {
-        $this->deleteMySQLRecord($this->recordCollection, $id);
+        $this->deletePDORecord($this->recordCollection, $id);
     }
 
     /**
@@ -238,7 +246,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function getState($id)
     {
-        return $this->getMySQLRecord($this->stateCollection, $id);
+        return $this->getPDORecord($this->stateCollection, $id);
     }
 
     /**
@@ -250,7 +258,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function saveState($record)
     {
-        return $this->saveMySQLRecord($this->stateCollection, $record);
+        return $this->savePDORecord($this->stateCollection, $record);
     }
 
     /**
@@ -262,7 +270,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function deleteState($id)
     {
-        $this->deleteMySQLRecord($this->stateCollection, $id);
+        $this->deletePDORecord($this->stateCollection, $id);
     }
 
     /**
@@ -274,7 +282,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function getDedup($id)
     {
-        return $this->getMySQLRecord($this->dedupCollection, $id);
+        return $this->getPDORecord($this->dedupCollection, $id);
     }
 
     /**
@@ -287,7 +295,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function findDedup($filter, $options = [])
     {
-        return $this->findMySQLRecord($this->dedupCollection, $filter, $options);
+        return $this->findPDORecord($this->dedupCollection, $filter, $options);
     }
 
     /**
@@ -296,11 +304,11 @@ class PDODatabase extends AbstractDatabase
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
-     * @return \MySQLDB\Driver\Cursor
+     * @return \Traversable
      */
     public function findDedups($filter, $options = [])
     {
-        return $this->findMySQLRecords($this->dedupCollection, $filter, $options);
+        return $this->findPDORecords($this->dedupCollection, $filter, $options);
     }
 
     /**
@@ -313,7 +321,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function countDedups($filter, $options = [])
     {
-        return $this->countMySQLRecords($this->dedupCollection, $filter, $options);
+        return $this->countPDORecords($this->dedupCollection, $filter, $options);
     }
 
     /**
@@ -325,7 +333,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function saveDedup($record)
     {
-        return $this->saveMySQLRecord($this->dedupCollection, $record);
+        return $this->savePDORecord($this->dedupCollection, $record);
     }
 
     /**
@@ -337,7 +345,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function deleteDedup($id)
     {
-        $this->deleteMySQLRecord($this->dedupCollection, $id);
+        $this->deletePDORecord($this->dedupCollection, $id);
     }
 
     /**
@@ -472,12 +480,13 @@ class PDODatabase extends AbstractDatabase
      * Get IDs in queue
      *
      * @param string $collectionName The queue collection name
+     * @param array  $options        Options such as skip and limit
      *
-     * @return \MySQLDB\Driver\Cursor
+     * @return \Traversable
      */
-    public function getQueuedIds($collectionName)
+    public function getQueuedIds($collectionName, $options)
     {
-        return $this->findMySQLRecords($collectionName, [], []);
+        return $this->findPDORecords($collectionName, [], $options);
     }
 
     /**
@@ -490,7 +499,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function findUriCache($filter, $options = [])
     {
-        return $this->findMySQLRecord($this->uriCacheCollection, $filter, $options);
+        return $this->findPDORecord($this->uriCacheCollection, $filter, $options);
     }
 
     /**
@@ -502,7 +511,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function saveUriCache($record)
     {
-        return $this->saveMySQLRecord($this->uriCacheCollection, $record);
+        return $this->savePDORecord($this->uriCacheCollection, $record);
     }
 
     /**
@@ -515,7 +524,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function findOntologyEnrichment($filter, $options = [])
     {
-        return $this->findMySQLRecord(
+        return $this->findPDORecord(
             $this->ontologyEnrichmentCollection, $filter, $options
         );
     }
@@ -555,11 +564,11 @@ class PDODatabase extends AbstractDatabase
      *
      * @return array|null
      */
-    protected function getMySQLRecord(string $collection, string $id)
+    protected function getPDORecord(string $collection, string $id)
     {
         $res = $this->dbQuery("select * from $collection where _id=?", [$id]);
         $record = $res->fetch();
-        if ($record) {
+        if ($record && in_array($collection, ['record', 'dedup'])) {
             $record += $this->getRecordAttrs($collection, $record['_id']);
         }
         return $record ?: null;
@@ -574,7 +583,7 @@ class PDODatabase extends AbstractDatabase
      *
      * @return array|null
      */
-    protected function findMySQLRecord(string $collection, array $filter,
+    protected function findPDORecord(string $collection, array $filter,
         array $options
     ) {
         list($where, $params) = $this->filterToSQL($collection, $filter);
@@ -604,7 +613,7 @@ class PDODatabase extends AbstractDatabase
      *
      * @return \Traversable
      */
-    protected function findMySQLRecords(string $collection, array $filter,
+    protected function findPDORecords(string $collection, array $filter,
         array $options
     ): \Traversable {
         list($where, $params) = $this->filterToSQL($collection, $filter);
@@ -632,7 +641,7 @@ class PDODatabase extends AbstractDatabase
      *
      * @return int|string
      */
-    protected function countMySQLRecords(string $collection, array $filter,
+    protected function countPDORecords(string $collection, array $filter,
         array $options
     ) {
         if (!$this->counts) {
@@ -653,90 +662,102 @@ class PDODatabase extends AbstractDatabase
      *
      * @return array Saved record (with a new _id if it didn't have one)
      */
-    protected function saveMySQLRecord($collection, $record)
+    protected function savePDORecord($collection, $record)
     {
-        $recordFields = [];
         $attrFields = [];
         $mainFields = $this->getMainFields($collection);
+        $insertFields = [];
+        $updateFields = [];
+        $updateParams = [];
         foreach ($record as $key => $value) {
             if (in_array($key, $mainFields)) {
-                $recordFields[$key] = $value;
+                $insertFields[] = $key;
+                $insertParams[] = $value;
+                if ('_id' !== $key) {
+                    $updateFields[] = $key;
+                    $updateParams[] = $value;
+                }
             } else {
                 $attrFields[$key] = $value;
             }
         }
 
-        $fields = array_keys($recordFields);
-        $params = array_values($recordFields);
         $existingAttrs = !empty($record['_id'])
+            && in_array($collection, ['record', 'dedup'])
             ? $this->getRecordAttrs($collection, $record['_id']) : [];
         $this->db->beginTransaction();
         try {
-            // Try update first
+            $params = $insertParams;
             $updateSQL = '';
             if (!empty($record['_id'])) {
-                $updateSQL = 'on duplicate key update '
-                    . implode(
-                        ', ',
-                        array_map(
-                            function ($s) {
-                                return "$s=?";
-                            },
-                            $fields
-                        )
-                    );
+                if ($this->mysql) {
+                    $updateSQL = 'on duplicate key update ';
+                } else {
+                    $updateSQL = 'on conflict(_id) set ';
+                }
+                $updateSQL .= implode(
+                    ', ',
+                    array_map(
+                        function ($s) {
+                            return "$s=?";
+                        },
+                        $updateFields
+                    )
+                );
 
-                $params = array_merge($params, $params);
+                $params = array_merge($params, $updateParams);
             }
-            $sql = "insert into $collection (" . implode(',', $fields)
-                . ') VALUES (' . rtrim(str_repeat('?,', count($fields)), ',')
+            $sql = "insert into $collection (" . implode(',', $insertFields)
+                . ') VALUES (' . rtrim(str_repeat('?,', count($insertFields)), ',')
                 . ') ' . $updateSQL;
 
             $this->dbQuery($sql, $params);
             if (!isset($record['_id'])) {
                 $record['_id'] = $this->db->lastInsertId($collection);
             }
-            // Go through existing attrs and new attrs and process them accordingly
-            $deleteAttrs = [];
-            $insertAttrs = [];
-            foreach ($existingAttrs as $key => $values) {
-                foreach ($values as $value) {
-                    if (!in_array($value, $attrFields[$key] ?? [])) {
-                        $deleteAttrs[$key][] = $value;
+            if (in_array($collection, ['record', 'dedup'])) {
+                // Go through existing attrs and new attrs and process them
+                $deleteAttrs = [];
+                $insertAttrs = [];
+                foreach ($existingAttrs as $key => $values) {
+                    foreach ($values as $value) {
+                        if (!in_array($value, $attrFields[$key] ?? [])) {
+                            $deleteAttrs[$key][] = $value;
+                        }
                     }
                 }
-            }
-            foreach ($attrFields as $key => $values) {
-                foreach ($values as $value) {
-                    if (!in_array($value, $existingAttrs[$key] ?? [])) {
-                        $insertAttrs[$key][] = $value;
+                foreach ($attrFields as $key => $values) {
+                    foreach ($values as $value) {
+                        if (!in_array($value, $existingAttrs[$key] ?? [])) {
+                            $insertAttrs[$key][] = $value;
+                        }
                     }
                 }
-            }
-            foreach ($deleteAttrs as $key => $values) {
-                foreach ((array)$values as $value) {
-                    $this->dbQuery(
-                        "delete from {$collection}_attrs where parent_id=?"
-                        . ' and attr=? and value=?',
-                        [
-                            $record['_id'],
-                            $key,
-                            $value
-                        ]
-                    );
+                foreach ($deleteAttrs as $key => $values) {
+                    foreach ((array)$values as $value) {
+                        $this->dbQuery(
+                            "delete from {$collection}_attrs where parent_id=?"
+                            . ' and attr=? and value=?',
+                            [
+                                $record['_id'],
+                                $key,
+                                $value
+                            ]
+                        );
+                    }
                 }
-            }
-            foreach ($insertAttrs as $key => $values) {
-                foreach ((array)$values as $value) {
-                    $this->dbQuery(
-                        "insert into {$collection}_attrs (parent_id, attr, value)"
-                        . " values (?, ?, ?)",
-                        [
-                            $record['_id'],
-                            $key,
-                            $value
-                        ]
-                    );
+                foreach ($insertAttrs as $key => $values) {
+                    foreach ((array)$values as $value) {
+                        $this->dbQuery(
+                            "insert into {$collection}_attrs"
+                            . ' (parent_id, attr, value) values (?, ?, ?)',
+                            [
+                                $record['_id'],
+                                $key,
+                                $value
+                            ]
+                        );
+                    }
                 }
             }
             $this->db->commit();
@@ -757,16 +778,16 @@ class PDODatabase extends AbstractDatabase
      *
      * @return void
      */
-    protected function updateMySQLRecord($collection, $id, $fields, $remove = [])
+    protected function updatePDORecord($collection, $id, $fields, $remove = [])
     {
-        $record = $this->getMySQLRecord($collection, $id);
-        $record += $fields;
+        $record = $this->getPDORecord($collection, $id);
+        $record = array_replace($record, $fields);
         foreach ($remove as $key) {
             if (isset($record[$key])) {
                 unset($record[$key]);
             }
         }
-        $this->saveMySQLRecord($collection, $record);
+        $this->savePDORecord($collection, $record);
     }
 
     /**
@@ -779,17 +800,17 @@ class PDODatabase extends AbstractDatabase
      *
      * @return void
      */
-    protected function updateMySQLRecords($collection, $filter, $fields,
+    protected function updatePDORecords($collection, $filter, $fields,
         $remove = []
     ) {
-        foreach ($this->findMySQLRecords($collection, $filter, []) as $record) {
+        foreach ($this->findPDORecords($collection, $filter, []) as $record) {
             $record += $fields;
             foreach ($remove as $key) {
                 if (isset($record[$key])) {
                     unset($record[$key]);
                 }
             }
-            $this->saveMySQLRecord($collection, $record);
+            $this->savePDORecord($collection, $record);
         }
     }
 
@@ -801,13 +822,13 @@ class PDODatabase extends AbstractDatabase
      *
      * @return void
      */
-    protected function deleteMySQLRecord($collection, $id)
+    protected function deletePDORecord($collection, $id)
     {
         $this->dbQuery("delete from $collection where _id=?", [$id]);
     }
 
     /**
-     * Prepare and execute a MySQL query
+     * Prepare and execute an SQL query
      *
      * @param string $sql    SQL statement
      * @param array  $params Any parameters
@@ -881,6 +902,15 @@ class PDODatabase extends AbstractDatabase
                     $whereParts = [];
                     $values = (array)$value['$in'];
                     $valueCount = count($values);
+                    // Special handling for null
+                    $nullKey = array_search(null, $values);
+                    if (false !== $nullKey) {
+                        unset($values[$nullKey]);
+                        --$valueCount;
+                        $whereParts[] = $this->mapFieldToQuery(
+                            $collection, $field, ' is null OR'
+                        );
+                    }
                     if ($valueCount > 1) {
                         $match = ' in (' . rtrim(str_repeat('?,', $valueCount), ',')
                             . ')';
@@ -890,21 +920,12 @@ class PDODatabase extends AbstractDatabase
                     } else {
                         $whereParts[]
                             = $this->mapFieldToQuery($collection, $field, '=?');
-                        $params[] = $values[0];
-                    }
-                    // Special handling for null
-                    $nullKey = array_search(null, $values);
-                    if (false !== $nullKey) {
-                        unset($values[$nullKey]);
-                        --$valueCount;
-                        $whereParts[] = 'OR ' . $this->mapFieldToQuery(
-                            $collection, $field, ' is null'
-                        );
+                        $params[] = reset($values);
                     }
                     if (count($whereParts) > 1) {
                         $where[] = '(' . implode(' ', $whereParts) . ')';
                     } else {
-                        $where[] = $whereParts[0];
+                        $where[] = reset($whereParts);
                     }
                 }
                 if (isset($value['$ne'])) {
@@ -973,9 +994,16 @@ class PDODatabase extends AbstractDatabase
         if (in_array($field, $mainFields)) {
             return "$field$operator";
         }
-        return "exists (select * from {$collection}_attrs ca where"
+        $result = "exists (select * from {$collection}_attrs ca where"
             . " ca.parent_id={$collection}._id and ca.attr='$field'"
             . " and ca.value$operator)";
+
+        if (' is null' === $operator) {
+            $result = "($result OR not exists (select * from {$collection}_attrs"
+                . " ca where ca.parent_id={$collection}._id and ca.attr='$field'))";
+        }
+
+        return $result;
     }
 
     /**
@@ -1003,7 +1031,7 @@ class PDODatabase extends AbstractDatabase
         }
         $limit = '';
         if (isset($options['skip'])) {
-            $limit = $options['skip'] . ', ';
+            $limit = $options['skip'] . ',';
         }
         if (isset($options['limit'])) {
             $limit .= $options['limit'];
@@ -1048,7 +1076,7 @@ class PDOResultIterator extends \IteratorIterator
     /**
      * Database
      *
-     * @var MySQLDatabase
+     * @var PDODatabase
      */
     protected $db;
 
@@ -1062,9 +1090,9 @@ class PDOResultIterator extends \IteratorIterator
     /**
      * Constructor
      *
-     * @param \Traversable  $iterator   Iterator
-     * @param MySQLDatabase $db         Database
-     * @param string        $collection Collection
+     * @param \Traversable $iterator   Iterator
+     * @param PDODatabase  $db         Database
+     * @param string       $collection Collection
      */
     public function __construct(\Traversable $iterator, PDODatabase $db,
         string $collection

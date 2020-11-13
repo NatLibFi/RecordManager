@@ -460,12 +460,13 @@ class MongoDatabase extends AbstractDatabase
      * Get IDs in queue
      *
      * @param string $collectionName The queue collection name
+     * @param array  $options        Options such as skip and limit
      *
      * @return \MongoDB\Driver\Cursor
      */
-    public function getQueuedIds($collectionName)
+    public function getQueuedIds($collectionName, $options)
     {
-        return $this->findMongoRecords($collectionName, [], []);
+        return $this->findMongoRecords($collectionName, [], $options);
     }
 
     /**

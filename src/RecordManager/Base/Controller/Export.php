@@ -166,7 +166,7 @@ class Export extends AbstractBase
             if ($sortDedup) {
                 $options['sort'] = ['dedup_id' => 1];
             }
-            $records = $this->db->findRecords($params, $options);
+
             $total = $this->db->countRecords($params, $options);
             $count = 0;
             $deduped = 0;
@@ -177,63 +177,69 @@ class Export extends AbstractBase
                     'exportRecords', "(1 per each $skipRecords records)"
                 );
             }
-            foreach ($records as $record) {
-                $metadataRecord = $this->recordFactory->createRecord(
-                    $record['format'],
-                    MetadataUtils::getRecordData($record, true),
-                    $record['oai_id'],
-                    $record['source_id']
-                );
-                if ($xpath) {
-                    $xml = $metadataRecord->toXML();
-                    $xpathResult = MetadataUtils::loadXML($xml)->xpath($xpath);
-                    if ($xpathResult === false) {
-                        throw new \Exception(
-                            "Failed to evaluate XPath expression '$xpath'"
-                        );
-                    }
-                    if (!$xpathResult) {
-                        continue;
-                    }
-                }
-                ++$count;
-                if ($record['deleted']) {
-                    if ($deletedFile) {
-                        file_put_contents(
-                            $deletedFile, "{$record['_id']}\n", FILE_APPEND
-                        );
-                    }
-                    ++$deleted;
-                } else {
-                    if ($skipRecords > 0 && $count % $skipRecords != 0) {
-                        continue;
-                    }
-                    if (isset($record['dedup_id'])) {
-                        ++$deduped;
-                    }
-                    if ($addDedupId == 'always') {
-                        $metadataRecord->addDedupKeyToMetadata(
-                            $record['dedup_id']
-                            ?? $record['_id']
-                        );
-                    } elseif ($addDedupId == 'deduped') {
-                        $metadataRecord->addDedupKeyToMetadata(
-                            $record['dedup_id']
-                            ?? ''
-                        );
-                    }
-                    $xml = $metadataRecord->toXML();
-                    $xml = preg_replace('/^<\?xml.*?\?>[\n\r]*/', '', $xml);
-                    file_put_contents($file, $xml . "\n", FILE_APPEND);
-                }
-                if ($count % 1000 == 0) {
-                    $this->logger->logInfo(
-                        'exportRecords',
-                        "$count records (of which $deduped deduped, $deleted "
-                        . "deleted) exported"
+            $this->db->iterateRecords(
+                $params,
+                $options,
+                function ($record) use (&$count, &$deduped, &$deleted, $skipRecords,
+                    $xpath, $file, $deletedFile, $addDedupId
+                ) {
+                    $metadataRecord = $this->recordFactory->createRecord(
+                        $record['format'],
+                        MetadataUtils::getRecordData($record, true),
+                        $record['oai_id'],
+                        $record['source_id']
                     );
+                    if ($xpath) {
+                        $xml = $metadataRecord->toXML();
+                        $xpathResult = MetadataUtils::loadXML($xml)->xpath($xpath);
+                        if ($xpathResult === false) {
+                            throw new \Exception(
+                                "Failed to evaluate XPath expression '$xpath'"
+                            );
+                        }
+                        if (!$xpathResult) {
+                            return true;
+                        }
+                    }
+                    ++$count;
+                    if ($record['deleted']) {
+                        if ($deletedFile) {
+                            file_put_contents(
+                                $deletedFile, "{$record['_id']}\n", FILE_APPEND
+                            );
+                        }
+                        ++$deleted;
+                    } else {
+                        if ($skipRecords > 0 && $count % $skipRecords != 0) {
+                            return true;
+                        }
+                        if (isset($record['dedup_id'])) {
+                            ++$deduped;
+                        }
+                        if ($addDedupId == 'always') {
+                            $metadataRecord->addDedupKeyToMetadata(
+                                $record['dedup_id']
+                                ?? $record['_id']
+                            );
+                        } elseif ($addDedupId == 'deduped') {
+                            $metadataRecord->addDedupKeyToMetadata(
+                                $record['dedup_id']
+                                ?? ''
+                            );
+                        }
+                        $xml = $metadataRecord->toXML();
+                        $xml = preg_replace('/^<\?xml.*?\?>[\n\r]*/', '', $xml);
+                        file_put_contents($file, $xml . "\n", FILE_APPEND);
+                    }
+                    if ($count % 1000 == 0) {
+                        $this->logger->logInfo(
+                            'exportRecords',
+                            "$count records (of which $deduped deduped, $deleted "
+                            . "deleted) exported"
+                        );
+                    }
                 }
-            }
+            );
             $this->logger->logInfo(
                 'exportRecords',
                 "Completed with $count records (of which $deduped deduped, $deleted "

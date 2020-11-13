@@ -278,44 +278,41 @@ EOT;
         if ($position) {
             $options['skip'] = (int)$position;
         }
-        $records = $this->db->findRecords($queryParams, $options);
-
         $maxRecords = $this->config['OAI-PMH']['result_limit'];
         $count = 0;
-        foreach ($records as $record) {
-            ++$count;
-            if ($count == 1) {
-                echo <<<EOT
+        $tokenBase = implode('|', [$set, $metadataPrefix, $from, $until]);
+        $this->db->iterateRecords(
+            $queryParams,
+            $options,
+            function ($record) use (&$count, $maxRecords, $verb, $tokenBase,
+                $position, $metadataPrefix, $includeMetadata
+            ) {
+                ++$count;
+                if ($count == 1) {
+                    echo <<<EOT
   <$verb>
 
 EOT;
-            }
-            if ($count > $maxRecords) {
-                // More records available, create resumptionToken
-                $token = $this->escape(
-                    implode(
-                        '|',
-                        [
-                            $set,
-                            $metadataPrefix,
-                            $from,
-                            $until,
-                            $count + $position
-                        ]
-                    )
-                );
-                echo <<<EOT
+                }
+                if ($count > $maxRecords) {
+                    // More records available, create resumptionToken
+                    $token = $this->escape(
+                        implode('|', [$tokenBase, $count + $position])
+                    );
+                    echo <<<EOT
     <resumptionToken cursor="$position">$token</resumptionToken>
 
 EOT;
-                break;
+                    return false;
+                }
+                $xml = $this
+                    ->createRecord($record, $metadataPrefix, $includeMetadata);
+                if ($xml === false) {
+                    return false;
+                }
+                echo $xml;
             }
-            $xml = $this->createRecord($record, $metadataPrefix, $includeMetadata);
-            if ($xml === false) {
-                break;
-            }
-            echo $xml;
-        }
+        );
 
         if ($count == 0) {
             $this->error('noRecordsMatch', '');
