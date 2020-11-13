@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2020.
+ * Copyright (C) The National Library of Finland 2019.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -62,9 +62,6 @@ trait AuthoritySupportTrait
      */
     protected function addNamespaceToAuthorityIds($ids, $type = '*')
     {
-        $ns = $this->dataSourceSettings[$this->source]['authority'][$type]
-            ?? $this->source;
-
         if (!is_array($ids)) {
             $ids = [$ids];
         }
