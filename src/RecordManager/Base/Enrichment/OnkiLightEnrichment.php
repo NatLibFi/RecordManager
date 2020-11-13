@@ -166,8 +166,8 @@ class OnkiLightEnrichment extends Enrichment
         $localData = $this->db->findOntologyEnrichment(['_id' => $id]);
         if ($localData) {
             $values = array_merge(
-                explode('|', $localData['prefLabels']),
-                explode('|', $localData['altLabels'])
+                explode('|', $localData['prefLabels'] ?? ''),
+                explode('|', $localData['altLabels'] ?? '')
             );
             $solrArray[$solrField] = array_merge($solrArray[$solrField], $values);
             if ($includeInAllfields) {
