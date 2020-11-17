@@ -1027,13 +1027,32 @@ class MetadataUtils
      * @param \DomDocument $dom     DOM
      * @param int          $options Additional libxml options (LIBXML_PARSEHUGE and
      *                              LIBXML_COMPACT are set by default)
+     * @param string       $errors  Any errors encountered
      *
      * @return \SimpleXMLElement|\DomDocument|bool
      */
-    public static function loadXML($xml, $dom = null, $options = 0)
-    {
+    public static function loadXML($xml, $dom = null, $options = 0,
+        &$errors = null
+    ) {
         $options |= LIBXML_PARSEHUGE | LIBXML_COMPACT;
-        return XmlSecurity::scan($xml, $dom, $options);
+        if (null === $errors) {
+            return XmlSecurity::scan($xml, $dom, $options);
+        }
+
+        $saveUseErrors = libxml_use_internal_errors(true);
+        libxml_clear_errors();
+        $errors = '';
+        $result = XmlSecurity::scan($xml, $dom, $options);
+        if (false === $result || libxml_get_last_error() !== false) {
+            $messageParts = [];
+            foreach (libxml_get_errors() as $error) {
+                $messageParts[] = '[' . $error->line . ':' . $error->column
+                    . '] Error ' . $error->code . ': ' . $error->message;
+            }
+            $errors = implode('; ', $messageParts);
+        }
+        libxml_use_internal_errors($saveUseErrors);
+        return $result;
     }
 
     /**

@@ -58,6 +58,7 @@
 ; format                Record format in RecordManager
 ; oaipmhTransformation[] XSL Transformations to be applied to the OAI-PMH responses (e.g. to strip namespaces, optional)
 ; preTransformation[]   XSL Transformations to be applied to files to be imported (e.g. to strip namespaces, optional)
+; reParseTransformed    Whether to re-parse transformation results. Disabled by default for performance reasons, but can be enabled to e.g. parse fields added by outputting un-encoded text.
 ; recordSplitterClass   PHP class used to split records in import or OAI-PMH harvest (optional, e.g. to split EAD records to multiple records)
 ; recordSplitter        Transformation (alternative to PHP class above) used to split records in import or OAI-PMH harvest (optional, e.g. to split EAD records to multiple records)
 ; recordSplitterParams[] An array of extra parameters that can be used to customize record splitter behavior. Available options depend on the splitter used.
