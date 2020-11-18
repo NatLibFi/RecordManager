@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Http\ClientFactory;
+
 /**
  * Trait for handling full text
  *
@@ -129,13 +131,12 @@ trait FullTextTrait
         $body = '';
         for ($try = 1; $try <= $maxTries; $try++) {
             if (!isset($this->request)) {
-                $this->urlRequest = new \HTTP_Request2(
+                $this->urlRequest = ClientFactory::createClient(
                     $url,
                     \HTTP_Request2::METHOD_GET,
                     $httpParams
                 );
                 $this->urlRequest->setHeader('Connection', 'Keep-Alive');
-                $this->urlRequest->setHeader('User-Agent', 'RecordManager');
             } else {
                 $this->urlRequest->setUrl($url);
             }

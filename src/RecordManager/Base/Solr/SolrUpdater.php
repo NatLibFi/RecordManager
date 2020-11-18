@@ -2609,7 +2609,7 @@ class SolrUpdater
      */
     protected function initSolrRequest($method, $timeout = null)
     {
-        $request = new \HTTP_Request2(
+        $request = \RecordManager\Base\Http\ClientFactory::createClient(
             $this->config['Solr']['update_url'],
             $method,
             $this->httpParams
@@ -2618,7 +2618,6 @@ class SolrUpdater
             $request->setConfig('timeout', $timeout);
         }
         $request->setHeader('Connection', 'Keep-Alive');
-        $request->setHeader('User-Agent', 'RecordManager');
         // At least some combinations of PHP + curl cause both Transfer-Encoding and
         // Content-Length to be set in certain cases. Set follow_redirects to true to
         // invoke the PHP workaround in the curl adapter.
