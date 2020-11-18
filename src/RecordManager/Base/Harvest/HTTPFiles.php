@@ -183,15 +183,13 @@ class HTTPFiles extends Base
      */
     protected function retrieveFileList()
     {
-        $request = new \HTTP_Request2(
+        $request = \RecordManager\Base\Http\ClientFactory::createClient(
             $this->baseURL,
             \HTTP_Request2::METHOD_GET,
             $this->httpParams
         );
-        $request->setHeader('User-Agent', 'RecordManager');
 
-        $url = $request->getURL();
-        $urlStr = $url->getURL();
+        $urlStr = $request->getURL()->getURL();
         $this->infoMsg("Sending request: $urlStr");
 
         // Perform request and throw an exception on error:
@@ -268,15 +266,14 @@ class HTTPFiles extends Base
      */
     protected function retrieveFile($filename)
     {
-        $request = new \HTTP_Request2(
+        $request = \RecordManager\Base\Http\ClientFactory::createClient(
             $this->baseURL . $filename,
             \HTTP_Request2::METHOD_GET,
             $this->httpParams
         );
         $request->setHeader('User-Agent', 'RecordManager');
 
-        $url = $request->getURL();
-        $urlStr = $url->getURL();
+        $urlStr = $request->getURL()->getURL();
         $this->infoMsg("Sending request: $urlStr");
 
         // Perform request and throw an exception on error:

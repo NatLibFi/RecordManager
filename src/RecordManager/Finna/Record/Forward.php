@@ -28,6 +28,7 @@
  */
 namespace RecordManager\Finna\Record;
 
+use RecordManager\Base\Record\AuthoritySupportTrait;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -44,7 +45,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Forward extends \RecordManager\Base\Record\Forward
 {
-    use FinnaRecordTrait;
+    use AuthoritySupportTrait;
     use ForwardRecordTrait;
 
     /**
