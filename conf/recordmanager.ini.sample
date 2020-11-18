@@ -191,6 +191,10 @@ error_email     =
 ;ssl_verify_peer = false
 ; Socks proxy:
 ;proxy = "socks5://localhost:1099"
+; Hosts for which proxy is disabled
+disable_proxy_hosts[] = "127.0.0.1"
+disable_proxy_hosts[] = "localhost"
+disable_proxy_hosts[] = "::1"
 
 [MarcRecord]
 ; The following setting can be used to override the default RDA relator codes that
