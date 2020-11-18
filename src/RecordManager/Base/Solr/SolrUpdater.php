@@ -1360,7 +1360,6 @@ class SolrUpdater
             [$this, 'solrRequest']
         );
 
-        $keys = $this->db->getQueuedIds($collectionName);
         $count = 0;
         $lastDisplayedCount = 0;
         $mergedComponents = 0;
