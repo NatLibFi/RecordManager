@@ -45,8 +45,6 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Marc extends Base
 {
-    use AuthoritySupportTrait;
-
     const SUBFIELD_INDICATOR = "\x1F";
     const END_OF_FIELD = "\x1E";
     const END_OF_RECORD = "\x1D";
@@ -409,15 +407,6 @@ class Marc extends Base
         $corporateAuthors = $this->getCorporateAuthors();
         $data['author_corporate'] = $corporateAuthors['names'];
         $data['author_corporate_role'] = $corporateAuthors['relators'];
-
-        $data['author2_id_str_mv'] = $this->getAuthorIds();
-        $data['author2_id_role_str_mv']
-            = array_merge(
-                $this->addNamespaceToAuthorityIds($primaryAuthors['idRoles']),
-                $this->addNamespaceToAuthorityIds($secondaryAuthors['idRoles']),
-                $this->addNamespaceToAuthorityIds($corporateAuthors['idRoles'])
-            );
-
         $data['author_additional'] = $this->getFieldsSubfields(
             [
                 [self::GET_BOTH, '505', ['r' => 1]]
@@ -663,15 +652,7 @@ class Marc extends Base
      */
     public function getAuthorIds()
     {
-        $primaryAuthors = $this->getPrimaryAuthors();
-        $secondaryAuthors = $this->getSecondaryAuthors();
-        $corporateAuthors = $this->getCorporateAuthors();
-
-        return array_merge(
-            $this->addNamespaceToAuthorityIds($primaryAuthors['ids']),
-            $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']),
-            $this->addNamespaceToAuthorityIds($corporateAuthors['ids'])
-        );
+        return [];
     }
 
     /**
@@ -2218,7 +2199,7 @@ class Marc extends Base
     protected function getAllFields()
     {
         $subfieldFilter = [
-            '650' => ['2' => 1, '6' => 1, '8' => 1],
+            '650' => ['0' => 1, '2' => 1, '6' => 1, '8' => 1],
             '773' => ['6' => 1, '7' => 1, '8' => 1, 'w' => 1],
             '856' => ['6' => 1, '8' => 1, 'q' => 1]
         ];
@@ -2228,7 +2209,7 @@ class Marc extends Base
                 foreach ($fields as $field) {
                     $subfields = $this->getAllSubfields(
                         $field,
-                        $subfieldFilter[$tag] ?? ['6' => 1, '8' => 1]
+                        $subfieldFilter[$tag] ?? ['0' => 1, '6' => 1, '8' => 1]
                     );
                     if ($subfields) {
                         $allFields = array_merge($allFields, $subfields);

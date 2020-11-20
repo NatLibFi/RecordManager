@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Base\Record;
+namespace RecordManager\Finna\Record;
 
 /**
  * Authority handling support trait.
@@ -47,8 +47,7 @@ trait AuthoritySupportTrait
      */
     public function getAuthorityNamespace($type = '*')
     {
-        return $this->dataSourceSettings[$this->source]['authority'][$type]
-            ?? $this->source;
+        return $this->dataSourceSettings[$this->source]['authority'][$type] ?? '';
     }
 
     /**
@@ -72,13 +71,16 @@ trait AuthoritySupportTrait
             }
         );
         $ns = $this->getAuthorityNamespace($type);
-
-        return array_map(
-            function ($id) use ($ns) {
-                return "{$ns}.{$id}";
-            },
-            $ids
-        );
+        $result = [];
+        foreach ($ids as $id) {
+            if (preg_match('/^https?:/', $id)) {
+                $result[] = $id;
+                continue;
+            }
+            $id = addcslashes($id, '\\.');
+            $result[] = $ns ? "$ns.$id" : $id;
+        }
+        return $result;
     }
 
     /**
@@ -91,7 +93,7 @@ trait AuthoritySupportTrait
      */
     protected function allowAuthorityIdRegex($id, $type)
     {
-        if (!$regex = $this->getAuthorityIdRegex($type)) {
+        if (!($regex = $this->getAuthorityIdRegex($type))) {
             return true;
         }
         return 1 === preg_match($regex, $id);

@@ -28,7 +28,6 @@
  */
 namespace RecordManager\Finna\Record;
 
-use RecordManager\Base\Record\AuthoritySupportTrait;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
