@@ -44,6 +44,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Marc extends \RecordManager\Base\Record\Marc
 {
+    use AuthoritySupportTrait;
+
     /**
      * Strings in field 300 that signify that the work is illustrated.
      *
@@ -144,6 +146,20 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
             }
         }
+
+        $primaryAuthors = $this->getPrimaryAuthors();
+        $secondaryAuthors = $this->getSecondaryAuthors();
+        $corporateAuthors = $this->getCorporateAuthors();
+        $data['author2_id_str_mv'] = array_merge(
+            $this->addNamespaceToAuthorityIds($primaryAuthors['ids']),
+            $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']),
+            $this->addNamespaceToAuthorityIds($corporateAuthors['ids'])
+        );
+        $data['author2_id_role_str_mv'] = array_merge(
+            $this->addNamespaceToAuthorityIds($primaryAuthors['idRoles']),
+            $this->addNamespaceToAuthorityIds($secondaryAuthors['idRoles']),
+            $this->addNamespaceToAuthorityIds($corporateAuthors['idRoles'])
+        );
 
         if (isset($data['publishDate'])) {
             $data['main_date_str']
@@ -667,12 +683,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         // Additional authority ids
-        foreach ($this->getFields('600') as $field) {
-            if ($id = $this->getSubField($field, '0')) {
-                $data['topic_id_str_mv']
-                    = $this->addNamespaceToAuthorityIds([$id]);
-            }
-        }
+        $data['topic_id_str_mv'] = $this->getTopicIds();
 
         // Make sure center_coords is single-valued
         if (!empty($data['center_coords'])) {
@@ -683,20 +694,22 @@ class Marc extends \RecordManager\Base\Record\Marc
     }
 
     /**
-     * Return author ids that are indexed to author2_id_str_mv
+     * Get all non-specific topics
      *
      * @return array
      */
-    public function getAuthorIds()
+    protected function getTopicIds()
     {
-        $ids = parent::getAuthorIds();
-
-        foreach ($this->getFields('700') as $field) {
-            if ($id = $this->getSubField($field, '0')) {
-                $ids = array_merge($ids, $this->addNamespaceToAuthorityIds([$id]));
+        $fieldTags = ['600', '610', '611', '630', '650'];
+        $result = [];
+        foreach ($fieldTags as $tag) {
+            foreach ($this->getFields($tag) as $field) {
+                if ($id = $this->getSubfield($field, '0')) {
+                    $result[] = $id;
+                }
             }
         }
-        return $ids;
+        return $this->addNamespaceToAuthorityIds($result);
     }
 
     /**
@@ -742,10 +755,22 @@ class Marc extends \RecordManager\Base\Record\Marc
                     [self::GET_NORMAL, '110', ['a' => 1, 'e' => 1]]
                 ]
             );
+            $authorIds = $marc->getFieldsSubfields(
+                [
+                    [self::GET_NORMAL, '100', ['0' => 1]],
+                    [self::GET_NORMAL, '110', ['0' => 1]]
+                ]
+            );
             $additionalAuthors = $marc->getFieldsSubfields(
                 [
                     [self::GET_NORMAL, '700', ['a' => 1, 'e' => 1]],
                     [self::GET_NORMAL, '710', ['a' => 1, 'e' => 1]]
+                ]
+            );
+            $additionalAuthorIds = $marc->getFieldsSubfields(
+                [
+                    [self::GET_NORMAL, '700', ['0' => 1]],
+                    [self::GET_NORMAL, '710', ['0' => 1]]
                 ]
             );
             $duration = $marc->getFieldsSubfields(
@@ -1221,10 +1246,10 @@ class Marc extends \RecordManager\Base\Record\Marc
                 'y' => 1, 'z' => 1, '2' => 1, '6' => 1, '8' => 1
             ],
             '650' => ['0' => 1, '2' => 1, '6' => 1, '8' => 1],
-            '100' => ['4' => 1],
-            '700' => ['4' => 1],
-            '710' => ['4' => 1],
-            '711' => ['4' => 1],
+            '100' => ['0' => 1, '4' => 1],
+            '700' => ['0' => 1, '4' => 1],
+            '710' => ['0' => 1, '4' => 1],
+            '711' => ['0' => 1, '4' => 1],
             '773' => [
                 '0' => 1, '4' => 1, '6' => 1, '7' => 1, '8' => 1, 'g' => 1, 'q' => 1,
                 'w' => 1
