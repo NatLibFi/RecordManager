@@ -45,7 +45,7 @@ trait AuthoritySupportTrait
      *
      * @return string
      */
-    public function getAuthorityNamespace($type = '*')
+    protected function getAuthorityNamespace($type = '*')
     {
         return $this->dataSourceSettings[$this->source]['authority'][$type] ?? '';
     }
