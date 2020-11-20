@@ -2944,4 +2944,17 @@ class Marc extends Base
 
         return $result;
     }
+
+    /**
+     * Combine author id and role into a string that can be indexed.
+     *
+     * @param string $id   Id
+     * @param string $role Role
+     *
+     * @return string
+     */
+    protected function formatAuthorIdWithRole($id, $role)
+    {
+        return '';
+    }
 }
