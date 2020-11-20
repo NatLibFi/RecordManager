@@ -646,16 +646,6 @@ class Marc extends Base
     }
 
     /**
-     * Return author ids that are indexed to author2_id_str_mv
-     *
-     * @return array
-     */
-    public function getAuthorIds()
-    {
-        return [];
-    }
-
-    /**
      * Return record ID (local)
      *
      * @return string

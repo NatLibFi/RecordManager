@@ -694,33 +694,6 @@ class Marc extends \RecordManager\Base\Record\Marc
     }
 
     /**
-     * Return author ids that are indexed to author2_id_str_mv
-     *
-     * @return array
-     */
-    public function getAuthorIds()
-    {
-        $primaryAuthors = $this->getPrimaryAuthors();
-        $secondaryAuthors = $this->getSecondaryAuthors();
-        $corporateAuthors = $this->getCorporateAuthors();
-
-        // TODO: Do we really need this?
-        $additional = [];
-        foreach ($this->getFields('700') as $field) {
-            if ($id = $this->getSubField($field, '0')) {
-                $additional[] = $id;
-            }
-        }
-
-        return array_merge(
-            $primaryAuthors['ids'],
-            $secondaryAuthors['ids'],
-            $corporateAuthors['ids'],
-            $additional
-        );
-    }
-
-    /**
      * Get all non-specific topics
      *
      * @return array
