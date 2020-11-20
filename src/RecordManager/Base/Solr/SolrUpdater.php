@@ -1690,10 +1690,6 @@ class SolrUpdater
                 if (!isset($this->settings[$source])) {
                     $this->log->logError(
                         'countValues',
-                        "No settings found for data source '$source'"
-                    );
-                    $this->log->logError(
-                        'countValues',
                         "No settings found for data source '$source', record "
                             . $record['_id']
                     );
