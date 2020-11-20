@@ -29,7 +29,6 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Record\AuthoritySupportTrait;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**

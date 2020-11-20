@@ -47,7 +47,17 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
      */
     public function testMarc1()
     {
-        $record = $this->createRecord(Marc::class, 'marc1.xml');
+        $record = $this->createRecord(
+            Marc::class,
+            'marc1.xml',
+            [
+                '__unit_test_no_source__' => [
+                    'authority' => [
+                        '*' => 'testauth'
+                    ],
+                ]
+            ]
+        );
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -223,6 +233,13 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
                 'Sajavaara, Paula',
             ],
             'format_ext_str_mv' => 'Book',
+            'author2_id_str_mv' => [
+                'testauth.(TEST)1',
+                'testauth.(TEST)1',
+                'testauth.(TEST)2',
+                'testauth.(TEST)3',
+            ],
+            'topic_id_str_mv' => [],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -426,6 +443,12 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
                 'Kalat, James W.',
             ],
             'format_ext_str_mv' => 'Book',
+            'topic_id_str_mv' => [
+                'http://www.yso.fi/onto/yso/p14664',
+                'test\\\\\\.12',
+                'BIOTEST\\.12',
+                '(BIOTEST)1234',
+            ],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -620,6 +643,7 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
                 'Maanmittaushallitus',
             ],
             'format_ext_str_mv' => 'Map',
+            'topic_id_str_mv' => [],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -751,6 +775,9 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
                 'Author, Test',
             ],
             'format_ext_str_mv' => 'BachelorsThesisPolytechnic',
+            'topic_id_str_mv' => [
+                'http://www.yso.fi/onto/yso/p8471',
+            ],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -877,6 +904,9 @@ class FinnaMarcRecordDriverTest extends RecordDriverTest
                 'Author, Test',
             ],
             'format_ext_str_mv' => 'BachelorsThesisPolytechnic',
+            'topic_id_str_mv' => [
+                'http://www.yso.fi/onto/yso/p8471',
+            ],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');

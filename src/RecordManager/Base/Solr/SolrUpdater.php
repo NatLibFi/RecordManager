@@ -1736,10 +1736,6 @@ class SolrUpdater
                     if (!isset($this->settings[$source])) {
                         $this->log->logError(
                             'countValues',
-                            "No settings found for data source '$source'"
-                        );
-                        $this->log->logError(
-                            'countValues',
                             "No settings found for data source '$source', record "
                                 . $record['_id']
                         );
@@ -2079,7 +2075,7 @@ class SolrUpdater
                 ->transformToSolrArray($metadataRecord->toXML(), $params);
         } else {
             $data = $metadataRecord->toSolrArray($this->db);
-            $this->enrich($source, $settings, $metadataRecord, $data);
+            $this->enrich($source, $settings, $metadataRecord, $data, '');
         }
 
         $data['id'] = $this->createSolrId($record['_id']);
@@ -2378,6 +2374,8 @@ class SolrUpdater
                 $data[$this->warningsField] = $warnings;
             }
         }
+
+        $this->enrich($source, $settings, $metadataRecord, $data, 'final');
 
         return $data;
     }
@@ -3023,10 +3021,14 @@ class SolrUpdater
      * @param array  $settings Data source settings
      * @param object $record   Metadata record
      * @param array  $data     Array of Solr fields
+     * @param string $stage    Stage of record processing
+     *                         - empty is for default, i.e. right after record has
+     *                         been converted to a Solr array but not mapped
+     *                         - "final" is for final Solr array after mappings etc.
      *
      * @return void
      */
-    protected function enrich($source, $settings, $record, &$data)
+    protected function enrich($source, $settings, $record, &$data, $stage = '')
     {
         $enrichments = array_unique(
             array_merge(
@@ -3034,7 +3036,13 @@ class SolrUpdater
                 (array)($settings['enrichments'] ?? [])
             )
         );
-        foreach ($enrichments as $enrichment) {
+        foreach ($enrichments as $enrichmentSettings) {
+            $parts = explode(',', $enrichmentSettings);
+            $enrichment = $parts[0];
+            $enrichmentStage = $parts[1] ?? '';
+            if ($stage !== $enrichmentStage) {
+                continue;
+            }
             if (!isset($this->enrichments[$enrichment])) {
                 $className = $enrichment;
                 if (strpos($className, '\\') === false) {
