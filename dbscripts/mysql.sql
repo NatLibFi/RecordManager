@@ -43,7 +43,7 @@ CREATE TABLE `dedup_attrs` (
   `attr` varchar(255) NOT NULL,
   `value` varchar(255) NOT NULL,
   CONSTRAINT `dedup_attrs_parent` FOREIGN KEY (`parent_id`) REFERENCES `dedup` (`_id`) ON DELETE CASCADE,
-  CONSTRAINT `dedup_attrs_value` FOREIGN KEY (`value`) REFERENCES `record` (`_id`) ON DELETE CASCADE
+  CONSTRAINT `dedup_attrs_value` FOREIGN KEY (`value`) REFERENCES `record` (`_id`) ON DELETE CASCADE -- This is always a record id
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `state` (
