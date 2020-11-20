@@ -55,7 +55,6 @@ class MarcAuthEnrichment extends AuthEnrichment
         }
 
         foreach ($record->getAuthorIds() as $id) {
-            list(, $id) = explode('.', $id, 2);
             $this->enrichField(
                 $sourceId, $record, $solrArray, $id, 'author_variant', true
             );

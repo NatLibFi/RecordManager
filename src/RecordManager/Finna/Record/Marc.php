@@ -713,10 +713,10 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         return array_merge(
-            $this->addNamespaceToAuthorityIds($primaryAuthors['ids']),
-            $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']),
-            $this->addNamespaceToAuthorityIds($corporateAuthors['ids']),
-            $this->addNamespaceToAuthorityIds($additional)
+            $primaryAuthors['ids'],
+            $secondaryAuthors['ids'],
+            $corporateAuthors['ids'],
+            $additional
         );
     }
 
