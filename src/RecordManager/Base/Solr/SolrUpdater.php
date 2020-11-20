@@ -2972,7 +2972,7 @@ class SolrUpdater
      * @param array  $data     Array of Solr fields
      * @param string $stage    Stage of record processing
      *                         - empty is for default, i.e. right after record has
-     *                           been converted to a Solr array but not mapped
+     *                         been converted to a Solr array but not mapped
      *                         - "final" is for final Solr array after mappings etc.
      *
      * @return void
