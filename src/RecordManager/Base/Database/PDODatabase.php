@@ -796,7 +796,7 @@ class PDODatabase extends AbstractDatabase
         $remove = []
     ) {
         foreach ($this->findPDORecords($collection, $filter, []) as $record) {
-            $record += $fields;
+            $record = array_replace($record, $fields);
             foreach ($remove as $key) {
                 if (isset($record[$key])) {
                     unset($record[$key]);
