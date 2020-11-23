@@ -138,7 +138,14 @@ class DedupHandler
     {
         $results = [];
         $sources = [];
-        foreach ((array)$dedupRecord['ids'] as $id) {
+        if (!$dedupRecord['deleted'] && empty($dedupRecord['ids'])) {
+            $this->db->deleteDedup($dedupRecord['_id']);
+            return [
+                "Deleted dedup record '{$dedupRecord['_id']}' (no records in"
+                . ' non-deleted dedup record)'
+            ];
+        }
+        foreach ((array)($dedupRecord['ids'] ?? []) as $id) {
             $record = $this->db->getRecord($id);
             $sourceAlreadyExists = false;
             if ($record) {
