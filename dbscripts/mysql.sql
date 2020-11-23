@@ -1,3 +1,5 @@
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+
 CREATE TABLE `record` (
   `_id` varchar(255) NOT NULL PRIMARY KEY,
   `oai_id` varchar(255) NULL,
@@ -64,3 +66,5 @@ CREATE TABLE `ontologyEnrichment` (
   `prefLabels` varchar(8192) NULL,
   `altLabels` varchar(8192) NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
