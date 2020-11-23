@@ -43,20 +43,13 @@ interface DatabaseInterface
     /**
      * Constructor.
      *
-     * @param string $url      Database connection URL
+     * @param string $dsn      Database connection string
      * @param string $database Datatabase name
      * @param array  $settings Optional database settings
      *
      * @throws Exception
      */
-    public function __construct($url, $database, $settings);
-
-    /**
-     * Open a database connection with the stored parameters
-     *
-     * @return void
-     */
-    public function reconnectDatabase();
+    public function __construct($dsn, $database, $settings);
 
     /**
      * Get a timestamp in the format the underlying database supports

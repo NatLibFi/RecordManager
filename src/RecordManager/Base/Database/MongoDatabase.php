@@ -55,24 +55,11 @@ class MongoDatabase extends AbstractDatabase
     protected $db;
 
     /**
-     * Open a database connection with the stored parameters
+     * Process id that connected the database
      *
-     * @return void
+     * @var int
      */
-    public function reconnectDatabase()
-    {
-        $connectTimeout = $this->settings['connect_timeout'] ?? 300000;
-        $socketTimeout = $this->settings['socket_timeout'] ?? 300000;
-        $this->mongoClient = new \MongoDB\Client(
-            $this->dsn,
-            [
-                'connectTimeoutMS' => (int)$connectTimeout,
-                'socketTimeoutMS' => (int)$socketTimeout,
-                '_xpid' => getmypid()
-            ]
-        );
-        $this->db = $this->mongoClient->{$this->databaseName};
-    }
+    protected $pid = null;
 
     /**
      * Get a timestamp
@@ -83,7 +70,7 @@ class MongoDatabase extends AbstractDatabase
      */
     public function getTimestamp($time = null)
     {
-        return new UTCDateTime(
+        return new \MongoDB\BSON\UTCDateTime(
             ($time === null ? time() : $time) * 1000
         );
     }
@@ -331,7 +318,7 @@ class MongoDatabase extends AbstractDatabase
     {
         $removed = [];
         $failed = [];
-        foreach ($this->db->listCollections() as $collection) {
+        foreach ($this->getDb()->listCollections() as $collection) {
             $collection = $collection->getName();
             if (strncmp($collection, 'mr_record_', 10) != 0) {
                 continue;
@@ -343,7 +330,7 @@ class MongoDatabase extends AbstractDatabase
                 && $collTime < time() - 60 * 60 * 24 * 7
             ) {
                 try {
-                    $this->db->selectCollection($collection)->drop();
+                    $this->getDb()->selectCollection($collection)->drop();
                     $removed[] = $collection;
                 } catch (\Exception $e) {
                     $failed[] = $collection;
@@ -366,7 +353,7 @@ class MongoDatabase extends AbstractDatabase
     public function getExistingQueueCollection($hash, $fromDate, $lastRecordTime)
     {
         $collectionName = "mr_record_{$hash}_{$fromDate}_{$lastRecordTime}";
-        foreach ($this->db->listCollections() as $collection) {
+        foreach ($this->getDb()->listCollections() as $collection) {
             $collection = $collection->getName();
             if ($collection == $collectionName) {
                 return $collectionName;
@@ -519,7 +506,7 @@ class MongoDatabase extends AbstractDatabase
      */
     protected function getMongoRecord($collection, $id)
     {
-        return $this->db->{$collection}->findOne(['_id' => $id]);
+        return $this->getDb()->{$collection}->findOne(['_id' => $id]);
     }
 
     /**
@@ -533,7 +520,7 @@ class MongoDatabase extends AbstractDatabase
      */
     protected function findMongoRecord($collection, $filter, $options)
     {
-        return $this->db->{$collection}->findOne($filter, $options);
+        return $this->getDb()->{$collection}->findOne($filter, $options);
     }
 
     /**
@@ -560,7 +547,7 @@ class MongoDatabase extends AbstractDatabase
                 }
             );
         }
-        return $this->db->{$collection}->find($filter, $options);
+        return $this->getDb()->{$collection}->find($filter, $options);
     }
 
     /**
@@ -575,7 +562,7 @@ class MongoDatabase extends AbstractDatabase
     protected function countMongoRecords($collection, $filter, $options)
     {
         return $this->counts
-            ? $this->db->{$collection}->count($filter, $options)
+            ? $this->getDb()->{$collection}->count($filter, $options)
             : 'the';
     }
 
@@ -596,11 +583,11 @@ class MongoDatabase extends AbstractDatabase
                 = new \MongoDB\Driver\WriteConcern($writeConcern);
         }
         if (!isset($record['_id'])) {
-            $res = $this->db->{$collection}->insertOne($record, $params);
+            $res = $this->getDb()->{$collection}->insertOne($record, $params);
             $record['_id'] = $res->getInsertedId();
         } else {
             $params['upsert'] = true;
-            $this->db->{$collection}->replaceOne(
+            $this->getDb()->{$collection}->replaceOne(
                 ['_id' => $record['_id']],
                 $record,
                 $params
@@ -628,7 +615,7 @@ class MongoDatabase extends AbstractDatabase
         if ($remove) {
             $params['$unset'] = $remove;
         }
-        $this->db->{$collection}->updateOne(['_id' => $id], $params);
+        $this->getDb()->{$collection}->updateOne(['_id' => $id], $params);
     }
 
     /**
@@ -651,7 +638,7 @@ class MongoDatabase extends AbstractDatabase
         if ($remove) {
             $params['$unset'] = $remove;
         }
-        $this->db->{$collection}->updateMany($filter, $params);
+        $this->getDb()->{$collection}->updateMany($filter, $params);
     }
 
     /**
@@ -664,6 +651,34 @@ class MongoDatabase extends AbstractDatabase
      */
     protected function deleteMongoRecord($collection, $id)
     {
-        $this->db->{$collection}->deleteOne(['_id' => $id]);
+        $this->getDb()->{$collection}->deleteOne(['_id' => $id]);
+    }
+
+    /**
+     * Get a database connection
+     *
+     * @return \MongoDB
+     */
+    public function getDb()
+    {
+        if (null === $this->db) {
+            $connectTimeout = $this->settings['connect_timeout'] ?? 300000;
+            $socketTimeout = $this->settings['socket_timeout'] ?? 300000;
+            $this->mongoClient = new \MongoDB\Client(
+                $this->dsn,
+                [
+                    'connectTimeoutMS' => (int)$connectTimeout,
+                    'socketTimeoutMS' => (int)$socketTimeout,
+                ]
+            );
+            $this->db = $this->mongoClient->{$this->databaseName};
+            $this->pid = getmypid();
+        } elseif ($this->pid !== getmypid()) {
+            throw new \Exception(
+                'PID ' . getmypid() . ': database already connected by PID '
+                . getmypid()
+            );
+        }
+        return $this->db;
     }
 }

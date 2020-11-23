@@ -46,7 +46,14 @@ class PDODatabase extends AbstractDatabase
      *
      * @var \PDO
      */
-    protected $db;
+    protected $db = null;
+
+    /**
+     * Process id that connected the database
+     *
+     * @var int
+     */
+    protected $pid = null;
 
     /**
      * Whether the database supports MySQL syntax
@@ -89,23 +96,7 @@ class PDODatabase extends AbstractDatabase
     {
         parent::__construct($url, $database, $settings);
 
-        $this->reconnectDatabase();
-    }
-
-    /**
-     * Open a database connection with the stored parameters
-     *
-     * @return void
-     */
-    public function reconnectDatabase()
-    {
         $this->mysql = strncmp($this->dsn, 'mysql', 5) === 0;
-        $this->db = new \PDO(
-            $this->dsn,
-            $this->settings['username'] ?? '',
-            $this->settings['password'] ?? ''
-        );
-        $this->db->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
     }
 
     /**
@@ -370,7 +361,7 @@ class PDODatabase extends AbstractDatabase
                 && $collTime < time() - 60 * 60 * 24 * 7
             ) {
                 try {
-                    $this->dbQuery('drop table ?', [$collection]);
+                    $this->dbQuery("drop table $collection");
                     $removed[] = $collection;
                 } catch (\Exception $e) {
                     $failed[] = $collection;
@@ -685,7 +676,8 @@ class PDODatabase extends AbstractDatabase
         $existingAttrs = !empty($record['_id'])
             && in_array($collection, ['record', 'dedup'])
             ? $this->getRecordAttrs($collection, $record['_id']) : [];
-        $this->db->beginTransaction();
+        $db = $this->getDb();
+        $db->beginTransaction();
         try {
             $params = $insertParams;
             $updateSQL = '';
@@ -713,7 +705,7 @@ class PDODatabase extends AbstractDatabase
 
             $this->dbQuery($sql, $params);
             if (!isset($record['_id'])) {
-                $record['_id'] = $this->db->lastInsertId($collection);
+                $record['_id'] = $db->lastInsertId($collection);
             }
             if (in_array($collection, ['record', 'dedup'])) {
                 // Go through existing attrs and new attrs and process them
@@ -760,9 +752,9 @@ class PDODatabase extends AbstractDatabase
                     }
                 }
             }
-            $this->db->commit();
+            $db->commit();
         } catch (\Exception $e) {
-            $this->db->rollback();
+            $db->rollback();
             throw $e;
         }
         return $record;
@@ -837,9 +829,11 @@ class PDODatabase extends AbstractDatabase
      */
     protected function dbQuery(string $sql, array $params = [])
     {
-        $stmt = $this->db->prepare($sql);
+        $stmt = $this->getDb()->prepare($sql);
         if (false === $stmt) {
-            throw new \Exception("Prepare failed for '$sql': " . $this->db->error);
+            throw new \Exception(
+                "Prepare failed for '$sql': " . $this->getDb()->error
+            );
         }
         foreach ($params as &$param) {
             if (is_bool($param)) {
@@ -851,6 +845,7 @@ class PDODatabase extends AbstractDatabase
         if ($stmt->execute($params)) {
             return $stmt;
         }
+
         throw new \Exception(
             "Query '$sql' failed: " . print_r($stmt->errorInfo(), true)
         );
@@ -1060,6 +1055,31 @@ class PDODatabase extends AbstractDatabase
         }
         return $this->mainFields[$collection];
     }
+
+    /**
+     * Get database handle
+     *
+     * @return \PDO
+     */
+    public function getDb(): \PDO
+    {
+        if (null === $this->db) {
+            $this->db = new \PDO(
+                $this->dsn . ';_xpid=' . getmypid(),
+                $this->settings['username'] ?? '',
+                $this->settings['password'] ?? ''
+            );
+            $this->db
+                ->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
+            $this->pid = getmypid();
+        } elseif ($this->pid !== getmypid()) {
+            throw new \Exception(
+                'PID ' . getmypid() . ': database already connected by PID '
+                . getmypid()
+            );
+        }
+        return $this->db;
+    }
 }
 
 /**
@@ -1076,7 +1096,7 @@ class PDOResultIterator extends \IteratorIterator
     /**
      * Database
      *
-     * @var PDODatabase
+     * @var \PDODatabase
      */
     protected $db;
 

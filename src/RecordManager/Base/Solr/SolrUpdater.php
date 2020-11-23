@@ -741,29 +741,8 @@ class SolrUpdater
             }
 
             $needCommit = false;
-
-            if (isset($fromDate)) {
-                if ($fromDate) {
-                    $fromTimestamp = strtotime($fromDate);
-                }
-            } else {
-                $state = $this->db->getState($lastUpdateKey);
-                if (null !== $state) {
-                    // Back-compatibility check:
-                    if (is_a($state['value'], 'MongoDB\BSON\UTCDateTime')) {
-                        $fromTimestamp
-                            = $state['value']->toDateTime()->getTimestamp();
-                    } else {
-                        $fromTimestamp = $state['value'];
-                    }
-                } else {
-                    $fromTimestamp = null;
-                }
-            }
-            $from = null !== $fromTimestamp
-                ? date('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
             // Take the last indexing date now and store it when done
-            if (!$sourceId && !$singleId && !isset($fromDate)) {
+            if (!$sourceId && !$singleId && null === $fromDate) {
                 $lastIndexingDate = time();
             } else {
                 $lastIndexingDate = null;
@@ -806,19 +785,17 @@ class SolrUpdater
                 }
 
                 if (!$childPid) {
-                    if (null !== $childPid) {
-                        $this->reconnectDatabase();
-                    }
                     $this->initWorkerPoolManager();
                     try {
                         $needCommit = $this->processMerged(
-                            $fromTimestamp,
+                            $fromDate,
                             $sourceId,
                             $singleId,
                             $noCommit,
                             $delete,
                             $compare,
-                            null !== $childPid
+                            null !== $childPid,
+                            $lastUpdateKey
                         );
                         if (null !== $childPid) {
                             $this->deInitWorkerPoolManager();
@@ -862,12 +839,12 @@ class SolrUpdater
                 'record',
                 $this->recordWorkers,
                 $this->recordWorkers,
-                [$this, 'processSingleRecord'],
-                [$this, 'reconnectDatabase']
+                [$this, 'processSingleRecord']
             );
 
-            // Reconnect database to be sure it's used just by us
-            $this->reconnectDatabase();
+            $fromTimestamp = $this->getStartTimestamp($fromDate, $lastUpdateKey);
+            $from = null !== $fromTimestamp
+                ? date('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
 
             $this->log->logInfo(
                 'updateRecords', "Creating individual record list (from $from)"
@@ -1137,32 +1114,48 @@ class SolrUpdater
     /**
      * Process merged (deduplicated) records
      *
-     * @param int|null $fromTimestamp Start timestamp
-     * @param string   $sourceId      Comma-separated list of source IDs to
-     *                                update, or empty or * for all sources
-     * @param string   $singleId      Process only the record with the given ID
-     * @param bool     $noCommit      If true, changes are not explicitly
-     *                                committed
-     * @param bool     $delete        If true, records in the given $sourceId are
-     *                                all deleted
-     * @param string   $compare       If set, just compare the records with the
-     *                                ones already in the Solr index and write any
-     *                                differences in a file given in this
-     *                                parameter
-     * @param bool     $checkParent   Whether to check that the parent process is
-     *                                alive
+     * @param string|null $fromDate      Start date
+     * @param string      $sourceId      Comma-separated list of source IDs to
+     *                                   update, or empty or * for all sources
+     * @param string      $singleId      Process only the record with the given ID
+     * @param bool        $noCommit      If true, changes are not explicitly
+     *                                   committed
+     * @param bool        $delete        If true, records in the given $sourceId are
+     *                                   all deleted
+     * @param string      $compare       If set, just compare the records with the
+     *                                   ones already in the Solr index and write any
+     *                                   differences in a file given in this
+     *                                   parameter
+     * @param bool        $checkParent   Whether to check that the parent process is
+     *                                   alive
+     * @param string      $lastUpdateKey Database state key for last index update
      *
      * @throws Exception
      * @return boolean Whether anything was updated
      */
     protected function processMerged(
-        $fromTimestamp, $sourceId, $singleId, $noCommit, $delete, $compare,
-        $checkParent
+        $fromDate, $sourceId, $singleId, $noCommit, $delete, $compare,
+        $checkParent, $lastUpdateKey
     ) {
+        // Create workers first before we need the database
+        $this->workerPoolManager->createWorkerPool(
+            'solr',
+            $this->solrUpdateWorkers,
+            $this->solrUpdateWorkers,
+            [$this, 'solrRequest']
+        );
+        $this->workerPoolManager->createWorkerPool(
+            'merge',
+            $this->recordWorkers,
+            $this->recordWorkers,
+            [$this, 'processDedupRecord']
+        );
+
         $verb = $compare ? 'compared' : ($this->dumpPrefix ? 'dumped' : 'indexed');
         $initVerb = $compare
             ? 'Comparing'
             : ($this->dumpPrefix ? 'Dumping' : 'Indexing');
+        $fromTimestamp = $this->getStartTimestamp($fromDate, $lastUpdateKey);
 
         $params = [];
         if ($singleId) {
@@ -1353,13 +1346,6 @@ class SolrUpdater
             );
         }
 
-        $this->workerPoolManager->createWorkerPool(
-            'solr',
-            $this->solrUpdateWorkers,
-            $this->solrUpdateWorkers,
-            [$this, 'solrRequest']
-        );
-
         $count = 0;
         $lastDisplayedCount = 0;
         $mergedComponents = 0;
@@ -1378,13 +1364,6 @@ class SolrUpdater
             );
         }
         $pc = new PerformanceCounter();
-        $this->workerPoolManager->createWorkerPool(
-            'merge',
-            $this->recordWorkers,
-            $this->recordWorkers,
-            [$this, 'processDedupRecord'],
-            [$this, 'reconnectDatabase']
-        );
         $this->db->iterateQueue(
             $collectionName,
             function ($item) use ($checkParent, $sourceId, $delete,
@@ -3104,19 +3083,6 @@ class SolrUpdater
     }
 
     /**
-     * Reconnect to the database after forking to avoid trouble with multiple
-     * processes sharing the connection.
-     *
-     * Public visibility so that the worker init can call this
-     *
-     * @return void
-     */
-    public function reconnectDatabase()
-    {
-        $this->db->reconnectDatabase();
-    }
-
-    /**
      * Create a Solr id field from a record id
      *
      * @param string $recordId Record id including a source prefix
@@ -3229,5 +3195,32 @@ class SolrUpdater
             $value = mb_substr($value, 0, $foundLimit, 'UTF-8');
         }
         return $value;
+    }
+
+    /**
+     * Get a unix timestamp for the update start time
+     *
+     * @param string $fromDate      User-given start date
+     * @param string $lastUpdateKey Last index update key in database
+     *
+     * @return int|null
+     */
+    protected function getStartTimestamp($fromDate, $lastUpdateKey)
+    {
+        if (null !== $fromDate) {
+            if ($fromDate) {
+                return strtotime($fromDate);
+            }
+        } else {
+            $state = $this->db->getState($lastUpdateKey);
+            if (null !== $state) {
+                // Back-compatibility check:
+                if (is_a($state['value'], 'MongoDB\BSON\UTCDateTime')) {
+                    return $state['value']->toDateTime()->getTimestamp();
+                }
+                return $state['value'];
+            }
+        }
+        return null;
     }
 }

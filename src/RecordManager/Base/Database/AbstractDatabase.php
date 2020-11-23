@@ -141,16 +141,7 @@ abstract class AbstractDatabase implements DatabaseInterface
         $this->dsn = $dsn;
         $this->databaseName = $database;
         $this->settings = $settings;
-
-        $this->reconnectDatabase();
     }
-
-    /**
-     * Open a database connection with the stored parameters
-     *
-     * @return void
-     */
-    abstract public function reconnectDatabase();
 
     /**
      * Get a timestamp in a format the database uses
