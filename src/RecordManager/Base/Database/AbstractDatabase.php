@@ -531,16 +531,23 @@ abstract class AbstractDatabase implements DatabaseInterface
         do {
             $records = $findMethod(
                 $filter,
-                array_merge($options, ['skip' => $position, 'limit' => $limit])
+                array_merge(
+                    $options,
+                    [
+                        'skip' => $position,
+                        'limit' => $limit,
+                        'sort' => ['_id' => 1]
+                    ]
+                )
             );
-            $more = false;
+            $recordCount = 0;
             foreach ($records as $record) {
-                $more = true;
+                ++$recordCount;
                 if ($callback($record, $params) === false) {
                     return;
                 }
             }
-            $position += $limit;
-        } while ($more);
+            $position += $recordCount;
+        } while ($recordCount);
     }
 }
