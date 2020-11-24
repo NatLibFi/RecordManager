@@ -430,14 +430,14 @@ abstract class AbstractDatabase implements DatabaseInterface
     abstract public function addIdToQueue($collectionName, $id);
 
     /**
-     * Get IDs in queue
+     * Find IDs in a queue collection
      *
-     * @param string $collectionName The queue collection name
-     * @param array  $options        Options such as skip and limit
+     * @param array $filter  Search filter
+     * @param array $options Options such as sorting. Must include 'collectionName'.
      *
      * @return \Traversable
      */
-    abstract public function getQueuedIds($collectionName, $options);
+    abstract public function findQueuedIds(array $filter, array $options);
 
     /**
      * Iterate through queue
@@ -453,22 +453,10 @@ abstract class AbstractDatabase implements DatabaseInterface
     public function iterateQueue(string $collectionName, callable $callback,
         array $params = []
     ):void {
-        $position = 0;
-        $limit = $this->getDefaultPageSize();
-        do {
-            $records = $this->getQueuedIds(
-                $collectionName,
-                ['skip' => $position, 'limit' => $limit]
-            );
-            $more = false;
-            foreach ($records as $record) {
-                $more = true;
-                if ($callback($record, $params) === false) {
-                    return;
-                }
-            }
-            $position += $limit;
-        } while ($more);
+        $options['collectionName'] = $collectionName;
+        $this->iterate(
+            [$this, 'findQueuedIds'], [], $options, $callback, $params
+        );
     }
 
     /**
@@ -526,28 +514,37 @@ abstract class AbstractDatabase implements DatabaseInterface
     protected function iterate(callable $findMethod, array $filter, array $options,
         callable $callback, array $params = []
     ): void {
-        $position = $options['skip'] ?? 0;
         $limit = $this->getDefaultPageSize();
+        $lastId = null;
         do {
+            $currentFilter = $filter;
+            if (null !== $lastId) {
+                $currentFilter['_id'] = [
+                    '$gt' => $lastId
+                ];
+            }
             $records = $findMethod(
-                $filter,
+                $currentFilter,
                 array_merge(
                     $options,
                     [
-                        'skip' => $position,
+                        'skip' => 0,
                         'limit' => $limit,
                         'sort' => ['_id' => 1]
                     ]
                 )
             );
-            $recordCount = 0;
+            $lastId = null;
             foreach ($records as $record) {
-                ++$recordCount;
+                if (!isset($record['_id'])) {
+                    throw new
+                        \Exception('Cannot iterate records without _id column');
+                }
+                $lastId = $record['_id'];
                 if ($callback($record, $params) === false) {
                     return;
                 }
             }
-            $position += $recordCount;
-        } while ($recordCount);
+        } while ($lastId);
     }
 }

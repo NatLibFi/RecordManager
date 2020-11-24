@@ -327,14 +327,14 @@ interface DatabaseInterface
     public function addIdToQueue($collectionName, $id);
 
     /**
-     * Get IDs in queue
+     * Find IDs in a queue collection
      *
-     * @param string $collectionName The queue collection name
-     * @param array  $options        Options such as skip and limit
+     * @param array $filter  Search filter
+     * @param array $options Options such as sorting. Must include 'collectionName'.
      *
      * @return \Traversable
      */
-    public function getQueuedIds($collectionName, $options);
+    public function findQueuedIds(array $filter, array $options);
 
     /**
      * Iterate through queue

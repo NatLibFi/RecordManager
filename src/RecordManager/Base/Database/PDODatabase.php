@@ -468,16 +468,19 @@ class PDODatabase extends AbstractDatabase
     }
 
     /**
-     * Get IDs in queue
+     * Find IDs in a queue collection
      *
-     * @param string $collectionName The queue collection name
-     * @param array  $options        Options such as skip and limit
+     * @param array $filter  Search filter
+     * @param array $options Options such as sorting. Must include 'collectionName'.
      *
      * @return \Traversable
      */
-    public function getQueuedIds($collectionName, $options)
+    public function findQueuedIds(array $filter, array $options)
     {
-        return $this->findPDORecords($collectionName, [], $options);
+        if (empty($options['collectionName'])) {
+            throw new \Exception('Options must include collectionName');
+        }
+        return $this->findPDORecords($options['collectionName'], $filter, $options);
     }
 
     /**
@@ -867,7 +870,21 @@ class PDODatabase extends AbstractDatabase
     ): array {
         $where = [];
         $params = [];
+        $mainFields = $this->getMainFields($collection);
         foreach ($filter as $field => $value) {
+            if ('$or' === $field) {
+                $subQueries = [];
+                $subQueryParams = [];
+                foreach ($value as $subFilter) {
+                    [$subPartQuery, $subPartParams]
+                        = $this->filterToSQL($collection, $subFilter, 'and');
+                    $subQueries[] = $subPartQuery;
+                    $subQueryParams = array_merge($subQueryParams, $subPartParams);
+                }
+                $where[] = '(' . implode(' or ', $subQueries) . ')';
+                $params = array_merge($params, $subQueryParams);
+                continue;
+            }
             if (is_array($value)) {
                 $keys = array_keys($value);
                 $supportedKeys = [
@@ -940,8 +957,15 @@ class PDODatabase extends AbstractDatabase
                     }
                 }
                 if (isset($value['$exists'])) {
-                    $match = $value['$exists'] ? ' is not null' : ' is null';
-                    $where[] = $this->mapFieldToQuery($collection, $field, $match);
+                    if (in_array($field, $mainFields)) {
+                        $match = $value['$exists'] ? ' is not null' : ' is null';
+                        $where[]
+                            = $this->mapFieldToQuery($collection, $field, $match);
+                    } else {
+                        $sub = $this
+                            ->mapFieldToQuery($collection, $field, ' is not null');
+                        $where[] = ($value['$exists'] ? '' : 'not ') . $sub;
+                    }
                 }
                 if (isset($value['$gt'])) {
                     $where[] = $this->mapFieldToQuery($collection, $field, '>?');
