@@ -456,7 +456,9 @@ class MongoDatabase extends AbstractDatabase
         if (empty($options['collectionName'])) {
             throw new \Exception('Options must include collectionName');
         }
-        return $this->findMongoRecords($options['collectionName'], [], $options);
+        $collectionName = $options['collectionName'];
+        unset($options['collectionName']);
+        return $this->findMongoRecords($collectionName, [], $options);
     }
 
     /**

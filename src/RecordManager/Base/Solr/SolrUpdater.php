@@ -1241,7 +1241,7 @@ class SolrUpdater
             $totalMergeCount = 0;
             $this->db->iterateRecords(
                 $params,
-                ['projection' => ['dedup_id' => 1]],
+                ['projection' => ['_id' => 1, 'dedup_id' => 1]],
                 function ($record) use ($checkParent, $collectionName,
                     &$totalMergeCount, &$count, &$prevId
                 ) {

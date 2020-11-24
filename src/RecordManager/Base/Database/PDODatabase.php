@@ -480,7 +480,9 @@ class PDODatabase extends AbstractDatabase
         if (empty($options['collectionName'])) {
             throw new \Exception('Options must include collectionName');
         }
-        return $this->findPDORecords($options['collectionName'], $filter, $options);
+        $collectionName = $options['collectionName'];
+        unset($options['collectionName']);
+        return $this->findPDORecords($collectionName, $filter, $options);
     }
 
     /**
