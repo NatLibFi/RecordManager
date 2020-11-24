@@ -545,6 +545,6 @@ abstract class AbstractDatabase implements DatabaseInterface
                     return;
                 }
             }
-        } while ($lastId);
+        } while ($lastId && !isset($filter['_id']));
     }
 }
