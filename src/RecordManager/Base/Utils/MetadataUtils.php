@@ -61,7 +61,7 @@ class MetadataUtils
      *
      * @var array
      */
-    protected static $abbreviations = null;
+    protected static $abbreviations = [];
 
     /**
      * Articles that should be removed from the beginning of sort keys.
@@ -153,7 +153,9 @@ class MetadataUtils
 
         // Read the abbreviations file
         self::$abbreviations = isset($config['Site']['abbreviations'])
-            ? self::readListFile($basePath, $config['Site']['abbreviations']) : [];
+            ? array_flip(
+                self::readListFile($basePath, $config['Site']['abbreviations'])
+            ) : [];
 
         // Read the artices file
         self::$articles = isset($config['Site']['articles'])
@@ -458,7 +460,7 @@ class MetadataUtils
             $str = rtrim($str, $basic);
         }
 
-        // Don't replace an initial letter followed by period
+        // Don't replace an initial letter or an abbreviation followed by period
         // (e.g. string "Smith, A.")
         if (substr($str, -1) == '.' && substr($str, -3, 1) != ' ') {
             $p = strrpos($str, ' ');
@@ -468,7 +470,7 @@ class MetadataUtils
                 $lastWord = substr($str, 0, -1);
             }
             if (!is_numeric($lastWord)
-                && !in_array(strtolower($lastWord), MetadataUtils::$abbreviations)
+                && !isset(MetadataUtils::$abbreviations[strtolower($lastWord)])
             ) {
                 $str = substr($str, 0, -1);
             }

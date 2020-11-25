@@ -201,7 +201,6 @@ class Dc extends Base
     public function getTitle($forFiling = false)
     {
         $title = trim((string)$this->doc->title);
-        $title = MetadataUtils::stripTrailingPunctuation($title);
         if ($forFiling) {
             $title = MetadataUtils::stripLeadingPunctuation($title);
             $title = MetadataUtils::stripLeadingArticle($title);
@@ -209,6 +208,7 @@ class Dc extends Base
             $title = MetadataUtils::stripLeadingPunctuation($title);
             $title = mb_strtolower($title, 'UTF-8');
         }
+        $title = MetadataUtils::stripTrailingPunctuation($title);
         return $title;
     }
 
