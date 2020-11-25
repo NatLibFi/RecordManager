@@ -2395,7 +2395,7 @@ class SolrUpdater
         // Analyze the records to find the best record to be used as the base
         foreach ($records as &$record) {
             $fieldCount = 0;
-            $capsRatio = 0;
+            $capsRatios = 0;
             $titleLen = isset($record['solr']['title'])
                 ? strlen($record['solr']['title']) : 0;
             foreach ($record['solr'] as $key => $field) {
@@ -2405,18 +2405,18 @@ class SolrUpdater
                 foreach ((array)$field as $content) {
                     ++$fieldCount;
 
-                    $contentLower = mb_strtolower($content, 'UTF-8');
-                    $similar = similar_text($content, $contentLower);
-                    // Use normal strlen since similar_text doesn't support MB
-                    $length = strlen($content);
-                    $capsRatio += 1 - $similar / $length;
+                    $uppercase = preg_match_all('/[\p{Lu}]/u', $content);
+                    $length = mb_strlen($content, 'UTF-8');
+                    if ($length) {
+                        $capsRatios += $uppercase / $length;
+                    }
                 }
             }
             if (0 === $fieldCount) {
                 $record['score'] = 0;
             } else {
                 $baseScore = $fieldCount + $titleLen;
-                $capsRatio /= $fieldCount;
+                $capsRatio = $capsRatios / $fieldCount;
                 $record['score'] = 0 == $capsRatio ? $fieldCount
                     : $baseScore / $capsRatio;
             }
@@ -3131,45 +3131,45 @@ class SolrUpdater
             return $value;
         }
 
-        $foundLimit = null;
-        foreach ($this->maxFieldLengths as $key => $limit) {
-            if ('__default__' === $key) {
-                continue;
-            }
-            if ($field === $key) {
-                $foundLimit = $limit;
-                break;
-            }
-            $left = strncmp('*', $key, 1) === 0;
-            if ($left) {
-                $key = substr($key, 1);
-            }
-            $right = substr($key, -1) === '*';
-            if ($right) {
-                $key = substr($key, 0, -1);
-            }
+        $foundLimit = $this->maxFieldLengths[$field] ?? null;
+        if (null === $foundLimit) {
+            foreach ($this->maxFieldLengths as $key => $limit) {
+                if ('__default__' === $key) {
+                    continue;
+                }
+                $left = strncmp('*', $key, 1) === 0;
+                if ($left) {
+                    $key = substr($key, 1);
+                }
+                $right = substr($key, -1) === '*';
+                if ($right) {
+                    $key = substr($key, 0, -1);
+                }
 
-            if ($left && $right) {
-                if (strpos($field, $key) !== false) {
-                    $foundLimit = $limit;
-                    break;
-                }
-            } elseif ($left) {
-                if ($key === substr($field, -strlen($key))) {
-                    $foundLimit = $limit;
-                    break;
-                }
-            } elseif ($right) {
-                if (strncmp($key, $field, strlen($key)) === 0) {
-                    $foundLimit = $limit;
-                    break;
+                if ($left && $right) {
+                    if (strpos($field, $key) !== false) {
+                        $foundLimit = $limit;
+                        break;
+                    }
+                } elseif ($left) {
+                    if ($key === substr($field, -strlen($key))) {
+                        $foundLimit = $limit;
+                        break;
+                    }
+                } elseif ($right) {
+                    if (strncmp($key, $field, strlen($key)) === 0) {
+                        $foundLimit = $limit;
+                        break;
+                    }
                 }
             }
+            if (null === $foundLimit) {
+                $foundLimit = $this->maxFieldLengths['__default__'] ?? null;
+            }
+            // Store the result for easier lookup further on
+            $this->maxFieldLengths[$field] = $foundLimit;
         }
 
-        if (null == $foundLimit) {
-            $foundLimit = $this->maxFieldLengths['__default__'] ?? null;
-        }
         if ($foundLimit) {
             $value = mb_substr($value, 0, $foundLimit, 'UTF-8');
         }
