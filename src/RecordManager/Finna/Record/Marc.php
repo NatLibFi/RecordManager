@@ -1306,8 +1306,8 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
         $allFields = array_map(
             function ($str) {
-                return MetadataUtils::stripLeadingPunctuation(
-                    MetadataUtils::stripTrailingPunctuation($str)
+                return MetadataUtils::stripTrailingPunctuation(
+                    MetadataUtils::stripLeadingPunctuation($str)
                 );
             },
             $allFields
