@@ -1131,8 +1131,13 @@ class Marc extends \RecordManager\Base\Record\Marc
             case 'q':
                 $year1 = substr($field008, 7, 4);
                 $year2 = substr($field008, 11, 4);
-                $startDate = "$year1-01-01T00:00:00Z";
-                $endDate = "$year2-12-31T23:59:59Z";
+                if (ctype_digit($year1) && ctype_digit($year2) && $year2 < $year1) {
+                    $startDate = "$year2-01-01T00:00:00Z";
+                    $endDate = "$year1-12-31T23:59:59Z";
+                } else {
+                    $startDate = "$year1-01-01T00:00:00Z";
+                    $endDate = "$year2-12-31T23:59:59Z";
+                }
                 break;
             case 'e':
                 $year = substr($field008, 7, 4);
