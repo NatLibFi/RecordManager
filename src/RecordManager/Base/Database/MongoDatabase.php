@@ -458,7 +458,7 @@ class MongoDatabase extends AbstractDatabase
         }
         $collectionName = $options['collectionName'];
         unset($options['collectionName']);
-        return $this->findMongoRecords($collectionName, [], $options);
+        return $this->findMongoRecords($collectionName, $filter, $options);
     }
 
     /**
