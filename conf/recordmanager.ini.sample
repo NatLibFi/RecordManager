@@ -45,9 +45,9 @@ database = recman
 ; MySQL/MariaDB support is provided as an alternative):
 ;connection = "mysql:host=localhost;dbname=recman;charset=UTF8"
 ; MySQL user name
-;username=recman
+;username = "recman"
 ; MySQL password
-;password=topsecret
+;password = "topsecret"
 ; Whether to ask the database for counts of records to be processed. Can be really
 ; slow, so not recommended for large collections.
 counts = false
@@ -270,9 +270,20 @@ replace[] = '\1 street'
 ; Base url for the MusicBrainz server.
 ;url = "http://localhost:5000"
 
+; Settings for connecting to an authority database for enrichment.
+; Settings defined in Database section are used if these are not defined.
 [AuthorityEnrichment]
-; Mongo url and database for authority records.
-; Fallbacks to settings defined in Mongo-section.
-; url = ""
-; database = ""
+; URL for a MongoDB database.
+; Use a unix socket like below, if possible. It can be an order of magnitude faster
+; than TCP/IP.
+;connection = "mongodb://%2Ftmp%2Fmongodb-27017.sock"
+; MongoDB database to use
+;database = recman
+; PDO connection string for a MySQL/MariaDB database (MongoDB is recommended, but
+; MySQL/MariaDB support is provided as an alternative):
+;connection = "mysql:host=localhost;dbname=recman;charset=UTF8"
+; MySQL user name
+;username = "recman"
+; MySQL password
+;password = "topsecret"
 
