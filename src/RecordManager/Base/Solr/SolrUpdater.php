@@ -2397,21 +2397,20 @@ class SolrUpdater
             $fieldCount = 0;
             $capsRatios = 0;
             $titleLen = isset($record['solr']['title'])
-                ? strlen($record['solr']['title']) : 0;
-            foreach ($record['solr'] as $key => $field) {
-                if (!isset($this->scoredFields[$key])) {
-                    continue;
-                }
-                foreach ((array)$field as $content) {
+                ? mb_strlen($record['solr']['title'], 'UTF-8') : 0;
+            $fields = array_intersect_key($record['solr'], $this->scoredFields);
+            array_walk_recursive(
+                $fields,
+                function ($field) use (&$fieldCount, &$capsRatios) {
                     ++$fieldCount;
 
-                    $uppercase = preg_match_all('/[\p{Lu}]/u', $content);
-                    $length = mb_strlen($content, 'UTF-8');
+                    $uppercase = preg_match_all('/[\p{Lu}]/u', $field);
+                    $length = mb_strlen($field, 'UTF-8');
                     if ($length) {
                         $capsRatios += $uppercase / $length;
                     }
                 }
-            }
+            );
             if (0 === $fieldCount) {
                 $record['score'] = 0;
             } else {
