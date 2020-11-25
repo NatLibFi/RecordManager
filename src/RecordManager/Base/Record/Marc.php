@@ -890,11 +890,11 @@ class Marc extends Base
                     }
                     $title .= current($subfield);
                 }
-                $title = MetadataUtils::stripTrailingPunctuation($title);
                 if ($forFiling) {
                     $title = MetadataUtils::stripLeadingPunctuation($title);
                     $title = mb_strtolower($title, 'UTF-8');
                 }
+                $title = MetadataUtils::stripTrailingPunctuation($title);
                 if (!empty($title)) {
                     return $title;
                 }
@@ -2209,8 +2209,8 @@ class Marc extends Base
         }
         $allFields = array_map(
             function ($str) {
-                return MetadataUtils::stripLeadingPunctuation(
-                    MetadataUtils::stripTrailingPunctuation($str)
+                return MetadataUtils::stripTrailingPunctuation(
+                    MetadataUtils::stripLeadingPunctuation($str)
                 );
             },
             $allFields

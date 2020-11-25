@@ -402,7 +402,7 @@ class OaiPmh extends Base
         // Load request parameters:
         $url = $request->getURL();
         $params['verb'] = $verb;
-        $url->setQueryVariables($params);
+        $url->setQueryVariables(array_merge($url->getQueryVariables(), $params));
 
         $urlStr = $url->getURL();
         if ($this->debugLog) {
