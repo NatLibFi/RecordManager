@@ -352,7 +352,7 @@ class PDODatabase extends AbstractDatabase
         $removed = [];
         $failed = [];
 
-        $res = $this->dbQuery("show tables like 'mr_record_%'");
+        $res = $this->dbQuery("show tables like 'q_%'");
         while ($collection = $res->fetchColumn()) {
             $nameParts = explode('_', $collection);
             $collTime = $nameParts[4] ?? null;
@@ -383,7 +383,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function getExistingQueueCollection($hash, $fromDate, $lastRecordTime)
     {
-        $collectionName = "mr_record_{$hash}_{$fromDate}_{$lastRecordTime}";
+        $collectionName = "q_{$hash}_{$fromDate}_{$lastRecordTime}";
         $res = $this->dbQuery("show tables like ?", [$collectionName]);
         if ($res->fetch()) {
             return $collectionName;
@@ -403,7 +403,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function getNewQueueCollection($hash, $fromDate, $lastRecordTime)
     {
-        $collectionName = "tmp_mr_record_{$hash}_{$fromDate}_{$lastRecordTime}";
+        $collectionName = "tmp_q_{$hash}_{$fromDate}_{$lastRecordTime}";
         $this->dbQuery(
             "create table if not exists {$collectionName} ("
             . '_id VARCHAR(255) PRIMARY KEY'
