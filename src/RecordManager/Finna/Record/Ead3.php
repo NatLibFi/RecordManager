@@ -228,7 +228,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
 
         $data['format_ext_str_mv'] = $data['format'];
 
-        $data['topic_uri_str_mv'] = $this->getTopicURIs();
+        $data['topic_id_str_mv'] = $this->getTopicURIs();
 
         return $data;
     }
