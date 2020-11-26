@@ -74,6 +74,7 @@ trait AuthoritySupportTrait
         $result = [];
         foreach ($ids as $id) {
             if (preg_match('/^https?:/', $id)) {
+                // Never prefix http(s) url's
                 $result[] = $id;
                 continue;
             }
@@ -94,6 +95,10 @@ trait AuthoritySupportTrait
     protected function allowAuthorityIdRegex($id, $type)
     {
         if (!($regex = $this->getAuthorityIdRegex($type))) {
+            return true;
+        }
+        if (preg_match('/^https?:/', $id)) {
+            // Always allow http(s) url's
             return true;
         }
         return 1 === preg_match($regex, $id);

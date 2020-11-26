@@ -116,13 +116,11 @@ abstract class AuthEnrichment extends Enrichment
             return;
         }
 
-        $source = $data['source_id'];
-
         $authRecord = $this->recordFactory->createRecord(
             $data['format'],
             MetadataUtils::getRecordData($data, true),
             $id,
-            $source
+            $data['source_id']
         );
 
         if ($altNames = $authRecord->getAlternativeNames()) {
