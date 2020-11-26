@@ -221,7 +221,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
 
-        $data['author_id_str_mv'] = array_merge(
+        $data['author2_id_str_mv'] = array_merge(
             $this->getAuthorIds(),
             $this->getCorporateAuthorIds()
         );
