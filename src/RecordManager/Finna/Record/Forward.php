@@ -481,7 +481,7 @@ class Forward extends \RecordManager\Base\Record\Forward
                 if (!empty($attributes->{'video-tyyppi'})) {
                     $videoType = (string)$attributes->{'video-tyyppi'};
                 }
-                if (!empty($attributes->{'online-video'}) && !$videoMatch) {
+                if (!empty($attributes->{'online-video'})) {
                     $videoMatch = boolval((string)$attributes->{'online-video'});
                 }
                 $description = (string)$attributes->{'video-lisatieto'};
