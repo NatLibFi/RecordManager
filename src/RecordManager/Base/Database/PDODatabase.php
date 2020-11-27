@@ -56,13 +56,6 @@ class PDODatabase extends AbstractDatabase
     protected $pid = null;
 
     /**
-     * Whether the database supports MySQL syntax
-     *
-     * @var bool
-     */
-    protected $mysql;
-
-    /**
      * Main fields in each table. Automatically filled.
      *
      * @var array
@@ -82,22 +75,6 @@ class PDODatabase extends AbstractDatabase
      * @var array
      */
     protected $lastRecordAttrId = [];
-
-    /**
-     * Constructor.
-     *
-     * @param string $url      Database connection URL
-     * @param string $database Datatabase name
-     * @param array  $settings Optional database settings
-     *
-     * @throws Exception
-     */
-    public function __construct($url, $database, $settings)
-    {
-        parent::__construct($url, $database, $settings);
-
-        $this->mysql = strncmp($this->dsn, 'mysql', 5) === 0;
-    }
 
     /**
      * Get a timestamp
@@ -655,67 +632,82 @@ class PDODatabase extends AbstractDatabase
      *
      * @param string $collection Collection
      * @param array  $record     Record
+     * @param array  $oldRecord  Old record (to avoid re-reading it from database)
      *
      * @return array Saved record (with a new _id if it didn't have one)
      */
-    protected function savePDORecord($collection, $record)
+    protected function savePDORecord($collection, $record, $oldRecord = null)
     {
-        $attrFields = [];
-        $mainFields = $this->getMainFields($collection);
-        $insertFields = [];
-        $updateFields = [];
-        $updateParams = [];
-        foreach ($record as $key => $value) {
-            if (in_array($key, $mainFields)) {
-                $insertFields[] = $key;
-                $insertParams[] = $value;
-                if ('_id' !== $key) {
-                    $updateFields[] = $key;
-                    $updateParams[] = $value;
-                }
-            } else {
-                $attrFields[$key] = $value;
-            }
-        }
-
-        $existingAttrs = !empty($record['_id'])
-            && in_array($collection, ['record', 'dedup'])
-            ? $this->getRecordAttrs($collection, $record['_id']) : [];
         $db = $this->getDb();
         $db->beginTransaction();
         try {
-            $params = $insertParams;
-            $updateSQL = '';
-            if (!empty($record['_id'])) {
-                if ($this->mysql) {
-                    $updateSQL = 'on duplicate key update ';
-                } else {
-                    $updateSQL = 'on conflict(_id) set ';
+            $mainFields = $this->getMainFields($collection);
+            $attrFields = [];
+
+            if (null === $oldRecord) {
+                $oldRecord = !empty($record['_id'])
+                    ? $this->getPDORecord($collection, $record['_id']) : null;
+            }
+            if ($oldRecord) {
+                $updateFields = [];
+                $updateParams = [];
+                foreach (array_keys($oldRecord + $record) as $key) {
+                    $value = $record[$key] ?? null;
+                    if (in_array($key, $mainFields)) {
+                        $oldValue = $oldRecord[$key] ?? null;
+                        if ('_id' !== $key && $oldValue !== $value) {
+                            $updateFields[] = $key;
+                            $updateParams[] = $value;
+                        }
+                    } else {
+                        $attrFields[$key] = $value ?: [];
+                    }
                 }
-                $updateSQL .= implode(
-                    ', ',
-                    array_map(
-                        function ($s) {
-                            return "$s=?";
-                        },
-                        $updateFields
-                    )
-                );
+                if ($updateFields) {
+                    $sql = "UPDATE $collection SET ";
+                    $sql .= implode(
+                        ', ',
+                        array_map(
+                            function ($s) {
+                                return "$s=?";
+                            },
+                            $updateFields
+                        )
+                    );
+                    $sql .= ' WHERE _id=?';
 
-                $params = array_merge($params, $updateParams);
-            }
-            $sql = "insert into $collection (" . implode(',', $insertFields)
-                . ') VALUES (' . rtrim(str_repeat('?,', count($insertFields)), ',')
-                . ') ' . $updateSQL;
+                    $updateParams[] = $record['_id'];
+                    $this->dbQuery($sql, $updateParams);
+                }
+            } else {
+                $insertFields = [];
+                $insertParams = [];
+                foreach ($record as $key => $value) {
+                    if (in_array($key, $mainFields)) {
+                        $insertFields[] = $key;
+                        $insertParams[] = $value;
+                    } else {
+                        $attrFields[$key] = $value;
+                    }
+                }
+                $sql = "INSERT INTO $collection (" . implode(',', $insertFields)
+                    . ') VALUES ('
+                    . rtrim(str_repeat('?,', count($insertFields)), ',')
+                    . ') ';
 
-            $this->dbQuery($sql, $params);
-            if (!isset($record['_id'])) {
-                $record['_id'] = $db->lastInsertId($collection);
+                $this->dbQuery($sql, $insertParams);
+                if (!isset($record['_id'])) {
+                    $record['_id'] = $db->lastInsertId($collection);
+                }
             }
+
             if (in_array($collection, ['record', 'dedup'])) {
                 // Go through existing attrs and new attrs and process them
                 $deleteAttrs = [];
                 $insertAttrs = [];
+                $existingAttrs = $oldRecord
+                    ? array_diff_key($oldRecord, array_flip($mainFields)) : [];
+
                 foreach ($existingAttrs as $key => $values) {
                     foreach ($values as $value) {
                         if (!in_array($value, $attrFields[$key] ?? [])) {
@@ -733,8 +725,8 @@ class PDODatabase extends AbstractDatabase
                 foreach ($deleteAttrs as $key => $values) {
                     foreach ((array)$values as $value) {
                         $this->dbQuery(
-                            "delete from {$collection}_attrs where parent_id=?"
-                            . ' and attr=? and value=?',
+                            "DELETE FROM {$collection}_attrs WHERE parent_id=?"
+                            . ' AND attr=? AND value=?',
                             [
                                 $record['_id'],
                                 $key,
@@ -746,8 +738,8 @@ class PDODatabase extends AbstractDatabase
                 foreach ($insertAttrs as $key => $values) {
                     foreach ((array)$values as $value) {
                         $this->dbQuery(
-                            "insert into {$collection}_attrs"
-                            . ' (parent_id, attr, value) values (?, ?, ?)',
+                            "INSERT INTO {$collection}_attrs"
+                            . ' (parent_id, attr, value) VALUES (?, ?, ?)',
                             [
                                 $record['_id'],
                                 $key,
@@ -777,14 +769,14 @@ class PDODatabase extends AbstractDatabase
      */
     protected function updatePDORecord($collection, $id, $fields, $remove = [])
     {
-        $record = $this->getPDORecord($collection, $id);
+        $oldRecord = $record = $this->getPDORecord($collection, $id);
         $record = array_replace($record, $fields);
         foreach ($remove as $key) {
             if (isset($record[$key])) {
                 unset($record[$key]);
             }
         }
-        $this->savePDORecord($collection, $record);
+        $this->savePDORecord($collection, $record, $oldRecord);
     }
 
     /**
@@ -801,13 +793,14 @@ class PDODatabase extends AbstractDatabase
         $remove = []
     ) {
         foreach ($this->findPDORecords($collection, $filter, []) as $record) {
+            $oldRecord = $record;
             $record = array_replace($record, $fields);
-            foreach ($remove as $key) {
+            foreach (array_keys($remove) as $key) {
                 if (isset($record[$key])) {
                     unset($record[$key]);
                 }
             }
-            $this->savePDORecord($collection, $record);
+            $this->savePDORecord($collection, $record, $oldRecord);
         }
     }
 
@@ -821,7 +814,7 @@ class PDODatabase extends AbstractDatabase
      */
     protected function deletePDORecord($collection, $id)
     {
-        $this->dbQuery("delete from $collection where _id=?", [$id]);
+        $this->dbQuery("DELETE FROM $collection WHERE _id=?", [$id]);
     }
 
     /**
@@ -868,7 +861,7 @@ class PDODatabase extends AbstractDatabase
      * @return array
      */
     protected function filterToSQL(string $collection, array $filter,
-        $operator = 'and'
+        $operator = 'AND'
     ): array {
         $where = [];
         $params = [];
@@ -879,11 +872,11 @@ class PDODatabase extends AbstractDatabase
                 $subQueryParams = [];
                 foreach ($value as $subFilter) {
                     [$subPartQuery, $subPartParams]
-                        = $this->filterToSQL($collection, $subFilter, 'and');
+                        = $this->filterToSQL($collection, $subFilter, 'AND');
                     $subQueries[] = $subPartQuery;
                     $subQueryParams = array_merge($subQueryParams, $subPartParams);
                 }
-                $where[] = '(' . implode(' or ', $subQueries) . ')';
+                $where[] = '(' . implode(' OR ', $subQueries) . ')';
                 $params = array_merge($params, $subQueryParams);
                 continue;
             }
@@ -901,15 +894,15 @@ class PDODatabase extends AbstractDatabase
                 if (isset($value['$or'])) {
                     $whereParts = [];
                     list($wherePart, $partParams)
-                        = $this->filterToSQL($collection, $value['$or'], 'or');
+                        = $this->filterToSQL($collection, $value['$or'], 'OR');
                     $where[] = "($wherePart)";
                     $params = array_merge($params, $partParams);
                 }
                 if (isset($value['$nor'])) {
                     $whereParts = [];
                     list($wherePart, $partParams)
-                        = $this->filterToSQL($collection, $value['$nor'], 'or');
-                    $where[] = "not ($wherePart)";
+                        = $this->filterToSQL($collection, $value['$nor'], 'OR');
+                    $where[] = "NOT ($wherePart)";
                     $params = array_merge($params, $partParams);
                 }
                 if (isset($value['$in'])) {
@@ -922,7 +915,7 @@ class PDODatabase extends AbstractDatabase
                         unset($values[$nullKey]);
                         --$valueCount;
                         $whereParts[] = $this->mapFieldToQuery(
-                            $collection, $field, ' is null OR'
+                            $collection, $field, ' IS NULL OR'
                         );
                     }
                     if ($valueCount > 1) {
@@ -946,7 +939,7 @@ class PDODatabase extends AbstractDatabase
                     $values = (array)$value['$ne'];
                     $valueCount = count($values);
                     if ($valueCount > 1) {
-                        $match = ' not in ('
+                        $match = ' NOT IN ('
                             . rtrim(str_repeat('?,', $valueCount), ',')
                             . ')';
                         $where[]
@@ -960,13 +953,13 @@ class PDODatabase extends AbstractDatabase
                 }
                 if (isset($value['$exists'])) {
                     if (in_array($field, $mainFields)) {
-                        $match = $value['$exists'] ? ' is not null' : ' is null';
+                        $match = $value['$exists'] ? ' IS NOT NULL' : ' IS NULL';
                         $where[]
                             = $this->mapFieldToQuery($collection, $field, $match);
                     } else {
                         $sub = $this
-                            ->mapFieldToQuery($collection, $field, ' is not null');
-                        $where[] = ($value['$exists'] ? '' : 'not ') . $sub;
+                            ->mapFieldToQuery($collection, $field, ' IS NOT NULL');
+                        $where[] = ($value['$exists'] ? '' : 'NOT ') . $sub;
                     }
                 }
                 if (isset($value['$gt'])) {
@@ -989,7 +982,7 @@ class PDODatabase extends AbstractDatabase
                 if ($value instanceof Regex) {
                     $params[] = (string)$value;
                     $where[]
-                        = $this->mapFieldToQuery($collection, $field, ' regexp ');
+                        = $this->mapFieldToQuery($collection, $field, ' REGEXP ');
                 } else {
                     $where[] = $this->mapFieldToQuery($collection, $field, '=?');
                     $params[] = $value;
@@ -1015,13 +1008,13 @@ class PDODatabase extends AbstractDatabase
         if (in_array($field, $mainFields)) {
             return "$field$operator";
         }
-        $result = "exists (select * from {$collection}_attrs ca where"
-            . " ca.parent_id={$collection}._id and ca.attr='$field'"
-            . " and ca.value$operator)";
+        $result = "EXISTS (SELECT * FROM {$collection}_attrs ca WHERE"
+            . " ca.parent_id={$collection}._id AND ca.attr='$field'"
+            . " AND ca.value$operator)";
 
-        if (' is null' === $operator) {
-            $result = "($result OR not exists (select * from {$collection}_attrs"
-                . " ca where ca.parent_id={$collection}._id and ca.attr='$field'))";
+        if (' IS NULL' === $operator) {
+            $result = "($result OR NOT EXISTS (SELECT * FROM {$collection}_attrs"
+                . " ca WHERE ca.parent_id={$collection}._id AND ca.attr='$field'))";
         }
 
         return $result;
@@ -1074,7 +1067,7 @@ class PDODatabase extends AbstractDatabase
     protected function getMainFields(string $collection): array
     {
         if (!isset($this->mainFields[$collection])) {
-            $res = $this->dbQuery("show columns from $collection");
+            $res = $this->dbQuery("SHOW COLUMNS FROM $collection");
             while ($row = $res->fetch()) {
                 $this->mainFields[$collection][] = $row['Field'];
             }
@@ -1091,7 +1084,7 @@ class PDODatabase extends AbstractDatabase
     {
         if (null === $this->db) {
             $this->db = new \PDO(
-                $this->dsn . ';_xpid=' . getmypid(),
+                $this->dsn,
                 $this->settings['username'] ?? '',
                 $this->settings['password'] ?? ''
             );
