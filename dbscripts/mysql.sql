@@ -68,4 +68,36 @@ CREATE TABLE `ontologyEnrichment` (
   `altLabels` varchar(8192) NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- A trigger to make sure we're not linking to a deleted dedup record
+DROP TRIGGER IF EXISTS record_before_update;
+delimiter $$
+CREATE TRIGGER record_before_update
+BEFORE UPDATE
+ON record FOR EACH ROW
+BEGIN
+    IF new.dedup_id <> old.dedup_id THEN
+        set @deleted = (SELECT deleted FROM dedup WHERE _id=new.dedup_id);
+        IF @deleted=1 THEN
+            set @msg = CONCAT('Attempted linking ', new._id, ' to a deleted dedup record ', new.dedup_id);
+            SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = @msg;
+        END IF;
+    END IF;
+END$$
+delimiter ;
+
+-- A trigger to make sure we're not deleting a linked dedup record
+delimiter $$
+CREATE TRIGGER dedup_before_update
+BEFORE UPDATE
+ON dedup FOR EACH ROW
+BEGIN
+    IF old.deleted=0 AND new.deleted=1 AND EXISTS (SELECT * FROM record WHERE dedup_id=new._id) THEN
+        set @msg = CONCAT('Attempted deletion of linked dedup record ', new._id);
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = @msg;
+    END IF;
+END$$
+delimiter ;
+
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;

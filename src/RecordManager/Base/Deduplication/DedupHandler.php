@@ -177,17 +177,19 @@ class DedupHandler
                     $reason
                         = "record linked with dedup record '{$record['dedup_id']}'";
                 }
+                // Update records first to remove links to the dedup record
+                $this->db->updateRecords(
+                    ['_id' => $id, 'deleted' => false],
+                    ['update_needed' => true],
+                    ['dedup_id' => 1]
+                );
+                // Now update dedup record
                 $this->removeFromDedupRecord($dedupRecord['_id'], $id);
                 if (isset($record['dedup_id'])
                     && $record['dedup_id'] != $dedupRecord['_id']
                 ) {
                     $this->removeFromDedupRecord($record['dedup_id'], $id);
                 }
-                $this->db->updateRecords(
-                    ['_id' => $id, 'deleted' => false],
-                    ['update_needed' => true],
-                    ['dedup_id' => 1]
-                );
                 $results[] = "Removed '$id' from dedup record "
                     . "'{$dedupRecord['_id']}' ($reason)";
             }
@@ -220,7 +222,7 @@ class DedupHandler
                 . " $id (dedup record does not exist)";
         }
 
-        if (!in_array($id, (array)$dedupRecord['ids'])) {
+        if (!in_array($id, ((array)$dedupRecord['ids'] ?? []))) {
             $this->db->updateRecords(
                 ['_id' => $id, 'deleted' => false],
                 ['update_needed' => true],
@@ -536,13 +538,19 @@ class DedupHandler
 
         // No match found
         if (isset($record['dedup_id']) || $record['update_needed']) {
+            $oldDedupId = null;
             if (isset($record['dedup_id'])) {
-                $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
+                $oldDedupId = $record['dedup_id'];
                 unset($record['dedup_id']);
             }
             $record['updated'] = $this->db->getTimestamp();
             $record['update_needed'] = false;
             $this->db->saveRecord($record);
+
+            // Update dedup record after record is updated
+            if (null !== $oldDedupId) {
+                $this->removeFromDedupRecord($oldDedupId, $record['_id']);
+            }
         }
 
         if ($this->verbose && microtime(true) - $startTime > 0.2) {
@@ -567,7 +575,14 @@ class DedupHandler
         if (!$dedupRecord) {
             $this->log->logError(
                 'removeFromDedupRecord',
-                "Found dangling reference to dedup record $dedupId"
+                "Found dangling reference to dedup record $dedupId in $id"
+            );
+            return;
+        }
+        if ($dedupRecord['deleted']) {
+            $this->log->logError(
+                'removeFromDedupRecord',
+                "Found reference to deleted dedup record $dedupId in $id"
             );
             return;
         }
@@ -582,15 +597,14 @@ class DedupHandler
                 $dedupRecord['ids'] = [];
                 $dedupRecord['deleted'] = true;
 
-                $this->db->updateRecords(
-                    [
-                        '_id' => $otherId,
-                        'deleted' => false,
-                        'suppressed' => ['$in' => [null, false]],
-                    ],
-                    ['update_needed' => true],
-                    ['dedup_id' => 1]
-                );
+                $otherRecord = $this->db->getRecord($otherId);
+                if (isset($otherRecord['dedup_id'])) {
+                    unset($otherRecord['dedup_id']);
+                }
+                if (!$otherRecord['deleted'] && !$otherRecord['suppressed']) {
+                    $otherRecord['update_needed'] = true;
+                }
+                $this->db->saveRecord($otherRecord);
             } elseif (empty($dedupRecord['ids'])) {
                 // No records remaining => just mark dedup record deleted.
                 // This shouldn't happen since dedup record should always contain
@@ -862,15 +876,23 @@ class DedupHandler
             'updated' => $this->db->getTimestamp(),
             'update_needed' => false
         ];
+        // Deferred removal to keep database checks happy
+        $removeFromDedup = [];
         if (!empty($rec2['dedup_id'])) {
             if (!$this->addToDedupRecord($rec2['dedup_id'], $rec1['_id'])) {
-                $this->removeFromDedupRecord($rec2['dedup_id'], $rec2['_id']);
+                $removeFromDedup[] = [
+                    'dedup_id' => $rec2['dedup_id'],
+                    '_id' => $rec2['_id']
+                ];
                 $rec2['dedup_id'] = $this->createDedupRecord(
                     $rec1['_id'], $rec2['_id']
                 );
             }
             if (isset($rec1['dedup_id']) && $rec1['dedup_id'] != $rec2['dedup_id']) {
-                $this->removeFromDedupRecord($rec1['dedup_id'], $rec1['_id']);
+                $removeFromDedup[] = [
+                    'dedup_id' => $rec1['dedup_id'],
+                    '_id' => $rec1['_id']
+                ];
             }
             $setValues['dedup_id'] = $rec1['dedup_id'] = $rec2['dedup_id'];
         } else {
@@ -896,6 +918,10 @@ class DedupHandler
             ['_id' => ['$in' => [$rec1['_id'], $rec2['_id']]]],
             $setValues
         );
+
+        foreach ($removeFromDedup as $current) {
+            $this->removeFromDedupRecord($current['dedup_id'], $current['_id']);
+        }
 
         if (!isset($rec1['host_record_id'])) {
             $count = $this->dedupComponentParts($rec1);
