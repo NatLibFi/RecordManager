@@ -111,8 +111,8 @@ class Lrmi extends \RecordManager\Base\Record\Lrmi
         }
 
         // Topic ids
-        $data['topic_uri_str_mv'] = array_merge(
-            $data['topic_uri_str_mv'] ?? [],
+        $data['topic_id_str_mv'] = array_merge(
+            $data['topic_id_str_mv'] ?? [],
             array_map(
                 function ($topic) {
                     return $topic['id'];
