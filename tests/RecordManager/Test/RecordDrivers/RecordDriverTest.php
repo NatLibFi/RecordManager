@@ -75,11 +75,15 @@ abstract class RecordDriverTest extends \RecordManager\Test\AbstractTest
     {
         foreach ($expected as $key => $value) {
             $this->assertEquals(
-                $value, $provided[$key] ?? null, "[$method] Compare field $key"
+                $value,
+                $provided[$key] ?? null,
+                "[$method] Compare expected field $key"
             );
         }
-        $this->assertEquals(
-            count($expected), count($provided), "[$method] Field count equal"
-        );
+        foreach ($provided as $key => $value) {
+            $this->assertTrue(array_key_exists($key, $expected) !== false,
+                "[$method] Unexpected field $key: " . var_export($value, true)
+            );
+        }
     }
 }

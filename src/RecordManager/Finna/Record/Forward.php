@@ -28,7 +28,6 @@
  */
 namespace RecordManager\Finna\Record;
 
-use RecordManager\Base\Record\AuthoritySupportTrait;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -158,13 +157,6 @@ class Forward extends \RecordManager\Base\Record\Forward
         }
 
         $data['building'] = $this->getBuilding();
-
-        $primaryAuthors = $this->getPrimaryAuthorsSorted();
-
-        $data['author_id_str_mv']
-            = $this->addNamespaceToAuthorityIds($primaryAuthors['ids']);
-        $data['author_id_role_str_mv']
-            = $this->addNamespaceToAuthorityIds($primaryAuthors['idRoles']);
 
         $allAuthors = $this->getAuthorsByRelator();
         $data['author2_id_str_mv']

@@ -44,6 +44,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Marc extends \RecordManager\Base\Record\Marc
 {
+    use AuthoritySupportTrait;
+
     /**
      * Strings in field 300 that signify that the work is illustrated.
      *
@@ -145,6 +147,20 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
 
+        $primaryAuthors = $this->getPrimaryAuthors();
+        $secondaryAuthors = $this->getSecondaryAuthors();
+        $corporateAuthors = $this->getCorporateAuthors();
+        $data['author2_id_str_mv'] = array_merge(
+            $this->addNamespaceToAuthorityIds($primaryAuthors['ids']),
+            $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']),
+            $this->addNamespaceToAuthorityIds($corporateAuthors['ids'])
+        );
+        $data['author2_id_role_str_mv'] = array_merge(
+            $this->addNamespaceToAuthorityIds($primaryAuthors['idRoles']),
+            $this->addNamespaceToAuthorityIds($secondaryAuthors['idRoles']),
+            $this->addNamespaceToAuthorityIds($corporateAuthors['idRoles'])
+        );
+
         if (isset($data['publishDate'])) {
             $data['main_date_str']
                 = MetadataUtils::extractYear($data['publishDate'][0]);
@@ -195,6 +211,14 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $data['author2'][] = $field;
                 $data['author2_role'][] = '-';
             }
+        }
+        // 979l = component part author id's
+        foreach ($this->getFields('979') as $field) {
+            $ids = $this->getSubfieldsArray($field, ['l' => 1]);
+            $data['author2_id_str_mv'] = array_merge(
+                $data['author2_id_str_mv'],
+                $this->addNamespaceToAuthorityIds($ids)
+            );
         }
 
         $data['title_alt'] = array_values(
@@ -667,12 +691,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         // Additional authority ids
-        foreach ($this->getFields('600') as $field) {
-            if ($id = $this->getSubField($field, '0')) {
-                $data['topic_id_str_mv']
-                    = $this->addNamespaceToAuthorityIds([$id]);
-            }
-        }
+        $data['topic_id_str_mv'] = $this->getTopicIds();
 
         // Make sure center_coords is single-valued
         if (!empty($data['center_coords'])) {
@@ -683,20 +702,22 @@ class Marc extends \RecordManager\Base\Record\Marc
     }
 
     /**
-     * Return author ids that are indexed to author2_id_str_mv
+     * Get all non-specific topics
      *
      * @return array
      */
-    public function getAuthorIds()
+    protected function getTopicIds()
     {
-        $ids = parent::getAuthorIds();
-
-        foreach ($this->getFields('700') as $field) {
-            if ($id = $this->getSubField($field, '0')) {
-                $ids = array_merge($ids, $this->addNamespaceToAuthorityIds([$id]));
+        $fieldTags = ['600', '610', '611', '630', '650'];
+        $result = [];
+        foreach ($fieldTags as $tag) {
+            foreach ($this->getFields($tag) as $field) {
+                if ($id = $this->getSubfield($field, '0')) {
+                    $result[] = $id;
+                }
             }
         }
-        return $ids;
+        return $this->addNamespaceToAuthorityIds($result);
     }
 
     /**
@@ -746,6 +767,14 @@ class Marc extends \RecordManager\Base\Record\Marc
                 [
                     [self::GET_NORMAL, '700', ['a' => 1, 'e' => 1]],
                     [self::GET_NORMAL, '710', ['a' => 1, 'e' => 1]]
+                ]
+            );
+            $authorIds = $marc->getFieldsSubfields(
+                [
+                    [self::GET_NORMAL, '100', ['0' => 1]],
+                    [self::GET_NORMAL, '110', ['0' => 1]],
+                    [self::GET_NORMAL, '700', ['0' => 1]],
+                    [self::GET_NORMAL, '710', ['0' => 1]],
                 ]
             );
             $duration = $marc->getFieldsSubfields(
@@ -885,6 +914,9 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
             foreach ($identifiers as $identifier) {
                 $newField['s'][] = ['k' => $identifier];
+            }
+            foreach ($authorIds as $identifier) {
+                $newField['s'][] = ['l' => $identifier];
             }
 
             $key = MetadataUtils::createIdSortKey($id);
@@ -1108,8 +1140,13 @@ class Marc extends \RecordManager\Base\Record\Marc
             case 'q':
                 $year1 = substr($field008, 7, 4);
                 $year2 = substr($field008, 11, 4);
-                $startDate = "$year1-01-01T00:00:00Z";
-                $endDate = "$year2-12-31T23:59:59Z";
+                if (ctype_digit($year1) && ctype_digit($year2) && $year2 < $year1) {
+                    $startDate = "$year2-01-01T00:00:00Z";
+                    $endDate = "$year1-12-31T23:59:59Z";
+                } else {
+                    $startDate = "$year1-01-01T00:00:00Z";
+                    $endDate = "$year2-12-31T23:59:59Z";
+                }
                 break;
             case 'e':
                 $year = substr($field008, 7, 4);
@@ -1221,10 +1258,10 @@ class Marc extends \RecordManager\Base\Record\Marc
                 'y' => 1, 'z' => 1, '2' => 1, '6' => 1, '8' => 1
             ],
             '650' => ['0' => 1, '2' => 1, '6' => 1, '8' => 1],
-            '100' => ['4' => 1],
-            '700' => ['4' => 1],
-            '710' => ['4' => 1],
-            '711' => ['4' => 1],
+            '100' => ['0' => 1, '4' => 1],
+            '700' => ['0' => 1, '4' => 1],
+            '710' => ['0' => 1, '4' => 1],
+            '711' => ['0' => 1, '4' => 1],
             '773' => [
                 '0' => 1, '4' => 1, '6' => 1, '7' => 1, '8' => 1, 'g' => 1, 'q' => 1,
                 'w' => 1
@@ -1276,8 +1313,8 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
         $allFields = array_map(
             function ($str) {
-                return MetadataUtils::stripLeadingPunctuation(
-                    MetadataUtils::stripTrailingPunctuation($str)
+                return MetadataUtils::stripTrailingPunctuation(
+                    MetadataUtils::stripLeadingPunctuation($str)
                 );
             },
             $allFields

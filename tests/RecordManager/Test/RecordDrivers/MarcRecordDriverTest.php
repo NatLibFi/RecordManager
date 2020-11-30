@@ -124,8 +124,6 @@ class MarcRecordDriverTest extends RecordDriverTest
             ],
             'author_corporate_role' => [
             ],
-            'author2_id_str_mv' => [],
-            'author2_id_role_str_mv' => [],
             'author_additional' => [
             ],
             'title' => 'Tutki ja kirjoita',
@@ -282,9 +280,7 @@ class MarcRecordDriverTest extends RecordDriverTest
                 '&käytt&tdk',
                 '&vanha&painos',
                 'neuropsykologia',
-                'http://www.yso.fi/onto/yso/p14664',
                 'biopsykologia',
-                'http://www.yso.fi/onto/yso/p9372',
                 'neuropsykologi',
                 'biopsykologi',
             ],
@@ -314,8 +310,6 @@ class MarcRecordDriverTest extends RecordDriverTest
             ],
             'author_corporate_role' => [
             ],
-            'author2_id_str_mv' => [],
-            'author2_id_role_str_mv' => [],
             'author_additional' => [
             ],
             'title' => 'Biological psychology',
@@ -446,8 +440,8 @@ class MarcRecordDriverTest extends RecordDriverTest
                 '1.',
                 'Suomen tiekartta 1',
                 '1:200000',
-                'Helsinki]',
-                'Maanmittaushallitus]',
+                'Helsinki',
+                'Maanmittaushallitus',
                 '1946.',
                 '1 kartta',
                 'värillinen',
@@ -470,7 +464,6 @@ class MarcRecordDriverTest extends RecordDriverTest
                 'ysa',
                 'Uudenmaan lääni',
                 'Ahvenanmaa',
-                'Maanmittaushallitus',
             ],
             'language' => [
                 'fin',
@@ -495,10 +488,6 @@ class MarcRecordDriverTest extends RecordDriverTest
             ],
             'author_corporate_role' => [
                 '-',
-            ],
-            'author2_id_str_mv' => [
-            ],
-            'author2_id_role_str_mv' => [
             ],
             'author_additional' => [
             ],
@@ -606,7 +595,7 @@ class MarcRecordDriverTest extends RecordDriverTest
                 'Les structures du quotidien',
                 'Paris',
                 'Armand Colin',
-                '1979]',
+                '1979',
                 '© 1979',
                 '543 sivua',
                 'kuvitettu',
@@ -662,10 +651,6 @@ class MarcRecordDriverTest extends RecordDriverTest
             'author_corporate' => [
             ],
             'author_corporate_role' => [
-            ],
-            'author2_id_str_mv' => [
-            ],
-            'author2_id_role_str_mv' => [
             ],
             'author_additional' => [
             ],
