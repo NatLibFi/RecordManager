@@ -212,6 +212,14 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $data['author2_role'][] = '-';
             }
         }
+        // 979l = component part author id's
+        foreach ($this->getFields('979') as $field) {
+            $ids = $this->getSubfieldsArray($field, ['l' => 1]);
+            $data['author2_id_str_mv'] = array_merge(
+                $data['author2_id_str_mv'],
+                $this->addNamespaceToAuthorityIds($ids)
+            );
+        }
 
         $data['title_alt'] = array_values(
             array_unique(
@@ -755,22 +763,18 @@ class Marc extends \RecordManager\Base\Record\Marc
                     [self::GET_NORMAL, '110', ['a' => 1, 'e' => 1]]
                 ]
             );
-            $authorIds = $marc->getFieldsSubfields(
-                [
-                    [self::GET_NORMAL, '100', ['0' => 1]],
-                    [self::GET_NORMAL, '110', ['0' => 1]]
-                ]
-            );
             $additionalAuthors = $marc->getFieldsSubfields(
                 [
                     [self::GET_NORMAL, '700', ['a' => 1, 'e' => 1]],
                     [self::GET_NORMAL, '710', ['a' => 1, 'e' => 1]]
                 ]
             );
-            $additionalAuthorIds = $marc->getFieldsSubfields(
+            $authorIds = $marc->getFieldsSubfields(
                 [
+                    [self::GET_NORMAL, '100', ['0' => 1]],
+                    [self::GET_NORMAL, '110', ['0' => 1]],
                     [self::GET_NORMAL, '700', ['0' => 1]],
-                    [self::GET_NORMAL, '710', ['0' => 1]]
+                    [self::GET_NORMAL, '710', ['0' => 1]],
                 ]
             );
             $duration = $marc->getFieldsSubfields(
@@ -910,6 +914,9 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
             foreach ($identifiers as $identifier) {
                 $newField['s'][] = ['k' => $identifier];
+            }
+            foreach ($authorIds as $identifier) {
+                $newField['s'][] = ['l' => $identifier];
             }
 
             $key = MetadataUtils::createIdSortKey($id);
