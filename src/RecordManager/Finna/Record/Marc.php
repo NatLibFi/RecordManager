@@ -996,35 +996,240 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
             return 'Thesis';
         }
-        $format = parent::getFormat();
 
-        // Separate non-musical sound from other sound types. This is not quite
-        // perfect since there's already e.g. MusicRecording, but we need to keep
-        // e.g. CD intact for backwards-compatibility.
-        if (in_array($format, ['CD', 'SoundCassette', 'SoundDisc', 'SoundRecording'])
-        ) {
-            $leader = $this->getField('000');
-            $type = substr($leader, 6, 1);
-            if ($type == 'i') {
-                switch ($format) {
-                case 'CD':
-                    $format = 'NonmusicalCD';
-                    break;
-                case 'SoundCassette':
-                    $format = 'NonmusicalCassette';
-                    break;
-                case 'SoundDisc':
-                    $format = 'NonmusicalDisc';
-                    break;
-                case 'SoundRecording':
-                    $format = 'NonmusicalRecording';
-                    break;
+        // Get the type of record from leader position 6
+        $leader = $this->getField('000');
+        $typeOfRecord = substr($leader, 6, 1);
+
+        // Get the bibliographic level from leader position 7
+        $bibliographicLevel = substr($leader, 7, 1);
+
+        // check the 007 - this is a repeating field
+        $fields = $this->getFields('007');
+        $online = false;
+        foreach ($fields as $field) {
+            $contents = $field;
+            $formatCode = strtoupper(substr($contents, 0, 1));
+            $formatCode2 = strtoupper(substr($contents, 1, 1));
+            switch ($formatCode) {
+            case 'A':
+                switch ($formatCode2) {
+                case 'D':
+                    return 'Atlas';
+                default:
+                    return 'Map';
                 }
-            } elseif ($type == 'j' && $format == 'SoundRecording') {
-                $format = 'MusicRecording';
+                break;
+            case 'C':
+                switch ($formatCode2) {
+                case 'A':
+                    return 'TapeCartridge';
+                case 'B':
+                    return 'ChipCartridge';
+                case 'C':
+                    return 'DiscCartridge';
+                case 'F':
+                    return 'TapeCassette';
+                case 'H':
+                    return 'TapeReel';
+                case 'J':
+                    return 'FloppyDisk';
+                case 'M':
+                case 'O':
+                    return 'CDROM';
+                case 'R':
+                    // Do not return - this will cause anything with an
+                    // 856 field to be labeled as "Electronic"
+                    $online = true;
+                    break;
+                default:
+                    return 'Electronic';
+                }
+                break;
+            case 'D':
+                return 'Globe';
+            case 'F':
+                return 'Braille';
+            case 'G':
+                switch ($formatCode2) {
+                case 'C':
+                case 'D':
+                    return 'Filmstrip';
+                case 'T':
+                    return 'Transparency';
+                default:
+                    return 'Slide';
+                }
+                break;
+            case 'H':
+                return 'Microfilm';
+            case 'K':
+                switch ($formatCode2) {
+                case 'C':
+                    return 'Collage';
+                case 'D':
+                    return 'Drawing';
+                case 'E':
+                    return 'Painting';
+                case 'F':
+                    return 'Print';
+                case 'G':
+                    return 'Photonegative';
+                case 'J':
+                    return 'Print';
+                case 'L':
+                    return 'TechnicalDrawing';
+                case 'O':
+                    return 'FlashCard';
+                case 'N':
+                    return 'Chart';
+                default:
+                    return 'Photo';
+                }
+                break;
+            case 'M':
+                switch ($formatCode2) {
+                case 'F':
+                    return 'VideoCassette';
+                case 'R':
+                    return 'Filmstrip';
+                default:
+                    return 'MotionPicture';
+                }
+                break;
+            case 'O':
+                return 'Kit';
+            case 'Q':
+                return 'MusicalScore';
+            case 'R':
+                return 'SensorImage';
+            case 'S':
+                switch ($formatCode2) {
+                case 'D':
+                    $size = strtoupper(substr($contents, 6, 1));
+                    $material = strtoupper(substr($contents, 10, 1));
+                    $soundTech = strtoupper(substr($contents, 13, 1));
+                    if ($soundTech == 'D'
+                        || ($size == 'G' && $material == 'M')
+                    ) {
+                        return 'i' === $typeOfRecord ? 'NonmusicalCD' : 'CD';
+                    }
+                    return 'i' === $typeOfRecord ? 'NonmusicalDisc' : 'SoundDisc';
+                case 'S':
+                    return 'i' === $typeOfRecord
+                        ? 'NonmusicalCassette' : 'SoundCassette';
+                default:
+                    if ('i' === $typeOfRecord) {
+                        return 'NonmusicalRecording';
+                    }
+                    if ('j' === $typeOfRecord) {
+                        return 'MusicRecording';
+                    }
+                    return 'SoundRecording';
+                }
+                break;
+            case 'V':
+                $videoFormat = strtoupper(substr($contents, 4, 1));
+                switch ($videoFormat) {
+                case 'S':
+                    return 'BluRay';
+                case 'V':
+                    return 'DVD';
+                }
+
+                switch ($formatCode2) {
+                case 'C':
+                    return 'VideoCartridge';
+                case 'D':
+                    return 'VideoDisc';
+                case 'F':
+                    return 'VideoCassette';
+                case 'R':
+                    return 'VideoReel';
+                case 'Z':
+                    if ($online) {
+                        return 'OnlineVideo';
+                    }
+                    return 'Video';
+                default:
+                    return 'Video';
+                }
+                break;
             }
         }
-        return $format;
+
+        switch (strtoupper($typeOfRecord)) {
+        case 'C':
+        case 'D':
+            return 'MusicalScore';
+        case 'E':
+        case 'F':
+            return 'Map';
+        case 'G':
+            return 'Slide';
+        case 'I':
+            return 'SoundRecording';
+        case 'J':
+            return 'MusicRecording';
+        case 'K':
+            return 'Photo';
+            break;
+        case 'M':
+            return 'Electronic';
+        case 'O':
+        case 'P':
+            return 'Kit';
+        case 'R':
+            return 'PhysicalObject';
+        case 'T':
+            return 'Manuscript';
+        }
+
+        $field008 = $this->getField('008');
+        if (!$online) {
+            $online = substr($field008, 23, 1) === 'o';
+        }
+
+        switch (strtoupper($bibliographicLevel)) {
+        // Monograph
+        case 'M':
+            if ($online) {
+                return 'eBook';
+            } else {
+                return 'Book';
+            }
+            break;
+        // Serial
+        case 'S':
+            // Look in 008 to determine what type of Continuing Resource
+            $formatCode = strtoupper(substr($field008, 21, 1));
+            switch ($formatCode) {
+            case 'N':
+                return $online ? 'eNewspaper' : 'Newspaper';
+            case 'P':
+                return $online ? 'eJournal' : 'Journal';
+            default:
+                return $online ? 'eSerial' : 'Serial';
+            }
+            break;
+
+        case 'A':
+            // Component part in monograph
+            return $online ? 'eBookSection' : 'BookSection';
+        case 'B':
+            // Component part in serial
+            return $online ? 'eArticle' : 'Article';
+        case 'C':
+            // Collection
+            return 'Collection';
+        case 'D':
+            // Component part in collection (sub unit)
+            return 'SubUnit';
+        case 'I':
+            // Integrating resource
+            return 'ContinuouslyUpdatedResource';
+        }
+        return 'Other';
     }
 
     /**
