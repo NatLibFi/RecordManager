@@ -41,16 +41,20 @@ class Factory
     /**
      * Create a database class
      *
-     * @param array $config Database configuration
+     * @param array $config RecordManager configuration
      *
      * @return DatabaseInterface
      */
     public static function createDatabase(array $config): DatabaseInterface
     {
-        $dsn = $config['connection'] ?? $config['url'];
-        if (strncmp('mongodb:', $dsn, 8) === 0) {
-            return new MongoDatabase($dsn, $config['database'], $config);
+        $backend = $config['Database']['backend'] ?? 'MongoDB';
+        if (empty($config[$backend])) {
+            throw new \Exception('MongoDB configuration missing');
         }
-        return new PDODatabase($dsn, $config['database'], $config);
+        $dbConfig = $config[$backend];
+        if ('Mongo' === $backend) {
+            return new MongoDatabase($dbConfig);
+        }
+        return new PDODatabase($dbConfig);
     }
 }

@@ -43,13 +43,11 @@ interface DatabaseInterface
     /**
      * Constructor.
      *
-     * @param string $dsn      Database connection string
-     * @param string $database Datatabase name
-     * @param array  $settings Optional database settings
+     * @param array $config Database settings
      *
      * @throws Exception
      */
-    public function __construct($dsn, $database, $settings);
+    public function __construct(array $config);
 
     /**
      * Get a timestamp in the format the underlying database supports

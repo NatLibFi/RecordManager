@@ -33,28 +33,37 @@ unicode_normalization_form = NFKC
 ;retry_wait = 120
 
 [Database]
-; URL for a MongoDB database.
-; Use a unix socket like below, if possible. It can be an order of magnitude faster
-; than TCP/IP.
-connection = "mongodb://%2Ftmp%2Fmongodb-27017.sock"
-;connection = mongodb://{username}:{password}@localhost
-;connection = mongodb://localhost
-; MongoDB database to use
+; Backend to use for database functionality. Valid options are Mongo and PDO.
+; Default and recommended is Mongo. PDO supports at least MySQL and MariaDB.
+; See also [Mongo] and [PDO] for further configuration options for each backend.
+backend = Mongo
+
+; Settings for MongoDB (default, see also the [Database] section)
+[Mongo]
+; Database url. Use a unix socket like below, if possible. It can be an order of
+; magnitude faster than TCP/IP.
+url = "mongodb://%2Ftmp%2Fmongodb-27017.sock"
+;url = mongodb://{username}:{password}@localhost
+;url = mongodb://localhost
+; Database to use
 database = recman
-; PDO connection string for a MySQL/MariaDB database (MongoDB is recommended, but
-; MySQL/MariaDB support is provided as an alternative):
-;connection = "mysql:host=localhost;dbname=recman;charset=UTF8"
-; MySQL user name
-;username = "recman"
-; MySQL password
-;password = "topsecret"
 ; Whether to ask the database for counts of records to be processed. Can be really
 ; slow, so not recommended for large collections.
 counts = false
-; MongoDB connection timeout in milliseconds. Default is 300 000 ms.
+; Connection timeout in milliseconds. Default is 300 000 ms.
 ;connect_timeout = 12000000
-; MongoDB socket timeout. Default is 300 000 ms.
+; Socket timeout. Default is 300 000 ms.
 ;socket_timeout = 12000000
+
+; Settings for MySQL/MariaDB database (optional, see also the [Database] section)
+[PDO]
+; PDO connection string for a MySQL/MariaDB database. Use localhost to connect via
+; unix socket.
+;connection = "mysql:host=localhost;dbname=recman;charset=UTF8"
+; User name
+;username = "recman"
+; Password
+;password = "topsecret"
 
 [Solr]
 ; Update URL. Note that RecordManager requires that the json update method be available.

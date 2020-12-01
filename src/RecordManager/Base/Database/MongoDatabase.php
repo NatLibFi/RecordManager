@@ -41,6 +41,13 @@ namespace RecordManager\Base\Database;
 class MongoDatabase extends AbstractDatabase
 {
     /**
+     * Database url
+     *
+     * @var string
+     */
+    protected $url;
+
+    /**
      * Mongo Client
      *
      * @var \MongoDB\Client
@@ -55,11 +62,50 @@ class MongoDatabase extends AbstractDatabase
     protected $db;
 
     /**
+     * Database name
+     *
+     * @var string
+     */
+    protected $databaseName;
+
+    /**
+     * Connection timeout
+     *
+     * @var int
+     */
+    protected $connectTimeout;
+
+    /**
+     * Socket read/write timeout
+     *
+     * @var int
+     */
+    protected $socketTimeout;
+
+    /**
      * Process id that connected the database
      *
      * @var int
      */
     protected $pid = null;
+
+    /**
+     * Constructor.
+     *
+     * @param array $config Database settings
+     *
+     * @throws Exception
+     */
+    public function __construct(array $config)
+    {
+        parent::__construct($config);
+
+        $this->url = $config['url'] ?? '';
+        $this->databaseName = $config['database'] ?? '';
+        $this->counts = !empty($config['counts']);
+        $this->connectTimeout = $config['connect_timeout'] ?? 300000;
+        $this->socketTimeout = $config['socket_timeout'] ?? 300000;
+    }
 
     /**
      * Get a timestamp
@@ -667,13 +713,11 @@ class MongoDatabase extends AbstractDatabase
     public function getDb()
     {
         if (null === $this->db) {
-            $connectTimeout = $this->settings['connect_timeout'] ?? 300000;
-            $socketTimeout = $this->settings['socket_timeout'] ?? 300000;
             $this->mongoClient = new \MongoDB\Client(
-                $this->dsn,
+                $this->url,
                 [
-                    'connectTimeoutMS' => (int)$connectTimeout,
-                    'socketTimeoutMS' => (int)$socketTimeout,
+                    'connectTimeoutMS' => (int)$this->connectTimeout,
+                    'socketTimeoutMS' => (int)$this->socketTimeout,
                 ]
             );
             $this->db = $this->mongoClient->{$this->databaseName};

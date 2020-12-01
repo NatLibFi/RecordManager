@@ -128,9 +128,7 @@ abstract class AbstractBase
             = $this->readDataSourceSettings("$basePath/conf/datasources.ini");
 
         try {
-            $this->db = DatabaseFactory::createDatabase(
-                $config['Database'] ?? $config['Mongo']
-            );
+            $this->db = DatabaseFactory::createDatabase($config);
         } catch (\Exception $e) {
             $this->logger->logFatal(
                 'startup',

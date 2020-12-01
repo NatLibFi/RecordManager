@@ -42,6 +42,27 @@ namespace RecordManager\Base\Database;
 class PDODatabase extends AbstractDatabase
 {
     /**
+     * Database connection string
+     *
+     * @var string
+     */
+    protected $dsn;
+
+    /**
+     * Username
+     *
+     * @var string
+     */
+    protected $username;
+
+    /**
+     * Password
+     *
+     * @var string
+     */
+    protected $password;
+
+    /**
      * Database
      *
      * @var \PDO
@@ -75,6 +96,22 @@ class PDODatabase extends AbstractDatabase
      * @var array
      */
     protected $lastRecordAttrId = [];
+
+    /**
+     * Constructor.
+     *
+     * @param array $config Database settings
+     *
+     * @throws Exception
+     */
+    public function __construct(array $config)
+    {
+        parent::__construct($config);
+
+        $this->dsn = $config['connection'] ?? '';
+        $this->username = $config['username'] ?? '';
+        $this->password = $config['password'] ?? '';
+    }
 
     /**
      * Get a timestamp
@@ -1083,11 +1120,7 @@ class PDODatabase extends AbstractDatabase
     public function getDb(): \PDO
     {
         if (null === $this->db) {
-            $this->db = new \PDO(
-                $this->dsn,
-                $this->settings['username'] ?? '',
-                $this->settings['password'] ?? ''
-            );
+            $this->db = new \PDO($this->dsn, $this->username, $this->password);
             $this->db
                 ->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
             $this->pid = getmypid();

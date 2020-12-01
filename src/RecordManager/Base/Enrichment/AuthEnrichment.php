@@ -72,17 +72,20 @@ abstract class AuthEnrichment extends Enrichment
     ) {
         parent::__construct($db, $logger, $config, $recordFactory);
 
-        // Back-compatibility checks:
-        $dbConfig = $config['Database'] ?? $config['Mongo'];
+        // Copy main configuration and modify it with the AuthorityEnrichment
+        // settings
+        $dbConfig = $config;
+        $dbType = $dbConfig['Database']['backend'] ?? 'Mongo';
 
         $connection = $config['AuthorityEnrichment']['connection']
             ?? $config['AuthorityEnrichment']['url'] ?? '';
         if ($connection) {
-            $dbConfig['connection'] = $connection;
+            $dbConfig[$dbType]['connection'] = $connection;
         }
 
         if (!empty($config['AuthorityEnrichment']['database'])) {
-            $dbConfig['database'] = $config['AuthorityEnrichment']['database'];
+            $dbConfig[$dbType]['database']
+                = $config['AuthorityEnrichment']['database'];
         }
 
         try {

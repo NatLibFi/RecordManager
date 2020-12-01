@@ -39,27 +39,6 @@ namespace RecordManager\Base\Database;
 abstract class AbstractDatabase implements DatabaseInterface
 {
     /**
-     * Database connection string
-     *
-     * @var string
-     */
-    protected $dsn;
-
-    /**
-     * Database name
-     *
-     * @var string
-     */
-    protected $databaseName;
-
-    /**
-     * Database settings
-     *
-     * @var array
-     */
-    protected $settings;
-
-    /**
      * Default page size when iterating a large set of results
      *
      * @var int
@@ -112,35 +91,28 @@ abstract class AbstractDatabase implements DatabaseInterface
     /**
      * Constructor.
      *
-     * @param string $dsn      Database connection string
-     * @param string $database Datatabase name
-     * @param array  $settings Optional database settings
+     * @param array $config Database settings
      *
      * @throws Exception
      */
-    public function __construct($dsn, $database, $settings)
+    public function __construct(array $config)
     {
-        if (!empty($settings['dedup_collection'])) {
-            $this->dedupCollection = $settings['dedup_collection'];
+        if (!empty($config['dedup_collection'])) {
+            $this->dedupCollection = $config['dedup_collection'];
         }
-        if (!empty($settings['record_collection'])) {
-            $this->recordCollection = $settings['record_collection'];
+        if (!empty($config['record_collection'])) {
+            $this->recordCollection = $config['record_collection'];
         }
-        if (!empty($settings['state_collection'])) {
-            $this->stateCollection = $settings['state_collection'];
+        if (!empty($config['state_collection'])) {
+            $this->stateCollection = $config['state_collection'];
         }
-        if (!empty($settings['uri_cache_collection'])) {
-            $this->uriCacheCollection = $settings['uri_cache_collection'];
+        if (!empty($config['uri_cache_collection'])) {
+            $this->uriCacheCollection = $config['uri_cache_collection'];
         }
-        if (!empty($settings['ontology_enrichment_collection'])) {
+        if (!empty($config['ontology_enrichment_collection'])) {
             $this->ontologyEnrichmentCollection
-                = $settings['ontology_enrichment_collection'];
+                = $config['ontology_enrichment_collection'];
         }
-        $this->counts = !empty($settings['counts']);
-
-        $this->dsn = $dsn;
-        $this->databaseName = $database;
-        $this->settings = $settings;
     }
 
     /**
