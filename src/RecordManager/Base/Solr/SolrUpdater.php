@@ -2021,10 +2021,12 @@ class SolrUpdater
                 ->transformToSolrArray($metadataRecord->toXML(), $params);
         } else {
             $data = $metadataRecord->toSolrArray($this->db);
-            $this->enrich($source, $settings, $metadataRecord, $data, '');
         }
 
         $data['id'] = $this->createSolrId($record['_id']);
+
+        $this->enrich($source, $settings, $metadataRecord, $data, '');
+
         if (null !== $dedupRecord && $this->dedupIdField) {
             $data[$this->dedupIdField] = (string)$dedupRecord['_id'];
         }

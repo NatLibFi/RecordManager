@@ -58,7 +58,7 @@ class LrmiOnkiLightEnrichment extends OnkiLightEnrichment
         }
 
         foreach ($record->getTopics() as $topic) {
-            if ($id = $topic['id'] ?? null) {
+            if ($id = ($topic['id'] ?? null)) {
                 $this->enrichField($solrArray, $id, 'topic');
             }
         }
