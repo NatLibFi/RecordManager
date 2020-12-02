@@ -1460,7 +1460,7 @@ class Marc extends Base
      *
      * @param string $marc MARCXML
      *
-     * @throws Exception
+     * @throws \Exception
      * @return void
      */
     protected function parseXML($marc)
@@ -1508,7 +1508,7 @@ class Marc extends Base
      *
      * @param string $marc ISO2709 string
      *
-     * @throws Exception
+     * @throws \Exception
      * @return void
      */
     protected function parseISO2709($marc)

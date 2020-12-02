@@ -33,7 +33,7 @@ require_once 'cmdline.php';
  * @param string[] $argv Program parameters
  *
  * @return void
- * @throws Exception
+ * @throws \Exception
  */
 function main($argv)
 {

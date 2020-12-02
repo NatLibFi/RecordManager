@@ -506,7 +506,7 @@ class SolrUpdater
      * @param array         $dataSourceSettings Data source settings
      * @param RecordFactory $recordFactory      Record Factory
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct($db, $basePath, $log, $verbose, $config,
         $dataSourceSettings, $recordFactory
@@ -705,7 +705,7 @@ class SolrUpdater
      * @return void
      */
     public function updateRecords($fromDate = null, $sourceId = '', $singleId = '',
-        $noCommit = false, $delete = false, $compare = false, $dumpPrefix = '',
+        $noCommit = false, $delete = false, $compare = '', $dumpPrefix = '',
         $datePerServer = false
     ) {
         if ($compare && $compare != '-') {
@@ -1053,7 +1053,7 @@ class SolrUpdater
                         if (null !== $exitCode) {
                             if (1 === $exitCode) {
                                 $needCommit = true;
-                            } elseif ($exitCode || null === $exitCode) {
+                            } elseif ($exitCode) {
                                 $this->log->logError(
                                     'updateRecords',
                                     'Merged record update process failed, aborting'
@@ -1134,7 +1134,7 @@ class SolrUpdater
      * @param bool        $checkParent   Whether to check that the parent process is
      *                                   alive
      *
-     * @throws Exception
+     * @throws \Exception
      * @return boolean Whether anything was updated
      */
     protected function processMerged(
@@ -1622,6 +1622,7 @@ class SolrUpdater
         if ($record['deleted'] || ($record['suppressed'] ?? false)) {
             $result['deleted'][] = (string)$record['_id'];
         } else {
+            $mergedComponents = 0;
             $data = $this->createSolrArray($record, $mergedComponents);
             if ($data !== false) {
                 if ($this->verbose) {
@@ -1909,7 +1910,7 @@ class SolrUpdater
      * @param array   $dedupRecord      Mongo dedup record
      *
      * @return array|false
-     * @throws Exception
+     * @throws \Exception
      */
     protected function createSolrArray($record, &$mergedComponents,
         $dedupRecord = null
@@ -2509,7 +2510,7 @@ class SolrUpdater
      * @param array  $record  Record
      * @param string $logfile Log file where results are written
      *
-     * @throws Exception
+     * @throws \Exception
      * @return void
      */
     protected function compareWithSolrRecord($record, $logfile)

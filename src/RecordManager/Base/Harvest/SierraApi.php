@@ -113,7 +113,7 @@ class SierraApi extends Base
      * @param array    $config   Main configuration
      * @param array    $settings Settings from datasources.ini
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct(Database $db, Logger $logger, $source, $basePath,
         $config, $settings
@@ -349,7 +349,7 @@ class SierraApi extends Base
      * @param string $response Sierra response JSON
      *
      * @return int Count of records processed
-     * @throws Exception
+     * @throws \Exception
      */
     protected function processResponse($response)
     {
@@ -401,7 +401,7 @@ class SierraApi extends Base
      * Renew the access token. Throw an exception if there is an error.
      *
      * @return void
-     * @throws Exception
+     * @throws \Exception
      * @throws \HTTP_Request2_LogicException
      */
     protected function renewAccessToken()

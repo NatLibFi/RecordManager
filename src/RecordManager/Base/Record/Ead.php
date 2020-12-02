@@ -435,7 +435,7 @@ class Ead extends Base
     /**
      * Get all XML fields
      *
-     * @param SimpleXMLElement $xml The XML document
+     * @param \SimpleXMLElement $xml The XML document
      *
      * @return array
      */

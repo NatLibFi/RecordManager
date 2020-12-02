@@ -62,7 +62,7 @@ class XslTransformation
      * @param string $configFile Configuration (properties) file
      * @param array  $params     Parameters passed to the xslt
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct($basePath, $configFile, $params = [])
     {
@@ -132,7 +132,7 @@ class XslTransformation
      * @param array  $params Parameters passed to the xslt
      *
      * @return string XML
-     * @throws Exception
+     * @throws \Exception
      */
     public function transform($data, $params = [])
     {
@@ -173,7 +173,7 @@ class XslTransformation
      * @param array  $params Parameters passed to the xslt
      *
      * @return array
-     * @throws Exception
+     * @throws \Exception
      */
     public function transformToSolrArray($data, $params = [])
     {

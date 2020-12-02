@@ -125,7 +125,7 @@ class Database
      * @param string $database Datatabase name
      * @param array  $settings Optional database settings
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct($url, $database, $settings)
     {

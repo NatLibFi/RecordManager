@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Base\Utils;
 
+use RecordManager\Base\Record\Base as BaseRecord;
+
 /**
  * MetadataUtils Class
  *
@@ -635,7 +637,7 @@ class MetadataUtils
      * @param array $range Start and end date
      *
      * @return string Start and end date in Solr format
-     * @throws Exception
+     * @throws \Exception
      */
     public static function dateRangeToStr($range)
     {
@@ -866,9 +868,9 @@ class MetadataUtils
     /**
      * Determine if a record is a hidden component part
      *
-     * @param array       $settings       Data source settings
-     * @param array       $record         Mongo record
-     * @param \BaseRecord $metadataRecord Metadata record
+     * @param array      $settings       Data source settings
+     * @param array      $record         Mongo record
+     * @param BaseRecord $metadataRecord Metadata record
      *
      * @return boolean
      */

@@ -40,4 +40,9 @@
   <target name="phpmd">
     <exec command="${basedir}/vendor/bin/phpmd ${srcdir} html ${basedir}/tests/phpmd.xml --reportfile ${basedir}/reports/phpmd.html" />
   </target>
+
+  <!-- Psalm -->
+  <target name="psalm">
+    <exec command="${basedir}/vendor/bin/psalm --diff" escape="false" passthru="true" checkreturn="true" />
+  </target>  
 </project>

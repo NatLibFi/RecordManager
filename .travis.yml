@@ -16,6 +16,7 @@ cache:
     - downloads
     - $HOME/.composer/cache
     - .php_cs.cache
+    - .psalm_cache
 
 script:
   - vendor/bin/phing phpunit phpcs php-cs-fixer-dryrun

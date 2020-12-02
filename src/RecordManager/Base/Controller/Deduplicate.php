@@ -148,11 +148,6 @@ class Deduplicate extends AbstractBase
             }
         }
 
-        if ($this->terminate) {
-            $this->logger->logInfo('deduplicate', 'Termination upon request');
-            return;
-        }
-
         foreach ($this->dataSourceSettings as $source => $settings) {
             try {
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
