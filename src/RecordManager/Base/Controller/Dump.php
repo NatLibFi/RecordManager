@@ -46,7 +46,7 @@ class Dump extends AbstractBase
      * @param string $recordID ID of the record to be dumped
      *
      * @return void
-     * @throws Exception
+     * @throws \Exception
      */
     public function launch($recordID)
     {

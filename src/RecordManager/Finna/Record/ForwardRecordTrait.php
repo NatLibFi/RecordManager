@@ -87,8 +87,8 @@ trait ForwardRecordTrait
     /**
      * Recursively append XML
      *
-     * @param SimpleXMLElement $simplexml Node to append to
-     * @param SimpleXMLElement $append    Node to be appended
+     * @param \SimpleXMLElement $simplexml Node to append to
+     * @param \SimpleXMLElement $append    Node to be appended
      *
      * @return void
      */

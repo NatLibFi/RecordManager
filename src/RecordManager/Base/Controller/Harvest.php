@@ -61,7 +61,7 @@ class Harvest extends AbstractBase
      *                                          this harvesting)
      *
      * @return void
-     * @throws Exception
+     * @throws \Exception
      */
     public function launch($repository = '', $harvestFromDate = null,
         $harvestUntilDate = null, $startResumptionToken = '', $exclude = null,
@@ -329,7 +329,7 @@ class Harvest extends AbstractBase
      * @param string $oaiId    ID of the record as received from OAI-PMH
      * @param bool   $deleted  Whether the record is to be deleted
      *
-     * @throws Exception
+     * @throws \Exception
      * @return void
      */
     public function markRecord($sourceId, $oaiId, $deleted)

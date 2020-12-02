@@ -46,7 +46,7 @@ class Sfx extends HTTPFiles
      * @param string $filename File to retrieve
      *
      * @return string xml
-     * @throws Exception
+     * @throws \Exception
      */
     protected function retrieveFile($filename)
     {
@@ -63,10 +63,10 @@ class Sfx extends HTTPFiles
      * Extract record ID.
      * This implementation works for MARC records.
      *
-     * @param SimpleXMLElement $record Record
+     * @param \SimpleXMLElement $record Record
      *
      * @return string ID
-     * @throws Exception
+     * @throws \Exception
      */
     protected function extractID($record)
     {
@@ -93,8 +93,8 @@ class Sfx extends HTTPFiles
     /**
      * Normalize a record
      *
-     * @param SimpleXMLElement $record Record
-     * @param string           $id     Record ID
+     * @param \SimpleXMLElement $record Record
+     * @param string            $id     Record ID
      *
      * @return void
      */
@@ -106,7 +106,7 @@ class Sfx extends HTTPFiles
     /**
      * Check if the record is modified.
      *
-     * @param SimpleXMLElement $record Record
+     * @param \SimpleXMLElement $record Record
      *
      * @return bool
      */

@@ -148,7 +148,7 @@ abstract class AbstractBase
     /**
      * Initialize the data source settings and XSL transformations
      *
-     * @throws Exception
+     * @throws \Exception
      * @return void
      */
     protected function initSourceSettings()
@@ -247,7 +247,7 @@ abstract class AbstractBase
     /**
      * Create a dedup handler
      *
-     * @return DedupHandler
+     * @return \RecordManager\Base\Deduplication\DedupHandler
      */
     protected function getDedupHandler()
     {

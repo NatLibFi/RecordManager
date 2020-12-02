@@ -555,7 +555,7 @@ abstract class Base
      *
      * @param string $xml XML string
      *
-     * @return SimpleXMLElement
+     * @return \SimpleXMLElement
      * @throws \Exception
      */
     protected function parseXMLRecord($xml)

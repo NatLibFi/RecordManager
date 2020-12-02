@@ -45,7 +45,7 @@ class MarcAuthEnrichment extends AuthEnrichment
      * @param object $record    Metadata Record
      * @param array  $solrArray Metadata to be sent to Solr
      *
-     * @throws Exception
+     * @throws \Exception
      * @return void
      */
     public function enrich($sourceId, $record, &$solrArray)
