@@ -67,9 +67,8 @@ class MusicBrainzEnrichment extends Enrichment
         parent::__construct($db, $logger, $config, $recordFactory);
 
         $this->baseURL
-            = isset($this->config['MusicBrainzEnrichment']['url'])
-            ? $this->config['MusicBrainzEnrichment']['url']
-            : '';
+            = $this->config['MusicBrainzEnrichment']['url']
+            ?? '';
     }
 
     /**

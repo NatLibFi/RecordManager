@@ -64,12 +64,12 @@ class Autoloader
      */
     public static function getLoader()
     {
-        if (null !== self::$loader) {
-            return self::$loader;
+        if (null !== static::$loader) {
+            return static::$loader;
         }
 
-        self::$loader = new Autoloader();
-        return self::$loader;
+        static::$loader = new Autoloader();
+        return static::$loader;
     }
 
     /**
@@ -104,11 +104,7 @@ class Autoloader
     protected function load($className)
     {
         foreach ($this->directories as $directory) {
-            if ($directory) {
-                $path = $path = "$directory/$className.php";
-            } else {
-                $path = "src/$className.php";
-            }
+            $path = $directory ? "$directory/$className.php" : "src/$className.php";
             $path = str_replace('\\', DIRECTORY_SEPARATOR, $path);
             if (file_exists($path)) {
                 include $path;

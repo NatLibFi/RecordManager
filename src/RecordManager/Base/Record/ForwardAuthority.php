@@ -364,7 +364,7 @@ class ForwardAuthority extends Base
     /**
      * Get the main metadata element
      *
-     * @return SimpleXMLElement
+     * @return \SimpleXMLElement
      */
     protected function getMainElement()
     {

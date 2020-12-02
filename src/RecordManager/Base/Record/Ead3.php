@@ -448,14 +448,14 @@ class Ead3 extends Ead
     /**
      * Get all XML fields
      *
-     * @param SimpleXMLElement $xml The XML document
+     * @param \SimpleXMLElement $xml The XML document
      *
      * @return array
      */
     protected function getAllFields($xml)
     {
         $allFields = [];
-        foreach ($xml->children() as $tag => $field) {
+        foreach ($xml->children() as $field) {
             $s = trim((string)$field);
             if ($s) {
                 $allFields[] = $s;

@@ -69,7 +69,7 @@ abstract class Enrichment
     /**
      * Maximum age of cached data in seconds
      *
-     * @var number
+     * @var int
      */
     protected $maxCacheAge;
 
@@ -174,7 +174,7 @@ abstract class Enrichment
      * @param array    $ignoreErrors Error codes to ignore
      *
      * @return string Metadata (typically XML)
-     * @throws Exception
+     * @throws \Exception
      */
     protected function getExternalData($url, $id, $headers = [], $ignoreErrors = [])
     {

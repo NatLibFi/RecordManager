@@ -100,7 +100,7 @@ class Factory
      * @param string $source Record source
      *
      * @return object       The record driver for handling the record.
-     * @throws Exception
+     * @throws \Exception
      */
     public function createRecord($format, $data, $oaiID, $source)
     {

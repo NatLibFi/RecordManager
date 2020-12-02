@@ -51,7 +51,6 @@ class Unsuppress extends AbstractBase
     public function launch($sourceId, $singleId)
     {
         $this->initSourceSettings();
-        $dedupHandler = $this->getDedupHandler();
         foreach ($this->dataSourceSettings as $source => $settings) {
             if ($sourceId && $sourceId != '*' && $source != $sourceId) {
                 continue;

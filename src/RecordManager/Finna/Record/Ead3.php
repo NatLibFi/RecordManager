@@ -157,6 +157,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         }
 
         if (isset($doc->did->physdesc)) {
+            $material = [];
             foreach ($doc->did->physdesc as $physdesc) {
                 if (isset($physdesc->attributes()->label)) {
                     $material[] = (string)$physdesc . ' '
@@ -643,7 +644,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                     continue;
                 }
                 foreach ($el->p as $p) {
-                    $desc[] = trim(html_entity_decode((string)$el->p));
+                    $desc[] = trim(html_entity_decode((string)$p));
                 }
             }
             if (!empty($desc)) {

@@ -947,8 +947,7 @@ class Marc extends Base
     public function getUniqueIDs()
     {
         $arr = [];
-        $form = isset($this->config['Site']['unicode_normalization_form'])
-            ? $this->config['Site']['unicode_normalization_form'] : 'NFKC';
+        $form = $this->config['Site']['unicode_normalization_form'] ?? 'NFKC';
         $nbn = $this->getField('015');
         if ($nbn) {
             $nr = MetadataUtils::normalizeKey(
@@ -1461,7 +1460,7 @@ class Marc extends Base
      *
      * @param string $marc MARCXML
      *
-     * @throws Exception
+     * @throws \Exception
      * @return void
      */
     protected function parseXML($marc)
@@ -1509,7 +1508,7 @@ class Marc extends Base
      *
      * @param string $marc ISO2709 string
      *
-     * @throws Exception
+     * @throws \Exception
      * @return void
      */
     protected function parseISO2709($marc)
@@ -1753,7 +1752,7 @@ class Marc extends Base
             }
             return $field['i2'];
         default:
-            die("Invalid indicator '$indicator' requested\n");
+            throw new \Exception("Invalid indicator '$indicator' requested");
         }
     }
 
@@ -1941,7 +1940,7 @@ class Marc extends Base
 
                 // Check for required subfields
                 if (isset($fieldspec[3])) {
-                    foreach ($fieldspec[3] as $required => $dummy) {
+                    foreach (array_keys($fieldspec[3]) as $required) {
                         $found = false;
                         foreach ($field['s'] as $subfield) {
                             if ($required == key($subfield)) {

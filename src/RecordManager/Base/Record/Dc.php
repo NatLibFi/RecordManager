@@ -118,7 +118,7 @@ class Dc extends Base
 
         // allfields
         $allFields = [];
-        foreach ($doc->children() as $tag => $field) {
+        foreach ($doc->children() as $field) {
             $allFields[] = MetadataUtils::stripTrailingPunctuation(
                 trim((string)$field)
             );

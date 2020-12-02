@@ -45,7 +45,7 @@ class MarcAuthOnkiLightEnrichment extends OnkiLightEnrichment
      * @param object $record    Metadata Record
      * @param array  $solrArray Metadata to be sent to Solr
      *
-     * @throws Exception
+     * @throws \Exception
      * @return void
      */
     public function enrich($sourceId, $record, &$solrArray)
@@ -55,9 +55,7 @@ class MarcAuthOnkiLightEnrichment extends OnkiLightEnrichment
         }
         foreach ($record->getFields('374') as $recField) {
             if ($id = $record->getSubfield($recField, '0')) {
-                $this->enrichField(
-                    $sourceId, $record, $solrArray, $id, 'occupation_str_mv', true
-                );
+                $this->enrichField($solrArray, $id, 'occupation_str_mv', true);
             }
         }
     }

@@ -47,7 +47,7 @@ class Forward extends Base
     /**
      * The XML document
      *
-     * @var SimpleXMLElement
+     * @var \SimpleXMLElement
      */
     protected $doc = null;
 
@@ -270,7 +270,7 @@ class Forward extends Base
     /**
      * Get the main metadata element
      *
-     * @return SimpleXMLElement
+     * @return \SimpleXMLElement
      */
     protected function getMainElement()
     {
@@ -339,7 +339,7 @@ class Forward extends Base
     /**
      * Get relator code for the agent
      *
-     * @param SimpleXMLElement $agent Agent
+     * @param \SimpleXMLElement $agent Agent
      *
      * @return string
      */

@@ -94,7 +94,7 @@ class MongoDatabase extends AbstractDatabase
      *
      * @param array $config Database settings
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct(array $config)
     {

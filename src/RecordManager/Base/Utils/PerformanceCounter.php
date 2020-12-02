@@ -63,7 +63,7 @@ class PerformanceCounter
     /**
      * Add the current count
      *
-     * @param number $count Current progress
+     * @param int $count Current progress
      *
      * @return void
      */
@@ -78,7 +78,7 @@ class PerformanceCounter
     /**
      * Get the speed as units / second
      *
-     * @return number
+     * @return int
      */
     public function getSpeed()
     {

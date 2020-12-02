@@ -329,8 +329,8 @@ class Lido extends Base
     /**
      * Get the last sublocation (partOfPlace) of a place
      *
-     * @param simpleXMLElement $place Place element
-     * @param bool             $isSub Is the current $place a sublocation
+     * @param \SimpleXMLElement $place Place element
+     * @param bool              $isSub Is the current $place a sublocation
      *
      * @return string
      */
@@ -700,7 +700,7 @@ class Lido extends Base
     /**
      * Get all XML fields
      *
-     * @param SimpleXMLElement $xml The XML document
+     * @param \SimpleXMLElement $xml The XML document
      *
      * @return array
      */
@@ -823,7 +823,7 @@ class Lido extends Base
      *
      * @param string|string[] $event Which events to use (omit to scan all events)
      *
-     * @return simpleXMLElement[] Array of event nodes
+     * @return \simpleXMLElement[] Array of event nodes
      */
     protected function getEventNodes($event = null)
     {
@@ -861,7 +861,7 @@ class Lido extends Base
      *
      * @param string|string[] $types Which subject types to include
      *
-     * @return simpleXMLElement[] Array of subjectSet nodes
+     * @return \simpleXMLElement[] Array of subjectSet nodes
      */
     protected function getTitleSetNodes($types = [])
     {
@@ -884,7 +884,7 @@ class Lido extends Base
     /**
      * Get all subject sets
      *
-     * @return simpleXMLElement[] Array of subjectSet nodes
+     * @return \simpleXMLElement[] Array of subjectSet nodes
      */
     protected function getSubjectSetNodes()
     {
@@ -909,7 +909,7 @@ class Lido extends Base
      *
      * @param string|string[] $exclude Which subject types to exclude
      *
-     * @return simpleXMLElement[] Array of subject nodes
+     * @return \simpleXMLElement[] Array of subject nodes
      */
     protected function getSubjectNodes($exclude = [])
     {
@@ -934,7 +934,7 @@ class Lido extends Base
      *
      * @param string|string[] $exclude Which description types to exclude
      *
-     * @return simpleXMLElement[] Array of objectDescriptionSet nodes
+     * @return \simpleXMLElement[] Array of objectDescriptionSet nodes
      */
     protected function getObjectDescriptionSetNodes($exclude = [])
     {
@@ -967,7 +967,7 @@ class Lido extends Base
      *
      * @param string[] $relatedWorkRelType Which relation types to include
      *
-     * @return simpleXMLElement[] Array of relatedWorkSet nodes
+     * @return \simpleXMLElement[] Array of relatedWorkSet nodes
      */
     protected function getRelatedWorkSetNodes($relatedWorkRelType = [])
     {
@@ -1002,7 +1002,7 @@ class Lido extends Base
     /**
      * Get resource sets
      *
-     * @return simpleXMLElement[] Array of resourceSet nodes
+     * @return \simpleXMLElement[] Array of resourceSet nodes
      */
     protected function getResourceSetNodes()
     {
