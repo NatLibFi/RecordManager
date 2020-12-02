@@ -64,7 +64,7 @@ EOT;
         exit(1);
     }
 
-    $lockfile = isset($params['lockfile']) ? $params['lockfile'] : '';
+    $lockfile = $params['lockfile'] ?? '';
     $lockhandle = false;
     try {
         if (($lockhandle = acquireLock($lockfile)) === false) {
@@ -75,10 +75,10 @@ EOT;
             $basePath,
             $config,
             true,
-            isset($params['verbose']) ? $params['verbose'] : false
+            $params['verbose'] ?? false
         );
 
-        $delete = isset($params['delete']) ? $params['delete'] : false;
+        $delete = $params['delete'] ?? false;
         $import->launch($params['source'], $params['file'], $delete);
     } catch (\Exception $e) {
         releaseLock($lockhandle);

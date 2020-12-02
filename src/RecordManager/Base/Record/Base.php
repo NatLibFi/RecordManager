@@ -115,9 +115,8 @@ class Base
     {
         $this->source = $source;
         $this->idPrefix
-            = isset($this->dataSourceSettings[$source]['idPrefix'])
-            ? $this->dataSourceSettings[$source]['idPrefix']
-            : $source;
+            = $this->dataSourceSettings[$source]['idPrefix']
+            ?? $source;
     }
 
     /**

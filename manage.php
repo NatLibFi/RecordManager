@@ -87,22 +87,21 @@ EOT;
         exit(1);
     }
 
-    $lockfile = isset($params['lockfile']) ? $params['lockfile'] : '';
+    $lockfile = $params['lockfile'] ?? '';
     $lockhandle = false;
-    $verbose = isset($params['verbose']) ? $params['verbose'] : false;
+    $verbose = $params['verbose'] ?? false;
     try {
         if (($lockhandle = acquireLock($lockfile)) === false) {
             die();
         }
 
-        $sources = isset($params['source']) ? $params['source'] : '';
-        $single = isset($params['single']) ? $params['single'] : '';
-        $noCommit = isset($params['nocommit']) ? $params['nocommit'] : false;
+        $sources = $params['source'] ?? '';
+        $single = $params['single'] ?? '';
+        $noCommit = $params['nocommit'] ?? false;
 
         // Solr update, compare and dump can handle multiple sources at once
         if ($params['func'] == 'updatesolr') {
-            $date = isset($params['all'])
-                ? '' : (isset($params['from']) ? $params['from'] : null);
+            $date = isset($params['all']) ? '' : ($params['from'] ?? null);
             $datePerServer = !empty($params['dateperserver']);
 
             $solrUpdate = new \RecordManager\Base\Controller\SolrUpdate(
@@ -110,19 +109,16 @@ EOT;
             );
             $solrUpdate->launch($date, $sources, $single, $noCommit, $datePerServer);
         } elseif ($params['func'] == 'comparesolr') {
-            $date = isset($params['all'])
-                ? '' : (isset($params['from']) ? $params['from'] : null);
-            $log = isset($params['comparelog']) ? $params['comparelog'] : '-';
+            $date = isset($params['all']) ? '' : ($params['from'] ?? null);
+            $log = $params['comparelog'] ?? '-';
 
             $solrCompare = new \RecordManager\Base\Controller\SolrCompare(
                 $basePath, $config, true, $verbose
             );
             $solrCompare->launch($log, $date, $sources, $single);
         } elseif ($params['func'] == 'dumpsolr') {
-            $date = isset($params['all'])
-                ? '' : (isset($params['from']) ? $params['from'] : null);
-            $dumpPrefix = isset($params['dumpprefix'])
-                ? $params['dumpprefix'] : 'dumpsolr';
+            $date = isset($params['all']) ? '' : ($params['from'] ?? null);
+            $dumpPrefix = $params['dumpprefix'] ?? 'dumpsolr';
             $mapped = isset($params['mapped'])
                 ? ('false' !== $params['mapped']) : true;
 
@@ -187,13 +183,17 @@ EOT;
                     $solrOptimize->launch();
                     break;
                 case 'count':
+                    if (empty($params['field'])) {
+                        echo "--field must be specified\n";
+                        exit(1);
+                    }
                     $countValues = new \RecordManager\Base\Controller\CountValues(
                         $basePath, $config, true, $verbose
                     );
                     $countValues->launch(
                         $source,
-                        isset($params['field']) ? $params['field'] : null,
-                        isset($params['mapped']) ? $params['mapped'] : false
+                        $params['field'],
+                        $params['mapped'] ?? false
                     );
                     break;
                 case 'checkdedup':

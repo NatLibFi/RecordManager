@@ -947,8 +947,7 @@ class Marc extends Base
     public function getUniqueIDs()
     {
         $arr = [];
-        $form = isset($this->config['Site']['unicode_normalization_form'])
-            ? $this->config['Site']['unicode_normalization_form'] : 'NFKC';
+        $form = $this->config['Site']['unicode_normalization_form'] ?? 'NFKC';
         $nbn = $this->getField('015');
         if ($nbn) {
             $nr = MetadataUtils::normalizeKey(
