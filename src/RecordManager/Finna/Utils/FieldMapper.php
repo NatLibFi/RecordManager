@@ -63,7 +63,7 @@ class FieldMapper extends \RecordManager\Base\Utils\FieldMapper
     {
         parent::__construct($basePath, $defaultMappings, $dataSourceSettings);
 
-        foreach ($this->settings as $source => &$settings) {
+        foreach ($this->settings as &$settings) {
             if (empty($settings['mappingFiles']['format_ext_str_mv'])
                 && !empty($settings['mappingFiles']['format'])
             ) {

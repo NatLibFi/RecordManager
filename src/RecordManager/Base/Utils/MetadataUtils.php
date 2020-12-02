@@ -400,8 +400,9 @@ class MetadataUtils
 
         $a1a = explode(' ', $a1);
         $a2a = explode(' ', $a2);
+        $minCount = min(count($a1a), count($a2a));
 
-        for ($i = 0; $i < min(count($a1a), count($a2a)); $i++) {
+        for ($i = 0; $i < $minCount; $i++) {
             if ($a1a[$i] != $a2a[$i]) {
                 // First word needs to match
                 if ($i == 0) {

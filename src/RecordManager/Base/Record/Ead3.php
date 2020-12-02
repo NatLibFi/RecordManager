@@ -455,7 +455,7 @@ class Ead3 extends Ead
     protected function getAllFields($xml)
     {
         $allFields = [];
-        foreach ($xml->children() as $tag => $field) {
+        foreach ($xml->children() as $field) {
             $s = trim((string)$field);
             if ($s) {
                 $allFields[] = $s;

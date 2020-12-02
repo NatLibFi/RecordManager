@@ -117,7 +117,7 @@ class OaiPmhProvider extends AbstractBase
         $this->printPrefix();
         if (!$this->checkParameters()) {
             $this->printSuffix();
-            die();
+            return;
         }
         switch ($this->verb) {
         case 'GetRecord':
@@ -166,8 +166,7 @@ class OaiPmhProvider extends AbstractBase
                 'The value of the identifier argument is unknown or illegal in'
                 . ' this repository.'
             );
-            $this->printSuffix();
-            die();
+            return;
         }
         $xml = $this->createRecord($record, $prefix, true);
         echo <<<EOT
@@ -220,8 +219,7 @@ EOT;
             $params = explode('|', $resumptionToken);
             if (count($params) != 5) {
                 $this->error('badResumptionToken', '');
-                $this->printSuffix();
-                die();
+                return;
             }
             $set = $params[0];
             $metadataPrefix = $params[1];
@@ -240,8 +238,7 @@ EOT;
         if ($set) {
             if (!isset($this->sets[$set])) {
                 $this->error('noRecordsMatch', 'Requested set does not exist');
-                $this->printSuffix();
-                die();
+                return;
             }
             foreach ($this->sets[$set] as $key => $value) {
                 if ($key == 'name') {
@@ -318,8 +315,7 @@ EOT;
 
         if ($count == 0) {
             $this->error('noRecordsMatch', '');
-            $this->printSuffix();
-            die();
+            return;
         }
 
         echo <<<EOT
@@ -347,8 +343,7 @@ EOT;
                     'The value of the identifier argument is unknown or illegal in'
                     . ' this repository.'
                 );
-                $this->printSuffix();
-                die();
+                return;
             }
             $source = $record['source_id'];
         }
@@ -362,7 +357,7 @@ EOT;
                 continue;
             }
             $formats[$datasource['format']] = 1;
-            foreach ($datasource as $key => $value) {
+            foreach (array_keys($datasource) as $key) {
                 if (preg_match('/transformation_to_(.+)/', $key, $matches)) {
                     $formats[$matches[1]] = 1;
                 }
@@ -375,7 +370,7 @@ EOT;
 EOT;
 
         // Map to OAI-PMH formats
-        foreach ($formats as $key => $dummy) {
+        foreach (array_keys($formats) as $key) {
             foreach ($this->formats as $id => $settings) {
                 if ($settings['format'] == $key) {
                     $prefix = $this->escape($id);
@@ -634,7 +629,7 @@ EOT;
                     $this->error('badArgument', 'Missing argument "metadataPrefix"');
                     return false;
                 }
-                foreach ($_GET as $key => $value) {
+                foreach (array_keys($_GET) as $key) {
                     $validVerb = in_array(
                         $key, ['verb', 'from', 'until', 'set', 'metadataPrefix']
                     );
@@ -666,8 +661,7 @@ EOT;
             break;
         default:
             $this->error('badVerb', 'Invalid verb');
-            $this->printSuffix();
-            die();
+            return false;
         }
 
         // Check dates

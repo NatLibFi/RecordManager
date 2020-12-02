@@ -239,7 +239,7 @@ class HTTPFiles extends Base
         $files = [];
         foreach ($matches as $match) {
             $filename = $match[1];
-            $date = $this->getFileDate($filename, $responseStr);
+            $date = $this->getFileDate($filename);
             if ($date === false) {
                 $this->warningMsg("Invalid filename date in '$filename'");
                 continue;
@@ -378,15 +378,14 @@ class HTTPFiles extends Base
     }
 
     /**
-     * Extract file date from the file name or directory list response data
+     * Extract file date from the file name
      *
-     * @param string $filename    File name
-     * @param string $responseStr Full HTTP directory listing response
+     * @param string $filename File name
      *
      * @return string|false Date in ISO8601 format or false if date could not be
      * determined
      */
-    protected function getFileDate($filename, $responseStr)
+    protected function getFileDate($filename)
     {
         $match = preg_match(
             '/(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)/', $filename, $dateparts

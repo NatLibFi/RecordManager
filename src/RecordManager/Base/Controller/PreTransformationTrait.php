@@ -86,6 +86,7 @@ trait PreTransformationTrait
         if (!empty($settings['reParseTransformed'])) {
             $xml = $xslt->transformToXml($doc);
             $doc = new \DOMDocument();
+            $errors = '';
             $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
             if (false === $result || $errors) {
                 throw new \Exception($errors ?: 'Unknown error');
