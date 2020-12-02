@@ -54,8 +54,7 @@ class CountValues extends AbstractBase
     public function launch($sourceId, $field, $mapped)
     {
         if (!$field) {
-            echo "Field must be specified\n";
-            exit;
+            throw new \Exception('Field must be specified');
         }
         $updater = new SolrUpdater(
             $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
