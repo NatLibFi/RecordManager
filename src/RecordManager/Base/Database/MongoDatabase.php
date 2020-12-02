@@ -57,7 +57,7 @@ class MongoDatabase extends AbstractDatabase
     /**
      * Mongo database
      *
-     * @var MongoDB
+     * @var \MongoDB\Database
      */
     protected $db;
 
@@ -88,6 +88,14 @@ class MongoDatabase extends AbstractDatabase
      * @var int
      */
     protected $pid = null;
+
+    /**
+     * Whether to report actual counts. When false, all count methods return 'the'
+     * instead.
+     *
+     * @var bool
+     */
+    protected $counts = false;
 
     /**
      * Constructor.
@@ -277,7 +285,7 @@ class MongoDatabase extends AbstractDatabase
     /**
      * Get a dedup record
      *
-     * @param string|ObjectID $id Record ID
+     * @param mixed $id Record ID
      *
      * @return array|null
      */
@@ -708,7 +716,7 @@ class MongoDatabase extends AbstractDatabase
     /**
      * Get a database connection
      *
-     * @return \MongoDB
+     * @return \MongoDB\Database
      */
     public function getDb()
     {

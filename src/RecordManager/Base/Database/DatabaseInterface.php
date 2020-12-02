@@ -45,7 +45,7 @@ interface DatabaseInterface
      *
      * @param array $config Database settings
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct(array $config);
 
@@ -192,7 +192,7 @@ interface DatabaseInterface
     /**
      * Get a dedup record
      *
-     * @param string|ObjectID $id Record ID
+     * @param mixed $id Record ID
      *
      * @return array|null
      */

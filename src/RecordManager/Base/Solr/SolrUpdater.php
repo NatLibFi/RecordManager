@@ -66,7 +66,7 @@ class SolrUpdater
     /**
      * Database
      *
-     * @var \RecordManager\Base\Database\Database
+     * @var \RecordManager\Base\Database\AbstractDatabase
      */
     protected $db;
 

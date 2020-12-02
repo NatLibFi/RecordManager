@@ -46,14 +46,6 @@ abstract class AbstractDatabase implements DatabaseInterface
     protected $defaultPageSize = 1000;
 
     /**
-     * Whether to report actual counts. When false, all count methods return 'the'
-     * instead.
-     *
-     * @var bool
-     */
-    protected $counts = false;
-
-    /**
      * Dedup collection name
      *
      * @var string
@@ -93,7 +85,7 @@ abstract class AbstractDatabase implements DatabaseInterface
      *
      * @param array $config Database settings
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct(array $config)
     {
@@ -262,7 +254,7 @@ abstract class AbstractDatabase implements DatabaseInterface
     /**
      * Get a dedup record
      *
-     * @param string|ObjectID $id Record ID
+     * @param mixed $id Record ID
      *
      * @return array|null
      */

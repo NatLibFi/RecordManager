@@ -102,7 +102,7 @@ class PDODatabase extends AbstractDatabase
      *
      * @param array $config Database settings
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct(array $config)
     {
@@ -281,7 +281,7 @@ class PDODatabase extends AbstractDatabase
     /**
      * Get a dedup record
      *
-     * @param string|ObjectID $id Record ID
+     * @param mixed $id Record ID
      *
      * @return array|null
      */
@@ -654,10 +654,6 @@ class PDODatabase extends AbstractDatabase
     protected function countPDORecords(string $collection, array $filter,
         array $options
     ) {
-        if (!$this->counts) {
-            return 'the';
-        }
-
         list($where, $params) = $this->filterToSQL($collection, $filter);
         list(, $sqlOptions) = $this->optionsToSQL($options);
         $sql = "select count(*) from $collection where $where $sqlOptions";
@@ -1016,7 +1012,7 @@ class PDODatabase extends AbstractDatabase
                     $params[] = $value['$lte'];
                 }
             } else {
-                if ($value instanceof Regex) {
+                if ($value instanceof \RecordManager\Base\Database\Regex) {
                     $params[] = (string)$value;
                     $where[]
                         = $this->mapFieldToQuery($collection, $field, ' REGEXP ');
@@ -1148,7 +1144,7 @@ class PDOResultIterator extends \IteratorIterator
     /**
      * Database
      *
-     * @var \PDODatabase
+     * @var PDODatabase
      */
     protected $db;
 

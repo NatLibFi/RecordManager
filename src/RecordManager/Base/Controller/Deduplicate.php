@@ -237,10 +237,6 @@ class Deduplicate extends AbstractBase
                 );
                 throw $e;
             }
-            if ($this->terminate) {
-                $this->logger->logInfo('deduplicate', 'Termination upon request');
-                exit(1);
-            }
         }
         $this->logger->logInfo('deduplicate', 'Deduplication completed');
     }
