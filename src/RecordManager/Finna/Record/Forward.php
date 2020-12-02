@@ -44,7 +44,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Forward extends \RecordManager\Base\Record\Forward
 {
-    use FinnaRecordTrait;
+    use AuthoritySupportTrait;
     use ForwardRecordTrait;
 
     /**

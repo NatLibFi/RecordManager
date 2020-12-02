@@ -1690,10 +1690,6 @@ class SolrUpdater
                 if (!isset($this->settings[$source])) {
                     $this->log->logError(
                         'countValues',
-                        "No settings found for data source '$source'"
-                    );
-                    $this->log->logError(
-                        'countValues',
                         "No settings found for data source '$source', record "
                             . $record['_id']
                     );
@@ -1721,7 +1717,7 @@ class SolrUpdater
                         ->transformToSolrArray($metadataRecord->toXML(), $params);
                 } else {
                     $data = $metadataRecord->toSolrArray($this->db);
-                    $this->enrich($source, $settings, $metadataRecord, $data);
+                    $this->enrich($source, $settings, $metadataRecord, $data, '');
                 }
             }
             if (isset($data[$field])) {
@@ -2026,7 +2022,7 @@ class SolrUpdater
                 ->transformToSolrArray($metadataRecord->toXML(), $params);
         } else {
             $data = $metadataRecord->toSolrArray($this->db);
-            $this->enrich($source, $settings, $metadataRecord, $data);
+            $this->enrich($source, $settings, $metadataRecord, $data, '');
         }
 
         $data['id'] = $this->createSolrId($record['_id']);
@@ -2324,6 +2320,8 @@ class SolrUpdater
             }
         }
 
+        $this->enrich($source, $settings, $metadataRecord, $data, 'final');
+
         return $data;
     }
 
@@ -2397,28 +2395,27 @@ class SolrUpdater
         // Analyze the records to find the best record to be used as the base
         foreach ($records as &$record) {
             $fieldCount = 0;
-            $capsRatio = 0;
+            $capsRatios = 0;
             $titleLen = isset($record['solr']['title'])
-                ? strlen($record['solr']['title']) : 0;
-            foreach ($record['solr'] as $key => $field) {
-                if (!isset($this->scoredFields[$key])) {
-                    continue;
-                }
-                foreach ((array)$field as $content) {
+                ? mb_strlen($record['solr']['title'], 'UTF-8') : 0;
+            $fields = array_intersect_key($record['solr'], $this->scoredFields);
+            array_walk_recursive(
+                $fields,
+                function ($field) use (&$fieldCount, &$capsRatios) {
                     ++$fieldCount;
 
-                    $contentLower = mb_strtolower($content, 'UTF-8');
-                    $similar = similar_text($content, $contentLower);
-                    // Use normal strlen since similar_text doesn't support MB
-                    $length = strlen($content);
-                    $capsRatio += 1 - $similar / $length;
+                    $uppercase = preg_match_all('/[\p{Lu}]/u', $field);
+                    $length = mb_strlen($field, 'UTF-8');
+                    if ($length) {
+                        $capsRatios += $uppercase / $length;
+                    }
                 }
-            }
+            );
             if (0 === $fieldCount) {
                 $record['score'] = 0;
             } else {
                 $baseScore = $fieldCount + $titleLen;
-                $capsRatio /= $fieldCount;
+                $capsRatio = $capsRatios / $fieldCount;
                 $record['score'] = 0 == $capsRatio ? $fieldCount
                     : $baseScore / $capsRatio;
             }
@@ -2609,7 +2606,7 @@ class SolrUpdater
      */
     protected function initSolrRequest($method, $timeout = null)
     {
-        $request = new \HTTP_Request2(
+        $request = \RecordManager\Base\Http\ClientFactory::createClient(
             $this->config['Solr']['update_url'],
             $method,
             $this->httpParams
@@ -2618,7 +2615,6 @@ class SolrUpdater
             $request->setConfig('timeout', $timeout);
         }
         $request->setHeader('Connection', 'Keep-Alive');
-        $request->setHeader('User-Agent', 'RecordManager');
         // At least some combinations of PHP + curl cause both Transfer-Encoding and
         // Content-Length to be set in certain cases. Set follow_redirects to true to
         // invoke the PHP workaround in the curl adapter.
@@ -2969,10 +2965,14 @@ class SolrUpdater
      * @param array  $settings Data source settings
      * @param object $record   Metadata record
      * @param array  $data     Array of Solr fields
+     * @param string $stage    Stage of record processing
+     *                         - empty is for default, i.e. right after record has
+     *                         been converted to a Solr array but not mapped
+     *                         - "final" is for final Solr array after mappings etc.
      *
      * @return void
      */
-    protected function enrich($source, $settings, $record, &$data)
+    protected function enrich($source, $settings, $record, &$data, $stage = '')
     {
         $enrichments = array_unique(
             array_merge(
@@ -2980,7 +2980,13 @@ class SolrUpdater
                 (array)($settings['enrichments'] ?? [])
             )
         );
-        foreach ($enrichments as $enrichment) {
+        foreach ($enrichments as $enrichmentSettings) {
+            $parts = explode(',', $enrichmentSettings);
+            $enrichment = $parts[0];
+            $enrichmentStage = $parts[1] ?? '';
+            if ($stage !== $enrichmentStage) {
+                continue;
+            }
             if (!isset($this->enrichments[$enrichment])) {
                 $className = $enrichment;
                 if (strpos($className, '\\') === false) {
@@ -3124,45 +3130,45 @@ class SolrUpdater
             return $value;
         }
 
-        $foundLimit = null;
-        foreach ($this->maxFieldLengths as $key => $limit) {
-            if ('__default__' === $key) {
-                continue;
-            }
-            if ($field === $key) {
-                $foundLimit = $limit;
-                break;
-            }
-            $left = strncmp('*', $key, 1) === 0;
-            if ($left) {
-                $key = substr($key, 1);
-            }
-            $right = substr($key, -1) === '*';
-            if ($right) {
-                $key = substr($key, 0, -1);
-            }
+        $foundLimit = $this->maxFieldLengths[$field] ?? null;
+        if (null === $foundLimit) {
+            foreach ($this->maxFieldLengths as $key => $limit) {
+                if ('__default__' === $key) {
+                    continue;
+                }
+                $left = strncmp('*', $key, 1) === 0;
+                if ($left) {
+                    $key = substr($key, 1);
+                }
+                $right = substr($key, -1) === '*';
+                if ($right) {
+                    $key = substr($key, 0, -1);
+                }
 
-            if ($left && $right) {
-                if (strpos($field, $key) !== false) {
-                    $foundLimit = $limit;
-                    break;
-                }
-            } elseif ($left) {
-                if ($key === substr($field, -strlen($key))) {
-                    $foundLimit = $limit;
-                    break;
-                }
-            } elseif ($right) {
-                if (strncmp($key, $field, strlen($key)) === 0) {
-                    $foundLimit = $limit;
-                    break;
+                if ($left && $right) {
+                    if (strpos($field, $key) !== false) {
+                        $foundLimit = $limit;
+                        break;
+                    }
+                } elseif ($left) {
+                    if ($key === substr($field, -strlen($key))) {
+                        $foundLimit = $limit;
+                        break;
+                    }
+                } elseif ($right) {
+                    if (strncmp($key, $field, strlen($key)) === 0) {
+                        $foundLimit = $limit;
+                        break;
+                    }
                 }
             }
+            if (null === $foundLimit) {
+                $foundLimit = $this->maxFieldLengths['__default__'] ?? null;
+            }
+            // Store the result for easier lookup further on
+            $this->maxFieldLengths[$field] = $foundLimit;
         }
 
-        if (null == $foundLimit) {
-            $foundLimit = $this->maxFieldLengths['__default__'] ?? null;
-        }
         if ($foundLimit) {
             $value = mb_substr($value, 0, $foundLimit, 'UTF-8');
         }

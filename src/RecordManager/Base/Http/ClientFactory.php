@@ -1,10 +1,10 @@
 <?php
 /**
- * Enrich Marc biblio records with authority record data.
+ * HTTP client factory
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2014-2020.
+ * Copyright (c) The National Library of Finland 2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -21,43 +21,46 @@
  *
  * @category DataManagement
  * @package  RecordManager
- * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Base\Enrichment;
+namespace RecordManager\Base\Http;
 
 /**
- * Enrich Marc biblio records with authority record data.
+ * HTTP client factory
  *
  * @category DataManagement
  * @package  RecordManager
- * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class MarcAuthEnrichment extends AuthEnrichment
+class ClientFactory
 {
     /**
-     * Enrich the record and return any additions in solrArray
+     * Create an \HTTP_Request2 instance
      *
-     * @param string $sourceId  Source ID
-     * @param object $record    Metadata Record
-     * @param array  $solrArray Metadata to be sent to Solr
+     * @param string $url    Request URL
+     * @param string $method Request method
+     * @param array  $config Configuration for this Request instance
      *
-     * @throws Exception
-     * @return void
+     * @return \HTTP_Request2
      */
-    public function enrich($sourceId, $record, &$solrArray)
-    {
-        if (!($record instanceof \RecordManager\Base\Record\Marc)) {
-            return;
+    public static function createClient(string $url, string $method, array $config
+    ): \HTTP_Request2 {
+        if (isset($config['disable_proxy_hosts'])) {
+            if ($url && !empty($config['proxy'])) {
+                $host = parse_url($url, PHP_URL_HOST);
+                if (in_array($host, (array)$config['disable_proxy_hosts'])) {
+                    $config['proxy'] = '';
+                }
+            }
+            unset($config['disable_proxy_hosts']);
         }
 
-        foreach ($solrArray['author2_id_str_mv'] ?? [] as $id) {
-            $this->enrichField(
-                $sourceId, $record, $solrArray, $id, 'author_variant', true
-            );
-        }
+        $result = new \HTTP_Request2($url, $method, $config);
+        $result->setHeader('User-Agent', 'RecordManager');
+        return $result;
     }
 }

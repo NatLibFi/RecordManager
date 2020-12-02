@@ -393,17 +393,16 @@ class OaiPmh extends Base
     protected function sendRequest($verb, $params = [])
     {
         // Set up the request:
-        $request = new \HTTP_Request2(
+        $request = \RecordManager\Base\Http\ClientFactory::createClient(
             $this->baseURL,
             \HTTP_Request2::METHOD_GET,
             $this->httpParams
         );
-        $request->setHeader('User-Agent', 'RecordManager');
 
         // Load request parameters:
         $url = $request->getURL();
         $params['verb'] = $verb;
-        $url->setQueryVariables($params);
+        $url->setQueryVariables(array_merge($url->getQueryVariables(), $params));
 
         $urlStr = $url->getURL();
         if ($this->debugLog) {

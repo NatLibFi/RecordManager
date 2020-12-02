@@ -61,7 +61,7 @@ class MetadataUtils
      *
      * @var array
      */
-    protected static $abbreviations = null;
+    protected static $abbreviations = [];
 
     /**
      * Articles that should be removed from the beginning of sort keys.
@@ -153,7 +153,9 @@ class MetadataUtils
 
         // Read the abbreviations file
         self::$abbreviations = isset($config['Site']['abbreviations'])
-            ? self::readListFile($basePath, $config['Site']['abbreviations']) : [];
+            ? array_flip(
+                self::readListFile($basePath, $config['Site']['abbreviations'])
+            ) : [];
 
         // Read the artices file
         self::$articles = isset($config['Site']['articles'])
@@ -458,7 +460,7 @@ class MetadataUtils
             $str = rtrim($str, $basic);
         }
 
-        // Don't replace an initial letter followed by period
+        // Don't replace an initial letter or an abbreviation followed by period
         // (e.g. string "Smith, A.")
         if (substr($str, -1) == '.' && substr($str, -3, 1) != ' ') {
             $p = strrpos($str, ' ');
@@ -468,7 +470,7 @@ class MetadataUtils
                 $lastWord = substr($str, 0, -1);
             }
             if (!is_numeric($lastWord)
-                && !in_array(strtolower($lastWord), MetadataUtils::$abbreviations)
+                && !isset(MetadataUtils::$abbreviations[strtolower($lastWord)])
             ) {
                 $str = substr($str, 0, -1);
             }
@@ -1027,13 +1029,32 @@ class MetadataUtils
      * @param \DomDocument $dom     DOM
      * @param int          $options Additional libxml options (LIBXML_PARSEHUGE and
      *                              LIBXML_COMPACT are set by default)
+     * @param string       $errors  Any errors encountered
      *
      * @return \SimpleXMLElement|\DomDocument|bool
      */
-    public static function loadXML($xml, $dom = null, $options = 0)
-    {
+    public static function loadXML($xml, $dom = null, $options = 0,
+        &$errors = null
+    ) {
         $options |= LIBXML_PARSEHUGE | LIBXML_COMPACT;
-        return XmlSecurity::scan($xml, $dom, $options);
+        if (null === $errors) {
+            return XmlSecurity::scan($xml, $dom, $options);
+        }
+
+        $saveUseErrors = libxml_use_internal_errors(true);
+        libxml_clear_errors();
+        $errors = '';
+        $result = XmlSecurity::scan($xml, $dom, $options);
+        if (false === $result || libxml_get_last_error() !== false) {
+            $messageParts = [];
+            foreach (libxml_get_errors() as $error) {
+                $messageParts[] = '[' . $error->line . ':' . $error->column
+                    . '] Error ' . $error->code . ': ' . $error->message;
+            }
+            $errors = implode('; ', $messageParts);
+        }
+        libxml_use_internal_errors($saveUseErrors);
+        return $result;
     }
 
     /**

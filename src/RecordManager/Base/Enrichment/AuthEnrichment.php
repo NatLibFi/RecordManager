@@ -103,15 +103,7 @@ abstract class AuthEnrichment extends Enrichment
     protected function enrichField($sourceId, $record, &$solrArray,
         $id, $solrField, $includeInAllfields = false
     ) {
-        $recAuthSource = $record->getAuthorityNamespace();
-
-        if (!($data = $this->authorityDb->getRecord($recAuthSource . '.' . $id))) {
-            return;
-        }
-
-        $source = $data['source_id'];
-
-        if ($source !== $recAuthSource) {
+        if (!($data = $this->authorityDb->getRecord($id))) {
             return;
         }
 
@@ -119,7 +111,7 @@ abstract class AuthEnrichment extends Enrichment
             $data['format'],
             MetadataUtils::getRecordData($data, true),
             $id,
-            $source
+            $data['source_id']
         );
 
         if ($altNames = $authRecord->getAlternativeNames()) {

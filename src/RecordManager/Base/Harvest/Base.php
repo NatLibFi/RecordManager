@@ -129,6 +129,14 @@ class Base
     protected $preXslt = [];
 
     /**
+     * Whether to always re-parse transformation results e.g. to include any new
+     * nodes added by outputting non-encoded text.
+     *
+     * @var bool
+     */
+    protected $reParseTransformed = false;
+
+    /**
      * Record handling callback
      *
      * @var callable
@@ -208,6 +216,7 @@ class Base
                 $this->preXslt[] = $xslt;
             }
         }
+        $this->reParseTransformed = !empty($settings['reParseTransformed']);
 
         if (isset($config['Harvesting']['max_tries'])) {
             $this->maxTries = $config['Harvesting']['max_tries'];
@@ -391,6 +400,9 @@ class Base
     /**
      * Do pre-transformation
      *
+     * Always returns a string to make sure any elements added as unescaped strings
+     * are properly parsed.
+     *
      * @param string $xml       XML to transform
      * @param bool   $returnDoc Whether to return DOM document instead of string
      *
@@ -400,32 +412,31 @@ class Base
     protected function preTransform($xml, $returnDoc = false)
     {
         $doc = new \DOMDocument();
-        $saveUseErrors = libxml_use_internal_errors(true);
-        libxml_clear_errors();
-        $result = MetadataUtils::loadXML($xml, $doc);
-        if ($result === false || libxml_get_last_error() !== false) {
+        $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
+        if ($result === false || $errors) {
             $this->warningMsg('Invalid XML received, trying encoding fix...');
             $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
-            libxml_clear_errors();
-            $result = MetadataUtils::loadXML($xml, $doc);
+            $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
         }
-        if ($result === false || libxml_get_last_error() !== false) {
-            libxml_use_internal_errors($saveUseErrors);
-            $errors = '';
-            foreach (libxml_get_errors() as $error) {
-                if ($errors) {
-                    $errors .= '; ';
-                }
-                $errors .= 'Error ' . $error->code . ' at ' . $error->line . ':'
-                    . $error->column . ': ' . $error->message;
-            }
+        if ($result === false || $errors) {
             $this->fatalMsg("Could not parse XML: $errors");
             throw new \Exception("Failed to parse XML");
         }
-        libxml_use_internal_errors($saveUseErrors);
 
-        foreach ($this->preXslt as $xslt) {
-            $doc = $xslt->transformToDoc($doc);
+        if ($this->reParseTransformed) {
+            foreach ($this->preXslt as $xslt) {
+                $xml = $xslt->transformToXml($doc);
+                $doc = new \DOMDocument();
+                $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
+            }
+            if ($result === false || $errors) {
+                $this->fatalMsg("Could not parse XML: $errors");
+                throw new \Exception("Failed to parse XML");
+            }
+        } else {
+            foreach ($this->preXslt as $xslt) {
+                $doc = $xslt->transformToDoc($doc);
+            }
         }
 
         return $returnDoc ? $doc : $doc->saveXML();

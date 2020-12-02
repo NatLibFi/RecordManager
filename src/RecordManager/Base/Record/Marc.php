@@ -45,8 +45,6 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Marc extends Base
 {
-    use AuthoritySupportTrait;
-
     const SUBFIELD_INDICATOR = "\x1F";
     const END_OF_FIELD = "\x1E";
     const END_OF_RECORD = "\x1D";
@@ -409,15 +407,6 @@ class Marc extends Base
         $corporateAuthors = $this->getCorporateAuthors();
         $data['author_corporate'] = $corporateAuthors['names'];
         $data['author_corporate_role'] = $corporateAuthors['relators'];
-
-        $data['author2_id_str_mv'] = $this->getAuthorIds();
-        $data['author2_id_role_str_mv']
-            = array_merge(
-                $this->addNamespaceToAuthorityIds($primaryAuthors['idRoles']),
-                $this->addNamespaceToAuthorityIds($secondaryAuthors['idRoles']),
-                $this->addNamespaceToAuthorityIds($corporateAuthors['idRoles'])
-            );
-
         $data['author_additional'] = $this->getFieldsSubfields(
             [
                 [self::GET_BOTH, '505', ['r' => 1]]
@@ -654,24 +643,6 @@ class Marc extends Base
         }
 
         return $data;
-    }
-
-    /**
-     * Return author ids that are indexed to author2_id_str_mv
-     *
-     * @return array
-     */
-    public function getAuthorIds()
-    {
-        $primaryAuthors = $this->getPrimaryAuthors();
-        $secondaryAuthors = $this->getSecondaryAuthors();
-        $corporateAuthors = $this->getCorporateAuthors();
-
-        return array_merge(
-            $this->addNamespaceToAuthorityIds($primaryAuthors['ids']),
-            $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']),
-            $this->addNamespaceToAuthorityIds($corporateAuthors['ids'])
-        );
     }
 
     /**
@@ -919,11 +890,11 @@ class Marc extends Base
                     }
                     $title .= current($subfield);
                 }
-                $title = MetadataUtils::stripTrailingPunctuation($title);
                 if ($forFiling) {
                     $title = MetadataUtils::stripLeadingPunctuation($title);
                     $title = mb_strtolower($title, 'UTF-8');
                 }
+                $title = MetadataUtils::stripTrailingPunctuation($title);
                 if (!empty($title)) {
                     return $title;
                 }
@@ -2218,7 +2189,7 @@ class Marc extends Base
     protected function getAllFields()
     {
         $subfieldFilter = [
-            '650' => ['2' => 1, '6' => 1, '8' => 1],
+            '650' => ['0' => 1, '2' => 1, '6' => 1, '8' => 1],
             '773' => ['6' => 1, '7' => 1, '8' => 1, 'w' => 1],
             '856' => ['6' => 1, '8' => 1, 'q' => 1]
         ];
@@ -2228,7 +2199,7 @@ class Marc extends Base
                 foreach ($fields as $field) {
                     $subfields = $this->getAllSubfields(
                         $field,
-                        $subfieldFilter[$tag] ?? ['6' => 1, '8' => 1]
+                        $subfieldFilter[$tag] ?? ['0' => 1, '6' => 1, '8' => 1]
                     );
                     if ($subfields) {
                         $allFields = array_merge($allFields, $subfields);
@@ -2238,8 +2209,8 @@ class Marc extends Base
         }
         $allFields = array_map(
             function ($str) {
-                return MetadataUtils::stripLeadingPunctuation(
-                    MetadataUtils::stripTrailingPunctuation($str)
+                return MetadataUtils::stripTrailingPunctuation(
+                    MetadataUtils::stripLeadingPunctuation($str)
                 );
             },
             $allFields
@@ -2972,5 +2943,18 @@ class Marc extends Base
         }
 
         return $result;
+    }
+
+    /**
+     * Combine author id and role into a string that can be indexed.
+     *
+     * @param string $id   Id
+     * @param string $role Role
+     *
+     * @return string
+     */
+    protected function formatAuthorIdWithRole($id, $role)
+    {
+        return '';
     }
 }
