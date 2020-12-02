@@ -3,7 +3,8 @@
   <property name="tmp" value="/tmp" />
   <property name="package"  value="${phing.project.name}" override="true" />
   <property name="builddir" value="${tmp}/build/${phing.project.name}" override="true" />
-  <property name="srcdir"   value="${project.basedir}" override="true" />
+  <property name="basedir"  value="${project.basedir}" override="true" />
+  <property name="srcdir"   value="${basedir}/src/RecordManager" override="true" />
   <property name="php-cs-fixer-extra-params" value=""/>
 
   <!-- Main Target -->
@@ -15,23 +16,29 @@
     <phingcall target="phpunit"/>
     <phingcall target="phpcs"/>
     <phingcall target="php-cs-fixer-dryrun"/>
+    <phingcall target="phpmd"/>
   </target>
 
   <!-- PHPUnit -->
   <target name="phpunit" description="Run tests">
-    <exec command="${srcdir}/vendor/bin/phpunit -dzend.enable_gc=0 -c ${srcdir}/tests/phpunit.xml ${srcdir}/tests" passthru="true" checkreturn="true" />
+    <exec command="${basedir}/vendor/bin/phpunit -dzend.enable_gc=0 -c ${basedir}/tests/phpunit.xml ${basedir}/tests" passthru="true" checkreturn="true" />
   </target>
 
   <!-- PHP CodeSniffer -->
   <target name="phpcs">
-    <exec command="${srcdir}/vendor/bin/phpcs --standard=PEAR --extensions=php *.php ${srcdir}/src/RecordManager" escape="false" passthru="true" checkreturn="true" />
+    <exec command="${basedir}/vendor/bin/phpcs --standard=PEAR --extensions=php *.php ${srcdir}" escape="false" passthru="true" checkreturn="true" />
   </target>
 
   <!-- php-cs-fixer (first task applies fixes, second task simply checks if they are needed) -->
   <target name="php-cs-fixer">
-    <exec command="${srcdir}/vendor/bin/php-cs-fixer fix --config=${srcdir}/tests/recordmanager.php_cs -vvv" passthru="true" escape="false" />
+    <exec command="${basedir}/vendor/bin/php-cs-fixer fix --config=${basedir}/tests/recordmanager.php_cs -vvv" passthru="true" escape="false" />
   </target>
   <target name="php-cs-fixer-dryrun">
-    <exec command="${srcdir}/vendor/bin/php-cs-fixer fix --config=${srcdir}/tests/recordmanager.php_cs -vvv --dry-run --diff" passthru="true" escape="false" checkreturn="true" />
+    <exec command="${basedir}/vendor/bin/php-cs-fixer fix --config=${basedir}/tests/recordmanager.php_cs -vvv --dry-run --diff" passthru="true" escape="false" checkreturn="true" />
+  </target>
+
+  <!-- Report rule violations with PHPMD (mess detector) -->
+  <target name="phpmd">
+    <exec command="${basedir}/vendor/bin/phpmd ${srcdir} html ${basedir}/tests/phpmd.xml --reportfile ${basedir}/reports/phpmd.html" />
   </target>
 </project>
