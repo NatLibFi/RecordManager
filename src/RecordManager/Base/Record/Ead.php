@@ -221,9 +221,8 @@ class Ead extends Base
 
         if (isset($doc->did->repository)) {
             $data['institution']
-                = (string)(isset($doc->did->repository->corpname)
-                ? $doc->did->repository->corpname
-                : $doc->did->repository);
+                = (string)($doc->did->repository->corpname
+                ?? $doc->did->repository);
         }
 
         $data['series'] = $this->getSeries();

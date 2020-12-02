@@ -254,9 +254,8 @@ abstract class AbstractBase
      */
     protected function getDedupHandler()
     {
-        $dedupClass = isset($this->config['Site']['dedup_handler'])
-            ? $this->config['Site']['dedup_handler']
-            : '\RecordManager\Base\Deduplication\DedupHandler';
+        $dedupClass = $this->config['Site']['dedup_handler']
+            ?? '\RecordManager\Base\Deduplication\DedupHandler';
         $dedupHandler = new $dedupClass(
             $this->db, $this->logger, $this->verbose, $this->basePath, $this->config,
             $this->dataSourceSettings, $this->recordFactory

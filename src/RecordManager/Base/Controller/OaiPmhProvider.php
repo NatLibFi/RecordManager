@@ -103,8 +103,7 @@ class OaiPmhProvider extends AbstractBase
             . $this->config['OAI-PMH']['set_definitions'];
         $this->sets = parse_ini_file($setIni, true);
 
-        $this->idPrefix = isset($this->config['OAI-PMH']['id_prefix'])
-            ? $this->config['OAI-PMH']['id_prefix'] : '';
+        $this->idPrefix = $this->config['OAI-PMH']['id_prefix'] ?? '';
     }
 
     /**

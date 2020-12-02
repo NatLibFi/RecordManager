@@ -541,8 +541,7 @@ class WorkerPoolManager
      */
     public function getExternalProcessExitCode($pid)
     {
-        return isset($this->externalProcessExitCodes[$pid])
-            ? $this->externalProcessExitCodes[$pid] : null;
+        return $this->externalProcessExitCodes[$pid] ?? null;
     }
 
     /**

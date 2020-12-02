@@ -74,7 +74,7 @@ EOT;
         exit(1);
     }
 
-    $lockfile = isset($params['lockfile']) ? $params['lockfile'] : '';
+    $lockfile = $params['lockfile'] ?? '';
     $lockhandle = false;
     try {
         if (($lockhandle = acquireLock($lockfile)) === false) {
@@ -85,9 +85,9 @@ EOT;
             $basePath,
             $config,
             true,
-            isset($params['verbose']) ? $params['verbose'] : false
+            $params['verbose'] ?? false
         );
-        $from = isset($params['from']) ? $params['from'] : null;
+        $from = $params['from'] ?? null;
         if (isset($params['all']) || isset($params['reharvest'])) {
             $from = '-';
         }
@@ -95,10 +95,10 @@ EOT;
             $harvest->launch(
                 $source,
                 $from,
-                isset($params['until']) ? $params['until'] : null,
-                isset($params['override']) ? urldecode($params['override']) : '',
-                isset($params['exclude']) ? $params['exclude'] : null,
-                isset($params['reharvest']) ? $params['reharvest'] : ''
+                $params['until'] ?? null,
+                urldecode($params['override'] ?? ''),
+                $params['exclude'] ?? null,
+                $params['reharvest'] ?? ''
             );
         }
     } catch (\Exception $e) {

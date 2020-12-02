@@ -82,22 +82,22 @@ EOT;
         $basePath,
         $config,
         true,
-        isset($params['verbose']) ? $params['verbose'] : false
+        $params['verbose'] ?? false
     );
 
     $export->launch(
         $params['file'],
-        isset($params['deleted']) ? $params['deleted'] : '',
-        isset($params['from']) ? $params['from'] : '',
-        isset($params['until']) ? $params['until'] : '',
-        isset($params['createdfrom']) ? $params['createdfrom'] : '',
-        isset($params['createduntil']) ? $params['createduntil'] : '',
-        isset($params['skip']) ? $params['skip'] : 0,
-        isset($params['source']) ? $params['source'] : '',
-        isset($params['single']) ? $params['single'] : '',
-        isset($params['xpath']) ? $params['xpath'] : '',
-        isset($params['sortdedup']) ? $params['sortdedup'] : false,
-        isset($params['dedupid']) ? $params['dedupid'] : ''
+        $params['deleted'] ?? '',
+        $params['from'] ?? '',
+        $params['until'] ?? '',
+        $params['createdfrom'] ?? '',
+        $params['createduntil'] ?? '',
+        $params['skip'] ?? 0,
+        $params['source'] ?? '',
+        $params['single'] ?? '',
+        $params['xpath'] ?? '',
+        $params['sortdedup'] ?? false,
+        $params['dedupid'] ?? ''
     );
 }
 

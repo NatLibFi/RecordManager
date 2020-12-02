@@ -85,9 +85,8 @@ class OnkiLightEnrichment extends Enrichment
         parent::__construct($db, $logger, $config, $recordFactory);
 
         $this->onkiLightBaseURL
-            = isset($this->config['OnkiLightEnrichment']['base_url'])
-            ? $this->config['OnkiLightEnrichment']['base_url']
-            : '';
+            = $this->config['OnkiLightEnrichment']['base_url']
+            ?? '';
 
         $this->urlPrefixWhitelist
             = isset($this->config['OnkiLightEnrichment']['url_prefix_whitelist'])
