@@ -442,7 +442,7 @@ class Ead extends Base
     protected function getAllFields($xml)
     {
         $allFields = [];
-        foreach ($xml->children() as $tag => $field) {
+        foreach ($xml->children() as $field) {
             $s = trim((string)$field);
             if ($s) {
                 $allFields[] = $s;

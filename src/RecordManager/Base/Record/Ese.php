@@ -111,7 +111,7 @@ class Ese extends Base
 
         // allfields
         $allFields = [];
-        foreach ($doc->children() as $tag => $field) {
+        foreach ($doc->children() as $field) {
             $allFields[] = $field;
         }
         $data['allfields'] = $allFields;

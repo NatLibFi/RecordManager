@@ -109,17 +109,14 @@ abstract class AbstractBase
      *                         console
      * @param bool   $verbose  Whether verbose output is enabled
      */
-    public function __construct($basePath, $config, $console = false,
-        $verbose = false
-    ) {
+    public function __construct($basePath, $config, $console, $verbose)
+    {
         $this->config = $config;
 
         date_default_timezone_set($config['Site']['timezone']);
 
         $this->logger = new Logger($config);
-        if ($console) {
-            $this->logger->logToConsole = true;
-        }
+        $this->logger->setLogToConsole($console);
         $this->verbose = $verbose;
 
         $this->basePath = $basePath;

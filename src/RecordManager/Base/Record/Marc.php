@@ -1752,7 +1752,7 @@ class Marc extends Base
             }
             return $field['i2'];
         default:
-            die("Invalid indicator '$indicator' requested\n");
+            throw new \Exception("Invalid indicator '$indicator' requested");
         }
     }
 
@@ -1940,7 +1940,7 @@ class Marc extends Base
 
                 // Check for required subfields
                 if (isset($fieldspec[3])) {
-                    foreach ($fieldspec[3] as $required => $dummy) {
+                    foreach (array_keys($fieldspec[3]) as $required) {
                         $found = false;
                         foreach ($field['s'] as $subfield) {
                             if ($required == key($subfield)) {

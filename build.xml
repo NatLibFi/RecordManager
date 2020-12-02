@@ -16,7 +16,6 @@
     <phingcall target="phpunit"/>
     <phingcall target="phpcs"/>
     <phingcall target="php-cs-fixer-dryrun"/>
-    <phingcall target="phpmd"/>
   </target>
 
   <!-- PHPUnit -->

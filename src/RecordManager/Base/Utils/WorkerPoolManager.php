@@ -570,7 +570,7 @@ class WorkerPoolManager
         while ($pid > 0) {
             $exitCode = pcntl_wexitstatus($status);
             $found = false;
-            foreach ($this->workerPools as $poolId => &$workers) {
+            foreach ($this->workerPools as &$workers) {
                 foreach ($workers as &$worker) {
                     if ($pid === $worker['pid']) {
                         $worker['exitCode'] = $exitCode;

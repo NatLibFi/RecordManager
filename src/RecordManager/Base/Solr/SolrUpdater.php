@@ -1554,7 +1554,7 @@ class SolrUpdater
             }
 
             // Remove duplicate fields from the merged record
-            foreach ($merged as $fieldkey => $value) {
+            foreach (array_keys($merged) as $fieldkey) {
                 if ($fieldkey == 'author=author2') {
                     $fieldkey = 'author2';
                 }
@@ -2176,7 +2176,8 @@ class SolrUpdater
                 $values = is_array($datavalue) ? $datavalue
                     : explode('/', $datavalue);
                 $hierarchyString = '';
-                for ($i = 0; $i < count($values); $i++) {
+                $valueCount = count($values);
+                for ($i = 0; $i < $valueCount; $i++) {
                     $hierarchyString .= '/' . $values[$i];
                     $array[] = ($i) . $hierarchyString . '/';
                 }

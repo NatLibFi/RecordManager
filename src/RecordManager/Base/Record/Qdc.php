@@ -389,7 +389,7 @@ class Qdc extends Base
     protected function getAllFields()
     {
         $allFields = [];
-        foreach ($this->doc->children() as $tag => $field) {
+        foreach ($this->doc->children() as $field) {
             $allFields[] = trim((string)$field);
         }
         return $allFields;

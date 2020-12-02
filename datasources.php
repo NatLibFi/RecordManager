@@ -70,4 +70,3 @@ EOT;
 }
 
 main($argv);
-
