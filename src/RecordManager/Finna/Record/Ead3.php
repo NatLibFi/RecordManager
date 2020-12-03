@@ -46,7 +46,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Ead3 extends \RecordManager\Base\Record\Ead3
 {
-    use \RecordManager\Base\Record\AuthoritySupportTrait;
+    use AuthoritySupportTrait;
 
     /**
      * Archive fonds format
