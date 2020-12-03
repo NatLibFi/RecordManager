@@ -46,8 +46,8 @@ class XmlSecurity extends \Laminas\Xml\Security
      * @param string $xml XML
      *
      * @return void
-     * @throws \Exception\RuntimeException If entity expansion or external entity
-     * declaration was discovered.
+     * @throws \RuntimeException If entity expansion or external entity declaration
+     *                           was discovered.
      */
     public static function heuristicScanString($xml)
     {

@@ -170,6 +170,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         }
 
         if (isset($doc->did->physdesc)) {
+            $material = [];
             foreach ($doc->did->physdesc as $physdesc) {
                 if (isset($physdesc->attributes()->label)) {
                     $material[] = (string)$physdesc . ' '
@@ -259,15 +260,15 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
 
-        $data['author_id_str_mv'] = array_merge(
+        $data['author2_id_str_mv'] = array_merge(
             $this->getAuthorIds(),
             $this->getCorporateAuthorIds()
         );
 
         $data['format_ext_str_mv'] = $data['format'];
 
-        $data['topic_uri_str_mv'] = $this->getTopicURIs();
-        $data['geographic_uri_str_mv'] = $this->getGeographicTopicURIs();
+        $data['topic_id_str_mv'] = $this->getTopicURIs();
+        $data['geographic_id_str_mv'] = $this->getGeographicTopicURIs();
 
         return $data;
     }
@@ -670,7 +671,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                     continue;
                 }
                 foreach ($el->p as $p) {
-                    $desc[] = trim(html_entity_decode((string)$el->p));
+                    $desc[] = trim(html_entity_decode((string)$p));
                 }
             }
             if (!empty($desc)) {

@@ -90,8 +90,6 @@ abstract class AuthEnrichment extends Enrichment
     /**
      * Enrich the record and return any additions in solrArray
      *
-     * @param string $sourceId           Source ID
-     * @param object $record             Record
      * @param array  $solrArray          Metadata to be sent to Solr
      * @param string $id                 Authority record id
      * @param string $solrField          Target Solr field
@@ -100,8 +98,8 @@ abstract class AuthEnrichment extends Enrichment
      *
      * @return void
      */
-    protected function enrichField($sourceId, $record, &$solrArray,
-        $id, $solrField, $includeInAllfields = false
+    protected function enrichField(&$solrArray, $id, $solrField,
+        $includeInAllfields = false
     ) {
         if (!($data = $this->authorityDb->getRecord($id))) {
             return;

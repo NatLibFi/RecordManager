@@ -125,7 +125,7 @@ class Database
      * @param string $database Datatabase name
      * @param array  $settings Optional database settings
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct($url, $database, $settings)
     {
@@ -161,10 +161,8 @@ class Database
      */
     public function reconnectDatabase()
     {
-        $connectTimeout = isset($this->mongoSettings['connect_timeout'])
-            ? $this->mongoSettings['connect_timeout'] : 300000;
-        $socketTimeout = isset($this->mongoSettings['socket_timeout'])
-            ? $this->mongoSettings['socket_timeout'] : 300000;
+        $connectTimeout = $this->mongoSettings['connect_timeout'] ?? 300000;
+        $socketTimeout = $this->mongoSettings['socket_timeout'] ?? 300000;
         $url = $this->mongoUrl;
         $this->mongoClient = new \MongoDB\Client(
             $url,

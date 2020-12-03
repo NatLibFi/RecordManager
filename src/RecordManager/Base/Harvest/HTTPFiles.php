@@ -75,7 +75,7 @@ class HTTPFiles extends Base
      * @param array    $config   Main configuration
      * @param array    $settings Settings from datasources.ini
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct(Database $db, Logger $logger, $source, $basePath,
         $config, $settings
@@ -96,7 +96,7 @@ class HTTPFiles extends Base
      * @param callable $callback Function to be called to store a harvested record
      *
      * @return void
-     * @throws Exception
+     * @throws \Exception
      */
     public function harvest($callback)
     {
@@ -178,7 +178,7 @@ class HTTPFiles extends Base
     /**
      * Retrieve list of files to be harvested, filter by date
      *
-     * @throws Exception
+     * @throws \Exception
      * @return array
      */
     protected function retrieveFileList()
@@ -239,7 +239,7 @@ class HTTPFiles extends Base
         $files = [];
         foreach ($matches as $match) {
             $filename = $match[1];
-            $date = $this->getFileDate($filename, $responseStr);
+            $date = $this->getFileDate($filename);
             if ($date === false) {
                 $this->warningMsg("Invalid filename date in '$filename'");
                 continue;
@@ -262,7 +262,7 @@ class HTTPFiles extends Base
      * @param string $filename File to retrieve
      *
      * @return string xml
-     * @throws Exception
+     * @throws \Exception
      */
     protected function retrieveFile($filename)
     {
@@ -317,7 +317,7 @@ class HTTPFiles extends Base
     /**
      * Process the records xml
      *
-     * @param XMLReader $xml XML File of records
+     * @param \XMLReader $xml XML File of records
      *
      * @return void
      */
@@ -349,8 +349,8 @@ class HTTPFiles extends Base
     /**
      * Save a harvested record.
      *
-     * @param SimpleXMLElement $record Record
-     * @param int              $recNum Record number in the file (1-based)
+     * @param \SimpleXMLElement $record Record
+     * @param int               $recNum Record number in the file (1-based)
      *
      * @return void
      */
@@ -378,15 +378,14 @@ class HTTPFiles extends Base
     }
 
     /**
-     * Extract file date from the file name or directory list response data
+     * Extract file date from the file name
      *
-     * @param string $filename    File name
-     * @param string $responseStr Full HTTP directory listing response
+     * @param string $filename File name
      *
      * @return string|false Date in ISO8601 format or false if date could not be
      * determined
      */
-    protected function getFileDate($filename, $responseStr)
+    protected function getFileDate($filename)
     {
         $match = preg_match(
             '/(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)/', $filename, $dateparts
@@ -402,8 +401,8 @@ class HTTPFiles extends Base
     /**
      * Normalize a record
      *
-     * @param SimpleXMLElement $record Record
-     * @param string           $id     Record ID
+     * @param \SimpleXMLElement $record Record
+     * @param string            $id     Record ID
      *
      * @return void
      */

@@ -146,7 +146,7 @@ class Base
     /**
      * Most recent record date encountered during harvesting
      *
-     * @var date
+     * @var string
      */
     protected $trackedEndDate = '';
 
@@ -181,7 +181,7 @@ class Base
      * @param array    $config   Main configuration
      * @param array    $settings Settings from datasources.ini
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct(Database $db, Logger $logger, $source, $basePath,
         $config, $settings
@@ -233,7 +233,7 @@ class Base
     /**
      * Return the number of changed records
      *
-     * @return number
+     * @return int
      */
     public function getChangedRecordCount()
     {
@@ -243,7 +243,7 @@ class Base
     /**
      * Return the number of deleted records
      *
-     * @return number
+     * @return int
      */
     public function getDeletedRecordCount()
     {
@@ -253,7 +253,7 @@ class Base
     /**
      * Return the number of unchanged records
      *
-     * @return number
+     * @return int
      */
     public function getUnchangedRecordCount()
     {
@@ -341,7 +341,7 @@ class Base
      * Check if the record is deleted.
      * This implementation works for MARC records.
      *
-     * @param SimpleXMLElement $record Record
+     * @param \SimpleXMLElement $record Record
      *
      * @return bool
      */
@@ -355,7 +355,7 @@ class Base
      * Check if the record is modified.
      * This implementation works for MARC records.
      *
-     * @param SimpleXMLElement $record Record
+     * @param \SimpleXMLElement $record Record
      *
      * @return bool
      */
@@ -369,10 +369,10 @@ class Base
      * Extract record ID.
      * This implementation works for MARC records.
      *
-     * @param SimpleXMLElement $record Record
+     * @param \SimpleXMLElement $record Record
      *
      * @return string|bool ID if found, false if record is missing ID
-     * @throws Exception
+     * @throws \Exception
      */
     protected function extractID($record)
     {
@@ -407,7 +407,7 @@ class Base
      * @param bool   $returnDoc Whether to return DOM document instead of string
      *
      * @return string|\DOMDocument Transformed XML
-     * @throws Exception
+     * @throws \Exception
      */
     protected function preTransform($xml, $returnDoc = false)
     {
@@ -557,7 +557,8 @@ class Base
      * @param string $prefix File name prefix
      * @param string $suffix File name suffix
      *
-     * @return void
+     * @return string
+     * @throws \Exception
      */
     protected function getTempFileName($prefix, $suffix)
     {

@@ -228,7 +228,7 @@ class FieldMapper
      *
      * @param string $filename Mapping file name
      *
-     * @throws Exception
+     * @throws \Exception
      * @return array Mappings
      */
     protected function readMappingFile($filename)

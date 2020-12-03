@@ -158,13 +158,6 @@ class Forward extends \RecordManager\Base\Record\Forward
 
         $data['building'] = $this->getBuilding();
 
-        $primaryAuthors = $this->getPrimaryAuthorsSorted();
-
-        $data['author_id_str_mv']
-            = $this->addNamespaceToAuthorityIds($primaryAuthors['ids']);
-        $data['author_id_role_str_mv']
-            = $this->addNamespaceToAuthorityIds($primaryAuthors['idRoles']);
-
         $allAuthors = $this->getAuthorsByRelator();
         $data['author2_id_str_mv']
             = $this->addNamespaceToAuthorityIds($allAuthors['ids']);
@@ -389,7 +382,7 @@ class Forward extends \RecordManager\Base\Record\Forward
     /**
      * Get relator code for the agent
      *
-     * @param SimpleXMLElement $agent Agent
+     * @param \SimpleXMLElement $agent Agent
      *
      * @return string
      */
@@ -440,7 +433,7 @@ class Forward extends \RecordManager\Base\Record\Forward
     /**
      * Get all metadata elements
      *
-     * @return SimpleXMLElement
+     * @return \SimpleXMLElement
      */
     protected function getAllMainElements()
     {

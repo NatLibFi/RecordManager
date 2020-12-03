@@ -233,9 +233,9 @@ class Ead
     /**
      * Recursively append a node to simplexml, merge elements with same name
      *
-     * @param SimpleXMLElement $simplexml Node to append to
-     * @param SimpleXMLElement $append    Node to be appended
-     * @param array            $ignore    Keyed array of node names to be ignored
+     * @param \SimpleXMLElement $simplexml Node to append to
+     * @param \SimpleXMLElement $append    Node to be appended
+     * @param array             $ignore    Keyed array of node names to be ignored
      *
      * @return void
      */
@@ -267,8 +267,8 @@ class Ead
     /**
      * Recursively append a node to simplexml, filtering out c, c01, c02 etc.
      *
-     * @param SimpleXMLElement $simplexml Node to append to
-     * @param SimpleXMLElement $append    Node to be appended
+     * @param \SimpleXMLElement $simplexml Node to append to
+     * @param \SimpleXMLElement $append    Node to be appended
      *
      * @return void
      */
