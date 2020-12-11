@@ -106,23 +106,23 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
 
         foreach ($this->doc->archdesc->did->unitid as $i) {
             $attr = $i->attributes();
-            if ($attr->label == 'Tekninen' && isset($attr->identifier)) {
+            if (isset($attr->identifier)
+                && !isset($attr->label) || $attr->label === 'Tekninen'
+            ) {
                 $this->archiveId = urlencode((string)$attr->identifier);
                 break;
             }
         }
-
-        $this->archiveTitle
-            = (string)$this->doc->control->filedesc->titlestmt->titleproper;
-
-        if (!$this->archiveTitle) {
-            $this->archiveTitle = $this->archiveId;
+        foreach ($this->doc->archdesc->did->unittitle as $title) {
+            $attr = $title->attributes();
+            if (in_array($attr->lang, ['fi', 'fin'])) {
+                $this->archiveTitle = (string)$title;
+                break;
+            }
         }
+        $this->archiveTitle = $this->archiveTitle ?? $this->archiveId;
 
-        $this->archiveSubTitle
-            = isset($this->doc->control->filedesc->titlestmt->subtitle)
-                ? (string)$this->doc->control->filedesc->titlestmt->subtitle
-                : '';
+        $this->archiveSubTitle = '';
     }
 
     /**
@@ -150,7 +150,9 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
             if ($record->did->unitid) {
                 foreach ($record->did->unitid as $i) {
                     $attr = $i->attributes();
-                    if ($attr->label == 'Tekninen' && isset($attr->identifier)) {
+                    if ((!$attr->label || $attr->label == 'Tekninen')
+                        && isset($attr->identifier)
+                    ) {
                         $unitId = urlencode((string)$attr->identifier);
                         if ($unitId != $this->archiveId) {
                             $unitId = $this->archiveId . '_' . $unitId;

@@ -255,10 +255,19 @@ class Ead3 extends Ead
     protected function getCorporateAuthors()
     {
         $result = [];
+        $names = [];
         if (isset($this->doc->did->controlaccess->corpname)) {
-            foreach ($this->doc->did->controlaccess->corpname as $corpname) {
-                $result[] = trim((string)$corpname);
+            foreach ($this->doc->did->controlaccess->corpname as $name) {
+                $names[] = (string)$name;
             }
+        }
+        if (isset($this->doc->controlaccess->corpname->part)) {
+            foreach ($this->doc->controlaccess->corpname->part as $name) {
+                $names[] = (string)$name;
+            }
+        }
+        foreach ($names as $corpname) {
+            $result[] = trim((string)$corpname);
         }
 
         if (isset($this->doc->did->origination->name)) {
@@ -294,7 +303,7 @@ class Ead3 extends Ead
      */
     protected function getTopics()
     {
-        return $this->getTopicsHelper('subject');
+        return $this->getTopicTermsFromNode('subject');
     }
 
     /**
@@ -304,19 +313,15 @@ class Ead3 extends Ead
      */
     protected function getGeographicTopics()
     {
-        return $this->getTopicsHelper('geogname');
+        return $this->getTopicTermsFromNode('geogname');
     }
 
     /**
-     * Helper function for getting topics
-     *
-     * @param string      $nodeName Name of node that contains the topic terms
-     * @param string|null $relator  Value of topic node relator-attribute
-     * @param boolean     $URIs     Return topic URI instead of label?
+     * Helper function for getting controlaccess elements with their identifiers.
      *
      * @return array
      */
-    protected function getTopicsHelper($nodeName, $relator = null, $URIs = false)
+    protected function getTopicTermsFromNode($nodeName, $uri = false)
     {
         $result = [];
         if (!isset($this->doc->controlaccess->{$nodeName})) {
@@ -325,19 +330,11 @@ class Ead3 extends Ead
 
         foreach ($this->doc->controlaccess->{$nodeName} as $node) {
             $attr = $node->attributes();
-            if ((!$relator || (string)$attr->relator === $relator)) {
-                $topic = null;
-                if (!$URIs && isset($node->part)) {
-                    $topic = (string)$node->part;
-                } elseif (isset($attr->identifier)) {
-                    $topic = (string)$attr->identifier;
-                }
-                if ('' !== ($topic = trim($topic))) {
-                    $result[] = $topic;
-                }
+            if ($value = trim((string)$node->part)) {
+                $result[] = $uri ? $attr->identifier : $value;
             }
         }
-        return array_unique($result);
+        return $result;
     }
 
     /**

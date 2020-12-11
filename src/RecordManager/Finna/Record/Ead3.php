@@ -48,6 +48,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
 {
     use AuthoritySupportTrait;
 
+    const UNIT_ID_RELATORS = ['tekninen'];
+    const GEOGRAPHIC_SUBJECT_RELATORS = ['aihe', 'alueellinen kattavuus'];
+    const SUBJECT_RELATORS = ['aihe'];
+
     /**
      * Archive fonds format
      *
@@ -151,16 +155,19 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         }
 
         if ($this->doc->did->unitid) {
+            $identifier = null;
             foreach ($this->doc->did->unitid as $i) {
+                $identifier = (string)$i;
                 if ($i->attributes()->label == 'Analoginen') {
-                    $idstr = (string)$i;
-                    $p = strpos($idstr, '/');
-                    $analogID = $p > 0
-                        ? substr($idstr, $p + 1)
-                        : $idstr;
-
-                    $data['identifier'] = $analogID;
+                    break;
                 }
+            }
+            if ($identifier) {
+                $p = strpos($identifier, '/');
+                $identifier = $p > 0
+                    ? substr($identifier, $p + 1)
+                    : $identifier;
+                $data['identifier'] = $identifier;
             }
         }
 
@@ -273,6 +280,11 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         return $data;
     }
 
+    public function getTopicURIs()
+    {
+        return $this->getTopicTerms('subject', self::SUBJECT_RELATORS, true);
+    }
+
     /**
      * Return subtitle
      *
@@ -294,7 +306,9 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (isset($this->doc->did->unitid)) {
             foreach ($this->doc->did->unitid as $i) {
                 $attr = $i->attributes();
-                if ($attr->label == 'Tekninen' && isset($attr->identifier)) {
+                if ($attr->label == 'Tekninen' || !isset($attr->label)
+                    && isset($attr->identifier)
+                ) {
                     return (string)$attr->identifier;
                 }
             }
@@ -391,7 +405,20 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      */
     protected function getDaterange()
     {
-        if (isset($this->doc->did->unitdate)) {
+        if (isset($this->doc->did->unitdatestructured)) {
+            $date = $this->doc->did->unitdatestructured;
+            if (isset($date->daterange)) {
+                $range = $this->doc->did->unitdatestructured->daterange;
+                if (isset($range->fromdate) && isset($range->todate)) {
+                    return $this->parseDateRange(
+                        (string)$range->fromdate . '/' . (string)$range->todate
+                    );
+                }
+            } else if (isset($date->datesingle)) {
+                $year = (string)$date->datesingle;
+                return $this->parseDateRange("{$year}/{$year}");
+            }
+        } else if (isset($this->doc->did->unitdate)) {
             foreach ($this->doc->did->unitdate as $unitdate) {
                 $attributes = $unitdate->attributes();
                 if ($attributes->label
@@ -533,13 +560,56 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     }
 
     /**
-     * Get topics URIs
+     * Helper function for getting controlaccess access elements filtered
+     * by relator-attribute.
+     *
+     * @param string $nodeName Name of node that contains the topic terms
+     * @param array  $relators Accepted relator-attribute values when relator
+     * is defined.
+     * @param bool   $uri      Return URI's instead of labels?
      *
      * @return array
      */
-    public function getTopicURIs()
+    protected function getTopicTermsFromNodeWithRelators(
+        $nodeName, $relators, $uri = false
+    ) {
+        $result = [];
+        if (!isset($this->doc->controlaccess->{$nodeName})) {
+            return $result;
+        }
+
+        foreach ($this->doc->controlaccess->{$nodeName} as $node) {
+            $attr = $node->attributes();
+            $value = trim((string)$node->part);
+            if (!$attr->relator || in_array($attr->relator, $relators) && $value) {
+                $result[] = $uri ? $attr->identifier : $value;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Get topics
+     *
+     * @return array
+     */
+    protected function getTopics()
     {
-        return $this->getTopicsHelper('subject', 'aihe', true);
+        return $this->getTopicTermsFromNodeWithRelators(
+            'subject', self::SUBJECT_RELATORS
+        );
+    }
+
+    /**
+     * Get geographic topics
+     *
+     * @return array
+     */
+    protected function getGeographicTopics()
+    {
+        return $this->getTopicTermsFromNodeWithRelators(
+            'geogname', self::GEOGRAPHIC_SUBJECT_RELATORS
+        );
     }
 
     /**
@@ -549,9 +619,8 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      */
     protected function getGeographicTopicURIs()
     {
-        return array_merge(
-            $this->getTopicsHelper('geogname', 'aihe', true),
-            $this->getTopicsHelper('geogname', 'alueellinen kattavuus', true)
+        return $this->getTopicTermsFromNodeWithRelators(
+            'geogname', self::GEOGRAPHIC_SUBJECT_RELATORS, true
         );
     }
 
@@ -564,67 +633,46 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     {
         $level1 = $level2 = null;
 
-        if ((string)$this->doc->attributes()->level === 'fonds') {
-            $level1 = 'Document';
+        $docLevel = (string)$this->doc->attributes()->level;
+        $level1 = $docLevel === 'fonds' ? 'Document' : null;
+
+        if (!isset($this->doc->controlaccess->genreform)) {
+            return $level1 ?? 'Document';
         }
 
-        if (isset($this->doc->controlaccess->genreform)) {
-            foreach ($this->doc->controlaccess->genreform as $genreform) {
-                $format = null;
-                foreach ($genreform->part as $part) {
-                    $attributes = $part->attributes();
-                    if (isset($attributes->lang)
-                        && (string)$attributes->lang === 'fin'
-                    ) {
-                        $format = (string)$part;
-                        break;
-                    }
-                }
 
-                if (!$format) {
-                    continue;
+        foreach ($this->doc->controlaccess->genreform as $genreform) {
+            $format = null;
+            foreach ($genreform->part as $part) {
+                $attributes = $part->attributes();
+                if (isset($attributes->lang)
+                    && (string)$attributes->lang === 'fin'
+                ) {
+                    $format = (string)$part;
+                    break;
                 }
+            }
 
-                $attr = $genreform->attributes();
-                if (isset($attr->encodinganalog)) {
-                    $type = (string)$attr->encodinganalog;
-                    if ($type === 'ahaa:AI08') {
-                        if ($level1 === null) {
-                            $level1 = $format;
-                        } else {
-                            $level2 = $format;
-                        }
-                    } elseif ($type === 'ahaa:AI57') {
+            if (!$format) {
+                continue;
+            }
+
+            $attr = $genreform->attributes();
+            if (isset($attr->encodinganalog)) {
+                $type = (string)$attr->encodinganalog;
+                if ($type === 'ahaa:AI08') {
+                    if ($level1 === null) {
+                        $level1 = $format;
+                    } else {
                         $level2 = $format;
                     }
+                } elseif ($type === 'ahaa:AI57') {
+                    $level2 = $format;
                 }
             }
         }
 
         return $level2 ? "$level1/$level2" : $level1;
-    }
-
-    /**
-     * Get topics
-     *
-     * @return array
-     */
-    protected function getTopics()
-    {
-        return $this->getTopicsHelper('subject', 'aihe');
-    }
-
-    /**
-     * Get geographic topics
-     *
-     * @return array
-     */
-    protected function getGeographicTopics()
-    {
-        return array_merge(
-            $this->getTopicsHelper('geogname', 'aihe'),
-            $this->getTopicsHelper('geogname', 'alueellinen kattavuus')
-        );
     }
 
     /**
@@ -664,12 +712,13 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (!empty($this->doc->scopecontent)) {
             $desc = [];
             foreach ($this->doc->scopecontent as $el) {
+                /*
                 if (isset($el->attributes()->encodinganalog)) {
                     continue;
                 }
                 if (! isset($el->head) || (string)$el->head !== 'Tietosisältö') {
                     continue;
-                }
+                }*/
                 foreach ($el->p as $p) {
                     $desc[] = trim(html_entity_decode((string)$p));
                 }
