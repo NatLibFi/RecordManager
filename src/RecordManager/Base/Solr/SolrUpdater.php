@@ -3093,10 +3093,15 @@ class SolrUpdater
     protected function createSolrId($recordId)
     {
         $parts = explode('.', $recordId, 2);
-        if (isset($parts[1])
-            && !empty($this->settings[$parts[0]]['indexUnprefixedIds'])
-        ) {
-            return $parts[1];
+        if ($id = ($parts[1] ?? null)) {
+            $sourceSettings = $this->settings[$parts[0]] ?? [];
+            if (!empty($sourceSettings['indexUnprefixedIds'])) {
+                return $id;
+            } else {
+                if ($solrIdPrefix = ($sourceSettings['solrIdPrefix'] ?? null)) {
+                    return "{$solrIdPrefix}.{$id}";
+                }
+            }
         }
         return $recordId;
     }
