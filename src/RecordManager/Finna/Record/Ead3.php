@@ -306,7 +306,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (isset($this->doc->did->unitid)) {
             foreach ($this->doc->did->unitid as $i) {
                 $attr = $i->attributes();
-                if ($attr->label == 'Tekninen' || !isset($attr->label)
+                if ((string)$attr->label === 'Tekninen' || !isset($attr->label)
                     && isset($attr->identifier)
                 ) {
                     return (string)$attr->identifier;
@@ -581,7 +581,9 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         foreach ($this->doc->controlaccess->{$nodeName} as $node) {
             $attr = $node->attributes();
             $value = trim((string)$node->part);
-            if (!$attr->relator || in_array($attr->relator, $relators) && $value) {
+            if (!$attr->relator || in_array((string)$attr->relator, $relators)
+                && $value
+            ) {
                 $result[] = $uri ? $attr->identifier : $value;
             }
         }
