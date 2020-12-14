@@ -107,7 +107,7 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
         foreach ($this->doc->archdesc->did->unitid as $i) {
             $attr = $i->attributes();
             if (isset($attr->identifier)
-                && !isset($attr->label) || $attr->label === 'Tekninen'
+                && !isset($attr->label) || (string)$attr->label === 'Tekninen'
             ) {
                 $this->archiveId = urlencode((string)$attr->identifier);
                 break;
