@@ -17,7 +17,8 @@ Thumbs.db
 # Local files
 conf/*.ini
 conf/*.lst
-.php_cs_cache/*
+.php_cs_cache
+.psalm_cache
 *.log
 vendor
 tests/.phpunit.result.cache

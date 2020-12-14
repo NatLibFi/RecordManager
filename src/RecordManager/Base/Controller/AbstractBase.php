@@ -109,17 +109,14 @@ abstract class AbstractBase
      *                         console
      * @param bool   $verbose  Whether verbose output is enabled
      */
-    public function __construct($basePath, $config, $console = false,
-        $verbose = false
-    ) {
+    public function __construct($basePath, $config, $console, $verbose)
+    {
         $this->config = $config;
 
         date_default_timezone_set($config['Site']['timezone']);
 
         $this->logger = new Logger($config);
-        if ($console) {
-            $this->logger->logToConsole = true;
-        }
+        $this->logger->setLogToConsole($console);
         $this->verbose = $verbose;
 
         $this->basePath = $basePath;
@@ -151,7 +148,7 @@ abstract class AbstractBase
     /**
      * Initialize the data source settings and XSL transformations
      *
-     * @throws Exception
+     * @throws \Exception
      * @return void
      */
     protected function initSourceSettings()
@@ -250,13 +247,12 @@ abstract class AbstractBase
     /**
      * Create a dedup handler
      *
-     * @return DedupHandler
+     * @return \RecordManager\Base\Deduplication\DedupHandler
      */
     protected function getDedupHandler()
     {
-        $dedupClass = isset($this->config['Site']['dedup_handler'])
-            ? $this->config['Site']['dedup_handler']
-            : '\RecordManager\Base\Deduplication\DedupHandler';
+        $dedupClass = $this->config['Site']['dedup_handler']
+            ?? '\RecordManager\Base\Deduplication\DedupHandler';
         $dedupHandler = new $dedupClass(
             $this->db, $this->logger, $this->verbose, $this->basePath, $this->config,
             $this->dataSourceSettings, $this->recordFactory

@@ -142,7 +142,7 @@ class CreatePreview extends AbstractBase
         }
 
         if (!$this->recordFactory->canCreate($record['format'])) {
-            die("Format '$format' not supported");
+            throw new \Exception("Format '$format' not supported");
         }
 
         $metadataRecord = $this->recordFactory->createRecord(

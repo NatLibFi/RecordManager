@@ -43,7 +43,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Base
+abstract class Base
 {
     /**
      * Logger
@@ -115,9 +115,8 @@ class Base
     {
         $this->source = $source;
         $this->idPrefix
-            = isset($this->dataSourceSettings[$source]['idPrefix'])
-            ? $this->dataSourceSettings[$source]['idPrefix']
-            : $source;
+            = $this->dataSourceSettings[$source]['idPrefix']
+            ?? $source;
     }
 
     /**
@@ -125,10 +124,7 @@ class Base
      *
      * @return string
      */
-    public function getID()
-    {
-        die('unimplemented');
-    }
+    abstract public function getID();
 
     /**
      * Return record linking IDs (typically same as ID) used for links
@@ -146,20 +142,14 @@ class Base
      *
      * @return string
      */
-    public function serialize()
-    {
-        die('unimplemented');
-    }
+    abstract public function serialize();
 
     /**
      * Serialize the record into XML for export
      *
      * @return string
      */
-    public function toXML()
-    {
-        die('unimplemented');
-    }
+    abstract public function toXML();
 
     /**
      * Normalize the record (optional)
@@ -565,7 +555,7 @@ class Base
      *
      * @param string $xml XML string
      *
-     * @return SimpleXMLElement
+     * @return \SimpleXMLElement
      * @throws \Exception
      */
     protected function parseXMLRecord($xml)

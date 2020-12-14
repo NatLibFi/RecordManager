@@ -64,7 +64,7 @@ trait FullTextTrait
     /**
      * Get full text fields for a given document
      *
-     * @param SimpleXMLElement $doc Document
+     * @param \SimpleXMLElement $doc Document
      *
      * @return array
      */
@@ -107,7 +107,7 @@ trait FullTextTrait
      * @param string $url URL to fetch
      *
      * @return string
-     * @throws Exception
+     * @throws \Exception
      */
     protected function getUrl($url)
     {

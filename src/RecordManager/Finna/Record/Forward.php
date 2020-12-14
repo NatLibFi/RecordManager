@@ -382,7 +382,7 @@ class Forward extends \RecordManager\Base\Record\Forward
     /**
      * Get relator code for the agent
      *
-     * @param SimpleXMLElement $agent Agent
+     * @param \SimpleXMLElement $agent Agent
      *
      * @return string
      */
@@ -433,7 +433,7 @@ class Forward extends \RecordManager\Base\Record\Forward
     /**
      * Get all metadata elements
      *
-     * @return SimpleXMLElement
+     * @return \SimpleXMLElement
      */
     protected function getAllMainElements()
     {

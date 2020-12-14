@@ -1,8 +1,8 @@
 <?php
 
 $finder = PhpCsFixer\Finder::create()
-    ->in(__DIR__ . '/../src/RecordManager')
-    ->in(__DIR__);
+    ->exclude(__DIR__ . '/tests')
+    ->in(__DIR__ . '/..');
 
 $rules = [
     'align_multiline_comment' => true,

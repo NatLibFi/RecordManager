@@ -229,7 +229,7 @@ class Lido extends \RecordManager\Base\Record\Lido
     /**
      * Get all XML fields
      *
-     * @param SimpleXMLElement $xml The XML document
+     * @param \SimpleXMLElement $xml The XML document
      *
      * @return array
      */
@@ -856,7 +856,7 @@ class Lido extends \RecordManager\Base\Record\Lido
      *
      * This assumes WSG 84
      *
-     * @param SimpleXMLElement $gml GML Node
+     * @param \SimpleXMLElement $gml GML Node
      *
      * @return string WKT
      */

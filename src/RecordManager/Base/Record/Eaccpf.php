@@ -411,6 +411,7 @@ class Eaccpf extends Base
         if (!isset($this->doc->cpfDescription->identity->nameEntryParallel)) {
             return [];
         }
+        $result = [];
         foreach ($this->doc->cpfDescription->identity->nameEntryParallel as $entry) {
             if (!isset($entry->nameEntry->part)) {
                 continue;
