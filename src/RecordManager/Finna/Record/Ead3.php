@@ -670,13 +670,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (!empty($this->doc->scopecontent)) {
             $desc = [];
             foreach ($this->doc->scopecontent as $el) {
-                /*
-                if (isset($el->attributes()->encodinganalog)) {
-                    continue;
-                }
-                if (! isset($el->head) || (string)$el->head !== 'Tietosisältö') {
-                    continue;
-                }*/
                 foreach ($el->p as $p) {
                     $desc[] = trim(html_entity_decode((string)$p));
                 }
