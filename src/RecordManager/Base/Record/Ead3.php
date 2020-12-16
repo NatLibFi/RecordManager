@@ -317,7 +317,11 @@ class Ead3 extends Ead
     }
 
     /**
-     * Helper function for getting controlaccess elements with their identifiers.
+     * Helper function for getting controlaccess child
+     * elements with their identifiers.
+     *
+     * @param string $nodeName Element name to search for
+     * @param bool   $uri      Whether to return identifiers instead of labels.
      *
      * @return array
      */
