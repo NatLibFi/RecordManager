@@ -206,7 +206,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $data['author_role'] = [];
             $data['author_variant'] = [];
             $data['author_facet'] = [];
-            $authorIds = $authorIdRoles = $author2Ids = $author2IdRoles = [];
+            $author2Ids = $author2IdRoles = [];
             foreach ($doc->controlaccess->name as $name) {
                 foreach ($name->part as $part) {
                     $id = $role = null;
@@ -227,9 +227,9 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                             $data['author_facet'][] = (string)$part;
                         }
                         if ($id) {
-                            $authorIds[] = $author2Ids[] = $id;
+                            $author2Ids[] = $id;
                             if ($role) {
-                                $authorIdRoles[] = $author2IdRoles[]
+                                $author2IdRoles[]
                                     = $this->formatAuthorIdWithRole($id, $role);
                             }
                         }
@@ -266,12 +266,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 }
             }
         }
-
-        $data['author2_id_str_mv'] = array_merge(
-            $this->getAuthorIds(),
-            $this->getCorporateAuthorIds()
-        );
-
         $data['format_ext_str_mv'] = $data['format'];
 
         $data['topic_id_str_mv'] = $this->getTopicURIs();
@@ -314,44 +308,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
         return '';
-    }
-
-    /**
-     * Get author identifiers
-     *
-     * @return array
-     */
-    protected function getAuthorIds()
-    {
-        $result = [];
-        if (!isset($this->doc->relations->relation)) {
-            return $result;
-        }
-
-        foreach ($this->doc->relations->relation as $relation) {
-            $type = (string)$relation->attributes()->relationtype;
-            if ('cpfrelation' !== $type) {
-                continue;
-            }
-            $role = (string)$relation->attributes()->arcrole;
-            switch ($role) {
-            case '':
-            case 'http://www.rdaregistry.info/Elements/u/P60672':
-            case 'http://www.rdaregistry.info/Elements/u/P60434':
-                $role = 'aut';
-                break;
-            case 'http://www.rdaregistry.info/Elements/u/P60429':
-                $role = 'pht';
-                break;
-            default:
-                $role = '';
-            }
-            if ('' === $role) {
-                continue;
-            }
-            $result[] = (string)$relation->attributes()->href;
-        }
-        return $result;
     }
 
     /**
