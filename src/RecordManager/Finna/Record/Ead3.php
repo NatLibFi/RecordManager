@@ -676,7 +676,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         $level1 = $docLevel === 'fonds' ? 'Document' : null;
 
         if (!isset($this->doc->controlaccess->genreform)) {
-            return $level1 ?? 'Document';
+            return $docLevel;
         }
 
         foreach ($this->doc->controlaccess->genreform as $genreform) {
