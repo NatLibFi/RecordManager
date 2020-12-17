@@ -115,7 +115,7 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
         }
         foreach ($this->doc->archdesc->did->unittitle as $title) {
             $attr = $title->attributes();
-            if (in_array($attr->lang, ['fi', 'fin'])) {
+            if (!$attr->lang || in_array($attr->lang, ['fi', 'fin'])) {
                 $this->archiveTitle = (string)$title;
                 break;
             }
