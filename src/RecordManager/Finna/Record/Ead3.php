@@ -602,7 +602,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      *
      * @param string $nodeName Name of node that contains the topic terms
      * @param array  $relators Accepted relator-attribute values when relator
-     * is defined.
+     *                         is defined.
      * @param bool   $uri      Return URI's instead of labels?
      *
      * @return array
