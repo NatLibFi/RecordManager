@@ -451,11 +451,11 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                         (string)$range->fromdate . '/' . (string)$range->todate
                     );
                 }
-            } else if (isset($date->datesingle)) {
+            } elseif (isset($date->datesingle)) {
                 $year = (string)$date->datesingle;
                 return $this->parseDateRange("{$year}/{$year}");
             }
-        } else if (isset($this->doc->did->unitdate)) {
+        } elseif (isset($this->doc->did->unitdate)) {
             foreach ($this->doc->did->unitdate as $unitdate) {
                 $attributes = $unitdate->attributes();
                 if ($attributes->label
@@ -678,7 +678,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (!isset($this->doc->controlaccess->genreform)) {
             return $level1 ?? 'Document';
         }
-
 
         foreach ($this->doc->controlaccess->genreform as $genreform) {
             $format = null;
