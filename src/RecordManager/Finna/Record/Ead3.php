@@ -148,11 +148,9 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 }
             }
         }
-        if (isset($data['online_boolean'])
-            && !isset($this->doc->accessrestrict->p)
-        ) {
-            $data['free_online_boolean'] = true;
-        }
+        $data['free_online_boolean']
+            = isset($data['online_boolean'])
+            && !isset($this->doc->accessrestrict);
 
         if ($this->doc->did->unitid) {
             $identifier = null;
