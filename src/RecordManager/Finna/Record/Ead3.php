@@ -282,16 +282,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         return $this->getTopicTerms('subject', self::SUBJECT_RELATORS, true);
     }
 
-    /**
-     * Return subtitle
-     *
-     * @return string
-     */
-    protected function getSubtitle()
-    {
-        // TODO return series id when available in metadata
-        return '';
-    }
 
     /**
      * Get unit id
@@ -431,6 +421,24 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
         return ['restricted'];
+    }
+
+    /**
+     * Return subtitle
+     *
+     * @return string
+     */
+    protected function getSubtitle()
+    {
+        $noSubtitleFormats = [
+            $this->fondsType,
+            $this->collectionType
+        ];
+        if (in_array($this->getFormat(), $noSubtitleFormats)) {
+            return '';
+        }
+
+        return (string)$this->doc->did->unitid;
     }
 
     /**
