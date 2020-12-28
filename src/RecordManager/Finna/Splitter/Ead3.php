@@ -247,7 +247,9 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                     $pid = implode(
                         '+', $parentDid->xpath('unitid[@label="Analoginen"]')
                     );
-
+                    if (!$pid && isset($parentDid->unitid)) {
+                        $pid = (string)$parentDid->unitid;
+                    }
                     if (preg_match('/\//', $pid)) {
                         $pid = substr(strrchr($pid, '/'), 1);
                     }
