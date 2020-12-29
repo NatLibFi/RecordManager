@@ -176,7 +176,8 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                 $addData->addAttribute('identifier', $unitId);
             }
             // Also store it in original record for the children
-            $original->addChild('add-data')->addAttribute('identifier', $unitId);
+            $originalAddData = $original->addChild('add-data');
+            $originalAddData->addAttribute('identifier', $unitId);
 
             $absolute = $addData->addChild('archive');
             $absolute->addAttribute('id', $this->archiveId);
@@ -257,14 +258,40 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                     $parentTitle = $pid . ' ' . $parentTitle;
                 }
 
+                $parentNode = $original->xpath('parent::*[@level]');
+
                 $parent = $addData->addChild('parent');
                 $parent->addAttribute('id', $parentID);
                 $parent->addAttribute('title', $parentTitle);
+                if ($parentNode) {
+                    // Add a new parent-node to parent record addData
+                    $level = (string)$parentNode[0]->attributes()->level;
+                    $parent->addAttribute('level', $level);
+                    if (in_array($level, ['series', 'subseries'])) {
+                        $parent = $originalAddData->addChild('parent');
+                        $parent->addAttribute('id', $parentID);
+                        $parent->addAttribute('title', $parentTitle);
+                        $parent->addAttribute('level', $level);
+                    }
+                }
+
+                if ($parentAddData) {
+                    // Copy all parent-nodes from parent record addData.
+                    foreach ($parentAddData[0]->parent as $p) {
+                        $copy = $addData->addChild('parent');
+                        $copy2 = $originalAddData->addChild('parent');
+                        foreach ($p->attributes() as $key => $val) {
+                            $copy->addAttribute($key, $val);
+                            $copy2->addAttribute($key, $val);
+                        }
+                    }
+                }
             } else {
                 if ($this->currentPos > 1) {
                     $parent = $addData->addChild('parent');
                     $parent->addAttribute('id', $this->archiveId);
                     $parent->addAttribute('title', $this->archiveTitle);
+                    $parent->addAttribute('level', 'archive');
                 }
             }
 
