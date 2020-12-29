@@ -282,7 +282,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         return $this->getTopicTerms('subject', self::SUBJECT_RELATORS, true);
     }
 
-
     /**
      * Get unit id
      *
