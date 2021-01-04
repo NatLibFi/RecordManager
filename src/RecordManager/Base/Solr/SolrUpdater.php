@@ -2918,6 +2918,7 @@ class SolrUpdater
         if ($this->dumpPrefix) {
             return false;
         }
+        $id = $this->createSolrId($id);
         $this->bufferedDeletions[] = '"delete":{"id":"' . $id . '"}';
         if (count($this->bufferedDeletions) >= 1000) {
             $request = "{" . implode(',', $this->bufferedDeletions) . "}";
