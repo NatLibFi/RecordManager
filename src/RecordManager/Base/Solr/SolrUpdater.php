@@ -1908,7 +1908,9 @@ class SolrUpdater
             }
 
             $this->settings[$source]['extraFields'] = [];
-            foreach ($settings['extraFields'] ?? [] as $extraField) {
+            foreach ($settings['extraFields'] ?? $settings['extrafields'] ?? []
+                as $extraField
+            ) {
                 list($field, $value) = explode(':', $extraField, 2);
                 $this->settings[$source]['extraFields'][] = [$field => $value];
             }
@@ -2950,6 +2952,7 @@ class SolrUpdater
         if ($this->dumpPrefix) {
             return false;
         }
+        $id = $this->createSolrId($id);
         $this->bufferedDeletions[] = '"delete":{"id":"' . $id . '"}';
         if (count($this->bufferedDeletions) >= 1000) {
             $request = "{" . implode(',', $this->bufferedDeletions) . "}";
