@@ -96,29 +96,33 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
     public function setData($data)
     {
         $this->doc = \RecordManager\Base\Utils\MetadataUtils::loadXML($data);
+
         $this->recordNodes = $this->doc->xpath('archdesc | archdesc/dsc//*[@level]');
         $this->recordCount = count($this->recordNodes);
         $this->currentPos = 0;
 
         $this->agency
             = (string)$this->doc->control->maintenanceagency->agencycode;
-        $this->archiveId = urlencode(
-            (string)($this->doc->control->recordid
-                ? $this->doc->control->recordid
-                : $this->doc->control->recordid)
-        );
 
-        $this->archiveTitle
-            = (string)$this->doc->control->filedesc->titlestmt->titleproper;
-
-        if (!$this->archiveTitle) {
-            $this->archiveTitle = $this->archiveId;
+        foreach ($this->doc->archdesc->did->unitid as $i) {
+            $attr = $i->attributes();
+            if (isset($attr->identifier)
+                && !isset($attr->label) || (string)$attr->label === 'Tekninen'
+            ) {
+                $this->archiveId = urlencode((string)$attr->identifier);
+                break;
+            }
         }
+        foreach ($this->doc->archdesc->did->unittitle as $title) {
+            $attr = $title->attributes();
+            if (!$attr->lang || in_array($attr->lang, ['fi', 'fin'])) {
+                $this->archiveTitle = (string)$title;
+                break;
+            }
+        }
+        $this->archiveTitle = $this->archiveTitle ?? $this->archiveId;
 
-        $this->archiveSubTitle
-            = isset($this->doc->control->filedesc->titlestmt->subtitle)
-                ? (string)$this->doc->control->filedesc->titlestmt->subtitle
-                : '';
+        $this->archiveSubTitle = '';
     }
 
     /**
@@ -146,7 +150,9 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
             if ($record->did->unitid) {
                 foreach ($record->did->unitid as $i) {
                     $attr = $i->attributes();
-                    if ($attr->label == 'Tekninen' && isset($attr->identifier)) {
+                    if ((!$attr->label || $attr->label == 'Tekninen')
+                        && isset($attr->identifier)
+                    ) {
                         $unitId = urlencode((string)$attr->identifier);
                         if ($unitId != $this->archiveId) {
                             $unitId = $this->archiveId . '_' . $unitId;
@@ -170,7 +176,8 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                 $addData->addAttribute('identifier', $unitId);
             }
             // Also store it in original record for the children
-            $original->addChild('add-data')->addAttribute('identifier', $unitId);
+            $originalAddData = $original->addChild('add-data');
+            $originalAddData->addAttribute('identifier', $unitId);
 
             $absolute = $addData->addChild('archive');
             $absolute->addAttribute('id', $this->archiveId);
@@ -205,7 +212,6 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
             }
 
             $parentDid = $original->xpath('parent::*/did');
-
             if ($parentDid) {
                 $parentDid = $parentDid[0];
                 // If parent has add-data, take the generated ID from it
@@ -242,7 +248,9 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                     $pid = implode(
                         '+', $parentDid->xpath('unitid[@label="Analoginen"]')
                     );
-
+                    if (!$pid && isset($parentDid->unitid)) {
+                        $pid = (string)$parentDid->unitid;
+                    }
                     if (preg_match('/\//', $pid)) {
                         $pid = substr(strrchr($pid, '/'), 1);
                     }
@@ -250,14 +258,40 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                     $parentTitle = $pid . ' ' . $parentTitle;
                 }
 
+                $parentNode = $original->xpath('parent::*[@level]');
+
                 $parent = $addData->addChild('parent');
                 $parent->addAttribute('id', $parentID);
                 $parent->addAttribute('title', $parentTitle);
+                if ($parentNode) {
+                    // Add a new parent-node to parent record addData
+                    $level = (string)$parentNode[0]->attributes()->level;
+                    $parent->addAttribute('level', $level);
+                    if (in_array($level, ['series', 'subseries'])) {
+                        $parent = $originalAddData->addChild('parent');
+                        $parent->addAttribute('id', $parentID);
+                        $parent->addAttribute('title', $parentTitle);
+                        $parent->addAttribute('level', $level);
+                    }
+                }
+
+                if ($parentAddData) {
+                    // Copy all parent-nodes from parent record addData.
+                    foreach ($parentAddData[0]->parent as $p) {
+                        $copy = $addData->addChild('parent');
+                        $copy2 = $originalAddData->addChild('parent');
+                        foreach ($p->attributes() as $key => $val) {
+                            $copy->addAttribute($key, $val);
+                            $copy2->addAttribute($key, $val);
+                        }
+                    }
+                }
             } else {
                 if ($this->currentPos > 1) {
                     $parent = $addData->addChild('parent');
                     $parent->addAttribute('id', $this->archiveId);
                     $parent->addAttribute('title', $this->archiveTitle);
+                    $parent->addAttribute('level', 'archive');
                 }
             }
 

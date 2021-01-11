@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2018.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -22,6 +22,7 @@
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -37,6 +38,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -298,12 +300,11 @@ class Eaccpf extends Base
      */
     protected function getHeading()
     {
-        if (!isset($this->doc->cpfDescription->identity->nameEntry->part)) {
-            return '';
-        }
         $name1 = '';
         $name2 = '';
-        foreach ($this->doc->cpfDescription->identity->nameEntry->part as $part) {
+        foreach (($this->doc->cpfDescription->identity->nameEntry->part ?? [])
+            as $part
+        ) {
             $type = $part->attributes()->localType;
             if ('TONI1' == $type) {
                 $name1 = (string)$part;
@@ -311,7 +312,17 @@ class Eaccpf extends Base
                 $name2 = (string)$part;
             }
         }
-        return trim("$name1 $name2");
+        if (empty($name1) && empty($name2)) {
+            if ($usefor = $this->getUseForHeadings()) {
+                return $usefor[0];
+            } else {
+                return '';
+            }
+        } elseif (!empty($name1) && !empty($name2)) {
+            return trim("$name1 $name2");
+        } else {
+            return !empty($name1) ? $name1 : $name2;
+        }
     }
 
     /**
@@ -431,6 +442,6 @@ class Eaccpf extends Base
                 $result[] = $s;
             }
         }
-        return implode(' ', $result);
+        return $result;
     }
 }

@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -23,6 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -39,6 +40,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Jukka Lehmus <jlehmus@mappi.helsinki.fi>
+ * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
@@ -254,8 +256,13 @@ class Ead3 extends Ead
     {
         $result = [];
         if (isset($this->doc->did->controlaccess->corpname)) {
-            foreach ($this->doc->did->controlaccess->corpname as $corpname) {
-                $result[] = trim((string)$corpname);
+            foreach ($this->doc->did->controlaccess->corpname as $name) {
+                $result[] = trim((string)$name);
+            }
+        }
+        if (isset($this->doc->controlaccess->corpname->part)) {
+            foreach ($this->doc->controlaccess->corpname->part as $name) {
+                $result[] = trim((string)$name);
             }
         }
 
@@ -286,38 +293,45 @@ class Ead3 extends Ead
     }
 
     /**
-     * Get geographic topics
-     *
-     * @return array
-     */
-    protected function getGeographicTopics()
-    {
-        $result = [];
-        if (!isset($this->doc->did->controlaccess->geogname)) {
-            return $result;
-        }
-        foreach ($this->doc->did->controlaccess->geogname as $name) {
-            if (trim((string)$name) !== '-') {
-                $result[] = trim((string)$name);
-            }
-        }
-        return $result;
-    }
-
-    /**
      * Get topics
      *
      * @return array
      */
     protected function getTopics()
     {
+        return $this->getTopicTermsFromNode('subject');
+    }
+
+    /**
+     * Get geographic topics
+     *
+     * @return array
+     */
+    protected function getGeographicTopics()
+    {
+        return $this->getTopicTermsFromNode('geogname');
+    }
+
+    /**
+     * Helper function for getting controlaccess child
+     * elements with their identifiers.
+     *
+     * @param string $nodeName Element name to search for
+     * @param bool   $uri      Whether to return identifiers instead of labels.
+     *
+     * @return array
+     */
+    protected function getTopicTermsFromNode($nodeName, $uri = false)
+    {
         $result = [];
-        if (!isset($this->doc->did->controlaccess->subject)) {
+        if (!isset($this->doc->controlaccess->{$nodeName})) {
             return $result;
         }
-        foreach ($this->doc->did->controlaccess->subject as $subject) {
-            if (trim((string)$subject) !== '-') {
-                $result[] = trim((string)$subject);
+
+        foreach ($this->doc->controlaccess->{$nodeName} as $node) {
+            $attr = $node->attributes();
+            if ($value = trim((string)$node->part)) {
+                $result[] = $uri ? $attr->identifier : $value;
             }
         }
         return $result;
