@@ -72,7 +72,8 @@ class MarcAuthority extends Marc
             $data['fullrecord'] = $this->toXML();
         }
 
-        $data['allfields'] = $this->getAllFields();
+        $data['allfields']
+            = array_merge($this->getAllFields(), [$this->getHeading()]);
         $data['source'] = $this->getRecordSource();
 
         $heading = $this->getHeading();
@@ -113,12 +114,22 @@ class MarcAuthority extends Marc
             as $code
         ) {
             foreach ($this->getFields($code) as $field) {
-                if ($activity = $this->getSubfield($field, 'a')) {
-                    $result[] = $activity;
-                }
+                $result = array_merge(
+                    $result, [
+                        implode(
+                            ', ',
+                            array_map(
+                                function ($val) {
+                                    return trim($val, '., ');
+                                },
+                                $this->getSubfieldsArray($field, ['a' => 1, 'b' => 1])
+                            )
+                        )
+                    ]
+                );
             }
         }
-        return $this->trimFields(array_unique($result));
+        return array_unique($this->trimFields($result));
     }
 
     /**
@@ -162,7 +173,11 @@ class MarcAuthority extends Marc
     protected function getHeading()
     {
         if ($name = $this->getFieldSubField('100', 'a', true)) {
-            return rtrim($name, ' .');
+            $name = rtrim($name, ' .');
+            if ($sub = $this->getFieldSubField('100', 'b', true)) {
+                $name .= ', ' . $sub;
+            }
+            return $name;
         }
         foreach (['110', '111'] as $code) {
             if ($field = $this->getFields($code)) {
@@ -173,7 +188,7 @@ class MarcAuthority extends Marc
                 $fields = array_merge(
                     $fields, $this->getSubfieldsArray($field[0], ['b' => true])
                 );
-                return implode(' / ', $this->trimFields($fields));
+                return implode(', ', $this->trimFields($fields));
             }
         }
         return '';
