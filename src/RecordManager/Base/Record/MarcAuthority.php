@@ -122,7 +122,9 @@ class MarcAuthority extends Marc
                                 function ($val) {
                                     return trim($val, '., ');
                                 },
-                                $this->getSubfieldsArray($field, ['a' => 1, 'b' => 1])
+                                $this->getSubfieldsArray(
+                                    $field, ['a' => 1, 'b' => 1]
+                                )
                             )
                         )
                     ]
