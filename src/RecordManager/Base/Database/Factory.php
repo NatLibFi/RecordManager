@@ -47,9 +47,9 @@ class Factory
      */
     public static function createDatabase(array $config): DatabaseInterface
     {
-        $backend = $config['Database']['backend'] ?? 'MongoDB';
+        $backend = $config['Database']['backend'] ?? 'Mongo';
         if (empty($config[$backend])) {
-            throw new \Exception('MongoDB configuration missing');
+            throw new \Exception("Configuration section $backend missing");
         }
         $dbConfig = $config[$backend];
         if ('Mongo' === $backend) {
