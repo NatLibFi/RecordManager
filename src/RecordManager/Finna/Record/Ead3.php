@@ -544,22 +544,20 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         };
 
         if (null === ($startDate = $parseDate($start))) {
-            $this->logger->log(
+            $this->logger->logDebug(
                 'Ead3',
                 "Failed to parse startDate $start, record {$this->source}."
-                . $this->getID(),
-                Logger::DEBUG
+                . $this->getID()
             );
             $this->storeWarning('invalid start date');
             return null;
         }
 
         if (null === ($endDate = $parseDate($end, '9', '12', null, '23:59:59'))) {
-            $this->logger->log(
+            $this->logger->logDebug(
                 'Ead3',
                 "Failed to parse endDate $end, record {$this->source}."
-                . $this->getID(),
-                Logger::DEBUG
+                . $this->getID()
             );
             $this->storeWarning('invalid end date');
             return null;
