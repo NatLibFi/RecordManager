@@ -327,6 +327,64 @@ class Lido extends Base
     }
 
     /**
+     * Get key data that can be used to identify expressions of a work
+     *
+     * Returns an associative array like this:
+     *
+     * [
+     *   'titles' => [
+     *     ['type' => 'title', 'value' => 'Title'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title']
+     *    ],
+     *   'authors' => [
+     *     ['type' => 'author', 'value' => 'Name 1'],
+     *     ['type' => 'author', 'value' => 'Name 2']
+     *   ],
+     *   'titlesAltScript' => [
+     *     ['type' => 'title', 'value' => 'Title in alternate script'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
+     *   ],
+     *   'authorsAltScript' => [
+     *     ['type' => 'author', 'value' => 'Name 1 in alternate script'],
+     *     ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *   ]
+     * ]
+     *
+     * @return array
+     */
+    public function getWorkIdentificationData()
+    {
+        $titlesByLang = [];
+        foreach ($this->getTitleSetNodes() as $set) {
+            foreach ($set->appellationValue as $appellationValue) {
+                $title = trim((string)$appellationValue);
+                if ('' !== $title) {
+                    $lang = (string)($appellationValue['lang'] ?? 'NA');
+                    $titlesByLang[$lang][] = $title;
+                }
+            }
+        }
+
+        $titles = [];
+        foreach ($titlesByLang as $titleParts) {
+            $title = implode(' ', $titleParts);
+            $titles[] = ['type' => 'title', 'value' => $title];
+            $sortTitle = MetadataUtils::stripLeadingPunctuation($title);
+            if ($sortTitle !== $title) {
+                $titles[] = ['type' => 'title', 'value' => $sortTitle];
+            }
+        }
+
+        $authors = [];
+        if ($author = $this->getMainAuthor()) {
+            $authors[] = ['type' => 'author', 'value' => $author];
+        }
+        $titlesAltScript = [];
+        $authorsAltScript = [];
+        return compact('titles', 'authors', 'titlesAltScript', 'authorsAltScript');
+    }
+
+    /**
      * Get the last sublocation (partOfPlace) of a place
      *
      * @param \SimpleXMLElement $place Place element

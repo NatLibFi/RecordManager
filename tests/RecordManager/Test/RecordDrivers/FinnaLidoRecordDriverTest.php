@@ -436,4 +436,33 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
 
         $this->assertEquals('Designmuseo', $fields['institution']);
     }
+
+    /**
+     * Test work identification keys
+     *
+     * @return void
+     */
+    public function testWorkIdentificationKeys()
+    {
+        $record = $this->createRecord(Lido::class, 'lido_workkeys.xml');
+
+        $expected = [
+            'titles' => [
+                ['type' => 'title', 'value' => 'Rantakiviä litteitä'],
+                ['type' => 'title', 'value' => 'Shore Stones'],
+                ['type' => 'title', 'value' => 'other'],
+            ],
+            'authors' => [
+                ['type' => 'author', 'value' => 'Halonen, Pekka']
+            ],
+            'titlesAltScript' => [],
+            'authorsAltScript' => []
+        ];
+
+        $this->compareArray(
+            $expected,
+            $record->getWorkIdentificationData(),
+            'getWorkIdentificationData'
+        );
+    }
 }
