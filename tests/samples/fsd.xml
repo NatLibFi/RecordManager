@@ -1,0 +1,40 @@
+<record>
+  <control>
+    <recordid>FSD3390</recordid>
+    <filedesc>
+      <titlestmt>
+        <titleproper lang="fi">Tampereen kaupungin aikuissosiaalityön asiakaskysely 2014</titleproper>
+      </titlestmt>
+    </filedesc>
+    <maintenancestatus value="derived"/>
+    <maintenanceagency>
+      <agencyname lang="fi">Yhteiskuntatieteellinen tietoarkisto</agencyname>
+    </maintenanceagency>
+    <maintenancehistory>
+      <maintenanceevent>
+        <eventtype value="derived"/>
+        <eventdatetime/>
+        <agenttype value="machine"/>
+        <agent/>
+      </maintenanceevent>
+    </maintenancehistory>
+  </control>
+  <did>
+    <unitid identifier="FSD3390">FSD3390</unitid>
+    <unittitle lang="fi">Tampereen kaupungin aikuissosiaalityön asiakaskysely 2014</unittitle>
+    <langmaterial>
+      <language lang="fi"/>
+    </langmaterial>
+    <daoset>
+      <dao daotype="derived" lang="fi" href="http://urn.fi/urn:nbn:fi:fsd:T-FSD3390">
+        <descriptivenote><p lang="fi">Yhteiskuntatieteellinen tietoarkisto FSD</p></descriptivenote>
+      </dao>
+    </daoset>
+    <unitdatestructured datechar="collection">
+      <daterange lang="fi">
+        <fromdate lang="fi" standarddate="2014-02-17">2014-02-17</fromdate>
+        <todate lang="fi" standarddate="2014-03-14">2014-03-14</todate>
+      </daterange>
+    </unitdatestructured>
+  </did>
+</record>
