@@ -99,7 +99,7 @@ EOT;
     {
         $preview = $this->getPreviewCreator();
 
-        $timestamp = new \MongoDB\BSON\UTCDateTime(time());
+        $timestamp = time();
         $record = [
             'format' => 'marc',
             'original_data' => $this->holdingRecord,

@@ -28,8 +28,6 @@
  */
 namespace RecordManager\Finna\Record;
 
-use MongoDB\BSON\UTCDateTime;
-use MongoDB\Collection;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -47,9 +45,9 @@ trait ForwardRecordTrait
     /**
      * Merge component parts to this record
      *
-     * @param Collection       $componentParts Component parts to be merged
-     * @param UTCDateTime|null $changeDate     Latest timestamp for the component
-     *                                         part set
+     * @param \Traversable $componentParts Component parts to be merged
+     * @param mixed        $changeDate     Latest database timestamp for the
+     *                                     component part set
      *
      * @return int Count of records merged
      */

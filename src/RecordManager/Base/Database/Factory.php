@@ -1,10 +1,10 @@
 <?php
 /**
- * Dump Record
+ * Database factory class
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (c) The National Library of Finland 2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,10 +25,10 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Base\Controller;
+namespace RecordManager\Base\Database;
 
 /**
- * Dump Record
+ * Database registry class
  *
  * @category DataManagement
  * @package  RecordManager
@@ -36,23 +36,25 @@ namespace RecordManager\Base\Controller;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Dump extends AbstractBase
+class Factory
 {
     /**
-     * Dump a single record to console
+     * Create a database class
      *
-     * @param string $recordID ID of the record to be dumped
+     * @param array $config RecordManager configuration
      *
-     * @return void
-     * @throws \Exception
+     * @return DatabaseInterface
      */
-    public function launch($recordID)
+    public static function createDatabase(array $config): DatabaseInterface
     {
-        if (!$recordID) {
-            throw new \Exception('dump: record id must be specified');
+        $backend = $config['Database']['backend'] ?? 'MongoDB';
+        if (empty($config[$backend])) {
+            throw new \Exception('MongoDB configuration missing');
         }
-        if ($record = $this->db->getRecord($recordID)) {
-            print_r($record);
+        $dbConfig = $config[$backend];
+        if ('Mongo' === $backend) {
+            return new MongoDatabase($dbConfig);
         }
+        return new PDODatabase($dbConfig);
     }
 }

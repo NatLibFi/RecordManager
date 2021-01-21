@@ -869,7 +869,7 @@ class MetadataUtils
      * Determine if a record is a hidden component part
      *
      * @param array      $settings       Data source settings
-     * @param array      $record         Mongo record
+     * @param array      $record         Database record
      * @param BaseRecord $metadataRecord Metadata record
      *
      * @return boolean
