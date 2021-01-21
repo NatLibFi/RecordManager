@@ -556,6 +556,32 @@ class MongoDatabase extends AbstractDatabase
     }
 
     /**
+     * Get a database connection
+     *
+     * @return \MongoDB\Database
+     */
+    public function getDb()
+    {
+        if (null === $this->db) {
+            $this->mongoClient = new \MongoDB\Client(
+                $this->url,
+                [
+                    'connectTimeoutMS' => (int)$this->connectTimeout,
+                    'socketTimeoutMS' => (int)$this->socketTimeout,
+                ]
+            );
+            $this->db = $this->mongoClient->{$this->databaseName};
+            $this->pid = getmypid();
+        } elseif ($this->pid !== getmypid()) {
+            throw new \Exception(
+                'PID ' . getmypid() . ': database already connected by PID '
+                . getmypid()
+            );
+        }
+        return $this->db;
+    }
+
+    /**
      * Get a record
      *
      * @param string $collection Collection
@@ -714,28 +740,45 @@ class MongoDatabase extends AbstractDatabase
     }
 
     /**
-     * Get a database connection
+     * Iterate through records
      *
-     * @return \MongoDB\Database
+     * Calls callback for each record until exhausted or callback returns false.
+     *
+     * @param Callable $findMethod Method used to find records to iterate
+     * @param array    $filter     Search filter
+     * @param array    $options    Options such as sorting
+     * @param Callable $callback   Callback to call for each record
+     * @param array    $params     Optional parameters to pass to the callback
+     *
+     * @return void
      */
-    public function getDb()
-    {
-        if (null === $this->db) {
-            $this->mongoClient = new \MongoDB\Client(
-                $this->url,
-                [
-                    'connectTimeoutMS' => (int)$this->connectTimeout,
-                    'socketTimeoutMS' => (int)$this->socketTimeout,
-                ]
+    protected function iterate(callable $findMethod, array $filter, array $options,
+        callable $callback, array $params = []
+    ): void {
+        $limit = $this->getDefaultPageSize();
+        $skip = 0;
+        $found = false;
+        do {
+            $currentFilter = $filter;
+            $records = $findMethod(
+                $currentFilter,
+                array_merge(
+                    $options,
+                    [
+                        'skip' => $skip,
+                        'limit' => $limit,
+                        'sort' => ['_id' => 1]
+                    ]
+                )
             );
-            $this->db = $this->mongoClient->{$this->databaseName};
-            $this->pid = getmypid();
-        } elseif ($this->pid !== getmypid()) {
-            throw new \Exception(
-                'PID ' . getmypid() . ': database already connected by PID '
-                . getmypid()
-            );
-        }
-        return $this->db;
+            $found = false;
+            foreach ($records as $record) {
+                $found = true;
+                if ($callback($record, $params) === false) {
+                    return;
+                }
+            }
+            $skip += $limit;
+        } while ($found && !isset($filter['_id']));
     }
 }
