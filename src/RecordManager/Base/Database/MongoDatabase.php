@@ -767,7 +767,6 @@ class MongoDatabase extends AbstractDatabase
                     [
                         'skip' => $skip,
                         'limit' => $limit,
-                        'sort' => ['_id' => 1]
                     ]
                 )
             );
