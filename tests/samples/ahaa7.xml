@@ -1,0 +1,30 @@
+<record>
+  <control>
+    <recordid>123</recordid>
+    <filedesc>
+      <titlestmt>
+        <titleproper encodinganalog="3.1.2" lang="fin"></titleproper>
+        <author></author>
+      </titlestmt>
+      <publicationstmt>
+        <publisher></publisher>
+      </publicationstmt>
+    </filedesc>
+    <maintenancestatus value="derived"/>
+    <maintenanceagency>
+      <agencycode lang="eng"></agencycode>
+    </maintenanceagency>
+    <maintenancehistory>
+      <maintenanceevent>
+        <eventtype value=""/>
+        <eventdatetime/>
+        <agenttype value=""/>
+        <agent/>
+      </maintenanceevent>
+    </maintenancehistory>
+  </control>
+  <did>
+    <unitid />
+    <unitdate label="Ajallinen kattavuus" normal="open/unknown"></unitdate>
+  </did>  
+</record>
