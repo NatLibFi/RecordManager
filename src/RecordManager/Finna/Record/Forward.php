@@ -100,15 +100,6 @@ class Forward extends \RecordManager\Base\Record\Forward
     protected $primaryLanguage = 'fi';
 
     /**
-     * Video type list for online urls
-     *
-     * @var array
-     */
-    protected $onlineVideoTypes = [
-        'elokuva', 'elokuvaklippi'
-    ];
-
-    /**
      * Return fields to be indexed in Solr
      *
      * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
@@ -478,7 +469,6 @@ class Forward extends \RecordManager\Base\Record\Forward
         $results = [];
         $records = $this->doc->children();
         $records = reset($records);
-        $onlineVideoTypes = $this->getOnlineVideoTypes();
 
         foreach (is_array($records) ? $records : [$records] as $record) {
             $videoMatch = false;
@@ -488,10 +478,9 @@ class Forward extends \RecordManager\Base\Record\Forward
                 $attributes = $record->Title->PartDesignation->Value->attributes();
                 if (!empty($attributes->{'video-tyyppi'})) {
                     $videoType = (string)$attributes->{'video-tyyppi'};
-                    if (!$videoMatch) {
-                        $videoMatch
-                            = in_array(strtolower($videoType), $onlineVideoTypes);
-                    }
+                }
+                if (!empty($attributes->{'online-video'})) {
+                    $videoMatch = boolval((string)$attributes->{'online-video'});
                 }
                 $description = (string)$attributes->{'video-lisatieto'};
             }
@@ -511,19 +500,6 @@ class Forward extends \RecordManager\Base\Record\Forward
             }
         }
         return $results;
-    }
-
-    /**
-     * Get online video types
-     *
-     * @return array
-     */
-    protected function getOnlineVideoTypes()
-    {
-        $onlineVideoTypes = $this->getDriverParam('onlineVideoTypes', '');
-        return empty($onlineVideoTypes)
-            ? $this->onlineVideoTypes
-            : explode(',', $onlineVideoTypes);
     }
 
     /**
