@@ -471,9 +471,7 @@ class Forward extends \RecordManager\Base\Record\Forward
         $records = reset($records);
 
         foreach (is_array($records) ? $records : [$records] as $record) {
-            $videoMatch = isset($record->Title->TitleText)
-                && substr((string)$record->Title->TitleText, -4) === '.mp4';
-
+            $videoMatch = false;
             $videoType = 'elokuva';
             $description = '';
             if (isset($record->Title->PartDesignation->Value)) {
