@@ -180,8 +180,8 @@ class Export extends AbstractBase
             $this->db->iterateRecords(
                 $params,
                 $options,
-                function ($record) use (&$count, &$deduped, &$deleted, $skipRecords,
-                    $xpath, $file, $deletedFile, $addDedupId
+                function (array $record) use (&$count, &$deduped, &$deleted,
+                    $skipRecords, $xpath, $file, $deletedFile, $addDedupId
                 ) {
                     $metadataRecord = $this->recordFactory->createRecord(
                         $record['format'],
@@ -191,7 +191,13 @@ class Export extends AbstractBase
                     );
                     if ($xpath) {
                         $xml = $metadataRecord->toXML();
-                        $xpathResult = MetadataUtils::loadXML($xml)->xpath($xpath);
+                        $dom = MetadataUtils::loadXML($xml);
+                        if (!$dom) {
+                            throw new \Exception(
+                                "Failed to parse record '${$record['_id']}'"
+                            );
+                        }
+                        $xpathResult = $dom->xpath($xpath);
                         if ($xpathResult === false) {
                             throw new \Exception(
                                 "Failed to evaluate XPath expression '$xpath'"

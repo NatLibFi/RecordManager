@@ -215,7 +215,7 @@ class OaiPmh extends Base
     /**
      * Set a start date for the harvest (only harvest records AFTER this date).
      *
-     * @param string $date Start date (YYYY-MM-DD format).
+     * @param string|null $date Start date (YYYY-MM-DD format).
      *
      * @return void
      */

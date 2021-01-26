@@ -160,13 +160,13 @@ function acquireLock($lockfile)
 /**
  * Release a lock on a lock file
  *
- * @param resource $handle Lock file handle
+ * @param resource|bool|null $handle Lock file handle or a falsy value
  *
  * @return void
  */
 function releaseLock($handle)
 {
-    if ($handle) {
+    if (is_resource($handle)) {
         flock($handle, LOCK_UN);
         fclose($handle);
     }

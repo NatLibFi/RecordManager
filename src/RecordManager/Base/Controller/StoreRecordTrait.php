@@ -48,6 +48,13 @@ trait StoreRecordTrait
     protected $previousStoredId = '[none]';
 
     /**
+     * Deduplication handler
+     *
+     * @var \RecordManager\Base\Deduplication\DedupHandlerInterface
+     */
+    protected $dedupHandler;
+
+    /**
      * Save a record into the database. Used by e.g. file import and OAI-PMH
      * harvesting.
      *

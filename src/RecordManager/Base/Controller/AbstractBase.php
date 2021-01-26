@@ -29,6 +29,7 @@ namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Database\DatabaseInterface;
 use RecordManager\Base\Database\Factory as DatabaseFactory;
+use RecordManager\Base\Deduplication\DedupHandlerInterface;
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -244,7 +245,7 @@ abstract class AbstractBase
     /**
      * Create a dedup handler
      *
-     * @return \RecordManager\Base\Deduplication\DedupHandler
+     * @return DedupHandlerInterface
      */
     protected function getDedupHandler()
     {
@@ -254,6 +255,11 @@ abstract class AbstractBase
             $this->db, $this->logger, $this->verbose, $this->basePath, $this->config,
             $this->dataSourceSettings, $this->recordFactory
         );
+        if (!($dedupHandler instanceof DedupHandlerInterface)) {
+            throw new \Exception(
+                'Dedup handler must implement DedupHandlerInterface'
+            );
+        }
         return $dedupHandler;
     }
 

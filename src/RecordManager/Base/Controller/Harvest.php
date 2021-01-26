@@ -156,7 +156,7 @@ class Harvest extends AbstractBase
                             $settings
                         );
                         if ($startResumptionToken) {
-                            $harvest->setStartPos($startResumptionToken);
+                            $harvest->setStartPos(intval($startResumptionToken));
                         }
                     } else {
                         $harvest = new \RecordManager\Base\Harvest\OaiPmh(
@@ -207,7 +207,7 @@ class Harvest extends AbstractBase
                                     ]
                                 ],
                                 [],
-                                function ($record) use (&$count, $source) {
+                                function (array $record) use (&$count, $source) {
                                     if (!empty($record['oai_id'])) {
                                         $this->storeRecord(
                                             $source, $record['oai_id'], true, ''
@@ -293,7 +293,7 @@ class Harvest extends AbstractBase
                                     'mark' => ['$exists' => false]
                                 ],
                                 [],
-                                function ($record) use (&$count, $source) {
+                                function (array $record) use (&$count, $source) {
                                     $this->storeRecord(
                                         $source, $record['oai_id'], true, ''
                                     );

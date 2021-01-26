@@ -77,7 +77,7 @@ function main($argv)
             continue;
         }
         $emptyLines = 0;
-        if ($inResponse) {
+        if ($inResponse && $out) {
             fputs($out, $line . "\n");
         }
     }

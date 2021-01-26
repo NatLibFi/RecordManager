@@ -106,7 +106,7 @@ class Deduplicate extends AbstractBase
                 $this->db->iterateRecords(
                     $filter,
                     [],
-                    function ($record) use ($pc, &$count, $source) {
+                    function (array $record) use ($pc, &$count, $source) {
                         if ($this->terminate) {
                             return false;
                         }
@@ -179,7 +179,7 @@ class Deduplicate extends AbstractBase
                 $this->db->iterateRecords(
                     $params,
                     [],
-                    function ($record) use ($singleId, $dedupHandler,
+                    function (array $record) use ($singleId, $dedupHandler,
                         &$count, &$deduped, $pc, $source, $verbose
                     ) {
                         if (!$singleId && empty($record['update_needed'])) {

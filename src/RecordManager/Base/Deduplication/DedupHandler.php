@@ -44,7 +44,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class DedupHandler
+class DedupHandler implements DedupHandlerInterface
 {
     /**
      * Database
@@ -564,8 +564,8 @@ class DedupHandler
     /**
      * Remove a record from a dedup record
      *
-     * @param object $dedupId ObjectID of the dedup record
-     * @param string $id      Record ID to remove
+     * @param string|object $dedupId ObjectID of the dedup record
+     * @param string        $id      Record ID to remove
      *
      * @return void
      */
