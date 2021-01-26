@@ -1188,8 +1188,14 @@ class SolrUpdater
             );
         }
 
+        // Include Solr URL so that the queue collections won't clash if multiple
+        // Solr indexes are being updated simultaneously
+        $queueIdParams = $params;
+        $queueIdParams['solrUrl'] = $this->config['Solr']['update_url'] ?? '-';
+        $queueId = md5(json_encode($queueIdParams));
+
         $collectionName = $this->db->getExistingQueueCollection(
-            md5(json_encode($params)),
+            $queueId,
             isset($mongoFromDate) ? $mongoFromDate->toDateTime()->format('U') : '0',
             $lastRecordTime
         );
@@ -1213,7 +1219,7 @@ class SolrUpdater
             }
 
             $collectionName = $this->db->getNewQueueCollection(
-                md5(json_encode($params)),
+                $queueId,
                 isset($mongoFromDate)
                     ? $mongoFromDate->toDateTime()->format('U') : 0,
                 $lastRecordTime
