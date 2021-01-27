@@ -207,7 +207,7 @@ class Harvest extends AbstractBase
                                     ]
                                 ],
                                 [],
-                                function (array $record) use (&$count, $source) {
+                                function ($record) use (&$count, $source) {
                                     if (!empty($record['oai_id'])) {
                                         $this->storeRecord(
                                             $source, $record['oai_id'], true, ''
@@ -293,7 +293,7 @@ class Harvest extends AbstractBase
                                     'mark' => ['$exists' => false]
                                 ],
                                 [],
-                                function (array $record) use (&$count, $source) {
+                                function ($record) use (&$count, $source) {
                                     $this->storeRecord(
                                         $source, $record['oai_id'], true, ''
                                     );

@@ -180,8 +180,8 @@ class Export extends AbstractBase
             $this->db->iterateRecords(
                 $params,
                 $options,
-                function (array $record) use (&$count, &$deduped, &$deleted,
-                    $skipRecords, $xpath, $file, $deletedFile, $addDedupId
+                function ($record) use (&$count, &$deduped, &$deleted, $skipRecords,
+                    $xpath, $file, $deletedFile, $addDedupId
                 ) {
                     $metadataRecord = $this->recordFactory->createRecord(
                         $record['format'],
