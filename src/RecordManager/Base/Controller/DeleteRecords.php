@@ -86,7 +86,7 @@ class DeleteRecords extends AbstractBase
         $this->db->iterateRecords(
             $params,
             [],
-            function ($record) use (&$count, $pc, $sourceId) {
+            function ($record) use (&$count, $pc, $sourceId, $dedupHandler) {
                 if (isset($record['dedup_id'])) {
                     $dedupHandler->removeFromDedupRecord(
                         $record['dedup_id'], $record['_id']
