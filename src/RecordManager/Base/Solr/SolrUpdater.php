@@ -2380,6 +2380,8 @@ class SolrUpdater
                                 }
                             } elseif ($building !== '') {
                                 $building = "$institutionCode/$building";
+                            } elseif ('building' === $field) {
+                                $building = $institutionCode;
                             }
                         }
                     } else {
