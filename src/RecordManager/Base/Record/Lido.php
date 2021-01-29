@@ -758,6 +758,8 @@ class Lido extends Base
     /**
      * Get all XML fields
      *
+     * A recursive method for fetching all relevant fields
+     *
      * @param \SimpleXMLElement $xml The XML document
      *
      * @return array
