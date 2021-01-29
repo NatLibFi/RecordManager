@@ -92,6 +92,8 @@ class Lido extends \RecordManager\Base\Record\Lido
     {
         $data = parent::toSolrArray($db);
 
+        $data['allfields'][] = $this->getRecordSourceOrganization();
+
         $data['identifier'] = $this->getIdentifier();
 
         // This is just the display measurements! There's also the more granular
@@ -224,20 +226,6 @@ class Lido extends \RecordManager\Base\Record\Lido
         $data['ctrlnum'] = $this->getOtherIdentifiers();
 
         return $data;
-    }
-
-    /**
-     * Get all XML fields
-     *
-     * @param \SimpleXMLElement $xml The XML document
-     *
-     * @return array
-     */
-    protected function getAllFields($xml)
-    {
-        $allfields = parent::getAllFields($xml);
-        $allfields[] = $this->getRecordSourceOrganization();
-        return $allfields;
     }
 
     /**
