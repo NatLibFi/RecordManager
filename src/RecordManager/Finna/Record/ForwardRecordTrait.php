@@ -28,6 +28,8 @@
  */
 namespace RecordManager\Finna\Record;
 
+use MongoDB\BSON\UTCDateTime;
+use MongoDB\Collection;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -45,9 +47,9 @@ trait ForwardRecordTrait
     /**
      * Merge component parts to this record
      *
-     * @param MongoCollection $componentParts Component parts to be merged
-     * @param MongoDate|null  $changeDate     Latest timestamp for the component part
-     *                                        set
+     * @param Collection       $componentParts Component parts to be merged
+     * @param UTCDateTime|null $changeDate     Latest timestamp for the component
+     *                                         part set
      *
      * @return int Count of records merged
      */
@@ -85,8 +87,8 @@ trait ForwardRecordTrait
     /**
      * Recursively append XML
      *
-     * @param SimpleXMLElement $simplexml Node to append to
-     * @param SimpleXMLElement $append    Node to be appended
+     * @param \SimpleXMLElement $simplexml Node to append to
+     * @param \SimpleXMLElement $append    Node to be appended
      *
      * @return void
      */

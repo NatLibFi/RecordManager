@@ -63,11 +63,10 @@ EOT;
             $basePath,
             $config,
             true,
-            isset($params['verbose']) ? $params['verbose'] : false
+            $params['verbose'] ?? false
         );
         $searchDataSources->launch($params['search']);
     }
 }
 
 main($argv);
-

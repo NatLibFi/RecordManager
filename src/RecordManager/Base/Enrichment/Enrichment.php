@@ -28,6 +28,7 @@
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\Database;
+use RecordManager\Base\Http\ClientFactory;
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 
@@ -68,7 +69,7 @@ abstract class Enrichment
     /**
      * Maximum age of cached data in seconds
      *
-     * @var number
+     * @var int
      */
     protected $maxCacheAge;
 
@@ -173,7 +174,7 @@ abstract class Enrichment
      * @param array    $ignoreErrors Error codes to ignore
      *
      * @return string Metadata (typically XML)
-     * @throws Exception
+     * @throws \Exception
      */
     protected function getExternalData($url, $id, $headers = [], $ignoreErrors = [])
     {
@@ -198,13 +199,12 @@ abstract class Enrichment
         $response = null;
         for ($try = 1; $try <= $this->maxTries; $try++) {
             if (null === $this->request) {
-                $this->request = new \HTTP_Request2(
+                $this->request = ClientFactory::createClient(
                     $url,
                     \HTTP_Request2::METHOD_GET,
                     $this->httpParams
                 );
                 $this->request->setHeader('Connection', 'Keep-Alive');
-                $this->request->setHeader('User-Agent', 'RecordManager');
             } else {
                 $this->request->setUrl($url);
             }

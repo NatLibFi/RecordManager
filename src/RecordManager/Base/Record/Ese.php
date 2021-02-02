@@ -94,20 +94,24 @@ class Ese extends Base
     /**
      * Return fields to be indexed in Solr
      *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
+     *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
         $data = [];
 
         $doc = $this->doc;
-        $data['record_format'] = $data['recordtype'] = 'ese';
+        $data['record_format'] = 'ese';
         $data['ctrlnum'] = (string)$doc->recordID;
         $data['fullrecord'] = $doc->asXML();
 
         // allfields
         $allFields = [];
-        foreach ($doc->children() as $tag => $field) {
+        foreach ($doc->children() as $field) {
             $allFields[] = $field;
         }
         $data['allfields'] = $allFields;
@@ -184,7 +188,7 @@ class Ese extends Base
     }
 
     /**
-     * Dedup: Return main author (format: Last, First)
+     * Return main author (format: Last, First)
      *
      * @return string
      */

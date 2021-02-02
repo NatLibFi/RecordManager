@@ -145,7 +145,7 @@ class OaiPmh extends Base
      * @param array    $config   Main configuration
      * @param array    $settings Settings from datasources.ini
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct(Database $db, Logger $logger, $source, $basePath,
         $config, $settings
@@ -386,24 +386,23 @@ class OaiPmh extends Base
      * @param string $verb   OAI-PMH verb to execute.
      * @param array  $params GET parameters for ListRecords method.
      *
-     * @return DOMDocument Response as DOM
-     * @throws Exception
-     * @throws HTTP_Request2_LogicException
+     * @return \DOMDocument Response as DOM
+     * @throws \Exception
+     * @throws \HTTP_Request2_LogicException
      */
     protected function sendRequest($verb, $params = [])
     {
         // Set up the request:
-        $request = new \HTTP_Request2(
+        $request = \RecordManager\Base\Http\ClientFactory::createClient(
             $this->baseURL,
             \HTTP_Request2::METHOD_GET,
             $this->httpParams
         );
-        $request->setHeader('User-Agent', 'RecordManager');
 
         // Load request parameters:
         $url = $request->getURL();
         $params['verb'] = $verb;
-        $url->setQueryVariables($params);
+        $url->setQueryVariables(array_merge($url->getQueryVariables(), $params));
 
         $urlStr = $url->getURL();
         if ($this->debugLog) {
@@ -468,8 +467,8 @@ class OaiPmh extends Base
      * @param bool   $resumption Whether this is a request made with a
      *                           resumptionToken
      *
-     * @return DOMDocument Response as DOM
-     * @throws Exception
+     * @return \DOMDocument Response as DOM
+     * @throws \Exception
      */
     protected function processResponse($xml, $resumption)
     {
@@ -505,7 +504,7 @@ class OaiPmh extends Base
     /**
      * Extract the ID from a record object (support method for processRecords()).
      *
-     * @param DOMNode $header XML record header
+     * @param \DOMNode $header XML record header
      *
      * @return string The ID value
      */

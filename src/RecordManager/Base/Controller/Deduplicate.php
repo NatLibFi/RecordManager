@@ -66,9 +66,12 @@ class Deduplicate extends AbstractBase
         $this->terminate = false;
         $dedupHandler = $this->getDedupHandler();
 
+        $this->logger->logInfo('deduplicate', 'Deduplication started');
+
         // Install a signal handler so that we can exit cleanly if interrupted
         if (function_exists('pcntl_signal')) {
             pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
+            pcntl_signal(SIGTERM, [$this, 'sigIntHandler']);
             $this->logger->logInfo('deduplicate', 'Interrupt handler set');
         } else {
             $this->logger->logInfo(
@@ -96,7 +99,8 @@ class Deduplicate extends AbstractBase
                     [
                         'source_id' => $source,
                         'host_record_id' => ['$exists' => false],
-                        'deleted' => false
+                        'deleted' => false,
+                        'suppressed' => ['$in' => [null, false]],
                     ]
                 );
                 $pc = new PerformanceCounter();
@@ -225,7 +229,7 @@ class Deduplicate extends AbstractBase
                 }
                 $this->logger->logInfo(
                     'deduplicate',
-                    "Completed with $count records processed for '$source', "
+                    "Total $count records processed for '$source', "
                     . "$deduped deduplicated"
                 );
             } catch (\Exception $e) {
@@ -239,6 +243,7 @@ class Deduplicate extends AbstractBase
                 exit(1);
             }
         }
+        $this->logger->logInfo('deduplicate', 'Deduplication completed');
     }
 
     /**

@@ -129,6 +129,14 @@ class Base
     protected $preXslt = [];
 
     /**
+     * Whether to always re-parse transformation results e.g. to include any new
+     * nodes added by outputting non-encoded text.
+     *
+     * @var bool
+     */
+    protected $reParseTransformed = false;
+
+    /**
      * Record handling callback
      *
      * @var callable
@@ -138,7 +146,7 @@ class Base
     /**
      * Most recent record date encountered during harvesting
      *
-     * @var date
+     * @var string
      */
     protected $trackedEndDate = '';
 
@@ -173,7 +181,7 @@ class Base
      * @param array    $config   Main configuration
      * @param array    $settings Settings from datasources.ini
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct(Database $db, Logger $logger, $source, $basePath,
         $config, $settings
@@ -208,6 +216,7 @@ class Base
                 $this->preXslt[] = $xslt;
             }
         }
+        $this->reParseTransformed = !empty($settings['reParseTransformed']);
 
         if (isset($config['Harvesting']['max_tries'])) {
             $this->maxTries = $config['Harvesting']['max_tries'];
@@ -224,7 +233,7 @@ class Base
     /**
      * Return the number of changed records
      *
-     * @return number
+     * @return int
      */
     public function getChangedRecordCount()
     {
@@ -234,7 +243,7 @@ class Base
     /**
      * Return the number of deleted records
      *
-     * @return number
+     * @return int
      */
     public function getDeletedRecordCount()
     {
@@ -244,7 +253,7 @@ class Base
     /**
      * Return the number of unchanged records
      *
-     * @return number
+     * @return int
      */
     public function getUnchangedRecordCount()
     {
@@ -332,7 +341,7 @@ class Base
      * Check if the record is deleted.
      * This implementation works for MARC records.
      *
-     * @param SimpleXMLElement $record Record
+     * @param \SimpleXMLElement $record Record
      *
      * @return bool
      */
@@ -346,7 +355,7 @@ class Base
      * Check if the record is modified.
      * This implementation works for MARC records.
      *
-     * @param SimpleXMLElement $record Record
+     * @param \SimpleXMLElement $record Record
      *
      * @return bool
      */
@@ -360,10 +369,10 @@ class Base
      * Extract record ID.
      * This implementation works for MARC records.
      *
-     * @param SimpleXMLElement $record Record
+     * @param \SimpleXMLElement $record Record
      *
      * @return string|bool ID if found, false if record is missing ID
-     * @throws Exception
+     * @throws \Exception
      */
     protected function extractID($record)
     {
@@ -391,41 +400,43 @@ class Base
     /**
      * Do pre-transformation
      *
+     * Always returns a string to make sure any elements added as unescaped strings
+     * are properly parsed.
+     *
      * @param string $xml       XML to transform
      * @param bool   $returnDoc Whether to return DOM document instead of string
      *
      * @return string|\DOMDocument Transformed XML
-     * @throws Exception
+     * @throws \Exception
      */
     protected function preTransform($xml, $returnDoc = false)
     {
         $doc = new \DOMDocument();
-        $saveUseErrors = libxml_use_internal_errors(true);
-        libxml_clear_errors();
-        $result = MetadataUtils::loadXML($xml, $doc);
-        if ($result === false || libxml_get_last_error() !== false) {
+        $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
+        if ($result === false || $errors) {
             $this->warningMsg('Invalid XML received, trying encoding fix...');
             $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
-            libxml_clear_errors();
-            $result = MetadataUtils::loadXML($xml, $doc);
+            $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
         }
-        if ($result === false || libxml_get_last_error() !== false) {
-            libxml_use_internal_errors($saveUseErrors);
-            $errors = '';
-            foreach (libxml_get_errors() as $error) {
-                if ($errors) {
-                    $errors .= '; ';
-                }
-                $errors .= 'Error ' . $error->code . ' at ' . $error->line . ':'
-                    . $error->column . ': ' . $error->message;
-            }
+        if ($result === false || $errors) {
             $this->fatalMsg("Could not parse XML: $errors");
             throw new \Exception("Failed to parse XML");
         }
-        libxml_use_internal_errors($saveUseErrors);
 
-        foreach ($this->preXslt as $xslt) {
-            $doc = $xslt->transformToDoc($doc);
+        if ($this->reParseTransformed) {
+            foreach ($this->preXslt as $xslt) {
+                $xml = $xslt->transformToXml($doc);
+                $doc = new \DOMDocument();
+                $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
+            }
+            if ($result === false || $errors) {
+                $this->fatalMsg("Could not parse XML: $errors");
+                throw new \Exception("Failed to parse XML");
+            }
+        } else {
+            foreach ($this->preXslt as $xslt) {
+                $doc = $xslt->transformToDoc($doc);
+            }
         }
 
         return $returnDoc ? $doc : $doc->saveXML();
@@ -546,7 +557,8 @@ class Base
      * @param string $prefix File name prefix
      * @param string $suffix File name suffix
      *
-     * @return void
+     * @return string
+     * @throws \Exception
      */
     protected function getTempFileName($prefix, $suffix)
     {

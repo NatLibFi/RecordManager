@@ -113,7 +113,7 @@ class SierraApi extends Base
      * @param array    $config   Main configuration
      * @param array    $settings Settings from datasources.ini
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function __construct(Database $db, Logger $logger, $source, $basePath,
         $config, $settings
@@ -273,12 +273,11 @@ class SierraApi extends Base
             $apiUrl .= '/' . urlencode($value);
         }
 
-        $request = new \HTTP_Request2(
+        $request = \RecordManager\Base\Http\ClientFactory::createClient(
             $apiUrl,
             \HTTP_Request2::METHOD_GET,
             $this->httpParams
         );
-        $request->setHeader('User-Agent', 'RecordManager');
         $request->setHeader('Accept', 'application/json');
 
         // Load request parameters:
@@ -350,7 +349,7 @@ class SierraApi extends Base
      * @param string $response Sierra response JSON
      *
      * @return int Count of records processed
-     * @throws Exception
+     * @throws \Exception
      */
     protected function processResponse($response)
     {
@@ -402,19 +401,18 @@ class SierraApi extends Base
      * Renew the access token. Throw an exception if there is an error.
      *
      * @return void
-     * @throws Exception
+     * @throws \Exception
      * @throws \HTTP_Request2_LogicException
      */
     protected function renewAccessToken()
     {
         // Set up the request:
         $apiUrl = $this->baseURL . '/' . $this->apiVersion . '/token';
-        $request = new \HTTP_Request2(
+        $request = \RecordManager\Base\Http\ClientFactory::createClient(
             $apiUrl,
             \HTTP_Request2::METHOD_POST,
             $this->httpParams
         );
-        $request->setHeader('User-Agent', 'RecordManager');
         $request->setHeader('Accept', 'application/json');
         $request->setHeader(
             'Authorization',

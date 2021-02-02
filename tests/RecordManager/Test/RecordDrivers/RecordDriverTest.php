@@ -25,8 +25,9 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-use RecordManager\Base\Record\Factory as RecordFactory;
-use RecordManager\Base\Utils\Logger;
+namespace RecordManager\Test\RecordDrivers;
+
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Generic Record Driver Test Class
@@ -37,14 +38,9 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-abstract class RecordDriverTest extends AbstractTest
+abstract class RecordDriverTest extends \RecordManager\Test\AbstractTest
 {
-    /**
-     * Record driver class. Override from a subclass.
-     *
-     * @var object
-     */
-    protected $driver = null;
+    use CreateRecordTrait;
 
     /**
      * Standard setup method.
@@ -53,27 +49,14 @@ abstract class RecordDriverTest extends AbstractTest
      */
     public function setUp(): void
     {
-        if (empty($this->driver)) {
-            $this->markTestIncomplete('Record driver needs to be set in subclass.');
-        }
-    }
-
-    /**
-     * Create a sample record driver
-     *
-     * @param string $sample Sample record file
-     *
-     * @return object
-     */
-    protected function createRecord($sample)
-    {
-        $logger = $this->createMock(Logger::class);
-        $recordFactory = new RecordFactory($logger, [], []);
-        $sample = file_get_contents(__DIR__ . '/../samples/' . $sample);
-        $record = $recordFactory->createRecord(
-            $this->driver, $sample, '__unit_test_no_id__', '__unit_test_no_source__'
+        MetadataUtils::setConfig(
+            [
+                'Site' => [
+                    'articles' => 'articles.lst'
+                ],
+            ],
+            __DIR__ . '/../../../configs/recorddrivertest'
         );
-        return $record;
     }
 
     /**
@@ -92,11 +75,15 @@ abstract class RecordDriverTest extends AbstractTest
     {
         foreach ($expected as $key => $value) {
             $this->assertEquals(
-                $value, $provided[$key] ?? null, "[$method] Compare field $key"
+                $value,
+                $provided[$key] ?? null,
+                "[$method] Compare expected field $key"
             );
         }
-        $this->assertEquals(
-            count($expected), count($provided), "[$method] Field count equal"
-        );
+        foreach ($provided as $key => $value) {
+            $this->assertTrue(array_key_exists($key, $expected) !== false,
+                "[$method] Unexpected field $key: " . var_export($value, true)
+            );
+        }
     }
 }

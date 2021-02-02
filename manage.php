@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -33,7 +33,7 @@ require_once 'cmdline.php';
  * @param string[] $argv Program parameters
  *
  * @return void
- * @throws Exception
+ * @throws \Exception
  */
 function main($argv)
 {
@@ -49,14 +49,15 @@ Parameters:
 
 --func              renormalize|deduplicate|updatesolr|dump|dumpsolr|markdeleted
                     |deletesource|deletesolr|optimizesolr|count|checkdedup|checksolr
-                    |comparesolr|purgedeleted|markdedup|markforupdate
+                    |comparesolr|purgedeleted|markdedup|markforupdate|suppress
+                    |unsuppress
 --source            Source ID to process (separate multiple sources with commas)
 --all               Process all records regardless of their state (deduplicate,
                     markdedup)
                     or date (updatesolr)
 --from              Override the date from which to run the update (updatesolr)
 --single            Process only the given record id (deduplicate, updatesolr, dump,
-                    markdeleted, markforupdate, checkdedup)
+                    markdeleted, markforupdate, checkdedup, suppress, unsuppress)
 --nocommit          Don't ask Solr to commit the changes (updatesolr)
 --field             Field to analyze (count)
 --force             Force deletesource to proceed even if deduplication is enabled
@@ -86,22 +87,21 @@ EOT;
         exit(1);
     }
 
-    $lockfile = isset($params['lockfile']) ? $params['lockfile'] : '';
+    $lockfile = $params['lockfile'] ?? '';
     $lockhandle = false;
-    $verbose = isset($params['verbose']) ? $params['verbose'] : false;
+    $verbose = $params['verbose'] ?? false;
     try {
         if (($lockhandle = acquireLock($lockfile)) === false) {
             die();
         }
 
-        $sources = isset($params['source']) ? $params['source'] : '';
-        $single = isset($params['single']) ? $params['single'] : '';
-        $noCommit = isset($params['nocommit']) ? $params['nocommit'] : false;
+        $sources = $params['source'] ?? '';
+        $single = $params['single'] ?? '';
+        $noCommit = $params['nocommit'] ?? false;
 
         // Solr update, compare and dump can handle multiple sources at once
         if ($params['func'] == 'updatesolr') {
-            $date = isset($params['all'])
-                ? '' : (isset($params['from']) ? $params['from'] : null);
+            $date = isset($params['all']) ? '' : ($params['from'] ?? null);
             $datePerServer = !empty($params['dateperserver']);
 
             $solrUpdate = new \RecordManager\Base\Controller\SolrUpdate(
@@ -109,19 +109,16 @@ EOT;
             );
             $solrUpdate->launch($date, $sources, $single, $noCommit, $datePerServer);
         } elseif ($params['func'] == 'comparesolr') {
-            $date = isset($params['all'])
-                ? '' : (isset($params['from']) ? $params['from'] : null);
-            $log = isset($params['comparelog']) ? $params['comparelog'] : '-';
+            $date = isset($params['all']) ? '' : ($params['from'] ?? null);
+            $log = $params['comparelog'] ?? '-';
 
             $solrCompare = new \RecordManager\Base\Controller\SolrCompare(
                 $basePath, $config, true, $verbose
             );
             $solrCompare->launch($log, $date, $sources, $single);
         } elseif ($params['func'] == 'dumpsolr') {
-            $date = isset($params['all'])
-                ? '' : (isset($params['from']) ? $params['from'] : null);
-            $dumpPrefix = isset($params['dumpprefix'])
-                ? $params['dumpprefix'] : 'dumpsolr';
+            $date = isset($params['all']) ? '' : ($params['from'] ?? null);
+            $dumpPrefix = $params['dumpprefix'] ?? 'dumpsolr';
             $mapped = isset($params['mapped'])
                 ? ('false' !== $params['mapped']) : true;
 
@@ -186,13 +183,17 @@ EOT;
                     $solrOptimize->launch();
                     break;
                 case 'count':
+                    if (empty($params['field'])) {
+                        echo "--field must be specified\n";
+                        exit(1);
+                    }
                     $countValues = new \RecordManager\Base\Controller\CountValues(
                         $basePath, $config, true, $verbose
                     );
                     $countValues->launch(
                         $source,
-                        isset($params['field']) ? $params['field'] : null,
-                        isset($params['mapped']) ? $params['mapped'] : false
+                        $params['field'],
+                        $params['mapped'] ?? false
                     );
                     break;
                 case 'checkdedup':
@@ -228,6 +229,18 @@ EOT;
                             $basePath, $config, true, $verbose
                         );
                     $markForUpdate->launch($source, $single);
+                    break;
+                case 'suppress':
+                    $suppress = new \RecordManager\Base\Controller\Suppress(
+                        $basePath, $config, true, $verbose
+                    );
+                    $suppress->launch($source, $single);
+                    break;
+                case 'unsuppress':
+                    $unsuppress = new \RecordManager\Base\Controller\Unsuppress(
+                        $basePath, $config, true, $verbose
+                    );
+                    $unsuppress->launch($source, $single);
                     break;
                 default:
                     echo 'Unknown func: ' . $params['func'] . "\n";

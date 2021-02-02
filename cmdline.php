@@ -108,7 +108,7 @@ function parseArgs($argv)
             $eqPos = strpos($arg, '=');
             if ($eqPos === false) {
                 $key = substr($arg, 2);
-                $params[$key] = isset($params[$key]) ? $params[$key] : true;
+                $params[$key] = $params[$key] ?? true;
             } else {
                 $key = substr($arg, 2, $eqPos - 2);
                 $params[$key] = substr($arg, $eqPos + 1);
@@ -121,7 +121,7 @@ function parseArgs($argv)
                 $chars = str_split(substr($arg, 1));
                 foreach ($chars as $char) {
                     $key = $char;
-                    $params[$key] = isset($params[$key]) ? $params[$key] : true;
+                    $params[$key] = $params[$key] ?? true;
                 }
             }
         } else {

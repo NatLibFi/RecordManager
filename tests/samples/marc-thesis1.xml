@@ -1,0 +1,62 @@
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+<record>
+    <leader>02224cam a2200433 i 4500</leader>
+    <controlfield tag="001">123</controlfield>
+    <controlfield tag="008">201022s2020    fi ||||||m   |||||||fin| </controlfield>
+    <datafield tag="080" ind1=" " ind2=" ">
+        <subfield code="a">614.8</subfield>
+    </datafield>
+    <datafield tag="100" ind1="1" ind2=" ">
+        <subfield code="a">Author, Test.</subfield>
+    </datafield>
+    <datafield tag="245" ind1="1" ind2="0">
+        <subfield code="a">Thesis Title /</subfield>
+        <subfield code="c">Test Author.</subfield>
+    </datafield>
+    <datafield tag="260" ind1=" " ind2=" ">
+        <subfield code="a">[Helsinki] :</subfield>
+        <subfield code="b">Kansalliskirjasto</subfield>
+        <subfield code="c">2020</subfield>
+    </datafield>
+    <datafield tag="336" ind1=" " ind2=" ">
+        <subfield code="a">teksti</subfield>
+        <subfield code="b">txt</subfield>
+        <subfield code="2">rdacontent</subfield>
+    </datafield>
+    <datafield tag="337" ind1=" " ind2=" ">
+        <subfield code="a">käytettävissä ilman laitetta</subfield>
+        <subfield code="b">n</subfield>
+        <subfield code="2">rdamedia</subfield>
+    </datafield>
+    <datafield tag="338" ind1=" " ind2=" ">
+        <subfield code="a">nide</subfield>
+        <subfield code="b">nc</subfield>
+        <subfield code="2">rdacarrier</subfield>
+    </datafield>
+    <datafield tag="509" ind1=" " ind2=" ">
+        <subfield code="a">AMK-opinnäytetypo :</subfield>
+        <subfield code="c">Sample Program,</subfield>
+        <subfield code="d">2020.</subfield>
+    </datafield>
+    <datafield tag="509" ind1=" " ind2=" ">
+        <subfield code="a">AMK-opinnäytetyö :</subfield>
+        <subfield code="c">Second Sample Program,</subfield>
+        <subfield code="d">2020.</subfield>
+    </datafield>
+    <datafield tag="650" ind1=" " ind2="7">
+        <subfield code="a">testaus</subfield>
+        <subfield code="2">yso/fin</subfield>
+        <subfield code="0">http://www.yso.fi/onto/yso/p8471</subfield>
+    </datafield>
+    <datafield tag="920" ind1=" " ind2=" ">
+        <subfield code="a">AMK-opinnäytetyö :</subfield>
+        <subfield code="c">Sample Program,</subfield>
+        <subfield code="d">2020.</subfield>
+    </datafield>
+    <datafield tag="920" ind1=" " ind2=" ">
+        <subfield code="a">AMK-opinnäytetyö :</subfield>
+        <subfield code="c">Second Sample Program,</subfield>
+        <subfield code="d">2020.</subfield>
+    </datafield>
+</record>
+</collection>

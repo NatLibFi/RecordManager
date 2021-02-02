@@ -39,25 +39,13 @@
 ;
 ; debugLog may be pointed to a file where all the OAI-PMH requests and responses are written.
 ;
-; To harvest MetaLib IRD's using MetaLib X-Server, create a section like this:
-;
-; [section_name]
-; type = metalib
-; url = http://metalib.adress/X
-; xUser = username
-; xPassword = password
-; format = marc
-; normalization = metalib_ird.properties
-; query = "WIN=INSTITUTE"
-; verbose = false
-; institution = MyInst
-;
 ; RecordManager settings:
 ; institution           The institution code mapped to the source (required)
 ; recordXPath           xpath expression used when loading records from a file to identify a single record (optional, e.g. //record)
 ; format                Record format in RecordManager
 ; oaipmhTransformation[] XSL Transformations to be applied to the OAI-PMH responses (e.g. to strip namespaces, optional)
 ; preTransformation[]   XSL Transformations to be applied to files to be imported (e.g. to strip namespaces, optional)
+; reParseTransformed    Whether to re-parse transformation results. Disabled by default for performance reasons, but can be enabled to e.g. parse fields added by outputting un-encoded text.
 ; recordSplitterClass   PHP class used to split records in import or OAI-PMH harvest (optional, e.g. to split EAD records to multiple records)
 ; recordSplitter        Transformation (alternative to PHP class above) used to split records in import or OAI-PMH harvest (optional, e.g. to split EAD records to multiple records)
 ; recordSplitterParams[] An array of extra parameters that can be used to customize record splitter behavior. Available options depend on the splitter used.
@@ -72,6 +60,7 @@
 ;                         merge_non_articles   Merge to host record unless article (including e-journal articles)
 ;                         merge_non_earticles  Merge to host record unless e-journal article
 ; idPrefix              Prefix to be used with the record ID's. Prefixes are always added so that ID's are unique, e.g. ID 1234 becomes prefix.1234 (optional, section name is used if not provided).
+; solrIdPrefix          Prefix to be used with the record ID's in Solr (optional, overrides idPrefix but does not modify the prefix used in the Database).
 ; indexMergedParts      Whether to index merged component parts also separately with hidden_component_boolean field set to true. Defaults to true.
 ; indexUnprefixedIds    Whether to index record ID's without the source prefix. Default is false.
 ; {field}_mapping       A mapping file (.ini-style) to be used to map values of {field} when updating Solr index. Useful for e.g. mapping multiple location codes to one.
@@ -85,7 +74,8 @@
 ;                       Use format fieldname:contents, e.g.
 ;                         extrafields[] = sector_str_mv:library
 ; driverParams[]        An array of extra parameters that can be used to customize record driver behavior
-; enrichments[]         An array of enrichment class names that can be used to enrich records
+; enrichments[]         An array of enrichment class names that can be used to enrich records. ",final" can be appended to indicate that enrichment is executed to the
+;                       final record after mappings etc. have been processed. By default it is executed before mappings, normalization etc.
 ; componentPartSourceId[] An array defining linked sources that are used to fetch component parts from this source
 ; authority[<type>]     Map to authority index sources where <type> is authority record type
 ;                       (corporateBody, person) or * for any;
@@ -128,6 +118,19 @@ componentParts = merge_non_articles
 dedup = true
 building_mapping = voyager_locations.map
 
+; Sample Koha configuration
+[koha]
+url = https://koha.address/cgi-bin/koha/opac/oai.pl
+metadataPrefix = marc21
+institution = SampleInstitution
+format = marc
+componentParts = merge_non_earticles
+dedup = true
+driverParams[] = "idIn999=true"
+driverParams[] = "003InLinkingID=true"
+driverParams[] = "kohaNormalization=true"
+enrichments[] = MarcAuthEnrichment,final
+
 ; Sample DSpace configuration
 [dspace]
 url = http://dspace.server/dspace-oai/request
@@ -152,15 +155,6 @@ prepend_title_with_subtitle = true
 prepend_parent_title_with_unitid = true
 recordXPath = //ead
 oaiIDXPath = ../../header/identifier
-
-; Sample MetaLib CKB Export configuration
-[metalib]
-type = metalib_export
-format = marc
-url = https://www.nelliportaali.fi/finna_export/
-filePrefix = "METALIB_"
-fileSuffix = ".xml"
-preTransformation = metalib_export.xsl
 
 ; Sample SFX configuration
 [sfx]

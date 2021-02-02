@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Finna\Record;
 
+use MongoDB\BSON\UTCDateTime;
+use MongoDB\Collection;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -42,6 +44,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Marc extends \RecordManager\Base\Record\Marc
 {
+    use AuthoritySupportTrait;
+
     /**
      * Strings in field 300 that signify that the work is illustrated.
      *
@@ -57,6 +61,27 @@ class Marc extends \RecordManager\Base\Record\Marc
      * @var array
      */
     protected $extraAllFields = [];
+
+    /**
+     * Default field for geographic coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoField = 'location_geo';
+
+    /**
+     * Default field for geographic center coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoCenterField = 'center_coords';
+
+    /**
+     * Default field for geographic center coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoDisplayField = '';
 
     /**
      * Set record data
@@ -81,6 +106,8 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     public function normalize()
     {
+        parent::normalize();
+
         // Kyyti enumeration from 362 to title
         if ($this->source == 'kyyti' && isset($this->fields['245'])
             && isset($this->fields['362'])
@@ -90,106 +117,20 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $this->fields['245'][0]['s'][] = ['n' => $enum];
             }
         }
-
-        // Koha and Alma record normalization
-        $koha = $this->getDriverParam('kohaNormalization', false);
-        $alma = $this->getDriverParam('almaNormalization', false);
-        if ($koha || $alma) {
-            // Convert items to holdings
-            $useHome = $koha && $this->getDriverParam('kohaUseHomeBranch', false);
-            $holdings = [];
-            $availableBuildings = [];
-            foreach ($this->getFields('952') as $field952) {
-                $key = [];
-                $holding = [];
-                $branch = $this->getSubfield($field952, $useHome ? 'a' : 'b');
-                $key[] = $branch;
-                // Always use subfield 'b' for location regardless of where it came
-                // from
-                $holding[] = ['b' => $branch];
-                foreach (['c', 'h', 'o', '8'] as $code) {
-                    $value = $this->getSubfield($field952, $code);
-                    $key[] = $value;
-                    if ('' !== $value) {
-                        $holding[] = [$code => $value];
-                    }
-                }
-
-                if ($alma) {
-                    $available = $this->getSubfield($field952, '1') == 1;
-                } else {
-                    // Availability
-                    static $subfieldsExist = [
-                        '0', // Withdrawn
-                        '1', // Lost
-                        '4', // Damaged
-                        'q', // Due date
-                    ];
-                    $available = true;
-                    foreach ($subfieldsExist as $code) {
-                        if ($this->getSubfield($field952, $code)) {
-                            $available = false;
-                            break;
-                        }
-                    }
-                    if ($available) {
-                        $status = $this->getSubfield($field952, '7'); // Not for loan
-                        $available = $status === '0' || $status === '1';
-                    }
-                }
-
-                $key = implode('//', $key);
-                if ($available) {
-                    $availableBuildings[$key] = 1;
-                }
-
-                $holdings[$key] = $holding;
-            }
-            $this->fields['952'] = [];
-            foreach ($holdings as $key => $holding) {
-                if (isset($availableBuildings[$key])) {
-                    $holding[] = ['9' => 1];
-                }
-                $this->fields['952'][] = [
-                    'i1' => ' ',
-                    'i2' => ' ',
-                    's' => $holding
-                ];
-            }
-        }
-
-        if ($koha) {
-            // Verify that 001 exists
-            if ('' === $this->getField('001')) {
-                if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
-                    $this->fields['001'] = [$id];
-                }
-            }
-        }
-
-        if ($alma) {
-            // Add a prefixed id to field 090 to indicate that the record is from
-            // Alma. Used at least with OpenURL.
-            $id = $this->getField('001');
-            $this->fields['090'][] = [
-                'i1' => ' ',
-                'i2' => ' ',
-                's' => [
-                    ['a' => "(Alma)$id"]
-                ]
-            ];
-            ksort($this->fields);
-        }
     }
 
     /**
-     * Return fields to be indexed in Solr (an alternative to an XSL transformation)
+     * Return fields to be indexed in Solr
+     *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
      *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
-        $data = parent::toSolrArray();
+        $data = parent::toSolrArray($db);
 
         if (empty($data['author'])) {
             foreach ($this->getFields('110') as $field110) {
@@ -205,6 +146,20 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
             }
         }
+
+        $primaryAuthors = $this->getPrimaryAuthors();
+        $secondaryAuthors = $this->getSecondaryAuthors();
+        $corporateAuthors = $this->getCorporateAuthors();
+        $data['author2_id_str_mv'] = array_merge(
+            $this->addNamespaceToAuthorityIds($primaryAuthors['ids']),
+            $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']),
+            $this->addNamespaceToAuthorityIds($corporateAuthors['ids'])
+        );
+        $data['author2_id_role_str_mv'] = array_merge(
+            $this->addNamespaceToAuthorityIds($primaryAuthors['idRoles']),
+            $this->addNamespaceToAuthorityIds($secondaryAuthors['idRoles']),
+            $this->addNamespaceToAuthorityIds($corporateAuthors['idRoles'])
+        );
 
         if (isset($data['publishDate'])) {
             $data['main_date_str']
@@ -257,6 +212,14 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $data['author2_role'][] = '-';
             }
         }
+        // 979l = component part author id's
+        foreach ($this->getFields('979') as $field) {
+            $ids = $this->getSubfieldsArray($field, ['l' => 1]);
+            $data['author2_id_str_mv'] = array_merge(
+                $data['author2_id_str_mv'],
+                $this->addNamespaceToAuthorityIds($ids)
+            );
+        }
 
         $data['title_alt'] = array_values(
             array_unique(
@@ -303,62 +266,6 @@ class Marc extends \RecordManager\Base\Record\Marc
                 )
             )
         );
-
-        // Location coordinates
-        $field = $this->getField('034');
-        if ($field) {
-            $westOrig = $this->getSubfield($field, 'd');
-            $eastOrig = $this->getSubfield($field, 'e');
-            $northOrig = $this->getSubfield($field, 'f');
-            $southOrig = $this->getSubfield($field, 'g');
-            $west = MetadataUtils::coordinateToDecimal($westOrig);
-            $east = MetadataUtils::coordinateToDecimal($eastOrig);
-            $north = MetadataUtils::coordinateToDecimal($northOrig);
-            $south = MetadataUtils::coordinateToDecimal($southOrig);
-
-            if (!is_nan($west) && !is_nan($north)) {
-                if (($west < -180 || $west > 180) || ($north < -90 || $north > 90)) {
-                    $this->logger->logDebug(
-                        'Marc',
-                        "Discarding invalid coordinates $west,$north decoded from "
-                            . "w=$westOrig, e=$eastOrig, n=$northOrig, s=$southOrig,"
-                            . " record {$this->source}." . $this->getID()
-                    );
-                    $this->storeWarning('invalid coordinates in 034');
-                } else {
-                    if (!is_nan($east) && !is_nan($south)) {
-                        if ($east < -180 || $east > 180 || $south < -90
-                            || $south > 90
-                        ) {
-                            $this->logger->logDebug(
-                                'Marc',
-                                "Discarding invalid coordinates $east,$south "
-                                    . "decoded from w=$westOrig, e=$eastOrig, "
-                                    . "n=$northOrig, s=$southOrig, record "
-                                    . "{$this->source}." . $this->getID()
-                            );
-                            $this->storeWarning('invalid coordinates in 034');
-                        } else {
-                            // Try to cope with weird coordinate order
-                            if ($north > $south) {
-                                list($north, $south) = [$south, $north];
-                            }
-                            if ($west > $east) {
-                                list($west, $east) = [$east, $west];
-                            }
-                            $data['location_geo']
-                                = "ENVELOPE($west, $east, $south, $north)";
-                        }
-                    } else {
-                        $data['location_geo'] = "POINT($west $north)";
-                    }
-                }
-            }
-        }
-        if (!empty($data['location_geo'])) {
-            $data['center_coords']
-                = MetadataUtils::getCenterCoordinates($data['location_geo']);
-        }
 
         // Classifications
         foreach ($this->getFields('080') as $field080) {
@@ -784,38 +691,41 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         // Additional authority ids
-        foreach ($this->getFields('600') as $field) {
-            if ($id = $this->getSubField($field, '0')) {
-                $data['topic_id_str_mv']
-                    = $this->addNamespaceToAuthorityIds([$id]);
-            }
+        $data['topic_id_str_mv'] = $this->getTopicIds();
+
+        // Make sure center_coords is single-valued
+        if (!empty($data['center_coords'])) {
+            $data['center_coords'] = $data['center_coords'][0];
         }
+
         return $data;
     }
 
     /**
-     * Return author ids that are indexed to author2_id_str_mv
+     * Get all non-specific topics
      *
      * @return array
      */
-    public function getAuthorIds()
+    protected function getTopicIds()
     {
-        $ids = parent::getAuthorIds();
-
-        foreach ($this->getFields('700') as $field) {
-            if ($id = $this->getSubField($field, '0')) {
-                $ids = array_merge($ids, $this->addNamespaceToAuthorityIds([$id]));
+        $fieldTags = ['600', '610', '611', '630', '650'];
+        $result = [];
+        foreach ($fieldTags as $tag) {
+            foreach ($this->getFields($tag) as $field) {
+                if ($id = $this->getSubfield($field, '0')) {
+                    $result[] = $id;
+                }
             }
         }
-        return $ids;
+        return $this->addNamespaceToAuthorityIds($result);
     }
 
     /**
      * Merge component parts to this record
      *
-     * @param MongoCollection $componentParts Component parts to be merged
-     * @param MongoDate|null  $changeDate     Latest timestamp for the component part
-     *                                        set
+     * @param Collection       $componentParts Component parts to be merged
+     * @param UTCDateTime|null $changeDate     Latest timestamp for the component
+     *                                         part set
      *
      * @return int Count of records merged
      */
@@ -857,6 +767,14 @@ class Marc extends \RecordManager\Base\Record\Marc
                 [
                     [self::GET_NORMAL, '700', ['a' => 1, 'e' => 1]],
                     [self::GET_NORMAL, '710', ['a' => 1, 'e' => 1]]
+                ]
+            );
+            $authorIds = $marc->getFieldsSubfields(
+                [
+                    [self::GET_NORMAL, '100', ['0' => 1]],
+                    [self::GET_NORMAL, '110', ['0' => 1]],
+                    [self::GET_NORMAL, '700', ['0' => 1]],
+                    [self::GET_NORMAL, '710', ['0' => 1]],
                 ]
             );
             $duration = $marc->getFieldsSubfields(
@@ -997,6 +915,9 @@ class Marc extends \RecordManager\Base\Record\Marc
             foreach ($identifiers as $identifier) {
                 $newField['s'][] = ['k' => $identifier];
             }
+            foreach ($authorIds as $identifier) {
+                $newField['s'][] = ['l' => $identifier];
+            }
 
             $key = MetadataUtils::createIdSortKey($id);
             $parts["$key $count"] = $newField;
@@ -1024,80 +945,291 @@ class Marc extends \RecordManager\Base\Record\Marc
         if (isset($this->fields['502'])) {
             return 'Dissertation';
         }
-        $dissType = '';
+        $dissTypes = [];
         if (isset($this->fields['509'])) {
-            $dissType = MetadataUtils::stripTrailingPunctuation(
-                $this->getFieldSubfields('509', ['a' => 1])
+            $dissTypes = $this->getFieldsSubfields(
+                [[self::GET_NORMAL, '509', ['a' => 1]]]
             );
         }
-        if (!$dissType && isset($this->fields['920'])) {
-            $dissType = MetadataUtils::stripTrailingPunctuation(
-                $this->getFieldSubfields('920', ['a' => 1])
+        if (!$dissTypes && isset($this->fields['920'])) {
+            $dissTypes = $this->getFieldsSubfields(
+                [[self::GET_NORMAL, '920', ['a' => 1]]]
             );
         }
-        if ($dissType) {
-            switch (strtolower($dissType)) {
-            case 'kandidaatintutkielma':
-            case 'kandidaatintyö':
-            case 'kandidatarbete':
-                return 'BachelorsThesis';
-            case 'pro gradu -tutkielma':
-            case 'pro gradu -työ':
-            case 'pro gradu':
-                return 'ProGradu';
-            case 'laudaturtyö':
-            case 'laudaturavh':
-                return 'LaudaturThesis';
-            case 'lisensiaatintyö':
-            case 'lic.avh.':
-                return 'LicentiateThesis';
-            case 'diplomityö':
-            case 'diplomarbete':
-                return 'MastersThesis';
-            case 'erikoistyö':
-            case 'vicenot.ex.':
-                return 'Thesis';
-            case 'lopputyö':
-            case 'rättsnot.ex.':
-                return 'Thesis';
-            case 'amk-opinnäytetyö':
-            case 'yh-examensarbete':
-                return 'BachelorsThesisPolytechnic';
-            case 'ylempi amk-opinnäytetyö':
-            case 'högre yh-examensarbete':
-                return 'MastersThesisPolytechnic';
+        if ($dissTypes) {
+            foreach ($dissTypes as $dissType) {
+                $dissType = mb_strtolower(
+                    MetadataUtils::normalizeUnicode($dissType, 'NFKC'),
+                    'UTF-8'
+                );
+                switch ($dissType) {
+                case 'kandidaatintutkielma':
+                case 'kandidaatintyö':
+                case 'kandidatarbete':
+                    return 'BachelorsThesis';
+                case 'pro gradu -tutkielma':
+                case 'pro gradu -työ':
+                case 'pro gradu':
+                    return 'ProGradu';
+                case 'laudaturtyö':
+                case 'laudaturavh':
+                    return 'LaudaturThesis';
+                case 'lisensiaatintyö':
+                case 'lic.avh.':
+                    return 'LicentiateThesis';
+                case 'diplomityö':
+                case 'diplomarbete':
+                    return 'MastersThesis';
+                case 'erikoistyö':
+                case 'vicenot.ex.':
+                    return 'Thesis';
+                case 'lopputyö':
+                case 'rättsnot.ex.':
+                    return 'Thesis';
+                case 'amk-opinnäytetyö':
+                case 'yh-examensarbete':
+                    return 'BachelorsThesisPolytechnic';
+                case 'ylempi amk-opinnäytetyö':
+                case 'högre yh-examensarbete':
+                    return 'MastersThesisPolytechnic';
+                }
             }
             return 'Thesis';
         }
-        $format = parent::getFormat();
 
-        // Separate non-musical sound from other sound types. This is not quite
-        // perfect since there's already e.g. MusicRecording, but we need to keep
-        // e.g. CD intact for backwards-compatibility.
-        if (in_array($format, ['CD', 'SoundCassette', 'SoundDisc', 'SoundRecording'])
-        ) {
-            $leader = $this->getField('000');
-            $type = substr($leader, 6, 1);
-            if ($type == 'i') {
-                switch ($format) {
-                case 'CD':
-                    $format = 'NonmusicalCD';
-                    break;
-                case 'SoundCassette':
-                    $format = 'NonmusicalCassette';
-                    break;
-                case 'SoundDisc':
-                    $format = 'NonmusicalDisc';
-                    break;
-                case 'SoundRecording':
-                    $format = 'NonmusicalRecording';
-                    break;
+        // Get the type of record from leader position 6
+        $leader = $this->getField('000');
+        $typeOfRecord = substr($leader, 6, 1);
+
+        // Get the bibliographic level from leader position 7
+        $bibliographicLevel = substr($leader, 7, 1);
+
+        // check the 007 - this is a repeating field
+        $fields = $this->getFields('007');
+        $online = false;
+        foreach ($fields as $field) {
+            $contents = $field;
+            $formatCode = strtoupper(substr($contents, 0, 1));
+            $formatCode2 = strtoupper(substr($contents, 1, 1));
+            switch ($formatCode) {
+            case 'A':
+                switch ($formatCode2) {
+                case 'D':
+                    return 'Atlas';
+                default:
+                    return 'Map';
                 }
-            } elseif ($type == 'j' && $format == 'SoundRecording') {
-                $format = 'MusicRecording';
+                break;
+            case 'C':
+                switch ($formatCode2) {
+                case 'A':
+                    return 'TapeCartridge';
+                case 'B':
+                    return 'ChipCartridge';
+                case 'C':
+                    return 'DiscCartridge';
+                case 'F':
+                    return 'TapeCassette';
+                case 'H':
+                    return 'TapeReel';
+                case 'J':
+                    return 'FloppyDisk';
+                case 'M':
+                case 'O':
+                    return 'CDROM';
+                case 'R':
+                    // Do not return - this will cause anything with an
+                    // 856 field to be labeled as "Electronic"
+                    $online = true;
+                    break;
+                default:
+                    return 'Electronic';
+                }
+                break;
+            case 'D':
+                return 'Globe';
+            case 'F':
+                return 'Braille';
+            case 'G':
+                switch ($formatCode2) {
+                case 'C':
+                case 'D':
+                    return 'Filmstrip';
+                case 'T':
+                    return 'Transparency';
+                default:
+                    return 'Slide';
+                }
+                break;
+            case 'H':
+                return 'Microfilm';
+            case 'K':
+                switch ($formatCode2) {
+                case 'C':
+                    return 'Collage';
+                case 'D':
+                    return 'Drawing';
+                case 'E':
+                    return 'Painting';
+                case 'F':
+                    return 'Print';
+                case 'G':
+                    return 'Photonegative';
+                case 'J':
+                    return 'Print';
+                case 'L':
+                    return 'TechnicalDrawing';
+                case 'O':
+                    return 'FlashCard';
+                case 'N':
+                    return 'Chart';
+                default:
+                    return 'Photo';
+                }
+                break;
+            case 'M':
+                switch ($formatCode2) {
+                case 'F':
+                    return 'VideoCassette';
+                case 'R':
+                    return 'Filmstrip';
+                default:
+                    return 'MotionPicture';
+                }
+                break;
+            case 'O':
+                return 'Kit';
+            case 'Q':
+                return 'MusicalScore';
+            case 'R':
+                return 'SensorImage';
+            case 'S':
+                switch ($formatCode2) {
+                case 'D':
+                    $size = strtoupper(substr($contents, 6, 1));
+                    $material = strtoupper(substr($contents, 10, 1));
+                    $soundTech = strtoupper(substr($contents, 13, 1));
+                    if ($soundTech == 'D'
+                        || ($size == 'G' && $material == 'M')
+                    ) {
+                        return 'i' === $typeOfRecord ? 'NonmusicalCD' : 'CD';
+                    }
+                    return 'i' === $typeOfRecord ? 'NonmusicalDisc' : 'SoundDisc';
+                case 'S':
+                    return 'i' === $typeOfRecord
+                        ? 'NonmusicalCassette' : 'SoundCassette';
+                default:
+                    if ('i' === $typeOfRecord) {
+                        return 'NonmusicalRecording';
+                    }
+                    if ('j' === $typeOfRecord) {
+                        return 'MusicRecording';
+                    }
+                    return 'SoundRecording';
+                }
+                break;
+            case 'V':
+                $videoFormat = strtoupper(substr($contents, 4, 1));
+                switch ($videoFormat) {
+                case 'S':
+                    return 'BluRay';
+                case 'V':
+                    return 'DVD';
+                }
+
+                switch ($formatCode2) {
+                case 'C':
+                    return 'VideoCartridge';
+                case 'D':
+                    return 'VideoDisc';
+                case 'F':
+                    return 'VideoCassette';
+                case 'R':
+                    return 'VideoReel';
+                case 'Z':
+                    if ($online) {
+                        return 'OnlineVideo';
+                    }
+                    return 'Video';
+                default:
+                    return 'Video';
+                }
+                break;
             }
         }
-        return $format;
+
+        switch (strtoupper($typeOfRecord)) {
+        case 'C':
+        case 'D':
+            return 'MusicalScore';
+        case 'E':
+        case 'F':
+            return 'Map';
+        case 'G':
+            return 'Slide';
+        case 'I':
+            return 'SoundRecording';
+        case 'J':
+            return 'MusicRecording';
+        case 'K':
+            return 'Photo';
+            break;
+        case 'M':
+            return 'Electronic';
+        case 'O':
+        case 'P':
+            return 'Kit';
+        case 'R':
+            return 'PhysicalObject';
+        case 'T':
+            return 'Manuscript';
+        }
+
+        $field008 = $this->getField('008');
+        if (!$online) {
+            $online = substr($field008, 23, 1) === 'o';
+        }
+
+        switch (strtoupper($bibliographicLevel)) {
+        // Monograph
+        case 'M':
+            if ($online) {
+                return 'eBook';
+            } else {
+                return 'Book';
+            }
+            break;
+        // Serial
+        case 'S':
+            // Look in 008 to determine what type of Continuing Resource
+            $formatCode = strtoupper(substr($field008, 21, 1));
+            switch ($formatCode) {
+            case 'N':
+                return $online ? 'eNewspaper' : 'Newspaper';
+            case 'P':
+                return $online ? 'eJournal' : 'Journal';
+            default:
+                return $online ? 'eSerial' : 'Serial';
+            }
+            break;
+
+        case 'A':
+            // Component part in monograph
+            return $online ? 'eBookSection' : 'BookSection';
+        case 'B':
+            // Component part in serial
+            return $online ? 'eArticle' : 'Article';
+        case 'C':
+            // Collection
+            return 'Collection';
+        case 'D':
+            // Component part in collection (sub unit)
+            return 'SubUnit';
+        case 'I':
+            // Integrating resource
+            return 'ContinuouslyUpdatedResource';
+        }
+        return 'Other';
     }
 
     /**
@@ -1213,8 +1345,13 @@ class Marc extends \RecordManager\Base\Record\Marc
             case 'q':
                 $year1 = substr($field008, 7, 4);
                 $year2 = substr($field008, 11, 4);
-                $startDate = "$year1-01-01T00:00:00Z";
-                $endDate = "$year2-12-31T23:59:59Z";
+                if (ctype_digit($year1) && ctype_digit($year2) && $year2 < $year1) {
+                    $startDate = "$year2-01-01T00:00:00Z";
+                    $endDate = "$year1-12-31T23:59:59Z";
+                } else {
+                    $startDate = "$year1-01-01T00:00:00Z";
+                    $endDate = "$year2-12-31T23:59:59Z";
+                }
                 break;
             case 'e':
                 $year = substr($field008, 7, 4);
@@ -1326,10 +1463,10 @@ class Marc extends \RecordManager\Base\Record\Marc
                 'y' => 1, 'z' => 1, '2' => 1, '6' => 1, '8' => 1
             ],
             '650' => ['0' => 1, '2' => 1, '6' => 1, '8' => 1],
-            '100' => ['4' => 1],
-            '700' => ['4' => 1],
-            '710' => ['4' => 1],
-            '711' => ['4' => 1],
+            '100' => ['0' => 1, '4' => 1],
+            '700' => ['0' => 1, '4' => 1],
+            '710' => ['0' => 1, '4' => 1],
+            '711' => ['0' => 1, '4' => 1],
             '773' => [
                 '0' => 1, '4' => 1, '6' => 1, '7' => 1, '8' => 1, 'g' => 1, 'q' => 1,
                 'w' => 1
@@ -1381,8 +1518,8 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
         $allFields = array_map(
             function ($str) {
-                return MetadataUtils::stripLeadingPunctuation(
-                    MetadataUtils::stripTrailingPunctuation($str)
+                return MetadataUtils::stripTrailingPunctuation(
+                    MetadataUtils::stripLeadingPunctuation($str)
                 );
             },
             $allFields
@@ -1422,8 +1559,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getDefaultBuildingFields()
     {
         $useSub = $this->getDriverParam('subLocationInBuilding', '');
-        $itemSub = $this
-            ->getDriverParam('itemSubLocationInBuilding', $useSub);
+        $itemSub = $this->getDriverParam('itemSubLocationInBuilding', $useSub);
         return [
             [
                 'field' => '852',
@@ -1729,11 +1865,17 @@ class Marc extends \RecordManager\Base\Record\Marc
     {
         $result = parent::getUniqueIDs();
         // Melinda ID
-        $f035 = $this->getField('035');
-        if ($f035) {
-            $id = $this->getSubfield($f035, 'a');
-            if (strncmp($id, 'FCC', 3) === 0 && ctype_digit(substr($id, 3))) {
+        foreach ($this->getFields('035') as $field) {
+            $id = $this->getSubfield($field, 'a');
+            if (strncmp('FCC', $id, 3) === 0) {
+                $idNumber = substr($id, 3);
+                if (ctype_digit($idNumber)) {
+                    $result[] = "(FI-MELINDA)$idNumber";
+                    break;
+                }
+            } elseif (strncmp('(FI-MELINDA)', $id, 12) === 0) {
                 $result[] = $id;
+                break;
             }
         }
         return $result;
@@ -1760,136 +1902,6 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
         return $building;
-    }
-
-    /**
-     * Get key data that can be used to identify expressions of a work
-     *
-     * Returns an associative array like this:
-     *
-     * [
-     *   'titles' => [
-     *     ['type' => 'title', 'value' => 'Title'],
-     *     ['type' => 'uniform', 'value' => 'Uniform Title']
-     *    ],
-     *   'authors' => [
-     *     ['type' => 'author', 'value' => 'Name 1'],
-     *     ['type' => 'author', 'value' => 'Name 2']
-     *   ],
-     *   'titlesAltScript' => [
-     *     ['type' => 'title', 'value' => 'Title in alternate script'],
-     *     ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
-     *   ],
-     *   'authorsAltScript' => [
-     *     ['type' => 'author', 'value' => 'Name 1 in alternate script'],
-     *     ['type' => 'author', 'value' => 'Name 2 in alternate script']
-     *   ]
-     * ]
-     *
-     * @return array
-     */
-    public function getWorkIdentificationData()
-    {
-        $authorFields = [
-            '100' => ['a' => 1, 'b' => 1],
-            '110' => ['a' => 1, 'b' => 1],
-            '111' => ['a' => 1, 'c' => 1],
-            '700' => ['a' => 1, 'b' => 1],
-            '710' => ['a' => 1, 'b' => 1],
-            '711' => ['a' => 1, 'c' => 1]
-        ];
-        $titleFields = [
-            '130' => ['n' => 1, 'p' => 1],
-            '730' => ['n' => 1, 'p' => 1],
-            '240' => ['n' => 1, 'p' => 1, 'm' => 1, 'r' => 1],
-            '245' => ['b' => 1, 'n' => 1],
-            '246' => ['b' => 1, 'n' => 1],
-            '247' => ['b' => 1, 'n' => 1],
-        ];
-
-        $authors = [];
-        $authorsAltScript = [];
-        $titles = [];
-        $titlesAltScript = [];
-
-        foreach ($authorFields as $tag => $subfields) {
-            $auths = $this->getFieldsSubfields(
-                [[self::GET_BOTH, $tag, $subfields]],
-                true,
-                false
-            );
-            if (isset($auths[1])) {
-                $authorsAltScript[] = [
-                    'type' => 'author',
-                    'value' => $auths[1]
-                ];
-            }
-            if (isset($auths[0])) {
-                $authors[] = [
-                    'type' => 'author',
-                    'value' => $auths[0]
-                ];
-                break;
-            }
-        }
-
-        foreach ($titleFields as $tag => $subfields) {
-            $field = $this->getField($tag);
-            $title = '';
-            $altTitles = [];
-            $ind = ('130' == $tag || '730' == $tag) ? 1 : 2;
-            if ($field && !empty($field['s'])) {
-                $title = $this->getSubfield($field, 'a');
-                $nonfiling = $this->getIndicator($field, $ind);
-                if ($nonfiling > 0) {
-                    $title = substr($title, $nonfiling);
-                }
-                $rest = $this->getSubfields($field, $subfields);
-                if ($rest) {
-                    $title .= " $rest";
-                }
-                $sub6 = $this->getSubfield($field, '6');
-                if ($sub6) {
-                    $sub6 = "$tag-" . substr($sub6, 4, 2);
-                    foreach ($this->getFields('880') as $f880) {
-                        if (strncmp($this->getSubfield($f880, '6'), $sub6, 6) != 0) {
-                            continue;
-                        }
-                        $altTitle = $this->getSubfield($f880, 'a');
-                        $nonfiling = $this->getIndicator($f880, $ind);
-                        if ($nonfiling > 0) {
-                            $altTitle = substr($altTitle, $nonfiling);
-                        }
-                        $rest = $this->getSubfields($f880, $subfields);
-                        if ($rest) {
-                            $altTitle .= " $rest";
-                        }
-                        if ($altTitle) {
-                            $altTitles[] = $altTitle;
-                        }
-                    }
-                }
-            }
-            $titleType = ('130' == $tag || '730' == $tag) ? 'uniform' : 'title';
-            if ($title) {
-                $titles[] = [
-                    'type' => $titleType,
-                    'value' => $title
-                ];
-            }
-            foreach ($altTitles as $altTitle) {
-                $titlesAltScript[] = [
-                    'type' => $titleType,
-                    'value' => $altTitle
-                ];
-            }
-        }
-
-        if (!$titles) {
-            return [];
-        }
-
-        return compact('authors', 'authorsAltScript', 'titles', 'titlesAltScript');
     }
 
     /**

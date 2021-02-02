@@ -77,26 +77,24 @@ trait PreTransformationTrait
                 $settings['preXSLT'][] = $xslt;
             }
         }
-        $saveUseErrors = libxml_use_internal_errors(true);
-        try {
-            libxml_clear_errors();
-            $doc = new \DOMDocument();
-            if (MetadataUtils::loadXML($data, $doc) === false) {
-                $errors = libxml_get_errors();
-                $messageParts = [];
-                foreach ($errors as $error) {
-                    $messageParts[] = '[' . $error->line . ':' . $error->column
-                        . '] Error ' . $error->code . ': ' . $error->message;
-                }
-                throw new \Exception(implode("\n", $messageParts));
-            }
-            libxml_use_internal_errors($saveUseErrors);
-        } catch (\Exception $e) {
-            libxml_use_internal_errors($saveUseErrors);
-            throw $e;
+        $doc = new \DOMDocument();
+        $result = MetadataUtils::loadXML($data, $doc, 0, $errors);
+        if (false === $result || $errors) {
+            throw new \Exception($errors ?: 'Unknown error');
         }
-        foreach ($settings['preXSLT'] as $xslt) {
-            $doc = $xslt->transformToDoc($doc);
+
+        if (!empty($settings['reParseTransformed'])) {
+            $xml = $xslt->transformToXml($doc);
+            $doc = new \DOMDocument();
+            $errors = '';
+            $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
+            if (false === $result || $errors) {
+                throw new \Exception($errors ?: 'Unknown error');
+            }
+        } else {
+            foreach ($settings['preXSLT'] as $xslt) {
+                $doc = $xslt->transformToDoc($doc);
+            }
         }
         return $doc->saveXML();
     }

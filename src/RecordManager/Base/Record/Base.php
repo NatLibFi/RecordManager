@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Base\Record;
 
+use MongoDB\BSON\UTCDateTime;
+use MongoDB\Collection;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -41,7 +43,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Base
+abstract class Base
 {
     /**
      * Logger
@@ -113,9 +115,8 @@ class Base
     {
         $this->source = $source;
         $this->idPrefix
-            = isset($this->dataSourceSettings[$source]['idPrefix'])
-            ? $this->dataSourceSettings[$source]['idPrefix']
-            : $source;
+            = $this->dataSourceSettings[$source]['idPrefix']
+            ?? $source;
     }
 
     /**
@@ -123,10 +124,7 @@ class Base
      *
      * @return string
      */
-    public function getID()
-    {
-        die('unimplemented');
-    }
+    abstract public function getID();
 
     /**
      * Return record linking IDs (typically same as ID) used for links
@@ -144,20 +142,14 @@ class Base
      *
      * @return string
      */
-    public function serialize()
-    {
-        die('unimplemented');
-    }
+    abstract public function serialize();
 
     /**
      * Serialize the record into XML for export
      *
      * @return string
      */
-    public function toXML()
-    {
-        die('unimplemented');
-    }
+    abstract public function toXML();
 
     /**
      * Normalize the record (optional)
@@ -191,9 +183,13 @@ class Base
     /**
      * Return fields to be indexed in Solr (an alternative to an XSL transformation)
      *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
+     *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
         return [];
     }
@@ -201,9 +197,9 @@ class Base
     /**
      * Merge component parts to this record
      *
-     * @param MongoCollection $componentParts Component parts to be merged
-     * @param MongoDate|null  $changeDate     Latest timestamp for the component part
-     *                                        set
+     * @param Collection       $componentParts Component parts to be merged
+     * @param UTCDateTime|null $changeDate     Latest timestamp for the component
+     *                                         part set
      *
      * @return void
      */
@@ -287,21 +283,21 @@ class Base
     }
 
     /**
-     * Dedup: Return full title (for debugging purposes only)
+     * Return main author (format: Last, First)
      *
      * @return string
      */
-    public function getFullTitle()
+    public function getMainAuthor()
     {
         return '';
     }
 
     /**
-     * Dedup: Return main author (format: Last, First)
+     * Dedup: Return full title (for debugging purposes only)
      *
      * @return string
      */
-    public function getMainAuthor()
+    public function getFullTitle()
     {
         return '';
     }
@@ -479,6 +475,11 @@ class Base
         if ($title = $this->getTitle(true)) {
             $titles[] = ['type' => 'title', 'value' => $title];
         }
+        if (($titleNonSorting = $this->getTitle(false))
+            && $title !== $titleNonSorting
+        ) {
+            $titles[] = ['type' => 'title', 'value' => $titleNonSorting];
+        }
         if ($author = $this->getMainAuthor()) {
             $authors[] = ['type' => 'author', 'value' => $author];
         }
@@ -554,7 +555,7 @@ class Base
      *
      * @param string $xml XML string
      *
-     * @return SimpleXMLElement
+     * @return \SimpleXMLElement
      * @throws \Exception
      */
     protected function parseXMLRecord($xml)

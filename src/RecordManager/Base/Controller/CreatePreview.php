@@ -142,7 +142,7 @@ class CreatePreview extends AbstractBase
         }
 
         if (!$this->recordFactory->canCreate($record['format'])) {
-            die("Format '$format' not supported");
+            throw new \Exception("Format '$format' not supported");
         }
 
         $metadataRecord = $this->recordFactory->createRecord(
@@ -217,6 +217,12 @@ class CreatePreview extends AbstractBase
             $preXslt = new \XSLTProcessor();
             $preXslt->importStylesheet($style);
             $doc = $preXslt->transformToDoc($doc);
+            if (false === $doc) {
+                throw new \Exception(
+                    'Could not process configured OAI-PMH transformation.'
+                    . ' The record may be invalid.'
+                );
+            }
         }
         return $doc->saveXML();
     }

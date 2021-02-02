@@ -1,6 +1,6 @@
 <?php
 /**
- * Finna record trait.
+ * Authority handling support trait.
  *
  * PHP version 7
  *
@@ -28,7 +28,7 @@
 namespace RecordManager\Finna\Record;
 
 /**
- * Finna record trait.
+ * Authority handling support trait.
  *
  * @category DataManagement
  * @package  RecordManager
@@ -36,7 +36,7 @@ namespace RecordManager\Finna\Record;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-trait FinnaRecordTrait
+trait AuthoritySupportTrait
 {
     /**
      * Get authority record namespace.
@@ -45,10 +45,9 @@ trait FinnaRecordTrait
      *
      * @return string
      */
-    public function getAuthorityNamespace($type = '*')
+    protected function getAuthorityNamespace($type = '*')
     {
-        return $this->dataSourceSettings[$this->source]['authority'][$type]
-            ?? $this->source;
+        return $this->dataSourceSettings[$this->source]['authority'][$type] ?? '';
     }
 
     /**
@@ -72,13 +71,17 @@ trait FinnaRecordTrait
             }
         );
         $ns = $this->getAuthorityNamespace($type);
-
-        return array_map(
-            function ($id) use ($ns) {
-                return "{$ns}.{$id}";
-            },
-            $ids
-        );
+        $result = [];
+        foreach ($ids as $id) {
+            if (preg_match('/^https?:/', $id)) {
+                // Never prefix http(s) url's
+                $result[] = $id;
+                continue;
+            }
+            $id = addcslashes($id, '\\.');
+            $result[] = $ns ? "$ns.$id" : $id;
+        }
+        return $result;
     }
 
     /**
@@ -91,7 +94,11 @@ trait FinnaRecordTrait
      */
     protected function allowAuthorityIdRegex($id, $type)
     {
-        if (!$regex = $this->getAuthorityIdRegex($type)) {
+        if (!($regex = $this->getAuthorityIdRegex($type))) {
+            return true;
+        }
+        if (preg_match('/^https?:/', $id)) {
+            // Always allow http(s) url's
             return true;
         }
         return 1 === preg_match($regex, $id);

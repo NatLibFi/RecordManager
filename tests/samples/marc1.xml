@@ -8,6 +8,10 @@
     <subfield code="a">978-951-31-4836-2</subfield>
     <subfield code="q">nidottu</subfield>
   </datafield>
+  <datafield tag="024" ind1="7" ind2=" ">
+    <subfield code="a">2345</subfield>
+    <subfield code="2">FOO</subfield>
+  </datafield>
   <datafield tag="035" ind1=" " ind2=" ">
     <subfield code="a">FCC005246184</subfield>
   </datafield>
@@ -30,6 +34,7 @@
   </datafield>
   <datafield tag="100" ind1="1" ind2=" ">
     <subfield code="a">Hirsjärvi, Sirkka.</subfield>
+    <subfield code="0">(TEST)1</subfield>
   </datafield>
   <datafield tag="245" ind1="1" ind2="0">
     <subfield code="a">Tutki ja kirjoita /</subfield>
@@ -38,10 +43,10 @@
   <datafield tag="250" ind1=" " ind2=" ">
     <subfield code="a">17. uud. p.</subfield>
   </datafield>
-  <datafield tag="260" ind1=" " ind2=" ">
+  <datafield tag="264" ind1=" " ind2="1">
     <subfield code="a">Helsinki :</subfield>
     <subfield code="b">Tammi,</subfield>
-    <subfield code="c">2013.</subfield>
+    <subfield code="c">2345 [2013].</subfield>
   </datafield>
   <datafield tag="336" ind1=" " ind2=" ">
     <subfield code="a">teksti</subfield>
@@ -103,9 +108,11 @@
   </datafield>
   <datafield tag="700" ind1="1" ind2=" ">
     <subfield code="a">Remes, Pirkko.</subfield>
+    <subfield code="0">(TEST)2</subfield>
   </datafield>
   <datafield tag="700" ind1="1" ind2=" ">
     <subfield code="a">Sajavaara, Paula.</subfield>
+    <subfield code="0">(TEST)3</subfield>
   </datafield>
   <datafield tag="852" ind1="8" ind2=" ">
     <subfield code="a">E</subfield>

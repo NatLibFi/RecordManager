@@ -45,7 +45,7 @@ class MarcAuthEnrichment extends AuthEnrichment
      * @param object $record    Metadata Record
      * @param array  $solrArray Metadata to be sent to Solr
      *
-     * @throws Exception
+     * @throws \Exception
      * @return void
      */
     public function enrich($sourceId, $record, &$solrArray)
@@ -54,13 +54,8 @@ class MarcAuthEnrichment extends AuthEnrichment
             return;
         }
 
-        $datasourceSettings = $record->getDataSourceSettings();
-
-        foreach ($record->getAuthorIds() as $id) {
-            list($source, $id) = explode('.', $id, 2);
-            $this->enrichField(
-                $sourceId, $record, $solrArray, $id, 'author_variant', true
-            );
+        foreach ($solrArray['author2_id_str_mv'] ?? [] as $id) {
+            $this->enrichField($solrArray, $id, 'author_variant', true);
         }
     }
 }

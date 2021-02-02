@@ -46,7 +46,7 @@ class Forward extends Base
     /**
      * The XML document
      *
-     * @var SimpleXMLElement
+     * @var \SimpleXMLElement
      */
     protected $doc = null;
 
@@ -172,14 +172,18 @@ class Forward extends Base
     /**
      * Return fields to be indexed in Solr
      *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
+     *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
         $data = [];
 
         $doc = $this->getMainElement();
-        $data['record_format'] = $data['recordtype'] = 'forward';
+        $data['record_format'] = 'forward';
         $data['ctrlnum'] = $this->getID();
         $data['fullrecord'] = $this->toXML();
         $publishDate = (string)$doc->YearOfReference;
@@ -247,7 +251,7 @@ class Forward extends Base
     }
 
     /**
-     * Dedup: Return main author (format: Last, First)
+     * Return main author (format: Last, First)
      *
      * @return string
      */
@@ -266,7 +270,7 @@ class Forward extends Base
     /**
      * Get the main metadata element
      *
-     * @return SimpleXMLElement
+     * @return \SimpleXMLElement
      */
     protected function getMainElement()
     {
@@ -292,9 +296,10 @@ class Forward extends Base
             if (in_array($tag, $this->filterFromAllFields)) {
                 continue;
             }
-            $results[] = MetadataUtils::stripTrailingPunctuation(
-                trim((string)$field)
-            );
+            $s = trim((string)$field);
+            if ($s && ($s = MetadataUtils::stripTrailingPunctuation($s))) {
+                $results[] = $s;
+            }
             $subs = $this->getAllFields($field->children());
             if ($subs) {
                 $results = array_merge($results, $subs);
@@ -334,7 +339,7 @@ class Forward extends Base
     /**
      * Get relator code for the agent
      *
-     * @param SimpleXMLElement $agent Agent
+     * @param \SimpleXMLElement $agent Agent
      *
      * @return string
      */

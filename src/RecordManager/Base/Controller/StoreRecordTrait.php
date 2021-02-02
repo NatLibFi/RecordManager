@@ -56,7 +56,7 @@ trait StoreRecordTrait
      * @param bool   $deleted    Whether the record is to be deleted
      * @param string $recordData Record metadata
      *
-     * @throws Exception
+     * @throws \Exception
      * @return integer Number of records processed (can be > 1 for split records)
      */
     public function storeRecord($sourceId, $oaiID, $deleted, $recordData)
@@ -270,7 +270,8 @@ trait StoreRecordTrait
                 [
                     'source_id' => $sourceId,
                     'main_id' => $mainID,
-                    'updated' => ['$lt' => $startTime]
+                    'updated' => ['$lt' => $startTime],
+                    'deleted' => false,
                 ],
                 [
                     'deleted' => true,

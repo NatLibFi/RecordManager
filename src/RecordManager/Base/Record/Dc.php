@@ -101,20 +101,24 @@ class Dc extends Base
     /**
      * Return fields to be indexed in Solr
      *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
+     *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
         $data = $this->getFullTextFields($this->doc);
 
         $doc = $this->doc;
-        $data['record_format'] = $data['recordtype'] = 'dc';
+        $data['record_format'] = 'dc';
         $data['ctrlnum'] = trim((string)$doc->recordID);
         $data['fullrecord'] = $doc->asXML();
 
         // allfields
         $allFields = [];
-        foreach ($doc->children() as $tag => $field) {
+        foreach ($doc->children() as $field) {
             $allFields[] = MetadataUtils::stripTrailingPunctuation(
                 trim((string)$field)
             );
@@ -197,7 +201,6 @@ class Dc extends Base
     public function getTitle($forFiling = false)
     {
         $title = trim((string)$this->doc->title);
-        $title = MetadataUtils::stripTrailingPunctuation($title);
         if ($forFiling) {
             $title = MetadataUtils::stripLeadingPunctuation($title);
             $title = MetadataUtils::stripLeadingArticle($title);
@@ -205,11 +208,12 @@ class Dc extends Base
             $title = MetadataUtils::stripLeadingPunctuation($title);
             $title = mb_strtolower($title, 'UTF-8');
         }
+        $title = MetadataUtils::stripTrailingPunctuation($title);
         return $title;
     }
 
     /**
-     * Dedup: Return main author (format: Last, First)
+     * Return main author (format: Last, First)
      *
      * @return string
      */

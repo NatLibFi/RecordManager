@@ -47,12 +47,47 @@ class Logger
     const INFO = 3;
     const DEBUG = 4;
 
-    public $logLevel = 0;
-    public $logFile = '';
-    public $maxFileSize = 0;
-    public $maxFileHistory = 5;
-    public $logToConsole = false;
-    public $errorEmail = '';
+    /**
+     * Whether to output messages also to console
+     *
+     * @var bool
+     */
+    protected $logToConsole = true;
+
+    /**
+     * Logging level
+     *
+     * @var int
+     */
+    protected $logLevel = 0;
+
+    /**
+     * Log file
+     *
+     * @var string
+     */
+    protected $logFile = '';
+
+    /**
+     * Maximum log file size
+     *
+     * @var int
+     */
+    protected $maxFileSize = 0;
+
+    /**
+     * Maximum number of old log files to keep
+     *
+     * @var int
+     */
+    protected $maxFileHistory = 5;
+
+    /**
+     * Email address for error messages
+     *
+     * @var string
+     */
+    protected $errorEmail = '';
 
     /**
      * Constructor
@@ -72,6 +107,18 @@ class Logger
         if (isset($config['Log']['error_email'])) {
             $this->errorEmail = $config['Log']['error_email'];
         }
+    }
+
+    /**
+     * Set console logging mode
+     *
+     * @param bool $console Whether console output is enabled
+     *
+     * @return void
+     */
+    public function setLogToConsole(bool $console): void
+    {
+        $this->logToConsole = $console;
     }
 
     /**

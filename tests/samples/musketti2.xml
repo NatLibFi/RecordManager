@@ -102,18 +102,18 @@
             <objectRelationWrap>
                 <subjectWrap>
                     <subjectSet>
-                        <displaySubject>Imatrankoski</displaySubject>
+                        <displaySubject> Imatrankoski </displaySubject>
                         <subject>
                             <subjectDate>
                                 <displayDate>1897</displayDate>
                             </subjectDate>
                             <subjectPlace>
-                                <displayPlace>Imatrankoski, Ruokolahti</displayPlace>
+                                <displayPlace><!-- test --> Imatrankoski, Ruokolahti </displayPlace>
                             </subjectPlace>
                             <subjectPlace>
                                 <place>
                                     <namePlaceSet>
-                                        <appellationValue>Imatrankoski</appellationValue>
+                                        <appellationValue> Imatrankoski </appellationValue>
                                     </namePlaceSet>
                                     <placeClassification>
                                         <term>luonnon paikka</term>
@@ -123,7 +123,7 @@
                             <subjectPlace>
                                 <place>
                                     <namePlaceSet>
-                                        <appellationValue>Ruokolahti</appellationValue>
+                                        <appellationValue> Ruokolahti .<!-- test -->. </appellationValue>
                                     </namePlaceSet>
                                     <placeClassification>
                                         <term>kunta/kaupunki (Suomi)</term>
@@ -136,10 +136,10 @@
                 <relatedWorksWrap>
                     <relatedWorkSet>
                         <relatedWork>
-                            <displayObject>Kansatieteen kuvakokoelma</displayObject>
+                            <displayObject> Kansatieteen kuvakokoelma </displayObject>
                         </relatedWork>
                         <relatedWorkRelType>
-                            <term>Kokoelma</term>
+                            <term> Kokoelma </term>
                         </relatedWorkRelType>
                     </relatedWorkSet>
                     <relatedWorkSet>
@@ -147,7 +147,7 @@
                             <displayObject />
                         </relatedWork>
                         <relatedWorkRelType>
-                            <term>Alakokoelma</term>
+                            <term> Alakokoelma </term>
                         </relatedWorkRelType>
                     </relatedWorkSet>
                     <relatedWorkSet>
@@ -155,7 +155,7 @@
                             <displayObject />
                         </relatedWork>
                         <relatedWorkRelType>
-                            <term>Erityiskokoelma</term>
+                            <term> Erityiskokoelma </term>
                         </relatedWorkRelType>
                     </relatedWorkSet>
                 </relatedWorksWrap>

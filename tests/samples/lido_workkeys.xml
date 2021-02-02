@@ -1,0 +1,267 @@
+<?xml version="1.0"?>
+<lidoWrap schemaLocation="http://www.lido-schema.org http://www.lido-schema.org/schema/v1.0/lido-v1.0.xsd">
+    <lido>
+        <lidoRecID pref="preferred" type="URI">vtm.urn:uuid:1A53062D-4CB9-4A14-940E-C30F3088C8B5</lidoRecID>
+        <category>
+            <conceptID type="URI">http://www.cidoc-crm.org/crm-concepts/#E22</conceptID>
+            <term lang="en">Man-Made Object</term>
+        </category>
+        <descriptiveMetadata lang="fi">
+            <objectClassificationWrap>
+                <objectWorkTypeWrap>
+                    <objectWorkType type="pääluokka" sortorder="1">
+                        <term>maalaus</term>
+                    </objectWorkType>
+                </objectWorkTypeWrap>
+                <classificationWrap>
+                    <classification type="pääluokka">
+                        <term lang="fi">maalaus</term>
+                    </classification>
+                </classificationWrap>
+            </objectClassificationWrap>
+            <objectIdentificationWrap>
+                <titleWrap>
+                    <titleSet type="teosnimi">
+                        <appellationValue lang="fi" label="teosnimi">Rantakiviä</appellationValue>
+                        <appellationValue lang="fi" label="alanimeketesti">litteitä</appellationValue>
+                        <appellationValue lang="en" label="english test">Shore Stones</appellationValue>
+                        <appellationValue label="odd">other</appellationValue>
+                    </titleSet>
+                </titleWrap>
+                <inscriptionsWrap>
+                    <inscriptions type="merkinnät 1" />
+                </inscriptionsWrap>
+                <repositoryWrap>
+                    <repositorySet type="current">
+                        <repositoryName>
+                            <legalBodyName>
+                                <appellationValue>Tuusulan taidemuseo</appellationValue>
+                            </legalBodyName>
+                        </repositoryName>
+                        <workID type="Object Identifier" encodinganalog="io_pid" label="Inventaarionro">Tla TM T 374</workID>
+                    </repositorySet>
+                </repositoryWrap>
+                <objectDescriptionWrap>
+                    <objectDescriptionSet type="provenienssi">
+                        <descriptiveNoteValue>Antti Halosen testamenttilahjoitus Pekka Halosen seuralle 1989</descriptiveNoteValue>
+                    </objectDescriptionSet>
+                </objectDescriptionWrap>
+                <objectMeasurementsWrap>
+                    <objectMeasurementsSet>
+                        <displayObjectMeasurements> 50 x 41 cm</displayObjectMeasurements>
+                        <objectMeasurements>
+                            <measurementsSet>
+                                <measurementType>korkeus</measurementType>
+                                <measurementUnit>cm</measurementUnit>
+                                <measurementValue>50</measurementValue>
+                            </measurementsSet>
+                            <measurementsSet>
+                                <measurementType>leveys</measurementType>
+                                <measurementUnit>cm</measurementUnit>
+                                <measurementValue>41</measurementValue>
+                            </measurementsSet>
+                        </objectMeasurements>
+                    </objectMeasurementsSet>
+                </objectMeasurementsWrap>
+            </objectIdentificationWrap>
+            <eventWrap>
+                <eventSet>
+                    <event>
+                        <eventID type="guid">E33B52C1-F654-4020-B9EF-D7D7A937ACBF</eventID>
+                        <eventType>
+                            <term>valmistus</term>
+                        </eventType>
+                        <eventActor>
+                            <actorInRole>
+                                <actor>
+                                    <nameActorSet>
+                                        <appellationValue>Halonen, Pekka</appellationValue>
+                                    </nameActorSet>
+                                </actor>
+                                <roleActor>
+                                    <term>taiteilija</term>
+                                </roleActor>
+                            </actorInRole>
+                        </eventActor>
+                        <eventDate>
+                            <displayDate>1930</displayDate>
+                            <date>
+                                <earliestDate>1930</earliestDate>
+                                <latestDate>1930</latestDate>
+                            </date>
+                        </eventDate>
+                        <eventMethod />
+                        <eventMaterialsTech>
+                            <displayMaterialsTech>maalaus</displayMaterialsTech>
+                            <displayMaterialsTech>öljy kankaalle ja pahville</displayMaterialsTech>
+                            <materialsTech>
+                                <termMaterialsTech type="pohjamateriaali">
+                                    <term>kangas</term>
+                                </termMaterialsTech>
+                                <termMaterialsTech type="pohjamateriaali">
+                                    <term>pahvi</term>
+                                </termMaterialsTech>
+                                <termMaterialsTech type="materiaali">
+                                    <term>öljy</term>
+                                </termMaterialsTech>
+                            </materialsTech>
+                        </eventMaterialsTech>
+                    </event>
+                </eventSet>
+                <eventSet>
+                    <displayEvent>Pystymetsän Pekka. Pekka Halosen maalauksia vuosilta 1887-1932. Halosenniemi, Tuusula 17.4.-17.10.2010</displayEvent>
+                    <event>
+                        <eventType>
+                            <term>näyttely</term>
+                        </eventType>
+                        <eventName>
+                            <appellationValue>Pystymetsän Pekka. Pekka Halosen maalauksia vuosilta 1887-1932. Halosenniemi, Tuusula 17.4.-17.10.2010</appellationValue>
+                        </eventName>
+                        <eventDate>
+                            <displayDate>2010</displayDate>
+                            <date>
+                                <earliestDate>2010-04-17</earliestDate>
+                                <latestDate>2010-10-17</latestDate>
+                            </date>
+                        </eventDate>
+                        <eventPlace>
+                            <displayPlace>Halosenniemi</displayPlace>
+                        </eventPlace>
+                    </event>
+                </eventSet>
+                <eventSet>
+                    <displayEvent>Tupatöllin tarinoita. Halosenniemi, Tuusula. 23.1.-11.4.2010</displayEvent>
+                    <event>
+                        <eventType>
+                            <term>näyttely</term>
+                        </eventType>
+                        <eventName>
+                            <appellationValue>Tupatöllin tarinoita. Halosenniemi, Tuusula. 23.1.-11.4.2010</appellationValue>
+                        </eventName>
+                        <eventDate>
+                            <displayDate>2010-01-23 - 2010-04-11</displayDate>
+                            <date>
+                                <earliestDate>2010-01-23</earliestDate>
+                                <latestDate>2010-04-11</latestDate>
+                            </date>
+                        </eventDate>
+                        <eventPlace />
+                    </event>
+                </eventSet>
+                <eventSet>
+                    <displayEvent>Yömetsä. Milla Toivanen Pekka Halosen vieraana. Halosenniemi, Tuusula. 16.9.2009-17.1.2010</displayEvent>
+                    <event>
+                        <eventType>
+                            <term>näyttely</term>
+                        </eventType>
+                        <eventName>
+                            <appellationValue>Yömetsä. Milla Toivanen Pekka Halosen vieraana. Halosenniemi, Tuusula. 16.9.2009-17.1.2010</appellationValue>
+                        </eventName>
+                        <eventDate>
+                            <displayDate>2009-2010</displayDate>
+                            <date>
+                                <earliestDate>2009-09-16</earliestDate>
+                                <latestDate>2009-09-16</latestDate>
+                            </date>
+                        </eventDate>
+                        <eventPlace>
+                            <displayPlace>Halosenniemi</displayPlace>
+                        </eventPlace>
+                    </event>
+                </eventSet>
+            </eventWrap>
+            <objectRelationWrap>
+                <subjectWrap>
+                    <subjectSet>
+                        <displaySubject label="yso aihe">signeeraus, maisema, luonto, vesi, vesialueet, ranta-alueet, kivi</displaySubject>
+                        <subject type="yso aihe">
+                            <subjectConcept>
+                                <term>signeeraus, maisema, luonto, vesi, vesialueet, ranta-alueet, kivi</term>
+                            </subjectConcept>
+                        </subject>
+                    </subjectSet>
+                    <subjectSet>
+                        <displaySubject label="tyylisuunta">modernismin loppukausi</displaySubject>
+                        <subject type="tyylisuunta">
+                            <subjectConcept>
+                                <term>modernismin loppukausi</term>
+                            </subjectConcept>
+                        </subject>
+                    </subjectSet>
+                    <subjectSet>
+                        <displaySubject label="iconclass">25H2(+1) 25H112 25H214 25H2311 25H133</displaySubject>
+                        <subject type="iconclass">
+                            <subjectConcept>
+                                <term>25H2(+1) </term>
+                                <term>25H112</term>
+                                <term>25H214</term>
+                                <term>25H2311 </term>
+                                <term>25H133</term>
+                            </subjectConcept>
+                        </subject>
+                    </subjectSet>
+                    <subjectSet>
+                        <displaySubject label="aihe">Rantamaisema, jonka matalassa vedessä näkyy maalauksen etuosassa punervanharmaita kiviä sekä rantakalliota harmaansinisen vaalean veden rannalla. Taustana pelkää vettä, mikä valtaa suurimman osa kuva-alasta. Veden kuvaus heijastuksineen on kiinnostanut Pekka Halosta koko hänen taiteellisen uransa aikana. Hänen viimeisten vuosien maisemissa vesiaiheet ovat lähinnä rantaviivojen, vesien ja jäänpinnan heijastusten kuvauksia. Horisontti on usein laskenut hyvin alas, sitä tuskin enää näkyy ollenkaan, kuten tässä teoksessa. Halosen maisemat muuttuvat yhä seesteisemmiksi ja pelkistetyimmiksi </displaySubject>
+                        <subject type="aihe">
+                            <subjectConcept>
+                                <term>Rantamaisema, jonka matalassa vedessä näkyy maalauksen etuosassa punervanharmaita kiviä sekä rantakalliota harmaansinisen vaalean veden rannalla. Taustana pelkää vettä, mikä valtaa suurimman osa kuva-alasta.</term>
+                                <term>Veden kuvaus heijastuksineen on kiinnostanut Pekka Halosta koko hänen taiteellisen uransa aikana. Hänen viimeisten vuosien maisemissa vesiaiheet ovat lähinnä rantaviivojen, vesien ja jäänpinnan heijastusten kuvauksia. Horisontti on usein laskenut hyvin alas, sitä tuskin enää näkyy ollenkaan, kuten tässä teoksessa. Halosen maisemat muuttuvat yhä seesteisemmiksi ja pelkistetyimmiksi</term>
+                                <term />
+                            </subjectConcept>
+                        </subject>
+                    </subjectSet>
+                    <subjectSet>
+                        <subject>
+                            <subjectPlace>
+                                <displayPlace>Tuusula, Tuusulanjärvi, Halosenniemi</displayPlace>
+                            </subjectPlace>
+                        </subject>
+                    </subjectSet>
+                </subjectWrap>
+                <relatedWorksWrap>
+                    <relatedWorkSet>
+                        <relatedWork>
+                            <displayObject>Pekka Halosen seuran kokoelma / Antti Halosen kokoelma</displayObject>
+                        </relatedWork>
+                        <relatedWorkRelType>
+                            <term>kuuluu kokoelmaan</term>
+                        </relatedWorkRelType>
+                    </relatedWorkSet>
+                    <relatedWorkSet>
+                        <relatedWork>
+                            <displayObject label="julkaisu`·9/tl">Lindström, Aune, 1957. Pekka Halonen, elämä ja teokset. WSOY.</displayObject>
+                            <object />
+                        </relatedWork>
+                        <relatedWorkRelType>
+                            <term>kirjallisuus</term>
+                        </relatedWorkRelType>
+                    </relatedWorkSet>
+                </relatedWorksWrap>
+            </objectRelationWrap>
+        </descriptiveMetadata>
+        <administrativeMetadata lang="fi">
+            <recordWrap>
+                <recordID type="URI">urn:uuid:1A53062D-4CB9-4A14-940E-C30F3088C8B5</recordID>
+                <recordType />
+                <recordSource>
+                    <legalBodyName>
+                        <appellationValue>Tuusulan taidemuseo</appellationValue>
+                    </legalBodyName>
+                </recordSource>
+                <recordInfoSet>
+                    <recordMetadataDate>2012-06-21T02:02:43.4080816+03:00</recordMetadataDate>
+                </recordInfoSet>
+            </recordWrap>
+            <resourceWrap>
+                <resourceSet>
+                    <resourceRepresentation type="zoomview">
+                        <linkResource formatResource="image/jpeg">http://ndl.fng.fi/ndl/zoomview/muusa24/3D313279-45A5-469A-885E-766C66F0F6DC.jpg</linkResource>
+                    </resourceRepresentation>
+                    <resourceType>
+                        <term>zoomview</term>
+                    </resourceType>
+                </resourceSet>
+            </resourceWrap>
+        </administrativeMetadata>
+    </lido>
+</lidoWrap>

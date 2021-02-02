@@ -119,13 +119,17 @@ class Lido extends Base
     /**
      * Return fields to be indexed in Solr
      *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
+     *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
         $data = [];
 
-        $data['record_format'] = $data['recordtype'] = 'lido';
+        $data['record_format'] = 'lido';
         $lang = $this->getDefaultLanguage();
         $title = $this->getTitle(false, $lang);
         if ($this->getDriverParam('splitTitles', false)) {
@@ -167,15 +171,6 @@ class Lido extends Base
 
         $data['topic'] = $data['topic_facet'] = $this->getSubjectTerms();
         $data['material'] = $this->getEventMaterials($this->mainEvent);
-
-        // This is just the display measurements! There's also the more granular
-        // form, which could be useful for some interesting things eg. sorting by
-        // size
-        $data['measurements'] = $this->getMeasurements();
-
-        $data['identifier'] = $this->getIdentifier();
-        $data['culture'] = $this->getCulture();
-        $data['rights'] = $this->getRights();
 
         $data['era'] = $data['era_facet']
             = $this->getEventDisplayDate($this->mainEvent);
@@ -321,7 +316,7 @@ class Lido extends Base
     }
 
     /**
-     * Dedup: Return main author (format: Last, First)
+     * Return main author (format: Last, First)
      *
      * @return string
      */
@@ -332,10 +327,68 @@ class Lido extends Base
     }
 
     /**
+     * Get key data that can be used to identify expressions of a work
+     *
+     * Returns an associative array like this:
+     *
+     * [
+     *   'titles' => [
+     *     ['type' => 'title', 'value' => 'Title'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title']
+     *    ],
+     *   'authors' => [
+     *     ['type' => 'author', 'value' => 'Name 1'],
+     *     ['type' => 'author', 'value' => 'Name 2']
+     *   ],
+     *   'titlesAltScript' => [
+     *     ['type' => 'title', 'value' => 'Title in alternate script'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
+     *   ],
+     *   'authorsAltScript' => [
+     *     ['type' => 'author', 'value' => 'Name 1 in alternate script'],
+     *     ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *   ]
+     * ]
+     *
+     * @return array
+     */
+    public function getWorkIdentificationData()
+    {
+        $titlesByLang = [];
+        foreach ($this->getTitleSetNodes() as $set) {
+            foreach ($set->appellationValue as $appellationValue) {
+                $title = trim((string)$appellationValue);
+                if ('' !== $title) {
+                    $lang = (string)($appellationValue['lang'] ?? 'NA');
+                    $titlesByLang[$lang][] = $title;
+                }
+            }
+        }
+
+        $titles = [];
+        foreach ($titlesByLang as $titleParts) {
+            $title = implode(' ', $titleParts);
+            $titles[] = ['type' => 'title', 'value' => $title];
+            $sortTitle = MetadataUtils::stripLeadingPunctuation($title);
+            if ($sortTitle !== $title) {
+                $titles[] = ['type' => 'title', 'value' => $sortTitle];
+            }
+        }
+
+        $authors = [];
+        if ($author = $this->getMainAuthor()) {
+            $authors[] = ['type' => 'author', 'value' => $author];
+        }
+        $titlesAltScript = [];
+        $authorsAltScript = [];
+        return compact('titles', 'authors', 'titlesAltScript', 'authorsAltScript');
+    }
+
+    /**
      * Get the last sublocation (partOfPlace) of a place
      *
-     * @param simpleXMLElement $place Place element
-     * @param bool             $isSub Is the current $place a sublocation
+     * @param \SimpleXMLElement $place Place element
+     * @param bool              $isSub Is the current $place a sublocation
      *
      * @return string
      */
@@ -349,66 +402,6 @@ class Lido extends Base
         }
         return $isSub && isset($place->namePlaceSet->appellationValue)
             ? (string)$place->namePlaceSet->appellationValue : '';
-    }
-
-    /**
-     * Return the object measurements. Only the display element is used currently
-     * until processing more granular data is needed.
-     *
-     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
-     * #objectMeasurementsSetComplexType
-     * @return string
-     */
-    protected function getMeasurements()
-    {
-        $nodeExists = !empty(
-            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
-                ->objectMeasurementsWrap->objectMeasurementsSet
-        );
-        if (!$nodeExists) {
-            return '';
-        }
-        $results = [];
-        foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap
-            ->objectMeasurementsWrap->objectMeasurementsSet as $set
-        ) {
-            foreach ($set->displayObjectMeasurements as $measurements
-            ) {
-                $value = trim((string)$measurements);
-                if ($value) {
-                    $results[] = $value;
-                }
-            }
-        }
-        return $results;
-    }
-
-    /**
-     * Return the object identifier. This is "an unambiguous numeric or alphanumeric
-     * identification number, assigned to the object by the institution of custody."
-     * (usually differs from a technical database id)
-     *
-     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
-     * #repositorySetComplexType
-     * @return string
-     */
-    protected function getIdentifier()
-    {
-        $nodeExists = !empty(
-            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
-                ->repositoryWrap->repositorySet
-        );
-        if (!$nodeExists) {
-            return '';
-        }
-        foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap
-            ->repositoryWrap->repositorySet as $set
-        ) {
-            if (!empty($set->workID)) {
-                return (string)$set->workID;
-            }
-        }
-        return '';
     }
 
     /**
@@ -475,7 +468,7 @@ class Lido extends Base
             ->objectDescriptionWrap->objectDescriptionSet as $set
         ) {
             foreach ($set->descriptiveNoteValue as $descriptiveNoteValue) {
-                $description[] = (string)$descriptiveNoteValue;
+                $description[] = trim((string)$descriptiveNoteValue);
             }
         }
 
@@ -485,26 +478,6 @@ class Lido extends Base
         }
 
         return trim(implode(' ', $description));
-    }
-
-    /**
-     * Return all the cultures associated with an object.
-     *
-     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
-     * #eventComplexType
-     * @return array
-     */
-    protected function getCulture()
-    {
-        $results = [];
-        foreach ($this->getEventNodes() as $event) {
-            foreach ($event->culture as $culture) {
-                if ($culture->term) {
-                    $results[] = (string)$culture->term;
-                }
-            }
-        }
-        return $results;
     }
 
     /**
@@ -596,9 +569,14 @@ class Lido extends Base
     {
         foreach ($this->getEventNodes($event) as $eventNode) {
             if (!empty($eventNode->eventPlace->displayPlace)) {
-                return MetadataUtils::stripTrailingPunctuation(
-                    (string)$eventNode->eventPlace->displayPlace, '.'
+                $str = trim(
+                    MetadataUtils::stripTrailingPunctuation(
+                        (string)$eventNode->eventPlace->displayPlace, '.'
+                    )
                 );
+                if ('' !== $str) {
+                    return $str;
+                }
             }
         }
         return '';
@@ -615,7 +593,10 @@ class Lido extends Base
     {
         foreach ($this->getEventNodes($event) as $eventNode) {
             if (!empty($eventNode->eventDate->displayDate)) {
-                return (string)$eventNode->eventDate->displayDate;
+                $str = trim((string)$eventNode->eventDate->displayDate);
+                if ('' !== $str) {
+                    return $str;
+                }
             }
         }
         return '';
@@ -632,28 +613,7 @@ class Lido extends Base
     {
         foreach ($this->getRelatedWorkSetNodes($relatedWorkRelType) as $set) {
             if (!empty($set->relatedWork->displayObject)) {
-                return (string)$set->relatedWork->displayObject;
-            }
-        }
-        return '';
-    }
-
-    /**
-     * Return the rights of the object.
-     *
-     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
-     * #rightsComplexType
-     * @return string
-     */
-    protected function getRights()
-    {
-        foreach ($this->getResourceSetNodes() as $set) {
-            $empty = empty(
-                $set->rightsResource->rightsHolder->legalBodyName->appellationValue
-            );
-            if (!$empty) {
-                return (string)$set->rightsResource->rightsHolder->legalBodyName
-                    ->appellationValue;
+                return trim((string)$set->relatedWork->displayObject);
             }
         }
         return '';
@@ -718,9 +678,14 @@ class Lido extends Base
         foreach ($this->getSubjectNodes() as $subject) {
             foreach ($subject->subjectPlace as $place) {
                 if (!empty($place->displayPlace)) {
-                    $results[] = MetadataUtils::stripTrailingPunctuation(
-                        (string)$place->displayPlace, '.'
+                    $str = trim(
+                        MetadataUtils::stripTrailingPunctuation(
+                            (string)$place->displayPlace, '.'
+                        )
                     );
+                    if ('' !== $str) {
+                        $results[] = $str;
+                    }
                 }
             }
         }
@@ -740,9 +705,14 @@ class Lido extends Base
                 if (!empty($place->place->namePlaceSet)) {
                     foreach ($place->place->namePlaceSet as $set) {
                         if ($set->appellationValue) {
-                            $results[] = MetadataUtils::stripTrailingPunctuation(
-                                (string)$set->appellationValue, '.'
+                            $str = trim(
+                                MetadataUtils::stripTrailingPunctuation(
+                                    (string)$set->appellationValue, '.'
+                                )
                             );
+                            if ('' !== $str) {
+                                $results[] = $str;
+                            }
                         }
                     }
                 }
@@ -788,7 +758,7 @@ class Lido extends Base
     /**
      * Get all XML fields
      *
-     * @param SimpleXMLElement $xml The XML document
+     * @param \SimpleXMLElement $xml The XML document
      *
      * @return array
      */
@@ -911,7 +881,7 @@ class Lido extends Base
      *
      * @param string|string[] $event Which events to use (omit to scan all events)
      *
-     * @return simpleXMLElement[] Array of event nodes
+     * @return \simpleXMLElement[] Array of event nodes
      */
     protected function getEventNodes($event = null)
     {
@@ -949,7 +919,7 @@ class Lido extends Base
      *
      * @param string|string[] $types Which subject types to include
      *
-     * @return simpleXMLElement[] Array of subjectSet nodes
+     * @return \simpleXMLElement[] Array of subjectSet nodes
      */
     protected function getTitleSetNodes($types = [])
     {
@@ -972,7 +942,7 @@ class Lido extends Base
     /**
      * Get all subject sets
      *
-     * @return simpleXMLElement[] Array of subjectSet nodes
+     * @return \simpleXMLElement[] Array of subjectSet nodes
      */
     protected function getSubjectSetNodes()
     {
@@ -997,7 +967,7 @@ class Lido extends Base
      *
      * @param string|string[] $exclude Which subject types to exclude
      *
-     * @return simpleXMLElement[] Array of subject nodes
+     * @return \simpleXMLElement[] Array of subject nodes
      */
     protected function getSubjectNodes($exclude = [])
     {
@@ -1022,7 +992,7 @@ class Lido extends Base
      *
      * @param string|string[] $exclude Which description types to exclude
      *
-     * @return simpleXMLElement[] Array of objectDescriptionSet nodes
+     * @return \simpleXMLElement[] Array of objectDescriptionSet nodes
      */
     protected function getObjectDescriptionSetNodes($exclude = [])
     {
@@ -1055,7 +1025,7 @@ class Lido extends Base
      *
      * @param string[] $relatedWorkRelType Which relation types to include
      *
-     * @return simpleXMLElement[] Array of relatedWorkSet nodes
+     * @return \simpleXMLElement[] Array of relatedWorkSet nodes
      */
     protected function getRelatedWorkSetNodes($relatedWorkRelType = [])
     {
@@ -1073,8 +1043,10 @@ class Lido extends Base
             if (empty($relatedWorkRelType)
                 || empty($relatedWorkSetNode->relatedWorkRelType->term)
                 || in_array(
-                    mb_strtolower(
-                        $relatedWorkSetNode->relatedWorkRelType->term, 'UTF-8'
+                    trim(
+                        mb_strtolower(
+                            $relatedWorkSetNode->relatedWorkRelType->term, 'UTF-8'
+                        )
                     ),
                     $relatedWorkRelType
                 )
@@ -1088,7 +1060,7 @@ class Lido extends Base
     /**
      * Get resource sets
      *
-     * @return simpleXMLElement[] Array of resourceSet nodes
+     * @return \simpleXMLElement[] Array of resourceSet nodes
      */
     protected function getResourceSetNodes()
     {

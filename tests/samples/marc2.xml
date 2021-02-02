@@ -71,18 +71,18 @@
   </datafield>
   <datafield tag="650" ind1=" " ind2="7">
     <subfield code="a">biopsykologia</subfield>
-    <subfield code="2">yso/fin</subfield>
-    <subfield code="0">http://www.yso.fi/onto/yso/p9372</subfield>
+    <subfield code="2">test</subfield>
+    <subfield code="0">test\.12</subfield>
   </datafield>
   <datafield tag="650" ind1=" " ind2="7">
     <subfield code="a">neuropsykologi</subfield>
-    <subfield code="2">yso/swe</subfield>
-    <subfield code="0">http://www.yso.fi/onto/yso/p14664</subfield>
+    <subfield code="2">biotest</subfield>
+    <subfield code="0">BIOTEST.12</subfield>
   </datafield>
   <datafield tag="650" ind1=" " ind2="7">
     <subfield code="a">biopsykologi</subfield>
-    <subfield code="2">yso/swe</subfield>
-    <subfield code="0">http://www.yso.fi/onto/yso/p9372</subfield>
+    <subfield code="2">biotest</subfield>
+    <subfield code="0">(BIOTEST)1234</subfield>
   </datafield>
   <datafield tag="850" ind1=" " ind2=" ">
     <subfield code="a">FI-Hc</subfield>

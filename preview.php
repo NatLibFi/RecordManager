@@ -64,8 +64,10 @@ if ($func === 'get_sources') {
     }
 
     try {
+        ob_start();
         $record = $createPreview->launch($_REQUEST['data'], $format, $source);
     } catch (\Exception $e) {
+        $res = ob_clean();
         http_response_code(400);
         echo json_encode(['error_message' => $e->getMessage()]);
         return;

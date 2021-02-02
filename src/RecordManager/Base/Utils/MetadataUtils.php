@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Base\Utils;
 
+use RecordManager\Base\Record\Base as BaseRecord;
+
 /**
  * MetadataUtils Class
  *
@@ -61,7 +63,7 @@ class MetadataUtils
      *
      * @var array
      */
-    protected static $abbreviations = null;
+    protected static $abbreviations = [];
 
     /**
      * Articles that should be removed from the beginning of sort keys.
@@ -153,7 +155,9 @@ class MetadataUtils
 
         // Read the abbreviations file
         self::$abbreviations = isset($config['Site']['abbreviations'])
-            ? self::readListFile($basePath, $config['Site']['abbreviations']) : [];
+            ? array_flip(
+                self::readListFile($basePath, $config['Site']['abbreviations'])
+            ) : [];
 
         // Read the artices file
         self::$articles = isset($config['Site']['articles'])
@@ -218,7 +222,13 @@ class MetadataUtils
     }
 
     /**
-     * Convert coordinates in [EWSN]DDDMMSS format to decimal
+     * Convert coordinates in different formats to decimal.
+     *
+     * Supported formats (with some intentional leniency):
+     * [EWSN]DDDMMSS[.sss]
+     * [EWSN+-]DDD.DDDDDD
+     * [EWSN]DDDMM.MMMM
+     * [EWSN+-]D[...].D[...]
      *
      * @param string $value Coordinates
      *
@@ -226,10 +236,49 @@ class MetadataUtils
      */
     public static function coordinateToDecimal($value)
     {
+        $value = str_replace(' ', '', $value);
         if ($value === '') {
             return (float)NAN;
         }
-        if (preg_match('/^([eEwWnNsS])(\d{3})(\d{2})(\d{2})/', $value, $matches)) {
+        $match = preg_match(
+            '/^([eEwWnNsS])(\d{3})(\d{2})((\d{2})(\.(\d{3}))?)/', $value, $matches
+        );
+        if ($match) {
+            $dec = $matches[2] + $matches[3] / 60 + $matches[4] / 3600;
+            if (in_array($matches[1], ['w', 'W', 's', 'S'])) {
+                return -$dec;
+            }
+            return $dec;
+        }
+        if (preg_match('/^([eEwWnNsS+-])?(\d{3}\.\d+)/', $value, $matches)) {
+            $dec = (float)$matches[2];
+            if (in_array($matches[1], ['w', 'W', 's', 'S', '-'])) {
+                return -$dec;
+            }
+            return $dec;
+        }
+        if (preg_match('/^([eEwWnNsS])?(\d{3})(\d{2}\.\d+)/', $value, $matches)
+        ) {
+            $dec = (float)$matches[2] + $matches[3] / 60;
+            if (in_array($matches[1], ['w', 'W', 's', 'S'])) {
+                return -$dec;
+            }
+            return $dec;
+        }
+        if (preg_match('/^([eEwWnNsS+-])?(\d+\.\d+)/', $value, $matches)
+        ) {
+            $dec = (float)$matches[2];
+            if (in_array($matches[1], ['w', 'W', 's', 'S', '-'])) {
+                return -$dec;
+            }
+            return $dec;
+        }
+        // Like the first one, but one last try for a value that's missing leading
+        // zeros
+        $match = preg_match(
+            '/^([eEwWnNsS])(\d+)(\d{2})((\d{2})(\.(\d{3}))?)$/', $value, $matches
+        );
+        if ($match) {
             $dec = $matches[2] + $matches[3] / 60 + $matches[4] / 3600;
             if (in_array($matches[1], ['w', 'W', 's', 'S'])) {
                 return -$dec;
@@ -279,6 +328,8 @@ class MetadataUtils
                 break;
             }
         }
+        // Limit key length to 200 characters
+        $key = substr($key, 0, 200);
         return MetadataUtils::normalizeKey($key, $form);
     }
 
@@ -351,8 +402,9 @@ class MetadataUtils
 
         $a1a = explode(' ', $a1);
         $a2a = explode(' ', $a2);
+        $minCount = min(count($a1a), count($a2a));
 
-        for ($i = 0; $i < min(count($a1a), count($a2a)); $i++) {
+        for ($i = 0; $i < $minCount; $i++) {
             if ($a1a[$i] != $a2a[$i]) {
                 // First word needs to match
                 if ($i == 0) {
@@ -401,9 +453,17 @@ class MetadataUtils
      */
     public static function stripTrailingPunctuation($str, $additional = '')
     {
-        $str = rtrim($str, ' /:;,=([' . $additional);
+        $basic = ' /:;,=([';
+        if ($additional) {
+            // Use preg_replace for multibyte support
+            $str = preg_replace(
+                '/[' . preg_quote($basic . $additional, '/') . ']*$/u', '', $str
+            );
+        } else {
+            $str = rtrim($str, $basic);
+        }
 
-        // Don't replace an initial letter followed by period
+        // Don't replace an initial letter or an abbreviation followed by period
         // (e.g. string "Smith, A.")
         if (substr($str, -1) == '.' && substr($str, -3, 1) != ' ') {
             $p = strrpos($str, ' ');
@@ -413,7 +473,7 @@ class MetadataUtils
                 $lastWord = substr($str, 0, -1);
             }
             if (!is_numeric($lastWord)
-                && !in_array(strtolower($lastWord), MetadataUtils::$abbreviations)
+                && !isset(MetadataUtils::$abbreviations[strtolower($lastWord)])
             ) {
                 $str = substr($str, 0, -1);
             }
@@ -445,7 +505,10 @@ class MetadataUtils
         $str,
         $punctuation = " \t\\#*!¡?/:;.,=(['\"´`” ̈"
     ) {
-        return ltrim($str, $punctuation);
+        // Use preg_replace for multibyte support
+        return preg_replace(
+            '/^[' . preg_quote($punctuation, '/') . ']*/u', '', $str
+        );
     }
 
     /**
@@ -574,7 +637,7 @@ class MetadataUtils
      * @param array $range Start and end date
      *
      * @return string Start and end date in Solr format
-     * @throws Exception
+     * @throws \Exception
      */
     public static function dateRangeToStr($range)
     {
@@ -805,9 +868,9 @@ class MetadataUtils
     /**
      * Determine if a record is a hidden component part
      *
-     * @param array       $settings       Data source settings
-     * @param array       $record         Mongo record
-     * @param \BaseRecord $metadataRecord Metadata record
+     * @param array      $settings       Data source settings
+     * @param array      $record         Mongo record
+     * @param BaseRecord $metadataRecord Metadata record
      *
      * @return boolean
      */
@@ -859,6 +922,40 @@ class MetadataUtils
             if (preg_match($expr, $wkt, $matches)) {
                 return (($matches[1] + $matches[2]) / 2) . ' '
                     . (($matches[3] + $matches[4]) / 2);
+            }
+            try {
+                $item = \geoPHP::load($wkt, 'wkt');
+            } catch (\Exception $e) {
+                if (null !== self::$logger) {
+                    self::$logger->logError(
+                        'getCenterCoordinates',
+                        "Could not parse WKT '$wkt': " . $e->getMessage()
+                    );
+                }
+                return [];
+            }
+            $centroid = $item ? $item->centroid() : null;
+            return $centroid ? $centroid->getX() . ' ' . $centroid->getY() : '';
+        }
+        return '';
+    }
+
+    /**
+     * Get user-displayable coordinates for a shape
+     *
+     * @param string|array $wkt WKT shape(s)
+     *
+     * @return string Center coordinates
+     */
+    public static function getGeoDisplayField($wkt)
+    {
+        if (!empty($wkt)) {
+            $wkt = is_array($wkt) ? $wkt[0] : $wkt;
+            $expr = '/ENVELOPE\s*\((-?[\d\.]+),\s*(-?[\d\.]+),\s*(-?[\d\.]+),'
+                . '\s*(-?[\d\.]+)\)/i';
+            if (preg_match($expr, $wkt, $matches)) {
+                return $matches[1] . ' ' . $matches[2] . ' ' . $matches[3]
+                    . ' ' . $matches[4];
             }
             try {
                 $item = \geoPHP::load($wkt, 'wkt');
@@ -935,13 +1032,32 @@ class MetadataUtils
      * @param \DomDocument $dom     DOM
      * @param int          $options Additional libxml options (LIBXML_PARSEHUGE and
      *                              LIBXML_COMPACT are set by default)
+     * @param string       $errors  Any errors encountered
      *
      * @return \SimpleXMLElement|\DomDocument|bool
      */
-    public static function loadXML($xml, $dom = null, $options = 0)
-    {
+    public static function loadXML($xml, $dom = null, $options = 0,
+        &$errors = null
+    ) {
         $options |= LIBXML_PARSEHUGE | LIBXML_COMPACT;
-        return XmlSecurity::scan($xml, $dom, $options);
+        if (null === $errors) {
+            return XmlSecurity::scan($xml, $dom, $options);
+        }
+
+        $saveUseErrors = libxml_use_internal_errors(true);
+        libxml_clear_errors();
+        $errors = '';
+        $result = XmlSecurity::scan($xml, $dom, $options);
+        if (false === $result || libxml_get_last_error() !== false) {
+            $messageParts = [];
+            foreach (libxml_get_errors() as $error) {
+                $messageParts[] = '[' . $error->line . ':' . $error->column
+                    . '] Error ' . $error->code . ': ' . $error->message;
+            }
+            $errors = implode('; ', $messageParts);
+        }
+        libxml_use_internal_errors($saveUseErrors);
+        return $result;
     }
 
     /**

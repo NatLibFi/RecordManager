@@ -27,6 +27,7 @@
  */
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Utils\DeweyCallNumber;
 use RecordManager\Base\Utils\LcCallNumber;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -44,8 +45,6 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Marc extends Base
 {
-    use \RecordManager\Finna\Record\FinnaRecordTrait;
-
     const SUBFIELD_INDICATOR = "\x1F";
     const END_OF_FIELD = "\x1E";
     const END_OF_RECORD = "\x1D";
@@ -81,6 +80,34 @@ class Marc extends Base
      * @var array
      */
     protected $illustrationStrings = ['ill.', 'illus.'];
+
+    /**
+     * Default field for geographic coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoField = 'long_lat';
+
+    /**
+     * Default field for geographic center coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoCenterField = '';
+
+    /**
+     * Default field for geographic displayable coordinates
+     *
+     * @var string
+     */
+    protected $defaultGeoDisplayField = 'long_lat_display';
+
+    protected $oclcNumPatterns = [
+        '/\([Oo][Cc][Oo][Ll][Cc]\)[^0-9]*[0]*([0-9]+)/',
+        '/ocm[0]*([0-9]+)[ ]*[0-9]*/',
+        '/ocn[0]*([0-9]+).*/',
+        '/on[0]*([0-9]+).*/',
+    ];
 
     /**
      * Constructor
@@ -251,75 +278,96 @@ class Marc extends Base
     }
 
     /**
-     * Return fields to be indexed in Solr (an alternative to an XSL transformation)
+     * Return fields to be indexed in Solr
+     *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
      *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
         $data = [];
-        $data['record_format'] = $data['recordtype'] = 'marc';
+        $data['record_format'] = 'marc';
 
-        // Add source prefix to IDs in link fields
+        // Try to find matches for IDs in link fields
         $fields = ['760', '762', '765', '767', '770', '772', '773', '774',
             '775', '776', '777', '780', '785', '786', '787'];
         foreach ($fields as $code) {
-            if (isset($this->fields[$code])) {
-                foreach ($this->fields[$code] as &$marcfield) {
-                    if (isset($marcfield['s'])) {
-                        foreach ($marcfield['s'] as &$marcsubfield) {
-                            if (key($marcsubfield) == 'w') {
-                                $marcsubfield = [
-                                    'w' => $this->idPrefix . '.'
-                                    . current($marcsubfield)
-                                ];
+            // Make sure not to use null coalescing with references. That won't work.
+            if (!isset($this->fields[$code])) {
+                continue;
+            }
+            foreach ($this->fields[$code] as &$marcfield) {
+                // Make sure not to use null coalescing with references. That won't
+                // work.
+                if (!isset($marcfield['s'])) {
+                    continue;
+                }
+                foreach ($marcfield['s'] as &$marcsubfield) {
+                    if (key($marcsubfield) == 'w') {
+                        $targetId = current($marcsubfield);
+                        $targetRecord = null;
+                        if ($db) {
+                            $linkingId = $this->createLinkingId($targetId);
+                            $targetRecord = $db->findRecord(
+                                [
+                                    'source_id' => $this->source,
+                                    'linking_id' => $linkingId
+                                ],
+                                ['projection' => ['_id' => 1]]
+                            );
+                            // Try with the original id if no exact match
+                            if (!$targetRecord && $targetId !== $linkingId) {
+                                $targetRecord = $db->findRecord(
+                                    [
+                                        'source_id' => $this->source,
+                                        'linking_id' => $targetId
+                                    ],
+                                    ['projection' => ['_id' => 1]]
+                                );
                             }
                         }
+                        if ($targetRecord) {
+                            $targetId = $targetRecord['_id'];
+                        } else {
+                            $targetId = $this->idPrefix . '.' . $targetId;
+                        }
+                        $marcsubfield = [
+                            'w' => $targetId
+                        ];
                     }
                 }
+                unset($marcsubfield);
             }
+            unset($marcfield);
         }
 
         // building
         $data['building'] = $this->getBuilding();
 
-        // long_lat
-        $field = $this->getField('034');
-        if ($field) {
-            $westOrig = $this->getSubfield($field, 'd');
-            $eastOrig = $this->getSubfield($field, 'e');
-            $northOrig = $this->getSubfield($field, 'f');
-            $southOrig = $this->getSubfield($field, 'g');
-            $west = MetadataUtils::coordinateToDecimal($westOrig);
-            $east = MetadataUtils::coordinateToDecimal($eastOrig);
-            $north = MetadataUtils::coordinateToDecimal($northOrig);
-            $south = MetadataUtils::coordinateToDecimal($southOrig);
-
-            if (!is_nan($west) && !is_nan($north)) {
-                if (!is_nan($east)) {
-                    $longitude = ($west + $east) / 2;
-                } else {
-                    $longitude = $west;
+        // Location coordinates
+        if ($geoField = $this->getDriverParam('geoField', $this->defaultGeoField)) {
+            if ($geoLocations = $this->getGeographicLocations()) {
+                $data[$geoField] = $geoLocations;
+                $centerField = $this->getDriverParam(
+                    'geoCenterField', $this->defaultGeoCenterField
+                );
+                if ($centerField) {
+                    foreach ($geoLocations as $geoLocation) {
+                        $data[$centerField][]
+                            = MetadataUtils::getCenterCoordinates($geoLocation);
+                    }
                 }
-
-                if (!is_nan($south)) {
-                    $latitude = ($north + $south) / 2;
-                } else {
-                    $latitude = $north;
-                }
-                if (($longitude < -180 || $longitude > 180)
-                    || ($latitude < -90 || $latitude > 90)
-                ) {
-                    $this->logger->logDebug(
-                        'Marc',
-                        "Discarding invalid coordinates $longitude,$latitude "
-                            . "decoded from w=$westOrig, e=$eastOrig, n=$northOrig, "
-                            . "s=$southOrig, record {$this->source}."
-                            . $this->getID()
-                    );
-                    $this->storeWarning('invalid coordinates in 034');
-                } else {
-                    $data['long_lat'] = "$longitude $latitude";
+                $displayField = $this->getDriverParam(
+                    'geoDisplayField', $this->defaultGeoDisplayField
+                );
+                if ($displayField) {
+                    foreach ($geoLocations as $geoLocation) {
+                        $data[$displayField][]
+                            = MetadataUtils::getGeoDisplayField($geoLocation);
+                    }
                 }
             }
         }
@@ -359,14 +407,6 @@ class Marc extends Base
         $corporateAuthors = $this->getCorporateAuthors();
         $data['author_corporate'] = $corporateAuthors['names'];
         $data['author_corporate_role'] = $corporateAuthors['relators'];
-
-        $data['author2_id_str_mv'] = $this->getAuthorIds();
-        $data['author2_id_role_str_mv']
-            = array_merge(
-                $this->addNamespaceToAuthorityIds($secondaryAuthors['idRoles']),
-                $this->addNamespaceToAuthorityIds($corporateAuthors['idRoles'])
-            );
-
         $data['author_additional'] = $this->getFieldsSubfields(
             [
                 [self::GET_BOTH, '505', ['r' => 1]]
@@ -580,25 +620,29 @@ class Marc extends Base
 
         $data['illustrated'] = $this->getIllustrated();
 
-        // TODO: dewey fields and OCLC numbers
+        $deweyFields = $this->getFieldsSubfields(
+            [
+                [self::GET_NORMAL, '082', ['a' => '1']],
+                [self::GET_NORMAL, '083', ['a' => '1']],
+            ]
+        );
+        foreach ($deweyFields as $field) {
+            $deweyCallNumber = new DeweyCallNumber($field);
+            $data['dewey-hundreds'] = $deweyCallNumber->getNumber(100);
+            $data['dewey-tens'] = $deweyCallNumber->getNumber(10);
+            $data['dewey-ones'] = $deweyCallNumber->getNumber(1);
+            $data['dewey-full'] = $deweyCallNumber->getSearchString($deweyFields);
+            if (empty($data['dewey-sort'])) {
+                $data['dewey-sort'] = $deweyCallNumber->getSortKey($deweyFields);
+            }
+            $data['dewey-raw'] = $field;
+        }
+
+        if ($res = $this->getOclcNumbers()) {
+            $data['oclc_num'] = $res;
+        }
 
         return $data;
-    }
-
-    /**
-     * Return author ids that are indexed to author2_id_str_mv
-     *
-     * @return array
-     */
-    public function getAuthorIds()
-    {
-        $secondaryAuthors = $this->getSecondaryAuthors();
-        $corporateAuthors = $this->getCorporateAuthors();
-
-        return array_merge(
-            $this->addNamespaceToAuthorityIds($secondaryAuthors['ids']),
-            $this->addNamespaceToAuthorityIds($corporateAuthors['ids'])
-        );
     }
 
     /**
@@ -629,13 +673,7 @@ class Marc extends Base
             // Koha style ID fallback
             $id = $this->getFieldSubfield('999', 'c');
         }
-        if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
-            $source = $this->getField('003');
-            $source = MetadataUtils::stripTrailingPunctuation($source);
-            if ($source) {
-                $id = "($source)$id";
-            }
-        }
+        $id = $this->createLinkingId($id);
         $results = [$id];
 
         $cns = $this->getFieldsSubfields(
@@ -648,6 +686,25 @@ class Marc extends Base
         }
 
         return $results;
+    }
+
+    /**
+     * Create a linking id from record id
+     *
+     * @param string $id Record id
+     *
+     * @return string
+     */
+    protected function createLinkingId($id)
+    {
+        if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
+            $source = $this->getField('003');
+            $source = MetadataUtils::stripTrailingPunctuation($source);
+            if ($source) {
+                $id = "($source)$id";
+            }
+        }
+        return $id;
     }
 
     /**
@@ -833,11 +890,11 @@ class Marc extends Base
                     }
                     $title .= current($subfield);
                 }
-                $title = MetadataUtils::stripTrailingPunctuation($title);
                 if ($forFiling) {
                     $title = MetadataUtils::stripLeadingPunctuation($title);
                     $title = mb_strtolower($title, 'UTF-8');
                 }
+                $title = MetadataUtils::stripTrailingPunctuation($title);
                 if (!empty($title)) {
                     return $title;
                 }
@@ -847,7 +904,7 @@ class Marc extends Base
     }
 
     /**
-     * Dedup: Return main author (format: Last, First)
+     * Return main author (format: Last, First)
      *
      * @return string
      */
@@ -857,6 +914,13 @@ class Marc extends Base
         if ($f100) {
             $author = $this->getSubfield($f100, 'a');
             $order = $this->getIndicator($f100, 1);
+            if ($order == 0 && strpos($author, ',') === false) {
+                $author = MetadataUtils::convertAuthorLastFirst($author);
+            }
+            return MetadataUtils::stripTrailingPunctuation($author);
+        } elseif ($f700 = $this->getField('700')) {
+            $author = $this->getSubfield($f700, 'a');
+            $order = $this->getIndicator($f700, 1);
             if ($order == 0 && strpos($author, ',') === false) {
                 $author = MetadataUtils::convertAuthorLastFirst($author);
             }
@@ -883,8 +947,7 @@ class Marc extends Base
     public function getUniqueIDs()
     {
         $arr = [];
-        $form = isset($this->config['Site']['unicode_normalization_form'])
-            ? $this->config['Site']['unicode_normalization_form'] : 'NFKC';
+        $form = $this->config['Site']['unicode_normalization_form'] ?? 'NFKC';
         $nbn = $this->getField('015');
         if ($nbn) {
             $nr = MetadataUtils::normalizeKey(
@@ -907,9 +970,7 @@ class Marc extends Base
         }
         $id = $this->getField('024');
         if ($id) {
-            $nr = MetadataUtils::normalizeKey(
-                $this->getSubfield($id, 'a'), $form
-            );
+            $nr = $this->getSubfield($id, 'a');
             switch ($this->getIndicator($id, 1)) {
             case '0':
                 $src = 'istc';
@@ -922,6 +983,9 @@ class Marc extends Base
                 break;
             case '3':
                 $src = 'ian';
+                if ($p = strpos($nr, ' ')) {
+                    $nr = substr($nr, 0, $p);
+                }
                 break;
             case '4':
                 $src = 'sici';
@@ -932,6 +996,7 @@ class Marc extends Base
             default:
                 $src = '';
             }
+            $nr = MetadataUtils::normalizeKey($nr, $form);
             // Ignore any invalid ISMN
             if ('ismn' === $src && !preg_match('{([0-9]{13})}', $nr)) {
                 $nr = '';
@@ -1248,19 +1313,17 @@ class Marc extends Base
     {
         $field = $this->getField('260');
         if ($field) {
-            $year = $this->getSubfield($field, 'c');
-            $matches = [];
-            if ($year && preg_match('/(\d{4})/', $year, $matches)) {
-                return $matches[1];
+            $year = $this->extractYear($this->getSubfield($field, 'c'));
+            if ($year) {
+                return $year;
             }
         }
         $fields = $this->getFields('264');
         foreach ($fields as $field) {
             if ($this->getIndicator($field, 2) == '1') {
-                $year = $this->getSubfield($field, 'c');
-                $matches = [];
-                if ($year && preg_match('/(\d{4})/', $year, $matches)) {
-                    return $matches[1];
+                $year = $this->extractYear($this->getSubfield($field, 'c'));
+                if ($year) {
+                    return $year;
                 }
             }
         }
@@ -1269,10 +1332,8 @@ class Marc extends Base
             return '';
         }
         $year = substr($field008, 7, 4);
-        if ($year && $year != '0000' && $year != '9999'
-            && preg_match('/(\d{4})/', $year)
-        ) {
-            return $year;
+        if ($year && $year != '0000' && $year != '9999') {
+            return $this->extractYear($year);
         }
         return '';
     }
@@ -1374,13 +1435,24 @@ class Marc extends Base
     protected function getDefaultBuildingFields()
     {
         $useSub = $this->getDriverParam('subLocationInBuilding', '');
-        return [
+        $fields = [
             [
                 'field' => '852',
                 'loc' => 'b',
                 'sub' => $useSub,
             ],
         ];
+        if ($this->getDriverParam('kohaNormalization', false)
+            || $this->getDriverParam('almaNormalization', false)
+        ) {
+            $itemSub = $this->getDriverParam('itemSubLocationInBuilding', $useSub);
+            $fields[] = [
+                'field' => '952',
+                'loc' => 'b',
+                'sub' => $itemSub,
+            ];
+        }
+        return $fields;
     }
 
     /**
@@ -1388,7 +1460,7 @@ class Marc extends Base
      *
      * @param string $marc MARCXML
      *
-     * @throws Exception
+     * @throws \Exception
      * @return void
      */
     protected function parseXML($marc)
@@ -1436,7 +1508,7 @@ class Marc extends Base
      *
      * @param string $marc ISO2709 string
      *
-     * @throws Exception
+     * @throws \Exception
      * @return void
      */
     protected function parseISO2709($marc)
@@ -1680,7 +1752,7 @@ class Marc extends Base
             }
             return $field['i2'];
         default:
-            die("Invalid indicator '$indicator' requested\n");
+            throw new \Exception("Invalid indicator '$indicator' requested");
         }
     }
 
@@ -1868,7 +1940,7 @@ class Marc extends Base
 
                 // Check for required subfields
                 if (isset($fieldspec[3])) {
-                    foreach ($fieldspec[3] as $required => $dummy) {
+                    foreach (array_keys($fieldspec[3]) as $required) {
                         $found = false;
                         foreach ($field['s'] as $subfield) {
                             if ($required == key($subfield)) {
@@ -2116,7 +2188,7 @@ class Marc extends Base
     protected function getAllFields()
     {
         $subfieldFilter = [
-            '650' => ['2' => 1, '6' => 1, '8' => 1],
+            '650' => ['0' => 1, '2' => 1, '6' => 1, '8' => 1],
             '773' => ['6' => 1, '7' => 1, '8' => 1, 'w' => 1],
             '856' => ['6' => 1, '8' => 1, 'q' => 1]
         ];
@@ -2126,7 +2198,7 @@ class Marc extends Base
                 foreach ($fields as $field) {
                     $subfields = $this->getAllSubfields(
                         $field,
-                        $subfieldFilter[$tag] ?? ['6' => 1, '8' => 1]
+                        $subfieldFilter[$tag] ?? ['0' => 1, '6' => 1, '8' => 1]
                     );
                     if ($subfields) {
                         $allFields = array_merge($allFields, $subfields);
@@ -2136,8 +2208,8 @@ class Marc extends Base
         }
         $allFields = array_map(
             function ($str) {
-                return MetadataUtils::stripLeadingPunctuation(
-                    MetadataUtils::stripTrailingPunctuation($str)
+                return MetadataUtils::stripTrailingPunctuation(
+                    MetadataUtils::stripLeadingPunctuation($str)
                 );
             },
             $allFields
@@ -2417,15 +2489,17 @@ class Marc extends Base
                         )
                     );
                 }
-                $fuller = ($tag == '100' || $tag == '700')
-                    ? $this->getSubfields($field, ['q' => 1]) : '';
                 $result['names'][] = MetadataUtils::stripTrailingPunctuation(
                     trim($terms)
                 );
+
+                $fuller = ($tag == '100' || $tag == '700')
+                    ? $this->getSubfields($field, ['q' => 1]) : '';
                 if ($fuller) {
                     $result['fuller'][]
                         = MetadataUtils::stripTrailingPunctuation(trim($fuller));
                 }
+
                 if ($fieldRelators) {
                     $result['relators'][] = reset($fieldRelators);
                 } else {
@@ -2501,5 +2575,385 @@ class Marc extends Base
             [],
             ['110', '111', '710', '711']
         );
+    }
+
+    /**
+     * Get key data that can be used to identify expressions of a work
+     *
+     * Returns an associative array like this:
+     *
+     * [
+     *   'titles' => [
+     *     ['type' => 'title', 'value' => 'Title'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title']
+     *    ],
+     *   'authors' => [
+     *     ['type' => 'author', 'value' => 'Name 1'],
+     *     ['type' => 'author', 'value' => 'Name 2']
+     *   ],
+     *   'titlesAltScript' => [
+     *     ['type' => 'title', 'value' => 'Title in alternate script'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
+     *   ],
+     *   'authorsAltScript' => [
+     *     ['type' => 'author', 'value' => 'Name 1 in alternate script'],
+     *     ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *   ]
+     * ]
+     *
+     * @return array
+     */
+    public function getWorkIdentificationData()
+    {
+        $authorFields = [
+            '100' => ['a' => 1, 'b' => 1],
+            '110' => ['a' => 1, 'b' => 1],
+            '111' => ['a' => 1, 'c' => 1],
+            '700' => ['a' => 1, 'b' => 1],
+            '710' => ['a' => 1, 'b' => 1],
+            '711' => ['a' => 1, 'c' => 1]
+        ];
+        $titleFields = [
+            '130' => ['n' => 1, 'p' => 1],
+            '730' => ['n' => 1, 'p' => 1],
+            '240' => ['n' => 1, 'p' => 1, 'm' => 1, 'r' => 1],
+            '245' => ['b' => 1, 'n' => 1],
+            '246' => ['b' => 1, 'n' => 1],
+            '247' => ['b' => 1, 'n' => 1],
+        ];
+
+        $authors = [];
+        $authorsAltScript = [];
+        $titles = [];
+        $titlesAltScript = [];
+
+        foreach ($authorFields as $tag => $subfields) {
+            $auths = $this->getFieldsSubfields(
+                [[self::GET_BOTH, $tag, $subfields]],
+                true,
+                false
+            );
+            if (isset($auths[1])) {
+                $authorsAltScript[] = [
+                    'type' => 'author',
+                    'value' => $auths[1]
+                ];
+            }
+            if (isset($auths[0])) {
+                $authors[] = [
+                    'type' => 'author',
+                    'value' => $auths[0]
+                ];
+                break;
+            }
+        }
+
+        foreach ($titleFields as $tag => $subfields) {
+            $field = $this->getField($tag);
+            $title = '';
+            $altTitles = [];
+            $ind = ('130' == $tag || '730' == $tag) ? 1 : 2;
+            if ($field && !empty($field['s'])) {
+                $title = $this->getSubfield($field, 'a');
+                $nonfiling = $this->getIndicator($field, $ind);
+                if ($nonfiling > 0) {
+                    $title = substr($title, $nonfiling);
+                }
+                $rest = $this->getSubfields($field, $subfields);
+                if ($rest) {
+                    $title .= " $rest";
+                }
+                $sub6 = $this->getSubfield($field, '6');
+                if ($sub6) {
+                    $sub6 = "$tag-" . substr($sub6, 4, 2);
+                    foreach ($this->getFields('880') as $f880) {
+                        if (strncmp($this->getSubfield($f880, '6'), $sub6, 6) != 0) {
+                            continue;
+                        }
+                        $altTitle = $this->getSubfield($f880, 'a');
+                        $nonfiling = $this->getIndicator($f880, $ind);
+                        if ($nonfiling > 0) {
+                            $altTitle = substr($altTitle, $nonfiling);
+                        }
+                        $rest = $this->getSubfields($f880, $subfields);
+                        if ($rest) {
+                            $altTitle .= " $rest";
+                        }
+                        if ($altTitle) {
+                            $altTitles[] = $altTitle;
+                        }
+                    }
+                }
+            }
+            $titleType = ('130' == $tag || '730' == $tag) ? 'uniform' : 'title';
+            if ($title) {
+                $titles[] = [
+                    'type' => $titleType,
+                    'value' => $title
+                ];
+            }
+            foreach ($altTitles as $altTitle) {
+                $titlesAltScript[] = [
+                    'type' => $titleType,
+                    'value' => $altTitle
+                ];
+            }
+        }
+
+        if (!$titles) {
+            return [];
+        }
+
+        return compact('authors', 'authorsAltScript', 'titles', 'titlesAltScript');
+    }
+
+    /**
+     * Normalize the record (optional)
+     *
+     * @return void
+     */
+    public function normalize()
+    {
+        // Koha and Alma record normalization. For Alma normalization to work,
+        // item information must be mapped in the enrichments for the publishing
+        // process so that it's similar to what Koha does:
+        // [x] Add Items Information
+        //   Repeatable field: 952
+        //   Barcode subfield: p
+        //   Item status subfield: 1
+        //   Enumeration A subfield: h
+        //   Enumeration B subfield: h
+        //   Chronology I subfield: h
+        //   Chronology J subfield: h
+        //   Permanent library subfield: a
+        //   Permanent location subfield: a
+        //   Current library subfield: b
+        //   Current location subfield: c
+        //   Call number subfield: o
+        //   Public note subfield: z
+        //   Due back date subfield: q
+        //
+        // See https://www.kiwi.fi/x/vAALC for illustration.
+        //
+        // Note that if kohaNormalization or almaNormalization is enabled, the
+        // "building" field in Solr is populated from both 852 and 952. This can be
+        // overridden with the buildingFields driver param.
+        $koha = $this->getDriverParam('kohaNormalization', false);
+        $alma = $this->getDriverParam('almaNormalization', false);
+        if ($koha || $alma) {
+            // Convert items to holdings
+            $useHome = $koha && $this->getDriverParam('kohaUseHomeBranch', false);
+            $holdings = [];
+            $availableBuildings = [];
+            foreach ($this->getFields('952') as $field952) {
+                $key = [];
+                $holding = [];
+                $branch = $this->getSubfield($field952, $useHome ? 'a' : 'b');
+                $key[] = $branch;
+                // Always use subfield 'b' for location regardless of where it came
+                // from
+                $holding[] = ['b' => $branch];
+                foreach (['c', 'h', 'o', '8'] as $code) {
+                    $value = $this->getSubfield($field952, $code);
+                    $key[] = $value;
+                    if ('' !== $value) {
+                        $holding[] = [$code => $value];
+                    }
+                }
+
+                if ($alma) {
+                    $available = $this->getSubfield($field952, '1') == 1;
+                } else {
+                    // Availability
+                    static $subfieldsExist = [
+                        '0', // Withdrawn
+                        '1', // Lost
+                        '4', // Damaged
+                        'q', // Due date
+                    ];
+                    $available = true;
+                    foreach ($subfieldsExist as $code) {
+                        if ($this->getSubfield($field952, $code)) {
+                            $available = false;
+                            break;
+                        }
+                    }
+                    if ($available) {
+                        $status = $this->getSubfield($field952, '7'); // Not for loan
+                        $available = $status === '0' || $status === '1';
+                    }
+                }
+
+                $key = implode('//', $key);
+                if ($available) {
+                    $availableBuildings[$key] = 1;
+                }
+
+                $holdings[$key] = $holding;
+            }
+            $this->fields['952'] = [];
+            foreach ($holdings as $key => $holding) {
+                if (isset($availableBuildings[$key])) {
+                    $holding[] = ['9' => 1];
+                }
+                $this->fields['952'][] = [
+                    'i1' => ' ',
+                    'i2' => ' ',
+                    's' => $holding
+                ];
+            }
+        }
+
+        if ($koha) {
+            // Verify that 001 exists
+            if ('' === $this->getField('001')) {
+                if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
+                    $this->fields['001'] = [$id];
+                }
+            }
+        }
+
+        if ($alma) {
+            // Add a prefixed id to field 090 to indicate that the record is from
+            // Alma. Used at least with OpenURL.
+            $id = $this->getField('001');
+            $this->fields['090'][] = [
+                'i1' => ' ',
+                'i2' => ' ',
+                's' => [
+                    ['a' => "(Alma)$id"]
+                ]
+            ];
+            ksort($this->fields);
+        }
+    }
+
+    /**
+     * Extract a year from a field such as publication date.
+     *
+     * @param string $field Field
+     *
+     * @return string
+     */
+    protected function extractYear($field)
+    {
+        // First look for a year in brackets
+        if (preg_match('/\[(\d{4})\]/', $field, $matches)) {
+            return $matches[1];
+        }
+        // Then look for any year
+        if (preg_match('/(\d{4})/', $field, $matches)) {
+            return $matches[1];
+        }
+
+        return '';
+    }
+
+    /**
+     * Get geographic locations
+     *
+     * @return array
+     */
+    protected function getGeographicLocations()
+    {
+        $result = [];
+        foreach ($this->getFields('034') as $field) {
+            $westOrig = $this->getSubfield($field, 'd');
+            $eastOrig = $this->getSubfield($field, 'e');
+            $northOrig = $this->getSubfield($field, 'f');
+            $southOrig = $this->getSubfield($field, 'g');
+            $west = MetadataUtils::coordinateToDecimal($westOrig);
+            $east = MetadataUtils::coordinateToDecimal($eastOrig);
+            $north = MetadataUtils::coordinateToDecimal($northOrig);
+            $south = MetadataUtils::coordinateToDecimal($southOrig);
+
+            if (!is_nan($west) && !is_nan($north)) {
+                if (($west < -180 || $west > 180) || ($north < -90 || $north > 90)) {
+                    $this->logger->logDebug(
+                        'Marc',
+                        "Discarding invalid coordinates $west,$north decoded from "
+                            . "w=$westOrig, e=$eastOrig, n=$northOrig, s=$southOrig,"
+                            . " record {$this->source}." . $this->getID()
+                    );
+                    $this->storeWarning('invalid coordinates in 034');
+                } else {
+                    if (!is_nan($east) && !is_nan($south)
+                        && ($east !== $west || $north !== $south)
+                    ) {
+                        if ($east < -180 || $east > 180 || $south < -90
+                            || $south > 90
+                        ) {
+                            $this->logger->logDebug(
+                                'Marc',
+                                "Discarding invalid coordinates $east,$south "
+                                    . "decoded from w=$westOrig, e=$eastOrig, "
+                                    . "n=$northOrig, s=$southOrig, record "
+                                    . "{$this->source}." . $this->getID()
+                            );
+                            $this->storeWarning('invalid coordinates in 034');
+                        } else {
+                            // Try to cope with weird coordinate order
+                            if ($north > $south) {
+                                list($north, $south) = [$south, $north];
+                            }
+                            if ($west > $east) {
+                                list($west, $east) = [$east, $west];
+                            }
+                            $result[] = "ENVELOPE($west, $east, $south, $north)";
+                        }
+                    } else {
+                        $result[] = "POINT($west $north)";
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get OCLC numbers
+     *
+     * @return array
+     */
+    protected function getOclcNumbers()
+    {
+        $result = [];
+
+        $ctrlNums = $this->getFieldsSubfields(
+            [
+                [self::GET_NORMAL, '035', ['a' => 1]]
+            ]
+        );
+        foreach ($ctrlNums as $ctrlNum) {
+            $ctrlLc = mb_strtolower($ctrlNum, 'UTF-8');
+            if (strncmp($ctrlLc, '(ocolc)', 7) === 0
+                || strncmp($ctrlLc, 'ocm', 3) === 0
+                || strncmp($ctrlLc, 'ocn', 3) === 0
+                || strncmp($ctrlLc, 'on', 2) === 0
+            ) {
+                foreach ($this->oclcNumPatterns as $pattern) {
+                    if (preg_match($pattern, $ctrlNum, $matches)) {
+                        $result[] = $matches[1];
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Combine author id and role into a string that can be indexed.
+     *
+     * @param string $id   Id
+     * @param string $role Role
+     *
+     * @return string
+     */
+    protected function formatAuthorIdWithRole($id, $role)
+    {
+        return '';
     }
 }

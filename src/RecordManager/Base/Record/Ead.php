@@ -80,6 +80,20 @@ class Ead extends Base
     protected $undefinedType = null;
 
     /**
+     * Field for geographic data
+     *
+     * @var string
+     */
+    protected $geoField = 'long_lat';
+
+    /**
+     * Field for geographic center coordinates
+     *
+     * @var string
+     */
+    protected $geoCenterField = '';
+
+    /**
      * Set record data
      *
      * @param string $source Source ID
@@ -141,14 +155,18 @@ class Ead extends Base
     /**
      * Return fields to be indexed in Solr
      *
+     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
+     *                                                  avoid database lookups for
+     *                                                  related records.
+     *
      * @return array
      */
-    public function toSolrArray()
+    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
     {
         $data = [];
 
         $doc = $this->doc;
-        $data['record_format'] = $data['recordtype'] = 'ead';
+        $data['record_format'] = 'ead';
         $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
         $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($doc->asXML());
         $data['allfields'] = $this->getAllFields($doc);
@@ -203,9 +221,8 @@ class Ead extends Base
 
         if (isset($doc->did->repository)) {
             $data['institution']
-                = (string)(isset($doc->did->repository->corpname)
-                ? $doc->did->repository->corpname
-                : $doc->did->repository);
+                = (string)($doc->did->repository->corpname
+                ?? $doc->did->repository);
         }
 
         $data['series'] = $this->getSeries();
@@ -296,7 +313,7 @@ class Ead extends Base
     }
 
     /**
-     * Dedup: Return main author (format: Last, First)
+     * Return main author (format: Last, First)
      *
      * @return string
      */
@@ -418,14 +435,14 @@ class Ead extends Base
     /**
      * Get all XML fields
      *
-     * @param SimpleXMLElement $xml The XML document
+     * @param \SimpleXMLElement $xml The XML document
      *
      * @return array
      */
     protected function getAllFields($xml)
     {
         $allFields = [];
-        foreach ($xml->children() as $tag => $field) {
+        foreach ($xml->children() as $field) {
             $s = trim((string)$field);
             if ($s) {
                 $allFields[] = $s;
@@ -484,8 +501,12 @@ class Ead extends Base
                         continue;
                     }
                     list($lat, $lon) = $coordinates;
-                    $data['location_geo'] = "POINT(${lon} ${lat})";
-                    $data['center_coords'] = "${lon} ${lat}";
+                    if ($this->geoField) {
+                        $data[$this->geoField] = "POINT(${lon} ${lat})";
+                    }
+                    if ($this->geoCenterField) {
+                        $data[$this->geoCenterField] = "${lon} ${lat}";
+                    }
                 }
             }
         }

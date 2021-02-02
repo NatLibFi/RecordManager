@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+ <record>
+  <leader>01171nem a22003734i 4500</leader>
+  <controlfield tag="001">107786</controlfield>
+  <controlfield tag="003">ANDL100008</controlfield>
+  <controlfield tag="005">20071212000000.0</controlfield>
+  <controlfield tag="007">au|aa|z|</controlfield>
+  <controlfield tag="008">920614s1946    fi |||||||b|| ||||||fin|c</controlfield>
+  <datafield tag="034" ind1="1" ind2=" ">
+   <subfield code="a">a</subfield>
+   <subfield code="b">00200000</subfield>
+   <subfield code="d">e0193000</subfield>
+   <subfield code="e">e0244500</subfield>
+   <subfield code="f">n0604000</subfield>
+   <subfield code="g">n0594800</subfield>
+  </datafield>
+  <datafield tag="034" ind1="1" ind2=" ">
+   <subfield code="a">a</subfield>
+   <subfield code="b">00200000</subfield>
+   <subfield code="d">e0193000</subfield>
+   <subfield code="e">e0244500</subfield>
+   <subfield code="f">n0604000</subfield>
+   <subfield code="g">n0594801</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+   <subfield code="a">(FI-Piki)Ppro837_107786</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+   <subfield code="a">(PIKI)Ppro837_107786</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+   <subfield code="a">(FI-MELINDA)000963219</subfield>
+  </datafield>
+  <datafield tag="041" ind1="0" ind2=" ">
+   <subfield code="a">fin</subfield>
+   <subfield code="a">swe</subfield>
+  </datafield>
+  <datafield tag="084" ind1=" " ind2=" ">
+   <subfield code="a">42.02</subfield>
+   <subfield code="2">ykl</subfield>
+  </datafield>
+  <datafield tag="245" ind1="0" ind2="0">
+   <subfield code="a">Suomen tiekartta =</subfield>
+   <subfield code="b">Vägkarta över Finland.</subfield>
+   <subfield code="n">1.</subfield>
+  </datafield>
+  <datafield tag="246" ind1="3" ind2=" ">
+   <subfield code="a">Vägkarta över Finland</subfield>
+  </datafield>
+  <datafield tag="246" ind1="3" ind2=" ">
+   <subfield code="a">Suomen tiekartta 1</subfield>
+  </datafield>
+  <datafield tag="255" ind1=" " ind2=" ">
+   <subfield code="a">1:200000.</subfield>
+  </datafield>
+  <datafield tag="260" ind1=" " ind2=" ">
+   <subfield code="a">[Helsinki] :</subfield>
+   <subfield code="b">[Maanmittaushallitus],</subfield>
+   <subfield code="c">1946.</subfield>
+  </datafield>
+  <datafield tag="300" ind1=" " ind2=" ">
+   <subfield code="a">1 kartta :</subfield>
+   <subfield code="b">värillinen ;</subfield>
+   <subfield code="c">taitettuna 26 x 13 cm</subfield>
+  </datafield>
+  <datafield tag="336" ind1=" " ind2=" ">
+   <subfield code="a">kartografinen kuva</subfield>
+   <subfield code="b">cri</subfield>
+   <subfield code="2">rdacontent</subfield>
+  </datafield>
+  <datafield tag="337" ind1=" " ind2=" ">
+   <subfield code="a">käytettävissä ilman laitetta</subfield>
+   <subfield code="b">n</subfield>
+   <subfield code="2">rdamedia</subfield>
+  </datafield>
+  <datafield tag="338" ind1=" " ind2=" ">
+   <subfield code="a">arkki</subfield>
+   <subfield code="b">nb</subfield>
+   <subfield code="2">rdacarrier</subfield>
+  </datafield>
+  <datafield tag="500" ind1=" " ind2=" ">
+   <subfield code="a">Ahvenanmaa mittakaavassa 1:400000.</subfield>
+  </datafield>
+  <datafield tag="590" ind1=" " ind2=" ">
+   <subfield code="a">Kh-kokoelma</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">tiekartat</subfield>
+   <subfield code="2">ysa</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">kartat</subfield>
+   <subfield code="z">Suomi</subfield>
+   <subfield code="2">ysa</subfield>
+  </datafield>
+  <datafield tag="651" ind1=" " ind2="7">
+   <subfield code="a">Turun ja Porin lääni</subfield>
+   <subfield code="2">ysa</subfield>
+  </datafield>
+  <datafield tag="651" ind1=" " ind2="7">
+   <subfield code="a">Uudenmaan lääni</subfield>
+   <subfield code="2">ysa</subfield>
+  </datafield>
+  <datafield tag="651" ind1=" " ind2="7">
+   <subfield code="a">Ahvenanmaa</subfield>
+   <subfield code="2">ysa</subfield>
+  </datafield>
+  <datafield tag="710" ind1="1" ind2=" ">
+   <subfield code="a">Maanmittaushallitus.</subfield>
+  </datafield>
+  <datafield tag="852" ind1=" " ind2=" ">
+   <subfield code="a">1</subfield>
+   <subfield code="b">001</subfield>
+   <subfield code="c">6</subfield>
+  </datafield>
+ </record>
+</collection>
