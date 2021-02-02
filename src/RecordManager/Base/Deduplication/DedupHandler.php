@@ -601,7 +601,7 @@ class DedupHandler implements DedupHandlerInterface
                 if (isset($otherRecord['dedup_id'])) {
                     unset($otherRecord['dedup_id']);
                 }
-                if (!$otherRecord['deleted'] && !$otherRecord['suppressed']) {
+                if (!$otherRecord['deleted'] && empty($otherRecord['suppressed'])) {
                     $otherRecord['update_needed'] = true;
                 }
                 $this->db->saveRecord($otherRecord);
