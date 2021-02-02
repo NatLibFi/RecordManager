@@ -120,8 +120,12 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
             ],
             'material' => [
             ],
-            'era_facet' => '1897',
-            'era' => '1897',
+            'era_facet' => [
+                '1897', '1898'
+            ],
+            'era' => [
+                '1897', '1898'
+            ],
             'geographic_facet' => [
                 0 => 'Imatrankoski, Ruokolahti',
                 1 => 'Imatrankoski',
@@ -152,18 +156,19 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
                 16 => 'Ruokolahti',
                 17 => 'Imatrankoski',
                 18 => '1897',
-                19 => 'Imatrankoski, Ruokolahti',
-                20 => 'Imatrankoski',
-                21 => 'luonnon paikka',
-                22 => 'Ruokolahti ..',
-                23 => 'kunta/kaupunki (Suomi)',
-                24 => 'Museovirasto',
-                25 => 'Hintze Harry',
-                26 => '4878:1',
+                19 => '1898',
+                20 => 'Imatrankoski, Ruokolahti',
+                21 => 'Imatrankoski',
+                22 => 'luonnon paikka',
+                23 => 'Ruokolahti ..',
+                24 => 'kunta/kaupunki (Suomi)',
+                25 => 'Museovirasto',
+                26 => 'Hintze Harry',
                 27 => '4878:1',
-                28 => 'Museovirasto/MV',
+                28 => '4878:1',
                 29 => 'Museovirasto/MV',
                 30 => 'Museovirasto/MV',
+                31 => 'Museovirasto/MV',
             ],
             'identifier' => '4878:1',
             'measurements' => [
