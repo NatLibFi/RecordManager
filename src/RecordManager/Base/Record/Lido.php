@@ -172,8 +172,12 @@ class Lido extends Base
         $data['topic'] = $data['topic_facet'] = $this->getSubjectTerms();
         $data['material'] = $this->getEventMaterials($this->mainEvent);
 
-        $data['era'] = $data['era_facet']
-            = $this->getEventDisplayDate($this->mainEvent);
+        if ($dates = $this->getSubjectDisplayDates()) {
+            $data['era'] = $data['era_facet'] = $dates;
+        } elseif ($date = $this->getEventDisplayDate($this->mainEvent)) {
+            $data['era'] = $data['era_facet'] = $date;
+        }
+
         $data['geographic_facet'] = [];
         $eventPlace = $this->getEventDisplayPlace($this->usagePlaceEvent);
         if ($eventPlace) {
@@ -659,6 +663,31 @@ class Lido extends Base
                 foreach ($concept->term as $term) {
                     $str = trim((string)$term);
                     if ($str !== '') {
+                        $results[] = $str;
+                    }
+                }
+            }
+        }
+        return $results;
+    }
+
+    /**
+     * Return the subject display dates
+     *
+     * @return array
+     */
+    protected function getSubjectDisplayDates()
+    {
+        $results = [];
+        foreach ($this->getSubjectNodes() as $subject) {
+            foreach ($subject->subjectDate as $date) {
+                if (!empty($date->displayDate)) {
+                    $str = trim(
+                        MetadataUtils::stripTrailingPunctuation(
+                            (string)$date->displayDate, '.'
+                        )
+                    );
+                    if ('' !== $str) {
                         $results[] = $str;
                     }
                 }
