@@ -27,7 +27,7 @@
  */
 namespace RecordManager\Test\RecordDrivers;
 
-use RecordManager\Base\Database\Database;
+use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Record\Marc;
 
 /**

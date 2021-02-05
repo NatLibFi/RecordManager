@@ -89,7 +89,6 @@ class Import extends AbstractBase
         }
 
         $this->logger->logInfo('import', "Total $count records loaded");
-        return $count;
     }
 
     /**

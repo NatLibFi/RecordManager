@@ -1,10 +1,10 @@
 <?php
 /**
- * Database access class
+ * MongoDB access class
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2017-2019.
+ * Copyright (c) The National Library of Finland 2017-2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,7 +28,7 @@
 namespace RecordManager\Base\Database;
 
 /**
- * Database access class
+ * MongoDB access class
  *
  * This class encapsulates access to the underlying MongoDB database.
  *
@@ -38,28 +38,14 @@ namespace RecordManager\Base\Database;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class Database
+class MongoDatabase extends AbstractDatabase
 {
     /**
-     * Mongo database URL
+     * Database url
      *
      * @var string
      */
-    protected $mongoUrl;
-
-    /**
-     * Mongo database name
-     *
-     * @var string
-     */
-    protected $mongoDatabaseName;
-
-    /**
-     * Mongo settings
-     *
-     * @var array
-     */
-    protected $mongoSettings;
+    protected $url;
 
     /**
      * Mongo Client
@@ -71,9 +57,37 @@ class Database
     /**
      * Mongo database
      *
-     * @var MongoDB
+     * @var \MongoDB\Database
      */
     protected $db;
+
+    /**
+     * Database name
+     *
+     * @var string
+     */
+    protected $databaseName;
+
+    /**
+     * Connection timeout
+     *
+     * @var int
+     */
+    protected $connectTimeout;
+
+    /**
+     * Socket read/write timeout
+     *
+     * @var int
+     */
+    protected $socketTimeout;
+
+    /**
+     * Process id that connected the database
+     *
+     * @var int
+     */
+    protected $pid = null;
 
     /**
      * Whether to report actual counts. When false, all count methods return 'the'
@@ -84,95 +98,21 @@ class Database
     protected $counts = false;
 
     /**
-     * Dedup collection name
-     *
-     * @var string
-     */
-    protected $dedupCollection = 'dedup';
-
-    /**
-     * Record collection name
-     *
-     * @var string
-     */
-    protected $recordCollection = 'record';
-
-    /**
-     * State collection name
-     *
-     * @var string
-     */
-    protected $stateCollection = 'state';
-
-    /**
-     * URI cache collection name
-     *
-     * @var string
-     */
-    protected $uriCacheCollection = 'uriCache';
-
-    /**
-     * Ontology enrichment collection name
-     *
-     * @var string
-     */
-    protected $ontologyEnrichmentCollection = 'ontologyEnrichment';
-
-    /**
      * Constructor.
      *
-     * @param string $url      Database connection URL
-     * @param string $database Datatabase name
-     * @param array  $settings Optional database settings
+     * @param array $config Database settings
      *
      * @throws \Exception
      */
-    public function __construct($url, $database, $settings)
+    public function __construct(array $config)
     {
-        if (!empty($settings['dedup_collection'])) {
-            $this->dedupCollection = $settings['dedup_collection'];
-        }
-        if (!empty($settings['record_collection'])) {
-            $this->recordCollection = $settings['record_collection'];
-        }
-        if (!empty($settings['state_collection'])) {
-            $this->stateCollection = $settings['state_collection'];
-        }
-        if (!empty($settings['uri_cache_collection'])) {
-            $this->uriCacheCollection = $settings['uri_cache_collection'];
-        }
-        if (!empty($settings['ontology_enrichment_collection'])) {
-            $this->ontologyEnrichmentCollection
-                = $settings['ontology_enrichment_collection'];
-        }
+        parent::__construct($config);
 
-        $this->mongoUrl = $url;
-        $this->mongoDatabaseName = $database;
-        $this->mongoSettings = $settings;
-        $this->counts = !empty($settings['counts']);
-
-        $this->reconnectDatabase();
-    }
-
-    /**
-     * Open a database connection with the stored parameters
-     *
-     * @return void
-     */
-    public function reconnectDatabase()
-    {
-        $connectTimeout = $this->mongoSettings['connect_timeout'] ?? 300000;
-        $socketTimeout = $this->mongoSettings['socket_timeout'] ?? 300000;
-        $url = $this->mongoUrl;
-        $this->mongoClient = new \MongoDB\Client(
-            $url,
-            [
-                'connectTimeoutMS' => (int)$connectTimeout,
-                'socketTimeoutMS' => (int)$socketTimeout,
-                '_xpid' => getmypid()
-            ]
-        );
-        $this->db = $this->mongoClient->{$this->mongoDatabaseName};
+        $this->url = $config['url'] ?? '';
+        $this->databaseName = $config['database'] ?? '';
+        $this->counts = !empty($config['counts']);
+        $this->connectTimeout = $config['connect_timeout'] ?? 300000;
+        $this->socketTimeout = $config['socket_timeout'] ?? 300000;
     }
 
     /**
@@ -187,6 +127,18 @@ class Database
         return new \MongoDB\BSON\UTCDateTime(
             ($time === null ? time() : $time) * 1000
         );
+    }
+
+    /**
+     * Convert a database timestamp to unix time
+     *
+     * @param mixed $timestamp Database timestamp
+     *
+     * @return int
+     */
+    public function getUnixTime($timestamp): int
+    {
+        return $timestamp->toDateTime()->getTimestamp();
     }
 
     /**
@@ -220,7 +172,7 @@ class Database
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
-     * @return \MongoDB\Driver\Cursor
+     * @return \Traversable
      */
     public function findRecords($filter, $options = [])
     {
@@ -333,7 +285,7 @@ class Database
     /**
      * Get a dedup record
      *
-     * @param string|ObjectID $id Record ID
+     * @param mixed $id Record ID
      *
      * @return array|null
      */
@@ -420,7 +372,7 @@ class Database
     {
         $removed = [];
         $failed = [];
-        foreach ($this->db->listCollections() as $collection) {
+        foreach ($this->getDb()->listCollections() as $collection) {
             $collection = $collection->getName();
             if (strncmp($collection, 'mr_record_', 10) != 0) {
                 continue;
@@ -432,7 +384,7 @@ class Database
                 && $collTime < time() - 60 * 60 * 24 * 7
             ) {
                 try {
-                    $this->db->selectCollection($collection)->drop();
+                    $this->getDb()->selectCollection($collection)->drop();
                     $removed[] = $collection;
                 } catch (\Exception $e) {
                     $failed[] = $collection;
@@ -447,7 +399,7 @@ class Database
      *
      * @param string $hash           Hash of parameters used to identify the
      *                               collection
-     * @param string $fromDate       Timestamp of processing start date
+     * @param int    $fromDate       Timestamp of processing start date
      * @param int    $lastRecordTime Newest record timestamp
      *
      * @return string
@@ -455,7 +407,7 @@ class Database
     public function getExistingQueueCollection($hash, $fromDate, $lastRecordTime)
     {
         $collectionName = "mr_record_{$hash}_{$fromDate}_{$lastRecordTime}";
-        foreach ($this->db->listCollections() as $collection) {
+        foreach ($this->getDb()->listCollections() as $collection) {
             $collection = $collection->getName();
             if ($collection == $collectionName) {
                 return $collectionName;
@@ -499,9 +451,9 @@ class Database
         // renameCollection requires admin priviledge
         $res = $this->mongoClient->admin->command(
             [
-                'renameCollection' => $this->mongoDatabaseName . '.'
+                'renameCollection' => $this->databaseName . '.'
                     . $collectionName,
-                'to' => $this->mongoDatabaseName . '.' . $newName
+                'to' => $this->databaseName . '.' . $newName
             ]
         );
         $resArray = $res->toArray();
@@ -546,15 +498,21 @@ class Database
     }
 
     /**
-     * Get IDs in queue
+     * Find IDs in a queue collection
      *
-     * @param string $collectionName The queue collection name
+     * @param array $filter  Search filter
+     * @param array $options Options such as sorting. Must include 'collectionName'.
      *
-     * @return \MongoDB\Driver\Cursor
+     * @return \Traversable
      */
-    public function getQueuedIds($collectionName)
+    public function findQueuedIds(array $filter, array $options)
     {
-        return $this->findMongoRecords($collectionName, [], []);
+        if (empty($options['collectionName'])) {
+            throw new \Exception('Options must include collectionName');
+        }
+        $collectionName = $options['collectionName'];
+        unset($options['collectionName']);
+        return $this->findMongoRecords($collectionName, $filter, $options);
     }
 
     /**
@@ -598,6 +556,32 @@ class Database
     }
 
     /**
+     * Get a database connection
+     *
+     * @return \MongoDB\Database
+     */
+    public function getDb()
+    {
+        if (null === $this->db) {
+            $this->mongoClient = new \MongoDB\Client(
+                $this->url,
+                [
+                    'connectTimeoutMS' => (int)$this->connectTimeout,
+                    'socketTimeoutMS' => (int)$this->socketTimeout,
+                ]
+            );
+            $this->db = $this->mongoClient->{$this->databaseName};
+            $this->pid = getmypid();
+        } elseif ($this->pid !== getmypid()) {
+            throw new \Exception(
+                'PID ' . getmypid() . ': database already connected by PID '
+                . getmypid()
+            );
+        }
+        return $this->db;
+    }
+
+    /**
      * Get a record
      *
      * @param string $collection Collection
@@ -607,7 +591,7 @@ class Database
      */
     protected function getMongoRecord($collection, $id)
     {
-        return $this->db->{$collection}->findOne(['_id' => $id]);
+        return $this->getDb()->{$collection}->findOne(['_id' => $id]);
     }
 
     /**
@@ -621,7 +605,7 @@ class Database
      */
     protected function findMongoRecord($collection, $filter, $options)
     {
-        return $this->db->{$collection}->findOne($filter, $options);
+        return $this->getDb()->{$collection}->findOne($filter, $options);
     }
 
     /**
@@ -638,7 +622,17 @@ class Database
         if (!isset($options['noCursorTimeout'])) {
             $options['noCursorTimeout'] = true;
         }
-        return $this->db->{$collection}->find($filter, $options);
+        if ($filter) {
+            array_walk_recursive(
+                $filter,
+                function (&$value) {
+                    if ($value instanceof Regex) {
+                        $value = new \MongoDB\BSON\Regex((string)$value);
+                    }
+                }
+            );
+        }
+        return $this->getDb()->{$collection}->find($filter, $options);
     }
 
     /**
@@ -653,7 +647,7 @@ class Database
     protected function countMongoRecords($collection, $filter, $options)
     {
         return $this->counts
-            ? $this->db->{$collection}->count($filter, $options)
+            ? $this->getDb()->{$collection}->count($filter, $options)
             : 'the';
     }
 
@@ -674,11 +668,11 @@ class Database
                 = new \MongoDB\Driver\WriteConcern($writeConcern);
         }
         if (!isset($record['_id'])) {
-            $res = $this->db->{$collection}->insertOne($record, $params);
+            $res = $this->getDb()->{$collection}->insertOne($record, $params);
             $record['_id'] = $res->getInsertedId();
         } else {
             $params['upsert'] = true;
-            $this->db->{$collection}->replaceOne(
+            $this->getDb()->{$collection}->replaceOne(
                 ['_id' => $record['_id']],
                 $record,
                 $params
@@ -706,7 +700,7 @@ class Database
         if ($remove) {
             $params['$unset'] = $remove;
         }
-        $this->db->{$collection}->updateOne(['_id' => $id], $params);
+        $this->getDb()->{$collection}->updateOne(['_id' => $id], $params);
     }
 
     /**
@@ -729,7 +723,7 @@ class Database
         if ($remove) {
             $params['$unset'] = $remove;
         }
-        $this->db->{$collection}->updateMany($filter, $params);
+        $this->getDb()->{$collection}->updateMany($filter, $params);
     }
 
     /**
@@ -742,6 +736,48 @@ class Database
      */
     protected function deleteMongoRecord($collection, $id)
     {
-        $this->db->{$collection}->deleteOne(['_id' => $id]);
+        $this->getDb()->{$collection}->deleteOne(['_id' => $id]);
+    }
+
+    /**
+     * Iterate through records
+     *
+     * Calls callback for each record until exhausted or callback returns false.
+     *
+     * @param Callable $findMethod Method used to find records to iterate
+     * @param array    $filter     Search filter
+     * @param array    $options    Options such as sorting
+     * @param Callable $callback   Callback to call for each record
+     * @param array    $params     Optional parameters to pass to the callback
+     *
+     * @return void
+     */
+    protected function iterate(callable $findMethod, array $filter, array $options,
+        callable $callback, array $params = []
+    ): void {
+        $limit = $this->getDefaultPageSize();
+        $skip = 0;
+        $found = false;
+        do {
+            $currentFilter = $filter;
+            $records = $findMethod(
+                $currentFilter,
+                array_merge(
+                    $options,
+                    [
+                        'skip' => $skip,
+                        'limit' => $limit,
+                    ]
+                )
+            );
+            $found = false;
+            foreach ($records as $record) {
+                $found = true;
+                if ($callback($record, $params) === false) {
+                    return;
+                }
+            }
+            $skip += $limit;
+        } while ($found && !isset($filter['_id']));
     }
 }

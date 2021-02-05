@@ -88,7 +88,7 @@ class SolrUpdaterTest extends AbstractTest
             'marc-broken.xml'
         );
 
-        $date = new \MongoDB\BSON\UTCDateTime(strtotime('2020-10-20 13:01:00'));
+        $date = strtotime('2020-10-20 13:01:00');
         $mongoRecord = [
             '_id' => $record->getID(),
             'oai_id' => '',

@@ -27,6 +27,7 @@
  */
 namespace RecordManager\Finna\Record;
 
+use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -82,15 +83,16 @@ class Lido extends \RecordManager\Base\Record\Lido
     /**
      * Return fields to be indexed in Solr
      *
-     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
-     *                                                  avoid database lookups for
-     *                                                  related records.
+     * @param Database $db Database connection. Omit to avoid database lookups for
+     *                     related records.
      *
      * @return array
      */
-    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
+    public function toSolrArray(Database $db = null)
     {
         $data = parent::toSolrArray($db);
+
+        $data['allfields'][] = $this->getRecordSourceOrganization();
 
         $data['identifier'] = $this->getIdentifier();
 
@@ -224,20 +226,6 @@ class Lido extends \RecordManager\Base\Record\Lido
         $data['ctrlnum'] = $this->getOtherIdentifiers();
 
         return $data;
-    }
-
-    /**
-     * Get all XML fields
-     *
-     * @param \SimpleXMLElement $xml The XML document
-     *
-     * @return array
-     */
-    protected function getAllFields($xml)
-    {
-        $allfields = parent::getAllFields($xml);
-        $allfields[] = $this->getRecordSourceOrganization();
-        return $allfields;
     }
 
     /**

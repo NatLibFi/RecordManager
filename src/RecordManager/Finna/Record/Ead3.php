@@ -29,6 +29,7 @@
  */
 namespace RecordManager\Finna\Record;
 
+use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -76,13 +77,12 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     /**
      * Return fields to be indexed in Solr
      *
-     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
-     *                                                  avoid database lookups for
-     *                                                  related records.
+     * @param Database $db Database connection. Omit to avoid database lookups for
+     *                     related records.
      *
      * @return array
      */
-    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
+    public function toSolrArray(Database $db = null)
     {
         $data = parent::toSolrArray($db);
         $doc = $this->doc;
@@ -544,22 +544,20 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         };
 
         if (null === ($startDate = $parseDate($start))) {
-            $this->logger->log(
+            $this->logger->logDebug(
                 'Ead3',
                 "Failed to parse startDate $start, record {$this->source}."
-                . $this->getID(),
-                Logger::DEBUG
+                . $this->getID()
             );
             $this->storeWarning('invalid start date');
             return null;
         }
 
         if (null === ($endDate = $parseDate($end, '9', '12', null, '23:59:59'))) {
-            $this->logger->log(
+            $this->logger->logDebug(
                 'Ead3',
                 "Failed to parse endDate $end, record {$this->source}."
-                . $this->getID(),
-                Logger::DEBUG
+                . $this->getID()
             );
             $this->storeWarning('invalid end date');
             return null;

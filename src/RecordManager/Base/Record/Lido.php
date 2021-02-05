@@ -27,6 +27,7 @@
  */
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -119,13 +120,12 @@ class Lido extends Base
     /**
      * Return fields to be indexed in Solr
      *
-     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
-     *                                                  avoid database lookups for
-     *                                                  related records.
+     * @param Database $db Database connection. Omit to avoid database lookups for
+     *                     related records.
      *
      * @return array
      */
-    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
+    public function toSolrArray(Database $db = null)
     {
         $data = [];
 
@@ -172,8 +172,12 @@ class Lido extends Base
         $data['topic'] = $data['topic_facet'] = $this->getSubjectTerms();
         $data['material'] = $this->getEventMaterials($this->mainEvent);
 
-        $data['era'] = $data['era_facet']
-            = $this->getEventDisplayDate($this->mainEvent);
+        if ($dates = $this->getSubjectDisplayDates()) {
+            $data['era'] = $data['era_facet'] = $dates;
+        } elseif ($date = $this->getEventDisplayDate($this->mainEvent)) {
+            $data['era'] = $data['era_facet'] = $date;
+        }
+
         $data['geographic_facet'] = [];
         $eventPlace = $this->getEventDisplayPlace($this->usagePlaceEvent);
         if ($eventPlace) {
@@ -324,6 +328,64 @@ class Lido extends Base
     {
         $authors = $this->getActors($this->mainEvent);
         return $authors ? $authors[0] : '';
+    }
+
+    /**
+     * Get key data that can be used to identify expressions of a work
+     *
+     * Returns an associative array like this:
+     *
+     * [
+     *   'titles' => [
+     *     ['type' => 'title', 'value' => 'Title'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title']
+     *    ],
+     *   'authors' => [
+     *     ['type' => 'author', 'value' => 'Name 1'],
+     *     ['type' => 'author', 'value' => 'Name 2']
+     *   ],
+     *   'titlesAltScript' => [
+     *     ['type' => 'title', 'value' => 'Title in alternate script'],
+     *     ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
+     *   ],
+     *   'authorsAltScript' => [
+     *     ['type' => 'author', 'value' => 'Name 1 in alternate script'],
+     *     ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *   ]
+     * ]
+     *
+     * @return array
+     */
+    public function getWorkIdentificationData()
+    {
+        $titlesByLang = [];
+        foreach ($this->getTitleSetNodes() as $set) {
+            foreach ($set->appellationValue as $appellationValue) {
+                $title = trim((string)$appellationValue);
+                if ('' !== $title) {
+                    $lang = (string)($appellationValue['lang'] ?? 'NA');
+                    $titlesByLang[$lang][] = $title;
+                }
+            }
+        }
+
+        $titles = [];
+        foreach ($titlesByLang as $titleParts) {
+            $title = implode(' ', $titleParts);
+            $titles[] = ['type' => 'title', 'value' => $title];
+            $sortTitle = MetadataUtils::stripLeadingPunctuation($title);
+            if ($sortTitle !== $title) {
+                $titles[] = ['type' => 'title', 'value' => $sortTitle];
+            }
+        }
+
+        $authors = [];
+        if ($author = $this->getMainAuthor()) {
+            $authors[] = ['type' => 'author', 'value' => $author];
+        }
+        $titlesAltScript = [];
+        $authorsAltScript = [];
+        return compact('titles', 'authors', 'titlesAltScript', 'authorsAltScript');
     }
 
     /**
@@ -610,6 +672,31 @@ class Lido extends Base
     }
 
     /**
+     * Return the subject display dates
+     *
+     * @return array
+     */
+    protected function getSubjectDisplayDates()
+    {
+        $results = [];
+        foreach ($this->getSubjectNodes() as $subject) {
+            foreach ($subject->subjectDate as $date) {
+                if (!empty($date->displayDate)) {
+                    $str = trim(
+                        MetadataUtils::stripTrailingPunctuation(
+                            (string)$date->displayDate, '.'
+                        )
+                    );
+                    if ('' !== $str) {
+                        $results[] = $str;
+                    }
+                }
+            }
+        }
+        return $results;
+    }
+
+    /**
      * Return the subject display places
      *
      * @return array
@@ -699,6 +786,8 @@ class Lido extends Base
 
     /**
      * Get all XML fields
+     *
+     * A recursive method for fetching all relevant fields
      *
      * @param \SimpleXMLElement $xml The XML document
      *
