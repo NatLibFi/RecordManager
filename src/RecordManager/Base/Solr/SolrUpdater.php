@@ -772,6 +772,12 @@ class SolrUpdater
                 }
             }
 
+            if (!$this->threadedMergedRecordUpdate) {
+                // Create worker pools before merged records are processed to avoid
+                // sharing the database connection between processes
+                $this->initSingleRecordWorkerPools();
+            }
+
             if ($processDedupRecords) {
                 if (!$delete && $this->threadedMergedRecordUpdate) {
                     $this->log->logInfo(
@@ -828,21 +834,11 @@ class SolrUpdater
                 return;
             }
 
-            // Create Solr worker pool only after any merged record forked process
-            // has been started
-            $this->initWorkerPoolManager();
-            $this->workerPoolManager->createWorkerPool(
-                'solr',
-                $this->solrUpdateWorkers,
-                $this->solrUpdateWorkers,
-                [$this, 'solrRequest']
-            );
-            $this->workerPoolManager->createWorkerPool(
-                'record',
-                $this->recordWorkers,
-                $this->recordWorkers,
-                [$this, 'processSingleRecord']
-            );
+            if ($this->threadedMergedRecordUpdate) {
+                // Create worker pools only after merged record forked process has
+                // been started to avoid sharing the worker pool manager
+                $this->initSingleRecordWorkerPools();
+            }
 
             $fromTimestamp = $this->getStartTimestamp($fromDate, $lastUpdateKey);
             $from = null !== $fromTimestamp
@@ -1647,6 +1643,28 @@ class SolrUpdater
             $this->solrRequest('{ "commit": {} }', 3600);
             $this->log->logInfo('checkIndexedRecords', 'Commit complete');
         }
+    }
+
+    /**
+     * Initialize worker pool manager and the pools for processing single records
+     *
+     * @return void
+     */
+    protected function initSingleRecordWorkerPools()
+    {
+        $this->initWorkerPoolManager();
+        $this->workerPoolManager->createWorkerPool(
+            'solr',
+            $this->solrUpdateWorkers,
+            $this->solrUpdateWorkers,
+            [$this, 'solrRequest']
+        );
+        $this->workerPoolManager->createWorkerPool(
+            'record',
+            $this->recordWorkers,
+            $this->recordWorkers,
+            [$this, 'processSingleRecord']
+        );
     }
 
     /**
