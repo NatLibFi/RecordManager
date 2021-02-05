@@ -44,6 +44,13 @@ use RecordManager\Base\Utils\MetadataUtils;
 class MarcAuthority extends Marc
 {
     /**
+     * Delimiter for separating name related subfields.
+     *
+     * @var string
+     */
+    protected $nameDelimiter = ' / ';
+
+    /**
      * Return record ID (local)
      *
      * @return string
@@ -72,8 +79,7 @@ class MarcAuthority extends Marc
             $data['fullrecord'] = $this->toXML();
         }
 
-        $data['allfields']
-            = array_merge($this->getAllFields(), [$this->getHeading()]);
+        $data['allfields'] = $this->getAllFields();
         $data['source'] = $this->getRecordSource();
 
         $heading = $this->getHeading();
@@ -114,24 +120,12 @@ class MarcAuthority extends Marc
             as $code
         ) {
             foreach ($this->getFields($code) as $field) {
-                $result = array_merge(
-                    $result, [
-                        implode(
-                            ', ',
-                            array_map(
-                                function ($val) {
-                                    return trim($val, '., ');
-                                },
-                                $this->getSubfieldsArray(
-                                    $field, ['a' => 1, 'b' => 1]
-                                )
-                            )
-                        )
-                    ]
-                );
+                if ($activity = $this->getSubfield($field, 'a')) {
+                    $result[] = $activity;
+                }
             }
         }
-        return array_unique($this->trimFields($result));
+        return $this->trimFields(array_unique($result));
     }
 
     /**
@@ -175,11 +169,7 @@ class MarcAuthority extends Marc
     protected function getHeading()
     {
         if ($name = $this->getFieldSubField('100', 'a', true)) {
-            $name = rtrim($name, ' .');
-            if ($sub = $this->getFieldSubField('100', 'b', true)) {
-                $name .= ', ' . $sub;
-            }
-            return $name;
+            return rtrim($name, ' .');
         }
         foreach (['110', '111'] as $code) {
             if ($field = $this->getFields($code)) {
@@ -190,7 +180,7 @@ class MarcAuthority extends Marc
                 $fields = array_merge(
                     $fields, $this->getSubfieldsArray($field[0], ['b' => true])
                 );
-                return implode(', ', $this->trimFields($fields));
+                return implode($this->nameDelimiter, $this->trimFields($fields));
             }
         }
         return '';
