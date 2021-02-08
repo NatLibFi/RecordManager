@@ -1,0 +1,41 @@
+<record>
+  <control>
+    <recordid>123</recordid>
+    <filedesc>
+      <titlestmt>
+        <titleproper encodinganalog="3.1.2" lang="fin"></titleproper>
+        <author></author>
+      </titlestmt>
+      <publicationstmt>
+        <publisher></publisher>
+      </publicationstmt>
+    </filedesc>
+    <maintenancestatus value="derived"/>
+    <maintenanceagency>
+      <agencycode lang="eng"></agencycode>
+    </maintenanceagency>
+    <maintenancehistory>
+      <maintenanceevent>
+        <eventtype value=""/>
+        <eventdatetime/>
+        <agenttype value=""/>
+        <agent/>
+      </maintenanceevent>
+    </maintenancehistory>
+  </control>
+  <did>
+    <unitid />
+    <unitdatestructured datechar="collection">
+      <daterange lang="fi">
+        <fromdate lang="fi" standarddate="2017-01-20">2017-01-20</fromdate>
+        <todate lang="fi" standarddate="2017-04-06">2017-04-06</todate>
+        <fromdate lang="fi" standarddate="2017-10">2017-10</fromdate>
+        <todate lang="fi" standarddate="2017-12">2017-12</todate>
+        <fromdate lang="fi" standarddate="2017-08-23">2017-08-23</fromdate>
+        <todate lang="fi" standarddate="2017-10-13">2017-10-13</todate>
+        <fromdate lang="fi" standarddate="2018-03">2018-03</fromdate>
+        <todate lang="fi" standarddate="2018-04">2018-04</todate>
+      </daterange>
+    </unitdatestructured>
+  </did>
+</record>
