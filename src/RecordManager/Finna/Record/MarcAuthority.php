@@ -89,12 +89,7 @@ class MarcAuthority extends \RecordManager\Base\Record\MarcAuthority
                     $result, [
                         implode(
                             $this->nameDelimiter,
-                            array_map(
-                                function ($val) {
-                                    return MetadataUtils::stripTrailingPunctuation(
-                                        $val, '.'
-                                    );
-                                },
+                            $this->trimFields(
                                 $this->getSubfieldsArray(
                                     $field, ['a' => 1, 'b' => 1]
                                 )
