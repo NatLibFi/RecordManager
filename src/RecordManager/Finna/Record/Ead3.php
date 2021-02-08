@@ -452,10 +452,8 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             if (isset($date->daterange)) {
                 $range = $this->doc->did->unitdatestructured->daterange;
                 if (isset($range->fromdate) && isset($range->todate)) {
-                    $fromDates = $this->doc->did->unitdatestructured->daterange
-                        ->xpath('fromdate');
-                    $toDates = $this->doc->did->unitdatestructured->daterange
-                        ->xpath('todate');
+                    $fromDates = $range->xpath('fromdate');
+                    $toDates = $range->xpath('todate');
 
                     $from = reset($fromDates);
                     $to = end($toDates);
