@@ -28,6 +28,7 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Marc authority record class
@@ -60,9 +61,13 @@ class MarcAuthority extends \RecordManager\Base\Record\MarcAuthority
     public function toSolrArray(Database $db = null)
     {
         $data = parent::toSolrArray($db);
-        $data['allfields']
-            = array_merge($data['allfields'], [$this->getHeading()]);
 
+        $data['allfields']
+            = array_merge(
+                $data['allfields'],
+                [$this->getHeading()],
+                $this->getAlternativeNames()
+            );
         return $data;
     }
 
@@ -86,7 +91,9 @@ class MarcAuthority extends \RecordManager\Base\Record\MarcAuthority
                             $this->nameDelimiter,
                             array_map(
                                 function ($val) {
-                                    return trim($val, '., ');
+                                    return MetadataUtils::stripTrailingPunctuation(
+                                        $val, '.'
+                                    );
                                 },
                                 $this->getSubfieldsArray(
                                     $field, ['a' => 1, 'b' => 1]
@@ -108,7 +115,7 @@ class MarcAuthority extends \RecordManager\Base\Record\MarcAuthority
     protected function getHeading()
     {
         if ($name = $this->getFieldSubField('100', 'a', true)) {
-            $name = rtrim($name, ' .');
+            $name = MetadataUtils::stripTrailingPunctuation($name, '.');
             if ($sub = $this->getFieldSubField('100', 'b', true)) {
                 $name .= $this->nameDelimiter . $sub;
             }
