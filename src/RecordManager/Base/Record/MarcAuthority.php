@@ -44,6 +44,13 @@ use RecordManager\Base\Utils\MetadataUtils;
 class MarcAuthority extends Marc
 {
     /**
+     * Delimiter for separating name related subfields.
+     *
+     * @var string
+     */
+    protected $nameDelimiter = ' / ';
+
+    /**
      * Return record ID (local)
      *
      * @return string
@@ -173,7 +180,7 @@ class MarcAuthority extends Marc
                 $fields = array_merge(
                     $fields, $this->getSubfieldsArray($field[0], ['b' => true])
                 );
-                return implode(' / ', $this->trimFields($fields));
+                return implode($this->nameDelimiter, $this->trimFields($fields));
             }
         }
         return '';
