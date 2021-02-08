@@ -27,7 +27,7 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Solr\SolrUpdater;
+use RecordManager\Base\Solr\SolrComparer;
 
 /**
  * Solr Updater
@@ -56,10 +56,10 @@ class SolrCompare extends AbstractBase
      */
     public function launch($log, $fromDate = null, $sourceId = '', $singleId = '')
     {
-        $updater = new SolrUpdater(
+        $comparer = new SolrComparer(
             $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
             $this->dataSourceSettings, $this->recordFactory
         );
-        $updater->updateRecords($fromDate, $sourceId, $singleId, false, false, $log);
+        $comparer->compareRecords($fromDate, $sourceId, $singleId, $log);
     }
 }

@@ -65,8 +65,7 @@ class SolrUpdate extends AbstractBase
             $this->dataSourceSettings, $this->recordFactory
         );
         $updater->updateRecords(
-            $fromDate, $sourceId, $singleId, $noCommit, false, false, '',
-            $datePerServer
+            $fromDate, $sourceId, $singleId, $noCommit, false, '', $datePerServer
         );
     }
 }
