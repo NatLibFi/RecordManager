@@ -260,7 +260,9 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (isset($doc->controlaccess->persname)) {
             foreach ($doc->controlaccess->persname as $name) {
                 if (isset($name->part)) {
-                    $data['author'][] = (string)$name->part;
+                    $name = (string)$name->part;
+                    $data['author'][] = $name;
+                    $data['author_facet'][] = $name;
                 }
             }
         }
