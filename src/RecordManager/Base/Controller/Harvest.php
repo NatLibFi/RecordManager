@@ -280,6 +280,8 @@ class Harvest extends AbstractBase
 
                             $this->logger
                                 ->logInfo('harvest', 'Fetching identifiers');
+                            // Reset any overridden resumptionToken:
+                            $harvest->setResumptionToken('');
                             $harvest->listIdentifiers([$this, 'markRecord']);
 
                             $this->logger
