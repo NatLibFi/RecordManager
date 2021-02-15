@@ -226,7 +226,11 @@ class PDODatabase extends AbstractDatabase
     public function updateRecords($filter, $fields, $remove = [])
     {
         $this->updatePDORecords(
-            $this->recordCollection, $filter, $fields, $remove
+            [$this, 'findRecords'],
+            $this->recordCollection,
+            $filter,
+            $fields,
+            $remove
         );
     }
 
@@ -815,26 +819,31 @@ class PDODatabase extends AbstractDatabase
     /**
      * Update multiple records
      *
-     * @param string $collection Collection
-     * @param array  $filter     Record ID
-     * @param array  $fields     Modified fields
-     * @param array  $remove     Removed fields
+     * @param Callable $findMethod Method used to find records to update
+     * @param string   $collection Collection
+     * @param array    $filter     Record ID
+     * @param array    $fields     Modified fields
+     * @param array    $remove     Removed fields
      *
      * @return void
      */
-    protected function updatePDORecords($collection, $filter, $fields,
-        $remove = []
+    protected function updatePDORecords(callable $findMethod, $collection, $filter,
+        $fields, $remove = []
     ) {
-        foreach ($this->findPDORecords($collection, $filter, []) as $record) {
-            $oldRecord = $record;
-            $record = array_replace($record, $fields);
-            foreach (array_keys($remove) as $key) {
-                if (isset($record[$key])) {
-                    unset($record[$key]);
+        $this->iterate(
+            $findMethod,
+            $filter,
+            [],
+            function ($oldRecord) use ($collection, $fields, $remove) {
+                $record = array_replace($oldRecord, $fields);
+                foreach (array_keys($remove) as $key) {
+                    if (isset($record[$key])) {
+                        unset($record[$key]);
+                    }
                 }
+                $this->savePDORecord($collection, $record, $oldRecord);
             }
-            $this->savePDORecord($collection, $record, $oldRecord);
-        }
+        );
     }
 
     /**
