@@ -296,9 +296,14 @@ class Harvest extends AbstractBase
                                 ],
                                 [],
                                 function ($record) use (&$count, $source) {
-                                    $this->storeRecord(
-                                        $source, $record['oai_id'], true, ''
-                                    );
+                                    if (!empty($record['oai_id'])) {
+                                        $this->storeRecord(
+                                            $source, $record['oai_id'], true, ''
+                                        );
+                                    } else {
+                                        $this->markRecordDeleted($record);
+                                    }
+
                                     if (++$count % 1000 == 0) {
                                         $this->logger->logInfo(
                                             'harvest', "Deleted $count records"
