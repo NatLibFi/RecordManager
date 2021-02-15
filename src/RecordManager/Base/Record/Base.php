@@ -561,6 +561,9 @@ abstract class Base
         $saveUseErrors = libxml_use_internal_errors(true);
         try {
             libxml_clear_errors();
+            if (empty($xml)) {
+                throw new \Exception('Tried to parse empty XML string');
+            }
             $doc = MetadataUtils::loadXML($xml);
             if (false === $doc) {
                 $errors = libxml_get_errors();
