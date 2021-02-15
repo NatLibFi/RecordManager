@@ -205,6 +205,10 @@ class Lido extends \RecordManager\Base\Record\Lido
             // Mark everything free until we know better
             $data['free_online_boolean'] = true;
             $data['free_online_str_mv'] = $this->source;
+            if ($this->hasHiResImages()) {
+                $data['hires_image_boolean'] = true;
+                $data['hires_image_str_mv'] = $this->source;
+            }
         }
 
         $data['location_geo'] = $this->getEventPlaceLocations();
@@ -1771,5 +1775,31 @@ class Lido extends \RecordManager\Base\Record\Lido
             }
         }
         return '';
+    }
+
+    /**
+     * Check if the record has links to high resolution images
+     *
+     * @return bool
+     */
+    protected function hasHiResImages()
+    {
+        foreach ($this->getResourceSetNodes() as $set) {
+            foreach ($set->resourceRepresentation as $node) {
+                if (!empty($node->linkResource)) {
+                    $link = trim((string)$node->linkResource);
+                    if (!empty($link)) {
+                        $attributes = $node->attributes();
+                        $type = (string)$attributes->type;
+                        if ('image_original' === $type || 'image_master' === $type
+                        ) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 }
