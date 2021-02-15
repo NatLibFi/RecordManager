@@ -1561,6 +1561,10 @@ class Lido extends \RecordManager\Base\Record\Lido
             'Kuva', 'Kuva, Valokuva', 'Valokuva', 'dia', 'kuva', 'negatiivi',
             'photograph', 'valoku', 'valokuva', 'valokuvat'
         ];
+        $imageResourceTypes = [
+            '', 'image_thumb', 'thumb', 'medium', 'image_large', 'large', 'zoomview',
+            'image_master', 'image_original'
+        ];
         if (empty(array_intersect($imageTypes, (array)$result))) {
             foreach ($this->getResourceSetNodes() as $set) {
                 foreach ($set->resourceRepresentation as $node) {
@@ -1569,15 +1573,7 @@ class Lido extends \RecordManager\Base\Record\Lido
                         if (!empty($link)) {
                             $attributes = $node->attributes();
                             $type = (string)$attributes->type;
-                            switch ($type) {
-                            case '':
-                            case 'image_thumb':
-                            case 'thumb':
-                            case 'medium':
-                            case 'image_large':
-                            case 'large':
-                            case 'zoomview':
-                            case 'image_master':
+                            if (in_array($type, $imageResourceTypes)) {
                                 $result = (array)$result;
                                 $result[] = 'Kuva';
                                 break;
