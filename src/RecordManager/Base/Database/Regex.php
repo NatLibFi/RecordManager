@@ -1,10 +1,10 @@
 <?php
 /**
- * Solr Updater
+ * Regular expression class
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (c) The National Library of Finland 2020.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,12 +25,10 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Base\Controller;
-
-use RecordManager\Base\Solr\SolrComparer;
+namespace RecordManager\Base\Database;
 
 /**
- * Solr Updater
+ * Regular expression class
  *
  * @category DataManagement
  * @package  RecordManager
@@ -38,28 +36,32 @@ use RecordManager\Base\Solr\SolrComparer;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class SolrCompare extends AbstractBase
+class Regex
 {
     /**
-     * Compare records that would be updated with the existing records in the Solr
-     * index.
+     * Regular expression
      *
-     * @param string      $log      Log file for comparison
-     * @param string|null $fromDate Starting date for updates (if empty
-     *                              string, last update date stored in the database
-     *                              is used and if null, all records are processed)
-     * @param string      $sourceId Source ID to process, or empty or * for all
-     *                              sources (ignored if record merging is enabled)
-     * @param string      $singleId Process only a record with the given ID
-     *
-     * @return void
+     * @var string
      */
-    public function launch($log, $fromDate = null, $sourceId = '', $singleId = '')
+    protected $regex;
+
+    /**
+     * Constructor
+     *
+     * @param string $regex Regular expression
+     */
+    public function __construct(string $regex)
     {
-        $comparer = new SolrComparer(
-            $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings, $this->recordFactory
-        );
-        $comparer->compareRecords($fromDate, $sourceId, $singleId, $log);
+        $this->regex = $regex;
+    }
+
+    /**
+     * Return regex as a string
+     *
+     * @return string
+     */
+    public function __toString(): string
+    {
+        return $this->regex;
     }
 }

@@ -53,9 +53,9 @@ class Autoloader
     /**
      * Autoloader instance
      *
-     * @var Autoloader
+     * @var Autoloader|null
      */
-    protected static $loader;
+    protected static $loader = null;
 
     /**
      * Get loader

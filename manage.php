@@ -110,7 +110,7 @@ EOT;
             $solrUpdate->launch($date, $sources, $single, $noCommit, $datePerServer);
         } elseif ($params['func'] == 'comparesolr') {
             $date = isset($params['all']) ? '' : ($params['from'] ?? null);
-            $log = $params['comparelog'] ?? '-';
+            $log = $params['comparelog'] ?? '';
 
             $solrCompare = new \RecordManager\Base\Controller\SolrCompare(
                 $basePath, $config, true, $verbose

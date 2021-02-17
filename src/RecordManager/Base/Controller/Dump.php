@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Utils\MetadataUtils;
-
 /**
  * Dump Record
  *
@@ -53,13 +51,7 @@ class Dump extends AbstractBase
         if (!$recordID) {
             throw new \Exception('dump: record id must be specified');
         }
-        $records = $this->db->findRecords(['_id' => $recordID]);
-        foreach ($records as $record) {
-            $record['original_data'] = MetadataUtils::getRecordData($record, false);
-            $record['normalized_data'] = MetadataUtils::getRecordData($record, true);
-            if ($record['original_data'] == $record['normalized_data']) {
-                $record['normalized_data'] = '';
-            }
+        if ($record = $this->db->getRecord($recordID)) {
             print_r($record);
         }
     }

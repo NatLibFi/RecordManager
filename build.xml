@@ -16,6 +16,7 @@
     <phingcall target="phpunit"/>
     <phingcall target="phpcs"/>
     <phingcall target="php-cs-fixer-dryrun"/>
+    <phingcall target="psalm"/>
   </target>
 
   <!-- PHPUnit -->
@@ -44,5 +45,10 @@
   <!-- Psalm -->
   <target name="psalm">
     <exec command="${basedir}/vendor/bin/psalm --diff" escape="false" passthru="true" checkreturn="true" />
+  </target>  
+
+  <!-- Psalm -->
+  <target name="psalm-info">
+    <exec command="${basedir}/vendor/bin/psalm --diff --show-info=true" escape="false" passthru="true" checkreturn="true" />
   </target>  
 </project>
