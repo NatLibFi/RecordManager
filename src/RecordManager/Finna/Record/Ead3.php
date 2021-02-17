@@ -257,6 +257,16 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 = $this->addNamespaceToAuthorityIds($author2IdRoles);
         }
 
+        if (isset($doc->controlaccess->persname)) {
+            foreach ($doc->controlaccess->persname as $name) {
+                if (isset($name->part)) {
+                    $name = (string)$name->part;
+                    $data['author'][] = $name;
+                    $data['author_facet'][] = $name;
+                }
+            }
+        }
+
         if (isset($doc->index->index->indexentry)) {
             foreach ($doc->index->index->indexentry as $indexentry) {
                 if (isset($indexentry->name->part)) {
