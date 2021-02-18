@@ -755,29 +755,14 @@ class MongoDatabase extends AbstractDatabase
     protected function iterate(callable $findMethod, array $filter, array $options,
         callable $callback, array $params = []
     ): void {
-        $limit = $this->getDefaultPageSize();
-        $skip = 0;
-        $found = false;
-        do {
-            $currentFilter = $filter;
-            $records = $findMethod(
-                $currentFilter,
-                array_merge(
-                    $options,
-                    [
-                        'skip' => $skip,
-                        'limit' => $limit,
-                    ]
-                )
-            );
-            $found = false;
-            foreach ($records as $record) {
-                $found = true;
-                if ($callback($record, $params) === false) {
-                    return;
-                }
+        if (!isset($options['noCursorTimeout'])) {
+            $options['noCursorTimeout'] = true;
+        }
+        $records = $findMethod($filter, $options);
+        foreach ($records as $record) {
+            if ($callback($record, $params) === false) {
+                return;
             }
-            $skip += $limit;
-        } while ($found && !isset($filter['_id']));
+        }
     }
 }
