@@ -957,7 +957,7 @@ class SolrUpdater
                     );
                     while (1) {
                         $pid = pcntl_waitpid($childPid, $status, WNOHANG);
-                        if ($pid > 0) {
+                        if ($pid !== 0) {
                             break;
                         }
                         sleep(1);

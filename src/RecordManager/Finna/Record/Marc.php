@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2020.
+ * Copyright (C) The National Library of Finland 2012-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -1822,14 +1822,13 @@ class Marc extends \RecordManager\Base\Record\Marc
         $fieldSpecs = [
             '110' => ['a' => 1, 'b' => 1, 'e' => 1],
             '111' => ['a' => 1, 'b' => 1, 'e' => 1],
-            '610' => ['a' => 1],
             '710' => ['a' => 1, 'b' => 1, 'e' => 1],
             '711' => ['a' => 1, 'b' => 1, 'e' => 1]
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,
             [],
-            ['110', '111', '610', '710', '711'],
+            ['110', '111', '710', '711'],
             false
         );
     }
@@ -1871,9 +1870,6 @@ class Marc extends \RecordManager\Base\Record\Marc
                     $result[] = "(FI-MELINDA)$idNumber";
                     break;
                 }
-            } elseif (strncmp('(FI-MELINDA)', $id, 12) === 0) {
-                $result[] = $id;
-                break;
             }
         }
         return $result;
