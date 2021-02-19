@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2020.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -103,11 +103,29 @@ class Marc extends Base
      */
     protected $defaultGeoDisplayField = 'long_lat_display';
 
+    /**
+     * OCLC number patterns
+     *
+     * @var array
+     */
     protected $oclcNumPatterns = [
         '/\([Oo][Cc][Oo][Ll][Cc]\)[^0-9]*[0]*([0-9]+)/',
         '/ocm[0]*([0-9]+)[ ]*[0-9]*/',
         '/ocn[0]*([0-9]+).*/',
         '/on[0]*([0-9]+).*/',
+    ];
+
+    /**
+     * Patterns for system control numbers considered for unique identifiers
+     * (field 035a)
+     *
+     * @var array
+     */
+    protected $scnPatterns = [
+        '^\((CONSER|DLC|OCoLC)\).+',
+        '^\(EXLCZ\).+',     // Ex Libris Community Zone
+        '^\(EXLNZ-.+\).+',  // Ex Libris Network Zone
+        '^\(\w\w-\w+\).+',  // ISIL style
     ];
 
     /**
@@ -948,6 +966,17 @@ class Marc extends Base
     {
         $arr = [];
         $form = $this->config['Site']['unicode_normalization_form'] ?? 'NFKC';
+        $f010 = $this->getField('010');
+        if ($f010) {
+            $lccn = MetadataUtils::normalizeKey($this->getSubfield($f010, 'a'));
+            if ($lccn) {
+                $arr[] = "(lccn)$lccn";
+            }
+            $nucmc = MetadataUtils::normalizeKey($this->getSubfield($f010, 'b'));
+            if ($nucmc) {
+                $arr[] = "(nucmc)$lccn";
+            }
+        }
         $nbn = $this->getField('015');
         if ($nbn) {
             $nr = MetadataUtils::normalizeKey(
@@ -1005,6 +1034,20 @@ class Marc extends Base
                 $arr[] = "($src)$nr";
             }
         }
+        foreach ($this->getFields('035') as $field) {
+            $nr = $this->getSubfield($field, 'a');
+            $match = false;
+            foreach ($this->scnPatterns as $pattern) {
+                if (preg_match("/$pattern/", $nr)) {
+                    $match = true;
+                    break;
+                }
+            }
+            if ($match) {
+                $arr[] = MetadataUtils::normalizeKey($nr);
+            }
+        }
+
         return $arr;
     }
 

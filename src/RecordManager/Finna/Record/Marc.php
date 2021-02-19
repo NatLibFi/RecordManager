@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2020.
+ * Copyright (C) The National Library of Finland 2012-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -1871,9 +1871,6 @@ class Marc extends \RecordManager\Base\Record\Marc
                     $result[] = "(FI-MELINDA)$idNumber";
                     break;
                 }
-            } elseif (strncmp('(FI-MELINDA)', $id, 12) === 0) {
-                $result[] = $id;
-                break;
             }
         }
         return $result;
