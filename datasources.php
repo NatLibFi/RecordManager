@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-require_once 'cmdline.php';
+require_once __DIR__ . '/cmdline.php';
 
 /**
  * Main function
