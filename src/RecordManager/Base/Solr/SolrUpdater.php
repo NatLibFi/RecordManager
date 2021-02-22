@@ -929,13 +929,11 @@ class SolrUpdater
                     if ($childPid) {
                         $pid = pcntl_waitpid($childPid, $status, WNOHANG);
                         if (0 !== $pid) {
-                            $exitCode = $pid > 0 ? pcntl_wexitstatus($status)
-                                : $this->workerPoolManager
-                                ->getExternalProcessExitCode($childPid);
+                            $exitCode = $pid > 0 ? pcntl_wexitstatus($status) : null;
                             $childPid = null;
                             if ($exitCode == 1) {
                                 $needCommit = true;
-                            } elseif ($exitCode || null === $exitCode) {
+                            } elseif ($exitCode) {
                                 $this->log->logError(
                                     'updateRecords',
                                     'Merged record update process failed, aborting'
