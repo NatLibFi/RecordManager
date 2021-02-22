@@ -45,9 +45,9 @@ class Autoloader
      * @var array
      */
     protected $directories = [
-        '',
-        'src/RecordManager',
-        'src/RecordManager/Record'
+        __DIR__ . '/../..',
+        __DIR__ . '/..',
+        __DIR__ . '/../Record',
     ];
 
     /**
