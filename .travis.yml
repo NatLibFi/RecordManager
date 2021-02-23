@@ -1,9 +1,9 @@
 sudo: false
 language: php
 php:
-  - 7.2
   - 7.3
   - 7.4
+  - 8.0
 
 before_script:
   - echo "extension = mongodb.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
