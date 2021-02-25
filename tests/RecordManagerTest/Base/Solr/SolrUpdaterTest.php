@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Test;
+namespace RecordManagerTest\Base\Solr;
 
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Solr\SolrUpdater;
@@ -40,9 +40,9 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class SolrUpdaterTest extends AbstractTest
+class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
 {
-    use RecordDrivers\CreateRecordTrait;
+    use \RecordManagerTest\Base\Record\CreateRecordTrait;
 
     /**
      * Main configuration

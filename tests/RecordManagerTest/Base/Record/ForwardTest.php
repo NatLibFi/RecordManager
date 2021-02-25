@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Test\RecordDrivers;
+namespace RecordManagerTest\Base\Record;
 
 use RecordManager\Base\Record\Forward;
 
@@ -38,7 +38,7 @@ use RecordManager\Base\Record\Forward;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class ForwardRecordDriverTest extends RecordDriverTest
+class ForwardTest extends RecordTest
 {
     /**
      * Test FORWARD Record handling

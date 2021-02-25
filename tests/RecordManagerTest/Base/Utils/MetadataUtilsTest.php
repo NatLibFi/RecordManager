@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Test;
+namespace RecordManagerTest\Base\Utils;
 
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -38,7 +38,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class MetadataUtilsTest extends AbstractTest
+class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * Tests for createSortableString

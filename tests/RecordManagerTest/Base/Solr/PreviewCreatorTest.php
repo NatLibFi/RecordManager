@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Test;
+namespace RecordManagerTest\Base\Solr;
 
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Solr\PreviewCreator;
@@ -40,7 +40,7 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-class PreviewCreatorTest extends AbstractTest
+class PreviewCreatorTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * Holding test record
@@ -126,7 +126,7 @@ EOT;
      */
     protected function getPreviewCreator()
     {
-        $basePath = dirname(__FILE__) . '/configs/mappingfilestest';
+        $basePath = __DIR__ . '/../../../fixtures/base/config/basic';
         $logger = $this->createMock(Logger::class);
         $recordFactory = new RecordFactory($logger, [], $this->dataSourceSettings);
         $preview = new PreviewCreator(

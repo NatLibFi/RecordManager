@@ -1,11 +1,10 @@
 <?php
 /**
- * Trait for creating records
+ * LcCallNumber tests
  *
  * PHP version 7
  *
- * Copyright (C) Eero Heikkinen 2013.
- * Copyright (C) The National Library of Finland 2020.
+ * Copyright (C) The National Library of Finland 2015
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -22,45 +21,45 @@
  *
  * @category DataManagement
  * @package  RecordManager
- * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-namespace RecordManager\Test\RecordDrivers;
+namespace RecordManagerTest\Base\Utils;
 
-use RecordManager\Base\Record\Factory as RecordFactory;
-use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\LcCallNumber;
 
 /**
- * Trait for creating record
+ * LcCallNumber tests
  *
  * @category DataManagement
  * @package  RecordManager
- * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/KDK-Alli/RecordManager
  */
-trait CreateRecordTrait
+class LcCallNumberTest extends \PHPUnit\Framework\TestCase
 {
     /**
-     * Create a sample record driver
+     * Tests for call number handling
      *
-     * @param string $class    Record class
-     * @param string $sample   Sample record file
-     * @param array  $dsConfig Datasource config
-     *
-     * @return \RecordManager\Base\Record\Base
+     * @return void
      */
-    protected function createRecord($class, $sample, $dsConfig = [])
+    public function testCallNumber()
     {
-        $logger = $this->createMock(Logger::class);
-        $recordFactory = new RecordFactory($logger, [], $dsConfig);
-        $sample = file_get_contents(__DIR__ . '/../../../samples/' . $sample);
-        $record = $recordFactory->createRecord(
-            $class, $sample, '__unit_test_no_id__', '__unit_test_no_source__'
+        $cn = new LcCallNumber('AC901.M5 vol. 1013, no. 8');
+        $this->assertTrue($cn->isValid());
+        $this->assertEquals(
+            'AC 3901', $cn->getSortKey()
         );
-        return $record;
+
+        $cn = new LcCallNumber('GV1101 .D7 1980');
+        $this->assertTrue($cn->isValid());
+        $this->assertEquals(
+            'GV 41101', $cn->getSortKey()
+        );
+
+        $cn = new LcCallNumber('XV1101 .D7 1980');
+        $this->assertFalse($cn->isValid());
     }
 }
