@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2014-2020.
+ * Copyright (C) The National Library of Finland 2014-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -46,7 +46,7 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class OnkiLightEnrichment extends Enrichment
+abstract class OnkiLightEnrichment extends Enrichment
 {
     /**
      * ONKI Light API base url
@@ -56,14 +56,14 @@ class OnkiLightEnrichment extends Enrichment
     protected $onkiLightBaseURL;
 
     /**
-     * Whitelist of URL prefixes to try to fetch
+     * List of allowed URL prefixes to try to fetch
      *
      * @var array
      */
-    protected $urlPrefixWhitelist;
+    protected $urlPrefixAllowedList;
 
     /**
-     * Whitelist of URI prefixes for which to process other vocabularies with
+     * List of URI prefixes for which to process other vocabularies with
      * exact matches
      *
      * @var array
@@ -85,20 +85,16 @@ class OnkiLightEnrichment extends Enrichment
         parent::__construct($db, $logger, $config, $recordFactory);
 
         $this->onkiLightBaseURL
-            = $this->config['OnkiLightEnrichment']['base_url']
-            ?? '';
+            = $this->config['OnkiLightEnrichment']['base_url'] ?? '';
 
-        $this->urlPrefixWhitelist
-            = isset($this->config['OnkiLightEnrichment']['url_prefix_whitelist'])
-            ? (array)$this->config['OnkiLightEnrichment']['url_prefix_whitelist']
-            : [];
+        // whitelist kept for back-compatibility
+        $list = $this->config['OnkiLightEnrichment']['url_prefix_allowed_list']
+            ?? $this->config['OnkiLightEnrichment']['url_prefix_whitelist']
+            ?? [];
+        $this->urlPrefixAllowedList = (array)$list;
 
         $this->uriPrefixExactMatches
-            = isset(
-                $this->config['OnkiLightEnrichment']['uri_prefix_exact_matches']
-            )
-            ? (array)$this->config['OnkiLightEnrichment']['uri_prefix_exact_matches']
-            : [];
+            = $this->config['OnkiLightEnrichment']['uri_prefix_exact_matches'] ?? [];
     }
 
     /**
@@ -111,10 +107,7 @@ class OnkiLightEnrichment extends Enrichment
      * @throws \Exception
      * @return void
      */
-    public function enrich($sourceId, $record, &$solrArray)
-    {
-        // Implemented in record drivers
-    }
+    public abstract function enrich($sourceId, $record, &$solrArray);
 
     /**
      * Enrich the record and return any additions in solrArray
@@ -139,13 +132,10 @@ class OnkiLightEnrichment extends Enrichment
 
         $solrArray[$solrField . '_uri_str_mv'][] = $id;
 
-        // Fetch alternate language expressions
-        $url = $id;
-
-        // Check that the URL prefix matches that of the whitelisted ones
+        // Check that the ID prefix matches that of the allowed ones
         $match = false;
-        foreach ($this->urlPrefixWhitelist as $prefix) {
-            if (strncmp($url, $prefix, strlen($prefix)) === 0) {
+        foreach ($this->urlPrefixAllowedList as $prefix) {
+            if (strncmp($id, $prefix, strlen($prefix)) === 0) {
                 $match = true;
                 break;
             }
@@ -154,7 +144,7 @@ class OnkiLightEnrichment extends Enrichment
         if (!$match) {
             $this->logger->logDebug(
                 'enrichField',
-                "Ignoring non-whitelisted URI '$url', record " . $solrArray['id']
+                "Ignoring unlisted URI '$id', record " . $solrArray['id']
             );
             return;
         }
@@ -173,7 +163,6 @@ class OnkiLightEnrichment extends Enrichment
             return;
         }
 
-        $url = $this->getOnkiUrl($id);
         if (!($url = $this->getOnkiUrl($id))) {
             return;
         }

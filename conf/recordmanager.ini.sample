@@ -268,7 +268,7 @@ replace[] = '\1 street'
 ; Service base URL
 ;base_url = "http://api.somewhere/rest/v1"
 ; URL prefixes to process
-;url_prefix_whitelist[] = "http://somewhere/"
+;url_prefix_allowed_list[] = "http://somewhere/"
 ; URI prefixes where exact matches in other vocabularies are also retrieved
 ;uri_prefix_exact_matches[] = "http://somewhere/vocab/"
 
