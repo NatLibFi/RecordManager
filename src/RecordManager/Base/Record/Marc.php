@@ -892,7 +892,7 @@ class Marc extends Base
             if ($field && !empty($field['s'])) {
                 $title = $this->getSubfield($field, 'a');
                 if ($forFiling) {
-                    $nonfiling = $this->getIndicator($field, 2);
+                    $nonfiling = (int)$this->getIndicator($field, 2);
                     if ($nonfiling > 0) {
                         $title = substr($title, $nonfiling);
                     }
@@ -2698,7 +2698,7 @@ class Marc extends Base
             $ind = ('130' == $tag || '730' == $tag) ? 1 : 2;
             if ($field && !empty($field['s'])) {
                 $title = $this->getSubfield($field, 'a');
-                $nonfiling = $this->getIndicator($field, $ind);
+                $nonfiling = (int)$this->getIndicator($field, $ind);
                 if ($nonfiling > 0) {
                     $title = substr($title, $nonfiling);
                 }
@@ -2714,7 +2714,7 @@ class Marc extends Base
                             continue;
                         }
                         $altTitle = $this->getSubfield($f880, 'a');
-                        $nonfiling = $this->getIndicator($f880, $ind);
+                        $nonfiling = (int)$this->getIndicator($f880, $ind);
                         if ($nonfiling > 0) {
                             $altTitle = substr($altTitle, $nonfiling);
                         }
