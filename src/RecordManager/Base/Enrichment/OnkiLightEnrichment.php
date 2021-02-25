@@ -107,7 +107,7 @@ abstract class OnkiLightEnrichment extends Enrichment
      * @throws \Exception
      * @return void
      */
-    public abstract function enrich($sourceId, $record, &$solrArray);
+    abstract public function enrich($sourceId, $record, &$solrArray);
 
     /**
      * Enrich the record and return any additions in solrArray
