@@ -23,7 +23,7 @@
  * @package  RecordManager
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Finna\Record;
 
@@ -39,7 +39,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class MarcAuthority extends \RecordManager\Base\Record\MarcAuthority
 {

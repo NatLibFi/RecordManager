@@ -23,7 +23,7 @@
  * @package  RecordManager
  * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManagerTest\Base\Record;
 
@@ -36,7 +36,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 abstract class RecordTest extends \PHPUnit\Framework\TestCase
 {
