@@ -413,7 +413,7 @@ class WorkerPoolManager
             $read = [$socket];
             $write = [];
             $except = [];
-            $res = socket_select($read, $write, $except, $block ? 1000 : 0);
+            $res = socket_select($read, $write, $except, $block ? 5000 : 0);
             if (false === $res) {
                 $error = socket_last_error();
                 if (SOCKET_EINTR === $error || (++$interrupted < 10)) {
