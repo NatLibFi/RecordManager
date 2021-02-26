@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2017-2020.
+ * Copyright (c) The National Library of Finland 2017-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -591,7 +591,8 @@ class MongoDatabase extends AbstractDatabase
      */
     protected function getMongoRecord($collection, $id)
     {
-        return $this->getDb()->{$collection}->findOne(['_id' => $id]);
+        $result = $this->getDb()->{$collection}->findOne(['_id' => $id]);
+        return null === $result ? null : iterator_to_array($result);
     }
 
     /**
@@ -605,7 +606,8 @@ class MongoDatabase extends AbstractDatabase
      */
     protected function findMongoRecord($collection, $filter, $options)
     {
-        return $this->getDb()->{$collection}->findOne($filter, $options);
+        $result = $this->getDb()->{$collection}->findOne($filter, $options);
+        return null === $result ? null : iterator_to_array($result);
     }
 
     /**
@@ -760,7 +762,7 @@ class MongoDatabase extends AbstractDatabase
         }
         $records = $findMethod($filter, $options);
         foreach ($records as $record) {
-            if ($callback($record, $params) === false) {
+            if ($callback(iterator_to_array($record), $params) === false) {
                 return;
             }
         }
