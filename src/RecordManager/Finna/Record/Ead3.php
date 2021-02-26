@@ -133,7 +133,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $data['hierarchy_sequence_str'] = $data['hierarchy_sequence'];
         }
 
-        $data['source_str_mv'] = $data['institution'] ?? $this->source;
+        $data['source_str_mv'] = ($data['institution'] ?? '') ?: $this->source;
         $data['datasource_str_mv'] = $this->source;
 
         // Digitized?
