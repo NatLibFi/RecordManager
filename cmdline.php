@@ -34,22 +34,16 @@
  */
 ini_set('display_errors', '1');
 
+require_once __DIR__ . '/vendor/autoload.php';
+require_once __DIR__ . '/src/RecordManager/Base/Autoloader.php';
+
 // If profiling is requested, set it up now. Profiling can be enabled from the
 // command line by providing XHProf location, e.g.
 // RECMAN_PROFILE=http://localhost/xhprof php manage.php ...
-if (!empty(getenv('RECMAN_PROFILE'))) {
-    if (extension_loaded('tideways_xhprof')
-        && function_exists('tideways_xhprof_enable')
-    ) {
-        tideways_xhprof_enable();
-        register_shutdown_function('finishProfiling');
-    } else {
-        echo "WARNING: No tideways_xhprof extension available, profiling disabled\n";
-    }
+if ($profilerBaseUrl = getenv('RECMAN_PROFILE')) {
+    $profiler = new \RecordManager\Base\Utils\Profiler($profilerBaseUrl);
+    $profiler->start();
 }
-
-require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/src/RecordManager/Base/Autoloader.php';
 
 /**
  * Load the main configuration
@@ -170,25 +164,4 @@ function releaseLock($handle)
         flock($handle, LOCK_UN);
         fclose($handle);
     }
-}
-
-/**
- * A shutdown function that outputs profiling information
- *
- * @return void
- */
-function finishProfiling()
-{
-    $xhprofData = function_exists('tideways_xhprof_disable')
-        ? tideways_xhprof_disable() : '';
-    $xhprofRunId = uniqid();
-    $suffix = 'recman';
-    $dir = ini_get('xhprof.output_dir');
-    if (empty($dir)) {
-        $dir = sys_get_temp_dir();
-    }
-    $profiler = getenv('RECMAN_PROFILE');
-    file_put_contents("$dir/$xhprofRunId.$suffix.xhprof", serialize($xhprofData));
-    $url = "$profiler?run=$xhprofRunId&source=$suffix";
-    echo "Profiler output at $url\n";
 }
