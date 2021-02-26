@@ -45,18 +45,17 @@ class SolrComparer extends SolrUpdater
     /**
      * Compare records with the Solr index
      *
+     * @param string      $logFile  Log file to use for any record differences
      * @param string|null $fromDate Starting date for updates (if empty
      *                              string, all records are processed)
      * @param string      $sourceId Comma-separated list of source IDs to
      *                              update, or empty or * for all sources
      * @param string      $singleId Process only the record with the given ID
-     * @param string      $logFile  Log file to use for any record differences
      *
      * @return void
      */
-    public function compareRecords($fromDate = null, $sourceId = '', $singleId = '',
-        $logFile = ''
-    ) {
+    public function compareRecords($logFile, $fromDate, $sourceId, $singleId)
+    {
         // Install a signal handler so that we can exit cleanly if interrupted
         unset($this->terminate);
         if (function_exists('pcntl_signal')) {

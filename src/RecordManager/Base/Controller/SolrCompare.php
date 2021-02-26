@@ -54,12 +54,12 @@ class SolrCompare extends AbstractBase
      *
      * @return void
      */
-    public function launch($log, $fromDate = null, $sourceId = '', $singleId = '')
+    public function launch($log, $fromDate, $sourceId, $singleId)
     {
         $comparer = new SolrComparer(
             $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
             $this->dataSourceSettings, $this->recordFactory
         );
-        $comparer->compareRecords($fromDate, $sourceId, $singleId, $log);
+        $comparer->compareRecords($log, $fromDate, $sourceId, $singleId);
     }
 }
