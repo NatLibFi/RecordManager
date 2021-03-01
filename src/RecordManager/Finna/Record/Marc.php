@@ -1581,11 +1581,10 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getEraFacets()
     {
         $result = parent::getEraFacets();
-        $result = array_unique(
-            array_merge(
-                $result,
-                $this->get653WithSecondInd('4')
-            )
+        $result = array_merge(
+            $result,
+            $this->get653WithSecondInd('4'),
+            $this->getFieldsSubfields([[self::GET_NORMAL, '388', ['a' => 1]]])
         );
         return $result;
     }
@@ -1598,11 +1597,10 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getEras()
     {
         $result = parent::getEras();
-        $result = array_unique(
-            array_merge(
-                $result,
-                $this->get653WithSecondInd('4')
-            )
+        $result = array_merge(
+            $result,
+            $this->get653WithSecondInd('4'),
+            $this->getFieldsSubfields([[self::GET_NORMAL, '388', ['a' => 1]]])
         );
         return $result;
     }
@@ -1615,11 +1613,9 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getGenreFacets()
     {
         $result = parent::getGenreFacets();
-        $result = array_unique(
-            array_merge(
-                $result,
-                $this->get653WithSecondInd('6')
-            )
+        $result = array_merge(
+            $result,
+            $this->get653WithSecondInd('6')
         );
         return $result;
     }
@@ -1632,11 +1628,9 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getGenres()
     {
         $result = parent::getGenres();
-        $result = array_unique(
-            array_merge(
-                $result,
-                $this->get653WithSecondInd('6')
-            )
+        $result = array_merge(
+            $result,
+            $this->get653WithSecondInd('6')
         );
         return $result;
     }
@@ -1649,11 +1643,10 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getGeographicFacets()
     {
         $result = parent::getGeographicFacets();
-        $result = array_unique(
-            array_merge(
-                $result,
-                $this->get653WithSecondInd('5')
-            )
+        $result = array_merge(
+            $result,
+            $this->get653WithSecondInd('5'),
+            $this->getFieldsSubfields([[self::GET_NORMAL, '370', ['g' => 1]]])
         );
         return $result;
     }
@@ -1666,11 +1659,10 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getGeographicTopics()
     {
         $result = parent::getGeographicTopics();
-        $result = array_unique(
-            array_merge(
-                $result,
-                $this->get653WithSecondInd('5')
-            )
+        $result = array_merge(
+            $result,
+            $this->get653WithSecondInd('5'),
+            $this->getFieldsSubfields([[self::GET_NORMAL, '370', ['g' => 1]]])
         );
         return $result;
     }
@@ -1695,11 +1687,9 @@ class Marc extends \RecordManager\Base\Record\Marc
             ],
             false, true, true
         );
-        $result = array_unique(
-            array_merge(
-                $result,
-                $this->get653WithSecondInd([' ', '0', '1', '2', '3'])
-            )
+        $result = array_merge(
+            $result,
+            $this->get653WithSecondInd([' ', '0', '1', '2', '3'])
         );
         return $result;
     }
@@ -1711,11 +1701,9 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     protected function getTopics()
     {
-        $result = array_unique(
-            array_merge(
-                parent::getTopics(),
-                $this->get653WithSecondInd([' ', '0', '1', '2', '3'])
-            )
+        $result = array_merge(
+            parent::getTopics(),
+            $this->get653WithSecondInd([' ', '0', '1', '2', '3'])
         );
         return $result;
     }
