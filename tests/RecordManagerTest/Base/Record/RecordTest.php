@@ -23,9 +23,9 @@
  * @package  RecordManager
  * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Test\RecordDrivers;
+namespace RecordManagerTest\Base\Record;
 
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -36,9 +36,9 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
-abstract class RecordDriverTest extends \RecordManager\Test\AbstractTest
+abstract class RecordTest extends \PHPUnit\Framework\TestCase
 {
     use CreateRecordTrait;
 
@@ -55,7 +55,7 @@ abstract class RecordDriverTest extends \RecordManager\Test\AbstractTest
                     'articles' => 'articles.lst'
                 ],
             ],
-            __DIR__ . '/../../../configs/recorddrivertest'
+            __DIR__ . '/../../../fixtures/base/config/recorddrivertest'
         );
     }
 

@@ -25,9 +25,9 @@
  * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Test\RecordDrivers;
+namespace RecordManagerTest\Base\Record;
 
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
@@ -40,7 +40,7 @@ use RecordManager\Base\Utils\Logger;
  * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 trait CreateRecordTrait
 {
@@ -53,11 +53,13 @@ trait CreateRecordTrait
      *
      * @return \RecordManager\Base\Record\Base
      */
-    protected function createRecord($class, $sample, $dsConfig = [])
+    protected function createRecord($class, $sample, $dsConfig = [], $ns = 'base')
     {
         $logger = $this->createMock(Logger::class);
         $recordFactory = new RecordFactory($logger, [], $dsConfig);
-        $sample = file_get_contents(__DIR__ . '/../../../samples/' . $sample);
+        $sample = file_get_contents(
+            __DIR__ . "/../../../fixtures/$ns/record/$sample"
+        );
         $record = $recordFactory->createRecord(
             $class, $sample, '__unit_test_no_id__', '__unit_test_no_source__'
         );

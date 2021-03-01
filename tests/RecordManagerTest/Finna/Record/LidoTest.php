@@ -25,9 +25,9 @@
  * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Test\RecordDrivers;
+namespace RecordManagerTest\Finna\Record;
 
 use RecordManager\Finna\Record\Lido;
 
@@ -38,9 +38,9 @@ use RecordManager\Finna\Record\Lido;
  * @package  RecordManager
  * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
-class FinnaLidoRecordDriverTest extends RecordDriverTest
+class LidoTest extends \RecordManagerTest\Base\Record\RecordTest
 {
     /**
      * Test Musketti LIDO record handling
@@ -49,7 +49,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testMusketti1()
     {
-        $fields = $this->createRecord(Lido::class, 'musketti1.xml')->toSolrArray();
+        $fields = $this->createRecord(Lido::class, 'musketti1.xml', [], 'finna')->toSolrArray();
 
         $this->assertContains('metalli', $fields['material']);
         $this->assertContains('kupari', $fields['material']);
@@ -99,7 +99,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testMusketti2()
     {
-        $fields = $this->createRecord(Lido::class, 'musketti2.xml')->toSolrArray();
+        $fields = $this->createRecord(Lido::class, 'musketti2.xml', [], 'finna')->toSolrArray();
         unset($fields['fullrecord']);
 
         $expected = [
@@ -237,7 +237,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testLusto1()
     {
-        $fields = $this->createRecord(Lido::class, 'lusto1.xml')->toSolrArray();
+        $fields = $this->createRecord(Lido::class, 'lusto1.xml', [], 'finna')->toSolrArray();
 
         $this->assertEquals('E01025:3', $fields['identifier']);
 
@@ -263,7 +263,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testVtm1()
     {
-        $fields = $this->createRecord(Lido::class, 'vtm1.xml')->toSolrArray();
+        $fields = $this->createRecord(Lido::class, 'vtm1.xml', [], 'finna')->toSolrArray();
 
         $this->assertContains('kangas', $fields['material']);
         $this->assertContains('öljy', $fields['material']);
@@ -295,7 +295,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testTuusula1()
     {
-        $fields = $this->createRecord(Lido::class, 'tuusula1.xml')->toSolrArray();
+        $fields = $this->createRecord(Lido::class, 'tuusula1.xml', [], 'finna')->toSolrArray();
 
         $this->assertContains('kangas', $fields['material']);
         $this->assertContains('pahvi', $fields['material']);
@@ -335,7 +335,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testDesign1()
     {
-        $fields = $this->createRecord(Lido::class, 'design1.xml')->toSolrArray();
+        $fields = $this->createRecord(Lido::class, 'design1.xml', [], 'finna')->toSolrArray();
 
         $this->assertEquals('Kuva', $fields['format']);
 
@@ -357,7 +357,7 @@ class FinnaLidoRecordDriverTest extends RecordDriverTest
      */
     public function testWorkIdentificationKeys()
     {
-        $record = $this->createRecord(Lido::class, 'lido_workkeys.xml');
+        $record = $this->createRecord(Lido::class, 'lido_workkeys.xml', [], 'finna');
 
         $expected = [
             'titles' => [

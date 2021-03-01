@@ -23,9 +23,9 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Test;
+namespace RecordManagerTest\Base\Utils;
 
 use RecordManager\Base\Utils\DeweyCallNumber;
 
@@ -36,9 +36,9 @@ use RecordManager\Base\Utils\DeweyCallNumber;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
-class DeweyCallNumberTest extends AbstractTest
+class DeweyCallNumberTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * Valid call numbers

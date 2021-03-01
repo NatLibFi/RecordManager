@@ -91,6 +91,9 @@ password =
 ; Fields that are copied down to all records in a dedup group if the values do not
 ; already exist
 ;copy_from_merged_record = mbid_str_mv
+; Lields that are copied from a parent record to all child records (i.e. component
+; parts in MARC nomenclature)
+copy_from_parent_record = building
 ; Fields that are added to the merged record if they don't already exist
 ;single_fields = title,publishDateSort
 ; Fields that are used for scoring when selecting the base record for a merged record
@@ -268,7 +271,7 @@ replace[] = '\1 street'
 ; Service base URL
 ;base_url = "http://api.somewhere/rest/v1"
 ; URL prefixes to process
-;url_prefix_whitelist[] = "http://somewhere/"
+;url_prefix_allowed_list[] = "http://somewhere/"
 ; URI prefixes where exact matches in other vocabularies are also retrieved
 ;uri_prefix_exact_matches[] = "http://somewhere/vocab/"
 

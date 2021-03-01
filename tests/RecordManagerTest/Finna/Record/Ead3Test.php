@@ -23,22 +23,22 @@
  * @package  RecordManager
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Test\RecordDrivers;
+namespace RecordManagerTest\Base\Record;
 
 use RecordManager\Finna\Record\Ead3;
 
 /**
- * NDL EAD3 Record Driver Test Class
+ * Finna EAD3 Record Driver Test Class
  *
  * @category DataManagement
  * @package  RecordManager
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
-class Ead3RecordDriverTest extends RecordDriverTest
+class Ead3RecordDriverTest extends \RecordManagerTest\Base\Record\RecordTest
 {
     protected $driver = '\RecordManager\Finna\Record\Ead3';
 
@@ -50,7 +50,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa()
     {
         // 1985-02-02/1995-12-01
-        $fields = $this->createRecord(Ead3::class, 'ahaa.xml')->toSolrArray();
+        $fields = $this->createRecord(Ead3::class, 'ahaa.xml', [], 'finna')->toSolrArray();
         $this->assertContains(
             '[1985-02-02 TO 1995-12-01]',
             $fields['search_daterange_mv']
@@ -65,7 +65,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa2()
     {
         // 1985-02/1995-12
-        $fields = $this->createRecord(Ead3::class, 'ahaa2.xml')->toSolrArray();
+        $fields = $this->createRecord(Ead3::class, 'ahaa2.xml', [], 'finna')->toSolrArray();
         $this->assertContains(
             '[1985-02-01 TO 1995-12-31]',
             $fields['search_daterange_mv']
@@ -80,7 +80,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa3()
     {
         // 1985-02/1995-11
-        $fields = $this->createRecord(Ead3::class, 'ahaa3.xml')->toSolrArray();
+        $fields = $this->createRecord(Ead3::class, 'ahaa3.xml', [], 'finna')->toSolrArray();
         $this->assertContains(
             '[1985-02-01 TO 1995-11-30]',
             $fields['search_daterange_mv']
@@ -95,7 +95,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa4()
     {
         // 1985/1995
-        $fields = $this->createRecord(Ead3::class, 'ahaa4.xml')->toSolrArray();
+        $fields = $this->createRecord(Ead3::class, 'ahaa4.xml', [], 'finna')->toSolrArray();
         $this->assertContains(
             '[1985-01-01 TO 1995-12-31]',
             $fields['search_daterange_mv']
@@ -110,7 +110,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa5()
     {
         // uuuu-uu-10/1995-05-uu
-        $fields = $this->createRecord(Ead3::class, 'ahaa5.xml')->toSolrArray();
+        $fields = $this->createRecord(Ead3::class, 'ahaa5.xml', [], 'finna')->toSolrArray();
         $this->assertContains(
             '[0000-01-10 TO 1995-05-31]',
             $fields['search_daterange_mv']
@@ -125,7 +125,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa6()
     {
         // unknown/open
-        $fields = $this->createRecord(Ead3::class, 'ahaa6.xml')->toSolrArray();
+        $fields = $this->createRecord(Ead3::class, 'ahaa6.xml', [], 'finna')->toSolrArray();
         $this->assertContains(
             '[0000-01-01 TO 9999-12-31]',
             $fields['search_daterange_mv']
@@ -140,7 +140,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa8()
     {
         // uuuu-12-uu/unknown
-        $fields = $this->createRecord(Ead3::class, 'ahaa8.xml')->toSolrArray();
+        $fields = $this->createRecord(Ead3::class, 'ahaa8.xml', [], 'finna')->toSolrArray();
         $this->assertContains(
             '[0000-12-01 TO 9999-12-31]',
             $fields['search_daterange_mv']
@@ -155,7 +155,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa9()
     {
         // 1900/1940-03-02
-        $fields = $this->createRecord(Ead3::class, 'ahaa9.xml')->toSolrArray();
+        $fields = $this->createRecord(Ead3::class, 'ahaa9.xml', [], 'finna')->toSolrArray();
         $this->assertContains(
             '[1900-01-01 TO 1940-03-02]',
             $fields['search_daterange_mv']
@@ -170,7 +170,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa10()
     {
         // 195u/1960-01-01
-        $fields = $this->createRecord(Ead3::class, 'ahaa10.xml')->toSolrArray();
+        $fields = $this->createRecord(Ead3::class, 'ahaa10.xml', [], 'finna')->toSolrArray();
         $this->assertContains(
             '[1950-01-01 TO 1960-01-01]',
             $fields['search_daterange_mv']
@@ -185,7 +185,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testAhaa11()
     {
         // uu5u-11-05/u960-01-01
-        $fields = $this->createRecord(Ead3::class, 'ahaa11.xml')->toSolrArray();
+        $fields = $this->createRecord(Ead3::class, 'ahaa11.xml', [], 'finna')->toSolrArray();
         $this->assertContains(
             '[0050-11-05 TO 9960-01-01]',
             $fields['search_daterange_mv']
@@ -200,7 +200,7 @@ class Ead3RecordDriverTest extends RecordDriverTest
     public function testFsd()
     {
         // uu5u-11-05/u960-01-01
-        $fields = $this->createRecord(Ead3::class, 'fsd.xml')->toSolrArray();
+        $fields = $this->createRecord(Ead3::class, 'fsd.xml', [], 'finna')->toSolrArray();
         $this->assertContains(
             '[2014-02-17 TO 2014-03-14]',
             $fields['search_daterange_mv']

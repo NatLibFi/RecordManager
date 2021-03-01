@@ -20,5 +20,7 @@ conf/*.lst
 .php_cs_cache
 .psalm_cache
 *.log
+reports
 vendor
 tests/.phpunit.result.cache
+

@@ -1,10 +1,10 @@
 <?php
 /**
- * Abstract base class for tests
+ * LcCallNumber tests
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2017
+ * Copyright (C) The National Library of Finland 2015
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -23,19 +23,43 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Test;
+namespace RecordManagerTest\Base\Utils;
+
+use RecordManager\Base\Utils\LcCallNumber;
 
 /**
- * Abstract base class for tests
+ * LcCallNumber tests
  *
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
-abstract class AbstractTest extends \PHPUnit\Framework\TestCase
+class LcCallNumberTest extends \PHPUnit\Framework\TestCase
 {
+    /**
+     * Tests for call number handling
+     *
+     * @return void
+     */
+    public function testCallNumber()
+    {
+        $cn = new LcCallNumber('AC901.M5 vol. 1013, no. 8');
+        $this->assertTrue($cn->isValid());
+        $this->assertEquals(
+            'AC 3901', $cn->getSortKey()
+        );
+
+        $cn = new LcCallNumber('GV1101 .D7 1980');
+        $this->assertTrue($cn->isValid());
+        $this->assertEquals(
+            'GV 41101', $cn->getSortKey()
+        );
+
+        $cn = new LcCallNumber('XV1101 .D7 1980');
+        $this->assertFalse($cn->isValid());
+    }
 }
