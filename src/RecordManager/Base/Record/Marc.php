@@ -1913,7 +1913,7 @@ class Marc extends Base
     protected function getFieldSubfield($tag, $code,
         $stripTrailingPunctuation = true
     ) {
-        $key = __METHOD__  . "-$tag-$code-"
+        $key = __METHOD__ . "-$tag-$code-"
             . ($stripTrailingPunctuation ? '1' : '0');
         if (isset($this->resultCache[$key])) {
             return $this->resultCache[$key];
