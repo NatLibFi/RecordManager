@@ -66,7 +66,7 @@ class SolrDump extends AbstractBase
             $this->dataSourceSettings, $this->recordFactory
         );
         $updater->updateRecords(
-            $fromDate, $sourceId, $singleId, false, false, false, $dumpPrefix
+            $fromDate, $sourceId, $singleId, false, false, $dumpPrefix, false
         );
     }
 }
