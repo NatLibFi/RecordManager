@@ -30,7 +30,6 @@ namespace RecordManager\Base\Solr;
 use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Record\Base as BaseRecord;
 use RecordManager\Base\Record\Factory as RecordFactory;
-use RecordManager\Base\Utils\Cache;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -506,11 +505,15 @@ class SolrUpdater
 
     /**
      * Cache for recent metadata records
+     *
+     * @var \cash\LRUCache
      */
     protected $metadataRecordCache;
 
     /**
      * Cache for recent record data
+     *
+     * @var \cash\LRUCache
      */
     protected $recordDataCache;
 
@@ -538,8 +541,8 @@ class SolrUpdater
         $this->verbose = $verbose;
         $this->recordFactory = $recordFactory;
 
-        $this->metadataRecordCache = new Cache(50);
-        $this->recordDataCache = new Cache(50);
+        $this->metadataRecordCache = new \cash\LRUCache(100);
+        $this->recordDataCache = new \cash\LRUCache(100);
 
         $this->journalFormats = $config['Solr']['journal_formats']
             ?? ['Journal', 'Serial', 'Newspaper'];
@@ -2146,7 +2149,7 @@ class SolrUpdater
                             $hostRecord['source_id']
                         );
                         $this->metadataRecordCache
-                            ->set($hostRecord['_id'], $hostMetadataRecord);
+                            ->put($hostRecord['_id'], $hostMetadataRecord);
                     }
                     $hostTitle = $hostMetadataRecord->getTitle();
                     if ($this->hierarchyParentTitleField) {
@@ -2171,7 +2174,7 @@ class SolrUpdater
                                 $source,
                                 $settings
                             );
-                            $this->recordDataCache->set($hostId, $hostData);
+                            $this->recordDataCache->put($hostId, $hostData);
                         }
                         $hostDataToCopy[] = $hostData;
                     }

@@ -749,20 +749,17 @@ class MetadataUtils
      */
     public static function normalizeUnicode($str, $form)
     {
-        switch ($form) {
-        case 'NFC':
-            $str = \Normalizer::normalize($str, \Normalizer::FORM_C);
-            break;
-        case 'NFD':
-            $str = \Normalizer::normalize($str, \Normalizer::FORM_D);
-            break;
-        case 'NFKC':
-            $str = \Normalizer::normalize($str, \Normalizer::FORM_KC);
-            break;
-        case 'NFKD':
-            $str = \Normalizer::normalize($str, \Normalizer::FORM_KD);
-            break;
+        static $forms = [
+            'NFC' => \Normalizer::FORM_C,
+            'NFD' => \Normalizer::FORM_D,
+            'NFKC' => \Normalizer::FORM_KC,
+            'NFKD' => \Normalizer::FORM_KD,
+        ];
+
+        if (empty($str)) {
+            return $str;
         }
+        $str = \Normalizer::normalize($str, $forms[$form] ?? \Normalizer::FORM_C);
         return $str === false ? '' : $str;
     }
 

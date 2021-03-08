@@ -934,6 +934,19 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     public function getFormat()
     {
+        if (!isset($this->cachedFormat)) {
+            $this->cachedFormat = $this->getFormatFunc();
+        }
+        return $this->cachedFormat;
+    }
+
+    /**
+     * Return format from predefined values
+     *
+     * @return string
+     */
+    protected function getFormatFunc()
+    {
         // Custom predefined type in 977a
         $field977a = $this->getFieldSubfields('977', ['a' => 1]);
         if ($field977a) {
@@ -1429,6 +1442,10 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     protected function get653WithSecondInd($ind)
     {
+        $key = __METHOD__ . '-' . (is_array($ind) ? implode(',', $ind) : $ind);
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
+        }
         $result = [];
         $ind = (array)$ind;
         foreach ($this->getFields('653') as $field) {
@@ -1439,6 +1456,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
             }
         }
+        $this->resultCache[$key] = $result;
         return $result;
     }
 
@@ -1583,8 +1601,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         $result = parent::getEraFacets();
         $result = array_merge(
             $result,
-            $this->get653WithSecondInd('4'),
-            $this->getFieldsSubfields([[self::GET_NORMAL, '388', ['a' => 1]]])
+            $this->getAdditionalEraFields()
         );
         return $result;
     }
@@ -1599,10 +1616,25 @@ class Marc extends \RecordManager\Base\Record\Marc
         $result = parent::getEras();
         $result = array_merge(
             $result,
-            $this->get653WithSecondInd('4'),
-            $this->getFieldsSubfields([[self::GET_NORMAL, '388', ['a' => 1]]])
+            $this->getAdditionalEraFields()
         );
         return $result;
+    }
+
+    /**
+     * Get additional era fields
+     *
+     * @return array
+     */
+    protected function getAdditionalEraFields()
+    {
+        if (!isset($this->resultCache[__METHOD__])) {
+            $this->resultCache[__METHOD__] = array_merge(
+                $this->get653WithSecondInd('4'),
+                $this->getFieldsSubfields([[self::GET_NORMAL, '388', ['a' => 1]]])
+            );
+        }
+        return $this->resultCache[__METHOD__];
     }
 
     /**
@@ -1849,6 +1881,9 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     public function getUniqueIDs()
     {
+        if (isset($this->resultCache[__METHOD__])) {
+            return $this->resultCache[__METHOD__];
+        }
         $result = parent::getUniqueIDs();
         // Melinda ID
         foreach ($this->getFields('035') as $field) {
@@ -1861,6 +1896,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
             }
         }
+        $this->resultCache[__METHOD__] = $result;
         return $result;
     }
 

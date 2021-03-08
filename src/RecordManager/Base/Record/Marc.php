@@ -129,6 +129,12 @@ class Marc extends Base
     ];
 
     /**
+     * A record-specific transient cache for results from methods that may get called
+     * multiple times with same parameters e.g. during deduplication.
+     */
+    protected $resultCache = [];
+
+    /**
      * Constructor
      *
      * @param Logger $logger             Logger
@@ -964,6 +970,9 @@ class Marc extends Base
      */
     public function getUniqueIDs()
     {
+        if (isset($this->resultCache[__METHOD__])) {
+            return $this->resultCache[__METHOD__];
+        }
         $arr = [];
         $form = $this->config['Site']['unicode_normalization_form'] ?? 'NFKC';
         $f010 = $this->getField('010');
@@ -1048,6 +1057,7 @@ class Marc extends Base
             }
         }
 
+        $this->resultCache[__METHOD__] = $arr;
         return $arr;
     }
 
@@ -1098,11 +1108,7 @@ class Marc extends Base
      */
     public function getSeriesISSN()
     {
-        $field = $this->getField('490');
-        if (!$field) {
-            return '';
-        }
-        return $this->getSubfield($field, 'x');
+        return $this->getFieldSubfield('490', 'x');
     }
 
     /**
@@ -1112,11 +1118,7 @@ class Marc extends Base
      */
     public function getSeriesNumbering()
     {
-        $field = $this->getField('490');
-        if (!$field) {
-            return '';
-        }
-        return $this->getSubfield($field, 'v');
+        return $this->getFieldSubfield('490', 'v');
     }
 
     /**
@@ -1871,11 +1873,15 @@ class Marc extends Base
     protected function getFieldSubfields($tag, $codes = null,
         $stripTrailingPunctuation = true
     ) {
-        if (!isset($this->fields[$tag])) {
-            return '';
+        $key = __METHOD__ . "$tag-" . implode(',', array_keys($codes ?? [])) . '-'
+            . ($stripTrailingPunctuation ? '1' : '0');
+
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
         }
-        $subfields = '';
-        foreach ($this->fields[$tag] as $field) {
+
+        $subfields = [];
+        foreach ($this->fields[$tag] ?? [] as $field) {
             if (!isset($field['s'])) {
                 continue;
             }
@@ -1883,16 +1889,15 @@ class Marc extends Base
                 if ($codes && !isset($codes[(string)key($subfield)])) {
                     continue;
                 }
-                if ($subfields) {
-                    $subfields .= ' ';
-                }
-                $subfields .= current($subfield);
+                $subfields[] = current($subfield);
             }
         }
-        if ($stripTrailingPunctuation) {
-            $subfields = MetadataUtils::stripTrailingPunctuation($subfields);
+        $result = implode(' ', $subfields);
+        if ($result && $stripTrailingPunctuation) {
+            $result = MetadataUtils::stripTrailingPunctuation($result);
         }
-        return $subfields;
+        $this->resultCache[$key] = $result;
+        return $result;
     }
 
     /**
@@ -1908,10 +1913,14 @@ class Marc extends Base
     protected function getFieldSubfield($tag, $code,
         $stripTrailingPunctuation = true
     ) {
-        if (!isset($this->fields[$tag])) {
-            return '';
+        $key = __METHOD__ . "-$tag-$code-"
+            . ($stripTrailingPunctuation ? '1' : '0');
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
         }
-        foreach ($this->fields[$tag] as $field) {
+
+        $result = '';
+        foreach ($this->fields[$tag] ?? [] as $field) {
             if (!isset($field['s'])) {
                 continue;
             }
@@ -1921,11 +1930,12 @@ class Marc extends Base
                     if ($stripTrailingPunctuation) {
                         $result = MetadataUtils::stripTrailingPunctuation($result);
                     }
-                    return $result;
+                    break;
                 }
             }
         }
-        return '';
+        $this->resultCache[$key] = $result;
+        return $result;
     }
 
     /**
@@ -1951,6 +1961,13 @@ class Marc extends Base
     protected function getFieldsSubfields($fieldspecs, $firstOnly = false,
         $stripTrailingPunctuation = true, $splitSubfields = false
     ) {
+        $key = __METHOD__ . '-' . json_encode($fieldspecs) . '-'
+            . ($firstOnly ? '1' : '0') . ($stripTrailingPunctuation ? '1' : '0')
+            . ($splitSubfields ? '1' : '0');
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
+        }
+
         $data = [];
         foreach ($fieldspecs as $fieldspec) {
             $type = $fieldspec[0];
@@ -2061,6 +2078,7 @@ class Marc extends Base
                 $data
             );
         }
+        $this->resultCache[$key] = $data;
         return $data;
     }
 
@@ -2221,6 +2239,8 @@ class Marc extends Base
     protected function setField($field, $value)
     {
         $this->fields[$field] = $value;
+        // Invalidate cache
+        $this->resultCache = [];
     }
 
     /**
