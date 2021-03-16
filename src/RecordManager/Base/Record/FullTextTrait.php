@@ -179,7 +179,7 @@ trait FullTextTrait
             if ($try > 1) {
                 $this->logger->logWarning(
                     'getUrl',
-                    "HTTP request for '$url' succeeded on attempt $try"
+                    "HTTP request for '$url' completed on attempt $try"
                 );
             }
             $body = $response->getBody();
