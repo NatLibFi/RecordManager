@@ -142,7 +142,7 @@ class Harvest extends AbstractBase
                         $this->logger->logInfo(
                             'harvest',
                             'Reharvest date threshold: '
-                            . date('Y-m-d H:i:s', $dateThreshold)
+                            . gmdate('Y-m-d\TH:i:s\Z', $dateThreshold)
                         );
                     }
 
