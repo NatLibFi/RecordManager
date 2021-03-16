@@ -125,15 +125,20 @@ class MusicBrainzEnrichment extends Enrichment
         foreach ($record->getFields('028') as $field028) {
             $id = $this->sanitizeId($record->getSubfield($field028, 'a'));
             $source = $this->sanitizeId($record->getSubfield($field028, 'b'));
+            $newIds = [];
             if ($id && $source) {
                 $query = 'catno:"' . addcslashes("$source $id", '"\\') . '"';
-                $mbIds = array_merge($mbIds, $this->getMBIDs($query));
-            } elseif ($id) {
+                $newIds = $this->getMBIDs($query);
+            }
+            if (!$newIds && $id) {
                 $query = 'catno:"' . addcslashes($id, '"\\')
                     . '" AND releaseaccent:"'
                     . addcslashes($solrArray['title_short'], '"\\')
                     . '"';
-                $mbIds = array_merge($mbIds, $this->getMBIDs($query));
+                $newIds = $this->getMBIDs($query);
+            }
+            if ($newIds) {
+                $mbIds = array_merge($mbIds, $newIds);
             }
         }
         if ($mbIds) {
