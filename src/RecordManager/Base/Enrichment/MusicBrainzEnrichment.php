@@ -113,20 +113,25 @@ class MusicBrainzEnrichment extends Enrichment
                 default:
                     $type = 'catno';
                 }
-                $query = "$type:\"" . addcslashes($id, "\"\\") . "\"";
+                $query = "$type:\"" . addcslashes($id, '"\\') . '"';
                 if ('catno' === $type) {
                     $query .= ' AND releaseaccent:"'
-                        . addcslashes($solrArray['title_short'], "\"\\")
+                        . addcslashes($solrArray['title_short'], '"\\')
                         . '"';
                 }
                 $mbIds = array_merge($mbIds, $this->getMBIDs($query));
             }
         }
         foreach ($record->getFields('028') as $field028) {
-            if ($id = $this->sanitizeId($record->getSubfield($field028, 'a'))) {
-                $query = "catno:\"" . addcslashes($id, "\"\\")
-                    . "\" AND releaseaccent:\""
-                    . addcslashes($solrArray['title_short'], "\"\\")
+            $id = $this->sanitizeId($record->getSubfield($field028, 'a'));
+            $source = $this->sanitizeId($record->getSubfield($field028, 'b'));
+            if ($id && $source) {
+                $query = 'catno:"' . addcslashes("$source $id", '"\\') . '"';
+                $mbIds = array_merge($mbIds, $this->getMBIDs($query));
+            } elseif ($id) {
+                $query = 'catno:"' . addcslashes($id, '"\\')
+                    . '" AND releaseaccent:"'
+                    . addcslashes($solrArray['title_short'], '"\\')
                     . '"';
                 $mbIds = array_merge($mbIds, $this->getMBIDs($query));
             }
