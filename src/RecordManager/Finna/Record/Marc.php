@@ -1968,4 +1968,24 @@ class Marc extends \RecordManager\Base\Record\Marc
         );
         return MetadataUtils::normalizeLanguageStrings($languages);
     }
+
+    /**
+     * Get series information
+     *
+     * @return array
+     */
+    protected function getSeries()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [self::GET_BOTH, '440', ['a' => 1]],
+                [self::GET_BOTH, '490', ['a' => 1]],
+                [self::GET_BOTH, '800', [
+                    'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'f' => 1, 'p' => 1,
+                    'q' => 1, 't' => 1
+                ]],
+                [self::GET_BOTH, '830', ['a' => 1, 'v' => 1, 'n' => 1, 'p' => 1]]
+            ]
+        );
+    }
 }

@@ -487,17 +487,7 @@ class Marc extends Base
             $data['title_full'] = $this->getFieldSubfields('240');
         }
 
-        $data['series'] = $this->getFieldsSubfields(
-            [
-                [self::GET_BOTH, '440', ['a' => 1]],
-                [self::GET_BOTH, '490', ['a' => 1]],
-                [self::GET_BOTH, '800', [
-                    'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'f' => 1, 'p' => 1,
-                    'q' => 1, 't' => 1
-                ]],
-                [self::GET_BOTH, '830', ['a' => 1, 'p' => 1]]
-            ]
-        );
+        $data['series'] = $this->getSeries();
 
         $data['publisher'] = $this->getFieldsSubfields(
             [
@@ -3018,5 +3008,25 @@ class Marc extends Base
     protected function formatAuthorIdWithRole($id, $role)
     {
         return '';
+    }
+
+    /**
+     * Get series information
+     *
+     * @return array
+     */
+    protected function getSeries()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [self::GET_BOTH, '440', ['a' => 1]],
+                [self::GET_BOTH, '490', ['a' => 1]],
+                [self::GET_BOTH, '800', [
+                    'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'f' => 1, 'p' => 1,
+                    'q' => 1, 't' => 1
+                ]],
+                [self::GET_BOTH, '830', ['a' => 1, 'p' => 1]]
+            ]
+        );
     }
 }
