@@ -1915,7 +1915,7 @@ class Marc extends Base
                     if ($stripTrailingPunctuation) {
                         $result = MetadataUtils::stripTrailingPunctuation($result);
                     }
-                    break;
+                    break 2;
                 }
             }
         }
