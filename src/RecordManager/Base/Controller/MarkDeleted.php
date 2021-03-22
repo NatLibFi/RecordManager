@@ -75,7 +75,7 @@ class MarkDeleted extends AbstractBase
         do {
             // Fetch a set of records at a time since the remaining set will be
             // changing during this process.
-            $records = $this->db->findRecords($params);
+            $records = $this->db->findRecords($params, ['limit' => 1000]);
             $more = false;
             foreach ($records as $record) {
                 $more = true;
