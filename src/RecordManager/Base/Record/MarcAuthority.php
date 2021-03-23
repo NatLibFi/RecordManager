@@ -23,10 +23,11 @@
  * @package  RecordManager
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -38,10 +39,17 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class MarcAuthority extends Marc
 {
+    /**
+     * Delimiter for separating name related subfields.
+     *
+     * @var string
+     */
+    protected $nameDelimiter = ' / ';
+
     /**
      * Return record ID (local)
      *
@@ -55,13 +63,12 @@ class MarcAuthority extends Marc
     /**
      * Return fields to be indexed in Solr
      *
-     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
-     *                                                  avoid database lookups for
-     *                                                  related records.
+     * @param Database $db Database connection. Omit to avoid database lookups for
+     *                     related records.
      *
      * @return array
      */
-    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
+    public function toSolrArray(Database $db = null)
     {
         $data = [];
 
@@ -173,7 +180,7 @@ class MarcAuthority extends Marc
                 $fields = array_merge(
                     $fields, $this->getSubfieldsArray($field[0], ['b' => true])
                 );
-                return implode(' / ', $this->trimFields($fields));
+                return implode($this->nameDelimiter, $this->trimFields($fields));
             }
         }
         return '';

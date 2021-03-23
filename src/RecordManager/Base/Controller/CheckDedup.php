@@ -23,7 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Controller;
 
@@ -36,7 +36,7 @@ use RecordManager\Base\Utils\PerformanceCounter;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class CheckDedup extends AbstractBase
 {
@@ -73,35 +73,38 @@ class CheckDedup extends AbstractBase
         }
 
         $this->logger->logInfo('checkDedupRecords', 'Checking dedup records');
-
-        $dedupRecords = $this->db->findDedups(
-            $params,
-            ['projection' => ['_id' => 1]]
-        );
         $count = 0;
         $fixed = 0;
         $pc = new PerformanceCounter();
-        foreach ($dedupRecords as $dedupRecordId) {
-            // Avoid stale data by reading the record just before processing
-            $dedupRecord = $this->db->getDedup($dedupRecordId['_id']);
-            $results = $dedupHandler->checkDedupRecord($dedupRecord);
-            if ($results) {
-                $fixed += count($results);
-                foreach ($results as $result) {
-                    $this->logger->logInfo('checkDedupRecords', $result);
+        $this->db->iterateDedups(
+            $params,
+            ['projection' => ['_id' => 1]],
+            function (array $dedupRecordId) use ($dedupHandler, &$count, &$fixed, $pc
+            ) {
+                // Avoid stale data by reading the record just before processing
+                $dedupRecord = $this->db->getDedup($dedupRecordId['_id']);
+                if (null === $dedupRecord) {
+                    return true;
+                }
+                $results = $dedupHandler->checkDedupRecord($dedupRecord);
+                if ($results) {
+                    $fixed += count($results);
+                    foreach ($results as $result) {
+                        $this->logger->logInfo('checkDedupRecords', $result);
+                    }
+                }
+                ++$count;
+                if ($count % 1000 == 0) {
+                    $pc->add($count);
+                    $avg = $pc->getSpeed();
+                    $this->logger->logInfo(
+                        'checkDedupRecords',
+                        "$count records checked with $fixed links fixed, "
+                        . "$avg records/sec"
+                    );
                 }
             }
-            ++$count;
-            if ($count % 1000 == 0) {
-                $pc->add($count);
-                $avg = $pc->getSpeed();
-                $this->logger->logInfo(
-                    'checkDedupRecords',
-                    "$count records checked with $fixed links fixed, "
-                    . "$avg records/sec"
-                );
-            }
-        }
+        );
         $this->logger->logInfo(
             'checkDedupRecords',
             "Completed dedup check with $count records checked, $fixed links fixed"
@@ -115,31 +118,31 @@ class CheckDedup extends AbstractBase
         } else {
             $params['dedup_id'] = ['$exists' => true];
         }
-        $records = $this->db->findRecords(
-            $params,
-            ['projection' => ['_id' => 1]]
-        );
         $count = 0;
         $fixed = 0;
         $pc = new PerformanceCounter();
-        foreach ($records as $recordId) {
-            $record = $this->db->getRecord($recordId['_id']);
-            $result = $dedupHandler->checkRecordLinks($record);
-            if ($result) {
-                ++$fixed;
-                $this->logger->logInfo('checkDedupRecords', $result);
+        $this->db->iterateRecords(
+            $params,
+            ['projection' => ['_id' => 1]],
+            function (array $recordId) use ($dedupHandler, &$count, &$fixed, $pc) {
+                $record = $this->db->getRecord($recordId['_id']);
+                $result = $dedupHandler->checkRecordLinks($record);
+                if ($result) {
+                    ++$fixed;
+                    $this->logger->logInfo('checkDedupRecords', $result);
+                }
+                ++$count;
+                if ($count % 1000 == 0) {
+                    $pc->add($count);
+                    $avg = $pc->getSpeed();
+                    $this->logger->logInfo(
+                        'checkDedupRecords',
+                        "$count links checked with $fixed links fixed, "
+                        . "$avg records/sec"
+                    );
+                }
             }
-            ++$count;
-            if ($count % 1000 == 0) {
-                $pc->add($count);
-                $avg = $pc->getSpeed();
-                $this->logger->logInfo(
-                    'checkDedupRecords',
-                    "$count links checked with $fixed links fixed, "
-                    . "$avg records/sec"
-                );
-            }
-        }
+        );
         $this->logger->logInfo(
             'checkDedupRecords',
             "Completed link check with $count records checked, $fixed links fixed"

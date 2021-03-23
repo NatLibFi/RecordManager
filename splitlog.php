@@ -24,9 +24,9 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
-require_once 'cmdline.php';
+require_once __DIR__ . '/cmdline.php';
 
 /**
  * Main function
@@ -77,7 +77,7 @@ function main($argv)
             continue;
         }
         $emptyLines = 0;
-        if ($inResponse) {
+        if ($inResponse && $out) {
             fputs($out, $line . "\n");
         }
     }

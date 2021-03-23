@@ -1,0 +1,228 @@
+<?xml version="1.0"?>
+<lidoWrap>
+    <lido>
+        <lidoRecID type="PICTURE">musketti_www.M012:4878:1</lidoRecID>
+        <descriptiveMetadata lang="fi">
+            <objectClassificationWrap>
+                <objectWorkTypeWrap>
+                    <objectWorkType>
+                        <term lang="fi">kuva</term>
+                    </objectWorkType>
+                </objectWorkTypeWrap>
+                <classificationWrap>
+                    <classification>
+                        <term label="aineistotyyppi" lang="fi">valokuva</term>
+                    </classification>
+                </classificationWrap>
+            </objectClassificationWrap>
+            <objectIdentificationWrap>
+                <titleWrap>
+                    <titleSet>
+                        <appellationValue label="aihe/nimi">Imatrankoski</appellationValue>
+                    </titleSet>
+                </titleWrap>
+                <inscriptionsWrap>
+                    <inscriptions>
+                        <inscriptionDescription>
+                            <descriptiveNoteValue>33,1.</descriptiveNoteValue>
+                        </inscriptionDescription>
+                    </inscriptions>
+                    <inscriptions>
+                        <inscriptionDescription>
+                            <descriptiveNoteValue>Imatra. val. H.Hintze 1897 Antr.</descriptiveNoteValue>
+                        </inscriptionDescription>
+                    </inscriptions>
+                    <inscriptions>
+                        <inscriptionDescription>
+                            <descriptiveNoteValue>33,1.</descriptiveNoteValue>
+                        </inscriptionDescription>
+                    </inscriptions>
+                    <inscriptions>
+                        <inscriptionDescription>
+                            <descriptiveNoteValue>Imatra. 1897</descriptiveNoteValue>
+                        </inscriptionDescription>
+                    </inscriptions>
+                    <inscriptions>
+                        <inscriptionDescription>
+                            <descriptiveNoteValue>33,1. Imatra.</descriptiveNoteValue>
+                        </inscriptionDescription>
+                    </inscriptions>
+                </inscriptionsWrap>
+                <repositoryWrap>
+                    <repositorySet>
+                        <repositoryName>
+                            <legalBodyName>
+                                <appellationValue>Museoviraston kuva-arkisto/</appellationValue>
+                            </legalBodyName>
+                        </repositoryName>
+                        <workID>4878:1</workID>
+                    </repositorySet>
+                </repositoryWrap>
+                <objectMeasurementsWrap>
+                    <objectMeasurementsSet>
+                        <displayObjectMeasurements>12 x 17 cm, 12 cm</displayObjectMeasurements>
+                        <objectMeasurements />
+                    </objectMeasurementsSet>
+                </objectMeasurementsWrap>
+            </objectIdentificationWrap>
+            <eventWrap>
+                <eventSet>
+                    <event>
+                        <eventType>
+                            <term>valmistus</term>
+                        </eventType>
+                        <eventName>
+                            <appellationValue>valmistus</appellationValue>
+                        </eventName>
+                        <eventActor>
+                            <actorInRole>
+                                <actor>
+                                    <nameActorSet>
+                                        <appellationValue>Hintze Harry</appellationValue>
+                                    </nameActorSet>
+                                </actor>
+                                <roleActor>
+                                    <term>kuvaaja</term>
+                                </roleActor>
+                            </actorInRole>
+                        </eventActor>
+                        <eventDate>
+                            <displayDate>1897</displayDate>
+                            <date>
+                                <earliestDate>1897</earliestDate>
+                                <latestDate>1897</latestDate>
+                            </date>
+                        </eventDate>
+                        <eventPlace>
+                            <displayPlace>Ruokolahti</displayPlace>
+                        </eventPlace>
+                    </event>
+                </eventSet>
+            </eventWrap>
+            <objectRelationWrap>
+                <subjectWrap>
+                    <subjectSet>
+                        <displaySubject> Imatrankoski </displaySubject>
+                        <subject>
+                            <subjectDate>
+                                <displayDate>1897</displayDate>
+                            </subjectDate>
+                            <subjectDate>
+                                <displayDate>1898</displayDate>
+                            </subjectDate>
+                            <subjectPlace>
+                                <displayPlace><!-- test --> Imatrankoski, Ruokolahti </displayPlace>
+                            </subjectPlace>
+                            <subjectPlace>
+                                <place>
+                                    <namePlaceSet>
+                                        <appellationValue> Imatrankoski </appellationValue>
+                                    </namePlaceSet>
+                                    <placeClassification>
+                                        <term>luonnon paikka</term>
+                                    </placeClassification>
+                                </place>
+                            </subjectPlace>
+                            <subjectPlace>
+                                <place>
+                                    <namePlaceSet>
+                                        <appellationValue> Ruokolahti .<!-- test -->. </appellationValue>
+                                    </namePlaceSet>
+                                    <placeClassification>
+                                        <term>kunta/kaupunki (Suomi)</term>
+                                    </placeClassification>
+                                </place>
+                            </subjectPlace>
+                        </subject>
+                    </subjectSet>
+                </subjectWrap>
+                <relatedWorksWrap>
+                    <relatedWorkSet>
+                        <relatedWork>
+                            <displayObject> Kansatieteen kuvakokoelma </displayObject>
+                        </relatedWork>
+                        <relatedWorkRelType>
+                            <term> Kokoelma </term>
+                        </relatedWorkRelType>
+                    </relatedWorkSet>
+                    <relatedWorkSet>
+                        <relatedWork>
+                            <displayObject />
+                        </relatedWork>
+                        <relatedWorkRelType>
+                            <term> Alakokoelma </term>
+                        </relatedWorkRelType>
+                    </relatedWorkSet>
+                    <relatedWorkSet>
+                        <relatedWork>
+                            <displayObject />
+                        </relatedWork>
+                        <relatedWorkRelType>
+                            <term> Erityiskokoelma </term>
+                        </relatedWorkRelType>
+                    </relatedWorkSet>
+                </relatedWorksWrap>
+            </objectRelationWrap>
+        </descriptiveMetadata>
+        <administrativeMetadata lang="fi">
+            <rightsWorkWrap>
+                <rightsWorkSet>
+                    <rightsType>
+                        <term />
+                    </rightsType>
+                    <creditLine>Museovirasto</creditLine>
+                </rightsWorkSet>
+                <rightsWorkSet>
+                    <rightsType>
+                        <term>valokuvaaja</term>
+                    </rightsType>
+                    <rightsHolder>
+                        <legalBodyName>
+                            <appellationValue>Hintze Harry</appellationValue>
+                        </legalBodyName>
+                    </rightsHolder>
+                </rightsWorkSet>
+            </rightsWorkWrap>
+            <recordWrap>
+                <recordID type="PICTURE">4878:1</recordID>
+                <recordType>
+                    <conceptID type="PICTURE">4878:1</conceptID>
+                </recordType>
+                <recordSource>
+                    <legalBodyID type="PICTURE">4878:1</legalBodyID>
+                    <legalBodyName>
+                        <appellationValue>Museovirasto/MV</appellationValue>
+                    </legalBodyName>
+                </recordSource>
+                <recordRights>
+                    <rightsType>
+                        <conceptID type="omistus" />
+                    </rightsType>
+                    <rightsHolder>
+                        <legalBodyName>
+                            <appellationValue>Museovirasto/MV</appellationValue>
+                        </legalBodyName>
+                    </rightsHolder>
+                </recordRights>
+            </recordWrap>
+            <resourceWrap>
+                <resourceSet>
+                    <resourceRepresentation>
+                        <linkResource>http://muisti.nba.fi/m/4878_1/00013199.jpg</linkResource>
+                    </resourceRepresentation>
+                    <rightsResource>
+                        <rightsType>
+                            <conceptID type="omistus" />
+                        </rightsType>
+                        <rightsHolder>
+                            <legalBodyName>
+                                <appellationValue>Museovirasto/MV</appellationValue>
+                            </legalBodyName>
+                        </rightsHolder>
+                        <creditLine>Museovirasto</creditLine>
+                    </rightsResource>
+                </resourceSet>
+            </resourceWrap>
+        </administrativeMetadata>
+    </lido>
+</lidoWrap>

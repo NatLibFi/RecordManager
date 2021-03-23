@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2020.
+ * Copyright (C) The National Library of Finland 2012-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -23,12 +23,14 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Solr;
 
-use MongoDB\BSON\UTCDateTime;
+use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Record\Base as BaseRecord;
 use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Utils\Cache;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -50,7 +52,7 @@ if (function_exists('pcntl_async_signals')) {
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class SolrUpdater
 {
@@ -66,7 +68,7 @@ class SolrUpdater
     /**
      * Database
      *
-     * @var \RecordManager\Base\Database\Database
+     * @var \RecordManager\Base\Database\AbstractDatabase
      */
     protected $db;
 
@@ -275,11 +277,18 @@ class SolrUpdater
     ];
 
     /**
-     * Fields to copy back from the merged record to all the child records
+     * Fields to copy back from the merged record to all the member records
      *
      * @var array
      */
     protected $copyFromMergedRecord = [];
+
+    /**
+     * Fields to copy from a parent record to all child records
+     *
+     * @var array
+     */
+    protected $copyFromParentRecord = [];
 
     /**
      * Fields that are analyzed when scoring records for merging order
@@ -496,20 +505,31 @@ class SolrUpdater
     protected $maxFieldLengths = [];
 
     /**
+     * Cache for recent metadata records
+     */
+    protected $metadataRecordCache;
+
+    /**
+     * Cache for recent record data
+     */
+    protected $recordDataCache;
+
+    /**
      * Constructor
      *
-     * @param MongoDB       $db                 Database connection
+     * @param Database      $db                 Database connection
      * @param string        $basePath           RecordManager main directory
      * @param object        $log                Logger
-     * @param boolean       $verbose            Whether to output verbose messages
+     * @param bool          $verbose            Whether to output verbose messages
      * @param array         $config             Main configuration
      * @param array         $dataSourceSettings Data source settings
      * @param RecordFactory $recordFactory      Record Factory
      *
      * @throws \Exception
      */
-    public function __construct($db, $basePath, $log, $verbose, $config,
-        $dataSourceSettings, $recordFactory
+    public function __construct(?Database $db, string $basePath, Logger $log,
+        bool $verbose, array $config, array $dataSourceSettings,
+        RecordFactory $recordFactory
     ) {
         $this->config = $config;
         $this->db = $db;
@@ -517,6 +537,9 @@ class SolrUpdater
         $this->log = $log;
         $this->verbose = $verbose;
         $this->recordFactory = $recordFactory;
+
+        $this->metadataRecordCache = new Cache(50);
+        $this->recordDataCache = new Cache(50);
 
         $this->journalFormats = $config['Solr']['journal_formats']
             ?? ['Journal', 'Serial', 'Newspaper'];
@@ -542,6 +565,11 @@ class SolrUpdater
         if (isset($config['Solr']['copy_from_merged_record'])) {
             $this->copyFromMergedRecord
                 = explode(',', $config['Solr']['copy_from_merged_record']);
+        }
+
+        if (isset($config['Solr']['copy_from_parent_record'])) {
+            $this->copyFromParentRecord
+                = explode(',', $config['Solr']['copy_from_parent_record']);
         }
 
         if (isset($config['Solr']['single_fields'])) {
@@ -694,10 +722,6 @@ class SolrUpdater
      *                                   committed
      * @param bool        $delete        If true, records in the given $sourceId are
      *                                   all deleted
-     * @param string      $compare       If set, just compare the records with the
-     *                                   ones already in the Solr index and write any
-     *                                   differences in a file given in this
-     *                                   parameter
      * @param string      $dumpPrefix    If specified, the Solr records are dumped
      *                                   into files and not sent to Solr
      * @param bool        $datePerServer Track last Solr update date per server url
@@ -705,11 +729,20 @@ class SolrUpdater
      * @return void
      */
     public function updateRecords($fromDate = null, $sourceId = '', $singleId = '',
-        $noCommit = false, $delete = false, $compare = '', $dumpPrefix = '',
-        $datePerServer = false
+        $noCommit = false, $delete = false, $dumpPrefix = '', $datePerServer = false
     ) {
-        if ($compare && $compare != '-') {
-            file_put_contents($compare, '');
+        // Install a signal handler so that we can exit cleanly if interrupted
+        unset($this->terminate);
+        if (function_exists('pcntl_signal')) {
+            pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
+            pcntl_signal(SIGTERM, [$this, 'sigIntHandler']);
+            $this->log
+                ->logInfo('updateRecords', 'Interrupt handler set');
+        } else {
+            $this->log->logInfo(
+                'updateRecords',
+                'Could not set an interrupt handler -- pcntl not available'
+            );
         }
 
         $lastUpdateKey = 'Last Index Update';
@@ -719,12 +752,11 @@ class SolrUpdater
 
         $this->dumpPrefix = $dumpPrefix;
 
-        $verb = $compare ? 'compared' : ($this->dumpPrefix ? 'dumped' : 'indexed');
-        $initVerb = $compare
-            ? 'Comparing'
-            : ($this->dumpPrefix ? 'Dumping' : 'Indexing');
+        $verb = $this->dumpPrefix ? 'dumped' : 'indexed';
+        $initVerb = $this->dumpPrefix ? 'Dumping' : 'Indexing';
 
         $childPid = null;
+        $fromTimestamp = null;
         try {
             if ($this->recordWorkers) {
                 $this->log->logInfo(
@@ -739,25 +771,9 @@ class SolrUpdater
             }
 
             $needCommit = false;
-
-            if (isset($fromDate) && $fromDate) {
-                $mongoFromDate = $this->db->getTimestamp(strtotime($fromDate));
-            }
-
-            if (!isset($fromDate)) {
-                $state = $this->db->getState($lastUpdateKey);
-                if (null !== $state) {
-                    $mongoFromDate = $state['value'];
-                } else {
-                    unset($mongoFromDate);
-                }
-            }
-            $from = isset($mongoFromDate)
-                ? $mongoFromDate->toDatetime()->format('Y-m-d H:i:s\Z')
-                : 'the beginning';
             // Take the last indexing date now and store it when done
-            if (!$sourceId && !$singleId && !isset($fromDate)) {
-                $lastIndexingDate = $this->db->getTimestamp();
+            if (!$sourceId && !$singleId && null === $fromDate) {
+                $lastIndexingDate = time();
             } else {
                 $lastIndexingDate = null;
             }
@@ -783,8 +799,14 @@ class SolrUpdater
                 }
             }
 
+            if (!$this->threadedMergedRecordUpdate) {
+                // Create worker pools before merged records are processed to avoid
+                // sharing the database connection between processes
+                $this->initSingleRecordWorkerPools();
+            }
+
             if ($processDedupRecords) {
-                if (!$delete && $this->threadedMergedRecordUpdate && !$compare) {
+                if (!$delete && $this->threadedMergedRecordUpdate) {
                     $this->log->logInfo(
                         'updateRecords',
                         'Running merged and individual record processing in'
@@ -799,19 +821,16 @@ class SolrUpdater
                 }
 
                 if (!$childPid) {
-                    if (null !== $childPid) {
-                        $this->reconnectDatabase();
-                    }
                     $this->initWorkerPoolManager();
                     try {
                         $needCommit = $this->processMerged(
-                            $mongoFromDate ?? null,
+                            $fromDate,
                             $sourceId,
                             $singleId,
                             $noCommit,
                             $delete,
-                            $compare,
-                            null !== $childPid
+                            null !== $childPid,
+                            $lastUpdateKey
                         );
                         if (null !== $childPid) {
                             $this->deInitWorkerPoolManager();
@@ -842,25 +861,15 @@ class SolrUpdater
                 return;
             }
 
-            // Create Solr worker pool only after any merged record forked process
-            // has been started
-            $this->initWorkerPoolManager();
-            $this->workerPoolManager->createWorkerPool(
-                'solr',
-                $this->solrUpdateWorkers,
-                $this->solrUpdateWorkers,
-                [$this, 'solrRequest']
-            );
-            $this->workerPoolManager->createWorkerPool(
-                'record',
-                $this->recordWorkers,
-                $this->recordWorkers,
-                [$this, 'processSingleRecord'],
-                [$this, 'reconnectDatabase']
-            );
+            if ($this->threadedMergedRecordUpdate) {
+                // Create worker pools only after merged record forked process has
+                // been started to avoid sharing the worker pool manager
+                $this->initSingleRecordWorkerPools();
+            }
 
-            // Reconnect MongoDB to be sure it's used just by us
-            $this->reconnectDatabase();
+            $fromTimestamp = $this->getStartTimestamp($fromDate, $lastUpdateKey);
+            $from = null !== $fromTimestamp
+                ? date('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
 
             $this->log->logInfo(
                 'updateRecords', "Creating individual record list (from $from)"
@@ -871,8 +880,9 @@ class SolrUpdater
                 $params['dedup_id'] = ['$exists' => false];
                 $lastIndexingDate = null;
             } else {
-                if (isset($mongoFromDate)) {
-                    $params['updated'] = ['$gte' => $mongoFromDate];
+                if (null !== $fromTimestamp) {
+                    $params['updated']
+                        = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
                 }
                 list($sourceOr, $sourceNor) = $this->createSourceFilter($sourceId);
                 if ($sourceOr) {
@@ -883,7 +893,6 @@ class SolrUpdater
                 }
                 $params['dedup_id'] = ['$exists' => false];
             }
-            $records = $this->db->findRecords($params);
             $total = $this->db->countRecords($params);
             $count = 0;
             $lastDisplayedCount = 0;
@@ -903,84 +912,87 @@ class SolrUpdater
             }
             $pc = new PerformanceCounter();
             $this->initBufferedUpdate();
-            foreach ($records as $record) {
-                if (isset($this->terminate)) {
-                    if ($childPid) {
-                        $this->log->logInfo(
-                            'updateRecords',
-                            'Waiting for child process to terminate...'
-                        );
-                        while (1) {
-                            $pid = pcntl_waitpid($childPid, $status, WNOHANG);
-                            if ($pid > 0) {
-                                break;
-                            }
-                            sleep(1);
-                        }
+            $this->db->iterateRecords(
+                $params,
+                [],
+                function ($record) use ($childPid, $pc, &$mergedComponents,
+                    &$count, &$deleted, $verb, $noCommit, &$lastDisplayedCount,
+                    &$needCommit
+                ) {
+                    if (isset($this->terminate)) {
+                        return false;
                     }
-                    $this->log->logInfo(
-                        'updateRecords',
-                        'Termination upon request (individual record handler)'
-                    );
-                    exit(1);
-                }
-                if (in_array($record['source_id'], $this->nonIndexedSources)) {
-                    continue;
-                }
+                    if (in_array($record['source_id'], $this->nonIndexedSources)) {
+                        return true;
+                    }
 
-                $this->workerPoolManager->addRequest('record', $record);
+                    $this->workerPoolManager->addRequest('record', $record);
 
-                while ($this->workerPoolManager->checkForResults('record')) {
-                    $result = $this->workerPoolManager->getResult('record');
-                    $mergedComponents += $result['mergedComponents'];
-                    if (!$compare) {
+                    while ($this->workerPoolManager->checkForResults('record')) {
+                        $result = $this->workerPoolManager->getResult('record');
+                        $mergedComponents += $result['mergedComponents'];
                         foreach ($result['deleted'] as $id) {
                             ++$deleted;
                             $this->bufferedDelete($id);
                         }
-                    }
-                    foreach ($result['records'] as $record) {
-                        ++$count;
-                        if (!$compare) {
+                        foreach ($result['records'] as $record) {
+                            ++$count;
                             $this->bufferedUpdate($record, $count, $noCommit);
-                        } else {
-                            $this->compareWithSolrRecord($record, $compare);
+                        }
+                    }
+                    if ($count + $deleted >= $lastDisplayedCount + 1000) {
+                        $lastDisplayedCount = $count + $deleted;
+                        $pc->add($count);
+                        $avg = $pc->getSpeed();
+                        $this->log->logInfo(
+                            'updateRecords',
+                            "$count individual, $deleted deleted and"
+                                . " $mergedComponents included child records $verb"
+                                . ", $avg records/sec"
+                        );
+                    }
+
+                    // Check child status
+                    if ($childPid) {
+                        $pid = pcntl_waitpid($childPid, $status, WNOHANG);
+                        if (0 !== $pid) {
+                            $exitCode = $pid > 0 ? pcntl_wexitstatus($status) : null;
+                            $childPid = null;
+                            if ($exitCode == 1) {
+                                $needCommit = true;
+                            } elseif ($exitCode) {
+                                $this->log->logError(
+                                    'updateRecords',
+                                    'Merged record update process failed, aborting'
+                                );
+                                throw new \Exception(
+                                    'Merged record update process failed'
+                                );
+                            }
                         }
                     }
                 }
-                if ($count + $deleted >= $lastDisplayedCount + 1000) {
-                    $lastDisplayedCount = $count + $deleted;
-                    $pc->add($count);
-                    $avg = $pc->getSpeed();
+            );
+
+            if (isset($this->terminate)) {
+                if ($childPid) {
                     $this->log->logInfo(
                         'updateRecords',
-                        "$count individual, $deleted deleted and"
-                            . " $mergedComponents included child records $verb"
-                            . ", $avg records/sec"
+                        'Waiting for child process to terminate...'
                     );
-                }
-
-                // Check child status
-                if ($childPid) {
-                    $pid = pcntl_waitpid($childPid, $status, WNOHANG);
-                    if (0 !== $pid) {
-                        $exitCode = $pid > 0 ? pcntl_wexitstatus($status)
-                            : $this->workerPoolManager
-                            ->getExternalProcessExitCode($childPid);
-                        $childPid = null;
-                        if ($exitCode == 1) {
-                            $needCommit = true;
-                        } elseif ($exitCode || null === $exitCode) {
-                            $this->log->logError(
-                                'updateRecords',
-                                'Merged record update process failed, aborting'
-                            );
-                            throw new \Exception(
-                                'Merged record update process failed'
-                            );
+                    while (1) {
+                        $pid = pcntl_waitpid($childPid, $status, WNOHANG);
+                        if ($pid !== 0) {
+                            break;
                         }
+                        sleep(1);
                     }
                 }
+                $this->log->logInfo(
+                    'updateRecords',
+                    'Termination upon request (individual record handler)'
+                );
+                exit(1);
             }
 
             while ($this->workerPoolManager->requestsPending('record')
@@ -989,19 +1001,13 @@ class SolrUpdater
                 while ($this->workerPoolManager->checkForResults('record')) {
                     $result = $this->workerPoolManager->getResult('record');
                     $mergedComponents += $result['mergedComponents'];
-                    if (!$compare) {
-                        foreach ($result['deleted'] as $id) {
-                            ++$deleted;
-                            $this->bufferedDelete($id);
-                        }
+                    foreach ($result['deleted'] as $id) {
+                        ++$deleted;
+                        $this->bufferedDelete($id);
                     }
                     foreach ($result['records'] as $record) {
                         ++$count;
-                        if (!$compare) {
-                            $this->bufferedUpdate($record, $count, $noCommit);
-                        } else {
-                            $this->compareWithSolrRecord($record, $compare);
-                        }
+                        $this->bufferedUpdate($record, $count, $noCommit);
                     }
                 }
                 usleep(10);
@@ -1024,7 +1030,7 @@ class SolrUpdater
             if ($count > 0) {
                 $needCommit = true;
             }
-            if (isset($lastIndexingDate) && !$compare) {
+            if (isset($lastIndexingDate)) {
                 $state = [
                     '_id' => $lastUpdateKey,
                     'value' => $lastIndexingDate
@@ -1075,7 +1081,7 @@ class SolrUpdater
                 }
             }
 
-            if (isset($lastIndexingDate) && !$compare) {
+            if (isset($lastIndexingDate)) {
                 $state = [
                     '_id' => $lastUpdateKey,
                     'value' => $lastIndexingDate
@@ -1083,7 +1089,7 @@ class SolrUpdater
                 $this->db->saveState($state);
             }
 
-            if (!$noCommit && $needCommit && !$compare && !$this->dumpPrefix) {
+            if (!$noCommit && $needCommit && !$this->dumpPrefix) {
                 $this->log->logInfo('updateRecords', 'Final commit...');
                 $this->solrRequest('{ "commit": {} }', 3600);
                 $this->log->logInfo('updateRecords', 'Commit complete');
@@ -1114,12 +1120,16 @@ class SolrUpdater
             }
         }
         $this->deInitWorkerPoolManager();
+        if (function_exists('pcntl_signal')) {
+            pcntl_signal(SIGINT, SIG_DFL);
+            pcntl_signal(SIGTERM, SIG_DFL);
+        }
     }
 
     /**
      * Process merged (deduplicated) records
      *
-     * @param UTCDateTime $mongoFromDate Start date
+     * @param string|null $fromDate      Start date
      * @param string      $sourceId      Comma-separated list of source IDs to
      *                                   update, or empty or * for all sources
      * @param string      $singleId      Process only the record with the given ID
@@ -1127,212 +1137,42 @@ class SolrUpdater
      *                                   committed
      * @param bool        $delete        If true, records in the given $sourceId are
      *                                   all deleted
-     * @param string      $compare       If set, just compare the records with the
-     *                                   ones already in the Solr index and write any
-     *                                   differences in a file given in this
-     *                                   parameter
-     * @param bool        $checkParent   Whether to check that the parent process is
+     * @param bool        $checkParent   Whether to check that a parent process is
      *                                   alive
+     * @param string      $lastUpdateKey Database state key for last index update
      *
      * @throws \Exception
      * @return boolean Whether anything was updated
      */
     protected function processMerged(
-        $mongoFromDate, $sourceId, $singleId, $noCommit, $delete, $compare,
-        $checkParent
+        $fromDate, $sourceId, $singleId, $noCommit, $delete, $checkParent,
+        $lastUpdateKey
     ) {
-        $verb = $compare ? 'compared' : ($this->dumpPrefix ? 'dumped' : 'indexed');
-        $initVerb = $compare
-            ? 'Comparing'
-            : ($this->dumpPrefix ? 'Dumping' : 'Indexing');
-
-        $params = [];
-        if ($singleId) {
-            $params['_id'] = $singleId;
-            $params['dedup_id'] = ['$exists' => true];
-        } else {
-            if (isset($mongoFromDate)) {
-                $params['updated'] = ['$gte' => $mongoFromDate];
-            }
-            list($sourceOr, $sourceNor) = $this->createSourceFilter($sourceId);
-            if ($sourceOr) {
-                $params['$or'] = $sourceOr;
-            }
-            if ($sourceNor) {
-                $params['$nor'] = $sourceNor;
-            }
-            $params['dedup_id'] = ['$exists' => true];
-        }
-
-        $record = $this->db->findRecord([], ['sort' => ['updated' => -1]]);
-        if (empty($record)) {
-            $this->log->logInfo('processMerged', 'No records found');
-            return;
-        }
-
-        $lastRecordTime = $record['updated']->toDateTime()->getTimestamp();
-
-        $res = $this->db->cleanupQueueCollections($lastRecordTime);
-
-        if ($res['removed']) {
-            $this->log->logInfo(
-                'processMerged',
-                'Cleanup: dropped old queue collections: '
-                    . implode(', ', $res['removed'])
-            );
-        }
-        if ($res['failed']) {
-            $this->log->logWarning(
-                'processMerged',
-                'Failed to drop collections: ' . implode(', ', $res['failed'])
-            );
-        }
-
-        // Include Solr URL so that the queue collections won't clash if multiple
-        // Solr indexes are being updated simultaneously
-        $queueIdParams = $params;
-        $queueIdParams['solrUrl'] = $this->config['Solr']['update_url'] ?? '-';
-        $queueId = md5(json_encode($queueIdParams));
-
-        $collectionName = $this->db->getExistingQueueCollection(
-            $queueId,
-            isset($mongoFromDate) ? $mongoFromDate->toDateTime()->format('U') : '0',
-            $lastRecordTime
-        );
-
-        $from = isset($mongoFromDate)
-            ? $mongoFromDate->toDateTime()->format('Y-m-d H:i:s\Z')
-            : 'the beginning';
-
-        if (!$collectionName) {
-            // Install a signal handler so that we can exit cleanly if interrupted
-            unset($this->terminate);
-            if (function_exists('pcntl_signal')) {
-                pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
-                pcntl_signal(SIGTERM, [$this, 'sigIntHandler']);
-                $this->log->logInfo('updateRecords', 'Interrupt handler set');
-            } else {
-                $this->log->logInfo(
-                    'updateRecords',
-                    'Could not set an interrupt handler -- pcntl not available'
-                );
-            }
-
-            $collectionName = $this->db->getNewQueueCollection(
-                $queueId,
-                isset($mongoFromDate)
-                    ? $mongoFromDate->toDateTime()->format('U') : 0,
-                $lastRecordTime
-            );
-            $this->log->logInfo(
-                'processMerged',
-                "Creating queue collection $collectionName (from $from, stage 1/2)"
-            );
-
-            $prevId = null;
-            $count = 0;
-            $totalMergeCount = 0;
-            $records = $this->db->findRecords(
-                $params,
-                ['projection' => ['dedup_id' => 1]]
-            );
-            foreach ($records as $record) {
-                if ($checkParent) {
-                    $this->checkParentIsAlive();
-                }
-                if (isset($this->terminate)) {
-                    $this->log->logInfo(
-                        'processMerged',
-                        'Termination upon request (queue collection creation)'
-                    );
-                    $this->db->dropQueueCollection($collectionName);
-                    exit(1);
-                }
-                $id = $record['dedup_id'];
-
-                if (!isset($prevId) || $prevId != $id) {
-                    $this->db->addIdToQueue($collectionName, $id);
-                    ++$totalMergeCount;
-                    if (++$count % 10000 == 0) {
-                        $this->log
-                            ->logInfo('processMerged', "$count id's processed");
-                    }
-                }
-                $prevId = $id;
-            }
-            $this->log->logInfo('processMerged', "$count id's processed");
-
-            $this->log->logInfo(
-                'processMerged',
-                "Creating queue collection $collectionName"
-                . " (from $from, stage 2/2)"
-            );
-            $dedupParams = [];
-            if ($singleId) {
-                $dedupParams['ids'] = $singleId;
-            } elseif (isset($mongoFromDate)) {
-                $dedupParams['changed'] = ['$gte' => $mongoFromDate];
-            } else {
-                $this->log->logWarning(
-                    'processMerged',
-                    'Processing all merge records -- this may be a lengthy process'
-                        . ' if deleted records have not been purged regularly'
-                );
-            }
-
-            $records = $this->db->findDedups($dedupParams);
-            $count = 0;
-            foreach ($records as $record) {
-                if ($checkParent) {
-                    $this->checkParentIsAlive();
-                }
-                if (isset($this->terminate)) {
-                    $this->log->logInfo('processMerged', 'Termination upon request');
-                    $this->db->dropQueueCollection($collectionName);
-                    exit(1);
-                }
-                $id = $record['_id'];
-                if (!isset($prevId) || $prevId != $id) {
-                    $this->db->addIdToQueue($collectionName, $id);
-
-                    ++$totalMergeCount;
-                    if (++$count % 10000 == 0) {
-                        $this->log->logInfo(
-                            'processMerged',
-                            "$count merge record id's processed"
-                        );
-                    }
-                }
-                $prevId = $id;
-            }
-            $this->log->logInfo(
-                'processMerged',
-                "$count merge record id's processed"
-            );
-
-            if ($totalMergeCount > 0) {
-                $collectionName = $this->db
-                    ->finalizeQueueCollection($collectionName);
-            }
-            $this->log->logInfo(
-                'processMerged',
-                "Queue collection $collectionName complete"
-            );
-        } else {
-            $this->log->logInfo(
-                'processMerged',
-                "Using existing queue collection $collectionName"
-            );
-        }
-
+        // Create workers first before we need the database
         $this->workerPoolManager->createWorkerPool(
             'solr',
             $this->solrUpdateWorkers,
             $this->solrUpdateWorkers,
             [$this, 'solrRequest']
         );
+        $this->workerPoolManager->createWorkerPool(
+            'merge',
+            $this->recordWorkers,
+            $this->recordWorkers,
+            [$this, 'processDedupRecord']
+        );
 
-        $keys = $this->db->getQueuedIds($collectionName);
+        $verb = $this->dumpPrefix ? 'dumped' : 'indexed';
+        $initVerb = $this->dumpPrefix ? 'Dumping' : 'Indexing';
+
+        $collectionName = $this->createQueueCollection(
+            $fromDate,
+            $sourceId,
+            $singleId,
+            $lastUpdateKey,
+            $checkParent
+        );
+
         $count = 0;
         $lastDisplayedCount = 0;
         $mergedComponents = 0;
@@ -1351,63 +1191,56 @@ class SolrUpdater
             );
         }
         $pc = new PerformanceCounter();
-        $this->workerPoolManager->createWorkerPool(
-            'merge',
-            $this->recordWorkers,
-            $this->recordWorkers,
-            [$this, 'processDedupRecord'],
-            [$this, 'reconnectDatabase']
-        );
-        foreach ($keys as $key) {
-            if ($checkParent) {
-                $this->checkParentIsAlive();
-            }
-            if (isset($this->terminate)) {
-                throw new \Exception('Execution termination requested');
-            }
-            if (empty($key['_id'])) {
-                continue;
-            }
-
-            $this->workerPoolManager->addRequest(
-                'merge',
-                (string)$key['_id'],
-                $sourceId,
-                $delete
-            );
-
-            while (!isset($this->terminate)
-                && $this->workerPoolManager->checkForResults('merge')
+        $this->db->iterateQueue(
+            $collectionName,
+            function ($item) use ($checkParent, $sourceId, $delete,
+                &$mergedComponents, &$deleted, &$count, $noCommit,
+                &$lastDisplayedCount, $pc, $verb
             ) {
-                $result = $this->workerPoolManager->getResult('merge');
-                $mergedComponents += $result['mergedComponents'];
-                if (!$compare) {
+                if ($checkParent) {
+                    $this->checkParentIsAlive();
+                }
+                if (isset($this->terminate)) {
+                    throw new \Exception('Execution termination requested');
+                }
+                if (empty($item['_id'])) {
+                    return true;
+                }
+
+                $this->workerPoolManager->addRequest(
+                    'merge',
+                    (string)$item['_id'],
+                    $sourceId,
+                    $delete
+                );
+
+                while (!isset($this->terminate)
+                    && $this->workerPoolManager->checkForResults('merge')
+                ) {
+                    $result = $this->workerPoolManager->getResult('merge');
+                    $mergedComponents += $result['mergedComponents'];
                     foreach ($result['deleted'] as $id) {
                         ++$deleted;
                         ++$count;
                         $this->bufferedDelete($id);
                     }
-                }
-                foreach ($result['records'] as $record) {
-                    ++$count;
-                    if (!$compare) {
+                    foreach ($result['records'] as $record) {
+                        ++$count;
                         $this->bufferedUpdate($record, $count, $noCommit);
-                    } else {
-                        $this->compareWithSolrRecord($record, $compare);
                     }
                 }
+                if ($count + $deleted >= $lastDisplayedCount + 1000) {
+                    $lastDisplayedCount = $count + $deleted;
+                    $pc->add($count);
+                    $avg = $pc->getSpeed();
+                    $this->log->logInfo(
+                        'processMerged',
+                        "$count merged, $deleted deleted and $mergedComponents"
+                            . " included child records $verb, $avg records/sec"
+                    );
+                }
             }
-            if ($count + $deleted >= $lastDisplayedCount + 1000) {
-                $lastDisplayedCount = $count + $deleted;
-                $pc->add($count);
-                $avg = $pc->getSpeed();
-                $this->log->logInfo(
-                    'processMerged',
-                    "$count merged, $deleted deleted and $mergedComponents"
-                        . " included child records $verb, $avg records/sec"
-                );
-            }
-        }
+        );
 
         while (!isset($this->terminate)
             && ($this->workerPoolManager->requestsPending('merge')
@@ -1418,40 +1251,32 @@ class SolrUpdater
             ) {
                 $result = $this->workerPoolManager->getResult('merge');
                 $mergedComponents += $result['mergedComponents'];
-                if (!$compare) {
-                    foreach ($result['deleted'] as $id) {
-                        ++$deleted;
-                        ++$count;
-                        $this->bufferedDelete($id);
-                    }
+                foreach ($result['deleted'] as $id) {
+                    ++$deleted;
+                    ++$count;
+                    $this->bufferedDelete($id);
                 }
                 foreach ($result['records'] as $record) {
                     ++$count;
-                    if (!$compare) {
-                        $this->bufferedUpdate($record, $count, $noCommit);
-                    } else {
-                        $this->compareWithSolrRecord($record, $compare);
-                    }
+                    $this->bufferedUpdate($record, $count, $noCommit);
                 }
             }
             usleep(1000);
         }
 
-        if (!$compare) {
-            // Flush update buffer and wait for any subsequent pending Solr updates
-            // to complete.
-            $this->flushUpdateBuffer();
+        // Flush update buffer and wait for any subsequent pending Solr updates
+        // to complete.
+        $this->flushUpdateBuffer();
 
-            $this->log->logInfo(
-                'processMerged',
-                'Waiting for any pending requests to complete...'
-            );
-            $this->workerPoolManager->waitUntilDone('solr');
-            $this->log->logInfo(
-                'processMerged',
-                'All requests complete'
-            );
-        }
+        $this->log->logInfo(
+            'processMerged',
+            'Waiting for any pending requests to complete...'
+        );
+        $this->workerPoolManager->waitUntilDone('solr');
+        $this->log->logInfo(
+            'processMerged',
+            'All requests complete'
+        );
 
         $this->log->logInfo(
             'processMerged',
@@ -1459,10 +1284,6 @@ class SolrUpdater
                 . " included child records $verb"
         );
 
-        if (function_exists('pcntl_signal')) {
-            pcntl_signal(SIGINT, SIG_DFL);
-            pcntl_signal(SIGTERM, SIG_DFL);
-        }
         return $count > 0;
     }
 
@@ -1495,68 +1316,73 @@ class SolrUpdater
             return $result;
         }
 
-        $children = [];
         $merged = [];
-        $records = $this->db->findRecords(
-            ['_id' => ['$in' => (array)$dedupRecord['ids']]]
-        );
-        foreach ($records as $record) {
-            if (in_array($record['source_id'], $this->nonIndexedSources)) {
-                continue;
-            }
-            if ($record['deleted'] || ($record['suppressed'] ?? false)
-                || ($sourceId && $delete && $record['source_id'] == $sourceId)
+        $members = [];
+        $this->db->iterateRecords(
+            ['_id' => ['$in' => (array)$dedupRecord['ids']]],
+            [],
+            function ($record) use ($sourceId, $delete, &$mergedComponents,
+                $dedupRecord, &$result, &$members
             ) {
-                $result['deleted'][] = $record['_id'];
-                continue;
+                if (in_array($record['source_id'], $this->nonIndexedSources)) {
+                    return true;
+                }
+                if ($record['deleted'] || ($record['suppressed'] ?? false)
+                    || ($sourceId && $delete && $record['source_id'] == $sourceId)
+                ) {
+                    $result['deleted'][] = $record['_id'];
+                    return true;
+                }
+                $data = $this
+                    ->createSolrArray($record, $mergedComponents, $dedupRecord);
+                if ($data === false) {
+                    return true;
+                }
+                $result['mergedComponents'] += $mergedComponents;
+                $members[] = ['database' => $record, 'solr' => $data];
             }
-            $data = $this->createSolrArray($record, $mergedComponents, $dedupRecord);
-            if ($data === false) {
-                continue;
-            }
-            $result['mergedComponents'] += $mergedComponents;
-            $children[] = ['mongo' => $record, 'solr' => $data];
-        }
-        $merged = $this->mergeRecords($children);
-        $this->copyMergedDataToChildren($merged, $children);
+        );
 
-        if (count($children) == 0) {
+        $merged = $this->mergeRecords($members);
+        $this->copyMergedDataToMembers($merged, $members);
+
+        if (empty($members)) {
             $this->log->logInfo(
                 'processMerged',
                 "Found no records with dedup id: $dedupId, ids: "
                     . implode(',', (array)$dedupRecord['ids'])
             );
             $result['deleted'][] = $dedupRecord['_id'];
-        } elseif (count($children) == 1) {
+        } elseif (count($members) == 1) {
             // A dedup key exists for a single record. This should only happen
             // when a data source is being deleted...
-            $child = $children[0];
+            $member = $members[0];
             if (!$delete) {
                 $this->log->logWarning(
                     'processMerged',
                     'Found a single record with a dedup id: '
-                        . $child['solr']['id']
+                        . $member['solr']['id']
                 );
             }
             if ($this->verbose) {
                 echo 'Original deduplicated but single record '
-                    . $child['solr']['id'] . ":\n";
-                print_r($child['solr']);
+                    . $member['solr']['id'] . ":\n";
+                print_r($member['solr']);
             }
 
-            $result['records'][] = $child['solr'];
+            $result['records'][] = $member['solr'];
             $result['deleted'][] = $dedupRecord['_id'];
         } else {
-            foreach ($children as $child) {
-                $child['solr']['merged_child_boolean'] = true;
+            foreach ($members as $member) {
+                $member['solr']['merged_child_boolean'] = true;
 
                 if ($this->verbose) {
                     echo 'Original deduplicated record '
-                        . $child['solr']['id'] . ":\n";
-                    $this->prettyPrint($child['solr']);
+                        . $member['solr']['id'] . ":\n";
+                    $this->prettyPrint($member['solr']);
                 }
 
-                $result['records'][] = $child['solr'];
+                $result['records'][] = $member['solr'];
             }
 
             // Remove duplicate fields from the merged record
@@ -1617,7 +1443,7 @@ class SolrUpdater
      *
      * @return array
      */
-    public function processSingleRecord($record)
+    public function processSingleRecord(array $record): array
     {
         $result = [
             'deleted' => [],
@@ -1684,73 +1510,78 @@ class SolrUpdater
         if ($sourceId) {
             $params['source_id'] = $sourceId;
         }
-        $records = $this->db->findRecords($params);
         $this->log->logInfo('countValues', "Counting values");
         $values = [];
         $count = 0;
-        foreach ($records as $record) {
-            $source = $record['source_id'];
-            if (!isset($this->settings[$source])) {
-                // Try to reload data source settings as they might have been updated
-                // during a long run
-                $this->initDatasources();
+        $this->db->iterateRecords(
+            $params,
+            [],
+            function ($record) use (&$values, &$count, $mapped, $field) {
+                $source = $record['source_id'];
                 if (!isset($this->settings[$source])) {
-                    $this->log->logError(
-                        'countValues',
-                        "No settings found for data source '$source', record "
-                            . $record['_id']
-                    );
+                    // Try to reload data source settings as they might have been
+                    // updated during a long run
+                    $this->initDatasources();
+                    if (!isset($this->settings[$source])) {
+                        $this->log->logError(
+                            'countValues',
+                            "No settings found for data source '$source', record "
+                                . $record['_id']
+                        );
+                    }
                 }
-            }
-            $settings = $this->settings[$source];
-            $mergedComponents = 0;
-            if ($mapped) {
-                $data = $this->createSolrArray($record, $mergedComponents);
-            } else {
-                $metadataRecord = $this->recordFactory->createRecord(
-                    $record['format'],
-                    MetadataUtils::getRecordData($record, true),
-                    $record['oai_id'],
-                    $record['source_id']
-                );
-                if (isset($settings['solrTransformationXSLT'])) {
-                    $params = [
-                        'source_id' => $source,
-                        'institution' => $settings['institution'],
-                        'format' => $settings['format'],
-                        'id_prefix' => $settings['idPrefix']
-                    ];
-                    $data = $settings['solrTransformationXSLT']
-                        ->transformToSolrArray($metadataRecord->toXML(), $params);
+                $settings = $this->settings[$source];
+                $mergedComponents = 0;
+                if ($mapped) {
+                    $data = $this->createSolrArray($record, $mergedComponents);
                 } else {
-                    $data = $metadataRecord->toSolrArray($this->db);
-                    $this->enrich($source, $settings, $metadataRecord, $data, '');
-                }
-            }
-            if (isset($data[$field])) {
-                $fieldArray = is_array($data[$field])
-                    ? $data[$field] : [$data[$field]];
-                foreach ($fieldArray as $value) {
-                    if (!isset($values[$value])) {
-                        $values[$value] = 1;
+                    $metadataRecord = $this->recordFactory->createRecord(
+                        $record['format'],
+                        MetadataUtils::getRecordData($record, true),
+                        $record['oai_id'],
+                        $record['source_id']
+                    );
+                    if (isset($settings['solrTransformationXSLT'])) {
+                        $params = [
+                            'source_id' => $source,
+                            'institution' => $settings['institution'],
+                            'format' => $settings['format'],
+                            'id_prefix' => $settings['idPrefix']
+                        ];
+                        $data = $settings['solrTransformationXSLT']
+                            ->transformToSolrArray(
+                                $metadataRecord->toXML(), $params
+                            );
                     } else {
-                        ++$values[$value];
+                        $data = $metadataRecord->toSolrArray($this->db);
+                        $this->enrich($source, $settings, $metadataRecord, $data);
+                    }
+                }
+                if (isset($data[$field])) {
+                    $fieldArray = is_array($data[$field])
+                        ? $data[$field] : [$data[$field]];
+                    foreach ($fieldArray as $value) {
+                        if (!isset($values[$value])) {
+                            $values[$value] = 1;
+                        } else {
+                            ++$values[$value];
+                        }
+                    }
+                }
+                ++$count;
+                if ($count % 1000 == 0) {
+                    $this->log->logInfo('countValues', "$count records processed");
+                    if ($this->verbose) {
+                        echo "Current list:\n";
+                        arsort($values, SORT_NUMERIC);
+                        foreach ($values as $key => $value) {
+                            echo "$key: $value\n";
+                        }
+                        echo "\n";
                     }
                 }
             }
-            ++$count;
-            if ($count % 1000 == 0) {
-                $this->log->logInfo('countValues', "$count records processed");
-                if ($this->verbose) {
-                    echo "Current list:\n";
-                    arsort($values, SORT_NUMERIC);
-                    foreach ($values as $key => $value) {
-                        echo "$key: $value\n";
-                    }
-                    echo "\n";
-                }
-            }
-        }
+        );
         arsort($values, SORT_NUMERIC);
         echo "Result list:\n";
         foreach ($values as $key => $value) {
@@ -1840,6 +1671,234 @@ class SolrUpdater
     }
 
     /**
+     * Initialize worker pool manager and the pools for processing single records
+     *
+     * @return void
+     */
+    protected function initSingleRecordWorkerPools()
+    {
+        $this->initWorkerPoolManager();
+        $this->workerPoolManager->createWorkerPool(
+            'solr',
+            $this->solrUpdateWorkers,
+            $this->solrUpdateWorkers,
+            [$this, 'solrRequest']
+        );
+        $this->workerPoolManager->createWorkerPool(
+            'record',
+            $this->recordWorkers,
+            $this->recordWorkers,
+            [$this, 'processSingleRecord']
+        );
+    }
+
+    /**
+     * Create a merged record collection for processing
+     *
+     * @param string|null $fromDate      Start date
+     * @param string      $sourceId      Comma-separated list of source IDs to
+     *                                   update, or empty or * for all sources
+     * @param string      $singleId      Process only the record with the given ID
+     * @param string      $lastUpdateKey Database state key for last index update
+     * @param bool        $checkParent   Whether to check that a parent process is
+     *                                   alive
+     *
+     * @throws \Exception
+     * @return string Collection name
+     */
+    protected function createQueueCollection($fromDate, $sourceId, $singleId,
+        $lastUpdateKey, $checkParent
+    ) {
+        $fromTimestamp = $this->getStartTimestamp($fromDate, $lastUpdateKey);
+
+        $params = [];
+        if ($singleId) {
+            $params['_id'] = $singleId;
+            $params['dedup_id'] = ['$exists' => true];
+        } else {
+            if (null !== $fromTimestamp) {
+                $params['updated']
+                    = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
+            }
+            list($sourceOr, $sourceNor) = $this->createSourceFilter($sourceId);
+            if ($sourceOr) {
+                $params['$or'] = $sourceOr;
+            }
+            if ($sourceNor) {
+                $params['$nor'] = $sourceNor;
+            }
+            $params['dedup_id'] = ['$exists' => true];
+        }
+
+        $record = $this->db->findRecord(
+            [],
+            ['sort' => ['updated' => -1], 'limit' => 1]
+        );
+        if (empty($record)) {
+            $this->log->logInfo('createQueueCollection', 'No records found');
+            return;
+        }
+
+        $lastRecordTime = $this->db->getUnixTime($record['updated']);
+
+        $res = $this->db->cleanupQueueCollections($lastRecordTime);
+
+        if ($res['removed']) {
+            $this->log->logInfo(
+                'createQueueCollection',
+                'Cleanup: dropped old queue collections: '
+                    . implode(', ', $res['removed'])
+            );
+        }
+        if ($res['failed']) {
+            $this->log->logWarning(
+                'createQueueCollection',
+                'Failed to drop collections: ' . implode(', ', $res['failed'])
+            );
+        }
+
+        // Include Solr URL so that the queue collections won't clash if multiple
+        // Solr indexes are being updated simultaneously
+        $queueIdParams = $params;
+        $queueIdParams['solrUrl'] = $this->config['Solr']['update_url'] ?? '-';
+        $queueId = md5(json_encode($queueIdParams));
+
+        $collectionName = $this->db->getExistingQueueCollection(
+            $queueId,
+            $fromTimestamp ?: 0,
+            $lastRecordTime
+        );
+
+        $from = null !== $fromTimestamp
+            ? date('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
+
+        if (!$collectionName) {
+            $collectionName = $this->db->getNewQueueCollection(
+                $queueId,
+                $fromTimestamp ?: 0,
+                $lastRecordTime
+            );
+            $this->log->logInfo(
+                'createQueueCollection',
+                "Creating collection $collectionName (from $from, stage 1/2)"
+            );
+
+            $prevId = null;
+            $count = 0;
+            $totalMergeCount = 0;
+            $this->db->iterateRecords(
+                $params,
+                ['projection' => ['_id' => 1, 'dedup_id' => 1]],
+                function ($record) use ($checkParent, $collectionName,
+                    &$totalMergeCount, &$count, &$prevId
+                ) {
+                    if ($checkParent) {
+                        $this->checkParentIsAlive();
+                    }
+                    if (isset($this->terminate)) {
+                        return false;
+                    }
+                    $id = $record['dedup_id'];
+
+                    if (!isset($prevId) || $prevId != $id) {
+                        $this->db->addIdToQueue($collectionName, $id);
+                        ++$totalMergeCount;
+                        if (++$count % 10000 == 0) {
+                            $this->log->logInfo(
+                                'createQueueCollection',
+                                "$count id's processed"
+                            );
+                        }
+                    }
+                    $prevId = $id;
+                }
+            );
+            if (isset($this->terminate)) {
+                $this->log->logInfo(
+                    'createQueueCollection',
+                    'Termination upon request'
+                );
+                $this->db->dropQueueCollection($collectionName);
+                exit(1);
+            }
+            $this->log->logInfo('createQueueCollection', "$count id's processed");
+
+            $this->log->logInfo(
+                'createQueueCollection',
+                "Creating collection $collectionName (from $from, stage 2/2)"
+            );
+            $dedupParams = [];
+            if ($singleId) {
+                $dedupParams['ids'] = $singleId;
+            } elseif (null !== $fromTimestamp) {
+                $dedupParams['changed']
+                    = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
+            } else {
+                $this->log->logWarning(
+                    'createQueueCollection',
+                    'Processing all merge records -- this may be a lengthy process'
+                        . ' if deleted records have not been purged regularly'
+                );
+            }
+
+            $count = 0;
+            $this->db->iterateDedups(
+                $dedupParams,
+                [],
+                function ($record) use ($checkParent, &$count, $collectionName,
+                    &$totalMergeCount, &$prevId
+                ) {
+                    if ($checkParent) {
+                        $this->checkParentIsAlive();
+                    }
+                    if (isset($this->terminate)) {
+                        return false;
+                    }
+                    $id = $record['_id'];
+                    if (!isset($prevId) || $prevId != $id) {
+                        $this->db->addIdToQueue($collectionName, $id);
+
+                        ++$totalMergeCount;
+                        if (++$count % 10000 == 0) {
+                            $this->log->logInfo(
+                                'createQueueCollection',
+                                "$count merge record id's processed"
+                            );
+                        }
+                    }
+                    $prevId = $id;
+                }
+            );
+            if (isset($this->terminate)) {
+                $this->log
+                    ->logInfo('createQueueCollection', 'Termination upon request');
+                $this->db->dropQueueCollection($collectionName);
+                exit(1);
+            }
+            $this->log->logInfo(
+                'createQueueCollection',
+                "$count merge record id's processed"
+            );
+
+            if ($totalMergeCount > 0) {
+                $collectionName = $this->db
+                    ->finalizeQueueCollection($collectionName);
+            }
+            $this->log->logInfo(
+                'createQueueCollection',
+                "Collection $collectionName complete"
+            );
+        } else {
+            $this->log->logInfo(
+                'createQueueCollection',
+                "Using existing collection $collectionName"
+            );
+        }
+
+        return $collectionName;
+    }
+
+    /**
      * Initialize or reload data source settings
      *
      * @param array $dataSourceSettings Optional data source settings to use instead
@@ -1912,15 +1971,15 @@ class SolrUpdater
     /**
      * Create Solr array for the given record
      *
-     * @param array   $record           Mongo record
-     * @param integer $mergedComponents Number of component parts merged to the
-     *                                  record
-     * @param array   $dedupRecord      Mongo dedup record
+     * @param array $record           Database record
+     * @param int   $mergedComponents Number of component parts merged to the
+     *                                record
+     * @param array $dedupRecord      Database dedup record
      *
      * @return array|false
      * @throws \Exception
      */
-    protected function createSolrArray($record, &$mergedComponents,
+    protected function createSolrArray(array $record, &$mergedComponents,
         $dedupRecord = null
     ) {
         $mergedComponents = 0;
@@ -1975,7 +2034,8 @@ class SolrUpdater
                     'host_record_id' => [
                         '$in' => array_values((array)$record['linking_id'])
                     ],
-                    'deleted' => false
+                    'deleted' => false,
+                    'suppressed' => ['$in' => [null, false]],
                 ];
                 if (!empty($settings['componentPartSourceId'])) {
                     $sourceParams = [];
@@ -2003,12 +2063,15 @@ class SolrUpdater
                 }
 
                 if ($merge && $hasComponentParts) {
-                    $components = $this->db->findRecords($params);
+                    $components = $this->db->findRecords(
+                        $params,
+                        ['limit' => 10000] // An arbitrary limit, but we something
+                    );
                 }
             }
         }
 
-        if ($hasComponentParts && isset($components)) {
+        if ($hasComponentParts && null !== $components) {
             $changeDate = null;
             $mergedComponents += $metadataRecord->mergeComponentParts(
                 $components, $changeDate
@@ -2040,6 +2103,7 @@ class SolrUpdater
         }
 
         // Record links between host records and component parts
+        $hostDataToCopy = [];
         if ($metadataRecord->getIsComponentPart()) {
             $hostRecords = [];
             if ($this->db && !empty($record['host_record_id'])) {
@@ -2049,7 +2113,8 @@ class SolrUpdater
                         'linking_id' => [
                             '$in' => array_values((array)$record['host_record_id'])
                         ]
-                    ]
+                    ],
+                    ['limit' => 10000] // An arbitrary limit, but we need something
                 );
                 if (!$hostRecords) {
                     $this->log->logWarning(
@@ -2071,12 +2136,18 @@ class SolrUpdater
                         $data[$this->hierarchyParentIdField][]
                             = $this->createSolrId($hostRecord['_id']);
                     }
-                    $hostMetadataRecord = $this->recordFactory->createRecord(
-                        $hostRecord['format'],
-                        MetadataUtils::getRecordData($hostRecord, true),
-                        $hostRecord['oai_id'],
-                        $hostRecord['source_id']
-                    );
+                    $hostMetadataRecord = $this->metadataRecordCache
+                        ->get($hostRecord['_id']);
+                    if (null === $hostMetadataRecord) {
+                        $hostMetadataRecord = $this->recordFactory->createRecord(
+                            $hostRecord['format'],
+                            MetadataUtils::getRecordData($hostRecord, true),
+                            $hostRecord['oai_id'],
+                            $hostRecord['source_id']
+                        );
+                        $this->metadataRecordCache
+                            ->set($hostRecord['_id'], $hostMetadataRecord);
+                    }
                     $hostTitle = $hostMetadataRecord->getTitle();
                     if ($this->hierarchyParentTitleField) {
                         $data[$this->hierarchyParentTitleField][] = $hostTitle;
@@ -2085,6 +2156,24 @@ class SolrUpdater
                         && empty($data[$this->containerTitleField])
                     ) {
                         $data[$this->containerTitleField] = $hostTitle;
+                    }
+                    if ($this->copyFromParentRecord) {
+                        // Collect data to copy here, but do the actual copying in
+                        // the end to avoid duplicate mapping etc.
+                        $hostId = 'host_' . $hostRecord['_id'];
+                        $hostData = $this->recordDataCache->get($hostId);
+                        if (null === $hostData) {
+                            $hostData = $hostMetadataRecord->toSolrArray($this->db);
+                            $this->augmentAndProcessFields(
+                                $hostData,
+                                $hostRecord,
+                                $hostMetadataRecord,
+                                $source,
+                                $settings
+                            );
+                            $this->recordDataCache->set($hostId, $hostData);
+                        }
+                        $hostDataToCopy[] = $hostData;
                     }
                 }
             }
@@ -2131,6 +2220,104 @@ class SolrUpdater
             }
         }
 
+        if ($hiddenComponent) {
+            $data['hidden_component_boolean'] = true;
+        }
+
+        // Work identification keys
+        $this->addWorkKeys($data, $metadataRecord);
+
+        $this->augmentAndProcessFields(
+            $data, $record, $metadataRecord, $source, $settings
+        );
+
+        foreach ($hostDataToCopy as $hostData) {
+            $this->copyParentDataToChild($hostData, $data);
+        }
+
+        if (!empty($this->warningsField)) {
+            $warnings = array_merge(
+                $warnings, $metadataRecord->getProcessingWarnings()
+            );
+            if ($warnings) {
+                $data[$this->warningsField] = $warnings;
+            }
+        }
+
+        $this->enrich($source, $settings, $metadataRecord, $data, 'final');
+
+        return $data;
+    }
+
+    /**
+     * Add work identification keys
+     *
+     * @param array      $data           Field array
+     * @param BaseRecord $metadataRecord Metadata record
+     *
+     * @return void
+     */
+    protected function addWorkKeys(array &$data, BaseRecord $metadataRecord)
+    {
+        if ($this->workKeysField
+            && $workIds = $metadataRecord->getWorkIdentificationData()
+        ) {
+            $keys = [];
+            foreach ($workIds['titles'] ?? [] as $titleData) {
+                $title = MetadataUtils::normalizeKey(
+                    $titleData['value'],
+                    $this->unicodeNormalizationForm
+                );
+                if ('uniform' === $titleData['type']) {
+                    $keys[] = "UT $title";
+                } else {
+                    foreach ($workIds['authors'] ?? [] as $authorData) {
+                        $author = MetadataUtils::normalizeKey(
+                            $authorData['value'],
+                            $this->unicodeNormalizationForm
+                        );
+                        $keys[] = "AT $author $title";
+                    }
+                }
+            }
+            foreach ($workIds['titlesAltScript'] ?? [] as $titleData) {
+                $title = MetadataUtils::normalizeKey(
+                    $titleData['value'],
+                    $this->unicodeNormalizationForm
+                );
+                if ('uniform' === $titleData['type']) {
+                    $keys[] = "UT $title";
+                } else {
+                    foreach ($workIds['authorsAltScript'] ?? [] as $authorData) {
+                        $author = MetadataUtils::normalizeKey(
+                            $authorData['value'],
+                            $this->unicodeNormalizationForm
+                        );
+                        $keys[] = "AT $author $title";
+                    }
+                }
+            }
+            if ($keys) {
+                $data[$this->workKeysField] = $keys;
+            }
+        }
+    }
+
+    /**
+     * Add extra fields from settings etc. and map the values
+     *
+     * @param array      $data           Field array
+     * @param mixed      $record         Database record
+     * @param BaseRecord $metadataRecord Metadata record
+     * @param string     $source         Source ID
+     * @param array      $settings       Settings
+     *
+     * @return void
+     */
+    protected function augmentAndProcessFields(array &$data,
+        $record, BaseRecord $metadataRecord, string $source,
+        array $settings
+    ): void {
         if (!isset($data['institution']) && !empty($settings['institution'])) {
             $data['institution'] = $settings['institution'];
         }
@@ -2220,10 +2407,11 @@ class SolrUpdater
 
         $data['first_indexed']
             = MetadataUtils::formatTimestamp(
-                $record['created']->toDateTime()->getTimestamp()
+                $this->db ? $this->db->getUnixTime($record['created'])
+                    : $record['created']
             );
         $data['last_indexed'] = MetadataUtils::formatTimestamp(
-            $record['date']->toDateTime()->getTimestamp()
+            $this->db ? $this->db->getUnixTime($record['date']) : $record['date']
         );
         if (!isset($data['fullrecord'])) {
             $data['fullrecord'] = $metadataRecord->toXML();
@@ -2247,54 +2435,18 @@ class SolrUpdater
             }
         }
 
-        if ($hiddenComponent) {
-            $data['hidden_component_boolean'] = true;
-        }
+        $this->normalizeFields($data);
+    }
 
-        // Work identification keys
-        if ($this->workKeysField
-            && $workIds = $metadataRecord->getWorkIdentificationData()
-        ) {
-            $keys = [];
-            foreach ($workIds['titles'] ?? [] as $titleData) {
-                $title = MetadataUtils::normalizeKey(
-                    $titleData['value'],
-                    $this->unicodeNormalizationForm
-                );
-                if ('uniform' === $titleData['type']) {
-                    $keys[] = "UT $title";
-                } else {
-                    foreach ($workIds['authors'] ?? [] as $authorData) {
-                        $author = MetadataUtils::normalizeKey(
-                            $authorData['value'],
-                            $this->unicodeNormalizationForm
-                        );
-                        $keys[] = "AT $author $title";
-                    }
-                }
-            }
-            foreach ($workIds['titlesAltScript'] ?? [] as $titleData) {
-                $title = MetadataUtils::normalizeKey(
-                    $titleData['value'],
-                    $this->unicodeNormalizationForm
-                );
-                if ('uniform' === $titleData['type']) {
-                    $keys[] = "UT $title";
-                } else {
-                    foreach ($workIds['authorsAltScript'] ?? [] as $authorData) {
-                        $author = MetadataUtils::normalizeKey(
-                            $authorData['value'],
-                            $this->unicodeNormalizationForm
-                        );
-                        $keys[] = "AT $author $title";
-                    }
-                }
-            }
-            if ($keys) {
-                $data[$this->workKeysField] = $keys;
-            }
-        }
-
+    /**
+     * Normalize and clean up fields
+     *
+     * @param array $data Field array
+     *
+     * @return void
+     */
+    protected function normalizeFields(array &$data)
+    {
         foreach ($data as $key => &$values) {
             if (is_array($values)) {
                 foreach ($values as $key2 => &$value) {
@@ -2320,19 +2472,6 @@ class SolrUpdater
                 unset($data[$key]);
             }
         }
-
-        if (!empty($this->warningsField)) {
-            $warnings = array_merge(
-                $warnings, $metadataRecord->getProcessingWarnings()
-            );
-            if ($warnings) {
-                $data[$this->warningsField] = $warnings;
-            }
-        }
-
-        $this->enrich($source, $settings, $metadataRecord, $data, 'final');
-
-        return $data;
     }
 
     /**
@@ -2397,8 +2536,8 @@ class SolrUpdater
     /**
      * Merge Solr records into a merged record
      *
-     * @param array $records Array of records to merge including the Mongo record and
-     *                       Solr array
+     * @param array $records Array of records to merge including the database record
+     *                       and Solr array
      *
      * @return array Merged Solr array
      */
@@ -2492,24 +2631,26 @@ class SolrUpdater
     }
 
     /**
-     * Copy configured fields from merged record to children
+     * Copy configured fields from merged record to the member records
      *
      * @param array $merged  Merged record
-     * @param array $records Array of child records
+     * @param array $records Array of member records
      *
      * @return void
      */
-    protected function copyMergedDataToChildren($merged, &$records)
+    protected function copyMergedDataToMembers($merged, &$records)
     {
         foreach ($this->copyFromMergedRecord as $copyField) {
             if (empty($merged[$copyField])) {
                 continue;
             }
-            foreach ($records as &$child) {
-                $child['solr'][$copyField] = array_unique(
-                    array_merge(
-                        (array)($child['solr'][$copyField] ?? []),
-                        (array)$merged[$copyField]
+            foreach ($records as &$member) {
+                $member['solr'][$copyField] = array_values(
+                    array_unique(
+                        array_merge(
+                            (array)($member['solr'][$copyField] ?? []),
+                            (array)$merged[$copyField]
+                        )
                     )
                 );
             }
@@ -2517,93 +2658,28 @@ class SolrUpdater
     }
 
     /**
-     * Compare given record with the already one in Solr
+     * Copy configured fields from a parent record to the child records
      *
-     * @param array  $record  Record
-     * @param string $logfile Log file where results are written
+     * This may add duplicate fields.
      *
-     * @throws \Exception
+     * @param array $parent Parent record
+     * @param array $child  Child record array
+     *
      * @return void
      */
-    protected function compareWithSolrRecord($record, $logfile)
+    protected function copyParentDataToChild($parent, &$child)
     {
-        $ignoreFields = [
-            'allfields', 'allfields_unstemmed', 'fulltext', 'fulltext_unstemmed',
-            'spelling', 'spellingShingle', 'authorStr', 'author_facet',
-            'publisherStr', 'publishDateSort', 'topic_browse', 'hierarchy_browse',
-            'first_indexed', 'last_indexed', '_version_',
-            'fullrecord', 'title_full_unstemmed', 'title_fullStr',
-            'author_additionalStr'
-        ];
-
-        if (isset($this->config['Solr']['ignore_in_comparison'])) {
-            $ignoreFields = array_merge(
-                $ignoreFields,
-                explode(',', $this->config['Solr']['ignore_in_comparison'])
-            );
-        }
-
-        if (!isset($this->config['Solr']['search_url'])) {
-            throw new \Exception('search_url not set in ini file Solr section');
-        }
-
-        $this->request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
-        $url = $this->config['Solr']['search_url'];
-        $url .= '?q=id:"' . urlencode($record['id']) . '"&wt=json';
-        $this->request->setUrl($url);
-
-        $response = $this->request->send();
-        if ($response->getStatus() != 200) {
-            $this->log->logInfo(
-                'compareWithSolrRecord',
-                "Could not fetch record (url $url), status code "
-                    . $response->getStatus()
-            );
-            return;
-        }
-
-        $solrResponse = json_decode($response->getBody(), true);
-        $solrRecord = $solrResponse['response']['docs'][0]
-            ?? [];
-
-        $differences = '';
-        $allFields = array_unique(
-            array_merge(array_keys($record), array_keys($solrRecord))
-        );
-        $allFields = array_diff($allFields, $ignoreFields);
-        foreach ($allFields as $field) {
-            if (!isset($solrRecord[$field])
-                || !isset($record[$field])
-                || $record[$field] != $solrRecord[$field]
-            ) {
-                $valueDiffs = '';
-
-                $values = (array)($record[$field] ?? []);
-                $solrValues = (array)($solrRecord[$field] ?? []);
-
-                foreach ($solrValues as $solrValue) {
-                    if (!in_array($solrValue, $values)) {
-                        $valueDiffs .= "--- $solrValue" . PHP_EOL;
-                    }
-                }
-                foreach ($values as $value) {
-                    if (!in_array($value, $solrValues)) {
-                        $valueDiffs .= "+++ $value " . PHP_EOL;
-                    }
-                }
-
-                if ($valueDiffs) {
-                    $differences .= "$field:" . PHP_EOL . $valueDiffs;
-                }
+        foreach ($this->copyFromParentRecord as $copyField) {
+            if (empty($parent[$copyField])) {
+                continue;
             }
-        }
-        if ($differences) {
-            $msg = "Record {$record['id']} would be changed: " . PHP_EOL
-                . $differences . PHP_EOL;
-            if ($logfile == '-') {
-                echo $msg;
+            if (empty($child[$copyField])) {
+                $child[$copyField] = (array)$parent[$copyField];
             } else {
-                file_put_contents($logfile, $msg, FILE_APPEND);
+                $child[$copyField] = array_merge(
+                    (array)($child[$copyField] ?? []),
+                    (array)$parent[$copyField]
+                );
             }
         }
     }
@@ -3061,19 +3137,6 @@ class SolrUpdater
     }
 
     /**
-     * Reconnect to the Mongo database after forking to avoid trouble with multiple
-     * processes sharing the connection.
-     *
-     * Public visibility so that the worker init can call this
-     *
-     * @return void
-     */
-    public function reconnectDatabase()
-    {
-        $this->db->reconnectDatabase();
-    }
-
-    /**
      * Create a Solr id field from a record id
      *
      * @param string $recordId Record id including a source prefix
@@ -3097,7 +3160,7 @@ class SolrUpdater
     }
 
     /**
-     * Parse source parameter to Mongo selectors
+     * Parse source parameter to database selectors
      *
      * @param string $sourceIds A single source id or a comma-separated list of
      *                          sources or exclusion filters
@@ -3118,7 +3181,7 @@ class SolrUpdater
             }
             if (strncmp($source, '-', 1) === 0) {
                 if (preg_match('/^-\/(.+)\/$/', $source, $matches)) {
-                    $regex = new \MongoDB\BSON\Regex($matches[1]);
+                    $regex = new \RecordManager\Base\Database\Regex($matches[1]);
                     $sourceExclude[] = [
                         'source_id' => $regex
                     ];
@@ -3191,5 +3254,35 @@ class SolrUpdater
             $value = mb_substr($value, 0, $foundLimit, 'UTF-8');
         }
         return $value;
+    }
+
+    /**
+     * Get a unix timestamp for the update start time
+     *
+     * @param string $fromDate      User-given start date
+     * @param string $lastUpdateKey Last index update key in database
+     *
+     * @return int|null
+     */
+    protected function getStartTimestamp($fromDate, $lastUpdateKey)
+    {
+        if (null !== $fromDate) {
+            if ($fromDate) {
+                return strtotime($fromDate);
+            }
+        } else {
+            if (!$lastUpdateKey) {
+                return null;
+            }
+            $state = $this->db->getState($lastUpdateKey);
+            if (null !== $state) {
+                // Back-compatibility check:
+                if (is_a($state['value'], 'MongoDB\BSON\UTCDateTime')) {
+                    return $state['value']->toDateTime()->getTimestamp();
+                }
+                return $state['value'];
+            }
+        }
+        return null;
     }
 }

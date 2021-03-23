@@ -23,7 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Controller;
 
@@ -36,7 +36,7 @@ use RecordManager\Base\Utils\PerformanceCounter;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class MarkForUpdate extends AbstractBase
 {
@@ -64,33 +64,36 @@ class MarkForUpdate extends AbstractBase
         if ($singleId) {
             $params['_id'] = $singleId;
         }
-        $records = $this->db->findRecords($params);
         $total = $this->db->countRecords($params);
         $count = 0;
-
         $this->logger->logInfo(
             'markForUpdate', "Marking $total records for update from '$sourceId'"
         );
         $pc = new PerformanceCounter();
-        foreach ($records as $record) {
-            $this->db->updateRecord(
-                $record['_id'],
-                [
-                    'updated' => $this->db->getTimestamp()
-                ]
-            );
 
-            ++$count;
-            if ($count % 1000 == 0) {
-                $pc->add($count);
-                $avg = $pc->getSpeed();
-                $this->logger->logInfo(
-                    'markForUpdate',
-                    "$count records marked for update from '$sourceId', "
-                    . "$avg records/sec"
+        $this->db->iterateRecords(
+            $params,
+            [],
+            function ($record) use (&$count, $pc, $sourceId) {
+                $this->db->updateRecord(
+                    $record['_id'],
+                    [
+                        'updated' => $this->db->getTimestamp()
+                    ]
                 );
+
+                ++$count;
+                if ($count % 1000 == 0) {
+                    $pc->add($count);
+                    $avg = $pc->getSpeed();
+                    $this->logger->logInfo(
+                        'markForUpdate',
+                        "$count records marked for update from '$sourceId', "
+                        . "$avg records/sec"
+                    );
+                }
             }
-        }
+        );
         $this->logger->logInfo(
             'markForUpdate',
             "Completed with $count records marked for update from '$sourceId'"

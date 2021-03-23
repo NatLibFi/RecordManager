@@ -23,7 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Controller;
 
@@ -36,7 +36,7 @@ use RecordManager\Base\Utils\PerformanceCounter;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class Suppress extends AbstractBase
 {
@@ -72,7 +72,6 @@ class Suppress extends AbstractBase
             } else {
                 $params['source_id'] = $source;
             }
-            $records = $this->db->findRecords($params);
             $total = $this->db->countRecords($params);
             $count = 0;
 
@@ -80,28 +79,35 @@ class Suppress extends AbstractBase
                 'suppress', "Processing $total records from '$source'"
             );
             $pc = new PerformanceCounter();
-            foreach ($records as $record) {
-                $record['suppressed'] = true;
-                if ($settings['dedup'] && isset($record['dedup_id'])) {
-                    $dedupHandler->removeFromDedupRecord(
-                        $record['dedup_id'], $record['_id']
-                    );
-                    unset($record['dedup_id']);
-                }
-                $record['update_needed'] = false;
-                $record['updated'] = $this->db->getTimestamp();
-                $this->db->saveRecord($record);
+            $this->db->iterateRecords(
+                $params,
+                [],
+                function ($record) use ($settings, $dedupHandler, &$count, $pc,
+                    $source
+                ) {
+                    $record['suppressed'] = true;
+                    if ($settings['dedup'] && isset($record['dedup_id'])) {
+                        $dedupHandler->removeFromDedupRecord(
+                            $record['dedup_id'], $record['_id']
+                        );
+                        unset($record['dedup_id']);
+                    }
+                    $record['update_needed'] = false;
+                    $record['updated'] = $this->db->getTimestamp();
+                    $this->db->saveRecord($record);
 
-                ++$count;
-                if ($count % 1000 == 0) {
-                    $pc->add($count);
-                    $avg = $pc->getSpeed();
-                    $this->logger->logInfo(
-                        'suppress',
-                        "$count records processed from '$source', $avg records/sec"
-                    );
+                    ++$count;
+                    if ($count % 1000 == 0) {
+                        $pc->add($count);
+                        $avg = $pc->getSpeed();
+                        $this->logger->logInfo(
+                            'suppress',
+                            "$count records processed from '$source'"
+                                . ", $avg records/sec"
+                        );
+                    }
                 }
-            }
+            );
             $this->logger->logInfo(
                 'suppress',
                 "Completed with $count records processed from '$source'"

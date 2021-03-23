@@ -23,7 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Utils;
 
@@ -40,7 +40,7 @@ if (function_exists('pcntl_async_signals')) {
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class WorkerPoolManager
 {
@@ -405,17 +405,18 @@ class WorkerPoolManager
     {
         $msgLen = '';
         $received = 0;
+        $interrupted = 0;
         do {
             if ($checkParent) {
                 $this->checkParentIsAlive();
             }
             $read = [$socket];
-            $write = null;
-            $except = null;
-            $res = socket_select($read, $write, $except, $block ? 1000 : 0);
+            $write = [];
+            $except = [];
+            $res = socket_select($read, $write, $except, $block ? 5000 : 0);
             if (false === $res) {
                 $error = socket_last_error();
-                if (SOCKET_EINTR === $error) {
+                if (SOCKET_EINTR === $error || (++$interrupted < 10)) {
                     // Retry after an interrupted system call
                     continue;
                 }
@@ -430,6 +431,7 @@ class WorkerPoolManager
                 usleep(10);
                 continue;
             }
+            $interrupted = 0;
 
             $buffer = '';
             $result = socket_recv(
@@ -498,9 +500,9 @@ class WorkerPoolManager
             if ($checkParent) {
                 $this->checkParentIsAlive();
             }
-            $read = null;
+            $read = [];
             $write = [$socket];
-            $except = null;
+            $except = [];
             $res = socket_select($read, $write, $except, null);
             if (false === $res) {
                 throw new \Exception(

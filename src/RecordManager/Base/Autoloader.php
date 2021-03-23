@@ -23,7 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 
 /**
@@ -35,7 +35,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class Autoloader
 {
@@ -45,17 +45,17 @@ class Autoloader
      * @var array
      */
     protected $directories = [
-        '',
-        'src/RecordManager',
-        'src/RecordManager/Record'
+        __DIR__ . '/../..',
+        __DIR__ . '/..',
+        __DIR__ . '/../Record',
     ];
 
     /**
      * Autoloader instance
      *
-     * @var Autoloader
+     * @var Autoloader|null
      */
-    protected static $loader;
+    protected static $loader = null;
 
     /**
      * Get loader

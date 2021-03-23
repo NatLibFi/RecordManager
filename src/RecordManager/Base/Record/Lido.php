@@ -23,10 +23,11 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -38,7 +39,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class Lido extends Base
 {
@@ -119,13 +120,12 @@ class Lido extends Base
     /**
      * Return fields to be indexed in Solr
      *
-     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
-     *                                                  avoid database lookups for
-     *                                                  related records.
+     * @param Database $db Database connection. Omit to avoid database lookups for
+     *                     related records.
      *
      * @return array
      */
-    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
+    public function toSolrArray(Database $db = null)
     {
         $data = [];
 
@@ -172,8 +172,12 @@ class Lido extends Base
         $data['topic'] = $data['topic_facet'] = $this->getSubjectTerms();
         $data['material'] = $this->getEventMaterials($this->mainEvent);
 
-        $data['era'] = $data['era_facet']
-            = $this->getEventDisplayDate($this->mainEvent);
+        if ($dates = $this->getSubjectDisplayDates()) {
+            $data['era'] = $data['era_facet'] = $dates;
+        } elseif ($date = $this->getEventDisplayDate($this->mainEvent)) {
+            $data['era'] = $data['era_facet'] = $date;
+        }
+
         $data['geographic_facet'] = [];
         $eventPlace = $this->getEventDisplayPlace($this->usagePlaceEvent);
         if ($eventPlace) {
@@ -668,6 +672,31 @@ class Lido extends Base
     }
 
     /**
+     * Return the subject display dates
+     *
+     * @return array
+     */
+    protected function getSubjectDisplayDates()
+    {
+        $results = [];
+        foreach ($this->getSubjectNodes() as $subject) {
+            foreach ($subject->subjectDate as $date) {
+                if (!empty($date->displayDate)) {
+                    $str = trim(
+                        MetadataUtils::stripTrailingPunctuation(
+                            (string)$date->displayDate, '.'
+                        )
+                    );
+                    if ('' !== $str) {
+                        $results[] = $str;
+                    }
+                }
+            }
+        }
+        return $results;
+    }
+
+    /**
      * Return the subject display places
      *
      * @return array
@@ -757,6 +786,8 @@ class Lido extends Base
 
     /**
      * Get all XML fields
+     *
+     * A recursive method for fetching all relevant fields
      *
      * @param \SimpleXMLElement $xml The XML document
      *

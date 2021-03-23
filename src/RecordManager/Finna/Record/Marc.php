@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2020.
+ * Copyright (C) The National Library of Finland 2012-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -23,12 +23,11 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.1 GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Finna\Record;
 
-use MongoDB\BSON\UTCDateTime;
-use MongoDB\Collection;
+use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -40,7 +39,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class Marc extends \RecordManager\Base\Record\Marc
 {
@@ -122,13 +121,12 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Return fields to be indexed in Solr
      *
-     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
-     *                                                  avoid database lookups for
-     *                                                  related records.
+     * @param Database $db Database connection. Omit to avoid database lookups for
+     *                     related records.
      *
      * @return array
      */
-    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
+    public function toSolrArray(Database $db = null)
     {
         $data = parent::toSolrArray($db);
 
@@ -232,8 +230,9 @@ class Marc extends \RecordManager\Base\Record\Marc
                             's' => 1, 't' => 1
                         ]],
                         [self::GET_BOTH, '240', [
-                            'a' => 1, 'd' => 1, 'f' => 1, 'g' => 1, 'k' => 1,
-                            'l' => 1, 'n' => 1, 'p' => 1, 'r' => 1, 's' => 1
+                            'a' => 1, 'd' => 1, 'f' => 1, 'g' => 1, 'h' => 1,
+                            'k' => 1, 'l' => 1, 'm' => 1, 'n' => 1, 'o' => 1,
+                            'p' => 1, 'r' => 1, 's' => 1
                         ]],
                         [self::GET_BOTH, '243', [
                             'a' => 1, 'd' => 1, 'f' => 1, 'g' => 1, 'h' => 1,
@@ -723,9 +722,9 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Merge component parts to this record
      *
-     * @param Collection       $componentParts Component parts to be merged
-     * @param UTCDateTime|null $changeDate     Latest timestamp for the component
-     *                                         part set
+     * @param \Traversable $componentParts Component parts to be merged
+     * @param mixed        $changeDate     Latest database timestamp for the
+     *                                     component part set
      *
      * @return int Count of records merged
      */
@@ -1497,7 +1496,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                     $tag,
                     [
                         '015', '024', '025', '026', '027', '028', '031', '880',
-                        '952', '979'
+                        '900', '910', '911', '940', '952', '979'
                     ]
                 )
             ) {
@@ -1582,11 +1581,10 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getEraFacets()
     {
         $result = parent::getEraFacets();
-        $result = array_unique(
-            array_merge(
-                $result,
-                $this->get653WithSecondInd('4')
-            )
+        $result = array_merge(
+            $result,
+            $this->get653WithSecondInd('4'),
+            $this->getFieldsSubfields([[self::GET_NORMAL, '388', ['a' => 1]]])
         );
         return $result;
     }
@@ -1599,11 +1597,10 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getEras()
     {
         $result = parent::getEras();
-        $result = array_unique(
-            array_merge(
-                $result,
-                $this->get653WithSecondInd('4')
-            )
+        $result = array_merge(
+            $result,
+            $this->get653WithSecondInd('4'),
+            $this->getFieldsSubfields([[self::GET_NORMAL, '388', ['a' => 1]]])
         );
         return $result;
     }
@@ -1616,11 +1613,9 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getGenreFacets()
     {
         $result = parent::getGenreFacets();
-        $result = array_unique(
-            array_merge(
-                $result,
-                $this->get653WithSecondInd('6')
-            )
+        $result = array_merge(
+            $result,
+            $this->get653WithSecondInd('6')
         );
         return $result;
     }
@@ -1633,11 +1628,9 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getGenres()
     {
         $result = parent::getGenres();
-        $result = array_unique(
-            array_merge(
-                $result,
-                $this->get653WithSecondInd('6')
-            )
+        $result = array_merge(
+            $result,
+            $this->get653WithSecondInd('6')
         );
         return $result;
     }
@@ -1650,11 +1643,10 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getGeographicFacets()
     {
         $result = parent::getGeographicFacets();
-        $result = array_unique(
-            array_merge(
-                $result,
-                $this->get653WithSecondInd('5')
-            )
+        $result = array_merge(
+            $result,
+            $this->get653WithSecondInd('5'),
+            $this->getFieldsSubfields([[self::GET_NORMAL, '370', ['g' => 1]]])
         );
         return $result;
     }
@@ -1667,11 +1659,10 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected function getGeographicTopics()
     {
         $result = parent::getGeographicTopics();
-        $result = array_unique(
-            array_merge(
-                $result,
-                $this->get653WithSecondInd('5')
-            )
+        $result = array_merge(
+            $result,
+            $this->get653WithSecondInd('5'),
+            $this->getFieldsSubfields([[self::GET_NORMAL, '370', ['g' => 1]]])
         );
         return $result;
     }
@@ -1696,11 +1687,9 @@ class Marc extends \RecordManager\Base\Record\Marc
             ],
             false, true, true
         );
-        $result = array_unique(
-            array_merge(
-                $result,
-                $this->get653WithSecondInd([' ', '0', '1', '2', '3'])
-            )
+        $result = array_merge(
+            $result,
+            $this->get653WithSecondInd([' ', '0', '1', '2', '3'])
         );
         return $result;
     }
@@ -1712,11 +1701,9 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     protected function getTopics()
     {
-        $result = array_unique(
-            array_merge(
-                parent::getTopics(),
-                $this->get653WithSecondInd([' ', '0', '1', '2', '3'])
-            )
+        $result = array_merge(
+            parent::getTopics(),
+            $this->get653WithSecondInd([' ', '0', '1', '2', '3'])
         );
         return $result;
     }
@@ -1824,14 +1811,13 @@ class Marc extends \RecordManager\Base\Record\Marc
         $fieldSpecs = [
             '110' => ['a' => 1, 'b' => 1, 'e' => 1],
             '111' => ['a' => 1, 'b' => 1, 'e' => 1],
-            '610' => ['a' => 1],
             '710' => ['a' => 1, 'b' => 1, 'e' => 1],
             '711' => ['a' => 1, 'b' => 1, 'e' => 1]
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,
             [],
-            ['110', '111', '610', '710', '711'],
+            ['110', '111', '710', '711'],
             false
         );
     }
@@ -1873,9 +1859,6 @@ class Marc extends \RecordManager\Base\Record\Marc
                     $result[] = "(FI-MELINDA)$idNumber";
                     break;
                 }
-            } elseif (strncmp('(FI-MELINDA)', $id, 12) === 0) {
-                $result[] = $id;
-                break;
             }
         }
         return $result;

@@ -27,11 +27,11 @@
  * @author   Demian Katz <demian.katz@villanova.edu>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Harvest;
 
-use RecordManager\Base\Database\Database;
+use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -44,7 +44,7 @@ use RecordManager\Base\Utils\Logger;
  * @author   Demian Katz <demian.katz@villanova.edu>
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class OaiPmh extends Base
 {
@@ -215,7 +215,7 @@ class OaiPmh extends Base
     /**
      * Set a start date for the harvest (only harvest records AFTER this date).
      *
-     * @param string $date Start date (YYYY-MM-DD format).
+     * @param string|null $date Start date (YYYY-MM-DD format).
      *
      * @return void
      */

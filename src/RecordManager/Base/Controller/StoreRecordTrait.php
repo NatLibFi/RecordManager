@@ -23,7 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Controller;
 
@@ -36,7 +36,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 trait StoreRecordTrait
 {
@@ -46,6 +46,13 @@ trait StoreRecordTrait
      * @var string
      */
     protected $previousStoredId = '[none]';
+
+    /**
+     * Deduplication handler
+     *
+     * @var \RecordManager\Base\Deduplication\DedupHandlerInterface
+     */
+    protected $dedupHandler;
 
     /**
      * Save a record into the database. Used by e.g. file import and OAI-PMH
@@ -293,16 +300,21 @@ trait StoreRecordTrait
      */
     public function markRecordDeleted($record)
     {
+        $dedupId = $record['dedup_id'] ?? null;
         if (isset($record['dedup_id'])) {
-            $this->dedupHandler->removeFromDedupRecord(
-                $record['dedup_id'], $record['_id']
-            );
             unset($record['dedup_id']);
         }
         $record['deleted'] = true;
         $record['updated'] = $this->db->getTimestamp();
         $record['update_needed'] = false;
         $this->db->saveRecord($record);
+
+        // Save dedup record now that record's dedup_id is cleared
+        if (null !== $dedupId) {
+            $this->dedupHandler->removeFromDedupRecord(
+                $dedupId, $record['_id']
+            );
+        }
 
         // Mark host records updated too
         $sourceId = $record['source_id'];
@@ -339,14 +351,15 @@ trait StoreRecordTrait
     {
         // A single OAI-PMH record may have been split to multiple records. Find
         // all occurrences.
-        $records = $this->db->findRecords(
-            ['source_id' => $sourceId, 'oai_id' => $oaiID]
-        );
         $count = 0;
-        foreach ($records as $record) {
-            $this->markRecordDeleted($record);
-            ++$count;
-        }
+        $this->db->iterateRecords(
+            ['source_id' => $sourceId, 'oai_id' => $oaiID],
+            [],
+            function ($record) use (&$count) {
+                $this->markRecordDeleted($record);
+                ++$count;
+            }
+        );
         return $count;
     }
 }

@@ -24,12 +24,10 @@
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Finna\Record;
 
-use MongoDB\BSON\UTCDateTime;
-use MongoDB\Collection;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -40,16 +38,16 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 trait ForwardRecordTrait
 {
     /**
      * Merge component parts to this record
      *
-     * @param Collection       $componentParts Component parts to be merged
-     * @param UTCDateTime|null $changeDate     Latest timestamp for the component
-     *                                         part set
+     * @param \Traversable $componentParts Component parts to be merged
+     * @param mixed        $changeDate     Latest database timestamp for the
+     *                                     component part set
      *
      * @return int Count of records merged
      */

@@ -23,11 +23,13 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Database\Database;
+use RecordManager\Base\Database\DatabaseInterface;
+use RecordManager\Base\Database\Factory as DatabaseFactory;
+use RecordManager\Base\Deduplication\DedupHandlerInterface;
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -46,7 +48,7 @@ if (function_exists('pcntl_async_signals')) {
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 abstract class AbstractBase
 {
@@ -81,7 +83,7 @@ abstract class AbstractBase
     /**
      * Database
      *
-     * @var Database
+     * @var DatabaseInterface
      */
     protected $db;
 
@@ -124,15 +126,11 @@ abstract class AbstractBase
             = $this->readDataSourceSettings("$basePath/conf/datasources.ini");
 
         try {
-            $this->db = new Database(
-                $config['Mongo']['url'],
-                $config['Mongo']['database'],
-                $config['Mongo']
-            );
+            $this->db = DatabaseFactory::createDatabase($config);
         } catch (\Exception $e) {
             $this->logger->logFatal(
                 'startup',
-                'Failed to connect to MongoDB: ' . $e->getMessage()
+                'Failed to connect to database: ' . $e->getMessage()
             );
             throw $e;
         }
@@ -247,7 +245,7 @@ abstract class AbstractBase
     /**
      * Create a dedup handler
      *
-     * @return \RecordManager\Base\Deduplication\DedupHandler
+     * @return DedupHandlerInterface
      */
     protected function getDedupHandler()
     {
@@ -257,6 +255,11 @@ abstract class AbstractBase
             $this->db, $this->logger, $this->verbose, $this->basePath, $this->config,
             $this->dataSourceSettings, $this->recordFactory
         );
+        if (!($dedupHandler instanceof DedupHandlerInterface)) {
+            throw new \Exception(
+                'Dedup handler must implement DedupHandlerInterface'
+            );
+        }
         return $dedupHandler;
     }
 

@@ -23,11 +23,10 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Database\Database;
 use RecordManager\Base\Utils\PerformanceCounter;
 
 /**
@@ -37,7 +36,7 @@ use RecordManager\Base\Utils\PerformanceCounter;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class PurgeDeleted extends AbstractBase
 {
@@ -66,24 +65,32 @@ class PurgeDeleted extends AbstractBase
             'purgeDeletedRecords',
             "Creating record list$dateStr" . ($sourceId ? " for '$sourceId'" : '')
         );
-        $records = $this->db->findRecords($params);
         $total = $this->db->countRecords($params);
         $count = 0;
 
         $this->logger->logInfo('purgeDeletedRecords', "Purging $total records");
         $pc = new PerformanceCounter();
-        foreach ($records as $record) {
-            $this->db->deleteRecord($record['_id']);
-            ++$count;
-            if ($count % 1000 == 0) {
-                $pc->add($count);
-                $avg = $pc->getSpeed();
-                $this->logger->logInfo(
-                    'purgeDeletedRecords',
-                    "$count records purged, $avg records/sec"
-                );
+
+        do {
+            // Fetch a set of records at a time since the remaining set will be
+            // changing during this process.
+            $records = $this->db->findRecords($params);
+            $more = false;
+            foreach ($records as $record) {
+                $more = true;
+                $this->db->deleteRecord($record['_id']);
+                ++$count;
+                if ($count % 1000 == 0) {
+                    $pc->add($count);
+                    $avg = $pc->getSpeed();
+                    $this->logger->logInfo(
+                        'purgeDeletedRecords',
+                        "$count records purged, $avg records/sec"
+                    );
+                }
             }
-        }
+        } while ($more);
+
         $this->logger->logInfo(
             'purgeDeletedRecords', "Total $count records purged"
         );
@@ -103,25 +110,27 @@ class PurgeDeleted extends AbstractBase
         $this->logger->logInfo(
             'purgeDeletedRecords', "Creating dedup record list$dateStr"
         );
-        $records = $this->db->findDedups($params);
         $total = $this->db->countDedups($params);
         $count = 0;
-
         $this->logger
             ->logInfo('purgeDeletedRecords', "Purging $total dedup records");
         $pc = new PerformanceCounter();
-        foreach ($records as $record) {
-            $this->db->deleteDedup($record['_id']);
-            ++$count;
-            if ($count % 1000 == 0) {
-                $pc->add($count);
-                $avg = $pc->getSpeed();
-                $this->logger->logInfo(
-                    'purgeDeletedRecords',
-                    "$count dedup records purged, $avg records/sec"
-                );
+        $this->db->iterateDedups(
+            $params,
+            [],
+            function ($record) use (&$count, $pc) {
+                $this->db->deleteDedup($record['_id']);
+                ++$count;
+                if ($count % 1000 == 0) {
+                    $pc->add($count);
+                    $avg = $pc->getSpeed();
+                    $this->logger->logInfo(
+                        'purgeDeletedRecords',
+                        "$count dedup records purged, $avg records/sec"
+                    );
+                }
             }
-        }
+        );
         $this->logger->logInfo(
             'purgeDeletedRecords', "Total $count dedup records purged"
         );

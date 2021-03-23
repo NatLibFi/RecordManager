@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2020.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -23,10 +23,11 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Utils\DeweyCallNumber;
 use RecordManager\Base\Utils\LcCallNumber;
 use RecordManager\Base\Utils\Logger;
@@ -41,7 +42,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class Marc extends Base
 {
@@ -102,11 +103,29 @@ class Marc extends Base
      */
     protected $defaultGeoDisplayField = 'long_lat_display';
 
+    /**
+     * OCLC number patterns
+     *
+     * @var array
+     */
     protected $oclcNumPatterns = [
         '/\([Oo][Cc][Oo][Ll][Cc]\)[^0-9]*[0]*([0-9]+)/',
         '/ocm[0]*([0-9]+)[ ]*[0-9]*/',
         '/ocn[0]*([0-9]+).*/',
         '/on[0]*([0-9]+).*/',
+    ];
+
+    /**
+     * Patterns for system control numbers considered for unique identifiers
+     * (field 035a)
+     *
+     * @var array
+     */
+    protected $scnPatterns = [
+        '^\((CONSER|DLC|OCoLC)\).+',
+        '^\(EXLCZ\).+',     // Ex Libris Community Zone
+        '^\(EXLNZ-.+\).+',  // Ex Libris Network Zone
+        '^\(\w\w-\w+\).+',  // ISIL style
     ];
 
     /**
@@ -280,13 +299,12 @@ class Marc extends Base
     /**
      * Return fields to be indexed in Solr
      *
-     * @param \RecordManager\Base\Database\Database $db Database connection. Omit to
-     *                                                  avoid database lookups for
-     *                                                  related records.
+     * @param Database $db Database connection. Omit to avoid database lookups for
+     *                     related records.
      *
      * @return array
      */
-    public function toSolrArray(\RecordManager\Base\Database\Database $db = null)
+    public function toSolrArray(Database $db = null)
     {
         $data = [];
         $data['record_format'] = 'marc';
@@ -874,7 +892,7 @@ class Marc extends Base
             if ($field && !empty($field['s'])) {
                 $title = $this->getSubfield($field, 'a');
                 if ($forFiling) {
-                    $nonfiling = $this->getIndicator($field, 2);
+                    $nonfiling = (int)$this->getIndicator($field, 2);
                     if ($nonfiling > 0) {
                         $title = substr($title, $nonfiling);
                     }
@@ -948,6 +966,17 @@ class Marc extends Base
     {
         $arr = [];
         $form = $this->config['Site']['unicode_normalization_form'] ?? 'NFKC';
+        $f010 = $this->getField('010');
+        if ($f010) {
+            $lccn = MetadataUtils::normalizeKey($this->getSubfield($f010, 'a'));
+            if ($lccn) {
+                $arr[] = "(lccn)$lccn";
+            }
+            $nucmc = MetadataUtils::normalizeKey($this->getSubfield($f010, 'b'));
+            if ($nucmc) {
+                $arr[] = "(nucmc)$lccn";
+            }
+        }
         $nbn = $this->getField('015');
         if ($nbn) {
             $nr = MetadataUtils::normalizeKey(
@@ -1005,6 +1034,20 @@ class Marc extends Base
                 $arr[] = "($src)$nr";
             }
         }
+        foreach ($this->getFields('035') as $field) {
+            $nr = $this->getSubfield($field, 'a');
+            $match = false;
+            foreach ($this->scnPatterns as $pattern) {
+                if (preg_match("/$pattern/", $nr)) {
+                    $match = true;
+                    break;
+                }
+            }
+            if ($match) {
+                $arr[] = MetadataUtils::normalizeKey($nr);
+            }
+        }
+
         return $arr;
     }
 
@@ -2655,7 +2698,7 @@ class Marc extends Base
             $ind = ('130' == $tag || '730' == $tag) ? 1 : 2;
             if ($field && !empty($field['s'])) {
                 $title = $this->getSubfield($field, 'a');
-                $nonfiling = $this->getIndicator($field, $ind);
+                $nonfiling = (int)$this->getIndicator($field, $ind);
                 if ($nonfiling > 0) {
                     $title = substr($title, $nonfiling);
                 }
@@ -2671,7 +2714,7 @@ class Marc extends Base
                             continue;
                         }
                         $altTitle = $this->getSubfield($f880, 'a');
-                        $nonfiling = $this->getIndicator($f880, $ind);
+                        $nonfiling = (int)$this->getIndicator($f880, $ind);
                         if ($nonfiling > 0) {
                             $altTitle = substr($altTitle, $nonfiling);
                         }

@@ -23,11 +23,9 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Controller;
-
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Dump Record
@@ -36,7 +34,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class Dump extends AbstractBase
 {
@@ -53,13 +51,7 @@ class Dump extends AbstractBase
         if (!$recordID) {
             throw new \Exception('dump: record id must be specified');
         }
-        $records = $this->db->findRecords(['_id' => $recordID]);
-        foreach ($records as $record) {
-            $record['original_data'] = MetadataUtils::getRecordData($record, false);
-            $record['normalized_data'] = MetadataUtils::getRecordData($record, true);
-            if ($record['original_data'] == $record['normalized_data']) {
-                $record['normalized_data'] = '';
-            }
+        if ($record = $this->db->getRecord($recordID)) {
             print_r($record);
         }
     }

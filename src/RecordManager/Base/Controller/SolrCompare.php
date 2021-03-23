@@ -23,11 +23,11 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Solr\SolrUpdater;
+use RecordManager\Base\Solr\SolrComparer;
 
 /**
  * Solr Updater
@@ -36,7 +36,7 @@ use RecordManager\Base\Solr\SolrUpdater;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class SolrCompare extends AbstractBase
 {
@@ -54,12 +54,12 @@ class SolrCompare extends AbstractBase
      *
      * @return void
      */
-    public function launch($log, $fromDate = null, $sourceId = '', $singleId = '')
+    public function launch($log, $fromDate, $sourceId, $singleId)
     {
-        $updater = new SolrUpdater(
+        $comparer = new SolrComparer(
             $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
             $this->dataSourceSettings, $this->recordFactory
         );
-        $updater->updateRecords($fromDate, $sourceId, $singleId, false, false, $log);
+        $comparer->compareRecords($log, $fromDate, $sourceId, $singleId);
     }
 }

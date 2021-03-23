@@ -24,11 +24,12 @@
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Enrichment;
 
-use RecordManager\Base\Database\Database;
+use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Database\Factory as DatabaseFactory;
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -37,16 +38,16 @@ use RecordManager\Base\Utils\MetadataUtils;
  * Enrich biblio records with authority record data.
  *
  * This is a base class for enrichment from authority record data.
- * Authority records are retrieved from Mongo.
+ * Authority records are retrieved from the database.
  * Subclasses need to implement the 'enrich' method
- * (i.e. call enrichField with an URI and name of the Solr-field to enrich).
+ * (i.e. call enrichField with an URI and name of the Solr field to enrich).
  *
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 abstract class AuthEnrichment extends Enrichment
 {
@@ -71,17 +72,28 @@ abstract class AuthEnrichment extends Enrichment
     ) {
         parent::__construct($db, $logger, $config, $recordFactory);
 
-        $url = $config['AuthorityEnrichment']['url']
-            ?? $config['Mongo']['url'];
-        $database = $config['AuthorityEnrichment']['database']
-            ?? $config['Mongo']['database'];
+        // Copy main configuration and modify it with the AuthorityEnrichment
+        // settings
+        $dbConfig = $config;
+        $dbType = $dbConfig['Database']['backend'] ?? 'Mongo';
+
+        $connection = $config['AuthorityEnrichment']['connection']
+            ?? $config['AuthorityEnrichment']['url'] ?? '';
+        if ($connection) {
+            $dbConfig[$dbType]['connection'] = $connection;
+        }
+
+        if (!empty($config['AuthorityEnrichment']['database'])) {
+            $dbConfig[$dbType]['database']
+                = $config['AuthorityEnrichment']['database'];
+        }
 
         try {
-            $this->authorityDb = new Database($url, $database, $config['Mongo']);
+            $this->authorityDb = DatabaseFactory::createDatabase($dbConfig);
         } catch (\Exception $e) {
             $this->logger->logFatal(
                 'startup',
-                'Failed to connect to authority MongoDB: ' . $e->getMessage()
+                'Failed to connect to authority database: ' . $e->getMessage()
             );
             throw $e;
         }

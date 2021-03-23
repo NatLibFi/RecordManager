@@ -23,7 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Controller;
 
@@ -37,7 +37,7 @@ use RecordManager\Base\Utils\PerformanceCounter;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class Renormalize extends AbstractBase
 {
@@ -70,102 +70,109 @@ class Renormalize extends AbstractBase
             } else {
                 $params['source_id'] = $source;
             }
-            $records = $this->db->findRecords($params);
             $total = $this->db->countRecords($params);
             $count = 0;
-
             $this->logger->logInfo(
                 'renormalize', "Processing $total records from '$source'"
             );
             $pc = new PerformanceCounter();
-            foreach ($records as $record) {
-                $originalData = MetadataUtils::getRecordData($record, false);
-                $normalizedData = $originalData;
-                if (null !== $settings['normalizationXSLT']) {
-                    $origMetadataRecord = $this->recordFactory->createRecord(
+            $this->db->iterateRecords(
+                $params,
+                [],
+                function ($record) use ($settings, $pc, $dedupHandler, &$count,
+                    $source
+                ) {
+                    $originalData = MetadataUtils::getRecordData($record, false);
+                    $normalizedData = $originalData;
+                    if (null !== $settings['normalizationXSLT']) {
+                        $origMetadataRecord = $this->recordFactory->createRecord(
+                            $record['format'],
+                            $originalData,
+                            $record['oai_id'],
+                            $record['source_id']
+                        );
+                        $normalizedData = $settings['normalizationXSLT']->transform(
+                            $origMetadataRecord->toXML(),
+                            ['oai_id' => $record['oai_id']]
+                        );
+                    }
+
+                    $metadataRecord = $this->recordFactory->createRecord(
                         $record['format'],
-                        $originalData,
+                        $normalizedData,
                         $record['oai_id'],
                         $record['source_id']
                     );
-                    $normalizedData = $settings['normalizationXSLT']->transform(
-                        $origMetadataRecord->toXML(), ['oai_id' => $record['oai_id']]
-                    );
-                }
+                    $metadataRecord->normalize();
 
-                $metadataRecord = $this->recordFactory->createRecord(
-                    $record['format'],
-                    $normalizedData,
-                    $record['oai_id'],
-                    $record['source_id']
-                );
-                $metadataRecord->normalize();
-
-                if ($metadataRecord->getSuppressed()) {
-                    $record['deleted'] = true;
-                }
-
-                $hostIDs = $metadataRecord->getHostRecordIDs();
-                $normalizedData = $metadataRecord->serialize();
-                if ($settings['dedup'] && !$hostIDs && !$record['deleted']) {
-                    $record['update_needed'] = $dedupHandler
-                        ->updateDedupCandidateKeys($record, $metadataRecord);
-                } else {
-                    if (isset($record['title_keys'])) {
-                        unset($record['title_keys']);
+                    if ($metadataRecord->getSuppressed()) {
+                        $record['deleted'] = true;
                     }
-                    if (isset($record['isbn_keys'])) {
-                        unset($record['isbn_keys']);
-                    }
-                    if (isset($record['id_keys'])) {
-                        unset($record['id_keys']);
-                    }
-                    if (isset($record['dedup_id'])) {
-                        $dedupHandler->removeFromDedupRecord(
-                            $record['dedup_id'], $record['_id']
-                        );
-                        unset($record['dedup_id']);
-                    }
-                    $record['update_needed'] = false;
-                }
 
-                $record['original_data'] = $originalData;
-                if ($normalizedData == $originalData) {
-                    $record['normalized_data'] = '';
-                } else {
-                    $record['normalized_data'] = $normalizedData;
-                }
-                $record['linking_id'] = $metadataRecord->getLinkingIDs();
-                if ($hostIDs) {
-                    $record['host_record_id'] = $hostIDs;
-                } elseif (isset($record['host_record_id'])) {
-                    unset($record['host_record_id']);
-                }
-                $record['updated'] = $this->db->getTimestamp();
-                $this->db->saveRecord($record);
+                    $hostIDs = $metadataRecord->getHostRecordIDs();
+                    $normalizedData = $metadataRecord->serialize();
+                    if ($settings['dedup'] && !$hostIDs && !$record['deleted']) {
+                        $record['update_needed'] = $dedupHandler
+                            ->updateDedupCandidateKeys($record, $metadataRecord);
+                    } else {
+                        if (isset($record['title_keys'])) {
+                            unset($record['title_keys']);
+                        }
+                        if (isset($record['isbn_keys'])) {
+                            unset($record['isbn_keys']);
+                        }
+                        if (isset($record['id_keys'])) {
+                            unset($record['id_keys']);
+                        }
+                        if (isset($record['dedup_id'])) {
+                            $dedupHandler->removeFromDedupRecord(
+                                $record['dedup_id'], $record['_id']
+                            );
+                            unset($record['dedup_id']);
+                        }
+                        $record['update_needed'] = false;
+                    }
 
-                if ($this->verbose) {
-                    echo "Metadata for record {$record['_id']}: \n";
-                    $record['normalized_data']
-                        = MetadataUtils::getRecordData($record, true);
-                    $record['original_data']
-                        = MetadataUtils::getRecordData($record, false);
-                    if ($record['normalized_data'] === $record['original_data']) {
+                    $record['original_data'] = $originalData;
+                    if ($normalizedData == $originalData) {
                         $record['normalized_data'] = '';
+                    } else {
+                        $record['normalized_data'] = $normalizedData;
                     }
-                    print_r($record);
-                }
+                    $record['linking_id'] = $metadataRecord->getLinkingIDs();
+                    if ($hostIDs) {
+                        $record['host_record_id'] = $hostIDs;
+                    } elseif (isset($record['host_record_id'])) {
+                        unset($record['host_record_id']);
+                    }
+                    $record['updated'] = $this->db->getTimestamp();
+                    $this->db->saveRecord($record);
 
-                ++$count;
-                if ($count % 1000 == 0) {
-                    $pc->add($count);
-                    $avg = $pc->getSpeed();
-                    $this->logger->logInfo(
-                        'renormalize',
-                        "$count records processed from '$source', $avg records/sec"
-                    );
+                    if ($this->verbose) {
+                        echo "Metadata for record {$record['_id']}: \n";
+                        $record['normalized_data']
+                            = MetadataUtils::getRecordData($record, true);
+                        $record['original_data']
+                            = MetadataUtils::getRecordData($record, false);
+                        if ($record['normalized_data'] === $record['original_data']
+                        ) {
+                            $record['normalized_data'] = '';
+                        }
+                        print_r($record);
+                    }
+
+                    ++$count;
+                    if ($count % 1000 == 0) {
+                        $pc->add($count);
+                        $avg = $pc->getSpeed();
+                        $this->logger->logInfo(
+                            'renormalize',
+                            "$count records processed from '$source'"
+                                . ", $avg records/sec"
+                        );
+                    }
                 }
-            }
+            );
             $this->logger->logInfo(
                 'renormalize',
                 "Completed with $count records processed from '$source'"

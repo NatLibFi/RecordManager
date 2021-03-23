@@ -25,7 +25,7 @@
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Eero Heikkinen <eero.heikkinen@gmail.com>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/src/RecordManager/Base/Autoloader.php';

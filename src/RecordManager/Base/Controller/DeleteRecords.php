@@ -23,7 +23,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Controller;
 
@@ -36,12 +36,12 @@ use RecordManager\Base\Utils\PerformanceCounter;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/KDK-Alli/RecordManager
+ * @link     https://github.com/NatLibFi/RecordManager
  */
 class DeleteRecords extends AbstractBase
 {
     /**
-     * Delete records of a single data source from the Mongo database
+     * Delete records of a single data source from the database
      *
      * @param string  $sourceId Source ID
      * @param boolean $force    Force deletion even if dedup is enable for the source
@@ -76,32 +76,35 @@ class DeleteRecords extends AbstractBase
             ->logInfo('deleteRecords', "Creating record list for '$sourceId'");
 
         $params = ['source_id' => $sourceId];
-        $records = $this->db->findRecords($params);
         $total = $this->db->countRecords($params);
         $count = 0;
-
         $this->logger->logInfo(
             'deleteRecords', "Deleting $total records from '$sourceId'"
         );
         $pc = new PerformanceCounter();
-        foreach ($records as $record) {
-            if (isset($record['dedup_id'])) {
-                $this->dedupHandler->removeFromDedupRecord(
-                    $record['dedup_id'], $record['_id']
-                );
-            }
-            $this->db->deleteRecord($record['_id']);
+        $dedupHandler = $this->getDedupHandler();
+        $this->db->iterateRecords(
+            $params,
+            [],
+            function ($record) use (&$count, $pc, $sourceId, $dedupHandler) {
+                if (isset($record['dedup_id'])) {
+                    $dedupHandler->removeFromDedupRecord(
+                        $record['dedup_id'], $record['_id']
+                    );
+                }
+                $this->db->deleteRecord($record['_id']);
 
-            ++$count;
-            if ($count % 1000 == 0) {
-                $pc->add($count);
-                $avg = $pc->getSpeed();
-                $this->logger->logInfo(
-                    'deleteRecords',
-                    "$count records deleted from '$sourceId', $avg records/sec"
-                );
+                ++$count;
+                if ($count % 1000 == 0) {
+                    $pc->add($count);
+                    $avg = $pc->getSpeed();
+                    $this->logger->logInfo(
+                        'deleteRecords',
+                        "$count records deleted from '$sourceId', $avg records/sec"
+                    );
+                }
             }
-        }
+        );
         $this->logger->logInfo(
             'deleteRecords', "Completed with $count records deleted from '$sourceId'"
         );
