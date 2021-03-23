@@ -252,4 +252,19 @@ class Ead3RecordDriverTest extends \RecordManagerTest\Base\Record\RecordTest
         );
     }
 
+    /**
+     * Test YKSA EAD3 record handling
+     *
+     * @return void
+     */
+    public function testYksa2()
+    {
+        // <unitdate>1931</unitdate>
+        $fields = $this->createRecord(Ead3::class, 'yksa2.xml', [], 'finna')->toSolrArray();
+        $this->assertContains(
+            '[1931-01-01 TO 1931-12-31]',
+            $fields['search_daterange_mv']
+        );
+    }
+
 }

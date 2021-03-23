@@ -94,7 +94,8 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $data['search_daterange_mv'][] = $data['unit_daterange']
                 = MetadataUtils::dateRangeToStr($unitDateRange);
 
-            $data['main_date_str'] = MetadataUtils::extractYear($unitDateRange[0]);
+            $data['main_date_str'] = $data['era_facet']
+                = MetadataUtils::extractYear($unitDateRange[0]);
             $data['main_date'] = $this->validateDate($unitDateRange[0]);
 
             if (!$startDateUnknown) {
@@ -489,9 +490,11 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             if (!empty($normal)) {
                 return $this->parseDateRange($normal);
             } else {
-                return $this->parseDateRange(
-                    str_replace('-', '/', (string)$unitdate)
-                );
+                $date = str_replace('-', '/', (string)$unitdate);
+                if (false === strpos($date, '/')) {
+                    $date = "${date}/${date}";
+                }
+                return $this->parseDateRange($date);
             }
         }
         return null;
