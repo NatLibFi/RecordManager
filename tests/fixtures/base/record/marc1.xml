@@ -24,6 +24,10 @@
   <datafield tag="041" ind1="0" ind2=" ">
     <subfield code="a">fin</subfield>
   </datafield>
+  <datafield tag="050" ind1="0" ind2=" ">
+    <subfield code="a">QC861.2</subfield>
+    <subfield code="b">.B36</subfield>
+  </datafield>
   <datafield tag="084" ind1=" " ind2=" ">
     <subfield code="a">38.04</subfield>
     <subfield code="2">ekl</subfield>

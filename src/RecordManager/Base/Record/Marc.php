@@ -487,17 +487,7 @@ class Marc extends Base
             $data['title_full'] = $this->getFieldSubfields('240');
         }
 
-        $data['series'] = $this->getFieldsSubfields(
-            [
-                [self::GET_BOTH, '440', ['a' => 1]],
-                [self::GET_BOTH, '490', ['a' => 1]],
-                [self::GET_BOTH, '800', [
-                    'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'f' => 1, 'p' => 1,
-                    'q' => 1, 't' => 1
-                ]],
-                [self::GET_BOTH, '830', ['a' => 1, 'p' => 1]]
-            ]
-        );
+        $data['series'] = $this->getSeries();
 
         $data['publisher'] = $this->getFieldsSubfields(
             [
@@ -585,25 +575,19 @@ class Marc extends Base
                 [self::GET_NORMAL, '050', ['a' => 1]]
             ]
         );
-        $values = $this->getFirstFieldSubfields(
+        $value = $this->getFirstFieldSubfields(
             [
                 [self::GET_NORMAL, '090', ['a' => 1]],
                 [self::GET_NORMAL, '050', ['a' => 1]]
             ]
         );
-        if ($values) {
-            if (preg_match('/^([A-Z]+)/', strtoupper($values[0]), $matches)) {
+        if ($value) {
+            if (preg_match('/^([A-Z]+)/', strtoupper($value), $matches)) {
                 $data['callnumber-subject'] = $matches[1];
             }
 
-            $dotPos = strstr($values[0], '.');
-            if ($dotPos > 0) {
-                $data['callnumber-label'] = strtoupper(
-                    substr($values[1], 0, $dotPos)
-                );
-            } else {
-                $data['callnumber-label'] = strtoupper($values[0]);
-            }
+            list($preDotPart) = explode('.', $value, 2);
+            $data['callnumber-label'] = strtoupper($preDotPart);
         }
         $data['callnumber-raw'] = array_map(
             'strtoupper',
@@ -619,6 +603,7 @@ class Marc extends Base
             $cn = new LcCallNumber($callnumber);
             if ($cn->isValid()) {
                 $data['callnumber-sort'] = $cn->getSortKey();
+                break;
             }
         }
         if (empty($data['callnumber-sort']) && !empty($data['callnumber-raw'])) {
@@ -1930,7 +1915,7 @@ class Marc extends Base
                     if ($stripTrailingPunctuation) {
                         $result = MetadataUtils::stripTrailingPunctuation($result);
                     }
-                    break;
+                    break 2;
                 }
             }
         }
@@ -3018,5 +3003,25 @@ class Marc extends Base
     protected function formatAuthorIdWithRole($id, $role)
     {
         return '';
+    }
+
+    /**
+     * Get series information
+     *
+     * @return array
+     */
+    protected function getSeries()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [self::GET_BOTH, '440', ['a' => 1]],
+                [self::GET_BOTH, '490', ['a' => 1]],
+                [self::GET_BOTH, '800', [
+                    'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'f' => 1, 'p' => 1,
+                    'q' => 1, 't' => 1
+                ]],
+                [self::GET_BOTH, '830', ['a' => 1, 'p' => 1]]
+            ]
+        );
     }
 }

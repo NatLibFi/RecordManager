@@ -156,6 +156,7 @@ class MarcTest extends \RecordManagerTest\Base\Record\RecordTest
             'callnumber-raw' => [
                 '38.04',
                 '38.03',
+                'QC861.2 .B36',
             ],
             'callnumber-sort' => '38.04',
             'topic' => [
@@ -204,17 +205,24 @@ class MarcTest extends \RecordManagerTest\Base\Record\RecordTest
                 'fin',
             ],
             'classification_txt_mv' => [
+                'dlc qc861.2.b36',
+                'dlc QC861.2 .B36',
                 'ekl 38.04',
                 'ekl 38.04',
                 'ekl 38.03',
                 'ekl 38.03',
             ],
             'classification_str_mv' => [
+                'dlc qc861.2.b36',
+                'dlc QC861.2 .B36',
                 'ekl 38.04',
                 'ekl 38.04',
                 'ekl 38.03',
                 'ekl 38.03',
             ],
+            'callnumber-subject' => 'QC',
+            'callnumber-label' => 'QC861',
+            'callnumber-sort' => '38.04',
             'source_str_mv' => '__unit_test_no_source__',
             'datasource_str_mv' => [
                 '__unit_test_no_source__',

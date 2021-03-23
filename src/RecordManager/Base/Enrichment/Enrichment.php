@@ -251,7 +251,7 @@ abstract class Enrichment
             if ($try > 1) {
                 $this->logger->logWarning(
                     'getExternalData',
-                    "HTTP request for '$url' succeeded on attempt $try"
+                    "HTTP request for '$url' completed on attempt $try"
                 );
             }
             if (isset($this->requestsHandled[$host])) {

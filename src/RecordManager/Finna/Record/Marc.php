@@ -28,6 +28,7 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Utils\LcCallNumber;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -633,12 +634,45 @@ class Marc extends \RecordManager\Base\Record\Marc
                 [
                     [self::GET_NORMAL, '080', ['a' => 1, 'b' => 1]],
                     [self::GET_NORMAL, '084', ['a' => 1, 'b' => 1]],
+                ]
+            )
+        );
+        $data['callnumber-sort'] = '';
+        if (!empty($data['callnumber-raw'])) {
+            $data['callnumber-sort'] = $data['callnumber-raw'][0];
+        }
+        $lccn = array_map(
+            'strtoupper',
+            $this->getFieldsSubfields(
+                [
                     [self::GET_NORMAL, '050', ['a' => 1, 'b' => 1]]
                 ]
             )
         );
-        $data['callnumber-sort'] = empty($data['callnumber-raw'])
-            ? '' : $data['callnumber-raw'][0];
+        if ($lccn) {
+            $data['callnumber-raw'] = array_merge(
+                $data['callnumber-raw'],
+                $lccn
+            );
+            if (empty($data['callnumber-sort'])) {
+                // Try to find a valid call number
+                $firstCn = null;
+                foreach ($lccn as $callnumber) {
+                    $cn = new LcCallNumber($callnumber);
+                    if (null === $firstCn) {
+                        $firstCn = $cn;
+                    }
+                    if ($cn->isValid()) {
+                        $data['callnumber-sort'] = $cn->getSortKey();
+                        break;
+                    }
+                }
+                if (empty($data['callnumber-sort'])) {
+                    // No valid call number, take first
+                    $data['callnumber-sort'] = $cn->getSortKey();
+                }
+            }
+        }
 
         if ($rights = $this->getUsageRights()) {
             $data['usage_rights_str_mv'] = $rights;
@@ -1967,5 +2001,25 @@ class Marc extends \RecordManager\Base\Record\Marc
             false, true, true
         );
         return MetadataUtils::normalizeLanguageStrings($languages);
+    }
+
+    /**
+     * Get series information
+     *
+     * @return array
+     */
+    protected function getSeries()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [self::GET_BOTH, '440', ['a' => 1]],
+                [self::GET_BOTH, '490', ['a' => 1]],
+                [self::GET_BOTH, '800', [
+                    'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'f' => 1, 'p' => 1,
+                    'q' => 1, 't' => 1
+                ]],
+                [self::GET_BOTH, '830', ['a' => 1, 'v' => 1, 'n' => 1, 'p' => 1]]
+            ]
+        );
     }
 }
