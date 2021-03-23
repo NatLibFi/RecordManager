@@ -266,5 +266,4 @@ class Ead3RecordDriverTest extends \RecordManagerTest\Base\Record\RecordTest
             $fields['search_daterange_mv']
         );
     }
-
 }
