@@ -293,7 +293,7 @@ EOT;
                 if ($count > $maxRecords) {
                     // More records available, create resumptionToken
                     $token = $this->escape(
-                        implode('|', [$tokenBase, $count + $position])
+                        implode('|', [$tokenBase, $count + $position - 1])
                     );
                     echo <<<EOT
     <resumptionToken cursor="$position">$token</resumptionToken>
