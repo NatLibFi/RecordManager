@@ -67,6 +67,23 @@ class Lrmi extends Qdc
 
         $doc = $this->doc;
 
+        $title = (string)$doc->title;
+        foreach ($doc->title as $t) {
+            if ((string)$t->attributes()->lang === 'fi') {
+                $title = (string)$t;
+                break;
+            }
+        }
+        $data['title'] = $data['title_full'] = $data['title_short'] = $title;
+
+        $title = MetadataUtils::stripLeadingPunctuation($title);
+        $title = MetadataUtils::stripLeadingArticle($title);
+        // Again, just in case stripping the article affected this
+        $title = MetadataUtils::stripLeadingPunctuation($title);
+        $title = mb_strtolower($title, 'UTF-8');
+
+        $data['title_sort'] = $title;
+
         $languages = [];
         if (isset($doc->material)) {
             foreach ($doc->material as $material) {
