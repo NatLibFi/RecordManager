@@ -267,6 +267,15 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
 
+        foreach ($this->doc->did->origination->persname ?? [] as $name) {
+            $data['author'][] = $data['author_facet'][] = (string)$name;
+        }
+        foreach ($this->doc->did->origination->name ?? [] as $name) {
+            foreach ($name->part ?? [] as $part) {
+                $data['author'][] = $data['author_facet'][] = (string)$part;
+            }
+        }
+
         if (isset($doc->index->index->indexentry)) {
             foreach ($doc->index->index->indexentry as $indexentry) {
                 if (isset($indexentry->name->part)) {
@@ -348,6 +357,16 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $result[] = trim((string)$relation->relationentry);
         }
         return $result;
+    }
+
+    /**
+     * Get secondary authors
+     *
+     * @return array
+     */
+    protected function getSecondaryAuthors()
+    {
+        return [];
     }
 
     /**
