@@ -731,6 +731,12 @@ class Marc extends \RecordManager\Base\Record\Marc
             $data['center_coords'] = $data['center_coords'][0];
         }
 
+        $data['description'] = $this->getFieldsSubfields(
+            [
+                [self::GET_NORMAL, '520', ['a' => 1]],
+            ]
+        );
+
         return $data;
     }
 
