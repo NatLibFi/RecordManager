@@ -249,9 +249,7 @@ class MarcTest extends \RecordManagerTest\Base\Record\RecordTest
                 'testauth.(TEST)3',
             ],
             'topic_id_str_mv' => [],
-            'description' => [
-                'Summary field'
-            ],
+            'description' => 'Summary field',
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -461,7 +459,7 @@ class MarcTest extends \RecordManagerTest\Base\Record\RecordTest
                 'BIOTEST\\.12',
                 '(BIOTEST)1234',
             ],
-            'description' => [],
+            'description' => '',
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -656,7 +654,7 @@ class MarcTest extends \RecordManagerTest\Base\Record\RecordTest
             ],
             'format_ext_str_mv' => 'Map',
             'topic_id_str_mv' => [],
-            'description' => [],
+            'description' => '',
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -791,7 +789,7 @@ class MarcTest extends \RecordManagerTest\Base\Record\RecordTest
             'topic_id_str_mv' => [
                 'http://www.yso.fi/onto/yso/p8471',
             ],
-            'description' => [],
+            'description' => '',
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -921,7 +919,7 @@ class MarcTest extends \RecordManagerTest\Base\Record\RecordTest
             'topic_id_str_mv' => [
                 'http://www.yso.fi/onto/yso/p8471',
             ],
-            'description' => [],
+            'description' => '',
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
