@@ -82,6 +82,7 @@ class MarcTest extends RecordTest
                 'nc',
                 'rdacarrier',
                 '18. p. 2013',
+                'Summary field',
                 'oppaat',
                 'ft: kirjoittaminen',
                 'apurahat',
