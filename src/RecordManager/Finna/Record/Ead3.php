@@ -94,7 +94,8 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $data['search_daterange_mv'][] = $data['unit_daterange']
                 = MetadataUtils::dateRangeToStr($unitDateRange);
 
-            $data['main_date_str'] = MetadataUtils::extractYear($unitDateRange[0]);
+            $data['main_date_str'] = $data['era_facet']
+                = MetadataUtils::extractYear($unitDateRange[0]);
             $data['main_date'] = $this->validateDate($unitDateRange[0]);
 
             if (!$startDateUnknown) {
@@ -476,11 +477,24 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 if ($attributes->label
                     && (string)$attributes->label === 'Ajallinen kattavuus'
                 ) {
-                    return $this->parseDateRange(
+                    $date = $this->parseDateRange(
                         (string)$unitdate->attributes()->normal
                     );
-                    break;
+                    if (!$date['startDateUnknown'] && !$date['endDateUnknown']) {
+                        return $date;
+                    }
                 }
+            }
+            $unitdate = $this->doc->did->unitdate;
+            $normal = (string)$unitdate->attributes()->normal;
+            if (!empty($normal)) {
+                return $this->parseDateRange($normal);
+            } else {
+                $date = str_replace('-', '/', (string)$unitdate);
+                if (false === strpos($date, '/')) {
+                    $date = "${date}/${date}";
+                }
+                return $this->parseDateRange($date);
             }
         }
         return null;
@@ -498,8 +512,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (!$input || $input == '-' || false === strpos($input, '/')) {
             return null;
         }
-
-        $yearLimits = ['0000', '9999'];
 
         list($start, $end) = explode('/', $input);
 
@@ -574,6 +586,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         }
 
         $startDateUnknown = $startDate['unknown'];
+        $endDateUnknown = $endDate['unknown'];
 
         $startDate = $startDate['date'];
         $endDate = $endDate['date'];
@@ -590,7 +603,8 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
 
         return [
             'date' => [$startDate, $endDate],
-            'startDateUnknown' => $startDateUnknown
+            'startDateUnknown' => $startDateUnknown,
+            'endDateUnknown' => $endDateUnknown,
         ];
     }
 

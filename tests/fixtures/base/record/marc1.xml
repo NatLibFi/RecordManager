@@ -70,6 +70,9 @@
   <datafield tag="500" ind1=" " ind2=" ">
     <subfield code="a">18. p. 2013</subfield>
   </datafield>
+  <datafield tag="520" ind1=" " ind2=" ">
+    <subfield code="a">Summary field</subfield>
+  </datafield>
   <datafield tag="650" ind1=" " ind2="7">
     <subfield code="a">oppaat</subfield>
     <subfield code="2">eks</subfield>

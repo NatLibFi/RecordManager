@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManagerTest\Base\Record;
+namespace RecordManagerTest\Finna\Record;
 
 use RecordManager\Finna\Record\Ead3;
 
@@ -193,6 +193,36 @@ class Ead3RecordDriverTest extends \RecordManagerTest\Base\Record\RecordTest
     }
 
     /**
+     * Test AHAA EAD3 record handling
+     *
+     * @return void
+     */
+    public function testAhaa12()
+    {
+        // Prefer unitdate with label "Ajallinen kattavuus"
+        $fields = $this->createRecord(Ead3::class, 'ahaa12.xml', [], 'finna')->toSolrArray();
+        $this->assertContains(
+            '[1970-01-01 TO 1971-12-31]',
+            $fields['search_daterange_mv']
+        );
+    }
+
+    /**
+     * Test AHAA EAD3 record handling
+     *
+     * @return void
+     */
+    public function testAhaa13()
+    {
+        // Discard unitdate with label "Ajallinen kattavuus" when starttime or endtime is unknown
+        $fields = $this->createRecord(Ead3::class, 'ahaa13.xml', [], 'finna')->toSolrArray();
+        $this->assertContains(
+            '[1992-01-01 TO 1993-12-31]',
+            $fields['search_daterange_mv']
+        );
+    }
+
+    /**
      * Test FSD EAD3 record handling
      *
      * @return void
@@ -203,6 +233,36 @@ class Ead3RecordDriverTest extends \RecordManagerTest\Base\Record\RecordTest
         $fields = $this->createRecord(Ead3::class, 'fsd.xml', [], 'finna')->toSolrArray();
         $this->assertContains(
             '[2014-02-17 TO 2014-03-14]',
+            $fields['search_daterange_mv']
+        );
+    }
+
+    /**
+     * Test YKSA EAD3 record handling
+     *
+     * @return void
+     */
+    public function testYksa()
+    {
+        // <unitdate>1918-1931</unitdate>
+        $fields = $this->createRecord(Ead3::class, 'yksa.xml', [], 'finna')->toSolrArray();
+        $this->assertContains(
+            '[1918-01-01 TO 1931-12-31]',
+            $fields['search_daterange_mv']
+        );
+    }
+
+    /**
+     * Test YKSA EAD3 record handling
+     *
+     * @return void
+     */
+    public function testYksa2()
+    {
+        // <unitdate>1931</unitdate>
+        $fields = $this->createRecord(Ead3::class, 'yksa2.xml', [], 'finna')->toSolrArray();
+        $this->assertContains(
+            '[1931-01-01 TO 1931-12-31]',
             $fields['search_daterange_mv']
         );
     }
