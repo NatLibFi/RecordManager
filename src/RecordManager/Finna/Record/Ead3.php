@@ -360,16 +360,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     }
 
     /**
-     * Get secondary authors
-     *
-     * @return array
-     */
-    protected function getSecondaryAuthors()
-    {
-        return [];
-    }
-
-    /**
      * Get author identifiers
      *
      * @return array
