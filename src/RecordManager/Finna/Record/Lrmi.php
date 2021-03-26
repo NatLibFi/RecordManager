@@ -29,6 +29,7 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Lrmi record class
@@ -121,6 +122,35 @@ class Lrmi extends \RecordManager\Base\Record\Lrmi
         );
 
         return $data;
+    }
+
+    /**
+     * Return title
+     *
+     * @param bool $forFiling Whether the title is to be used in filing
+     *                        (e.g. sorting, non-filing characters should be removed)
+     *
+     * @return string
+     */
+    public function getTitle($forFiling = false)
+    {
+        $doc = $this->doc;
+        $title = (string)$doc->title;
+        foreach ($doc->title as $t) {
+            if ((string)$t->attributes()->lang === 'fi') {
+                $title = (string)$t;
+                break;
+            }
+        }
+        if ($forFiling) {
+            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = MetadataUtils::stripLeadingArticle($title);
+            // Again, just in case stripping the article affected this
+            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = mb_strtolower($title, 'UTF-8');
+
+        }
+        return $title;
     }
 
     /**
