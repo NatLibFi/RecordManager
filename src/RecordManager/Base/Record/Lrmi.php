@@ -93,8 +93,7 @@ class Lrmi extends Qdc
      */
     public function getTitle($forFiling = false)
     {
-        $doc = $this->doc;
-        $title = (string)$doc->title;
+        $title = (string)$this->doc->title;
         if ($forFiling) {
             $title = MetadataUtils::stripLeadingPunctuation($title);
             $title = MetadataUtils::stripLeadingArticle($title);
