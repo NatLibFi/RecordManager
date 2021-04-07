@@ -156,8 +156,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if ($this->doc->did->unitid) {
             $identifier = null;
             foreach ($this->doc->did->unitid as $i) {
-                $identifier = (string)$i;
-                if ($i->attributes()->label == 'Analoginen') {
+                $attr = $i->attributes();
+                if ((string)$attr->label === 'Tekninen'
+                    && $identifier = (string)$attr->identifier
+                ) {
                     break;
                 }
             }
