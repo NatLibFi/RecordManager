@@ -159,7 +159,7 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
             $unitId = '';
 
             if ($record->did->unitid) {
-                $firstId = null;
+                $firstId = '';
                 foreach ($record->did->unitid as $i) {
                     $attr = $i->attributes();
                     if (!isset($attr->identifier)) {
