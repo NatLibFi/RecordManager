@@ -49,7 +49,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
 {
     use AuthoritySupportTrait;
 
-    const UNIT_ID_RELATORS = ['tekninen'];
     const GEOGRAPHIC_SUBJECT_RELATORS = ['aihe', 'alueellinen kattavuus'];
     const SUBJECT_RELATORS = ['aihe'];
 
@@ -153,23 +152,12 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             = isset($data['online_boolean'])
             && !isset($this->doc->accessrestrict);
 
-        if ($this->doc->did->unitid) {
-            $identifier = null;
-            foreach ($this->doc->did->unitid as $i) {
-                $attr = $i->attributes();
-                if ((string)$attr->label === 'Tekninen'
-                    && $identifier = (string)$attr->identifier
-                ) {
-                    break;
-                }
-            }
-            if ($identifier) {
-                $p = strpos($identifier, '/');
-                $identifier = $p > 0
-                    ? substr($identifier, $p + 1)
-                    : $identifier;
-                $data['identifier'] = $identifier;
-            }
+        if ($identifier = $this->getUnitId()) {
+            $p = strpos($identifier, '/');
+            $identifier = $p > 0
+                ? substr($identifier, $p + 1)
+                : $identifier;
+            $data['identifier'] = $identifier;
         }
 
         if (isset($doc->did->dimensions)) {
@@ -311,11 +299,12 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      */
     protected function getUnitId()
     {
+        $unitIdLabel = $this->getDriverParam('unitIdLabel', null);
         if (isset($this->doc->did->unitid)) {
             foreach ($this->doc->did->unitid as $i) {
                 $attr = $i->attributes();
-                if ((string)$attr->label === 'Tekninen' || !isset($attr->label)
-                    && isset($attr->identifier)
+                if (isset($attr->identifier)
+                    && (!$unitIdLabel || (string)$attr->label === $unitIdLabel)
                 ) {
                     return (string)$attr->identifier;
                 }
