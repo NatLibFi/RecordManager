@@ -159,23 +159,31 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
             $unitId = '';
 
             if ($record->did->unitid) {
-                foreach ([true,false] as $checkLabel) {
-                    foreach ($record->did->unitid as $i) {
-                        $attr = $i->attributes();
-                        if (!isset($attr->identifier)) {
-                            continue;
-                        }
-                        if (!$checkLabel
-                            || (!$this->unitIdLabel
-                            || (string)$attr->label === $this->unitIdLabel)
-                        ) {
-                            $unitId = urlencode((string)$attr->identifier);
-                            if ($unitId != $this->archiveId) {
-                                $unitId = $this->archiveId . '_' . $unitId;
-                                break 2;
-                            }
+                $firstId = null;
+                foreach ($record->did->unitid as $i) {
+                    $attr = $i->attributes();
+                    if (!isset($attr->identifier)) {
+                        continue;
+                    }
+                    $id = urlencode((string)$attr->identifier);
+                    if (!$firstId) {
+                        $firstId = $id;
+                        if ($firstId != $this->archiveId) {
+                            $firstId = $this->archiveId . '_' . $firstId;
                         }
                     }
+                    if (!$this->unitIdLabel
+                        || (string)$attr->label === $this->unitIdLabel
+                    ) {
+                        $unitId = $id;
+                        if ($unitId != $this->archiveId) {
+                            $unitId = $this->archiveId . '_' . $unitId;
+                            break;
+                        }
+                    }
+                }
+                if (!$unitId) {
+                    $unitId = $firstId;
                 }
 
                 // This shouldn't happen:
