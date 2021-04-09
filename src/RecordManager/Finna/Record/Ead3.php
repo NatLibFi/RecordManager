@@ -301,12 +301,17 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     {
         $unitIdLabel = $this->getDriverParam('unitIdLabel', null);
         if (isset($this->doc->did->unitid)) {
-            foreach ($this->doc->did->unitid as $i) {
-                $attr = $i->attributes();
-                if (isset($attr->identifier)
-                    && (!$unitIdLabel || (string)$attr->label === $unitIdLabel)
-                ) {
-                    return (string)$attr->identifier;
+            foreach ([true,false] as $checkLabel) {
+                foreach ($this->doc->did->unitid as $i) {
+                    $attr = $i->attributes();
+                    if (!isset($attr->identifier)) {
+                        continue;
+                    }
+                    if (!$checkLabel
+                        || (!$unitIdLabel || (string)$attr->label === $unitIdLabel)
+                    ) {
+                        return (string)$attr->identifier;
+                    }
                 }
             }
         }
