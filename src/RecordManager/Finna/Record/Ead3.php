@@ -300,22 +300,23 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     protected function getUnitId()
     {
         $unitIdLabel = $this->getDriverParam('unitIdLabel', null);
+        $firstId = '';
         if (isset($this->doc->did->unitid)) {
-            foreach ([true,false] as $checkLabel) {
-                foreach ($this->doc->did->unitid as $i) {
-                    $attr = $i->attributes();
-                    if (!isset($attr->identifier)) {
-                        continue;
-                    }
-                    if (!$checkLabel
-                        || (!$unitIdLabel || (string)$attr->label === $unitIdLabel)
-                    ) {
-                        return (string)$attr->identifier;
-                    }
+            foreach ($this->doc->did->unitid as $i) {
+                $attr = $i->attributes();
+                if (!isset($attr->identifier)) {
+                    continue;
+                }
+                $id = (string)$attr->identifier;
+                if (!$firstId) {
+                    $firstId = $id;
+                }
+                if (!$unitIdLabel || (string)$attr->label === $unitIdLabel) {
+                    return $id;
                 }
             }
         }
-        return '';
+        return $firstId;
     }
 
     /**

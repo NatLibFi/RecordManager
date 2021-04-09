@@ -108,19 +108,20 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
         $this->agency
             = (string)$this->doc->control->maintenanceagency->agencycode;
 
-        foreach ([true,false] as $checkLabel) {
-            foreach ($this->doc->archdesc->did->unitid as $i) {
-                $attr = $i->attributes();
-                if (!isset($attr->identifier)) {
-                    continue;
-                }
-                if (!$checkLabel
-                    || (!$this->unitIdLabel
-                    || (string)$attr->label === $this->unitIdLabel)
-                ) {
-                    $this->archiveId = urlencode((string)$attr->identifier);
-                    break 2;
-                }
+        foreach ($this->doc->archdesc->did->unitid as $i) {
+            $attr = $i->attributes();
+            if (!isset($attr->identifier)) {
+                continue;
+            }
+            $id = urlencode((string)$attr->identifier);
+            if (!$this->archiveId) {
+                $this->archiveId = $id;
+            }
+            if (!$this->unitIdLabel
+                || (string)$attr->label === $this->unitIdLabel
+            ) {
+                $this->archiveId = $id;
+                break;
             }
         }
         foreach ($this->doc->archdesc->did->unittitle as $title) {
