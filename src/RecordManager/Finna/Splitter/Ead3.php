@@ -70,6 +70,9 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
     protected $archiveSubTitle = '';
     protected $repository = '';
 
+    // label-attribute of identifying unitid-element
+    protected $unitIdLabel = null;
+
     /**
      * Constructor
      *
@@ -84,6 +87,7 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
             $fields = explode(',', $params['nonInheritedFields']);
             $this->nonInheritedFields = array_flip($fields);
         }
+        $this->unitIdLabel = $params['unitIdLabel'] ?? null;
     }
 
     /**
@@ -104,13 +108,19 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
         $this->agency
             = (string)$this->doc->control->maintenanceagency->agencycode;
 
-        foreach ($this->doc->archdesc->did->unitid as $i) {
-            $attr = $i->attributes();
-            if (isset($attr->identifier)
-                && !isset($attr->label) || (string)$attr->label === 'Tekninen'
-            ) {
-                $this->archiveId = urlencode((string)$attr->identifier);
-                break;
+        foreach ([true,false] as $checkLabel) {
+            foreach ($this->doc->archdesc->did->unitid as $i) {
+                $attr = $i->attributes();
+                if (!isset($attr->identifier)) {
+                    continue;
+                }
+                if (!$checkLabel
+                    || (!$this->unitIdLabel
+                    || (string)$attr->label === $this->unitIdLabel)
+                ) {
+                    $this->archiveId = urlencode((string)$attr->identifier);
+                    break 2;
+                }
             }
         }
         foreach ($this->doc->archdesc->did->unittitle as $title) {
@@ -148,15 +158,21 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
             $unitId = '';
 
             if ($record->did->unitid) {
-                foreach ($record->did->unitid as $i) {
-                    $attr = $i->attributes();
-                    if ((!$attr->label || $attr->label == 'Tekninen')
-                        && isset($attr->identifier)
-                    ) {
-                        $unitId = urlencode((string)$attr->identifier);
-                        if ($unitId != $this->archiveId) {
-                            $unitId = $this->archiveId . '_' . $unitId;
-                            break;
+                foreach ([true,false] as $checkLabel) {
+                    foreach ($record->did->unitid as $i) {
+                        $attr = $i->attributes();
+                        if (!isset($attr->identifier)) {
+                            continue;
+                        }
+                        if (!$checkLabel
+                            || (!$this->unitIdLabel
+                            || (string)$attr->label === $this->unitIdLabel)
+                        ) {
+                            $unitId = urlencode((string)$attr->identifier);
+                            if ($unitId != $this->archiveId) {
+                                $unitId = $this->archiveId . '_' . $unitId;
+                                break 2;
+                            }
                         }
                     }
                 }
