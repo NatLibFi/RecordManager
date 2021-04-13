@@ -168,16 +168,12 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                     $id = urlencode((string)$attr->identifier);
                     if (!$firstId) {
                         $firstId = $id;
-                        if ($firstId != $this->archiveId) {
-                            $firstId = $this->archiveId . '_' . $firstId;
-                        }
                     }
                     if (!$this->unitIdLabel
                         || (string)$attr->label === $this->unitIdLabel
                     ) {
                         $unitId = $id;
                         if ($unitId != $this->archiveId) {
-                            $unitId = $this->archiveId . '_' . $unitId;
                             break;
                         }
                     }
@@ -186,9 +182,11 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
                     $unitId = $firstId;
                 }
 
-                // This shouldn't happen:
                 if ($unitId == '') {
+                    // This shouldn't happen:
                     $unitId = urlencode($this->archiveId . '_' . $this->currentPos);
+                } elseif ($unitId != $this->archiveId) {
+                    $unitId = $this->archiveId . '_' . $unitId;
                 }
             } else {
                 $unitId = $this->archiveId . '_' . $this->currentPos;
