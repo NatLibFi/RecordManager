@@ -784,7 +784,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $desc = [];
             foreach ($this->doc->scopecontent as $el) {
                 foreach ($el->p as $p) {
-                    $desc[] = trim(html_entity_decode((string)$p));
+                    $desc[] = str_replace(
+                        ["\r\n", "\n\r", "\r", "\n"], '   /   ',
+                        trim(html_entity_decode((string)$p))
+                    );
                 }
             }
             if (!empty($desc)) {
