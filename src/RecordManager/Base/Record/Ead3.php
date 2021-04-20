@@ -125,7 +125,6 @@ class Ead3 extends Ead
         $data['author'] = $this->getAuthors();
         $data['author_sort'] = reset($data['author']);
         $data['author_corporate'] = $this->getCorporateAuthors();
-        $data['author2'] = $this->getSecondaryAuthors();
         $data['geographic'] = $data['geographic_facet']
             = $this->getGeographicTopics();
         $data['topic'] = $data['topic_facet'] = $this->getTopics();
@@ -244,6 +243,11 @@ class Ead3 extends Ead
                 }
             }
         }
+        if (isset($this->doc->did->origination->persname)) {
+            foreach ($this->doc->did->origination->persname as $name) {
+                $result[] = trim((string)$name);
+            }
+        }
         return $result;
     }
 
@@ -272,22 +276,6 @@ class Ead3 extends Ead
                     $result[] = trim((string)$part);
                 }
             }
-        }
-        return $result;
-    }
-
-    /**
-     * Get secondary authors
-     *
-     * @return array
-     */
-    protected function getSecondaryAuthors()
-    {
-        $result = [];
-        if (!empty($this->doc->did->origination->persname)) {
-            $result[] = trim(
-                (string)$this->doc->did->origination->persname
-            );
         }
         return $result;
     }

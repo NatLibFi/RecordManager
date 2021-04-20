@@ -67,6 +67,10 @@ class Lrmi extends Qdc
 
         $doc = $this->doc;
 
+        $data['title'] = $data['title_full'] = $data['title_short']
+            = $this->getTitle();
+        $data['title_sort'] = $this->getTitle(true);
+
         $languages = [];
         if (isset($doc->material)) {
             foreach ($doc->material as $material) {
@@ -77,6 +81,27 @@ class Lrmi extends Qdc
             = MetadataUtils::normalizeLanguageStrings(array_unique($languages));
 
         return $data;
+    }
+
+    /**
+     * Return title
+     *
+     * @param bool $forFiling Whether the title is to be used in filing
+     *                        (e.g. sorting, non-filing characters should be removed)
+     *
+     * @return string
+     */
+    public function getTitle($forFiling = false)
+    {
+        $title = (string)$this->doc->title;
+        if ($forFiling) {
+            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = MetadataUtils::stripLeadingArticle($title);
+            // Again, just in case stripping the article affected this
+            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = mb_strtolower($title, 'UTF-8');
+        }
+        return $title;
     }
 
     /**

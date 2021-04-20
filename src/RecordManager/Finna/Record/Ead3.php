@@ -49,7 +49,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
 {
     use AuthoritySupportTrait;
 
-    const UNIT_ID_RELATORS = ['tekninen'];
     const GEOGRAPHIC_SUBJECT_RELATORS = ['aihe', 'alueellinen kattavuus'];
     const SUBJECT_RELATORS = ['aihe'];
 
@@ -153,21 +152,12 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             = isset($data['online_boolean'])
             && !isset($this->doc->accessrestrict);
 
-        if ($this->doc->did->unitid) {
-            $identifier = null;
-            foreach ($this->doc->did->unitid as $i) {
-                $identifier = (string)$i;
-                if ($i->attributes()->label == 'Analoginen') {
-                    break;
-                }
-            }
-            if ($identifier) {
-                $p = strpos($identifier, '/');
-                $identifier = $p > 0
-                    ? substr($identifier, $p + 1)
-                    : $identifier;
-                $data['identifier'] = $identifier;
-            }
+        if ($identifier = $this->getUnitId()) {
+            $p = strpos($identifier, '/');
+            $identifier = $p > 0
+                ? substr($identifier, $p + 1)
+                : $identifier;
+            $data['identifier'] = $identifier;
         }
 
         if (isset($doc->did->dimensions)) {
@@ -268,6 +258,15 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
 
+        foreach ($this->doc->did->origination->persname ?? [] as $name) {
+            $data['author'][] = $data['author_facet'][] = (string)$name;
+        }
+        foreach ($this->doc->did->origination->name ?? [] as $name) {
+            foreach ($name->part ?? [] as $part) {
+                $data['author'][] = $data['author_facet'][] = (string)$part;
+            }
+        }
+
         if (isset($doc->index->index->indexentry)) {
             foreach ($doc->index->index->indexentry as $indexentry) {
                 if (isset($indexentry->name->part)) {
@@ -300,17 +299,24 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      */
     protected function getUnitId()
     {
+        $unitIdLabel = $this->getDriverParam('unitIdLabel', null);
+        $firstId = '';
         if (isset($this->doc->did->unitid)) {
             foreach ($this->doc->did->unitid as $i) {
                 $attr = $i->attributes();
-                if ((string)$attr->label === 'Tekninen' || !isset($attr->label)
-                    && isset($attr->identifier)
-                ) {
-                    return (string)$attr->identifier;
+                if (!isset($attr->identifier)) {
+                    continue;
+                }
+                $id = (string)$attr->identifier;
+                if (!$firstId) {
+                    $firstId = $id;
+                }
+                if (!$unitIdLabel || (string)$attr->label === $unitIdLabel) {
+                    return $id;
                 }
             }
         }
-        return '';
+        return $firstId;
     }
 
     /**
@@ -778,7 +784,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $desc = [];
             foreach ($this->doc->scopecontent as $el) {
                 foreach ($el->p as $p) {
-                    $desc[] = trim(html_entity_decode((string)$p));
+                    $desc[] = str_replace(
+                        ["\r\n", "\n\r", "\r", "\n"], '   /   ',
+                        trim(html_entity_decode((string)$p))
+                    );
                 }
             }
             if (!empty($desc)) {

@@ -70,6 +70,9 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
     protected $archiveSubTitle = '';
     protected $repository = '';
 
+    // label-attribute of identifying unitid-element
+    protected $unitIdLabel = null;
+
     /**
      * Constructor
      *
@@ -84,6 +87,7 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
             $fields = explode(',', $params['nonInheritedFields']);
             $this->nonInheritedFields = array_flip($fields);
         }
+        $this->unitIdLabel = $params['unitIdLabel'] ?? null;
     }
 
     /**
@@ -106,10 +110,17 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
 
         foreach ($this->doc->archdesc->did->unitid as $i) {
             $attr = $i->attributes();
-            if (isset($attr->identifier)
-                && !isset($attr->label) || (string)$attr->label === 'Tekninen'
+            if (!isset($attr->identifier)) {
+                continue;
+            }
+            $id = urlencode((string)$attr->identifier);
+            if (!$this->archiveId) {
+                $this->archiveId = $id;
+            }
+            if (!$this->unitIdLabel
+                || (string)$attr->label === $this->unitIdLabel
             ) {
-                $this->archiveId = urlencode((string)$attr->identifier);
+                $this->archiveId = $id;
                 break;
             }
         }
@@ -148,22 +159,34 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
             $unitId = '';
 
             if ($record->did->unitid) {
+                $firstId = '';
                 foreach ($record->did->unitid as $i) {
                     $attr = $i->attributes();
-                    if ((!$attr->label || $attr->label == 'Tekninen')
-                        && isset($attr->identifier)
+                    if (!isset($attr->identifier)) {
+                        continue;
+                    }
+                    $id = urlencode((string)$attr->identifier);
+                    if (!$firstId) {
+                        $firstId = $id;
+                    }
+                    if (!$this->unitIdLabel
+                        || (string)$attr->label === $this->unitIdLabel
                     ) {
-                        $unitId = urlencode((string)$attr->identifier);
+                        $unitId = $id;
                         if ($unitId != $this->archiveId) {
-                            $unitId = $this->archiveId . '_' . $unitId;
                             break;
                         }
                     }
                 }
+                if (!$unitId) {
+                    $unitId = $firstId;
+                }
 
-                // This shouldn't happen:
                 if ($unitId == '') {
+                    // This shouldn't happen:
                     $unitId = urlencode($this->archiveId . '_' . $this->currentPos);
+                } elseif ($unitId != $this->archiveId) {
+                    $unitId = $this->archiveId . '_' . $unitId;
                 }
             } else {
                 $unitId = $this->archiveId . '_' . $this->currentPos;
