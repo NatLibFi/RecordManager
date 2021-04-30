@@ -453,7 +453,16 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (in_array($this->getFormat(), $noSubtitleFormats)) {
             return '';
         }
-
+        if ($signumLabel = $this->getDriverParam('signumLabel', null)) {
+            if (isset($this->doc->did->unitid)) {
+                foreach ($this->doc->did->unitid as $id) {
+                    $attr = $id->attributes();
+                    if ((string)$attr->label === $signumLabel) {
+                        return (string)$id;
+                    }
+                }
+            }
+        }
         return (string)$this->doc->did->unitid;
     }
 
