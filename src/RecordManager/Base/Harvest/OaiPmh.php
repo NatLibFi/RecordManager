@@ -492,7 +492,7 @@ class OaiPmh extends Base
                 $this->errorMsg("OAI-PMH server returned error $code ($value)");
                 throw new \Exception(
                     "{$this->source}: OAI-PMH error -- code: $code, " .
-                    "value: $value\n"
+                    "value: $value"
                 );
             }
         }
