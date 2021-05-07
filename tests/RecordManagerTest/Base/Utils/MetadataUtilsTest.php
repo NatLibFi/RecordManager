@@ -174,4 +174,49 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
             );
         }
     }
+
+    /**
+     * Tests for isbn10to13
+     *
+     * @return void
+     */
+    public function testIsbn10to13()
+    {
+        $this->assertEquals(false, MetadataUtils::isbn10to13(''));
+        $this->assertEquals(false, MetadataUtils::isbn10to13('foo'));
+        $this->assertEquals(false, MetadataUtils::isbn10to13('9514920988 foo'));
+        // Invalid ISBN:
+        $this->assertEquals(false, MetadataUtils::isbn10to13('9514920096'));
+        $this->assertEquals(
+            '9789514920981', MetadataUtils::isbn10to13('9514920988')
+        );
+        $this->assertEquals(
+            false, MetadataUtils::isbn10to13('951-492-098-8')
+        );
+    }
+
+    /**
+     * Tests for normalizeISBN
+     *
+     * @return void
+     */
+    public function testNormalizeISBN()
+    {
+        $this->assertEquals('', MetadataUtils::normalizeISBN(''));
+        $this->assertEquals('', MetadataUtils::normalizeISBN('foo'));
+        // Invalid ISBN:
+        $this->assertEquals('', MetadataUtils::normalizeISBN('9514920096'));
+        $this->assertEquals(
+            '9789514920981', MetadataUtils::normalizeISBN('9514920988')
+        );
+        $this->assertEquals(
+            '9789514920981', MetadataUtils::normalizeISBN('951-492-098-8')
+        );
+        $this->assertEquals(
+            '9789514920981', MetadataUtils::normalizeISBN('9789514920981')
+        );
+        $this->assertEquals(
+            '9789514920981', MetadataUtils::normalizeISBN('978-951-492098-1')
+        );
+    }
 }

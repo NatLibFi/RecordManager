@@ -1056,10 +1056,12 @@ class Marc extends Base
         $arr = [];
         $fields = $this->getFields('020');
         foreach ($fields as $field) {
-            $isbn = $this->getSubfield($field, 'a');
+            $original = $isbn = $this->getSubfield($field, 'a');
             $isbn = MetadataUtils::normalizeISBN($isbn);
             if ($isbn) {
                 $arr[] = $isbn;
+            } else {
+                $this->storeWarning("Invalid ISBN '$original'");
             }
         }
 
