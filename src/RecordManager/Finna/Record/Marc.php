@@ -56,11 +56,11 @@ class Marc extends \RecordManager\Base\Record\Marc
     ];
 
     /**
-     * Extra data to be included in allfields e.g. from component parts
+     * Extra data to be included in Solr fields e.g. from component parts
      *
      * @var array
      */
-    protected $extraAllFields = [];
+    protected $extraFields = [];
 
     /**
      * Default field for geographic coordinates
@@ -95,7 +95,7 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     public function setData($source, $oaiID, $data)
     {
-        $this->extraAllFields = [];
+        $this->extraFields = [];
         parent::setData($source, $oaiID, $data);
     }
 
@@ -740,6 +740,14 @@ class Marc extends \RecordManager\Base\Record\Marc
             )
         );
 
+        // Merge any extra fields from e.g. merged component parts
+        foreach ($this->extraFields as $field => $fieldData) {
+            $data[$field] = array_merge(
+                (array)($data[$field] ?? []),
+                (array)$fieldData
+            );
+        }
+
         return $data;
     }
 
@@ -907,8 +915,23 @@ class Marc extends \RecordManager\Base\Record\Marc
             foreach ($marc->getFields('031') as $field031) {
                 foreach ($marc->getSubfieldsArray($field031, ['t' => 1]) as $lyrics
                 ) {
-                    $this->extraAllFields[] = $lyrics;
+                    $this->extraFields['allfields'][] = $lyrics;
+                    // Text incipit is treated as an alternative title
+                    $this->extraFields['title_alt'][] = $lyrics;
                 }
+            }
+            $titlesVarying = $marc->getFieldsSubfields(
+                [[self::GET_NORMAL, '246', ['a' => 1, 'b' => 1, 'n' => 1, 'p' => 1]]]
+            );
+            if ($titlesVarying) {
+                $this->extraFields['allfields'] = array_merge(
+                    (array)($this->extraFields['allfields'] ?? []),
+                    $titlesVarying
+                );
+                $this->extraFields['title_alt'] = array_merge(
+                    (array)($this->extraFields['title_alt'] ?? []),
+                    $titlesVarying
+                );
             }
 
             $newField = [
@@ -1572,9 +1595,6 @@ class Marc extends \RecordManager\Base\Record\Marc
                     }
                 }
             }
-        }
-        if ($this->extraAllFields) {
-            $allFields = array_merge($allFields, $this->extraAllFields);
         }
         $allFields = array_map(
             function ($str) {

@@ -8,7 +8,7 @@ For a stable version, see the stable branch.
 
 ## General Installation
 
-- PHP 7.x is required.
+- PHP 7.3 is required.
 - Composer is required for dependencies. Run `composer install` in the directory where RecordManager is installed.
 - The following PHP modules are required: xml, xslt, mbstring, intl
 - The following PECL module is required: mongodb
@@ -34,15 +34,20 @@ These are quick instructions on how to set up RecordManager. Please refer to the
   `yum install geos-devel` will be needed to compile the bindings unless GEOS is
   installed from source.
 
-- Required pecl modules: mongodb
+- MongoDB support
+
+  RecordManager supports both MongoDB (recommended) and any MySQL compatible
+  database. You may opt to skip the MongoDB requirements if you only use MySQL.
+
+  - Required pecl modules for MongoDB support: mongodb
 
     E.g. remi repos include a package for mongodb:
 
-      yum install php70-php-pecl-mongodb
+      yum install php74-php-pecl-mongodb
 
     Webtatic too:
 
-      yum install php70w-pecl-mongodb
+      yum install php74w-pecl-mongodb
 
     If there's no package available, use pecl to install mongodb:
 
@@ -52,19 +57,31 @@ These are quick instructions on how to set up RecordManager. Please refer to the
     Either way, make sure it's at least v1.2.0. Earlier versions have problems with
     pcntl.
 
-- Add the extension=mongodb.so line to /etc/php.d/mongodb.ini
+  - Add the extension=mongodb.so line to /etc/php.d/mongodb.ini
 
-- Install MongoDB from 10gen repositories (see http://www.mongodb.org/display/DOCS/CentOS+and+Fedora+Packages)
+  - Install MongoDB from 10gen repositories (see
+    http://www.mongodb.org/display/DOCS/CentOS+and+Fedora+Packages)
 
-- Adjust MongoDB settings as needed
+  - Adjust MongoDB settings as needed
 
 - Copy RecordManager to /usr/local/RecordManager/
 
-- Run `composer install` to install PHP dependencies
+- Run `composer install` to install PHP dependencies. If you did not install the
+  mongodb module above, you can also use `composer install --ignore-platform-reqs` to
+  force package installation even if the underlying dependencies are missing.
 
-- Create indexes with dbscripts/mongo.js
+- MongoDB: Create indexes with dbscripts/mongo.js
 
       mongo recman dbscripts/mongo.js
+
+- MySQL: Create tables and indexes with dbscripts/mysql.sql and add a user
+
+      mysql
+      create database recman;
+      use recman
+      source dbscripts/mysql.sql;
+      create user 'recman'@'localhost' identified by '<password>';
+      grant all on recman.* to 'recman'@'localhost';
 
 - Copy conf/recordmanager.ini.sample to conf/recordmanager.ini and modify the settings to suit your needs.
 
