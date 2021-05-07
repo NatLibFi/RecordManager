@@ -409,7 +409,7 @@ class Lido extends Base
             if ($isbn) {
                 $arr[] = $isbn;
             } else {
-                $this->storeWarning("Invalid ISBN '$original'");
+                $this->storeWarning("Invalid ISBN '$identifier'");
             }
         }
 
