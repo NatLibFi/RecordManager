@@ -282,10 +282,7 @@ class Qdc extends Base
                 if (!preg_match('{^([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
                     continue;
                 }
-                $isbn = $matches[1];
-                if (strlen($isbn) == 10) {
-                    $isbn = MetadataUtils::isbn10to13($isbn);
-                }
+                $isbn = MetadataUtils::normalizeISBN($matches[1]);
                 if ($isbn) {
                     $arr[] = $isbn;
                 }
