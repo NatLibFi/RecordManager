@@ -28,6 +28,7 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * EAC-CPF Record Class
@@ -93,5 +94,22 @@ class Eaccpf extends \RecordManager\Base\Record\Eaccpf
             }
         }
         return $result;
+    }
+
+    /**
+     * Parse date
+     *
+     * @param string $date Date
+     *
+     * @return null|string
+     */
+    protected function parseDate(string $date) : ?string
+    {
+        $year = MetadataUtils::extractYear($date);
+        if (strpos($year, 'u') === false) {
+            // Year is not unknown
+            return $year;
+        }
+        return null;
     }
 }
