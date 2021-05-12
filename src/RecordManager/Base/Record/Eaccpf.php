@@ -184,7 +184,7 @@ class Eaccpf extends Base
             $type = (string)$attrs->localType;
             if ('http://rdaregistry.info/Elements/a/P50121' === $type) {
                 $d = (string)$attrs->standardDate;
-                if ($date = $this->parseDate($d)) {
+                if ($date = $this->parseYear($d)) {
                     return $date;
                 }
             }
@@ -234,7 +234,7 @@ class Eaccpf extends Base
             $type = (string)$attrs->localType;
             if ('http://rdaregistry.info/Elements/a/P50120' === $type) {
                 $d = (string)$attrs->standardDate;
-                if ($date = $this->parseDate($d)) {
+                if ($date = $this->parseYear($d)) {
                     return $date;
                 }
             }
@@ -265,13 +265,13 @@ class Eaccpf extends Base
     }
 
     /**
-     * Parse date
+     * Parse year.
      *
      * @param string $date Date
      *
      * @return null|string
      */
-    protected function parseDate(string $date) : ?string
+    protected function parseYear(string $date) : ?string
     {
         return MetadataUtils::extractYear($date) ?: null;
     }

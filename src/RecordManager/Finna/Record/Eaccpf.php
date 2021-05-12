@@ -97,13 +97,13 @@ class Eaccpf extends \RecordManager\Base\Record\Eaccpf
     }
 
     /**
-     * Parse date
+     * Parse year.
      *
      * @param string $date Date
      *
      * @return null|string
      */
-    protected function parseDate(string $date) : ?string
+    protected function parseYear(string $date) : ?string
     {
         $year = MetadataUtils::extractYear($date);
         if (strpos($year, 'u') === false) {
