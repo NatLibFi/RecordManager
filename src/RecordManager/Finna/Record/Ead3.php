@@ -859,7 +859,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      * Check whether the given node is a time interval element
      * and should not be included when collecting name elements.
      *
-     * @param SimpleXMLElement $node Node
+     * @param \SimpleXMLElement $node Node
      *
      * @return bool
      */
