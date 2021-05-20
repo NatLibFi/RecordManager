@@ -50,7 +50,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     use AuthoritySupportTrait;
 
     const GEOGRAPHIC_SUBJECT_RELATORS = ['aihe', 'alueellinen kattavuus'];
-    const SUBJECT_RELATORS = ['aihe'];
+    const SUBJECT_RELATORS = ['aihe', 'asiasana'];
 
     /**
      * Archive fonds format
