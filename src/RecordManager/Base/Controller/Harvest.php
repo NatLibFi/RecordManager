@@ -211,7 +211,7 @@ class Harvest extends AbstractBase
                                     if ($this->verbose) {
                                         echo "Marking {$record['_id']} deleted\n";
                                     }
-                                    $this->markRecordDeleted($record);
+                                    $this->markRecordDeleted($record, true);
                                     if (++$count % 1000 == 0) {
                                         $this->logger->logInfo(
                                             'harvest', "Deleted $count records"
@@ -221,6 +221,26 @@ class Harvest extends AbstractBase
                             );
                             $this->logger
                                 ->logInfo('harvest', "Deleted $count records");
+                            // Deduplication will update timestamps from deferred
+                            // update with markRecordDeleted, but handle non-dedup
+                            // sources here to avoid need for deduplication:
+                            if (empty($this->dataSourceSettings[$source]['dedup'])) {
+                                $this->logger->logInfo(
+                                    'harvest',
+                                    'Updating timestamps for any host records of'
+                                    . ' records deleted'
+                                );
+                                $this->db->updateRecords(
+                                    [
+                                        'source_id' => $source,
+                                        'update_needed' => true
+                                    ],
+                                    [
+                                        'updated' => $this->db->getTimestamp(),
+                                        'update_needed' => false
+                                    ]
+                                );
+                            }
                         }
                     }
 
