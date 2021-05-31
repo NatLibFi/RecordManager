@@ -87,9 +87,7 @@ class Deduplicate extends AbstractBase
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
                     continue;
                 }
-                if (empty($source) || empty($settings) || !isset($settings['dedup'])
-                    || !$settings['dedup']
-                ) {
+                if (empty($source) || empty($settings)) {
                     continue;
                 }
                 $this->logger->logInfo(
@@ -150,9 +148,7 @@ class Deduplicate extends AbstractBase
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
                     continue;
                 }
-                if (empty($source) || empty($settings) || !isset($settings['dedup'])
-                    || !$settings['dedup']
-                ) {
+                if (empty($source) || empty($settings)) {
                     continue;
                 }
 
