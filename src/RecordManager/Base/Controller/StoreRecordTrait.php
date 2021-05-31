@@ -355,7 +355,10 @@ trait StoreRecordTrait
         $this->db->iterateRecords(
             ['source_id' => $sourceId, 'oai_id' => $oaiID],
             [],
-            function ($record) use (&$count) {
+            function ($record) use (&$count, $oaiID) {
+                if ($this->verbose) {
+                    echo "Delete by oai_id $oaiID: {$record['_id']}\n";
+                }
                 $this->markRecordDeleted($record);
                 ++$count;
             }
