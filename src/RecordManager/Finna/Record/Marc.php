@@ -449,6 +449,8 @@ class Marc extends \RecordManager\Base\Record\Marc
                     $data['building_sub_str_mv'][] = $location;
                 }
             }
+        }
+        if ($itemSubBuilding) {
             foreach ($this->getFields('952') as $field) {
                 $location = $this->getSubfield($field, $itemSubBuilding);
                 if ('' !== $location) {
