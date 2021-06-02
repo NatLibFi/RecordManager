@@ -56,6 +56,8 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
 
     const NAME_TYPE_VARIANT = 'Varianttinimi';
     const NAME_TYPE_ALTERNATIVE = 'Vaihtehtoinen nimi';
+    const NAME_TYPE_PRIMARY = 'Ensisijainen nimi';
+    const NAME_TYPE_OUTDATED = 'Vanhentunut nimi';
 
     /**
      * Archive fonds format
@@ -213,7 +215,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                     }
 
                     switch ($part->attributes()->localtype) {
-                    case 'Ensisijainen nimi':
+                    case self::NAME_TYPE_PRIMARY:
                         $data['author'][] = (string)$part;
                         if (! isset($part->attributes()->lang)
                             || (string)$part->attributes()->lang === 'fin'
@@ -230,7 +232,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                         break;
                     case self::NAME_TYPE_VARIANT:
                     case self::NAME_TYPE_ALTERNATIVE:
-                    case 'Vanhentunut nimi':
+                    case self::NAME_TYPE_OUTDATED:
                         $data['author_variant'][] = (string)$part;
                         if ($id) {
                             $author2Ids[] = $id;
