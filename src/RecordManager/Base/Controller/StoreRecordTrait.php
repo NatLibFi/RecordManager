@@ -294,11 +294,13 @@ trait StoreRecordTrait
     /**
      * Mark a record deleted
      *
-     * @param array $record Record
+     * @param array $record          Record
+     * @param bool  $deferHostUpdate Whether to defer updating host records'
+     *                               timestamps
      *
      * @return void
      */
-    public function markRecordDeleted($record)
+    public function markRecordDeleted($record, $deferHostUpdate = false)
     {
         $dedupId = $record['dedup_id'] ?? null;
         if (isset($record['dedup_id'])) {
@@ -332,9 +334,12 @@ trait StoreRecordTrait
             $this->db->updateRecords(
                 [
                     'source_id' => ['$in' => $hostSourceIds],
-                    'linking_id' => ['$in' => (array)$hostIDs]
+                    'linking_id' => ['$in' => (array)$hostIDs],
+                    'deleted' => false
                 ],
-                ['updated' => $this->db->getTimestamp()]
+                $deferHostUpdate
+                    ? ['update_needed' => true]
+                    : ['updated' => $this->db->getTimestamp()]
             );
         }
     }
