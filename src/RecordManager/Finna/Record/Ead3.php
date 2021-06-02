@@ -541,7 +541,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $month = $defaultMonth;
             $day = $defaultDay;
             if (!in_array($date, ['open', 'unknown'])) {
-                $parts = explode('-', $date);
+                $parts = explode('-', trim($date));
                 $year = str_replace('u', $defaultYear, $parts[0]);
 
                 if (isset($parts[1]) && $parts[1] !== 'uu') {
@@ -560,6 +560,13 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 $day = date('t', strtotime("{$year}-{$month}"));
             }
 
+            if (!preg_match('/^-?\d{1,4}$/', $year)
+                || !preg_match('/^\d{1,2}$/', $month)
+                || !preg_match('/^\d{1,2}$/', $day)
+            ) {
+                return null;
+            }
+
             $date = sprintf(
                 '%04d-%02d-%02dT%sZ',
                 $year, $month, $day, $hour
@@ -568,12 +575,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             try {
                 $d = new \DateTime($date);
             } catch (\Exception $e) {
-                $this->logger->logDebug(
-                    'Ead3',
-                    "Failed to parse date $date, record {$this->source}."
-                    . $this->getID()
-                );
-                $this->storeWarning('invalid date');
                 return null;
             }
 
