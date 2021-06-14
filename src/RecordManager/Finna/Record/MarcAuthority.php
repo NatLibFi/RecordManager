@@ -84,15 +84,17 @@ class MarcAuthority extends \RecordManager\Base\Record\MarcAuthority
         foreach (array_merge(['400', '410', '500', '510'], $additional)
             as $code
         ) {
+            $subfields = in_array($code, ['400', '500'])
+                ? ['a' => 1, 'b' => 1, 'c' => 1]
+                : ['a' => 1, 'b' => 1];
+
             foreach ($this->getFields($code) as $field) {
                 $result = array_merge(
                     $result, [
                         implode(
                             $this->nameDelimiter,
                             $this->trimFields(
-                                $this->getSubfieldsArray(
-                                    $field, ['a' => 1, 'b' => 1]
-                                )
+                                $this->getSubfieldsArray($field, $subfields)
                             )
                         )
                     ]
@@ -111,8 +113,10 @@ class MarcAuthority extends \RecordManager\Base\Record\MarcAuthority
     {
         if ($name = $this->getFieldSubField('100', 'a', true)) {
             $name = MetadataUtils::stripTrailingPunctuation($name, '.');
-            if ($sub = $this->getFieldSubField('100', 'b', true)) {
-                $name .= $this->nameDelimiter . $sub;
+            foreach (['b', 'c'] as $subfield) {
+                if ($sub = $this->getFieldSubField('100', $subfield, true)) {
+                    $name .= $this->nameDelimiter . $sub;
+                }
             }
             return $name;
         }
