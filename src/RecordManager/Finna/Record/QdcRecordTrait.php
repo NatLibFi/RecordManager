@@ -193,7 +193,12 @@ trait QdcRecordTrait
         }
         $result = [];
         foreach ($this->doc->rights as $rights) {
-            $result[] = trim((string)$rights);
+            $rights = trim((string)$rights);
+            // Convert lowercase CC rights to uppercase
+            if (strncmp($rights, 'cc', 2) === 0) {
+                $rights = mb_strtoupper($rights, 'UTF-8');
+            }
+            $result[] = $rights;
         }
         return $result;
     }
