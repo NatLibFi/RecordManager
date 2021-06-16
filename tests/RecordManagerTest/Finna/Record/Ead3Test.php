@@ -266,4 +266,42 @@ class Ead3RecordDriverTest extends \RecordManagerTest\Base\Record\RecordTest
             $fields['search_daterange_mv']
         );
     }
+
+    /**
+     * Test date range parsing
+     *
+     * @return void
+     */
+    public function testParseDateRange()
+    {
+        $record = $this->createRecord(Ead3::class, 'yksa.xml', [], 'finna');
+        $reflection = new \ReflectionObject($record);
+        $parseDateRange = $reflection->getMethod('parseDateRange');
+        $parseDateRange->setAccessible(true);
+
+        $this->assertEquals(
+            [
+                'date' => ['2021-01-01T00:00:00Z', '2021-12-31T23:59:59Z'],
+                'startDateUnknown' => false,
+                'endDateUnknown' => false,
+            ],
+            $parseDateRange->invokeArgs($record, ['2021/2021'])
+        );
+        $this->assertEquals(
+            [
+                'date' => ['2022-01-01T00:00:00Z', '2022-12-31T23:59:59Z'],
+                'startDateUnknown' => false,
+                'endDateUnknown' => false,
+            ],
+            $parseDateRange->invokeArgs($record, ['2022/2021'])
+        );
+        $this->assertEquals(
+            null,
+            $parseDateRange->invokeArgs($record, ['11999/2021'])
+        );
+        $this->assertEquals(
+            null,
+            $parseDateRange->invokeArgs($record, ['2010, 2020, 2021'])
+        );
+    }
 }

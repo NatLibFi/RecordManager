@@ -259,20 +259,18 @@ class Ead3 extends Ead
     protected function getCorporateAuthors()
     {
         $result = [];
-        if (isset($this->doc->did->controlaccess->corpname)) {
-            foreach ($this->doc->did->controlaccess->corpname as $name) {
+        foreach ($this->doc->did->controlaccess->corpname ?? [] as $name) {
+            if (!isset($name->part)) {
                 $result[] = trim((string)$name);
-            }
-        }
-        if (isset($this->doc->controlaccess->corpname->part)) {
-            foreach ($this->doc->controlaccess->corpname->part as $name) {
-                $result[] = trim((string)$name);
-            }
-        }
-
-        if (isset($this->doc->did->origination->name)) {
-            foreach ($this->doc->did->origination->name as $name) {
+            } else {
                 foreach ($name->part as $part) {
+                    $result[] = trim((string)$part);
+                }
+            }
+        }
+        foreach ($this->doc->did->origination ?? [] as $origination) {
+            foreach ($origination->name ?? [] as $name) {
+                foreach ($name->part ?? [] as $part) {
                     $result[] = trim((string)$part);
                 }
             }

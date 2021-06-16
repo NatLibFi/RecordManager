@@ -50,7 +50,14 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     use AuthoritySupportTrait;
 
     const GEOGRAPHIC_SUBJECT_RELATORS = ['aihe', 'alueellinen kattavuus'];
-    const SUBJECT_RELATORS = ['aihe'];
+    const SUBJECT_RELATORS = ['aihe', 'asiasana'];
+
+    const RELATOR_TIME_INTERVAL = 'suhteen ajallinen kattavuus';
+
+    const NAME_TYPE_VARIANT = 'Varianttinimi';
+    const NAME_TYPE_ALTERNATIVE = 'Vaihtehtoinen nimi';
+    const NAME_TYPE_PRIMARY = 'Ensisijainen nimi';
+    const NAME_TYPE_OUTDATED = 'Vanhentunut nimi';
 
     /**
      * Archive fonds format
@@ -208,7 +215,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                     }
 
                     switch ($part->attributes()->localtype) {
-                    case 'Ensisijainen nimi':
+                    case self::NAME_TYPE_PRIMARY:
                         $data['author'][] = (string)$part;
                         if (! isset($part->attributes()->lang)
                             || (string)$part->attributes()->lang === 'fin'
@@ -223,9 +230,9 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                             }
                         }
                         break;
-                    case 'Varianttinimi':
-                    case 'Vaihtoehtoinen nimi':
-                    case 'Vanhentunut nimi':
+                    case self::NAME_TYPE_VARIANT:
+                    case self::NAME_TYPE_ALTERNATIVE:
+                    case self::NAME_TYPE_OUTDATED:
                         $data['author_variant'][] = (string)$part;
                         if ($id) {
                             $author2Ids[] = $id;
@@ -258,12 +265,27 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
 
-        foreach ($this->doc->did->origination->persname ?? [] as $name) {
-            $data['author'][] = $data['author_facet'][] = (string)$name;
+        foreach ($this->doc->did->origination ?? [] as $origination) {
+            foreach ($origination->persname ?? [] as $name) {
+                $data['author'][] = $data['author_facet'][] = (string)$name;
+            }
         }
-        foreach ($this->doc->did->origination->name ?? [] as $name) {
-            foreach ($name->part ?? [] as $part) {
-                $data['author'][] = $data['author_facet'][] = (string)$part;
+        foreach ($this->doc->did->origination ?? [] as $origination) {
+            foreach ($origination->name ?? [] as $name) {
+                foreach ($name->part ?? [] as $part) {
+                    if ($this->isTimeIntervalNode($part)) {
+                        continue;
+                    }
+                    $value = (string)$part;
+                    $data['author'][] = $data['author_facet'][] = $value;
+                    if (in_array(
+                        (string)$part->attributes()->localtype,
+                        [self::NAME_TYPE_VARIANT, self::NAME_TYPE_ALTERNATIVE]
+                    )
+                    ) {
+                        $data['author_variant'][] = $value;
+                    }
+                }
             }
         }
 
@@ -396,6 +418,35 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     }
 
     /**
+     * Get corporate authors
+     *
+     * @return array
+     */
+    protected function getCorporateAuthors() : array
+    {
+        $result = [];
+        foreach ($this->doc->controlaccess->corpname ?? [] as $name) {
+            foreach ($name->part ?? [] as $part) {
+                if ($this->isTimeIntervalNode($part)) {
+                    continue;
+                }
+                $result[] = trim((string)$part);
+            }
+        }
+        foreach ($this->doc->did->origination ?? [] as $origination) {
+            foreach ($origination->name ?? [] as $name) {
+                foreach ($name->part ?? [] as $part) {
+                    if ($this->isTimeIntervalNode($part)) {
+                        continue;
+                    }
+                    $result[] = trim((string)$part);
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Get corporate author identifiers
      *
      * @return array
@@ -495,7 +546,9 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                     $date = $this->parseDateRange(
                         (string)$unitdate->attributes()->normal
                     );
-                    if (!$date['startDateUnknown'] && !$date['endDateUnknown']) {
+                    if ($date
+                        && !$date['startDateUnknown'] && !$date['endDateUnknown']
+                    ) {
                         return $date;
                     }
                 }
@@ -805,5 +858,19 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
         return '';
+    }
+
+    /**
+     * Check whether the given node is a time interval element
+     * and should not be included when collecting name elements.
+     *
+     * @param \SimpleXMLElement $node Node
+     *
+     * @return bool
+     */
+    protected function isTimeIntervalNode(\SimpleXMLElement $node) : bool
+    {
+        return (string)$node->attributes()->localtype
+            === self::RELATOR_TIME_INTERVAL;
     }
 }
