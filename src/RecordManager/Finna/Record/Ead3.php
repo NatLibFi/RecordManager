@@ -546,7 +546,9 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                     $date = $this->parseDateRange(
                         (string)$unitdate->attributes()->normal
                     );
-                    if (!$date['startDateUnknown'] && !$date['endDateUnknown']) {
+                    if ($date
+                        && !$date['startDateUnknown'] && !$date['endDateUnknown']
+                    ) {
                         return $date;
                     }
                 }
