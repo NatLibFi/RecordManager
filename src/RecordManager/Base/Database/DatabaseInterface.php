@@ -377,4 +377,38 @@ interface DatabaseInterface
      * @return array|null
      */
     public function findOntologyEnrichment($filter, $options = []);
+
+    /**
+     * Save a log message
+     *
+     * @param string $context   Context
+     * @param string $msg       Message
+     * @param int    $level     Message level (see constants in Logger)
+     * @param int    $pid       Process ID
+     * @param int    $timestamp Unix time stamp
+     *
+     * @return void
+     */
+    public function saveLogMessage(string $context, string $msg, int $level,
+        int $pid, int $timestamp
+    ): void;
+
+    /**
+     * Find log messages
+     *
+     * @param array $filter  Search filter
+     * @param array $options Options such as sorting
+     *
+     * @return \Traversable
+     */
+    public function findLogMessages(array $filter, array $options = []);
+
+    /**
+     * Delete a log message
+     *
+     * @param mixed $id Message ID
+     *
+     * @return void
+     */
+    public function deleteLogMessage($id): void;
 }

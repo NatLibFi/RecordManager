@@ -191,8 +191,21 @@ id_prefix = "oai:base.address:"
 
 [Log]
 log_file        = /var/log/recman.log
+; Logging level. Following levels are available:
+; 0 - Fatal
+; 1 - Error, Fatal
+; 2 - Warning, Error, Fatal
+; 3 - Info, Warning, Error, Fatal
+; 4 - Debug, Info, Warning, Error, Fatal
 log_level       = 4
+; Email address for error messages. Only fatal errors are sent by email as they
+; occur.
 error_email     =
+; Minimum error level to store in the database. Stored messages can be sent in
+; batches using the logs.php utility. By default (-1), no messages are stored. Levels
+; are the same as for log_level.
+store_message_level = -1
+
 
 ; The following section contains parameters passed to the HTTP client.
 ; See https://pear.php.net/manual/en/package.http.http-request2.config.php for
