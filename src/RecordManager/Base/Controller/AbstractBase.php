@@ -134,6 +134,7 @@ abstract class AbstractBase
             );
             throw $e;
         }
+        $this->logger->setDatabase($this->db);
 
         MetadataUtils::setLogger($this->logger);
         MetadataUtils::setConfig($config, $this->basePath);

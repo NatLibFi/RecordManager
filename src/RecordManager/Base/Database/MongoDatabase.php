@@ -556,6 +556,59 @@ class MongoDatabase extends AbstractDatabase
     }
 
     /**
+     * Save a log message
+     *
+     * @param string $context   Context
+     * @param string $msg       Message
+     * @param int    $level     Message level (see constants in Logger)
+     * @param int    $pid       Process ID
+     * @param int    $timestamp Unix time stamp
+     *
+     * @return void
+     */
+    public function saveLogMessage(string $context, string $msg, int $level,
+        int $pid, int $timestamp
+    ): void {
+        $record = [
+            'timestamp' => $this->getTimestamp($timestamp),
+            'context' => $context,
+            'message' => $msg,
+            'level' => $level,
+            'pid' => $pid,
+        ];
+        $this->saveMongoRecord($this->logMessageCollection, $record);
+    }
+
+    /**
+     * Find log messages
+     *
+     * @param array $filter  Search filter
+     * @param array $options Options such as sorting
+     *
+     * @return \Traversable
+     */
+    public function findLogMessages(array $filter, array $options = [])
+    {
+        return $this->findMongoRecords(
+            $this->logMessageCollection,
+            $filter,
+            $options
+        );
+    }
+
+    /**
+     * Delete a log message
+     *
+     * @param mixed $id Message ID
+     *
+     * @return void
+     */
+    public function deleteLogMessage($id): void
+    {
+        $this->deleteMongoRecord($this->logMessageCollection, $id);
+    }
+
+    /**
      * Get a database connection
      *
      * @return \MongoDB\Database
@@ -732,7 +785,7 @@ class MongoDatabase extends AbstractDatabase
      * Delete a record
      *
      * @param string $collection Collection
-     * @param string $id         Record ID
+     * @param mixed  $id         Record ID
      *
      * @return void
      */

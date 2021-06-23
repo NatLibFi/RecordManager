@@ -544,6 +544,55 @@ class PDODatabase extends AbstractDatabase
     }
 
     /**
+     * Save a log message
+     *
+     * @param string $context   Context
+     * @param string $msg       Message
+     * @param int    $level     Message level (see constants in Logger)
+     * @param int    $pid       Process ID
+     * @param int    $timestamp Unix time stamp
+     *
+     * @return void
+     */
+    public function saveLogMessage(string $context, string $msg, int $level,
+        int $pid, int $timestamp
+    ): void {
+        $record = [
+            'timestamp' => $this->getTimestamp($timestamp),
+            'context' => $context,
+            'message' => $msg,
+            'level' => $level,
+            'pid' => $pid,
+        ];
+        $this->savePDORecord($this->logMessageCollection, $record);
+    }
+
+    /**
+     * Find log messages
+     *
+     * @param array $filter  Search filter
+     * @param array $options Options such as sorting
+     *
+     * @return \Traversable
+     */
+    public function findLogMessages($filter, $options = [])
+    {
+        return $this->findPDORecords($this->logMessageCollection, $filter, $options);
+    }
+
+    /**
+     * Delete a log message
+     *
+     * @param mixed $id Message ID
+     *
+     * @return void
+     */
+    public function deleteLogMessage($id): void
+    {
+        $this->deletePDORecord($this->logMessageCollection, $id);
+    }
+
+    /**
      * Get all attributes for a record
      *
      * @param string $collection Collection

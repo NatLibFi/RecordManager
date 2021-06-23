@@ -81,6 +81,13 @@ abstract class AbstractDatabase implements DatabaseInterface
     protected $ontologyEnrichmentCollection = 'ontologyEnrichment';
 
     /**
+     * Log message collection name
+     *
+     * @var string
+     */
+    protected $logMessageCollection = 'logMessage';
+
+    /**
      * Constructor.
      *
      * @param array $config Database settings
@@ -104,6 +111,9 @@ abstract class AbstractDatabase implements DatabaseInterface
         if (!empty($config['ontology_enrichment_collection'])) {
             $this->ontologyEnrichmentCollection
                 = $config['ontology_enrichment_collection'];
+        }
+        if (!empty($config['log_message_collection'])) {
+            $this->logMessageCollection = $config['log_message_collection'];
         }
     }
 
@@ -402,6 +412,40 @@ abstract class AbstractDatabase implements DatabaseInterface
      * @return \Traversable
      */
     abstract public function findQueuedIds(array $filter, array $options);
+
+    /**
+     * Save a log message
+     *
+     * @param string $context   Context
+     * @param string $msg       Message
+     * @param int    $level     Message level (see constants in Logger)
+     * @param int    $pid       Process ID
+     * @param int    $timestamp Unix time stamp
+     *
+     * @return void
+     */
+    abstract public function saveLogMessage(string $context, string $msg, int $level,
+        int $pid, int $timestamp
+    ): void;
+
+    /**
+     * Find log messages
+     *
+     * @param array $filter  Search filter
+     * @param array $options Options such as sorting
+     *
+     * @return \Traversable
+     */
+    abstract public function findLogMessages(array $filter, array $options = []);
+
+    /**
+     * Delete a log message
+     *
+     * @param mixed $id Message ID
+     *
+     * @return void
+     */
+    abstract public function deleteLogMessage($id): void;
 
     /**
      * Iterate through queue
