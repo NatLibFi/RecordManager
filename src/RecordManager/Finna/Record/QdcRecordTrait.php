@@ -193,6 +193,9 @@ trait QdcRecordTrait
         }
         $result = [];
         foreach ($this->doc->rights as $rights) {
+            if ((string)$rights->attributes()->type === 'uri') {
+                continue;
+            }
             $rights = trim((string)$rights);
             // Convert lowercase CC rights to uppercase
             if (strncmp($rights, 'cc', 2) === 0) {
