@@ -422,6 +422,11 @@ class Qdc extends Base
     {
         $languages = [];
         foreach (explode(' ', trim((string)$this->doc->language)) as $language) {
+            $language = preg_replace(
+                '/^http:\/\/lexvo\.org\/id\/iso639-.\/(.*)/',
+                '$1',
+                $language
+            );
             foreach (str_split($language, 3) as $code) {
                 $languages[] = $code;
             }
