@@ -207,15 +207,21 @@ trait QdcRecordTrait
                 continue;
             }
             $rights = trim((string)$rights);
-            // Convert lowercase CC rights to uppercase
-            if (strncmp($rights, 'cc', 2) === 0) {
-                $rights = mb_strtoupper($rights, 'UTF-8');
-            }
             $result[] = $rights;
         }
         if (!$result && $firstRights) {
             $result[] = $firstRights;
         }
+        $result = array_map(
+            function ($s) {
+                // Convert lowercase CC rights to uppercase
+                if (strncmp($s, 'cc', 2) === 0) {
+                    $s = mb_strtoupper($s, 'UTF-8');
+                }
+                return $s;
+            },
+            $result
+        );
         return $result;
     }
 
