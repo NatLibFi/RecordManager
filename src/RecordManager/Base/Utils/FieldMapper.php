@@ -199,14 +199,33 @@ class FieldMapper
             $all = 'regexp-multi' === $type;
             foreach ($map as $pattern => $replacement) {
                 $pattern = addcslashes($pattern, '/');
-                $newValue = preg_replace(
-                    "/$pattern/u", $replacement, $value, -1, $count
-                );
-                if ($count > 0) {
-                    if (!$all) {
-                        return $newValue;
+                if (is_array($replacement)) {
+                    $matches = false;
+                    foreach ($replacement as $current) {
+                        $newValue = preg_replace(
+                            "/$pattern/u", $current, $value, -1, $count
+                        );
+                        if ($count > 0) {
+                            $newValues[] = $newValue;
+                            $matches = true;
+                        } else {
+                            // No matches, stop the loop
+                            break;
+                        }
                     }
-                    $newValues[] = $newValue;
+                    if (!$all && $matches) {
+                        return $newValues;
+                    }
+                } else {
+                    $newValue = preg_replace(
+                        "/$pattern/u", $replacement, $value, -1, $count
+                    );
+                    if ($count > 0) {
+                        if (!$all) {
+                            return $newValue;
+                        }
+                        $newValues[] = $newValue;
+                    }
                 }
             }
             if ($newValues) {

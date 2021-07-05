@@ -1,4 +1,6 @@
 ([a-z]+)(\d) = $1/$2
 ([a-z]+) = string
 ^\d+(.*)$ = $1
+^FOO.*[] = BAR
+^FOO.*[] = BAZ
 ##default = def
