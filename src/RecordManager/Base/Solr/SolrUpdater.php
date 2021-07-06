@@ -945,7 +945,7 @@ class SolrUpdater
                     }
                     if ($count + $deleted >= $lastDisplayedCount + 1000) {
                         $lastDisplayedCount = $count + $deleted;
-                        $pc->add($count);
+                        $pc->add($lastDisplayedCount);
                         $avg = $pc->getSpeed();
                         $this->log->logInfo(
                             'updateRecords',
@@ -1234,7 +1234,7 @@ class SolrUpdater
                 }
                 if ($count + $deleted >= $lastDisplayedCount + 1000) {
                     $lastDisplayedCount = $count + $deleted;
-                    $pc->add($count);
+                    $pc->add($lastDisplayedCount);
                     $avg = $pc->getSpeed();
                     $this->log->logInfo(
                         'processMerged',
