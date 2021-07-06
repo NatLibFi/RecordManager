@@ -192,17 +192,36 @@ trait QdcRecordTrait
             return ['restricted'];
         }
         $result = [];
+        // Try to find useful rights, fall back to the first entry if not found
+        $firstRights = '';
         foreach ($this->doc->rights as $rights) {
-            if ((string)$rights->attributes()->type === 'uri') {
+            if ('' === $firstRights) {
+                $firstRights = (string)$rights;
+            }
+            if ($rights->attributes()->lang) {
+                // Language string, hope for something better
+                continue;
+            }
+            $type = (string)$rights->attributes()->type;
+            if ('' !== $type && 'url' !== $type) {
                 continue;
             }
             $rights = trim((string)$rights);
-            // Convert lowercase CC rights to uppercase
-            if (strncmp($rights, 'cc', 2) === 0) {
-                $rights = mb_strtoupper($rights, 'UTF-8');
-            }
             $result[] = $rights;
         }
+        if (!$result && $firstRights) {
+            $result[] = $firstRights;
+        }
+        $result = array_map(
+            function ($s) {
+                // Convert lowercase CC rights to uppercase
+                if (strncmp($s, 'cc', 2) === 0) {
+                    $s = mb_strtoupper($s, 'UTF-8');
+                }
+                return $s;
+            },
+            $result
+        );
         return $result;
     }
 

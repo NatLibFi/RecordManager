@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2017
+ * Copyright (C) The National Library of Finland 2017-2021
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -59,7 +59,7 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
             'building_mapping' => [
                 'building.map',
                 'building_sub.map,regexp'
-            ]
+            ],
         ]
     ];
 
@@ -157,7 +157,10 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
         $result = $this->callProtected(
             $fieldMapper, 'mapValue', ['21', $mapping]
         );
-        $this->assertEquals('', $result);
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['FOO123', $mapping]
+        );
+        $this->assertEquals(['BAR', 'BAZ'], $result);
     }
 
     /**
