@@ -361,30 +361,29 @@ class MongoDatabase extends AbstractDatabase
     }
 
     /**
-     * Remove old queue collections
+     * Remove old tracking collections
      *
-     * @param int $lastRecordTime Newest record timestamp
+     * @param int $minAge Minimum age in days. Default is 7 days.
      *
      * @return array Array of two arrays with collections removed and those whose
      * removal failed
      */
-    public function cleanupQueueCollections($lastRecordTime)
+    public function cleanupTrackingCollections(int $minAge = 7)
     {
         $removed = [];
         $failed = [];
         foreach ($this->getDb()->listCollections() as $collection) {
             $collection = $collection->getName();
-            if (strncmp($collection, 'mr_record_', 10) != 0) {
+            if (strncmp($collection, 'tracking_', 9) !== 0) {
                 continue;
             }
             $nameParts = explode('_', $collection);
-            $collTime = $nameParts[4] ?? null;
+            $collTime = $nameParts[2] ?? null;
             if (is_numeric($collTime)
-                && $collTime != $lastRecordTime
-                && $collTime < time() - 60 * 60 * 24 * 7
+                && $collTime < time() - $minAge * 60 * 60 * 24
             ) {
                 try {
-                    $this->getDb()->selectCollection($collection)->drop();
+                    $this->getDb()->dropCollection($collection);
                     $removed[] = $collection;
                 } catch (\Exception $e) {
                     $failed[] = $collection;
@@ -395,124 +394,49 @@ class MongoDatabase extends AbstractDatabase
     }
 
     /**
-     * Check for an existing queue collection with the given parameters
-     *
-     * @param string $hash           Hash of parameters used to identify the
-     *                               collection
-     * @param int    $fromDate       Timestamp of processing start date
-     * @param int    $lastRecordTime Newest record timestamp
+     * Create a new temporary tracking collection
      *
      * @return string
      */
-    public function getExistingQueueCollection($hash, $fromDate, $lastRecordTime)
+    public function getNewTrackingCollection()
     {
-        $collectionName = "mr_record_{$hash}_{$fromDate}_{$lastRecordTime}";
-        foreach ($this->getDb()->listCollections() as $collection) {
-            $collection = $collection->getName();
-            if ($collection == $collectionName) {
-                return $collectionName;
-            }
-        }
-        return '';
+        return 'tracking_' . getmypid() . '_' . time();
     }
 
     /**
-     * Create a new temporary queue collection for the given parameters
-     *
-     * @param string $hash           Hash of parameters used to identify the
-     *                               collection
-     * @param string $fromDate       Timestamp of processing start date
-     * @param int    $lastRecordTime Newest record timestamp
-     *
-     * @return string
-     */
-    public function getNewQueueCollection($hash, $fromDate, $lastRecordTime)
-    {
-        $collectionName = "tmp_mr_record_{$hash}_{$fromDate}_{$lastRecordTime}";
-        return $collectionName;
-    }
-
-    /**
-     * Rename a temporary dedup collection to its final name and return the name
-     *
-     * @param string $collectionName The temporary collection name
-     *
-     * @return string
-     */
-    public function finalizeQueueCollection($collectionName)
-    {
-        if (strncmp($collectionName, 'tmp_', 4) !== 0) {
-            throw new \Exception(
-                "Invalid temp queue collection name: '$collectionName'"
-            );
-        }
-        $newName = substr($collectionName, 4);
-
-        // renameCollection requires admin priviledge
-        $res = $this->mongoClient->admin->command(
-            [
-                'renameCollection' => $this->databaseName . '.'
-                    . $collectionName,
-                'to' => $this->databaseName . '.' . $newName
-            ]
-        );
-        $resArray = $res->toArray();
-        if (!$resArray[0]['ok']) {
-            throw new \Exception(
-                'Renaming collection failed: ' . print_r($resArray, true)
-            );
-        }
-        return $newName;
-    }
-
-    /**
-     * Remove a temp dedup collection
+     * Remove a temporary tracking collection
      *
      * @param string $collectionName The temporary collection name
      *
      * @return bool
      */
-    public function dropQueueCollection($collectionName)
+    public function dropTrackingCollection($collectionName)
     {
-        if (strncmp($collectionName, 'tmp_', 4) !== 0) {
+        if (strncmp($collectionName, 'tracking_', 4) !== 0) {
             throw new \Exception(
-                "Invalid temp queue collection name: '$collectionName'"
+                "Invalid tracking collection name: '$collectionName'"
             );
         }
-        $collection = $this->mongoClient->{$collectionName};
-        $res = $collection->drop();
+        $res = $this->getDb()->dropCollection($collectionName);
         return (bool)$res['ok'];
     }
 
     /**
-     * Add a record ID to a queue collection
+     * Add a record ID to a tracking collection
      *
      * @param string $collectionName The queue collection name
      * @param string $id             ID to add
      *
-     * @return void
+     * @return bool true if added, false if id already exists
      */
-    public function addIdToQueue($collectionName, $id)
+    public function addIdToTrackingCollection($collectionName, $id)
     {
-        $this->saveMongoRecord($collectionName, ['_id' => $id], 0);
-    }
+        $params = [
+            'writeConcern' => new \MongoDB\Driver\WriteConcern(1)
+        ];
+        $res = $this->getDb()->{$collectionName}->insertOne(['_id' => $id], $params);
 
-    /**
-     * Find IDs in a queue collection
-     *
-     * @param array $filter  Search filter
-     * @param array $options Options such as sorting. Must include 'collectionName'.
-     *
-     * @return \Traversable
-     */
-    public function findQueuedIds(array $filter, array $options)
-    {
-        if (empty($options['collectionName'])) {
-            throw new \Exception('Options must include collectionName');
-        }
-        $collectionName = $options['collectionName'];
-        unset($options['collectionName']);
-        return $this->findMongoRecords($collectionName, $filter, $options);
+        return $res->getInsertedCount() > 0;
     }
 
     /**
