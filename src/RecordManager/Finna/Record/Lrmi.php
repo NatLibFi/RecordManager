@@ -98,14 +98,17 @@ class Lrmi extends \RecordManager\Base\Record\Lrmi
             $data['educational_audience_str_mv'][]
                 = (string)$audience->educationalRole;
         }
-        $data['educational_level_str_mv']
-            = $this->getAlignmentObjects('educationalLevel');
-
-        $data['educational_aim_str_mv']
-            = $this->getAlignmentObjects('teaches');
-
-        $data['educational_subject_str_mv']
-            = $this->getAlignmentObjects('educationalSubject');
+        $data['educational_level_str_mv'] = array_map(
+            'strval', (array)($doc->learningResource->educationalLevel ?? [])
+        );
+        $data['educational_aim_str_mv'] = array_map(
+            'strval', (array)($doc->learningResource->teaches ?? [])
+        );
+        foreach ($doc->learningResource->educationalAlignment ?? [] as $alignment) {
+            if ($subject = $alignment->educationalSubject ?? null) {
+                $data['educational_subject_str_mv'][] = (string)$subject;
+            }
+        }
 
         foreach ($doc->type as $type) {
             $data['educational_material_type_str_mv'][] = (string)$type;
