@@ -1780,7 +1780,7 @@ class SolrUpdater
             $this->db->dropTrackingCollection($trackingName);
             exit(1);
         }
-        $this->log->logInfo('iterateMergedRecords', "$count id's processed");
+        $this->log->logInfo('iterateMergedRecords', "$count records processed");
 
         $this->log->logInfo(
             'iterateMergedRecords',
@@ -1820,6 +1820,9 @@ class SolrUpdater
                 }
             }
         );
+        $this->log
+            ->logInfo('iterateMergedRecords', "$count merge records processed");
+
         $this->db->dropTrackingCollection($trackingName);
 
         if (isset($this->terminate)) {
