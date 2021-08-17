@@ -1780,7 +1780,7 @@ class SolrUpdater
             $this->db->dropTrackingCollection($trackingName);
             exit(1);
         }
-        $this->log->logInfo('createQueueCollection', "$count id's processed");
+        $this->log->logInfo('iterateMergedRecords', "$count id's processed");
 
         $this->log->logInfo(
             'iterateMergedRecords',
