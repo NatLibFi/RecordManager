@@ -417,7 +417,7 @@ class MongoDatabase extends AbstractDatabase
                 "Invalid tracking collection name: '$collectionName'"
             );
         }
-        $res = $this->getDb()->dropCollection($collectionName);
+        $res = (array)$this->getDb()->dropCollection($collectionName);
         return (bool)$res['ok'];
     }
 
@@ -432,11 +432,16 @@ class MongoDatabase extends AbstractDatabase
     public function addIdToTrackingCollection($collectionName, $id)
     {
         $params = [
-            'writeConcern' => new \MongoDB\Driver\WriteConcern(1)
+            'writeConcern' => new \MongoDB\Driver\WriteConcern(1),
+            'upsert' => true
         ];
-        $res = $this->getDb()->{$collectionName}->insertOne(['_id' => $id], $params);
+        $res = $this->getDb()->{$collectionName}->replaceOne(
+            ['_id' => $id],
+            ['_id' => $id],
+            $params
+        );
 
-        return $res->getInsertedCount() > 0;
+        return $res->getMatchedCount() === 0;
     }
 
     /**
