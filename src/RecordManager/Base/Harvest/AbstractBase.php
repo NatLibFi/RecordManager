@@ -42,7 +42,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class Base
+abstract class AbstractBase
 {
     /**
      * Database
@@ -139,6 +139,8 @@ class Base
     /**
      * Record handling callback
      *
+     * @see StoreRecordTrait::storeRecord
+     *
      * @var callable
      */
     protected $callback = null;
@@ -231,6 +233,15 @@ class Base
     }
 
     /**
+     * Harvest all available documents.
+     *
+     * @param callable $callback Function to be called to store a harvested record
+     *
+     * @return void
+     */
+    abstract public function harvest($callback);
+
+    /**
      * Return the number of changed records
      *
      * @return int
@@ -302,7 +313,7 @@ class Base
      *
      * @return void
      */
-    public function initHarvest($callback)
+    protected function initHarvest($callback)
     {
         $this->callback = $callback;
         $this->changedRecords = 0;

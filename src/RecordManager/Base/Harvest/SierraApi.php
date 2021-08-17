@@ -42,7 +42,7 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class SierraApi extends Base
+class SierraApi extends AbstractBase
 {
     /**
      * Client key for the Sierra API

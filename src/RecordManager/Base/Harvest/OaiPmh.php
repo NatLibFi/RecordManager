@@ -46,7 +46,7 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class OaiPmh extends Base
+class OaiPmh extends AbstractBase
 {
     /**
      * Set to harvest (null for all records)
@@ -210,30 +210,6 @@ class OaiPmh extends Base
     public function setResumptionToken($token)
     {
         $this->resumptionToken = $token;
-    }
-
-    /**
-     * Set a start date for the harvest (only harvest records AFTER this date).
-     *
-     * @param string|null $date Start date (YYYY-MM-DD format).
-     *
-     * @return void
-     */
-    public function setStartDate($date)
-    {
-        $this->startDate = $date;
-    }
-
-    /**
-     * Set an end date for the harvest (only harvest records BEFORE this date).
-     *
-     * @param string $date End date (YYYY-MM-DD format).
-     *
-     * @return void
-     */
-    public function setEndDate($date)
-    {
-        $this->endDate = $date;
     }
 
     /**
