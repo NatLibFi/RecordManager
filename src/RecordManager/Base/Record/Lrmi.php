@@ -50,7 +50,7 @@ class Lrmi extends Qdc
      *
      * @var array
      */
-    protected $ignored_allfields = [];
+    protected $ignoredAllfields = [];
 
     /**
      * Return fields to be indexed in Solr
@@ -263,7 +263,7 @@ class Lrmi extends Qdc
             $tag = $node->getName();
             $field = trim((string)$node);
             $iterator->next();
-            if (in_array($tag, $this->ignored_allfields) || !$field) {
+            if (in_array($tag, $this->ignoredAllfields) || !$field) {
                 continue;
             }
             $allFields[] = $field;

@@ -50,7 +50,7 @@ class Lrmi extends \RecordManager\Base\Record\Lrmi
      *
      * @var array
      */
-    protected $ignored_allfields = [
+    protected $ignoredAllfields = [
         'format', 'id', 'identifier', 'date', 'dateCreated', 'dateModified',
         'filesize', 'inLanguage', 'position', 'recordID', 'rights', 'targetUrl',
         'url'
