@@ -58,6 +58,8 @@ class EadOnkiLightEnrichment extends OnkiLightEnrichment
         }
         foreach ($record->getTopicURIs() as $id) {
             $this->enrichField(
+                $sourceId,
+                $record,
                 $solrArray,
                 $id,
                 'topic_add_txt_mv',
