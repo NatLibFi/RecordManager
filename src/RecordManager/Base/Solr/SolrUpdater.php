@@ -1564,7 +1564,7 @@ class SolrUpdater
                         echo "Current list:\n";
                         arsort($values, SORT_NUMERIC);
                         foreach ($values as $key => $value) {
-                            echo "$key: $value\n";
+                            printf("%10ld: %s\n", $value, $key);
                         }
                         echo "\n";
                     }
@@ -1574,7 +1574,7 @@ class SolrUpdater
         arsort($values, SORT_NUMERIC);
         echo "Result list:\n";
         foreach ($values as $key => $value) {
-            echo "$key: $value\n";
+            printf("%10ld: %s\n", $value, $key);
         }
     }
 
