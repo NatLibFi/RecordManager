@@ -98,34 +98,23 @@ class SolrComparer extends SolrUpdater
             }
 
             if ($processDedupRecords) {
-                $collectionName = $this->createQueueCollection(
-                    $fromDate,
-                    $sourceId,
-                    $singleId,
-                    '',
-                    false
-                );
-
                 $count = 0;
                 $lastDisplayedCount = 0;
                 $mergedComponents = 0;
                 $deleted = 0;
                 $pc = new PerformanceCounter();
-                $this->db->iterateQueue(
-                    $collectionName,
-                    function ($item) use ($sourceId,
+                $this->iterateMergedRecords(
+                    $fromDate,
+                    $sourceId,
+                    $singleId,
+                    '',
+                    false,
+                    function (string $dedupId) use ($sourceId,
                         &$mergedComponents, $logFile, &$deleted, &$count,
                         &$lastDisplayedCount, $pc
                     ) {
-                        if (isset($this->terminate)) {
-                            return false;
-                        }
-                        if (empty($item['_id'])) {
-                            return true;
-                        }
-
                         $result = $this->processDedupRecord(
-                            (string)$item['_id'],
+                            $dedupId,
                             $sourceId,
                             false
                         );

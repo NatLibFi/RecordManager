@@ -149,10 +149,25 @@ class FieldMapper
                         }
                     }
                     if (null !== $newValues) {
-                        $data[$field] = array_values(array_unique($newValues));
+                        $data[$field] = array_values(
+                            array_filter(
+                                array_unique($newValues),
+                                function ($s) {
+                                    return '' !== $s;
+                                }
+                            )
+                        );
                     }
                 } else {
                     $data[$field] = $this->mapValue($data[$field], $mappingFile);
+                }
+                if ([] === $data[$field] || '' === $data[$field]) {
+                    if (isset($mappingFile[0]['map']['##mappedempty'])) {
+                        $data[$field] = $mappingFile[0]['map']['##mappedempty'];
+                    } elseif (isset($mappingFile[0]['map']['##mappedemptyarray'])) {
+                        $data[$field]
+                            = [$mappingFile[0]['map']['##mappedemptyarray']];
+                    }
                 }
             } elseif (isset($mappingFile[0]['map']['##empty'])) {
                 $data[$field] = $mappingFile[0]['map']['##empty'];

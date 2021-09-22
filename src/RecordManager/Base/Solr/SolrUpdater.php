@@ -945,7 +945,7 @@ class SolrUpdater
                     }
                     if ($count + $deleted >= $lastDisplayedCount + 1000) {
                         $lastDisplayedCount = $count + $deleted;
-                        $pc->add($count);
+                        $pc->add($lastDisplayedCount);
                         $avg = $pc->getSpeed();
                         $this->log->logInfo(
                             'updateRecords',
@@ -1168,14 +1168,6 @@ class SolrUpdater
         $verb = $this->dumpPrefix ? 'dumped' : 'indexed';
         $initVerb = $this->dumpPrefix ? 'Dumping' : 'Indexing';
 
-        $collectionName = $this->createQueueCollection(
-            $fromDate,
-            $sourceId,
-            $singleId,
-            $lastUpdateKey,
-            $checkParent
-        );
-
         $count = 0;
         $lastDisplayedCount = 0;
         $mergedComponents = 0;
@@ -1194,25 +1186,19 @@ class SolrUpdater
             );
         }
         $pc = new PerformanceCounter();
-        $this->db->iterateQueue(
-            $collectionName,
-            function ($item) use ($checkParent, $sourceId, $delete,
+        $this->iterateMergedRecords(
+            $fromDate,
+            $sourceId,
+            $singleId,
+            $lastUpdateKey,
+            $checkParent,
+            function (string $mergeId) use ($sourceId, $delete,
                 &$mergedComponents, &$deleted, &$count, $noCommit,
                 &$lastDisplayedCount, $pc, $verb
             ) {
-                if ($checkParent) {
-                    $this->checkParentIsAlive();
-                }
-                if (isset($this->terminate)) {
-                    throw new \Exception('Execution termination requested');
-                }
-                if (empty($item['_id'])) {
-                    return true;
-                }
-
                 $this->workerPoolManager->addRequest(
                     'merge',
-                    (string)$item['_id'],
+                    $mergeId,
                     $sourceId,
                     $delete
                 );
@@ -1234,7 +1220,7 @@ class SolrUpdater
                 }
                 if ($count + $deleted >= $lastDisplayedCount + 1000) {
                     $lastDisplayedCount = $count + $deleted;
-                    $pc->add($count);
+                    $pc->add($lastDisplayedCount);
                     $avg = $pc->getSpeed();
                     $this->log->logInfo(
                         'processMerged',
@@ -1533,7 +1519,7 @@ class SolrUpdater
                         );
                     }
                 }
-                $settings = $this->settings[$source];
+                $settings = $this->settings[$source] ?? [];
                 $mergedComponents = 0;
                 if ($mapped) {
                     $data = $this->createSolrArray($record, $mergedComponents);
@@ -1578,7 +1564,7 @@ class SolrUpdater
                         echo "Current list:\n";
                         arsort($values, SORT_NUMERIC);
                         foreach ($values as $key => $value) {
-                            echo "$key: $value\n";
+                            printf("%10ld: %s\n", $value, $key);
                         }
                         echo "\n";
                     }
@@ -1588,7 +1574,7 @@ class SolrUpdater
         arsort($values, SORT_NUMERIC);
         echo "Result list:\n";
         foreach ($values as $key => $value) {
-            echo "$key: $value\n";
+            printf("%10ld: %s\n", $value, $key);
         }
     }
 
@@ -1696,7 +1682,7 @@ class SolrUpdater
     }
 
     /**
-     * Create a merged record collection for processing
+     * Iterate all merged records
      *
      * @param string|null $fromDate      Start date
      * @param string      $sourceId      Comma-separated list of source IDs to
@@ -1705,15 +1691,32 @@ class SolrUpdater
      * @param string      $lastUpdateKey Database state key for last index update
      * @param bool        $checkParent   Whether to check that a parent process is
      *                                   alive
+     * @param Callable    $callback      Callback to call for each record
      *
      * @throws \Exception
      * @return string Collection name
      */
-    protected function createQueueCollection($fromDate, $sourceId, $singleId,
-        $lastUpdateKey, $checkParent
+    protected function iterateMergedRecords($fromDate, $sourceId, $singleId,
+        $lastUpdateKey, $checkParent, $callback
     ) {
-        $fromTimestamp = $this->getStartTimestamp($fromDate, $lastUpdateKey);
+        // Clean up any left over tracking collections
+        $res = $this->db->cleanupTrackingCollections();
+        if ($res['removed']) {
+            $this->log->logInfo(
+                'processMerged',
+                'Cleanup: dropped old tracking collections: '
+                    . implode(', ', $res['removed'])
+            );
+        }
+        if ($res['failed']) {
+            $this->log->logWarning(
+                'processMerged',
+                'Failed to drop old tracking collections: '
+                    . implode(', ', $res['failed'])
+            );
+        }
 
+        $fromTimestamp = $this->getStartTimestamp($fromDate, $lastUpdateKey);
         $params = [];
         if ($singleId) {
             $params['_id'] = $singleId;
@@ -1733,172 +1736,99 @@ class SolrUpdater
             $params['dedup_id'] = ['$exists' => true];
         }
 
-        $record = $this->db->findRecord(
-            [],
-            ['sort' => ['updated' => -1], 'limit' => 1]
-        );
-        if (empty($record)) {
-            $this->log->logInfo('createQueueCollection', 'No records found');
-            return;
-        }
-
-        $lastRecordTime = $this->db->getUnixTime($record['updated']);
-
-        $res = $this->db->cleanupQueueCollections($lastRecordTime);
-
-        if ($res['removed']) {
-            $this->log->logInfo(
-                'createQueueCollection',
-                'Cleanup: dropped old queue collections: '
-                    . implode(', ', $res['removed'])
-            );
-        }
-        if ($res['failed']) {
-            $this->log->logWarning(
-                'createQueueCollection',
-                'Failed to drop collections: ' . implode(', ', $res['failed'])
-            );
-        }
-
-        // Include Solr URL so that the queue collections won't clash if multiple
-        // Solr indexes are being updated simultaneously
-        $queueIdParams = $params;
-        $queueIdParams['solrUrl'] = $this->config['Solr']['update_url'] ?? '-';
-        $queueId = md5(json_encode($queueIdParams));
-
-        $collectionName = $this->db->getExistingQueueCollection(
-            $queueId,
-            $fromTimestamp ?: 0,
-            $lastRecordTime
+        $trackingName = $this->db->getNewTrackingCollection();
+        $this->log->logInfo(
+            'iterateMergedRecords',
+            "Tracking progress with collection $trackingName"
         );
 
         $from = null !== $fromTimestamp
             ? date('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
 
-        if (!$collectionName) {
-            $collectionName = $this->db->getNewQueueCollection(
-                $queueId,
-                $fromTimestamp ?: 0,
-                $lastRecordTime
-            );
-            $this->log->logInfo(
-                'createQueueCollection',
-                "Creating collection $collectionName (from $from, stage 1/2)"
-            );
+        $this->log->logInfo(
+            'iterateMergedRecords',
+            "Processing records (from $from, stage 1/2)"
+        );
 
-            $prevId = null;
-            $count = 0;
-            $totalMergeCount = 0;
-            $this->db->iterateRecords(
-                $params,
-                ['projection' => ['_id' => 1, 'dedup_id' => 1]],
-                function ($record) use ($checkParent, $collectionName,
-                    &$totalMergeCount, &$count, &$prevId
-                ) {
-                    if ($checkParent) {
-                        $this->checkParentIsAlive();
-                    }
-                    if (isset($this->terminate)) {
-                        return false;
-                    }
-                    $id = $record['dedup_id'];
-
-                    if (!isset($prevId) || $prevId != $id) {
-                        $this->db->addIdToQueue($collectionName, $id);
-                        ++$totalMergeCount;
-                        if (++$count % 10000 == 0) {
-                            $this->log->logInfo(
-                                'createQueueCollection',
-                                "$count id's processed"
-                            );
-                        }
-                    }
-                    $prevId = $id;
+        $prevId = null;
+        $count = 0;
+        $this->db->iterateRecords(
+            $params,
+            ['projection' => ['_id' => 1, 'dedup_id' => 1]],
+            function ($record) use ($checkParent, $trackingName, &$count, &$prevId,
+                $callback
+            ) {
+                if ($checkParent) {
+                    $this->checkParentIsAlive();
                 }
-            );
-            if (isset($this->terminate)) {
-                $this->log->logInfo(
-                    'createQueueCollection',
-                    'Termination upon request'
-                );
-                $this->db->dropQueueCollection($collectionName);
-                exit(1);
-            }
-            $this->log->logInfo('createQueueCollection', "$count id's processed");
-
-            $this->log->logInfo(
-                'createQueueCollection',
-                "Creating collection $collectionName (from $from, stage 2/2)"
-            );
-            $dedupParams = [];
-            if ($singleId) {
-                $dedupParams['ids'] = $singleId;
-            } elseif (null !== $fromTimestamp) {
-                $dedupParams['changed']
-                    = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
-            } else {
-                $this->log->logWarning(
-                    'createQueueCollection',
-                    'Processing all merge records -- this may be a lengthy process'
-                        . ' if deleted records have not been purged regularly'
-                );
-            }
-
-            $count = 0;
-            $this->db->iterateDedups(
-                $dedupParams,
-                [],
-                function ($record) use ($checkParent, &$count, $collectionName,
-                    &$totalMergeCount, &$prevId
-                ) {
-                    if ($checkParent) {
-                        $this->checkParentIsAlive();
-                    }
-                    if (isset($this->terminate)) {
-                        return false;
-                    }
-                    $id = $record['_id'];
-                    if (!isset($prevId) || $prevId != $id) {
-                        $this->db->addIdToQueue($collectionName, $id);
-
-                        ++$totalMergeCount;
-                        if (++$count % 10000 == 0) {
-                            $this->log->logInfo(
-                                'createQueueCollection',
-                                "$count merge record id's processed"
-                            );
-                        }
-                    }
-                    $prevId = $id;
+                if (isset($this->terminate)) {
+                    return false;
                 }
-            );
-            if (isset($this->terminate)) {
-                $this->log
-                    ->logInfo('createQueueCollection', 'Termination upon request');
-                $this->db->dropQueueCollection($collectionName);
-                exit(1);
-            }
-            $this->log->logInfo(
-                'createQueueCollection',
-                "$count merge record id's processed"
-            );
+                $id = (string)$record['dedup_id'];
 
-            if ($totalMergeCount > 0) {
-                $collectionName = $this->db
-                    ->finalizeQueueCollection($collectionName);
+                if ($prevId !== $id
+                    && $this->db->addIdToTrackingCollection($trackingName, $id)
+                ) {
+                    $callback($id);
+                    ++$count;
+                }
+                $prevId = $id;
             }
-            $this->log->logInfo(
-                'createQueueCollection',
-                "Collection $collectionName complete"
-            );
+        );
+        if (isset($this->terminate)) {
+            $this->log->logInfo('iterateMergedRecords', 'Termination upon request');
+            $this->db->dropTrackingCollection($trackingName);
+            exit(1);
+        }
+        $this->log->logInfo('iterateMergedRecords', "$count records processed");
+
+        $this->log->logInfo(
+            'iterateMergedRecords',
+            "Processing merge records (from $from, stage 2/2)"
+        );
+
+        $dedupParams = [];
+        if ($singleId) {
+            $dedupParams['ids'] = $singleId;
+        } elseif (null !== $fromTimestamp) {
+            $dedupParams['changed']
+                = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
         } else {
-            $this->log->logInfo(
-                'createQueueCollection',
-                "Using existing collection $collectionName"
+            $this->log->logWarning(
+                'iterateMergedRecords',
+                'Processing all merge records -- this may be a lengthy process'
+                    . ' if deleted records have not been purged regularly'
             );
         }
 
-        return $collectionName;
+        $count = 0;
+        $this->db->iterateDedups(
+            $dedupParams,
+            [],
+            function ($record) use ($checkParent, &$count, $trackingName, $callback
+            ) {
+                if ($checkParent) {
+                    $this->checkParentIsAlive();
+                }
+                if (isset($this->terminate)) {
+                    return false;
+                }
+                $id = (string)$record['_id'];
+                if ($this->db->addIdToTrackingCollection($trackingName, $id)) {
+                    $callback($id);
+                    ++$count;
+                }
+            }
+        );
+        $this->log
+            ->logInfo('iterateMergedRecords', "$count merge records processed");
+
+        $this->db->dropTrackingCollection($trackingName);
+
+        if (isset($this->terminate)) {
+            $this->log->logInfo('iterateMergedRecords', 'Termination upon request');
+            exit(1);
+        }
     }
 
     /**

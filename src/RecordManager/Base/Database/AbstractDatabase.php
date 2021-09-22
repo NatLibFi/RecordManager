@@ -339,79 +339,40 @@ abstract class AbstractDatabase implements DatabaseInterface
     abstract public function deleteDedup($id);
 
     /**
-     * Remove old queue collections
+     * Remove old tracking collections
      *
-     * @param int $lastRecordTime Newest record timestamp
+     * @param int $minAge Minimum age in days. Default is 7 days.
      *
      * @return array Array of two arrays with collections removed and those whose
      * removal failed
      */
-    abstract public function cleanupQueueCollections($lastRecordTime);
+    abstract public function cleanupTrackingCollections(int $minAge = 7);
 
     /**
-     * Check for an existing queue collection with the given parameters
-     *
-     * @param string $hash           Hash of parameters used to identify the
-     *                               collection
-     * @param int    $fromDate       Timestamp of processing start date
-     * @param int    $lastRecordTime Newest record timestamp
+     * Create a new temporary tracking collection
      *
      * @return string
      */
-    abstract public function getExistingQueueCollection($hash, $fromDate,
-        $lastRecordTime
-    );
+    abstract public function getNewTrackingCollection();
 
     /**
-     * Create a new temporary queue collection for the given parameters
-     *
-     * @param string $hash           Hash of parameters used to identify the
-     *                               collection
-     * @param string $fromDate       Timestamp of processing start date
-     * @param int    $lastRecordTime Newest record timestamp
-     *
-     * @return string
-     */
-    abstract public function getNewQueueCollection($hash, $fromDate, $lastRecordTime
-    );
-
-    /**
-     * Rename a temporary dedup collection to its final name and return the name
-     *
-     * @param string $collectionName The temporary collection name
-     *
-     * @return string
-     */
-    abstract public function finalizeQueueCollection($collectionName);
-
-    /**
-     * Remove a temp dedup collection
+     * Remove a temporary tracking collection
      *
      * @param string $collectionName The temporary collection name
      *
      * @return bool
      */
-    abstract public function dropQueueCollection($collectionName);
+    abstract public function dropTrackingCollection($collectionName);
 
     /**
-     * Add a record ID to a queue collection
+     * Add a record ID to a tracking collection
      *
      * @param string $collectionName The queue collection name
      * @param string $id             ID to add
      *
-     * @return void
+     * @return bool True if added, false if id already exists
      */
-    abstract public function addIdToQueue($collectionName, $id);
-
-    /**
-     * Find IDs in a queue collection
-     *
-     * @param array $filter  Search filter
-     * @param array $options Options such as sorting. Must include 'collectionName'.
-     *
-     * @return \Traversable
-     */
-    abstract public function findQueuedIds(array $filter, array $options);
+    abstract public function addIdToTrackingCollection($collectionName, $id);
 
     /**
      * Save a log message
@@ -446,26 +407,6 @@ abstract class AbstractDatabase implements DatabaseInterface
      * @return void
      */
     abstract public function deleteLogMessage($id): void;
-
-    /**
-     * Iterate through queue
-     *
-     * Calls callback for each item until exhausted or callback returns false.
-     *
-     * @param string   $collectionName The queue collection name
-     * @param Callable $callback       Callback to call for each record
-     * @param array    $params         Optional parameters to pass to the callback
-     *
-     * @return void
-     */
-    public function iterateQueue(string $collectionName, callable $callback,
-        array $params = []
-    ):void {
-        $options['collectionName'] = $collectionName;
-        $this->iterate(
-            [$this, 'findQueuedIds'], [], $options, $callback, $params
-        );
-    }
 
     /**
      * Find a single URI cache record

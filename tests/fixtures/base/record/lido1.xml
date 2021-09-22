@@ -1,0 +1,100 @@
+<?xml version="1.0"?>
+<lidoWrap schemaLocation="http://www.lido-schema.org http://www.lido-schema.org/schema/v1.0/lido-v1.0.xsd">
+  <lido>
+    <lidoRecID type="Test">knp-247394</lidoRecID>
+    <descriptiveMetadata lang="fi">
+      <objectClassificationWrap>
+        <objectWorkTypeWrap>
+          <objectWorkType>
+            <term>Kirja</term>
+          </objectWorkType>
+        </objectWorkTypeWrap>
+      </objectClassificationWrap>
+      <objectIdentificationWrap>
+        <titleWrap>
+          <titleSet>
+            <appellationValue>Luonnonsuojelus&#xE4;&#xE4;d&#xF6;kset / toimittanut Raimo Luhtanen</appellationValue>
+          </titleSet>
+        </titleWrap>
+        <inscriptionsWrap/>
+        <repositoryWrap>
+          <repositorySet>
+            <repositoryName>
+              <legalBodyName>
+                <appellationValue>Test Institution</appellationValue>
+              </legalBodyName>
+            </repositoryName>
+            <workID type="numero">26054</workID>
+          </repositorySet>
+          <repositorySet>
+            <workID type="isbn">9518593736</workID>
+          </repositorySet>
+          <repositorySet>
+            <workID type="isbn">9789518593731</workID>
+            <workID type="isbn">9789518593732</workID>
+          </repositorySet>
+          <repositorySet>
+            <workID type="issn">0357-5284</workID>
+          </repositorySet>
+        </repositoryWrap>
+      </objectIdentificationWrap>
+      <objectRelationWrap>
+        <subjectWrap>
+          <subjectSet>
+            <subject>
+              <subjectConcept>
+                <term>retkeily</term>
+                <term>ulkoilu</term>
+              </subjectConcept>
+            </subject>
+          </subjectSet>
+        </subjectWrap>
+      </objectRelationWrap>
+      <eventWrap>
+        <eventSet>
+          <event>
+            <eventID type=""/>
+            <eventType>
+              <term>valmistus</term>
+            </eventType>
+            <eventActor>
+              <actorInRole>
+                <actor>
+                  <actorID type=""/>
+                  <nameActorSet>
+                    <appellationValue>Luhtanen, Raimo</appellationValue>
+                  </nameActorSet>
+                </actor>
+                <roleActor>
+                  <term>Kirjoittajat</term>
+                </roleActor>
+              </actorInRole>
+            </eventActor>
+          </event>
+        </eventSet>
+      </eventWrap>
+    </descriptiveMetadata>
+    <administrativeMetadata lang="fi">
+      <recordWrap>
+        <recordInfoSet>
+          <recordInfoID type="knp">M011-320623</recordInfoID>
+        </recordInfoSet>
+      </recordWrap>
+      <rightsWorkWrap>
+        <rightsWorkSet>
+          <rightsHolder>
+            <legalBodyName>
+              <appellationValue>Test Institution</appellationValue>
+            </legalBodyName>
+          </rightsHolder>
+        </rightsWorkSet>
+      </rightsWorkWrap>
+      <recordWrap>
+        <recordID type="local">247394</recordID>
+        <recordType>
+          <term lang="en">Archive</term>
+        </recordType>
+      </recordWrap>
+    </administrativeMetadata>
+  </lido>
+</lidoWrap>

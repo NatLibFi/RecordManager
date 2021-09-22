@@ -29,6 +29,7 @@
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Record\BAse as BaseRecord;
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 
@@ -112,17 +113,19 @@ abstract class OnkiLightEnrichment extends Enrichment
     /**
      * Enrich the record and return any additions in solrArray
      *
-     * @param array  $solrArray          Metadata to be sent to Solr
-     * @param string $id                 Onki id
-     * @param string $solrField          Target Solr field
-     * @param string $solrCheckField     Solr field to check for existing values
-     * @param bool   $includeInAllfields Whether to include the enriched
-     *                                   value also in allFields
+     * @param string     $sourceId           Source ID
+     * @param BaseRecord $record             Metadata record
+     * @param array      $solrArray          Metadata to be sent to Solr
+     * @param string     $id                 Onki id
+     * @param string     $solrField          Target Solr field
+     * @param string     $solrCheckField     Solr field to check for existing values
+     * @param bool       $includeInAllfields Whether to include the enriched
+     *                                       value also in allFields
      *
      * @return void
      */
-    protected function enrichField(&$solrArray, $id, $solrField,
-        $solrCheckField = '', $includeInAllfields = false
+    protected function enrichField(string $sourceId, BaseRecord $record, &$solrArray,
+        $id, $solrField, $solrCheckField = '', $includeInAllfields = false
     ) {
         // Clean up any invalid characters from the id
         $id = str_replace(
@@ -151,7 +154,7 @@ abstract class OnkiLightEnrichment extends Enrichment
         if (!$match) {
             $this->logger->logDebug(
                 'enrichField',
-                "Ignoring unlisted URI '$id', record " . $solrArray['id']
+                "Ignoring unlisted URI '$id', record $sourceId." . $record->getID()
             );
             return;
         }
