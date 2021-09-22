@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2020.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -425,7 +425,17 @@ class Ead3 extends Ead
                     . (string)$archiveAttr->subtitle;
             }
             $data['allfields'][] = $data['hierarchy_top_title'];
-            if ($archiveAttr->sequence) {
+            $seqLabel = $this->getDriverParam('sequenceUnitIdLabel', 'sequence');
+            if ($seqLabel) {
+                foreach ($this->doc->did->unitid ?? [] as $unitId) {
+                    if ($seqLabel === (string)$unitId->attributes()->label) {
+                        $data['hierarchy_sequence']
+                            = str_pad((string)$unitId, 7, '0', STR_PAD_LEFT);
+                        break;
+                    }
+                }
+            }
+            if (!isset($data['hierarchy_sequence']) && $archiveAttr->sequence) {
                 $data['hierarchy_sequence'] = (string)$archiveAttr->sequence;
             }
         }
