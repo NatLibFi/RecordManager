@@ -51,10 +51,10 @@
 ^Public [Dd]omain.*[] = usage_D
 ^Public [Dd]omain.*[] = usage_E
 
-^https?://creativecommons\.org/publicdomain/mark/1\.0/deed.*[] = usage_A
-^https?://creativecommons\.org/publicdomain/mark/1\.0/deed.*[] = usage_B
-^https?://creativecommons\.org/publicdomain/mark/1\.0/deed.*[] = usage_C
-^https?://creativecommons\.org/publicdomain/mark/1\.0/deed.*[] = usage_D
-^https?://creativecommons\.org/publicdomain/mark/1\.0/deed.*[] = usage_E
+^https?://creativecommons\.org/publicdomain/.*[] = usage_A
+^https?://creativecommons\.org/publicdomain/.*[] = usage_B
+^https?://creativecommons\.org/publicdomain/.*[] = usage_C
+^https?://creativecommons\.org/publicdomain/.*[] = usage_D
+^https?://creativecommons\.org/publicdomain/.*[] = usage_E
 
 ##default = usage_F
