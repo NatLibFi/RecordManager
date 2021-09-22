@@ -1,0 +1,7 @@
+^CC[ -]*BY[ -]*ND.*[] = by
+^CC[ -]*BY[ -]*ND.*[] = nd
+
+^CC[ -]*BY[ \.\d]*[] = by
+
+##default =
+##mappedemptyarray = other
