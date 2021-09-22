@@ -57,4 +57,7 @@
 ^https?://creativecommons\.org/publicdomain/.*[] = usage_D
 ^https?://creativecommons\.org/publicdomain/.*[] = usage_E
 
-##default = usage_F
+; By default map to empty value:
+##default =
+; If mappings of all values results in empty, use the following:
+##mappedemptyarray = usage_F
