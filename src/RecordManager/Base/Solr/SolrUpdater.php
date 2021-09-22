@@ -1519,7 +1519,7 @@ class SolrUpdater
                         );
                     }
                 }
-                $settings = $this->settings[$source];
+                $settings = $this->settings[$source] ?? [];
                 $mergedComponents = 0;
                 if ($mapped) {
                     $data = $this->createSolrArray($record, $mergedComponents);
