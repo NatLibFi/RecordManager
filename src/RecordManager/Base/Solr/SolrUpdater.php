@@ -872,7 +872,7 @@ class SolrUpdater
 
             $fromTimestamp = $this->getStartTimestamp($fromDate, $lastUpdateKey);
             $from = null !== $fromTimestamp
-                ? date('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
+                ? gmdate('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
 
             $this->log->logInfo(
                 'updateRecords', "Creating individual record list (from $from)"
@@ -1743,7 +1743,7 @@ class SolrUpdater
         );
 
         $from = null !== $fromTimestamp
-            ? date('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
+            ? gmdate('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
 
         $this->log->logInfo(
             'iterateMergedRecords',
