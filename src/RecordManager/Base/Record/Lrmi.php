@@ -244,7 +244,7 @@ class Lrmi extends Qdc
         }
         return $result;
     }
-    
+
     /**
      * Get an array of all fields relevant to allfields search
      *
