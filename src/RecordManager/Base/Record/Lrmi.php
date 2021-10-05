@@ -225,27 +225,6 @@ class Lrmi extends Qdc
     }
 
     /**
-     * Get alignment object.
-     *
-     * @param string $type Type
-     *
-     * @return array
-     */
-    protected function getAlignmentObjects($type)
-    {
-        $result = [];
-        foreach ($this->doc->alignmentObject as $obj) {
-            if (isset($obj->alignmentType)
-                && $type === (string)$obj->alignmentType
-                && isset($obj->targetName)
-            ) {
-                $result[] = (string)$obj->targetName;
-            }
-        }
-        return $result;
-    }
-
-    /**
      * Get an array of all fields relevant to allfields search
      *
      * @return array
