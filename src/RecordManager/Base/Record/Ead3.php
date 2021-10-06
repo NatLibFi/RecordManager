@@ -447,9 +447,7 @@ class Ead3 extends Ead
         } else {
             $data['is_hierarchy_id'] = $data['hierarchy_top_id'] = $this->getID();
             $data['is_hierarchy_title'] = $data['hierarchy_top_title']
-                = isset($this->doc->did->unittitle)
-                    ? (string)$this->doc->did->unittitle->attributes()->label
-                    : '';
+                = (string)($this->doc->did->unittitle ?? '');
         }
 
         return $data;
