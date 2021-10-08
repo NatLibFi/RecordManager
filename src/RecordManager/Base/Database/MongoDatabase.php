@@ -98,6 +98,34 @@ class MongoDatabase extends AbstractDatabase
     protected $counts = false;
 
     /**
+     * Whether to use a MongoDB session.
+     *
+     * @var bool
+     */
+    protected $useSession;
+
+    /**
+     * Session ID
+     *
+     * @var \MongoDB\Model\BSONDocument
+     */
+    protected $sessionId = null;
+
+    /**
+     * Session refresh interval in seconds
+     *
+     * @var int
+     */
+    protected $sessionRefreshInterval = 0;
+
+    /**
+     * Last session refresh time
+     *
+     * @var int
+     */
+    protected $lastSessionRefresh = 0;
+
+    /**
      * Constructor.
      *
      * @param array $config Database settings
@@ -113,6 +141,7 @@ class MongoDatabase extends AbstractDatabase
         $this->counts = !empty($config['counts']);
         $this->connectTimeout = $config['connect_timeout'] ?? 300000;
         $this->socketTimeout = $config['socket_timeout'] ?? 300000;
+        $this->useSession = $config['session'] ?? true;
     }
 
     /**
@@ -292,7 +321,7 @@ class MongoDatabase extends AbstractDatabase
     public function getDedup($id)
     {
         if (is_string($id)) {
-            $id = new \MongoDB\BSON\ObjectID($id);
+            $id = new \MongoDB\BSON\ObjectId($id);
         }
         return $this->getMongoRecord($this->dedupCollection, $id);
     }
@@ -554,13 +583,60 @@ class MongoDatabase extends AbstractDatabase
             );
             $this->db = $this->mongoClient->{$this->databaseName};
             $this->pid = getmypid();
+            if ($this->useSession) {
+                $result = $this->db->command(['startSession' => 1]);
+                $result->rewind();
+                $session = $result->current();
+                if (empty($session['id'])) {
+                    throw new \Exception(
+                        'Could not start MongoDB session: '
+                        . var_export($session, true)
+                    );
+                }
+                $this->sessionId = $session['id'];
+                $this->sessionRefreshInterval
+                    = (60 * max(1, floor($session['timeoutMinutes'] / 2)));
+                $this->lastSessionRefresh = time();
+            }
         } elseif ($this->pid !== getmypid()) {
             throw new \Exception(
                 'PID ' . getmypid() . ': database already connected by PID '
                 . getmypid()
             );
+        } else {
+            $this->refreshSession();
         }
         return $this->db;
+    }
+
+    /**
+     * Refresh the session whenever necessary
+     *
+     * @return void
+     */
+    protected function refreshSession()
+    {
+        if ($this->useSession && $this->sessionId
+            && time() - $this->lastSessionRefresh >= $this->sessionRefreshInterval
+        ) {
+            // Do not call getDb to avoid circular reference
+            $result = $this->db->command(
+                [
+                    'refreshSessions' => [
+                        $this->sessionId
+                    ]
+                ]
+            );
+            $result->rewind();
+            $result = $result->current();
+            if (!$result['ok']) {
+                throw new \Exception(
+                    'Could not refresh MongoDB session: '
+                    . var_export($result, true)
+                );
+            }
+            $this->lastSessionRefresh = time();
+        }
     }
 
     /**
@@ -747,6 +823,7 @@ class MongoDatabase extends AbstractDatabase
             if ($callback(iterator_to_array($record), $params) === false) {
                 return;
             }
+            $this->refreshSession();
         }
     }
 }

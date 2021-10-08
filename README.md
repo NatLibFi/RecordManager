@@ -11,9 +11,8 @@ For a stable version, see the stable branch.
 - Minimum supported PHP version is 7.3.
 - Composer is required for dependencies. Run `composer install` in the directory where RecordManager is installed.
 - The following PHP modules are required: xml, xslt, mbstring, intl
-- The following PECL module is required: mongodb
-
-N.B. When using MongoDB, its localLogicalSessionTimeoutMinutes may need to be increased if long-running processes get interrupted with a "cursor id [number] not found" error.
+- The following PECL module is required for MongoDB support: mongodb
+- With MongoDB, the minimum supported version is 3.6. Older versions may still work, but `session = false` needs to be specified in recordmanager.ini.
 
 ## Installation notes on CentOS 7
 
