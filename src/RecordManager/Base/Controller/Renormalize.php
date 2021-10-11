@@ -85,7 +85,7 @@ class Renormalize extends AbstractBase
                     $originalData = MetadataUtils::getRecordData($record, false);
                     $normalizedData = $originalData;
                     if (null !== $settings['normalizationXSLT']) {
-                        $origMetadataRecord = $this->recordFactory->createRecord(
+                        $origMetadataRecord = $this->createRecord(
                             $record['format'],
                             $originalData,
                             $record['oai_id'],
@@ -97,7 +97,7 @@ class Renormalize extends AbstractBase
                         );
                     }
 
-                    $metadataRecord = $this->recordFactory->createRecord(
+                    $metadataRecord = $this->createRecord(
                         $record['format'],
                         $normalizedData,
                         $record['oai_id'],

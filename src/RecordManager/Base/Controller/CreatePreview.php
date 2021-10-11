@@ -141,11 +141,11 @@ class CreatePreview extends AbstractBase
             );
         }
 
-        if (!$this->recordFactory->canCreate($record['format'])) {
+        if (!$this->recordPluginManager->has($record['format'])) {
             throw new \Exception("Format '$format' not supported");
         }
 
-        $metadataRecord = $this->recordFactory->createRecord(
+        $metadataRecord = $this->createRecord(
             $record['format'],
             $record['normalized_data'],
             $record['oai_id'],

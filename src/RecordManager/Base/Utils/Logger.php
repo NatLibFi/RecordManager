@@ -126,6 +126,7 @@ class Logger
         if (isset($config['Log']['store_message_level'])) {
             $this->storeMessageLevel = $config['Log']['store_message_level'];
         }
+        $this->logToConsole = PHP_SAPI === 'cli';
     }
 
     /**

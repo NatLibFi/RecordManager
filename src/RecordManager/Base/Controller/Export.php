@@ -183,7 +183,7 @@ class Export extends AbstractBase
                 function ($record) use (&$count, &$deduped, &$deleted, $skipRecords,
                     $xpath, $file, $deletedFile, $addDedupId
                 ) {
-                    $metadataRecord = $this->recordFactory->createRecord(
+                    $metadataRecord = $this->createRecord(
                         $record['format'],
                         MetadataUtils::getRecordData($record, true),
                         $record['oai_id'],

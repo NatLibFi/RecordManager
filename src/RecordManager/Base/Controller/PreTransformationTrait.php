@@ -62,7 +62,7 @@ trait PreTransformationTrait
             foreach ((array)$settings['preTransformation'] as $transformation) {
                 $style = new \DOMDocument();
                 $style->load(
-                    $this->basePath . '/transformations/' . $transformation
+                    RECMAN_BASE_PATH . '/transformations/' . $transformation
                 );
                 $xslt = new \XSLTProcessor();
                 $xslt->importStylesheet($style);

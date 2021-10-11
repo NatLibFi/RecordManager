@@ -1,10 +1,10 @@
 <?php
 /**
- * Count Field Values
+ * RecordManager base module
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * @category DataManagement
  * @package  RecordManager
@@ -25,12 +25,10 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Base\Controller;
-
-use RecordManager\Base\Solr\SolrUpdater;
+namespace RecordManager\Base;
 
 /**
- * Count Field Values
+ * RecordManager base module
  *
  * @category DataManagement
  * @package  RecordManager
@@ -38,28 +36,15 @@ use RecordManager\Base\Solr\SolrUpdater;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class CountValues extends AbstractBase
+class Module
 {
     /**
-     * Count distinct values in the specified field (that would be added to the
-     * Solr index)
+     * Get module configuration
      *
-     * @param string $sourceId Source ID
-     * @param string $field    Field name
-     * @param bool   $mapped   Whether to count values after any mapping files are
-     *                         are processed
-     *
-     * @return void
+     * @return array
      */
-    public function launch($sourceId, $field, $mapped)
+    public function getConfig()
     {
-        if (!$field) {
-            throw new \Exception('Field must be specified');
-        }
-        $updater = new SolrUpdater(
-            $this->db, RECMAN_BASE_PATH, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings, $this->recordFactory
-        );
-        $updater->countValues($sourceId, $field, $mapped);
+        return include __DIR__ . '/config/module.config.php';
     }
 }

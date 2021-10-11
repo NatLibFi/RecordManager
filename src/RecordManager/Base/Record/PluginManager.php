@@ -1,10 +1,10 @@
 <?php
 /**
- * Database factory class
+ * Record plugin manager
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2020.
+ * Copyright (c) The National Library of Finland 2020-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,10 +25,10 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Base\Database;
+namespace RecordManager\Base\Record;
 
 /**
- * Database registry class
+ * Record plugin manager
  *
  * @category DataManagement
  * @package  RecordManager
@@ -36,25 +36,6 @@ namespace RecordManager\Base\Database;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class Factory
+class PluginManager extends \Laminas\ServiceManager\AbstractPluginManager
 {
-    /**
-     * Create a database class
-     *
-     * @param array $config RecordManager configuration
-     *
-     * @return DatabaseInterface
-     */
-    public static function createDatabase(array $config): DatabaseInterface
-    {
-        $backend = $config['Database']['backend'] ?? 'Mongo';
-        if (empty($config[$backend])) {
-            throw new \Exception("Configuration section $backend missing");
-        }
-        $dbConfig = $config[$backend];
-        if ('Mongo' === $backend) {
-            return new MongoDatabase($dbConfig);
-        }
-        return new PDODatabase($dbConfig);
-    }
 }

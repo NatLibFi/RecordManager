@@ -44,7 +44,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class Marc extends Base
+class Marc extends AbstractRecord
 {
     const SUBFIELD_INDICATOR = "\x1F";
     const END_OF_FIELD = "\x1E";

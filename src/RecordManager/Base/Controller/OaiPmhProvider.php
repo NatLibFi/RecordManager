@@ -168,7 +168,7 @@ class OaiPmhProvider extends AbstractBase
             );
             return;
         }
-        $xml = $this->createRecord($record, $prefix, true);
+        $xml = $this->createRecordXML($record, $prefix, true);
         echo <<<EOT
   <GetRecord>
 $xml
@@ -308,7 +308,7 @@ EOT;
 EOT;
                     return false;
                 }
-                $xml = $this->createRecord(
+                $xml = $this->createRecordXML(
                     $record,
                     $metadataPrefix,
                     $includeMetadata,
@@ -758,7 +758,7 @@ EOT;
      *
      * @return boolean|string
      */
-    protected function createRecord($record, $format, $includeMetadata,
+    protected function createRecordXML($record, $format, $includeMetadata,
         $outputErrors = true
     ) {
         $sourceFormat = $record['format'];
@@ -771,7 +771,7 @@ EOT;
         $oaiId = empty($datasource['ignoreOaiIdInProvider'])
             ? $record['oai_id'] : '';
         if ($includeMetadata && !$record['deleted']) {
-            $metadataRecord = $this->recordFactory->createRecord(
+            $metadataRecord = $this->createRecord(
                 $record['format'],
                 MetadataUtils::getRecordData($record, true),
                 $oaiId,

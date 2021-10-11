@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2020.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,9 +28,8 @@
 namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Database\DatabaseInterface;
-use RecordManager\Base\Database\Factory as DatabaseFactory;
 use RecordManager\Base\Deduplication\DedupHandlerInterface;
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\XslTransformation;
@@ -52,6 +51,8 @@ if (function_exists('pcntl_async_signals')) {
  */
 abstract class AbstractBase
 {
+    use \RecordManager\Base\Record\CreateRecordTrait;
+
     /**
      * Main configuration
      *
@@ -65,13 +66,6 @@ abstract class AbstractBase
      * @var bool
      */
     protected $verbose = false;
-
-    /**
-     * Base path of Record Manager
-     *
-     * @var string
-     */
-    protected $basePath;
 
     /**
      * Logger
@@ -95,53 +89,39 @@ abstract class AbstractBase
     protected $dataSourceSettings;
 
     /**
-     * Record factory
+     * Record loader
      *
-     * @var RecordFactory
+     * @var RecordPluginManager
      */
-    protected $recordFactory;
+    protected $recordPluginManager;
 
     /**
      * Constructor
      *
-     * @param string $basePath Base directory
-     * @param array  $config   Main configuration
-     * @param bool   $console  Specify whether RecordManager is executed on the
-     *                         console so that log output is also output to the
-     *                         console
-     * @param bool   $verbose  Whether verbose output is enabled
+     * @param array               $config              Main configuration
+     * @param array               $datasourceConfig    Datasource configuration
+     * @param Logger              $logger              Logger
+     * @param DatabaseInterface   $database            Database
+     * @param RecordPluginManager $recordPluginManager Record plugin manager
      */
-    public function __construct($basePath, $config, $console, $verbose)
-    {
-        $this->config = $config;
-
+    public function __construct(
+        array $config,
+        array $datasourceConfig,
+        Logger $logger,
+        DatabaseInterface $database,
+        RecordPluginManager $recordPluginManager
+    ) {
         date_default_timezone_set($config['Site']['timezone']);
 
-        $this->logger = new Logger($config);
-        $this->logger->setLogToConsole($console);
-        $this->verbose = $verbose;
-
-        $this->basePath = $basePath;
-        $this->dataSourceSettings = $config['dataSourceSettings']
-            = $this->readDataSourceSettings("$basePath/conf/datasources.ini");
-
-        try {
-            $this->db = DatabaseFactory::createDatabase($config);
-        } catch (\Exception $e) {
-            $this->logger->logFatal(
-                'startup',
-                'Failed to connect to database: ' . $e->getMessage()
-            );
-            throw $e;
-        }
+        $this->config = $config;
+        $this->verbose = $config['Log']['verbose'] ?? false;
+        $this->logger = $logger;
+        $this->db = $database;
         $this->logger->setDatabase($this->db);
-
+        $this->dataSourceSettings = $datasourceConfig;
+        $this->recordPluginManager = $recordPluginManager;
         MetadataUtils::setLogger($this->logger);
-        MetadataUtils::setConfig($config, $this->basePath);
-
-        $this->recordFactory = new RecordFactory(
-            $this->logger, $config, $this->dataSourceSettings
-        );
+        MetadataUtils::setConfig($config, RECMAN_BASE_PATH);
     }
 
     /**
@@ -205,14 +185,14 @@ abstract class AbstractBase
             ];
             $settings['normalizationXSLT'] = !empty($settings['normalization'])
                 ? new XslTransformation(
-                    $this->basePath . '/transformations',
+                    RECMAN_BASE_PATH . '/transformations',
                     $settings['normalization'],
                     $params
                 ) : null;
             $settings['solrTransformationXSLT']
                 = !empty($settings['solrTransformation'])
                 ? new XslTransformation(
-                    $this->basePath . '/transformations',
+                    RECMAN_BASE_PATH . '/transformations',
                     $settings['solrTransformation'],
                     $params
                 ) : null;
@@ -228,7 +208,7 @@ abstract class AbstractBase
                 $settings['recordSplitter'] = $settings['recordSplitterClass'];
             } elseif (!empty($settings['recordSplitter'])) {
                 $style = new \DOMDocument();
-                $xslFile = $this->basePath . '/transformations/'
+                $xslFile = RECMAN_BASE_PATH . '/transformations/'
                     . $settings['recordSplitter'];
                 if ($style->load($xslFile) === false) {
                     throw new \Exception(
@@ -253,8 +233,8 @@ abstract class AbstractBase
         $dedupClass = $this->config['Site']['dedup_handler']
             ?? '\RecordManager\Base\Deduplication\DedupHandler';
         $dedupHandler = new $dedupClass(
-            $this->db, $this->logger, $this->verbose, $this->basePath, $this->config,
-            $this->dataSourceSettings, $this->recordFactory
+            $this->db, $this->logger, $this->verbose, RECMAN_BASE_PATH, $this->config,
+            $this->dataSourceSettings, $this->recordPluginManager
         );
         if (!($dedupHandler instanceof DedupHandlerInterface)) {
             throw new \Exception(

@@ -27,6 +27,8 @@
  */
 require_once __DIR__ . '/cmdline.php';
 
+use Laminas\ServiceManager\ServiceManager;
+
 /**
  * Main function
  *
@@ -38,9 +40,6 @@ require_once __DIR__ . '/cmdline.php';
 function main($argv)
 {
     $params = parseArgs($argv);
-    $basePath = !empty($params['basepath']) ? $params['basepath'] : __DIR__;
-    $config = applyConfigOverrides($params, loadMainConfig($basePath));
-
     if (empty($params['func']) || !is_string($params['func'])) {
         echo <<<EOT
 Usage: $argv[0] --func=... [...]
@@ -87,9 +86,18 @@ EOT;
         exit(1);
     }
 
+    define(
+        'RECMAN_BASE_PATH',
+        !empty($params['basepath']) ? $params['basepath'] : __DIR__
+    );
+
+    $app = Laminas\Mvc\Application::init(require 'conf/application.config.php');
+    $sm = $app->getServiceManager();
+    $configReader = $sm->get(\RecordManager\Base\Settings\Ini::class);
+    $configReader->addOverrides('recordmanager.ini', $params);
+
     $lockfile = $params['lockfile'] ?? '';
     $lockhandle = false;
-    $verbose = $params['verbose'] ?? false;
     try {
         if (($lockhandle = acquireLock($lockfile)) === false) {
             die();
@@ -104,9 +112,7 @@ EOT;
             $date = isset($params['all']) ? '' : ($params['from'] ?? null);
             $datePerServer = !empty($params['dateperserver']);
 
-            $solrUpdate = new \RecordManager\Base\Controller\SolrUpdate(
-                $basePath, $config, true, $verbose
-            );
+            $solrUpdate = $sm->get(\RecordManager\Base\Controller\SolrUpdate::class);
             $solrUpdate->launch($date, $sources, $single, $noCommit, $datePerServer);
         } elseif ($params['func'] == 'comparesolr') {
             $date = isset($params['all']) ? '' : ($params['from'] ?? null);

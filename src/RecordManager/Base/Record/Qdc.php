@@ -41,7 +41,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class Qdc extends Base
+class Qdc extends AbstractRecord
 {
     use FullTextTrait;
 

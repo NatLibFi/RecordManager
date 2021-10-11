@@ -133,7 +133,7 @@ trait StoreRecordTrait
         $mainID = '';
         foreach ($dataArray as $data) {
             if (null !== $settings['normalizationXSLT']) {
-                $metadataRecord = $this->recordFactory->createRecord(
+                $metadataRecord = $this->createRecord(
                     $settings['format'],
                     $settings['normalizationXSLT']
                         ->transform($data, ['oai_id' => $oaiID]),
@@ -142,11 +142,11 @@ trait StoreRecordTrait
                 );
                 $metadataRecord->normalize();
                 $normalizedData = $metadataRecord->serialize();
-                $originalData = $this->recordFactory->createRecord(
+                $originalData = $this->createRecord(
                     $settings['format'], $data, $oaiID, $sourceId
                 )->serialize();
             } else {
-                $metadataRecord = $this->recordFactory->createRecord(
+                $metadataRecord = $this->createRecord(
                     $settings['format'], $data, $oaiID, $sourceId
                 );
                 $originalData = $metadataRecord->serialize();
@@ -321,7 +321,7 @@ trait StoreRecordTrait
         // Mark host records updated too
         $sourceId = $record['source_id'];
         $settings = $this->dataSourceSettings[$sourceId];
-        $metadataRecord = $this->recordFactory->createRecord(
+        $metadataRecord = $this->createRecord(
             $record['format'],
             MetadataUtils::getRecordData($record, true),
             $record['oai_id'],

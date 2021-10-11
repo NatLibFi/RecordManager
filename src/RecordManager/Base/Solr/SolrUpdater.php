@@ -29,7 +29,7 @@ namespace RecordManager\Base\Solr;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Record\Base as BaseRecord;
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -55,14 +55,8 @@ if (function_exists('pcntl_async_signals')) {
  */
 class SolrUpdater
 {
+    use \RecordManager\Base\Record\CreateRecordTrait;
     use \RecordManager\Base\Utils\ParentProcessCheckTrait;
-
-    /**
-     * Base path of Record Manager
-     *
-     * @var string
-     */
-    protected $basePath;
 
     /**
      * Database
@@ -520,26 +514,24 @@ class SolrUpdater
     /**
      * Constructor
      *
-     * @param Database      $db                 Database connection
-     * @param string        $basePath           RecordManager main directory
-     * @param object        $log                Logger
-     * @param bool          $verbose            Whether to output verbose messages
-     * @param array         $config             Main configuration
-     * @param array         $dataSourceSettings Data source settings
-     * @param RecordFactory $recordFactory      Record Factory
+     * @param Database            $db                  Database connection
+     * @param object              $log                 Logger
+     * @param bool                $verbose             Whether to output verbose messages
+     * @param array               $config              Main configuration
+     * @param array               $dataSourceSettings  Data source settings
+     * @param RecordPluginManager $recordPluginManager Record plugin manager
      *
      * @throws \Exception
      */
-    public function __construct(?Database $db, string $basePath, Logger $log,
+    public function __construct(?Database $db, Logger $log,
         bool $verbose, array $config, array $dataSourceSettings,
-        RecordFactory $recordFactory
+        RecordPluginManager $recordPluginManager
     ) {
         $this->config = $config;
         $this->db = $db;
-        $this->basePath = $basePath;
         $this->log = $log;
         $this->verbose = $verbose;
-        $this->recordFactory = $recordFactory;
+        $this->recordPluginManager = $recordPluginManager;
 
         $this->metadataRecordCache = new \cash\LRUCache(100);
         $this->recordDataCache = new \cash\LRUCache(100);
@@ -1524,7 +1516,7 @@ class SolrUpdater
                 if ($mapped) {
                     $data = $this->createSolrArray($record, $mergedComponents);
                 } else {
-                    $metadataRecord = $this->recordFactory->createRecord(
+                    $metadataRecord = $this->createRecord(
                         $record['format'],
                         MetadataUtils::getRecordData($record, true),
                         $record['oai_id'],
@@ -1892,7 +1884,7 @@ class SolrUpdater
 
         // Create field mapper
         $this->fieldMapper = new $this->fieldMapperClass(
-            $this->basePath,
+            RECMAN_BASE_PATH,
             array_merge(
                 $this->config['DefaultMappings'] ?? [],
                 $this->config['Default Mappings'] ?? []
@@ -1932,7 +1924,7 @@ class SolrUpdater
             }
         }
 
-        $metadataRecord = $this->recordFactory->createRecord(
+        $metadataRecord = $this->createRecord(
             $record['format'],
             MetadataUtils::getRecordData($record, true),
             $record['oai_id'],
@@ -2072,7 +2064,7 @@ class SolrUpdater
                     $hostMetadataRecord = $this->metadataRecordCache
                         ->get($hostRecord['_id']);
                     if (null === $hostMetadataRecord) {
-                        $hostMetadataRecord = $this->recordFactory->createRecord(
+                        $hostMetadataRecord = $this->createRecord(
                             $hostRecord['format'],
                             MetadataUtils::getRecordData($hostRecord, true),
                             $hostRecord['oai_id'],

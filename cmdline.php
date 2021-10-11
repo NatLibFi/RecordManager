@@ -5,7 +5,7 @@
  * PHP version 7
  *
  * Copyright (C) Patrick Fisher 2009
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -35,7 +35,6 @@
 ini_set('display_errors', '1');
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/src/RecordManager/Base/Autoloader.php';
 
 // If profiling is requested, set it up now. Profiling can be enabled from the
 // command line by providing XHProf location, e.g.
@@ -123,6 +122,9 @@ function parseArgs($argv)
         } else {
             $params[] = $arg;
         }
+    }
+    if ($params['verbose'] ?? false) {
+        $params['config.Log.verbose'] = true;
     }
     return $params;
 }
