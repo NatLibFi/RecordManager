@@ -61,7 +61,7 @@ counts = false
 ;socket_timeout = 12000000
 ; Whether to use MongoDB sessions. Default is true. Set to false only if MongoDB
 ; version does not support sessions (older than 3.6).
-sessions = true
+;session = true
 
 ; Settings for MySQL/MariaDB database (optional, see also the [Database] section)
 [PDO]
