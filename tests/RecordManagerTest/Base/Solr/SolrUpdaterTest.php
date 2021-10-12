@@ -27,7 +27,8 @@
  */
 namespace RecordManagerTest\Base\Solr;
 
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Solr\SolrUpdater;
 use RecordManager\Base\Utils\Logger;
 
@@ -42,7 +43,7 @@ use RecordManager\Base\Utils\Logger;
  */
 class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
 {
-    use \RecordManagerTest\Base\Record\CreateRecordTrait;
+    use \RecordManagerTest\Base\Record\CreateSampleRecordTrait;
 
     /**
      * Main configuration
@@ -145,13 +146,24 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
      */
     protected function getSolrUpdater()
     {
-        $basePath = dirname(__FILE__) . '/configs/solrupdatertest';
         $logger = $this->createMock(Logger::class);
-        $recordFactory
-            = new RecordFactory($logger, $this->config, $this->dataSourceSettings);
+        $record = new \RecordManager\Base\Record\Marc(
+          $logger,
+          [],
+          $this->dataSourceSettings
+        );
+        $recordPM = $this->createMock(RecordPluginManager::class);
+        $enrichmentPM = $this->createMock(EnrichmentPluginManager::class);
+        $recordPM->expects($this->once())
+            ->method('get')
+            ->will($this->returnValue($record));
         $solrUpdater = new SolrUpdater(
-            null, $basePath, $logger, false, $this->config,
-            $this->dataSourceSettings, $recordFactory
+            null,
+            $logger,
+            $this->config,
+            $this->dataSourceSettings,
+            $recordPM,
+            $enrichmentPM
         );
 
         return $solrUpdater;

@@ -36,7 +36,6 @@ namespace RecordManager\Base\Settings;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-
 class Ini
 {
     /**
@@ -89,7 +88,7 @@ class Ini
      *
      * @return array
      */
-    function applyOverrides($config, $overrides)
+    public function applyOverrides($config, $overrides)
     {
         foreach ($overrides as $key => $value) {
             $setting = explode('.', $key);

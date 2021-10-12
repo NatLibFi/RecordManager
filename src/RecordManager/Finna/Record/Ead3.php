@@ -581,7 +581,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             return null;
         }
 
-        list($start, $end) = explode('/', $input);
+        [$start, $end] = explode('/', $input);
 
         $parseDate = function (
             $date, $defaultYear = '0', $defaultMonth = '01', $defaultDay = '01',

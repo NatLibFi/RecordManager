@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<ruleset name="RecordManager Coding Standards" namespace="RecordManager\PHPCS">
+  <description>Coding standards for RecordManager.</description>
+  <file>../src</file>
+  <exclude-pattern>src/RecordManager/[^/]+/config/*</exclude-pattern>
+  <arg name="extensions" value="php"/>
+  <rule ref="PEAR"/>
+</ruleset>

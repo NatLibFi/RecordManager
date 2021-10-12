@@ -4,8 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) Eero Heikkinen 2013.
- * Copyright (C) The National Library of Finland 2020.
+ * Copyright (C) The National Library of Finland 2020-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -29,7 +28,6 @@
  */
 namespace RecordManagerTest\Base\Record;
 
-use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -42,7 +40,7 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-trait CreateRecordTrait
+trait CreateSampleRecordTrait
 {
     /**
      * Create a sample record driver
@@ -51,18 +49,18 @@ trait CreateRecordTrait
      * @param string $sample   Sample record file
      * @param array  $dsConfig Datasource config
      *
-     * @return \RecordManager\Base\Record\Base
+     * @return \RecordManager\Base\Record\AbstractRecord
      */
     protected function createRecord($class, $sample, $dsConfig = [], $ns = 'base')
     {
         $logger = $this->createMock(Logger::class);
-        $recordFactory = new RecordFactory($logger, [], $dsConfig);
-        $sample = file_get_contents(
-            __DIR__ . "/../../../fixtures/$ns/record/$sample"
+        $record = new $class(
+            $logger,
+            [],
+            $dsConfig
         );
-        $record = $recordFactory->createRecord(
-            $class, $sample, '__unit_test_no_id__', '__unit_test_no_source__'
-        );
+        $data = file_get_contents(__DIR__ . "/../../../fixtures/$ns/record/$sample");
+        $record->setData('__unit_test_no_source__', '__unit_test_no_id__', $data);
         return $record;
     }
 }

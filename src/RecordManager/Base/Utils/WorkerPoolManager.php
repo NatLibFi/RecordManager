@@ -175,7 +175,7 @@ class WorkerPoolManager
                     . socket_strerror(socket_last_error())
                 );
             }
-            list($childSocket, $parentSocket) = $socketPair;
+            [$childSocket, $parentSocket] = $socketPair;
             unset($socketPair);
 
             $parentPid = getmypid();

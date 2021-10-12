@@ -41,11 +41,17 @@ namespace RecordManager\Base\Splitter;
 class File
 {
     protected $xmlDoc;
+
     protected $recordNodes;
+
     protected $recordCount;
+
     protected $currentPos;
+
     protected $xpath;
+
     protected $recordXPath = '//record';
+
     protected $oaiIDXpath = '';
 
     /**

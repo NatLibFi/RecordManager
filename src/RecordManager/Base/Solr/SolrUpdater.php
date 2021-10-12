@@ -892,7 +892,7 @@ class SolrUpdater
                     $params['updated']
                         = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
                 }
-                list($sourceOr, $sourceNor) = $this->createSourceFilter($sourceId);
+                [$sourceOr, $sourceNor] = $this->createSourceFilter($sourceId);
                 if ($sourceOr) {
                     $params['$or'] = $sourceOr;
                 }
@@ -1731,7 +1731,7 @@ class SolrUpdater
                 $params['updated']
                     = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
             }
-            list($sourceOr, $sourceNor) = $this->createSourceFilter($sourceId);
+            [$sourceOr, $sourceNor] = $this->createSourceFilter($sourceId);
             if ($sourceOr) {
                 $params['$or'] = $sourceOr;
             }
@@ -1886,7 +1886,7 @@ class SolrUpdater
             foreach ($settings['extraFields'] ?? $settings['extrafields'] ?? []
                 as $extraField
             ) {
-                list($field, $value) = explode(':', $extraField, 2);
+                [$field, $value] = explode(':', $extraField, 2);
                 $this->settings[$source]['extraFields'][] = [$field => $value];
             }
 

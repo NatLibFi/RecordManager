@@ -27,7 +27,11 @@
  */
 namespace RecordManager\Base\Controller;
 
+use RecordManager\Base\Database\DatabaseInterface;
+use RecordManager\Base\Deduplication\DedupHandlerInterface;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Solr\SolrComparer;
+use RecordManager\Base\Utils\Logger;
 
 /**
  * Solr Updater
@@ -40,6 +44,44 @@ use RecordManager\Base\Solr\SolrComparer;
  */
 class SolrCompare extends AbstractBase
 {
+    /**
+     * Solr access
+     *
+     * @var SolrComparer
+     */
+    protected $solrComparer;
+
+    /**
+     * Constructor
+     *
+     * @param array                 $config              Main configuration
+     * @param array                 $datasourceConfig    Datasource configuration
+     * @param Logger                $logger              Logger
+     * @param DatabaseInterface     $database            Database
+     * @param RecordPluginManager   $recordPluginManager Record plugin manager
+     * @param DedupHandlerInterface $dedupHandler        Deduplication handler
+     * @param SolrComparer          $solrComparer        Solr comparer
+     */
+    public function __construct(
+        array $config,
+        array $datasourceConfig,
+        Logger $logger,
+        DatabaseInterface $database,
+        RecordPluginManager $recordPluginManager,
+        DedupHandlerInterface $dedupHandler,
+        SolrComparer $solrComparer
+    ) {
+        parent::__construct(
+            $config,
+            $datasourceConfig,
+            $logger,
+            $database,
+            $recordPluginManager,
+            $dedupHandler
+        );
+        $this->solrComparer = $solrComparer;
+    }
+
     /**
      * Compare records that would be updated with the existing records in the Solr
      * index.
@@ -56,10 +98,6 @@ class SolrCompare extends AbstractBase
      */
     public function launch($log, $fromDate, $sourceId, $singleId)
     {
-        $comparer = new SolrComparer(
-            $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings, $this->recordFactory
-        );
-        $comparer->compareRecords($log, $fromDate, $sourceId, $singleId);
+        $this->solrComparer->compareRecords($log, $fromDate, $sourceId, $singleId);
     }
 }

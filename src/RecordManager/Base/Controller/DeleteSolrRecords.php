@@ -47,23 +47,19 @@ class DeleteSolrRecords extends AbstractBase
      */
     public function launch($sourceId)
     {
-        $updater = new \RecordManager\Base\Solr\SolrUpdater(
-            $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings, $this->recordFactory
-        );
         if (!empty($this->config['Solr']['merge_records'])) {
             $this->logger->logInfo(
                 'deleteSolrRecords',
                 "Deleting data source '$sourceId' from merged records via Solr "
                     . 'update for merged records'
             );
-            $updater->updateRecords('', $sourceId, '', false, true);
+            $this->solrUpdater->updateRecords('', $sourceId, '', false, true);
         }
         $this->logger->logInfo(
             'deleteSolrRecords',
             "Deleting data source '$sourceId' directly from Solr"
         );
-        $updater->deleteDataSource($sourceId);
+        $this->solrUpdater->deleteDataSource($sourceId);
         $this->logger->logInfo(
             'deleteSolrRecords', "Deletion of '$sourceId' from Solr completed"
         );

@@ -26,15 +26,15 @@
 
   <!-- PHP CodeSniffer -->
   <target name="phpcs">
-    <exec command="${basedir}/vendor/bin/phpcs --standard=PEAR --extensions=php *.php ${srcdir}" escape="false" passthru="true" checkreturn="true" />
+    <exec command="${basedir}/vendor/bin/phpcs --standard=${basedir}/tests/phpcs.xml" escape="false" passthru="true" checkreturn="true" />
   </target>
 
   <!-- php-cs-fixer (first task applies fixes, second task simply checks if they are needed) -->
   <target name="php-cs-fixer">
-    <exec command="${basedir}/vendor/bin/php-cs-fixer fix --config=${basedir}/tests/recordmanager.php_cs -vvv" passthru="true" escape="false" />
+    <exec command="${basedir}/vendor/bin/php-cs-fixer fix --config=${basedir}/tests/recordmanager.php-cs-fixer.php -vvv" passthru="true" escape="false" />
   </target>
   <target name="php-cs-fixer-dryrun">
-    <exec command="${basedir}/vendor/bin/php-cs-fixer fix --config=${basedir}/tests/recordmanager.php_cs -vvv --dry-run --diff" passthru="true" escape="false" checkreturn="true" />
+    <exec command="${basedir}/vendor/bin/php-cs-fixer fix --config=${basedir}/tests/recordmanager.php-cs-fixer.php --dry-run -vvv --diff" passthru="true" escape="false" checkreturn="true" />
   </target>
 
   <!-- Report rule violations with PHPMD (mess detector) -->
@@ -45,10 +45,10 @@
   <!-- Psalm -->
   <target name="psalm">
     <exec command="${basedir}/vendor/bin/psalm --diff" escape="false" passthru="true" checkreturn="true" />
-  </target>  
+  </target>
 
   <!-- Psalm -->
   <target name="psalm-info">
     <exec command="${basedir}/vendor/bin/psalm --diff --show-info=true" escape="false" passthru="true" checkreturn="true" />
-  </target>  
+  </target>
 </project>

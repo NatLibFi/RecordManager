@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Solr\SolrUpdater;
-
 /**
  * Solr Index Check
  *
@@ -49,13 +47,8 @@ class SolrCheck extends AbstractBase
      */
     public function launch()
     {
-        $updater = new SolrUpdater(
-            $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings, $this->recordFactory
-        );
-
         $this->logger->logInfo('SolrCheck', 'Checking Solr index');
-        $updater->checkIndexedRecords();
+        $this->solrUpdater->checkIndexedRecords();
         $this->logger->logInfo('SolrCheck', 'Solr check completed');
     }
 }

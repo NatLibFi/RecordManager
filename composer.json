@@ -18,6 +18,11 @@
             "RecordManager\\": "src/RecordManager/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "RecordManagerTest\\": "tests/RecordManagerTest/"
+        }
+    },
     "require": {
         "cash/lrucache": "^1.0.0",
         "laminas/laminas-mvc": "3.2.0",

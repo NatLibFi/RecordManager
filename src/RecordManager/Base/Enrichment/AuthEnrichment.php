@@ -28,9 +28,7 @@
  */
 namespace RecordManager\Base\Enrichment;
 
-use RecordManager\Base\Database\AbstractAuthorityDatabase;
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Database\Factory as DatabaseFactory;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -52,6 +50,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 abstract class AuthEnrichment extends AbstractEnrichment
 {
+    use \RecordManager\Base\Record\CreateRecordTrait;
+
     /**
      * Authority database
      *
@@ -98,7 +98,7 @@ abstract class AuthEnrichment extends AbstractEnrichment
             return;
         }
 
-        $authRecord = $this->recordFactory->createRecord(
+        $authRecord = $this->createRecord(
             $data['format'],
             MetadataUtils::getRecordData($data, true),
             $id,

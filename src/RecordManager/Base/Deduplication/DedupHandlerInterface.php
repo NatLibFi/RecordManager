@@ -28,7 +28,7 @@
 namespace RecordManager\Base\Deduplication;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -47,16 +47,18 @@ interface DedupHandlerInterface
     /**
      * Constructor
      *
-     * @param Database      $db            Database
-     * @param Logger        $log           Logger object
-     * @param boolean       $verbose       Whether verbose output is enabled
-     * @param string        $basePath      Base path
-     * @param array         $mainConfig    Main configuration
-     * @param array         $settings      Data source settings
-     * @param RecordFactory $recordFactory Record factory
+     * @param Database            $db                  Database
+     * @param Logger              $log                 Logger object
+     * @param array               $mainConfig          Main configuration
+     * @param array               $datasourceConfig    Data source settings
+     * @param RecordPluginManager $recordPluginManager Record plugin manager
      */
-    public function __construct(Database $db, Logger $log, $verbose, $basePath,
-        $mainConfig, $settings, $recordFactory
+    public function __construct(
+        Database $db,
+        Logger $log,
+        array $mainConfig,
+        array $datasourceConfig,
+        RecordPluginManager $recordPluginManager
     );
 
     /**

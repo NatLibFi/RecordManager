@@ -27,8 +27,6 @@
  */
 require_once __DIR__ . '/cmdline.php';
 
-use Laminas\ServiceManager\ServiceManager;
-
 /**
  * Main function
  *

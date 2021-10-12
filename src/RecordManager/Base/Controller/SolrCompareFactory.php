@@ -1,6 +1,6 @@
 <?php
 /**
- * Deduplication handler factory
+ * SolrCompare factory
  *
  * PHP version 7
  *
@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Base\Deduplication;
+namespace RecordManager\Base\Controller;
 
 use Interop\Container\ContainerInterface;
 use Interop\Container\Exception\ContainerException;
@@ -33,7 +33,7 @@ use Laminas\ServiceManager\Exception\ServiceNotCreatedException;
 use Laminas\ServiceManager\Exception\ServiceNotFoundException;
 
 /**
- * Deduplication handler factory
+ * SolrCompare factory
  *
  * @category DataManagement
  * @package  RecordManager
@@ -41,7 +41,8 @@ use Laminas\ServiceManager\Exception\ServiceNotFoundException;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class DedupHandlerFactory implements \Laminas\ServiceManager\Factory\FactoryInterface
+class AbstractBaseWithSolrUpdaterFactory
+    implements \Laminas\ServiceManager\Factory\FactoryInterface
 {
     /**
      * Create an object
@@ -65,16 +66,14 @@ class DedupHandlerFactory implements \Laminas\ServiceManager\Factory\FactoryInte
         array $options = null
     ) {
         $configReader = $container->get(\RecordManager\Base\Settings\Ini::class);
-        $config = $configReader->get('recordmanager.ini');
-        $className = !empty($config['Site']['dedup_handler']) ?
-            $config['Site']['dedup_handler'] : $requestedName;
-
-        return new $className(
-            $container->get(\RecordManager\Base\Database\AbstractDatabase::class),
-            $container->get(\RecordManager\Base\Utils\Logger::class),
-            $config,
+        return new $requestedName(
+            $configReader->get('recordmanager.ini'),
             $configReader->get('datasources.ini'),
-            $container->get(\RecordManager\Base\Record\PluginManager::class)
+            $container->get(\RecordManager\Base\Utils\Logger::class),
+            $container->get(\RecordManager\Base\Database\AbstractDatabase::class),
+            $container->get(\RecordManager\Base\Record\PluginManager::class),
+            $container->get(\RecordManager\Base\Deduplication\DedupHandler::class),
+            $container->get(\RecordManager\Base\Solr\SolrComparer::class)
         );
     }
 }

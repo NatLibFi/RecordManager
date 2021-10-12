@@ -278,7 +278,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
                 $data['classification_txt_mv'][] = "udk $classification";
 
-                list($mainClass) = explode('.', $classification, 2);
+                [$mainClass] = explode('.', $classification, 2);
                 $mainClass = ".$mainClass";
                 if (is_numeric($mainClass) && (!isset($data['major_genre_str_mv'])
                     || $data['major_genre_str_mv'] == 'nonfiction')

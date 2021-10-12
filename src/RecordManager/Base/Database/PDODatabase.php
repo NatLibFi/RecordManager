@@ -589,8 +589,8 @@ class PDODatabase extends AbstractDatabase
     protected function findPDORecord(string $collection, array $filter,
         array $options
     ) {
-        list($where, $params) = $this->filterToSQL($collection, $filter);
-        list($fields, $sqlOptions) = $this->optionsToSQL($options);
+        [$where, $params] = $this->filterToSQL($collection, $filter);
+        [$fields, $sqlOptions] = $this->optionsToSQL($options);
         $sql = "select $fields from $collection";
         if ($where) {
             $sql .= " where $where";
@@ -619,8 +619,8 @@ class PDODatabase extends AbstractDatabase
     protected function findPDORecords(string $collection, array $filter,
         array $options
     ): \Traversable {
-        list($where, $params) = $this->filterToSQL($collection, $filter);
-        list($fields, $sqlOptions) = $this->optionsToSQL($options);
+        [$where, $params] = $this->filterToSQL($collection, $filter);
+        [$fields, $sqlOptions] = $this->optionsToSQL($options);
         $sql = "select $fields from $collection";
         if ($where) {
             $sql .= " where $where";
@@ -647,8 +647,8 @@ class PDODatabase extends AbstractDatabase
     protected function countPDORecords(string $collection, array $filter,
         array $options
     ) {
-        list($where, $params) = $this->filterToSQL($collection, $filter);
-        list(, $sqlOptions) = $this->optionsToSQL($options);
+        [$where, $params] = $this->filterToSQL($collection, $filter);
+        [, $sqlOptions] = $this->optionsToSQL($options);
         $sql = "select count(*) from $collection where $where $sqlOptions";
         return $this->dbQuery($sql, $params)->fetchColumn();
     }
@@ -924,14 +924,14 @@ class PDODatabase extends AbstractDatabase
                 }
                 if (isset($value['$or'])) {
                     $whereParts = [];
-                    list($wherePart, $partParams)
+                    [$wherePart, $partParams]
                         = $this->filterToSQL($collection, $value['$or'], 'OR');
                     $where[] = "($wherePart)";
                     $params = array_merge($params, $partParams);
                 }
                 if (isset($value['$nor'])) {
                     $whereParts = [];
-                    list($wherePart, $partParams)
+                    [$wherePart, $partParams]
                         = $this->filterToSQL($collection, $value['$nor'], 'OR');
                     $where[] = "NOT ($wherePart)";
                     $params = array_merge($params, $partParams);

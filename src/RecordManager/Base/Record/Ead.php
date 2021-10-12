@@ -500,7 +500,7 @@ class Ead extends AbstractRecord
                     if (count($coordinates) !== 2) {
                         continue;
                     }
-                    list($lat, $lon) = $coordinates;
+                    [$lat, $lon] = $coordinates;
                     if ($this->geoField) {
                         $data[$this->geoField] = "POINT(${lon} ${lat})";
                     }

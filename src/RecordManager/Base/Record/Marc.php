@@ -586,7 +586,7 @@ class Marc extends AbstractRecord
                 $data['callnumber-subject'] = $matches[1];
             }
 
-            list($preDotPart) = explode('.', $value, 2);
+            [$preDotPart] = explode('.', $value, 2);
             $data['callnumber-label'] = strtoupper($preDotPart);
         }
         $data['callnumber-raw'] = array_map(
@@ -2944,10 +2944,10 @@ class Marc extends AbstractRecord
                         } else {
                             // Try to cope with weird coordinate order
                             if ($north > $south) {
-                                list($north, $south) = [$south, $north];
+                                [$north, $south] = [$south, $north];
                             }
                             if ($west > $east) {
-                                list($west, $east) = [$east, $west];
+                                [$west, $east] = [$east, $west];
                             }
                             $result[] = "ENVELOPE($west, $east, $south, $north)";
                         }

@@ -967,7 +967,7 @@ class Lido extends \RecordManager\Base\Record\Lido
     {
         $result = [];
         foreach (preg_split('/(?=/\d)\s(?=/\d)/', $coordinates) as $coordinate) {
-            list($lat, $lon) = explode(',', $coordinate, 2);
+            [$lat, $lon] = explode(',', $coordinate, 2);
             $lat = trim($lat);
             $lon = trim($lon);
             $result[] = "$lon $lat";
@@ -1023,7 +1023,7 @@ class Lido extends \RecordManager\Base\Record\Lido
 
         $imprecise = false;
 
-        list($input) = explode(',', $input, 2);
+        [$input] = explode(',', $input, 2);
 
         if (true
             && preg_match(

@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2017.
+ * Copyright (C) The National Library of Finland 2017-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,7 +27,8 @@
  */
 namespace RecordManagerTest\Base\Solr;
 
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Solr\PreviewCreator;
 use RecordManager\Base\Utils\Logger;
 
@@ -126,12 +127,24 @@ EOT;
      */
     protected function getPreviewCreator()
     {
-        $basePath = __DIR__ . '/../../../fixtures/base/config/basic';
         $logger = $this->createMock(Logger::class);
-        $recordFactory = new RecordFactory($logger, [], $this->dataSourceSettings);
+        $record = new \RecordManager\Base\Record\Marc(
+          $logger,
+          [],
+          $this->dataSourceSettings
+        );
+        $recordPM = $this->createMock(RecordPluginManager::class);
+        $enrichmentPM = $this->createMock(EnrichmentPluginManager::class);
+        $recordPM->expects($this->once())
+            ->method('get')
+            ->will($this->returnValue($record));
         $preview = new PreviewCreator(
-            null, $basePath, $logger, false, [], $this->dataSourceSettings,
-            $recordFactory
+            null,
+            $logger,
+            [],
+            $this->dataSourceSettings,
+            $recordPM,
+            $enrichmentPM
         );
 
         return $preview;

@@ -161,7 +161,7 @@ class SolrComparer extends SolrUpdater
                     $params['updated']
                         = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
                 }
-                list($sourceOr, $sourceNor) = $this->createSourceFilter($sourceId);
+                [$sourceOr, $sourceNor] = $this->createSourceFilter($sourceId);
                 if ($sourceOr) {
                     $params['$or'] = $sourceOr;
                 }

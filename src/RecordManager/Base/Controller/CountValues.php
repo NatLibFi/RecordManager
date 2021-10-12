@@ -79,7 +79,7 @@ class CountValues extends AbstractBase
             $recordPluginManager,
             $dedupHandler
         );
-        $this->solrUpdarter = $solrUpdater;
+        $this->solrUpdater = $solrUpdater;
     }
 
     /**

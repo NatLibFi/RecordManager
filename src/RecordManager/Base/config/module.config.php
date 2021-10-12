@@ -1,6 +1,6 @@
 <?php
 /**
- * Authority database factory
+ * Base module configuration
  *
  * PHP version 7
  *
@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Base;
+namespace RecordManager\Base\Module\Config;
 
 use Laminas\ServiceManager\Factory\InvokableFactory;
 
@@ -34,98 +34,99 @@ return [
         'plugin_managers' => [
             'base_record' => [
                 'factories' => [
-                    Record\Dc::class => Record\AbstractRecordFactory::class,
-                    Record\Eaccpf::class => Record\AbstractRecordFactory::class,
-                    Record\Ead::class => Record\AbstractRecordFactory::class,
-                    Record\Ead3::class => Record\AbstractRecordFactory::class,
-                    Record\Ese::class => Record\AbstractRecordFactory::class,
-                    Record\Forward::class => Record\RecordFactory::class,
-                    Record\ForwardAuthority::class
-                         => Record\AbstractRecordFactory::class,
-                    Record\Lido::class => Record\AbstractRecordFactory::class,
-                    Record\Lrmi::class => Record\AbstractRecordFactory::class,
-                    Record\Marc::class => Record\AbstractRecordFactory::class,
-                    Record\MarcAuthority::class
-                        => Record\AbstractRecordFactory::class,
-                    Record\Qdc::class => Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\Dc::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\Eaccpf::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\Ead::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\Ead3::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\Ese::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\Forward::class => \RecordManager\Base\Record\RecordFactory::class,
+                    \RecordManager\Base\Record\ForwardAuthority::class
+                         => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\Lido::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\Lrmi::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\Marc::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\MarcAuthority::class
+                        => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\Qdc::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                 ],
                 'aliases' => [
-                    'dc' => Record\Dc::class,
-                    'eaccpf' => Record\Eaccpf::class,
-                    'ead' => Record\Ead::class,
-                    'ead3' => Record\Ead3::class,
-                    'ese' => Record\Ese::class,
-                    'forward' => Record\Forward::class,
-                    'forwardauthority' => Record\ForwardAuthority::class,
-                    'lido' => Record\Lido::class,
-                    'lrmi' => Record\Lrmi::class,
-                    'marc' => Record\Marc::class,
-                    'marcauthority' => Record\MarcAuthority::class,
-                    'qdc' => Record\Qdc::class,
+                    'dc' => \RecordManager\Base\Record\Dc::class,
+                    'eaccpf' => \RecordManager\Base\Record\Eaccpf::class,
+                    'ead' => \RecordManager\Base\Record\Ead::class,
+                    'ead3' => \RecordManager\Base\Record\Ead3::class,
+                    'ese' => \RecordManager\Base\Record\Ese::class,
+                    'forward' => \RecordManager\Base\Record\Forward::class,
+                    'forwardauthority' => \RecordManager\Base\Record\ForwardAuthority::class,
+                    'lido' => \RecordManager\Base\Record\Lido::class,
+                    'lrmi' => \RecordManager\Base\Record\Lrmi::class,
+                    'marc' => \RecordManager\Base\Record\Marc::class,
+                    'marcauthority' => \RecordManager\Base\Record\MarcAuthority::class,
+                    'qdc' => \RecordManager\Base\Record\Qdc::class,
                 ],
             ],
             'base_enrichment' => [
                 'factories' => [
-                    Enrichment\AuthEnrichment::class
-                        => Enrichment\AuthEnrichmentFactory::class,
-                    Enrichment\EadOnkiLightEnrichment::class
-                        => Enrichment\AbstractEnrichmentFactory::class,
-                    Enrichment\LrmiOnkiLightEnrichment::class
-                        => Enrichment\AbstractEnrichmentFactory::class,
-                    Enrichment\MarcAuthEnrichment::class
-                        => Enrichment\AuthEnrichmentFactory::class,
-                    Enrichment\MarcAuthOnkiLightEnrichment::class
-                        => Enrichment\AbstractEnrichmentFactory::class,
-                    Enrichment\MarcOnkiLightEnrichment::class
-                        => Enrichment\AbstractEnrichmentFactory::class,
-                    Enrichment\MusicBrainzEnrichment::class
-                        => Enrichment\AbstractEnrichmentFactory::class,
-                    Enrichment\NominatimGeocoder::class
-                        => Enrichment\AbstractEnrichmentFactory::class,
-                    Enrichment\OnkiLightEnrichment::class
-                        => Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\AuthEnrichment::class
+                        => \RecordManager\Base\Enrichment\AuthEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\EadOnkiLightEnrichment::class
+                        => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\LrmiOnkiLightEnrichment::class
+                        => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\MarcAuthEnrichment::class
+                        => \RecordManager\Base\Enrichment\AuthEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\MarcAuthOnkiLightEnrichment::class
+                        => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\MarcOnkiLightEnrichment::class
+                        => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\MusicBrainzEnrichment::class
+                        => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\NominatimGeocoder::class
+                        => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\OnkiLightEnrichment::class
+                        => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
                 ],
                 'aliases' => [
                     'AuthEnrichment'
-                        => Enrichment\AuthEnrichment::class,
+                        => \RecordManager\Base\Enrichment\AuthEnrichment::class,
                     'EadOnkiLightEnrichment'
-                        => Enrichment\EadOnkiLightEnrichment::class,
+                        => \RecordManager\Base\Enrichment\EadOnkiLightEnrichment::class,
                     'LrmiOnkiLightEnrichment'
-                        => Enrichment\LrmiOnkiLightEnrichment::class,
+                        => \RecordManager\Base\Enrichment\LrmiOnkiLightEnrichment::class,
                     'MarcAuthEnrichment'
-                        => Enrichment\MarcAuthEnrichment::class,
+                        => \RecordManager\Base\Enrichment\MarcAuthEnrichment::class,
                     'MarcAuthOnkiLightEnrichment'
-                        => Enrichment\MarcAuthOnkiLightEnrichment::class,
+                        => \RecordManager\Base\Enrichment\MarcAuthOnkiLightEnrichment::class,
                     'MarcOnkiLightEnrichment'
-                        => Enrichment\MarcOnkiLightEnrichment::class,
+                        => \RecordManager\Base\Enrichment\MarcOnkiLightEnrichment::class,
                     'MusicBrainzEnrichment'
-                        => Enrichment\MusicBrainzEnrichment::class,
+                        => \RecordManager\Base\Enrichment\MusicBrainzEnrichment::class,
                     'NominatimGeocoder'
-                        => Enrichment\NominatimGeocoder::class,
+                        => \RecordManager\Base\Enrichment\NominatimGeocoder::class,
                     'OnkiLightEnrichment'
-                        => Enrichment\OnkiLightEnrichment::class,
+                        => \RecordManager\Base\Enrichment\OnkiLightEnrichment::class,
                 ],
             ],
         ],
     ],
     'service_manager' => [
         'factories' => [
-            Controller\SolrUpdate::class
-                => Controller\AbstractBaseWithSolrUpdaterFactory::class,
-            Database\AbstractAuthorityDatabase::class
-                => Database\AbstractAuthorityDatabaseFactory::class,
-            Database\AbstractDatabase::class
-                => Database\AbstractDatabaseFactory::class,
-            Deduplication\DedupHandler::class
-                => Deduplication\DedupHandlerFactory::class,
-            Enrichment\PluginManager::class
-                => ServiceManager\AbstractPluginManagerFactory::class,
-            Record\PluginManager::class
-                => ServiceManager\AbstractPluginManagerFactory::class,
-            Settings\Ini::class => InvokableFactory::class,
-            Solr\PreviewCreator::class => Solr\SolrUpdaterFactory::class,
-            Solr\SolrUpdater::class => Solr\SolrUpdaterFactory::class,
-            Utils\Logger::class => Utils\LoggerFactory::class,
+            \RecordManager\Base\Controller\SolrUpdate::class
+                => \RecordManager\Base\Controller\AbstractBaseWithSolrUpdaterFactory::class,
+            \RecordManager\Base\Database\AbstractAuthorityDatabase::class
+                => \RecordManager\Base\Database\AbstractAuthorityDatabaseFactory::class,
+            \RecordManager\Base\Database\AbstractDatabase::class
+                => \RecordManager\Base\Database\AbstractDatabaseFactory::class,
+            \RecordManager\Base\Deduplication\DedupHandler::class
+                => \RecordManager\Base\Deduplication\DedupHandlerFactory::class,
+            \RecordManager\Base\Enrichment\PluginManager::class
+                => \RecordManager\Base\ServiceManager\AbstractPluginManagerFactory::class,
+            \RecordManager\Base\Record\PluginManager::class
+                => \RecordManager\Base\ServiceManager\AbstractPluginManagerFactory::class,
+            \RecordManager\Base\Settings\Ini::class => InvokableFactory::class,
+            \RecordManager\Base\Solr\PreviewCreator::class => \RecordManager\Base\Solr\SolrUpdaterFactory::class,
+            \RecordManager\Base\Solr\SolrComparer::class => \RecordManager\Base\Solr\SolrComparerFactory::class,
+            \RecordManager\Base\Solr\SolrUpdater::class => \RecordManager\Base\Solr\SolrUpdaterFactory::class,
+            \RecordManager\Base\Utils\Logger::class => \RecordManager\Base\Utils\LoggerFactory::class,
         ],
     ],
 ];

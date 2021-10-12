@@ -28,10 +28,11 @@
 namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Database\DatabaseInterface;
+use RecordManager\Base\Deduplication\DedupHandlerInterface;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Solr\PreviewCreator;
-use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Create Preview Record
@@ -56,12 +57,13 @@ class CreatePreview extends AbstractBase
     /**
      * Constructor
      *
-     * @param array               $config              Main configuration
-     * @param array               $datasourceConfig    Datasource configuration
-     * @param Logger              $logger              Logger
-     * @param DatabaseInterface   $database            Database
-     * @param RecordPluginManager $recordPluginManager Record plugin manager
-     * @param PreviewCreator      $previewCreator      Preview creator
+     * @param array                 $config              Main configuration
+     * @param array                 $datasourceConfig    Datasource configuration
+     * @param Logger                $logger              Logger
+     * @param DatabaseInterface     $database            Database
+     * @param RecordPluginManager   $recordPluginManager Record plugin manager
+     * @param DedupHandlerInterface $dedupHandler        Deduplication handler
+     * @param PreviewCreator        $previewCreator      Preview creator
      */
     public function __construct(
         array $config,
@@ -69,6 +71,7 @@ class CreatePreview extends AbstractBase
         Logger $logger,
         DatabaseInterface $database,
         RecordPluginManager $recordPluginManager,
+        DedupHandlerInterface $dedupHandler,
         PreviewCreator $previewCreator
     ) {
         parent::__construct(
@@ -76,7 +79,8 @@ class CreatePreview extends AbstractBase
             $datasourceConfig,
             $logger,
             $database,
-            $recordPluginManager
+            $recordPluginManager,
+            $dedupHandler
         );
 
         $this->previewCreator = $previewCreator;

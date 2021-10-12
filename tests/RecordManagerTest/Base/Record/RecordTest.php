@@ -40,7 +40,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 abstract class RecordTest extends \PHPUnit\Framework\TestCase
 {
-    use CreateRecordTrait;
+    use CreateSampleRecordTrait;
 
     /**
      * Standard setup method.

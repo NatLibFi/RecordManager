@@ -28,7 +28,7 @@
 namespace RecordManager\Base\Deduplication;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -46,6 +46,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class DedupHandler implements DedupHandlerInterface
 {
+    use \RecordManager\Base\Record\CreateRecordTrait;
+
     /**
      * Database
      *
@@ -61,11 +63,11 @@ class DedupHandler implements DedupHandlerInterface
     protected $log;
 
     /**
-     * Record Factory
+     * Record plugin manager
      *
-     * @var RecordFactory
+     * @var RecordPluginManager
      */
-    protected $recordFactory;
+    protected $recordPluginManager;
 
     /**
      * Verbose mode
@@ -98,32 +100,34 @@ class DedupHandler implements DedupHandlerInterface
     /**
      * Constructor
      *
-     * @param Database      $db            Database
-     * @param Logger        $log           Logger object
-     * @param boolean       $verbose       Whether verbose output is enabled
-     * @param string        $basePath      Base path
-     * @param array         $mainConfig    Main configuration
-     * @param array         $settings      Data source settings
-     * @param RecordFactory $recordFactory Record factory
+     * @param Database            $db                  Database
+     * @param Logger              $log                 Logger object
+     * @param array               $mainConfig          Main configuration
+     * @param array               $datasourceConfig    Data source settings
+     * @param RecordPluginManager $recordPluginManager Record plugin manager
      */
-    public function __construct(Database $db, Logger $log, $verbose,
-        $basePath, $mainConfig, $settings, $recordFactory
+    public function __construct(
+        Database $db,
+        Logger $log,
+        array $mainConfig,
+        array $datasourceConfig,
+        RecordPluginManager $recordPluginManager
     ) {
         $this->db = $db;
         $this->log = $log;
-        $this->recordFactory = $recordFactory;
-        $this->verbose = $verbose;
-        $this->dataSourceSettings = $settings;
+        $this->recordPluginManager = $recordPluginManager;
+        $this->verbose = $config['Log']['verbose'] ?? false;
+        $this->dataSourceSettings = $datasourceConfig;
         $this->normalizationForm
             = $mainConfig['Site']['unicode_normalization_form'] ?? 'NFKC';
 
         $this->fieldMapper = new FieldMapper(
-            $basePath,
+            RECMAN_BASE_PATH,
             array_merge(
                 $mainConfig['DefaultMappings'] ?? [],
                 $mainConfig['Default Mappings'] ?? []
             ),
-            $settings
+            $datasourceConfig
         );
     }
 
@@ -445,7 +449,7 @@ class DedupHandler implements DedupHandlerInterface
                 }
 
                 if (!isset($origRecord)) {
-                    $origRecord = $this->recordFactory->createRecord(
+                    $origRecord = $this->createRecord(
                         $record['format'],
                         MetadataUtils::getRecordData($record, true),
                         $record['oai_id'],
@@ -642,7 +646,7 @@ class DedupHandler implements DedupHandlerInterface
      */
     protected function matchRecords($record, $origRecord, $candidate)
     {
-        $cRecord = $this->recordFactory->createRecord(
+        $cRecord = $this->createRecord(
             $candidate['format'],
             MetadataUtils::getRecordData($candidate, true),
             $candidate['oai_id'],
@@ -1050,7 +1054,7 @@ class DedupHandler implements DedupHandlerInterface
                                 . MetadataUtils::getRecordData($component1, true)
                                 . "\n";
                         }
-                        $metadataComponent1 = $this->recordFactory->createRecord(
+                        $metadataComponent1 = $this->createRecord(
                             $component1['format'],
                             MetadataUtils::getRecordData($component1, true),
                             $component1['oai_id'],

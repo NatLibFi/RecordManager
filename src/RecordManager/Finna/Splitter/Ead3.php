@@ -60,14 +60,21 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
     protected $nonInheritedFields = [];
 
     protected $doc;
+
     protected $recordNodes;
+
     protected $recordCount;
+
     protected $currentPos;
 
     protected $agency = '';
+
     protected $archiveId = '';
+
     protected $archiveTitle = '';
+
     protected $archiveSubTitle = '';
+
     protected $repository = '';
 
     // label-attribute of identifying unitid-element

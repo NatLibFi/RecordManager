@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Solr\SolrUpdater;
-
 /**
  * Solr Updater
  *
@@ -61,11 +59,7 @@ class SolrDump extends AbstractBase
             $this->config['Solr']['field_mapper']
                 = '\RecordManager\Base\Utils\NoOpFieldMapper';
         }
-        $updater = new SolrUpdater(
-            $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings, $this->recordFactory
-        );
-        $updater->updateRecords(
+        $this->solrUpdater->updateRecords(
             $fromDate, $sourceId, $singleId, false, false, $dumpPrefix, false
         );
     }
