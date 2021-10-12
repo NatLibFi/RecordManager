@@ -260,7 +260,7 @@ class Qdc extends Base
         $form = $this->config['Site']['unicode_normalization_form'] ?? 'NFKC';
         foreach ($this->doc->identifier as $identifier) {
             $identifier = strtolower(trim((string)$identifier));
-            if (strncmp('urn:', $identifier, 4) === 0) {
+            if (strncasecmp('urn:', $identifier, 4) === 0) {
                 $arr[] = '(urn)' . MetadataUtils::normalizeKey($identifier, $form);
             }
         }
@@ -299,17 +299,21 @@ class Qdc extends Base
      */
     public function getISSNs()
     {
-        if (!isset($this->doc->relation)) {
-            return [];
-        }
-
         $result = [];
-        foreach ($this->doc->relation as $rel) {
-            if ((string)$rel->attributes()->{'type'} === 'issn') {
-                $result[] = trim((string)$rel);
+        if (!isset($this->doc->relation)) {
+            foreach ($this->doc->relation as $rel) {
+                if ((string)$rel->attributes()->{'type'} === 'issn') {
+                    $result[] = trim((string)$rel);
+                }
             }
         }
-        return $result;
+        foreach ($this->doc->identifier as $identifier) {
+            $trimmed = trim((string)$identifier);
+            if (preg_match('{(issn[\s\S])[\S]{4}\-[\S]{4}}i', $trimmed, $matches)) {
+                $result[] = $matches[2];
+            }
+        }
+        return array_unique($result);
     }
 
     /**
