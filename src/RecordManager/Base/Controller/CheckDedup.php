@@ -52,8 +52,6 @@ class CheckDedup extends AbstractBase
         $this->logger
             ->logInfo('checkDedupRecords', 'Checking dedup record consistency');
 
-        $dedupHandler = $this->getDedupHandler();
-
         $params = [];
         if ($singleId) {
             $record = $this->db->getRecord($singleId);
@@ -73,6 +71,7 @@ class CheckDedup extends AbstractBase
         }
 
         $this->logger->logInfo('checkDedupRecords', 'Checking dedup records');
+        $dedupHandler = $this->dedupHandler;
         $count = 0;
         $fixed = 0;
         $pc = new PerformanceCounter();

@@ -77,8 +77,6 @@ class Harvest extends AbstractBase
 
         $this->initSourceSettings();
 
-        $this->dedupHandler = $this->getDedupHandler();
-
         if ($reharvest && !is_string($reharvest) && $startResumptionToken) {
             $this->logger->logFatal(
                 'harvest',

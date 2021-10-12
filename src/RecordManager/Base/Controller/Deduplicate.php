@@ -64,7 +64,6 @@ class Deduplicate extends AbstractBase
         $markOnly = false
     ) {
         $this->terminate = false;
-        $dedupHandler = $this->getDedupHandler();
 
         $this->logger->logInfo('deduplicate', 'Deduplication started');
 
@@ -165,6 +164,7 @@ class Deduplicate extends AbstractBase
                     $params['update_needed'] = true;
                 }
                 $total = $this->db->countRecords($params);
+                $dedupHandler = $this->dedupHandler;
                 $count = 0;
                 $deduped = 0;
                 $pc = new PerformanceCounter();

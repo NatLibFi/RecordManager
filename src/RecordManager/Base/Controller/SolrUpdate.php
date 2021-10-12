@@ -27,7 +27,11 @@
  */
 namespace RecordManager\Base\Controller;
 
+use RecordManager\Base\Database\DatabaseInterface;
+use RecordManager\Base\Deduplication\DedupHandlerInterface;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Solr\SolrUpdater;
+use RecordManager\Base\Utils\Logger;
 
 /**
  * Solr Update
@@ -40,6 +44,37 @@ use RecordManager\Base\Solr\SolrUpdater;
  */
 class SolrUpdate extends AbstractBase
 {
+    /**
+     * Constructor
+     *
+     * @param array                 $config              Main configuration
+     * @param array                 $datasourceConfig    Datasource configuration
+     * @param Logger                $logger              Logger
+     * @param DatabaseInterface     $database            Database
+     * @param RecordPluginManager   $recordPluginManager Record plugin manager
+     * @param DedupHandlerInterface $dedupHandler        Deduplication handler
+     * @param SolrUpdater           $solrUpdater         Solr updater
+     */
+    public function __construct(
+        array $config,
+        array $datasourceConfig,
+        Logger $logger,
+        DatabaseInterface $database,
+        RecordPluginManager $recordPluginManager,
+        DedupHandlerInterface $dedupHandler,
+        SolrUpdater $solrUpdater
+    ) {
+        parent::__construct(
+            $config,
+            $datasourceConfig,
+            $logger,
+            $database,
+            $recordPluginManager,
+            $dedupHandler
+        );
+        $this->solrUpdater = $solrUpdater;
+    }
+
     /**
      * Send updates to the Solr index
      *
@@ -60,11 +95,7 @@ class SolrUpdate extends AbstractBase
     public function launch($fromDate = null, $sourceId = '', $singleId = '',
         $noCommit = false, $datePerServer = false
     ) {
-        $updater = new SolrUpdater(
-            $this->db, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings, $this->recordPluginManager
-        );
-        $updater->updateRecords(
+        $this->solrUpdater->updateRecords(
             $fromDate, $sourceId, $singleId, $noCommit, false, '', $datePerServer
         );
     }

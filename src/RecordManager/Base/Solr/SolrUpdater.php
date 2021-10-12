@@ -28,7 +28,8 @@
 namespace RecordManager\Base\Solr;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Record\Base as BaseRecord;
+use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
+use RecordManager\Base\Record\AbstractRecord;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
@@ -94,11 +95,18 @@ class SolrUpdater
     protected $settings;
 
     /**
-     * Record factory
+     * Record plugin manager
      *
-     * @var RecordFactory
+     * @var RecordPluginManager
      */
-    protected $recordFactory;
+    protected $recordPluginManager;
+
+    /**
+     * Enrichment plugin manager
+     *
+     * @var EnrichmentPluginManager
+     */
+    protected $enrichmentPluginManager;
 
     /**
      * Whether building field is hierarchical
@@ -514,24 +522,29 @@ class SolrUpdater
     /**
      * Constructor
      *
-     * @param Database            $db                  Database connection
-     * @param object              $log                 Logger
-     * @param bool                $verbose             Whether to output verbose messages
-     * @param array               $config              Main configuration
-     * @param array               $dataSourceSettings  Data source settings
-     * @param RecordPluginManager $recordPluginManager Record plugin manager
+     * @param Database                $db                 Database connection
+     * @param object                  $log                Logger
+     * @param array                   $config             Main configuration
+     * @param array                   $dataSourceSettings Data source settings
+     * @param RecordPluginManager     $recordPM           Record plugin manager
+     * @param EnrichmentPluginManager $enrichmentPM       Enrichment plugin manager
      *
      * @throws \Exception
      */
-    public function __construct(?Database $db, Logger $log,
-        bool $verbose, array $config, array $dataSourceSettings,
-        RecordPluginManager $recordPluginManager
+    public function __construct(
+        ?Database $db,
+        Logger $log,
+        array $config,
+        array $dataSourceSettings,
+        RecordPluginManager $recordPM,
+        EnrichmentPluginManager $enrichmentPM,
     ) {
         $this->config = $config;
         $this->db = $db;
         $this->log = $log;
-        $this->verbose = $verbose;
-        $this->recordPluginManager = $recordPluginManager;
+        $this->verbose = $config['Log']['verbose'] ?? false;
+        $this->recordPluginManager = $recordPM;
+        $this->enrichmentPluginManager = $enrichmentPM;
 
         $this->metadataRecordCache = new \cash\LRUCache(100);
         $this->recordDataCache = new \cash\LRUCache(100);
@@ -2177,12 +2190,12 @@ class SolrUpdater
     /**
      * Add work identification keys
      *
-     * @param array      $data           Field array
-     * @param BaseRecord $metadataRecord Metadata record
+     * @param array          $data           Field array
+     * @param AbstractRecord $metadataRecord Metadata record
      *
      * @return void
      */
-    protected function addWorkKeys(array &$data, BaseRecord $metadataRecord)
+    protected function addWorkKeys(array &$data, AbstractRecord $metadataRecord)
     {
         if ($this->workKeysField
             && $workIds = $metadataRecord->getWorkIdentificationData()
@@ -2231,16 +2244,16 @@ class SolrUpdater
     /**
      * Add extra fields from settings etc. and map the values
      *
-     * @param array      $data           Field array
-     * @param mixed      $record         Database record
-     * @param BaseRecord $metadataRecord Metadata record
-     * @param string     $source         Source ID
-     * @param array      $settings       Settings
+     * @param array          $data           Field array
+     * @param mixed          $record         Database record
+     * @param AbstractRecord $metadataRecord Metadata record
+     * @param string         $source         Source ID
+     * @param array          $settings       Settings
      *
      * @return void
      */
     protected function augmentAndProcessFields(array &$data,
-        $record, BaseRecord $metadataRecord, string $source,
+        $record, AbstractRecord $metadataRecord, string $source,
         array $settings
     ): void {
         if (!isset($data['institution']) && !empty($settings['institution'])) {
@@ -3002,13 +3015,8 @@ class SolrUpdater
                 continue;
             }
             if (!isset($this->enrichments[$enrichment])) {
-                $className = $enrichment;
-                if (strpos($className, '\\') === false) {
-                    $className = "\RecordManager\Base\Enrichment\\$className";
-                }
-                $this->enrichments[$enrichment] = new $className(
-                    $this->db, $this->log, $this->config, $this->recordFactory
-                );
+                $this->enrichments[$enrichment]
+                    = $this->enrichmentPluginManager->get($enrichment);
             }
             $this->enrichments[$enrichment]->enrich($source, $record, $data);
         }

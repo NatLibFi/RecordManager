@@ -1,6 +1,6 @@
 <?php
 /**
- * Factory for controllers that don't require additional constructor parameters.
+ * Factory for controllers that use SolrUpdater.
  *
  * PHP version 7
  *
@@ -33,7 +33,7 @@ use Laminas\ServiceManager\Exception\ServiceNotCreatedException;
 use Laminas\ServiceManager\Exception\ServiceNotFoundException;
 
 /**
- * Factory for controllers that don't require additional constructor parameters.
+ * Factory for controllers that use SolrUpdater.
  *
  * @category DataManagement
  * @package  RecordManager
@@ -41,7 +41,7 @@ use Laminas\ServiceManager\Exception\ServiceNotFoundException;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class AbstractBaseFactory
+class AbstractBaseWithSolrUpdaterFactory
     implements \Laminas\ServiceManager\Factory\FactoryInterface
 {
     /**
@@ -73,6 +73,7 @@ class AbstractBaseFactory
             $container->get(\RecordManager\Base\Database\AbstractDatabase::class),
             $container->get(\RecordManager\Base\Record\PluginManager::class),
             $container->get(\RecordManager\Base\Deduplication\DedupHandler::class),
+            $container->get(\RecordManager\Base\Solr\SolrUpdater::class)
         );
     }
 }

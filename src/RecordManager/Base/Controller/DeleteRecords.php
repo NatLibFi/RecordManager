@@ -82,7 +82,7 @@ class DeleteRecords extends AbstractBase
             'deleteRecords', "Deleting $total records from '$sourceId'"
         );
         $pc = new PerformanceCounter();
-        $dedupHandler = $this->getDedupHandler();
+        $dedupHandler = $this->dedupHandler;
         $this->db->iterateRecords(
             $params,
             [],

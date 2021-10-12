@@ -1,6 +1,6 @@
 <?php
 /**
- * Factory for controllers that don't require additional constructor parameters.
+ * Deduplication handler factory
  *
  * PHP version 7
  *
@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Base\Controller;
+namespace RecordManager\Base\Database;
 
 use Interop\Container\ContainerInterface;
 use Interop\Container\Exception\ContainerException;
@@ -33,7 +33,7 @@ use Laminas\ServiceManager\Exception\ServiceNotCreatedException;
 use Laminas\ServiceManager\Exception\ServiceNotFoundException;
 
 /**
- * Factory for controllers that don't require additional constructor parameters.
+ * Deduplication handler factory
  *
  * @category DataManagement
  * @package  RecordManager
@@ -41,7 +41,7 @@ use Laminas\ServiceManager\Exception\ServiceNotFoundException;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class AbstractBaseFactory
+class AbstractDatabaseFactory
     implements \Laminas\ServiceManager\Factory\FactoryInterface
 {
     /**
@@ -66,13 +66,16 @@ class AbstractBaseFactory
         array $options = null
     ) {
         $configReader = $container->get(\RecordManager\Base\Settings\Ini::class);
-        return new $requestedName(
-            $configReader->get('recordmanager.ini'),
-            $configReader->get('datasources.ini'),
-            $container->get(\RecordManager\Base\Utils\Logger::class),
+        $config = $configReader->get('recordmanager.ini');
+        $className = !empty($config['Site']['dedup_handler']) ?
+            $config['Site']['dedup_handler'] : $requestedName;
+
+        return new $className(
             $container->get(\RecordManager\Base\Database\AbstractDatabase::class),
-            $container->get(\RecordManager\Base\Record\PluginManager::class),
-            $container->get(\RecordManager\Base\Deduplication\DedupHandler::class),
+            $container->get(\RecordManager\Base\Utils\Logger::class),
+            $config,
+            $configReader->get('datasources.ini'),
+            $container->get(\RecordManager\Base\Record\PluginManager::class)
         );
     }
 }

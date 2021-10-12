@@ -27,8 +27,11 @@
  */
 namespace RecordManager\Base\Controller;
 
+use RecordManager\Base\Database\DatabaseInterface;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Solr\PreviewCreator;
 use RecordManager\Base\Utils\MetadataUtils;
+use RecordManager\Base\Utils\Logger;
 
 /**
  * Create Preview Record
@@ -44,19 +47,39 @@ class CreatePreview extends AbstractBase
     use PreTransformationTrait;
 
     /**
+     * Preview creator
+     *
+     * @var PreviewCreator
+     */
+    protected $previewCreator;
+
+    /**
      * Constructor
      *
-     * @param string $basePath Base directory
-     * @param array  $config   Main configuration
-     * @param bool   $console  Specify whether RecordManager is executed on the
-     *                         console so that log output is also output to the
-     *                         console
-     * @param bool   $verbose  Whether verbose output is enabled
+     * @param array               $config              Main configuration
+     * @param array               $datasourceConfig    Datasource configuration
+     * @param Logger              $logger              Logger
+     * @param DatabaseInterface   $database            Database
+     * @param RecordPluginManager $recordPluginManager Record plugin manager
+     * @param PreviewCreator      $previewCreator      Preview creator
      */
-    public function __construct($basePath, $config, $console = false,
-        $verbose = false
+    public function __construct(
+        array $config,
+        array $datasourceConfig,
+        Logger $logger,
+        DatabaseInterface $database,
+        RecordPluginManager $recordPluginManager,
+        PreviewCreator $previewCreator
     ) {
-        parent::__construct($basePath, $config, $console, $verbose);
+        parent::__construct(
+            $config,
+            $datasourceConfig,
+            $logger,
+            $database,
+            $recordPluginManager
+        );
+
+        $this->previewCreator = $previewCreator;
 
         if (empty($this->dataSourceSettings['_preview'])) {
             $this->dataSourceSettings['_preview'] = [
@@ -156,12 +179,7 @@ class CreatePreview extends AbstractBase
         $record['_id'] = $record['linking_id']
             = $source . '.' . $metadataRecord->getID();
 
-        $preview = new PreviewCreator(
-            $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings, $this->recordFactory
-        );
-
-        return $preview->create($record);
+        return $this->previewCreator->create($record);
     }
 
     /**

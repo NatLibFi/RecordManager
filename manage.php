@@ -91,7 +91,7 @@ EOT;
         !empty($params['basepath']) ? $params['basepath'] : __DIR__
     );
 
-    $app = Laminas\Mvc\Application::init(require 'conf/application.config.php');
+    $app = Laminas\Mvc\Application::init(include 'conf/application.config.php');
     $sm = $app->getServiceManager();
     $configReader = $sm->get(\RecordManager\Base\Settings\Ini::class);
     $configReader->addOverrides('recordmanager.ini', $params);

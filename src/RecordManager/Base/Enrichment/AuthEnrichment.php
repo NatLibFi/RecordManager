@@ -28,9 +28,10 @@
  */
 namespace RecordManager\Base\Enrichment;
 
+use RecordManager\Base\Database\AbstractAuthorityDatabase;
 use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Database\Factory as DatabaseFactory;
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -49,7 +50,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-abstract class AuthEnrichment extends Enrichment
+abstract class AuthEnrichment extends AbstractEnrichment
 {
     /**
      * Authority database
@@ -61,42 +62,22 @@ abstract class AuthEnrichment extends Enrichment
     /**
      * Constructor
      *
-     * @param Database      $db            Database connection (for cache)
-     * @param Logger        $logger        Logger
-     * @param array         $config        Main configuration
-     * @param RecordFactory $recordFactory Record factory
+     * @param Database            $db                  Database connection (for
+     *                                                 cache)
+     * @param Logger              $logger              Logger
+     * @param array               $config              Main configuration
+     * @param RecordPluginManager $recordPluginManager Record plugin manager
+     * @param Database            $authorityDb         Authority database connection
      */
     public function __construct(
-        Database $db, Logger $logger, array $config,
-        RecordFactory $recordFactory
+        Database $db,
+        Logger $logger,
+        array $config,
+        RecordPluginManager $recordPluginManager,
+        Database $authorityDb
     ) {
-        parent::__construct($db, $logger, $config, $recordFactory);
-
-        // Copy main configuration and modify it with the AuthorityEnrichment
-        // settings
-        $dbConfig = $config;
-        $dbType = $dbConfig['Database']['backend'] ?? 'Mongo';
-
-        $connection = $config['AuthorityEnrichment']['connection']
-            ?? $config['AuthorityEnrichment']['url'] ?? '';
-        if ($connection) {
-            $dbConfig[$dbType]['connection'] = $connection;
-        }
-
-        if (!empty($config['AuthorityEnrichment']['database'])) {
-            $dbConfig[$dbType]['database']
-                = $config['AuthorityEnrichment']['database'];
-        }
-
-        try {
-            $this->authorityDb = DatabaseFactory::createDatabase($dbConfig);
-        } catch (\Exception $e) {
-            $this->logger->logFatal(
-                'startup',
-                'Failed to connect to authority database: ' . $e->getMessage()
-            );
-            throw $e;
-        }
+        parent::__construct($db, $logger, $config, $recordPluginManager);
+        $this->authorityDb = $authorityDb;
     }
 
     /**

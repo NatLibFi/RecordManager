@@ -1,6 +1,6 @@
 <?php
 /**
- * Factory for controllers that don't require additional constructor parameters.
+ * Authority Enrichment factory
  *
  * PHP version 7
  *
@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Base\Controller;
+namespace RecordManager\Base\Enrichment;
 
 use Interop\Container\ContainerInterface;
 use Interop\Container\Exception\ContainerException;
@@ -33,7 +33,7 @@ use Laminas\ServiceManager\Exception\ServiceNotCreatedException;
 use Laminas\ServiceManager\Exception\ServiceNotFoundException;
 
 /**
- * Factory for controllers that don't require additional constructor parameters.
+ * Authority Enrichment factory
  *
  * @category DataManagement
  * @package  RecordManager
@@ -41,7 +41,7 @@ use Laminas\ServiceManager\Exception\ServiceNotFoundException;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class AbstractBaseFactory
+class AuthEnrichmentFactory
     implements \Laminas\ServiceManager\Factory\FactoryInterface
 {
     /**
@@ -66,13 +66,14 @@ class AbstractBaseFactory
         array $options = null
     ) {
         $configReader = $container->get(\RecordManager\Base\Settings\Ini::class);
+
         return new $requestedName(
-            $configReader->get('recordmanager.ini'),
-            $configReader->get('datasources.ini'),
-            $container->get(\RecordManager\Base\Utils\Logger::class),
             $container->get(\RecordManager\Base\Database\AbstractDatabase::class),
+            $container->get(\RecordManager\Base\Utils\Logger::class),
+            $configReader->get('recordmanager.ini'),
             $container->get(\RecordManager\Base\Record\PluginManager::class),
-            $container->get(\RecordManager\Base\Deduplication\DedupHandler::class),
+            $container
+                ->get(\RecordManager\Base\Database\AbstractAuthorityDatabase::class)
         );
     }
 }

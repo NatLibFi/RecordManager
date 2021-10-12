@@ -51,7 +51,6 @@ class Suppress extends AbstractBase
     public function launch($sourceId, $singleId)
     {
         $this->initSourceSettings();
-        $dedupHandler = $this->getDedupHandler();
         foreach ($this->dataSourceSettings as $source => $settings) {
             if ($sourceId && $sourceId != '*' && $source != $sourceId) {
                 continue;
@@ -72,6 +71,7 @@ class Suppress extends AbstractBase
             } else {
                 $params['source_id'] = $source;
             }
+            $dedupHandler = $this->dedupHandler;
             $total = $this->db->countRecords($params);
             $count = 0;
 

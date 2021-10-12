@@ -55,8 +55,6 @@ class Import extends AbstractBase
     {
         $this->initSourceSettings();
 
-        $this->dedupHandler = $this->getDedupHandler();
-
         if (!isset($this->dataSourceSettings[$source])) {
             $this->logger->logFatal(
                 'import',

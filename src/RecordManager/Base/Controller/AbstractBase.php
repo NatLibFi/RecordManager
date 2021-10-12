@@ -96,20 +96,29 @@ abstract class AbstractBase
     protected $recordPluginManager;
 
     /**
+     * Deduplication handler
+     *
+     * @var DedupHandlerInterface
+     */
+    protected $dedupHandler;
+
+    /**
      * Constructor
      *
-     * @param array               $config              Main configuration
-     * @param array               $datasourceConfig    Datasource configuration
-     * @param Logger              $logger              Logger
-     * @param DatabaseInterface   $database            Database
-     * @param RecordPluginManager $recordPluginManager Record plugin manager
+     * @param array                 $config              Main configuration
+     * @param array                 $datasourceConfig    Datasource configuration
+     * @param Logger                $logger              Logger
+     * @param DatabaseInterface     $database            Database
+     * @param RecordPluginManager   $recordPluginManager Record plugin manager
+     * @param DedupHandlerInterface $dedupHandler        Deduplication handler
      */
     public function __construct(
         array $config,
         array $datasourceConfig,
         Logger $logger,
         DatabaseInterface $database,
-        RecordPluginManager $recordPluginManager
+        RecordPluginManager $recordPluginManager,
+        DedupHandlerInterface $dedupHandler
     ) {
         date_default_timezone_set($config['Site']['timezone']);
 
@@ -120,6 +129,8 @@ abstract class AbstractBase
         $this->logger->setDatabase($this->db);
         $this->dataSourceSettings = $datasourceConfig;
         $this->recordPluginManager = $recordPluginManager;
+        $this->dedupHandler = $dedupHandler;
+
         MetadataUtils::setLogger($this->logger);
         MetadataUtils::setConfig($config, RECMAN_BASE_PATH);
     }
@@ -221,27 +232,6 @@ abstract class AbstractBase
                 $settings['recordSplitter'] = null;
             }
         }
-    }
-
-    /**
-     * Create a dedup handler
-     *
-     * @return DedupHandlerInterface
-     */
-    protected function getDedupHandler()
-    {
-        $dedupClass = $this->config['Site']['dedup_handler']
-            ?? '\RecordManager\Base\Deduplication\DedupHandler';
-        $dedupHandler = new $dedupClass(
-            $this->db, $this->logger, $this->verbose, RECMAN_BASE_PATH, $this->config,
-            $this->dataSourceSettings, $this->recordPluginManager
-        );
-        if (!($dedupHandler instanceof DedupHandlerInterface)) {
-            throw new \Exception(
-                'Dedup handler must implement DedupHandlerInterface'
-            );
-        }
-        return $dedupHandler;
     }
 
     /**

@@ -52,7 +52,6 @@ class Renormalize extends AbstractBase
     public function launch($sourceId, $singleId)
     {
         $this->initSourceSettings();
-        $dedupHandler = $this->getDedupHandler();
         foreach ($this->dataSourceSettings as $source => $settings) {
             if ($sourceId && $sourceId != '*' && $source != $sourceId) {
                 continue;
@@ -71,6 +70,7 @@ class Renormalize extends AbstractBase
                 $params['source_id'] = $source;
             }
             $total = $this->db->countRecords($params);
+            $dedupHandler = $this->dedupHandler;
             $count = 0;
             $this->logger->logInfo(
                 'renormalize', "Processing $total records from '$source'"

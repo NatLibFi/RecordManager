@@ -27,7 +27,7 @@
  */
 namespace RecordManager\Base\Utils;
 
-use RecordManager\Base\Record\Base as BaseRecord;
+use RecordManager\Base\Record\AbstractRecord;
 
 /**
  * MetadataUtils Class
@@ -865,9 +865,9 @@ class MetadataUtils
     /**
      * Determine if a record is a hidden component part
      *
-     * @param array      $settings       Data source settings
-     * @param array      $record         Database record
-     * @param BaseRecord $metadataRecord Metadata record
+     * @param array          $settings       Data source settings
+     * @param array          $record         Database record
+     * @param AbstractRecord $metadataRecord Metadata record
      *
      * @return boolean
      */

@@ -2,6 +2,8 @@
 /**
  * Database factory
  *
+ * PHP version 7
+ *
  * Copyright (C) The National Library of Finland 2021.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -31,7 +33,7 @@ use Laminas\ServiceManager\Exception\ServiceNotCreatedException;
 use Laminas\ServiceManager\Exception\ServiceNotFoundException;
 
 /**
- * Database Factory
+ * Database factory
  *
  * @category DataManagement
  * @package  RecordManager
@@ -69,10 +71,7 @@ class AbstractDatabaseFactory
         if (empty($config[$backend])) {
             throw new \Exception("Configuration section $backend missing");
         }
-        $dbConfig = $config[$backend];
-        if ('Mongo' === $backend) {
-            return new MongoDatabase($dbConfig);
-        }
-        return new PDODatabase($dbConfig);
+        $dbClass = __NAMESPACE__ . '\\' . $backend . 'Database';
+        return new $dbClass($config[$backend]);
     }
 }

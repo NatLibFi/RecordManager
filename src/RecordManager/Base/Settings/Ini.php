@@ -51,6 +51,8 @@ class Ini
      *
      * @param string $filename Ini file
      * @param array  $settings Settings (associative array)
+     *
+     * @return void
      */
     public function addOverrides(string $filename, array $settings)
     {

@@ -28,7 +28,7 @@
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -42,7 +42,7 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class NominatimGeocoder extends Enrichment
+class NominatimGeocoder extends AbstractEnrichment
 {
     /**
      * Nominatim server base url
@@ -141,16 +141,17 @@ class NominatimGeocoder extends Enrichment
     /**
      * Constructor
      *
-     * @param Database      $db            Database connection (for cache)
-     * @param Logger        $logger        Logger
-     * @param array         $config        Main configuration
-     * @param RecordFactory $recordFactory Record factory
+     * @param Database            $db                  Database connection (for
+     *                                                 cache)
+     * @param Logger              $logger              Logger
+     * @param array               $config              Main configuration
+     * @param RecordPluginManager $recordPluginManager Record plugin manager
      */
     public function __construct(
         Database $db, Logger $logger, array $config,
-        RecordFactory $recordFactory
+        RecordPluginManager $recordPluginManager
     ) {
-        parent::__construct($db, $logger, $config, $recordFactory);
+        parent::__construct($db, $logger, $config, $recordPluginManager);
 
         $settings = $config['NominatimGeocoder'] ?? [];
         if (!isset($settings['url']) || !$settings['url']) {

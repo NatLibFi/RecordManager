@@ -27,7 +27,11 @@
  */
 namespace RecordManager\Base\Controller;
 
+use RecordManager\Base\Database\DatabaseInterface;
+use RecordManager\Base\Deduplication\DedupHandlerInterface;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Solr\SolrUpdater;
+use RecordManager\Base\Utils\Logger;
 
 /**
  * Count Field Values
@@ -40,6 +44,44 @@ use RecordManager\Base\Solr\SolrUpdater;
  */
 class CountValues extends AbstractBase
 {
+    /**
+     * Solr access
+     *
+     * @var SolrUpdater
+     */
+    protected $solrUpdater;
+
+    /**
+     * Constructor
+     *
+     * @param array                 $config              Main configuration
+     * @param array                 $datasourceConfig    Datasource configuration
+     * @param Logger                $logger              Logger
+     * @param DatabaseInterface     $database            Database
+     * @param RecordPluginManager   $recordPluginManager Record plugin manager
+     * @param DedupHandlerInterface $dedupHandler        Deduplication handler
+     * @param SolrUpdater           $solrUpdater         Solr updater
+     */
+    public function __construct(
+        array $config,
+        array $datasourceConfig,
+        Logger $logger,
+        DatabaseInterface $database,
+        RecordPluginManager $recordPluginManager,
+        DedupHandlerInterface $dedupHandler,
+        SolrUpdater $solrUpdater
+    ) {
+        parent::__construct(
+            $config,
+            $datasourceConfig,
+            $logger,
+            $database,
+            $recordPluginManager,
+            $dedupHandler
+        );
+        $this->solrUpdarter = $solrUpdater;
+    }
+
     /**
      * Count distinct values in the specified field (that would be added to the
      * Solr index)
@@ -56,10 +98,6 @@ class CountValues extends AbstractBase
         if (!$field) {
             throw new \Exception('Field must be specified');
         }
-        $updater = new SolrUpdater(
-            $this->db, RECMAN_BASE_PATH, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings, $this->recordFactory
-        );
-        $updater->countValues($sourceId, $field, $mapped);
+        $this->solrUpdater->countValues($sourceId, $field, $mapped);
     }
 }

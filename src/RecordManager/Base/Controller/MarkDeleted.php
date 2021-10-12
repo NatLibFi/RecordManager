@@ -55,8 +55,6 @@ class MarkDeleted extends AbstractBase
             return;
         }
 
-        $dedupHandler = $this->getDedupHandler();
-
         $this->logger
             ->logInfo('markDeleted', "Creating record list for '$sourceId'");
 
@@ -80,7 +78,7 @@ class MarkDeleted extends AbstractBase
             foreach ($records as $record) {
                 $more = true;
                 if (isset($record['dedup_id'])) {
-                    $dedupHandler->removeFromDedupRecord(
+                    $this->dedupHandler->removeFromDedupRecord(
                         $record['dedup_id'], $record['_id']
                     );
                     unset($record['dedup_id']);

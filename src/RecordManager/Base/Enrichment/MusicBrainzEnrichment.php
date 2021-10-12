@@ -28,7 +28,7 @@
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -43,7 +43,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class MusicBrainzEnrichment extends Enrichment
+class MusicBrainzEnrichment extends AbstractEnrichment
 {
     /**
      * MusicBrainz API base url
@@ -55,20 +55,19 @@ class MusicBrainzEnrichment extends Enrichment
     /**
      * Constructor
      *
-     * @param Database      $db            Database connection (for cache)
-     * @param Logger        $logger        Logger
-     * @param array         $config        Main configuration
-     * @param RecordFactory $recordFactory Record factory
+     * @param Database            $db                  Database connection (for
+     *                                                 cache)
+     * @param Logger              $logger              Logger
+     * @param array               $config              Main configuration
+     * @param RecordPluginManager $recordPluginManager Record plugin manager
      */
     public function __construct(
         Database $db, Logger $logger, array $config,
-        RecordFactory $recordFactory
+        RecordPluginManager $recordPluginManager
     ) {
-        parent::__construct($db, $logger, $config, $recordFactory);
+        parent::__construct($db, $logger, $config, $recordPluginManager);
 
-        $this->baseURL
-            = $this->config['MusicBrainzEnrichment']['url']
-            ?? '';
+        $this->baseURL = $this->config['MusicBrainzEnrichment']['url'] ?? '';
     }
 
     /**
