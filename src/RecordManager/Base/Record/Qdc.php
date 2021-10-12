@@ -260,7 +260,7 @@ class Qdc extends Base
         $form = $this->config['Site']['unicode_normalization_form'] ?? 'NFKC';
         foreach ($this->doc->identifier as $identifier) {
             $identifier = strtolower(trim((string)$identifier));
-            if (strncasecmp('urn:', $identifier, 4) === 0) {
+            if (strncmp('urn:', $identifier, 4) === 0) {
                 $arr[] = '(urn)' . MetadataUtils::normalizeKey($identifier, $form);
             }
         }
@@ -309,7 +309,12 @@ class Qdc extends Base
         }
         foreach ($this->doc->identifier as $identifier) {
             $trimmed = trim((string)$identifier);
-            if (preg_match('{(issn[\s\S])([\S]{4}\-[\S]{4})}i', $trimmed, $matches)) {
+            if (preg_match(
+                '{(issn[\s\S])([\S]{4}\-[\S]{4})}i',
+                $trimmed,
+                $matches
+            )
+            ) {
                 $result[] = $matches[2];
             }
         }
