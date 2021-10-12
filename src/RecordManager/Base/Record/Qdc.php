@@ -309,7 +309,7 @@ class Qdc extends Base
         }
         foreach ($this->doc->identifier as $identifier) {
             $trimmed = trim((string)$identifier);
-            if (preg_match('{(issn[\s\S])[\S]{4}\-[\S]{4}}i', $trimmed, $matches)) {
+            if (preg_match('{(issn[\s\S])([\S]{4}\-[\S]{4})}i', $trimmed, $matches)) {
                 $result[] = $matches[2];
             }
         }
