@@ -300,11 +300,9 @@ class Qdc extends Base
     public function getISSNs()
     {
         $result = [];
-        if (!isset($this->doc->relation)) {
-            foreach ($this->doc->relation as $rel) {
-                if ((string)$rel->attributes()->{'type'} === 'issn') {
-                    $result[] = trim((string)$rel);
-                }
+        foreach ($this->doc->relation as $rel) {
+            if ((string)$rel->attributes()->{'type'} === 'issn') {
+                $result[] = trim((string)$rel);
             }
         }
         foreach ($this->doc->identifier as $identifier) {
