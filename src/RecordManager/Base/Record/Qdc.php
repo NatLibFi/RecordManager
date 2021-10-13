@@ -316,7 +316,7 @@ class Qdc extends Base
                 $result[] = $matches[2];
             }
         }
-        return array_unique($result);
+        return array_values(array_unique($result));
     }
 
     /**
