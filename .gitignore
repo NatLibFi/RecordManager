@@ -17,6 +17,7 @@ Thumbs.db
 # Local files
 conf/*.ini
 conf/*.lst
+conf/modules.config.php
 .php_cs_cache
 .psalm_cache
 *.log

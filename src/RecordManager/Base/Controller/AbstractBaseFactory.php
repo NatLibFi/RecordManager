@@ -72,6 +72,7 @@ class AbstractBaseFactory
             $container->get(\RecordManager\Base\Utils\Logger::class),
             $container->get(\RecordManager\Base\Database\AbstractDatabase::class),
             $container->get(\RecordManager\Base\Record\PluginManager::class),
+            $container->get(\RecordManager\Base\Splitter\PluginManager::class),
             $container->get(\RecordManager\Base\Deduplication\DedupHandler::class),
         );
     }

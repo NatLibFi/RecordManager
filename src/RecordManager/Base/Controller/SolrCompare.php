@@ -30,6 +30,7 @@ namespace RecordManager\Base\Controller;
 use RecordManager\Base\Database\DatabaseInterface;
 use RecordManager\Base\Deduplication\DedupHandlerInterface;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
+use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
 use RecordManager\Base\Solr\SolrComparer;
 use RecordManager\Base\Utils\Logger;
 
@@ -59,6 +60,8 @@ class SolrCompare extends AbstractBase
      * @param Logger                $logger              Logger
      * @param DatabaseInterface     $database            Database
      * @param RecordPluginManager   $recordPluginManager Record plugin manager
+     * @param SplitterPluginManager $splitterManager     Record splitter plugin
+     *                                                   manager
      * @param DedupHandlerInterface $dedupHandler        Deduplication handler
      * @param SolrComparer          $solrComparer        Solr comparer
      */
@@ -68,6 +71,7 @@ class SolrCompare extends AbstractBase
         Logger $logger,
         DatabaseInterface $database,
         RecordPluginManager $recordPluginManager,
+        SplitterPluginManager $splitterManager,
         DedupHandlerInterface $dedupHandler,
         SolrComparer $solrComparer
     ) {
@@ -77,6 +81,7 @@ class SolrCompare extends AbstractBase
             $logger,
             $database,
             $recordPluginManager,
+            $splitterManager,
             $dedupHandler
         );
         $this->solrComparer = $solrComparer;

@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2019.
+ * Copyright (C) The National Library of Finland 2012-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -55,30 +55,70 @@ class Ead
      */
     protected $nonInheritedFields = [];
 
+    /**
+     * XML document
+     *
+     * @var \SimpleXMLElement
+     */
     protected $doc;
 
+    /**
+     * Record nodes
+     *
+     * @var array
+     */
     protected $recordNodes;
 
+    /**
+     * Record count
+     *
+     * @var int
+     */
     protected $recordCount;
 
+    /**
+     * Current position
+     *
+     * @var int
+     */
     protected $currentPos;
 
-    protected $agency = '';
-
-    protected $archiveId = '';
-
-    protected $archiveTitle = '';
-
-    protected $archiveSubTitle = '';
-
-    protected $repository = '';
+    /**
+     * Main agency code
+     *
+     * @var string
+     */
+    protected $agency;
 
     /**
-     * Constructor
+     * Archive identifier
      *
-     * @param array $params Splitter configuration params
+     * @var string
      */
-    public function __construct($params)
+    protected $archiveId;
+
+    /**
+     * Archive title
+     *
+     * @var string
+     */
+    protected $archiveTitle;
+
+    /**
+     * Archive identifier
+     *
+     * @var string
+     */
+    protected $archiveSubTitle;
+
+    /**
+     * Initializer
+     *
+     * @param array $params Splitter configuration
+     *
+     * @return void
+     */
+    public function init(array $params): void
     {
         $this->prependParentTitleWithUnitId
             = !empty($params['prependParentTitleWithUnitId']);

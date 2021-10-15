@@ -1,8 +1,10 @@
 <?php
 
-$modules = ['RecordManager\Base', 'Laminas\Router'];
-if (defined('RECMAN_MODULES')) {
-    $modules = array_merge(explode(';', RECMAN_MODULES));
+// Default modules (specify local modules in modules.config.php):
+$modules = ['RecordManager\\Base', 'Laminas\\Router'];
+
+if (file_exists(__DIR__ . '/modules.config.php')) {
+    $modules = array_merge($modules, include __DIR__ . '/modules.config.php');
 }
 
 return [
@@ -13,8 +15,7 @@ return [
         ],
         'config_cache_enabled' => false,
         'module_map_cache_enabled' => false,
-        'check_dependencies' => defined('APPLICATION_ENV')
-            && APPLICATION_ENV == 'development',
+        'check_dependencies' => getenv('APPLICATION_ENV') == 'development',
         'module_paths' => [
             './src/RecordManager',
             './vendor',

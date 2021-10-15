@@ -31,6 +31,7 @@ use RecordManager\Base\Database\DatabaseInterface;
 use RecordManager\Base\Deduplication\DedupHandlerInterface;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Solr\SolrUpdater;
+use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -45,6 +46,13 @@ use RecordManager\Base\Utils\Logger;
 class SolrUpdate extends AbstractBase
 {
     /**
+     * Solr access
+     *
+     * @var SolrUpdater
+     */
+    protected $solrUpdater;
+
+    /**
      * Constructor
      *
      * @param array                 $config              Main configuration
@@ -52,6 +60,8 @@ class SolrUpdate extends AbstractBase
      * @param Logger                $logger              Logger
      * @param DatabaseInterface     $database            Database
      * @param RecordPluginManager   $recordPluginManager Record plugin manager
+     * @param SplitterPluginManager $splitterManager     Record splitter plugin
+     *                                                   manager
      * @param DedupHandlerInterface $dedupHandler        Deduplication handler
      * @param SolrUpdater           $solrUpdater         Solr updater
      */
@@ -61,6 +71,7 @@ class SolrUpdate extends AbstractBase
         Logger $logger,
         DatabaseInterface $database,
         RecordPluginManager $recordPluginManager,
+        SplitterPluginManager $splitterManager,
         DedupHandlerInterface $dedupHandler,
         SolrUpdater $solrUpdater
     ) {
@@ -70,6 +81,7 @@ class SolrUpdate extends AbstractBase
             $logger,
             $database,
             $recordPluginManager,
+            $splitterManager,
             $dedupHandler
         );
         $this->solrUpdater = $solrUpdater;

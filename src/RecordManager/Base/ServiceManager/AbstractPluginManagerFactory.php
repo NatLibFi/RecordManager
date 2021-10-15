@@ -50,14 +50,23 @@ class AbstractPluginManagerFactory implements FactoryInterface
      * @param string $requestedName Service being created
      *
      * @return string
+     *
+     * @throws ServiceNotCreatedException if an exception is raised when
+     * creating a service.
      */
     public function getConfigKey($requestedName)
     {
-        // Extract namespace of plugin manager (chop off leading top-level
-        // namespace -- e.g. VuFind -- and trailing PluginManager class).
-        $regex = '/^[^\\\\]+\\\\(.*)\\\\PluginManager$/';
-        preg_match($regex, $requestedName, $matches);
-        return strtolower(str_replace('\\', '_', $matches[1]));
+        // Extract namespace of the plugin manager (chop off leading top-level
+        // namespace -- e.g. RecordManager\Base -- and trailing PluginManager class):
+        $parts = explode('\\', $requestedName);
+        if (count($parts) < 4 || array_pop($parts) !== 'PluginManager') {
+            throw new ServiceNotCreatedException(
+                "Cannot determine config key for $requestedName"
+            );
+        }
+        array_shift($parts);
+        array_shift($parts);
+        return strtolower(implode('_', $parts));
     }
 
     /**
@@ -88,6 +97,12 @@ class AbstractPluginManagerFactory implements FactoryInterface
             throw new \Exception($error);
         }
         $config = $container->get('Config');
+        if (!isset($config['recordmanager']['plugin_managers'][$configKey])) {
+            throw new ServiceNotCreatedException(
+                'Plugin configuration not found at recordmanager => plugin_managers'
+                . " => $configKey"
+            );
+        }
         return new $requestedName(
             $container,
             $config['recordmanager']['plugin_managers'][$configKey]

@@ -1,10 +1,10 @@
 <?php
 /**
- * XML File Splitter
+ * Generic XML File Splitter
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,9 +28,9 @@
 namespace RecordManager\Base\Splitter;
 
 /**
- * File Splitter
+ * Generic File Splitter
  *
- * This class splits XML to multiple records using an xpath expression
+ * This class splits XML to multiple records using an XPath expression
  *
  * @category DataManagement
  * @package  RecordManager
@@ -40,26 +40,63 @@ namespace RecordManager\Base\Splitter;
  */
 class File
 {
+    /**
+     * XML document
+     *
+     * @var \DOMDocument
+     */
     protected $xmlDoc;
 
+    /**
+     * Record nodes
+     *
+     * @var \DOMNodeList|false
+     */
     protected $recordNodes;
 
+    /**
+     * Record count
+     *
+     * @var int
+     */
     protected $recordCount;
 
+    /**
+     * Current position
+     *
+     * @var int
+     */
     protected $currentPos;
 
+    /**
+     * XPath query handler
+     *
+     * @var \DOMXpath
+     */
     protected $xpath;
 
+    /**
+     * Record XPath
+     *
+     * @var string
+     */
     protected $recordXPath = '//record';
 
+    /**
+     * OAI identifier XPath
+     *
+     * @var string
+     */
     protected $oaiIDXpath = '';
 
     /**
-     * Constructor
+     * Initializer
      *
-     * @param array $params Splitter configuration params
+     * @param array $params Splitter configuration
+     *
+     * @return void
      */
-    public function __construct($params)
+    public function init(array $params): void
     {
         if (!empty($params['recordXPath'])) {
             $this->recordXPath = $params['recordXPath'];

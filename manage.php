@@ -139,9 +139,7 @@ EOT;
             foreach (explode(',', $sources) as $source) {
                 switch ($params['func']) {
                 case 'renormalize':
-                    $renormalize = new \RecordManager\Base\Controller\Renormalize(
-                        $basePath, $config, true, $verbose
-                    );
+                    $renormalize = $sm->get(\RecordManager\Base\Controller\Renormalize::class);
                     $renormalize->launch($source, $single);
                     break;
                 case 'deduplicate':

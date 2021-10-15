@@ -1,10 +1,10 @@
 <?php
 /**
- * Record plugin manager
+ * RecordManager Finna module
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2020-2021.
+ * Copyright (C) The National Library of Finland 2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
  * @category DataManagement
  * @package  RecordManager
@@ -25,10 +25,10 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Base\Record;
+namespace RecordManager\Finna;
 
 /**
- * Record plugin manager
+ * RecordManager Finna module
  *
  * @category DataManagement
  * @package  RecordManager
@@ -36,25 +36,15 @@ namespace RecordManager\Base\Record;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class PluginManager extends \Laminas\ServiceManager\AbstractPluginManager
+class Module
 {
     /**
-     * Constructor
+     * Get module configuration
      *
-     * Make sure plugins are properly initialized.
-     *
-     * @param mixed $configOrContainerInstance Configuration or container instance
-     * @param array $v3config                  If $configOrContainerInstance is a
-     * container, this value will be passed to the parent constructor.
+     * @return array
      */
-    public function __construct(
-        $configOrContainerInstance = null,
-        array $v3config = []
-    ) {
-        // These objects are not meant to be shared -- every time we retrieve one,
-        // we are building a brand new object.
-        $this->sharedByDefault = false;
-
-        parent::__construct($configOrContainerInstance, $v3config);
+    public function getConfig()
+    {
+        return include __DIR__ . '/config/module.config.php';
     }
 }

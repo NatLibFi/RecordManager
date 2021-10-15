@@ -62,6 +62,8 @@ class CreatePreview extends AbstractBase
      * @param Logger                $logger              Logger
      * @param DatabaseInterface     $database            Database
      * @param RecordPluginManager   $recordPluginManager Record plugin manager
+     * @param SplitterPluginManager $splitterManager     Record splitter plugin
+     *                                                   manager
      * @param DedupHandlerInterface $dedupHandler        Deduplication handler
      * @param PreviewCreator        $previewCreator      Preview creator
      */
@@ -71,6 +73,7 @@ class CreatePreview extends AbstractBase
         Logger $logger,
         DatabaseInterface $database,
         RecordPluginManager $recordPluginManager,
+        SplitterPluginManager $splitterManager,
         DedupHandlerInterface $dedupHandler,
         PreviewCreator $previewCreator
     ) {
@@ -80,6 +83,7 @@ class CreatePreview extends AbstractBase
             $logger,
             $database,
             $recordPluginManager,
+            $splitterManager,
             $dedupHandler
         );
 

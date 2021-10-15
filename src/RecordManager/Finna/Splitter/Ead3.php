@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2019.
+ * Copyright (C) The National Library of Finland 2012-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -51,49 +51,20 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
      */
     protected $prependParentTitleWithUnitId;
 
-    /**
-     * Keyed list of fields within record did element not to be inherited to child
-     * nodes
-     *
-     * @var array
-     */
-    protected $nonInheritedFields = [];
-
-    protected $doc;
-
-    protected $recordNodes;
-
-    protected $recordCount;
-
-    protected $currentPos;
-
-    protected $agency = '';
-
-    protected $archiveId = '';
-
-    protected $archiveTitle = '';
-
-    protected $archiveSubTitle = '';
-
-    protected $repository = '';
-
     // label-attribute of identifying unitid-element
     protected $unitIdLabel = null;
 
     /**
-     * Constructor
+     * Initializer
      *
-     * @param array $params Splitter configuration params
+     * @param array $params Splitter configuration
+     *
+     * @return void
      */
-    public function __construct($params)
+    public function init(array $params): void
     {
-        $this->prependParentTitleWithUnitId
-            = !empty($params['prependParentTitleWithUnitId']);
+        parent::init($params);
 
-        if (!empty($params['nonInheritedFields'])) {
-            $fields = explode(',', $params['nonInheritedFields']);
-            $this->nonInheritedFields = array_flip($fields);
-        }
         $this->unitIdLabel = $params['unitIdLabel'] ?? null;
     }
 

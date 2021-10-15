@@ -30,6 +30,7 @@ namespace RecordManager\Base\Controller;
 use RecordManager\Base\Database\DatabaseInterface;
 use RecordManager\Base\Deduplication\DedupHandlerInterface;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
+use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\XslTransformation;
@@ -89,11 +90,18 @@ abstract class AbstractBase
     protected $dataSourceSettings;
 
     /**
-     * Record loader
+     * Record plugin manager
      *
      * @var RecordPluginManager
      */
     protected $recordPluginManager;
+
+    /**
+     * Record splitter plugin manager
+     *
+     * @var SplitterPluginManager
+     */
+    protected $splitterPluginManager;
 
     /**
      * Deduplication handler
@@ -110,6 +118,8 @@ abstract class AbstractBase
      * @param Logger                $logger              Logger
      * @param DatabaseInterface     $database            Database
      * @param RecordPluginManager   $recordPluginManager Record plugin manager
+     * @param SplitterPluginManager $splitterManager     Record splitter plugin
+     *                                                   manager
      * @param DedupHandlerInterface $dedupHandler        Deduplication handler
      */
     public function __construct(
@@ -118,6 +128,7 @@ abstract class AbstractBase
         Logger $logger,
         DatabaseInterface $database,
         RecordPluginManager $recordPluginManager,
+        SplitterPluginManager $splitterManager,
         DedupHandlerInterface $dedupHandler
     ) {
         date_default_timezone_set($config['Site']['timezone']);
@@ -129,6 +140,7 @@ abstract class AbstractBase
         $this->logger->setDatabase($this->db);
         $this->dataSourceSettings = $datasourceConfig;
         $this->recordPluginManager = $recordPluginManager;
+        $this->splitterPluginManager = $splitterManager;
         $this->dedupHandler = $dedupHandler;
 
         MetadataUtils::setLogger($this->logger);
@@ -209,14 +221,8 @@ abstract class AbstractBase
                 ) : null;
 
             if (!empty($settings['recordSplitterClass'])) {
-                if (!class_exists($settings['recordSplitterClass'])) {
-                    throw new \Exception(
-                        "Record splitter class '"
-                        . $settings['recordSplitterClass']
-                        . "' not found for source $source"
-                    );
-                }
-                $settings['recordSplitter'] = $settings['recordSplitterClass'];
+                $settings['recordSplitter'] = $this->splitterPluginManager
+                    ->get($settings['recordSplitterClass']);
             } elseif (!empty($settings['recordSplitter'])) {
                 $style = new \DOMDocument();
                 $xslFile = RECMAN_BASE_PATH . '/transformations/'

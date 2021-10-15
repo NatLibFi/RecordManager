@@ -59,6 +59,8 @@ class CountValues extends AbstractBase
      * @param Logger                $logger              Logger
      * @param DatabaseInterface     $database            Database
      * @param RecordPluginManager   $recordPluginManager Record plugin manager
+     * @param SplitterPluginManager $splitterManager     Record splitter plugin
+     *                                                   manager
      * @param DedupHandlerInterface $dedupHandler        Deduplication handler
      * @param SolrUpdater           $solrUpdater         Solr updater
      */
@@ -68,6 +70,7 @@ class CountValues extends AbstractBase
         Logger $logger,
         DatabaseInterface $database,
         RecordPluginManager $recordPluginManager,
+        SplitterPluginManager $splitterManager,
         DedupHandlerInterface $dedupHandler,
         SolrUpdater $solrUpdater
     ) {
@@ -77,6 +80,7 @@ class CountValues extends AbstractBase
             $logger,
             $database,
             $recordPluginManager,
+            $splitterManager,
             $dedupHandler
         );
         $this->solrUpdater = $solrUpdater;

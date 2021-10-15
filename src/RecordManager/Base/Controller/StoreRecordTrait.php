@@ -82,7 +82,7 @@ trait StoreRecordTrait
             if ($this->verbose) {
                 echo "Splitting records\n";
             }
-            if (is_string($settings['recordSplitter'])) {
+            if (!($settings['recordSplitter'] instanceof \XSLTProcessor)) {
                 $splitterParams = !empty($settings['recordSplitterParams'])
                     ? $settings['recordSplitterParams']
                     : [];
@@ -94,7 +94,8 @@ trait StoreRecordTrait
                     $splitterParams['nonInheritedFields']
                         = $settings['nonInheritedFields'];
                 }
-                $splitter = new $settings['recordSplitter']($splitterParams);
+                $splitter = $settings['recordSplitter'];
+                $splitter->init($splitterParams);
                 $splitter->setData($recordData);
                 while (!$splitter->getEOF()) {
                     $dataArray[] = $splitter->getNextRecord();
