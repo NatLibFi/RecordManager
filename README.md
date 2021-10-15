@@ -9,10 +9,34 @@ For a stable version, see the stable branch.
 ## General Installation
 
 - Minimum supported PHP version is 7.3.
-- Composer is required for dependencies. Run `composer install` in the directory where RecordManager is installed.
+- Composer is required for dependencies. Run `composer install` (or `php /path/to/composer.phar install`) in the directory where RecordManager is installed.
 - The following PHP modules are required: xml, xslt, mbstring, intl
 - The following PECL module is required for MongoDB support: mongodb
 - With MongoDB, the minimum supported version is 3.6. Older versions may still work, but `session = false` needs to be specified in recordmanager.ini.
+
+## Upgrading
+
+Generally upgrading should be straightforward by replacing the old version with the new one and running
+`composer install` (or `php /path/to/composer.phar install`).
+With MongoDB you need to manually check that all indexes are present (see dbscripts/mongo.js).
+With MySQL/MariaDB make sure all tables are present (see dbscripts/mysql.sql).
+
+Note that since 8 Jul 2021 there is a new method for tracking updates of deduplicated records. Since RecordManager no longer uses the old method, there may be old tracking collections left dangling. With Mongo shell with the correct database active, you can use the following script to remove them:
+
+    var count = 0;
+    db.getCollectionNames().forEach(function(c) {
+        if (c.match("^tmp_mr_record") || c.match("^mr_record")) {
+            db.getCollection(c).drop();
+            count++;
+        }
+    });
+    print(count + " collections dropped");
+
+With MySQL/MariaDB you can identify the tables with the following SQL query:
+
+    show tables like '%mr_record_%';
+
+You can then use the `drop table` command to remove them.
 
 ## Installation notes on CentOS 7
 

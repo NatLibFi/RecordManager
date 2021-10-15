@@ -1079,7 +1079,6 @@ class Marc extends AbstractRecord
         $fields = $this->getFields('022');
         foreach ($fields as $field) {
             $issn = $this->getSubfield($field, 'a');
-            $issn = str_replace('-', '', $issn);
             if ($issn) {
                 $arr[] = $issn;
             }
