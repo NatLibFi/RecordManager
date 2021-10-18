@@ -7,7 +7,7 @@
  * PHP version 7
  *
  * Copyright (c) Demian Katz 2010.
- * Copyright (c) The National Library of Finland 2011-2020.
+ * Copyright (c) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -60,7 +60,7 @@ class OaiPmh extends AbstractBase
      *
      * @var string
      */
-    protected $metadata = 'oai_dc';
+    protected $metadataPrefix = 'oai_dc';
 
     /**
      * OAI prefix to strip from ID values
@@ -121,13 +121,6 @@ class OaiPmh extends AbstractBase
     protected $ignoreNoRecordsMatch = false;
 
     /**
-     * Current response being processed
-     *
-     * @var \DOMDocument
-     */
-    protected $xml = null;
-
-    /**
      * Safety limit for abort if the same resumption token with no new results is
      * received with subsequent calls.
      *
@@ -136,80 +129,64 @@ class OaiPmh extends AbstractBase
     protected $sameResumptionTokenLimit = 100;
 
     /**
-     * Constructor.
+     * Current response being processed
      *
-     * @param Database $db       Database
-     * @param Logger   $logger   The Logger object used for logging messages
-     * @param string   $source   The data source to be harvested
-     * @param string   $basePath RecordManager main directory location
-     * @param array    $config   Main configuration
-     * @param array    $settings Settings from datasources.ini
-     *
-     * @throws \Exception
+     * @var \DOMDocument
      */
-    public function __construct(Database $db, Logger $logger, $source, $basePath,
-        $config, $settings
-    ) {
-        parent::__construct($db, $logger, $source, $basePath, $config, $settings);
+    protected $xml = null;
 
-        if (isset($settings['set'])) {
-            $this->set = $settings['set'];
-        }
-        if (isset($settings['metadataPrefix'])) {
-            $this->metadata = $settings['metadataPrefix'];
-        }
-        if (isset($settings['idPrefix'])) {
-            $this->idPrefix = $settings['idPrefix'];
-        }
-        if (isset($settings['idSearch'])) {
-            $this->idSearch = $settings['idSearch'];
-        }
-        if (isset($settings['idReplace'])) {
-            $this->idReplace = $settings['idReplace'];
-        }
-        if (isset($settings['dateGranularity'])) {
-            $this->granularity = $settings['dateGranularity'];
-        }
-        if (isset($settings['debuglog'])) {
-            $this->debugLog = $settings['debuglog'];
-        }
-        if (isset($settings['oaipmhTransformation'])) {
-            foreach ((array)$settings['oaipmhTransformation'] as $transformation) {
-                $style = new \DOMDocument();
-                $loadResult
-                    = $style->load("$basePath/transformations/$transformation");
-                if (false === $loadResult) {
-                    throw new \Exception(
-                        "Could not load $basePath/transformations/$transformation"
-                    );
-                }
-                $xslt = new \XSLTProcessor();
-                $xslt->importStylesheet($style);
-                $xslt->setParameter('', 'source_id', $source);
-                $this->preXslt[] = $xslt;
+    /**
+     * Initialize harvesting
+     *
+     * @param string $source  Source ID
+     * @param bool   $verbose Verbose mode toggle
+     *
+     * @return void
+     */
+    public function init(string $source, bool $verbose): void
+    {
+        parent::init($source, $verbose);
+
+        $settings = $this->dataSourceConfig[$source] ?? [];
+        $this->set = $settings['set'] ?? null;
+        $this->metadataPrefix = $settings['metadataPrefix'] ?? 'oai_dc';
+        $this->idPrefix = $settings['idPrefix'] ?? '';
+        $this->idSearch = $settings['idSearch'] ?? [];
+        $this->idReplace = $settings['idReplace'] ?? [];
+        $this->granularity = $settings['dateGranularity'] ?? 'auto';
+        $this->debugLog = $settings['debuglog'] ?? '';
+        $this->preXslt = [];
+        foreach ((array)($settings['oaipmhTransformation'] ?? []) as $transformation) {
+            $style = new \DOMDocument();
+            $xsltPath = RECMAN_BASE_PATH . "/transformations/$transformation";
+            $loadResult = $style->load($xsltPath);
+            if (false === $loadResult) {
+                throw new \Exception("Could not load $xsltPath");
             }
+            $xslt = new \XSLTProcessor();
+            $xslt->importStylesheet($style);
+            $xslt->setParameter('', 'source_id', $source);
+            $this->preXslt[] = $xslt;
         }
-        if (isset($settings['ignoreNoRecordsMatch'])) {
-            $this->ignoreNoRecordsMatch = $settings['ignoreNoRecordsMatch'];
-        }
-        if (isset($settings['sameResumptionTokenLimit'])) {
-            $this->sameResumptionTokenLimit
-                = $settings['sameResumptionTokenLimit'];
-        }
+        $this->ignoreNoRecordsMatch = $settings['ignoreNoRecordsMatch'] ?? false;
+        $this->sameResumptionTokenLimit
+            = $settings['sameResumptionTokenLimit'] ?? 100;
+
+        $this->xml = null;
 
         $this->identifyServer();
     }
 
     /**
-     * Override the resumption token.
+     * Override the initial position
      *
-     * @param string $token New resumption token
+     * @param string $pos New start position
      *
      * @return void
      */
-    public function setResumptionToken($token)
+    public function setInitialPosition($pos)
     {
-        $this->resumptionToken = $token;
+        $this->resumptionToken = $pos;
     }
 
     /**
@@ -611,7 +588,7 @@ class OaiPmh extends AbstractBase
      */
     protected function getRecordsByDate()
     {
-        $params = ['metadataPrefix' => $this->metadata];
+        $params = ['metadataPrefix' => $this->metadataPrefix];
         if (!empty($this->startDate)) {
             $params['from'] = $this->startDate;
         }
@@ -647,7 +624,7 @@ class OaiPmh extends AbstractBase
     {
         // Make the OAI-PMH request:
         if (empty($params)) {
-            $params = ['metadataPrefix' => $this->metadata];
+            $params = ['metadataPrefix' => $this->metadataPrefix];
             if (!empty($this->set)) {
                 $params['set'] = $this->set;
             }

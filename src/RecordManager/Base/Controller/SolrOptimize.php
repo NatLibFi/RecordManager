@@ -38,6 +38,8 @@ namespace RecordManager\Base\Controller;
  */
 class SolrOptimize extends AbstractBase
 {
+    use ControllerWithSolrUpdaterTrait;
+
     /**
      * Optimize the Solr index
      *
@@ -45,8 +47,8 @@ class SolrOptimize extends AbstractBase
      */
     public function launch()
     {
-        $this->logger->logInfo('optimizeSolr', 'Optimizing Solr index');
+        $this->logger->logInfo('SolrOptimize', 'Optimizing Solr index');
         $this->solrUpdater->optimizeIndex();
-        $this->logger->logInfo('optimizeSolr', 'Solr optimization completed');
+        $this->logger->logInfo('SolrOptimize', 'Solr optimization completed');
     }
 }

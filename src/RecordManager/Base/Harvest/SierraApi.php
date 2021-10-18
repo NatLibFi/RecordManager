@@ -27,9 +27,6 @@
  */
 namespace RecordManager\Base\Harvest;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\Logger;
-
 /**
  * SierraApi Class
  *
@@ -104,24 +101,19 @@ class SierraApi extends AbstractBase
     protected $suppressedBibCode3 = [];
 
     /**
-     * Constructor.
+     * Initialize harvesting
      *
-     * @param Database $db       Database
-     * @param Logger   $logger   The Logger object used for logging messages
-     * @param string   $source   The data source to be harvested
-     * @param string   $basePath RecordManager main directory location
-     * @param array    $config   Main configuration
-     * @param array    $settings Settings from datasources.ini
+     * @param string $source  Source ID
+     * @param bool   $verbose Verbose mode toggle
      *
-     * @throws \Exception
+     * @return void
      */
-    public function __construct(Database $db, Logger $logger, $source, $basePath,
-        $config, $settings
-    ) {
-        parent::__construct($db, $logger, $source, $basePath, $config, $settings);
+    public function init(string $source, bool $verbose): void
+    {
+        parent::init($source, $verbose);
 
-        if (empty($settings['sierraApiKey'])
-            || empty($settings['sierraApiSecret'])
+        $settings = $this->dataSourceConfig[$source] ?? [];
+        if (empty($settings['sierraApiKey']) || empty($settings['sierraApiSecret'])
         ) {
             throw new \Exception(
                 "sierraApiKey or sierraApiSecret missing from settings of '$source'"
@@ -129,17 +121,11 @@ class SierraApi extends AbstractBase
         }
         $this->apiKey = $settings['sierraApiKey'];
         $this->apiSecret = $settings['sierraApiSecret'];
-        if (isset($settings['suppressedRecords'])) {
-            $this->suppressedRecords = $settings['suppressedRecords'];
-        }
-        if (isset($settings['batchSize'])) {
-            $this->batchSize = $settings['batchSize'];
-        }
-        if (isset($settings['suppressedBibCode3'])) {
-            $this->suppressedBibCode3 = explode(
-                ',', $settings['suppressedBibCode3']
-            );
-        }
+        $this->suppressedRecords = $settings['suppressedRecords'] ?? null;
+        $this->batchSize = $settings['batchSize'] ?? 100;
+        $this->suppressedBibCode3 = explode(
+            ',', $settings['suppressedBibCode3'] ?? ''
+        );
         $this->apiVersion = 'v' . ($settings['sierraApiVersion'] ?? '5');
 
         // Set a timeout since Sierra may sometimes just hang without ever returning.
@@ -149,13 +135,13 @@ class SierraApi extends AbstractBase
     /**
      * Override the start position.
      *
-     * @param int $pos New start position
+     * @param string $pos New start position
      *
      * @return void
      */
-    public function setStartPos($pos)
+    public function setInitialPosition($pos)
     {
-        $this->startPosition = $pos;
+        $this->startPosition = intval($pos);
     }
 
     /**

@@ -1847,7 +1847,7 @@ class SolrUpdater
     protected function initDatasources($dataSourceSettings = null)
     {
         if (null === $dataSourceSettings) {
-            $filename = "{$this->basePath}/conf/datasources.ini";
+            $filename = RECMAN_BASE_PATH . '/conf/datasources.ini';
             $dataSourceSettings = parse_ini_file($filename, true);
             if (false === $dataSourceSettings) {
                 $error = error_get_last();
@@ -1875,7 +1875,7 @@ class SolrUpdater
                 = isset($settings['solrTransformation'])
                     && $settings['solrTransformation']
                     ? new \RecordManager\Base\Utils\XslTransformation(
-                        $this->basePath . '/transformations',
+                        RECMAN_BASE_PATH . '/transformations',
                         $settings['solrTransformation']
                     ) : null;
             if (!isset($this->settings[$source]['dedup'])) {

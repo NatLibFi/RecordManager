@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -38,9 +38,6 @@ require_once __DIR__ . '/cmdline.php';
 function main($argv)
 {
     $params = parseArgs($argv);
-    $basePath = !empty($params['basepath']) ? $params['basepath'] : __DIR__;
-    $config = applyConfigOverrides($params, loadMainConfig($basePath));
-
     if (empty($params['file']) || empty($params['source'])) {
         echo <<<EOT
 Usage: $argv[0] --file=... --source=... [...]
@@ -64,6 +61,9 @@ EOT;
         exit(1);
     }
 
+    $app = bootstrap($params);
+    $sm = $app->getServiceManager();
+
     $lockfile = $params['lockfile'] ?? '';
     $lockhandle = false;
     try {
@@ -71,15 +71,12 @@ EOT;
             die();
         }
 
-        $import = new \RecordManager\Base\Controller\Import(
-            $basePath,
-            $config,
-            true,
-            $params['verbose'] ?? false
+        $import = $sm->get(\RecordManager\Base\Controller\Import::class);
+        $import->launch(
+            $params['source'],
+            $params['file'],
+            $params['delete'] ?? false
         );
-
-        $delete = $params['delete'] ?? false;
-        $import->launch($params['source'], $params['file'], $delete);
     } catch (\Exception $e) {
         releaseLock($lockhandle);
         throw $e;

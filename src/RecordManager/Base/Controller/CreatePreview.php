@@ -31,6 +31,7 @@ use RecordManager\Base\Database\DatabaseInterface;
 use RecordManager\Base\Deduplication\DedupHandlerInterface;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Solr\PreviewCreator;
+use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -233,7 +234,7 @@ class CreatePreview extends AbstractBase
         foreach ((array)$transformations as $transformation) {
             $style = new \DOMDocument();
             $loadResult = $style->load(
-                $this->basePath . "/transformations/$transformation"
+                RECMAN_BASE_PATH . "/transformations/$transformation"
             );
             if (false === $loadResult) {
                 throw new \Exception(

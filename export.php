@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -37,9 +37,6 @@ require_once __DIR__ . '/cmdline.php';
 function main($argv)
 {
     $params = parseArgs($argv);
-    $basePath = !empty($params['basepath']) ? $params['basepath'] : __DIR__;
-    $config = applyConfigOverrides($params, loadMainConfig($basePath));
-
     if (empty($params['file'])) {
         echo <<<EOT
 Usage: $argv[0] --file=... [...]
@@ -78,13 +75,10 @@ EOT;
         exit(1);
     }
 
-    $export = new \RecordManager\Base\Controller\Export(
-        $basePath,
-        $config,
-        true,
-        $params['verbose'] ?? false
-    );
+    $app = bootstrap($params);
+    $sm = $app->getServiceManager();
 
+    $export = $sm->get(\RecordManager\Base\Controller\Export::class);
     $export->launch(
         $params['file'],
         $params['deleted'] ?? '',

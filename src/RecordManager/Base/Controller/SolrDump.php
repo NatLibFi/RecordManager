@@ -38,6 +38,8 @@ namespace RecordManager\Base\Controller;
  */
 class SolrDump extends AbstractBase
 {
+    use ControllerWithSolrUpdaterTrait;
+
     /**
      * Dump Solr updates to files instead of sending them to Solr
      *

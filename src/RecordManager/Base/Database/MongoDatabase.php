@@ -321,7 +321,12 @@ class MongoDatabase extends AbstractDatabase
     public function getDedup($id)
     {
         if (is_string($id)) {
-            $id = new \MongoDB\BSON\ObjectId($id);
+            try {
+                $id = new \MongoDB\BSON\ObjectId($id);
+            } catch (\MongoDB\Driver\Exception\InvalidArgumentException $e) {
+                // Invalid id, return null:
+                return null;
+            }
         }
         return $this->getMongoRecord($this->dedupCollection, $id);
     }

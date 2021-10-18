@@ -27,6 +27,13 @@
  */
 namespace RecordManager\Base\Controller;
 
+use RecordManager\Base\Database\DatabaseInterface;
+use RecordManager\Base\Deduplication\DedupHandlerInterface;
+use RecordManager\Base\Harvest\PluginManager as HarvesterPluginManager;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
+use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
+use RecordManager\Base\Utils\Logger;
+
 /**
  * Harvest
  *
@@ -39,6 +46,49 @@ namespace RecordManager\Base\Controller;
 class Harvest extends AbstractBase
 {
     use StoreRecordTrait;
+
+    /**
+     * Harvester plugin manager
+     *
+     * @var HarvesterPluginManager
+     */
+    protected $harvesterPluginManager;
+
+    /**
+     * Constructor
+     *
+     * @param array                  $config              Main configuration
+     * @param array                  $datasourceConfig    Datasource configuration
+     * @param Logger                 $logger              Logger
+     * @param DatabaseInterface      $database            Database
+     * @param RecordPluginManager    $recordPluginManager Record plugin manager
+     * @param SplitterPluginManager  $splitterManager     Record splitter plugin
+     *                                                    manager
+     * @param DedupHandlerInterface  $dedupHandler        Deduplication handler
+     * @param HarvesterPluginManager $harvesterManager    Harvester plugin manager
+     */
+    public function __construct(
+        array $config,
+        array $datasourceConfig,
+        Logger $logger,
+        DatabaseInterface $database,
+        RecordPluginManager $recordPluginManager,
+        SplitterPluginManager $splitterManager,
+        DedupHandlerInterface $dedupHandler,
+        HarvesterPluginManager $harvesterManager
+    ) {
+        parent::__construct(
+            $config,
+            $datasourceConfig,
+            $logger,
+            $database,
+            $recordPluginManager,
+            $splitterManager,
+            $dedupHandler
+        );
+
+        $this->harvesterPluginManager = $harvesterManager;
+    }
 
     /**
      * Harvest records from a data source
@@ -105,240 +155,208 @@ class Harvest extends AbstractBase
                 }
                 $this->logger->logInfo(
                     'harvest',
-                    "Harvesting from '{$source}'"
+                    "Harvesting from '$source'"
                     . ($reharvest ? ' (full reharvest)' : '')
                 );
 
-                if ($this->verbose) {
-                    $settings['verbose'] = true;
+                $dateThreshold = null;
+                if ($reharvest) {
+                    if (is_string($reharvest)) {
+                        $dateThreshold = strtotime($reharvest);
+                    } else {
+                        $dateThreshold = time();
+                    }
+                    $this->logger->logInfo(
+                        'harvest',
+                        'Reharvest date threshold: '
+                        . gmdate('Y-m-d\TH:i:s\Z', $dateThreshold)
+                    );
                 }
 
-                if ($settings['type'] == 'metalib') {
-                    throw new \Exception('MetaLib harvesting no longer supported');
-                } elseif ($settings['type'] == 'metalib_export') {
-                    throw new \Exception('MetaLib harvesting no longer supported');
-                } elseif ($settings['type'] == 'sfx') {
-                    $harvest = new \RecordManager\Base\Harvest\Sfx(
-                        $this->db, $this->logger, $source, $this->basePath,
-                        $this->config, $settings
+                $type = ($settings['type'] ?? null) ?: 'OAI-PMH';
+                $harvester = $this->harvesterPluginManager->get($type);
+                $harvester->init($source, $this->verbose);
+
+                if ($startResumptionToken) {
+                    if (is_callable([$harvester, 'setInitialPosition'])) {
+                        $harvester->setInitialPosition($startResumptionToken);
+                    } else {
+                        $this->logger->logWarning(
+                            'harvest',
+                            get_class($harvester) . ' does not support overriding'
+                            . ' of start position'
+                        );
+                    }
+                }
+                if (isset($harvestFromDate)) {
+                    $harvester->setStartDate(
+                        $harvestFromDate == '-' ? null : $harvestFromDate
                     );
-                    if (isset($harvestFromDate)) {
-                        $harvest->setStartDate($harvestFromDate);
-                    }
-                    if (isset($harvestUntilDate)) {
-                        $harvest->setEndDate($harvestUntilDate);
-                    }
-                    $harvest->harvest([$this, 'storeRecord']);
-                } else {
-                    $dateThreshold = null;
-                    if ($reharvest) {
-                        if (is_string($reharvest)) {
-                            $dateThreshold = strtotime($reharvest);
-                        } else {
-                            $dateThreshold = time();
-                        }
+                }
+                if (isset($harvestUntilDate)) {
+                    $harvester->setEndDate($harvestUntilDate);
+                }
+
+                $harvester->harvest([$this, 'storeRecord']);
+
+                if ($reharvest) {
+                    if ($harvester->getHarvestedRecordCount() == 0) {
+                        $this->logger->logFatal(
+                            'harvest',
+                            "No records received from '$source' during"
+                                . ' reharvesting -- assuming an error and'
+                                . ' skipping marking records deleted'
+                        );
+                    } else {
                         $this->logger->logInfo(
                             'harvest',
-                            'Reharvest date threshold: '
-                            . gmdate('Y-m-d\TH:i:s\Z', $dateThreshold)
+                            'Marking deleted all records not received during'
+                            . ' the harvesting'
                         );
-                    }
-
-                    if ($settings['type'] == 'sierra') {
-                        $harvest = new \RecordManager\Base\Harvest\SierraApi(
-                            $this->db,
-                            $this->logger,
-                            $source,
-                            $this->basePath,
-                            $this->config,
-                            $settings
+                        $count = 0;
+                        $this->db->iterateRecords(
+                            [
+                                'source_id' => $source,
+                                'deleted' => false,
+                                'updated' => [
+                                    '$lt' =>
+                                        $this->db->getTimestamp($dateThreshold)
+                                ]
+                            ],
+                            [],
+                            function ($record) use (&$count) {
+                                if ($this->verbose) {
+                                    echo "Marking {$record['_id']} deleted\n";
+                                }
+                                $this->markRecordDeleted($record, true);
+                                if (++$count % 1000 == 0) {
+                                    $this->logger->logInfo(
+                                        'harvest', "Deleted $count records"
+                                    );
+                                }
+                            }
                         );
-                        if ($startResumptionToken) {
-                            $harvest->setStartPos(intval($startResumptionToken));
-                        }
-                    } else {
-                        $harvest = new \RecordManager\Base\Harvest\OaiPmh(
-                            $this->db,
-                            $this->logger,
-                            $source,
-                            $this->basePath,
-                            $this->config,
-                            $settings
-                        );
-                        if ($startResumptionToken) {
-                            $harvest->setResumptionToken($startResumptionToken);
-                        }
-                    }
-                    if (isset($harvestFromDate)) {
-                        $harvest->setStartDate(
-                            $harvestFromDate == '-' ? null : $harvestFromDate
-                        );
-                    }
-                    if (isset($harvestUntilDate)) {
-                        $harvest->setEndDate($harvestUntilDate);
-                    }
-
-                    $harvest->harvest([$this, 'storeRecord']);
-
-                    if ($reharvest) {
-                        if ($harvest->getHarvestedRecordCount() == 0) {
-                            $this->logger->logFatal(
-                                'harvest',
-                                "No records received from '$source' during"
-                                    . ' reharvesting -- assuming an error and'
-                                    . ' skipping marking records deleted'
-                            );
-                        } else {
+                        $this->logger
+                            ->logInfo('harvest', "Deleted $count records");
+                        // Deduplication will update timestamps from deferred
+                        // update with markRecordDeleted, but handle non-dedup
+                        // sources here to avoid need for deduplication:
+                        if (empty($this->dataSourceSettings[$source]['dedup'])) {
                             $this->logger->logInfo(
                                 'harvest',
-                                'Marking deleted all records not received during'
-                                . ' the harvesting'
+                                'Updating timestamps for any host records of'
+                                . ' records deleted'
                             );
-                            $count = 0;
-                            $this->db->iterateRecords(
+                            $this->db->updateRecords(
                                 [
                                     'source_id' => $source,
-                                    'deleted' => false,
-                                    'updated' => [
-                                        '$lt' =>
-                                            $this->db->getTimestamp($dateThreshold)
-                                    ]
+                                    'update_needed' => true
                                 ],
-                                [],
-                                function ($record) use (&$count) {
-                                    if ($this->verbose) {
-                                        echo "Marking {$record['_id']} deleted\n";
-                                    }
-                                    $this->markRecordDeleted($record, true);
-                                    if (++$count % 1000 == 0) {
-                                        $this->logger->logInfo(
-                                            'harvest', "Deleted $count records"
-                                        );
-                                    }
-                                }
+                                [
+                                    'updated' => $this->db->getTimestamp(),
+                                    'update_needed' => false
+                                ]
                             );
-                            $this->logger
-                                ->logInfo('harvest', "Deleted $count records");
-                            // Deduplication will update timestamps from deferred
-                            // update with markRecordDeleted, but handle non-dedup
-                            // sources here to avoid need for deduplication:
-                            if (empty($this->dataSourceSettings[$source]['dedup'])) {
+                        }
+                    }
+                }
+
+                if (!$reharvest && isset($settings['deletions'])
+                    && strncmp(
+                        $settings['deletions'], 'ListIdentifiers', 15
+                    ) == 0
+                ) {
+                    // The repository doesn't support reporting deletions, so
+                    // list all identifiers and mark deleted records that were
+                    // not found
+
+                    if (!is_callable([$harvester, 'listIdentifiers'])) {
+                        throw new \Exception(
+                            get_class($harvester)
+                            . ' does not support listing identifiers'
+                        );
+                    }
+
+                    $processDeletions = true;
+                    $interval = null;
+                    $deletions = explode(':', $settings['deletions']);
+                    if (isset($deletions[1])) {
+                        $state = $this->db->getState(
+                            "Last Deletion Processing Time $source"
+                        );
+                        if (null !== $state) {
+                            $interval
+                                = round((time() - $state['value']) / 3600 / 24);
+                            if ($interval < $deletions[1]) {
                                 $this->logger->logInfo(
                                     'harvest',
-                                    'Updating timestamps for any host records of'
-                                    . ' records deleted'
+                                    "Not processing deletions, $interval days"
+                                    . ' since last time'
                                 );
-                                $this->db->updateRecords(
-                                    [
-                                        'source_id' => $source,
-                                        'update_needed' => true
-                                    ],
-                                    [
-                                        'updated' => $this->db->getTimestamp(),
-                                        'update_needed' => false
-                                    ]
-                                );
+                                $processDeletions = false;
                             }
                         }
                     }
 
-                    if (!$reharvest && isset($settings['deletions'])
-                        && strncmp(
-                            $settings['deletions'], 'ListIdentifiers', 15
-                        ) == 0
-                    ) {
-                        // The repository doesn't support reporting deletions, so
-                        // list all identifiers and mark deleted records that were
-                        // not found
+                    if ($processDeletions) {
+                        $this->logger->logInfo(
+                            'harvest',
+                            'Processing deletions' . (isset($interval)
+                                ? " ($interval days since last time)" : '')
+                        );
 
-                        if (!is_callable([$harvest, 'listIdentifiers'])) {
-                            throw new \Exception(
-                                get_class($harvest)
-                                . ' does not support listing identifiers'
-                            );
-                        }
+                        $this->logger->logInfo('harvest', 'Unmarking records');
+                        $this->db->updateRecords(
+                            ['source_id' => $source, 'deleted' => false],
+                            [],
+                            ['mark' => 1]
+                        );
 
-                        $processDeletions = true;
-                        $interval = null;
-                        $deletions = explode(':', $settings['deletions']);
-                        if (isset($deletions[1])) {
-                            $state = $this->db->getState(
-                                "Last Deletion Processing Time $source"
-                            );
-                            if (null !== $state) {
-                                $interval
-                                    = round((time() - $state['value']) / 3600 / 24);
-                                if ($interval < $deletions[1]) {
-                                    $this->logger->logInfo(
-                                        'harvest',
-                                        "Not processing deletions, $interval days"
-                                        . ' since last time'
+                        $this->logger
+                            ->logInfo('harvest', 'Fetching identifiers');
+                        // Reset any overridden initial position:
+                        $harvester->setInitialPosition('');
+                        $harvester->listIdentifiers([$this, 'markRecord']);
+
+                        $this->logger
+                            ->logInfo('harvest', 'Marking deleted records');
+
+                        $count = 0;
+                        $this->db->iterateRecords(
+                            [
+                                'source_id' => $source,
+                                'deleted' => false,
+                                'mark' => ['$exists' => false]
+                            ],
+                            [],
+                            function ($record) use (&$count, $source) {
+                                if (!empty($record['oai_id'])) {
+                                    $this->storeRecord(
+                                        $source, $record['oai_id'], true, ''
                                     );
-                                    $processDeletions = false;
+                                } else {
+                                    $this->markRecordDeleted($record);
+                                }
+
+                                if (++$count % 1000 == 0) {
+                                    $this->logger->logInfo(
+                                        'harvest', "Deleted $count records"
+                                    );
                                 }
                             }
-                        }
+                        );
+                        $this->logger
+                            ->logInfo('harvest', "Deleted $count records");
 
-                        if ($processDeletions) {
-                            $this->logger->logInfo(
-                                'harvest',
-                                'Processing deletions' . (isset($interval)
-                                    ? " ($interval days since last time)" : '')
-                            );
-
-                            $this->logger->logInfo('harvest', 'Unmarking records');
-                            $this->db->updateRecords(
-                                ['source_id' => $source, 'deleted' => false],
-                                [],
-                                ['mark' => 1]
-                            );
-
-                            $this->logger
-                                ->logInfo('harvest', 'Fetching identifiers');
-                            // Reset any overridden resumptionToken:
-                            $harvest->setResumptionToken('');
-                            $harvest->listIdentifiers([$this, 'markRecord']);
-
-                            $this->logger
-                                ->logInfo('harvest', 'Marking deleted records');
-
-                            $count = 0;
-                            $this->db->iterateRecords(
-                                [
-                                    'source_id' => $source,
-                                    'deleted' => false,
-                                    'mark' => ['$exists' => false]
-                                ],
-                                [],
-                                function ($record) use (&$count, $source) {
-                                    if (!empty($record['oai_id'])) {
-                                        $this->storeRecord(
-                                            $source, $record['oai_id'], true, ''
-                                        );
-                                    } else {
-                                        $this->markRecordDeleted($record);
-                                    }
-
-                                    if (++$count % 1000 == 0) {
-                                        $this->logger->logInfo(
-                                            'harvest', "Deleted $count records"
-                                        );
-                                    }
-                                }
-                            );
-                            $this->logger
-                                ->logInfo('harvest', "Deleted $count records");
-
-                            $state = [
-                                '_id' => "Last Deletion Processing Time $source",
-                                'value' => time()
-                            ];
-                            $this->db->saveState($state);
-                        }
+                        $state = [
+                            '_id' => "Last Deletion Processing Time $source",
+                            'value' => time()
+                        ];
+                        $this->db->saveState($state);
                     }
                 }
                 $this->logger->logInfo(
-                    'harvest', "Harvesting from '{$source}' completed"
+                    'harvest', "Harvesting from '$source' completed"
                 );
             } catch (\Exception $e) {
                 $this->logger->logFatal('harvest', 'Exception: ' . $e->getMessage());

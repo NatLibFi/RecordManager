@@ -38,6 +38,8 @@ namespace RecordManager\Base\Controller;
  */
 class DeleteSolrRecords extends AbstractBase
 {
+    use ControllerWithSolrUpdaterTrait;
+
     /**
      * Delete records of a single data source from the Solr index
      *

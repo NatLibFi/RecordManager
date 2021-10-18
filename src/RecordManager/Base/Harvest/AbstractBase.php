@@ -66,18 +66,25 @@ abstract class AbstractBase
     protected $config;
 
     /**
+     * Data source configuration
+     *
+     * @var array
+     */
+    protected $dataSourceConfig;
+
+    /**
      * Base URL of repository
      *
      * @var string
      */
-    protected $baseURL;
+    protected $baseURL = null;
 
     /**
      * Source ID
      *
      * @var string
      */
-    protected $source;
+    protected $source = null;
 
     /**
      * Harvest start date (null for all records)
@@ -176,60 +183,69 @@ abstract class AbstractBase
     /**
      * Constructor.
      *
-     * @param Database $db       Database
-     * @param Logger   $logger   The Logger object used for logging messages
-     * @param string   $source   The data source to be harvested
-     * @param string   $basePath RecordManager main directory location
-     * @param array    $config   Main configuration
-     * @param array    $settings Settings from datasources.ini
+     * @param Database $db               Database
+     * @param Logger   $logger           The Logger object used for logging messages
+     * @param array    $config           Main configuration
+     * @param array    $dataSourceConfig Data source configuration
      *
      * @throws \Exception
      */
-    public function __construct(Database $db, Logger $logger, $source, $basePath,
-        $config, $settings
+    public function __construct(
+        Database $db,
+        Logger $logger,
+        array $config,
+        array $dataSourceConfig
     ) {
         $this->db = $db;
         $this->log = $logger;
         $this->config = $config;
+        $this->dataSourceConfig = $dataSourceConfig;
 
-        // Don't time out during harvest
-        set_time_limit(0);
+        if (isset($config['HTTP'])) {
+            $this->httpParams = $config['HTTP'];
+        }
+    }
+
+    /**
+     * Initialize harvester
+     *
+     * @param string $source  Source ID
+     * @param bool   $verbose Verbose mode toggle
+     *
+     * @return void
+     */
+    public function init(string $source, bool $verbose): void
+    {
+        $this->verbose = $verbose;
 
         // Check if we have a start date
         $this->source = $source;
         $this->loadLastHarvestedDate();
+
+        $settings = $this->dataSourceConfig[$source] ?? [];
 
         // Set up base URL:
         if (empty($settings['url'])) {
             throw new \Exception("Missing base URL for {$source}");
         }
         $this->baseURL = $settings['url'];
-        if (isset($settings['verbose'])) {
-            $this->verbose = $settings['verbose'];
-        }
 
         if (!empty($settings['preTransformation'])) {
             foreach ((array)$settings['preTransformation'] as $transformation) {
                 $style = new \DOMDocument();
-                $style->load("$basePath/transformations/$transformation");
+                $style->load(RECMAN_BASE_PATH . "/transformations/$transformation");
                 $xslt = new \XSLTProcessor();
                 $xslt->importStylesheet($style);
                 $xslt->setParameter('', 'source_id', $this->source);
                 $this->preXslt[] = $xslt;
             }
+        } else {
+            $this->preXslt = [];
         }
         $this->reParseTransformed = !empty($settings['reParseTransformed']);
 
-        if (isset($config['Harvesting']['max_tries'])) {
-            $this->maxTries = $config['Harvesting']['max_tries'];
-        }
-        if (isset($config['Harvesting']['retry_wait'])) {
-            $this->retryWait = $config['Harvesting']['retry_wait'];
-        }
-
-        if (isset($config['HTTP'])) {
-            $this->httpParams += $config['HTTP'];
-        }
+        $this->maxTries = $config['Harvesting']['max_tries'] ?? 5;
+        $this->retryWait = $config['Harvesting']['retry_wait'] ?? 30;
     }
 
     /**

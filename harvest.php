@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -38,9 +38,6 @@ require_once __DIR__ . '/cmdline.php';
 function main($argv)
 {
     $params = parseArgs($argv);
-    $basePath = !empty($params['basepath']) ? $params['basepath'] : __DIR__;
-    $config = applyConfigOverrides($params, loadMainConfig($basePath));
-
     if (empty($params['source']) || !is_string($params['source'])) {
         echo <<<EOT
 Usage: $argv[0] --source=... [...]
@@ -74,6 +71,12 @@ EOT;
         exit(1);
     }
 
+    $app = bootstrap($params);
+    $sm = $app->getServiceManager();
+
+    // Don't time out during harvest
+    set_time_limit(0);
+
     $lockfile = $params['lockfile'] ?? '';
     $lockhandle = false;
     try {
@@ -81,12 +84,7 @@ EOT;
             die();
         }
 
-        $harvest = new \RecordManager\Base\Controller\Harvest(
-            $basePath,
-            $config,
-            true,
-            $params['verbose'] ?? false
-        );
+        $harvest = $sm->get(\RecordManager\Base\Controller\Harvest::class);
         $from = $params['from'] ?? null;
         if (isset($params['all']) || isset($params['reharvest'])) {
             $from = '-';

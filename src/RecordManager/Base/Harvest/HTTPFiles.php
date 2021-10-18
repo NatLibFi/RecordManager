@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Harvest;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\XmlSecurity;
 
 /**
@@ -66,28 +64,20 @@ class HTTPFiles extends AbstractBase
     protected $recordElem = 'record';
 
     /**
-     * Constructor.
+     * Initialize harvesting
      *
-     * @param Database $db       Database
-     * @param Logger   $logger   The Logger object used for logging messages
-     * @param string   $source   The data source to be harvested
-     * @param string   $basePath RecordManager main directory location
-     * @param array    $config   Main configuration
-     * @param array    $settings Settings from datasources.ini
+     * @param string $source  Source ID
+     * @param bool   $verbose Verbose mode toggle
      *
-     * @throws \Exception
+     * @return void
      */
-    public function __construct(Database $db, Logger $logger, $source, $basePath,
-        $config, $settings
-    ) {
-        parent::__construct($db, $logger, $source, $basePath, $config, $settings);
+    public function init(string $source, bool $verbose): void
+    {
+        parent::init($source, $verbose);
 
-        if (isset($settings['filePrefix'])) {
-            $this->filePrefix = $settings['filePrefix'];
-        }
-        if (isset($settings['fileSuffix'])) {
-            $this->fileSuffix = $settings['fileSuffix'];
-        }
+        $settings = $this->dataSourceConfig[$source] ?? [];
+        $this->filePrefix = $settings['filePrefix'] ?? '';
+        $this->fileSuffix = $settings['fileSuffix'] ?? '';
     }
 
     /**

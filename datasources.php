@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2014,2019.
+ * Copyright (C) The National Library of Finland 2014-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -37,9 +37,6 @@ require_once __DIR__ . '/cmdline.php';
 function main($argv)
 {
     $params = parseArgs($argv);
-    $basePath = !empty($params['basepath']) ? $params['basepath'] : __DIR__;
-    $config = applyConfigOverrides($params, loadMainConfig($basePath));
-
     if (empty($params['search'])) {
         echo <<<EOT
 Usage: $argv[0] --search=...
@@ -58,12 +55,11 @@ EOT;
         exit(1);
     }
 
+    $app = bootstrap($params);
+
     if (!empty($params['search'])) {
-        $searchDataSources = new \RecordManager\Base\Controller\SearchDataSources(
-            $basePath,
-            $config,
-            true,
-            $params['verbose'] ?? false
+        $searchDataSources = $app->getServiceManager()->get(
+            \RecordManager\Base\Controller\SearchDataSources::class
         );
         $searchDataSources->launch($params['search']);
     }

@@ -45,47 +45,31 @@ if ($profilerBaseUrl = getenv('RECMAN_PROFILE')) {
 }
 
 /**
- * Load the main configuration
- *
- * @param string $basePath Base path
- *
- * @return array
- */
-function loadMainConfig($basePath)
-{
-    $filename = $basePath . '/conf/recordmanager.ini';
-    $result = parse_ini_file($filename, true);
-    if (false === $result) {
-        $error = error_get_last();
-        $message = $error['message'] ?? 'unknown error occurred';
-        throw new \Exception(
-            "Could not load configuration from file '$filename': $message"
-        );
-    }
-    return $result;
-}
-
-/**
- * Apply any configuration overrides defined on command line
+ * Bootstrap a command line application
  *
  * @param array $params Command line parameters
- * @param array $config Configuration
  *
- * @return array
+ * @return \Laminas\Mvc\Application
  */
-function applyConfigOverrides($params, $config)
+function bootstrap($params)
 {
-    foreach ($params as $key => $value) {
-        $setting = explode('.', $key);
-        if ($setting[0] == 'config') {
-            $config[$setting[1]][$setting[2]] = $value;
-        }
-    }
-    return $config;
+    define(
+        'RECMAN_BASE_PATH',
+        !empty($params['basepath']) ? $params['basepath'] : __DIR__
+    );
+
+    $app = \Laminas\Mvc\Application::init(
+        include __DIR__ . '/conf/application.config.php'
+    );
+    $sm = $app->getServiceManager();
+    $configReader = $sm->get(\RecordManager\Base\Settings\Ini::class);
+    $configReader->addOverrides('recordmanager.ini', $params);
+
+    return $app;
 }
 
 /**
- * Command Line Interface (CLI) utility function.
+ * Parse command line arguments
  *
  * @param array $argv Arguments
  *

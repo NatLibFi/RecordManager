@@ -1,6 +1,6 @@
 <?php
 /**
- * SolrCompare factory
+ * Harvest factory
  *
  * PHP version 7
  *
@@ -33,7 +33,7 @@ use Laminas\ServiceManager\Exception\ServiceNotCreatedException;
 use Laminas\ServiceManager\Exception\ServiceNotFoundException;
 
 /**
- * SolrCompare factory
+ * Harvest factory
  *
  * @category DataManagement
  * @package  RecordManager
@@ -41,7 +41,7 @@ use Laminas\ServiceManager\Exception\ServiceNotFoundException;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class SolrCompareFactory implements \Laminas\ServiceManager\Factory\FactoryInterface
+class HarvestFactory implements \Laminas\ServiceManager\Factory\FactoryInterface
 {
     /**
      * Create an object
@@ -73,7 +73,7 @@ class SolrCompareFactory implements \Laminas\ServiceManager\Factory\FactoryInter
             $container->get(\RecordManager\Base\Record\PluginManager::class),
             $container->get(\RecordManager\Base\Splitter\PluginManager::class),
             $container->get(\RecordManager\Base\Deduplication\DedupHandler::class),
-            $container->get(\RecordManager\Base\Solr\SolrComparer::class)
+            $container->get(\RecordManager\Base\Harvest\PluginManager::class),
         );
     }
 }

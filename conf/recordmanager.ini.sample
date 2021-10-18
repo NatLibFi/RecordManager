@@ -172,6 +172,8 @@ contents = 0
 description = 0
 *_txt* = 0
 
+; OAI-PMH base configuration. Additionally, formats are configured in
+; oai-pmh-formats.ini and sets in oai-pmh-sets.ini.
 [OAI-PMH]
 ; Repository name returned in the Identify response
 repository_name = OAI-PMH Repository
@@ -182,10 +184,6 @@ admin_email = nobody@localhost
 ; Maximum number of results to return for a single request (resumptionToken is used
 ; if there are more results to be returned)
 result_limit = 1000
-; Name of the .ini file containing metadata format definitions
-format_definitions = oai-pmh-formats.ini
-; Name of the .ini file containing record set definitions
-set_definitions = oai-pmh-sets.ini
 ; Record ID prefix used to create an OAI ID for records that don't already have one.
 ; To create an OAI ID, the record ID is appended to the prefix.
 id_prefix = "oai:base.address:"

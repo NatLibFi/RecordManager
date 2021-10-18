@@ -1,6 +1,6 @@
 <?php
 /**
- * SolrCompare factory
+ * Harvester factory
  *
  * PHP version 7
  *
@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Base\Controller;
+namespace RecordManager\Base\Harvest;
 
 use Interop\Container\ContainerInterface;
 use Interop\Container\Exception\ContainerException;
@@ -33,7 +33,7 @@ use Laminas\ServiceManager\Exception\ServiceNotCreatedException;
 use Laminas\ServiceManager\Exception\ServiceNotFoundException;
 
 /**
- * SolrCompare factory
+ * Harvester factory
  *
  * @category DataManagement
  * @package  RecordManager
@@ -41,7 +41,7 @@ use Laminas\ServiceManager\Exception\ServiceNotFoundException;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class SolrCompareFactory implements \Laminas\ServiceManager\Factory\FactoryInterface
+class AbstractBaseFactory implements \Laminas\ServiceManager\Factory\FactoryInterface
 {
     /**
      * Create an object
@@ -65,15 +65,12 @@ class SolrCompareFactory implements \Laminas\ServiceManager\Factory\FactoryInter
         array $options = null
     ) {
         $configReader = $container->get(\RecordManager\Base\Settings\Ini::class);
+
         return new $requestedName(
-            $configReader->get('recordmanager.ini'),
-            $configReader->get('datasources.ini'),
-            $container->get(\RecordManager\Base\Utils\Logger::class),
             $container->get(\RecordManager\Base\Database\AbstractDatabase::class),
-            $container->get(\RecordManager\Base\Record\PluginManager::class),
-            $container->get(\RecordManager\Base\Splitter\PluginManager::class),
-            $container->get(\RecordManager\Base\Deduplication\DedupHandler::class),
-            $container->get(\RecordManager\Base\Solr\SolrComparer::class)
+            $container->get(\RecordManager\Base\Utils\Logger::class),
+            $configReader->get('recordmanager.ini'),
+            $configReader->get('datasources.ini')
         );
     }
 }

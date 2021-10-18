@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,12 +27,6 @@
  */
 namespace RecordManager\Base\Controller;
 
-use RecordManager\Base\Database\DatabaseInterface;
-use RecordManager\Base\Deduplication\DedupHandlerInterface;
-use RecordManager\Base\Record\PluginManager as RecordPluginManager;
-use RecordManager\Base\Solr\SolrUpdater;
-use RecordManager\Base\Utils\Logger;
-
 /**
  * Count Field Values
  *
@@ -44,47 +38,7 @@ use RecordManager\Base\Utils\Logger;
  */
 class CountValues extends AbstractBase
 {
-    /**
-     * Solr access
-     *
-     * @var SolrUpdater
-     */
-    protected $solrUpdater;
-
-    /**
-     * Constructor
-     *
-     * @param array                 $config              Main configuration
-     * @param array                 $datasourceConfig    Datasource configuration
-     * @param Logger                $logger              Logger
-     * @param DatabaseInterface     $database            Database
-     * @param RecordPluginManager   $recordPluginManager Record plugin manager
-     * @param SplitterPluginManager $splitterManager     Record splitter plugin
-     *                                                   manager
-     * @param DedupHandlerInterface $dedupHandler        Deduplication handler
-     * @param SolrUpdater           $solrUpdater         Solr updater
-     */
-    public function __construct(
-        array $config,
-        array $datasourceConfig,
-        Logger $logger,
-        DatabaseInterface $database,
-        RecordPluginManager $recordPluginManager,
-        SplitterPluginManager $splitterManager,
-        DedupHandlerInterface $dedupHandler,
-        SolrUpdater $solrUpdater
-    ) {
-        parent::__construct(
-            $config,
-            $datasourceConfig,
-            $logger,
-            $database,
-            $recordPluginManager,
-            $splitterManager,
-            $dedupHandler
-        );
-        $this->solrUpdater = $solrUpdater;
-    }
+    use ControllerWithSolrUpdaterTrait;
 
     /**
      * Count distinct values in the specified field (that would be added to the

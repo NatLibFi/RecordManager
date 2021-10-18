@@ -27,6 +27,12 @@
  */
 namespace RecordManager\Base\Controller;
 
+use RecordManager\Base\Database\DatabaseInterface;
+use RecordManager\Base\Deduplication\DedupHandlerInterface;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
+use RecordManager\Base\Solr\SolrUpdater;
+use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
+use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\XslTransformation;
 
@@ -84,25 +90,40 @@ class OaiPmhProvider extends AbstractBase
     /**
      * Constructor
      *
-     * @param string $basePath Base directory
-     * @param array  $config   Main configuration
-     * @param bool   $console  Specify whether RecordManager is executed on the
-     *                         console so that log output is also output to the
-     *                         console
-     * @param bool   $verbose  Whether verbose output is enabled
+     * @param array                 $config              Main configuration
+     * @param array                 $datasourceConfig    Datasource configuration
+     * @param Logger                $logger              Logger
+     * @param DatabaseInterface     $database            Database
+     * @param RecordPluginManager   $recordPluginManager Record plugin manager
+     * @param SplitterPluginManager $splitterManager     Record splitter plugin
+     *                                                   manager
+     * @param DedupHandlerInterface $dedupHandler        Deduplication handler
+     * @param array                 $formatConfig        OAI-PMH format configuration
+     * @param array                 $setConfig           OAI-PMH set configuration
      */
-    public function __construct($basePath, $config, $console = false,
-        $verbose = false
+    public function __construct(
+        array $config,
+        array $datasourceConfig,
+        Logger $logger,
+        DatabaseInterface $database,
+        RecordPluginManager $recordPluginManager,
+        SplitterPluginManager $splitterManager,
+        DedupHandlerInterface $dedupHandler,
+        array $formatConfig,
+        array $setConfig
     ) {
-        parent::__construct($basePath, $config, $console, $verbose);
+        parent::__construct(
+            $config,
+            $datasourceConfig,
+            $logger,
+            $database,
+            $recordPluginManager,
+            $splitterManager,
+            $dedupHandler
+        );
 
-        $formatIni = $this->basePath . '/conf/'
-            . $this->config['OAI-PMH']['format_definitions'];
-        $this->formats = parse_ini_file($formatIni, true);
-        $setIni = $this->basePath . '/conf/'
-            . $this->config['OAI-PMH']['set_definitions'];
-        $this->sets = parse_ini_file($setIni, true);
-
+        $this->formats = $formatConfig;
+        $this->sets = $setConfig;
         $this->idPrefix = $this->config['OAI-PMH']['id_prefix'] ?? '';
     }
 
@@ -790,7 +811,7 @@ EOT;
                 if (!isset($this->transformations[$transformationKey])) {
                     $this->transformations[$transformationKey]
                         = new XslTransformation(
-                            $this->basePath . '/transformations', $datasource[$key]
+                            RECMAN_BASE_PATH . '/transformations', $datasource[$key]
                         );
                 }
                 $params = [

@@ -37,9 +37,6 @@ require_once __DIR__ . '/cmdline.php';
 function main($argv)
 {
     $params = parseArgs($argv);
-    $basePath = !empty($params['basepath']) ? $params['basepath'] : __DIR__;
-    $config = applyConfigOverrides($params, loadMainConfig($basePath));
-
     if (empty($params['func'])) {
         echo <<<EOT
 Usage: $argv[0] --func=...
@@ -56,18 +53,16 @@ EOT;
         exit(1);
     }
 
+    $app = bootstrap($params);
+    $sm = $app->getServiceManager();
+
     if ('sendlogs' === $params['func']) {
         if (empty($params['email'])) {
             echo "Email address is required.\n";
             exit(1);
         }
 
-        $sendLogs = new \RecordManager\Base\Controller\SendLogs(
-            $basePath,
-            $config,
-            true,
-            $params['verbose'] ?? false
-        );
+        $sendLogs = $sm->get(\RecordManager\Base\Controller\SendLogs::class);
         $sendLogs->launch($params['email']);
     }
 }

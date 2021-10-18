@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2020.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -84,15 +84,8 @@ EOT;
         exit(1);
     }
 
-    define(
-        'RECMAN_BASE_PATH',
-        !empty($params['basepath']) ? $params['basepath'] : __DIR__
-    );
-
-    $app = Laminas\Mvc\Application::init(include 'conf/application.config.php');
+    $app = bootstrap($params);
     $sm = $app->getServiceManager();
-    $configReader = $sm->get(\RecordManager\Base\Settings\Ini::class);
-    $configReader->addOverrides('recordmanager.ini', $params);
 
     $lockfile = $params['lockfile'] ?? '';
     $lockhandle = false;
@@ -116,9 +109,7 @@ EOT;
             $date = isset($params['all']) ? '' : ($params['from'] ?? null);
             $log = $params['comparelog'] ?? '';
 
-            $solrCompare = new \RecordManager\Base\Controller\SolrCompare(
-                $basePath, $config, true, $verbose
-            );
+            $solrCompare = $sm->get(\RecordManager\Base\Controller\SolrCompare::class);
             $solrCompare->launch($log, $date, $sources, $single);
         } elseif ($params['func'] == 'dumpsolr') {
             $date = isset($params['all']) ? '' : ($params['from'] ?? null);
@@ -126,26 +117,24 @@ EOT;
             $mapped = isset($params['mapped'])
                 ? ('false' !== $params['mapped']) : true;
 
-            $solrDump = new \RecordManager\Base\Controller\SolrDump(
-                $basePath, $config, true, $verbose
-            );
+            $solrDump = $sm->get(\RecordManager\Base\Controller\SolrDump::class);
             $solrDump->launch($dumpPrefix, $date, $sources, $single, $mapped);
         } elseif ($params['func'] == 'checksolr') {
-            $solrCheck = new \RecordManager\Base\Controller\SolrCheck(
-                $basePath, $config, true, $verbose
-            );
+            $solrCheck = $sm->get(\RecordManager\Base\Controller\SolrCheck::class);
             $solrCheck->launch();
         } else {
             foreach (explode(',', $sources) as $source) {
                 switch ($params['func']) {
                 case 'renormalize':
-                    $renormalize = $sm->get(\RecordManager\Base\Controller\Renormalize::class);
+                    $renormalize = $sm->get(
+                        \RecordManager\Base\Controller\Renormalize::class
+                    );
                     $renormalize->launch($source, $single);
                     break;
                 case 'deduplicate':
                 case 'markdedup':
-                    $deduplicate = new \RecordManager\Base\Controller\Deduplicate(
-                        $basePath, $config, true, $verbose
+                    $deduplicate = $sm->get(
+                        \RecordManager\Base\Controller\Deduplicate::class
                     );
                     $deduplicate->launch(
                         $source, isset($params['all']) ? true : false, $single,
@@ -153,34 +142,30 @@ EOT;
                     );
                     break;
                 case 'dump':
-                    $dump = new \RecordManager\Base\Controller\Dump(
-                        $basePath, $config, true, $verbose
-                    );
+                    $dump = $sm->get(\RecordManager\Base\Controller\Dump::class);
                     $dump->launch($single);
                     break;
                 case 'deletesource':
-                    $deleteRecords
-                        = new \RecordManager\Base\Controller\DeleteRecords(
-                            $basePath, $config, true, $verbose
-                        );
+                    $deleteRecords = $sm->get(
+                        \RecordManager\Base\Controller\DeleteRecords::class
+                    );
                     $deleteRecords->launch($source, !empty($params['force']));
                     break;
                 case 'markdeleted':
-                    $markDeleted = new \RecordManager\Base\Controller\MarkDeleted(
-                        $basePath, $config, true, $verbose
+                    $markDeleted = $sm->get(
+                        \RecordManager\Base\Controller\MarkDeleted::class
                     );
                     $markDeleted->launch($source, $single);
                     break;
                 case 'deletesolr':
-                    $deleteSolr
-                        = new \RecordManager\Base\Controller\DeleteSolrRecords(
-                            $basePath, $config, true, $verbose
-                        );
+                    $deleteSolr = $sm->get(
+                        \RecordManager\Base\Controller\DeleteSolrRecords::class
+                    );
                     $deleteSolr->launch($source);
                     break;
                 case 'optimizesolr':
-                    $solrOptimize = new \RecordManager\Base\Controller\SolrOptimize(
-                        $basePath, $config, true, $verbose
+                    $solrOptimize = $sm->get(
+                        \RecordManager\Base\Controller\SolrOptimize::class
                     );
                     $solrOptimize->launch();
                     break;
@@ -189,8 +174,8 @@ EOT;
                         echo "--field must be specified\n";
                         exit(1);
                     }
-                    $countValues = new \RecordManager\Base\Controller\CountValues(
-                        $basePath, $config, true, $verbose
+                    $countValues = $sm->get(
+                        \RecordManager\Base\Controller\CountValues::class
                     );
                     $countValues->launch(
                         $source,
@@ -199,8 +184,8 @@ EOT;
                     );
                     break;
                 case 'checkdedup':
-                    $checkDedup = new \RecordManager\Base\Controller\CheckDedup(
-                        $basePath, $config, true, $verbose
+                    $checkDedup = $sm->get(
+                        \RecordManager\Base\Controller\CheckDedup::class
                     );
                     $checkDedup->launch($single);
                     break;
@@ -216,31 +201,29 @@ No records have been purged.
 EOT;
                         exit(1);
                     }
-                    $purge = new \RecordManager\Base\Controller\PurgeDeleted(
-                        $basePath, $config, true, $verbose
+                    $purge = $sm->get(
+                        \RecordManager\Base\Controller\PurgeDeleted::class
                     );
                     $purge->launch(
-                        isset($params['daystokeep']) ? intval($params['daystokeep'])
-                        : 0,
+                        intval($params['daystokeep'] ?? 0),
                         $source
                     );
                     break;
                 case 'markforupdate':
-                    $markForUpdate
-                        = new \RecordManager\Base\Controller\MarkForUpdate(
-                            $basePath, $config, true, $verbose
-                        );
+                    $markForUpdate = $sm->get(
+                        \RecordManager\Base\Controller\MarkForUpdate::class
+                    );
                     $markForUpdate->launch($source, $single);
                     break;
                 case 'suppress':
-                    $suppress = new \RecordManager\Base\Controller\Suppress(
-                        $basePath, $config, true, $verbose
+                    $suppress = $sm->get(
+                        \RecordManager\Base\Controller\Suppress::class
                     );
                     $suppress->launch($source, $single);
                     break;
                 case 'unsuppress':
-                    $unsuppress = new \RecordManager\Base\Controller\Unsuppress(
-                        $basePath, $config, true, $verbose
+                    $unsuppress = $sm->get(
+                        \RecordManager\Base\Controller\Unsuppress::class
                     );
                     $unsuppress->launch($source, $single);
                     break;
