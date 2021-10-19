@@ -126,6 +126,9 @@ metadataPrefix = marc21
 institution = SampleInstitution
 format = marc
 componentParts = merge_non_earticles
+; Hierarchical format facet:
+format_mapping[] = marc_format_to_hierarchy.map
+format_mapping[] = sub_format.map,regexp
 dedup = true
 driverParams[] = "idIn999=true"
 driverParams[] = "003InLinkingID=true"
