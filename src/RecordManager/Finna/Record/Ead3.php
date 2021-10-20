@@ -49,15 +49,15 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
 {
     use AuthoritySupportTrait;
 
-    const GEOGRAPHIC_SUBJECT_RELATORS = ['aihe', 'alueellinen kattavuus'];
-    const SUBJECT_RELATORS = ['aihe', 'asiasana'];
+    public const GEOGRAPHIC_SUBJECT_RELATORS = ['aihe', 'alueellinen kattavuus'];
+    public const SUBJECT_RELATORS = ['aihe', 'asiasana'];
 
-    const RELATOR_TIME_INTERVAL = 'suhteen ajallinen kattavuus';
+    public const RELATOR_TIME_INTERVAL = 'suhteen ajallinen kattavuus';
 
-    const NAME_TYPE_VARIANT = 'Varianttinimi';
-    const NAME_TYPE_ALTERNATIVE = 'Vaihtehtoinen nimi';
-    const NAME_TYPE_PRIMARY = 'Ensisijainen nimi';
-    const NAME_TYPE_OUTDATED = 'Vanhentunut nimi';
+    public const NAME_TYPE_VARIANT = 'Varianttinimi';
+    public const NAME_TYPE_ALTERNATIVE = 'Vaihtehtoinen nimi';
+    public const NAME_TYPE_PRIMARY = 'Ensisijainen nimi';
+    public const NAME_TYPE_OUTDATED = 'Vanhentunut nimi';
 
     /**
      * Archive fonds format
@@ -584,7 +584,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         [$start, $end] = explode('/', $input);
 
         $parseDate = function (
-            $date, $defaultYear = '0', $defaultMonth = '01', $defaultDay = '01',
+            $date,
+            $defaultYear = '0',
+            $defaultMonth = '01',
+            $defaultDay = '01',
             $hour = '00:00:00'
         ) {
             $unknownDate = false;
@@ -622,7 +625,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
 
             $date = sprintf(
                 '%04d-%02d-%02dT%sZ',
-                $year, $month, $day, $hour
+                $year,
+                $month,
+                $day,
+                $hour
             );
 
             try {
@@ -704,7 +710,9 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      * @return array
      */
     protected function getTopicTermsFromNodeWithRelators(
-        $nodeName, $relators, $uri = false
+        $nodeName,
+        $relators,
+        $uri = false
     ) {
         $result = [];
         if (!isset($this->doc->controlaccess->{$nodeName})) {
@@ -731,7 +739,8 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     protected function getTopics()
     {
         return $this->getTopicTermsFromNodeWithRelators(
-            'subject', self::SUBJECT_RELATORS
+            'subject',
+            self::SUBJECT_RELATORS
         );
     }
 
@@ -743,7 +752,8 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     protected function getGeographicTopics()
     {
         return $this->getTopicTermsFromNodeWithRelators(
-            'geogname', self::GEOGRAPHIC_SUBJECT_RELATORS
+            'geogname',
+            self::GEOGRAPHIC_SUBJECT_RELATORS
         );
     }
 
@@ -755,7 +765,9 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     protected function getGeographicTopicURIs()
     {
         return $this->getTopicTermsFromNodeWithRelators(
-            'geogname', self::GEOGRAPHIC_SUBJECT_RELATORS, true
+            'geogname',
+            self::GEOGRAPHIC_SUBJECT_RELATORS,
+            true
         );
     }
 
@@ -848,7 +860,8 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             foreach ($this->doc->scopecontent as $el) {
                 foreach ($el->p as $p) {
                     $desc[] = str_replace(
-                        ["\r\n", "\n\r", "\r", "\n"], '   /   ',
+                        ["\r\n", "\n\r", "\r", "\n"],
+                        '   /   ',
                         trim(html_entity_decode((string)$p))
                     );
                 }

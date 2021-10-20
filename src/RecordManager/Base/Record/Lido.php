@@ -151,7 +151,9 @@ class Lido extends AbstractRecord
         if ($description) {
             if (!empty($data['description'])
                 && strncmp(
-                    $data['description'], $description, strlen($data['description'])
+                    $data['description'],
+                    $description,
+                    strlen($data['description'])
                 )
             ) {
                 $data['description'] .= " -- $description";
@@ -184,12 +186,14 @@ class Lido extends AbstractRecord
             $data['geographic_facet'][] = $eventPlace;
         }
         $data['geographic_facet'] = array_merge(
-            $data['geographic_facet'], $this->getSubjectDisplayPlaces()
+            $data['geographic_facet'],
+            $this->getSubjectDisplayPlaces()
         );
         $data['geographic'] = $data['geographic_facet'];
         // Index the other place forms only to facets
         $data['geographic_facet'] = array_merge(
-            $data['geographic_facet'], $this->getSubjectPlaces()
+            $data['geographic_facet'],
+            $this->getSubjectPlaces()
         );
         $data['collection']
             = $this->getRelatedWorkDisplayObject($this->relatedWorkRelationTypes);
@@ -220,7 +224,9 @@ class Lido extends AbstractRecord
      *
      * @return string
      */
-    public function getTitle($forFiling = false, $lang = null,
+    public function getTitle(
+        $forFiling = false,
+        $lang = null,
         $excludedDescriptions = ['provenance']
     ) {
         $titles = [];
@@ -311,7 +317,8 @@ class Lido extends AbstractRecord
                     $locations = array_merge(
                         $locations,
                         preg_split(
-                            '/[\/;]/', (string)$eventNode->eventPlace->displayPlace
+                            '/[\/;]/',
+                            (string)$eventNode->eventPlace->displayPlace
                         )
                     );
                 }
@@ -613,7 +620,8 @@ class Lido extends AbstractRecord
             if (!empty($eventNode->eventPlace->displayPlace)) {
                 $str = trim(
                     MetadataUtils::stripTrailingPunctuation(
-                        (string)$eventNode->eventPlace->displayPlace, '.'
+                        (string)$eventNode->eventPlace->displayPlace,
+                        '.'
                     )
                 );
                 if ('' !== $str) {
@@ -722,7 +730,8 @@ class Lido extends AbstractRecord
                 if (!empty($date->displayDate)) {
                     $str = trim(
                         MetadataUtils::stripTrailingPunctuation(
-                            (string)$date->displayDate, '.'
+                            (string)$date->displayDate,
+                            '.'
                         )
                     );
                     if ('' !== $str) {
@@ -747,7 +756,8 @@ class Lido extends AbstractRecord
                 if (!empty($place->displayPlace)) {
                     $str = trim(
                         MetadataUtils::stripTrailingPunctuation(
-                            (string)$place->displayPlace, '.'
+                            (string)$place->displayPlace,
+                            '.'
                         )
                     );
                     if ('' !== $str) {
@@ -774,7 +784,8 @@ class Lido extends AbstractRecord
                         if ($set->appellationValue) {
                             $str = trim(
                                 MetadataUtils::stripTrailingPunctuation(
-                                    (string)$set->appellationValue, '.'
+                                    (string)$set->appellationValue,
+                                    '.'
                                 )
                             );
                             if ('' !== $str) {
@@ -894,7 +905,9 @@ class Lido extends AbstractRecord
             $noprocess = true;
         } elseif (true
             && preg_match(
-                '/(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)/', $input, $matches
+                '/(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)/',
+                $input,
+                $matches
             ) > 0
         ) {
             $year = $matches[3];
@@ -971,7 +984,8 @@ class Lido extends AbstractRecord
                     }
                     if (true
                         && !array_intersect(
-                            $eventTypes, is_array($event) ? $event : [$event]
+                            $eventTypes,
+                            is_array($event) ? $event : [$event]
                         )
                     ) {
                         continue;
@@ -1046,7 +1060,8 @@ class Lido extends AbstractRecord
                 if (empty($exclude)
                     || empty($subjectNode['type'])
                     || !in_array(
-                        mb_strtolower($subjectNode['type'], 'UTF-8'), $exclude
+                        mb_strtolower($subjectNode['type'], 'UTF-8'),
+                        $exclude
                     )
                 ) {
                     $subjectList[] = $subjectNode;
@@ -1114,7 +1129,8 @@ class Lido extends AbstractRecord
                 || in_array(
                     trim(
                         mb_strtolower(
-                            $relatedWorkSetNode->relatedWorkRelType->term, 'UTF-8'
+                            $relatedWorkSetNode->relatedWorkRelType->term,
+                            'UTF-8'
                         )
                     ),
                     $relatedWorkRelType
@@ -1186,7 +1202,9 @@ class Lido extends AbstractRecord
      *
      * @return array
      */
-    protected function getIdentifiersByType(array $include = [], array $exclude = []
+    protected function getIdentifiersByType(
+        array $include = [],
+        array $exclude = []
     ): array {
         $result = [];
         foreach ($this->doc->lido->descriptiveMetadata as $dmd) {

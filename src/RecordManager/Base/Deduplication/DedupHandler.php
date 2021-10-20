@@ -258,7 +258,8 @@ class DedupHandler implements DedupHandlerInterface
                 MetadataUtils::createTitleKey($title, $this->normalizationForm)
                 . ' '
                 . MetadataUtils::normalizeKey(
-                    $authorParts[0], $this->normalizationForm
+                    $authorParts[0],
+                    $this->normalizationForm
                 )
             ];
         } else {
@@ -504,7 +505,8 @@ class DedupHandler implements DedupHandlerInterface
                             'deleted' => false
                         ],
                         [],
-                        function ($dedupRecord) use (&$bestMatchRecords,
+                        function ($dedupRecord) use (
+                            &$bestMatchRecords,
                             &$bestDedupId
                         ) {
                             $cnt = count($dedupRecord['ids']);
@@ -658,10 +660,14 @@ class DedupHandler implements DedupHandlerInterface
         }
 
         $recordHidden = MetadataUtils::isHiddenComponentPart(
-            $this->dataSourceSettings[$record['source_id']], $record, $origRecord
+            $this->dataSourceSettings[$record['source_id']],
+            $record,
+            $origRecord
         );
         $candidateHidden = MetadataUtils::isHiddenComponentPart(
-            $this->dataSourceSettings[$candidate['source_id']], $candidate, $cRecord
+            $this->dataSourceSettings[$candidate['source_id']],
+            $candidate,
+            $cRecord
         );
 
         // Check that both records are hidden component parts or neither is
@@ -689,7 +695,8 @@ class DedupHandler implements DedupHandlerInterface
         $origFormat = $origRecord->getFormat();
         $cFormat = $cRecord->getFormat();
         $origMapped = $this->fieldMapper->mapFormat(
-            $record['source_id'], $origFormat
+            $record['source_id'],
+            $origFormat
         );
         $cMapped = $this->fieldMapper->mapFormat($candidate['source_id'], $cFormat);
         if ($origFormat != $cFormat && $origMapped != $cMapped) {
@@ -772,10 +779,12 @@ class DedupHandler implements DedupHandlerInterface
         }
 
         $origTitle = MetadataUtils::normalizeKey(
-            $origRecord->getTitle(true), $this->normalizationForm
+            $origRecord->getTitle(true),
+            $this->normalizationForm
         );
         $cTitle = MetadataUtils::normalizeKey(
-            $cRecord->getTitle(true), $this->normalizationForm
+            $cRecord->getTitle(true),
+            $this->normalizationForm
         );
         if (!$origTitle || !$cTitle) {
             // No title match without title...
@@ -795,10 +804,12 @@ class DedupHandler implements DedupHandlerInterface
         }
 
         $origAuthor = MetadataUtils::normalizeKey(
-            $origRecord->getMainAuthor(), $this->normalizationForm
+            $origRecord->getMainAuthor(),
+            $this->normalizationForm
         );
         $cAuthor = MetadataUtils::normalizeKey(
-            $cRecord->getMainAuthor(), $this->normalizationForm
+            $cRecord->getMainAuthor(),
+            $this->normalizationForm
         );
         $authorLev = 0;
         if ($origAuthor || $cAuthor) {
@@ -811,7 +822,8 @@ class DedupHandler implements DedupHandlerInterface
             }
             if (!MetadataUtils::authorMatch($origAuthor, $cAuthor)) {
                 $authorLev = levenshtein(
-                    substr($origAuthor, 0, 255), substr($cAuthor, 0, 255)
+                    substr($origAuthor, 0, 255),
+                    substr($cAuthor, 0, 255)
                 );
                 $authorLev = $authorLev / mb_strlen($origAuthor) * 100;
                 if ($authorLev > 20) {
@@ -891,7 +903,8 @@ class DedupHandler implements DedupHandlerInterface
                     '_id' => $rec2['_id']
                 ];
                 $rec2['dedup_id'] = $this->createDedupRecord(
-                    $rec1['_id'], $rec2['_id']
+                    $rec1['_id'],
+                    $rec2['_id']
                 );
             }
             if (isset($rec1['dedup_id']) && $rec1['dedup_id'] != $rec2['dedup_id']) {
@@ -906,7 +919,8 @@ class DedupHandler implements DedupHandlerInterface
                 if (!$this->addToDedupRecord($rec1['dedup_id'], $rec2['_id'])) {
                     $this->removeFromDedupRecord($rec1['dedup_id'], $rec1['_id']);
                     $rec1['dedup_id'] = $this->createDedupRecord(
-                        $rec1['_id'], $rec2['_id']
+                        $rec1['_id'],
+                        $rec2['_id']
                     );
                 }
                 $setValues['dedup_id'] = $rec2['dedup_id'] = $rec1['dedup_id'];
@@ -1013,7 +1027,8 @@ class DedupHandler implements DedupHandlerInterface
             return 0;
         }
         $components1 = $this->getComponentPartsSorted(
-            $hostRecord['source_id'], $hostRecord['linking_id']
+            $hostRecord['source_id'],
+            $hostRecord['linking_id']
         );
         $component1count = count($components1);
 
@@ -1027,14 +1042,18 @@ class DedupHandler implements DedupHandlerInterface
                 'suppressed' => ['$in' => [null, false]],
             ],
             [],
-            function ($otherRecord) use ($components1, $component1count, &$marked,
+            function ($otherRecord) use (
+                $components1,
+                $component1count,
+                &$marked,
                 $hostRecord
             ) {
                 if ($otherRecord['source_id'] == $hostRecord['source_id']) {
                     return true;
                 }
                 $components2 = $this->getComponentPartsSorted(
-                    $otherRecord['source_id'], $otherRecord['linking_id']
+                    $otherRecord['source_id'],
+                    $otherRecord['linking_id']
                 );
                 $component2count = count($components2);
 
@@ -1061,7 +1080,9 @@ class DedupHandler implements DedupHandlerInterface
                             $component1['source_id']
                         );
                         if (!$this->matchRecords(
-                            $component1, $metadataComponent1, $component2
+                            $component1,
+                            $metadataComponent1,
+                            $component2
                         )
                         ) {
                             $allMatch = false;

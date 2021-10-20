@@ -62,7 +62,9 @@ class MusicBrainzEnrichment extends AbstractEnrichment
      * @param RecordPluginManager $recordPluginManager Record plugin manager
      */
     public function __construct(
-        Database $db, Logger $logger, array $config,
+        Database $db,
+        Logger $logger,
+        array $config,
         RecordPluginManager $recordPluginManager
     ) {
         parent::__construct($db, $logger, $config, $recordPluginManager);

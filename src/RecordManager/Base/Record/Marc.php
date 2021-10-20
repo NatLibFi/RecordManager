@@ -46,14 +46,14 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Marc extends AbstractRecord
 {
-    const SUBFIELD_INDICATOR = "\x1F";
-    const END_OF_FIELD = "\x1E";
-    const END_OF_RECORD = "\x1D";
-    const LEADER_LEN = 24;
+    public const SUBFIELD_INDICATOR = "\x1F";
+    public const END_OF_FIELD = "\x1E";
+    public const END_OF_RECORD = "\x1D";
+    public const LEADER_LEN = 24;
 
-    const GET_NORMAL = 0;
-    const GET_ALT = 1;
-    const GET_BOTH = 2;
+    public const GET_NORMAL = 0;
+    public const GET_ALT = 1;
+    public const GET_BOTH = 2;
 
     /**
      * MARC is stored in a multidimensional array:
@@ -147,7 +147,8 @@ class Marc extends AbstractRecord
 
         if (isset($config['MarcRecord']['primary_author_relators'])) {
             $this->primaryAuthorRelators = explode(
-                ',', $config['MarcRecord']['primary_author_relators']
+                ',',
+                $config['MarcRecord']['primary_author_relators']
             );
         }
     }
@@ -180,7 +181,8 @@ class Marc extends AbstractRecord
                                 'i2' => $data[1]
                             ];
                             $subfields = explode(
-                                self::SUBFIELD_INDICATOR, substr($data, 3)
+                                self::SUBFIELD_INDICATOR,
+                                substr($data, 3)
                             );
                             foreach ($subfields as $subfield) {
                                 $newField['s'][] = [
@@ -273,7 +275,8 @@ class Marc extends AbstractRecord
             foreach ($fields as $data) {
                 if (!is_array($data)) {
                     $field = $record->addChild(
-                        'controlfield', htmlspecialchars($data, ENT_NOQUOTES)
+                        'controlfield',
+                        htmlspecialchars($data, ENT_NOQUOTES)
                     );
                     $field->addAttribute('tag', $tag);
                 } else {
@@ -376,7 +379,8 @@ class Marc extends AbstractRecord
             if ($geoLocations = $this->getGeographicLocations()) {
                 $data[$geoField] = $geoLocations;
                 $centerField = $this->getDriverParam(
-                    'geoCenterField', $this->defaultGeoCenterField
+                    'geoCenterField',
+                    $this->defaultGeoCenterField
                 );
                 if ($centerField) {
                     foreach ($geoLocations as $geoLocation) {
@@ -385,7 +389,8 @@ class Marc extends AbstractRecord
                     }
                 }
                 $displayField = $this->getDriverParam(
-                    'geoDisplayField', $this->defaultGeoDisplayField
+                    'geoDisplayField',
+                    $this->defaultGeoDisplayField
                 );
                 if ($displayField) {
                     foreach ($geoLocations as $geoLocation) {
@@ -440,7 +445,8 @@ class Marc extends AbstractRecord
 
         $data['title'] = $this->getTitle();
         $data['title_sub'] = $this->getFieldSubfields(
-            '245', ['b' => 1, 'n' => 1, 'p' => 1]
+            '245',
+            ['b' => 1, 'n' => 1, 'p' => 1]
         );
         $data['title_short'] = $this->getFieldSubfields('245', ['a' => 1]);
         $data['title_full'] = $this->getFieldSubfields(
@@ -482,7 +488,8 @@ class Marc extends AbstractRecord
 
         if (!$data['title_short']) {
             $data['title_short'] = $this->getFieldSubfields(
-                '240', ['a' => 1, 'n' => 1, 'p' => 1]
+                '240',
+                ['a' => 1, 'n' => 1, 'p' => 1]
             );
             $data['title_full'] = $this->getFieldSubfields('240');
         }
@@ -493,7 +500,8 @@ class Marc extends AbstractRecord
             [
                 [self::GET_BOTH, '260', ['b' => 1]]
             ],
-            false, true
+            false,
+            true
         );
         if (!$data['publisher']) {
             $fields = $this->getFields('264');
@@ -974,7 +982,8 @@ class Marc extends AbstractRecord
         $nbn = $this->getField('015');
         if ($nbn) {
             $nr = MetadataUtils::normalizeKey(
-                $this->getSubfield($nbn, 'a'), $form
+                $this->getSubfield($nbn, 'a'),
+                $form
             );
             $src = $this->getSubfield($nbn, '2');
             if ($src && $nr) {
@@ -984,7 +993,8 @@ class Marc extends AbstractRecord
         $nba = $this->getField('016');
         if ($nba) {
             $nr = MetadataUtils::normalizeKey(
-                $this->getSubfield($nba, 'a'), $form
+                $this->getSubfield($nba, 'a'),
+                $form
             );
             $src = $this->getSubfield($nba, '2');
             if ($src && $nr) {
@@ -1571,7 +1581,8 @@ class Marc extends AbstractRecord
                     'i2' => $tagData[1]
                 ];
                 $subfields = explode(
-                    self::SUBFIELD_INDICATOR, substr($tagData, 3)
+                    self::SUBFIELD_INDICATOR,
+                    substr($tagData, 3)
                 );
                 foreach ($subfields as $subfield) {
                     $newField['s'][] = [
@@ -1856,7 +1867,9 @@ class Marc extends AbstractRecord
      *
      * @return string Concatenated subfields (space-separated)
      */
-    protected function getFieldSubfields($tag, $codes = null,
+    protected function getFieldSubfields(
+        $tag,
+        $codes = null,
         $stripTrailingPunctuation = true
     ) {
         $key = __METHOD__ . "$tag-" . implode(',', array_keys($codes ?? [])) . '-'
@@ -1896,7 +1909,9 @@ class Marc extends AbstractRecord
      *
      * @return string
      */
-    protected function getFieldSubfield($tag, $code,
+    protected function getFieldSubfield(
+        $tag,
+        $code,
         $stripTrailingPunctuation = true
     ) {
         $key = __METHOD__ . "-$tag-$code-"
@@ -1944,8 +1959,11 @@ class Marc extends AbstractRecord
      *
      * @return array Subfields
      */
-    protected function getFieldsSubfields($fieldspecs, $firstOnly = false,
-        $stripTrailingPunctuation = true, $splitSubfields = false
+    protected function getFieldsSubfields(
+        $fieldspecs,
+        $firstOnly = false,
+        $stripTrailingPunctuation = true,
+        $splitSubfields = false
     ) {
         $key = __METHOD__ . '-' . json_encode($fieldspecs) . '-'
             . ($firstOnly ? '1' : '0') . ($stripTrailingPunctuation ? '1' : '0')
@@ -2046,7 +2064,10 @@ class Marc extends AbstractRecord
                     && ($origSub6 = $this->getSubfield($field, '6'))
                 ) {
                     $altSubfields = $this->getAlternateScriptSubfields(
-                        $tag, $origSub6, $codes, $splitSubfields
+                        $tag,
+                        $origSub6,
+                        $codes,
+                        $splitSubfields
                     );
                     $data = array_merge($data, $altSubfields);
                 }
@@ -2080,7 +2101,10 @@ class Marc extends AbstractRecord
      *
      * @return array
      */
-    protected function getAlternateScriptSubfields($tag, $sub6, $codes,
+    protected function getAlternateScriptSubfields(
+        $tag,
+        $sub6,
+        $codes,
         $splitSubfields = false
     ) {
         $data = [];
@@ -2375,7 +2399,9 @@ class Marc extends AbstractRecord
                 [self::GET_NORMAL, '651', ['x' => 1]],
                 [self::GET_NORMAL, '655', ['x' => 1]]
             ],
-            false, true, true
+            false,
+            true,
+            true
         );
     }
 
@@ -2399,7 +2425,9 @@ class Marc extends AbstractRecord
                     [self::GET_NORMAL, '655', ['a' => 1]],
                     [self::GET_NORMAL, '655', ['v' => 1]]
                 ],
-                false, true, true
+                false,
+                true,
+                true
             )
         );
     }
@@ -2423,7 +2451,9 @@ class Marc extends AbstractRecord
                 [self::GET_NORMAL, '651', ['z' => 1]],
                 [self::GET_NORMAL, '655', ['z' => 1]]
             ],
-            false, true, true
+            false,
+            true,
+            true
         );
     }
 
@@ -2443,7 +2473,9 @@ class Marc extends AbstractRecord
                 [self::GET_NORMAL, '651', ['y' => 1]],
                 [self::GET_NORMAL, '655', ['y' => 1]]
             ],
-            false, true, true
+            false,
+            true,
+            true
         );
     }
 
@@ -2462,7 +2494,9 @@ class Marc extends AbstractRecord
                 [self::GET_NORMAL, '041', ['h' => 1]],
                 [self::GET_NORMAL, '041', ['j' => 1]]
             ],
-            false, true, true
+            false,
+            true,
+            true
         );
         $result = array_merge($languages, $languages2);
         return MetadataUtils::normalizeLanguageStrings($result);
@@ -2498,8 +2532,12 @@ class Marc extends AbstractRecord
      * @return array Array keyed by 'names' for author names, 'fuller' for fuller
      * forms and 'relators' for relator codes
      */
-    protected function getAuthorsByRelator($fieldSpecs, $relators,
-        $noRelatorRequired, $altScript = true, $invertMatch = false
+    protected function getAuthorsByRelator(
+        $fieldSpecs,
+        $relators,
+        $noRelatorRequired,
+        $altScript = true,
+        $invertMatch = false
     ) {
         $result = [
             'names' => [], 'fuller' => [], 'relators' => [],
@@ -2534,7 +2572,9 @@ class Marc extends AbstractRecord
                     $terms .= ' ' . implode(
                         ' ',
                         $this->getAlternateScriptSubfields(
-                            $tag, $sub6, $subfieldList
+                            $tag,
+                            $sub6,
+                            $subfieldList
                         )
                     );
                 }
@@ -2584,7 +2624,9 @@ class Marc extends AbstractRecord
             ]
         ];
         return $this->getAuthorsByRelator(
-            $fieldSpecs, $this->primaryAuthorRelators, ['100']
+            $fieldSpecs,
+            $this->primaryAuthorRelators,
+            ['100']
         );
     }
 
@@ -2602,7 +2644,11 @@ class Marc extends AbstractRecord
             ]
         ];
         return $this->getAuthorsByRelator(
-            $fieldSpecs, $this->primaryAuthorRelators, ['700'], true, true
+            $fieldSpecs,
+            $this->primaryAuthorRelators,
+            ['700'],
+            true,
+            true
         );
     }
 

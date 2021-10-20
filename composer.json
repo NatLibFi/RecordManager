@@ -34,7 +34,7 @@
         "phayes/geophp": "^1.2"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^2.18.2",
+        "friendsofphp/php-cs-fixer": "3.1.0",
         "phing/phing": "^2.16.4",
         "phpmd/phpmd": "^2.9.1",
         "phpunit/phpunit": "^8.5.14",

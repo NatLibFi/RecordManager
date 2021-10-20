@@ -324,7 +324,8 @@ class HTTPFiles extends AbstractBase
                 $this->errorMsg('Failed to expand node: ' . $xml->readOuterXml());
             } else {
                 $this->processRecord(
-                    simplexml_import_dom($doc->importNode($expanded, true)), $count
+                    simplexml_import_dom($doc->importNode($expanded, true)),
+                    $count
                 );
                 if ($count % 1000 == 0) {
                     $this->infoMsg("$count records processed");
@@ -358,7 +359,11 @@ class HTTPFiles extends AbstractBase
         } elseif ($this->isModified($record)) {
             $this->normalizeRecord($record, $id);
             $this->changedRecords += call_user_func(
-                $this->callback, $this->source, $oaiId, false, $record->asXML()
+                $this->callback,
+                $this->source,
+                $oaiId,
+                false,
+                $record->asXML()
             );
         } else {
             // This assumes the provider may return records that are not changed or
@@ -378,7 +383,9 @@ class HTTPFiles extends AbstractBase
     protected function getFileDate($filename)
     {
         $match = preg_match(
-            '/(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)/', $filename, $dateparts
+            '/(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)/',
+            $filename,
+            $dateparts
         );
         if (!$match) {
             return false;

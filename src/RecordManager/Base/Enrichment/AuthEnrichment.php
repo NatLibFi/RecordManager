@@ -91,7 +91,10 @@ abstract class AuthEnrichment extends AbstractEnrichment
      *
      * @return void
      */
-    protected function enrichField(&$solrArray, $id, $solrField,
+    protected function enrichField(
+        &$solrArray,
+        $id,
+        $solrField,
         $includeInAllfields = false
     ) {
         if (!($data = $this->authorityDb->getRecord($id))) {

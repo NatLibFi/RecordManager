@@ -736,8 +736,14 @@ class SolrUpdater
      *
      * @return void
      */
-    public function updateRecords($fromDate = null, $sourceId = '', $singleId = '',
-        $noCommit = false, $delete = false, $dumpPrefix = '', $datePerServer = false
+    public function updateRecords(
+        $fromDate = null,
+        $sourceId = '',
+        $singleId = '',
+        $noCommit = false,
+        $delete = false,
+        $dumpPrefix = '',
+        $datePerServer = false
     ) {
         // Install a signal handler so that we can exit cleanly if interrupted
         unset($this->terminate);
@@ -768,7 +774,8 @@ class SolrUpdater
         try {
             if ($this->recordWorkers) {
                 $this->log->logInfo(
-                    'updateRecords', "Using {$this->recordWorkers} record workers"
+                    'updateRecords',
+                    "Using {$this->recordWorkers} record workers"
                 );
             }
             if ($this->solrUpdateWorkers) {
@@ -880,7 +887,8 @@ class SolrUpdater
                 ? gmdate('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
 
             $this->log->logInfo(
-                'updateRecords', "Creating individual record list (from $from)"
+                'updateRecords',
+                "Creating individual record list (from $from)"
             );
             $params = [];
             if ($singleId) {
@@ -923,8 +931,15 @@ class SolrUpdater
             $this->db->iterateRecords(
                 $params,
                 [],
-                function ($record) use ($childPid, $pc, &$mergedComponents,
-                    &$count, &$deleted, $verb, $noCommit, &$lastDisplayedCount,
+                function ($record) use (
+                    $childPid,
+                    $pc,
+                    &$mergedComponents,
+                    &$count,
+                    &$deleted,
+                    $verb,
+                    $noCommit,
+                    &$lastDisplayedCount,
                     &$needCommit
                 ) {
                     if (isset($this->terminate)) {
@@ -1153,7 +1168,12 @@ class SolrUpdater
      * @return boolean Whether anything was updated
      */
     protected function processMerged(
-        $fromDate, $sourceId, $singleId, $noCommit, $delete, $checkParent,
+        $fromDate,
+        $sourceId,
+        $singleId,
+        $noCommit,
+        $delete,
+        $checkParent,
         $lastUpdateKey
     ) {
         // Create workers first before we need the database
@@ -1197,9 +1217,16 @@ class SolrUpdater
             $singleId,
             $lastUpdateKey,
             $checkParent,
-            function (string $mergeId) use ($sourceId, $delete,
-                &$mergedComponents, &$deleted, &$count, $noCommit,
-                &$lastDisplayedCount, $pc, $verb
+            function (string $mergeId) use (
+                $sourceId,
+                $delete,
+                &$mergedComponents,
+                &$deleted,
+                &$count,
+                $noCommit,
+                &$lastDisplayedCount,
+                $pc,
+                $verb
             ) {
                 $this->workerPoolManager->addRequest(
                     'merge',
@@ -1315,8 +1342,13 @@ class SolrUpdater
         $this->db->iterateRecords(
             ['_id' => ['$in' => (array)$dedupRecord['ids']]],
             [],
-            function ($record) use ($sourceId, $delete, &$mergedComponents,
-                $dedupRecord, &$result, &$members
+            function ($record) use (
+                $sourceId,
+                $delete,
+                &$mergedComponents,
+                $dedupRecord,
+                &$result,
+                &$members
             ) {
                 if (in_array($record['source_id'], $this->nonIndexedSources)) {
                     return true;
@@ -1544,7 +1576,8 @@ class SolrUpdater
                         ];
                         $data = $settings['solrTransformationXSLT']
                             ->transformToSolrArray(
-                                $metadataRecord->toXML(), $params
+                                $metadataRecord->toXML(),
+                                $params
                             );
                     } else {
                         $data = $metadataRecord->toSolrArray($this->db);
@@ -1701,8 +1734,13 @@ class SolrUpdater
      * @throws \Exception
      * @return string Collection name
      */
-    protected function iterateMergedRecords($fromDate, $sourceId, $singleId,
-        $lastUpdateKey, $checkParent, $callback
+    protected function iterateMergedRecords(
+        $fromDate,
+        $sourceId,
+        $singleId,
+        $lastUpdateKey,
+        $checkParent,
+        $callback
     ) {
         // Clean up any left over tracking collections
         $res = $this->db->cleanupTrackingCollections();
@@ -1760,7 +1798,11 @@ class SolrUpdater
         $this->db->iterateRecords(
             $params,
             ['projection' => ['_id' => 1, 'dedup_id' => 1]],
-            function ($record) use ($checkParent, $trackingName, &$count, &$prevId,
+            function ($record) use (
+                $checkParent,
+                $trackingName,
+                &$count,
+                &$prevId,
                 $callback
             ) {
                 if ($checkParent) {
@@ -1810,7 +1852,11 @@ class SolrUpdater
         $this->db->iterateDedups(
             $dedupParams,
             [],
-            function ($record) use ($checkParent, &$count, $trackingName, $callback
+            function ($record) use (
+                $checkParent,
+                &$count,
+                $trackingName,
+                $callback
             ) {
                 if ($checkParent) {
                     $this->checkParentIsAlive();
@@ -1917,7 +1963,9 @@ class SolrUpdater
      * @return array|false
      * @throws \Exception
      */
-    protected function createSolrArray(array $record, &$mergedComponents,
+    protected function createSolrArray(
+        array $record,
+        &$mergedComponents,
         $dedupRecord = null
     ) {
         $mergedComponents = 0;
@@ -1946,7 +1994,9 @@ class SolrUpdater
 
         $settings = $this->settings[$source];
         $hiddenComponent = MetadataUtils::isHiddenComponentPart(
-            $settings, $record, $metadataRecord
+            $settings,
+            $record,
+            $metadataRecord
         );
 
         if ($hiddenComponent && !$settings['indexMergedParts']) {
@@ -2012,7 +2062,8 @@ class SolrUpdater
         if ($hasComponentParts && null !== $components) {
             $changeDate = null;
             $mergedComponents += $metadataRecord->mergeComponentParts(
-                $components, $changeDate
+                $components,
+                $changeDate
             );
             // Use latest date as the host record date
             if (null !== $changeDate && $changeDate > $record['date']) {
@@ -2166,7 +2217,11 @@ class SolrUpdater
         $this->addWorkKeys($data, $metadataRecord);
 
         $this->augmentAndProcessFields(
-            $data, $record, $metadataRecord, $source, $settings
+            $data,
+            $record,
+            $metadataRecord,
+            $source,
+            $settings
         );
 
         foreach ($hostDataToCopy as $hostData) {
@@ -2175,7 +2230,8 @@ class SolrUpdater
 
         if (!empty($this->warningsField)) {
             $warnings = array_merge(
-                $warnings, $metadataRecord->getProcessingWarnings()
+                $warnings,
+                $metadataRecord->getProcessingWarnings()
             );
             if ($warnings) {
                 $data[$this->warningsField] = $warnings;
@@ -2252,8 +2308,11 @@ class SolrUpdater
      *
      * @return void
      */
-    protected function augmentAndProcessFields(array &$data,
-        $record, AbstractRecord $metadataRecord, string $source,
+    protected function augmentAndProcessFields(
+        array &$data,
+        $record,
+        AbstractRecord $metadataRecord,
+        string $source,
         array $settings
     ): void {
         if (!isset($data['institution']) && !empty($settings['institution'])) {
@@ -2367,7 +2426,8 @@ class SolrUpdater
                     ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
                     ['ax', 'bx', 'cx', 'dx', 'ex', 'fx', 'gx', 'hx', 'ix', 'jx'],
                     MetadataUtils::normalizeKey(
-                        $format, $this->unicodeNormalizationForm
+                        $format,
+                        $this->unicodeNormalizationForm
                     )
                 );
             }
@@ -2389,7 +2449,8 @@ class SolrUpdater
             if (is_array($values)) {
                 foreach ($values as $key2 => &$value) {
                     $value = MetadataUtils::normalizeUnicode(
-                        $value, $this->unicodeNormalizationForm
+                        $value,
+                        $this->unicodeNormalizationForm
                     );
                     $value = $this->trimFieldLength($key, $value);
                     if (empty($value) || $value === 0 || $value === 0.0
@@ -2401,7 +2462,8 @@ class SolrUpdater
                 $values = array_values(array_unique($values));
             } elseif ($key != 'fullrecord') {
                 $values = MetadataUtils::normalizeUnicode(
-                    $values, $this->unicodeNormalizationForm
+                    $values,
+                    $this->unicodeNormalizationForm
                 );
                 $values = $this->trimFieldLength($key, $values);
             }
@@ -2918,7 +2980,8 @@ class SolrUpdater
         if (!$noCommit && !$this->dumpPrefix && $count % $this->commitInterval == 0
         ) {
             $this->log->logInfo(
-                'bufferedUpdate', 'Waiting for any pending requests to complete...'
+                'bufferedUpdate',
+                'Waiting for any pending requests to complete...'
             );
             $this->workerPoolManager->waitUntilDone('solr');
             $this->log->logInfo('bufferedUpdate', 'Intermediate commit...');

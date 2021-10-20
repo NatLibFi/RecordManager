@@ -259,7 +259,10 @@ class MongoDatabase extends AbstractDatabase
     public function updateRecords($filter, $fields, $remove = [])
     {
         $this->updateMongoRecords(
-            $this->recordCollection, $filter, $fields, $remove
+            $this->recordCollection,
+            $filter,
+            $fields,
+            $remove
         );
     }
 
@@ -514,7 +517,9 @@ class MongoDatabase extends AbstractDatabase
     public function findOntologyEnrichment($filter, $options = [])
     {
         return $this->findMongoRecord(
-            $this->ontologyEnrichmentCollection, $filter, $options
+            $this->ontologyEnrichmentCollection,
+            $filter,
+            $options
         );
     }
 
@@ -529,8 +534,12 @@ class MongoDatabase extends AbstractDatabase
      *
      * @return void
      */
-    public function saveLogMessage(string $context, string $msg, int $level,
-        int $pid, int $timestamp
+    public function saveLogMessage(
+        string $context,
+        string $msg,
+        int $level,
+        int $pid,
+        int $timestamp
     ): void {
         $record = [
             'timestamp' => $this->getTimestamp($timestamp),
@@ -778,7 +787,10 @@ class MongoDatabase extends AbstractDatabase
      *
      * @return void
      */
-    protected function updateMongoRecords($collection, $filter, $fields,
+    protected function updateMongoRecords(
+        $collection,
+        $filter,
+        $fields,
         $remove = []
     ) {
         $params = [];
@@ -817,8 +829,12 @@ class MongoDatabase extends AbstractDatabase
      *
      * @return void
      */
-    protected function iterate(callable $findMethod, array $filter, array $options,
-        callable $callback, array $params = []
+    protected function iterate(
+        callable $findMethod,
+        array $filter,
+        array $options,
+        callable $callback,
+        array $params = []
     ): void {
         if (!isset($options['noCursorTimeout'])) {
             $options['noCursorTimeout'] = true;

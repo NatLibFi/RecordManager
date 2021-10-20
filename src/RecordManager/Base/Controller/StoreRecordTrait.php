@@ -144,11 +144,17 @@ trait StoreRecordTrait
                 $metadataRecord->normalize();
                 $normalizedData = $metadataRecord->serialize();
                 $originalData = $this->createRecord(
-                    $settings['format'], $data, $oaiID, $sourceId
+                    $settings['format'],
+                    $data,
+                    $oaiID,
+                    $sourceId
                 )->serialize();
             } else {
                 $metadataRecord = $this->createRecord(
-                    $settings['format'], $data, $oaiID, $sourceId
+                    $settings['format'],
+                    $data,
+                    $oaiID,
+                    $sourceId
                 );
                 $originalData = $metadataRecord->serialize();
                 $metadataRecord->normalize();
@@ -216,7 +222,8 @@ trait StoreRecordTrait
                 if ($dbRecord['deleted']) {
                     if (isset($dbRecord['dedup_id'])) {
                         $this->dedupHandler->removeFromDedupRecord(
-                            $dbRecord['dedup_id'], $dbRecord['_id']
+                            $dbRecord['dedup_id'],
+                            $dbRecord['_id']
                         );
                         unset($dbRecord['dedup_id']);
                     }
@@ -228,7 +235,8 @@ trait StoreRecordTrait
                     if (!$hostIDs) {
                         $dbRecord['update_needed']
                             = $this->dedupHandler->updateDedupCandidateKeys(
-                                $dbRecord, $metadataRecord
+                                $dbRecord,
+                                $metadataRecord
                             );
                     } else {
                         $this->db->updateRecords(
@@ -315,7 +323,8 @@ trait StoreRecordTrait
         // Save dedup record now that record's dedup_id is cleared
         if (null !== $dedupId) {
             $this->dedupHandler->removeFromDedupRecord(
-                $dedupId, $record['_id']
+                $dedupId,
+                $record['_id']
             );
         }
 

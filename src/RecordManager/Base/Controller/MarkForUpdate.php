@@ -67,7 +67,8 @@ class MarkForUpdate extends AbstractBase
         $total = $this->db->countRecords($params);
         $count = 0;
         $this->logger->logInfo(
-            'markForUpdate', "Marking $total records for update from '$sourceId'"
+            'markForUpdate',
+            "Marking $total records for update from '$sourceId'"
         );
         $pc = new PerformanceCounter();
 

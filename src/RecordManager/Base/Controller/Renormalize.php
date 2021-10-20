@@ -73,13 +73,18 @@ class Renormalize extends AbstractBase
             $dedupHandler = $this->dedupHandler;
             $count = 0;
             $this->logger->logInfo(
-                'renormalize', "Processing $total records from '$source'"
+                'renormalize',
+                "Processing $total records from '$source'"
             );
             $pc = new PerformanceCounter();
             $this->db->iterateRecords(
                 $params,
                 [],
-                function ($record) use ($settings, $pc, $dedupHandler, &$count,
+                function ($record) use (
+                    $settings,
+                    $pc,
+                    $dedupHandler,
+                    &$count,
                     $source
                 ) {
                     $originalData = MetadataUtils::getRecordData($record, false);
@@ -126,7 +131,8 @@ class Renormalize extends AbstractBase
                         }
                         if (isset($record['dedup_id'])) {
                             $dedupHandler->removeFromDedupRecord(
-                                $record['dedup_id'], $record['_id']
+                                $record['dedup_id'],
+                                $record['_id']
                             );
                             unset($record['dedup_id']);
                         }

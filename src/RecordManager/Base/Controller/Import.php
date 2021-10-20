@@ -71,14 +71,16 @@ class Import extends AbstractBase
         }
         foreach ($filelist as $file) {
             $this->logger->logInfo(
-                'import', "Loading records from '$file' into '$source'"
+                'import',
+                "Loading records from '$file' into '$source'"
             );
 
             if (preg_match('/^[\/\w_:-]+$/', $settings['recordXPath'])) {
                 $count += $this->streamingLoad($file, $source, $delete);
             } else {
                 $this->logger->logInfo(
-                    'import', "Complex recordXPath, cannot use streaming loader"
+                    'import',
+                    "Complex recordXPath, cannot use streaming loader"
                 );
                 $count += $this->fullLoad($file, $source, $delete);
             }

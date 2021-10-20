@@ -81,7 +81,9 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
      * @param RecordPluginManager $recordPluginManager Record plugin manager
      */
     public function __construct(
-        Database $db, Logger $logger, array $config,
+        Database $db,
+        Logger $logger,
+        array $config,
         RecordPluginManager $recordPluginManager
     ) {
         parent::__construct($db, $logger, $config, $recordPluginManager);
@@ -193,7 +195,10 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
 
         try {
             $data = $this->getExternalData(
-                $url, $id, ['Accept' => 'application/json'], [500]
+                $url,
+                $id,
+                ['Accept' => 'application/json'],
+                [500]
             );
         } catch (\Exception $e) {
             $this->logger->logDebug(
@@ -256,7 +261,8 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
                             continue;
                         }
                         $matchData = $this->getExternalData(
-                            $matchURL, $matchId,
+                            $matchURL,
+                            $matchId,
                             ['Accept' => 'application/json']
                         );
                         if (!$matchData) {

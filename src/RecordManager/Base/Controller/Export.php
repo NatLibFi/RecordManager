@@ -174,14 +174,22 @@ class Export extends AbstractBase
             $this->logger->logInfo('exportRecords', "Exporting $total records");
             if ($skipRecords) {
                 $this->logger->logInfo(
-                    'exportRecords', "(1 per each $skipRecords records)"
+                    'exportRecords',
+                    "(1 per each $skipRecords records)"
                 );
             }
             $this->db->iterateRecords(
                 $params,
                 $options,
-                function ($record) use (&$count, &$deduped, &$deleted, $skipRecords,
-                    $xpath, $file, $deletedFile, $addDedupId
+                function ($record) use (
+                    &$count,
+                    &$deduped,
+                    &$deleted,
+                    $skipRecords,
+                    $xpath,
+                    $file,
+                    $deletedFile,
+                    $addDedupId
                 ) {
                     $metadataRecord = $this->createRecord(
                         $record['format'],
@@ -211,7 +219,9 @@ class Export extends AbstractBase
                     if ($record['deleted']) {
                         if ($deletedFile) {
                             file_put_contents(
-                                $deletedFile, "{$record['_id']}\n", FILE_APPEND
+                                $deletedFile,
+                                "{$record['_id']}\n",
+                                FILE_APPEND
                             );
                         }
                         ++$deleted;
@@ -253,7 +263,8 @@ class Export extends AbstractBase
             );
         } catch (\Exception $e) {
             $this->logger->logFatal(
-                'exportRecords', 'Exception: ' . $e->getMessage()
+                'exportRecords',
+                'Exception: ' . $e->getMessage()
             );
         }
         file_put_contents($file, "</collection>\n", FILE_APPEND);

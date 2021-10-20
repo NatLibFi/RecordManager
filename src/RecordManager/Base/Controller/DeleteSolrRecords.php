@@ -63,7 +63,8 @@ class DeleteSolrRecords extends AbstractBase
         );
         $this->solrUpdater->deleteDataSource($sourceId);
         $this->logger->logInfo(
-            'deleteSolrRecords', "Deletion of '$sourceId' from Solr completed"
+            'deleteSolrRecords',
+            "Deletion of '$sourceId' from Solr completed"
         );
     }
 }

@@ -191,7 +191,8 @@ class Lrmi extends Qdc
         return array_map(
             function ($topic) {
                 return $topic['value'];
-            }, $this->getTopicsExtended()
+            },
+            $this->getTopicsExtended()
         );
     }
 

@@ -75,7 +75,8 @@ class Unsuppress extends AbstractBase
             $count = 0;
 
             $this->logger->logInfo(
-                'unsuppress', "Processing $total records from '$source'"
+                'unsuppress',
+                "Processing $total records from '$source'"
             );
             $pc = new PerformanceCounter();
             $this->db->iterateRecords(

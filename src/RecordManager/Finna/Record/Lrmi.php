@@ -99,10 +99,12 @@ class Lrmi extends \RecordManager\Base\Record\Lrmi
                 = (string)$audience->educationalRole;
         }
         $data['educational_level_str_mv'] = array_map(
-            'strval', (array)($doc->learningResource->educationalLevel ?? [])
+            'strval',
+            (array)($doc->learningResource->educationalLevel ?? [])
         );
         $data['educational_aim_str_mv'] = array_map(
-            'strval', (array)($doc->learningResource->teaches ?? [])
+            'strval',
+            (array)($doc->learningResource->teaches ?? [])
         );
         foreach ($doc->learningResource->educationalAlignment ?? [] as $alignment) {
             if ($subject = $alignment->educationalSubject ?? null) {
@@ -120,7 +122,8 @@ class Lrmi extends \RecordManager\Base\Record\Lrmi
             array_map(
                 function ($topic) {
                     return $topic['id'];
-                }, $this->getTopicsExtended()
+                },
+                $this->getTopicsExtended()
             )
         );
 

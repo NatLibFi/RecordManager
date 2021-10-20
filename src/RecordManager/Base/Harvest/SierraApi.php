@@ -124,7 +124,8 @@ class SierraApi extends AbstractBase
         $this->suppressedRecords = $settings['suppressedRecords'] ?? null;
         $this->batchSize = $settings['batchSize'] ?? 100;
         $this->suppressedBibCode3 = explode(
-            ',', $settings['suppressedBibCode3'] ?? ''
+            ',',
+            $settings['suppressedBibCode3'] ?? ''
         );
         $this->apiVersion = 'v' . ($settings['sierraApiVersion'] ?? '5');
 
@@ -275,7 +276,8 @@ class SierraApi extends AbstractBase
             $this->renewAccessToken();
         }
         $request->setHeader(
-            'Authorization', "Bearer {$this->accessToken}"
+            'Authorization',
+            "Bearer {$this->accessToken}"
         );
 
         // Perform request and throw an exception on error:
@@ -292,7 +294,8 @@ class SierraApi extends AbstractBase
                     $this->infoMsg('Renewing access token');
                     $this->renewAccessToken();
                     $request->setHeader(
-                        'Authorization', "Bearer {$this->accessToken}"
+                        'Authorization',
+                        "Bearer {$this->accessToken}"
                     );
                     ++$maxTries;
                     sleep(1);
@@ -553,7 +556,8 @@ class SierraApi extends AbstractBase
         }
         if (isset($record['fixedFields']['31'])) {
             $suppressed = in_array(
-                $record['fixedFields']['31']['value'], $this->suppressedBibCode3
+                $record['fixedFields']['31']['value'],
+                $this->suppressedBibCode3
             );
             if ($suppressed) {
                 return true;

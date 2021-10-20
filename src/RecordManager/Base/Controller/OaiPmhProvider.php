@@ -46,10 +46,10 @@ use RecordManager\Base\Utils\XslTransformation;
  */
 class OaiPmhProvider extends AbstractBase
 {
-    const DT_EMPTY = 0;
-    const DT_INVALID = 1;
-    const DT_SHORT = 2;
-    const DT_LONG = 3;
+    public const DT_EMPTY = 0;
+    public const DT_INVALID = 1;
+    public const DT_SHORT = 2;
+    public const DT_LONG = 3;
 
     /**
      * Requested command
@@ -311,8 +311,14 @@ EOT;
         $this->db->iterateRecords(
             $queryParams,
             $options,
-            function ($record) use (&$count, $maxRecords, $tokenBase,
-                $position, $metadataPrefix, $includeMetadata, $sendListElement,
+            function ($record) use (
+                &$count,
+                $maxRecords,
+                $tokenBase,
+                $position,
+                $metadataPrefix,
+                $includeMetadata,
+                $sendListElement,
                 $listElementSent
             ) {
                 ++$count;
@@ -651,7 +657,8 @@ EOT;
             if ($this->getParam('resumptionToken')) {
                 if ($paramCount != 1) {
                     $this->error(
-                        'badArgument', 'Extraneous arguments with resumptionToken'
+                        'badArgument',
+                        'Extraneous arguments with resumptionToken'
                     );
                     return false;
                 }
@@ -662,7 +669,8 @@ EOT;
                 }
                 foreach (array_keys($_GET) as $key) {
                     $validVerb = in_array(
-                        $key, ['verb', 'from', 'until', 'set', 'metadataPrefix']
+                        $key,
+                        ['verb', 'from', 'until', 'set', 'metadataPrefix']
                     );
                     if (!$validVerb) {
                         $this->error('badArgument', 'Illegal argument');
@@ -778,7 +786,10 @@ EOT;
      *
      * @return boolean|string
      */
-    protected function createRecordXML($record, $format, $includeMetadata,
+    protected function createRecordXML(
+        $record,
+        $format,
+        $includeMetadata,
         $outputErrors = true
     ) {
         $sourceFormat = $record['format'];
@@ -810,7 +821,8 @@ EOT;
                 if (!isset($this->transformations[$transformationKey])) {
                     $this->transformations[$transformationKey]
                         = new XslTransformation(
-                            RECMAN_BASE_PATH . '/transformations', $datasource[$key]
+                            RECMAN_BASE_PATH . '/transformations',
+                            $datasource[$key]
                         );
                 }
                 $params = [

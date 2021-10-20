@@ -92,12 +92,14 @@ class PurgeDeleted extends AbstractBase
         } while ($more);
 
         $this->logger->logInfo(
-            'purgeDeletedRecords', "Total $count records purged"
+            'purgeDeletedRecords',
+            "Total $count records purged"
         );
 
         if ($sourceId) {
             $this->logger->logInfo(
-                'purgeDeletedRecords', 'Source specified -- skipping dedup records'
+                'purgeDeletedRecords',
+                'Source specified -- skipping dedup records'
             );
             return;
         }
@@ -108,7 +110,8 @@ class PurgeDeleted extends AbstractBase
             $params['changed'] = ['$lt' => $this->db->getTimestamp($date)];
         }
         $this->logger->logInfo(
-            'purgeDeletedRecords', "Creating dedup record list$dateStr"
+            'purgeDeletedRecords',
+            "Creating dedup record list$dateStr"
         );
         $total = $this->db->countDedups($params);
         $count = 0;
@@ -132,7 +135,8 @@ class PurgeDeleted extends AbstractBase
             }
         );
         $this->logger->logInfo(
-            'purgeDeletedRecords', "Total $count dedup records purged"
+            'purgeDeletedRecords',
+            "Total $count dedup records purged"
         );
     }
 }

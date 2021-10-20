@@ -101,7 +101,9 @@ class DeweyCallNumber
         }
 
         $cutterMatch = preg_match(
-            '/ *\.?([A-Z]\d{1,3}(?:[A-Z]+)?) *(.+)?/', $rest, $matches
+            '/ *\.?([A-Z]\d{1,3}(?:[A-Z]+)?) *(.+)?/',
+            $rest,
+            $matches
         );
         if ($cutterMatch) {
             $this->cutter = $matches[1];

@@ -165,7 +165,8 @@ abstract class AbstractBase
             }
             if (!isset($settings['format'])) {
                 $this->logger->logFatal(
-                    'initSourceSettings', "format not set for $source"
+                    'initSourceSettings',
+                    "format not set for $source"
                 );
                 throw new \Exception("Error: format not set for $source\n");
             }

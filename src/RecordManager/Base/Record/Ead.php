@@ -237,7 +237,8 @@ class Ead extends AbstractRecord
         $data['title'] .= $data['title_short'];
         $data['title_full'] = $data['title_sort'] = $data['title'];
         $data['title_sort'] = mb_strtolower(
-            MetadataUtils::stripLeadingPunctuation($data['title_sort']), 'UTF-8'
+            MetadataUtils::stripLeadingPunctuation($data['title_sort']),
+            'UTF-8'
         );
 
         if ($languages = $doc->did->xpath('langmaterial/language')) {

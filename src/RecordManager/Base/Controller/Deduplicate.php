@@ -60,7 +60,10 @@ class Deduplicate extends AbstractBase
      *
      * @return void
      */
-    public function launch($sourceId, $allRecords = false, $singleId = '',
+    public function launch(
+        $sourceId,
+        $allRecords = false,
+        $singleId = '',
         $markOnly = false
     ) {
         $this->terminate = false;
@@ -90,7 +93,8 @@ class Deduplicate extends AbstractBase
                     continue;
                 }
                 $this->logger->logInfo(
-                    'deduplicate', "Marking all records for processing in '$source'"
+                    'deduplicate',
+                    "Marking all records for processing in '$source'"
                 );
                 $filter = [
                     'source_id' => $source,
@@ -109,7 +113,8 @@ class Deduplicate extends AbstractBase
                         }
 
                         $this->db->updateRecord(
-                            $record['_id'], ['update_needed' => true]
+                            $record['_id'],
+                            ['update_needed' => true]
                         );
 
                         ++$count;
@@ -169,14 +174,21 @@ class Deduplicate extends AbstractBase
                 $deduped = 0;
                 $pc = new PerformanceCounter();
                 $this->logger->logInfo(
-                    'deduplicate', "Processing $total records for '$source'"
+                    'deduplicate',
+                    "Processing $total records for '$source'"
                 );
                 $verbose = $this->verbose;
                 $this->db->iterateRecords(
                     $params,
                     [],
-                    function ($record) use ($singleId, $dedupHandler,
-                        &$count, &$deduped, $pc, $source, $verbose
+                    function ($record) use (
+                        $singleId,
+                        $dedupHandler,
+                        &$count,
+                        &$deduped,
+                        $pc,
+                        $source,
+                        $verbose
                     ) {
                         if (!$singleId && empty($record['update_needed'])) {
                             return true;
@@ -229,7 +241,8 @@ class Deduplicate extends AbstractBase
                 );
             } catch (\Exception $e) {
                 $this->logger->logFatal(
-                    'deduplicate', 'Exception: ' . $e->getMessage()
+                    'deduplicate',
+                    'Exception: ' . $e->getMessage()
                 );
                 throw $e;
             }

@@ -54,15 +54,25 @@ class SolrDump extends AbstractBase
      *
      * @return void
      */
-    public function launch($dumpPrefix, $fromDate = null, $sourceId = '',
-        $singleId = '', $mapValues = true
+    public function launch(
+        $dumpPrefix,
+        $fromDate = null,
+        $sourceId = '',
+        $singleId = '',
+        $mapValues = true
     ) {
         if (!$mapValues) {
             $this->config['Solr']['field_mapper']
                 = '\RecordManager\Base\Utils\NoOpFieldMapper';
         }
         $this->solrUpdater->updateRecords(
-            $fromDate, $sourceId, $singleId, false, false, $dumpPrefix, false
+            $fromDate,
+            $sourceId,
+            $singleId,
+            false,
+            false,
+            $dumpPrefix,
+            false
         );
     }
 }

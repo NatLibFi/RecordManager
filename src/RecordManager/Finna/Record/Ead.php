@@ -239,7 +239,9 @@ class Ead extends \RecordManager\Base\Record\Ead
             $endDate = $endYear . '-' . $endMonth . '-' . $endDay . 'T23:59:59Z';
         } elseif (true
             && preg_match(
-                '/(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d\d\d)/', $input, $matches
+                '/(\d\d?).(\d\d\d\d) ?- ?(\d\d?).(\d\d\d\d)/',
+                $input,
+                $matches
             ) > 0
         ) {
             $startYear = $matches[2];

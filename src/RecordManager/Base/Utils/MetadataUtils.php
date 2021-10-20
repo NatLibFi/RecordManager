@@ -172,7 +172,8 @@ class MetadataUtils
             ?? ['eArticle'];
 
         self::$allArticleFormats = array_merge(
-            self::$articleFormats, $eArticleFormats
+            self::$articleFormats,
+            $eArticleFormats
         );
 
         self::$unicodeNormalizationForm
@@ -241,7 +242,9 @@ class MetadataUtils
             return (float)NAN;
         }
         $match = preg_match(
-            '/^([eEwWnNsS])(\d{3})(\d{2})((\d{2})(\.(\d{3}))?)/', $value, $matches
+            '/^([eEwWnNsS])(\d{3})(\d{2})((\d{2})(\.(\d{3}))?)/',
+            $value,
+            $matches
         );
         if ($match) {
             $dec = $matches[2] + $matches[3] / 60 + $matches[4] / 3600;
@@ -276,7 +279,9 @@ class MetadataUtils
         // Like the first one, but one last try for a value that's missing leading
         // zeros
         $match = preg_match(
-            '/^([eEwWnNsS])(\d+)(\d{2})((\d{2})(\.(\d{3}))?)$/', $value, $matches
+            '/^([eEwWnNsS])(\d+)(\d{2})((\d{2})(\.(\d{3}))?)$/',
+            $value,
+            $matches
         );
         if ($match) {
             $dec = $matches[2] + $matches[3] / 60 + $matches[4] / 3600;
@@ -347,7 +352,9 @@ class MetadataUtils
         $str = MetadataUtils::normalizeUnicode($str, 'NFKC');
         $str = strtr($str, self::$foldingTable);
         $str = preg_replace(
-            '/[\x00-\x20\x21-\x2F\x3A-\x40,\x5B-\x60,\x7B-\x7F]/', '', $str
+            '/[\x00-\x20\x21-\x2F\x3A-\x40,\x5B-\x60,\x7B-\x7F]/',
+            '',
+            $str
         );
         if ('NFKC' !== $form) {
             $str = MetadataUtils::normalizeUnicode($str, $form);
@@ -457,7 +464,9 @@ class MetadataUtils
         if ($additional) {
             // Use preg_replace for multibyte support
             $str = preg_replace(
-                '/[' . preg_quote($basic . $additional, '/') . ']*$/u', '', $str
+                '/[' . preg_quote($basic . $additional, '/') . ']*$/u',
+                '',
+                $str
             );
         } else {
             $str = rtrim($str, $basic);
@@ -507,7 +516,9 @@ class MetadataUtils
     ) {
         // Use preg_replace for multibyte support
         return preg_replace(
-            '/^[' . preg_quote($punctuation, '/') . ']*/u', '', $str
+            '/^[' . preg_quote($punctuation, '/') . ']*/u',
+            '',
+            $str
         );
     }
 
@@ -1033,7 +1044,10 @@ class MetadataUtils
      *
      * @return \SimpleXMLElement|\DomDocument|bool
      */
-    public static function loadXML($xml, $dom = null, $options = 0,
+    public static function loadXML(
+        $xml,
+        $dom = null,
+        $options = 0,
         &$errors = null
     ) {
         $options |= LIBXML_PARSEHUGE | LIBXML_COMPACT;

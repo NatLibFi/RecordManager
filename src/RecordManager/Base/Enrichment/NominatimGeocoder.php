@@ -148,7 +148,9 @@ class NominatimGeocoder extends AbstractEnrichment
      * @param RecordPluginManager $recordPluginManager Record plugin manager
      */
     public function __construct(
-        Database $db, Logger $logger, array $config,
+        Database $db,
+        Logger $logger,
+        array $config,
         RecordPluginManager $recordPluginManager
     ) {
         parent::__construct($db, $logger, $config, $recordPluginManager);
@@ -269,7 +271,8 @@ class NominatimGeocoder extends AbstractEnrichment
                         $solrArray[$this->solrField] = $wkts;
                     } else {
                         $solrArray[$this->solrField] = array_merge(
-                            $solrArray[$this->solrField], $wkts
+                            $solrArray[$this->solrField],
+                            $wkts
                         );
                     }
                     if (!empty($this->solrCenterField)) {
@@ -348,7 +351,10 @@ class NominatimGeocoder extends AbstractEnrichment
 
         $url = $this->baseUrl . '?' . http_build_query($params);
         $response = $this->getExternalData(
-            $url, 'nominatim ' . md5($url), [], [500]
+            $url,
+            'nominatim ' . md5($url),
+            [],
+            [500]
         );
         $places = json_decode($response, true);
         if (null === $places) {
@@ -472,13 +478,15 @@ class NominatimGeocoder extends AbstractEnrichment
             $curr = \geoPHP::load($current['wkt'], 'wkt');
             if ($prev->startPoint() == $curr->endPoint()) {
                 $previous['wkt'] = $this->mergeShapes(
-                    $current['wkt'], $previous['wkt']
+                    $current['wkt'],
+                    $previous['wkt']
                 );
                 array_pop($results);
                 $results[] = $previous;
             } elseif ($prev->endPoint() == $curr->startPoint()) {
                 $previous['wkt'] = $this->mergeShapes(
-                    $previous['wkt'], $current['wkt']
+                    $previous['wkt'],
+                    $current['wkt']
                 );
                 array_pop($results);
                 $results[] = $previous;

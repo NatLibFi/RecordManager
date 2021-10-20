@@ -109,9 +109,14 @@ class SolrComparer extends SolrUpdater
                     $singleId,
                     '',
                     false,
-                    function (string $dedupId) use ($sourceId,
-                        &$mergedComponents, $logFile, &$deleted, &$count,
-                        &$lastDisplayedCount, $pc
+                    function (string $dedupId) use (
+                        $sourceId,
+                        &$mergedComponents,
+                        $logFile,
+                        &$deleted,
+                        &$count,
+                        &$lastDisplayedCount,
+                        $pc
                     ) {
                         $result = $this->processDedupRecord(
                             $dedupId,
@@ -150,7 +155,8 @@ class SolrComparer extends SolrUpdater
                 ? date('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
 
             $this->log->logInfo(
-                'compareRecords', "Creating individual record list (from $from)"
+                'compareRecords',
+                "Creating individual record list (from $from)"
             );
             $params = [];
             if ($singleId) {
@@ -183,8 +189,13 @@ class SolrComparer extends SolrUpdater
             $this->db->iterateRecords(
                 $params,
                 [],
-                function ($record) use ($pc, &$mergedComponents, $logFile,
-                    &$count, &$deleted, &$lastDisplayedCount
+                function ($record) use (
+                    $pc,
+                    &$mergedComponents,
+                    $logFile,
+                    &$count,
+                    &$deleted,
+                    &$lastDisplayedCount
                 ) {
                     if (isset($this->terminate)) {
                         return false;

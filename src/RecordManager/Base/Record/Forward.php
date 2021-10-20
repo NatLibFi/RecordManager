@@ -102,17 +102,20 @@ class Forward extends AbstractRecord
 
         if (isset($config['ForwardRecord']['primary_author_relators'])) {
             $this->primaryAuthorRelators = explode(
-                ',', $config['ForwardRecord']['primary_author_relators']
+                ',',
+                $config['ForwardRecord']['primary_author_relators']
             );
         }
         if (isset($config['ForwardRecord']['secondary_author_relators'])) {
             $this->secondaryAuthorRelators = explode(
-                ',', $config['ForwardRecord']['secondary_author_relators']
+                ',',
+                $config['ForwardRecord']['secondary_author_relators']
             );
         }
         if (isset($config['ForwardRecord']['corporate_author_relators'])) {
             $this->corporateAuthorRelators = explode(
-                ',', $config['ForwardRecord']['corporate_author_relators']
+                ',',
+                $config['ForwardRecord']['corporate_author_relators']
             );
         }
     }

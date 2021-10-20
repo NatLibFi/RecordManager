@@ -138,7 +138,8 @@ class CreatePreview extends AbstractBase
             $metadata = $this->pretransform($metadata, $source);
         } elseif (!empty($settings['oaipmhTransformation'])) {
             $metadata = $this->oaipmhTransform(
-                $metadata, $settings['oaipmhTransformation']
+                $metadata,
+                $settings['oaipmhTransformation']
             );
         }
 
@@ -169,7 +170,8 @@ class CreatePreview extends AbstractBase
         // Normalize the record
         if (null !== $settings['normalizationXSLT']) {
             $record['normalized_data'] = $settings['normalizationXSLT']->transform(
-                $metadata, ['oai_id' => $record['oai_id']]
+                $metadata,
+                ['oai_id' => $record['oai_id']]
             );
         }
 

@@ -90,7 +90,8 @@ class MarcAuthority extends \RecordManager\Base\Record\MarcAuthority
 
             foreach ($this->getFields($code) as $field) {
                 $result = array_merge(
-                    $result, [
+                    $result,
+                    [
                         implode(
                             $this->nameDelimiter,
                             $this->trimFields(

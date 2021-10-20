@@ -182,7 +182,8 @@ class Forward extends \RecordManager\Base\Record\Forward
             $type = $event->ProductionEventType;
             if (null !== ($type->attributes()->{'elokuva-laji1fin'})) {
                 $laji = mb_strtolower(
-                    (string)$type->attributes()->{'elokuva-laji1fin'}, 'UTF-8'
+                    (string)$type->attributes()->{'elokuva-laji1fin'},
+                    'UTF-8'
                 );
                 switch ($laji) {
                 case 'lyhyt':

@@ -66,7 +66,8 @@ class MarkDeleted extends AbstractBase
         $count = 0;
 
         $this->logger->logInfo(
-            'markDeleted', "Marking deleted $total records from '$sourceId'"
+            'markDeleted',
+            "Marking deleted $total records from '$sourceId'"
         );
         $pc = new PerformanceCounter();
 
@@ -79,7 +80,8 @@ class MarkDeleted extends AbstractBase
                 $more = true;
                 if (isset($record['dedup_id'])) {
                     $this->dedupHandler->removeFromDedupRecord(
-                        $record['dedup_id'], $record['_id']
+                        $record['dedup_id'],
+                        $record['_id']
                     );
                     unset($record['dedup_id']);
                 }

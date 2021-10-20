@@ -47,7 +47,10 @@ class ClientFactory
      *
      * @return \HTTP_Request2
      */
-    public static function createClient(string $url, string $method, array $config
+    public static function createClient(
+        string $url,
+        string $method,
+        array $config
     ): \HTTP_Request2 {
         if (isset($config['disable_proxy_hosts'])) {
             if ($url && !empty($config['proxy'])) {

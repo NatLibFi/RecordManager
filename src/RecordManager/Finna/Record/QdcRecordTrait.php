@@ -116,7 +116,9 @@ trait QdcRecordTrait
             $attrs = $coverage->attributes();
             if ($attrs->type == 'geocoding') {
                 $match = preg_match(
-                    '/([\d\.]+)\s*,\s*([\d\.]+)/', trim((string)$coverage), $matches
+                    '/([\d\.]+)\s*,\s*([\d\.]+)/',
+                    trim((string)$coverage),
+                    $matches
                 );
                 if ($match) {
                     if ($attrs->format == 'lon,lat') {
@@ -144,7 +146,8 @@ trait QdcRecordTrait
         $data['datasource_str_mv'] = $this->source;
 
         $data['author_facet'] = array_merge(
-            $this->getPrimaryAuthors(), $this->getSecondaryAuthors(),
+            $this->getPrimaryAuthors(),
+            $this->getSecondaryAuthors(),
             $this->getCorporateAuthors()
         );
 
@@ -161,7 +164,8 @@ trait QdcRecordTrait
     protected function getSecondaryAuthors()
     {
         return array_merge(
-            parent::getSecondaryAuthors(), $this->getValues('author') ?? []
+            parent::getSecondaryAuthors(),
+            $this->getValues('author') ?? []
         );
     }
 
@@ -240,7 +244,8 @@ trait QdcRecordTrait
 
         foreach ($this->getValues('identifier') as $identifier) {
             $res = preg_match(
-                '/^(URN:NBN:fi:|URN:ISBN:978-?951|URN:ISBN:951)/i', $identifier
+                '/^(URN:NBN:fi:|URN:ISBN:978-?951|URN:ISBN:951)/i',
+                $identifier
             );
             if ($res) {
                 if (!empty($urls)) {

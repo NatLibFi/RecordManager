@@ -76,19 +76,25 @@ class Suppress extends AbstractBase
             $count = 0;
 
             $this->logger->logInfo(
-                'suppress', "Processing $total records from '$source'"
+                'suppress',
+                "Processing $total records from '$source'"
             );
             $pc = new PerformanceCounter();
             $this->db->iterateRecords(
                 $params,
                 [],
-                function ($record) use ($settings, $dedupHandler, &$count, $pc,
+                function ($record) use (
+                    $settings,
+                    $dedupHandler,
+                    &$count,
+                    $pc,
                     $source
                 ) {
                     $record['suppressed'] = true;
                     if ($settings['dedup'] && isset($record['dedup_id'])) {
                         $dedupHandler->removeFromDedupRecord(
-                            $record['dedup_id'], $record['_id']
+                            $record['dedup_id'],
+                            $record['_id']
                         );
                         unset($record['dedup_id']);
                     }

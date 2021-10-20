@@ -203,7 +203,9 @@ class Marc extends \RecordManager\Base\Record\Marc
                 [self::GET_BOTH, '910', ['a' => 1, 'b' => 1]],
                 [self::GET_BOTH, '911', ['a' => 1, 'e' => 1]]
             ],
-            false, true, true
+            false,
+            true,
+            true
         ) as $field) {
             $field = trim($field);
             if ($field) {
@@ -519,7 +521,10 @@ class Marc extends \RecordManager\Base\Record\Marc
 
         // Identifiers from component parts (type as a leading string)
         foreach ($this->getFieldsSubfields(
-            [[self::GET_NORMAL, '979', ['k' => 1]]], false, true, true
+            [[self::GET_NORMAL, '979', ['k' => 1]]],
+            false,
+            true,
+            true
         ) as $identifier) {
             $parts = explode(' ', $identifier, 2);
             if (!isset($parts[1])) {
@@ -577,7 +582,8 @@ class Marc extends \RecordManager\Base\Record\Marc
                     }
                 }
                 $access = MetadataUtils::normalizeKey(
-                    $this->getFieldSubfields('506', ['f' => 1]), 'NFKC'
+                    $this->getFieldSubfields('506', ['f' => 1]),
+                    'NFKC'
                 );
                 switch ($access) {
                 case 'unrestricted':
@@ -682,7 +688,8 @@ class Marc extends \RecordManager\Base\Record\Marc
 
         if (!empty($data['online_str_mv'])) {
             $access = MetadataUtils::normalizeKey(
-                $this->getFieldSubfields('506', ['f' => 1]), 'NFKC'
+                $this->getFieldSubfields('506', ['f' => 1]),
+                'NFKC'
             );
             if ($access !== 'onlineaccesswithauthorization') {
                 $data['free_online_str_mv'] = $data['online_str_mv'];
@@ -796,17 +803,21 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
             $data = MetadataUtils::getRecordData($componentPart, true);
             $marc = new Marc(
-                $this->logger, $this->config, $this->dataSourceSettings
+                $this->logger,
+                $this->config,
+                $this->dataSourceSettings
             );
             $marc->setData($this->source, '', $data);
             $title = $marc->getFieldSubfields(
-                '245', ['a' => 1, 'b' => 1, 'n' => 1, 'p' => 1]
+                '245',
+                ['a' => 1, 'b' => 1, 'n' => 1, 'p' => 1]
             );
             $uniTitle
                 = $marc->getFieldSubfields('240', ['a' => 1, 'n' => 1, 'p' => 1]);
             if (!$uniTitle) {
                 $uniTitle = $marc->getFieldSubfields(
-                    '130', ['a' => 1, 'n' => 1, 'p' => 1]
+                    '130',
+                    ['a' => 1, 'n' => 1, 'p' => 1]
                 );
             }
             $additionalTitles = $marc->getFieldsSubfields(
@@ -842,12 +853,15 @@ class Marc extends \RecordManager\Base\Record\Marc
             $languages = [substr($marc->getField('008'), 35, 3)];
             $languages = array_unique(
                 array_merge(
-                    $languages, $marc->getFieldsSubfields(
+                    $languages,
+                    $marc->getFieldsSubfields(
                         [
                             [self::GET_NORMAL, '041', ['a' => 1]],
                             [self::GET_NORMAL, '041', ['d' => 1]]
                         ],
-                        false, true, true
+                        false,
+                        true,
+                        true
                     )
                 )
             );
@@ -856,7 +870,9 @@ class Marc extends \RecordManager\Base\Record\Marc
                 [
                     [self::GET_NORMAL, '041', ['h' => 1]]
                 ],
-                false, true, true
+                false,
+                true,
+                true
             );
             $originalLanguages
                 = MetadataUtils::normalizeLanguageStrings($originalLanguages);
@@ -864,7 +880,9 @@ class Marc extends \RecordManager\Base\Record\Marc
                 [
                     [self::GET_NORMAL, '041', ['j' => 1]]
                 ],
-                false, true, true
+                false,
+                true,
+                true
             );
             $subtitleLanguages
                 = MetadataUtils::normalizeLanguageStrings($subtitleLanguages);
@@ -1843,7 +1861,9 @@ class Marc extends \RecordManager\Base\Record\Marc
                 [self::GET_NORMAL, '651', ['x' => 1]],
                 [self::GET_NORMAL, '655', ['x' => 1]]
             ],
-            false, true, true
+            false,
+            true,
+            true
         );
         $result = array_merge(
             $result,
@@ -1881,7 +1901,9 @@ class Marc extends \RecordManager\Base\Record\Marc
                 // 979h = component part language
                 [self::GET_NORMAL, '979', ['h' => 1]]
             ],
-            false, true, true
+            false,
+            true,
+            true
         );
         $result = array_merge($languages, $languages2);
         return MetadataUtils::normalizeLanguageStrings($result);
@@ -1901,7 +1923,9 @@ class Marc extends \RecordManager\Base\Record\Marc
             ]
         ];
         return $this->getAuthorsByRelator(
-            $fieldSpecs, $this->primaryAuthorRelators, ['100']
+            $fieldSpecs,
+            $this->primaryAuthorRelators,
+            ['100']
         );
     }
 
@@ -1919,7 +1943,10 @@ class Marc extends \RecordManager\Base\Record\Marc
             ]
         ];
         return $this->getAuthorsByRelator(
-            $fieldSpecs, $this->primaryAuthorRelators, ['100'], false
+            $fieldSpecs,
+            $this->primaryAuthorRelators,
+            ['100'],
+            false
         );
     }
 
@@ -1937,7 +1964,11 @@ class Marc extends \RecordManager\Base\Record\Marc
             ]
         ];
         return $this->getAuthorsByRelator(
-            $fieldSpecs, $this->primaryAuthorRelators, ['700'], true, true
+            $fieldSpecs,
+            $this->primaryAuthorRelators,
+            ['700'],
+            true,
+            true
         );
     }
 
@@ -1955,7 +1986,11 @@ class Marc extends \RecordManager\Base\Record\Marc
             ]
         ];
         return $this->getAuthorsByRelator(
-            $fieldSpecs, $this->primaryAuthorRelators, ['700'], false, true
+            $fieldSpecs,
+            $this->primaryAuthorRelators,
+            ['700'],
+            false,
+            true
         );
     }
 
@@ -2063,7 +2098,9 @@ class Marc extends \RecordManager\Base\Record\Marc
                 // 979i = component part original language
                 [self::GET_NORMAL, '979', ['i' => 1]]
             ],
-            false, true, true
+            false,
+            true,
+            true
         );
         // If not a translation, take also language from 041a and 041d.
         foreach ($this->getFields('041') as $f041) {
@@ -2090,7 +2127,9 @@ class Marc extends \RecordManager\Base\Record\Marc
                 // 979j = component part subtitle language
                 [self::GET_NORMAL, '979', ['j' => 1]]
             ],
-            false, true, true
+            false,
+            true,
+            true
         );
         return MetadataUtils::normalizeLanguageStrings($languages);
     }

@@ -113,8 +113,12 @@ class Harvest extends AbstractBase
      * @return void
      * @throws \Exception
      */
-    public function launch($repository = '', $harvestFromDate = null,
-        $harvestUntilDate = null, $startResumptionToken = '', $exclude = null,
+    public function launch(
+        $repository = '',
+        $harvestFromDate = null,
+        $harvestUntilDate = null,
+        $startResumptionToken = '',
+        $exclude = null,
         $reharvest = false
     ) {
         if (empty($this->dataSourceSettings)) {
@@ -231,7 +235,8 @@ class Harvest extends AbstractBase
                                 $this->markRecordDeleted($record, true);
                                 if (++$count % 1000 == 0) {
                                     $this->logger->logInfo(
-                                        'harvest', "Deleted $count records"
+                                        'harvest',
+                                        "Deleted $count records"
                                     );
                                 }
                             }
@@ -263,7 +268,9 @@ class Harvest extends AbstractBase
 
                 if (!$reharvest && isset($settings['deletions'])
                     && strncmp(
-                        $settings['deletions'], 'ListIdentifiers', 15
+                        $settings['deletions'],
+                        'ListIdentifiers',
+                        15
                     ) == 0
                 ) {
                     // The repository doesn't support reporting deletions, so
@@ -332,7 +339,10 @@ class Harvest extends AbstractBase
                             function ($record) use (&$count, $source) {
                                 if (!empty($record['oai_id'])) {
                                     $this->storeRecord(
-                                        $source, $record['oai_id'], true, ''
+                                        $source,
+                                        $record['oai_id'],
+                                        true,
+                                        ''
                                     );
                                 } else {
                                     $this->markRecordDeleted($record);
@@ -340,7 +350,8 @@ class Harvest extends AbstractBase
 
                                 if (++$count % 1000 == 0) {
                                     $this->logger->logInfo(
-                                        'harvest', "Deleted $count records"
+                                        'harvest',
+                                        "Deleted $count records"
                                     );
                                 }
                             }
@@ -356,7 +367,8 @@ class Harvest extends AbstractBase
                     }
                 }
                 $this->logger->logInfo(
-                    'harvest', "Harvesting from '$source' completed"
+                    'harvest',
+                    "Harvesting from '$source' completed"
                 );
             } catch (\Exception $e) {
                 $this->logger->logFatal('harvest', 'Exception: ' . $e->getMessage());

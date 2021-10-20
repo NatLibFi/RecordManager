@@ -394,7 +394,8 @@ class OaiPmh extends AbstractBase
                     );
                 }
                 return $this->processResponse(
-                    $responseStr, isset($params['resumptionToken'])
+                    $responseStr,
+                    isset($params['resumptionToken'])
                 );
             } catch (\Exception $e) {
                 if ($try < $this->maxTries) {
@@ -635,7 +636,8 @@ class OaiPmh extends AbstractBase
         $listIdentifiers = $this->getSingleNode($this->xml, 'ListIdentifiers');
         if ($listIdentifiers !== false) {
             $headers = $this->getImmediateChildrenByTagName(
-                $listIdentifiers, 'header'
+                $listIdentifiers,
+                'header'
             );
             $this->processIdentifiers($headers);
             $token = $this->getSingleNode($listIdentifiers, 'resumptionToken');

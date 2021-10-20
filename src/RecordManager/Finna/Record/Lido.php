@@ -241,7 +241,9 @@ class Lido extends \RecordManager\Base\Record\Lido
      *
      * @return string
      */
-    public function getTitle($forFiling = false, $lang = null,
+    public function getTitle(
+        $forFiling = false,
+        $lang = null,
         $excludedDescriptions = ['provenance']
     ) {
         return parent::getTitle($forFiling, $lang, ['provenienssi']);
@@ -383,7 +385,8 @@ class Lido extends \RecordManager\Base\Record\Lido
                     $locations = array_merge(
                         $locations,
                         preg_split(
-                            '/[\/;]/', (string)$eventNode->eventPlace->displayPlace
+                            '/[\/;]/',
+                            (string)$eventNode->eventPlace->displayPlace
                         )
                     );
                 }
@@ -678,7 +681,10 @@ class Lido extends \RecordManager\Base\Record\Lido
         }
 
         return $this->processDateRangeValues(
-            $startDate, $endDate, $displayDate, $periodName
+            $startDate,
+            $endDate,
+            $displayDate,
+            $periodName
         );
     }
 
@@ -704,7 +710,10 @@ class Lido extends \RecordManager\Base\Record\Lido
                 $displayDate = (string)$node->subjectDate->displayDate;
             }
             $range = $this->processDateRangeValues(
-                $startDate, $endDate, $displayDate, ''
+                $startDate,
+                $endDate,
+                $displayDate,
+                ''
             );
             if ($range) {
                 $ranges[] = $range;
@@ -724,7 +733,10 @@ class Lido extends \RecordManager\Base\Record\Lido
      * @return null|string[] Null if parsing failed, two ISO 8601 dates otherwise
      */
     protected function processDateRangeValues(
-        $startDate, $endDate, $displayDate, $periodName
+        $startDate,
+        $endDate,
+        $displayDate,
+        $periodName
     ) {
         if ($startDate) {
             if ($endDate < $startDate) {
@@ -1034,10 +1046,16 @@ class Lido extends \RecordManager\Base\Record\Lido
             ) > 0
         ) {
             $startDate = sprintf(
-                '%04d-%02d-%02dT00:00:00Z', $matches[3], $matches[2], $matches[1]
+                '%04d-%02d-%02dT00:00:00Z',
+                $matches[3],
+                $matches[2],
+                $matches[1]
             );
             $endDate = sprintf(
-                '%04d-%02d-%02dT23:59:59Z', $matches[6], $matches[5], $matches[4]
+                '%04d-%02d-%02dT23:59:59Z',
+                $matches[6],
+                $matches[5],
+                $matches[4]
             );
             $noprocess = true;
         } elseif (true
@@ -1049,7 +1067,10 @@ class Lido extends \RecordManager\Base\Record\Lido
         ) {
             $startDate = sprintf('%04d-01-01T00:00:00Z', $matches[1]);
             $endDate = sprintf(
-                '%04d-%02d-%02dT23:59:59Z', $matches[4], $matches[3], $matches[2]
+                '%04d-%02d-%02dT23:59:59Z',
+                $matches[4],
+                $matches[3],
+                $matches[2]
             );
             $noprocess = true;
         } elseif (true
@@ -1060,7 +1081,10 @@ class Lido extends \RecordManager\Base\Record\Lido
             ) > 0
         ) {
             $startDate = sprintf(
-                '%04d-%02d-%02dT00:00:00Z', $matches[3], $matches[2], $matches[1]
+                '%04d-%02d-%02dT00:00:00Z',
+                $matches[3],
+                $matches[2],
+                $matches[1]
             );
             $endDate = sprintf('%04d-12-31T23:59:59Z', $matches[4]);
             $noprocess = true;
@@ -1073,10 +1097,16 @@ class Lido extends \RecordManager\Base\Record\Lido
             ) > 0
         ) {
             $startDate = sprintf(
-                '%04d-%02d-%02dT00:00:00Z', $matches[1], $matches[2], $matches[3]
+                '%04d-%02d-%02dT00:00:00Z',
+                $matches[1],
+                $matches[2],
+                $matches[3]
             );
             $endDate = sprintf(
-                '%04d-%02d-%02dT23:59:59Z', $matches[4], $matches[5], $matches[6]
+                '%04d-%02d-%02dT23:59:59Z',
+                $matches[4],
+                $matches[5],
+                $matches[6]
             );
             $noprocess = true;
         } elseif (true
@@ -1087,15 +1117,23 @@ class Lido extends \RecordManager\Base\Record\Lido
             ) > 0
         ) {
             $startDate = sprintf(
-                '%04d-%02d-%02dT00:00:00Z', $matches[1], $matches[2], $matches[3]
+                '%04d-%02d-%02dT00:00:00Z',
+                $matches[1],
+                $matches[2],
+                $matches[3]
             );
             $endDate = sprintf(
-                '%04d-%02d-%02dT23:59:59Z', $matches[4], $matches[5], $matches[6]
+                '%04d-%02d-%02dT23:59:59Z',
+                $matches[4],
+                $matches[5],
+                $matches[6]
             );
             $noprocess = true;
         } elseif (true
             && preg_match(
-                '/(\d\d\d\d)(\d\d?)\s*-\s*(\d\d\d\d)(\d\d?)/', $input, $matches
+                '/(\d\d\d\d)(\d\d?)\s*-\s*(\d\d\d\d)(\d\d?)/',
+                $input,
+                $matches
             ) > 0
         ) {
             $startDate = sprintf('%04d-%02d-01T00:00:00Z', $matches[1], $matches[2]);
@@ -1211,7 +1249,9 @@ class Lido extends \RecordManager\Base\Record\Lido
             $noprocess = true;
         } elseif (true
             && preg_match(
-                '/(\d\d?)\s*\.\s*(\d\d?)\s*\.\s*(\d\d\d\d)/', $input, $matches
+                '/(\d\d?)\s*\.\s*(\d\d?)\s*\.\s*(\d\d\d\d)/',
+                $input,
+                $matches
             ) > 0
         ) {
             $year = $matches[3];
@@ -1263,7 +1303,9 @@ class Lido extends \RecordManager\Base\Record\Lido
             }
         } elseif (true
             && preg_match(
-                '/(\d?\d?\d\d)\s*-(luvun|luku)\s+(puoliväli)/', $input, $matches
+                '/(\d?\d?\d\d)\s*-(luvun|luku)\s+(puoliväli)/',
+                $input,
+                $matches
             ) > 0
         ) {
             $year = $matches[1];
@@ -1305,7 +1347,9 @@ class Lido extends \RecordManager\Base\Record\Lido
             }
         } elseif (true
             && preg_match(
-                '/(-?\d?\d?\d\d)\s*-(luku|luvulta|l)/', $input, $matches
+                '/(-?\d?\d?\d\d)\s*-(luku|luvulta|l)/',
+                $input,
+                $matches
             ) > 0
         ) {
             $year = $matches[1];
@@ -1343,7 +1387,9 @@ class Lido extends \RecordManager\Base\Record\Lido
             $endDate = $year + 9;
         } elseif (true
             && preg_match(
-                '/(-?\d\d\d\d)\s*-\s*(-?\d\d\d\d)/', $input, $matches
+                '/(-?\d\d\d\d)\s*-\s*(-?\d\d\d\d)/',
+                $input,
+                $matches
             ) > 0
         ) {
             $startDate = $matches[1];

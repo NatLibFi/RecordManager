@@ -184,7 +184,8 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
             $absolute->addAttribute('id', $this->archiveId);
             $absolute->addAttribute('title', $this->archiveTitle);
             $absolute->addAttribute(
-                'sequence', str_pad($this->currentPos, 7, '0', STR_PAD_LEFT)
+                'sequence',
+                str_pad($this->currentPos, 7, '0', STR_PAD_LEFT)
             );
 
             if ($this->archiveSubTitle) {
@@ -247,7 +248,8 @@ class Ead3 extends \RecordManager\Base\Splitter\Ead
 
                 if ($this->prependParentTitleWithUnitId) {
                     $pid = implode(
-                        '+', $parentDid->xpath('unitid[@label="Analoginen"]')
+                        '+',
+                        $parentDid->xpath('unitid[@label="Analoginen"]')
                     );
                     if (!$pid && isset($parentDid->unitid)) {
                         $pid = (string)$parentDid->unitid;

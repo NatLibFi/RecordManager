@@ -144,7 +144,8 @@ class Ead3 extends Ead
         $data['title'] .= $data['title_short'];
         $data['title_full'] = $data['title_sort'] = $data['title'];
         $data['title_sort'] = mb_strtolower(
-            MetadataUtils::stripLeadingPunctuation($data['title_sort']), 'UTF-8'
+            MetadataUtils::stripLeadingPunctuation($data['title_sort']),
+            'UTF-8'
         );
 
         $data['language'] = $this->getLanguages();

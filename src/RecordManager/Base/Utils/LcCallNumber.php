@@ -94,7 +94,9 @@ class LcCallNumber
         $rest = '';
         if (true
             && preg_match(
-                '/^([a-zA-Z]+) *(?:(\d+)(\.\d+)?)?/', $callnumber, $matches
+                '/^([a-zA-Z]+) *(?:(\d+)(\.\d+)?)?/',
+                $callnumber,
+                $matches
             )
         ) {
             $this->classification = isset($matches[0]) ? trim($matches[0]) : '';

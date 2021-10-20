@@ -57,13 +57,15 @@ class CheckDedup extends AbstractBase
             $record = $this->db->getRecord($singleId);
             if (!$record) {
                 $this->logger->logInfo(
-                    'checkDedupRecords', 'No record found with the given ID'
+                    'checkDedupRecords',
+                    'No record found with the given ID'
                 );
                 return;
             }
             if (empty($record['dedup_id'])) {
                 $this->logger->logInfo(
-                    'checkDedupRecords', "Record $singleId not deduplicated"
+                    'checkDedupRecords',
+                    "Record $singleId not deduplicated"
                 );
                 return;
             }
@@ -78,7 +80,11 @@ class CheckDedup extends AbstractBase
         $this->db->iterateDedups(
             $params,
             ['projection' => ['_id' => 1]],
-            function (array $dedupRecordId) use ($dedupHandler, &$count, &$fixed, $pc
+            function (array $dedupRecordId) use (
+                $dedupHandler,
+                &$count,
+                &$fixed,
+                $pc
             ) {
                 // Avoid stale data by reading the record just before processing
                 $dedupRecord = $this->db->getDedup($dedupRecordId['_id']);

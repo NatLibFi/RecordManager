@@ -79,7 +79,8 @@ class DeleteRecords extends AbstractBase
         $total = $this->db->countRecords($params);
         $count = 0;
         $this->logger->logInfo(
-            'deleteRecords', "Deleting $total records from '$sourceId'"
+            'deleteRecords',
+            "Deleting $total records from '$sourceId'"
         );
         $pc = new PerformanceCounter();
         $dedupHandler = $this->dedupHandler;
@@ -89,7 +90,8 @@ class DeleteRecords extends AbstractBase
             function ($record) use (&$count, $pc, $sourceId, $dedupHandler) {
                 if (isset($record['dedup_id'])) {
                     $dedupHandler->removeFromDedupRecord(
-                        $record['dedup_id'], $record['_id']
+                        $record['dedup_id'],
+                        $record['_id']
                     );
                 }
                 $this->db->deleteRecord($record['_id']);
@@ -106,7 +108,8 @@ class DeleteRecords extends AbstractBase
             }
         );
         $this->logger->logInfo(
-            'deleteRecords', "Completed with $count records deleted from '$sourceId'"
+            'deleteRecords',
+            "Completed with $count records deleted from '$sourceId'"
         );
 
         $this->logger->logInfo(

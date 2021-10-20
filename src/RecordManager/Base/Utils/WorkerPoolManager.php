@@ -148,8 +148,12 @@ class WorkerPoolManager
      *
      * @return void
      */
-    public function createWorkerPool($poolId, $processes, $maxQueue,
-        callable $runMethod, callable $initMethod = null
+    public function createWorkerPool(
+        $poolId,
+        $processes,
+        $maxQueue,
+        callable $runMethod,
+        callable $initMethod = null
     ) {
         if (isset($this->workerPoolRunMethods[$poolId])) {
             // Already initialized
@@ -435,7 +439,10 @@ class WorkerPoolManager
 
             $buffer = '';
             $result = socket_recv(
-                $socket, $buffer, 8 - strlen($msgLen), MSG_WAITALL
+                $socket,
+                $buffer,
+                8 - strlen($msgLen),
+                MSG_WAITALL
             );
             if (false === $result) {
                 throw new \Exception(
@@ -455,7 +462,10 @@ class WorkerPoolManager
             }
             $buffer = '';
             $result = socket_recv(
-                $socket, $buffer, $messageLength - $received, MSG_WAITALL
+                $socket,
+                $buffer,
+                $messageLength - $received,
+                MSG_WAITALL
             );
             if (false === $result) {
                 throw new \Exception(

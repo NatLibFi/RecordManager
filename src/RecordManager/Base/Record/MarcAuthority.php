@@ -178,7 +178,8 @@ class MarcAuthority extends Marc
                 }
                 $fields = [$sub];
                 $fields = array_merge(
-                    $fields, $this->getSubfieldsArray($field[0], ['b' => true])
+                    $fields,
+                    $this->getSubfieldsArray($field[0], ['b' => true])
                 );
                 return implode($this->nameDelimiter, $this->trimFields($fields));
             }
@@ -254,7 +255,8 @@ class MarcAuthority extends Marc
         return array_map(
             function ($field) use ($mask) {
                 return MetadataUtils::stripTrailingPunctuation($field, $mask);
-            }, $fields
+            },
+            $fields
         );
     }
 }

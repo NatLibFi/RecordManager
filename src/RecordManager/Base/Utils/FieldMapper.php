@@ -218,7 +218,11 @@ class FieldMapper
                     $matches = false;
                     foreach ($replacement as $current) {
                         $newValue = preg_replace(
-                            "/$pattern/u", $current, $value, -1, $count
+                            "/$pattern/u",
+                            $current,
+                            $value,
+                            -1,
+                            $count
                         );
                         if ($count > 0) {
                             $newValues[] = $newValue;
@@ -233,7 +237,11 @@ class FieldMapper
                     }
                 } else {
                     $newValue = preg_replace(
-                        "/$pattern/u", $replacement, $value, -1, $count
+                        "/$pattern/u",
+                        $replacement,
+                        $value,
+                        -1,
+                        $count
                     );
                     if ($count > 0) {
                         if (!$all) {
