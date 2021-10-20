@@ -38,8 +38,7 @@ return [
                     \RecordManager\Finna\Record\Eaccpf::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Finna\Record\Ead::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Finna\Record\Ead3::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
-                    \RecordManager\Finna\Record\Ese::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
-                    \RecordManager\Finna\Record\Forward::class => \RecordManager\Base\Record\RecordFactory::class,
+                    \RecordManager\Finna\Record\Forward::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Finna\Record\ForwardAuthority::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Finna\Record\Lido::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Finna\Record\Lrmi::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
@@ -52,7 +51,6 @@ return [
                     \RecordManager\Base\Record\Eaccpf::class => \RecordManager\Finna\Record\Eaccpf::class,
                     \RecordManager\Base\Record\Ead::class => \RecordManager\Finna\Record\Ead::class,
                     \RecordManager\Base\Record\Ead3::class => \RecordManager\Finna\Record\Ead3::class,
-                    \RecordManager\Base\Record\Ese::class => \RecordManager\Finna\Record\Ese::class,
                     \RecordManager\Base\Record\Forward::class => \RecordManager\Finna\Record\Forward::class,
                     \RecordManager\Base\Record\ForwardAuthority::class => \RecordManager\Finna\Record\ForwardAuthority::class,
                     \RecordManager\Base\Record\Lido::class => \RecordManager\Finna\Record\Lido::class,
@@ -64,7 +62,7 @@ return [
             ],
             'splitter' => [
                 'factories' => [
-                    \RecordManager\Base\Splitter\Ead3::class => InvokableFactory::class,
+                    \RecordManager\Finna\Splitter\Ead3::class => InvokableFactory::class,
                 ],
             ],
         ],

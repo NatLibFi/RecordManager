@@ -31,9 +31,6 @@
  */
 namespace RecordManager\Base\Harvest;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\Logger;
-
 /**
  * OaiPmh Class
  *
@@ -156,7 +153,9 @@ class OaiPmh extends AbstractBase
         $this->granularity = $settings['dateGranularity'] ?? 'auto';
         $this->debugLog = $settings['debuglog'] ?? '';
         $this->preXslt = [];
-        foreach ((array)($settings['oaipmhTransformation'] ?? []) as $transformation) {
+        foreach ((array)($settings['oaipmhTransformation'] ?? [])
+            as $transformation
+        ) {
             $style = new \DOMDocument();
             $xsltPath = RECMAN_BASE_PATH . "/transformations/$transformation";
             $loadResult = $style->load($xsltPath);
@@ -457,14 +456,14 @@ class OaiPmh extends AbstractBase
     /**
      * Extract the ID from a record object (support method for processRecords()).
      *
-     * @param \DOMNode $header XML record header
+     * @param \DOMNode $record XML record header
      *
      * @return string The ID value
      */
-    protected function extractID($header)
+    protected function extractID($record)
     {
         // Normalize to string:
-        $id = $this->getSingleNode($header, 'identifier')->nodeValue;
+        $id = $this->getSingleNode($record, 'identifier')->nodeValue;
 
         // Strip prefix if found:
         if (substr($id, 0, strlen($this->idPrefix)) == $this->idPrefix) {

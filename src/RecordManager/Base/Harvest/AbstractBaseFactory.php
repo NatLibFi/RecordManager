@@ -58,6 +58,8 @@ class AbstractBaseFactory implements \Laminas\ServiceManager\Factory\FactoryInte
      * @throws ContainerException&\Throwable if any other error occurs
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     *
+     * @psalm-suppress UndefinedDocblockClass
      */
     public function __invoke(
         ContainerInterface $container,

@@ -30,8 +30,8 @@ namespace RecordManager\Base\Controller;
 use RecordManager\Base\Database\DatabaseInterface;
 use RecordManager\Base\Deduplication\DedupHandlerInterface;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
-use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
 use RecordManager\Base\Solr\SolrComparer;
+use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
 use RecordManager\Base\Utils\Logger;
 
 /**

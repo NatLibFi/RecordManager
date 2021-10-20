@@ -244,8 +244,8 @@ abstract class AbstractBase
         }
         $this->reParseTransformed = !empty($settings['reParseTransformed']);
 
-        $this->maxTries = $config['Harvesting']['max_tries'] ?? 5;
-        $this->retryWait = $config['Harvesting']['retry_wait'] ?? 30;
+        $this->maxTries = $this->config['Harvesting']['max_tries'] ?? 5;
+        $this->retryWait = $this->config['Harvesting']['retry_wait'] ?? 30;
     }
 
     /**

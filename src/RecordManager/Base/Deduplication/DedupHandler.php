@@ -116,7 +116,7 @@ class DedupHandler implements DedupHandlerInterface
         $this->db = $db;
         $this->log = $log;
         $this->recordPluginManager = $recordPluginManager;
-        $this->verbose = $config['Log']['verbose'] ?? false;
+        $this->verbose = $mainConfig['Log']['verbose'] ?? false;
         $this->dataSourceSettings = $datasourceConfig;
         $this->normalizationForm
             = $mainConfig['Site']['unicode_normalization_form'] ?? 'NFKC';

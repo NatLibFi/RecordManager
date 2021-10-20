@@ -45,7 +45,8 @@ class PluginManager extends \Laminas\ServiceManager\AbstractPluginManager
      *
      * @param mixed $configOrContainerInstance Configuration or container instance
      * @param array $v3config                  If $configOrContainerInstance is a
-     * container, this value will be passed to the parent constructor.
+     *                                         container, this value will be passed
+     *                                         to the parent constructor.
      */
     public function __construct(
         $configOrContainerInstance = null,
