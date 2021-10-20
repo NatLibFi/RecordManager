@@ -331,14 +331,12 @@ class Qdc extends Base
      */
     public function getSeriesNumbering()
     {
-        $result = '';
         foreach ($this->doc->relation as $rel) {
             if ((string)$rel->attributes()->{'type'} === 'numberinseries') {
-                $result = trim((string)$rel);
-                break;
+                return trim((string)$rel);
             }
         }
-        return $result;
+        return '';
     }
 
     /**
