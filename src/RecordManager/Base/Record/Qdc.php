@@ -389,7 +389,7 @@ class Qdc extends Base
 
     /**
      * Get series information
-     * 
+     *
      * @return array
      */
     public function getSeries()
