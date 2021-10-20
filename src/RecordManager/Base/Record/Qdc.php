@@ -151,6 +151,8 @@ class Qdc extends Base
         $data['isbn'] = $this->getISBNs();
         $data['issn'] = $this->getISSNs();
 
+        $data['series'] = $this->getSeries();
+
         $data['topic'] = $data['topic_facet'] = $this->getTopics();
         $data['url'] = $this->getUrls();
 
@@ -329,7 +331,14 @@ class Qdc extends Base
      */
     public function getSeriesNumbering()
     {
-        return '';
+        $result = '';
+        foreach ($this->doc->relation as $rel) {
+            if ((string)$rel->attributes()->{'type'} === 'numberinseries') {
+                $result = trim((string)$rel);
+                break;
+            }
+        }
+        return $result;
     }
 
     /**
@@ -376,6 +385,22 @@ class Qdc extends Base
     public function getPageCount()
     {
         return '';
+    }
+
+    /**
+     * Get series information
+     * 
+     * @return array
+     */
+    public function getSeries()
+    {
+        $result = [];
+        foreach ($this->doc->relation as $rel) {
+            if ((string)$rel->attributes()->{'type'} === 'ispartofseries') {
+                $result[] = trim((string)$rel);
+            }
+        }
+        return $result;
     }
 
     /**
