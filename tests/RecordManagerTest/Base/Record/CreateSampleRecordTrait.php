@@ -54,11 +54,20 @@ trait CreateSampleRecordTrait
     protected function createRecord($class, $sample, $dsConfig = [], $ns = 'base')
     {
         $logger = $this->createMock(Logger::class);
-        $record = new $class(
-            $logger,
-            [],
-            $dsConfig
-        );
+        if (\RecordManager\Finna\Record\Marc::class === $class) {
+            $record = new $class(
+                $logger,
+                [],
+                $dsConfig,
+                $this->createMock(\RecordManager\Base\Record\PluginManager::class)
+            );
+        } else {
+            $record = new $class(
+                $logger,
+                [],
+                $dsConfig
+            );
+        }
         $data = file_get_contents(__DIR__ . "/../../../fixtures/$ns/record/$sample");
         $record->setData('__unit_test_no_source__', '__unit_test_no_id__', $data);
         return $record;

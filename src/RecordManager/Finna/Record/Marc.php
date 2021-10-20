@@ -51,6 +51,13 @@ class Marc extends \RecordManager\Base\Record\Marc
     use CreateRecordTrait;
 
     /**
+     * Record plugin manager
+     *
+     * @var RecordPluginManager
+     */
+    protected $recordPluginManager;
+
+    /**
      * Strings in field 300 that signify that the work is illustrated.
      *
      * @var string
