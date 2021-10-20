@@ -28,7 +28,10 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Record\CreateRecordTrait;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\LcCallNumber;
+use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -45,6 +48,7 @@ use RecordManager\Base\Utils\MetadataUtils;
 class Marc extends \RecordManager\Base\Record\Marc
 {
     use AuthoritySupportTrait;
+    use CreateRecordTrait;
 
     /**
      * Strings in field 300 that signify that the work is illustrated.
@@ -89,6 +93,25 @@ class Marc extends \RecordManager\Base\Record\Marc
      * @var mixed
      */
     protected $cachedFormat = null;
+
+    /**
+     * Constructor
+     *
+     * @param Logger              $logger              Logger
+     * @param array               $config              Main configuration
+     * @param array               $dataSourceSettings  Data source settings
+     * @param RecordPluginManager $recordPluginManager Record plugin manager
+     */
+    public function __construct(
+        Logger $logger,
+        $config,
+        $dataSourceSettings,
+        RecordPluginManager $recordPluginManager
+    ) {
+        parent::__construct($logger, $config, $dataSourceSettings);
+
+        $this->recordPluginManager = $recordPluginManager;
+    }
 
     /**
      * Set record data
@@ -810,12 +833,12 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $changeDate = $componentPart['date'];
             }
             $data = MetadataUtils::getRecordData($componentPart, true);
-            $marc = new Marc(
-                $this->logger,
-                $this->config,
-                $this->dataSourceSettings
+            $marc = $this->createRecord(
+                $componentPart['format'],
+                $data,
+                '',
+                $this->source
             );
-            $marc->setData($this->source, '', $data);
             $title = $marc->getFieldSubfields(
                 '245',
                 ['a' => 1, 'b' => 1, 'n' => 1, 'p' => 1]
