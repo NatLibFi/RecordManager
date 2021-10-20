@@ -24,11 +24,6 @@ unicode_normalization_form = NFKC
 ; e.g. folding_ignore_characters = 'åäöÅÄÖ'
 ;folding_ignore_characters = ''
 
-; The following section defines available modules that provide the services required
-; by the application. Base module is always defined.
-[Services]
-;modules[] = Finna
-
 ; These settings control the OAI-PMH harvester
 [Harvesting]
 ; Number of attempts to fetch data from the OAI-PMH provider. Default is 5.
