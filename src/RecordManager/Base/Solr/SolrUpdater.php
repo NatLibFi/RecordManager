@@ -537,7 +537,7 @@ class SolrUpdater
         array $config,
         array $dataSourceSettings,
         RecordPluginManager $recordPM,
-        EnrichmentPluginManager $enrichmentPM,
+        EnrichmentPluginManager $enrichmentPM
     ) {
         $this->config = $config;
         $this->db = $db;
