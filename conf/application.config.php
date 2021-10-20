@@ -4,6 +4,9 @@
 $modules = ['RecordManager\\Base', 'Laminas\\Router'];
 
 if (file_exists(__DIR__ . '/modules.config.php')) {
+    /**
+     * @psalm-suppress MissingFile
+     */
     $modules = array_merge($modules, include __DIR__ . '/modules.config.php');
 }
 
