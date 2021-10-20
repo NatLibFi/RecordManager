@@ -154,8 +154,9 @@ class Qdc extends Base
         $data['topic'] = $data['topic_facet'] = $this->getTopics();
         $data['url'] = $this->getUrls();
 
-        $data['contents'] = $this->getDescriptions();
-        $data['description'] = $data['contents'][0] ?? '';
+        $descriptions = $this->getDescriptions();
+        $data['contents'] = $descriptions['results'];
+        $data['description'] = $descriptions['primary'];
 
         return $data;
     }
@@ -438,19 +439,41 @@ class Qdc extends Base
     }
 
     /**
-     * Get descriptions as an imploded string
+     * Get descriptions as an array
      *
      * @return array
      */
     public function getDescriptions(): array
     {
         $results = [];
-        foreach ($this->getValues('description') as $description) {
-            if (!preg_match('/(^https?)|(^\d+\.\d+$)/', $description)) {
+        $primary = '';
+        $lang = $this->getDefaultLanguage();
+        foreach ($this->doc->description as $description) {
+            $trimmed = trim((string)$description);
+            if (!preg_match('/(^https?)|(^\d+\.\d+$)/', $trimmed)) {
                 $results[] = $description;
+                if (!$primary) {
+                    $descLang = (string)$description->attributes()->{'lang'};
+                    if ($descLang === $lang) {
+                        $primary = $trimmed;
+                    }
+                }
             }
         }
-        return $results;
+        if (empty($primary) && !empty($results[0])) {
+            $primary = $results[0];
+        }
+        return compact('primary', 'results');
+    }
+
+    /**
+     * Get the default language used when building the Solr array
+     *
+     * @return string
+     */
+    protected function getDefaultLanguage()
+    {
+        return 'en';
     }
 
     /**
