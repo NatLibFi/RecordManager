@@ -154,15 +154,8 @@ class Qdc extends Base
         $data['topic'] = $data['topic_facet'] = $this->getTopics();
         $data['url'] = $this->getUrls();
 
-        foreach ($this->getValues('description') as $description) {
-            if (preg_match('/^https?/', $description)) {
-                // already added in getUrls
-            } elseif (preg_match('/^\d+\.\d+$/', $description)) {
-                // Classification, put somewhere?
-            } else {
-                $data['contents'][] = $description;
-            }
-        }
+        $data['contents'] = $this->getDescriptions();
+        $data['description'] = $data['contents'][0] ?? [];
 
         return $data;
     }
@@ -442,6 +435,22 @@ class Qdc extends Base
     public function getTopics()
     {
         return $this->getValues('subject');
+    }
+
+    /**
+     * Get descriptions as an imploded string
+     *
+     * @return array
+     */
+    public function getDescriptions(): array
+    {
+        $results = [];
+        foreach ($this->getValues('description') as $description) {
+            if (!preg_match('/(^https?)|(^\d+\.\d+$)/', $description)) {
+                $results[] = $description;
+            }
+        }
+        return $results;
     }
 
     /**
