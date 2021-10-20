@@ -151,4 +151,4 @@ https?://(www\.gamemetadata\.org|gamemetadata\.soe\.ucsc\.edu)/platform/1150 = V
 
 (.{1,20}) = UNMAPPED:$1
 
-.* = ""
+.* =
