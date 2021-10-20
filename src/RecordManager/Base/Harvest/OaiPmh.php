@@ -119,11 +119,25 @@ class OaiPmh extends AbstractBase
 
     /**
      * Safety limit for abort if the same resumption token with no new results is
-     * received with subsequent calls.
+     * received with consecutive calls
      *
      * @var int
      */
     protected $sameResumptionTokenLimit = 100;
+
+    /**
+     * Last received resumption token
+     *
+     * @var string
+     */
+    protected $lastResumptionToken = '';
+
+    /**
+     * Counter for same resumption token received with consecutive calls
+     *
+     * @var int
+     */
+    protected $sameResumptionTokenCount = 0;
 
     /**
      * Current response being processed

@@ -1602,7 +1602,7 @@ class SolrUpdater
                         echo "Current list:\n";
                         arsort($values, SORT_NUMERIC);
                         foreach ($values as $key => $value) {
-                            printf("%10ld: %s\n", $value, $key);
+                            echo str_pad($value, 10, ' ', STR_PAD_LEFT) . ": $key\n";
                         }
                         echo "\n";
                     }
@@ -1612,7 +1612,7 @@ class SolrUpdater
         arsort($values, SORT_NUMERIC);
         echo "Result list:\n";
         foreach ($values as $key => $value) {
-            printf("%10ld: %s\n", $value, $key);
+            echo str_pad($value, 10, ' ', STR_PAD_LEFT) . ": $key\n";
         }
     }
 
@@ -1731,8 +1731,9 @@ class SolrUpdater
      *                                   alive
      * @param Callable    $callback      Callback to call for each record
      *
+     * @return void
+     *
      * @throws \Exception
-     * @return string Collection name
      */
     protected function iterateMergedRecords(
         $fromDate,

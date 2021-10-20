@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2020.
+ * Copyright (c) The National Library of Finland 2020-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -84,18 +84,18 @@ class PDODatabase extends AbstractDatabase
     protected $mainFields = [];
 
     /**
-     * Last fetched record attributes
+     * Last fetched record attributes per collection
      *
      * @var array
      */
     protected $lastRecordAttrs = [];
 
     /**
-     * Id of record for last fetched attributes
+     * Id's of records for last fetched attributes per collection
      *
      * @var array
      */
-    protected $lastRecordAttrId = [];
+    protected $lastRecordAttrsId = [];
 
     /**
      * Constructor.

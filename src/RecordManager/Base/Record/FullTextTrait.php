@@ -41,6 +41,13 @@ use RecordManager\Base\Http\ClientFactory;
 trait FullTextTrait
 {
     /**
+     * HTTP Request class
+     *
+     * @var \HTTP_Request2
+     */
+    protected $urlRequest = null;
+
+    /**
      * Number of requests handled per host
      *
      * @var array
@@ -157,7 +164,7 @@ trait FullTextTrait
                         "HTTP request for '$url' failed (" . $e->getMessage()
                             . "), retrying in {$retryWait} seconds (retry $try)..."
                     );
-                    $this->request = null;
+                    $this->urlRequest = null;
                     sleep($retryWait);
                     continue;
                 }
@@ -171,7 +178,7 @@ trait FullTextTrait
                         "HTTP request for '$url' failed ($code), retrying "
                             . "in {$retryWait} seconds (retry $try)..."
                     );
-                    $this->request = null;
+                    $this->urlRequest = null;
                     sleep($retryWait);
                     continue;
                 }

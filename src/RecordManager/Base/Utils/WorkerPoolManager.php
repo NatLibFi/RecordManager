@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2017-2020.
+ * Copyright (C) The National Library of Finland 2017-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -316,7 +316,8 @@ class WorkerPoolManager
     {
         $this->handleRequests($poolId);
         $this->checkForStoppedWorkers();
-        return !empty($this->requests[$poolId]) || $this->requestsActive($poolId);
+        return !empty($this->requestQueue[$poolId])
+            || $this->requestsActive($poolId);
     }
 
     /**
@@ -345,7 +346,7 @@ class WorkerPoolManager
      *
      * @param string $poolId Pool id
      *
-     * @return bool
+     * @return void
      */
     public function waitUntilDone($poolId)
     {

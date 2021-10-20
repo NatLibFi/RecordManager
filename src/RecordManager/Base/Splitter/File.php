@@ -102,7 +102,7 @@ class File
             $this->recordXPath = $params['recordXPath'];
         }
         if (!empty($params['oaiIDXPath'])) {
-            $this->oaiIDXPath = $params['oaiIDXPath'];
+            $this->oaiIDXpath = $params['oaiIDXPath'];
         }
     }
 

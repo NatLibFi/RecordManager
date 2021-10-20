@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2011-2020.
+ * Copyright (c) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -112,7 +112,7 @@ abstract class AbstractBase
      *
      * @var int
      */
-    protected $normalRecords = 0;
+    protected $changedRecords = 0;
 
     /**
      * Deleted record count

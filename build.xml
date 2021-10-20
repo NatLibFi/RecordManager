@@ -17,6 +17,7 @@
     <phingcall target="phpcs"/>
     <phingcall target="php-cs-fixer-dryrun"/>
     <phingcall target="psalm"/>
+    <phingcall target="phpstan-console"/>
   </target>
 
   <!-- PHPUnit -->
@@ -46,9 +47,12 @@
   <target name="psalm">
     <exec command="${basedir}/vendor/bin/psalm --diff" escape="false" passthru="true" checkreturn="true" />
   </target>
-
-  <!-- Psalm -->
   <target name="psalm-info">
     <exec command="${basedir}/vendor/bin/psalm --diff --show-info=true" escape="false" passthru="true" checkreturn="true" />
+  </target>
+
+  <!-- Phpstan -->
+  <target name="phpstan-console">
+    <exec command="${basedir}/vendor/bin/phpstan.phar --configuration=${basedir}/tests/phpstan.neon --memory-limit=2G analyse" escape="false" passthru="true" checkreturn="true" />
   </target>
 </project>

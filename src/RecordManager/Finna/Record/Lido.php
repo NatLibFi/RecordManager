@@ -978,7 +978,7 @@ class Lido extends \RecordManager\Base\Record\Lido
     protected function swapCoordinates($coordinates)
     {
         $result = [];
-        foreach (preg_split('/(?=/\d)\s(?=/\d)/', $coordinates) as $coordinate) {
+        foreach (preg_split('/(?=\/\d)\s(?=\/\d)/', $coordinates) as $coordinate) {
             [$lat, $lon] = explode(',', $coordinate, 2);
             $lat = trim($lat);
             $lon = trim($lon);

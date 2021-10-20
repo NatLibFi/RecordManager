@@ -84,6 +84,13 @@ class Marc extends \RecordManager\Base\Record\Marc
     protected $defaultGeoDisplayField = '';
 
     /**
+     * Cache for record format
+     *
+     * @var mixed
+     */
+    protected $cachedFormat = null;
+
+    /**
      * Set record data
      *
      * @param string $source Source ID
@@ -96,6 +103,7 @@ class Marc extends \RecordManager\Base\Record\Marc
     public function setData($source, $oaiID, $data)
     {
         $this->extraFields = [];
+        $this->cachedFormat = null;
         parent::setData($source, $oaiID, $data);
     }
 
@@ -1025,7 +1033,7 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     public function getFormat()
     {
-        if (!isset($this->cachedFormat)) {
+        if (null === $this->cachedFormat) {
             $this->cachedFormat = $this->getFormatFunc();
         }
         return $this->cachedFormat;
@@ -1456,6 +1464,8 @@ class Marc extends \RecordManager\Base\Record\Marc
                 return MetadataUtils::stripTrailingPunctuation($b);
             }
         }
+
+        return '';
     }
 
     /**

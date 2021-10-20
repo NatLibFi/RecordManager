@@ -197,7 +197,9 @@ class Import extends AbstractBase
         if (!empty($settings['oaiIDXPath'])) {
             $params['oaiIDXPath'] = $settings['oaiIDXPath'];
         }
-        $splitter = new \RecordManager\Base\Splitter\File($params);
+        $splitter = $this->splitterPluginManager
+            ->get(\RecordManager\Base\Splitter\File::class);
+        $splitter->init($params);
         $splitter->setData($data);
 
         if ($this->verbose) {

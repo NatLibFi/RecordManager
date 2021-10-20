@@ -514,9 +514,10 @@ class Forward extends \RecordManager\Base\Record\Forward
             if (null !== $event->attributes()->{'elonet-tag'}
                 && (string)$event->attributes()->{'elonet-tag'} === 'skftunniste'
             ) {
-                return 'skf';
+                return ['skf'];
             }
         }
+        return [];
     }
 
     /**

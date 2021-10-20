@@ -20,6 +20,7 @@ conf/*.lst
 conf/modules.config.php
 .php_cs_cache
 .psalm_cache
+.phpstan_cache
 *.log
 reports
 vendor
