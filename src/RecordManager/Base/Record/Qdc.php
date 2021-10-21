@@ -164,6 +164,8 @@ class Qdc extends Base
             }
         }
 
+        $data['series'] = $this->getSeries();
+
         return $data;
     }
 
@@ -458,5 +460,15 @@ class Qdc extends Base
             $values[] = trim((string)$value);
         }
         return $values;
+    }
+
+    /**
+     * Get series information
+     *
+     * @return array
+     */
+    public function getSeries()
+    {
+        return [];
     }
 }

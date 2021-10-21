@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Finna\Record;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-
 /**
  * Qdc record class
  *
@@ -42,24 +40,7 @@ use RecordManager\Base\Database\DatabaseInterface as Database;
  */
 class Qdc extends \RecordManager\Base\Record\Qdc
 {
-    use QdcRecordTrait {
-        toSolrArray as _toSolrArray;
-    }
-
-    /**
-     * Return fields to be indexed in Solr
-     *
-     * @param Database $db Database connection. Omit to avoid database lookups for
-     *                     related records.
-     *
-     * @return array
-     */
-    public function toSolrArray(Database $db = null)
-    {
-        $data = $this->_toSolrArray();
-        $data['series'] = $this->getSeries();
-        return $data;
-    }
+    use QdcRecordTrait;
 
     /**
      * Get primary authors
