@@ -149,6 +149,4 @@
 .*\bWii\b.* = Wii
 .*\bWindows\b.* = Windows
 
-(.{1,20}) = UNMAPPED:$1
-
 .* =
