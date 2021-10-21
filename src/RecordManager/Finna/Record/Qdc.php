@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Finna\Record;
 
+use RecordManager\Base\Database\DatabaseInterface as Database;
+
 /**
  * Qdc record class
  *
