@@ -34,7 +34,7 @@ return [
         'plugin_managers' => [
             'record' => [
                 'factories' => [
-                    \RecordManager\Finna\Record\Dc::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Finna\Record\Dc::class => \RecordManager\Base\Record\AbstractRecordWithHttpClientManagerFactory::class,
                     \RecordManager\Finna\Record\Eaccpf::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Finna\Record\Ead::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Finna\Record\Ead3::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
@@ -44,7 +44,7 @@ return [
                     \RecordManager\Finna\Record\Lrmi::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Finna\Record\Marc::class => \RecordManager\Finna\Record\MarcFactory::class,
                     \RecordManager\Finna\Record\MarcAuthority::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
-                    \RecordManager\Finna\Record\Qdc::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Finna\Record\Qdc::class => \RecordManager\Base\Record\AbstractRecordWithHttpClientManagerFactory::class,
                 ],
                 'aliases' => [
                     \RecordManager\Base\Record\Dc::class => \RecordManager\Finna\Record\Dc::class,

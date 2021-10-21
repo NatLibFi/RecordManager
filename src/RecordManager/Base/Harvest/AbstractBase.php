@@ -28,6 +28,7 @@
 namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -57,6 +58,13 @@ abstract class AbstractBase
      * @var Logger
      */
     protected $log;
+
+    /**
+     * HTTP client manager
+     *
+     * @var HttpClientManager
+     */
+    protected $httpClientManager;
 
     /**
      * Main configuration
@@ -160,13 +168,6 @@ abstract class AbstractBase
     protected $trackedEndDate = '';
 
     /**
-     * HTTP_Request2 configuration params
-     *
-     * @var array
-     */
-    protected $httpParams = [];
-
-    /**
      * Number of times to attempt a request before bailing out
      *
      * @var int
@@ -183,27 +184,27 @@ abstract class AbstractBase
     /**
      * Constructor.
      *
-     * @param Database $db               Database
-     * @param Logger   $logger           The Logger object used for logging messages
-     * @param array    $config           Main configuration
-     * @param array    $dataSourceConfig Data source configuration
+     * @param Database          $db               Database
+     * @param Logger            $logger           The Logger object used for logging
+     *                                            messages
+     * @param HttpClientManager $httpManager      HTTP client manager
+     * @param array             $config           Main configuration
+     * @param array             $dataSourceConfig Data source configuration
      *
      * @throws \Exception
      */
     public function __construct(
         Database $db,
         Logger $logger,
+        HttpClientManager $httpManager,
         array $config,
         array $dataSourceConfig
     ) {
         $this->db = $db;
         $this->log = $logger;
+        $this->httpClientManager = $httpManager;
         $this->config = $config;
         $this->dataSourceConfig = $dataSourceConfig;
-
-        if (isset($config['HTTP'])) {
-            $this->httpParams = $config['HTTP'];
-        }
     }
 
     /**

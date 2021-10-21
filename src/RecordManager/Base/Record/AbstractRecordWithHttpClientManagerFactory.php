@@ -1,6 +1,6 @@
 <?php
 /**
- * Harvester factory
+ * Record factory for records with HTTP client manager
  *
  * PHP version 7
  *
@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Base\Harvest;
+namespace RecordManager\Base\Record;
 
 use Interop\Container\ContainerInterface;
 use Interop\Container\Exception\ContainerException;
@@ -33,7 +33,7 @@ use Laminas\ServiceManager\Exception\ServiceNotCreatedException;
 use Laminas\ServiceManager\Exception\ServiceNotFoundException;
 
 /**
- * Harvester factory
+ * Record factory for records with HTTP client manager
  *
  * @category DataManagement
  * @package  RecordManager
@@ -41,7 +41,8 @@ use Laminas\ServiceManager\Exception\ServiceNotFoundException;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class AbstractBaseFactory implements \Laminas\ServiceManager\Factory\FactoryInterface
+class AbstractRecordWithHttpClientManagerFactory
+    implements \Laminas\ServiceManager\Factory\FactoryInterface
 {
     /**
      * Create an object
@@ -69,11 +70,10 @@ class AbstractBaseFactory implements \Laminas\ServiceManager\Factory\FactoryInte
         $configReader = $container->get(\RecordManager\Base\Settings\Ini::class);
 
         return new $requestedName(
-            $container->get(\RecordManager\Base\Database\AbstractDatabase::class),
             $container->get(\RecordManager\Base\Utils\Logger::class),
-            $container->get(\RecordManager\Base\Http\ClientManager::class),
             $configReader->get('recordmanager.ini'),
-            $configReader->get('datasources.ini')
+            $configReader->get('datasources.ini'),
+            $container->get(\RecordManager\Base\Http\ClientManager::class),
         );
     }
 }

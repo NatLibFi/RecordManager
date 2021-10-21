@@ -173,10 +173,9 @@ class HTTPFiles extends AbstractBase
      */
     protected function retrieveFileList()
     {
-        $request = \RecordManager\Base\Http\ClientFactory::createClient(
+        $request = $this->httpClientManager->createClient(
             $this->baseURL,
-            \HTTP_Request2::METHOD_GET,
-            $this->httpParams
+            \HTTP_Request2::METHOD_GET
         );
 
         $urlStr = $request->getURL()->getURL();
@@ -256,12 +255,10 @@ class HTTPFiles extends AbstractBase
      */
     protected function retrieveFile($filename)
     {
-        $request = \RecordManager\Base\Http\ClientFactory::createClient(
+        $request = $this->httpClientManager->createClient(
             $this->baseURL . $filename,
-            \HTTP_Request2::METHOD_GET,
-            $this->httpParams
+            \HTTP_Request2::METHOD_GET
         );
-        $request->setHeader('User-Agent', 'RecordManager');
 
         $urlStr = $request->getURL()->getURL();
         $this->infoMsg("Sending request: $urlStr");

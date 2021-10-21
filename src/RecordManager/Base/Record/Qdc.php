@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2018.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,6 +28,8 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
+use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -45,7 +47,37 @@ class Qdc extends AbstractRecord
 {
     use FullTextTrait;
 
+    /**
+     * Document
+     *
+     * @var \SimpleXMLElement
+     */
     protected $doc = null;
+
+    /**
+     * HTTP client manager
+     *
+     * @var HttpClientManager
+     */
+    protected $httpClientManager;
+
+    /**
+     * Constructor
+     *
+     * @param Logger            $logger             Logger
+     * @param array             $config             Main configuration
+     * @param array             $dataSourceSettings Data source settings
+     * @param HttpClientManager $httpManager        HTTP client manager
+     */
+    public function __construct(
+        Logger $logger,
+        $config,
+        $dataSourceSettings,
+        HttpClientManager $httpManager
+    ) {
+        parent::__construct($logger, $config, $dataSourceSettings);
+        $this->httpClientManager = $httpManager;
+    }
 
     /**
      * Set record data

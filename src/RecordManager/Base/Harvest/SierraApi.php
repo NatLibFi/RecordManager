@@ -101,6 +101,16 @@ class SierraApi extends AbstractBase
     protected $suppressedBibCode3 = [];
 
     /**
+     * HTTP client options
+     *
+     * @var array
+     */
+    protected $httpOptions = [
+        // Set a timeout since Sierra may sometimes just hang without ever returning.
+        'timeout' => 600
+    ];
+
+    /**
      * Initialize harvesting
      *
      * @param string $source  Source ID
@@ -128,9 +138,6 @@ class SierraApi extends AbstractBase
             $settings['suppressedBibCode3'] ?? ''
         );
         $this->apiVersion = 'v' . ($settings['sierraApiVersion'] ?? '5');
-
-        // Set a timeout since Sierra may sometimes just hang without ever returning.
-        $this->httpParams['timeout'] = 600;
     }
 
     /**
@@ -260,10 +267,10 @@ class SierraApi extends AbstractBase
             $apiUrl .= '/' . urlencode($value);
         }
 
-        $request = \RecordManager\Base\Http\ClientFactory::createClient(
+        $request = $this->httpClientManager->createClient(
             $apiUrl,
             \HTTP_Request2::METHOD_GET,
-            $this->httpParams
+            $this->httpOptions
         );
         $request->setHeader('Accept', 'application/json');
 
@@ -397,10 +404,9 @@ class SierraApi extends AbstractBase
     {
         // Set up the request:
         $apiUrl = $this->baseURL . '/' . $this->apiVersion . '/token';
-        $request = \RecordManager\Base\Http\ClientFactory::createClient(
+        $request = $this->httpClientManager->createClient(
             $apiUrl,
-            \HTTP_Request2::METHOD_POST,
-            $this->httpParams
+            \HTTP_Request2::METHOD_POST
         );
         $request->setHeader('Accept', 'application/json');
         $request->setHeader(

@@ -28,7 +28,7 @@
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Http\ClientFactory;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 
@@ -95,7 +95,7 @@ abstract class AbstractEnrichment
     protected $retryWait;
 
     /**
-     * HTTP_Request2 configuration params
+     * HTTP_Request2 options
      *
      * @array
      */
@@ -125,6 +125,13 @@ abstract class AbstractEnrichment
     protected $recordPluginManager;
 
     /**
+     * HTTP client manager
+     *
+     * @var HttpClientManager
+     */
+    protected $httpClientManager;
+
+    /**
      * Constructor
      *
      * @param Database            $db                  Database connection (for
@@ -151,10 +158,6 @@ abstract class AbstractEnrichment
             ?? 90;
         $this->retryWait = $config['Enrichment']['retry_wait']
             ?? 5;
-
-        if (isset($config['HTTP'])) {
-            $this->httpParams += $config['HTTP'];
-        }
     }
 
     /**
@@ -202,7 +205,7 @@ abstract class AbstractEnrichment
         $response = null;
         for ($try = 1; $try <= $this->maxTries; $try++) {
             if (null === $this->request) {
-                $this->request = ClientFactory::createClient(
+                $this->request = $this->httpClientManager->createClient(
                     $url,
                     \HTTP_Request2::METHOD_GET,
                     $this->httpParams

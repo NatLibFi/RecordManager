@@ -29,6 +29,7 @@ namespace RecordManager\Base\Solr;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Record\AbstractRecord;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\FieldMapper;
@@ -107,6 +108,13 @@ class SolrUpdater
      * @var EnrichmentPluginManager
      */
     protected $enrichmentPluginManager;
+
+    /**
+     * HTTP client manager
+     *
+     * @var HttpClientManager
+     */
+    protected $httpClientManager;
 
     /**
      * Whether building field is hierarchical
@@ -226,13 +234,6 @@ class SolrUpdater
      * @var \HTTP_Request2
      */
     protected $request = null;
-
-    /**
-     * HTTP_Request2 configuration params
-     *
-     * @array
-     */
-    protected $httpParams = [];
 
     /**
      * Fields to merge when merging deduplicated records
@@ -528,6 +529,7 @@ class SolrUpdater
      * @param array                   $dataSourceSettings Data source settings
      * @param RecordPluginManager     $recordPM           Record plugin manager
      * @param EnrichmentPluginManager $enrichmentPM       Enrichment plugin manager
+     * @param HttpClientManager       $httpManager        HTTP client manager
      *
      * @throws \Exception
      */
@@ -537,7 +539,8 @@ class SolrUpdater
         array $config,
         array $dataSourceSettings,
         RecordPluginManager $recordPM,
-        EnrichmentPluginManager $enrichmentPM
+        EnrichmentPluginManager $enrichmentPM,
+        HttpClientManager $httpManager
     ) {
         $this->config = $config;
         $this->db = $db;
@@ -545,6 +548,7 @@ class SolrUpdater
         $this->verbose = $config['Log']['verbose'] ?? false;
         $this->recordPluginManager = $recordPM;
         $this->enrichmentPluginManager = $enrichmentPM;
+        $this->httpClientManager = $httpManager;
 
         $this->metadataRecordCache = new \cash\LRUCache(100);
         $this->recordDataCache = new \cash\LRUCache(100);
@@ -619,10 +623,6 @@ class SolrUpdater
         }
         $this->datePerServer
             = !empty($config['Solr']['track_updates_per_update_url']);
-
-        if (isset($config['HTTP'])) {
-            $this->httpParams += $config['HTTP'];
-        }
 
         if (!empty($config['Solr']['field_mapper'])) {
             $this->fieldMapperClass = $config['Solr']['field_mapper'];
@@ -2695,10 +2695,9 @@ class SolrUpdater
      */
     protected function initSolrRequest($method, $timeout = null)
     {
-        $request = \RecordManager\Base\Http\ClientFactory::createClient(
+        $request = $this->httpClientManager->createClient(
             $this->config['Solr']['update_url'],
-            $method,
-            $this->httpParams
+            $method
         );
         if ($timeout !== null) {
             $request->setConfig('timeout', $timeout);

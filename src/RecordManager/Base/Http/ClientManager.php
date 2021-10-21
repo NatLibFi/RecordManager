@@ -1,10 +1,10 @@
 <?php
 /**
- * HTTP client factory
+ * HTTP client manager
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2020.
+ * Copyright (c) The National Library of Finland 2020-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,7 +28,7 @@
 namespace RecordManager\Base\Http;
 
 /**
- * HTTP client factory
+ * HTTP client manager
  *
  * @category DataManagement
  * @package  RecordManager
@@ -36,22 +36,40 @@ namespace RecordManager\Base\Http;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class ClientFactory
+class ClientManager
 {
+    /**
+     * Main configuration
+     *
+     * @var array
+     */
+    protected $config;
+
+    /**
+     * Constructor
+     *
+     * @param array $config Main configuration
+     */
+    public function __construct(array $config)
+    {
+        $this->config = $config;
+    }
+
     /**
      * Create an \HTTP_Request2 instance
      *
-     * @param string $url    Request URL
-     * @param string $method Request method
-     * @param array  $config Configuration for this Request instance
+     * @param string $url     Request URL
+     * @param string $method  Request method
+     * @param array  $options Configuration options
      *
      * @return \HTTP_Request2
      */
-    public static function createClient(
+    public function createClient(
         string $url,
         string $method,
-        array $config
+        array $options = []
     ): \HTTP_Request2 {
+        $config = $options + ($this->config['HTTP'] ?? []);
         if (isset($config['disable_proxy_hosts'])) {
             if ($url && !empty($config['proxy'])) {
                 $host = parse_url($url, PHP_URL_HOST);
@@ -62,8 +80,8 @@ class ClientFactory
             unset($config['disable_proxy_hosts']);
         }
 
-        $result = new \HTTP_Request2($url, $method, $config);
-        $result->setHeader('User-Agent', 'RecordManager');
-        return $result;
+        $request = new \HTTP_Request2($url, $method, $config);
+        $request->setHeader('User-Agent', 'RecordManager');
+        return $request;
     }
 }

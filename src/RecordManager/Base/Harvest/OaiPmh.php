@@ -359,10 +359,9 @@ class OaiPmh extends AbstractBase
     protected function sendRequest($verb, $params = [])
     {
         // Set up the request:
-        $request = \RecordManager\Base\Http\ClientFactory::createClient(
+        $request = $this->httpClientManager->createClient(
             $this->baseURL,
-            \HTTP_Request2::METHOD_GET,
-            $this->httpParams
+            \HTTP_Request2::METHOD_GET
         );
 
         // Load request parameters:

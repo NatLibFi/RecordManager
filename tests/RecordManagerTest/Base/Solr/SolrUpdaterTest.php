@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2020
+ * Copyright (C) The National Library of Finland 2020-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,6 +28,7 @@
 namespace RecordManagerTest\Base\Solr;
 
 use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Solr\SolrUpdater;
 use RecordManager\Base\Utils\Logger;
@@ -153,7 +154,6 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
           $this->dataSourceSettings
         );
         $recordPM = $this->createMock(RecordPluginManager::class);
-        $enrichmentPM = $this->createMock(EnrichmentPluginManager::class);
         $recordPM->expects($this->once())
             ->method('get')
             ->will($this->returnValue($record));
@@ -163,7 +163,8 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
             $this->config,
             $this->dataSourceSettings,
             $recordPM,
-            $enrichmentPM
+            $this->createMock(EnrichmentPluginManager::class),
+            $this->createMock(HttpClientManager::class)
         );
 
         return $solrUpdater;

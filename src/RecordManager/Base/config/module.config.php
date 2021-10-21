@@ -75,7 +75,7 @@ return [
             ],
             'record' => [
                 'factories' => [
-                    \RecordManager\Base\Record\Dc::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\Dc::class => \RecordManager\Base\Record\AbstractRecordWithHttpClientManagerFactory::class,
                     \RecordManager\Base\Record\Eaccpf::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\Ead::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\Ead3::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
@@ -86,7 +86,7 @@ return [
                     \RecordManager\Base\Record\Lrmi::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\Marc::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\MarcAuthority::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
-                    \RecordManager\Base\Record\Qdc::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\Qdc::class => \RecordManager\Base\Record\AbstractRecordWithHttpClientManagerFactory::class,
                 ],
                 'aliases' => [
                     'dc' => \RecordManager\Base\Record\Dc::class,
@@ -146,6 +146,7 @@ return [
             \RecordManager\Base\Harvest\Sfx::class => \RecordManager\Base\Harvest\AbstractBaseFactory::class,
             \RecordManager\Base\Harvest\SierraApi::class => \RecordManager\Base\Harvest\AbstractBaseFactory::class,
             \RecordManager\Base\Harvest\PluginManager::class => \RecordManager\Base\ServiceManager\AbstractPluginManagerFactory::class,
+            \RecordManager\Base\Http\ClientManager::class => \RecordManager\Base\Http\ClientManagerFactory::class,
             \RecordManager\Base\Record\PluginManager::class => \RecordManager\Base\ServiceManager\AbstractPluginManagerFactory::class,
             \RecordManager\Base\Settings\Ini::class => InvokableFactory::class,
             \RecordManager\Base\Solr\PreviewCreator::class => \RecordManager\Base\Solr\SolrUpdaterFactory::class,
