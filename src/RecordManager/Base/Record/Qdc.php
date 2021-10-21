@@ -439,19 +439,19 @@ class Qdc extends Base
     }
 
     /**
-     * Get descriptions as an array
+     * Get descriptions as an associative array
      *
      * @return array
      */
     public function getDescriptions(): array
     {
-        $results = [];
+        $all = [];
         $primary = '';
-        $lang = $this->getDefaultLanguage();
+        $lang = $this->getDriverParam('defaultDisplayLanguage', 'en');
         foreach ($this->doc->description as $description) {
             $trimmed = trim((string)$description);
             if (!preg_match('/(^https?)|(^\d+\.\d+$)/', $trimmed)) {
-                $results[] = $description;
+                $all[] = $description;
                 if (!$primary) {
                     $descLang = (string)$description->attributes()->{'lang'};
                     if ($descLang === $lang) {
@@ -460,20 +460,10 @@ class Qdc extends Base
                 }
             }
         }
-        if (empty($primary) && !empty($results[0])) {
-            $primary = $results[0];
+        if (!$primary && $all) {
+            $primary = $all[0];
         }
-        return compact('primary', 'results');
-    }
-
-    /**
-     * Get the default language used when building the Solr array
-     *
-     * @return string
-     */
-    protected function getDefaultLanguage()
-    {
-        return 'en';
+        return compact('primary', 'all');
     }
 
     /**
