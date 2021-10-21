@@ -150,8 +150,6 @@ trait QdcRecordTrait
 
         $data['format_ext_str_mv'] = $data['format'];
 
-        $data['series'] = $this->getSeries();
-
         return $data;
     }
 
@@ -258,36 +256,5 @@ trait QdcRecordTrait
         }
 
         return $urls;
-    }
-
-    /**
-     * Dedup: Return series numbering
-     *
-     * @return string
-     */
-    public function getSeriesNumbering()
-    {
-        foreach ($this->doc->relation as $rel) {
-            if ((string)$rel->attributes()->{'type'} === 'numberinseries') {
-                return trim((string)$rel);
-            }
-        }
-        return '';
-    }
-
-    /**
-     * Get series information
-     *
-     * @return array
-     */
-    public function getSeries()
-    {
-        $result = [];
-        foreach ($this->doc->relation as $rel) {
-            if ((string)$rel->attributes()->{'type'} === 'ispartofseries') {
-                $result[] = trim((string)$rel);
-            }
-        }
-        return $result;
     }
 }

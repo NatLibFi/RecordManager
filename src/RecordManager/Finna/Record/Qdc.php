@@ -40,7 +40,24 @@ namespace RecordManager\Finna\Record;
  */
 class Qdc extends \RecordManager\Base\Record\Qdc
 {
-    use QdcRecordTrait;
+    use QdcRecordTrait {
+        toSolrArray as _toSolrArray;
+    }
+
+    /**
+     * Return fields to be indexed in Solr
+     *
+     * @param Database $db Database connection. Omit to avoid database lookups for
+     *                     related records.
+     *
+     * @return array
+     */
+    public function toSolrArray(Database $db = null)
+    {
+        $data = $this->_toSolrArray();
+        $data['series'] = $this->getSeries();
+        return $data;
+    }
 
     /**
      * Get primary authors
@@ -54,5 +71,36 @@ class Qdc extends \RecordManager\Base\Record\Qdc
             return (array)array_shift($authors);
         }
         return parent::getPrimaryAuthors();
+    }
+
+    /**
+     * Dedup: Return series numbering
+     *
+     * @return string
+     */
+    public function getSeriesNumbering()
+    {
+        foreach ($this->doc->relation as $rel) {
+            if ((string)$rel->attributes()->{'type'} === 'numberinseries') {
+                return trim((string)$rel);
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Get series information
+     *
+     * @return array
+     */
+    public function getSeries()
+    {
+        $result = [];
+        foreach ($this->doc->relation as $rel) {
+            if ((string)$rel->attributes()->{'type'} === 'ispartofseries') {
+                $result[] = trim((string)$rel);
+            }
+        }
+        return $result;
     }
 }
