@@ -154,15 +154,9 @@ class Qdc extends AbstractRecord
         $data['topic'] = $data['topic_facet'] = $this->getTopics();
         $data['url'] = $this->getUrls();
 
-        foreach ($this->getValues('description') as $description) {
-            if (preg_match('/^https?/', $description)) {
-                // already added in getUrls
-            } elseif (preg_match('/^\d+\.\d+$/', $description)) {
-                // Classification, put somewhere?
-            } else {
-                $data['contents'][] = $description;
-            }
-        }
+        $descriptions = $this->getDescriptions();
+        $data['contents'] = $descriptions['all'];
+        $data['description'] = $descriptions['primary'];
 
         return $data;
     }
@@ -442,6 +436,34 @@ class Qdc extends AbstractRecord
     public function getTopics()
     {
         return $this->getValues('subject');
+    }
+
+    /**
+     * Get descriptions as an associative array
+     *
+     * @return array
+     */
+    public function getDescriptions(): array
+    {
+        $all = [];
+        $primary = '';
+        $lang = $this->getDriverParam('defaultDisplayLanguage', 'en');
+        foreach ($this->doc->description as $description) {
+            $trimmed = trim((string)$description);
+            if (!preg_match('/(^https?)|(^\d+\.\d+$)/', $trimmed)) {
+                $all[] = $description;
+                if (!$primary) {
+                    $descLang = (string)$description->attributes()->{'lang'};
+                    if ($descLang === $lang) {
+                        $primary = $trimmed;
+                    }
+                }
+            }
+        }
+        if (!$primary && $all) {
+            $primary = $all[0];
+        }
+        return compact('primary', 'all');
     }
 
     /**
