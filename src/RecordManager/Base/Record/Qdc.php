@@ -155,7 +155,7 @@ class Qdc extends Base
         $data['url'] = $this->getUrls();
 
         $descriptions = $this->getDescriptions();
-        $data['contents'] = $descriptions['results'];
+        $data['contents'] = $descriptions['all'];
         $data['description'] = $descriptions['primary'];
 
         return $data;
