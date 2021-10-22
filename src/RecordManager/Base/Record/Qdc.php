@@ -190,6 +190,8 @@ class Qdc extends AbstractRecord
         $data['contents'] = $descriptions['all'];
         $data['description'] = $descriptions['primary'];
 
+        $data['series'] = $this->getSeries();
+
         return $data;
     }
 
@@ -512,5 +514,15 @@ class Qdc extends AbstractRecord
             $values[] = trim((string)$value);
         }
         return $values;
+    }
+
+    /**
+     * Get series information
+     *
+     * @return array
+     */
+    public function getSeries()
+    {
+        return [];
     }
 }

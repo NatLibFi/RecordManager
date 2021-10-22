@@ -763,11 +763,16 @@ class Marc extends \RecordManager\Base\Record\Marc
         );
 
         if ('VideoGame' === $data['format']) {
-            if ($device = $this->getGamePlatformId()) {
-                $data['format'] = [['VideoGame', $device]];
+            if ($platforms = $this->getGamePlatformIds()) {
+                $data['format'] = [['VideoGame', reset($platforms)]];
+                $data['format_ext_str_mv'] = [];
+                foreach ($platforms as $platform) {
+                    $data['format_ext_str_mv'] = [['VideoGame', $platform]];
+                }
             }
+        } else {
+            $data['format_ext_str_mv'] = $data['format'];
         }
-        $data['format_ext_str_mv'] = $data['format'];
 
         $availableBuildings = $this->getAvailableItemsBuildings();
         if ($availableBuildings) {
@@ -1472,30 +1477,33 @@ class Marc extends \RecordManager\Base\Record\Marc
     }
 
     /**
-     * Try to determine the gaming console or other platform identifier
+     * Try to determine the gaming console or other platform identifiers
      *
-     * @return string
+     * @return array
      */
-    protected function getGamePlatformId()
+    protected function getGamePlatformIds()
     {
-        if ($f753 = $this->getField('753')) {
-            if ($id = $this->getSubfield($f753, '0')) {
-                return $id;
+        $result = [];
+        $fields = $this->getFields('753');
+        if ($fields) {
+            foreach ($fields as $field) {
+                if ($id = $this->getSubfield($field, '0')) {
+                    $result[] = $id;
+                }
+                if ($os = $this->getSubfield($field, 'c')) {
+                    $result[] = $os;
+                }
+                if ($device = $this->getSubfield($field, 'a')) {
+                    $result[] = $device;
+                }
             }
-            if ($os = $this->getSubfield($f753, 'c')) {
-                return $os;
-            }
-            if ($device = $this->getSubfield($f753, 'a')) {
-                return $device;
-            }
-        }
-        if ($f245 = $this->getField('245')) {
-            if ($b = $this->getSubfield($f245, 'b')) {
-                return MetadataUtils::stripTrailingPunctuation($b);
+        } elseif ($field = $this->getField('245')) {
+            if ($b = $this->getSubfield($field, 'b')) {
+                $result[] = MetadataUtils::stripTrailingPunctuation($b);
             }
         }
 
-        return '';
+        return $result;
     }
 
     /**
