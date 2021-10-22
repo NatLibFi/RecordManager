@@ -29,6 +29,7 @@
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Record\AbstractRecord;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
@@ -79,14 +80,22 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
      * @param Logger              $logger              Logger
      * @param array               $config              Main configuration
      * @param RecordPluginManager $recordPluginManager Record plugin manager
+     * @param HttpClientManager   $httpManager         HTTP client manager
      */
     public function __construct(
         Database $db,
         Logger $logger,
         array $config,
-        RecordPluginManager $recordPluginManager
+        RecordPluginManager $recordPluginManager,
+        HttpClientManager $httpManager
     ) {
-        parent::__construct($db, $logger, $config, $recordPluginManager);
+        parent::__construct(
+            $db,
+            $logger,
+            $config,
+            $recordPluginManager,
+            $httpManager
+        );
 
         $this->onkiLightBaseURL
             = $this->config['OnkiLightEnrichment']['base_url'] ?? '';

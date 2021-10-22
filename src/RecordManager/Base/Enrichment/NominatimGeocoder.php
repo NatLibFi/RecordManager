@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2013-2020.
+ * Copyright (C) The National Library of Finland 2013-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,6 +28,7 @@
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 
@@ -146,14 +147,22 @@ class NominatimGeocoder extends AbstractEnrichment
      * @param Logger              $logger              Logger
      * @param array               $config              Main configuration
      * @param RecordPluginManager $recordPluginManager Record plugin manager
+     * @param HttpClientManager   $httpManager         HTTP client manager
      */
     public function __construct(
         Database $db,
         Logger $logger,
         array $config,
-        RecordPluginManager $recordPluginManager
+        RecordPluginManager $recordPluginManager,
+        HttpClientManager $httpManager
     ) {
-        parent::__construct($db, $logger, $config, $recordPluginManager);
+        parent::__construct(
+            $db,
+            $logger,
+            $config,
+            $recordPluginManager,
+            $httpManager
+        );
 
         $settings = $config['NominatimGeocoder'] ?? [];
         if (!isset($settings['url']) || !$settings['url']) {

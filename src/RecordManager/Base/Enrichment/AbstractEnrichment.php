@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2014-2020.
+ * Copyright (C) The National Library of Finland 2014-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -99,7 +99,7 @@ abstract class AbstractEnrichment
      *
      * @array
      */
-    protected $httpParams = [
+    protected $httpOptions = [
         'follow_redirects' => true
     ];
 
@@ -139,17 +139,20 @@ abstract class AbstractEnrichment
      * @param Logger              $logger              Logger
      * @param array               $config              Main configuration
      * @param RecordPluginManager $recordPluginManager Record plugin manager
+     * @param HttpClientManager   $httpManager         HTTP client manager
      */
     public function __construct(
         Database $db,
         Logger $logger,
         array $config,
-        RecordPluginManager $recordPluginManager
+        RecordPluginManager $recordPluginManager,
+        HttpClientManager $httpManager
     ) {
         $this->db = $db;
         $this->logger = $logger;
         $this->config = $config;
         $this->recordPluginManager = $recordPluginManager;
+        $this->httpClientManager = $httpManager;
 
         $this->maxCacheAge = isset($config['Enrichment']['cache_expiration'])
             ? $config['Enrichment']['cache_expiration'] * 60
@@ -208,7 +211,7 @@ abstract class AbstractEnrichment
                 $this->request = $this->httpClientManager->createClient(
                     $url,
                     \HTTP_Request2::METHOD_GET,
-                    $this->httpParams
+                    $this->httpOptions
                 );
                 $this->request->setHeader('Connection', 'Keep-Alive');
             } else {

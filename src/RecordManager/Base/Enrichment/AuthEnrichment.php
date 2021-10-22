@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2014-2020.
+ * Copyright (C) The National Library of Finland 2014-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -29,6 +29,7 @@
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -67,6 +68,7 @@ abstract class AuthEnrichment extends AbstractEnrichment
      * @param Logger              $logger              Logger
      * @param array               $config              Main configuration
      * @param RecordPluginManager $recordPluginManager Record plugin manager
+     * @param HttpClientManager   $httpManager         HTTP client manager
      * @param Database            $authorityDb         Authority database connection
      */
     public function __construct(
@@ -74,9 +76,16 @@ abstract class AuthEnrichment extends AbstractEnrichment
         Logger $logger,
         array $config,
         RecordPluginManager $recordPluginManager,
+        HttpClientManager $httpManager,
         Database $authorityDb
     ) {
-        parent::__construct($db, $logger, $config, $recordPluginManager);
+        parent::__construct(
+            $db,
+            $logger,
+            $config,
+            $recordPluginManager,
+            $httpManager
+        );
         $this->authorityDb = $authorityDb;
     }
 

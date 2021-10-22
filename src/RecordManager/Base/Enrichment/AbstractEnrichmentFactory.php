@@ -73,7 +73,8 @@ class AbstractEnrichmentFactory
             $container->get(\RecordManager\Base\Database\AbstractDatabase::class),
             $container->get(\RecordManager\Base\Utils\Logger::class),
             $configReader->get('recordmanager.ini'),
-            $container->get(\RecordManager\Base\Record\PluginManager::class)
+            $container->get(\RecordManager\Base\Record\PluginManager::class),
+            $container->get(\RecordManager\Base\Http\ClientManager::class)
         );
     }
 }

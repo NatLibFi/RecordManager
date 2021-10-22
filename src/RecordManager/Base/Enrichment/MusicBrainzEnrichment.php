@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2019.
+ * Copyright (C) The National Library of Finland 2019-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,9 +27,6 @@
  */
 namespace RecordManager\Base\Enrichment;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Record\PluginManager as RecordPluginManager;
-use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -53,26 +50,6 @@ class MusicBrainzEnrichment extends AbstractEnrichment
     protected $baseURL;
 
     /**
-     * Constructor
-     *
-     * @param Database            $db                  Database connection (for
-     *                                                 cache)
-     * @param Logger              $logger              Logger
-     * @param array               $config              Main configuration
-     * @param RecordPluginManager $recordPluginManager Record plugin manager
-     */
-    public function __construct(
-        Database $db,
-        Logger $logger,
-        array $config,
-        RecordPluginManager $recordPluginManager
-    ) {
-        parent::__construct($db, $logger, $config, $recordPluginManager);
-
-        $this->baseURL = $this->config['MusicBrainzEnrichment']['url'] ?? '';
-    }
-
-    /**
      * Enrich the record and return any additions in solrArray
      *
      * @param string $sourceId  Source ID
@@ -83,6 +60,7 @@ class MusicBrainzEnrichment extends AbstractEnrichment
      */
     public function enrich($sourceId, $record, &$solrArray)
     {
+        $this->baseURL = $this->config['MusicBrainzEnrichment']['url'] ?? '';
         if (empty($this->baseURL)
             || !($record instanceof \RecordManager\Base\Record\Marc)
         ) {
@@ -178,8 +156,7 @@ class MusicBrainzEnrichment extends AbstractEnrichment
             'query' => $query,
             'fmt' => 'json'
         ];
-        $url = $this->baseURL . '/ws/2/release?'
-            . http_build_query($params);
+        $url = $this->baseURL . '/ws/2/release?' . http_build_query($params);
         $data = $this->getExternalData($url, $query);
         if ($data) {
             $data = json_decode($data, true);
