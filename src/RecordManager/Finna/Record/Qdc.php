@@ -55,4 +55,35 @@ class Qdc extends \RecordManager\Base\Record\Qdc
         }
         return parent::getPrimaryAuthors();
     }
+
+    /**
+     * Dedup: Return series numbering
+     *
+     * @return string
+     */
+    public function getSeriesNumbering()
+    {
+        foreach ($this->doc->relation as $rel) {
+            if ((string)$rel->attributes()->{'type'} === 'numberinseries') {
+                return trim((string)$rel);
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Get series information
+     *
+     * @return array
+     */
+    public function getSeries()
+    {
+        $result = [];
+        foreach ($this->doc->relation as $rel) {
+            if ((string)$rel->attributes()->{'type'} === 'ispartofseries') {
+                $result[] = trim((string)$rel);
+            }
+        }
+        return $result;
+    }
 }

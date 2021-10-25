@@ -717,7 +717,17 @@ class Marc extends \RecordManager\Base\Record\Marc
             )
         );
 
-        $data['format_ext_str_mv'] = $data['format'];
+        if ('VideoGame' === $data['format']) {
+            if ($platforms = $this->getGamePlatformIds()) {
+                $data['format'] = [['VideoGame', reset($platforms)]];
+                $data['format_ext_str_mv'] = [];
+                foreach ($platforms as $platform) {
+                    $data['format_ext_str_mv'] = [['VideoGame', $platform]];
+                }
+            }
+        } else {
+            $data['format_ext_str_mv'] = $data['format'];
+        }
 
         $availableBuildings = $this->getAvailableItemsBuildings();
         if ($availableBuildings) {
@@ -1084,6 +1094,38 @@ class Marc extends \RecordManager\Base\Record\Marc
         // Get the bibliographic level from leader position 7
         $bibliographicLevel = substr($leader, 7, 1);
 
+        // Get 008
+        $field008 = $this->getField('008');
+
+        // Board games and video games
+        $self = $this;
+        $termsIn655 = null;
+        $termIn655 = function (string $term) use ($self, &$termsIn655) {
+            if (null === $termsIn655) {
+                $termsIn655 = $self->getFieldsSubfields(
+                    [[self::GET_NORMAL, '655', ['a' => 1]]]
+                );
+                $termsIn655 = array_map(
+                    function ($s) {
+                        return mb_strtolower($s, 'UTF-8');
+                    },
+                    $termsIn655
+                );
+            }
+            return in_array($term, $termsIn655);
+        };
+        if ('r' === $typeOfRecord) {
+            $visualType = substr($field008, 33, 1);
+            if ('g' === $visualType || $termIn655('lautapelit')) {
+                return 'BoardGame';
+            }
+        } elseif ('m' === $typeOfRecord) {
+            $electronicType = substr($field008, 26, 1);
+            if ('g' === $electronicType || $termIn655('videopelit')) {
+                return 'VideoGame';
+            }
+        }
+
         // check the 007 - this is a repeating field
         $fields = $this->getFields('007');
         $online = false;
@@ -1265,7 +1307,6 @@ class Marc extends \RecordManager\Base\Record\Marc
             return 'Manuscript';
         }
 
-        $field008 = $this->getField('008');
         if (!$online) {
             $online = substr($field008, 23, 1) === 'o';
         }
@@ -1377,6 +1418,36 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
         return false;
+    }
+
+    /**
+     * Try to determine the gaming console or other platform identifiers
+     *
+     * @return array
+     */
+    protected function getGamePlatformIds()
+    {
+        $result = [];
+        $fields = $this->getFields('753');
+        if ($fields) {
+            foreach ($fields as $field) {
+                if ($id = $this->getSubfield($field, '0')) {
+                    $result[] = $id;
+                }
+                if ($os = $this->getSubfield($field, 'c')) {
+                    $result[] = $os;
+                }
+                if ($device = $this->getSubfield($field, 'a')) {
+                    $result[] = $device;
+                }
+            }
+        } elseif ($field = $this->getField('245')) {
+            if ($b = $this->getSubfield($field, 'b')) {
+                $result[] = MetadataUtils::stripTrailingPunctuation($b);
+            }
+        }
+
+        return $result;
     }
 
     /**

@@ -154,15 +154,11 @@ class Qdc extends Base
         $data['topic'] = $data['topic_facet'] = $this->getTopics();
         $data['url'] = $this->getUrls();
 
-        foreach ($this->getValues('description') as $description) {
-            if (preg_match('/^https?/', $description)) {
-                // already added in getUrls
-            } elseif (preg_match('/^\d+\.\d+$/', $description)) {
-                // Classification, put somewhere?
-            } else {
-                $data['contents'][] = $description;
-            }
-        }
+        $descriptions = $this->getDescriptions();
+        $data['contents'] = $descriptions['all'];
+        $data['description'] = $descriptions['primary'];
+
+        $data['series'] = $this->getSeries();
 
         return $data;
     }
@@ -445,6 +441,34 @@ class Qdc extends Base
     }
 
     /**
+     * Get descriptions as an associative array
+     *
+     * @return array
+     */
+    public function getDescriptions(): array
+    {
+        $all = [];
+        $primary = '';
+        $lang = $this->getDriverParam('defaultDisplayLanguage', 'en');
+        foreach ($this->doc->description as $description) {
+            $trimmed = trim((string)$description);
+            if (!preg_match('/(^https?)|(^\d+\.\d+$)/', $trimmed)) {
+                $all[] = $description;
+                if (!$primary) {
+                    $descLang = (string)$description->attributes()->{'lang'};
+                    if ($descLang === $lang) {
+                        $primary = $trimmed;
+                    }
+                }
+            }
+        }
+        if (!$primary && $all) {
+            $primary = $all[0];
+        }
+        return compact('primary', 'all');
+    }
+
+    /**
      * Get xml field values
      *
      * @param string $tag Field name
@@ -458,5 +482,15 @@ class Qdc extends Base
             $values[] = trim((string)$value);
         }
         return $values;
+    }
+
+    /**
+     * Get series information
+     *
+     * @return array
+     */
+    public function getSeries()
+    {
+        return [];
     }
 }
