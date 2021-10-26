@@ -22,7 +22,10 @@ conf/modules.config.php
 .psalm_cache
 .phpstan_cache
 *.log
+mappings/*.map
 reports
+transformations/*.properties
+transformations/*.xsl
 vendor
 tests/.phpunit.result.cache
 

@@ -32,6 +32,7 @@ use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
 use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Record\AbstractRecord;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
+use RecordManager\Base\Settings\Ini;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -387,11 +388,11 @@ class SolrUpdater
     protected $fieldMapper = null;
 
     /**
-     * Field mapper class name
+     * Whether to disable field mappings
      *
-     * @var string
+     * @var bool
      */
-    protected $fieldMapperClass = '\RecordManager\Base\Utils\FieldMapper';
+    protected $disableMappings = false;
 
     /**
      * Whether to track last update date per server's update url
@@ -521,6 +522,13 @@ class SolrUpdater
     protected $recordDataCache;
 
     /**
+     * Configuration reader
+     *
+     * @var Ini
+     */
+    protected $configReader;
+
+    /**
      * Constructor
      *
      * @param Database                $db                 Database connection
@@ -530,6 +538,8 @@ class SolrUpdater
      * @param RecordPluginManager     $recordPM           Record plugin manager
      * @param EnrichmentPluginManager $enrichmentPM       Enrichment plugin manager
      * @param HttpClientManager       $httpManager        HTTP client manager
+     * @param Ini                     $configReader       Configuration reader
+     * @param FieldMapper             $fieldMapper        Field mapper
      *
      * @throws \Exception
      */
@@ -540,7 +550,9 @@ class SolrUpdater
         array $dataSourceSettings,
         RecordPluginManager $recordPM,
         EnrichmentPluginManager $enrichmentPM,
-        HttpClientManager $httpManager
+        HttpClientManager $httpManager,
+        Ini $configReader,
+        FieldMapper $fieldMapper
     ) {
         $this->config = $config;
         $this->db = $db;
@@ -549,6 +561,8 @@ class SolrUpdater
         $this->recordPluginManager = $recordPM;
         $this->enrichmentPluginManager = $enrichmentPM;
         $this->httpClientManager = $httpManager;
+        $this->configReader = $configReader;
+        $this->fieldMapper = $fieldMapper;
 
         $this->metadataRecordCache = new \cash\LRUCache(100);
         $this->recordDataCache = new \cash\LRUCache(100);
@@ -623,10 +637,6 @@ class SolrUpdater
         }
         $this->datePerServer
             = !empty($config['Solr']['track_updates_per_update_url']);
-
-        if (!empty($config['Solr']['field_mapper'])) {
-            $this->fieldMapperClass = $config['Solr']['field_mapper'];
-        }
 
         $this->unicodeNormalizationForm
             = $config['Solr']['unicode_normalization_form'] ?? '';
@@ -719,10 +729,10 @@ class SolrUpdater
     /**
      * Update Solr index (merged records and individual records)
      *
-     * @param string|null $fromDate      Starting date for updates (if empty
-     *                                   string, last update date stored in the
-     *                                   database is used and if null, all records
-     *                                   are processed)
+     * @param string|null $fromDate      Starting date for updates (if null, last
+     *                                   update date stored in the database is used
+     *                                   and if an empty string, all records are
+     *                                   processed)
      * @param string      $sourceId      Comma-separated list of source IDs to
      *                                   update, or empty or * for all sources
      * @param string      $singleId      Process only the record with the given ID
@@ -745,6 +755,9 @@ class SolrUpdater
         $dumpPrefix = '',
         $datePerServer = false
     ) {
+        if ('*' === $sourceId) {
+            $sourceId = '';
+        }
         // Install a signal handler so that we can exit cleanly if interrupted
         unset($this->terminate);
         if (function_exists('pcntl_signal')) {
@@ -1150,6 +1163,18 @@ class SolrUpdater
     }
 
     /**
+     * Toggle field mappings
+     *
+     * @param bool $disable Whether to disable mappings
+     *
+     * @return void
+     */
+    public function disableFieldMappings(bool $disable): void
+    {
+        $this->disableMappings = $disable;
+    }
+
+    /**
      * Process merged (deduplicated) records
      *
      * @param string|null $fromDate      Start date
@@ -1515,7 +1540,9 @@ class SolrUpdater
      */
     public function optimizeIndex()
     {
+        $this->log->logInfo('optimizeIndex', 'Optimizing Solr index');
         $this->solrRequest('{ "optimize": {} }', 4 * 60 * 60);
+        $this->log->logInfo('optimizeIndex', 'Solr optimization completed');
     }
 
     /**
@@ -1894,16 +1921,8 @@ class SolrUpdater
     protected function initDatasources($dataSourceSettings = null)
     {
         if (null === $dataSourceSettings) {
-            $filename = RECMAN_BASE_PATH . '/conf/datasources.ini';
-            $dataSourceSettings = parse_ini_file($filename, true);
-            if (false === $dataSourceSettings) {
-                $error = error_get_last();
-                $message = $error['message'] ?? 'unknown error occurred';
-                throw new \Exception(
-                    "Could not load data source settings from file '$filename':"
-                    . $message
-                );
-            }
+            $dataSourceSettings = $this->configReader->get('datasources.ini', true);
+            $this->fieldMapper->initDataSourceSettings($dataSourceSettings);
         }
         $this->settings = [];
         foreach ($dataSourceSettings as $source => $settings) {
@@ -1941,16 +1960,6 @@ class SolrUpdater
                 $this->nonIndexedSources[] = $source;
             }
         }
-
-        // Create field mapper
-        $this->fieldMapper = new $this->fieldMapperClass(
-            RECMAN_BASE_PATH,
-            array_merge(
-                $this->config['DefaultMappings'] ?? [],
-                $this->config['Default Mappings'] ?? []
-            ),
-            $dataSourceSettings
-        );
     }
 
     /**
@@ -2344,7 +2353,9 @@ class SolrUpdater
         }
 
         // Map field values according to any mapping files
-        $data = $this->fieldMapper->mapValues($source, $data);
+        if (!$this->disableMappings) {
+            $data = $this->fieldMapper->mapValues($source, $data);
+        }
 
         // Special case: Special values for building (institution/location).
         // Used by default if building is set as a hierarchical facet.
@@ -3165,7 +3176,7 @@ class SolrUpdater
      */
     protected function createSourceFilter($sourceIds)
     {
-        if (!$sourceIds) {
+        if (!$sourceIds || '*' === $sourceIds) {
             return [null, null];
         }
         $sources = explode(',', $sourceIds);

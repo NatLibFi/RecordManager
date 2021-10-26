@@ -39,29 +39,15 @@ namespace RecordManager\Finna\Utils;
 class FieldMapper extends \RecordManager\Base\Utils\FieldMapper
 {
     /**
-     * Mapping file cache
+     * Initialize the data source settings
      *
-     * @var array
-     */
-    protected static $mapCache = [];
-
-    /**
-     * Settings for all data sources
+     * @param array $dataSourceConfig Data source configuration
      *
-     * @var array
+     * @return void
      */
-    protected $settings = [];
-
-    /**
-     * Constructor
-     *
-     * @param string $basePath           Base path for configuration files
-     * @param array  $defaultMappings    Default mappings for all data sources
-     * @param array  $dataSourceSettings Data source settings
-     */
-    public function __construct($basePath, $defaultMappings, $dataSourceSettings)
+    public function initDataSourceSettings(array $dataSourceConfig): void
     {
-        parent::__construct($basePath, $defaultMappings, $dataSourceSettings);
+        parent::initDataSourceSettings($dataSourceConfig);
 
         foreach ($this->settings as &$settings) {
             if (empty($settings['mappingFiles']['format_ext_str_mv'])

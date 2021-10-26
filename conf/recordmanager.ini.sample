@@ -200,7 +200,7 @@ log_level       = 4
 ; occur.
 error_email     =
 ; Minimum error level to store in the database. Stored messages can be sent in
-; batches using the logs.php utility. By default (-1), no messages are stored. Levels
+; batches using the sendlogs utility. By default (-1), no messages are stored. Levels
 ; are the same as for log_level.
 store_message_level = -1
 

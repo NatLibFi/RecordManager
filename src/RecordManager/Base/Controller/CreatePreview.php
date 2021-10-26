@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -34,6 +34,7 @@ use RecordManager\Base\Solr\PreviewCreator;
 use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
+use RecordManager\Base\Utils\XslTransformation;
 
 /**
  * Create Preview Record
@@ -46,7 +47,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class CreatePreview extends AbstractBase
 {
-    use PreTransformationTrait;
+    use \RecordManager\Base\Record\PreTransformationTrait;
 
     /**
      * Preview creator
@@ -126,15 +127,13 @@ class CreatePreview extends AbstractBase
             $source = "_preview";
         }
 
-        $this->initSourceSettings();
-
         $settings = $this->dataSourceSettings[$source];
 
         if (empty($format) && !empty($settings['format'])) {
             $format = $settings['format'];
         }
 
-        if ($settings['preTransformation']) {
+        if (!empty($settings['preTransformation'])) {
             $metadata = $this->pretransform($metadata, $source);
         } elseif (!empty($settings['oaipmhTransformation'])) {
             $metadata = $this->oaipmhTransform(
@@ -168,8 +167,20 @@ class CreatePreview extends AbstractBase
         ];
 
         // Normalize the record
-        if (null !== $settings['normalizationXSLT']) {
-            $record['normalized_data'] = $settings['normalizationXSLT']->transform(
+        if (!empty($settings['normalization'])) {
+            $params = [
+                'source_id' => $source,
+                'institution' => $settings['institution'],
+                'format' => $settings['format'],
+                'id_prefix' => $settings['idPrefix']
+            ];
+            $normalizationXSLT = new XslTransformation(
+                RECMAN_BASE_PATH . '/transformations',
+                $settings['normalization'],
+                $params
+            );
+
+            $record['normalized_data'] = $normalizationXSLT->transform(
                 $metadata,
                 ['oai_id' => $record['oai_id']]
             );

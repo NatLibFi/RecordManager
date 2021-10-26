@@ -90,10 +90,9 @@ class Ini
      */
     public function applyOverrides($config, $overrides)
     {
-        foreach ($overrides as $key => $value) {
-            $setting = explode('.', $key);
-            if ($setting[0] == 'config' && isset($setting[2])) {
-                $config[$setting[1]][$setting[2]] = $value;
+        foreach ($overrides as $section => $settings) {
+            foreach ($settings as $key => $value) {
+                $config[$section][$key] = $value;
             }
         }
         return $config;

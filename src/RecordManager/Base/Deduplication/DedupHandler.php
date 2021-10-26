@@ -105,30 +105,25 @@ class DedupHandler implements DedupHandlerInterface
      * @param array               $mainConfig          Main configuration
      * @param array               $datasourceConfig    Data source settings
      * @param RecordPluginManager $recordPluginManager Record plugin manager
+     * @param FieldMapper         $fieldMapper         Field mapper
      */
     public function __construct(
         Database $db,
         Logger $log,
         array $mainConfig,
         array $datasourceConfig,
-        RecordPluginManager $recordPluginManager
+        RecordPluginManager $recordPluginManager,
+        FieldMapper $fieldMapper
     ) {
         $this->db = $db;
         $this->log = $log;
         $this->recordPluginManager = $recordPluginManager;
+        $this->fieldMapper = $fieldMapper;
+
         $this->verbose = $mainConfig['Log']['verbose'] ?? false;
         $this->dataSourceSettings = $datasourceConfig;
         $this->normalizationForm
             = $mainConfig['Site']['unicode_normalization_form'] ?? 'NFKC';
-
-        $this->fieldMapper = new FieldMapper(
-            RECMAN_BASE_PATH,
-            array_merge(
-                $mainConfig['DefaultMappings'] ?? [],
-                $mainConfig['Default Mappings'] ?? []
-            ),
-            $datasourceConfig
-        );
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php
 /**
- * Command line interface for exporting records
+ * Leacy command line interface for exporting records
  *
  * PHP version 7
  *
@@ -27,72 +27,25 @@
  */
 require_once __DIR__ . '/cmdline.php';
 
-/**
- * Main function
- *
- * @param string[] $argv Program parameters
- *
- * @return void
- */
-function main($argv)
-{
-    $params = parseArgs($argv);
-    if (empty($params['file'])) {
-        echo <<<EOT
-Usage: $argv[0] --file=... [...]
+convertOptions(
+    [
+        'file' => [
+            'command' => 'records:export',
+            'arg' => 1
+        ],
+        'createdfrom' => [
+            'opt' => 'created-from'
+        ],
+        'createduntil' => [
+            'opt' => 'created-until'
+        ],
+        'sortdedup' => [
+            'opt' => 'sort-dedup'
+        ],
+        'dedupid' => [
+            'opt' => 'dedup-id'
+        ],
+    ],
+);
 
-Parameters:
-
---file=...          The file for records
---deleted=...       The file for deleted record IDs
---from=...          Update date (and optional time) where to start the export
-                    (e.g. --from="2017-01-01 17:00")
---until=...         Update date (and optional time) where to end the export
-                    (e.g. --until="2017-01-01 23:59:59")
---createdfrom=...   Creation date (and optional time) where to start the export
-                    (e.g. --createdfrom="2017-01-01 17:00")
---createduntil=...  Creation date (and optional time) where to end the export
-                    (e.g. --createduntil="2017-01-01 23:59:59")
---verbose           Enable verbose output
---quiet             Quiet, no output apart from the data
---skip=...          Skip x records to export only a "representative" subset
---source=...        Export only the given source(s)
-                    (separate multiple sources with commas)
---single=...        Export single record with the given id
---xpath=...         Export only records matching the XPath expression
---config.section.name=...
-                    Set configuration directive to given value overriding
-                    any setting in recordmanager.ini
---sortdedup         Sort export file by dedup id
---dedupid=...       deduped = Add dedup id's to records that have duplicates
-                    always  = Always add dedup id's to the records
-                    Otherwise dedup id's are not added to the records
---basepath=path     Use path as the base directory for conf, mappings and
-                    transformations directories. Normally automatically determined.
-
-
-EOT;
-        exit(1);
-    }
-
-    $app = bootstrap($params);
-    $sm = $app->getServiceManager();
-
-    $export = $sm->get(\RecordManager\Base\Controller\Export::class);
-    $export->launch(
-        $params['file'],
-        $params['deleted'] ?? '',
-        $params['from'] ?? '',
-        $params['until'] ?? '',
-        $params['createdfrom'] ?? '',
-        $params['createduntil'] ?? '',
-        $params['skip'] ?? 0,
-        $params['source'] ?? '',
-        $params['single'] ?? '',
-        $params['xpath'] ?? '',
-        $params['sortdedup'] ?? false,
-        $params['dedupid'] ?? ''
-    );
-}
-
-main($argv);
+include __DIR__ . '/console';

@@ -1,10 +1,9 @@
 <?php
 /**
- * Command Line Utility Functions
+ * Legacy command Line Utility Functions
  *
  * PHP version 7
  *
- * Copyright (C) Patrick Fisher 2009
  * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,124 +29,59 @@
 /**
  * Command Line Utility Functions
  *
- * Helper functions for command line utilities.
+ * Helper functions for legacy command line utilities.
  */
-ini_set('display_errors', '1');
-
-require_once __DIR__ . '/vendor/autoload.php';
-
-// If profiling is requested, set it up now. Profiling can be enabled from the
-// command line by providing XHProf location, e.g.
-// RECMAN_PROFILE=http://localhost/xhprof php manage.php ...
-if ($profilerBaseUrl = getenv('RECMAN_PROFILE')) {
-    $profiler = new \RecordManager\Base\Utils\Profiler($profilerBaseUrl);
-    $profiler->start();
-}
 
 /**
- * Bootstrap a command line application
+ * Convert legacy command line parameters to console parameters
  *
- * @param array $params Command line parameters
- *
- * @return \Laminas\Mvc\Application
- */
-function bootstrap($params)
-{
-    define(
-        'RECMAN_BASE_PATH',
-        !empty($params['basepath']) ? $params['basepath'] : __DIR__
-    );
-
-    $app = \Laminas\Mvc\Application::init(
-        include __DIR__ . '/conf/application.config.php'
-    );
-    $sm = $app->getServiceManager();
-    $configReader = $sm->get(\RecordManager\Base\Settings\Ini::class);
-    $configReader->addOverrides('recordmanager.ini', $params);
-
-    return $app;
-}
-
-/**
- * Parse command line arguments
- *
- * @param array $argv Arguments
- *
- * @return array Parsed keys and values
- * @usage  $args = parseArgs($_SERVER['argv']);
- * @author Patrick Fisher <patrick@pwfisher.com>
- * @source https://github.com/pwfisher/CommandLine.php
- */
-function parseArgs($argv)
-{
-    array_shift($argv);
-    $params = [];
-    foreach ($argv as $arg) {
-        if (substr($arg, 0, 2) == '--') {
-            $eqPos = strpos($arg, '=');
-            if ($eqPos === false) {
-                $key = substr($arg, 2);
-                $params[$key] = $params[$key] ?? true;
-            } else {
-                $key = substr($arg, 2, $eqPos - 2);
-                $params[$key] = substr($arg, $eqPos + 1);
-            }
-        } elseif (substr($arg, 0, 1) == '-') {
-            if (substr($arg, 2, 1) == '=') {
-                $key = substr($arg, 1, 1);
-                $params[$key] = substr($arg, 3);
-            } else {
-                $chars = str_split(substr($arg, 1));
-                foreach ($chars as $char) {
-                    $key = $char;
-                    $params[$key] = $params[$key] ?? true;
-                }
-            }
-        } else {
-            $params[] = $arg;
-        }
-    }
-    if ($params['verbose'] ?? false) {
-        $params['config.Log.verbose'] = true;
-    }
-    return $params;
-}
-
-/**
- * Try to acquire a lock on a lock file
- *
- * @param string $lockfile Lock file
- *
- * @return resource|bool|null Returns file handle on success, null if no lock was
- * required or false on failure
- */
-function acquireLock($lockfile)
-{
-    if (empty($lockfile)) {
-        return null;
-    }
-    $handle = fopen($lockfile, 'c+');
-    if (!is_resource($handle)) {
-        return false;
-    }
-    if (!flock($handle, LOCK_EX | LOCK_NB)) {
-        fclose($handle);
-        return false;
-    }
-    return $handle;
-}
-
-/**
- * Release a lock on a lock file
- *
- * @param resource|bool|null $handle Lock file handle or a falsy value
+ * @param array $mappings Option mappings
  *
  * @return void
  */
-function releaseLock($handle)
+function convertOptions(array $mappings): void
 {
-    if (is_resource($handle)) {
-        flock($handle, LOCK_UN);
-        fclose($handle);
+    $args = $_SERVER['argv'];
+    $executable = array_shift($args);
+    $command = '';
+    $options = [];
+    $arguments = [];
+    foreach ($args as $option) {
+        $mapped = false;
+        foreach ($mappings as $src => $dst) {
+            if (preg_match("/^--$src=(.+)/", $option, $matches)) {
+                $value = $matches[1];
+                if (isset($dst['valueMap'][$value])) {
+                    $value = $dst['valueMap'][$value];
+                }
+                if ($src === 'func') {
+                    $command = $value;
+                } else {
+                    if (isset($dst['command'])) {
+                        $command = $dst['command'];
+                    }
+                    if (isset($dst['arg'])) {
+                        $arguments[$dst['arg']] = $value;
+                    };
+                    if (isset($dst['opt'])) {
+                        $options[] = '--' . $dst['opt'] . '=' . $value;
+                    }
+                }
+                $mapped = true;
+                break;
+            } elseif (preg_match("/^--$src$/", $option)) {
+                if (isset($dst['opt'])) {
+                    $options[] = '--' . $dst['opt'];
+                }
+                $mapped = true;
+                break;
+            }
+        }
+        if (!$mapped) {
+            $options[] = $option;
+        }
     }
+    ksort($arguments);
+    $_SERVER['argv'] = array_merge([$executable, $command], $options, $arguments);
+    $_SERVER['argc'] = count($_SERVER['argv']);
 }

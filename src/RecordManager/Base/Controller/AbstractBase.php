@@ -1,6 +1,6 @@
 <?php
 /**
- * Record Manager controller base class
+ * RecordManager controller base class
  *
  * PHP version 7
  *
@@ -33,16 +33,9 @@ use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
-use RecordManager\Base\Utils\XslTransformation;
-
-if (function_exists('pcntl_async_signals')) {
-    pcntl_async_signals(true);
-} else {
-    declare(ticks = 1);
-}
 
 /**
- * Record Manager controller base class
+ * RecordManager controller base class
  *
  * @category DataManagement
  * @package  RecordManager
@@ -145,100 +138,6 @@ abstract class AbstractBase
 
         MetadataUtils::setLogger($this->logger);
         MetadataUtils::setConfig($config, RECMAN_BASE_PATH);
-    }
-
-    /**
-     * Initialize the data source settings and XSL transformations
-     *
-     * @throws \Exception
-     * @return void
-     */
-    protected function initSourceSettings()
-    {
-        foreach ($this->dataSourceSettings as $source => &$settings) {
-            if (!isset($settings['institution'])) {
-                $this->logger->logFatal(
-                    'initSourceSettings',
-                    "institution not set for $source"
-                );
-                throw new \Exception("Error: institution not set for $source\n");
-            }
-            if (!isset($settings['format'])) {
-                $this->logger->logFatal(
-                    'initSourceSettings',
-                    "format not set for $source"
-                );
-                throw new \Exception("Error: format not set for $source\n");
-            }
-            if (empty($settings['idPrefix'])) {
-                $settings['idPrefix'] = $source;
-            }
-            if (!isset($settings['recordXPath'])) {
-                $settings['recordXPath'] = '//record';
-            }
-            if (!isset($settings['oaiIDXPath'])) {
-                $settings['oaiIDXPath'] = '';
-            }
-            if (!isset($settings['dedup'])) {
-                $settings['dedup'] = false;
-            }
-            if (empty($settings['componentParts'])) {
-                $settings['componentParts'] = 'as_is';
-            }
-            if (!isset($settings['preTransformation'])) {
-                $settings['preTransformation'] = '';
-            }
-            if (!isset($settings['indexMergedParts'])) {
-                $settings['indexMergedParts'] = true;
-            }
-            if (!isset($settings['type'])) {
-                $settings['type'] = '';
-            }
-            if (!isset($settings['non_inherited_fields'])) {
-                $settings['non_inherited_fields'] = [];
-            }
-            if (!isset($settings['keepMissingHierarchyMembers'])) {
-                $settings['keepMissingHierarchyMembers'] = false;
-            }
-
-            $params = [
-                'source_id' => $source,
-                'institution' => $settings['institution'],
-                'format' => $settings['format'],
-                'id_prefix' => $settings['idPrefix']
-            ];
-            $settings['normalizationXSLT'] = !empty($settings['normalization'])
-                ? new XslTransformation(
-                    RECMAN_BASE_PATH . '/transformations',
-                    $settings['normalization'],
-                    $params
-                ) : null;
-            $settings['solrTransformationXSLT']
-                = !empty($settings['solrTransformation'])
-                ? new XslTransformation(
-                    RECMAN_BASE_PATH . '/transformations',
-                    $settings['solrTransformation'],
-                    $params
-                ) : null;
-
-            if (!empty($settings['recordSplitterClass'])) {
-                $settings['recordSplitter'] = $this->splitterPluginManager
-                    ->get($settings['recordSplitterClass']);
-            } elseif (!empty($settings['recordSplitter'])) {
-                $style = new \DOMDocument();
-                $xslFile = RECMAN_BASE_PATH . '/transformations/'
-                    . $settings['recordSplitter'];
-                if ($style->load($xslFile) === false) {
-                    throw new \Exception(
-                        "Could not load $xslFile for source $source"
-                    );
-                }
-                $settings['recordSplitter'] = new \XSLTProcessor();
-                $settings['recordSplitter']->importStylesheet($style);
-            } else {
-                $settings['recordSplitter'] = null;
-            }
-        }
     }
 
     /**

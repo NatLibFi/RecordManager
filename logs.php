@@ -27,44 +27,14 @@
  */
 require_once __DIR__ . '/cmdline.php';
 
-/**
- * Main function
- *
- * @param string[] $argv Program parameters
- *
- * @return void
- */
-function main($argv)
-{
-    $params = parseArgs($argv);
-    if (empty($params['func'])) {
-        echo <<<EOT
-Usage: $argv[0] --func=...
+convertOptions(
+    [
+        'func' => [],
+        'email' => [
+            'command' => 'logs:send',
+            'arg' => 1,
+        ]
+    ],
+);
 
-Parameters:
-
---func              sendlogs
---email=address     Recipient email address (sendlogs)
---basepath=path     Use path as the base directory for conf, mappings and
-                    transformations directories. Normally automatically determined.
-
-
-EOT;
-        exit(1);
-    }
-
-    $app = bootstrap($params);
-    $sm = $app->getServiceManager();
-
-    if ('sendlogs' === $params['func']) {
-        if (empty($params['email'])) {
-            echo "Email address is required.\n";
-            exit(1);
-        }
-
-        $sendLogs = $sm->get(\RecordManager\Base\Controller\SendLogs::class);
-        $sendLogs->launch($params['email']);
-    }
-}
-
-main($argv);
+include __DIR__ . '/console';

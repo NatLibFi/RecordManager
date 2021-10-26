@@ -39,11 +39,25 @@ namespace RecordManager\Base\Utils;
 class FieldMapper
 {
     /**
+     * Base path
+     *
+     * @var string
+     */
+    protected $basePath;
+
+    /**
      * Mapping file cache
      *
      * @var array
      */
     protected static $mapCache = [];
+
+    /**
+     * Default (not specific to data source configuration) mappings
+     *
+     * @var array
+     */
+    protected $defaultMappings = [];
 
     /**
      * Settings for all data sources
@@ -61,11 +75,25 @@ class FieldMapper
      */
     public function __construct($basePath, $defaultMappings, $dataSourceSettings)
     {
-        foreach ($dataSourceSettings as $source => $settings) {
+        $this->basePath = $basePath;
+        $this->defaultMappings = $defaultMappings;
+        $this->initDataSourceSettings($dataSourceSettings);
+    }
+
+    /**
+     * Initialize the data source settings
+     *
+     * @param array $dataSourceConfig Data source configuration
+     *
+     * @return void
+     */
+    public function initDataSourceSettings(array $dataSourceConfig): void
+    {
+        foreach ($dataSourceConfig as $source => $settings) {
             $this->settings[$source]['mappingFiles'] = [];
 
             // Use default mappings as the basis
-            $allMappings = $defaultMappings;
+            $allMappings = $this->defaultMappings;
 
             // Apply data source specific overrides
             foreach ($settings as $key => $value) {
@@ -86,7 +114,7 @@ class FieldMapper
                     $type = $parts[1] ?? 'normal';
                     if (!isset(self::$mapCache[$filename])) {
                         self::$mapCache[$filename] = $this->readMappingFile(
-                            $basePath . '/mappings/' . $filename
+                            $this->basePath . '/mappings/' . $filename
                         );
                     }
                     $this->settings[$source]['mappingFiles'][$field][] = [

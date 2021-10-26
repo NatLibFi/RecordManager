@@ -54,8 +54,12 @@ class SolrComparer extends SolrUpdater
      *
      * @return void
      */
-    public function compareRecords($logFile, $fromDate, $sourceId, $singleId)
-    {
+    public function compareRecords(
+        ?string $logFile,
+        ?string $fromDate,
+        ?string $sourceId,
+        ?string $singleId
+    ): void {
         // Install a signal handler so that we can exit cleanly if interrupted
         unset($this->terminate);
         if (function_exists('pcntl_signal')) {
@@ -79,7 +83,7 @@ class SolrComparer extends SolrUpdater
             // Only process merged records if any of the selected sources has
             // deduplication enabled
             $processDedupRecords = true;
-            if ($sourceId) {
+            if ($sourceId && '*' !== $sourceId) {
                 $sources = explode(',', $sourceId);
                 foreach ($sources as $source) {
                     if (strncmp($source, '-', 1) === 0

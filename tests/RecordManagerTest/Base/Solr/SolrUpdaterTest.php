@@ -30,7 +30,9 @@ namespace RecordManagerTest\Base\Solr;
 use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
 use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
+use RecordManager\Base\Settings\Ini;
 use RecordManager\Base\Solr\SolrUpdater;
+use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -45,6 +47,13 @@ use RecordManager\Base\Utils\Logger;
 class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
 {
     use \RecordManagerTest\Base\Record\CreateSampleRecordTrait;
+
+    /**
+     * Location of configuration files
+     *
+     * @var string
+     */
+    const CONFIG_DIR = __DIR__ . '/../../../fixtures/base/config/basic';
 
     /**
      * Main configuration
@@ -157,6 +166,11 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
         $recordPM->expects($this->once())
             ->method('get')
             ->will($this->returnValue($record));
+        $fieldMapper = new FieldMapper(
+          self::CONFIG_DIR,
+          [],
+          $this->dataSourceSettings
+        );
         $solrUpdater = new SolrUpdater(
             null,
             $logger,
@@ -164,7 +178,9 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
             $this->dataSourceSettings,
             $recordPM,
             $this->createMock(EnrichmentPluginManager::class),
-            $this->createMock(HttpClientManager::class)
+            $this->createMock(HttpClientManager::class),
+            $this->createMock(Ini::class),
+            $fieldMapper
         );
 
         return $solrUpdater;

@@ -1,6 +1,6 @@
 <?php
 /**
- * Command line interface for managing data sources
+ * Legacy command line interface for managing data sources
  *
  * PHP version 7
  *
@@ -27,42 +27,13 @@
  */
 require_once __DIR__ . '/cmdline.php';
 
-/**
- * Main function
- *
- * @param string[] $argv Program parameters
- *
- * @return void
- */
-function main($argv)
-{
-    $params = parseArgs($argv);
-    if (empty($params['search'])) {
-        echo <<<EOT
-Usage: $argv[0] --search=...
+convertOptions(
+    [
+        'search' => [
+            'command' => 'sources:search',
+            'arg' => 1
+        ]
+    ]
+);
 
-Parameters:
-
---search=[regexp]   Search for a string in data sources and list the data source id's
-                    Note that all settings are normalized to not contain any spaces
-                    around equal signs, and boolean true is denoted with 1 and false
-                    with 0.
---basepath=path     Use path as the base directory for conf, mappings and
-                    transformations directories. Normally automatically determined.
-
-
-EOT;
-        exit(1);
-    }
-
-    $app = bootstrap($params);
-
-    if (!empty($params['search'])) {
-        $searchDataSources = $app->getServiceManager()->get(
-            \RecordManager\Base\Controller\SearchDataSources::class
-        );
-        $searchDataSources->launch($params['search']);
-    }
-}
-
-main($argv);
+include __DIR__ . '/console';

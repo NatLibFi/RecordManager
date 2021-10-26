@@ -30,7 +30,7 @@
 require_once __DIR__ . '/vendor/autoload.php';
 
 define('RECMAN_BASE_PATH', getenv('RECMAN_BASE_PATH') ?: __DIR__);
-$app = Laminas\Mvc\Application::init(
+$app = \Laminas\Mvc\Application::init(
     include RECMAN_BASE_PATH . '/conf/application.config.php'
 );
 $sm = $app->getServiceManager();

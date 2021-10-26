@@ -76,7 +76,8 @@ class DedupHandlerFactory implements \Laminas\ServiceManager\Factory\FactoryInte
             $container->get(\RecordManager\Base\Utils\Logger::class),
             $config,
             $configReader->get('datasources.ini'),
-            $container->get(\RecordManager\Base\Record\PluginManager::class)
+            $container->get(\RecordManager\Base\Record\PluginManager::class),
+            $container->get(\RecordManager\Base\Utils\FieldMapper::class),
         );
     }
 }
