@@ -92,13 +92,18 @@ class Forward extends AbstractRecord
     /**
      * Constructor
      *
-     * @param Logger $logger             Logger
-     * @param array  $config             Main configuration
-     * @param array  $dataSourceSettings Data source settings
+     * @param array         $config             Main configuration
+     * @param array         $dataSourceSettings Data source settings
+     * @param Logger        $logger             Logger
+     * @param MetadataUtils $metadataUtils      Metadata utilities
      */
-    public function __construct(Logger $logger, $config, $dataSourceSettings)
-    {
-        parent::__construct($logger, $config, $dataSourceSettings);
+    public function __construct(
+        array $config,
+        array $dataSourceSettings,
+        Logger $logger,
+        MetadataUtils $metadataUtils
+    ) {
+        parent::__construct($config, $dataSourceSettings, $logger, $metadataUtils);
 
         if (isset($config['ForwardRecord']['primary_author_relators'])) {
             $this->primaryAuthorRelators = explode(
@@ -160,7 +165,7 @@ class Forward extends AbstractRecord
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -199,8 +204,8 @@ class Forward extends AbstractRecord
             }
         }
         $data['title_short'] = $data['title_full'] = $data['title'];
-        $data['title_sort'] = MetadataUtils::stripLeadingPunctuation(
-            MetadataUtils::stripLeadingArticle($data['title'])
+        $data['title_sort'] = $this->metadataUtils->stripLeadingPunctuation(
+            $this->metadataUtils->stripLeadingArticle($data['title'])
         );
 
         $descriptions = $this->getDescriptions($this->primaryLanguage);
@@ -264,7 +269,7 @@ class Forward extends AbstractRecord
         $author = $authors['names'][0] ?? '';
         if ($author) {
             if (strpos($author, ',') === false) {
-                $author = MetadataUtils::convertAuthorLastFirst($author);
+                $author = $this->metadataUtils->convertAuthorLastFirst($author);
             }
         }
         return $author;
@@ -300,7 +305,7 @@ class Forward extends AbstractRecord
                 continue;
             }
             $s = trim((string)$field);
-            if ($s && ($s = MetadataUtils::stripTrailingPunctuation($s))) {
+            if ($s && ($s = $this->metadataUtils->stripTrailingPunctuation($s))) {
                 $results[] = $s;
             }
             $subs = $this->getAllFields($field->children());
@@ -348,7 +353,7 @@ class Forward extends AbstractRecord
      */
     protected function getRelator($agent)
     {
-        return MetadataUtils::normalizeRelator((string)$agent->Activity);
+        return $this->metadataUtils->normalizeRelator((string)$agent->Activity);
     }
 
     /**
@@ -471,7 +476,7 @@ class Forward extends AbstractRecord
         $title = (string)$doc->IdentifyingTitle;
 
         if ($forFiling) {
-            $title = MetadataUtils::stripLeadingArticle($title);
+            $title = $this->metadataUtils->stripLeadingArticle($title);
         }
 
         return $title;

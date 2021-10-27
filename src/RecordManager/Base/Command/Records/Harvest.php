@@ -34,6 +34,7 @@ use RecordManager\Base\Harvest\PluginManager as HarvesterPluginManager;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\MetadataUtils;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -70,6 +71,7 @@ class Harvest extends AbstractBase
      * @param SplitterPluginManager  $splitterManager     Record splitter plugin
      *                                                    manager
      * @param DedupHandlerInterface  $dedupHandler        Deduplication handler
+     * @param MetadataUtils          $metadataUtils       Metadata utilities
      * @param HarvesterPluginManager $harvesterManager    Harvester plugin manager
      */
     public function __construct(
@@ -80,6 +82,7 @@ class Harvest extends AbstractBase
         RecordPluginManager $recordPluginManager,
         SplitterPluginManager $splitterManager,
         DedupHandlerInterface $dedupHandler,
+        MetadataUtils $metadataUtils,
         HarvesterPluginManager $harvesterManager
     ) {
         parent::__construct(
@@ -89,7 +92,8 @@ class Harvest extends AbstractBase
             $database,
             $recordPluginManager,
             $splitterManager,
-            $dedupHandler
+            $dedupHandler,
+            $metadataUtils
         );
 
         $this->harvesterPluginManager = $harvesterManager;

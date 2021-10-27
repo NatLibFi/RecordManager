@@ -28,7 +28,6 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Ead record class
@@ -72,13 +71,14 @@ class Ead extends \RecordManager\Base\Record\Ead
 
         $unitDateRange = $this->parseDateRange((string)$doc->did->unitdate);
         $data['search_daterange_mv'] = $data['unit_daterange']
-            = MetadataUtils::dateRangeToStr($unitDateRange);
+            = $this->metadataUtils->dateRangeToStr($unitDateRange);
         if ($unitDateRange) {
-            $data['main_date_str'] = MetadataUtils::extractYear($unitDateRange[0]);
+            $data['main_date_str'] = $this->metadataUtils
+                ->extractYear($unitDateRange[0]);
             $data['main_date'] = $this->validateDate($unitDateRange[0]);
             // Append year range to title (only years, not the full dates)
-            $startYear = MetadataUtils::extractYear($unitDateRange[0]);
-            $endYear = MetadataUtils::extractYear($unitDateRange[1]);
+            $startYear = $this->metadataUtils->extractYear($unitDateRange[0]);
+            $endYear = $this->metadataUtils->extractYear($unitDateRange[1]);
             $yearRange = '';
             if ($startYear != '-9999') {
                 $yearRange = $startYear;

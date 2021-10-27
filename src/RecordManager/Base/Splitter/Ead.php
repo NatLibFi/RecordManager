@@ -38,7 +38,7 @@ namespace RecordManager\Base\Splitter;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class Ead
+class Ead extends AbstractBase
 {
     /**
      * Whether to prepend unit id to parent title
@@ -138,7 +138,7 @@ class Ead
      */
     public function setData($data)
     {
-        $this->doc = \RecordManager\Base\Utils\MetadataUtils::loadXML($data);
+        $this->doc = $this->metadataUtils->loadXML($data);
         $this->recordNodes = $this->doc->xpath('archdesc | archdesc/dsc//*[@level]');
         $this->recordCount = count($this->recordNodes);
         $this->currentPos = 0;
@@ -157,125 +157,119 @@ class Ead
     }
 
     /**
-     * Check whether EOF has been encountered
-     *
-     * @return boolean
-     */
-    public function getEOF()
-    {
-        return $this->currentPos >= $this->recordCount;
-    }
-
-    /**
      * Get next record
      *
-     * @return string XML
+     * Returns false on EOF or an associative array with the following keys:
+     * - string metadata       Actual metadata
+     * - array  additionalData Any additional data
+     *
+     * @return array|bool
      */
     public function getNextRecord()
     {
-        if ($this->currentPos < $this->recordCount) {
-            $original = $this->recordNodes[$this->currentPos++];
-            $record = simplexml_load_string('<' . $original->getName() . '/>');
-            foreach ($original->attributes() as $key => $value) {
-                $record->addAttribute($key, $value);
-            }
-            foreach ($original->children() as $child) {
-                $this->appendXMLFiltered($record, $child);
-            }
-
-            $addData = $record->addChild('add-data');
-
-            if ($record->did->unitid) {
-                $unitId = urlencode(
-                    $record->did->unitid->attributes()->identifier
-                    ? (string)$record->did->unitid->attributes()->identifier
-                    : (string)$record->did->unitid
-                );
-                if ($unitId != $this->archiveId) {
-                    $unitId = $this->archiveId . '_' . $unitId;
-                }
-            } else {
-                // Create ID for the unit
-                $unitId = $this->archiveId . '_' . $this->currentPos;
-            }
-            if ($record->getName() != 'archdesc') {
-                $addData->addAttribute('identifier', $unitId);
-            }
-            // Also store it in original record for the children
-            $original->addChild('add-data')->addAttribute('identifier', $unitId);
-
-            $absolute = $addData->addChild('archive');
-            $absolute->addAttribute('id', $this->archiveId);
-            $absolute->addAttribute('title', $this->archiveTitle);
-            $absolute->addAttribute(
-                'sequence',
-                str_pad($this->currentPos, 7, '0', STR_PAD_LEFT)
-            );
-            if ($this->archiveSubTitle) {
-                $absolute->addAttribute('subtitle', $this->archiveSubTitle);
-            }
-
-            $ancestorDid = $original->xpath('ancestor::*/did');
-            if ($ancestorDid) {
-                // Append any ancestor did's
-                foreach (array_reverse($ancestorDid) as $did) {
-                    $this->appendXML($record, $did, $this->nonInheritedFields);
-                }
-            }
-
-            if ($this->doc->archdesc->bibliography) {
-                foreach ($this->doc->archdesc->bibliography as $elem) {
-                    $this->appendXML($record, $elem);
-                }
-            }
-            if ($this->doc->archdesc->accessrestrict) {
-                foreach ($this->doc->archdesc->accessrestrict as $elem) {
-                    $this->appendXML($record, $elem);
-                }
-            }
-
-            $parentDid = $original->xpath('parent::*/did | parent::*/parent::*/did');
-            if ($parentDid) {
-                $parentDid = $parentDid[0];
-                // If parent has add-data, take the generated ID from it
-                $parentAddData = $original->xpath(
-                    'parent::*/add-data | parent::*/parent::*/add-data'
-                );
-                if ($parentAddData) {
-                    $parentID
-                        = (string)$parentAddData[0]->attributes()->identifier;
-                } else {
-                    // Generate parent ID
-                    $parentID = urlencode(
-                        $parentDid->unitid->attributes()->identifier
-                        ? (string)$parentDid->unitid->attributes()->identifier
-                        : (string)$parentDid->unitid
-                    );
-                    if ($parentID != $this->archiveId) {
-                        $parentID = $this->archiveId . '_' . $parentID;
-                    }
-                }
-                $parentTitle = (string)$parentDid->unittitle;
-
-                if ($this->prependParentTitleWithUnitId) {
-                    if ((string)$parentDid->unitid
-                        && in_array(
-                            (string)$record->attributes()->level,
-                            ['series', 'subseries', 'item', 'file']
-                        )
-                    ) {
-                        $parentTitle = (string)$parentDid->unitid . ' '
-                            . $parentTitle;
-                    }
-                }
-                $parent = $addData->addChild('parent');
-                $parent->addAttribute('id', $parentID);
-                $parent->addAttribute('title', $parentTitle);
-            }
-
-            return $record->asXML();
+        if ($this->getEOF()) {
+            return false;
         }
-        return false;
+        $original = $this->recordNodes[$this->currentPos++];
+        $record = simplexml_load_string('<' . $original->getName() . '/>');
+        foreach ($original->attributes() as $key => $value) {
+            $record->addAttribute($key, $value);
+        }
+        foreach ($original->children() as $child) {
+            $this->appendXMLFiltered($record, $child);
+        }
+
+        $addData = $record->addChild('add-data');
+
+        if ($record->did->unitid) {
+            $unitId = urlencode(
+                $record->did->unitid->attributes()->identifier
+                ? (string)$record->did->unitid->attributes()->identifier
+                : (string)$record->did->unitid
+            );
+            if ($unitId != $this->archiveId) {
+                $unitId = $this->archiveId . '_' . $unitId;
+            }
+        } else {
+            // Create ID for the unit
+            $unitId = $this->archiveId . '_' . $this->currentPos;
+        }
+        if ($record->getName() != 'archdesc') {
+            $addData->addAttribute('identifier', $unitId);
+        }
+        // Also store it in original record for the children
+        $original->addChild('add-data')->addAttribute('identifier', $unitId);
+
+        $absolute = $addData->addChild('archive');
+        $absolute->addAttribute('id', $this->archiveId);
+        $absolute->addAttribute('title', $this->archiveTitle);
+        $absolute->addAttribute(
+            'sequence',
+            str_pad($this->currentPos, 7, '0', STR_PAD_LEFT)
+        );
+        if ($this->archiveSubTitle) {
+            $absolute->addAttribute('subtitle', $this->archiveSubTitle);
+        }
+
+        $ancestorDid = $original->xpath('ancestor::*/did');
+        if ($ancestorDid) {
+            // Append any ancestor did's
+            foreach (array_reverse($ancestorDid) as $did) {
+                $this->appendXML($record, $did, $this->nonInheritedFields);
+            }
+        }
+
+        if ($this->doc->archdesc->bibliography) {
+            foreach ($this->doc->archdesc->bibliography as $elem) {
+                $this->appendXML($record, $elem);
+            }
+        }
+        if ($this->doc->archdesc->accessrestrict) {
+            foreach ($this->doc->archdesc->accessrestrict as $elem) {
+                $this->appendXML($record, $elem);
+            }
+        }
+
+        $parentDid = $original->xpath('parent::*/did | parent::*/parent::*/did');
+        if ($parentDid) {
+            $parentDid = $parentDid[0];
+            // If parent has add-data, take the generated ID from it
+            $parentAddData = $original->xpath(
+                'parent::*/add-data | parent::*/parent::*/add-data'
+            );
+            if ($parentAddData) {
+                $parentID
+                    = (string)$parentAddData[0]->attributes()->identifier;
+            } else {
+                // Generate parent ID
+                $parentID = urlencode(
+                    $parentDid->unitid->attributes()->identifier
+                    ? (string)$parentDid->unitid->attributes()->identifier
+                    : (string)$parentDid->unitid
+                );
+                if ($parentID != $this->archiveId) {
+                    $parentID = $this->archiveId . '_' . $parentID;
+                }
+            }
+            $parentTitle = (string)$parentDid->unittitle;
+
+            if ($this->prependParentTitleWithUnitId) {
+                if ((string)$parentDid->unitid
+                    && in_array(
+                        (string)$record->attributes()->level,
+                        ['series', 'subseries', 'item', 'file']
+                    )
+                ) {
+                    $parentTitle = (string)$parentDid->unitid . ' '
+                        . $parentTitle;
+                }
+            }
+            $parent = $addData->addChild('parent');
+            $parent->addAttribute('id', $parentID);
+            $parent->addAttribute('title', $parentTitle);
+        }
+
+        return ['metadata' => $record->asXML()];
     }
 
     /**

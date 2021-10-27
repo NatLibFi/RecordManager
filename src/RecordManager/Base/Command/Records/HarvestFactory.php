@@ -75,6 +75,7 @@ class HarvestFactory implements \Laminas\ServiceManager\Factory\FactoryInterface
             $container->get(\RecordManager\Base\Record\PluginManager::class),
             $container->get(\RecordManager\Base\Splitter\PluginManager::class),
             $container->get(\RecordManager\Base\Deduplication\DedupHandler::class),
+            $container->get(\RecordManager\Base\Utils\MetadataUtils::class),
             $container->get(\RecordManager\Base\Harvest\PluginManager::class)
         );
     }

@@ -2,9 +2,12 @@
 /**
  * Pre-transformation trait
  *
+ * Prerequisites:
+ * - MetadataUtils as $this->metadataUtils
+ *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -26,8 +29,6 @@
  * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Record;
-
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Pre-transformation trait
@@ -82,7 +83,8 @@ trait PreTransformationTrait
             }
         }
         $doc = new \DOMDocument();
-        $result = MetadataUtils::loadXML($data, $doc, 0, $errors);
+        $errors = '';
+        $result = $this->metadataUtils->loadXML($data, $doc, 0, $errors);
         if (false === $result || $errors) {
             throw new \Exception($errors ?: 'Unknown error');
         }
@@ -91,7 +93,7 @@ trait PreTransformationTrait
             $xml = $xslt->transformToXml($doc);
             $doc = new \DOMDocument();
             $errors = '';
-            $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
+            $result = $this->metadataUtils->loadXML($xml, $doc, 0, $errors);
             if (false === $result || $errors) {
                 throw new \Exception($errors ?: 'Unknown error');
             }

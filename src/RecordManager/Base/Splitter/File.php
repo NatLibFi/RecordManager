@@ -38,7 +38,7 @@ namespace RecordManager\Base\Splitter;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class File
+class File extends AbstractBase
 {
     /**
      * XML document
@@ -53,20 +53,6 @@ class File
      * @var \DOMNodeList|false
      */
     protected $recordNodes;
-
-    /**
-     * Record count
-     *
-     * @var int
-     */
-    protected $recordCount;
-
-    /**
-     * Current position
-     *
-     * @var int
-     */
-    protected $currentPos;
 
     /**
      * XPath query handler
@@ -117,7 +103,7 @@ class File
     {
         if (is_string($data)) {
             $this->xmlDoc = new \DOMDocument();
-            \RecordManager\Base\Utils\MetadataUtils::loadXML($data, $this->xmlDoc);
+            $this->metadataUtils->loadXML($data, $this->xmlDoc);
         } else {
             $this->xmlDoc = $data;
         }
@@ -128,43 +114,38 @@ class File
     }
 
     /**
-     * Check whether EOF has been encountered
-     *
-     * @return boolean
-     */
-    public function getEOF()
-    {
-        return $this->currentPos >= $this->recordCount;
-    }
-
-    /**
      * Get next record
      *
-     * @param string $oaiID OAI Identifier (if XPath specified in constructor)
+     * Returns false on EOF or an associative array with the following keys:
+     * - string metadata       Actual metadata
+     * - array  additionalData Any additional data
      *
-     * @return string|boolean
+     * @return array|bool
      */
-    public function getNextRecord(&$oaiID)
+    public function getNextRecord()
     {
-        if ($this->currentPos < $this->recordCount) {
-            $node = $this->recordNodes->item($this->currentPos++);
-            if ($this->oaiIDXpath) {
-                $xNodes = $this->xpath->query($this->oaiIDXpath, $node);
-                if ($xNodes->length == 0 || !$xNodes->item(0)->nodeValue) {
-                    throw new \Exception(
-                        "No OAI ID found with XPath '{$this->oaiIDXpath}' " .
-                        "starting at element: '{$node->nodeName}'\n"
-                    );
-                }
-                $oaiID = $xNodes->item(0)->nodeValue;
-            }
-            if ($node->nodeType !== XML_DOCUMENT_NODE) {
-                $childNode = $node;
-                $node = new \DomDocument;
-                $node->appendChild($node->importNode($childNode, true));
-            }
-            return $node->saveXML();
+        if ($this->getEOF()) {
+            return false;
         }
-        return false;
+        $result = [];
+        $node = $this->recordNodes->item($this->currentPos++);
+        if ($this->oaiIDXpath) {
+            $xNodes = $this->xpath->query($this->oaiIDXpath, $node);
+            if ($xNodes->length == 0 || !$xNodes->item(0)->nodeValue) {
+                throw new \Exception(
+                    "No OAI ID found with XPath '{$this->oaiIDXpath}' " .
+                    "starting at element: '{$node->nodeName}'\n"
+                );
+            }
+            $result['additionalData']['oaiId'] = $xNodes->item(0)->nodeValue;
+        }
+        if ($node->nodeType !== XML_DOCUMENT_NODE) {
+            $childNode = $node;
+            $node = new \DomDocument;
+            $node->appendChild($node->importNode($childNode, true));
+        }
+        $result['metadata'] = $node->saveXML();
+
+        return $result;
     }
 }

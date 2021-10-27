@@ -29,7 +29,6 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Forward record class
@@ -113,11 +112,11 @@ class Forward extends \RecordManager\Base\Record\Forward
         $data = parent::toSolrArray($db);
 
         if (isset($data['publishDate'])) {
-            $year = MetadataUtils::extractYear($data['publishDate']);
+            $year = $this->metadataUtils->extractYear($data['publishDate']);
             $data['main_date_str'] = $year;
             $data['main_date'] = $this->validateDate("$year-01-01T00:00:00Z");
             $data['search_daterange_mv'][] = $data['publication_daterange']
-                = MetadataUtils::dateRangeToStr(
+                = $this->metadataUtils->dateRangeToStr(
                     ["$year-01-01T00:00:00Z", "$year-12-31T23:59:59Z"]
                 );
         }
@@ -159,11 +158,11 @@ class Forward extends \RecordManager\Base\Record\Forward
 
         $languages = $this->getLanguages();
         $data['language']
-            = MetadataUtils::normalizeLanguageStrings($languages);
+            = $this->metadataUtils->normalizeLanguageStrings($languages);
 
         $subtitles = $this->getSubtitleLanguages();
         $data['subtitle_lng_str_mv']
-            = MetadataUtils::normalizeLanguageStrings($subtitles);
+            = $this->metadataUtils->normalizeLanguageStrings($subtitles);
 
         return $data;
     }
@@ -384,7 +383,7 @@ class Forward extends \RecordManager\Base\Record\Forward
             return '';
         }
         $activity = $agent->Activity;
-        $relator = MetadataUtils::normalizeRelator((string)$activity);
+        $relator = $this->metadataUtils->normalizeRelator((string)$activity);
         if (in_array($relator, ['a00', 'a08', 'a99', 'd99', 'e04', 'e99'])) {
             $relator = null;
             foreach (

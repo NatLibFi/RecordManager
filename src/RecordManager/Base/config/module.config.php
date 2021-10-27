@@ -50,7 +50,7 @@ return [
                     \RecordManager\Base\Command\Records\Suppress::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
                     \RecordManager\Base\Command\Records\Unsuppress::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
                     \RecordManager\Base\Command\Solr\CheckIndex::class => \RecordManager\Base\Command\Solr\AbstractBaseWithSolrUpdaterFactory::class,
-                    \RecordManager\Base\Command\Solr\CompareRecords::class => \RecordManager\Base\Command\Solr\CompareFactory::class,
+                    \RecordManager\Base\Command\Solr\CompareRecords::class => \RecordManager\Base\Command\Solr\CompareRecordsFactory::class,
                     \RecordManager\Base\Command\Solr\Delete::class => \RecordManager\Base\Command\Solr\AbstractBaseWithSolrUpdaterFactory::class,
                     \RecordManager\Base\Command\Solr\DumpUpdates::class => \RecordManager\Base\Command\Solr\AbstractBaseWithSolrUpdaterFactory::class,
                     \RecordManager\Base\Command\Solr\Optimize::class => \RecordManager\Base\Command\Solr\AbstractBaseWithSolrUpdaterFactory::class,
@@ -131,8 +131,8 @@ return [
             ],
             'splitter' => [
                 'factories' => [
-                    \RecordManager\Base\Splitter\Ead::class => InvokableFactory::class,
-                    \RecordManager\Base\Splitter\File::class => InvokableFactory::class,
+                    \RecordManager\Base\Splitter\Ead::class => \RecordManager\Base\Splitter\AbstractBaseFactory::class,
+                    \RecordManager\Base\Splitter\File::class => \RecordManager\Base\Splitter\AbstractBaseFactory::class,
                 ],
             ],
         ],
@@ -161,6 +161,7 @@ return [
             \RecordManager\Base\Splitter\PluginManager::class => \RecordManager\Base\ServiceManager\AbstractPluginManagerFactory::class,
             \RecordManager\Base\Utils\FieldMapper::class => \RecordManager\Base\Utils\FieldMapperFactory::class,
             \RecordManager\Base\Utils\Logger::class => \RecordManager\Base\Utils\LoggerFactory::class,
+            \RecordManager\Base\Utils\MetadataUtils::class => \RecordManager\Base\Utils\MetadataUtilsFactory::class,
         ],
         'shared' => [
             \RecordManager\Base\Database\AbstractDatabase::class => false,

@@ -31,6 +31,7 @@ use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Enrichment Class
@@ -132,35 +133,53 @@ abstract class AbstractEnrichment
     protected $httpClientManager;
 
     /**
+     * Metadata utilities
+     *
+     * @var MetadataUtils;
+     */
+    protected $metadataUtils;
+
+    /**
      * Constructor
      *
+     * @param array               $config              Main configuration
      * @param Database            $db                  Database connection (for
      *                                                 cache)
      * @param Logger              $logger              Logger
-     * @param array               $config              Main configuration
      * @param RecordPluginManager $recordPluginManager Record plugin manager
      * @param HttpClientManager   $httpManager         HTTP client manager
+     * @param MetadataUtils       $metadataUtils       Metadata utilities
      */
     public function __construct(
+        array $config,
         Database $db,
         Logger $logger,
-        array $config,
         RecordPluginManager $recordPluginManager,
-        HttpClientManager $httpManager
+        HttpClientManager $httpManager,
+        MetadataUtils $metadataUtils
     ) {
+        $this->config = $config;
         $this->db = $db;
         $this->logger = $logger;
-        $this->config = $config;
         $this->recordPluginManager = $recordPluginManager;
         $this->httpClientManager = $httpManager;
+        $this->metadataUtils = $metadataUtils;
 
-        $this->maxCacheAge = isset($config['Enrichment']['cache_expiration'])
-            ? $config['Enrichment']['cache_expiration'] * 60
+        $this->init();
+    }
+
+    /**
+     * Initialize settings
+     *
+     * @return void
+     */
+    public function init()
+    {
+        $this->maxCacheAge = isset($this->config['Enrichment']['cache_expiration'])
+            ? $this->config['Enrichment']['cache_expiration'] * 60
             : 86400;
-        $this->maxTries = $config['Enrichment']['max_tries']
-            ?? 90;
-        $this->retryWait = $config['Enrichment']['retry_wait']
-            ?? 5;
+        $this->maxTries = $this->config['Enrichment']['max_tries'] ?? 90;
+        $this->retryWait = $this->config['Enrichment']['retry_wait'] ?? 5;
     }
 
     /**

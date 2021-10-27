@@ -64,18 +64,20 @@ class Qdc extends AbstractRecord
     /**
      * Constructor
      *
-     * @param Logger            $logger             Logger
      * @param array             $config             Main configuration
      * @param array             $dataSourceSettings Data source settings
+     * @param Logger            $logger             Logger
+     * @param MetadataUtils     $metadataUtils      Metadata utilities
      * @param HttpClientManager $httpManager        HTTP client manager
      */
     public function __construct(
-        Logger $logger,
         $config,
         $dataSourceSettings,
+        Logger $logger,
+        MetadataUtils $metadataUtils,
         HttpClientManager $httpManager
     ) {
-        parent::__construct($logger, $config, $dataSourceSettings);
+        parent::__construct($config, $dataSourceSettings, $logger, $metadataUtils);
         $this->httpClientManager = $httpManager;
     }
 
@@ -118,7 +120,7 @@ class Qdc extends AbstractRecord
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -217,13 +219,13 @@ class Qdc extends AbstractRecord
     {
         $title = trim((string)$this->doc->title);
         if ($forFiling) {
-            $title = MetadataUtils::stripLeadingPunctuation($title);
-            $title = MetadataUtils::stripLeadingArticle($title);
+            $title = $this->metadataUtils->stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripLeadingArticle($title);
             // Again, just in case stripping the article affected this
-            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripLeadingPunctuation($title);
             $title = mb_strtolower($title, 'UTF-8');
         }
-        $title = MetadataUtils::stripTrailingPunctuation($title);
+        $title = $this->metadataUtils->stripTrailingPunctuation($title);
         return $title;
     }
 
@@ -247,7 +249,7 @@ class Qdc extends AbstractRecord
         $result = [];
         foreach ($this->getValues('creator') as $author) {
             $result[]
-                = MetadataUtils::stripTrailingPunctuation($author);
+                = $this->metadataUtils->stripTrailingPunctuation($author);
         }
         return $result;
     }
@@ -262,7 +264,7 @@ class Qdc extends AbstractRecord
         $result = [];
         foreach ($this->getValues('contributor') as $contributor) {
             $result[]
-                = MetadataUtils::stripTrailingPunctuation($contributor);
+                = $this->metadataUtils->stripTrailingPunctuation($contributor);
         }
         return $result;
     }
@@ -289,7 +291,8 @@ class Qdc extends AbstractRecord
         foreach ($this->doc->identifier as $identifier) {
             $identifier = strtolower(trim((string)$identifier));
             if (strncmp('urn:', $identifier, 4) === 0) {
-                $arr[] = '(urn)' . MetadataUtils::normalizeKey($identifier, $form);
+                $arr[] = '(urn)' . $this->metadataUtils
+                    ->normalizeKey($identifier, $form);
             }
         }
 
@@ -310,7 +313,7 @@ class Qdc extends AbstractRecord
                 if (!preg_match('{^([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
                     continue;
                 }
-                $isbn = MetadataUtils::normalizeISBN($matches[1]);
+                $isbn = $this->metadataUtils->normalizeISBN($matches[1]);
                 if ($isbn) {
                     $arr[] = $isbn;
                 }
@@ -459,7 +462,7 @@ class Qdc extends AbstractRecord
                 $languages[] = $code;
             }
         }
-        return MetadataUtils::normalizeLanguageStrings($languages);
+        return $this->metadataUtils->normalizeLanguageStrings($languages);
     }
 
     /**

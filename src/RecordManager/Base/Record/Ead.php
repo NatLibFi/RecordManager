@@ -28,7 +28,6 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Ead record class
@@ -140,7 +139,7 @@ class Ead extends AbstractRecord
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -168,7 +167,7 @@ class Ead extends AbstractRecord
         $doc = $this->doc;
         $data['record_format'] = 'ead';
         $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
-        $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($doc->asXML());
+        $data['fullrecord'] = $this->metadataUtils->trimXMLWhitespace($doc->asXML());
         $data['allfields'] = $this->getAllFields($doc);
 
         if ($doc->scopecontent) {
@@ -237,12 +236,13 @@ class Ead extends AbstractRecord
         $data['title'] .= $data['title_short'];
         $data['title_full'] = $data['title_sort'] = $data['title'];
         $data['title_sort'] = mb_strtolower(
-            MetadataUtils::stripLeadingPunctuation($data['title_sort']),
+            $this->metadataUtils->stripLeadingPunctuation($data['title_sort']),
             'UTF-8'
         );
 
         if ($languages = $doc->did->xpath('langmaterial/language')) {
-            $data['language'] = MetadataUtils::normalizeLanguageStrings($languages);
+            $data['language'] = $this->metadataUtils
+                ->normalizeLanguageStrings($languages);
         }
 
         if ($extents = $doc->did->xpath('physdesc/extent')) {

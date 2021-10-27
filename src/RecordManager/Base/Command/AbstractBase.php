@@ -109,6 +109,13 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
     protected $dedupHandler;
 
     /**
+     * Metadata utilities
+     *
+     * @var MetadataUtils
+     */
+    protected $metadataUtils;
+
+    /**
      * Constructor
      *
      * @param array                 $config              Main configuration
@@ -119,6 +126,7 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
      * @param SplitterPluginManager $splitterManager     Record splitter plugin
      *                                                   manager
      * @param DedupHandlerInterface $dedupHandler        Deduplication handler
+     * @param MetadataUtils         $metadataUtils       Metadata utilities
      */
     public function __construct(
         array $config,
@@ -127,7 +135,8 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
         DatabaseInterface $database,
         RecordPluginManager $recordPluginManager,
         SplitterPluginManager $splitterManager,
-        DedupHandlerInterface $dedupHandler
+        DedupHandlerInterface $dedupHandler,
+        MetadataUtils $metadataUtils
     ) {
         $name = null;
         if (empty($this->defaultName)) {
@@ -154,9 +163,7 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
         $this->recordPluginManager = $recordPluginManager;
         $this->splitterPluginManager = $splitterManager;
         $this->dedupHandler = $dedupHandler;
-
-        MetadataUtils::setLogger($this->logger);
-        MetadataUtils::setConfig($config, RECMAN_BASE_PATH);
+        $this->metadataUtils = $metadataUtils;
     }
 
     /**
@@ -278,8 +285,9 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
                 ) : null;
 
             if (!empty($settings['recordSplitterClass'])) {
+                $splitterClass = ltrim($settings['recordSplitterClass'], '\\');
                 $settings['recordSplitter'] = $this->splitterPluginManager
-                    ->get($settings['recordSplitterClass']);
+                    ->get($splitterClass);
             } elseif (!empty($settings['recordSplitter'])) {
                 $style = new \DOMDocument();
                 $xslFile = RECMAN_BASE_PATH . '/transformations/'

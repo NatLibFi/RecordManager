@@ -67,6 +67,13 @@ abstract class AbstractBase
     protected $httpClientManager;
 
     /**
+     * Metadata utilities
+     *
+     * @var MetadataUtils
+     */
+    protected $metadataUtils;
+
+    /**
      * Main configuration
      *
      * @var array
@@ -184,27 +191,30 @@ abstract class AbstractBase
     /**
      * Constructor.
      *
+     * @param array             $config           Main configuration
+     * @param array             $dataSourceConfig Data source configuration
      * @param Database          $db               Database
      * @param Logger            $logger           The Logger object used for logging
      *                                            messages
      * @param HttpClientManager $httpManager      HTTP client manager
-     * @param array             $config           Main configuration
-     * @param array             $dataSourceConfig Data source configuration
+     * @param MetadataUtils     $metadataUtils    Metadata utilities
      *
      * @throws \Exception
      */
     public function __construct(
+        array $config,
+        array $dataSourceConfig,
         Database $db,
         Logger $logger,
         HttpClientManager $httpManager,
-        array $config,
-        array $dataSourceConfig
+        MetadataUtils $metadataUtils
     ) {
+        $this->config = $config;
+        $this->dataSourceConfig = $dataSourceConfig;
         $this->db = $db;
         $this->log = $logger;
         $this->httpClientManager = $httpManager;
-        $this->config = $config;
-        $this->dataSourceConfig = $dataSourceConfig;
+        $this->metadataUtils = $metadataUtils;
     }
 
     /**
@@ -440,11 +450,11 @@ abstract class AbstractBase
     protected function preTransform($xml, $returnDoc = false)
     {
         $doc = new \DOMDocument();
-        $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
+        $result = $this->metadataUtils->loadXML($xml, $doc, 0, $errors);
         if ($result === false || $errors) {
             $this->warningMsg('Invalid XML received, trying encoding fix...');
             $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
-            $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
+            $result = $this->metadataUtils->loadXML($xml, $doc, 0, $errors);
         }
         if ($result === false || $errors) {
             $this->fatalMsg("Could not parse XML: $errors");
@@ -455,7 +465,7 @@ abstract class AbstractBase
             foreach ($this->preXslt as $xslt) {
                 $xml = $xslt->transformToXml($doc);
                 $doc = new \DOMDocument();
-                $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
+                $result = $this->metadataUtils->loadXML($xml, $doc, 0, $errors);
             }
             if ($result === false || $errors) {
                 $this->fatalMsg("Could not parse XML: $errors");

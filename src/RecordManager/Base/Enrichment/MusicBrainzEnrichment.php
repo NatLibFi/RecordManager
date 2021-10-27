@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Enrichment;
 
-use RecordManager\Base\Utils\MetadataUtils;
-
 /**
  * MusicBrainzEnrichment Class
  *
@@ -135,7 +133,7 @@ class MusicBrainzEnrichment extends AbstractEnrichment
     protected function sanitizeId($id)
     {
         $id = preg_replace('/[\s\(\[].*$/', '', $id);
-        $id = MetadataUtils::normalizeKey($id);
+        $id = $this->metadataUtils->normalizeKey($id);
         return $id;
     }
 

@@ -30,7 +30,6 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * EAD 3 Record Class
@@ -91,7 +90,7 @@ class Ead3 extends Ead
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -119,7 +118,7 @@ class Ead3 extends Ead
         $doc = $this->doc;
         $data['record_format'] = 'ead3';
         $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
-        $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($doc->asXML());
+        $data['fullrecord'] = $this->metadataUtils->trimXMLWhitespace($doc->asXML());
         $data['allfields'] = $this->getAllFields($doc);
         $data['description'] = $this->getDescription();
         $data['author'] = $this->getAuthors();
@@ -144,7 +143,7 @@ class Ead3 extends Ead
         $data['title'] .= $data['title_short'];
         $data['title_full'] = $data['title_sort'] = $data['title'];
         $data['title_sort'] = mb_strtolower(
-            MetadataUtils::stripLeadingPunctuation($data['title_sort']),
+            $this->metadataUtils->stripLeadingPunctuation($data['title_sort']),
             'UTF-8'
         );
 
@@ -187,10 +186,10 @@ class Ead3 extends Ead
             : '';
 
         if ($forFiling) {
-            $title = MetadataUtils::stripLeadingPunctuation($title);
-            $title = MetadataUtils::stripLeadingArticle($title);
+            $title = $this->metadataUtils->stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripLeadingArticle($title);
             // Again, just in case stripping the article affected this
-            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripLeadingPunctuation($title);
             $title = mb_strtolower($title, 'UTF-8');
         }
 

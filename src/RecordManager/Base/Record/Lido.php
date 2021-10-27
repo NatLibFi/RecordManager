@@ -28,7 +28,6 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Lido record class
@@ -43,6 +42,11 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Lido extends AbstractRecord
 {
+    /**
+     * The XML document
+     *
+     * @var \SimpleXMLElement
+     */
     protected $doc = null;
 
     /**
@@ -104,7 +108,7 @@ class Lido extends AbstractRecord
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -133,7 +137,7 @@ class Lido extends AbstractRecord
         $lang = $this->getDefaultLanguage();
         $title = $this->getTitle(false, $lang);
         if ($this->getDriverParam('splitTitles', false)) {
-            $titlePart = MetadataUtils::splitTitle($title);
+            $titlePart = $this->metadataUtils->splitTitle($title);
             if ($titlePart) {
                 $data['description'] = $title;
                 $title = $titlePart;
@@ -273,7 +277,7 @@ class Lido extends AbstractRecord
         }
 
         if ($forFiling) {
-            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripLeadingPunctuation($title);
         }
         return $title;
     }
@@ -384,7 +388,7 @@ class Lido extends AbstractRecord
         foreach ($titlesByLang as $titleParts) {
             $title = implode(' ', $titleParts);
             $titles[] = ['type' => 'title', 'value' => $title];
-            $sortTitle = MetadataUtils::stripLeadingPunctuation($title);
+            $sortTitle = $this->metadataUtils->stripLeadingPunctuation($title);
             if ($sortTitle !== $title) {
                 $titles[] = ['type' => 'title', 'value' => $sortTitle];
             }
@@ -412,7 +416,7 @@ class Lido extends AbstractRecord
             if (!preg_match('{^([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
                 continue;
             }
-            $isbn = MetadataUtils::normalizeISBN($matches[1]);
+            $isbn = $this->metadataUtils->normalizeISBN($matches[1]);
             if ($isbn) {
                 $arr[] = $isbn;
             } else {
@@ -592,7 +596,7 @@ class Lido extends AbstractRecord
             foreach ($eventNode->eventActor as $actorNode) {
                 foreach ($actorNode->actorInRole as $roleNode) {
                     if (isset($roleNode->actor->nameActorSet->appellationValue)) {
-                        $actorRole = MetadataUtils::normalizeRelator(
+                        $actorRole = $this->metadataUtils->normalizeRelator(
                             (string)$roleNode->roleActor->term
                         );
                         if (empty($role) || in_array($actorRole, (array)$role)) {
@@ -619,7 +623,7 @@ class Lido extends AbstractRecord
         foreach ($this->getEventNodes($event) as $eventNode) {
             if (!empty($eventNode->eventPlace->displayPlace)) {
                 $str = trim(
-                    MetadataUtils::stripTrailingPunctuation(
+                    $this->metadataUtils->stripTrailingPunctuation(
                         (string)$eventNode->eventPlace->displayPlace,
                         '.'
                     )
@@ -729,7 +733,7 @@ class Lido extends AbstractRecord
             foreach ($subject->subjectDate as $date) {
                 if (!empty($date->displayDate)) {
                     $str = trim(
-                        MetadataUtils::stripTrailingPunctuation(
+                        $this->metadataUtils->stripTrailingPunctuation(
                             (string)$date->displayDate,
                             '.'
                         )
@@ -755,7 +759,7 @@ class Lido extends AbstractRecord
             foreach ($subject->subjectPlace as $place) {
                 if (!empty($place->displayPlace)) {
                     $str = trim(
-                        MetadataUtils::stripTrailingPunctuation(
+                        $this->metadataUtils->stripTrailingPunctuation(
                             (string)$place->displayPlace,
                             '.'
                         )
@@ -783,7 +787,7 @@ class Lido extends AbstractRecord
                     foreach ($place->place->namePlaceSet as $set) {
                         if ($set->appellationValue) {
                             $str = trim(
-                                MetadataUtils::stripTrailingPunctuation(
+                                $this->metadataUtils->stripTrailingPunctuation(
                                     (string)$set->appellationValue,
                                     '.'
                                 )
@@ -949,8 +953,8 @@ class Lido extends AbstractRecord
             return null;
         }
 
-        if (MetadataUtils::validateISO8601Date($startDate) === false
-            || MetadataUtils::validateISO8601Date($endDate) === false
+        if ($this->metadataUtils->validateISO8601Date($startDate) === false
+            || $this->metadataUtils->validateISO8601Date($endDate) === false
         ) {
             return null;
         }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Compare factory
+ * MetadataUtils factory
  *
  * PHP version 7
  *
@@ -25,7 +25,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Base\Command\Solr;
+namespace RecordManager\Base\Utils;
 
 use Interop\Container\ContainerInterface;
 use Interop\Container\Exception\ContainerException;
@@ -33,7 +33,7 @@ use Laminas\ServiceManager\Exception\ServiceNotCreatedException;
 use Laminas\ServiceManager\Exception\ServiceNotFoundException;
 
 /**
- * Compare factory
+ * MetadataUtils Factory
  *
  * @category DataManagement
  * @package  RecordManager
@@ -41,7 +41,8 @@ use Laminas\ServiceManager\Exception\ServiceNotFoundException;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class CompareFactory implements \Laminas\ServiceManager\Factory\FactoryInterface
+class MetadataUtilsFactory
+    implements \Laminas\ServiceManager\Factory\FactoryInterface
 {
     /**
      * Create an object
@@ -68,14 +69,9 @@ class CompareFactory implements \Laminas\ServiceManager\Factory\FactoryInterface
     ) {
         $configReader = $container->get(\RecordManager\Base\Settings\Ini::class);
         return new $requestedName(
+            RECMAN_BASE_PATH,
             $configReader->get('recordmanager.ini'),
-            $configReader->get('datasources.ini'),
-            $container->get(\RecordManager\Base\Utils\Logger::class),
-            $container->get(\RecordManager\Base\Database\AbstractDatabase::class),
-            $container->get(\RecordManager\Base\Record\PluginManager::class),
-            $container->get(\RecordManager\Base\Splitter\PluginManager::class),
-            $container->get(\RecordManager\Base\Deduplication\DedupHandler::class),
-            $container->get(\RecordManager\Base\Solr\SolrComparer::class)
+            $container->get(\RecordManager\Base\Utils\Logger::class)
         );
     }
 }

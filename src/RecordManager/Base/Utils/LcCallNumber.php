@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2015.
+ * Copyright (C) The National Library of Finland 2015-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -38,7 +38,7 @@ namespace RecordManager\Base\Utils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class LcCallNumber
+class LcCallNumber extends AbstractCallNumber
 {
     /**
      * Classification
@@ -161,14 +161,14 @@ class LcCallNumber
                     $key .= '_';
                 }
             }
-            $key .= MetadataUtils::createSortableString($this->suffix);
+            $key .= $this->createSortableString($this->suffix);
         }
         if ($this->cutter) {
             foreach (preg_split('/[A-Za-z]\d+/', $this->cutter) as $part) {
                 if ($key) {
                     $key .= ' ';
                 }
-                $key .= MetadataUtils::createSortableString($part);
+                $key .= $this->createSortableString($part);
             }
         }
         return $key;

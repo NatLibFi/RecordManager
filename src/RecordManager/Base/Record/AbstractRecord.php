@@ -52,6 +52,13 @@ abstract class AbstractRecord
     protected $logger;
 
     /**
+     * MetadataUtils
+     *
+     * @var MetadataUtils
+     */
+    protected $metadataUtils;
+
+    /**
      * Main configuration
      *
      * @var array
@@ -89,15 +96,21 @@ abstract class AbstractRecord
     /**
      * Constructor
      *
-     * @param Logger $logger             Logger
-     * @param array  $config             Main configuration
-     * @param array  $dataSourceSettings Data source settings
+     * @param array         $config             Main configuration
+     * @param array         $dataSourceSettings Data source settings
+     * @param Logger        $logger             Logger
+     * @param MetadataUtils $metadataUtils      Metadata utilities
      */
-    public function __construct(Logger $logger, $config, $dataSourceSettings)
-    {
-        $this->logger = $logger;
+    public function __construct(
+        array $config,
+        array $dataSourceSettings,
+        Logger $logger,
+        MetadataUtils $metadataUtils
+    ) {
         $this->config = $config;
         $this->dataSourceSettings = $dataSourceSettings;
+        $this->logger = $logger;
+        $this->metadataUtils = $metadataUtils;
     }
 
     /**
@@ -542,7 +555,7 @@ abstract class AbstractRecord
      */
     protected function validateDate($dateString)
     {
-        if (MetadataUtils::validateISO8601Date($dateString) !== false) {
+        if ($this->metadataUtils->validateISO8601Date($dateString) !== false) {
             return $dateString;
         }
         return '';
@@ -564,7 +577,7 @@ abstract class AbstractRecord
             if (empty($xml)) {
                 throw new \Exception('Tried to parse empty XML string');
             }
-            $doc = MetadataUtils::loadXML($xml);
+            $doc = $this->metadataUtils->loadXML($xml);
             if (false === $doc) {
                 $errors = libxml_get_errors();
                 $messageParts = [];

@@ -138,10 +138,16 @@ EOT;
     protected function getPreviewCreator()
     {
         $logger = $this->createMock(Logger::class);
+        $metadataUtils = new \RecordManager\Base\Utils\MetadataUtils(
+            RECMAN_BASE_PATH,
+            [],
+            $logger
+        );
         $record = new \RecordManager\Base\Record\Marc(
-          $logger,
           [],
-          $this->dataSourceSettings
+          $this->dataSourceSettings,
+          $logger,
+          $metadataUtils
         );
         $recordPM = $this->createMock(RecordPluginManager::class);
         $recordPM->expects($this->once())
@@ -154,15 +160,16 @@ EOT;
           $this->dataSourceSettings
         );
         $preview = new PreviewCreator(
-            null,
-            $logger,
             [],
             $this->dataSourceSettings,
+            null,
+            $logger,
             $recordPM,
             $this->createMock(EnrichmentPluginManager::class),
             $this->createMock(HttpClientManager::class),
             $this->createMock(Ini::class),
-            $fieldMapper
+            $fieldMapper,
+            $metadataUtils
         );
 
         return $preview;

@@ -67,6 +67,7 @@ class CreatePreview extends AbstractBase
      * @param SplitterPluginManager $splitterManager     Record splitter plugin
      *                                                   manager
      * @param DedupHandlerInterface $dedupHandler        Deduplication handler
+     * @param MetadataUtils         $metadataUtils       Metadata utilities
      * @param PreviewCreator        $previewCreator      Preview creator
      */
     public function __construct(
@@ -77,6 +78,7 @@ class CreatePreview extends AbstractBase
         RecordPluginManager $recordPluginManager,
         SplitterPluginManager $splitterManager,
         DedupHandlerInterface $dedupHandler,
+        MetadataUtils $metadataUtils,
         PreviewCreator $previewCreator
     ) {
         parent::__construct(
@@ -86,7 +88,8 @@ class CreatePreview extends AbstractBase
             $database,
             $recordPluginManager,
             $splitterManager,
-            $dedupHandler
+            $dedupHandler,
+            $metadataUtils
         );
 
         $this->previewCreator = $previewCreator;
@@ -144,7 +147,7 @@ class CreatePreview extends AbstractBase
 
         if ('marc' !== $format && substr(trim($metadata), 0, 1) === '<') {
             $doc = new \DOMDocument();
-            if (MetadataUtils::loadXML($metadata, $doc)) {
+            if ($this->metadataUtils->loadXML($metadata, $doc)) {
                 $root = $doc->childNodes->item(0);
                 if (in_array($root->nodeName, ['records', 'collection'])) {
                     // This is a collection of records, get the first one
@@ -239,7 +242,7 @@ class CreatePreview extends AbstractBase
     protected function oaipmhTransform($metadata, $transformations)
     {
         $doc = new \DOMDocument();
-        if (!MetadataUtils::loadXML($metadata, $doc)) {
+        if (!$this->metadataUtils->loadXML($metadata, $doc)) {
             throw new \Exception(
                 'Could not parse XML record'
             );

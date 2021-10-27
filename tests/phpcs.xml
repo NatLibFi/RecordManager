@@ -5,4 +5,9 @@
   <exclude-pattern>src/RecordManager/[^/]+/config/*</exclude-pattern>
   <arg name="extensions" value="php"/>
   <rule ref="PEAR"/>
+  <rule ref="PEAR.WhiteSpace.ObjectOperatorIndent">
+    <properties>
+      <property name="multilevel" value="true" />
+    </properties>
+  </rule>
 </ruleset>

@@ -28,7 +28,6 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Lido record class
@@ -151,22 +150,24 @@ class Lido extends \RecordManager\Base\Record\Lido
 
         foreach ($this->getSubjectDateRanges() as $range) {
             if (!isset($data['main_date_str'])) {
-                $data['main_date_str'] = MetadataUtils::extractYear($range[0]);
+                $data['main_date_str'] = $this->metadataUtils
+                    ->extractYear($range[0]);
                 $data['main_date'] = $this->validateDate($range[0]);
             }
             $data['search_daterange_mv'][]
-                = MetadataUtils::dateRangeToStr($range);
+                = $this->metadataUtils->dateRangeToStr($range);
         }
 
         $daterange = $this->getDateRange('valmistus');
         if ($daterange) {
             if (!isset($data['main_date_str'])) {
-                $data['main_date_str'] = MetadataUtils::extractYear($daterange[0]);
+                $data['main_date_str'] = $this->metadataUtils
+                    ->extractYear($daterange[0]);
                 $data['main_date'] = $this->validateDate($daterange[0]);
             }
             $data['search_daterange_mv'][]
                 = $data['creation_daterange']
-                    = MetadataUtils::dateRangeToStr($daterange);
+                    = $this->metadataUtils->dateRangeToStr($daterange);
         } else {
             $dateSources = [
                 'suunnittelu' => 'design', 'tuotanto' => 'production',
@@ -176,24 +177,25 @@ class Lido extends \RecordManager\Base\Record\Lido
                 $daterange = $this->getDateRange($dateSource);
                 if ($daterange) {
                     $data[$field . '_daterange']
-                        = MetadataUtils::dateRangeToStr($daterange);
+                        = $this->metadataUtils->dateRangeToStr($daterange);
                     if (!isset($data['search_daterange_mv'])) {
                         $data['search_daterange_mv'][]
                             = $data[$field . '_daterange'];
                     }
                     if (!isset($data['main_date_str'])) {
                         $data['main_date_str']
-                            = MetadataUtils::extractYear($daterange[0]);
+                            = $this->metadataUtils->extractYear($daterange[0]);
                         $data['main_date'] = $this->validateDate($daterange[0]);
                     }
                 }
             }
         }
         if ($range = $this->getDateRange('käyttö')) {
-            $data['use_daterange'] = MetadataUtils::dateRangeToStr($range);
+            $data['use_daterange'] = $this->metadataUtils->dateRangeToStr($range);
         }
         if ($range = $this->getDateRange('löytyminen')) {
-            $data['finding_daterange'] = MetadataUtils::dateRangeToStr($range);
+            $data['finding_daterange'] = $this->metadataUtils
+                ->dateRangeToStr($range);
         }
 
         $data['source_str_mv'] = $this->source;
@@ -213,7 +215,7 @@ class Lido extends \RecordManager\Base\Record\Lido
 
         $data['location_geo'] = $this->getEventPlaceLocations();
         $data['center_coords']
-            = MetadataUtils::getCenterCoordinates($data['location_geo']);
+            = $this->metadataUtils->getCenterCoordinates($data['location_geo']);
 
         // Usage rights
         if ($rights = $this->getUsageRights()) {
@@ -463,7 +465,7 @@ class Lido extends \RecordManager\Base\Record\Lido
         $result = array_map(
             function ($s) {
                 $s = preg_replace('/\(.*/', '', $s);
-                return trim(MetadataUtils::stripTrailingPunctuation($s));
+                return trim($this->metadataUtils->stripTrailingPunctuation($s));
             },
             $result
         );
@@ -595,7 +597,7 @@ class Lido extends \RecordManager\Base\Record\Lido
         // this field
         $title = str_replace([',', ';'], ' ', $this->getTitle());
         if ($this->getDriverParam('splitTitles', false)) {
-            $titlePart = MetadataUtils::splitTitle($title);
+            $titlePart = $this->metadataUtils->splitTitle($title);
             if ($titlePart) {
                 $title = $titlePart;
             }
@@ -1468,8 +1470,8 @@ class Lido extends \RecordManager\Base\Record\Lido
             return null;
         }
 
-        $start = MetadataUtils::validateISO8601Date($startDate);
-        $end = MetadataUtils::validateISO8601Date($endDate);
+        $start = $this->metadataUtils->validateISO8601Date($startDate);
+        $end = $this->metadataUtils->validateISO8601Date($endDate);
         if ($start === false || $end === false) {
             $this->logger->logDebug(
                 'Lido',
@@ -1648,7 +1650,7 @@ class Lido extends \RecordManager\Base\Record\Lido
             foreach ($eventNode->eventActor as $actorNode) {
                 foreach ($actorNode->actorInRole as $roleNode) {
                     if (isset($roleNode->actor->nameActorSet->appellationValue)) {
-                        $actorRole = MetadataUtils::normalizeRelator(
+                        $actorRole = $this->metadataUtils->normalizeRelator(
                             (string)$roleNode->roleActor->term
                         );
                         if (empty($role) || in_array($actorRole, (array)$role)) {

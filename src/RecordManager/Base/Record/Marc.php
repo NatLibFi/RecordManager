@@ -64,7 +64,7 @@ class Marc extends AbstractRecord
      *               {p => "Part"}
      *              ]
      */
-    protected $fields;
+    protected $fields = [];
 
     /**
      * Default primary author relator codes, may be overridden in configuration
@@ -137,13 +137,18 @@ class Marc extends AbstractRecord
     /**
      * Constructor
      *
-     * @param Logger $logger             Logger
-     * @param array  $config             Main configuration
-     * @param array  $dataSourceSettings Data source settings
+     * @param array         $config             Main configuration
+     * @param array         $dataSourceSettings Data source settings
+     * @param Logger        $logger             Logger
+     * @param MetadataUtils $metadataUtils      Metadata utilities
      */
-    public function __construct(Logger $logger, $config, $dataSourceSettings)
-    {
-        parent::__construct($logger, $config, $dataSourceSettings);
+    public function __construct(
+        array $config,
+        array $dataSourceSettings,
+        Logger $logger,
+        MetadataUtils $metadataUtils
+    ) {
+        parent::__construct($config, $dataSourceSettings, $logger, $metadataUtils);
 
         if (isset($config['MarcRecord']['primary_author_relators'])) {
             $this->primaryAuthorRelators = explode(
@@ -384,8 +389,8 @@ class Marc extends AbstractRecord
                 );
                 if ($centerField) {
                     foreach ($geoLocations as $geoLocation) {
-                        $data[$centerField][]
-                            = MetadataUtils::getCenterCoordinates($geoLocation);
+                        $data[$centerField][] = $this->metadataUtils
+                            ->getCenterCoordinates($geoLocation);
                     }
                 }
                 $displayField = $this->getDriverParam(
@@ -394,8 +399,8 @@ class Marc extends AbstractRecord
                 );
                 if ($displayField) {
                     foreach ($geoLocations as $geoLocation) {
-                        $data[$displayField][]
-                            = MetadataUtils::getGeoDisplayField($geoLocation);
+                        $data[$displayField][] = $this->metadataUtils
+                            ->getGeoDisplayField($geoLocation);
                     }
                 }
             }
@@ -508,7 +513,7 @@ class Marc extends AbstractRecord
             foreach ($fields as $field) {
                 if ($this->getIndicator($field, 2) == '1') {
                     $data['publisher'] = [
-                        MetadataUtils::stripTrailingPunctuation(
+                        $this->metadataUtils->stripTrailingPunctuation(
                             $this->getSubfield($field, 'b')
                         )
                     ];
@@ -554,7 +559,7 @@ class Marc extends AbstractRecord
             }
             $isbn = $matches[1];
             if (strlen($isbn) == 10) {
-                $isbn = MetadataUtils::isbn10to13($isbn);
+                $isbn = $this->metadataUtils->isbn10to13($isbn);
             }
             if ($isbn) {
                 $data['isbn'][] = $isbn;
@@ -716,7 +721,7 @@ class Marc extends AbstractRecord
     {
         if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
             $source = $this->getField('003');
-            $source = MetadataUtils::stripTrailingPunctuation($source);
+            $source = $this->metadataUtils->stripTrailingPunctuation($source);
             if ($source) {
                 $id = "($source)$id";
             }
@@ -745,7 +750,7 @@ class Marc extends AbstractRecord
     {
         $field = $this->getField('941');
         if ($field) {
-            return MetadataUtils::stripControlCharacters(
+            return $this->metadataUtils->stripControlCharacters(
                 $this->getSubfield($field, 'a')
             );
         }
@@ -756,7 +761,7 @@ class Marc extends AbstractRecord
             true
         );
         $ids = array_map(
-            ['\RecordManager\Base\Utils\MetadataUtils', 'stripControlCharacters'],
+            [$this->metadataUtils, 'stripControlCharacters'],
             $ids
         );
         if ($this->getDriverParam('003InLinkingID', false)) {
@@ -767,7 +772,7 @@ class Marc extends AbstractRecord
                     if (null === $record003) {
                         $field = $this->getField('003');
                         $record003 = $field
-                            ? MetadataUtils::stripControlCharacters($field)
+                            ? $this->metadataUtils->stripControlCharacters($field)
                             : '';
                     }
                     if ('' !== $record003) {
@@ -853,7 +858,7 @@ class Marc extends AbstractRecord
     public function getContainerTitle()
     {
         $first773 = $this->getField('773');
-        return MetadataUtils::stripTrailingPunctuation(
+        return $this->metadataUtils->stripTrailingPunctuation(
             $this->getSubfield($first773, 't')
         );
     }
@@ -866,7 +871,7 @@ class Marc extends AbstractRecord
     public function getContainerReference()
     {
         $first773 = $this->getField('773');
-        return MetadataUtils::stripTrailingPunctuation(
+        return $this->metadataUtils->stripTrailingPunctuation(
             $this->getSubfield($first773, 'g')
         );
     }
@@ -900,7 +905,7 @@ class Marc extends AbstractRecord
                     if (!in_array(key($subfield), $acceptSubfields)) {
                         continue;
                     }
-                    if (!MetadataUtils::hasTrailingPunctuation($title)) {
+                    if (!$this->metadataUtils->hasTrailingPunctuation($title)) {
                         $title .= $punctuation[key($subfield)];
                     } else {
                         $title .= ' ';
@@ -908,10 +913,10 @@ class Marc extends AbstractRecord
                     $title .= current($subfield);
                 }
                 if ($forFiling) {
-                    $title = MetadataUtils::stripLeadingPunctuation($title);
+                    $title = $this->metadataUtils->stripLeadingPunctuation($title);
                     $title = mb_strtolower($title, 'UTF-8');
                 }
-                $title = MetadataUtils::stripTrailingPunctuation($title);
+                $title = $this->metadataUtils->stripTrailingPunctuation($title);
                 if (!empty($title)) {
                     return $title;
                 }
@@ -932,16 +937,16 @@ class Marc extends AbstractRecord
             $author = $this->getSubfield($f100, 'a');
             $order = $this->getIndicator($f100, 1);
             if ($order == 0 && strpos($author, ',') === false) {
-                $author = MetadataUtils::convertAuthorLastFirst($author);
+                $author = $this->metadataUtils->convertAuthorLastFirst($author);
             }
-            return MetadataUtils::stripTrailingPunctuation($author);
+            return $this->metadataUtils->stripTrailingPunctuation($author);
         } elseif ($f700 = $this->getField('700')) {
             $author = $this->getSubfield($f700, 'a');
             $order = $this->getIndicator($f700, 1);
             if ($order == 0 && strpos($author, ',') === false) {
-                $author = MetadataUtils::convertAuthorLastFirst($author);
+                $author = $this->metadataUtils->convertAuthorLastFirst($author);
             }
-            return MetadataUtils::stripTrailingPunctuation($author);
+            return $this->metadataUtils->stripTrailingPunctuation($author);
         }
         return '';
     }
@@ -970,18 +975,20 @@ class Marc extends AbstractRecord
         $form = $this->config['Site']['unicode_normalization_form'] ?? 'NFKC';
         $f010 = $this->getField('010');
         if ($f010) {
-            $lccn = MetadataUtils::normalizeKey($this->getSubfield($f010, 'a'));
+            $lccn = $this->metadataUtils
+                ->normalizeKey($this->getSubfield($f010, 'a'));
             if ($lccn) {
                 $arr[] = "(lccn)$lccn";
             }
-            $nucmc = MetadataUtils::normalizeKey($this->getSubfield($f010, 'b'));
+            $nucmc = $this->metadataUtils
+                ->normalizeKey($this->getSubfield($f010, 'b'));
             if ($nucmc) {
                 $arr[] = "(nucmc)$lccn";
             }
         }
         $nbn = $this->getField('015');
         if ($nbn) {
-            $nr = MetadataUtils::normalizeKey(
+            $nr = $this->metadataUtils->normalizeKey(
                 $this->getSubfield($nbn, 'a'),
                 $form
             );
@@ -992,7 +999,7 @@ class Marc extends AbstractRecord
         }
         $nba = $this->getField('016');
         if ($nba) {
-            $nr = MetadataUtils::normalizeKey(
+            $nr = $this->metadataUtils->normalizeKey(
                 $this->getSubfield($nba, 'a'),
                 $form
             );
@@ -1029,7 +1036,7 @@ class Marc extends AbstractRecord
             default:
                 $src = '';
             }
-            $nr = MetadataUtils::normalizeKey($nr, $form);
+            $nr = $this->metadataUtils->normalizeKey($nr, $form);
             // Ignore any invalid ISMN
             if ('ismn' === $src && !preg_match('{([0-9]{13})}', $nr)) {
                 $nr = '';
@@ -1048,7 +1055,7 @@ class Marc extends AbstractRecord
                 }
             }
             if ($match) {
-                $arr[] = MetadataUtils::normalizeKey($nr);
+                $arr[] = $this->metadataUtils->normalizeKey($nr);
             }
         }
 
@@ -1067,7 +1074,7 @@ class Marc extends AbstractRecord
         $fields = $this->getFields('020');
         foreach ($fields as $field) {
             $original = $isbn = $this->getSubfield($field, 'a');
-            $isbn = MetadataUtils::normalizeISBN($isbn);
+            $isbn = $this->metadataUtils->normalizeISBN($isbn);
             if ($isbn) {
                 $arr[] = $isbn;
             } else {
@@ -1636,7 +1643,8 @@ class Marc extends AbstractRecord
                 } else {
                     // Additional normalization here so that we don't break ISO2709
                     // directory in SolrUpdater
-                    $fieldStr = MetadataUtils::normalizeUnicode($field, 'NFKC');
+                    $fieldStr = $this->metadataUtils
+                        ->normalizeUnicode($field, 'NFKC');
                 }
                 $fieldStr .= self::END_OF_FIELD;
                 $len = strlen($fieldStr);
@@ -1893,7 +1901,7 @@ class Marc extends AbstractRecord
         }
         $result = implode(' ', $subfields);
         if ($result && $stripTrailingPunctuation) {
-            $result = MetadataUtils::stripTrailingPunctuation($result);
+            $result = $this->metadataUtils->stripTrailingPunctuation($result);
         }
         $this->resultCache[$key] = $result;
         return $result;
@@ -1929,7 +1937,8 @@ class Marc extends AbstractRecord
                 if (key($subfield) === $code) {
                     $result = current($subfield);
                     if ($stripTrailingPunctuation) {
-                        $result = MetadataUtils::stripTrailingPunctuation($result);
+                        $result = $this->metadataUtils
+                            ->stripTrailingPunctuation($result);
                     }
                     break 2;
                 }
@@ -2078,10 +2087,7 @@ class Marc extends AbstractRecord
         }
         if ($stripTrailingPunctuation) {
             $data = array_map(
-                [
-                    '\RecordManager\Base\Utils\MetadataUtils',
-                    'stripTrailingPunctuation'
-                ],
+                [$this->metadataUtils, 'stripTrailingPunctuation'],
                 $data
             );
         }
@@ -2281,8 +2287,8 @@ class Marc extends AbstractRecord
         }
         $allFields = array_map(
             function ($str) {
-                return MetadataUtils::stripTrailingPunctuation(
-                    MetadataUtils::stripLeadingPunctuation($str)
+                return $this->metadataUtils->stripTrailingPunctuation(
+                    $this->metadataUtils->stripLeadingPunctuation($str)
                 );
             },
             $allFields
@@ -2412,7 +2418,7 @@ class Marc extends AbstractRecord
      */
     protected function getGenreFacets()
     {
-        return MetadataUtils::ucFirst(
+        return $this->metadataUtils->ucFirst(
             $this->getFieldsSubfields(
                 [
                     [self::GET_NORMAL, '600', ['v' => 1]],
@@ -2499,7 +2505,7 @@ class Marc extends AbstractRecord
             true
         );
         $result = array_merge($languages, $languages2);
-        return MetadataUtils::normalizeLanguageStrings($result);
+        return $this->metadataUtils->normalizeLanguageStrings($result);
     }
 
     /**
@@ -2512,7 +2518,7 @@ class Marc extends AbstractRecord
     protected function normalizeRelators($relators)
     {
         return array_map(
-            ['RecordManager\Base\Utils\MetadataUtils', 'normalizeRelator'],
+            [$this->metadataUtils, 'normalizeRelator'],
             $relators
         );
     }
@@ -2578,15 +2584,15 @@ class Marc extends AbstractRecord
                         )
                     );
                 }
-                $result['names'][] = MetadataUtils::stripTrailingPunctuation(
+                $result['names'][] = $this->metadataUtils->stripTrailingPunctuation(
                     trim($terms)
                 );
 
                 $fuller = ($tag == '100' || $tag == '700')
                     ? $this->getSubfields($field, ['q' => 1]) : '';
                 if ($fuller) {
-                    $result['fuller'][]
-                        = MetadataUtils::stripTrailingPunctuation(trim($fuller));
+                    $result['fuller'][] = $this->metadataUtils
+                        ->stripTrailingPunctuation(trim($fuller));
                 }
 
                 if ($fieldRelators) {
@@ -2600,7 +2606,8 @@ class Marc extends AbstractRecord
                         $result['idRoles'][]
                             = $this->formatAuthorIdWithRole(
                                 $authId,
-                                MetaDataUtils::stripTrailingPunctuation($role, '. ')
+                                $this->metadataUtils
+                                    ->stripTrailingPunctuation($role, '. ')
                             );
                     }
                 }
@@ -2957,10 +2964,10 @@ class Marc extends AbstractRecord
             $eastOrig = $this->getSubfield($field, 'e');
             $northOrig = $this->getSubfield($field, 'f');
             $southOrig = $this->getSubfield($field, 'g');
-            $west = MetadataUtils::coordinateToDecimal($westOrig);
-            $east = MetadataUtils::coordinateToDecimal($eastOrig);
-            $north = MetadataUtils::coordinateToDecimal($northOrig);
-            $south = MetadataUtils::coordinateToDecimal($southOrig);
+            $west = $this->metadataUtils->coordinateToDecimal($westOrig);
+            $east = $this->metadataUtils->coordinateToDecimal($eastOrig);
+            $north = $this->metadataUtils->coordinateToDecimal($northOrig);
+            $south = $this->metadataUtils->coordinateToDecimal($southOrig);
 
             if (!is_nan($west) && !is_nan($north)) {
                 if (($west < -180 || $west > 180) || ($north < -90 || $north > 90)) {

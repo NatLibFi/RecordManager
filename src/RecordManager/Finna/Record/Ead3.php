@@ -30,7 +30,6 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * EAD 3 Record Class
@@ -98,17 +97,17 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $unitDateRange = $unitDateRange['date'];
 
             $data['search_daterange_mv'][] = $data['unit_daterange']
-                = MetadataUtils::dateRangeToStr($unitDateRange);
+                = $this->metadataUtils->dateRangeToStr($unitDateRange);
 
             $data['main_date_str'] = $data['era_facet']
-                = MetadataUtils::extractYear($unitDateRange[0]);
+                = $this->metadataUtils->extractYear($unitDateRange[0]);
             $data['main_date'] = $this->validateDate($unitDateRange[0]);
 
             if (!$startDateUnknown) {
                 // When startDate is known, Append year range to title
                 // (only years, not the full dates)
-                $startYear = MetadataUtils::extractYear($unitDateRange[0]);
-                $endYear = MetadataUtils::extractYear($unitDateRange[1]);
+                $startYear = $this->metadataUtils->extractYear($unitDateRange[0]);
+                $endYear = $this->metadataUtils->extractYear($unitDateRange[1]);
                 $yearRange = '';
                 if ($startYear != '-9999') {
                     $yearRange = $startYear;

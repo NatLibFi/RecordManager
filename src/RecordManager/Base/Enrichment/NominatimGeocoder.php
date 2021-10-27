@@ -27,11 +27,6 @@
  */
 namespace RecordManager\Base\Enrichment;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Http\ClientManager as HttpClientManager;
-use RecordManager\Base\Record\PluginManager as RecordPluginManager;
-use RecordManager\Base\Utils\Logger;
-
 /**
  * Nominatim Geocoder Class
  *
@@ -140,31 +135,15 @@ class NominatimGeocoder extends AbstractEnrichment
     protected $transformations = [];
 
     /**
-     * Constructor
+     * Initialize settings
      *
-     * @param Database            $db                  Database connection (for
-     *                                                 cache)
-     * @param Logger              $logger              Logger
-     * @param array               $config              Main configuration
-     * @param RecordPluginManager $recordPluginManager Record plugin manager
-     * @param HttpClientManager   $httpManager         HTTP client manager
+     * @return void
      */
-    public function __construct(
-        Database $db,
-        Logger $logger,
-        array $config,
-        RecordPluginManager $recordPluginManager,
-        HttpClientManager $httpManager
-    ) {
-        parent::__construct(
-            $db,
-            $logger,
-            $config,
-            $recordPluginManager,
-            $httpManager
-        );
+    public function init()
+    {
+        parent::init();
 
-        $settings = $config['NominatimGeocoder'] ?? [];
+        $settings = $this->config['NominatimGeocoder'] ?? [];
         if (!isset($settings['url']) || !$settings['url']) {
             throw new \Exception('url must be specified for Nominatim');
         }

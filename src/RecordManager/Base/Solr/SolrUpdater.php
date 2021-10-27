@@ -118,6 +118,13 @@ class SolrUpdater
     protected $httpClientManager;
 
     /**
+     * Metadata utilities
+     *
+     * @var MetadataUtils
+     */
+    protected $metadataUtils;
+
+    /**
      * Whether building field is hierarchical
      *
      * @var bool
@@ -531,28 +538,30 @@ class SolrUpdater
     /**
      * Constructor
      *
-     * @param Database                $db                 Database connection
-     * @param object                  $log                Logger
      * @param array                   $config             Main configuration
      * @param array                   $dataSourceSettings Data source settings
+     * @param Database                $db                 Database connection
+     * @param object                  $log                Logger
      * @param RecordPluginManager     $recordPM           Record plugin manager
      * @param EnrichmentPluginManager $enrichmentPM       Enrichment plugin manager
      * @param HttpClientManager       $httpManager        HTTP client manager
      * @param Ini                     $configReader       Configuration reader
      * @param FieldMapper             $fieldMapper        Field mapper
+     * @param MetadataUtils           $metadataUtils      Metadata utilities
      *
      * @throws \Exception
      */
     public function __construct(
-        ?Database $db,
-        Logger $log,
         array $config,
         array $dataSourceSettings,
+        ?Database $db,
+        Logger $log,
         RecordPluginManager $recordPM,
         EnrichmentPluginManager $enrichmentPM,
         HttpClientManager $httpManager,
         Ini $configReader,
-        FieldMapper $fieldMapper
+        FieldMapper $fieldMapper,
+        MetadataUtils $metadataUtils
     ) {
         $this->config = $config;
         $this->db = $db;
@@ -563,6 +572,7 @@ class SolrUpdater
         $this->httpClientManager = $httpManager;
         $this->configReader = $configReader;
         $this->fieldMapper = $fieldMapper;
+        $this->metadataUtils = $metadataUtils;
 
         $this->metadataRecordCache = new \cash\LRUCache(100);
         $this->recordDataCache = new \cash\LRUCache(100);
@@ -1452,14 +1462,14 @@ class SolrUpdater
                         );
                     } else {
                         $merged[$fieldkey] = array_values(
-                            MetadataUtils::array_iunique($merged[$fieldkey])
+                            $this->metadataUtils->array_iunique($merged[$fieldkey])
                         );
                     }
                 }
             }
             if (isset($merged['allfields'])) {
                 $merged['allfields'] = array_values(
-                    MetadataUtils::array_iunique($merged['allfields'])
+                    $this->metadataUtils->array_iunique($merged['allfields'])
                 );
             } else {
                 $this->log->logWarning(
@@ -1590,7 +1600,7 @@ class SolrUpdater
                 } else {
                     $metadataRecord = $this->createRecord(
                         $record['format'],
-                        MetadataUtils::getRecordData($record, true),
+                        $this->metadataUtils->getRecordData($record, true),
                         $record['oai_id'],
                         $record['source_id']
                     );
@@ -1997,13 +2007,13 @@ class SolrUpdater
 
         $metadataRecord = $this->createRecord(
             $record['format'],
-            MetadataUtils::getRecordData($record, true),
+            $this->metadataUtils->getRecordData($record, true),
             $record['oai_id'],
             $record['source_id']
         );
 
         $settings = $this->settings[$source];
-        $hiddenComponent = MetadataUtils::isHiddenComponentPart(
+        $hiddenComponent = $this->metadataUtils->isHiddenComponentPart(
             $settings,
             $record,
             $metadataRecord
@@ -2140,7 +2150,7 @@ class SolrUpdater
                     if (null === $hostMetadataRecord) {
                         $hostMetadataRecord = $this->createRecord(
                             $hostRecord['format'],
-                            MetadataUtils::getRecordData($hostRecord, true),
+                            $this->metadataUtils->getRecordData($hostRecord, true),
                             $hostRecord['oai_id'],
                             $hostRecord['source_id']
                         );
@@ -2268,7 +2278,7 @@ class SolrUpdater
         ) {
             $keys = [];
             foreach ($workIds['titles'] ?? [] as $titleData) {
-                $title = MetadataUtils::normalizeKey(
+                $title = $this->metadataUtils->normalizeKey(
                     $titleData['value'],
                     $this->unicodeNormalizationForm
                 );
@@ -2276,7 +2286,7 @@ class SolrUpdater
                     $keys[] = "UT $title";
                 } else {
                     foreach ($workIds['authors'] ?? [] as $authorData) {
-                        $author = MetadataUtils::normalizeKey(
+                        $author = $this->metadataUtils->normalizeKey(
                             $authorData['value'],
                             $this->unicodeNormalizationForm
                         );
@@ -2285,7 +2295,7 @@ class SolrUpdater
                 }
             }
             foreach ($workIds['titlesAltScript'] ?? [] as $titleData) {
-                $title = MetadataUtils::normalizeKey(
+                $title = $this->metadataUtils->normalizeKey(
                     $titleData['value'],
                     $this->unicodeNormalizationForm
                 );
@@ -2293,7 +2303,7 @@ class SolrUpdater
                     $keys[] = "UT $title";
                 } else {
                     foreach ($workIds['authorsAltScript'] ?? [] as $authorData) {
-                        $author = MetadataUtils::normalizeKey(
+                        $author = $this->metadataUtils->normalizeKey(
                             $authorData['value'],
                             $this->unicodeNormalizationForm
                         );
@@ -2411,15 +2421,15 @@ class SolrUpdater
                     $all[] = $field;
                 }
             }
-            $data['allfields'] = MetadataUtils::array_iunique($all);
+            $data['allfields'] = $this->metadataUtils->array_iunique($all);
         }
 
         $data['first_indexed']
-            = MetadataUtils::formatTimestamp(
+            = $this->metadataUtils->formatTimestamp(
                 $this->db ? $this->db->getUnixTime($record['created'])
                     : $record['created']
             );
-        $data['last_indexed'] = MetadataUtils::formatTimestamp(
+        $data['last_indexed'] = $this->metadataUtils->formatTimestamp(
             $this->db ? $this->db->getUnixTime($record['date']) : $record['date']
         );
         if (!isset($data['fullrecord'])) {
@@ -2437,7 +2447,7 @@ class SolrUpdater
                 $data['allfields'][] = str_replace(
                     ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
                     ['ax', 'bx', 'cx', 'dx', 'ex', 'fx', 'gx', 'hx', 'ix', 'jx'],
-                    MetadataUtils::normalizeKey(
+                    $this->metadataUtils->normalizeKey(
                         $format,
                         $this->unicodeNormalizationForm
                     )
@@ -2460,7 +2470,7 @@ class SolrUpdater
         foreach ($data as $key => &$values) {
             if (is_array($values)) {
                 foreach ($values as $key2 => &$value) {
-                    $value = MetadataUtils::normalizeUnicode(
+                    $value = $this->metadataUtils->normalizeUnicode(
                         $value,
                         $this->unicodeNormalizationForm
                     );
@@ -2473,7 +2483,7 @@ class SolrUpdater
                 }
                 $values = array_values(array_unique($values));
             } elseif ($key != 'fullrecord') {
-                $values = MetadataUtils::normalizeUnicode(
+                $values = $this->metadataUtils->normalizeUnicode(
                     $values,
                     $this->unicodeNormalizationForm
                 );

@@ -45,29 +45,38 @@ trait CreateSampleRecordTrait
     /**
      * Create a sample record driver
      *
-     * @param string $class    Record class
-     * @param string $sample   Sample record file
-     * @param array  $dsConfig Datasource config
+     * @param string $class             Record class
+     * @param string $sample            Sample record file
+     * @param array  $dsConfig          Datasource config
+     * @param array  $constructorParams Additional constructor params
      *
      * @return \RecordManager\Base\Record\AbstractRecord
      */
-    protected function createRecord($class, $sample, $dsConfig = [], $ns = 'base')
-    {
+    protected function createRecord(
+        string $class,
+        string $sample,
+        array $dsConfig = [],
+        string $ns = 'base',
+        array $constructorParams = []
+    ) {
         $logger = $this->createMock(Logger::class);
-        if (\RecordManager\Finna\Record\Marc::class === $class) {
-            $record = new $class(
-                $logger,
-                [],
-                $dsConfig,
-                $this->createMock(\RecordManager\Base\Record\PluginManager::class)
-            );
-        } else {
-            $record = new $class(
-                $logger,
-                [],
-                $dsConfig
-            );
-        }
+        $config = [
+            'Site' => [
+                'articles' => 'articles.lst'
+            ],
+        ];
+        $metadataUtils = new \RecordManager\Base\Utils\MetadataUtils(
+            __DIR__ . '/../../../fixtures/base/config/recorddrivertest',
+            $config,
+            $logger
+        );
+        $record = new $class(
+            [],
+            $dsConfig,
+            $logger,
+            $metadataUtils,
+            ...$constructorParams
+        );
         $data = file_get_contents(__DIR__ . "/../../../fixtures/$ns/record/$sample");
         $record->setData('__unit_test_no_source__', '__unit_test_no_id__', $data);
         return $record;

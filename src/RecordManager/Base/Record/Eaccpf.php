@@ -29,7 +29,6 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * EAC-CPF Record Class
@@ -85,7 +84,7 @@ class Eaccpf extends AbstractRecord
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -111,7 +110,8 @@ class Eaccpf extends AbstractRecord
         $data = [];
 
         $data['record_format'] = 'eaccpf';
-        $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        $data['fullrecord']
+            = $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
         $data['allfields'] = $this->getAllFields();
         $data['source'] = $this->getRecordSource();
         $data['record_type'] = $this->getRecordType();
@@ -273,7 +273,7 @@ class Eaccpf extends AbstractRecord
      */
     protected function parseYear(string $date) : ?string
     {
-        return MetadataUtils::extractYear($date) ?: null;
+        return $this->metadataUtils->extractYear($date) ?: null;
     }
 
     /**

@@ -104,18 +104,20 @@ class Marc extends \RecordManager\Base\Record\Marc
     /**
      * Constructor
      *
-     * @param Logger              $logger              Logger
      * @param array               $config              Main configuration
      * @param array               $dataSourceSettings  Data source settings
+     * @param Logger              $logger              Logger
+     * @param MetadataUtils       $metadataUtils       Metadata utilities
      * @param RecordPluginManager $recordPluginManager Record plugin manager
      */
     public function __construct(
-        Logger $logger,
         $config,
         $dataSourceSettings,
+        Logger $logger,
+        MetadataUtils $metadataUtils,
         RecordPluginManager $recordPluginManager
     ) {
-        parent::__construct($logger, $config, $dataSourceSettings);
+        parent::__construct($config, $dataSourceSettings, $logger, $metadataUtils);
 
         $this->recordPluginManager = $recordPluginManager;
     }
@@ -179,7 +181,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                         $role = $this->getSubfield($field110, 'e');
                     }
                     $data['author_role'][] = $role
-                        ? MetadataUtils::normalizeRelator($role) : '';
+                        ? $this->metadataUtils->normalizeRelator($role) : '';
                 }
             }
         }
@@ -200,15 +202,15 @@ class Marc extends \RecordManager\Base\Record\Marc
 
         if (isset($data['publishDate'])) {
             $data['main_date_str']
-                = MetadataUtils::extractYear($data['publishDate'][0]);
+                = $this->metadataUtils->extractYear($data['publishDate'][0]);
             $data['main_date']
                 = $this->validateDate($data['main_date_str'] . '-01-01T00:00:00Z');
         }
         if ($range = $this->getPublicationDateRange()) {
             $data['search_daterange_mv'][] = $data['publication_daterange']
-                = MetadataUtils::dateRangeToStr($range);
+                = $this->metadataUtils->dateRangeToStr($range);
         }
-        $data['publication_place_txt_mv'] = MetadataUtils::arrayTrim(
+        $data['publication_place_txt_mv'] = $this->metadataUtils->arrayTrim(
             $this->getFieldsSubfields(
                 [
                     [self::GET_NORMAL, '260', ['a' => 1]]
@@ -221,7 +223,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             foreach ($fields as $field) {
                 if ($this->getIndicator($field, 2) == '1') {
                     $data['publication_place_txt_mv'][]
-                        = MetadataUtils::stripTrailingPunctuation(
+                        = $this->metadataUtils->stripTrailingPunctuation(
                             $this->getSubfield($field, 'a')
                         );
                 }
@@ -619,7 +621,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                         }
                     }
                 }
-                $access = MetadataUtils::normalizeKey(
+                $access = $this->metadataUtils->normalizeKey(
                     $this->getFieldSubfields('506', ['f' => 1]),
                     'NFKC'
                 );
@@ -725,7 +727,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         if (!empty($data['online_str_mv'])) {
-            $access = MetadataUtils::normalizeKey(
+            $access = $this->metadataUtils->normalizeKey(
                 $this->getFieldSubfields('506', ['f' => 1]),
                 'NFKC'
             );
@@ -844,7 +846,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             if (null === $changeDate || $changeDate < $componentPart['date']) {
                 $changeDate = $componentPart['date'];
             }
-            $data = MetadataUtils::getRecordData($componentPart, true);
+            $data = $this->metadataUtils->getRecordData($componentPart, true);
             $marc = $this->createRecord(
                 $componentPart['format'],
                 $data,
@@ -908,7 +910,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                     )
                 )
             );
-            $languages = MetadataUtils::normalizeLanguageStrings($languages);
+            $languages = $this->metadataUtils->normalizeLanguageStrings($languages);
             $originalLanguages = $marc->getFieldsSubfields(
                 [
                     [self::GET_NORMAL, '041', ['h' => 1]]
@@ -918,7 +920,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 true
             );
             $originalLanguages
-                = MetadataUtils::normalizeLanguageStrings($originalLanguages);
+                = $this->metadataUtils->normalizeLanguageStrings($originalLanguages);
             $subtitleLanguages = $marc->getFieldsSubfields(
                 [
                     [self::GET_NORMAL, '041', ['j' => 1]]
@@ -928,7 +930,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 true
             );
             $subtitleLanguages
-                = MetadataUtils::normalizeLanguageStrings($subtitleLanguages);
+                = $this->metadataUtils->normalizeLanguageStrings($subtitleLanguages);
             $id = $componentPart['_id'];
 
             $identifierFields = [
@@ -1052,7 +1054,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 $newField['s'][] = ['l' => $identifier];
             }
 
-            $key = MetadataUtils::createIdSortKey($id);
+            $key = $this->metadataUtils->createIdSortKey($id);
             $parts["$key $count"] = $newField;
             ++$count;
         }
@@ -1105,7 +1107,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         if ($dissTypes) {
             foreach ($dissTypes as $dissType) {
                 $dissType = mb_strtolower(
-                    MetadataUtils::normalizeUnicode($dissType, 'NFKC'),
+                    $this->metadataUtils->normalizeUnicode($dissType, 'NFKC'),
                     'UTF-8'
                 );
                 switch ($dissType) {
@@ -1442,11 +1444,11 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
         foreach ($this->getFields('540') as $field) {
-            $sub3 = MetadataUtils::stripTrailingPunctuation(
+            $sub3 = $this->metadataUtils->stripTrailingPunctuation(
                 $this->getSubfield($field, '3')
             );
             if ($sub3 == 'Metadata' || strncasecmp($sub3, 'metadata', 8) == 0) {
-                $subA = MetadataUtils::stripTrailingPunctuation(
+                $subA = $this->metadataUtils->stripTrailingPunctuation(
                     $this->getSubfield($field, 'a')
                 );
                 if (strncasecmp($subA, 'ei poimintaa', 12) == 0) {
@@ -1499,7 +1501,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         } elseif ($field = $this->getField('245')) {
             if ($b = $this->getSubfield($field, 'b')) {
-                $result[] = MetadataUtils::stripTrailingPunctuation($b);
+                $result[] = $this->metadataUtils->stripTrailingPunctuation($b);
             }
         }
 
@@ -1516,13 +1518,13 @@ class Marc extends \RecordManager\Base\Record\Marc
     {
         $rights = [];
         foreach ($this->getFields('540') as $field) {
-            $sub3 = MetadataUtils::stripTrailingPunctuation(
+            $sub3 = $this->metadataUtils->stripTrailingPunctuation(
                 $this->getSubfield($field, '3')
             );
             if ($sub3 == 'Metadata' || strncasecmp($sub3, 'metadata', 8) == 0) {
                 continue;
             }
-            $subC = MetadataUtils::stripTrailingPunctuation(
+            $subC = $this->metadataUtils->stripTrailingPunctuation(
                 $this->getSubfield($field, 'c')
             );
             $rights[] = $subC ? $subC : 'restricted';
@@ -1578,8 +1580,8 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         if (!isset($startDate) || !isset($endDate)
-            || MetadataUtils::validateISO8601Date($startDate) === false
-            || MetadataUtils::validateISO8601Date($endDate) === false
+            || $this->metadataUtils->validateISO8601Date($startDate) === false
+            || $this->metadataUtils->validateISO8601Date($endDate) === false
         ) {
             $field = $this->getField('260');
             if ($field) {
@@ -1593,8 +1595,8 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
 
         if (!isset($startDate) || !isset($endDate)
-            || MetadataUtils::validateISO8601Date($startDate) === false
-            || MetadataUtils::validateISO8601Date($endDate) === false
+            || $this->metadataUtils->validateISO8601Date($startDate) === false
+            || $this->metadataUtils->validateISO8601Date($endDate) === false
         ) {
             $fields = $this->getFields('264');
             foreach ($fields as $field) {
@@ -1610,8 +1612,8 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
         if (isset($startDate) && isset($endDate)
-            && MetadataUtils::validateISO8601Date($startDate) !== false
-            && MetadataUtils::validateISO8601Date($endDate) !== false
+            && $this->metadataUtils->validateISO8601Date($startDate) !== false
+            && $this->metadataUtils->validateISO8601Date($endDate) !== false
         ) {
             if ($endDate < $startDate) {
                 $this->logger->logDebug(
@@ -1697,7 +1699,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                     continue;
                 }
                 $allFields[] = $isbn;
-                $isbn = MetadataUtils::normalizeISBN($isbn);
+                $isbn = $this->metadataUtils->normalizeISBN($isbn);
                 if ($isbn) {
                     $allFields[] = $isbn;
                 }
@@ -1727,8 +1729,8 @@ class Marc extends \RecordManager\Base\Record\Marc
         }
         $allFields = array_map(
             function ($str) {
-                return MetadataUtils::stripTrailingPunctuation(
-                    MetadataUtils::stripLeadingPunctuation($str)
+                return $this->metadataUtils->stripTrailingPunctuation(
+                    $this->metadataUtils->stripLeadingPunctuation($str)
                 );
             },
             $allFields
@@ -1954,7 +1956,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             true
         );
         $result = array_merge($languages, $languages2);
-        return MetadataUtils::normalizeLanguageStrings($result);
+        return $this->metadataUtils->normalizeLanguageStrings($result);
     }
 
     /**
@@ -2159,7 +2161,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
             }
         }
-        return MetadataUtils::normalizeLanguageStrings($languages);
+        return $this->metadataUtils->normalizeLanguageStrings($languages);
     }
 
     /**
@@ -2179,7 +2181,7 @@ class Marc extends \RecordManager\Base\Record\Marc
             true,
             true
         );
-        return MetadataUtils::normalizeLanguageStrings($languages);
+        return $this->metadataUtils->normalizeLanguageStrings($languages);
     }
 
     /**

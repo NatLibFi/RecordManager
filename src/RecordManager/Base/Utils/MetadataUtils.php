@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2020.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -32,7 +32,7 @@ use RecordManager\Base\Record\AbstractRecord;
 /**
  * MetadataUtils Class
  *
- * This class contains a collection of static helper functions for metadata
+ * This class contains a collection of helper functions for metadata
  * processing
  *
  * @category DataManagement
@@ -48,7 +48,21 @@ class MetadataUtils
      *
      * @var \RecordManager\Base\Utils\Logger
      */
-    protected static $logger = null;
+    protected $logger;
+
+    /**
+     * Main configuration
+     *
+     * @var array
+     */
+    protected $config;
+
+    /**
+     * Base path for referenced files
+     *
+     * @var string
+     */
+    protected $basePath;
 
     /**
      * Title prefixes that, when encountered, will cause the full title to be
@@ -56,56 +70,63 @@ class MetadataUtils
      *
      * @var array
      */
-    protected static $fullTitlePrefixes = null;
+    protected $fullTitlePrefixes = null;
 
     /**
      * Abbreviations that require the following period to be retained.
      *
      * @var array
      */
-    protected static $abbreviations = [];
+    protected $abbreviations = [];
 
     /**
      * Articles that should be removed from the beginning of sort keys.
      *
      * @var array
      */
-    protected static $articles = null;
+    protected $articles = null;
 
     /**
      * Non-electronic article formats
      *
      * @var array
      */
-    protected static $articleFormats = null;
+    protected $articleFormats = null;
+
+    /**
+     * Electronic article formats
+     *
+     * @var array
+     */
+    protected $eArticleFormats = null;
 
     /**
      * All article formats
      *
      * @var array
      */
-    protected static $allArticleFormats = null;
+    protected $allArticleFormats = null;
 
     /**
      * Unicode normalization form
      *
      * @var string
      */
-    protected static $unicodeNormalizationForm = '';
+    protected $unicodeNormalizationForm = '';
 
     /**
      * Whether to convert all language strings to lowercase
      *
      * @var bool
      */
-    protected static $lowercaseLanguageStrings = true;
+    protected $lowercaseLanguageStrings = true;
 
     /**
      * Normalization character folding table
      *
      * @var array
      */
-    protected static $foldingTable = [
+    protected $foldingTable = [
         'Š' => 'S', 'š' => 's', 'Ž' => 'Z', 'ž' => 'z', 'À' => 'A',
         'Á' => 'A', 'Â' => 'A', 'Ã' => 'A', 'Ä' => 'A', 'Å' => 'A',
         'Æ' => 'A', 'Ç' => 'C', 'È' => 'E', 'É' => 'E', 'Ê' => 'E',
@@ -122,81 +143,82 @@ class MetadataUtils
     ];
 
     /**
-     * Set the logger
+     * Constructor
      *
-     * @param \RecordManager\Base\Utils\Logger $logger Logger
-     *
-     * @return void
-     */
-    public static function setLogger(\RecordManager\Base\Utils\Logger $logger)
-    {
-        self::$logger = $logger;
-    }
-
-    /**
-     * Set the configuration
-     *
+     * @param string $basePath Base path for referenced files
      * @param array  $config   Main configuration
-     * @param string $basePath Base path for finding config files
-     *
-     * @return void
+     * @param Logger $logger   Logger
      */
-    public static function setConfig($config, $basePath)
-    {
+    public function __construct(
+        string $basePath,
+        array $config,
+        Logger $logger
+    ) {
+        $this->basePath = $basePath;
+        $this->config = $config;
+        $this->logger = $logger;
+
         if (isset($config['Site']['full_title_prefixes'])) {
-            self::$fullTitlePrefixes = array_map(
-                ['\RecordManager\Base\Utils\MetadataUtils', 'normalizeKey'],
+            $this->fullTitlePrefixes = array_map(
+                [$this, 'normalizeKey'],
                 file(
-                    "$basePath/conf/{$config['Site']['full_title_prefixes']}",
+                    RECMAN_BASE_PATH
+                        . "/conf/{$config['Site']['full_title_prefixes']}",
                     FILE_IGNORE_NEW_LINES
                 )
             );
         }
 
         // Read the abbreviations file
-        self::$abbreviations = isset($config['Site']['abbreviations'])
+        $this->abbreviations = isset($config['Site']['abbreviations'])
             ? array_flip(
-                self::readListFile($basePath, $config['Site']['abbreviations'])
+                $this->readListFile($config['Site']['abbreviations'])
             ) : [];
 
         // Read the artices file
-        self::$articles = isset($config['Site']['articles'])
-            ? self::readListFile($basePath, $config['Site']['articles']) : [];
+        $this->articles = isset($config['Site']['articles'])
+            ? $this->readListFile($config['Site']['articles']) : [];
 
-        self::$articleFormats
-            = $config['Solr']['article_formats']
-            ?? ['Article'];
+        $this->articleFormats = $config['Solr']['article_formats'] ?? ['Article'];
 
-        $eArticleFormats
-            = $config['Solr']['earticle_formats']
-            ?? ['eArticle'];
+        $this->eArticleFormats = $config['Solr']['earticle_formats'] ?? ['eArticle'];
 
-        self::$allArticleFormats = array_merge(
-            self::$articleFormats,
-            $eArticleFormats
+        $this->allArticleFormats = array_merge(
+            $this->articleFormats,
+            $this->eArticleFormats
         );
 
-        self::$unicodeNormalizationForm
-            = $config['Solr']['unicode_normalization_form']
-            ?? '';
+        $this->unicodeNormalizationForm
+            = $config['Solr']['unicode_normalization_form'] ?? '';
 
-        self::$lowercaseLanguageStrings
-            = $config['Site']['lowercase_language_strings']
-            ?? true;
+        $this->lowercaseLanguageStrings
+            = $config['Site']['lowercase_language_strings'] ?? true;
 
         if (!empty($config['Site']['folding_ignore_characters'])) {
             $chars = preg_split(
                 '//u',
                 $config['Site']['folding_ignore_characters'],
-                null,
+                -1,
                 PREG_SPLIT_NO_EMPTY
             );
             foreach ($chars as $c) {
-                if (isset(self::$foldingTable[$c])) {
-                    unset(self::$foldingTable[$c]);
+                if (isset($this->foldingTable[$c])) {
+                    unset($this->foldingTable[$c]);
                 }
             }
         }
+    }
+
+    /**
+     * Set the logger
+     *
+     * @param Logger $logger Logger
+     *
+     * @return void
+     */
+    public function setLogger(Logger $logger)
+    {
+        $this->logger = $logger;
     }
 
     /**
@@ -206,7 +228,7 @@ class MetadataUtils
      *
      * @return bool|string Resulting ISBN or false for invalid ISBN
      */
-    public static function isbn10to13($isbn)
+    public function isbn10to13($isbn)
     {
         if (!preg_match('{^([0-9]{9})[0-9xX]$}', $isbn, $matches)) {
             // Invalid ISBN
@@ -214,12 +236,12 @@ class MetadataUtils
         }
 
         // Check that the 10 digit ISBN is valid
-        $checkChar = static::calculateIsbn10CheckChar($isbn);
+        $checkChar = $this->calculateIsbn10CheckChar($isbn);
         if ($isbn[9] !== $checkChar && ($checkChar !== 'X' || $isbn[9] !== 'x')) {
             return false;
         }
 
-        return '978' . $matches[1] . static::calculateIsbn13CheckDigit($isbn);
+        return '978' . $matches[1] . $this->calculateIsbn13CheckDigit($isbn);
     }
 
     /**
@@ -235,7 +257,7 @@ class MetadataUtils
      *
      * @return float
      */
-    public static function coordinateToDecimal($value)
+    public function coordinateToDecimal($value)
     {
         $value = str_replace(' ', '', $value);
         if ($value === '') {
@@ -301,12 +323,12 @@ class MetadataUtils
      *
      * @return string
      */
-    public static function createTitleKey($title, $form)
+    public function createTitleKey($title, $form)
     {
         $full = false;
-        if (isset(MetadataUtils::$fullTitlePrefixes)) {
-            $normalTitle = MetadataUtils::normalizeKey($title);
-            foreach (MetadataUtils::$fullTitlePrefixes as $prefix) {
+        if (isset($this->fullTitlePrefixes)) {
+            $normalTitle = $this->normalizeKey($title);
+            foreach ($this->fullTitlePrefixes as $prefix) {
                 if ($prefix
                     && strncmp($normalTitle, $prefix, strlen($prefix)) === 0
                 ) {
@@ -335,7 +357,7 @@ class MetadataUtils
         }
         // Limit key length to 200 characters
         $key = substr($key, 0, 200);
-        return MetadataUtils::normalizeKey($key, $form);
+        return $this->normalizeKey($key, $form);
     }
 
     /**
@@ -347,17 +369,17 @@ class MetadataUtils
      *
      * @return string
      */
-    public static function normalizeKey($str, $form = 'NFKC')
+    public function normalizeKey($str, $form = 'NFKC')
     {
-        $str = MetadataUtils::normalizeUnicode($str, 'NFKC');
-        $str = strtr($str, self::$foldingTable);
+        $str = $this->normalizeUnicode($str, 'NFKC');
+        $str = strtr($str, $this->foldingTable);
         $str = preg_replace(
             '/[\x00-\x20\x21-\x2F\x3A-\x40,\x5B-\x60,\x7B-\x7F]/',
             '',
             $str
         );
         if ('NFKC' !== $form) {
-            $str = MetadataUtils::normalizeUnicode($str, $form);
+            $str = $this->normalizeUnicode($str, $form);
         }
         $str = mb_strtolower(trim($str), 'UTF-8');
         return $str;
@@ -370,7 +392,7 @@ class MetadataUtils
      *
      * @return string Normalized ISBN or empty string
      */
-    public static function normalizeISBN($isbn)
+    public function normalizeISBN($isbn)
     {
         $isbn = str_replace('-', '', $isbn);
         if (!preg_match('{([0-9]{9,12}[0-9xX])}', $isbn, $matches)) {
@@ -378,7 +400,7 @@ class MetadataUtils
         }
         $isbn = $matches[1];
         if (strlen($isbn) === 10) {
-            $isbn = MetadataUtils::isbn10to13($isbn) ?: '';
+            $isbn = $this->isbn10to13($isbn) ?: '';
         }
         return $isbn;
     }
@@ -392,7 +414,7 @@ class MetadataUtils
      *
      * @return bool
      */
-    public static function authorMatch($a1, $a2)
+    public function authorMatch($a1, $a2)
     {
         if ($a1 == $a2) {
             return true;
@@ -433,7 +455,7 @@ class MetadataUtils
      *
      * @return boolean
      */
-    public static function hasTrailingPunctuation($str)
+    public function hasTrailingPunctuation($str)
     {
         $i = strlen($str) - 1;
         if ($i < 0) {
@@ -458,7 +480,7 @@ class MetadataUtils
      *
      * @return string
      */
-    public static function stripTrailingPunctuation($str, $additional = '')
+    public function stripTrailingPunctuation($str, $additional = '')
     {
         $basic = ' /:;,=([';
         if ($additional) {
@@ -482,7 +504,7 @@ class MetadataUtils
                 $lastWord = substr($str, 0, -1);
             }
             if (!is_numeric($lastWord)
-                && !isset(MetadataUtils::$abbreviations[strtolower($lastWord)])
+                && !isset($this->abbreviations[strtolower($lastWord)])
             ) {
                 $str = substr($str, 0, -1);
             }
@@ -510,7 +532,7 @@ class MetadataUtils
      *
      * @return string
      */
-    public static function stripLeadingPunctuation(
+    public function stripLeadingPunctuation(
         $str,
         $punctuation = " \t\\#*!¡?/:;.,=(['\"´`” ̈"
     ) {
@@ -529,9 +551,9 @@ class MetadataUtils
      *
      * @return string Modified title string
      */
-    public static function stripLeadingArticle($str)
+    public function stripLeadingArticle($str)
     {
-        foreach (MetadataUtils::$articles as $article) {
+        foreach ($this->articles as $article) {
             $len = strlen($article);
             if (strncasecmp($article, $str, $len) == 0) {
                 $str = substr($str, $len);
@@ -549,7 +571,7 @@ class MetadataUtils
      * @return array
      */
     // @codingStandardsIgnoreStart
-    public static function array_iunique($array)
+    public function array_iunique($array)
     {
         // This one handles UTF-8 properly, but mb_strtolower is SLOW
         $map = [];
@@ -570,7 +592,7 @@ class MetadataUtils
      *
      * @return string Sort key
      */
-    public static function createIdSortKey($id)
+    public function createIdSortKey($id)
     {
         if (preg_match('/^\w*(\d+)$/', $id, $matches)) {
             return $matches[1];
@@ -585,7 +607,7 @@ class MetadataUtils
      *
      * @return boolean|int False if invalid, resulting time otherwise
      */
-    public static function validateDate($date)
+    public function validateDate($date)
     {
         if (true
             && preg_match(
@@ -615,7 +637,7 @@ class MetadataUtils
      *
      * @return boolean|int False if invalid, resulting time otherwise
      */
-    public static function validateISO8601Date($date)
+    public function validateISO8601Date($date)
     {
         if (true
             && preg_match(
@@ -650,7 +672,7 @@ class MetadataUtils
      * @return string Start and end date in Solr format
      * @throws \Exception
      */
-    public static function dateRangeToStr($range)
+    public function dateRangeToStr($range)
     {
         if (!isset($range)) {
             return null;
@@ -676,7 +698,7 @@ class MetadataUtils
      *
      * @return string Cleaned string
      */
-    public static function trimXMLWhitespace($xml)
+    public function trimXMLWhitespace($xml)
     {
         return preg_replace('~\s*(<([^>]*)>[^<]*</\2>|<[^>]*>)\s*~', '$1', $xml);
     }
@@ -690,7 +712,7 @@ class MetadataUtils
      *
      * @return string Metadata as a string
      */
-    public static function getRecordData(&$record, $normalized)
+    public function getRecordData(&$record, $normalized)
     {
         if ($normalized) {
             $data = $record['normalized_data']
@@ -709,7 +731,7 @@ class MetadataUtils
      *
      * @return string Formatted string
      */
-    public static function formatTimestamp($timestamp)
+    public function formatTimestamp($timestamp)
     {
         $date = new \DateTime('', new \DateTimeZone('UTC'));
         $date->setTimeStamp($timestamp);
@@ -723,7 +745,7 @@ class MetadataUtils
      *
      * @return string Year
      */
-    public static function extractYear($str)
+    public function extractYear($str)
     {
         $matches = [];
         if (preg_match('/(\-?\d{4})/', $str, $matches)) {
@@ -739,7 +761,7 @@ class MetadataUtils
      *
      * @return string|string[] Converted string
      */
-    public static function ucFirst($str)
+    public function ucFirst($str)
     {
         if (is_array($str)) {
             foreach ($str as &$s) {
@@ -758,9 +780,9 @@ class MetadataUtils
      *
      * @return string Normalized string
      */
-    public static function normalizeUnicode($str, $form)
+    public function normalizeUnicode($str, $form)
     {
-        static $forms = [
+        $forms = [
             'NFC' => \Normalizer::FORM_C,
             'NFD' => \Normalizer::FORM_D,
             'NFKC' => \Normalizer::FORM_KC,
@@ -782,7 +804,7 @@ class MetadataUtils
      *
      * @return array Trimmed array
      */
-    public static function arrayTrim($array, $chars = " \t\n\r\0\x0B")
+    public function arrayTrim($array, $chars = " \t\n\r\0\x0B")
     {
         array_walk(
             $array,
@@ -803,7 +825,7 @@ class MetadataUtils
      * @return null|string Null if title was not split, otherwise the initial
      * title part
      */
-    public static function splitTitle($title)
+    public function splitTitle($title)
     {
         $i = 0;
         $parenLevel = 0;
@@ -823,10 +845,10 @@ class MetadataUtils
                     && ($i > 1 || strlen($word) > 4)
                 ) {
                     // Verify that the word is strippable (not abbreviation etc.)
-                    $leadStripped = MetadataUtils::stripLeadingPunctuation(
+                    $leadStripped = $this->stripLeadingPunctuation(
                         $word
                     );
-                    $stripped = MetadataUtils::stripTrailingPunctuation(
+                    $stripped = $this->stripTrailingPunctuation(
                         $leadStripped
                     );
                     $nextFirst = isset($titleWords[$i])
@@ -844,7 +866,7 @@ class MetadataUtils
                         && !preg_match('/.+\-\w{1,2}\.$/', $word)
                         && !preg_match('/^\w\.\w\.$/', $word) // initials
                     ) {
-                        return MetadataUtils::stripTrailingPunctuation(
+                        return $this->stripTrailingPunctuation(
                             implode(' ', array_splice($titleWords, 0, $i))
                         );
                     }
@@ -852,25 +874,6 @@ class MetadataUtils
             }
         }
         return null;
-    }
-
-    /**
-     * Make a string numerically sortable
-     *
-     * @param string $str String
-     *
-     * @return string
-     */
-    public static function createSortableString($str)
-    {
-        $str = preg_replace_callback(
-            '/(\d+)/',
-            function ($matches) {
-                return strlen((int)$matches[1]) . $matches[1];
-            },
-            strtoupper($str)
-        );
-        return preg_replace('/\s{2,}/', ' ', $str);
     }
 
     /**
@@ -882,7 +885,7 @@ class MetadataUtils
      *
      * @return boolean
      */
-    public static function isHiddenComponentPart($settings, $record, $metadataRecord)
+    public function isHiddenComponentPart($settings, $record, $metadataRecord)
     {
         if (isset($record['host_record_id'])) {
             if ($settings['componentParts'] == 'merge_all') {
@@ -892,9 +895,9 @@ class MetadataUtils
             ) {
                 $format = $metadataRecord->getFormat();
 
-                if (!in_array($format, MetadataUtils::$allArticleFormats)) {
+                if (!in_array($format, $this->allArticleFormats)) {
                     return true;
-                } elseif (in_array($format, MetadataUtils::$articleFormats)) {
+                } elseif (in_array($format, $this->articleFormats)) {
                     return true;
                 }
             }
@@ -909,7 +912,7 @@ class MetadataUtils
      *
      * @return string
      */
-    public static function stripControlCharacters($str)
+    public function stripControlCharacters($str)
     {
         return str_replace(["\r", "\n", "\t"], '', $str);
     }
@@ -921,7 +924,7 @@ class MetadataUtils
      *
      * @return string Center coordinates
      */
-    public static function getCenterCoordinates($wkt)
+    public function getCenterCoordinates($wkt)
     {
         if (!empty($wkt)) {
             $wkt = is_array($wkt) ? $wkt[0] : $wkt;
@@ -934,8 +937,8 @@ class MetadataUtils
             try {
                 $item = \geoPHP::load($wkt, 'wkt');
             } catch (\Exception $e) {
-                if (null !== self::$logger) {
-                    self::$logger->logError(
+                if (null !== $this->logger) {
+                    $this->logger->logError(
                         'getCenterCoordinates',
                         "Could not parse WKT '$wkt': " . $e->getMessage()
                     );
@@ -955,7 +958,7 @@ class MetadataUtils
      *
      * @return string Center coordinates
      */
-    public static function getGeoDisplayField($wkt)
+    public function getGeoDisplayField($wkt)
     {
         if (!empty($wkt)) {
             $wkt = is_array($wkt) ? $wkt[0] : $wkt;
@@ -968,8 +971,8 @@ class MetadataUtils
             try {
                 $item = \geoPHP::load($wkt, 'wkt');
             } catch (\Exception $e) {
-                if (null !== self::$logger) {
-                    self::$logger->logError(
+                if (null !== $this->logger) {
+                    $this->logger->logError(
                         'getCenterCoordinates',
                         "Could not parse WKT '$wkt': " . $e->getMessage()
                     );
@@ -990,16 +993,16 @@ class MetadataUtils
      *
      * @return mixed
      */
-    public static function normalizeLanguageStrings($languages)
+    public function normalizeLanguageStrings($languages)
     {
         if (is_array($languages)) {
             foreach ($languages as &$language) {
-                $language = self::normalizeLanguageStrings($language);
+                $language = $this->normalizeLanguageStrings($language);
             }
             return array_values(array_filter($languages));
         }
         $languages = trim($languages);
-        if (self::$lowercaseLanguageStrings) {
+        if ($this->lowercaseLanguageStrings) {
             $languages = strtolower($languages);
         }
         return $languages;
@@ -1012,7 +1015,7 @@ class MetadataUtils
      *
      * @return string
      */
-    public static function normalizeRelator($relator)
+    public function normalizeRelator($relator)
     {
         $relator = trim($relator);
         $relator = preg_replace('/\p{P}+/u', '', $relator);
@@ -1027,7 +1030,7 @@ class MetadataUtils
      *
      * @return string
      */
-    public static function getSourceFromId($id)
+    public function getSourceFromId($id)
     {
         $parts = explode('.', $id, 2);
         return $parts[0];
@@ -1044,7 +1047,7 @@ class MetadataUtils
      *
      * @return \SimpleXMLElement|\DomDocument|bool
      */
-    public static function loadXML(
+    public function loadXML(
         $xml,
         $dom = null,
         $options = 0,
@@ -1078,7 +1081,7 @@ class MetadataUtils
      *
      * @return string
      */
-    public static function convertAuthorLastFirst($author)
+    public function convertAuthorLastFirst($author)
     {
         $p = strrpos($author, ' ');
         if ($p > 0) {
@@ -1091,14 +1094,13 @@ class MetadataUtils
     /**
      * Read a list file into an array
      *
-     * @param string $basePath Base path
      * @param string $filename List file name
      *
      * @return array
      */
-    protected static function readListFile($basePath, $filename)
+    protected function readListFile($filename)
     {
-        $filename = "$basePath/conf/$filename";
+        $filename = $this->basePath . "/conf/$filename";
         $lines = file($filename, FILE_IGNORE_NEW_LINES);
         if ($lines === false) {
             throw new \Exception("Could not open list file '$filename'");
@@ -1120,7 +1122,7 @@ class MetadataUtils
      *
      * @return string
      */
-    protected static function calculateIsbn10CheckChar(string $isbn): string
+    protected function calculateIsbn10CheckChar(string $isbn): string
     {
         $sum = 0;
         for ($pos = 0, $mul = 10; $pos < 9; $pos++, $mul--) {
@@ -1140,7 +1142,7 @@ class MetadataUtils
      *
      * @return string
      */
-    protected static function calculateIsbn13CheckDigit(string $isbn): string
+    protected function calculateIsbn13CheckDigit(string $isbn): string
     {
         $sum = 38 + 3 * ($isbn[0] + $isbn[2] + $isbn[4] + $isbn[6]
             + $isbn[8])

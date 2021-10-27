@@ -240,9 +240,13 @@ class Import extends AbstractBase
         }
         $count = 0;
         while (!$splitter->getEOF()) {
-            $oaiID = '';
-            $data = $splitter->getNextRecord($oaiID);
-            $count += $this->storeRecord($source, $oaiID, $delete, $data);
+            $data = $splitter->getNextRecord();
+            $count += $this->storeRecord(
+                $source,
+                $data['additionalData']['oaiId'] ?? '',
+                $delete,
+                $data['metadata']
+            );
             if ($this->verbose) {
                 echo "Stored records: $count\n";
             }

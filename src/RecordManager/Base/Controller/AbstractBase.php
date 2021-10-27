@@ -104,6 +104,13 @@ abstract class AbstractBase
     protected $dedupHandler;
 
     /**
+     * Metadata utilities
+     *
+     * @var MetadataUtils;
+     */
+    protected $metadataUtils;
+
+    /**
      * Constructor
      *
      * @param array                 $config              Main configuration
@@ -114,6 +121,7 @@ abstract class AbstractBase
      * @param SplitterPluginManager $splitterManager     Record splitter plugin
      *                                                   manager
      * @param DedupHandlerInterface $dedupHandler        Deduplication handler
+     * @param MetadataUtils         $metadataUtils       Metadata utilities
      */
     public function __construct(
         array $config,
@@ -122,7 +130,8 @@ abstract class AbstractBase
         DatabaseInterface $database,
         RecordPluginManager $recordPluginManager,
         SplitterPluginManager $splitterManager,
-        DedupHandlerInterface $dedupHandler
+        DedupHandlerInterface $dedupHandler,
+        MetadataUtils $metadataUtils
     ) {
         date_default_timezone_set($config['Site']['timezone']);
 
@@ -135,9 +144,7 @@ abstract class AbstractBase
         $this->recordPluginManager = $recordPluginManager;
         $this->splitterPluginManager = $splitterManager;
         $this->dedupHandler = $dedupHandler;
-
-        MetadataUtils::setLogger($this->logger);
-        MetadataUtils::setConfig($config, RECMAN_BASE_PATH);
+        $this->metadataUtils = $metadataUtils;
     }
 
     /**

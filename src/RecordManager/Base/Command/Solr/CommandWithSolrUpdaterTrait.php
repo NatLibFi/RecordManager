@@ -33,6 +33,7 @@ use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Solr\SolrUpdater;
 use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Trait for commands that need SolrUpdater.
@@ -63,6 +64,7 @@ trait CommandWithSolrUpdaterTrait
      * @param SplitterPluginManager $splitterManager     Record splitter plugin
      *                                                   manager
      * @param DedupHandlerInterface $dedupHandler        Deduplication handler
+     * @param MetadataUtils         $metadataUtils       Metadata utilities
      * @param SolrUpdater           $solrUpdater         Solr updater
      */
     public function __construct(
@@ -73,6 +75,7 @@ trait CommandWithSolrUpdaterTrait
         RecordPluginManager $recordPluginManager,
         SplitterPluginManager $splitterManager,
         DedupHandlerInterface $dedupHandler,
+        MetadataUtils $metadataUtils,
         SolrUpdater $solrUpdater
     ) {
         parent::__construct(
@@ -82,7 +85,8 @@ trait CommandWithSolrUpdaterTrait
             $database,
             $recordPluginManager,
             $splitterManager,
-            $dedupHandler
+            $dedupHandler,
+            $metadataUtils
         );
         $this->solrUpdater = $solrUpdater;
     }

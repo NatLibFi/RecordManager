@@ -34,6 +34,7 @@ use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Solr\SolrComparer;
 use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\MetadataUtils;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -68,6 +69,7 @@ class CompareRecords extends AbstractBase
      * @param SplitterPluginManager $splitterManager     Record splitter plugin
      *                                                   manager
      * @param DedupHandlerInterface $dedupHandler        Deduplication handler
+     * @param MetadataUtils         $metadataUtils       Metadata utilities
      * @param SolrComparer          $solrComparer        Solr comparer
      */
     public function __construct(
@@ -78,6 +80,7 @@ class CompareRecords extends AbstractBase
         RecordPluginManager $recordPluginManager,
         SplitterPluginManager $splitterManager,
         DedupHandlerInterface $dedupHandler,
+        MetadataUtils $metadataUtils,
         SolrComparer $solrComparer
     ) {
         parent::__construct(
@@ -87,7 +90,8 @@ class CompareRecords extends AbstractBase
             $database,
             $recordPluginManager,
             $splitterManager,
-            $dedupHandler
+            $dedupHandler,
+            $metadataUtils
         );
         $this->solrComparer = $solrComparer;
     }

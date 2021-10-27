@@ -1,10 +1,10 @@
 <?php
 /**
- * Field value mapper that does no mapping at all
+ * Splitter interface
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2019.
+ * Copyright (C) The National Library of Finland 2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,10 +25,10 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Base\Utils;
+namespace RecordManager\Base\Splitter;
 
 /**
- * Field value mapper that does no mapping at all
+ * Splitter interface
  *
  * @category DataManagement
  * @package  RecordManager
@@ -36,45 +36,41 @@ namespace RecordManager\Base\Utils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class NoOpFieldMapper extends FieldMapper
+interface SplitterInterface
 {
     /**
-     * Map source format to Solr format
+     * Initializer
      *
-     * @param string $source Source ID
-     * @param string $format Format
+     * @param array $params Splitter configuration
      *
-     * @return string Mapped format string
+     * @return void
      */
-    public function mapFormat($source, $format)
-    {
-        return $format;
-    }
+    public function init(array $params);
 
     /**
-     * Map all fields in an array
+     * Set metadata
      *
-     * @param string $source Source ID
-     * @param array  $data   Fields to process
+     * @param string $data Record metadata
      *
-     * @return array
+     * @return void
      */
-    public function mapValues($source, $data)
-    {
-        return $data;
-    }
+    public function setData($data);
 
     /**
-     * Map a value using a mapping file
+     * Check whether EOF has been encountered
      *
-     * @param mixed $value       Value to map
-     * @param array $mappingFile Mapping file
-     * @param int   $index       Mapping index for sub-entry mappings
-     *
-     * @return mixed
+     * @return bool
      */
-    protected function mapValue($value, $mappingFile, $index = 0)
-    {
-        return $value;
-    }
+    public function getEOF();
+
+    /**
+     * Get next record
+     *
+     * Returns false on EOF or an associative array with the following keys:
+     * - string metadata       Actual metadata
+     * - array  additionalData Any additional data
+     *
+     * @return array|bool
+     */
+    public function getNextRecord();
 }

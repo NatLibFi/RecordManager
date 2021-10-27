@@ -28,7 +28,6 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Marc authority record class
@@ -113,7 +112,7 @@ class MarcAuthority extends \RecordManager\Base\Record\MarcAuthority
     protected function getHeading()
     {
         if ($name = $this->getFieldSubField('100', 'a', true)) {
-            $name = MetadataUtils::stripTrailingPunctuation($name, '.');
+            $name = $this->metadataUtils->stripTrailingPunctuation($name, '.');
             foreach (['b', 'c'] as $subfield) {
                 if ($sub = $this->getFieldSubField('100', $subfield, true)) {
                     $name .= $this->nameDelimiter . $sub;

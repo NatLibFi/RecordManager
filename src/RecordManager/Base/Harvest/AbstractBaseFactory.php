@@ -69,11 +69,12 @@ class AbstractBaseFactory implements \Laminas\ServiceManager\Factory\FactoryInte
         $configReader = $container->get(\RecordManager\Base\Settings\Ini::class);
 
         return new $requestedName(
+            $configReader->get('recordmanager.ini'),
+            $configReader->get('datasources.ini'),
             $container->get(\RecordManager\Base\Database\AbstractDatabase::class),
             $container->get(\RecordManager\Base\Utils\Logger::class),
             $container->get(\RecordManager\Base\Http\ClientManager::class),
-            $configReader->get('recordmanager.ini'),
-            $configReader->get('datasources.ini')
+            $container->get(\RecordManager\Base\Utils\MetadataUtils::class)
         );
     }
 }

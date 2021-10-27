@@ -28,8 +28,6 @@
  */
 namespace RecordManager\Finna\Record;
 
-use RecordManager\Base\Utils\MetadataUtils;
-
 /**
  * Forward record trait.
  *
@@ -59,7 +57,7 @@ trait ForwardRecordTrait
             if (null === $changeDate || $changeDate < $componentPart['date']) {
                 $changeDate = $componentPart['date'];
             }
-            $data = MetadataUtils::getRecordData($componentPart, true);
+            $data = $this->metadataUtils->getRecordData($componentPart, true);
             $xml = simplexml_load_string($data);
             foreach ($xml->children() as $child) {
                 $parts[] = [

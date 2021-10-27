@@ -97,6 +97,7 @@ class OaiPmhProvider extends AbstractBase
      * @param SplitterPluginManager $splitterManager     Record splitter plugin
      *                                                   manager
      * @param DedupHandlerInterface $dedupHandler        Deduplication handler
+     * @param MetadataUtils         $metadataUtils       Metadata utilities
      * @param array                 $formatConfig        OAI-PMH format configuration
      * @param array                 $setConfig           OAI-PMH set configuration
      */
@@ -108,6 +109,7 @@ class OaiPmhProvider extends AbstractBase
         RecordPluginManager $recordPluginManager,
         SplitterPluginManager $splitterManager,
         DedupHandlerInterface $dedupHandler,
+        MetadataUtils $metadataUtils,
         array $formatConfig,
         array $setConfig
     ) {
@@ -118,7 +120,8 @@ class OaiPmhProvider extends AbstractBase
             $database,
             $recordPluginManager,
             $splitterManager,
-            $dedupHandler
+            $dedupHandler,
+            $metadataUtils
         );
 
         $this->formats = $formatConfig;
@@ -804,7 +807,7 @@ EOT;
         if ($includeMetadata && !$record['deleted']) {
             $metadataRecord = $this->createRecord(
                 $record['format'],
-                MetadataUtils::getRecordData($record, true),
+                $this->metadataUtils->getRecordData($record, true),
                 $oaiId,
                 $record['source_id']
             );

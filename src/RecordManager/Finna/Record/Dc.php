@@ -28,7 +28,6 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Dc record class
@@ -57,7 +56,7 @@ class Dc extends \RecordManager\Base\Record\Dc
 
         if (isset($data['publishDate'])) {
             $data['main_date_str']
-                = MetadataUtils::extractYear($data['publishDate']);
+                = $this->metadataUtils->extractYear($data['publishDate']);
             $data['main_date'] = $this->validateDate(
                 $this->getPublicationYear() . '-01-01T00:00:00Z'
             );
@@ -65,7 +64,7 @@ class Dc extends \RecordManager\Base\Record\Dc
 
         if ($range = $this->getPublicationDateRange()) {
             $data['search_daterange_mv'][] = $data['publication_daterange']
-                = MetadataUtils::dateRangeToStr($range);
+                = $this->metadataUtils->dateRangeToStr($range);
         }
 
         // language, take only first

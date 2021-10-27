@@ -63,28 +63,31 @@ abstract class AuthEnrichment extends AbstractEnrichment
     /**
      * Constructor
      *
+     * @param array               $config              Main configuration
      * @param Database            $db                  Database connection (for
      *                                                 cache)
      * @param Logger              $logger              Logger
-     * @param array               $config              Main configuration
      * @param RecordPluginManager $recordPluginManager Record plugin manager
      * @param HttpClientManager   $httpManager         HTTP client manager
+     * @param MetadataUtils       $metadataUtils       Metadata utilities
      * @param Database            $authorityDb         Authority database connection
      */
     public function __construct(
+        array $config,
         Database $db,
         Logger $logger,
-        array $config,
         RecordPluginManager $recordPluginManager,
         HttpClientManager $httpManager,
+        MetadataUtils $metadataUtils,
         Database $authorityDb
     ) {
         parent::__construct(
+            $config,
             $db,
             $logger,
-            $config,
             $recordPluginManager,
-            $httpManager
+            $httpManager,
+            $metadataUtils
         );
         $this->authorityDb = $authorityDb;
     }
@@ -112,7 +115,7 @@ abstract class AuthEnrichment extends AbstractEnrichment
 
         $authRecord = $this->createRecord(
             $data['format'],
-            MetadataUtils::getRecordData($data, true),
+            $this->metadataUtils->getRecordData($data, true),
             $id,
             $data['source_id']
         );

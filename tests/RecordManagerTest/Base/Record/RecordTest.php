@@ -43,23 +43,6 @@ abstract class RecordTest extends \PHPUnit\Framework\TestCase
     use CreateSampleRecordTrait;
 
     /**
-     * Standard setup method.
-     *
-     * @return void
-     */
-    public function setUp(): void
-    {
-        MetadataUtils::setConfig(
-            [
-                'Site' => [
-                    'articles' => 'articles.lst'
-                ],
-            ],
-            __DIR__ . '/../../../fixtures/base/config/recorddrivertest'
-        );
-    }
-
-    /**
      * Compare two arrays
      *
      * This makes any errors easier to understand than using assertEquals on the

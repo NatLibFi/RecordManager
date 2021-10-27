@@ -28,7 +28,6 @@
 namespace RecordManager\Base\Command\Records;
 
 use RecordManager\Base\Command\AbstractBase;
-use RecordManager\Base\Utils\MetadataUtils;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -261,13 +260,13 @@ class Export extends AbstractBase
                 ) {
                     $metadataRecord = $this->createRecord(
                         $record['format'],
-                        MetadataUtils::getRecordData($record, true),
+                        $this->metadataUtils->getRecordData($record, true),
                         $record['oai_id'],
                         $record['source_id']
                     );
                     if ($xpath) {
                         $xml = $metadataRecord->toXML();
-                        $dom = MetadataUtils::loadXML($xml);
+                        $dom = $this->metadataUtils->loadXML($xml);
                         if (!$dom) {
                             throw new \Exception(
                                 "Failed to parse record '${$record['_id']}'"

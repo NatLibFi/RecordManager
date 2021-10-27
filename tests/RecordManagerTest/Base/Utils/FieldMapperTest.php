@@ -52,7 +52,7 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
      *
      * @var array
      */
-    protected $dataSourceSettings = [
+    protected $dataSourceConfig = [
         'test' => [
             'institution' => 'Test',
             'format' => 'marc',
@@ -420,6 +420,6 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
      */
     protected function getFieldMapper()
     {
-        return new FieldMapper(self::CONFIG_DIR, [], $this->dataSourceSettings);
+        return new FieldMapper(self::CONFIG_DIR, [], $this->dataSourceConfig);
     }
 }

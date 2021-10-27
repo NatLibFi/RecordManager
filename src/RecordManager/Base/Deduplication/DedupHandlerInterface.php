@@ -28,9 +28,6 @@
 namespace RecordManager\Base\Deduplication;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Record\PluginManager as RecordPluginManager;
-use RecordManager\Base\Utils\FieldMapper;
-use RecordManager\Base\Utils\Logger;
 
 /**
  * Interface for Deduplication Handlers
@@ -45,25 +42,6 @@ use RecordManager\Base\Utils\Logger;
  */
 interface DedupHandlerInterface
 {
-    /**
-     * Constructor
-     *
-     * @param Database            $db                  Database
-     * @param Logger              $log                 Logger object
-     * @param array               $mainConfig          Main configuration
-     * @param array               $datasourceConfig    Data source settings
-     * @param RecordPluginManager $recordPluginManager Record plugin manager
-     * @param FieldMapper         $fieldMapper         Field mapper
-     */
-    public function __construct(
-        Database $db,
-        Logger $log,
-        array $mainConfig,
-        array $datasourceConfig,
-        RecordPluginManager $recordPluginManager,
-        FieldMapper $fieldMapper
-    );
-
     /**
      * Verify dedup record consistency
      *

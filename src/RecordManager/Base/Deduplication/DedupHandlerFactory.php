@@ -72,12 +72,13 @@ class DedupHandlerFactory implements \Laminas\ServiceManager\Factory\FactoryInte
             $config['Site']['dedup_handler'] : $requestedName;
 
         return new $className(
-            $container->get(\RecordManager\Base\Database\AbstractDatabase::class),
-            $container->get(\RecordManager\Base\Utils\Logger::class),
             $config,
             $configReader->get('datasources.ini'),
+            $container->get(\RecordManager\Base\Database\AbstractDatabase::class),
+            $container->get(\RecordManager\Base\Utils\Logger::class),
             $container->get(\RecordManager\Base\Record\PluginManager::class),
             $container->get(\RecordManager\Base\Utils\FieldMapper::class),
+            $container->get(\RecordManager\Base\Utils\MetadataUtils::class)
         );
     }
 }

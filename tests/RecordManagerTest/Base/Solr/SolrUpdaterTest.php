@@ -78,7 +78,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
      *
      * @var array
      */
-    protected $dataSourceSettings = [
+    protected $dataSourceConfig = [
         'test' => [
             'institution' => 'Test',
             'format' => 'marc',
@@ -157,10 +157,16 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
     protected function getSolrUpdater()
     {
         $logger = $this->createMock(Logger::class);
+        $metadataUtils = new \RecordManager\Base\Utils\MetadataUtils(
+            RECMAN_BASE_PATH,
+            [],
+            $logger,
+        );
         $record = new \RecordManager\Base\Record\Marc(
-          $logger,
           [],
-          $this->dataSourceSettings
+          $this->dataSourceConfig,
+          $logger,
+          $metadataUtils,
         );
         $recordPM = $this->createMock(RecordPluginManager::class);
         $recordPM->expects($this->once())
@@ -169,18 +175,19 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
         $fieldMapper = new FieldMapper(
           self::CONFIG_DIR,
           [],
-          $this->dataSourceSettings
+          $this->dataSourceConfig
         );
         $solrUpdater = new SolrUpdater(
+            $this->config,
+            $this->dataSourceConfig,
             null,
             $logger,
-            $this->config,
-            $this->dataSourceSettings,
             $recordPM,
             $this->createMock(EnrichmentPluginManager::class),
             $this->createMock(HttpClientManager::class),
             $this->createMock(Ini::class),
-            $fieldMapper
+            $fieldMapper,
+            $metadataUtils
         );
 
         return $solrUpdater;

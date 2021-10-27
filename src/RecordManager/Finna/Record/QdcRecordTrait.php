@@ -28,7 +28,6 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Qdc record trait.
@@ -56,7 +55,7 @@ trait QdcRecordTrait
 
         if (isset($data['publishDate'])) {
             $data['main_date_str']
-                = MetadataUtils::extractYear($data['publishDate']);
+                = $this->metadataUtils->extractYear($data['publishDate']);
             $data['main_date'] = $this->validateDate(
                 $this->getPublicationYear() . '-01-01T00:00:00Z'
             );
@@ -64,7 +63,7 @@ trait QdcRecordTrait
 
         if ($range = $this->getPublicationDateRange()) {
             $data['search_daterange_mv'][] = $data['publication_daterange']
-                = MetadataUtils::dateRangeToStr($range);
+                = $this->metadataUtils->dateRangeToStr($range);
         }
 
         foreach ($this->doc->relation as $relation) {
@@ -134,7 +133,7 @@ trait QdcRecordTrait
         }
         if (!empty($data['location_geo'])) {
             $data['center_coords']
-                = MetadataUtils::getCenterCoordinates($data['location_geo']);
+                = $this->metadataUtils->getCenterCoordinates($data['location_geo']);
         }
 
         // Usage rights

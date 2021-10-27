@@ -73,8 +73,11 @@ class FieldMapper
      * @param array  $defaultMappings    Default mappings for all data sources
      * @param array  $dataSourceSettings Data source settings
      */
-    public function __construct($basePath, $defaultMappings, $dataSourceSettings)
-    {
+    public function __construct(
+        string $basePath,
+        array $defaultMappings,
+        array $dataSourceSettings
+    ) {
         $this->basePath = $basePath;
         $this->defaultMappings = $defaultMappings;
         $this->initDataSourceSettings($dataSourceSettings);

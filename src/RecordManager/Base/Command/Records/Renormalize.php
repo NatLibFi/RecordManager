@@ -28,7 +28,6 @@
 namespace RecordManager\Base\Command\Records;
 
 use RecordManager\Base\Command\AbstractBase;
-use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\PerformanceCounter;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -141,7 +140,7 @@ class Renormalize extends AbstractBase
                     return false;
                 }
                 $settings = $this->dataSourceSettings[$source];
-                $originalData = MetadataUtils::getRecordData($record, false);
+                $originalData = $this->metadataUtils->getRecordData($record, false);
                 $normalizedData = $originalData;
                 if (null !== $settings['normalizationXSLT']) {
                     $origMetadataRecord = $this->createRecord(
@@ -211,9 +210,9 @@ class Renormalize extends AbstractBase
                 if ($this->verbose) {
                     echo "Metadata for record {$record['_id']}: \n";
                     $record['normalized_data']
-                        = MetadataUtils::getRecordData($record, true);
+                        = $this->metadataUtils->getRecordData($record, true);
                     $record['original_data']
-                        = MetadataUtils::getRecordData($record, false);
+                        = $this->metadataUtils->getRecordData($record, false);
                     if ($record['normalized_data'] === $record['original_data']
                     ) {
                         $record['normalized_data'] = '';

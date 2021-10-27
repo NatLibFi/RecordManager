@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Finna\Module\Config;
 
-use Laminas\ServiceManager\Factory\InvokableFactory;
-
 return [
     'recordmanager' => [
         'plugin_managers' => [
@@ -62,7 +60,7 @@ return [
             ],
             'splitter' => [
                 'factories' => [
-                    \RecordManager\Finna\Splitter\Ead3::class => InvokableFactory::class,
+                    \RecordManager\Finna\Splitter\Ead3::class => \RecordManager\Base\Splitter\AbstractBaseFactory::class,
                 ],
             ],
         ],

@@ -56,6 +56,10 @@ class MarcTest extends \RecordManagerTest\Base\Record\RecordTest
                         '*' => 'testauth'
                     ],
                 ]
+            ],
+            'base',
+            [
+                $this->createMock(\RecordManager\Base\Record\PluginManager::class)
             ]
         );
         $fields = $record->toSolrArray();
@@ -289,7 +293,15 @@ class MarcTest extends \RecordManagerTest\Base\Record\RecordTest
      */
     public function testMarc2()
     {
-        $record = $this->createRecord(Marc::class, 'marc2.xml');
+        $record = $this->createRecord(
+            Marc::class,
+            'marc2.xml',
+            [],
+            'base',
+            [
+                $this->createMock(\RecordManager\Base\Record\PluginManager::class)
+            ]
+        );
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -474,7 +486,15 @@ class MarcTest extends \RecordManagerTest\Base\Record\RecordTest
      */
     public function testMarcGeo()
     {
-        $record = $this->createRecord(Marc::class, 'marc_geo.xml');
+        $record = $this->createRecord(
+            Marc::class,
+            'marc_geo.xml',
+            [],
+            'base',
+            [
+                $this->createMock(\RecordManager\Base\Record\PluginManager::class)
+            ]
+        );
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -667,7 +687,15 @@ class MarcTest extends \RecordManagerTest\Base\Record\RecordTest
      */
     public function testMarcThesis1()
     {
-        $record = $this->createRecord(Marc::class, 'marc-thesis1.xml', [], 'finna');
+        $record = $this->createRecord(
+            Marc::class,
+            'marc-thesis1.xml',
+            [],
+            'finna',
+            [
+                $this->createMock(\RecordManager\Base\Record\PluginManager::class)
+            ]
+        );
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -802,7 +830,15 @@ class MarcTest extends \RecordManagerTest\Base\Record\RecordTest
      */
     public function testMarcThesis2()
     {
-        $record = $this->createRecord(Marc::class, 'marc-thesis2.xml', [], 'finna');
+        $record = $this->createRecord(
+            Marc::class,
+            'marc-thesis2.xml',
+            [],
+            'finna',
+            [
+                $this->createMock(\RecordManager\Base\Record\PluginManager::class)
+            ]
+        );
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 

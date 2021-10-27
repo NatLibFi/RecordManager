@@ -64,18 +64,20 @@ class Dc extends AbstractRecord
     /**
      * Constructor
      *
-     * @param Logger            $logger             Logger
      * @param array             $config             Main configuration
      * @param array             $dataSourceSettings Data source settings
+     * @param Logger            $logger             Logger
+     * @param MetadataUtils     $metadataUtils      Metadata utilities
      * @param HttpClientManager $httpManager        HTTP client manager
      */
     public function __construct(
-        Logger $logger,
         $config,
         $dataSourceSettings,
+        Logger $logger,
+        MetadataUtils $metadataUtils,
         HttpClientManager $httpManager
     ) {
-        parent::__construct($logger, $config, $dataSourceSettings);
+        parent::__construct($config, $dataSourceSettings, $logger, $metadataUtils);
         $this->httpClientManager = $httpManager;
     }
 
@@ -118,7 +120,7 @@ class Dc extends AbstractRecord
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -151,7 +153,7 @@ class Dc extends AbstractRecord
         // allfields
         $allFields = [];
         foreach ($doc->children() as $field) {
-            $allFields[] = MetadataUtils::stripTrailingPunctuation(
+            $allFields[] = $this->metadataUtils->stripTrailingPunctuation(
                 trim((string)$field)
             );
         }
@@ -164,16 +166,17 @@ class Dc extends AbstractRecord
                 $languages[] = $code;
             }
         }
-        $data['language'] = MetadataUtils::normalizeLanguageStrings($languages);
+        $data['language'] = $this->metadataUtils
+            ->normalizeLanguageStrings($languages);
 
         $data['format'] = (string)$doc->type;
-        $data['author'] = MetadataUtils::stripTrailingPunctuation(
+        $data['author'] = $this->metadataUtils->stripTrailingPunctuation(
             trim((string)$doc->creator)
         );
         $data['author2'] = $this->getValues('contributor');
 
-        $data['title'] = $data['title_full']
-            = MetadataUtils::stripTrailingPunctuation(trim((string)$doc->title));
+        $data['title'] = $data['title_full'] = $this->metadataUtils
+            ->stripTrailingPunctuation(trim((string)$doc->title));
         $titleParts = explode(' : ', $data['title'], 2);
         if (!empty($titleParts)) {
             $data['title_short'] = $titleParts[0];
@@ -184,7 +187,7 @@ class Dc extends AbstractRecord
         $data['title_sort'] = $this->getTitle(true);
 
         $data['publisher'] = [
-            MetadataUtils::stripTrailingPunctuation(
+            $this->metadataUtils->stripTrailingPunctuation(
                 trim((string)$doc->publisher)
             )
         ];
@@ -234,13 +237,13 @@ class Dc extends AbstractRecord
     {
         $title = trim((string)$this->doc->title);
         if ($forFiling) {
-            $title = MetadataUtils::stripLeadingPunctuation($title);
-            $title = MetadataUtils::stripLeadingArticle($title);
+            $title = $this->metadataUtils->stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripLeadingArticle($title);
             // Again, just in case stripping the article affected this
-            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripLeadingPunctuation($title);
             $title = mb_strtolower($title, 'UTF-8');
         }
-        $title = MetadataUtils::stripTrailingPunctuation($title);
+        $title = $this->metadataUtils->stripTrailingPunctuation($title);
         return $title;
     }
 
@@ -267,7 +270,7 @@ class Dc extends AbstractRecord
             if (!preg_match('{([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
                 continue;
             }
-            $isbn = MetadataUtils::normalizeISBN($matches[1]);
+            $isbn = $this->metadataUtils->normalizeISBN($matches[1]);
             if ($isbn) {
                 $arr[] = $isbn;
             }
@@ -342,7 +345,7 @@ class Dc extends AbstractRecord
     {
         $values = [];
         foreach ($this->doc->{$tag} as $value) {
-            $values[] = MetadataUtils::stripTrailingPunctuation(
+            $values[] = $this->metadataUtils->stripTrailingPunctuation(
                 trim((string)$value)
             );
         }

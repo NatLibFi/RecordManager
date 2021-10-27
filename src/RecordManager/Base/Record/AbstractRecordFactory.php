@@ -70,9 +70,10 @@ class AbstractRecordFactory
         $configReader = $container->get(\RecordManager\Base\Settings\Ini::class);
 
         return new $requestedName(
-            $container->get(\RecordManager\Base\Utils\Logger::class),
             $configReader->get('recordmanager.ini'),
-            $configReader->get('datasources.ini')
+            $configReader->get('datasources.ini'),
+            $container->get(\RecordManager\Base\Utils\Logger::class),
+            $container->get(\RecordManager\Base\Utils\MetadataUtils::class)
         );
     }
 }

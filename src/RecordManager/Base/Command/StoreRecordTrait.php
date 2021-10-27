@@ -2,9 +2,12 @@
 /**
  * Record storage trait
  *
+ * Prerequisites:
+ * - MetadataUtils as $this->metadataUtils.
+ *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -26,8 +29,6 @@
  * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Command;
-
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Record storage trait
@@ -98,7 +99,8 @@ trait StoreRecordTrait
                 $splitter->init($splitterParams);
                 $splitter->setData($recordData);
                 while (!$splitter->getEOF()) {
-                    $dataArray[] = $splitter->getNextRecord();
+                    $splitRecord = $splitter->getNextRecord();
+                    $dataArray[] = $splitRecord['metadata'];
                 }
             } else {
                 $doc = new \DOMDocument();
@@ -333,7 +335,7 @@ trait StoreRecordTrait
         $settings = $this->dataSourceSettings[$sourceId];
         $metadataRecord = $this->createRecord(
             $record['format'],
-            MetadataUtils::getRecordData($record, true),
+            $this->metadataUtils->getRecordData($record, true),
             $record['oai_id'],
             $sourceId
         );
