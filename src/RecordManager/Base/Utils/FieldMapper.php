@@ -69,18 +69,18 @@ class FieldMapper
     /**
      * Constructor
      *
-     * @param string $basePath           Base path for configuration files
-     * @param array  $defaultMappings    Default mappings for all data sources
-     * @param array  $dataSourceSettings Data source settings
+     * @param string $basePath         Base path for configuration files
+     * @param array  $defaultMappings  Default mappings for all data sources
+     * @param array  $dataSourceConfig Data source settings
      */
     public function __construct(
         string $basePath,
         array $defaultMappings,
-        array $dataSourceSettings
+        array $dataSourceConfig
     ) {
         $this->basePath = $basePath;
         $this->defaultMappings = $defaultMappings;
-        $this->initDataSourceSettings($dataSourceSettings);
+        $this->initdataSourceConfig($dataSourceConfig);
     }
 
     /**
@@ -90,7 +90,7 @@ class FieldMapper
      *
      * @return void
      */
-    public function initDataSourceSettings(array $dataSourceConfig): void
+    public function initdataSourceConfig(array $dataSourceConfig): void
     {
         foreach ($dataSourceConfig as $source => $settings) {
             $this->settings[$source]['mappingFiles'] = [];

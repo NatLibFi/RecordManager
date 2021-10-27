@@ -133,14 +133,14 @@ class Suppress extends AbstractBase
                 $pc
             ) {
                 $source = $record['source_id'];
-                if (!isset($this->dataSourceSettings[$source])) {
+                if (!isset($this->dataSourceConfig[$source])) {
                     $this->logger->logFatal(
                         'suppress',
                         "Data source configuration missing for '$source'"
                     );
                     return false;
                 }
-                $settings = $this->dataSourceSettings[$source];
+                $settings = $this->dataSourceConfig[$source];
                 $record['suppressed'] = true;
                 if ($settings['dedup'] && isset($record['dedup_id'])) {
                     $this->dedupHandler->removeFromDedupRecord(

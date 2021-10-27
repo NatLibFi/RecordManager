@@ -80,7 +80,7 @@ abstract class AbstractBase
      *
      * @var array
      */
-    protected $dataSourceSettings;
+    protected $dataSourceConfig;
 
     /**
      * Record plugin manager
@@ -140,7 +140,7 @@ abstract class AbstractBase
         $this->logger = $logger;
         $this->db = $database;
         $this->logger->setDatabase($this->db);
-        $this->dataSourceSettings = $datasourceConfig;
+        $this->dataSourceConfig = $datasourceConfig;
         $this->recordPluginManager = $recordPluginManager;
         $this->splitterPluginManager = $splitterManager;
         $this->dedupHandler = $dedupHandler;
@@ -154,7 +154,7 @@ abstract class AbstractBase
      *
      * @return array
      */
-    protected function readDataSourceSettings($filename)
+    protected function readdataSourceConfig($filename)
     {
         $settings = parse_ini_file($filename, true);
         if (false === $settings) {

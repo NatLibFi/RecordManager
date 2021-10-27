@@ -70,7 +70,7 @@ abstract class AbstractRecord
      *
      * @var array
      */
-    protected $dataSourceSettings;
+    protected $dataSourceConfig;
 
     /**
      * Record source ID
@@ -96,19 +96,19 @@ abstract class AbstractRecord
     /**
      * Constructor
      *
-     * @param array         $config             Main configuration
-     * @param array         $dataSourceSettings Data source settings
-     * @param Logger        $logger             Logger
-     * @param MetadataUtils $metadataUtils      Metadata utilities
+     * @param array         $config           Main configuration
+     * @param array         $dataSourceConfig Data source settings
+     * @param Logger        $logger           Logger
+     * @param MetadataUtils $metadataUtils    Metadata utilities
      */
     public function __construct(
         array $config,
-        array $dataSourceSettings,
+        array $dataSourceConfig,
         Logger $logger,
         MetadataUtils $metadataUtils
     ) {
         $this->config = $config;
-        $this->dataSourceSettings = $dataSourceSettings;
+        $this->dataSourceConfig = $dataSourceConfig;
         $this->logger = $logger;
         $this->metadataUtils = $metadataUtils;
     }
@@ -127,7 +127,7 @@ abstract class AbstractRecord
     {
         $this->source = $source;
         $this->idPrefix
-            = $this->dataSourceSettings[$source]['idPrefix']
+            = $this->dataSourceConfig[$source]['idPrefix']
             ?? $source;
     }
 
@@ -423,7 +423,7 @@ abstract class AbstractRecord
      */
     public function getSuppressed()
     {
-        $filters = $this->dataSourceSettings[$this->source]['suppressOnField'] ?? [];
+        $filters = $this->dataSourceConfig[$this->source]['suppressOnField'] ?? [];
         if ($filters) {
             $solrFields = $this->toSolrArray();
             foreach ($filters as $field => $filter) {
@@ -504,9 +504,9 @@ abstract class AbstractRecord
      *
      * @return array
      */
-    public function getDataSourceSettings()
+    public function getdataSourceConfig()
     {
-        return $this->dataSourceSettings[$this->source];
+        return $this->dataSourceConfig[$this->source];
     }
 
     /**
@@ -520,14 +520,14 @@ abstract class AbstractRecord
      */
     protected function getDriverParam($parameter, $default = true)
     {
-        if (!isset($this->dataSourceSettings[$this->source]['driverParams'])
+        if (!isset($this->dataSourceConfig[$this->source]['driverParams'])
         ) {
             return $default;
         }
         $iniValues = parse_ini_string(
             implode(
                 PHP_EOL,
-                $this->dataSourceSettings[$this->source]['driverParams']
+                $this->dataSourceConfig[$this->source]['driverParams']
             )
         );
 

@@ -64,20 +64,20 @@ class Dc extends AbstractRecord
     /**
      * Constructor
      *
-     * @param array             $config             Main configuration
-     * @param array             $dataSourceSettings Data source settings
-     * @param Logger            $logger             Logger
-     * @param MetadataUtils     $metadataUtils      Metadata utilities
-     * @param HttpClientManager $httpManager        HTTP client manager
+     * @param array             $config           Main configuration
+     * @param array             $dataSourceConfig Data source settings
+     * @param Logger            $logger           Logger
+     * @param MetadataUtils     $metadataUtils    Metadata utilities
+     * @param HttpClientManager $httpManager      HTTP client manager
      */
     public function __construct(
         $config,
-        $dataSourceSettings,
+        $dataSourceConfig,
         Logger $logger,
         MetadataUtils $metadataUtils,
         HttpClientManager $httpManager
     ) {
-        parent::__construct($config, $dataSourceSettings, $logger, $metadataUtils);
+        parent::__construct($config, $dataSourceConfig, $logger, $metadataUtils);
         $this->httpClientManager = $httpManager;
     }
 

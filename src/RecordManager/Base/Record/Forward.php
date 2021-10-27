@@ -92,18 +92,18 @@ class Forward extends AbstractRecord
     /**
      * Constructor
      *
-     * @param array         $config             Main configuration
-     * @param array         $dataSourceSettings Data source settings
-     * @param Logger        $logger             Logger
-     * @param MetadataUtils $metadataUtils      Metadata utilities
+     * @param array         $config           Main configuration
+     * @param array         $dataSourceConfig Data source settings
+     * @param Logger        $logger           Logger
+     * @param MetadataUtils $metadataUtils    Metadata utilities
      */
     public function __construct(
         array $config,
-        array $dataSourceSettings,
+        array $dataSourceConfig,
         Logger $logger,
         MetadataUtils $metadataUtils
     ) {
-        parent::__construct($config, $dataSourceSettings, $logger, $metadataUtils);
+        parent::__construct($config, $dataSourceConfig, $logger, $metadataUtils);
 
         if (isset($config['ForwardRecord']['primary_author_relators'])) {
             $this->primaryAuthorRelators = explode(

@@ -47,7 +47,7 @@ trait AuthoritySupportTrait
      */
     protected function getAuthorityNamespace($type = '*')
     {
-        return $this->dataSourceSettings[$this->source]['authority'][$type] ?? '';
+        return $this->dataSourceConfig[$this->source]['authority'][$type] ?? '';
     }
 
     /**
@@ -113,8 +113,8 @@ trait AuthoritySupportTrait
      */
     protected function getAuthorityIdRegex($type = '*')
     {
-        return $this->dataSourceSettings[$this->source]['authority_id_regex'][$type]
-            ?? $this->dataSourceSettings[$this->source]['authority_id_regex']['*']
+        return $this->dataSourceConfig[$this->source]['authority_id_regex'][$type]
+            ?? $this->dataSourceConfig[$this->source]['authority_id_regex']['*']
             ?? null;
     }
 

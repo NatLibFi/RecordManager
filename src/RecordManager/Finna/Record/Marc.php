@@ -105,19 +105,19 @@ class Marc extends \RecordManager\Base\Record\Marc
      * Constructor
      *
      * @param array               $config              Main configuration
-     * @param array               $dataSourceSettings  Data source settings
+     * @param array               $dataSourceConfig    Data source settings
      * @param Logger              $logger              Logger
      * @param MetadataUtils       $metadataUtils       Metadata utilities
      * @param RecordPluginManager $recordPluginManager Record plugin manager
      */
     public function __construct(
         $config,
-        $dataSourceSettings,
+        $dataSourceConfig,
         Logger $logger,
         MetadataUtils $metadataUtils,
         RecordPluginManager $recordPluginManager
     ) {
-        parent::__construct($config, $dataSourceSettings, $logger, $metadataUtils);
+        parent::__construct($config, $dataSourceConfig, $logger, $metadataUtils);
 
         $this->recordPluginManager = $recordPluginManager;
     }

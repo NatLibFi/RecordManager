@@ -87,14 +87,14 @@ class Import extends AbstractBase
         $files = $input->getArgument('file');
         $delete = $input->getOption('delete');
 
-        if (!isset($this->dataSourceSettings[$source])) {
+        if (!isset($this->dataSourceConfig[$source])) {
             $this->logger->logFatal(
                 'import',
                 "Settings not found for data source $source"
             );
             throw new \Exception("Error: settings not found for $source\n");
         }
-        $settings = &$this->dataSourceSettings[$source];
+        $settings = &$this->dataSourceConfig[$source];
         $count = 0;
         $filelist = glob($files);
         if (empty($filelist)) {
@@ -136,7 +136,7 @@ class Import extends AbstractBase
      */
     protected function streamingLoad($file, $source, $delete)
     {
-        $settings = $this->dataSourceSettings[$source];
+        $settings = $this->dataSourceConfig[$source];
         $xml = new \XMLReader();
         $result = $xml->open($file);
         if (false === $result) {
@@ -207,7 +207,7 @@ class Import extends AbstractBase
      */
     protected function fullLoad($file, $source, $delete)
     {
-        $settings = $this->dataSourceSettings[$source];
+        $settings = $this->dataSourceConfig[$source];
         $data = file_get_contents($file);
         if ($data === false) {
             throw new \Exception("Could not read file '$file'");

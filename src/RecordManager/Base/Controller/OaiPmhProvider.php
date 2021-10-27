@@ -389,7 +389,7 @@ EOT;
         }
 
         // List available formats
-        foreach ($this->dataSourceSettings as $sourceId => $datasource) {
+        foreach ($this->dataSourceConfig as $sourceId => $datasource) {
             if ($source && $sourceId != $source) {
                 continue;
             }
@@ -684,7 +684,7 @@ EOT;
                 // source
                 $format = $this->formats[$format]['format'] ?? '';
                 $formatValid = false;
-                foreach ($this->dataSourceSettings as $sourceSettings) {
+                foreach ($this->dataSourceConfig as $sourceSettings) {
                     if (($sourceSettings['format'] ?? '') === $format
                         || !empty($sourceSettings["transformation_to_$format"])
                     ) {
@@ -801,7 +801,7 @@ EOT;
         }
         $metadata = '';
         $source = $record['source_id'];
-        $datasource = $this->dataSourceSettings[$source] ?? [];
+        $datasource = $this->dataSourceConfig[$source] ?? [];
         $oaiId = empty($datasource['ignoreOaiIdInProvider'])
             ? $record['oai_id'] : '';
         if ($includeMetadata && !$record['deleted']) {

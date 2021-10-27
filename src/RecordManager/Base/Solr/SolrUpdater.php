@@ -538,22 +538,22 @@ class SolrUpdater
     /**
      * Constructor
      *
-     * @param array                   $config             Main configuration
-     * @param array                   $dataSourceSettings Data source settings
-     * @param Database                $db                 Database connection
-     * @param object                  $log                Logger
-     * @param RecordPluginManager     $recordPM           Record plugin manager
-     * @param EnrichmentPluginManager $enrichmentPM       Enrichment plugin manager
-     * @param HttpClientManager       $httpManager        HTTP client manager
-     * @param Ini                     $configReader       Configuration reader
-     * @param FieldMapper             $fieldMapper        Field mapper
-     * @param MetadataUtils           $metadataUtils      Metadata utilities
+     * @param array                   $config           Main configuration
+     * @param array                   $dataSourceConfig Data source settings
+     * @param Database                $db               Database connection
+     * @param object                  $log              Logger
+     * @param RecordPluginManager     $recordPM         Record plugin manager
+     * @param EnrichmentPluginManager $enrichmentPM     Enrichment plugin manager
+     * @param HttpClientManager       $httpManager      HTTP client manager
+     * @param Ini                     $configReader     Configuration reader
+     * @param FieldMapper             $fieldMapper      Field mapper
+     * @param MetadataUtils           $metadataUtils    Metadata utilities
      *
      * @throws \Exception
      */
     public function __construct(
         array $config,
-        array $dataSourceSettings,
+        array $dataSourceConfig,
         ?Database $db,
         Logger $log,
         RecordPluginManager $recordPM,
@@ -694,7 +694,7 @@ class SolrUpdater
         }
 
         // Load settings
-        $this->initDatasources($dataSourceSettings);
+        $this->initDatasources($dataSourceConfig);
     }
 
     /**
@@ -1923,19 +1923,19 @@ class SolrUpdater
     /**
      * Initialize or reload data source settings
      *
-     * @param array $dataSourceSettings Optional data source settings to use instead
-     *                                  of reading them from the ini file
+     * @param array $dataSourceConfig Optional data source settings to use instead
+     *                                of reading them from the ini file
      *
      * @return void
      */
-    protected function initDatasources($dataSourceSettings = null)
+    protected function initDatasources($dataSourceConfig = null)
     {
-        if (null === $dataSourceSettings) {
-            $dataSourceSettings = $this->configReader->get('datasources.ini', true);
-            $this->fieldMapper->initDataSourceSettings($dataSourceSettings);
+        if (null === $dataSourceConfig) {
+            $dataSourceConfig = $this->configReader->get('datasources.ini', true);
+            $this->fieldMapper->initdataSourceConfig($dataSourceConfig);
         }
         $this->settings = [];
-        foreach ($dataSourceSettings as $source => $settings) {
+        foreach ($dataSourceConfig as $source => $settings) {
             if (!isset($settings['format'])) {
                 throw new \Exception("Error: format not set for $source\n");
             }

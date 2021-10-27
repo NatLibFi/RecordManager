@@ -105,7 +105,7 @@ class Search extends AbstractBase
             $regexp = "/$regexp/";
         }
         $matches = [];
-        foreach ($this->dataSourceSettings as $source => $settings) {
+        foreach ($this->dataSourceConfig as $source => $settings) {
             foreach ($settings as $setting => $value) {
                 foreach (is_array($value) ? $value : [$value] as $single) {
                     if (is_array($single)) {

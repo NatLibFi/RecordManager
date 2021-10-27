@@ -87,7 +87,7 @@ EOT;
      *
      * @var array
      */
-    protected $dataSourceSettings = [
+    protected $dataSourceConfig = [
         'test' => [
             'institution' => 'Test',
             'format' => 'marc',
@@ -145,7 +145,7 @@ EOT;
         );
         $record = new \RecordManager\Base\Record\Marc(
           [],
-          $this->dataSourceSettings,
+          $this->dataSourceConfig,
           $logger,
           $metadataUtils
         );
@@ -157,11 +157,11 @@ EOT;
         $fieldMapper = new FieldMapper(
           self::CONFIG_DIR,
           [],
-          $this->dataSourceSettings
+          $this->dataSourceConfig
         );
         $preview = new PreviewCreator(
             [],
-            $this->dataSourceSettings,
+            $this->dataSourceConfig,
             null,
             $logger,
             $recordPM,

@@ -122,7 +122,7 @@ class Deduplicate extends AbstractBase
         }
 
         if ($allRecords || $markOnly) {
-            foreach ($this->dataSourceSettings as $source => $settings) {
+            foreach ($this->dataSourceConfig as $source => $settings) {
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
                     continue;
                 }
@@ -184,7 +184,7 @@ class Deduplicate extends AbstractBase
             }
         }
 
-        foreach ($this->dataSourceSettings as $source => $settings) {
+        foreach ($this->dataSourceConfig as $source => $settings) {
             try {
                 if ($sourceId && $sourceId != '*' && $source != $sourceId) {
                     continue;

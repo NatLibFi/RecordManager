@@ -132,14 +132,14 @@ class Renormalize extends AbstractBase
                 &$count
             ) {
                 $source = $record['source_id'];
-                if (!isset($this->dataSourceSettings[$source])) {
+                if (!isset($this->dataSourceConfig[$source])) {
                     $this->logger->logFatal(
                         'renormalize',
                         "Data source configuration missing for '$source'"
                     );
                     return false;
                 }
-                $settings = $this->dataSourceSettings[$source];
+                $settings = $this->dataSourceConfig[$source];
                 $originalData = $this->metadataUtils->getRecordData($record, false);
                 $normalizedData = $originalData;
                 if (null !== $settings['normalizationXSLT']) {

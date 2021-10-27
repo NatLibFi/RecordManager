@@ -95,7 +95,7 @@ class DedupHandler implements DedupHandlerInterface
      *
      * @var array
      */
-    protected $dataSourceSettings;
+    protected $dataSourceConfig;
 
     /**
      * Unicode normalization form for keys
@@ -132,7 +132,7 @@ class DedupHandler implements DedupHandlerInterface
         MetadataUtils $metadataUtils
     ) {
         $this->config = $config;
-        $this->dataSourceSettings = $datasourceConfig;
+        $this->dataSourceConfig = $datasourceConfig;
         $this->db = $db;
         $this->log = $log;
         $this->recordPluginManager = $recordPluginManager;
@@ -329,7 +329,7 @@ class DedupHandler implements DedupHandlerInterface
     public function dedupRecord($record)
     {
         if ($record['deleted'] || ($record['suppressed'] ?? false)
-            || empty($this->dataSourceSettings[$record['source_id']]['dedup'])
+            || empty($this->dataSourceConfig[$record['source_id']]['dedup'])
         ) {
             if (isset($record['dedup_id'])) {
                 $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
@@ -674,12 +674,12 @@ class DedupHandler implements DedupHandlerInterface
         }
 
         $recordHidden = $this->metadataUtils->isHiddenComponentPart(
-            $this->dataSourceSettings[$record['source_id']],
+            $this->dataSourceConfig[$record['source_id']],
             $record,
             $origRecord
         );
         $candidateHidden = $this->metadataUtils->isHiddenComponentPart(
-            $this->dataSourceSettings[$candidate['source_id']],
+            $this->dataSourceConfig[$candidate['source_id']],
             $candidate,
             $cRecord
         );

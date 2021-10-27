@@ -78,7 +78,7 @@ trait StoreRecordTrait
         }
 
         $dataArray = [];
-        $settings = $this->dataSourceSettings[$sourceId];
+        $settings = $this->dataSourceConfig[$sourceId];
         if ($settings['recordSplitter']) {
             if ($this->verbose) {
                 echo "Splitting records\n";
@@ -332,7 +332,7 @@ trait StoreRecordTrait
 
         // Mark host records updated too
         $sourceId = $record['source_id'];
-        $settings = $this->dataSourceSettings[$sourceId];
+        $settings = $this->dataSourceConfig[$sourceId];
         $metadataRecord = $this->createRecord(
             $record['format'],
             $this->metadataUtils->getRecordData($record, true),

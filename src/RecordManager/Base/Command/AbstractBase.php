@@ -85,7 +85,7 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
      *
      * @var array
      */
-    protected $dataSourceSettings;
+    protected $dataSourceConfig;
 
     /**
      * Record plugin manager
@@ -159,7 +159,7 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
         $this->logger = $logger;
         $this->db = $database;
         $this->logger->setDatabase($this->db);
-        $this->dataSourceSettings = $datasourceConfig;
+        $this->dataSourceConfig = $datasourceConfig;
         $this->recordPluginManager = $recordPluginManager;
         $this->splitterPluginManager = $splitterManager;
         $this->dedupHandler = $dedupHandler;
@@ -218,7 +218,7 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
      */
     protected function initSourceSettings()
     {
-        foreach ($this->dataSourceSettings as $source => &$settings) {
+        foreach ($this->dataSourceConfig as $source => &$settings) {
             if (!isset($settings['institution'])) {
                 $this->logger->logFatal(
                     'initSourceSettings',
@@ -312,7 +312,7 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
      *
      * @return array
      */
-    protected function readDataSourceSettings($filename)
+    protected function readdataSourceConfig($filename)
     {
         $settings = parse_ini_file($filename, true);
         if (false === $settings) {

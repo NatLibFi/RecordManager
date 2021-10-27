@@ -94,8 +94,8 @@ class CreatePreview extends AbstractBase
 
         $this->previewCreator = $previewCreator;
 
-        if (empty($this->dataSourceSettings['_preview'])) {
-            $this->dataSourceSettings['_preview'] = [
+        if (empty($this->dataSourceConfig['_preview'])) {
+            $this->dataSourceConfig['_preview'] = [
                 'institution' => '_preview',
                 'componentParts' => null,
                 'format' => '_preview',
@@ -104,8 +104,8 @@ class CreatePreview extends AbstractBase
                 'mappingFiles' => []
             ];
         }
-        if (empty($this->dataSourceSettings['_marc_preview'])) {
-            $this->dataSourceSettings['_marc_preview'] = [
+        if (empty($this->dataSourceConfig['_marc_preview'])) {
+            $this->dataSourceConfig['_marc_preview'] = [
                 'institution' => '_preview',
                 'componentParts' => null,
                 'format' => 'marc',
@@ -126,11 +126,11 @@ class CreatePreview extends AbstractBase
      */
     public function launch($metadata, $format, $source)
     {
-        if (!$source || !isset($this->dataSourceSettings[$source])) {
+        if (!$source || !isset($this->dataSourceConfig[$source])) {
             $source = "_preview";
         }
 
-        $settings = $this->dataSourceSettings[$source];
+        $settings = $this->dataSourceConfig[$source];
 
         if (empty($format) && !empty($settings['format'])) {
             $format = $settings['format'];
@@ -217,7 +217,7 @@ class CreatePreview extends AbstractBase
     public function getDataSources($format = '')
     {
         $result = [];
-        foreach ($this->dataSourceSettings as $id => $config) {
+        foreach ($this->dataSourceConfig as $id => $config) {
             if ($format && $config['format'] !== $format) {
                 continue;
             }

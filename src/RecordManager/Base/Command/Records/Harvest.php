@@ -163,7 +163,7 @@ class Harvest extends AbstractBase
      */
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
-        if (empty($this->dataSourceSettings)) {
+        if (empty($this->dataSourceConfig)) {
             $this->logger->logFatal(
                 'harvest',
                 'Please add data source settings to datasources.ini'
@@ -202,7 +202,7 @@ class Harvest extends AbstractBase
         $returnCode = Command::SUCCESS;
 
         // Loop through all the sources and perform harvests
-        foreach ($this->dataSourceSettings as $source => $settings) {
+        foreach ($this->dataSourceConfig as $source => $settings) {
             try {
                 if ($repository && $repository != '*' && $source != $repository) {
                     continue;
@@ -302,7 +302,7 @@ class Harvest extends AbstractBase
                         // Deduplication will update timestamps from deferred
                         // update with markRecordDeleted, but handle non-dedup
                         // sources here to avoid need for deduplication:
-                        if (empty($this->dataSourceSettings[$source]['dedup'])) {
+                        if (empty($this->dataSourceConfig[$source]['dedup'])) {
                             $this->logger->logInfo(
                                 'harvest',
                                 'Updating timestamps for any host records of'
