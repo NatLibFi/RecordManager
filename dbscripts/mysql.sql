@@ -68,6 +68,15 @@ CREATE TABLE `ontologyEnrichment` (
   `altLabels` varchar(8192) NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `logMessage` (
+  `_id` integer NOT NULL PRIMARY KEY AUTO_INCREMENT,
+  `timestamp` datetime NOT NULL,
+  `context` varchar(255) NOT NULL,
+  `message` longtext NOT NULL,
+  `level` int(2) NOT NULL,
+  `pid` int(9) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- A trigger to make sure we're not linking to a deleted dedup record
 DROP TRIGGER IF EXISTS record_before_update;
 delimiter $$

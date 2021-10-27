@@ -201,24 +201,24 @@ class MetadataUtils
     /**
      * Convert ISBN-10 (without dashes) to ISBN-13
      *
-     * @param string $isbn ISBN
+     * @param string $isbn ISBN without dashes
      *
-     * @return boolean|string Resulting ISBN or false for invalid string
+     * @return bool|string Resulting ISBN or false for invalid ISBN
      */
     public static function isbn10to13($isbn)
     {
         if (!preg_match('{^([0-9]{9})[0-9xX]$}', $isbn, $matches)) {
-            // number is not 10 digits
+            // Invalid ISBN
             return false;
         }
 
-        $sum_of_digits = 38 + 3 * ($isbn[0] + $isbn[2] + $isbn[4] + $isbn[6]
-            + $isbn[8])
-            + $isbn[1] + $isbn[3] + $isbn[5] + $isbn[7];
+        // Check that the 10 digit ISBN is valid
+        $checkChar = static::calculateIsbn10CheckChar($isbn);
+        if ($isbn[9] !== $checkChar && ($checkChar !== 'X' || $isbn[9] !== 'x')) {
+            return false;
+        }
 
-        $check_digit = (10 - ($sum_of_digits % 10)) % 10;
-
-        return '978' . $matches[1] . $check_digit;
+        return '978' . $matches[1] . static::calculateIsbn13CheckDigit($isbn);
     }
 
     /**
@@ -370,8 +370,8 @@ class MetadataUtils
             return '';
         }
         $isbn = $matches[1];
-        if (strlen($isbn) == 10) {
-            $isbn = MetadataUtils::isbn10to13($isbn);
+        if (strlen($isbn) === 10) {
+            $isbn = MetadataUtils::isbn10to13($isbn) ?: '';
         }
         return $isbn;
     }
@@ -749,20 +749,17 @@ class MetadataUtils
      */
     public static function normalizeUnicode($str, $form)
     {
-        switch ($form) {
-        case 'NFC':
-            $str = \Normalizer::normalize($str, \Normalizer::FORM_C);
-            break;
-        case 'NFD':
-            $str = \Normalizer::normalize($str, \Normalizer::FORM_D);
-            break;
-        case 'NFKC':
-            $str = \Normalizer::normalize($str, \Normalizer::FORM_KC);
-            break;
-        case 'NFKD':
-            $str = \Normalizer::normalize($str, \Normalizer::FORM_KD);
-            break;
+        static $forms = [
+            'NFC' => \Normalizer::FORM_C,
+            'NFD' => \Normalizer::FORM_D,
+            'NFKC' => \Normalizer::FORM_KC,
+            'NFKD' => \Normalizer::FORM_KD,
+        ];
+
+        if (empty($str)) {
+            return $str;
         }
+        $str = \Normalizer::normalize($str, $forms[$form] ?? \Normalizer::FORM_C);
         return $str === false ? '' : $str;
     }
 
@@ -1100,5 +1097,40 @@ class MetadataUtils
         );
 
         return $lines;
+    }
+
+    /**
+     * Calculate check character for ISBN-10
+     *
+     * @param string $isbn ISBN-10
+     *
+     * @return string
+     */
+    protected static function calculateIsbn10CheckChar(string $isbn): string
+    {
+        $sum = 0;
+        for ($pos = 0, $mul = 10; $pos < 9; $pos++, $mul--) {
+            $sum += $mul * $isbn[$pos];
+        }
+        $checkChar = (11 - ($sum) % 11) % 11;
+        if ($checkChar === 10) {
+            $checkChar = 'X';
+        }
+        return (string)$checkChar;
+    }
+
+    /**
+     * Calculate check digit for ISBN-13
+     *
+     * @param string $isbn ISBN-13
+     *
+     * @return string
+     */
+    protected static function calculateIsbn13CheckDigit(string $isbn): string
+    {
+        $sum = 38 + 3 * ($isbn[0] + $isbn[2] + $isbn[4] + $isbn[6]
+            + $isbn[8])
+            + $isbn[1] + $isbn[3] + $isbn[5] + $isbn[7];
+        return (string)((10 - ($sum % 10)) % 10);
     }
 }

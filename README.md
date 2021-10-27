@@ -8,11 +8,35 @@ For a stable version, see the stable branch.
 
 ## General Installation
 
-- PHP 7.x is required.
-- Composer is required for dependencies. Run `composer install` in the directory where RecordManager is installed.
+- Minimum supported PHP version is 7.3.
+- Composer is required for dependencies. Run `composer install` (or `php /path/to/composer.phar install`) in the directory where RecordManager is installed.
 - The following PHP modules are required: xml, xslt, mbstring, intl
-- The following PECL module is required: mongodb
+- The following PECL module is required for MongoDB support: mongodb
+- With MongoDB, the minimum supported version is 3.6. Older versions may still work, but `session = false` needs to be specified in recordmanager.ini.
 
+## Upgrading
+
+Generally upgrading should be straightforward by replacing the old version with the new one and running
+`composer install` (or `php /path/to/composer.phar install`).
+With MongoDB you need to manually check that all indexes are present (see dbscripts/mongo.js).
+With MySQL/MariaDB make sure all tables are present (see dbscripts/mysql.sql).
+
+Note that since 8 Jul 2021 there is a new method for tracking updates of deduplicated records. Since RecordManager no longer uses the old method, there may be old tracking collections left dangling. With Mongo shell with the correct database active, you can use the following script to remove them:
+
+    var count = 0;
+    db.getCollectionNames().forEach(function(c) {
+        if (c.match("^tmp_mr_record") || c.match("^mr_record")) {
+            db.getCollection(c).drop();
+            count++;
+        }
+    });
+    print(count + " collections dropped");
+
+With MySQL/MariaDB you can identify the tables with the following SQL query:
+
+    show tables like '%mr_record_%';
+
+You can then use the `drop table` command to remove them.
 
 ## Installation notes on CentOS 7
 
@@ -34,15 +58,20 @@ These are quick instructions on how to set up RecordManager. Please refer to the
   `yum install geos-devel` will be needed to compile the bindings unless GEOS is
   installed from source.
 
-- Required pecl modules: mongodb
+- MongoDB support
+
+  RecordManager supports both MongoDB (recommended) and any MySQL compatible
+  database. You may opt to skip the MongoDB requirements if you only use MySQL.
+
+  - Required pecl modules for MongoDB support: mongodb
 
     E.g. remi repos include a package for mongodb:
 
-      yum install php70-php-pecl-mongodb
+      yum install php74-php-pecl-mongodb
 
     Webtatic too:
 
-      yum install php70w-pecl-mongodb
+      yum install php74w-pecl-mongodb
 
     If there's no package available, use pecl to install mongodb:
 
@@ -52,19 +81,31 @@ These are quick instructions on how to set up RecordManager. Please refer to the
     Either way, make sure it's at least v1.2.0. Earlier versions have problems with
     pcntl.
 
-- Add the extension=mongodb.so line to /etc/php.d/mongodb.ini
+  - Add the extension=mongodb.so line to /etc/php.d/mongodb.ini
 
-- Install MongoDB from 10gen repositories (see http://www.mongodb.org/display/DOCS/CentOS+and+Fedora+Packages)
+  - Install MongoDB from 10gen repositories (see
+    http://www.mongodb.org/display/DOCS/CentOS+and+Fedora+Packages)
 
-- Adjust MongoDB settings as needed
+  - Adjust MongoDB settings as needed
 
 - Copy RecordManager to /usr/local/RecordManager/
 
-- Run `composer install` to install PHP dependencies
+- Run `composer install` to install PHP dependencies. If you did not install the
+  mongodb module above, you can also use `composer install --ignore-platform-reqs` to
+  force package installation even if the underlying dependencies are missing.
 
-- Create indexes with dbscripts/mongo.js
+- MongoDB: Create indexes with dbscripts/mongo.js
 
       mongo recman dbscripts/mongo.js
+
+- MySQL: Create tables and indexes with dbscripts/mysql.sql and add a user
+
+      mysql
+      create database recman;
+      use recman
+      source dbscripts/mysql.sql;
+      create user 'recman'@'localhost' identified by '<password>';
+      grant all on recman.* to 'recman'@'localhost';
 
 - Copy conf/recordmanager.ini.sample to conf/recordmanager.ini and modify the settings to suit your needs.
 

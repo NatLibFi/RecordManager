@@ -29,6 +29,7 @@
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Record\BAse as BaseRecord;
 use RecordManager\Base\Record\Factory as RecordFactory;
 use RecordManager\Base\Utils\Logger;
 
@@ -112,16 +113,19 @@ abstract class OnkiLightEnrichment extends Enrichment
     /**
      * Enrich the record and return any additions in solrArray
      *
-     * @param array  $solrArray          Metadata to be sent to Solr
-     * @param string $id                 Onki id
-     * @param string $solrField          Target Solr field
-     * @param bool   $includeInAllfields Whether to include the enriched
-     *                                   value also in allFields
+     * @param string     $sourceId           Source ID
+     * @param BaseRecord $record             Metadata record
+     * @param array      $solrArray          Metadata to be sent to Solr
+     * @param string     $id                 Onki id
+     * @param string     $solrField          Target Solr field
+     * @param string     $solrCheckField     Solr field to check for existing values
+     * @param bool       $includeInAllfields Whether to include the enriched
+     *                                       value also in allFields
      *
      * @return void
      */
-    protected function enrichField(&$solrArray, $id, $solrField,
-        $includeInAllfields = false
+    protected function enrichField(string $sourceId, BaseRecord $record, &$solrArray,
+        $id, $solrField, $solrCheckField = '', $includeInAllfields = false
     ) {
         // Clean up any invalid characters from the id
         $id = str_replace(
@@ -130,7 +134,13 @@ abstract class OnkiLightEnrichment extends Enrichment
             $id
         );
 
-        $solrArray[$solrField . '_uri_str_mv'][] = $id;
+        // TODO: Deprecated, remove in future:
+        $solrFieldBaseName = str_replace(
+            ['_add_txt_mv', '_txt_mv', '_str_mv'],
+            '',
+            $solrField
+        );
+        $solrArray[$solrFieldBaseName . '_uri_str_mv'][] = $id;
 
         // Check that the ID prefix matches that of the allowed ones
         $match = false;
@@ -144,10 +154,14 @@ abstract class OnkiLightEnrichment extends Enrichment
         if (!$match) {
             $this->logger->logDebug(
                 'enrichField',
-                "Ignoring unlisted URI '$id', record " . $solrArray['id']
+                "Ignoring unlisted URI '$id', record $sourceId." . $record->getID()
             );
             return;
         }
+
+        $checkFieldContents = $solrCheckField
+            ? (array)($solrArray[$solrCheckField] ?? [])
+            : [];
 
         $localData = $this->db->findOntologyEnrichment(['_id' => $id]);
         if ($localData) {
@@ -155,7 +169,9 @@ abstract class OnkiLightEnrichment extends Enrichment
                 explode('|', $localData['prefLabels'] ?? ''),
                 explode('|', $localData['altLabels'] ?? '')
             );
-            $solrArray[$solrField] = array_merge($solrArray[$solrField], $values);
+            $values = array_diff($values, $checkFieldContents);
+            $solrArray[$solrField]
+                = array_merge($solrArray[$solrField] ?? [], $values);
             if ($includeInAllfields) {
                 $solrArray['allfields']
                     = array_merge($solrArray['allfields'], $values);
@@ -197,8 +213,9 @@ abstract class OnkiLightEnrichment extends Enrichment
                 } elseif ($item['type'] != 'skos:Concept') {
                     continue;
                 }
-                if ($item['uri'] == $id
-                    && $val = $item['altLabel']['value'] ?? null
+                $val = $item['altLabel']['value'] ?? null;
+                if ($item['uri'] == $id && $val
+                    && !in_array($val, $checkFieldContents)
                 ) {
                     $solrArray[$solrField][] = $val;
                     if ($includeInAllfields) {
@@ -260,9 +277,11 @@ abstract class OnkiLightEnrichment extends Enrichment
                             foreach ((array)($matchItem['altLabel'] ?? [])
                                 as $label
                             ) {
-                                if (!$val = $label['value'] ?? null) {
+                                $val = $label['value'] ?? null;
+                                if (!$val || in_array($val, $checkFieldContents)) {
                                     continue;
                                 }
+
                                 $solrArray[$solrField][] = $val;
                                 if ($includeInAllfields) {
                                     $solrArray['allfields'][] = $val;

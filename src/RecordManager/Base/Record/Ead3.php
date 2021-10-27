@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2020.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -125,7 +125,6 @@ class Ead3 extends Ead
         $data['author'] = $this->getAuthors();
         $data['author_sort'] = reset($data['author']);
         $data['author_corporate'] = $this->getCorporateAuthors();
-        $data['author2'] = $this->getSecondaryAuthors();
         $data['geographic'] = $data['geographic_facet']
             = $this->getGeographicTopics();
         $data['topic'] = $data['topic_facet'] = $this->getTopics();
@@ -244,6 +243,11 @@ class Ead3 extends Ead
                 }
             }
         }
+        if (isset($this->doc->did->origination->persname)) {
+            foreach ($this->doc->did->origination->persname as $name) {
+                $result[] = trim((string)$name);
+            }
+        }
         return $result;
     }
 
@@ -255,39 +259,21 @@ class Ead3 extends Ead
     protected function getCorporateAuthors()
     {
         $result = [];
-        if (isset($this->doc->did->controlaccess->corpname)) {
-            foreach ($this->doc->did->controlaccess->corpname as $name) {
+        foreach ($this->doc->did->controlaccess->corpname ?? [] as $name) {
+            if (!isset($name->part)) {
                 $result[] = trim((string)$name);
-            }
-        }
-        if (isset($this->doc->controlaccess->corpname->part)) {
-            foreach ($this->doc->controlaccess->corpname->part as $name) {
-                $result[] = trim((string)$name);
-            }
-        }
-
-        if (isset($this->doc->did->origination->name)) {
-            foreach ($this->doc->did->origination->name as $name) {
+            } else {
                 foreach ($name->part as $part) {
                     $result[] = trim((string)$part);
                 }
             }
         }
-        return $result;
-    }
-
-    /**
-     * Get secondary authors
-     *
-     * @return array
-     */
-    protected function getSecondaryAuthors()
-    {
-        $result = [];
-        if (!empty($this->doc->did->origination->persname)) {
-            $result[] = trim(
-                (string)$this->doc->did->origination->persname
-            );
+        foreach ($this->doc->did->origination ?? [] as $origination) {
+            foreach ($origination->name ?? [] as $name) {
+                foreach ($name->part ?? [] as $part) {
+                    $result[] = trim((string)$part);
+                }
+            }
         }
         return $result;
     }
@@ -439,7 +425,17 @@ class Ead3 extends Ead
                     . (string)$archiveAttr->subtitle;
             }
             $data['allfields'][] = $data['hierarchy_top_title'];
-            if ($archiveAttr->sequence) {
+            $seqLabel = $this->getDriverParam('sequenceUnitIdLabel', 'sequence');
+            if ($seqLabel) {
+                foreach ($this->doc->did->unitid ?? [] as $unitId) {
+                    if ($seqLabel === (string)$unitId->attributes()->label) {
+                        $data['hierarchy_sequence']
+                            = str_pad((string)$unitId, 7, '0', STR_PAD_LEFT);
+                        break;
+                    }
+                }
+            }
+            if (!isset($data['hierarchy_sequence']) && $archiveAttr->sequence) {
                 $data['hierarchy_sequence'] = (string)$archiveAttr->sequence;
             }
         }
@@ -451,9 +447,7 @@ class Ead3 extends Ead
         } else {
             $data['is_hierarchy_id'] = $data['hierarchy_top_id'] = $this->getID();
             $data['is_hierarchy_title'] = $data['hierarchy_top_title']
-                = isset($this->doc->did->unittitle)
-                    ? (string)$this->doc->did->unittitle->attributes()->label
-                    : '';
+                = (string)($this->doc->did->unittitle ?? '');
         }
 
         return $data;

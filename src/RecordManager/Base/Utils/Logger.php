@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2020.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -26,6 +26,8 @@
  * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Utils;
+
+use RecordManager\Base\Database\DatabaseInterface;
 
 /**
  * Logger
@@ -90,6 +92,20 @@ class Logger
     protected $errorEmail = '';
 
     /**
+     * Maximum message level to store in the database
+     *
+     * @var int
+     */
+    protected $storeMessageLevel = -1;
+
+    /**
+     * Database
+     *
+     * @var DatabaseInterface
+     */
+    protected $db = null;
+
+    /**
      * Constructor
      *
      * @param array $config Main configuration
@@ -107,6 +123,9 @@ class Logger
         if (isset($config['Log']['error_email'])) {
             $this->errorEmail = $config['Log']['error_email'];
         }
+        if (isset($config['Log']['store_message_level'])) {
+            $this->storeMessageLevel = $config['Log']['store_message_level'];
+        }
     }
 
     /**
@@ -119,6 +138,18 @@ class Logger
     public function setLogToConsole(bool $console): void
     {
         $this->logToConsole = $console;
+    }
+
+    /**
+     * Set database
+     *
+     * @param DatabaseInterface $db Database
+     *
+     * @return void
+     */
+    public function setDatabase(?DatabaseInterface $db): void
+    {
+        $this->db = $db;
     }
 
     /**
@@ -187,6 +218,30 @@ class Logger
     }
 
     /**
+     * Convert log level to string
+     *
+     * @param int $level Level to convert
+     *
+     * @return string
+     */
+    public function logLevelToStr($level)
+    {
+        switch ($level) {
+        case Logger::FATAL:
+            return 'FATAL';
+        case Logger::ERROR:
+            return 'ERROR';
+        case Logger::WARNING:
+            return 'WARNING';
+        case Logger::INFO:
+            return 'INFO';
+        case Logger::DEBUG:
+            return 'DEBUG';
+        }
+        return '???';
+    }
+
+    /**
      * Write a message to the log
      *
      * @param string $context Context of the log message (e.g. current function)
@@ -201,7 +256,8 @@ class Logger
         if ($this->logLevel < $level) {
             return;
         }
-        $msg = date('Y-m-d H:i:s') . ' [' . getmypid() . '] ['
+        $timestamp = time();
+        $logMsg = date('Y-m-d H:i:s', $timestamp) . ' [' . getmypid() . '] ['
             . $this->logLevelToStr($level) . "] [$context] $msg\n";
         if ($this->logFile) {
             if ($this->maxFileSize && file_exists($this->logFile)
@@ -219,53 +275,48 @@ class Logger
                 }
                 rename($this->logFile, $this->logFile . '.0');
             }
-            file_put_contents($this->logFile, $msg, FILE_APPEND);
+            file_put_contents($this->logFile, $logMsg, FILE_APPEND);
         }
-        if (strlen($msg) > 4096) {
-            // Avoid throwing a large error on the console or in the email
-            $msg = substr($msg, 0, 2048)
+        // Avoid a too long error on the console or in the email
+        if (mb_strlen($logMsg, 'UTF-8') > 4096 + 50) {
+            $logMsg = mb_substr($logMsg, 0, 2048, 'UTF-8')
                 . "\n\n[... Truncated - See log for full message ...]\n\n"
-                . substr($msg, -2048);
+                . mb_substr($logMsg, -2048, null, 'UTF-8');
         }
+
         if ($level == Logger::FATAL && $this->errorEmail) {
             $email = "RecordManager encountered the following fatal error: "
-                . PHP_EOL . PHP_EOL . $msg;
+                . PHP_EOL . PHP_EOL . $logMsg;
             mail(
                 $this->errorEmail,
                 'RecordManager Error Report (' . gethostname() . ')',
                 $email
             );
         }
+
         if ($this->logToConsole) {
             if ($level == Logger::INFO) {
-                echo $msg;
+                echo $logMsg;
             } else {
-                file_put_contents('php://stderr', $msg, FILE_APPEND);
+                file_put_contents('php://stderr', $logMsg, FILE_APPEND);
             }
         }
-    }
 
-    /**
-     * Convert log level to string
-     *
-     * @param int $level Level to convert
-     *
-     * @return string
-     */
-    protected function logLevelToStr($level)
-    {
-        switch ($level) {
-        case Logger::FATAL:
-            return 'FATAL';
-        case Logger::ERROR:
-            return 'ERROR';
-        case Logger::WARNING:
-            return 'WARNING';
-        case Logger::INFO:
-            return 'INFO';
-        case Logger::DEBUG:
-            return 'DEBUG';
+        if ($level <= $this->storeMessageLevel && $this->db) {
+            $dbMsg = $msg;
+            if (mb_strlen($dbMsg, 'UTF-8') > 4200) {
+                // Avoid a too long error in the database
+                $logMsg = mb_substr($dbMsg, 0, 2048, 'UTF-8')
+                    . "\n\n[... Truncated - See log for full message ...]\n\n"
+                    . mb_substr($dbMsg, -2048, null, 'UTF-8');
+            }
+            $this->db->saveLogMessage(
+                $context,
+                $msg,
+                $level,
+                getmypid(),
+                $timestamp
+            );
         }
-        return '???';
     }
 }

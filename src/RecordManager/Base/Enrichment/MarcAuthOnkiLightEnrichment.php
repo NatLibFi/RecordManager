@@ -55,7 +55,15 @@ class MarcAuthOnkiLightEnrichment extends OnkiLightEnrichment
         }
         foreach ($record->getFields('374') as $recField) {
             if ($id = $record->getSubfield($recField, '0')) {
-                $this->enrichField($solrArray, $id, 'occupation_str_mv', true);
+                $this->enrichField(
+                    $sourceId,
+                    $record,
+                    $solrArray,
+                    $id,
+                    'occupation_str_mv',
+                    '',
+                    true
+                );
             }
         }
     }

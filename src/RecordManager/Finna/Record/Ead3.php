@@ -49,9 +49,15 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
 {
     use AuthoritySupportTrait;
 
-    const UNIT_ID_RELATORS = ['tekninen'];
     const GEOGRAPHIC_SUBJECT_RELATORS = ['aihe', 'alueellinen kattavuus'];
-    const SUBJECT_RELATORS = ['aihe'];
+    const SUBJECT_RELATORS = ['aihe', 'asiasana'];
+
+    const RELATOR_TIME_INTERVAL = 'suhteen ajallinen kattavuus';
+
+    const NAME_TYPE_VARIANT = 'Varianttinimi';
+    const NAME_TYPE_ALTERNATIVE = 'Vaihtehtoinen nimi';
+    const NAME_TYPE_PRIMARY = 'Ensisijainen nimi';
+    const NAME_TYPE_OUTDATED = 'Vanhentunut nimi';
 
     /**
      * Archive fonds format
@@ -94,7 +100,8 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $data['search_daterange_mv'][] = $data['unit_daterange']
                 = MetadataUtils::dateRangeToStr($unitDateRange);
 
-            $data['main_date_str'] = MetadataUtils::extractYear($unitDateRange[0]);
+            $data['main_date_str'] = $data['era_facet']
+                = MetadataUtils::extractYear($unitDateRange[0]);
             $data['main_date'] = $this->validateDate($unitDateRange[0]);
 
             if (!$startDateUnknown) {
@@ -152,21 +159,12 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             = isset($data['online_boolean'])
             && !isset($this->doc->accessrestrict);
 
-        if ($this->doc->did->unitid) {
-            $identifier = null;
-            foreach ($this->doc->did->unitid as $i) {
-                $identifier = (string)$i;
-                if ($i->attributes()->label == 'Analoginen') {
-                    break;
-                }
-            }
-            if ($identifier) {
-                $p = strpos($identifier, '/');
-                $identifier = $p > 0
-                    ? substr($identifier, $p + 1)
-                    : $identifier;
-                $data['identifier'] = $identifier;
-            }
+        if ($identifier = $this->getUnitId()) {
+            $p = strpos($identifier, '/');
+            $identifier = $p > 0
+                ? substr($identifier, $p + 1)
+                : $identifier;
+            $data['identifier'] = $identifier;
         }
 
         if (isset($doc->did->dimensions)) {
@@ -217,7 +215,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                     }
 
                     switch ($part->attributes()->localtype) {
-                    case 'Ensisijainen nimi':
+                    case self::NAME_TYPE_PRIMARY:
                         $data['author'][] = (string)$part;
                         if (! isset($part->attributes()->lang)
                             || (string)$part->attributes()->lang === 'fin'
@@ -232,9 +230,9 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                             }
                         }
                         break;
-                    case 'Varianttinimi':
-                    case 'Vaihtoehtoinen nimi':
-                    case 'Vanhentunut nimi':
+                    case self::NAME_TYPE_VARIANT:
+                    case self::NAME_TYPE_ALTERNATIVE:
+                    case self::NAME_TYPE_OUTDATED:
                         $data['author_variant'][] = (string)$part;
                         if ($id) {
                             $author2Ids[] = $id;
@@ -263,6 +261,30 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                     $name = (string)$name->part;
                     $data['author'][] = $name;
                     $data['author_facet'][] = $name;
+                }
+            }
+        }
+
+        foreach ($this->doc->did->origination ?? [] as $origination) {
+            foreach ($origination->persname ?? [] as $name) {
+                $data['author'][] = $data['author_facet'][] = (string)$name;
+            }
+        }
+        foreach ($this->doc->did->origination ?? [] as $origination) {
+            foreach ($origination->name ?? [] as $name) {
+                foreach ($name->part ?? [] as $part) {
+                    if ($this->isTimeIntervalNode($part)) {
+                        continue;
+                    }
+                    $value = (string)$part;
+                    $data['author'][] = $data['author_facet'][] = $value;
+                    if (in_array(
+                        (string)$part->attributes()->localtype,
+                        [self::NAME_TYPE_VARIANT, self::NAME_TYPE_ALTERNATIVE]
+                    )
+                    ) {
+                        $data['author_variant'][] = $value;
+                    }
                 }
             }
         }
@@ -299,17 +321,24 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
      */
     protected function getUnitId()
     {
+        $unitIdLabel = $this->getDriverParam('unitIdLabel', null);
+        $firstId = '';
         if (isset($this->doc->did->unitid)) {
             foreach ($this->doc->did->unitid as $i) {
                 $attr = $i->attributes();
-                if ((string)$attr->label === 'Tekninen' || !isset($attr->label)
-                    && isset($attr->identifier)
-                ) {
-                    return (string)$attr->identifier;
+                if (!isset($attr->identifier)) {
+                    continue;
+                }
+                $id = (string)$attr->identifier;
+                if (!$firstId) {
+                    $firstId = $id;
+                }
+                if (!$unitIdLabel || (string)$attr->label === $unitIdLabel) {
+                    return $id;
                 }
             }
         }
-        return '';
+        return $firstId;
     }
 
     /**
@@ -389,6 +418,35 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
     }
 
     /**
+     * Get corporate authors
+     *
+     * @return array
+     */
+    protected function getCorporateAuthors() : array
+    {
+        $result = [];
+        foreach ($this->doc->controlaccess->corpname ?? [] as $name) {
+            foreach ($name->part ?? [] as $part) {
+                if ($this->isTimeIntervalNode($part)) {
+                    continue;
+                }
+                $result[] = trim((string)$part);
+            }
+        }
+        foreach ($this->doc->did->origination ?? [] as $origination) {
+            foreach ($origination->name ?? [] as $name) {
+                foreach ($name->part ?? [] as $part) {
+                    if ($this->isTimeIntervalNode($part)) {
+                        continue;
+                    }
+                    $result[] = trim((string)$part);
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Get corporate author identifiers
      *
      * @return array
@@ -446,7 +504,16 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         if (in_array($this->getFormat(), $noSubtitleFormats)) {
             return '';
         }
-
+        if ($signumLabel = $this->getDriverParam('signumLabel', null)) {
+            if (isset($this->doc->did->unitid)) {
+                foreach ($this->doc->did->unitid as $id) {
+                    $attr = $id->attributes();
+                    if ((string)$attr->label === $signumLabel) {
+                        return (string)$id;
+                    }
+                }
+            }
+        }
         return (string)$this->doc->did->unitid;
     }
 
@@ -476,11 +543,26 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 if ($attributes->label
                     && (string)$attributes->label === 'Ajallinen kattavuus'
                 ) {
-                    return $this->parseDateRange(
+                    $date = $this->parseDateRange(
                         (string)$unitdate->attributes()->normal
                     );
-                    break;
+                    if ($date
+                        && !$date['startDateUnknown'] && !$date['endDateUnknown']
+                    ) {
+                        return $date;
+                    }
                 }
+            }
+            $unitdate = $this->doc->did->unitdate;
+            $normal = (string)$unitdate->attributes()->normal;
+            if (!empty($normal)) {
+                return $this->parseDateRange($normal);
+            } else {
+                $date = str_replace('-', '/', (string)$unitdate);
+                if (false === strpos($date, '/')) {
+                    $date = "${date}/${date}";
+                }
+                return $this->parseDateRange($date);
             }
         }
         return null;
@@ -499,8 +581,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             return null;
         }
 
-        $yearLimits = ['0000', '9999'];
-
         list($start, $end) = explode('/', $input);
 
         $parseDate = function (
@@ -514,7 +594,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $month = $defaultMonth;
             $day = $defaultDay;
             if (!in_array($date, ['open', 'unknown'])) {
-                $parts = explode('-', $date);
+                $parts = explode('-', trim($date));
                 $year = str_replace('u', $defaultYear, $parts[0]);
 
                 if (isset($parts[1]) && $parts[1] !== 'uu') {
@@ -533,6 +613,13 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
                 $day = date('t', strtotime("{$year}-{$month}"));
             }
 
+            if (!preg_match('/^-?\d{1,4}$/', $year)
+                || !preg_match('/^\d{1,2}$/', $month)
+                || !preg_match('/^\d{1,2}$/', $day)
+            ) {
+                return null;
+            }
+
             $date = sprintf(
                 '%04d-%02d-%02dT%sZ',
                 $year, $month, $day, $hour
@@ -541,12 +628,6 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             try {
                 $d = new \DateTime($date);
             } catch (\Exception $e) {
-                $this->logger->logDebug(
-                    'Ead3',
-                    "Failed to parse date $date, record {$this->source}."
-                    . $this->getID()
-                );
-                $this->storeWarning('invalid date');
                 return null;
             }
 
@@ -574,6 +655,7 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
         }
 
         $startDateUnknown = $startDate['unknown'];
+        $endDateUnknown = $endDate['unknown'];
 
         $startDate = $startDate['date'];
         $endDate = $endDate['date'];
@@ -590,7 +672,8 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
 
         return [
             'date' => [$startDate, $endDate],
-            'startDateUnknown' => $startDateUnknown
+            'startDateUnknown' => $startDateUnknown,
+            'endDateUnknown' => $endDateUnknown,
         ];
     }
 
@@ -764,7 +847,10 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             $desc = [];
             foreach ($this->doc->scopecontent as $el) {
                 foreach ($el->p as $p) {
-                    $desc[] = trim(html_entity_decode((string)$p));
+                    $desc[] = str_replace(
+                        ["\r\n", "\n\r", "\r", "\n"], '   /   ',
+                        trim(html_entity_decode((string)$p))
+                    );
                 }
             }
             if (!empty($desc)) {
@@ -772,5 +858,19 @@ class Ead3 extends \RecordManager\Base\Record\Ead3
             }
         }
         return '';
+    }
+
+    /**
+     * Check whether the given node is a time interval element
+     * and should not be included when collecting name elements.
+     *
+     * @param \SimpleXMLElement $node Node
+     *
+     * @return bool
+     */
+    protected function isTimeIntervalNode(\SimpleXMLElement $node) : bool
+    {
+        return (string)$node->attributes()->localtype
+            === self::RELATOR_TIME_INTERVAL;
     }
 }

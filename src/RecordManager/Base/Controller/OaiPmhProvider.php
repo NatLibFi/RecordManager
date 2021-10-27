@@ -276,36 +276,48 @@ EOT;
         }
         $maxRecords = $this->config['OAI-PMH']['result_limit'];
         $count = 0;
+        $listElementSent = false;
+        $sendListElement = function () use (&$listElementSent, $verb) {
+            if (!$listElementSent) {
+                echo <<<EOT
+  <$verb>
+
+EOT;
+                $listElementSent = true;
+            }
+        };
+
         $tokenBase = implode('|', [$set, $metadataPrefix, $from, $until]);
         $this->db->iterateRecords(
             $queryParams,
             $options,
-            function ($record) use (&$count, $maxRecords, $verb, $tokenBase,
-                $position, $metadataPrefix, $includeMetadata
+            function ($record) use (&$count, $maxRecords, $tokenBase,
+                $position, $metadataPrefix, $includeMetadata, $sendListElement,
+                $listElementSent
             ) {
                 ++$count;
-                if ($count == 1) {
-                    echo <<<EOT
-  <$verb>
-
-EOT;
-                }
                 if ($count > $maxRecords) {
                     // More records available, create resumptionToken
                     $token = $this->escape(
-                        implode('|', [$tokenBase, $count + $position])
+                        implode('|', [$tokenBase, $count + $position - 1])
                     );
+                    $sendListElement();
                     echo <<<EOT
     <resumptionToken cursor="$position">$token</resumptionToken>
 
 EOT;
                     return false;
                 }
-                $xml = $this
-                    ->createRecord($record, $metadataPrefix, $includeMetadata);
-                if ($xml === false) {
+                $xml = $this->createRecord(
+                    $record,
+                    $metadataPrefix,
+                    $includeMetadata,
+                    !$listElementSent
+                );
+                if ($xml === false && !$listElementSent) {
                     return false;
                 }
+                $sendListElement();
                 echo $xml;
             }
         );
@@ -315,10 +327,12 @@ EOT;
             return;
         }
 
-        echo <<<EOT
+        if ($listElementSent) {
+            echo <<<EOT
   </$verb>
 
 EOT;
+        }
     }
 
     /**
@@ -622,7 +636,7 @@ EOT;
                     return false;
                 }
             } else {
-                if (!$this->getParam('metadataPrefix')) {
+                if (!($format = $this->getParam('metadataPrefix'))) {
                     $this->error('badArgument', 'Missing argument "metadataPrefix"');
                     return false;
                 }
@@ -634,6 +648,22 @@ EOT;
                         $this->error('badArgument', 'Illegal argument');
                         return false;
                     }
+                }
+                // Check that the requested format is available at least from one
+                // source
+                $format = $this->formats[$format]['format'] ?? '';
+                $formatValid = false;
+                foreach ($this->dataSourceSettings as $sourceSettings) {
+                    if (($sourceSettings['format'] ?? '') === $format
+                        || !empty($sourceSettings["transformation_to_$format"])
+                    ) {
+                        $formatValid = true;
+                        break;
+                    }
+                }
+                if (!$formatValid) {
+                    $this->error('cannotDisseminateFormat', '');
+                    return false;
                 }
             }
             break;
@@ -724,18 +754,20 @@ EOT;
      * @param boolean $includeMetadata Whether to include record data
      *                                 (or only header). Metadata is never returned
      *                                 for deleted records.
+     * @param boolean $outputErrors    Whether to output errors
      *
      * @return boolean|string
      */
-    protected function createRecord($record, $format, $includeMetadata)
-    {
+    protected function createRecord($record, $format, $includeMetadata,
+        $outputErrors = true
+    ) {
         $sourceFormat = $record['format'];
         if (isset($this->formats[$format])) {
             $format = $this->formats[$format]['format'];
         }
         $metadata = '';
         $source = $record['source_id'];
-        $datasource = $this->dataSourceSettings[$source];
+        $datasource = $this->dataSourceSettings[$source] ?? [];
         $oaiId = empty($datasource['ignoreOaiIdInProvider'])
             ? $record['oai_id'] : '';
         if ($includeMetadata && !$record['deleted']) {
@@ -749,7 +781,9 @@ EOT;
             $key = "transformation_to_{$format}";
             if ($sourceFormat != $format || isset($datasource[$key])) {
                 if (!isset($datasource[$key])) {
-                    $this->error('cannotDisseminateFormat', '');
+                    if ($outputErrors) {
+                        $this->error('cannotDisseminateFormat', '');
+                    }
                     return false;
                 }
                 $transformationKey = "{$key}_$source";

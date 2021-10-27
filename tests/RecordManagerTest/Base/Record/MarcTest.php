@@ -82,6 +82,7 @@ class MarcTest extends RecordTest
                 'nc',
                 'rdacarrier',
                 '18. p. 2013',
+                'Summary field',
                 'oppaat',
                 'ft: kirjoittaminen',
                 'apurahat',
@@ -158,12 +159,15 @@ class MarcTest extends RecordTest
             ],
             'issn' => [
             ],
-            'callnumber-first' => '',
+            'callnumber-first' => 'QC861.2',
             'callnumber-raw' => [
                 '38.04',
                 '38.03',
+                'QC861.2 .B36',
             ],
-            'callnumber-sort' => '',
+            'callnumber-subject' => 'QC',
+            'callnumber-label' => 'QC861',
+            'callnumber-sort' => 'QC 3861.2',
             'topic' => [
                 'oppaat',
                 'ft: kirjoittaminen',

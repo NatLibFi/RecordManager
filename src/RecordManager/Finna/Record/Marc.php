@@ -28,6 +28,7 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Utils\LcCallNumber;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -55,11 +56,11 @@ class Marc extends \RecordManager\Base\Record\Marc
     ];
 
     /**
-     * Extra data to be included in allfields e.g. from component parts
+     * Extra data to be included in Solr fields e.g. from component parts
      *
      * @var array
      */
-    protected $extraAllFields = [];
+    protected $extraFields = [];
 
     /**
      * Default field for geographic coordinates
@@ -94,7 +95,7 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     public function setData($source, $oaiID, $data)
     {
-        $this->extraAllFields = [];
+        $this->extraFields = [];
         parent::setData($source, $oaiID, $data);
     }
 
@@ -448,6 +449,8 @@ class Marc extends \RecordManager\Base\Record\Marc
                     $data['building_sub_str_mv'][] = $location;
                 }
             }
+        }
+        if ($itemSubBuilding) {
             foreach ($this->getFields('952') as $field) {
                 $location = $this->getSubfield($field, $itemSubBuilding);
                 if ('' !== $location) {
@@ -633,12 +636,45 @@ class Marc extends \RecordManager\Base\Record\Marc
                 [
                     [self::GET_NORMAL, '080', ['a' => 1, 'b' => 1]],
                     [self::GET_NORMAL, '084', ['a' => 1, 'b' => 1]],
+                ]
+            )
+        );
+        $data['callnumber-sort'] = '';
+        if (!empty($data['callnumber-raw'])) {
+            $data['callnumber-sort'] = $data['callnumber-raw'][0];
+        }
+        $lccn = array_map(
+            'strtoupper',
+            $this->getFieldsSubfields(
+                [
                     [self::GET_NORMAL, '050', ['a' => 1, 'b' => 1]]
                 ]
             )
         );
-        $data['callnumber-sort'] = empty($data['callnumber-raw'])
-            ? '' : $data['callnumber-raw'][0];
+        if ($lccn) {
+            $data['callnumber-raw'] = array_merge(
+                $data['callnumber-raw'],
+                $lccn
+            );
+            if (empty($data['callnumber-sort'])) {
+                // Try to find a valid call number
+                $firstCn = null;
+                foreach ($lccn as $callnumber) {
+                    $cn = new LcCallNumber($callnumber);
+                    if (null === $firstCn) {
+                        $firstCn = $cn;
+                    }
+                    if ($cn->isValid()) {
+                        $data['callnumber-sort'] = $cn->getSortKey();
+                        break;
+                    }
+                }
+                if (empty($data['callnumber-sort'])) {
+                    // No valid call number, take first
+                    $data['callnumber-sort'] = $cn->getSortKey();
+                }
+            }
+        }
 
         if ($rights = $this->getUsageRights()) {
             $data['usage_rights_str_mv'] = $rights;
@@ -681,7 +717,17 @@ class Marc extends \RecordManager\Base\Record\Marc
             )
         );
 
-        $data['format_ext_str_mv'] = $data['format'];
+        if ('VideoGame' === $data['format']) {
+            if ($platforms = $this->getGamePlatformIds()) {
+                $data['format'] = [['VideoGame', reset($platforms)]];
+                $data['format_ext_str_mv'] = [];
+                foreach ($platforms as $platform) {
+                    $data['format_ext_str_mv'] = [['VideoGame', $platform]];
+                }
+            }
+        } else {
+            $data['format_ext_str_mv'] = $data['format'];
+        }
 
         $availableBuildings = $this->getAvailableItemsBuildings();
         if ($availableBuildings) {
@@ -695,6 +741,23 @@ class Marc extends \RecordManager\Base\Record\Marc
         // Make sure center_coords is single-valued
         if (!empty($data['center_coords'])) {
             $data['center_coords'] = $data['center_coords'][0];
+        }
+
+        $data['description'] = implode(
+            ' ',
+            $this->getFieldsSubfields(
+                [
+                    [self::GET_NORMAL, '520', ['a' => 1]],
+                ]
+            )
+        );
+
+        // Merge any extra fields from e.g. merged component parts
+        foreach ($this->extraFields as $field => $fieldData) {
+            $data[$field] = array_merge(
+                (array)($data[$field] ?? []),
+                (array)$fieldData
+            );
         }
 
         return $data;
@@ -864,8 +927,23 @@ class Marc extends \RecordManager\Base\Record\Marc
             foreach ($marc->getFields('031') as $field031) {
                 foreach ($marc->getSubfieldsArray($field031, ['t' => 1]) as $lyrics
                 ) {
-                    $this->extraAllFields[] = $lyrics;
+                    $this->extraFields['allfields'][] = $lyrics;
+                    // Text incipit is treated as an alternative title
+                    $this->extraFields['title_alt'][] = $lyrics;
                 }
+            }
+            $titlesVarying = $marc->getFieldsSubfields(
+                [[self::GET_NORMAL, '246', ['a' => 1, 'b' => 1, 'n' => 1, 'p' => 1]]]
+            );
+            if ($titlesVarying) {
+                $this->extraFields['allfields'] = array_merge(
+                    (array)($this->extraFields['allfields'] ?? []),
+                    $titlesVarying
+                );
+                $this->extraFields['title_alt'] = array_merge(
+                    (array)($this->extraFields['title_alt'] ?? []),
+                    $titlesVarying
+                );
             }
 
             $newField = [
@@ -933,6 +1011,19 @@ class Marc extends \RecordManager\Base\Record\Marc
      * @return string
      */
     public function getFormat()
+    {
+        if (!isset($this->cachedFormat)) {
+            $this->cachedFormat = $this->getFormatFunc();
+        }
+        return $this->cachedFormat;
+    }
+
+    /**
+     * Return format from predefined values
+     *
+     * @return string
+     */
+    protected function getFormatFunc()
     {
         // Custom predefined type in 977a
         $field977a = $this->getFieldSubfields('977', ['a' => 1]);
@@ -1002,6 +1093,38 @@ class Marc extends \RecordManager\Base\Record\Marc
 
         // Get the bibliographic level from leader position 7
         $bibliographicLevel = substr($leader, 7, 1);
+
+        // Get 008
+        $field008 = $this->getField('008');
+
+        // Board games and video games
+        $self = $this;
+        $termsIn655 = null;
+        $termIn655 = function (string $term) use ($self, &$termsIn655) {
+            if (null === $termsIn655) {
+                $termsIn655 = $self->getFieldsSubfields(
+                    [[self::GET_NORMAL, '655', ['a' => 1]]]
+                );
+                $termsIn655 = array_map(
+                    function ($s) {
+                        return mb_strtolower($s, 'UTF-8');
+                    },
+                    $termsIn655
+                );
+            }
+            return in_array($term, $termsIn655);
+        };
+        if ('r' === $typeOfRecord) {
+            $visualType = substr($field008, 33, 1);
+            if ('g' === $visualType || $termIn655('lautapelit')) {
+                return 'BoardGame';
+            }
+        } elseif ('m' === $typeOfRecord) {
+            $electronicType = substr($field008, 26, 1);
+            if ('g' === $electronicType || $termIn655('videopelit')) {
+                return 'VideoGame';
+            }
+        }
 
         // check the 007 - this is a repeating field
         $fields = $this->getFields('007');
@@ -1184,7 +1307,6 @@ class Marc extends \RecordManager\Base\Record\Marc
             return 'Manuscript';
         }
 
-        $field008 = $this->getField('008');
         if (!$online) {
             $online = substr($field008, 23, 1) === 'o';
         }
@@ -1296,6 +1418,36 @@ class Marc extends \RecordManager\Base\Record\Marc
             }
         }
         return false;
+    }
+
+    /**
+     * Try to determine the gaming console or other platform identifiers
+     *
+     * @return array
+     */
+    protected function getGamePlatformIds()
+    {
+        $result = [];
+        $fields = $this->getFields('753');
+        if ($fields) {
+            foreach ($fields as $field) {
+                if ($id = $this->getSubfield($field, '0')) {
+                    $result[] = $id;
+                }
+                if ($os = $this->getSubfield($field, 'c')) {
+                    $result[] = $os;
+                }
+                if ($device = $this->getSubfield($field, 'a')) {
+                    $result[] = $device;
+                }
+            }
+        } elseif ($field = $this->getField('245')) {
+            if ($b = $this->getSubfield($field, 'b')) {
+                $result[] = MetadataUtils::stripTrailingPunctuation($b);
+            }
+        }
+
+        return $result;
     }
 
     /**
@@ -1429,6 +1581,10 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     protected function get653WithSecondInd($ind)
     {
+        $key = __METHOD__ . '-' . (is_array($ind) ? implode(',', $ind) : $ind);
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
+        }
         $result = [];
         $ind = (array)$ind;
         foreach ($this->getFields('653') as $field) {
@@ -1439,6 +1595,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
             }
         }
+        $this->resultCache[$key] = $result;
         return $result;
     }
 
@@ -1512,9 +1669,6 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
             }
         }
-        if ($this->extraAllFields) {
-            $allFields = array_merge($allFields, $this->extraAllFields);
-        }
         $allFields = array_map(
             function ($str) {
                 return MetadataUtils::stripTrailingPunctuation(
@@ -1583,8 +1737,7 @@ class Marc extends \RecordManager\Base\Record\Marc
         $result = parent::getEraFacets();
         $result = array_merge(
             $result,
-            $this->get653WithSecondInd('4'),
-            $this->getFieldsSubfields([[self::GET_NORMAL, '388', ['a' => 1]]])
+            $this->getAdditionalEraFields()
         );
         return $result;
     }
@@ -1599,10 +1752,25 @@ class Marc extends \RecordManager\Base\Record\Marc
         $result = parent::getEras();
         $result = array_merge(
             $result,
-            $this->get653WithSecondInd('4'),
-            $this->getFieldsSubfields([[self::GET_NORMAL, '388', ['a' => 1]]])
+            $this->getAdditionalEraFields()
         );
         return $result;
+    }
+
+    /**
+     * Get additional era fields
+     *
+     * @return array
+     */
+    protected function getAdditionalEraFields()
+    {
+        if (!isset($this->resultCache[__METHOD__])) {
+            $this->resultCache[__METHOD__] = array_merge(
+                $this->get653WithSecondInd('4'),
+                $this->getFieldsSubfields([[self::GET_NORMAL, '388', ['a' => 1]]])
+            );
+        }
+        return $this->resultCache[__METHOD__];
     }
 
     /**
@@ -1849,6 +2017,9 @@ class Marc extends \RecordManager\Base\Record\Marc
      */
     public function getUniqueIDs()
     {
+        if (isset($this->resultCache[__METHOD__])) {
+            return $this->resultCache[__METHOD__];
+        }
         $result = parent::getUniqueIDs();
         // Melinda ID
         foreach ($this->getFields('035') as $field) {
@@ -1861,6 +2032,7 @@ class Marc extends \RecordManager\Base\Record\Marc
                 }
             }
         }
+        $this->resultCache[__METHOD__] = $result;
         return $result;
     }
 
@@ -1931,5 +2103,25 @@ class Marc extends \RecordManager\Base\Record\Marc
             false, true, true
         );
         return MetadataUtils::normalizeLanguageStrings($languages);
+    }
+
+    /**
+     * Get series information
+     *
+     * @return array
+     */
+    protected function getSeries()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [self::GET_BOTH, '440', ['a' => 1]],
+                [self::GET_BOTH, '490', ['a' => 1]],
+                [self::GET_BOTH, '800', [
+                    'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'f' => 1, 'p' => 1,
+                    'q' => 1, 't' => 1
+                ]],
+                [self::GET_BOTH, '830', ['a' => 1, 'v' => 1, 'n' => 1, 'p' => 1]]
+            ]
+        );
     }
 }

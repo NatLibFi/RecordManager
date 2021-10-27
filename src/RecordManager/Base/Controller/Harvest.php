@@ -142,7 +142,7 @@ class Harvest extends AbstractBase
                         $this->logger->logInfo(
                             'harvest',
                             'Reharvest date threshold: '
-                            . date('Y-m-d H:i:s', $dateThreshold)
+                            . gmdate('Y-m-d\TH:i:s\Z', $dateThreshold)
                         );
                     }
 
@@ -207,14 +207,11 @@ class Harvest extends AbstractBase
                                     ]
                                 ],
                                 [],
-                                function ($record) use (&$count, $source) {
-                                    if (!empty($record['oai_id'])) {
-                                        $this->storeRecord(
-                                            $source, $record['oai_id'], true, ''
-                                        );
-                                    } else {
-                                        $this->markRecordDeleted($record);
+                                function ($record) use (&$count) {
+                                    if ($this->verbose) {
+                                        echo "Marking {$record['_id']} deleted\n";
                                     }
+                                    $this->markRecordDeleted($record, true);
                                     if (++$count % 1000 == 0) {
                                         $this->logger->logInfo(
                                             'harvest', "Deleted $count records"
@@ -224,6 +221,26 @@ class Harvest extends AbstractBase
                             );
                             $this->logger
                                 ->logInfo('harvest', "Deleted $count records");
+                            // Deduplication will update timestamps from deferred
+                            // update with markRecordDeleted, but handle non-dedup
+                            // sources here to avoid need for deduplication:
+                            if (empty($this->dataSourceSettings[$source]['dedup'])) {
+                                $this->logger->logInfo(
+                                    'harvest',
+                                    'Updating timestamps for any host records of'
+                                    . ' records deleted'
+                                );
+                                $this->db->updateRecords(
+                                    [
+                                        'source_id' => $source,
+                                        'update_needed' => true
+                                    ],
+                                    [
+                                        'updated' => $this->db->getTimestamp(),
+                                        'update_needed' => false
+                                    ]
+                                );
+                            }
                         }
                     }
 

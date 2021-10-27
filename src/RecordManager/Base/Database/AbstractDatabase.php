@@ -81,6 +81,13 @@ abstract class AbstractDatabase implements DatabaseInterface
     protected $ontologyEnrichmentCollection = 'ontologyEnrichment';
 
     /**
+     * Log message collection name
+     *
+     * @var string
+     */
+    protected $logMessageCollection = 'logMessage';
+
+    /**
      * Constructor.
      *
      * @param array $config Database settings
@@ -104,6 +111,9 @@ abstract class AbstractDatabase implements DatabaseInterface
         if (!empty($config['ontology_enrichment_collection'])) {
             $this->ontologyEnrichmentCollection
                 = $config['ontology_enrichment_collection'];
+        }
+        if (!empty($config['log_message_collection'])) {
+            $this->logMessageCollection = $config['log_message_collection'];
         }
     }
 
@@ -329,99 +339,74 @@ abstract class AbstractDatabase implements DatabaseInterface
     abstract public function deleteDedup($id);
 
     /**
-     * Remove old queue collections
+     * Remove old tracking collections
      *
-     * @param int $lastRecordTime Newest record timestamp
+     * @param int $minAge Minimum age in days. Default is 7 days.
      *
      * @return array Array of two arrays with collections removed and those whose
      * removal failed
      */
-    abstract public function cleanupQueueCollections($lastRecordTime);
+    abstract public function cleanupTrackingCollections(int $minAge = 7);
 
     /**
-     * Check for an existing queue collection with the given parameters
-     *
-     * @param string $hash           Hash of parameters used to identify the
-     *                               collection
-     * @param int    $fromDate       Timestamp of processing start date
-     * @param int    $lastRecordTime Newest record timestamp
+     * Create a new temporary tracking collection
      *
      * @return string
      */
-    abstract public function getExistingQueueCollection($hash, $fromDate,
-        $lastRecordTime
-    );
+    abstract public function getNewTrackingCollection();
 
     /**
-     * Create a new temporary queue collection for the given parameters
-     *
-     * @param string $hash           Hash of parameters used to identify the
-     *                               collection
-     * @param string $fromDate       Timestamp of processing start date
-     * @param int    $lastRecordTime Newest record timestamp
-     *
-     * @return string
-     */
-    abstract public function getNewQueueCollection($hash, $fromDate, $lastRecordTime
-    );
-
-    /**
-     * Rename a temporary dedup collection to its final name and return the name
-     *
-     * @param string $collectionName The temporary collection name
-     *
-     * @return string
-     */
-    abstract public function finalizeQueueCollection($collectionName);
-
-    /**
-     * Remove a temp dedup collection
+     * Remove a temporary tracking collection
      *
      * @param string $collectionName The temporary collection name
      *
      * @return bool
      */
-    abstract public function dropQueueCollection($collectionName);
+    abstract public function dropTrackingCollection($collectionName);
 
     /**
-     * Add a record ID to a queue collection
+     * Add a record ID to a tracking collection
      *
      * @param string $collectionName The queue collection name
      * @param string $id             ID to add
      *
-     * @return void
+     * @return bool True if added, false if id already exists
      */
-    abstract public function addIdToQueue($collectionName, $id);
+    abstract public function addIdToTrackingCollection($collectionName, $id);
 
     /**
-     * Find IDs in a queue collection
+     * Save a log message
+     *
+     * @param string $context   Context
+     * @param string $msg       Message
+     * @param int    $level     Message level (see constants in Logger)
+     * @param int    $pid       Process ID
+     * @param int    $timestamp Unix time stamp
+     *
+     * @return void
+     */
+    abstract public function saveLogMessage(string $context, string $msg, int $level,
+        int $pid, int $timestamp
+    ): void;
+
+    /**
+     * Find log messages
      *
      * @param array $filter  Search filter
-     * @param array $options Options such as sorting. Must include 'collectionName'.
+     * @param array $options Options such as sorting
      *
      * @return \Traversable
      */
-    abstract public function findQueuedIds(array $filter, array $options);
+    abstract public function findLogMessages(array $filter, array $options = []);
 
     /**
-     * Iterate through queue
+     * Delete a log message
      *
-     * Calls callback for each item until exhausted or callback returns false.
-     *
-     * @param string   $collectionName The queue collection name
-     * @param Callable $callback       Callback to call for each record
-     * @param array    $params         Optional parameters to pass to the callback
+     * @param mixed $id Message ID
      *
      * @return void
      */
-    public function iterateQueue(string $collectionName, callable $callback,
-        array $params = []
-    ):void {
-        $options['collectionName'] = $collectionName;
-        $this->iterate(
-            [$this, 'findQueuedIds'], [], $options, $callback, $params
-        );
-    }
+    abstract public function deleteLogMessage($id): void;
 
     /**
      * Find a single URI cache record

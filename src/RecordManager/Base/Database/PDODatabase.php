@@ -358,25 +358,24 @@ class PDODatabase extends AbstractDatabase
     }
 
     /**
-     * Remove old queue collections
+     * Remove old tracking collections
      *
-     * @param int $lastRecordTime Newest record timestamp
+     * @param int $minAge Minimum age in days. Default is 7 days.
      *
      * @return array Array of two arrays with collections removed and those whose
      * removal failed
      */
-    public function cleanupQueueCollections($lastRecordTime)
+    public function cleanupTrackingCollections(int $minAge = 7)
     {
         $removed = [];
         $failed = [];
 
-        $res = $this->dbQuery("show tables like 'q_%'");
+        $res = $this->dbQuery("show tables like 'tracking_%'");
         while ($collection = $res->fetchColumn()) {
             $nameParts = explode('_', $collection);
-            $collTime = $nameParts[4] ?? null;
+            $collTime = $nameParts[2] ?? null;
             if (is_numeric($collTime)
-                && $collTime != $lastRecordTime
-                && $collTime < time() - 60 * 60 * 24 * 7
+                && $collTime != time() - $minAge * 60 * 60 * 24
             ) {
                 try {
                     $this->dbQuery("drop table $collection");
@@ -390,40 +389,15 @@ class PDODatabase extends AbstractDatabase
     }
 
     /**
-     * Check for an existing queue collection with the given parameters
-     *
-     * @param string $hash           Hash of parameters used to identify the
-     *                               collection
-     * @param int    $fromDate       Timestamp of processing start date
-     * @param int    $lastRecordTime Newest record timestamp
+     * Create a new temporary tracking collection
      *
      * @return string
      */
-    public function getExistingQueueCollection($hash, $fromDate, $lastRecordTime)
+    public function getNewTrackingCollection()
     {
-        $collectionName = "q_{$hash}_{$fromDate}_{$lastRecordTime}";
-        $res = $this->dbQuery("show tables like ?", [$collectionName]);
-        if ($res->fetch()) {
-            return $collectionName;
-        }
-        return '';
-    }
-
-    /**
-     * Create a new temporary queue collection for the given parameters
-     *
-     * @param string $hash           Hash of parameters used to identify the
-     *                               collection
-     * @param string $fromDate       Timestamp of processing start date
-     * @param int    $lastRecordTime Newest record timestamp
-     *
-     * @return string
-     */
-    public function getNewQueueCollection($hash, $fromDate, $lastRecordTime)
-    {
-        $collectionName = "tmp_q_{$hash}_{$fromDate}_{$lastRecordTime}";
+        $collectionName = 'tracking_' . getmypid() . '_' . time();
         $this->dbQuery(
-            "create table if not exists {$collectionName} ("
+            "create table {$collectionName} ("
             . '_id VARCHAR(255) PRIMARY KEY'
             . ')'
         );
@@ -431,41 +405,21 @@ class PDODatabase extends AbstractDatabase
     }
 
     /**
-     * Rename a temporary dedup collection to its final name and return the name
-     *
-     * @param string $collectionName The temporary collection name
-     *
-     * @return string
-     */
-    public function finalizeQueueCollection($collectionName)
-    {
-        if (strncmp($collectionName, 'tmp_', 4) !== 0) {
-            throw new \Exception(
-                "Invalid temp queue collection name: '$collectionName'"
-            );
-        }
-        $newName = substr($collectionName, 4);
-
-        $this->dbQuery("rename table $collectionName to $newName");
-        return $newName;
-    }
-
-    /**
-     * Remove a temp dedup collection
+     * Remove a temporary tracking collection
      *
      * @param string $collectionName The temporary collection name
      *
      * @return bool
      */
-    public function dropQueueCollection($collectionName)
+    public function dropTrackingCollection($collectionName)
     {
-        if (strncmp($collectionName, 'tmp_', 4) !== 0) {
+        if (strncmp($collectionName, 'tracking_', 9) !== 0) {
             throw new \Exception(
-                "Invalid temp queue collection name: '$collectionName'"
+                "Invalid tracking collection name: '$collectionName'"
             );
         }
         try {
-            $this->dbQuery('drop table ?', [$collectionName]);
+            $this->dbQuery("drop table $collectionName");
         } catch (\Exception $e) {
             return false;
         }
@@ -473,34 +427,20 @@ class PDODatabase extends AbstractDatabase
     }
 
     /**
-     * Add a record ID to a queue collection
+     * Add a record ID to a tracking collection
      *
      * @param string $collectionName The queue collection name
      * @param string $id             ID to add
      *
-     * @return void
+     * @return bool True if added, false if id already exists
      */
-    public function addIdToQueue($collectionName, $id)
+    public function addIdToTrackingCollection($collectionName, $id)
     {
-        $this->dbQuery("insert ignore into $collectionName (_id) values (?)", [$id]);
-    }
-
-    /**
-     * Find IDs in a queue collection
-     *
-     * @param array $filter  Search filter
-     * @param array $options Options such as sorting. Must include 'collectionName'.
-     *
-     * @return \Traversable
-     */
-    public function findQueuedIds(array $filter, array $options)
-    {
-        if (empty($options['collectionName'])) {
-            throw new \Exception('Options must include collectionName');
-        }
-        $collectionName = $options['collectionName'];
-        unset($options['collectionName']);
-        return $this->findPDORecords($collectionName, $filter, $options);
+        $res = $this->dbQuery(
+            "insert ignore into $collectionName (_id) values (?)",
+            [$id]
+        );
+        return $res->rowCount() > 0;
     }
 
     /**
@@ -541,6 +481,55 @@ class PDODatabase extends AbstractDatabase
         return $this->findPDORecord(
             $this->ontologyEnrichmentCollection, $filter, $options
         );
+    }
+
+    /**
+     * Save a log message
+     *
+     * @param string $context   Context
+     * @param string $msg       Message
+     * @param int    $level     Message level (see constants in Logger)
+     * @param int    $pid       Process ID
+     * @param int    $timestamp Unix time stamp
+     *
+     * @return void
+     */
+    public function saveLogMessage(string $context, string $msg, int $level,
+        int $pid, int $timestamp
+    ): void {
+        $record = [
+            'timestamp' => $this->getTimestamp($timestamp),
+            'context' => $context,
+            'message' => $msg,
+            'level' => $level,
+            'pid' => $pid,
+        ];
+        $this->savePDORecord($this->logMessageCollection, $record);
+    }
+
+    /**
+     * Find log messages
+     *
+     * @param array $filter  Search filter
+     * @param array $options Options such as sorting
+     *
+     * @return \Traversable
+     */
+    public function findLogMessages($filter, $options = [])
+    {
+        return $this->findPDORecords($this->logMessageCollection, $filter, $options);
+    }
+
+    /**
+     * Delete a log message
+     *
+     * @param mixed $id Message ID
+     *
+     * @return void
+     */
+    public function deleteLogMessage($id): void
+    {
+        $this->deletePDORecord($this->logMessageCollection, $id);
     }
 
     /**
@@ -615,7 +604,7 @@ class PDODatabase extends AbstractDatabase
                 $result += $this->getRecordAttrs($collection, $result['_id']);
             }
         }
-        return $result;
+        return $result ?: null;
     }
 
     /**

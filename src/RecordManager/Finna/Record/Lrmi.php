@@ -29,6 +29,7 @@
 namespace RecordManager\Finna\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Lrmi record class
@@ -49,7 +50,7 @@ class Lrmi extends \RecordManager\Base\Record\Lrmi
      *
      * @var array
      */
-    protected $ignored_allfields = [
+    protected $ignoredAllfields = [
         'format', 'id', 'identifier', 'date', 'dateCreated', 'dateModified',
         'filesize', 'inLanguage', 'position', 'recordID', 'rights', 'targetUrl',
         'url'
@@ -97,14 +98,17 @@ class Lrmi extends \RecordManager\Base\Record\Lrmi
             $data['educational_audience_str_mv'][]
                 = (string)$audience->educationalRole;
         }
-        $data['educational_level_str_mv']
-            = $this->getAlignmentObjects('educationalLevel');
-
-        $data['educational_aim_str_mv']
-            = $this->getAlignmentObjects('teaches');
-
-        $data['educational_subject_str_mv']
-            = $this->getAlignmentObjects('educationalSubject');
+        $data['educational_level_str_mv'] = array_map(
+            'strval', (array)($doc->learningResource->educationalLevel ?? [])
+        );
+        $data['educational_aim_str_mv'] = array_map(
+            'strval', (array)($doc->learningResource->teaches ?? [])
+        );
+        foreach ($doc->learningResource->educationalAlignment ?? [] as $alignment) {
+            if ($subject = $alignment->educationalSubject ?? null) {
+                $data['educational_subject_str_mv'][] = (string)$subject;
+            }
+        }
 
         foreach ($doc->type as $type) {
             $data['educational_material_type_str_mv'][] = (string)$type;
@@ -121,6 +125,34 @@ class Lrmi extends \RecordManager\Base\Record\Lrmi
         );
 
         return $data;
+    }
+
+    /**
+     * Return title
+     *
+     * @param bool $forFiling Whether the title is to be used in filing
+     *                        (e.g. sorting, non-filing characters should be removed)
+     *
+     * @return string
+     */
+    public function getTitle($forFiling = false)
+    {
+        $doc = $this->doc;
+        $title = (string)$doc->title;
+        foreach ($doc->title as $t) {
+            if ((string)$t->attributes()->lang === 'fi') {
+                $title = (string)$t;
+                break;
+            }
+        }
+        if ($forFiling) {
+            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = MetadataUtils::stripLeadingArticle($title);
+            // Again, just in case stripping the article affected this
+            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = mb_strtolower($title, 'UTF-8');
+        }
+        return $title;
     }
 
     /**

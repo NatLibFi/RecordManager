@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2017
+ * Copyright (C) The National Library of Finland 2017-2021
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -45,7 +45,7 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
      *
      * @var string
      */
-    const CONFIG_DIR = __DIR__ . '/../../../fixtures/base/config/fieldmappertest/mappings';
+    const CONFIG_DIR = __DIR__ . '/../../../fixtures/base/config/fieldmappertest';
 
     /**
      * Data source settings
@@ -59,9 +59,60 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
             'building_mapping' => [
                 'building.map',
                 'building_sub.map,regexp'
+            ],
+            'rights_mapping' => [
+                'rights.map,regexp'
             ]
         ]
     ];
+
+    /**
+     * Test mapValues
+     *
+     * @return void
+     */
+    public function testMapValues()
+    {
+        $fieldMapper = $this->getFieldMapper();
+
+        $record = [
+            'building' => ['A1', 'B1'],
+            'rights' => ['CC FOO', 'CC BY ND']
+        ];
+        $expected = [
+            'building' => ['A', 'B'],
+            'rights' => ['by', 'nd']
+        ];
+
+        $mapped = $fieldMapper->mapValues('test', $record);
+
+        $this->assertIsArray($mapped);
+        $this->assertEquals($expected, $mapped);
+    }
+
+    /**
+     * Test mapValues
+     *
+     * @return void
+     */
+    public function testMapValuesDefault()
+    {
+        $fieldMapper = $this->getFieldMapper();
+
+        $record = [
+            'building' => ['A1', 'B1'],
+            'rights' => ['CC FOO', 'CC BAR']
+        ];
+        $expected = [
+            'building' => ['A', 'B'],
+            'rights' => ['other']
+        ];
+
+        $mapped = $fieldMapper->mapValues('test', $record);
+
+        $this->assertIsArray($mapped);
+        $this->assertEquals($expected, $mapped);
+    }
 
     /**
      * Tests for basic mapping files
@@ -78,7 +129,7 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
                 'map' => $this->callProtected(
                    $fieldMapper,
                    'readMappingFile',
-                   [self::CONFIG_DIR . '/building-basic.map']
+                   [self::CONFIG_DIR . '/mappings/building-basic.map']
                 )
             ]
         ];
@@ -129,7 +180,7 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
                 'map' => $this->callProtected(
                    $fieldMapper,
                    'readMappingFile',
-                   [self::CONFIG_DIR . '/building-regexp.map']
+                   [self::CONFIG_DIR . '/mappings/building-regexp.map']
                 )
             ]
         ];
@@ -157,7 +208,10 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
         $result = $this->callProtected(
             $fieldMapper, 'mapValue', ['21', $mapping]
         );
-        $this->assertEquals('', $result);
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['FOO123', $mapping]
+        );
+        $this->assertEquals(['BAR', 'BAZ'], $result);
     }
 
     /**
@@ -175,7 +229,7 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
                 'map' => $this->callProtected(
                    $fieldMapper,
                    'readMappingFile',
-                   [self::CONFIG_DIR . '/building-regexp-no-default.map']
+                   [self::CONFIG_DIR . '/mappings/building-regexp-no-default.map']
                 )
             ]
         ];
@@ -221,7 +275,54 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
                 'map' => $this->callProtected(
                    $fieldMapper,
                    'readMappingFile',
-                   [self::CONFIG_DIR . '/building-regexp-multi.map']
+                   [self::CONFIG_DIR . '/mappings/building-regexp-multi.map']
+                )
+            ]
+        ];
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['val1', $mapping]
+        );
+        $this->assertEquals(['val/1', 'string1'], $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['val', $mapping]
+        );
+        $this->assertEquals(['string'], $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['!21!', $mapping]
+        );
+        $this->assertEquals('def', $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['21!', $mapping]
+        );
+        $this->assertEquals(['!'], $result);
+
+        $result = $this->callProtected(
+            $fieldMapper, 'mapValue', ['21', $mapping]
+        );
+        $this->assertEquals([''], $result);
+    }
+
+    /**
+     * Tests for regexp multi mapping files with an empty default and ##emptyarray
+     * set
+     *
+     * @return void
+     */
+    public function testRegexpMultiEmptyArrayMappingFile()
+    {
+        $fieldMapper = $this->getFieldMapper();
+
+        $mapping = [
+            [
+                'type' => 'regexp-multi',
+                'map' => $this->callProtected(
+                   $fieldMapper,
+                   'readMappingFile',
+                   [self::CONFIG_DIR . '/mappings/building-regexp-multi.map']
                 )
             ]
         ];
@@ -267,7 +368,7 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
                 'map' => $this->callProtected(
                    $fieldMapper,
                    'readMappingFile',
-                   [self::CONFIG_DIR . '/building-basic.map']
+                   [self::CONFIG_DIR . '/mappings/building-basic.map']
                 )
             ],
             [
@@ -275,7 +376,7 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
                 'map' => $this->callProtected(
                    $fieldMapper,
                    'readMappingFile',
-                   [self::CONFIG_DIR . '/building-regexp.map']
+                   [self::CONFIG_DIR . '/mappings/building-regexp.map']
                 )
             ]
         ];

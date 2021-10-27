@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2017.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -200,6 +200,10 @@ class Lido extends Base
             $data['thumbnail'] = $urls[0];
         }
 
+        $data['ctrlnum'] = $this->getRecordInfoIDs();
+        $data['isbn'] = $this->getISBNs();
+        $data['issn'] = $this->getISSNs();
+
         $data['allfields'] = $this->getAllFields($this->doc);
 
         return $data;
@@ -386,6 +390,40 @@ class Lido extends Base
         $titlesAltScript = [];
         $authorsAltScript = [];
         return compact('titles', 'authors', 'titlesAltScript', 'authorsAltScript');
+    }
+
+    /**
+     * Dedup: Return ISBNs in ISBN-13 format without dashes
+     *
+     * @return array
+     */
+    public function getISBNs()
+    {
+        $arr = [];
+        foreach ($this->getIdentifiersByType(['isbn'], []) as $identifier) {
+            $identifier = str_replace('-', '', trim($identifier));
+            if (!preg_match('{^([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
+                continue;
+            }
+            $isbn = MetadataUtils::normalizeISBN($matches[1]);
+            if ($isbn) {
+                $arr[] = $isbn;
+            } else {
+                $this->storeWarning("Invalid ISBN '$identifier'");
+            }
+        }
+
+        return array_unique($arr);
+    }
+
+    /**
+     * Dedup: Return ISSNs
+     *
+     * @return array
+     */
+    public function getISSNs()
+    {
+        return $this->getIdentifiersByType(['issn'], []);
     }
 
     /**
@@ -1108,5 +1146,67 @@ class Lido extends Base
             $setList[] = $resourceSetNode;
         }
         return $setList;
+    }
+
+    /**
+     * Return identifiers from recordInfoSet.
+     *
+     * @return array
+     */
+    protected function getRecordInfoIDs()
+    {
+        $hasValue = isset(
+            $this->doc->lido->administrativeMetadata->recordWrap->recordInfoSet
+        );
+        if (!$hasValue) {
+            return [];
+        }
+
+        $ids = [];
+        foreach ($this->doc->lido->administrativeMetadata->recordWrap->recordInfoSet
+            as $set
+        ) {
+            if (isset($set->recordInfoID)) {
+                $info = $set->recordInfoID;
+                $attributes = $info->attributes();
+                if (isset($attributes->type)) {
+                    $type = (string)$attributes->type;
+                    $ids[] = "($type)" . (string)$info;
+                }
+            }
+        }
+        return $ids;
+    }
+
+    /**
+     * Return identifiers by type.
+     *
+     * @param array $include Types to include
+     * @param array $exclude Types to exclude
+     *
+     * @return array
+     */
+    protected function getIdentifiersByType(array $include = [], array $exclude = []
+    ): array {
+        $result = [];
+        foreach ($this->doc->lido->descriptiveMetadata as $dmd) {
+            foreach ($dmd->objectIdentificationWrap->repositoryWrap->repositorySet
+                ?? [] as $set
+            ) {
+                foreach ($set->workID as $workId) {
+                    $type = trim($workId['type']);
+                    if ($include && !in_array($type, $include)) {
+                        continue;
+                    }
+                    if ($type && $exclude && !in_array($type, $include)) {
+                        continue;
+                    }
+                    if ($identifier = trim($workId)) {
+                        $result[] = $identifier;
+                    }
+                }
+            }
+        }
+        return $result;
     }
 }

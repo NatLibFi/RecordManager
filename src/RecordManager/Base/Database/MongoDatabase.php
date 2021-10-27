@@ -98,6 +98,34 @@ class MongoDatabase extends AbstractDatabase
     protected $counts = false;
 
     /**
+     * Whether to use a MongoDB session.
+     *
+     * @var bool
+     */
+    protected $useSession;
+
+    /**
+     * Session ID
+     *
+     * @var \MongoDB\Model\BSONDocument
+     */
+    protected $sessionId = null;
+
+    /**
+     * Session refresh interval in seconds
+     *
+     * @var int
+     */
+    protected $sessionRefreshInterval = 0;
+
+    /**
+     * Last session refresh time
+     *
+     * @var int
+     */
+    protected $lastSessionRefresh = 0;
+
+    /**
      * Constructor.
      *
      * @param array $config Database settings
@@ -113,6 +141,7 @@ class MongoDatabase extends AbstractDatabase
         $this->counts = !empty($config['counts']);
         $this->connectTimeout = $config['connect_timeout'] ?? 300000;
         $this->socketTimeout = $config['socket_timeout'] ?? 300000;
+        $this->useSession = $config['session'] ?? true;
     }
 
     /**
@@ -292,7 +321,7 @@ class MongoDatabase extends AbstractDatabase
     public function getDedup($id)
     {
         if (is_string($id)) {
-            $id = new \MongoDB\BSON\ObjectID($id);
+            $id = new \MongoDB\BSON\ObjectId($id);
         }
         return $this->getMongoRecord($this->dedupCollection, $id);
     }
@@ -361,30 +390,29 @@ class MongoDatabase extends AbstractDatabase
     }
 
     /**
-     * Remove old queue collections
+     * Remove old tracking collections
      *
-     * @param int $lastRecordTime Newest record timestamp
+     * @param int $minAge Minimum age in days. Default is 7 days.
      *
      * @return array Array of two arrays with collections removed and those whose
      * removal failed
      */
-    public function cleanupQueueCollections($lastRecordTime)
+    public function cleanupTrackingCollections(int $minAge = 7)
     {
         $removed = [];
         $failed = [];
         foreach ($this->getDb()->listCollections() as $collection) {
             $collection = $collection->getName();
-            if (strncmp($collection, 'mr_record_', 10) != 0) {
+            if (strncmp($collection, 'tracking_', 9) !== 0) {
                 continue;
             }
             $nameParts = explode('_', $collection);
-            $collTime = $nameParts[4] ?? null;
+            $collTime = $nameParts[2] ?? null;
             if (is_numeric($collTime)
-                && $collTime != $lastRecordTime
-                && $collTime < time() - 60 * 60 * 24 * 7
+                && $collTime < time() - $minAge * 60 * 60 * 24
             ) {
                 try {
-                    $this->getDb()->selectCollection($collection)->drop();
+                    $this->getDb()->dropCollection($collection);
                     $removed[] = $collection;
                 } catch (\Exception $e) {
                     $failed[] = $collection;
@@ -395,124 +423,54 @@ class MongoDatabase extends AbstractDatabase
     }
 
     /**
-     * Check for an existing queue collection with the given parameters
-     *
-     * @param string $hash           Hash of parameters used to identify the
-     *                               collection
-     * @param int    $fromDate       Timestamp of processing start date
-     * @param int    $lastRecordTime Newest record timestamp
+     * Create a new temporary tracking collection
      *
      * @return string
      */
-    public function getExistingQueueCollection($hash, $fromDate, $lastRecordTime)
+    public function getNewTrackingCollection()
     {
-        $collectionName = "mr_record_{$hash}_{$fromDate}_{$lastRecordTime}";
-        foreach ($this->getDb()->listCollections() as $collection) {
-            $collection = $collection->getName();
-            if ($collection == $collectionName) {
-                return $collectionName;
-            }
-        }
-        return '';
+        return 'tracking_' . getmypid() . '_' . time();
     }
 
     /**
-     * Create a new temporary queue collection for the given parameters
-     *
-     * @param string $hash           Hash of parameters used to identify the
-     *                               collection
-     * @param string $fromDate       Timestamp of processing start date
-     * @param int    $lastRecordTime Newest record timestamp
-     *
-     * @return string
-     */
-    public function getNewQueueCollection($hash, $fromDate, $lastRecordTime)
-    {
-        $collectionName = "tmp_mr_record_{$hash}_{$fromDate}_{$lastRecordTime}";
-        return $collectionName;
-    }
-
-    /**
-     * Rename a temporary dedup collection to its final name and return the name
-     *
-     * @param string $collectionName The temporary collection name
-     *
-     * @return string
-     */
-    public function finalizeQueueCollection($collectionName)
-    {
-        if (strncmp($collectionName, 'tmp_', 4) !== 0) {
-            throw new \Exception(
-                "Invalid temp queue collection name: '$collectionName'"
-            );
-        }
-        $newName = substr($collectionName, 4);
-
-        // renameCollection requires admin priviledge
-        $res = $this->mongoClient->admin->command(
-            [
-                'renameCollection' => $this->databaseName . '.'
-                    . $collectionName,
-                'to' => $this->databaseName . '.' . $newName
-            ]
-        );
-        $resArray = $res->toArray();
-        if (!$resArray[0]['ok']) {
-            throw new \Exception(
-                'Renaming collection failed: ' . print_r($resArray, true)
-            );
-        }
-        return $newName;
-    }
-
-    /**
-     * Remove a temp dedup collection
+     * Remove a temporary tracking collection
      *
      * @param string $collectionName The temporary collection name
      *
      * @return bool
      */
-    public function dropQueueCollection($collectionName)
+    public function dropTrackingCollection($collectionName)
     {
-        if (strncmp($collectionName, 'tmp_', 4) !== 0) {
+        if (strncmp($collectionName, 'tracking_', 4) !== 0) {
             throw new \Exception(
-                "Invalid temp queue collection name: '$collectionName'"
+                "Invalid tracking collection name: '$collectionName'"
             );
         }
-        $collection = $this->mongoClient->{$collectionName};
-        $res = $collection->drop();
+        $res = (array)$this->getDb()->dropCollection($collectionName);
         return (bool)$res['ok'];
     }
 
     /**
-     * Add a record ID to a queue collection
+     * Add a record ID to a tracking collection
      *
      * @param string $collectionName The queue collection name
      * @param string $id             ID to add
      *
-     * @return void
+     * @return bool true if added, false if id already exists
      */
-    public function addIdToQueue($collectionName, $id)
+    public function addIdToTrackingCollection($collectionName, $id)
     {
-        $this->saveMongoRecord($collectionName, ['_id' => $id], 0);
-    }
+        $params = [
+            'writeConcern' => new \MongoDB\Driver\WriteConcern(1),
+            'upsert' => true
+        ];
+        $res = $this->getDb()->{$collectionName}->replaceOne(
+            ['_id' => $id],
+            ['_id' => $id],
+            $params
+        );
 
-    /**
-     * Find IDs in a queue collection
-     *
-     * @param array $filter  Search filter
-     * @param array $options Options such as sorting. Must include 'collectionName'.
-     *
-     * @return \Traversable
-     */
-    public function findQueuedIds(array $filter, array $options)
-    {
-        if (empty($options['collectionName'])) {
-            throw new \Exception('Options must include collectionName');
-        }
-        $collectionName = $options['collectionName'];
-        unset($options['collectionName']);
-        return $this->findMongoRecords($collectionName, $filter, $options);
+        return $res->getMatchedCount() === 0;
     }
 
     /**
@@ -556,6 +514,59 @@ class MongoDatabase extends AbstractDatabase
     }
 
     /**
+     * Save a log message
+     *
+     * @param string $context   Context
+     * @param string $msg       Message
+     * @param int    $level     Message level (see constants in Logger)
+     * @param int    $pid       Process ID
+     * @param int    $timestamp Unix time stamp
+     *
+     * @return void
+     */
+    public function saveLogMessage(string $context, string $msg, int $level,
+        int $pid, int $timestamp
+    ): void {
+        $record = [
+            'timestamp' => $this->getTimestamp($timestamp),
+            'context' => $context,
+            'message' => $msg,
+            'level' => $level,
+            'pid' => $pid,
+        ];
+        $this->saveMongoRecord($this->logMessageCollection, $record);
+    }
+
+    /**
+     * Find log messages
+     *
+     * @param array $filter  Search filter
+     * @param array $options Options such as sorting
+     *
+     * @return \Traversable
+     */
+    public function findLogMessages(array $filter, array $options = [])
+    {
+        return $this->findMongoRecords(
+            $this->logMessageCollection,
+            $filter,
+            $options
+        );
+    }
+
+    /**
+     * Delete a log message
+     *
+     * @param mixed $id Message ID
+     *
+     * @return void
+     */
+    public function deleteLogMessage($id): void
+    {
+        $this->deleteMongoRecord($this->logMessageCollection, $id);
+    }
+
+    /**
      * Get a database connection
      *
      * @return \MongoDB\Database
@@ -572,13 +583,60 @@ class MongoDatabase extends AbstractDatabase
             );
             $this->db = $this->mongoClient->{$this->databaseName};
             $this->pid = getmypid();
+            if ($this->useSession) {
+                $result = $this->db->command(['startSession' => 1]);
+                $result->rewind();
+                $session = $result->current();
+                if (empty($session['id'])) {
+                    throw new \Exception(
+                        'Could not start MongoDB session: '
+                        . var_export($session, true)
+                    );
+                }
+                $this->sessionId = $session['id'];
+                $this->sessionRefreshInterval
+                    = (60 * max(1, floor($session['timeoutMinutes'] / 2)));
+                $this->lastSessionRefresh = time();
+            }
         } elseif ($this->pid !== getmypid()) {
             throw new \Exception(
                 'PID ' . getmypid() . ': database already connected by PID '
                 . getmypid()
             );
+        } else {
+            $this->refreshSession();
         }
         return $this->db;
+    }
+
+    /**
+     * Refresh the session whenever necessary
+     *
+     * @return void
+     */
+    protected function refreshSession()
+    {
+        if ($this->useSession && $this->sessionId
+            && time() - $this->lastSessionRefresh >= $this->sessionRefreshInterval
+        ) {
+            // Do not call getDb to avoid circular reference
+            $result = $this->db->command(
+                [
+                    'refreshSessions' => [
+                        $this->sessionId
+                    ]
+                ]
+            );
+            $result->rewind();
+            $result = $result->current();
+            if (!$result['ok']) {
+                throw new \Exception(
+                    'Could not refresh MongoDB session: '
+                    . var_export($result, true)
+                );
+            }
+            $this->lastSessionRefresh = time();
+        }
     }
 
     /**
@@ -732,7 +790,7 @@ class MongoDatabase extends AbstractDatabase
      * Delete a record
      *
      * @param string $collection Collection
-     * @param string $id         Record ID
+     * @param mixed  $id         Record ID
      *
      * @return void
      */
@@ -765,6 +823,7 @@ class MongoDatabase extends AbstractDatabase
             if ($callback(iterator_to_array($record), $params) === false) {
                 return;
             }
+            $this->refreshSession();
         }
     }
 }

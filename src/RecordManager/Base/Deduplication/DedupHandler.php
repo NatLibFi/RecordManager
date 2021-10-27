@@ -309,7 +309,9 @@ class DedupHandler implements DedupHandlerInterface
      */
     public function dedupRecord($record)
     {
-        if ($record['deleted'] || ($record['suppressed'] ?? false)) {
+        if ($record['deleted'] || ($record['suppressed'] ?? false)
+            || empty($this->dataSourceSettings[$record['source_id']]['dedup'])
+        ) {
             if (isset($record['dedup_id'])) {
                 $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
                 unset($record['dedup_id']);

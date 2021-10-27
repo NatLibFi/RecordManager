@@ -1,47 +1,65 @@
-CC0[] = usage_A
-CC0[] = usage_B
-CC0[] = usage_C
-CC0[] = usage_D
-CC0[] = usage_E
-CC BY 4.0[] = usage_B
-CC BY 4.0[] = usage_C
-CC BY 4.0[] = usage_D
-CC BY 4.0[] = usage_E
-CCBY4.0[] = usage_B
-CCBY4.0[] = usage_C
-CCBY4.0[] = usage_D
-CCBY4.0[] = usage_E
-CC BY[] = usage_B
-CC BY[] = usage_C
-CC BY[] = usage_D
-CC BY[] = usage_E
-CC BY-SA 3.0[] = usage_B
-CC BY-SA 3.0[] = usage_C
-CC BY-SA 3.0[] = usage_D
-CC BY-SA 3.0[] = usage_E
-CCBYSA4.0[] = usage_B
-CCBYSA4.0[] = usage_C
-CCBYSA4.0[] = usage_D
-CCBYSA4.0[] = usage_E
-CC BY-ND 4.0[] = usage_C
-CC BY-ND 4.0[] = usage_E
-CC BY -NC 4.0[] = usage_D
-CC BY -NC -ND 4.0[] = usage_E
-CC BY -NC -SA 4.0[] = usage_D
-CC BY -NC -SA 4.0[] = usage_E
-CC BY-NC-ND 4.0[] = usage_E
-No known copyright restrictions[] = usage_B
-No known copyright restrictions[] = usage_C
-No known copyright restrictions[] = usage_D
-No known copyright restrictions[] = usage_E
-Public Domain Mark[] = usage_A
-Public Domain Mark[] = usage_B
-Public Domain Mark[] = usage_C
-Public Domain Mark[] = usage_D
-Public Domain Mark[] = usage_E
-Public domain[] = usage_A
-Public domain[] = usage_B
-Public domain[] = usage_C
-Public domain[] = usage_D
-Public domain[] = usage_E
-##default = usage_F
+; Regexp map. Note: the order is important since first match will rule over others.
+
+^CC0$[] = usage_A
+^CC0$[] = usage_B
+^CC0$[] = usage_C
+^CC0$[] = usage_D
+^CC0$[] = usage_E
+
+^CC[ -]*BY[ -]*NC[ -]*ND.*[] = usage_E
+^https?://creativecommons\.org/licenses/by-nc-nd/.*[] = usage_E
+
+^CC[ -]*BY[ -]*NC[ -]*SA.*[] = usage_D
+^CC[ -]*BY[ -]*NC[ -]*SA.*[] = usage_E
+^https?://creativecommons\.org/licenses/by-nc-sa/.*[] = usage_D
+^https?://creativecommons\.org/licenses/by-nc-sa/.*[] = usage_E
+
+^CC[ -]*BY[ -]*SA.*[] = usage_B
+^CC[ -]*BY[ -]*SA.*[] = usage_C
+^CC[ -]*BY[ -]*SA.*[] = usage_D
+^CC[ -]*BY[ -]*SA.*[] = usage_E
+^https?://creativecommons\.org/licenses/by-sa/.*[] = usage_B
+^https?://creativecommons\.org/licenses/by-sa/.*[] = usage_C
+^https?://creativecommons\.org/licenses/by-sa/.*[] = usage_D
+^https?://creativecommons\.org/licenses/by-sa/.*[] = usage_E
+
+^CC[ -]*BY[ -]*ND.*[] = usage_C
+^CC[ -]*BY[ -]*ND.*[] = usage_E
+^https?://creativecommons\.org/licenses/by-nd/.*[] = usage_C
+^https?://creativecommons\.org/licenses/by-nd/.*[] = usage_E
+
+^CC[ -]*BY[ -]*NC.*[] = usage_D
+^https?://creativecommons\.org/licenses/by-nc/.*[] = usage_D
+
+^CC[ -]*BY[ \.\d]*[] = usage_B
+^CC[ -]*BY[ \.\d]*[] = usage_C
+^CC[ -]*BY[ \.\d]*[] = usage_D
+^CC[ -]*BY[ \.\d]*[] = usage_E
+^https?://creativecommons\.org/licenses/by/.*[] = usage_B
+^https?://creativecommons\.org/licenses/by/.*[] = usage_C
+^https?://creativecommons\.org/licenses/by/.*[] = usage_D
+^https?://creativecommons\.org/licenses/by/.*[] = usage_E
+
+^No known copyright restrictions$[] = usage_B
+^No known copyright restrictions$[] = usage_C
+^No known copyright restrictions$[] = usage_D
+^No known copyright restrictions$[] = usage_E
+
+^Public [Dd]omain.*[] = usage_A
+^Public [Dd]omain.*[] = usage_B
+^Public [Dd]omain.*[] = usage_C
+^Public [Dd]omain.*[] = usage_D
+^Public [Dd]omain.*[] = usage_E
+
+^https?://creativecommons\.org/publicdomain/.*[] = usage_A
+^https?://creativecommons\.org/publicdomain/.*[] = usage_B
+^https?://creativecommons\.org/publicdomain/.*[] = usage_C
+^https?://creativecommons\.org/publicdomain/.*[] = usage_D
+^https?://creativecommons\.org/publicdomain/.*[] = usage_E
+
+^restricted$[] = usage_F
+
+; By default map to empty value:
+##default =
+; If mappings of all values results in empty, use the following:
+##mappedemptyarray = usage_F
