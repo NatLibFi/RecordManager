@@ -38,7 +38,7 @@ With MySQL/MariaDB you can identify the tables with the following SQL query:
 
 You can then use the `drop table` command to remove them.
 
-## Installation notes on CentOS 7
+## Installation Notes on CentOS 7
 
 These are quick instructions on how to set up RecordManager. Please refer to the [wiki pages](https://github.com/NatLibFi/RecordManager/wiki) for more information on the configuration and setup of RecordManager.
 
@@ -113,16 +113,40 @@ These are quick instructions on how to set up RecordManager. Please refer to the
 
 - Start using the system by executing e.g.
 
-      php harvest.php --source=datasource_id
+      ./console records:harvest --source=datasource_id
 
   or
 
-      php import.php --file=filename --source=datasource_id
+      ./console records:import datasource_id filename
 
-- Deduplicate harvested records:
+- Deduplicate the records:
 
-      php manage.php --func=deduplicate
+      ./console records:deduplicate
 
 - Update Solr index:
 
-      php manage.php --func=updatesolr
+      ./console solr:update-index
+
+## Creating Additional Modules
+
+RecordManager supports modules that can modify and add new
+functionality. Active modules are specified in `conf/modules.config.php`. You can copy the provided `conf/modules.config.php.sample` to `conf/modules.config.php` and modify it accordingly.
+
+A minimal module ("Sample" in this example) consists of the following file:
+
+`src/RecordManager/Sample/Module.php`
+
+The file needs to contain a Module class that provides the module configuration:
+
+    <?php
+    namespace RecordManager\Sample;
+
+    class Module
+    {
+        public function getConfig()
+        {
+            return [];
+        }
+    }
+
+This, alone, doesn't really do anything. Please see the [Finna module](https://github.com/NatLibFi/RecordManager-Finna/blob/dev/src/RecordManager/Finna/Module.php) for an example of one that does a number of different things.

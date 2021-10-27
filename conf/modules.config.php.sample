@@ -2,5 +2,5 @@
 
 // Local modules (in addition to the base ones):
 return [
-    'RecordManager\\Finna',
+    'RecordManager\\Sample',
 ];
