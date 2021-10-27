@@ -53,7 +53,7 @@ class LrmiOnkiLightEnrichment extends OnkiLightEnrichment
      */
     public function enrich($sourceId, $record, &$solrArray)
     {
-        if (!($record instanceof \RecordManager\Finna\Record\Lrmi)) {
+        if (!($record instanceof \RecordManager\Base\Record\Lrmi)) {
             return;
         }
 
