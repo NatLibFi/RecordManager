@@ -106,7 +106,7 @@ class HTTPFiles extends AbstractBase
             $this->infoMsg('Processing the records...');
 
             if (null !== $this->preXslt) {
-                $data = $this->preTransform($data);
+                $data = $this->transform($data);
             }
 
             $tempFile = $this->getTempFileName('http-harvest-', '.xml');

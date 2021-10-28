@@ -436,7 +436,7 @@ abstract class AbstractBase
     }
 
     /**
-     * Do pre-transformation
+     * Do transformation
      *
      * Always returns a string to make sure any elements added as unescaped strings
      * are properly parsed.
@@ -447,7 +447,7 @@ abstract class AbstractBase
      * @return string|\DOMDocument Transformed XML
      * @throws \Exception
      */
-    protected function preTransform($xml, $returnDoc = false)
+    protected function transform($xml, $returnDoc = false)
     {
         $doc = new \DOMDocument();
         $result = $this->metadataUtils->loadXML($xml, $doc, 0, $errors);

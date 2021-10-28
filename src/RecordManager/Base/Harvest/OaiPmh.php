@@ -439,7 +439,7 @@ class OaiPmh extends AbstractBase
     protected function processResponse($xml, $resumption)
     {
         try {
-            $result = $this->preTransform($xml, true);
+            $result = $this->transform($xml, true);
         } catch (\Exception $e) {
             $tempfile = $this->getTempFileName('oai-pmh-error-', '.xml');
             file_put_contents($tempfile, $xml);
