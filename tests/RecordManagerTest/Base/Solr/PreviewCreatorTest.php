@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2017.
+ * Copyright (C) The National Library of Finland 2017-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,8 +27,12 @@
  */
 namespace RecordManagerTest\Base\Solr;
 
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
+use RecordManager\Base\Settings\Ini;
 use RecordManager\Base\Solr\PreviewCreator;
+use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -42,6 +46,13 @@ use RecordManager\Base\Utils\Logger;
  */
 class PreviewCreatorTest extends \PHPUnit\Framework\TestCase
 {
+    /**
+     * Location of configuration files
+     *
+     * @var string
+     */
+    const CONFIG_DIR = __DIR__ . '/../../../fixtures/base/config/basic';
+
     /**
      * Holding test record
      *
@@ -76,7 +87,7 @@ EOT;
      *
      * @var array
      */
-    protected $dataSourceSettings = [
+    protected $dataSourceConfig = [
         'test' => [
             'institution' => 'Test',
             'format' => 'marc',
@@ -126,12 +137,39 @@ EOT;
      */
     protected function getPreviewCreator()
     {
-        $basePath = __DIR__ . '/../../../fixtures/base/config/basic';
         $logger = $this->createMock(Logger::class);
-        $recordFactory = new RecordFactory($logger, [], $this->dataSourceSettings);
+        $metadataUtils = new \RecordManager\Base\Utils\MetadataUtils(
+            RECMAN_BASE_PATH,
+            [],
+            $logger
+        );
+        $record = new \RecordManager\Base\Record\Marc(
+          [],
+          $this->dataSourceConfig,
+          $logger,
+          $metadataUtils
+        );
+        $recordPM = $this->createMock(RecordPluginManager::class);
+        $recordPM->expects($this->once())
+            ->method('get')
+            ->will($this->returnValue($record));
+
+        $fieldMapper = new FieldMapper(
+          self::CONFIG_DIR,
+          [],
+          $this->dataSourceConfig
+        );
         $preview = new PreviewCreator(
-            null, $basePath, $logger, false, [], $this->dataSourceSettings,
-            $recordFactory
+            [],
+            $this->dataSourceConfig,
+            null,
+            $logger,
+            $recordPM,
+            $this->createMock(EnrichmentPluginManager::class),
+            $this->createMock(HttpClientManager::class),
+            $this->createMock(Ini::class),
+            $fieldMapper,
+            $metadataUtils
         );
 
         return $preview;

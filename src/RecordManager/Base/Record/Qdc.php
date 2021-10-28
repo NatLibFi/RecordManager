@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2018.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,6 +28,8 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
+use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -41,11 +43,43 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class Qdc extends Base
+class Qdc extends AbstractRecord
 {
     use FullTextTrait;
 
+    /**
+     * Document
+     *
+     * @var \SimpleXMLElement
+     */
     protected $doc = null;
+
+    /**
+     * HTTP client manager
+     *
+     * @var HttpClientManager
+     */
+    protected $httpClientManager;
+
+    /**
+     * Constructor
+     *
+     * @param array             $config           Main configuration
+     * @param array             $dataSourceConfig Data source settings
+     * @param Logger            $logger           Logger
+     * @param MetadataUtils     $metadataUtils    Metadata utilities
+     * @param HttpClientManager $httpManager      HTTP client manager
+     */
+    public function __construct(
+        $config,
+        $dataSourceConfig,
+        Logger $logger,
+        MetadataUtils $metadataUtils,
+        HttpClientManager $httpManager
+    ) {
+        parent::__construct($config, $dataSourceConfig, $logger, $metadataUtils);
+        $this->httpClientManager = $httpManager;
+    }
 
     /**
      * Set record data
@@ -86,7 +120,7 @@ class Qdc extends Base
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -185,13 +219,13 @@ class Qdc extends Base
     {
         $title = trim((string)$this->doc->title);
         if ($forFiling) {
-            $title = MetadataUtils::stripLeadingPunctuation($title);
-            $title = MetadataUtils::stripLeadingArticle($title);
+            $title = $this->metadataUtils->stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripLeadingArticle($title);
             // Again, just in case stripping the article affected this
-            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripLeadingPunctuation($title);
             $title = mb_strtolower($title, 'UTF-8');
         }
-        $title = MetadataUtils::stripTrailingPunctuation($title);
+        $title = $this->metadataUtils->stripTrailingPunctuation($title);
         return $title;
     }
 
@@ -215,7 +249,7 @@ class Qdc extends Base
         $result = [];
         foreach ($this->getValues('creator') as $author) {
             $result[]
-                = MetadataUtils::stripTrailingPunctuation($author);
+                = $this->metadataUtils->stripTrailingPunctuation($author);
         }
         return $result;
     }
@@ -230,7 +264,7 @@ class Qdc extends Base
         $result = [];
         foreach ($this->getValues('contributor') as $contributor) {
             $result[]
-                = MetadataUtils::stripTrailingPunctuation($contributor);
+                = $this->metadataUtils->stripTrailingPunctuation($contributor);
         }
         return $result;
     }
@@ -257,7 +291,8 @@ class Qdc extends Base
         foreach ($this->doc->identifier as $identifier) {
             $identifier = strtolower(trim((string)$identifier));
             if (strncmp('urn:', $identifier, 4) === 0) {
-                $arr[] = '(urn)' . MetadataUtils::normalizeKey($identifier, $form);
+                $arr[] = '(urn)' . $this->metadataUtils
+                    ->normalizeKey($identifier, $form);
             }
         }
 
@@ -278,7 +313,7 @@ class Qdc extends Base
                 if (!preg_match('{^([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
                     continue;
                 }
-                $isbn = MetadataUtils::normalizeISBN($matches[1]);
+                $isbn = $this->metadataUtils->normalizeISBN($matches[1]);
                 if ($isbn) {
                     $arr[] = $isbn;
                 }
@@ -427,7 +462,7 @@ class Qdc extends Base
                 $languages[] = $code;
             }
         }
-        return MetadataUtils::normalizeLanguageStrings($languages);
+        return $this->metadataUtils->normalizeLanguageStrings($languages);
     }
 
     /**

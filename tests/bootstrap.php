@@ -1,4 +1,2 @@
 <?php
-require_once 'src/RecordManager/Base/Autoloader.php';
-$loader = Autoloader::getLoader();
-$loader->addDirectory('tests');
+define('RECMAN_BASE_PATH', __DIR__ . '/fixtures/base/config/basic');

@@ -40,6 +40,7 @@
 ; debugLog may be pointed to a file where all the OAI-PMH requests and responses are written.
 ;
 ; RecordManager settings:
+; type                  Harvester type (HTTPFiles, OAI-PMH (default), SFX, SierraApi)
 ; institution           The institution code mapped to the source (required)
 ; recordXPath           xpath expression used when loading records from a file to identify a single record (optional, e.g. //record)
 ; format                Record format in RecordManager

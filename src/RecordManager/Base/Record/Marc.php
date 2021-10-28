@@ -44,16 +44,16 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class Marc extends Base
+class Marc extends AbstractRecord
 {
-    const SUBFIELD_INDICATOR = "\x1F";
-    const END_OF_FIELD = "\x1E";
-    const END_OF_RECORD = "\x1D";
-    const LEADER_LEN = 24;
+    public const SUBFIELD_INDICATOR = "\x1F";
+    public const END_OF_FIELD = "\x1E";
+    public const END_OF_RECORD = "\x1D";
+    public const LEADER_LEN = 24;
 
-    const GET_NORMAL = 0;
-    const GET_ALT = 1;
-    const GET_BOTH = 2;
+    public const GET_NORMAL = 0;
+    public const GET_ALT = 1;
+    public const GET_BOTH = 2;
 
     /**
      * MARC is stored in a multidimensional array:
@@ -64,7 +64,7 @@ class Marc extends Base
      *               {p => "Part"}
      *              ]
      */
-    protected $fields;
+    protected $fields = [];
 
     /**
      * Default primary author relator codes, may be overridden in configuration
@@ -137,17 +137,23 @@ class Marc extends Base
     /**
      * Constructor
      *
-     * @param Logger $logger             Logger
-     * @param array  $config             Main configuration
-     * @param array  $dataSourceSettings Data source settings
+     * @param array         $config           Main configuration
+     * @param array         $dataSourceConfig Data source settings
+     * @param Logger        $logger           Logger
+     * @param MetadataUtils $metadataUtils    Metadata utilities
      */
-    public function __construct(Logger $logger, $config, $dataSourceSettings)
-    {
-        parent::__construct($logger, $config, $dataSourceSettings);
+    public function __construct(
+        array $config,
+        array $dataSourceConfig,
+        Logger $logger,
+        MetadataUtils $metadataUtils
+    ) {
+        parent::__construct($config, $dataSourceConfig, $logger, $metadataUtils);
 
         if (isset($config['MarcRecord']['primary_author_relators'])) {
             $this->primaryAuthorRelators = explode(
-                ',', $config['MarcRecord']['primary_author_relators']
+                ',',
+                $config['MarcRecord']['primary_author_relators']
             );
         }
     }
@@ -180,7 +186,8 @@ class Marc extends Base
                                 'i2' => $data[1]
                             ];
                             $subfields = explode(
-                                self::SUBFIELD_INDICATOR, substr($data, 3)
+                                self::SUBFIELD_INDICATOR,
+                                substr($data, 3)
                             );
                             foreach ($subfields as $subfield) {
                                 $newField['s'][] = [
@@ -273,7 +280,8 @@ class Marc extends Base
             foreach ($fields as $data) {
                 if (!is_array($data)) {
                     $field = $record->addChild(
-                        'controlfield', htmlspecialchars($data, ENT_NOQUOTES)
+                        'controlfield',
+                        htmlspecialchars($data, ENT_NOQUOTES)
                     );
                     $field->addAttribute('tag', $tag);
                 } else {
@@ -376,21 +384,23 @@ class Marc extends Base
             if ($geoLocations = $this->getGeographicLocations()) {
                 $data[$geoField] = $geoLocations;
                 $centerField = $this->getDriverParam(
-                    'geoCenterField', $this->defaultGeoCenterField
+                    'geoCenterField',
+                    $this->defaultGeoCenterField
                 );
                 if ($centerField) {
                     foreach ($geoLocations as $geoLocation) {
-                        $data[$centerField][]
-                            = MetadataUtils::getCenterCoordinates($geoLocation);
+                        $data[$centerField][] = $this->metadataUtils
+                            ->getCenterCoordinates($geoLocation);
                     }
                 }
                 $displayField = $this->getDriverParam(
-                    'geoDisplayField', $this->defaultGeoDisplayField
+                    'geoDisplayField',
+                    $this->defaultGeoDisplayField
                 );
                 if ($displayField) {
                     foreach ($geoLocations as $geoLocation) {
-                        $data[$displayField][]
-                            = MetadataUtils::getGeoDisplayField($geoLocation);
+                        $data[$displayField][] = $this->metadataUtils
+                            ->getGeoDisplayField($geoLocation);
                     }
                 }
             }
@@ -440,7 +450,8 @@ class Marc extends Base
 
         $data['title'] = $this->getTitle();
         $data['title_sub'] = $this->getFieldSubfields(
-            '245', ['b' => 1, 'n' => 1, 'p' => 1]
+            '245',
+            ['b' => 1, 'n' => 1, 'p' => 1]
         );
         $data['title_short'] = $this->getFieldSubfields('245', ['a' => 1]);
         $data['title_full'] = $this->getFieldSubfields(
@@ -482,7 +493,8 @@ class Marc extends Base
 
         if (!$data['title_short']) {
             $data['title_short'] = $this->getFieldSubfields(
-                '240', ['a' => 1, 'n' => 1, 'p' => 1]
+                '240',
+                ['a' => 1, 'n' => 1, 'p' => 1]
             );
             $data['title_full'] = $this->getFieldSubfields('240');
         }
@@ -493,14 +505,15 @@ class Marc extends Base
             [
                 [self::GET_BOTH, '260', ['b' => 1]]
             ],
-            false, true
+            false,
+            true
         );
         if (!$data['publisher']) {
             $fields = $this->getFields('264');
             foreach ($fields as $field) {
                 if ($this->getIndicator($field, 2) == '1') {
                     $data['publisher'] = [
-                        MetadataUtils::stripTrailingPunctuation(
+                        $this->metadataUtils->stripTrailingPunctuation(
                             $this->getSubfield($field, 'b')
                         )
                     ];
@@ -546,7 +559,7 @@ class Marc extends Base
             }
             $isbn = $matches[1];
             if (strlen($isbn) == 10) {
-                $isbn = MetadataUtils::isbn10to13($isbn);
+                $isbn = $this->metadataUtils->isbn10to13($isbn);
             }
             if ($isbn) {
                 $data['isbn'][] = $isbn;
@@ -586,7 +599,7 @@ class Marc extends Base
                 $data['callnumber-subject'] = $matches[1];
             }
 
-            list($preDotPart) = explode('.', $value, 2);
+            [$preDotPart] = explode('.', $value, 2);
             $data['callnumber-label'] = strtoupper($preDotPart);
         }
         $data['callnumber-raw'] = array_map(
@@ -708,7 +721,7 @@ class Marc extends Base
     {
         if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
             $source = $this->getField('003');
-            $source = MetadataUtils::stripTrailingPunctuation($source);
+            $source = $this->metadataUtils->stripTrailingPunctuation($source);
             if ($source) {
                 $id = "($source)$id";
             }
@@ -737,7 +750,7 @@ class Marc extends Base
     {
         $field = $this->getField('941');
         if ($field) {
-            return MetadataUtils::stripControlCharacters(
+            return $this->metadataUtils->stripControlCharacters(
                 $this->getSubfield($field, 'a')
             );
         }
@@ -748,7 +761,7 @@ class Marc extends Base
             true
         );
         $ids = array_map(
-            ['\RecordManager\Base\Utils\MetadataUtils', 'stripControlCharacters'],
+            [$this->metadataUtils, 'stripControlCharacters'],
             $ids
         );
         if ($this->getDriverParam('003InLinkingID', false)) {
@@ -759,7 +772,7 @@ class Marc extends Base
                     if (null === $record003) {
                         $field = $this->getField('003');
                         $record003 = $field
-                            ? MetadataUtils::stripControlCharacters($field)
+                            ? $this->metadataUtils->stripControlCharacters($field)
                             : '';
                     }
                     if ('' !== $record003) {
@@ -845,7 +858,7 @@ class Marc extends Base
     public function getContainerTitle()
     {
         $first773 = $this->getField('773');
-        return MetadataUtils::stripTrailingPunctuation(
+        return $this->metadataUtils->stripTrailingPunctuation(
             $this->getSubfield($first773, 't')
         );
     }
@@ -858,7 +871,7 @@ class Marc extends Base
     public function getContainerReference()
     {
         $first773 = $this->getField('773');
-        return MetadataUtils::stripTrailingPunctuation(
+        return $this->metadataUtils->stripTrailingPunctuation(
             $this->getSubfield($first773, 'g')
         );
     }
@@ -892,7 +905,7 @@ class Marc extends Base
                     if (!in_array(key($subfield), $acceptSubfields)) {
                         continue;
                     }
-                    if (!MetadataUtils::hasTrailingPunctuation($title)) {
+                    if (!$this->metadataUtils->hasTrailingPunctuation($title)) {
                         $title .= $punctuation[key($subfield)];
                     } else {
                         $title .= ' ';
@@ -900,10 +913,10 @@ class Marc extends Base
                     $title .= current($subfield);
                 }
                 if ($forFiling) {
-                    $title = MetadataUtils::stripLeadingPunctuation($title);
+                    $title = $this->metadataUtils->stripLeadingPunctuation($title);
                     $title = mb_strtolower($title, 'UTF-8');
                 }
-                $title = MetadataUtils::stripTrailingPunctuation($title);
+                $title = $this->metadataUtils->stripTrailingPunctuation($title);
                 if (!empty($title)) {
                     return $title;
                 }
@@ -924,16 +937,16 @@ class Marc extends Base
             $author = $this->getSubfield($f100, 'a');
             $order = $this->getIndicator($f100, 1);
             if ($order == 0 && strpos($author, ',') === false) {
-                $author = MetadataUtils::convertAuthorLastFirst($author);
+                $author = $this->metadataUtils->convertAuthorLastFirst($author);
             }
-            return MetadataUtils::stripTrailingPunctuation($author);
+            return $this->metadataUtils->stripTrailingPunctuation($author);
         } elseif ($f700 = $this->getField('700')) {
             $author = $this->getSubfield($f700, 'a');
             $order = $this->getIndicator($f700, 1);
             if ($order == 0 && strpos($author, ',') === false) {
-                $author = MetadataUtils::convertAuthorLastFirst($author);
+                $author = $this->metadataUtils->convertAuthorLastFirst($author);
             }
-            return MetadataUtils::stripTrailingPunctuation($author);
+            return $this->metadataUtils->stripTrailingPunctuation($author);
         }
         return '';
     }
@@ -962,19 +975,22 @@ class Marc extends Base
         $form = $this->config['Site']['unicode_normalization_form'] ?? 'NFKC';
         $f010 = $this->getField('010');
         if ($f010) {
-            $lccn = MetadataUtils::normalizeKey($this->getSubfield($f010, 'a'));
+            $lccn = $this->metadataUtils
+                ->normalizeKey($this->getSubfield($f010, 'a'));
             if ($lccn) {
                 $arr[] = "(lccn)$lccn";
             }
-            $nucmc = MetadataUtils::normalizeKey($this->getSubfield($f010, 'b'));
+            $nucmc = $this->metadataUtils
+                ->normalizeKey($this->getSubfield($f010, 'b'));
             if ($nucmc) {
                 $arr[] = "(nucmc)$lccn";
             }
         }
         $nbn = $this->getField('015');
         if ($nbn) {
-            $nr = MetadataUtils::normalizeKey(
-                $this->getSubfield($nbn, 'a'), $form
+            $nr = $this->metadataUtils->normalizeKey(
+                $this->getSubfield($nbn, 'a'),
+                $form
             );
             $src = $this->getSubfield($nbn, '2');
             if ($src && $nr) {
@@ -983,8 +999,9 @@ class Marc extends Base
         }
         $nba = $this->getField('016');
         if ($nba) {
-            $nr = MetadataUtils::normalizeKey(
-                $this->getSubfield($nba, 'a'), $form
+            $nr = $this->metadataUtils->normalizeKey(
+                $this->getSubfield($nba, 'a'),
+                $form
             );
             $src = $this->getSubfield($nba, '2');
             if ($src && $nr) {
@@ -1019,7 +1036,7 @@ class Marc extends Base
             default:
                 $src = '';
             }
-            $nr = MetadataUtils::normalizeKey($nr, $form);
+            $nr = $this->metadataUtils->normalizeKey($nr, $form);
             // Ignore any invalid ISMN
             if ('ismn' === $src && !preg_match('{([0-9]{13})}', $nr)) {
                 $nr = '';
@@ -1038,7 +1055,7 @@ class Marc extends Base
                 }
             }
             if ($match) {
-                $arr[] = MetadataUtils::normalizeKey($nr);
+                $arr[] = $this->metadataUtils->normalizeKey($nr);
             }
         }
 
@@ -1057,7 +1074,7 @@ class Marc extends Base
         $fields = $this->getFields('020');
         foreach ($fields as $field) {
             $original = $isbn = $this->getSubfield($field, 'a');
-            $isbn = MetadataUtils::normalizeISBN($isbn);
+            $isbn = $this->metadataUtils->normalizeISBN($isbn);
             if ($isbn) {
                 $arr[] = $isbn;
             } else {
@@ -1571,7 +1588,8 @@ class Marc extends Base
                     'i2' => $tagData[1]
                 ];
                 $subfields = explode(
-                    self::SUBFIELD_INDICATOR, substr($tagData, 3)
+                    self::SUBFIELD_INDICATOR,
+                    substr($tagData, 3)
                 );
                 foreach ($subfields as $subfield) {
                     $newField['s'][] = [
@@ -1625,7 +1643,8 @@ class Marc extends Base
                 } else {
                     // Additional normalization here so that we don't break ISO2709
                     // directory in SolrUpdater
-                    $fieldStr = MetadataUtils::normalizeUnicode($field, 'NFKC');
+                    $fieldStr = $this->metadataUtils
+                        ->normalizeUnicode($field, 'NFKC');
                 }
                 $fieldStr .= self::END_OF_FIELD;
                 $len = strlen($fieldStr);
@@ -1856,7 +1875,9 @@ class Marc extends Base
      *
      * @return string Concatenated subfields (space-separated)
      */
-    protected function getFieldSubfields($tag, $codes = null,
+    protected function getFieldSubfields(
+        $tag,
+        $codes = null,
         $stripTrailingPunctuation = true
     ) {
         $key = __METHOD__ . "$tag-" . implode(',', array_keys($codes ?? [])) . '-'
@@ -1880,7 +1901,7 @@ class Marc extends Base
         }
         $result = implode(' ', $subfields);
         if ($result && $stripTrailingPunctuation) {
-            $result = MetadataUtils::stripTrailingPunctuation($result);
+            $result = $this->metadataUtils->stripTrailingPunctuation($result);
         }
         $this->resultCache[$key] = $result;
         return $result;
@@ -1896,7 +1917,9 @@ class Marc extends Base
      *
      * @return string
      */
-    protected function getFieldSubfield($tag, $code,
+    protected function getFieldSubfield(
+        $tag,
+        $code,
         $stripTrailingPunctuation = true
     ) {
         $key = __METHOD__ . "-$tag-$code-"
@@ -1914,7 +1937,8 @@ class Marc extends Base
                 if (key($subfield) === $code) {
                     $result = current($subfield);
                     if ($stripTrailingPunctuation) {
-                        $result = MetadataUtils::stripTrailingPunctuation($result);
+                        $result = $this->metadataUtils
+                            ->stripTrailingPunctuation($result);
                     }
                     break 2;
                 }
@@ -1944,8 +1968,11 @@ class Marc extends Base
      *
      * @return array Subfields
      */
-    protected function getFieldsSubfields($fieldspecs, $firstOnly = false,
-        $stripTrailingPunctuation = true, $splitSubfields = false
+    protected function getFieldsSubfields(
+        $fieldspecs,
+        $firstOnly = false,
+        $stripTrailingPunctuation = true,
+        $splitSubfields = false
     ) {
         $key = __METHOD__ . '-' . json_encode($fieldspecs) . '-'
             . ($firstOnly ? '1' : '0') . ($stripTrailingPunctuation ? '1' : '0')
@@ -2046,7 +2073,10 @@ class Marc extends Base
                     && ($origSub6 = $this->getSubfield($field, '6'))
                 ) {
                     $altSubfields = $this->getAlternateScriptSubfields(
-                        $tag, $origSub6, $codes, $splitSubfields
+                        $tag,
+                        $origSub6,
+                        $codes,
+                        $splitSubfields
                     );
                     $data = array_merge($data, $altSubfields);
                 }
@@ -2057,10 +2087,7 @@ class Marc extends Base
         }
         if ($stripTrailingPunctuation) {
             $data = array_map(
-                [
-                    '\RecordManager\Base\Utils\MetadataUtils',
-                    'stripTrailingPunctuation'
-                ],
+                [$this->metadataUtils, 'stripTrailingPunctuation'],
                 $data
             );
         }
@@ -2080,7 +2107,10 @@ class Marc extends Base
      *
      * @return array
      */
-    protected function getAlternateScriptSubfields($tag, $sub6, $codes,
+    protected function getAlternateScriptSubfields(
+        $tag,
+        $sub6,
+        $codes,
         $splitSubfields = false
     ) {
         $data = [];
@@ -2257,8 +2287,8 @@ class Marc extends Base
         }
         $allFields = array_map(
             function ($str) {
-                return MetadataUtils::stripTrailingPunctuation(
-                    MetadataUtils::stripLeadingPunctuation($str)
+                return $this->metadataUtils->stripTrailingPunctuation(
+                    $this->metadataUtils->stripLeadingPunctuation($str)
                 );
             },
             $allFields
@@ -2375,7 +2405,9 @@ class Marc extends Base
                 [self::GET_NORMAL, '651', ['x' => 1]],
                 [self::GET_NORMAL, '655', ['x' => 1]]
             ],
-            false, true, true
+            false,
+            true,
+            true
         );
     }
 
@@ -2386,7 +2418,7 @@ class Marc extends Base
      */
     protected function getGenreFacets()
     {
-        return MetadataUtils::ucFirst(
+        return $this->metadataUtils->ucFirst(
             $this->getFieldsSubfields(
                 [
                     [self::GET_NORMAL, '600', ['v' => 1]],
@@ -2399,7 +2431,9 @@ class Marc extends Base
                     [self::GET_NORMAL, '655', ['a' => 1]],
                     [self::GET_NORMAL, '655', ['v' => 1]]
                 ],
-                false, true, true
+                false,
+                true,
+                true
             )
         );
     }
@@ -2423,7 +2457,9 @@ class Marc extends Base
                 [self::GET_NORMAL, '651', ['z' => 1]],
                 [self::GET_NORMAL, '655', ['z' => 1]]
             ],
-            false, true, true
+            false,
+            true,
+            true
         );
     }
 
@@ -2443,7 +2479,9 @@ class Marc extends Base
                 [self::GET_NORMAL, '651', ['y' => 1]],
                 [self::GET_NORMAL, '655', ['y' => 1]]
             ],
-            false, true, true
+            false,
+            true,
+            true
         );
     }
 
@@ -2462,10 +2500,12 @@ class Marc extends Base
                 [self::GET_NORMAL, '041', ['h' => 1]],
                 [self::GET_NORMAL, '041', ['j' => 1]]
             ],
-            false, true, true
+            false,
+            true,
+            true
         );
         $result = array_merge($languages, $languages2);
-        return MetadataUtils::normalizeLanguageStrings($result);
+        return $this->metadataUtils->normalizeLanguageStrings($result);
     }
 
     /**
@@ -2478,7 +2518,7 @@ class Marc extends Base
     protected function normalizeRelators($relators)
     {
         return array_map(
-            ['RecordManager\Base\Utils\MetadataUtils', 'normalizeRelator'],
+            [$this->metadataUtils, 'normalizeRelator'],
             $relators
         );
     }
@@ -2498,8 +2538,12 @@ class Marc extends Base
      * @return array Array keyed by 'names' for author names, 'fuller' for fuller
      * forms and 'relators' for relator codes
      */
-    protected function getAuthorsByRelator($fieldSpecs, $relators,
-        $noRelatorRequired, $altScript = true, $invertMatch = false
+    protected function getAuthorsByRelator(
+        $fieldSpecs,
+        $relators,
+        $noRelatorRequired,
+        $altScript = true,
+        $invertMatch = false
     ) {
         $result = [
             'names' => [], 'fuller' => [], 'relators' => [],
@@ -2534,19 +2578,21 @@ class Marc extends Base
                     $terms .= ' ' . implode(
                         ' ',
                         $this->getAlternateScriptSubfields(
-                            $tag, $sub6, $subfieldList
+                            $tag,
+                            $sub6,
+                            $subfieldList
                         )
                     );
                 }
-                $result['names'][] = MetadataUtils::stripTrailingPunctuation(
+                $result['names'][] = $this->metadataUtils->stripTrailingPunctuation(
                     trim($terms)
                 );
 
                 $fuller = ($tag == '100' || $tag == '700')
                     ? $this->getSubfields($field, ['q' => 1]) : '';
                 if ($fuller) {
-                    $result['fuller'][]
-                        = MetadataUtils::stripTrailingPunctuation(trim($fuller));
+                    $result['fuller'][] = $this->metadataUtils
+                        ->stripTrailingPunctuation(trim($fuller));
                 }
 
                 if ($fieldRelators) {
@@ -2560,7 +2606,8 @@ class Marc extends Base
                         $result['idRoles'][]
                             = $this->formatAuthorIdWithRole(
                                 $authId,
-                                MetaDataUtils::stripTrailingPunctuation($role, '. ')
+                                $this->metadataUtils
+                                    ->stripTrailingPunctuation($role, '. ')
                             );
                     }
                 }
@@ -2584,7 +2631,9 @@ class Marc extends Base
             ]
         ];
         return $this->getAuthorsByRelator(
-            $fieldSpecs, $this->primaryAuthorRelators, ['100']
+            $fieldSpecs,
+            $this->primaryAuthorRelators,
+            ['100']
         );
     }
 
@@ -2602,7 +2651,11 @@ class Marc extends Base
             ]
         ];
         return $this->getAuthorsByRelator(
-            $fieldSpecs, $this->primaryAuthorRelators, ['700'], true, true
+            $fieldSpecs,
+            $this->primaryAuthorRelators,
+            ['700'],
+            true,
+            true
         );
     }
 
@@ -2911,10 +2964,10 @@ class Marc extends Base
             $eastOrig = $this->getSubfield($field, 'e');
             $northOrig = $this->getSubfield($field, 'f');
             $southOrig = $this->getSubfield($field, 'g');
-            $west = MetadataUtils::coordinateToDecimal($westOrig);
-            $east = MetadataUtils::coordinateToDecimal($eastOrig);
-            $north = MetadataUtils::coordinateToDecimal($northOrig);
-            $south = MetadataUtils::coordinateToDecimal($southOrig);
+            $west = $this->metadataUtils->coordinateToDecimal($westOrig);
+            $east = $this->metadataUtils->coordinateToDecimal($eastOrig);
+            $north = $this->metadataUtils->coordinateToDecimal($northOrig);
+            $south = $this->metadataUtils->coordinateToDecimal($southOrig);
 
             if (!is_nan($west) && !is_nan($north)) {
                 if (($west < -180 || $west > 180) || ($north < -90 || $north > 90)) {
@@ -2943,10 +2996,10 @@ class Marc extends Base
                         } else {
                             // Try to cope with weird coordinate order
                             if ($north > $south) {
-                                list($north, $south) = [$south, $north];
+                                [$north, $south] = [$south, $north];
                             }
                             if ($west > $east) {
-                                list($west, $east) = [$east, $west];
+                                [$west, $east] = [$east, $west];
                             }
                             $result[] = "ENVELOPE($west, $east, $south, $north)";
                         }

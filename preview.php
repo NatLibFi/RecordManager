@@ -5,7 +5,7 @@
  * PHP version 7
  *
  * Copyright (C) Eero Heikkinen 2013.
- * Copyright (C) The National Library of Finland 2013.
+ * Copyright (C) The National Library of Finland 2013-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,22 +28,13 @@
  * @link     https://github.com/NatLibFi/RecordManager
  */
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/src/RecordManager/Base/Autoloader.php';
 
-$basePath = __DIR__;
-$filename = $basePath . '/conf/recordmanager.ini';
-$config = parse_ini_file($filename, true);
-if (false === $config) {
-    $error = error_get_last();
-    $message = $error['message'] ?? 'unknown error occurred';
-    throw new \Exception(
-        "Could not load configuration from file '$filename': $message"
-    );
-}
-
-$createPreview = new \RecordManager\Base\Controller\CreatePreview(
-    $basePath, $config
+define('RECMAN_BASE_PATH', getenv('RECMAN_BASE_PATH') ?: __DIR__);
+$app = \Laminas\Mvc\Application::init(
+    include RECMAN_BASE_PATH . '/conf/application.config.php'
 );
+$sm = $app->getServiceManager();
+$createPreview = $sm->get(\RecordManager\Base\Controller\CreatePreview::class);
 
 $func = $_REQUEST['func'] ?? '';
 if ($func === 'get_sources') {

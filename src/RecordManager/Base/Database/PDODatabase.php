@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2020.
+ * Copyright (c) The National Library of Finland 2020-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -84,18 +84,18 @@ class PDODatabase extends AbstractDatabase
     protected $mainFields = [];
 
     /**
-     * Last fetched record attributes
+     * Last fetched record attributes per collection
      *
      * @var array
      */
     protected $lastRecordAttrs = [];
 
     /**
-     * Id of record for last fetched attributes
+     * Id's of records for last fetched attributes per collection
      *
      * @var array
      */
-    protected $lastRecordAttrId = [];
+    protected $lastRecordAttrsId = [];
 
     /**
      * Constructor.
@@ -479,7 +479,9 @@ class PDODatabase extends AbstractDatabase
     public function findOntologyEnrichment($filter, $options = [])
     {
         return $this->findPDORecord(
-            $this->ontologyEnrichmentCollection, $filter, $options
+            $this->ontologyEnrichmentCollection,
+            $filter,
+            $options
         );
     }
 
@@ -494,8 +496,12 @@ class PDODatabase extends AbstractDatabase
      *
      * @return void
      */
-    public function saveLogMessage(string $context, string $msg, int $level,
-        int $pid, int $timestamp
+    public function saveLogMessage(
+        string $context,
+        string $msg,
+        int $level,
+        int $pid,
+        int $timestamp
     ): void {
         $record = [
             'timestamp' => $this->getTimestamp($timestamp),
@@ -586,11 +592,13 @@ class PDODatabase extends AbstractDatabase
      *
      * @return array|null
      */
-    protected function findPDORecord(string $collection, array $filter,
+    protected function findPDORecord(
+        string $collection,
+        array $filter,
         array $options
     ) {
-        list($where, $params) = $this->filterToSQL($collection, $filter);
-        list($fields, $sqlOptions) = $this->optionsToSQL($options);
+        [$where, $params] = $this->filterToSQL($collection, $filter);
+        [$fields, $sqlOptions] = $this->optionsToSQL($options);
         $sql = "select $fields from $collection";
         if ($where) {
             $sql .= " where $where";
@@ -616,11 +624,13 @@ class PDODatabase extends AbstractDatabase
      *
      * @return \Traversable
      */
-    protected function findPDORecords(string $collection, array $filter,
+    protected function findPDORecords(
+        string $collection,
+        array $filter,
         array $options
     ): \Traversable {
-        list($where, $params) = $this->filterToSQL($collection, $filter);
-        list($fields, $sqlOptions) = $this->optionsToSQL($options);
+        [$where, $params] = $this->filterToSQL($collection, $filter);
+        [$fields, $sqlOptions] = $this->optionsToSQL($options);
         $sql = "select $fields from $collection";
         if ($where) {
             $sql .= " where $where";
@@ -644,11 +654,13 @@ class PDODatabase extends AbstractDatabase
      *
      * @return int|string
      */
-    protected function countPDORecords(string $collection, array $filter,
+    protected function countPDORecords(
+        string $collection,
+        array $filter,
         array $options
     ) {
-        list($where, $params) = $this->filterToSQL($collection, $filter);
-        list(, $sqlOptions) = $this->optionsToSQL($options);
+        [$where, $params] = $this->filterToSQL($collection, $filter);
+        [, $sqlOptions] = $this->optionsToSQL($options);
         $sql = "select count(*) from $collection where $where $sqlOptions";
         return $this->dbQuery($sql, $params)->fetchColumn();
     }
@@ -816,8 +828,12 @@ class PDODatabase extends AbstractDatabase
      *
      * @return void
      */
-    protected function updatePDORecords(callable $findMethod, $collection, $filter,
-        $fields, $remove = []
+    protected function updatePDORecords(
+        callable $findMethod,
+        $collection,
+        $filter,
+        $fields,
+        $remove = []
     ) {
         $this->iterate(
             $findMethod,
@@ -891,7 +907,9 @@ class PDODatabase extends AbstractDatabase
      *
      * @return array
      */
-    protected function filterToSQL(string $collection, array $filter,
+    protected function filterToSQL(
+        string $collection,
+        array $filter,
         $operator = 'AND'
     ): array {
         $where = [];
@@ -924,14 +942,14 @@ class PDODatabase extends AbstractDatabase
                 }
                 if (isset($value['$or'])) {
                     $whereParts = [];
-                    list($wherePart, $partParams)
+                    [$wherePart, $partParams]
                         = $this->filterToSQL($collection, $value['$or'], 'OR');
                     $where[] = "($wherePart)";
                     $params = array_merge($params, $partParams);
                 }
                 if (isset($value['$nor'])) {
                     $whereParts = [];
-                    list($wherePart, $partParams)
+                    [$wherePart, $partParams]
                         = $this->filterToSQL($collection, $value['$nor'], 'OR');
                     $where[] = "NOT ($wherePart)";
                     $params = array_merge($params, $partParams);
@@ -946,7 +964,9 @@ class PDODatabase extends AbstractDatabase
                         unset($values[$nullKey]);
                         --$valueCount;
                         $whereParts[] = $this->mapFieldToQuery(
-                            $collection, $field, ' IS NULL OR'
+                            $collection,
+                            $field,
+                            ' IS NULL OR'
                         );
                     }
                     if ($valueCount > 1) {
@@ -1032,7 +1052,9 @@ class PDODatabase extends AbstractDatabase
      *
      * @return string
      */
-    protected function mapFieldToQuery(string $collection, string $field,
+    protected function mapFieldToQuery(
+        string $collection,
+        string $field,
         string $operator
     ): string {
         $mainFields = $this->getMainFields($collection);
@@ -1160,7 +1182,9 @@ class PDOResultIterator extends \IteratorIterator
      * @param PDODatabase  $db         Database
      * @param string       $collection Collection
      */
-    public function __construct(\Traversable $iterator, PDODatabase $db,
+    public function __construct(
+        \Traversable $iterator,
+        PDODatabase $db,
         string $collection
     ) {
         parent::__construct($iterator);

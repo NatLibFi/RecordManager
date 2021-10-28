@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2011-2020.
+ * Copyright (c) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,6 +28,7 @@
 namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -59,6 +60,20 @@ abstract class AbstractBase
     protected $log;
 
     /**
+     * HTTP client manager
+     *
+     * @var HttpClientManager
+     */
+    protected $httpClientManager;
+
+    /**
+     * Metadata utilities
+     *
+     * @var MetadataUtils
+     */
+    protected $metadataUtils;
+
+    /**
      * Main configuration
      *
      * @var array
@@ -66,18 +81,25 @@ abstract class AbstractBase
     protected $config;
 
     /**
+     * Data source configuration
+     *
+     * @var array
+     */
+    protected $dataSourceConfig;
+
+    /**
      * Base URL of repository
      *
      * @var string
      */
-    protected $baseURL;
+    protected $baseURL = null;
 
     /**
      * Source ID
      *
      * @var string
      */
-    protected $source;
+    protected $source = null;
 
     /**
      * Harvest start date (null for all records)
@@ -105,7 +127,7 @@ abstract class AbstractBase
      *
      * @var int
      */
-    protected $normalRecords = 0;
+    protected $changedRecords = 0;
 
     /**
      * Deleted record count
@@ -153,13 +175,6 @@ abstract class AbstractBase
     protected $trackedEndDate = '';
 
     /**
-     * HTTP_Request2 configuration params
-     *
-     * @var array
-     */
-    protected $httpParams = [];
-
-    /**
      * Number of times to attempt a request before bailing out
      *
      * @var int
@@ -176,60 +191,72 @@ abstract class AbstractBase
     /**
      * Constructor.
      *
-     * @param Database $db       Database
-     * @param Logger   $logger   The Logger object used for logging messages
-     * @param string   $source   The data source to be harvested
-     * @param string   $basePath RecordManager main directory location
-     * @param array    $config   Main configuration
-     * @param array    $settings Settings from datasources.ini
+     * @param array             $config           Main configuration
+     * @param array             $dataSourceConfig Data source configuration
+     * @param Database          $db               Database
+     * @param Logger            $logger           The Logger object used for logging
+     *                                            messages
+     * @param HttpClientManager $httpManager      HTTP client manager
+     * @param MetadataUtils     $metadataUtils    Metadata utilities
      *
      * @throws \Exception
      */
-    public function __construct(Database $db, Logger $logger, $source, $basePath,
-        $config, $settings
+    public function __construct(
+        array $config,
+        array $dataSourceConfig,
+        Database $db,
+        Logger $logger,
+        HttpClientManager $httpManager,
+        MetadataUtils $metadataUtils
     ) {
+        $this->config = $config;
+        $this->dataSourceConfig = $dataSourceConfig;
         $this->db = $db;
         $this->log = $logger;
-        $this->config = $config;
+        $this->httpClientManager = $httpManager;
+        $this->metadataUtils = $metadataUtils;
+    }
 
-        // Don't time out during harvest
-        set_time_limit(0);
+    /**
+     * Initialize harvester
+     *
+     * @param string $source  Source ID
+     * @param bool   $verbose Verbose mode toggle
+     *
+     * @return void
+     */
+    public function init(string $source, bool $verbose): void
+    {
+        $this->verbose = $verbose;
 
         // Check if we have a start date
         $this->source = $source;
         $this->loadLastHarvestedDate();
+
+        $settings = $this->dataSourceConfig[$source] ?? [];
 
         // Set up base URL:
         if (empty($settings['url'])) {
             throw new \Exception("Missing base URL for {$source}");
         }
         $this->baseURL = $settings['url'];
-        if (isset($settings['verbose'])) {
-            $this->verbose = $settings['verbose'];
-        }
 
         if (!empty($settings['preTransformation'])) {
             foreach ((array)$settings['preTransformation'] as $transformation) {
                 $style = new \DOMDocument();
-                $style->load("$basePath/transformations/$transformation");
+                $style->load(RECMAN_BASE_PATH . "/transformations/$transformation");
                 $xslt = new \XSLTProcessor();
                 $xslt->importStylesheet($style);
                 $xslt->setParameter('', 'source_id', $this->source);
                 $this->preXslt[] = $xslt;
             }
+        } else {
+            $this->preXslt = [];
         }
         $this->reParseTransformed = !empty($settings['reParseTransformed']);
 
-        if (isset($config['Harvesting']['max_tries'])) {
-            $this->maxTries = $config['Harvesting']['max_tries'];
-        }
-        if (isset($config['Harvesting']['retry_wait'])) {
-            $this->retryWait = $config['Harvesting']['retry_wait'];
-        }
-
-        if (isset($config['HTTP'])) {
-            $this->httpParams += $config['HTTP'];
-        }
+        $this->maxTries = $this->config['Harvesting']['max_tries'] ?? 5;
+        $this->retryWait = $this->config['Harvesting']['retry_wait'] ?? 30;
     }
 
     /**
@@ -409,7 +436,7 @@ abstract class AbstractBase
     }
 
     /**
-     * Do pre-transformation
+     * Do transformation
      *
      * Always returns a string to make sure any elements added as unescaped strings
      * are properly parsed.
@@ -420,14 +447,14 @@ abstract class AbstractBase
      * @return string|\DOMDocument Transformed XML
      * @throws \Exception
      */
-    protected function preTransform($xml, $returnDoc = false)
+    protected function transform($xml, $returnDoc = false)
     {
         $doc = new \DOMDocument();
-        $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
+        $result = $this->metadataUtils->loadXML($xml, $doc, 0, $errors);
         if ($result === false || $errors) {
             $this->warningMsg('Invalid XML received, trying encoding fix...');
             $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
-            $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
+            $result = $this->metadataUtils->loadXML($xml, $doc, 0, $errors);
         }
         if ($result === false || $errors) {
             $this->fatalMsg("Could not parse XML: $errors");
@@ -438,7 +465,7 @@ abstract class AbstractBase
             foreach ($this->preXslt as $xslt) {
                 $xml = $xslt->transformToXml($doc);
                 $doc = new \DOMDocument();
-                $result = MetadataUtils::loadXML($xml, $doc, 0, $errors);
+                $result = $this->metadataUtils->loadXML($xml, $doc, 0, $errors);
             }
             if ($result === false || $errors) {
                 $this->fatalMsg("Could not parse XML: $errors");

@@ -2,9 +2,12 @@
 /**
  * Trait for handling full text
  *
+ * Prerequisites:
+ * - HTTP\ClientManager as $this->httpClientManager
+ *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2020.
+ * Copyright (C) The National Library of Finland 2020-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,8 +30,6 @@
  */
 namespace RecordManager\Base\Record;
 
-use RecordManager\Base\Http\ClientFactory;
-
 /**
  * Trait for handling full text
  *
@@ -40,6 +41,13 @@ use RecordManager\Base\Http\ClientFactory;
  */
 trait FullTextTrait
 {
+    /**
+     * HTTP Request class
+     *
+     * @var \HTTP_Request2
+     */
+    protected $urlRequest = null;
+
     /**
      * Number of requests handled per host
      *
@@ -113,13 +121,9 @@ trait FullTextTrait
     {
         $maxTries = $this->config['Enrichment']['max_tries'] ?? 90;
         $retryWait = $this->config['Enrichment']['retry_wait'] ?? 5;
-        $httpParams = [
+        $httpOptions = [
             'follow_redirects' => true
         ];
-
-        if (isset($this->config['HTTP'])) {
-            $httpParams += $this->config['HTTP'];
-        }
 
         $host = parse_url($url, PHP_URL_HOST);
         $port = parse_url($url, PHP_URL_PORT);
@@ -131,10 +135,10 @@ trait FullTextTrait
         $body = '';
         for ($try = 1; $try <= $maxTries; $try++) {
             if (!isset($this->request)) {
-                $this->urlRequest = ClientFactory::createClient(
+                $this->urlRequest = $this->httpClientManager->createClient(
                     $url,
                     \HTTP_Request2::METHOD_GET,
-                    $httpParams
+                    $httpOptions
                 );
                 $this->urlRequest->setHeader('Connection', 'Keep-Alive');
             } else {
@@ -157,7 +161,7 @@ trait FullTextTrait
                         "HTTP request for '$url' failed (" . $e->getMessage()
                             . "), retrying in {$retryWait} seconds (retry $try)..."
                     );
-                    $this->request = null;
+                    $this->urlRequest = null;
                     sleep($retryWait);
                     continue;
                 }
@@ -171,7 +175,7 @@ trait FullTextTrait
                         "HTTP request for '$url' failed ($code), retrying "
                             . "in {$retryWait} seconds (retry $try)..."
                     );
-                    $this->request = null;
+                    $this->urlRequest = null;
                     sleep($retryWait);
                     continue;
                 }

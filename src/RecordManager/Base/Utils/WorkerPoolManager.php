@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2017-2020.
+ * Copyright (C) The National Library of Finland 2017-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -148,8 +148,12 @@ class WorkerPoolManager
      *
      * @return void
      */
-    public function createWorkerPool($poolId, $processes, $maxQueue,
-        callable $runMethod, callable $initMethod = null
+    public function createWorkerPool(
+        $poolId,
+        $processes,
+        $maxQueue,
+        callable $runMethod,
+        callable $initMethod = null
     ) {
         if (isset($this->workerPoolRunMethods[$poolId])) {
             // Already initialized
@@ -175,7 +179,7 @@ class WorkerPoolManager
                     . socket_strerror(socket_last_error())
                 );
             }
-            list($childSocket, $parentSocket) = $socketPair;
+            [$childSocket, $parentSocket] = $socketPair;
             unset($socketPair);
 
             $parentPid = getmypid();
@@ -312,7 +316,8 @@ class WorkerPoolManager
     {
         $this->handleRequests($poolId);
         $this->checkForStoppedWorkers();
-        return !empty($this->requests[$poolId]) || $this->requestsActive($poolId);
+        return !empty($this->requestQueue[$poolId])
+            || $this->requestsActive($poolId);
     }
 
     /**
@@ -341,7 +346,7 @@ class WorkerPoolManager
      *
      * @param string $poolId Pool id
      *
-     * @return bool
+     * @return void
      */
     public function waitUntilDone($poolId)
     {
@@ -435,7 +440,10 @@ class WorkerPoolManager
 
             $buffer = '';
             $result = socket_recv(
-                $socket, $buffer, 8 - strlen($msgLen), MSG_WAITALL
+                $socket,
+                $buffer,
+                8 - strlen($msgLen),
+                MSG_WAITALL
             );
             if (false === $result) {
                 throw new \Exception(
@@ -455,7 +463,10 @@ class WorkerPoolManager
             }
             $buffer = '';
             $result = socket_recv(
-                $socket, $buffer, $messageLength - $received, MSG_WAITALL
+                $socket,
+                $buffer,
+                $messageLength - $received,
+                MSG_WAITALL
             );
             if (false === $result) {
                 throw new \Exception(

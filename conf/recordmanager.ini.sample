@@ -167,6 +167,8 @@ contents = 0
 description = 0
 *_txt* = 0
 
+; OAI-PMH base configuration. Additionally, formats are configured in
+; oai-pmh-formats.ini and sets in oai-pmh-sets.ini.
 [OAI-PMH]
 ; Repository name returned in the Identify response
 repository_name = OAI-PMH Repository
@@ -177,16 +179,9 @@ admin_email = nobody@localhost
 ; Maximum number of results to return for a single request (resumptionToken is used
 ; if there are more results to be returned)
 result_limit = 1000
-; Name of the .ini file containing metadata format definitions
-format_definitions = oai-pmh-formats.ini
-; Name of the .ini file containing record set definitions
-set_definitions = oai-pmh-sets.ini
 ; Record ID prefix used to create an OAI ID for records that don't already have one.
 ; To create an OAI ID, the record ID is appended to the prefix.
 id_prefix = "oai:base.address:"
-
-[Record Classes]
-;ead = "\RecordManager\Finna\Record\Ead"
 
 [Enrichment]
 ; Maximum lifetime of cached entries in minutes. Default is 1440 (24 hours)
@@ -205,7 +200,7 @@ log_level       = 4
 ; occur.
 error_email     =
 ; Minimum error level to store in the database. Stored messages can be sent in
-; batches using the logs.php utility. By default (-1), no messages are stored. Levels
+; batches using the sendlogs utility. By default (-1), no messages are stored. Levels
 ; are the same as for log_level.
 store_message_level = -1
 

@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,8 +27,14 @@
  */
 namespace RecordManager\Base\Controller;
 
+use RecordManager\Base\Database\DatabaseInterface;
+use RecordManager\Base\Deduplication\DedupHandlerInterface;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Solr\PreviewCreator;
+use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
+use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
+use RecordManager\Base\Utils\XslTransformation;
 
 /**
  * Create Preview Record
@@ -41,25 +47,55 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class CreatePreview extends AbstractBase
 {
-    use PreTransformationTrait;
+    use \RecordManager\Base\Record\PreTransformationTrait;
+
+    /**
+     * Preview creator
+     *
+     * @var PreviewCreator
+     */
+    protected $previewCreator;
 
     /**
      * Constructor
      *
-     * @param string $basePath Base directory
-     * @param array  $config   Main configuration
-     * @param bool   $console  Specify whether RecordManager is executed on the
-     *                         console so that log output is also output to the
-     *                         console
-     * @param bool   $verbose  Whether verbose output is enabled
+     * @param array                 $config              Main configuration
+     * @param array                 $datasourceConfig    Datasource configuration
+     * @param Logger                $logger              Logger
+     * @param DatabaseInterface     $database            Database
+     * @param RecordPluginManager   $recordPluginManager Record plugin manager
+     * @param SplitterPluginManager $splitterManager     Record splitter plugin
+     *                                                   manager
+     * @param DedupHandlerInterface $dedupHandler        Deduplication handler
+     * @param MetadataUtils         $metadataUtils       Metadata utilities
+     * @param PreviewCreator        $previewCreator      Preview creator
      */
-    public function __construct($basePath, $config, $console = false,
-        $verbose = false
+    public function __construct(
+        array $config,
+        array $datasourceConfig,
+        Logger $logger,
+        DatabaseInterface $database,
+        RecordPluginManager $recordPluginManager,
+        SplitterPluginManager $splitterManager,
+        DedupHandlerInterface $dedupHandler,
+        MetadataUtils $metadataUtils,
+        PreviewCreator $previewCreator
     ) {
-        parent::__construct($basePath, $config, $console, $verbose);
+        parent::__construct(
+            $config,
+            $datasourceConfig,
+            $logger,
+            $database,
+            $recordPluginManager,
+            $splitterManager,
+            $dedupHandler,
+            $metadataUtils
+        );
 
-        if (empty($this->dataSourceSettings['_preview'])) {
-            $this->dataSourceSettings['_preview'] = [
+        $this->previewCreator = $previewCreator;
+
+        if (empty($this->dataSourceConfig['_preview'])) {
+            $this->dataSourceConfig['_preview'] = [
                 'institution' => '_preview',
                 'componentParts' => null,
                 'format' => '_preview',
@@ -68,8 +104,8 @@ class CreatePreview extends AbstractBase
                 'mappingFiles' => []
             ];
         }
-        if (empty($this->dataSourceSettings['_marc_preview'])) {
-            $this->dataSourceSettings['_marc_preview'] = [
+        if (empty($this->dataSourceConfig['_marc_preview'])) {
+            $this->dataSourceConfig['_marc_preview'] = [
                 'institution' => '_preview',
                 'componentParts' => null,
                 'format' => 'marc',
@@ -90,29 +126,28 @@ class CreatePreview extends AbstractBase
      */
     public function launch($metadata, $format, $source)
     {
-        if (!$source || !isset($this->dataSourceSettings[$source])) {
+        if (!$source || !isset($this->dataSourceConfig[$source])) {
             $source = "_preview";
         }
 
-        $this->initSourceSettings();
-
-        $settings = $this->dataSourceSettings[$source];
+        $settings = $this->dataSourceConfig[$source];
 
         if (empty($format) && !empty($settings['format'])) {
             $format = $settings['format'];
         }
 
-        if ($settings['preTransformation']) {
+        if (!empty($settings['preTransformation'])) {
             $metadata = $this->pretransform($metadata, $source);
         } elseif (!empty($settings['oaipmhTransformation'])) {
             $metadata = $this->oaipmhTransform(
-                $metadata, $settings['oaipmhTransformation']
+                $metadata,
+                $settings['oaipmhTransformation']
             );
         }
 
         if ('marc' !== $format && substr(trim($metadata), 0, 1) === '<') {
             $doc = new \DOMDocument();
-            if (MetadataUtils::loadXML($metadata, $doc)) {
+            if ($this->metadataUtils->loadXML($metadata, $doc)) {
                 $root = $doc->childNodes->item(0);
                 if (in_array($root->nodeName, ['records', 'collection'])) {
                     // This is a collection of records, get the first one
@@ -135,17 +170,30 @@ class CreatePreview extends AbstractBase
         ];
 
         // Normalize the record
-        if (null !== $settings['normalizationXSLT']) {
-            $record['normalized_data'] = $settings['normalizationXSLT']->transform(
-                $metadata, ['oai_id' => $record['oai_id']]
+        if (!empty($settings['normalization'])) {
+            $params = [
+                'source_id' => $source,
+                'institution' => $settings['institution'],
+                'format' => $settings['format'],
+                'id_prefix' => $settings['idPrefix']
+            ];
+            $normalizationXSLT = new XslTransformation(
+                RECMAN_BASE_PATH . '/transformations',
+                $settings['normalization'],
+                $params
+            );
+
+            $record['normalized_data'] = $normalizationXSLT->transform(
+                $metadata,
+                ['oai_id' => $record['oai_id']]
             );
         }
 
-        if (!$this->recordFactory->canCreate($record['format'])) {
+        if (!$this->recordPluginManager->has($record['format'])) {
             throw new \Exception("Format '$format' not supported");
         }
 
-        $metadataRecord = $this->recordFactory->createRecord(
+        $metadataRecord = $this->createRecord(
             $record['format'],
             $record['normalized_data'],
             $record['oai_id'],
@@ -156,12 +204,7 @@ class CreatePreview extends AbstractBase
         $record['_id'] = $record['linking_id']
             = $source . '.' . $metadataRecord->getID();
 
-        $preview = new PreviewCreator(
-            $this->db, $this->basePath, $this->logger, $this->verbose, $this->config,
-            $this->dataSourceSettings, $this->recordFactory
-        );
-
-        return $preview->create($record);
+        return $this->previewCreator->create($record);
     }
 
     /**
@@ -174,7 +217,7 @@ class CreatePreview extends AbstractBase
     public function getDataSources($format = '')
     {
         $result = [];
-        foreach ($this->dataSourceSettings as $id => $config) {
+        foreach ($this->dataSourceConfig as $id => $config) {
             if ($format && $config['format'] !== $format) {
                 continue;
             }
@@ -199,7 +242,7 @@ class CreatePreview extends AbstractBase
     protected function oaipmhTransform($metadata, $transformations)
     {
         $doc = new \DOMDocument();
-        if (!MetadataUtils::loadXML($metadata, $doc)) {
+        if (!$this->metadataUtils->loadXML($metadata, $doc)) {
             throw new \Exception(
                 'Could not parse XML record'
             );
@@ -207,7 +250,7 @@ class CreatePreview extends AbstractBase
         foreach ((array)$transformations as $transformation) {
             $style = new \DOMDocument();
             $loadResult = $style->load(
-                $this->basePath . "/transformations/$transformation"
+                RECMAN_BASE_PATH . "/transformations/$transformation"
             );
             if (false === $loadResult) {
                 throw new \Exception(

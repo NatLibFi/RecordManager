@@ -28,7 +28,6 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Ese record class
@@ -41,7 +40,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class Ese extends Base
+class Ese extends AbstractRecord
 {
     protected $doc = null;
 
@@ -79,7 +78,7 @@ class Ese extends Base
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -117,7 +116,7 @@ class Ese extends Base
         $data['allfields'] = $allFields;
 
         // language
-        $data['language'] = MetadataUtils::normalizeLanguageStrings(
+        $data['language'] = $this->metadataUtils->normalizeLanguageStrings(
             explode(' ', $doc->language)
         );
 
@@ -178,10 +177,10 @@ class Ese extends Base
     {
         $title = trim((string)$this->doc->title);
         if ($forFiling) {
-            $title = MetadataUtils::stripLeadingPunctuation($title);
-            $title = MetadataUtils::stripLeadingArticle($title);
+            $title = $this->metadataUtils->stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripLeadingArticle($title);
             // Again, just in case stripping the article affected this
-            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripLeadingPunctuation($title);
             $title = mb_strtolower($title, 'UTF-8');
         }
         return $title;
@@ -210,7 +209,7 @@ class Ese extends Base
             if (!preg_match('{([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
                 continue;
             }
-            $isbn = MetadataUtils::normalizeISBN($matches[1]);
+            $isbn = $this->metadataUtils->normalizeISBN($matches[1]);
             if ($isbn) {
                 $arr[] = $isbn;
             }

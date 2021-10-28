@@ -176,11 +176,18 @@ abstract class AbstractDatabase implements DatabaseInterface
      *
      * @return void
      */
-    public function iterateRecords(array $filter, array $options, callable $callback,
+    public function iterateRecords(
+        array $filter,
+        array $options,
+        callable $callback,
         array $params = []
     ): void {
         $this->iterate(
-            [$this, 'findRecords'], $filter, $options, $callback, $params
+            [$this, 'findRecords'],
+            $filter,
+            $options,
+            $callback,
+            $params
         );
     }
 
@@ -302,11 +309,18 @@ abstract class AbstractDatabase implements DatabaseInterface
      *
      * @return void
      */
-    public function iterateDedups(array $filter, array $options, callable $callback,
+    public function iterateDedups(
+        array $filter,
+        array $options,
+        callable $callback,
         array $params = []
     ): void {
         $this->iterate(
-            [$this, 'findDedups'], $filter, $options, $callback, $params
+            [$this, 'findDedups'],
+            $filter,
+            $options,
+            $callback,
+            $params
         );
     }
 
@@ -385,8 +399,12 @@ abstract class AbstractDatabase implements DatabaseInterface
      *
      * @return void
      */
-    abstract public function saveLogMessage(string $context, string $msg, int $level,
-        int $pid, int $timestamp
+    abstract public function saveLogMessage(
+        string $context,
+        string $msg,
+        int $level,
+        int $pid,
+        int $timestamp
     ): void;
 
     /**
@@ -460,8 +478,12 @@ abstract class AbstractDatabase implements DatabaseInterface
      *
      * @return void
      */
-    protected function iterate(callable $findMethod, array $filter, array $options,
-        callable $callback, array $params = []
+    protected function iterate(
+        callable $findMethod,
+        array $filter,
+        array $options,
+        callable $callback,
+        array $params = []
     ): void {
         $limit = $this->getDefaultPageSize();
         $lastId = null;

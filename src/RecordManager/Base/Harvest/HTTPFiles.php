@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Harvest;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\XmlSecurity;
 
 /**
@@ -66,28 +64,20 @@ class HTTPFiles extends AbstractBase
     protected $recordElem = 'record';
 
     /**
-     * Constructor.
+     * Initialize harvesting
      *
-     * @param Database $db       Database
-     * @param Logger   $logger   The Logger object used for logging messages
-     * @param string   $source   The data source to be harvested
-     * @param string   $basePath RecordManager main directory location
-     * @param array    $config   Main configuration
-     * @param array    $settings Settings from datasources.ini
+     * @param string $source  Source ID
+     * @param bool   $verbose Verbose mode toggle
      *
-     * @throws \Exception
+     * @return void
      */
-    public function __construct(Database $db, Logger $logger, $source, $basePath,
-        $config, $settings
-    ) {
-        parent::__construct($db, $logger, $source, $basePath, $config, $settings);
+    public function init(string $source, bool $verbose): void
+    {
+        parent::init($source, $verbose);
 
-        if (isset($settings['filePrefix'])) {
-            $this->filePrefix = $settings['filePrefix'];
-        }
-        if (isset($settings['fileSuffix'])) {
-            $this->fileSuffix = $settings['fileSuffix'];
-        }
+        $settings = $this->dataSourceConfig[$source] ?? [];
+        $this->filePrefix = $settings['filePrefix'] ?? '';
+        $this->fileSuffix = $settings['fileSuffix'] ?? '';
     }
 
     /**
@@ -116,7 +106,7 @@ class HTTPFiles extends AbstractBase
             $this->infoMsg('Processing the records...');
 
             if (null !== $this->preXslt) {
-                $data = $this->preTransform($data);
+                $data = $this->transform($data);
             }
 
             $tempFile = $this->getTempFileName('http-harvest-', '.xml');
@@ -183,10 +173,9 @@ class HTTPFiles extends AbstractBase
      */
     protected function retrieveFileList()
     {
-        $request = \RecordManager\Base\Http\ClientFactory::createClient(
+        $request = $this->httpClientManager->createClient(
             $this->baseURL,
-            \HTTP_Request2::METHOD_GET,
-            $this->httpParams
+            \HTTP_Request2::METHOD_GET
         );
 
         $urlStr = $request->getURL()->getURL();
@@ -266,12 +255,10 @@ class HTTPFiles extends AbstractBase
      */
     protected function retrieveFile($filename)
     {
-        $request = \RecordManager\Base\Http\ClientFactory::createClient(
+        $request = $this->httpClientManager->createClient(
             $this->baseURL . $filename,
-            \HTTP_Request2::METHOD_GET,
-            $this->httpParams
+            \HTTP_Request2::METHOD_GET
         );
-        $request->setHeader('User-Agent', 'RecordManager');
 
         $urlStr = $request->getURL()->getURL();
         $this->infoMsg("Sending request: $urlStr");
@@ -334,7 +321,8 @@ class HTTPFiles extends AbstractBase
                 $this->errorMsg('Failed to expand node: ' . $xml->readOuterXml());
             } else {
                 $this->processRecord(
-                    simplexml_import_dom($doc->importNode($expanded, true)), $count
+                    simplexml_import_dom($doc->importNode($expanded, true)),
+                    $count
                 );
                 if ($count % 1000 == 0) {
                     $this->infoMsg("$count records processed");
@@ -368,7 +356,11 @@ class HTTPFiles extends AbstractBase
         } elseif ($this->isModified($record)) {
             $this->normalizeRecord($record, $id);
             $this->changedRecords += call_user_func(
-                $this->callback, $this->source, $oaiId, false, $record->asXML()
+                $this->callback,
+                $this->source,
+                $oaiId,
+                false,
+                $record->asXML()
             );
         } else {
             // This assumes the provider may return records that are not changed or
@@ -388,7 +380,9 @@ class HTTPFiles extends AbstractBase
     protected function getFileDate($filename)
     {
         $match = preg_match(
-            '/(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)/', $filename, $dateparts
+            '/(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)/',
+            $filename,
+            $dateparts
         );
         if (!$match) {
             return false;

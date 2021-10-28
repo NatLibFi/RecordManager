@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2013-2020.
+ * Copyright (C) The National Library of Finland 2013-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,10 +27,6 @@
  */
 namespace RecordManager\Base\Enrichment;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Record\Factory as RecordFactory;
-use RecordManager\Base\Utils\Logger;
-
 /**
  * Nominatim Geocoder Class
  *
@@ -42,7 +38,7 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class NominatimGeocoder extends Enrichment
+class NominatimGeocoder extends AbstractEnrichment
 {
     /**
      * Nominatim server base url
@@ -139,20 +135,15 @@ class NominatimGeocoder extends Enrichment
     protected $transformations = [];
 
     /**
-     * Constructor
+     * Initialize settings
      *
-     * @param Database      $db            Database connection (for cache)
-     * @param Logger        $logger        Logger
-     * @param array         $config        Main configuration
-     * @param RecordFactory $recordFactory Record factory
+     * @return void
      */
-    public function __construct(
-        Database $db, Logger $logger, array $config,
-        RecordFactory $recordFactory
-    ) {
-        parent::__construct($db, $logger, $config, $recordFactory);
+    public function init()
+    {
+        parent::init();
 
-        $settings = $config['NominatimGeocoder'] ?? [];
+        $settings = $this->config['NominatimGeocoder'] ?? [];
         if (!isset($settings['url']) || !$settings['url']) {
             throw new \Exception('url must be specified for Nominatim');
         }
@@ -268,7 +259,8 @@ class NominatimGeocoder extends Enrichment
                         $solrArray[$this->solrField] = $wkts;
                     } else {
                         $solrArray[$this->solrField] = array_merge(
-                            $solrArray[$this->solrField], $wkts
+                            $solrArray[$this->solrField],
+                            $wkts
                         );
                     }
                     if (!empty($this->solrCenterField)) {
@@ -347,7 +339,10 @@ class NominatimGeocoder extends Enrichment
 
         $url = $this->baseUrl . '?' . http_build_query($params);
         $response = $this->getExternalData(
-            $url, 'nominatim ' . md5($url), [], [500]
+            $url,
+            'nominatim ' . md5($url),
+            [],
+            [500]
         );
         $places = json_decode($response, true);
         if (null === $places) {
@@ -471,13 +466,15 @@ class NominatimGeocoder extends Enrichment
             $curr = \geoPHP::load($current['wkt'], 'wkt');
             if ($prev->startPoint() == $curr->endPoint()) {
                 $previous['wkt'] = $this->mergeShapes(
-                    $current['wkt'], $previous['wkt']
+                    $current['wkt'],
+                    $previous['wkt']
                 );
                 array_pop($results);
                 $results[] = $previous;
             } elseif ($prev->endPoint() == $curr->startPoint()) {
                 $previous['wkt'] = $this->mergeShapes(
-                    $previous['wkt'], $current['wkt']
+                    $previous['wkt'],
+                    $current['wkt']
                 );
                 array_pop($results);
                 $results[] = $previous;

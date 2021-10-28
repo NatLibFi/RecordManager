@@ -1,10 +1,10 @@
 <?php
 /**
- * Command line interface for managing data sources
+ * Legacy command line interface for managing data sources
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2014,2019.
+ * Copyright (C) The National Library of Finland 2014-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,46 +27,13 @@
  */
 require_once __DIR__ . '/cmdline.php';
 
-/**
- * Main function
- *
- * @param string[] $argv Program parameters
- *
- * @return void
- */
-function main($argv)
-{
-    $params = parseArgs($argv);
-    $basePath = !empty($params['basepath']) ? $params['basepath'] : __DIR__;
-    $config = applyConfigOverrides($params, loadMainConfig($basePath));
+convertOptions(
+    [
+        'search' => [
+            'command' => 'sources:search',
+            'arg' => 1
+        ]
+    ]
+);
 
-    if (empty($params['search'])) {
-        echo <<<EOT
-Usage: $argv[0] --search=...
-
-Parameters:
-
---search=[regexp]   Search for a string in data sources and list the data source id's
-                    Note that all settings are normalized to not contain any spaces
-                    around equal signs, and boolean true is denoted with 1 and false
-                    with 0.
---basepath=path     Use path as the base directory for conf, mappings and
-                    transformations directories. Normally automatically determined.
-
-
-EOT;
-        exit(1);
-    }
-
-    if (!empty($params['search'])) {
-        $searchDataSources = new \RecordManager\Base\Controller\SearchDataSources(
-            $basePath,
-            $config,
-            true,
-            $params['verbose'] ?? false
-        );
-        $searchDataSources->launch($params['search']);
-    }
-}
-
-main($argv);
+include __DIR__ . '/console';

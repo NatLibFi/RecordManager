@@ -28,7 +28,6 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Forward authority Record Class
@@ -41,8 +40,13 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class ForwardAuthority extends Base
+class ForwardAuthority extends AbstractRecord
 {
+    /**
+     * The XML document
+     *
+     * @var \SimpleXMLElement
+     */
     protected $doc = null;
 
     /**
@@ -58,7 +62,7 @@ class ForwardAuthority extends Base
     public function setData($source, $oaiID, $data)
     {
         parent::setData($source, $oaiID, $data);
-        $this->doc = MetadataUtils::loadXML($data);
+        $this->doc = $this->metadataUtils->loadXML($data);
     }
 
     /**
@@ -80,7 +84,7 @@ class ForwardAuthority extends Base
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -106,14 +110,17 @@ class ForwardAuthority extends Base
         $data = [];
 
         $data['record_format'] = 'forwardAuthority';
-        $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        $data['fullrecord']
+            = $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
         $data['allfields'] = $this->getAllFields();
         $data['source'] = $this->getRecordSource();
         $data['record_type'] = $this->getRecordType();
         $data['heading'] = $this->getHeading();
         $data['use_for'] = $this->getUseForHeadings();
-        $data['birth_date'] = MetadataUtils::extractYear($this->getBirthDate());
-        $data['death_date'] = MetadataUtils::extractYear($this->getDeathDate());
+        $data['birth_date']
+            = $this->metadataUtils->extractYear($this->getBirthDate());
+        $data['death_date']
+            = $this->metadataUtils->extractYear($this->getDeathDate());
         $data['birth_place'] = $this->getBirthPlace();
         $data['death_place'] = $this->getDeathPlace();
         $data['related_place'] = $this->getRelatedPlaces();

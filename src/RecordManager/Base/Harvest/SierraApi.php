@@ -27,9 +27,6 @@
  */
 namespace RecordManager\Base\Harvest;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\Logger;
-
 /**
  * SierraApi Class
  *
@@ -104,24 +101,29 @@ class SierraApi extends AbstractBase
     protected $suppressedBibCode3 = [];
 
     /**
-     * Constructor.
+     * HTTP client options
      *
-     * @param Database $db       Database
-     * @param Logger   $logger   The Logger object used for logging messages
-     * @param string   $source   The data source to be harvested
-     * @param string   $basePath RecordManager main directory location
-     * @param array    $config   Main configuration
-     * @param array    $settings Settings from datasources.ini
-     *
-     * @throws \Exception
+     * @var array
      */
-    public function __construct(Database $db, Logger $logger, $source, $basePath,
-        $config, $settings
-    ) {
-        parent::__construct($db, $logger, $source, $basePath, $config, $settings);
+    protected $httpOptions = [
+        // Set a timeout since Sierra may sometimes just hang without ever returning.
+        'timeout' => 600
+    ];
 
-        if (empty($settings['sierraApiKey'])
-            || empty($settings['sierraApiSecret'])
+    /**
+     * Initialize harvesting
+     *
+     * @param string $source  Source ID
+     * @param bool   $verbose Verbose mode toggle
+     *
+     * @return void
+     */
+    public function init(string $source, bool $verbose): void
+    {
+        parent::init($source, $verbose);
+
+        $settings = $this->dataSourceConfig[$source] ?? [];
+        if (empty($settings['sierraApiKey']) || empty($settings['sierraApiSecret'])
         ) {
             throw new \Exception(
                 "sierraApiKey or sierraApiSecret missing from settings of '$source'"
@@ -129,33 +131,25 @@ class SierraApi extends AbstractBase
         }
         $this->apiKey = $settings['sierraApiKey'];
         $this->apiSecret = $settings['sierraApiSecret'];
-        if (isset($settings['suppressedRecords'])) {
-            $this->suppressedRecords = $settings['suppressedRecords'];
-        }
-        if (isset($settings['batchSize'])) {
-            $this->batchSize = $settings['batchSize'];
-        }
-        if (isset($settings['suppressedBibCode3'])) {
-            $this->suppressedBibCode3 = explode(
-                ',', $settings['suppressedBibCode3']
-            );
-        }
+        $this->suppressedRecords = $settings['suppressedRecords'] ?? null;
+        $this->batchSize = $settings['batchSize'] ?? 100;
+        $this->suppressedBibCode3 = explode(
+            ',',
+            $settings['suppressedBibCode3'] ?? ''
+        );
         $this->apiVersion = 'v' . ($settings['sierraApiVersion'] ?? '5');
-
-        // Set a timeout since Sierra may sometimes just hang without ever returning.
-        $this->httpParams['timeout'] = 600;
     }
 
     /**
      * Override the start position.
      *
-     * @param int $pos New start position
+     * @param string $pos New start position
      *
      * @return void
      */
-    public function setStartPos($pos)
+    public function setInitialPosition($pos)
     {
-        $this->startPosition = $pos;
+        $this->startPosition = intval($pos);
     }
 
     /**
@@ -273,10 +267,10 @@ class SierraApi extends AbstractBase
             $apiUrl .= '/' . urlencode($value);
         }
 
-        $request = \RecordManager\Base\Http\ClientFactory::createClient(
+        $request = $this->httpClientManager->createClient(
             $apiUrl,
             \HTTP_Request2::METHOD_GET,
-            $this->httpParams
+            $this->httpOptions
         );
         $request->setHeader('Accept', 'application/json');
 
@@ -289,7 +283,8 @@ class SierraApi extends AbstractBase
             $this->renewAccessToken();
         }
         $request->setHeader(
-            'Authorization', "Bearer {$this->accessToken}"
+            'Authorization',
+            "Bearer {$this->accessToken}"
         );
 
         // Perform request and throw an exception on error:
@@ -306,7 +301,8 @@ class SierraApi extends AbstractBase
                     $this->infoMsg('Renewing access token');
                     $this->renewAccessToken();
                     $request->setHeader(
-                        'Authorization', "Bearer {$this->accessToken}"
+                        'Authorization',
+                        "Bearer {$this->accessToken}"
                     );
                     ++$maxTries;
                     sleep(1);
@@ -408,10 +404,9 @@ class SierraApi extends AbstractBase
     {
         // Set up the request:
         $apiUrl = $this->baseURL . '/' . $this->apiVersion . '/token';
-        $request = \RecordManager\Base\Http\ClientFactory::createClient(
+        $request = $this->httpClientManager->createClient(
             $apiUrl,
-            \HTTP_Request2::METHOD_POST,
-            $this->httpParams
+            \HTTP_Request2::METHOD_POST
         );
         $request->setHeader('Accept', 'application/json');
         $request->setHeader(
@@ -567,7 +562,8 @@ class SierraApi extends AbstractBase
         }
         if (isset($record['fixedFields']['31'])) {
             $suppressed = in_array(
-                $record['fixedFields']['31']['value'], $this->suppressedBibCode3
+                $record['fixedFields']['31']['value'],
+                $this->suppressedBibCode3
             );
             if ($suppressed) {
                 return true;

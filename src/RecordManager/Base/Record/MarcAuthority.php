@@ -28,7 +28,6 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Forward authority Record Class
@@ -89,9 +88,9 @@ class MarcAuthority extends Marc
         $data['record_type'] = $this->getRecordType();
 
         $data['birth_date']
-            = MetadataUtils::extractYear($this->getFieldSubField('046', 'f'));
+            = $this->metadataUtils->extractYear($this->getFieldSubField('046', 'f'));
         $data['death_date']
-            = MetadataUtils::extractYear($this->getFieldSubField('046', 'g'));
+            = $this->metadataUtils->extractYear($this->getFieldSubField('046', 'g'));
 
         $data['birth_place'] = $this->getFieldSubField('370', 'a');
         $data['death_place'] = $this->getFieldSubField('370', 'b');
@@ -178,7 +177,8 @@ class MarcAuthority extends Marc
                 }
                 $fields = [$sub];
                 $fields = array_merge(
-                    $fields, $this->getSubfieldsArray($field[0], ['b' => true])
+                    $fields,
+                    $this->getSubfieldsArray($field[0], ['b' => true])
                 );
                 return implode($this->nameDelimiter, $this->trimFields($fields));
             }
@@ -253,8 +253,9 @@ class MarcAuthority extends Marc
     {
         return array_map(
             function ($field) use ($mask) {
-                return MetadataUtils::stripTrailingPunctuation($field, $mask);
-            }, $fields
+                return $this->metadataUtils->stripTrailingPunctuation($field, $mask);
+            },
+            $fields
         );
     }
 }

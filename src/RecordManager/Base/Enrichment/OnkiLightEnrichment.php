@@ -28,10 +28,7 @@
  */
 namespace RecordManager\Base\Enrichment;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Record\BAse as BaseRecord;
-use RecordManager\Base\Record\Factory as RecordFactory;
-use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Record\AbstractRecord;
 
 /**
  * OnkiLightEnrichment Class
@@ -47,7 +44,7 @@ use RecordManager\Base\Utils\Logger;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-abstract class OnkiLightEnrichment extends Enrichment
+abstract class OnkiLightEnrichment extends AbstractEnrichment
 {
     /**
      * ONKI Light API base url
@@ -72,18 +69,13 @@ abstract class OnkiLightEnrichment extends Enrichment
     protected $uriPrefixExactMatches;
 
     /**
-     * Constructor
+     * Initialize settings
      *
-     * @param Database      $db            Database connection (for cache)
-     * @param Logger        $logger        Logger
-     * @param array         $config        Main configuration
-     * @param RecordFactory $recordFactory Record factory
+     * @return void
      */
-    public function __construct(
-        Database $db, Logger $logger, array $config,
-        RecordFactory $recordFactory
-    ) {
-        parent::__construct($db, $logger, $config, $recordFactory);
+    public function init()
+    {
+        parent::init();
 
         $this->onkiLightBaseURL
             = $this->config['OnkiLightEnrichment']['base_url'] ?? '';
@@ -113,19 +105,26 @@ abstract class OnkiLightEnrichment extends Enrichment
     /**
      * Enrich the record and return any additions in solrArray
      *
-     * @param string     $sourceId           Source ID
-     * @param BaseRecord $record             Metadata record
-     * @param array      $solrArray          Metadata to be sent to Solr
-     * @param string     $id                 Onki id
-     * @param string     $solrField          Target Solr field
-     * @param string     $solrCheckField     Solr field to check for existing values
-     * @param bool       $includeInAllfields Whether to include the enriched
-     *                                       value also in allFields
+     * @param string         $sourceId           Source ID
+     * @param AbstractRecord $record             Metadata record
+     * @param array          $solrArray          Metadata to be sent to Solr
+     * @param string         $id                 Onki id
+     * @param string         $solrField          Target Solr field
+     * @param string         $solrCheckField     Solr field to check for existing
+     *                                           values
+     * @param bool           $includeInAllfields Whether to include the enriched
+     *                                           value also in allFields
      *
      * @return void
      */
-    protected function enrichField(string $sourceId, BaseRecord $record, &$solrArray,
-        $id, $solrField, $solrCheckField = '', $includeInAllfields = false
+    protected function enrichField(
+        string $sourceId,
+        AbstractRecord $record,
+        &$solrArray,
+        $id,
+        $solrField,
+        $solrCheckField = '',
+        $includeInAllfields = false
     ) {
         // Clean up any invalid characters from the id
         $id = str_replace(
@@ -185,7 +184,10 @@ abstract class OnkiLightEnrichment extends Enrichment
 
         try {
             $data = $this->getExternalData(
-                $url, $id, ['Accept' => 'application/json'], [500]
+                $url,
+                $id,
+                ['Accept' => 'application/json'],
+                [500]
             );
         } catch (\Exception $e) {
             $this->logger->logDebug(
@@ -248,7 +250,8 @@ abstract class OnkiLightEnrichment extends Enrichment
                             continue;
                         }
                         $matchData = $this->getExternalData(
-                            $matchURL, $matchId,
+                            $matchURL,
+                            $matchId,
                             ['Accept' => 'application/json']
                         );
                         if (!$matchData) {

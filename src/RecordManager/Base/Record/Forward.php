@@ -42,7 +42,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class Forward extends Base
+class Forward extends AbstractRecord
 {
     /**
      * The XML document
@@ -92,27 +92,35 @@ class Forward extends Base
     /**
      * Constructor
      *
-     * @param Logger $logger             Logger
-     * @param array  $config             Main configuration
-     * @param array  $dataSourceSettings Data source settings
+     * @param array         $config           Main configuration
+     * @param array         $dataSourceConfig Data source settings
+     * @param Logger        $logger           Logger
+     * @param MetadataUtils $metadataUtils    Metadata utilities
      */
-    public function __construct(Logger $logger, $config, $dataSourceSettings)
-    {
-        parent::__construct($logger, $config, $dataSourceSettings);
+    public function __construct(
+        array $config,
+        array $dataSourceConfig,
+        Logger $logger,
+        MetadataUtils $metadataUtils
+    ) {
+        parent::__construct($config, $dataSourceConfig, $logger, $metadataUtils);
 
         if (isset($config['ForwardRecord']['primary_author_relators'])) {
             $this->primaryAuthorRelators = explode(
-                ',', $config['ForwardRecord']['primary_author_relators']
+                ',',
+                $config['ForwardRecord']['primary_author_relators']
             );
         }
         if (isset($config['ForwardRecord']['secondary_author_relators'])) {
             $this->secondaryAuthorRelators = explode(
-                ',', $config['ForwardRecord']['secondary_author_relators']
+                ',',
+                $config['ForwardRecord']['secondary_author_relators']
             );
         }
         if (isset($config['ForwardRecord']['corporate_author_relators'])) {
             $this->corporateAuthorRelators = explode(
-                ',', $config['ForwardRecord']['corporate_author_relators']
+                ',',
+                $config['ForwardRecord']['corporate_author_relators']
             );
         }
     }
@@ -157,7 +165,7 @@ class Forward extends Base
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -196,8 +204,8 @@ class Forward extends Base
             }
         }
         $data['title_short'] = $data['title_full'] = $data['title'];
-        $data['title_sort'] = MetadataUtils::stripLeadingPunctuation(
-            MetadataUtils::stripLeadingArticle($data['title'])
+        $data['title_sort'] = $this->metadataUtils->stripLeadingPunctuation(
+            $this->metadataUtils->stripLeadingArticle($data['title'])
         );
 
         $descriptions = $this->getDescriptions($this->primaryLanguage);
@@ -261,7 +269,7 @@ class Forward extends Base
         $author = $authors['names'][0] ?? '';
         if ($author) {
             if (strpos($author, ',') === false) {
-                $author = MetadataUtils::convertAuthorLastFirst($author);
+                $author = $this->metadataUtils->convertAuthorLastFirst($author);
             }
         }
         return $author;
@@ -297,7 +305,7 @@ class Forward extends Base
                 continue;
             }
             $s = trim((string)$field);
-            if ($s && ($s = MetadataUtils::stripTrailingPunctuation($s))) {
+            if ($s && ($s = $this->metadataUtils->stripTrailingPunctuation($s))) {
                 $results[] = $s;
             }
             $subs = $this->getAllFields($field->children());
@@ -345,7 +353,7 @@ class Forward extends Base
      */
     protected function getRelator($agent)
     {
-        return MetadataUtils::normalizeRelator((string)$agent->Activity);
+        return $this->metadataUtils->normalizeRelator((string)$agent->Activity);
     }
 
     /**
@@ -468,7 +476,7 @@ class Forward extends Base
         $title = (string)$doc->IdentifyingTitle;
 
         if ($forFiling) {
-            $title = MetadataUtils::stripLeadingArticle($title);
+            $title = $this->metadataUtils->stripLeadingArticle($title);
         }
 
         return $title;

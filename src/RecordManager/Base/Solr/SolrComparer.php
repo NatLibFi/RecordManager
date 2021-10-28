@@ -54,8 +54,12 @@ class SolrComparer extends SolrUpdater
      *
      * @return void
      */
-    public function compareRecords($logFile, $fromDate, $sourceId, $singleId)
-    {
+    public function compareRecords(
+        ?string $logFile,
+        ?string $fromDate,
+        ?string $sourceId,
+        ?string $singleId
+    ): void {
         // Install a signal handler so that we can exit cleanly if interrupted
         unset($this->terminate);
         if (function_exists('pcntl_signal')) {
@@ -79,7 +83,7 @@ class SolrComparer extends SolrUpdater
             // Only process merged records if any of the selected sources has
             // deduplication enabled
             $processDedupRecords = true;
-            if ($sourceId) {
+            if ($sourceId && '*' !== $sourceId) {
                 $sources = explode(',', $sourceId);
                 foreach ($sources as $source) {
                     if (strncmp($source, '-', 1) === 0
@@ -109,9 +113,14 @@ class SolrComparer extends SolrUpdater
                     $singleId,
                     '',
                     false,
-                    function (string $dedupId) use ($sourceId,
-                        &$mergedComponents, $logFile, &$deleted, &$count,
-                        &$lastDisplayedCount, $pc
+                    function (string $dedupId) use (
+                        $sourceId,
+                        &$mergedComponents,
+                        $logFile,
+                        &$deleted,
+                        &$count,
+                        &$lastDisplayedCount,
+                        $pc
                     ) {
                         $result = $this->processDedupRecord(
                             $dedupId,
@@ -150,7 +159,8 @@ class SolrComparer extends SolrUpdater
                 ? date('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
 
             $this->log->logInfo(
-                'compareRecords', "Creating individual record list (from $from)"
+                'compareRecords',
+                "Creating individual record list (from $from)"
             );
             $params = [];
             if ($singleId) {
@@ -161,7 +171,7 @@ class SolrComparer extends SolrUpdater
                     $params['updated']
                         = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
                 }
-                list($sourceOr, $sourceNor) = $this->createSourceFilter($sourceId);
+                [$sourceOr, $sourceNor] = $this->createSourceFilter($sourceId);
                 if ($sourceOr) {
                     $params['$or'] = $sourceOr;
                 }
@@ -183,8 +193,13 @@ class SolrComparer extends SolrUpdater
             $this->db->iterateRecords(
                 $params,
                 [],
-                function ($record) use ($pc, &$mergedComponents, $logFile,
-                    &$count, &$deleted, &$lastDisplayedCount
+                function ($record) use (
+                    $pc,
+                    &$mergedComponents,
+                    $logFile,
+                    &$count,
+                    &$deleted,
+                    &$lastDisplayedCount
                 ) {
                     if (isset($this->terminate)) {
                         return false;

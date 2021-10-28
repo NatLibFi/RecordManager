@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2014-2020.
+ * Copyright (C) The National Library of Finland 2014-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -29,8 +29,8 @@
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Database\Factory as DatabaseFactory;
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -49,8 +49,10 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-abstract class AuthEnrichment extends Enrichment
+abstract class AuthEnrichment extends AbstractEnrichment
 {
+    use \RecordManager\Base\Record\CreateRecordTrait;
+
     /**
      * Authority database
      *
@@ -61,42 +63,33 @@ abstract class AuthEnrichment extends Enrichment
     /**
      * Constructor
      *
-     * @param Database      $db            Database connection (for cache)
-     * @param Logger        $logger        Logger
-     * @param array         $config        Main configuration
-     * @param RecordFactory $recordFactory Record factory
+     * @param array               $config              Main configuration
+     * @param Database            $db                  Database connection (for
+     *                                                 cache)
+     * @param Logger              $logger              Logger
+     * @param RecordPluginManager $recordPluginManager Record plugin manager
+     * @param HttpClientManager   $httpManager         HTTP client manager
+     * @param MetadataUtils       $metadataUtils       Metadata utilities
+     * @param Database            $authorityDb         Authority database connection
      */
     public function __construct(
-        Database $db, Logger $logger, array $config,
-        RecordFactory $recordFactory
+        array $config,
+        Database $db,
+        Logger $logger,
+        RecordPluginManager $recordPluginManager,
+        HttpClientManager $httpManager,
+        MetadataUtils $metadataUtils,
+        Database $authorityDb
     ) {
-        parent::__construct($db, $logger, $config, $recordFactory);
-
-        // Copy main configuration and modify it with the AuthorityEnrichment
-        // settings
-        $dbConfig = $config;
-        $dbType = $dbConfig['Database']['backend'] ?? 'Mongo';
-
-        $connection = $config['AuthorityEnrichment']['connection']
-            ?? $config['AuthorityEnrichment']['url'] ?? '';
-        if ($connection) {
-            $dbConfig[$dbType]['connection'] = $connection;
-        }
-
-        if (!empty($config['AuthorityEnrichment']['database'])) {
-            $dbConfig[$dbType]['database']
-                = $config['AuthorityEnrichment']['database'];
-        }
-
-        try {
-            $this->authorityDb = DatabaseFactory::createDatabase($dbConfig);
-        } catch (\Exception $e) {
-            $this->logger->logFatal(
-                'startup',
-                'Failed to connect to authority database: ' . $e->getMessage()
-            );
-            throw $e;
-        }
+        parent::__construct(
+            $config,
+            $db,
+            $logger,
+            $recordPluginManager,
+            $httpManager,
+            $metadataUtils
+        );
+        $this->authorityDb = $authorityDb;
     }
 
     /**
@@ -110,16 +103,19 @@ abstract class AuthEnrichment extends Enrichment
      *
      * @return void
      */
-    protected function enrichField(&$solrArray, $id, $solrField,
+    protected function enrichField(
+        &$solrArray,
+        $id,
+        $solrField,
         $includeInAllfields = false
     ) {
         if (!($data = $this->authorityDb->getRecord($id))) {
             return;
         }
 
-        $authRecord = $this->recordFactory->createRecord(
+        $authRecord = $this->createRecord(
             $data['format'],
-            MetadataUtils::getRecordData($data, true),
+            $this->metadataUtils->getRecordData($data, true),
             $id,
             $data['source_id']
         );

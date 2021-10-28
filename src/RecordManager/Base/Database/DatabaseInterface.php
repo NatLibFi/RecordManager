@@ -108,7 +108,10 @@ interface DatabaseInterface
      *
      * @return void
      */
-    public function iterateRecords(array $filter, array $options, callable $callback,
+    public function iterateRecords(
+        array $filter,
+        array $options,
+        callable $callback,
         array $params = []
     ): void;
 
@@ -230,7 +233,10 @@ interface DatabaseInterface
      *
      * @return void
      */
-    public function iterateDedups(array $filter, array $options, callable $callback,
+    public function iterateDedups(
+        array $filter,
+        array $options,
+        callable $callback,
         array $params = []
     ): void;
 
@@ -338,8 +344,12 @@ interface DatabaseInterface
      *
      * @return void
      */
-    public function saveLogMessage(string $context, string $msg, int $level,
-        int $pid, int $timestamp
+    public function saveLogMessage(
+        string $context,
+        string $msg,
+        int $level,
+        int $pid,
+        int $timestamp
     ): void;
 
     /**

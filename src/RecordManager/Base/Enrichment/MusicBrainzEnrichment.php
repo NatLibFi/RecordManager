@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2019.
+ * Copyright (C) The National Library of Finland 2019-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,11 +27,6 @@
  */
 namespace RecordManager\Base\Enrichment;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Record\Factory as RecordFactory;
-use RecordManager\Base\Utils\Logger;
-use RecordManager\Base\Utils\MetadataUtils;
-
 /**
  * MusicBrainzEnrichment Class
  *
@@ -43,7 +38,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class MusicBrainzEnrichment extends Enrichment
+class MusicBrainzEnrichment extends AbstractEnrichment
 {
     /**
      * MusicBrainz API base url
@@ -51,25 +46,6 @@ class MusicBrainzEnrichment extends Enrichment
      * @var string
      */
     protected $baseURL;
-
-    /**
-     * Constructor
-     *
-     * @param Database      $db            Database connection (for cache)
-     * @param Logger        $logger        Logger
-     * @param array         $config        Main configuration
-     * @param RecordFactory $recordFactory Record factory
-     */
-    public function __construct(
-        Database $db, Logger $logger, array $config,
-        RecordFactory $recordFactory
-    ) {
-        parent::__construct($db, $logger, $config, $recordFactory);
-
-        $this->baseURL
-            = $this->config['MusicBrainzEnrichment']['url']
-            ?? '';
-    }
 
     /**
      * Enrich the record and return any additions in solrArray
@@ -82,6 +58,7 @@ class MusicBrainzEnrichment extends Enrichment
      */
     public function enrich($sourceId, $record, &$solrArray)
     {
+        $this->baseURL = $this->config['MusicBrainzEnrichment']['url'] ?? '';
         if (empty($this->baseURL)
             || !($record instanceof \RecordManager\Base\Record\Marc)
         ) {
@@ -156,7 +133,7 @@ class MusicBrainzEnrichment extends Enrichment
     protected function sanitizeId($id)
     {
         $id = preg_replace('/[\s\(\[].*$/', '', $id);
-        $id = MetadataUtils::normalizeKey($id);
+        $id = $this->metadataUtils->normalizeKey($id);
         return $id;
     }
 
@@ -177,8 +154,7 @@ class MusicBrainzEnrichment extends Enrichment
             'query' => $query,
             'fmt' => 'json'
         ];
-        $url = $this->baseURL . '/ws/2/release?'
-            . http_build_query($params);
+        $url = $this->baseURL . '/ws/2/release?' . http_build_query($params);
         $data = $this->getExternalData($url, $query);
         if ($data) {
             $data = json_decode($data, true);

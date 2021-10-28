@@ -39,11 +39,25 @@ namespace RecordManager\Base\Utils;
 class FieldMapper
 {
     /**
+     * Base path
+     *
+     * @var string
+     */
+    protected $basePath;
+
+    /**
      * Mapping file cache
      *
      * @var array
      */
     protected static $mapCache = [];
+
+    /**
+     * Default (not specific to data source configuration) mappings
+     *
+     * @var array
+     */
+    protected $defaultMappings = [];
 
     /**
      * Settings for all data sources
@@ -55,17 +69,34 @@ class FieldMapper
     /**
      * Constructor
      *
-     * @param string $basePath           Base path for configuration files
-     * @param array  $defaultMappings    Default mappings for all data sources
-     * @param array  $dataSourceSettings Data source settings
+     * @param string $basePath         Base path for configuration files
+     * @param array  $defaultMappings  Default mappings for all data sources
+     * @param array  $dataSourceConfig Data source settings
      */
-    public function __construct($basePath, $defaultMappings, $dataSourceSettings)
+    public function __construct(
+        string $basePath,
+        array $defaultMappings,
+        array $dataSourceConfig
+    ) {
+        $this->basePath = $basePath;
+        $this->defaultMappings = $defaultMappings;
+        $this->initdataSourceConfig($dataSourceConfig);
+    }
+
+    /**
+     * Initialize the data source settings
+     *
+     * @param array $dataSourceConfig Data source configuration
+     *
+     * @return void
+     */
+    public function initdataSourceConfig(array $dataSourceConfig): void
     {
-        foreach ($dataSourceSettings as $source => $settings) {
+        foreach ($dataSourceConfig as $source => $settings) {
             $this->settings[$source]['mappingFiles'] = [];
 
             // Use default mappings as the basis
-            $allMappings = $defaultMappings;
+            $allMappings = $this->defaultMappings;
 
             // Apply data source specific overrides
             foreach ($settings as $key => $value) {
@@ -86,7 +117,7 @@ class FieldMapper
                     $type = $parts[1] ?? 'normal';
                     if (!isset(self::$mapCache[$filename])) {
                         self::$mapCache[$filename] = $this->readMappingFile(
-                            $basePath . '/mappings/' . $filename
+                            $this->basePath . '/mappings/' . $filename
                         );
                     }
                     $this->settings[$source]['mappingFiles'][$field][] = [
@@ -218,7 +249,11 @@ class FieldMapper
                     $matches = false;
                     foreach ($replacement as $current) {
                         $newValue = preg_replace(
-                            "/$pattern/u", $current, $value, -1, $count
+                            "/$pattern/u",
+                            $current,
+                            $value,
+                            -1,
+                            $count
                         );
                         if ($count > 0) {
                             $newValues[] = $newValue;
@@ -233,7 +268,11 @@ class FieldMapper
                     }
                 } else {
                     $newValue = preg_replace(
-                        "/$pattern/u", $replacement, $value, -1, $count
+                        "/$pattern/u",
+                        $replacement,
+                        $value,
+                        -1,
+                        $count
                     );
                     if ($count > 0) {
                         if (!$all) {

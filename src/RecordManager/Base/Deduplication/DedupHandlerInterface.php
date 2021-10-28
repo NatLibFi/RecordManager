@@ -28,8 +28,6 @@
 namespace RecordManager\Base\Deduplication;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Record\Factory as RecordFactory;
-use RecordManager\Base\Utils\Logger;
 
 /**
  * Interface for Deduplication Handlers
@@ -44,21 +42,6 @@ use RecordManager\Base\Utils\Logger;
  */
 interface DedupHandlerInterface
 {
-    /**
-     * Constructor
-     *
-     * @param Database      $db            Database
-     * @param Logger        $log           Logger object
-     * @param boolean       $verbose       Whether verbose output is enabled
-     * @param string        $basePath      Base path
-     * @param array         $mainConfig    Main configuration
-     * @param array         $settings      Data source settings
-     * @param RecordFactory $recordFactory Record factory
-     */
-    public function __construct(Database $db, Logger $log, $verbose, $basePath,
-        $mainConfig, $settings, $recordFactory
-    );
-
     /**
      * Verify dedup record consistency
      *

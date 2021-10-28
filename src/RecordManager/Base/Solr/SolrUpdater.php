@@ -28,8 +28,11 @@
 namespace RecordManager\Base\Solr;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Record\Base as BaseRecord;
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
+use RecordManager\Base\Record\AbstractRecord;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
+use RecordManager\Base\Settings\Ini;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -55,14 +58,8 @@ if (function_exists('pcntl_async_signals')) {
  */
 class SolrUpdater
 {
+    use \RecordManager\Base\Record\CreateRecordTrait;
     use \RecordManager\Base\Utils\ParentProcessCheckTrait;
-
-    /**
-     * Base path of Record Manager
-     *
-     * @var string
-     */
-    protected $basePath;
 
     /**
      * Database
@@ -100,11 +97,32 @@ class SolrUpdater
     protected $settings;
 
     /**
-     * Record factory
+     * Record plugin manager
      *
-     * @var RecordFactory
+     * @var RecordPluginManager
      */
-    protected $recordFactory;
+    protected $recordPluginManager;
+
+    /**
+     * Enrichment plugin manager
+     *
+     * @var EnrichmentPluginManager
+     */
+    protected $enrichmentPluginManager;
+
+    /**
+     * HTTP client manager
+     *
+     * @var HttpClientManager
+     */
+    protected $httpClientManager;
+
+    /**
+     * Metadata utilities
+     *
+     * @var MetadataUtils
+     */
+    protected $metadataUtils;
 
     /**
      * Whether building field is hierarchical
@@ -224,13 +242,6 @@ class SolrUpdater
      * @var \HTTP_Request2
      */
     protected $request = null;
-
-    /**
-     * HTTP_Request2 configuration params
-     *
-     * @array
-     */
-    protected $httpParams = [];
 
     /**
      * Fields to merge when merging deduplicated records
@@ -384,11 +395,11 @@ class SolrUpdater
     protected $fieldMapper = null;
 
     /**
-     * Field mapper class name
+     * Whether to disable field mappings
      *
-     * @var string
+     * @var bool
      */
-    protected $fieldMapperClass = '\RecordManager\Base\Utils\FieldMapper';
+    protected $disableMappings = false;
 
     /**
      * Whether to track last update date per server's update url
@@ -518,28 +529,50 @@ class SolrUpdater
     protected $recordDataCache;
 
     /**
+     * Configuration reader
+     *
+     * @var Ini
+     */
+    protected $configReader;
+
+    /**
      * Constructor
      *
-     * @param Database      $db                 Database connection
-     * @param string        $basePath           RecordManager main directory
-     * @param object        $log                Logger
-     * @param bool          $verbose            Whether to output verbose messages
-     * @param array         $config             Main configuration
-     * @param array         $dataSourceSettings Data source settings
-     * @param RecordFactory $recordFactory      Record Factory
+     * @param array                   $config           Main configuration
+     * @param array                   $dataSourceConfig Data source settings
+     * @param Database                $db               Database connection
+     * @param object                  $log              Logger
+     * @param RecordPluginManager     $recordPM         Record plugin manager
+     * @param EnrichmentPluginManager $enrichmentPM     Enrichment plugin manager
+     * @param HttpClientManager       $httpManager      HTTP client manager
+     * @param Ini                     $configReader     Configuration reader
+     * @param FieldMapper             $fieldMapper      Field mapper
+     * @param MetadataUtils           $metadataUtils    Metadata utilities
      *
      * @throws \Exception
      */
-    public function __construct(?Database $db, string $basePath, Logger $log,
-        bool $verbose, array $config, array $dataSourceSettings,
-        RecordFactory $recordFactory
+    public function __construct(
+        array $config,
+        array $dataSourceConfig,
+        ?Database $db,
+        Logger $log,
+        RecordPluginManager $recordPM,
+        EnrichmentPluginManager $enrichmentPM,
+        HttpClientManager $httpManager,
+        Ini $configReader,
+        FieldMapper $fieldMapper,
+        MetadataUtils $metadataUtils
     ) {
         $this->config = $config;
         $this->db = $db;
-        $this->basePath = $basePath;
         $this->log = $log;
-        $this->verbose = $verbose;
-        $this->recordFactory = $recordFactory;
+        $this->verbose = $config['Log']['verbose'] ?? false;
+        $this->recordPluginManager = $recordPM;
+        $this->enrichmentPluginManager = $enrichmentPM;
+        $this->httpClientManager = $httpManager;
+        $this->configReader = $configReader;
+        $this->fieldMapper = $fieldMapper;
+        $this->metadataUtils = $metadataUtils;
 
         $this->metadataRecordCache = new \cash\LRUCache(100);
         $this->recordDataCache = new \cash\LRUCache(100);
@@ -615,14 +648,6 @@ class SolrUpdater
         $this->datePerServer
             = !empty($config['Solr']['track_updates_per_update_url']);
 
-        if (isset($config['HTTP'])) {
-            $this->httpParams += $config['HTTP'];
-        }
-
-        if (!empty($config['Solr']['field_mapper'])) {
-            $this->fieldMapperClass = $config['Solr']['field_mapper'];
-        }
-
         $this->unicodeNormalizationForm
             = $config['Solr']['unicode_normalization_form'] ?? '';
 
@@ -669,7 +694,7 @@ class SolrUpdater
         }
 
         // Load settings
-        $this->initDatasources($dataSourceSettings);
+        $this->initDatasources($dataSourceConfig);
     }
 
     /**
@@ -714,10 +739,10 @@ class SolrUpdater
     /**
      * Update Solr index (merged records and individual records)
      *
-     * @param string|null $fromDate      Starting date for updates (if empty
-     *                                   string, last update date stored in the
-     *                                   database is used and if null, all records
-     *                                   are processed)
+     * @param string|null $fromDate      Starting date for updates (if null, last
+     *                                   update date stored in the database is used
+     *                                   and if an empty string, all records are
+     *                                   processed)
      * @param string      $sourceId      Comma-separated list of source IDs to
      *                                   update, or empty or * for all sources
      * @param string      $singleId      Process only the record with the given ID
@@ -731,9 +756,18 @@ class SolrUpdater
      *
      * @return void
      */
-    public function updateRecords($fromDate = null, $sourceId = '', $singleId = '',
-        $noCommit = false, $delete = false, $dumpPrefix = '', $datePerServer = false
+    public function updateRecords(
+        $fromDate = null,
+        $sourceId = '',
+        $singleId = '',
+        $noCommit = false,
+        $delete = false,
+        $dumpPrefix = '',
+        $datePerServer = false
     ) {
+        if ('*' === $sourceId) {
+            $sourceId = '';
+        }
         // Install a signal handler so that we can exit cleanly if interrupted
         unset($this->terminate);
         if (function_exists('pcntl_signal')) {
@@ -763,7 +797,8 @@ class SolrUpdater
         try {
             if ($this->recordWorkers) {
                 $this->log->logInfo(
-                    'updateRecords', "Using {$this->recordWorkers} record workers"
+                    'updateRecords',
+                    "Using {$this->recordWorkers} record workers"
                 );
             }
             if ($this->solrUpdateWorkers) {
@@ -875,7 +910,8 @@ class SolrUpdater
                 ? gmdate('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
 
             $this->log->logInfo(
-                'updateRecords', "Creating individual record list (from $from)"
+                'updateRecords',
+                "Creating individual record list (from $from)"
             );
             $params = [];
             if ($singleId) {
@@ -887,7 +923,7 @@ class SolrUpdater
                     $params['updated']
                         = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
                 }
-                list($sourceOr, $sourceNor) = $this->createSourceFilter($sourceId);
+                [$sourceOr, $sourceNor] = $this->createSourceFilter($sourceId);
                 if ($sourceOr) {
                     $params['$or'] = $sourceOr;
                 }
@@ -918,8 +954,15 @@ class SolrUpdater
             $this->db->iterateRecords(
                 $params,
                 [],
-                function ($record) use ($childPid, $pc, &$mergedComponents,
-                    &$count, &$deleted, $verb, $noCommit, &$lastDisplayedCount,
+                function ($record) use (
+                    $childPid,
+                    $pc,
+                    &$mergedComponents,
+                    &$count,
+                    &$deleted,
+                    $verb,
+                    $noCommit,
+                    &$lastDisplayedCount,
                     &$needCommit
                 ) {
                     if (isset($this->terminate)) {
@@ -1130,6 +1173,18 @@ class SolrUpdater
     }
 
     /**
+     * Toggle field mappings
+     *
+     * @param bool $disable Whether to disable mappings
+     *
+     * @return void
+     */
+    public function disableFieldMappings(bool $disable): void
+    {
+        $this->disableMappings = $disable;
+    }
+
+    /**
      * Process merged (deduplicated) records
      *
      * @param string|null $fromDate      Start date
@@ -1148,7 +1203,12 @@ class SolrUpdater
      * @return boolean Whether anything was updated
      */
     protected function processMerged(
-        $fromDate, $sourceId, $singleId, $noCommit, $delete, $checkParent,
+        $fromDate,
+        $sourceId,
+        $singleId,
+        $noCommit,
+        $delete,
+        $checkParent,
         $lastUpdateKey
     ) {
         // Create workers first before we need the database
@@ -1192,9 +1252,16 @@ class SolrUpdater
             $singleId,
             $lastUpdateKey,
             $checkParent,
-            function (string $mergeId) use ($sourceId, $delete,
-                &$mergedComponents, &$deleted, &$count, $noCommit,
-                &$lastDisplayedCount, $pc, $verb
+            function (string $mergeId) use (
+                $sourceId,
+                $delete,
+                &$mergedComponents,
+                &$deleted,
+                &$count,
+                $noCommit,
+                &$lastDisplayedCount,
+                $pc,
+                $verb
             ) {
                 $this->workerPoolManager->addRequest(
                     'merge',
@@ -1310,8 +1377,13 @@ class SolrUpdater
         $this->db->iterateRecords(
             ['_id' => ['$in' => (array)$dedupRecord['ids']]],
             [],
-            function ($record) use ($sourceId, $delete, &$mergedComponents,
-                $dedupRecord, &$result, &$members
+            function ($record) use (
+                $sourceId,
+                $delete,
+                &$mergedComponents,
+                $dedupRecord,
+                &$result,
+                &$members
             ) {
                 if (in_array($record['source_id'], $this->nonIndexedSources)) {
                     return true;
@@ -1390,14 +1462,14 @@ class SolrUpdater
                         );
                     } else {
                         $merged[$fieldkey] = array_values(
-                            MetadataUtils::array_iunique($merged[$fieldkey])
+                            $this->metadataUtils->array_iunique($merged[$fieldkey])
                         );
                     }
                 }
             }
             if (isset($merged['allfields'])) {
                 $merged['allfields'] = array_values(
-                    MetadataUtils::array_iunique($merged['allfields'])
+                    $this->metadataUtils->array_iunique($merged['allfields'])
                 );
             } else {
                 $this->log->logWarning(
@@ -1478,7 +1550,9 @@ class SolrUpdater
      */
     public function optimizeIndex()
     {
+        $this->log->logInfo('optimizeIndex', 'Optimizing Solr index');
         $this->solrRequest('{ "optimize": {} }', 4 * 60 * 60);
+        $this->log->logInfo('optimizeIndex', 'Solr optimization completed');
     }
 
     /**
@@ -1524,9 +1598,9 @@ class SolrUpdater
                 if ($mapped) {
                     $data = $this->createSolrArray($record, $mergedComponents);
                 } else {
-                    $metadataRecord = $this->recordFactory->createRecord(
+                    $metadataRecord = $this->createRecord(
                         $record['format'],
-                        MetadataUtils::getRecordData($record, true),
+                        $this->metadataUtils->getRecordData($record, true),
                         $record['oai_id'],
                         $record['source_id']
                     );
@@ -1539,7 +1613,8 @@ class SolrUpdater
                         ];
                         $data = $settings['solrTransformationXSLT']
                             ->transformToSolrArray(
-                                $metadataRecord->toXML(), $params
+                                $metadataRecord->toXML(),
+                                $params
                             );
                     } else {
                         $data = $metadataRecord->toSolrArray($this->db);
@@ -1564,7 +1639,7 @@ class SolrUpdater
                         echo "Current list:\n";
                         arsort($values, SORT_NUMERIC);
                         foreach ($values as $key => $value) {
-                            printf("%10ld: %s\n", $value, $key);
+                            echo str_pad($value, 10, ' ', STR_PAD_LEFT) . ": $key\n";
                         }
                         echo "\n";
                     }
@@ -1574,7 +1649,7 @@ class SolrUpdater
         arsort($values, SORT_NUMERIC);
         echo "Result list:\n";
         foreach ($values as $key => $value) {
-            printf("%10ld: %s\n", $value, $key);
+            echo str_pad($value, 10, ' ', STR_PAD_LEFT) . ": $key\n";
         }
     }
 
@@ -1693,11 +1768,17 @@ class SolrUpdater
      *                                   alive
      * @param Callable    $callback      Callback to call for each record
      *
+     * @return void
+     *
      * @throws \Exception
-     * @return string Collection name
      */
-    protected function iterateMergedRecords($fromDate, $sourceId, $singleId,
-        $lastUpdateKey, $checkParent, $callback
+    protected function iterateMergedRecords(
+        $fromDate,
+        $sourceId,
+        $singleId,
+        $lastUpdateKey,
+        $checkParent,
+        $callback
     ) {
         // Clean up any left over tracking collections
         $res = $this->db->cleanupTrackingCollections();
@@ -1726,7 +1807,7 @@ class SolrUpdater
                 $params['updated']
                     = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
             }
-            list($sourceOr, $sourceNor) = $this->createSourceFilter($sourceId);
+            [$sourceOr, $sourceNor] = $this->createSourceFilter($sourceId);
             if ($sourceOr) {
                 $params['$or'] = $sourceOr;
             }
@@ -1755,7 +1836,11 @@ class SolrUpdater
         $this->db->iterateRecords(
             $params,
             ['projection' => ['_id' => 1, 'dedup_id' => 1]],
-            function ($record) use ($checkParent, $trackingName, &$count, &$prevId,
+            function ($record) use (
+                $checkParent,
+                $trackingName,
+                &$count,
+                &$prevId,
                 $callback
             ) {
                 if ($checkParent) {
@@ -1805,7 +1890,11 @@ class SolrUpdater
         $this->db->iterateDedups(
             $dedupParams,
             [],
-            function ($record) use ($checkParent, &$count, $trackingName, $callback
+            function ($record) use (
+                $checkParent,
+                &$count,
+                $trackingName,
+                $callback
             ) {
                 if ($checkParent) {
                     $this->checkParentIsAlive();
@@ -1834,27 +1923,19 @@ class SolrUpdater
     /**
      * Initialize or reload data source settings
      *
-     * @param array $dataSourceSettings Optional data source settings to use instead
-     *                                  of reading them from the ini file
+     * @param array $dataSourceConfig Optional data source settings to use instead
+     *                                of reading them from the ini file
      *
      * @return void
      */
-    protected function initDatasources($dataSourceSettings = null)
+    protected function initDatasources($dataSourceConfig = null)
     {
-        if (null === $dataSourceSettings) {
-            $filename = "{$this->basePath}/conf/datasources.ini";
-            $dataSourceSettings = parse_ini_file($filename, true);
-            if (false === $dataSourceSettings) {
-                $error = error_get_last();
-                $message = $error['message'] ?? 'unknown error occurred';
-                throw new \Exception(
-                    "Could not load data source settings from file '$filename':"
-                    . $message
-                );
-            }
+        if (null === $dataSourceConfig) {
+            $dataSourceConfig = $this->configReader->get('datasources.ini', true);
+            $this->fieldMapper->initdataSourceConfig($dataSourceConfig);
         }
         $this->settings = [];
-        foreach ($dataSourceSettings as $source => $settings) {
+        foreach ($dataSourceConfig as $source => $settings) {
             if (!isset($settings['format'])) {
                 throw new \Exception("Error: format not set for $source\n");
             }
@@ -1870,7 +1951,7 @@ class SolrUpdater
                 = isset($settings['solrTransformation'])
                     && $settings['solrTransformation']
                     ? new \RecordManager\Base\Utils\XslTransformation(
-                        $this->basePath . '/transformations',
+                        RECMAN_BASE_PATH . '/transformations',
                         $settings['solrTransformation']
                     ) : null;
             if (!isset($this->settings[$source]['dedup'])) {
@@ -1881,7 +1962,7 @@ class SolrUpdater
             foreach ($settings['extraFields'] ?? $settings['extrafields'] ?? []
                 as $extraField
             ) {
-                list($field, $value) = explode(':', $extraField, 2);
+                [$field, $value] = explode(':', $extraField, 2);
                 $this->settings[$source]['extraFields'][] = [$field => $value];
             }
 
@@ -1889,16 +1970,6 @@ class SolrUpdater
                 $this->nonIndexedSources[] = $source;
             }
         }
-
-        // Create field mapper
-        $this->fieldMapper = new $this->fieldMapperClass(
-            $this->basePath,
-            array_merge(
-                $this->config['DefaultMappings'] ?? [],
-                $this->config['Default Mappings'] ?? []
-            ),
-            $dataSourceSettings
-        );
     }
 
     /**
@@ -1912,7 +1983,9 @@ class SolrUpdater
      * @return array|false
      * @throws \Exception
      */
-    protected function createSolrArray(array $record, &$mergedComponents,
+    protected function createSolrArray(
+        array $record,
+        &$mergedComponents,
         $dedupRecord = null
     ) {
         $mergedComponents = 0;
@@ -1932,16 +2005,18 @@ class SolrUpdater
             }
         }
 
-        $metadataRecord = $this->recordFactory->createRecord(
+        $metadataRecord = $this->createRecord(
             $record['format'],
-            MetadataUtils::getRecordData($record, true),
+            $this->metadataUtils->getRecordData($record, true),
             $record['oai_id'],
             $record['source_id']
         );
 
         $settings = $this->settings[$source];
-        $hiddenComponent = MetadataUtils::isHiddenComponentPart(
-            $settings, $record, $metadataRecord
+        $hiddenComponent = $this->metadataUtils->isHiddenComponentPart(
+            $settings,
+            $record,
+            $metadataRecord
         );
 
         if ($hiddenComponent && !$settings['indexMergedParts']) {
@@ -2007,7 +2082,8 @@ class SolrUpdater
         if ($hasComponentParts && null !== $components) {
             $changeDate = null;
             $mergedComponents += $metadataRecord->mergeComponentParts(
-                $components, $changeDate
+                $components,
+                $changeDate
             );
             // Use latest date as the host record date
             if (null !== $changeDate && $changeDate > $record['date']) {
@@ -2072,9 +2148,9 @@ class SolrUpdater
                     $hostMetadataRecord = $this->metadataRecordCache
                         ->get($hostRecord['_id']);
                     if (null === $hostMetadataRecord) {
-                        $hostMetadataRecord = $this->recordFactory->createRecord(
+                        $hostMetadataRecord = $this->createRecord(
                             $hostRecord['format'],
-                            MetadataUtils::getRecordData($hostRecord, true),
+                            $this->metadataUtils->getRecordData($hostRecord, true),
                             $hostRecord['oai_id'],
                             $hostRecord['source_id']
                         );
@@ -2161,7 +2237,11 @@ class SolrUpdater
         $this->addWorkKeys($data, $metadataRecord);
 
         $this->augmentAndProcessFields(
-            $data, $record, $metadataRecord, $source, $settings
+            $data,
+            $record,
+            $metadataRecord,
+            $source,
+            $settings
         );
 
         foreach ($hostDataToCopy as $hostData) {
@@ -2170,7 +2250,8 @@ class SolrUpdater
 
         if (!empty($this->warningsField)) {
             $warnings = array_merge(
-                $warnings, $metadataRecord->getProcessingWarnings()
+                $warnings,
+                $metadataRecord->getProcessingWarnings()
             );
             if ($warnings) {
                 $data[$this->warningsField] = $warnings;
@@ -2185,19 +2266,19 @@ class SolrUpdater
     /**
      * Add work identification keys
      *
-     * @param array      $data           Field array
-     * @param BaseRecord $metadataRecord Metadata record
+     * @param array          $data           Field array
+     * @param AbstractRecord $metadataRecord Metadata record
      *
      * @return void
      */
-    protected function addWorkKeys(array &$data, BaseRecord $metadataRecord)
+    protected function addWorkKeys(array &$data, AbstractRecord $metadataRecord)
     {
         if ($this->workKeysField
             && $workIds = $metadataRecord->getWorkIdentificationData()
         ) {
             $keys = [];
             foreach ($workIds['titles'] ?? [] as $titleData) {
-                $title = MetadataUtils::normalizeKey(
+                $title = $this->metadataUtils->normalizeKey(
                     $titleData['value'],
                     $this->unicodeNormalizationForm
                 );
@@ -2205,7 +2286,7 @@ class SolrUpdater
                     $keys[] = "UT $title";
                 } else {
                     foreach ($workIds['authors'] ?? [] as $authorData) {
-                        $author = MetadataUtils::normalizeKey(
+                        $author = $this->metadataUtils->normalizeKey(
                             $authorData['value'],
                             $this->unicodeNormalizationForm
                         );
@@ -2214,7 +2295,7 @@ class SolrUpdater
                 }
             }
             foreach ($workIds['titlesAltScript'] ?? [] as $titleData) {
-                $title = MetadataUtils::normalizeKey(
+                $title = $this->metadataUtils->normalizeKey(
                     $titleData['value'],
                     $this->unicodeNormalizationForm
                 );
@@ -2222,7 +2303,7 @@ class SolrUpdater
                     $keys[] = "UT $title";
                 } else {
                     foreach ($workIds['authorsAltScript'] ?? [] as $authorData) {
-                        $author = MetadataUtils::normalizeKey(
+                        $author = $this->metadataUtils->normalizeKey(
                             $authorData['value'],
                             $this->unicodeNormalizationForm
                         );
@@ -2239,16 +2320,19 @@ class SolrUpdater
     /**
      * Add extra fields from settings etc. and map the values
      *
-     * @param array      $data           Field array
-     * @param mixed      $record         Database record
-     * @param BaseRecord $metadataRecord Metadata record
-     * @param string     $source         Source ID
-     * @param array      $settings       Settings
+     * @param array          $data           Field array
+     * @param mixed          $record         Database record
+     * @param AbstractRecord $metadataRecord Metadata record
+     * @param string         $source         Source ID
+     * @param array          $settings       Settings
      *
      * @return void
      */
-    protected function augmentAndProcessFields(array &$data,
-        $record, BaseRecord $metadataRecord, string $source,
+    protected function augmentAndProcessFields(
+        array &$data,
+        $record,
+        AbstractRecord $metadataRecord,
+        string $source,
         array $settings
     ): void {
         if (!isset($data['institution']) && !empty($settings['institution'])) {
@@ -2279,7 +2363,9 @@ class SolrUpdater
         }
 
         // Map field values according to any mapping files
-        $data = $this->fieldMapper->mapValues($source, $data);
+        if (!$this->disableMappings) {
+            $data = $this->fieldMapper->mapValues($source, $data);
+        }
 
         // Special case: Special values for building (institution/location).
         // Used by default if building is set as a hierarchical facet.
@@ -2335,15 +2421,15 @@ class SolrUpdater
                     $all[] = $field;
                 }
             }
-            $data['allfields'] = MetadataUtils::array_iunique($all);
+            $data['allfields'] = $this->metadataUtils->array_iunique($all);
         }
 
         $data['first_indexed']
-            = MetadataUtils::formatTimestamp(
+            = $this->metadataUtils->formatTimestamp(
                 $this->db ? $this->db->getUnixTime($record['created'])
                     : $record['created']
             );
-        $data['last_indexed'] = MetadataUtils::formatTimestamp(
+        $data['last_indexed'] = $this->metadataUtils->formatTimestamp(
             $this->db ? $this->db->getUnixTime($record['date']) : $record['date']
         );
         if (!isset($data['fullrecord'])) {
@@ -2361,8 +2447,9 @@ class SolrUpdater
                 $data['allfields'][] = str_replace(
                     ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
                     ['ax', 'bx', 'cx', 'dx', 'ex', 'fx', 'gx', 'hx', 'ix', 'jx'],
-                    MetadataUtils::normalizeKey(
-                        $format, $this->unicodeNormalizationForm
+                    $this->metadataUtils->normalizeKey(
+                        $format,
+                        $this->unicodeNormalizationForm
                     )
                 );
             }
@@ -2383,8 +2470,9 @@ class SolrUpdater
         foreach ($data as $key => &$values) {
             if (is_array($values)) {
                 foreach ($values as $key2 => &$value) {
-                    $value = MetadataUtils::normalizeUnicode(
-                        $value, $this->unicodeNormalizationForm
+                    $value = $this->metadataUtils->normalizeUnicode(
+                        $value,
+                        $this->unicodeNormalizationForm
                     );
                     $value = $this->trimFieldLength($key, $value);
                     if (empty($value) || $value === 0 || $value === 0.0
@@ -2395,8 +2483,9 @@ class SolrUpdater
                 }
                 $values = array_values(array_unique($values));
             } elseif ($key != 'fullrecord') {
-                $values = MetadataUtils::normalizeUnicode(
-                    $values, $this->unicodeNormalizationForm
+                $values = $this->metadataUtils->normalizeUnicode(
+                    $values,
+                    $this->unicodeNormalizationForm
                 );
                 $values = $this->trimFieldLength($key, $values);
             }
@@ -2627,10 +2716,9 @@ class SolrUpdater
      */
     protected function initSolrRequest($method, $timeout = null)
     {
-        $request = \RecordManager\Base\Http\ClientFactory::createClient(
+        $request = $this->httpClientManager->createClient(
             $this->config['Solr']['update_url'],
-            $method,
-            $this->httpParams
+            $method
         );
         if ($timeout !== null) {
             $request->setConfig('timeout', $timeout);
@@ -2913,7 +3001,8 @@ class SolrUpdater
         if (!$noCommit && !$this->dumpPrefix && $count % $this->commitInterval == 0
         ) {
             $this->log->logInfo(
-                'bufferedUpdate', 'Waiting for any pending requests to complete...'
+                'bufferedUpdate',
+                'Waiting for any pending requests to complete...'
             );
             $this->workerPoolManager->waitUntilDone('solr');
             $this->log->logInfo('bufferedUpdate', 'Intermediate commit...');
@@ -3010,13 +3099,8 @@ class SolrUpdater
                 continue;
             }
             if (!isset($this->enrichments[$enrichment])) {
-                $className = $enrichment;
-                if (strpos($className, '\\') === false) {
-                    $className = "\RecordManager\Base\Enrichment\\$className";
-                }
-                $this->enrichments[$enrichment] = new $className(
-                    $this->db, $this->log, $this->config, $this->recordFactory
-                );
+                $this->enrichments[$enrichment]
+                    = $this->enrichmentPluginManager->get($enrichment);
             }
             $this->enrichments[$enrichment]->enrich($source, $record, $data);
         }
@@ -3102,7 +3186,7 @@ class SolrUpdater
      */
     protected function createSourceFilter($sourceIds)
     {
-        if (!$sourceIds) {
+        if (!$sourceIds || '*' === $sourceIds) {
             return [null, null];
         }
         $sources = explode(',', $sourceIds);

@@ -28,7 +28,7 @@
 namespace RecordManager\Base\Deduplication;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -46,6 +46,8 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class DedupHandler implements DedupHandlerInterface
 {
+    use \RecordManager\Base\Record\CreateRecordTrait;
+
     /**
      * Database
      *
@@ -61,11 +63,11 @@ class DedupHandler implements DedupHandlerInterface
     protected $log;
 
     /**
-     * Record Factory
+     * Record plugin manager
      *
-     * @var RecordFactory
+     * @var RecordPluginManager
      */
-    protected $recordFactory;
+    protected $recordPluginManager;
 
     /**
      * Verbose mode
@@ -82,11 +84,18 @@ class DedupHandler implements DedupHandlerInterface
     protected $fieldMapper;
 
     /**
+     * Main configuration
+     *
+     * @var array
+     */
+    protected $config;
+
+    /**
      * Data source settings
      *
      * @var array
      */
-    protected $dataSourceSettings;
+    protected $dataSourceConfig;
 
     /**
      * Unicode normalization form for keys
@@ -96,35 +105,43 @@ class DedupHandler implements DedupHandlerInterface
     protected $normalizationForm;
 
     /**
+     * Metadata utilities
+     *
+     * @var MetadataUtils;
+     */
+    protected $metadataUtils;
+
+    /**
      * Constructor
      *
-     * @param Database      $db            Database
-     * @param Logger        $log           Logger object
-     * @param boolean       $verbose       Whether verbose output is enabled
-     * @param string        $basePath      Base path
-     * @param array         $mainConfig    Main configuration
-     * @param array         $settings      Data source settings
-     * @param RecordFactory $recordFactory Record factory
+     * @param array               $config              Main configuration
+     * @param array               $datasourceConfig    Data source settings
+     * @param Database            $db                  Database
+     * @param Logger              $log                 Logger object
+     * @param RecordPluginManager $recordPluginManager Record plugin manager
+     * @param FieldMapper         $fieldMapper         Field mapper
+     * @param MetadataUtils       $metadataUtils       Metadata utilities
      */
-    public function __construct(Database $db, Logger $log, $verbose,
-        $basePath, $mainConfig, $settings, $recordFactory
+    public function __construct(
+        array $config,
+        array $datasourceConfig,
+        Database $db,
+        Logger $log,
+        RecordPluginManager $recordPluginManager,
+        FieldMapper $fieldMapper,
+        MetadataUtils $metadataUtils
     ) {
+        $this->config = $config;
+        $this->dataSourceConfig = $datasourceConfig;
         $this->db = $db;
         $this->log = $log;
-        $this->recordFactory = $recordFactory;
-        $this->verbose = $verbose;
-        $this->dataSourceSettings = $settings;
-        $this->normalizationForm
-            = $mainConfig['Site']['unicode_normalization_form'] ?? 'NFKC';
+        $this->recordPluginManager = $recordPluginManager;
+        $this->fieldMapper = $fieldMapper;
+        $this->metadataUtils = $metadataUtils;
 
-        $this->fieldMapper = new FieldMapper(
-            $basePath,
-            array_merge(
-                $mainConfig['DefaultMappings'] ?? [],
-                $mainConfig['Default Mappings'] ?? []
-            ),
-            $settings
-        );
+        $this->verbose = $config['Log']['verbose'] ?? false;
+        $this->normalizationForm
+            = $config['Site']['unicode_normalization_form'] ?? 'NFKC';
     }
 
     /**
@@ -251,10 +268,12 @@ class DedupHandler implements DedupHandlerInterface
         if ($title && $author) {
             $authorParts = preg_split('/,\s/', $author);
             $keys = [
-                MetadataUtils::createTitleKey($title, $this->normalizationForm)
+                $this->metadataUtils
+                    ->createTitleKey($title, $this->normalizationForm)
                 . ' '
-                . MetadataUtils::normalizeKey(
-                    $authorParts[0], $this->normalizationForm
+                . $this->metadataUtils->normalizeKey(
+                    $authorParts[0],
+                    $this->normalizationForm
                 )
             ];
         } else {
@@ -310,7 +329,7 @@ class DedupHandler implements DedupHandlerInterface
     public function dedupRecord($record)
     {
         if ($record['deleted'] || ($record['suppressed'] ?? false)
-            || empty($this->dataSourceSettings[$record['source_id']]['dedup'])
+            || empty($this->dataSourceConfig[$record['source_id']]['dedup'])
         ) {
             if (isset($record['dedup_id'])) {
                 $this->removeFromDedupRecord($record['dedup_id'], $record['_id']);
@@ -324,7 +343,7 @@ class DedupHandler implements DedupHandlerInterface
         $startTime = microtime(true);
         if ($this->verbose) {
             echo 'Original ' . $record['_id'] . ":\n"
-                . MetadataUtils::getRecordData($record, true) . "\n";
+                . $this->metadataUtils->getRecordData($record, true) . "\n";
         }
 
         $origRecord = null;
@@ -445,9 +464,9 @@ class DedupHandler implements DedupHandlerInterface
                 }
 
                 if (!isset($origRecord)) {
-                    $origRecord = $this->recordFactory->createRecord(
+                    $origRecord = $this->createRecord(
                         $record['format'],
-                        MetadataUtils::getRecordData($record, true),
+                        $this->metadataUtils->getRecordData($record, true),
                         $record['oai_id'],
                         $record['source_id']
                     );
@@ -500,7 +519,8 @@ class DedupHandler implements DedupHandlerInterface
                             'deleted' => false
                         ],
                         [],
-                        function ($dedupRecord) use (&$bestMatchRecords,
+                        function ($dedupRecord) use (
+                            &$bestMatchRecords,
                             &$bestDedupId
                         ) {
                             $cnt = count($dedupRecord['ids']);
@@ -642,22 +662,26 @@ class DedupHandler implements DedupHandlerInterface
      */
     protected function matchRecords($record, $origRecord, $candidate)
     {
-        $cRecord = $this->recordFactory->createRecord(
+        $cRecord = $this->createRecord(
             $candidate['format'],
-            MetadataUtils::getRecordData($candidate, true),
+            $this->metadataUtils->getRecordData($candidate, true),
             $candidate['oai_id'],
             $candidate['source_id']
         );
         if ($this->verbose) {
             echo "\nCandidate " . $candidate['_id'] . ":\n"
-                . MetadataUtils::getRecordData($candidate, true) . "\n";
+                . $this->metadataUtils->getRecordData($candidate, true) . "\n";
         }
 
-        $recordHidden = MetadataUtils::isHiddenComponentPart(
-            $this->dataSourceSettings[$record['source_id']], $record, $origRecord
+        $recordHidden = $this->metadataUtils->isHiddenComponentPart(
+            $this->dataSourceConfig[$record['source_id']],
+            $record,
+            $origRecord
         );
-        $candidateHidden = MetadataUtils::isHiddenComponentPart(
-            $this->dataSourceSettings[$candidate['source_id']], $candidate, $cRecord
+        $candidateHidden = $this->metadataUtils->isHiddenComponentPart(
+            $this->dataSourceConfig[$candidate['source_id']],
+            $candidate,
+            $cRecord
         );
 
         // Check that both records are hidden component parts or neither is
@@ -685,7 +709,8 @@ class DedupHandler implements DedupHandlerInterface
         $origFormat = $origRecord->getFormat();
         $cFormat = $cRecord->getFormat();
         $origMapped = $this->fieldMapper->mapFormat(
-            $record['source_id'], $origFormat
+            $record['source_id'],
+            $origFormat
         );
         $cMapped = $this->fieldMapper->mapFormat($candidate['source_id'], $cFormat);
         if ($origFormat != $cFormat && $origMapped != $cMapped) {
@@ -767,11 +792,13 @@ class DedupHandler implements DedupHandlerInterface
             return false;
         }
 
-        $origTitle = MetadataUtils::normalizeKey(
-            $origRecord->getTitle(true), $this->normalizationForm
+        $origTitle = $this->metadataUtils->normalizeKey(
+            $origRecord->getTitle(true),
+            $this->normalizationForm
         );
-        $cTitle = MetadataUtils::normalizeKey(
-            $cRecord->getTitle(true), $this->normalizationForm
+        $cTitle = $this->metadataUtils->normalizeKey(
+            $cRecord->getTitle(true),
+            $this->normalizationForm
         );
         if (!$origTitle || !$cTitle) {
             // No title match without title...
@@ -790,11 +817,13 @@ class DedupHandler implements DedupHandlerInterface
             return false;
         }
 
-        $origAuthor = MetadataUtils::normalizeKey(
-            $origRecord->getMainAuthor(), $this->normalizationForm
+        $origAuthor = $this->metadataUtils->normalizeKey(
+            $origRecord->getMainAuthor(),
+            $this->normalizationForm
         );
-        $cAuthor = MetadataUtils::normalizeKey(
-            $cRecord->getMainAuthor(), $this->normalizationForm
+        $cAuthor = $this->metadataUtils->normalizeKey(
+            $cRecord->getMainAuthor(),
+            $this->normalizationForm
         );
         $authorLev = 0;
         if ($origAuthor || $cAuthor) {
@@ -805,9 +834,10 @@ class DedupHandler implements DedupHandlerInterface
                 }
                 return false;
             }
-            if (!MetadataUtils::authorMatch($origAuthor, $cAuthor)) {
+            if (!$this->metadataUtils->authorMatch($origAuthor, $cAuthor)) {
                 $authorLev = levenshtein(
-                    substr($origAuthor, 0, 255), substr($cAuthor, 0, 255)
+                    substr($origAuthor, 0, 255),
+                    substr($cAuthor, 0, 255)
                 );
                 $authorLev = $authorLev / mb_strlen($origAuthor) * 100;
                 if ($authorLev > 20) {
@@ -887,7 +917,8 @@ class DedupHandler implements DedupHandlerInterface
                     '_id' => $rec2['_id']
                 ];
                 $rec2['dedup_id'] = $this->createDedupRecord(
-                    $rec1['_id'], $rec2['_id']
+                    $rec1['_id'],
+                    $rec2['_id']
                 );
             }
             if (isset($rec1['dedup_id']) && $rec1['dedup_id'] != $rec2['dedup_id']) {
@@ -902,7 +933,8 @@ class DedupHandler implements DedupHandlerInterface
                 if (!$this->addToDedupRecord($rec1['dedup_id'], $rec2['_id'])) {
                     $this->removeFromDedupRecord($rec1['dedup_id'], $rec1['_id']);
                     $rec1['dedup_id'] = $this->createDedupRecord(
-                        $rec1['_id'], $rec2['_id']
+                        $rec1['_id'],
+                        $rec2['_id']
                     );
                 }
                 $setValues['dedup_id'] = $rec2['dedup_id'] = $rec1['dedup_id'];
@@ -969,10 +1001,10 @@ class DedupHandler implements DedupHandlerInterface
         if (!$record) {
             return false;
         }
-        $source = MetadataUtils::getSourceFromId($id);
+        $source = $this->metadataUtils->getSourceFromId($id);
         foreach ((array)$record['ids'] as $existingId) {
             if ($id !== $existingId
-                && $source === MetadataUtils::getSourceFromId($existingId)
+                && $source === $this->metadataUtils->getSourceFromId($existingId)
             ) {
                 return false;
             }
@@ -1009,7 +1041,8 @@ class DedupHandler implements DedupHandlerInterface
             return 0;
         }
         $components1 = $this->getComponentPartsSorted(
-            $hostRecord['source_id'], $hostRecord['linking_id']
+            $hostRecord['source_id'],
+            $hostRecord['linking_id']
         );
         $component1count = count($components1);
 
@@ -1023,14 +1056,18 @@ class DedupHandler implements DedupHandlerInterface
                 'suppressed' => ['$in' => [null, false]],
             ],
             [],
-            function ($otherRecord) use ($components1, $component1count, &$marked,
+            function ($otherRecord) use (
+                $components1,
+                $component1count,
+                &$marked,
                 $hostRecord
             ) {
                 if ($otherRecord['source_id'] == $hostRecord['source_id']) {
                     return true;
                 }
                 $components2 = $this->getComponentPartsSorted(
-                    $otherRecord['source_id'], $otherRecord['linking_id']
+                    $otherRecord['source_id'],
+                    $otherRecord['linking_id']
                 );
                 $component2count = count($components2);
 
@@ -1047,17 +1084,20 @@ class DedupHandler implements DedupHandlerInterface
                         }
                         if ($this->verbose) {
                             echo 'Original ' . $component1['_id'] . ":\n"
-                                . MetadataUtils::getRecordData($component1, true)
+                                . $this->metadataUtils
+                                    ->getRecordData($component1, true)
                                 . "\n";
                         }
-                        $metadataComponent1 = $this->recordFactory->createRecord(
+                        $metadataComponent1 = $this->createRecord(
                             $component1['format'],
-                            MetadataUtils::getRecordData($component1, true),
+                            $this->metadataUtils->getRecordData($component1, true),
                             $component1['oai_id'],
                             $component1['source_id']
                         );
                         if (!$this->matchRecords(
-                            $component1, $metadataComponent1, $component2
+                            $component1,
+                            $metadataComponent1,
+                            $component2
                         )
                         ) {
                             $allMatch = false;
@@ -1113,7 +1153,7 @@ class DedupHandler implements DedupHandlerInterface
             ],
             [],
             function ($component) use (&$components) {
-                $components[MetadataUtils::createIdSortKey($component['_id'])]
+                $components[$this->metadataUtils->createIdSortKey($component['_id'])]
                     = $component;
             }
         );

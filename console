@@ -1,0 +1,55 @@
+#!/usr/bin/env php
+<?php
+
+ini_set('display_errors', '1');
+if (function_exists('pcntl_async_signals')) {
+    pcntl_async_signals(true);
+} else {
+    declare(ticks = 1);
+}
+
+require __DIR__ . '/vendor/autoload.php';
+
+// If profiling is requested, set it up now. Profiling can be enabled from the
+// command line by providing XHProf location, e.g.
+// RECMAN_PROFILE=http://localhost/xhprof php manage.php ...
+if ($profilerBaseUrl = getenv('RECMAN_PROFILE')) {
+    $profiler = new \RecordManager\Base\Utils\Profiler($profilerBaseUrl);
+    $profiler->start();
+}
+
+// Handle basepath and config overrides ("--config.Section.parameter = value"):
+$basepath = null;
+$overrides = [];
+foreach ($_SERVER['argv'] as $i => $parameter) {
+    if (strncmp('--', $parameter, 2) !== 0 || strpos($parameter, '=') === false) {
+        continue;
+    }
+    $parsed = parse_ini_string(substr($parameter, 2));
+    $remove = false;
+    if (isset($parsed['basepath'])) {
+        $basepath = $parsed['basepath'];
+        $remove = true;
+    } else {
+        reset($parsed);
+        $key = key($parsed);
+        if (preg_match('/^config\.([^.]+)\.(.+)/', $key, $matches)) {
+            $overrides[$matches[1]][$matches[2]] = $parsed[$key];
+            $remove = true;
+        }
+    }
+    if ($remove) {
+        array_splice($_SERVER['argv'], $i, 1, []);
+        $_SERVER['argc']--;
+    }
+}
+
+define('RECMAN_BASE_PATH', $basepath ?: getenv('RECMAN_BASE_PATH') ?: __DIR__);
+
+$app = Laminas\Mvc\Application::init(require 'conf/application.config.php');
+$sm = $app->getServiceManager();
+if ($overrides) {
+    $configReader = $sm->get(\RecordManager\Base\Settings\Ini::class);
+    $configReader->addOverrides('recordmanager.ini', $overrides);
+}
+return $sm->get(\RecordManager\Base\ConsoleRunner::class)->run();

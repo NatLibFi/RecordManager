@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2015-2020.
+ * Copyright (C) The National Library of Finland 2015-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -39,7 +39,7 @@ namespace RecordManager\Base\Utils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class DeweyCallNumber
+class DeweyCallNumber extends AbstractCallNumber
 {
     /**
      * Raw value
@@ -101,7 +101,9 @@ class DeweyCallNumber
         }
 
         $cutterMatch = preg_match(
-            '/ *\.?([A-Z]\d{1,3}(?:[A-Z]+)?) *(.+)?/', $rest, $matches
+            '/ *\.?([A-Z]\d{1,3}(?:[A-Z]+)?) *(.+)?/',
+            $rest,
+            $matches
         );
         if ($cutterMatch) {
             $this->cutter = $matches[1];
@@ -157,7 +159,7 @@ class DeweyCallNumber
     {
         $result = '';
         if (null !== $this->digits) {
-            $result .= MetadataUtils::createSortableString($this->digits);
+            $result .= $this->createSortableString($this->digits);
         }
         if (null !== $this->decimal) {
             $result .= $this->decimal;
@@ -172,7 +174,7 @@ class DeweyCallNumber
             if ($result) {
                 $result .= ' ';
             }
-            $result .= MetadataUtils::createSortableString($this->suffix);
+            $result .= $this->createSortableString($this->suffix);
         }
 
         return $result;

@@ -1,10 +1,10 @@
 <?php
 /**
- * Record Manager controller base class
+ * RecordManager controller base class
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2020.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,21 +28,14 @@
 namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Database\DatabaseInterface;
-use RecordManager\Base\Database\Factory as DatabaseFactory;
 use RecordManager\Base\Deduplication\DedupHandlerInterface;
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
+use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
-use RecordManager\Base\Utils\XslTransformation;
-
-if (function_exists('pcntl_async_signals')) {
-    pcntl_async_signals(true);
-} else {
-    declare(ticks = 1);
-}
 
 /**
- * Record Manager controller base class
+ * RecordManager controller base class
  *
  * @category DataManagement
  * @package  RecordManager
@@ -52,6 +45,8 @@ if (function_exists('pcntl_async_signals')) {
  */
 abstract class AbstractBase
 {
+    use \RecordManager\Base\Record\CreateRecordTrait;
+
     /**
      * Main configuration
      *
@@ -65,13 +60,6 @@ abstract class AbstractBase
      * @var bool
      */
     protected $verbose = false;
-
-    /**
-     * Base path of Record Manager
-     *
-     * @var string
-     */
-    protected $basePath;
 
     /**
      * Logger
@@ -92,176 +80,71 @@ abstract class AbstractBase
      *
      * @var array
      */
-    protected $dataSourceSettings;
+    protected $dataSourceConfig;
 
     /**
-     * Record factory
+     * Record plugin manager
      *
-     * @var RecordFactory
+     * @var RecordPluginManager
      */
-    protected $recordFactory;
+    protected $recordPluginManager;
+
+    /**
+     * Record splitter plugin manager
+     *
+     * @var SplitterPluginManager
+     */
+    protected $splitterPluginManager;
+
+    /**
+     * Deduplication handler
+     *
+     * @var DedupHandlerInterface
+     */
+    protected $dedupHandler;
+
+    /**
+     * Metadata utilities
+     *
+     * @var MetadataUtils;
+     */
+    protected $metadataUtils;
 
     /**
      * Constructor
      *
-     * @param string $basePath Base directory
-     * @param array  $config   Main configuration
-     * @param bool   $console  Specify whether RecordManager is executed on the
-     *                         console so that log output is also output to the
-     *                         console
-     * @param bool   $verbose  Whether verbose output is enabled
+     * @param array                 $config              Main configuration
+     * @param array                 $datasourceConfig    Datasource configuration
+     * @param Logger                $logger              Logger
+     * @param DatabaseInterface     $database            Database
+     * @param RecordPluginManager   $recordPluginManager Record plugin manager
+     * @param SplitterPluginManager $splitterManager     Record splitter plugin
+     *                                                   manager
+     * @param DedupHandlerInterface $dedupHandler        Deduplication handler
+     * @param MetadataUtils         $metadataUtils       Metadata utilities
      */
-    public function __construct($basePath, $config, $console, $verbose)
-    {
-        $this->config = $config;
-
+    public function __construct(
+        array $config,
+        array $datasourceConfig,
+        Logger $logger,
+        DatabaseInterface $database,
+        RecordPluginManager $recordPluginManager,
+        SplitterPluginManager $splitterManager,
+        DedupHandlerInterface $dedupHandler,
+        MetadataUtils $metadataUtils
+    ) {
         date_default_timezone_set($config['Site']['timezone']);
 
-        $this->logger = new Logger($config);
-        $this->logger->setLogToConsole($console);
-        $this->verbose = $verbose;
-
-        $this->basePath = $basePath;
-        $this->dataSourceSettings = $config['dataSourceSettings']
-            = $this->readDataSourceSettings("$basePath/conf/datasources.ini");
-
-        try {
-            $this->db = DatabaseFactory::createDatabase($config);
-        } catch (\Exception $e) {
-            $this->logger->logFatal(
-                'startup',
-                'Failed to connect to database: ' . $e->getMessage()
-            );
-            throw $e;
-        }
+        $this->config = $config;
+        $this->verbose = $config['Log']['verbose'] ?? false;
+        $this->logger = $logger;
+        $this->db = $database;
         $this->logger->setDatabase($this->db);
-
-        MetadataUtils::setLogger($this->logger);
-        MetadataUtils::setConfig($config, $this->basePath);
-
-        $this->recordFactory = new RecordFactory(
-            $this->logger, $config, $this->dataSourceSettings
-        );
-    }
-
-    /**
-     * Initialize the data source settings and XSL transformations
-     *
-     * @throws \Exception
-     * @return void
-     */
-    protected function initSourceSettings()
-    {
-        foreach ($this->dataSourceSettings as $source => &$settings) {
-            if (!isset($settings['institution'])) {
-                $this->logger->logFatal(
-                    'initSourceSettings',
-                    "institution not set for $source"
-                );
-                throw new \Exception("Error: institution not set for $source\n");
-            }
-            if (!isset($settings['format'])) {
-                $this->logger->logFatal(
-                    'initSourceSettings', "format not set for $source"
-                );
-                throw new \Exception("Error: format not set for $source\n");
-            }
-            if (empty($settings['idPrefix'])) {
-                $settings['idPrefix'] = $source;
-            }
-            if (!isset($settings['recordXPath'])) {
-                $settings['recordXPath'] = '//record';
-            }
-            if (!isset($settings['oaiIDXPath'])) {
-                $settings['oaiIDXPath'] = '';
-            }
-            if (!isset($settings['dedup'])) {
-                $settings['dedup'] = false;
-            }
-            if (empty($settings['componentParts'])) {
-                $settings['componentParts'] = 'as_is';
-            }
-            if (!isset($settings['preTransformation'])) {
-                $settings['preTransformation'] = '';
-            }
-            if (!isset($settings['indexMergedParts'])) {
-                $settings['indexMergedParts'] = true;
-            }
-            if (!isset($settings['type'])) {
-                $settings['type'] = '';
-            }
-            if (!isset($settings['non_inherited_fields'])) {
-                $settings['non_inherited_fields'] = [];
-            }
-            if (!isset($settings['keepMissingHierarchyMembers'])) {
-                $settings['keepMissingHierarchyMembers'] = false;
-            }
-
-            $params = [
-                'source_id' => $source,
-                'institution' => $settings['institution'],
-                'format' => $settings['format'],
-                'id_prefix' => $settings['idPrefix']
-            ];
-            $settings['normalizationXSLT'] = !empty($settings['normalization'])
-                ? new XslTransformation(
-                    $this->basePath . '/transformations',
-                    $settings['normalization'],
-                    $params
-                ) : null;
-            $settings['solrTransformationXSLT']
-                = !empty($settings['solrTransformation'])
-                ? new XslTransformation(
-                    $this->basePath . '/transformations',
-                    $settings['solrTransformation'],
-                    $params
-                ) : null;
-
-            if (!empty($settings['recordSplitterClass'])) {
-                if (!class_exists($settings['recordSplitterClass'])) {
-                    throw new \Exception(
-                        "Record splitter class '"
-                        . $settings['recordSplitterClass']
-                        . "' not found for source $source"
-                    );
-                }
-                $settings['recordSplitter'] = $settings['recordSplitterClass'];
-            } elseif (!empty($settings['recordSplitter'])) {
-                $style = new \DOMDocument();
-                $xslFile = $this->basePath . '/transformations/'
-                    . $settings['recordSplitter'];
-                if ($style->load($xslFile) === false) {
-                    throw new \Exception(
-                        "Could not load $xslFile for source $source"
-                    );
-                }
-                $settings['recordSplitter'] = new \XSLTProcessor();
-                $settings['recordSplitter']->importStylesheet($style);
-            } else {
-                $settings['recordSplitter'] = null;
-            }
-        }
-    }
-
-    /**
-     * Create a dedup handler
-     *
-     * @return DedupHandlerInterface
-     */
-    protected function getDedupHandler()
-    {
-        $dedupClass = $this->config['Site']['dedup_handler']
-            ?? '\RecordManager\Base\Deduplication\DedupHandler';
-        $dedupHandler = new $dedupClass(
-            $this->db, $this->logger, $this->verbose, $this->basePath, $this->config,
-            $this->dataSourceSettings, $this->recordFactory
-        );
-        if (!($dedupHandler instanceof DedupHandlerInterface)) {
-            throw new \Exception(
-                'Dedup handler must implement DedupHandlerInterface'
-            );
-        }
-        return $dedupHandler;
+        $this->dataSourceConfig = $datasourceConfig;
+        $this->recordPluginManager = $recordPluginManager;
+        $this->splitterPluginManager = $splitterManager;
+        $this->dedupHandler = $dedupHandler;
+        $this->metadataUtils = $metadataUtils;
     }
 
     /**
@@ -271,7 +154,7 @@ abstract class AbstractBase
      *
      * @return array
      */
-    protected function readDataSourceSettings($filename)
+    protected function readdataSourceConfig($filename)
     {
         $settings = parse_ini_file($filename, true);
         if (false === $settings) {

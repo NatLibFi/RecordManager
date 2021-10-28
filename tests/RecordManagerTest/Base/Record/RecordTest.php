@@ -40,24 +40,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 abstract class RecordTest extends \PHPUnit\Framework\TestCase
 {
-    use CreateRecordTrait;
-
-    /**
-     * Standard setup method.
-     *
-     * @return void
-     */
-    public function setUp(): void
-    {
-        MetadataUtils::setConfig(
-            [
-                'Site' => [
-                    'articles' => 'articles.lst'
-                ],
-            ],
-            __DIR__ . '/../../../fixtures/base/config/recorddrivertest'
-        );
-    }
+    use CreateSampleRecordTrait;
 
     /**
      * Compare two arrays

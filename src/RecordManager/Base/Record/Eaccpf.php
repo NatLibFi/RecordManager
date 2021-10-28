@@ -29,7 +29,6 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * EAC-CPF Record Class
@@ -43,7 +42,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class Eaccpf extends Base
+class Eaccpf extends AbstractRecord
 {
     protected $doc = null;
 
@@ -85,7 +84,7 @@ class Eaccpf extends Base
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -111,7 +110,8 @@ class Eaccpf extends Base
         $data = [];
 
         $data['record_format'] = 'eaccpf';
-        $data['fullrecord'] = MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        $data['fullrecord']
+            = $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
         $data['allfields'] = $this->getAllFields();
         $data['source'] = $this->getRecordSource();
         $data['record_type'] = $this->getRecordType();
@@ -273,7 +273,7 @@ class Eaccpf extends Base
      */
     protected function parseYear(string $date) : ?string
     {
-        return MetadataUtils::extractYear($date) ?: null;
+        return $this->metadataUtils->extractYear($date) ?: null;
     }
 
     /**

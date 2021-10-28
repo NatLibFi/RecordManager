@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2020
+ * Copyright (C) The National Library of Finland 2020-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,8 +27,12 @@
  */
 namespace RecordManagerTest\Base\Solr;
 
-use RecordManager\Base\Record\Factory as RecordFactory;
+use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
+use RecordManager\Base\Record\PluginManager as RecordPluginManager;
+use RecordManager\Base\Settings\Ini;
 use RecordManager\Base\Solr\SolrUpdater;
+use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -42,7 +46,14 @@ use RecordManager\Base\Utils\Logger;
  */
 class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
 {
-    use \RecordManagerTest\Base\Record\CreateRecordTrait;
+    use \RecordManagerTest\Base\Record\CreateSampleRecordTrait;
+
+    /**
+     * Location of configuration files
+     *
+     * @var string
+     */
+    const CONFIG_DIR = __DIR__ . '/../../../fixtures/base/config/basic';
 
     /**
      * Main configuration
@@ -67,7 +78,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
      *
      * @var array
      */
-    protected $dataSourceSettings = [
+    protected $dataSourceConfig = [
         'test' => [
             'institution' => 'Test',
             'format' => 'marc',
@@ -145,13 +156,38 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
      */
     protected function getSolrUpdater()
     {
-        $basePath = dirname(__FILE__) . '/configs/solrupdatertest';
         $logger = $this->createMock(Logger::class);
-        $recordFactory
-            = new RecordFactory($logger, $this->config, $this->dataSourceSettings);
+        $metadataUtils = new \RecordManager\Base\Utils\MetadataUtils(
+            RECMAN_BASE_PATH,
+            [],
+            $logger,
+        );
+        $record = new \RecordManager\Base\Record\Marc(
+          [],
+          $this->dataSourceConfig,
+          $logger,
+          $metadataUtils,
+        );
+        $recordPM = $this->createMock(RecordPluginManager::class);
+        $recordPM->expects($this->once())
+            ->method('get')
+            ->will($this->returnValue($record));
+        $fieldMapper = new FieldMapper(
+          self::CONFIG_DIR,
+          [],
+          $this->dataSourceConfig
+        );
         $solrUpdater = new SolrUpdater(
-            null, $basePath, $logger, false, $this->config,
-            $this->dataSourceSettings, $recordFactory
+            $this->config,
+            $this->dataSourceConfig,
+            null,
+            $logger,
+            $recordPM,
+            $this->createMock(EnrichmentPluginManager::class),
+            $this->createMock(HttpClientManager::class),
+            $this->createMock(Ini::class),
+            $fieldMapper,
+            $metadataUtils
         );
 
         return $solrUpdater;

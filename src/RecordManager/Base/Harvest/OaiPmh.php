@@ -7,7 +7,7 @@
  * PHP version 7
  *
  * Copyright (c) Demian Katz 2010.
- * Copyright (c) The National Library of Finland 2011-2020.
+ * Copyright (c) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -30,9 +30,6 @@
  * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Harvest;
-
-use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\Logger;
 
 /**
  * OaiPmh Class
@@ -60,7 +57,7 @@ class OaiPmh extends AbstractBase
      *
      * @var string
      */
-    protected $metadata = 'oai_dc';
+    protected $metadataPrefix = 'oai_dc';
 
     /**
      * OAI prefix to strip from ID values
@@ -121,6 +118,28 @@ class OaiPmh extends AbstractBase
     protected $ignoreNoRecordsMatch = false;
 
     /**
+     * Safety limit for abort if the same resumption token with no new results is
+     * received with consecutive calls
+     *
+     * @var int
+     */
+    protected $sameResumptionTokenLimit = 100;
+
+    /**
+     * Last received resumption token
+     *
+     * @var string
+     */
+    protected $lastResumptionToken = '';
+
+    /**
+     * Counter for same resumption token received with consecutive calls
+     *
+     * @var int
+     */
+    protected $sameResumptionTokenCount = 0;
+
+    /**
      * Current response being processed
      *
      * @var \DOMDocument
@@ -128,88 +147,59 @@ class OaiPmh extends AbstractBase
     protected $xml = null;
 
     /**
-     * Safety limit for abort if the same resumption token with no new results is
-     * received with subsequent calls.
+     * Initialize harvesting
      *
-     * @var int
+     * @param string $source  Source ID
+     * @param bool   $verbose Verbose mode toggle
+     *
+     * @return void
      */
-    protected $sameResumptionTokenLimit = 100;
+    public function init(string $source, bool $verbose): void
+    {
+        parent::init($source, $verbose);
 
-    /**
-     * Constructor.
-     *
-     * @param Database $db       Database
-     * @param Logger   $logger   The Logger object used for logging messages
-     * @param string   $source   The data source to be harvested
-     * @param string   $basePath RecordManager main directory location
-     * @param array    $config   Main configuration
-     * @param array    $settings Settings from datasources.ini
-     *
-     * @throws \Exception
-     */
-    public function __construct(Database $db, Logger $logger, $source, $basePath,
-        $config, $settings
-    ) {
-        parent::__construct($db, $logger, $source, $basePath, $config, $settings);
-
-        if (isset($settings['set'])) {
-            $this->set = $settings['set'];
-        }
-        if (isset($settings['metadataPrefix'])) {
-            $this->metadata = $settings['metadataPrefix'];
-        }
-        if (isset($settings['idPrefix'])) {
-            $this->idPrefix = $settings['idPrefix'];
-        }
-        if (isset($settings['idSearch'])) {
-            $this->idSearch = $settings['idSearch'];
-        }
-        if (isset($settings['idReplace'])) {
-            $this->idReplace = $settings['idReplace'];
-        }
-        if (isset($settings['dateGranularity'])) {
-            $this->granularity = $settings['dateGranularity'];
-        }
-        if (isset($settings['debuglog'])) {
-            $this->debugLog = $settings['debuglog'];
-        }
-        if (isset($settings['oaipmhTransformation'])) {
-            foreach ((array)$settings['oaipmhTransformation'] as $transformation) {
-                $style = new \DOMDocument();
-                $loadResult
-                    = $style->load("$basePath/transformations/$transformation");
-                if (false === $loadResult) {
-                    throw new \Exception(
-                        "Could not load $basePath/transformations/$transformation"
-                    );
-                }
-                $xslt = new \XSLTProcessor();
-                $xslt->importStylesheet($style);
-                $xslt->setParameter('', 'source_id', $source);
-                $this->preXslt[] = $xslt;
+        $settings = $this->dataSourceConfig[$source] ?? [];
+        $this->set = $settings['set'] ?? null;
+        $this->metadataPrefix = $settings['metadataPrefix'] ?? 'oai_dc';
+        $this->idPrefix = $settings['idPrefix'] ?? '';
+        $this->idSearch = $settings['idSearch'] ?? [];
+        $this->idReplace = $settings['idReplace'] ?? [];
+        $this->granularity = $settings['dateGranularity'] ?? 'auto';
+        $this->debugLog = $settings['debuglog'] ?? '';
+        $this->preXslt = [];
+        foreach ((array)($settings['oaipmhTransformation'] ?? [])
+            as $transformation
+        ) {
+            $style = new \DOMDocument();
+            $xsltPath = RECMAN_BASE_PATH . "/transformations/$transformation";
+            $loadResult = $style->load($xsltPath);
+            if (false === $loadResult) {
+                throw new \Exception("Could not load $xsltPath");
             }
+            $xslt = new \XSLTProcessor();
+            $xslt->importStylesheet($style);
+            $xslt->setParameter('', 'source_id', $source);
+            $this->preXslt[] = $xslt;
         }
-        if (isset($settings['ignoreNoRecordsMatch'])) {
-            $this->ignoreNoRecordsMatch = $settings['ignoreNoRecordsMatch'];
-        }
-        if (isset($settings['sameResumptionTokenLimit'])) {
-            $this->sameResumptionTokenLimit
-                = $settings['sameResumptionTokenLimit'];
-        }
+        $this->ignoreNoRecordsMatch = $settings['ignoreNoRecordsMatch'] ?? false;
+        $this->sameResumptionTokenLimit
+            = $settings['sameResumptionTokenLimit'] ?? 100;
+
+        $this->xml = null;
 
         $this->identifyServer();
     }
 
     /**
-     * Override the resumption token.
+     * Override the initial position
      *
-     * @param string $token New resumption token
+     * @param string $pos New start position
      *
      * @return void
      */
-    public function setResumptionToken($token)
+    public function setInitialPosition($pos)
     {
-        $this->resumptionToken = $token;
+        $this->resumptionToken = $pos;
     }
 
     /**
@@ -369,10 +359,9 @@ class OaiPmh extends AbstractBase
     protected function sendRequest($verb, $params = [])
     {
         // Set up the request:
-        $request = \RecordManager\Base\Http\ClientFactory::createClient(
+        $request = $this->httpClientManager->createClient(
             $this->baseURL,
-            \HTTP_Request2::METHOD_GET,
-            $this->httpParams
+            \HTTP_Request2::METHOD_GET
         );
 
         // Load request parameters:
@@ -418,7 +407,8 @@ class OaiPmh extends AbstractBase
                     );
                 }
                 return $this->processResponse(
-                    $responseStr, isset($params['resumptionToken'])
+                    $responseStr,
+                    isset($params['resumptionToken'])
                 );
             } catch (\Exception $e) {
                 if ($try < $this->maxTries) {
@@ -449,7 +439,7 @@ class OaiPmh extends AbstractBase
     protected function processResponse($xml, $resumption)
     {
         try {
-            $result = $this->preTransform($xml, true);
+            $result = $this->transform($xml, true);
         } catch (\Exception $e) {
             $tempfile = $this->getTempFileName('oai-pmh-error-', '.xml');
             file_put_contents($tempfile, $xml);
@@ -480,14 +470,14 @@ class OaiPmh extends AbstractBase
     /**
      * Extract the ID from a record object (support method for processRecords()).
      *
-     * @param \DOMNode $header XML record header
+     * @param \DOMNode $record XML record header
      *
      * @return string The ID value
      */
-    protected function extractID($header)
+    protected function extractID($record)
     {
         // Normalize to string:
-        $id = $this->getSingleNode($header, 'identifier')->nodeValue;
+        $id = $this->getSingleNode($record, 'identifier')->nodeValue;
 
         // Strip prefix if found:
         if (substr($id, 0, strlen($this->idPrefix)) == $this->idPrefix) {
@@ -611,7 +601,7 @@ class OaiPmh extends AbstractBase
      */
     protected function getRecordsByDate()
     {
-        $params = ['metadataPrefix' => $this->metadata];
+        $params = ['metadataPrefix' => $this->metadataPrefix];
         if (!empty($this->startDate)) {
             $params['from'] = $this->startDate;
         }
@@ -647,7 +637,7 @@ class OaiPmh extends AbstractBase
     {
         // Make the OAI-PMH request:
         if (empty($params)) {
-            $params = ['metadataPrefix' => $this->metadata];
+            $params = ['metadataPrefix' => $this->metadataPrefix];
             if (!empty($this->set)) {
                 $params['set'] = $this->set;
             }
@@ -659,7 +649,8 @@ class OaiPmh extends AbstractBase
         $listIdentifiers = $this->getSingleNode($this->xml, 'ListIdentifiers');
         if ($listIdentifiers !== false) {
             $headers = $this->getImmediateChildrenByTagName(
-                $listIdentifiers, 'header'
+                $listIdentifiers,
+                'header'
             );
             $this->processIdentifiers($headers);
             $token = $this->getSingleNode($listIdentifiers, 'resumptionToken');

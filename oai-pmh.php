@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) Ere Maijala 2012.
+ * Copyright (C) Ere Maijala 2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -30,30 +30,11 @@
  * OAI-PMH Provider Front-End
  */
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/src/RecordManager/Base/Autoloader.php';
 
-/**
- * Main function
- *
- * @return void
- */
-function main()
-{
-    $basePath = __DIR__;
-    $filename = $basePath . '/conf/recordmanager.ini';
-    $config = parse_ini_file($filename, true);
-    if (false === $config) {
-        $error = error_get_last();
-        $message = $error['message'] ?? 'unknown error occurred';
-        throw new \Exception(
-            "Could not load configuration from file '$filename': $message"
-        );
-    }
-
-    $provider = new \RecordManager\Base\Controller\OaiPmhProvider(
-        $basePath, $config
-    );
-    $provider->launch();
-}
-
-main();
+define('RECMAN_BASE_PATH', getenv('RECMAN_BASE_PATH') ?: __DIR__);
+$app = Laminas\Mvc\Application::init(
+    include RECMAN_BASE_PATH . '/conf/application.config.php'
+);
+$sm = $app->getServiceManager();
+$provider = $sm->get(\RecordManager\Base\Controller\OaiPmhProvider::class);
+$provider->launch();

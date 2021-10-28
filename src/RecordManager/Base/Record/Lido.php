@@ -28,7 +28,6 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Utils\MetadataUtils;
 
 /**
  * Lido record class
@@ -41,8 +40,13 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class Lido extends Base
+class Lido extends AbstractRecord
 {
+    /**
+     * The XML document
+     *
+     * @var \SimpleXMLElement
+     */
     protected $doc = null;
 
     /**
@@ -104,7 +108,7 @@ class Lido extends Base
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -133,7 +137,7 @@ class Lido extends Base
         $lang = $this->getDefaultLanguage();
         $title = $this->getTitle(false, $lang);
         if ($this->getDriverParam('splitTitles', false)) {
-            $titlePart = MetadataUtils::splitTitle($title);
+            $titlePart = $this->metadataUtils->splitTitle($title);
             if ($titlePart) {
                 $data['description'] = $title;
                 $title = $titlePart;
@@ -151,7 +155,9 @@ class Lido extends Base
         if ($description) {
             if (!empty($data['description'])
                 && strncmp(
-                    $data['description'], $description, strlen($data['description'])
+                    $data['description'],
+                    $description,
+                    strlen($data['description'])
                 )
             ) {
                 $data['description'] .= " -- $description";
@@ -184,12 +190,14 @@ class Lido extends Base
             $data['geographic_facet'][] = $eventPlace;
         }
         $data['geographic_facet'] = array_merge(
-            $data['geographic_facet'], $this->getSubjectDisplayPlaces()
+            $data['geographic_facet'],
+            $this->getSubjectDisplayPlaces()
         );
         $data['geographic'] = $data['geographic_facet'];
         // Index the other place forms only to facets
         $data['geographic_facet'] = array_merge(
-            $data['geographic_facet'], $this->getSubjectPlaces()
+            $data['geographic_facet'],
+            $this->getSubjectPlaces()
         );
         $data['collection']
             = $this->getRelatedWorkDisplayObject($this->relatedWorkRelationTypes);
@@ -220,7 +228,9 @@ class Lido extends Base
      *
      * @return string
      */
-    public function getTitle($forFiling = false, $lang = null,
+    public function getTitle(
+        $forFiling = false,
+        $lang = null,
         $excludedDescriptions = ['provenance']
     ) {
         $titles = [];
@@ -267,7 +277,7 @@ class Lido extends Base
         }
 
         if ($forFiling) {
-            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripLeadingPunctuation($title);
         }
         return $title;
     }
@@ -311,7 +321,8 @@ class Lido extends Base
                     $locations = array_merge(
                         $locations,
                         preg_split(
-                            '/[\/;]/', (string)$eventNode->eventPlace->displayPlace
+                            '/[\/;]/',
+                            (string)$eventNode->eventPlace->displayPlace
                         )
                     );
                 }
@@ -377,7 +388,7 @@ class Lido extends Base
         foreach ($titlesByLang as $titleParts) {
             $title = implode(' ', $titleParts);
             $titles[] = ['type' => 'title', 'value' => $title];
-            $sortTitle = MetadataUtils::stripLeadingPunctuation($title);
+            $sortTitle = $this->metadataUtils->stripLeadingPunctuation($title);
             if ($sortTitle !== $title) {
                 $titles[] = ['type' => 'title', 'value' => $sortTitle];
             }
@@ -405,7 +416,7 @@ class Lido extends Base
             if (!preg_match('{^([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
                 continue;
             }
-            $isbn = MetadataUtils::normalizeISBN($matches[1]);
+            $isbn = $this->metadataUtils->normalizeISBN($matches[1]);
             if ($isbn) {
                 $arr[] = $isbn;
             } else {
@@ -585,7 +596,7 @@ class Lido extends Base
             foreach ($eventNode->eventActor as $actorNode) {
                 foreach ($actorNode->actorInRole as $roleNode) {
                     if (isset($roleNode->actor->nameActorSet->appellationValue)) {
-                        $actorRole = MetadataUtils::normalizeRelator(
+                        $actorRole = $this->metadataUtils->normalizeRelator(
                             (string)$roleNode->roleActor->term
                         );
                         if (empty($role) || in_array($actorRole, (array)$role)) {
@@ -612,8 +623,9 @@ class Lido extends Base
         foreach ($this->getEventNodes($event) as $eventNode) {
             if (!empty($eventNode->eventPlace->displayPlace)) {
                 $str = trim(
-                    MetadataUtils::stripTrailingPunctuation(
-                        (string)$eventNode->eventPlace->displayPlace, '.'
+                    $this->metadataUtils->stripTrailingPunctuation(
+                        (string)$eventNode->eventPlace->displayPlace,
+                        '.'
                     )
                 );
                 if ('' !== $str) {
@@ -721,8 +733,9 @@ class Lido extends Base
             foreach ($subject->subjectDate as $date) {
                 if (!empty($date->displayDate)) {
                     $str = trim(
-                        MetadataUtils::stripTrailingPunctuation(
-                            (string)$date->displayDate, '.'
+                        $this->metadataUtils->stripTrailingPunctuation(
+                            (string)$date->displayDate,
+                            '.'
                         )
                     );
                     if ('' !== $str) {
@@ -746,8 +759,9 @@ class Lido extends Base
             foreach ($subject->subjectPlace as $place) {
                 if (!empty($place->displayPlace)) {
                     $str = trim(
-                        MetadataUtils::stripTrailingPunctuation(
-                            (string)$place->displayPlace, '.'
+                        $this->metadataUtils->stripTrailingPunctuation(
+                            (string)$place->displayPlace,
+                            '.'
                         )
                     );
                     if ('' !== $str) {
@@ -773,8 +787,9 @@ class Lido extends Base
                     foreach ($place->place->namePlaceSet as $set) {
                         if ($set->appellationValue) {
                             $str = trim(
-                                MetadataUtils::stripTrailingPunctuation(
-                                    (string)$set->appellationValue, '.'
+                                $this->metadataUtils->stripTrailingPunctuation(
+                                    (string)$set->appellationValue,
+                                    '.'
                                 )
                             );
                             if ('' !== $str) {
@@ -894,7 +909,9 @@ class Lido extends Base
             $noprocess = true;
         } elseif (true
             && preg_match(
-                '/(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)/', $input, $matches
+                '/(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)/',
+                $input,
+                $matches
             ) > 0
         ) {
             $year = $matches[3];
@@ -936,8 +953,8 @@ class Lido extends Base
             return null;
         }
 
-        if (MetadataUtils::validateISO8601Date($startDate) === false
-            || MetadataUtils::validateISO8601Date($endDate) === false
+        if ($this->metadataUtils->validateISO8601Date($startDate) === false
+            || $this->metadataUtils->validateISO8601Date($endDate) === false
         ) {
             return null;
         }
@@ -971,7 +988,8 @@ class Lido extends Base
                     }
                     if (true
                         && !array_intersect(
-                            $eventTypes, is_array($event) ? $event : [$event]
+                            $eventTypes,
+                            is_array($event) ? $event : [$event]
                         )
                     ) {
                         continue;
@@ -1046,7 +1064,8 @@ class Lido extends Base
                 if (empty($exclude)
                     || empty($subjectNode['type'])
                     || !in_array(
-                        mb_strtolower($subjectNode['type'], 'UTF-8'), $exclude
+                        mb_strtolower($subjectNode['type'], 'UTF-8'),
+                        $exclude
                     )
                 ) {
                     $subjectList[] = $subjectNode;
@@ -1114,7 +1133,8 @@ class Lido extends Base
                 || in_array(
                     trim(
                         mb_strtolower(
-                            $relatedWorkSetNode->relatedWorkRelType->term, 'UTF-8'
+                            $relatedWorkSetNode->relatedWorkRelType->term,
+                            'UTF-8'
                         )
                     ),
                     $relatedWorkRelType
@@ -1186,7 +1206,9 @@ class Lido extends Base
      *
      * @return array
      */
-    protected function getIdentifiersByType(array $include = [], array $exclude = []
+    protected function getIdentifiersByType(
+        array $include = [],
+        array $exclude = []
     ): array {
         $result = [];
         foreach ($this->doc->lido->descriptiveMetadata as $dmd) {

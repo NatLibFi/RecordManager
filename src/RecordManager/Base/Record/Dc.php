@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2018.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -28,6 +28,8 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
+use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
@@ -41,11 +43,43 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class Dc extends Base
+class Dc extends AbstractRecord
 {
     use FullTextTrait;
 
+    /**
+     * Document
+     *
+     * @var \SimpleXMLElement
+     */
     protected $doc = null;
+
+    /**
+     * HTTP client manager
+     *
+     * @var HttpClientManager
+     */
+    protected $httpClientManager;
+
+    /**
+     * Constructor
+     *
+     * @param array             $config           Main configuration
+     * @param array             $dataSourceConfig Data source settings
+     * @param Logger            $logger           Logger
+     * @param MetadataUtils     $metadataUtils    Metadata utilities
+     * @param HttpClientManager $httpManager      HTTP client manager
+     */
+    public function __construct(
+        $config,
+        $dataSourceConfig,
+        Logger $logger,
+        MetadataUtils $metadataUtils,
+        HttpClientManager $httpManager
+    ) {
+        parent::__construct($config, $dataSourceConfig, $logger, $metadataUtils);
+        $this->httpClientManager = $httpManager;
+    }
 
     /**
      * Set record data
@@ -86,7 +120,7 @@ class Dc extends Base
      */
     public function serialize()
     {
-        return MetadataUtils::trimXMLWhitespace($this->doc->asXML());
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
     }
 
     /**
@@ -119,7 +153,7 @@ class Dc extends Base
         // allfields
         $allFields = [];
         foreach ($doc->children() as $field) {
-            $allFields[] = MetadataUtils::stripTrailingPunctuation(
+            $allFields[] = $this->metadataUtils->stripTrailingPunctuation(
                 trim((string)$field)
             );
         }
@@ -132,16 +166,17 @@ class Dc extends Base
                 $languages[] = $code;
             }
         }
-        $data['language'] = MetadataUtils::normalizeLanguageStrings($languages);
+        $data['language'] = $this->metadataUtils
+            ->normalizeLanguageStrings($languages);
 
         $data['format'] = (string)$doc->type;
-        $data['author'] = MetadataUtils::stripTrailingPunctuation(
+        $data['author'] = $this->metadataUtils->stripTrailingPunctuation(
             trim((string)$doc->creator)
         );
         $data['author2'] = $this->getValues('contributor');
 
-        $data['title'] = $data['title_full']
-            = MetadataUtils::stripTrailingPunctuation(trim((string)$doc->title));
+        $data['title'] = $data['title_full'] = $this->metadataUtils
+            ->stripTrailingPunctuation(trim((string)$doc->title));
         $titleParts = explode(' : ', $data['title'], 2);
         if (!empty($titleParts)) {
             $data['title_short'] = $titleParts[0];
@@ -152,7 +187,7 @@ class Dc extends Base
         $data['title_sort'] = $this->getTitle(true);
 
         $data['publisher'] = [
-            MetadataUtils::stripTrailingPunctuation(
+            $this->metadataUtils->stripTrailingPunctuation(
                 trim((string)$doc->publisher)
             )
         ];
@@ -202,13 +237,13 @@ class Dc extends Base
     {
         $title = trim((string)$this->doc->title);
         if ($forFiling) {
-            $title = MetadataUtils::stripLeadingPunctuation($title);
-            $title = MetadataUtils::stripLeadingArticle($title);
+            $title = $this->metadataUtils->stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripLeadingArticle($title);
             // Again, just in case stripping the article affected this
-            $title = MetadataUtils::stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripLeadingPunctuation($title);
             $title = mb_strtolower($title, 'UTF-8');
         }
-        $title = MetadataUtils::stripTrailingPunctuation($title);
+        $title = $this->metadataUtils->stripTrailingPunctuation($title);
         return $title;
     }
 
@@ -235,7 +270,7 @@ class Dc extends Base
             if (!preg_match('{([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
                 continue;
             }
-            $isbn = MetadataUtils::normalizeISBN($matches[1]);
+            $isbn = $this->metadataUtils->normalizeISBN($matches[1]);
             if ($isbn) {
                 $arr[] = $isbn;
             }
@@ -310,7 +345,7 @@ class Dc extends Base
     {
         $values = [];
         foreach ($this->doc->{$tag} as $value) {
-            $values[] = MetadataUtils::stripTrailingPunctuation(
+            $values[] = $this->metadataUtils->stripTrailingPunctuation(
                 trim((string)$value)
             );
         }
