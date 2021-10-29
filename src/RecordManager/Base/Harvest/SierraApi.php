@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2016-2020.
+ * Copyright (c) The National Library of Finland 2016-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -113,14 +113,15 @@ class SierraApi extends AbstractBase
     /**
      * Initialize harvesting
      *
-     * @param string $source  Source ID
-     * @param bool   $verbose Verbose mode toggle
+     * @param string $source    Source ID
+     * @param bool   $verbose   Verbose mode toggle
+     * @param bool   $reharvest Whether running a reharvest
      *
      * @return void
      */
-    public function init(string $source, bool $verbose): void
+    public function init(string $source, bool $verbose, bool $reharvest): void
     {
-        parent::init($source, $verbose);
+        parent::init($source, $verbose, $reharvest);
 
         $settings = $this->dataSourceConfig[$source] ?? [];
         if (empty($settings['sierraApiKey']) || empty($settings['sierraApiSecret'])
@@ -171,6 +172,9 @@ class SierraApi extends AbstractBase
         ];
         if (null !== $this->suppressedRecords) {
             $apiParams['suppressed'] = $this->suppressedRecords ? 'true' : 'false';
+        }
+        if ($this->reharvest) {
+            $apiParams['deleted'] = 'false';
         }
 
         if (!empty($this->startDate) || !empty($this->endDate)) {
@@ -549,7 +553,6 @@ class SierraApi extends AbstractBase
 
     /**
      * Check if the record is deleted.
-     * This implementation works for MARC records.
      *
      * @param array $record Sierra Bib Record
      *

@@ -235,7 +235,7 @@ class Harvest extends AbstractBase
 
                 $type = ($settings['type'] ?? null) ?: 'OAI-PMH';
                 $harvester = $this->harvesterPluginManager->get($type);
-                $harvester->init($source, $this->verbose);
+                $harvester->init($source, $this->verbose, $reharvest ? true : false);
 
                 if ($startPosition) {
                     if (is_callable([$harvester, 'setInitialPosition'])) {

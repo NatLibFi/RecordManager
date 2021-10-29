@@ -66,14 +66,15 @@ class HTTPFiles extends AbstractBase
     /**
      * Initialize harvesting
      *
-     * @param string $source  Source ID
-     * @param bool   $verbose Verbose mode toggle
+     * @param string $source    Source ID
+     * @param bool   $verbose   Verbose mode toggle
+     * @param bool   $reharvest Whether running a reharvest
      *
      * @return void
      */
-    public function init(string $source, bool $verbose): void
+    public function init(string $source, bool $verbose, bool $reharvest): void
     {
-        parent::init($source, $verbose);
+        parent::init($source, $verbose, $reharvest);
 
         $settings = $this->dataSourceConfig[$source] ?? [];
         $this->filePrefix = $settings['filePrefix'] ?? '';
