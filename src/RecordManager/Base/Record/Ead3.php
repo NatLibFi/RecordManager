@@ -133,7 +133,11 @@ class Ead3 extends Ead
         $data['title_sub'] = $this->getSubtitle();
         $data['title_short'] = $this->getTitle();
         $data['title'] = '';
-        if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
+        // Ini handling returns true as '1':
+        $prependTitle = $this->getDriverParam('prependTitleWithSubtitle', '1');
+        if ('1' === $prependTitle
+            || ('children' === $prependTitle && $this->doc->{'add-data'}->{'parent'})
+        ) {
             if (!empty($data['title_sub'])
                 && $data['title_sub'] != $data['title_short']
             ) {

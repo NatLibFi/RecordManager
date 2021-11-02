@@ -228,7 +228,11 @@ class Ead extends AbstractRecord
         $data['title_sub'] = $this->getSubtitle();
         $data['title_short'] = (string)$doc->did->unittitle;
         $data['title'] = '';
-        if ($this->getDriverParam('prependTitleWithSubtitle', true)) {
+        // Ini handling returns true as '1':
+        $prependTitle = $this->getDriverParam('prependTitleWithSubtitle', '1');
+        if ('1' === $prependTitle
+            || ('children' === $prependTitle && $this->doc->{'add-data'}->{'parent'})
+        ) {
             if ($data['title_sub'] && $data['title_sub'] != $data['title_short']) {
                 $data['title'] = $data['title_sub'] . ' ';
             }
