@@ -139,9 +139,20 @@ class DedupHandler implements DedupHandlerInterface
         $this->fieldMapper = $fieldMapper;
         $this->metadataUtils = $metadataUtils;
 
-        $this->verbose = $config['Log']['verbose'] ?? false;
         $this->normalizationForm
             = $config['Site']['unicode_normalization_form'] ?? 'NFKC';
+    }
+
+    /**
+     * Get/set verbose mode
+     *
+     * @param $verbose New mode or null for no change
+     *
+     * @return bool
+     */
+    public function setVerboseMode(?bool $verbose): bool
+    {
+        return $this->verbose = ($verbose ?? $this->verbose);
     }
 
     /**

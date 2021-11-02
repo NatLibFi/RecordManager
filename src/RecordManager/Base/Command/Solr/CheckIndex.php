@@ -68,6 +68,7 @@ class CheckIndex extends AbstractBase
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
         $this->logger->logInfo('SolrCheck', 'Checking Solr index');
+        $this->solrUpdater->setVerboseMode($this->verbose);
         $this->solrUpdater->checkIndexedRecords();
         $this->logger->logInfo('SolrCheck', 'Solr check completed');
         return Command::SUCCESS;

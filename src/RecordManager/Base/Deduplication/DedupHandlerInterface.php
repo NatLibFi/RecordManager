@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2020.
+ * Copyright (C) The National Library of Finland 2020-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,8 +27,6 @@
  */
 namespace RecordManager\Base\Deduplication;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-
 /**
  * Interface for Deduplication Handlers
  *
@@ -42,6 +40,15 @@ use RecordManager\Base\Database\DatabaseInterface as Database;
  */
 interface DedupHandlerInterface
 {
+    /**
+     * Get/set verbose mode
+     *
+     * @param $verbose New mode or null for no change
+     *
+     * @return bool
+     */
+    public function setVerboseMode(?bool $verbose): bool;
+
     /**
      * Verify dedup record consistency
      *

@@ -136,7 +136,6 @@ abstract class AbstractBase
         date_default_timezone_set($config['Site']['timezone']);
 
         $this->config = $config;
-        $this->verbose = $config['Log']['verbose'] ?? false;
         $this->logger = $logger;
         $this->db = $database;
         $this->logger->setDatabase($this->db);

@@ -100,6 +100,7 @@ class UpdateIndex extends AbstractBase
      */
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
+        $this->solrUpdater->setVerboseMode($this->verbose);
         $this->solrUpdater->updateRecords(
             $input->getOption('all') ? '' : $input->getOption('from'),
             $input->getOption('source'),

@@ -65,6 +65,7 @@ class Optimize extends AbstractBase
      */
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
+        $this->solrUpdater->setVerboseMode($this->verbose);
         $this->solrUpdater->optimizeIndex();
         return Command::SUCCESS;
     }

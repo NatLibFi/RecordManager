@@ -86,6 +86,7 @@ class Delete extends AbstractBase
             'deleteSolr',
             "Deleting data source '$sourceId' directly from Solr"
         );
+        $this->solrUpdater->setVerboseMode($this->verbose);
         $this->solrUpdater->deleteDataSource($sourceId);
         $this->logger->logInfo(
             'deleteSolr',

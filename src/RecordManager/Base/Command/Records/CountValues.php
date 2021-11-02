@@ -86,6 +86,7 @@ class CountValues extends AbstractBase
      */
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
+        $this->solrUpdater->setVerboseMode($this->verbose);
         $this->solrUpdater->countValues(
             $input->getOption('source'),
             $input->getArgument('field'),

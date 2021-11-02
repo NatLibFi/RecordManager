@@ -155,7 +155,6 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
         date_default_timezone_set($config['Site']['timezone']);
 
         $this->config = $config;
-        $this->verbose = $config['Log']['verbose'] ?? false;
         $this->logger = $logger;
         $this->db = $database;
         $this->logger->setDatabase($this->db);
@@ -177,6 +176,9 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->initSourceSettings();
+
+        $this->verbose = $input->getOption('verbose') !== false;
+        $this->dedupHandler->setVerboseMode($this->verbose);
 
         $lock = $input->getOption('lock');
         if (false !== $lock) {

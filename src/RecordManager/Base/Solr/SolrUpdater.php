@@ -566,7 +566,6 @@ class SolrUpdater
         $this->config = $config;
         $this->db = $db;
         $this->log = $log;
-        $this->verbose = $config['Log']['verbose'] ?? false;
         $this->recordPluginManager = $recordPM;
         $this->enrichmentPluginManager = $enrichmentPM;
         $this->httpClientManager = $httpManager;
@@ -695,6 +694,18 @@ class SolrUpdater
 
         // Load settings
         $this->initDatasources($dataSourceConfig);
+    }
+
+    /**
+     * Get/set verbose mode
+     *
+     * @param $verbose New mode or null for no change
+     *
+     * @return bool
+     */
+    public function setVerboseMode(?bool $verbose): bool
+    {
+        return $this->verbose = ($verbose ?? $this->verbose);
     }
 
     /**
