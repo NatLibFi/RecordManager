@@ -76,6 +76,7 @@ class OaiPmhProviderFactory
             $container->get(\RecordManager\Base\Record\PluginManager::class),
             $container->get(\RecordManager\Base\Splitter\PluginManager::class),
             $container->get(\RecordManager\Base\Deduplication\DedupHandler::class),
+            $container->get(\RecordManager\Base\Utils\MetadataUtils::class),
             $configReader->get('oai-pmh-formats.ini'),
             $configReader->get('oai-pmh-sets.ini')
         );
