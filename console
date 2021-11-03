@@ -21,28 +21,27 @@ if ($profilerBaseUrl = getenv('RECMAN_PROFILE')) {
 // Handle basepath and config overrides ("--config.Section.parameter = value"):
 $basepath = null;
 $overrides = [];
-foreach ($_SERVER['argv'] as $i => $parameter) {
+$remainingArgs = [];
+foreach ($_SERVER['argv'] as $parameter) {
     if (strncmp('--', $parameter, 2) !== 0 || strpos($parameter, '=') === false) {
+        $remainingArgs[] = $parameter;
         continue;
     }
     $parsed = parse_ini_string(substr($parameter, 2));
-    $remove = false;
     if (isset($parsed['basepath'])) {
         $basepath = $parsed['basepath'];
-        $remove = true;
     } else {
         reset($parsed);
         $key = key($parsed);
         if (preg_match('/^config\.([^.]+)\.(.+)/', $key, $matches)) {
             $overrides[$matches[1]][$matches[2]] = $parsed[$key];
-            $remove = true;
+        } else {
+            $remainingArgs[] = $parameter;
         }
     }
-    if ($remove) {
-        array_splice($_SERVER['argv'], $i, 1, []);
-        $_SERVER['argc']--;
-    }
 }
+$_SERVER['argv'] = $remainingArgs;
+$_SERVER['argc'] = count($remainingArgs);
 
 define('RECMAN_BASE_PATH', $basepath ?: getenv('RECMAN_BASE_PATH') ?: __DIR__);
 
