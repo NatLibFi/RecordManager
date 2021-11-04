@@ -635,7 +635,9 @@ class MongoDatabase extends AbstractDatabase
             $result = $this->db->command(
                 [
                     'refreshSessions' => [
-                        $this->sessionId
+                        [
+                            'id' => $this->sessionId['id']
+                        ]
                     ]
                 ]
             );
