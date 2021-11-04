@@ -116,7 +116,7 @@ class MongoDatabase extends AbstractDatabase
      *
      * @var int
      */
-    protected $sessionRefreshInterval = 0;
+    protected $sessionRefreshInterval = 60;
 
     /**
      * Last session refresh time
@@ -608,8 +608,6 @@ class MongoDatabase extends AbstractDatabase
                     );
                 }
                 $this->sessionId = $session['id'];
-                $this->sessionRefreshInterval
-                    = (60 * max(1, floor($session['timeoutMinutes'] / 2)));
                 $this->lastSessionRefresh = time();
             }
         } elseif ($this->pid !== getmypid()) {
