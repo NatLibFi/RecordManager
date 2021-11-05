@@ -109,7 +109,7 @@ return [
                     \RecordManager\Base\Record\Forward::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\ForwardAuthority::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\Lido::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
-                    \RecordManager\Base\Record\Lrmi::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\Lrmi::class => \RecordManager\Base\Record\AbstractRecordWithHttpClientManagerFactory::class,
                     \RecordManager\Base\Record\Marc::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\MarcAuthority::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\Qdc::class => \RecordManager\Base\Record\AbstractRecordWithHttpClientManagerFactory::class,
