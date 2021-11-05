@@ -54,9 +54,6 @@ counts = false
 ;connect_timeout = 12000000
 ; Socket timeout. Default is 300 000 ms.
 ;socket_timeout = 12000000
-; Whether to use MongoDB sessions. Default is true. Set to false only if MongoDB
-; version does not support sessions (older than 3.6).
-;session = true
 
 ; Settings for MySQL/MariaDB database (optional, see also the [Database] section)
 [PDO]
