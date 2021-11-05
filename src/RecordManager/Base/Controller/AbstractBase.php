@@ -145,38 +145,4 @@ abstract class AbstractBase
         $this->dedupHandler = $dedupHandler;
         $this->metadataUtils = $metadataUtils;
     }
-
-    /**
-     * Read and initalize the data source settings
-     *
-     * @param string $filename Ini file
-     *
-     * @return array
-     */
-    protected function readdataSourceConfig($filename)
-    {
-        $settings = parse_ini_file($filename, true);
-        if (false === $settings) {
-            $error = error_get_last();
-            $message = $error['message'] ?? 'unknown error occurred';
-            throw new \Exception(
-                "Could not load data source settings from file '$filename': $message"
-            );
-        }
-
-        // Check for linked data sources and store information to the linked sources
-        // too
-        foreach ($settings as $sourceId => $sourceSettings) {
-            if (!empty($sourceSettings['componentPartSourceId'])) {
-                foreach ($sourceSettings['componentPartSourceId'] as $linked) {
-                    if (!isset($settings[$linked]['__hostRecordSourceId'])) {
-                        $settings[$linked]['__hostRecordSourceId'] = [$linked];
-                    }
-                    $settings[$linked]['__hostRecordSourceId'][] = $sourceId;
-                }
-            }
-        }
-
-        return $settings;
-    }
 }
