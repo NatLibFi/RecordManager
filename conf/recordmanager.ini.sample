@@ -118,16 +118,16 @@ unicode_normalization_form = NFKC
 ; Maximum Solr update request size in kilobytes. Default is 1024 (1 MB).
 ;max_update_size = 1024
 ; Number of worker processes to use to handle records. By default no workers are used
-; meaning that the process is essentially single-threaded. Note that
-; setting threaded_merged_record_update to true will essentially double this.
+; meaning that a single record is processed at a time. Note that setting
+; parallel_merged_record_update to true will essentially double this.
 ;record_workers = 3
 ; Number of worker processes to use to send updates to Solr. By default no workers
-; are used meaning that the process is essentially single-threaded. Note that
-; setting threaded_merged_record_update to true will essentially double this.
+; are used meaning that a single Solr update request is sent at a time. Note that
+; setting parallel_merged_record_update to true will essentially double this.
 ;solr_update_workers = 3
-; Whether to use a separate thread for updating merged records. Allows merged and
+; Whether to use a separate process for updating merged records. Allows merged and
 ; single record update to run in parallel.
-;threaded_merged_record_update = true
+;parallel_merged_record_update = true
 ; Field mapper class. Default is "\RecordManager\Base\Utils\FieldMapper".
 ;field_mapper = "\RecordManager\Finna\Utils\FieldMapper"
 ; Enrichments used with all data sources

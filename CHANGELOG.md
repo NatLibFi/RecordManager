@@ -22,10 +22,11 @@ This is a major release that contains a lot of refactoring and underlying change
 ### Changed
 
 - Refactor the code to use Laminas module manager and service manager. This includes a lot of cleaning up as well.
+- Setting `threaded_merged_record_update` has been renamed to `parallel_merged_record_update`.
 
 ### Removed
 
-- Remove Finna module (will be moved to the RecordManager-Finna repository).
+- Remove Finna module (moved to the [RecordManager-Finna](https://github.com/NatLibFi/RecordManager-Finna) repository).
 
 ## [1.9.0] - 2021-10-27
 
