@@ -82,17 +82,6 @@ class WorkerPoolManager
     protected $maxPendingRequests = 8;
 
     /**
-     * External process exit codes
-     *
-     * Since we install the SIG_CHLD handler, we might get results from processes
-     * not managed by us. Store these exit codes so that they can be retrieved if
-     * necessary.
-     *
-     * @var array
-     */
-    protected $externalProcessExitCodes = [];
-
-    /**
      * Termination flag for child processes
      *
      * @var bool
@@ -583,18 +572,6 @@ class WorkerPoolManager
     }
 
     /**
-     * Get exit code of any external child process
-     *
-     * @param int $pid Process ID
-     *
-     * @return mixed Exit code or null if not available
-     */
-    public function getExternalProcessExitCode($pid)
-    {
-        return $this->externalProcessExitCodes[$pid] ?? null;
-    }
-
-    /**
      * Signal handler
      *
      * @param int $signo Signal number
@@ -627,26 +604,23 @@ class WorkerPoolManager
      */
     protected function reapChildren()
     {
-        $pid = pcntl_waitpid(-1, $status, WNOHANG);
-
-        while ($pid > 0) {
-            $exitCode = pcntl_wexitstatus($status);
+        do {
             $found = false;
             foreach ($this->workerPools as &$workers) {
                 foreach ($workers as &$worker) {
-                    if ($pid === $worker['pid']) {
-                        $worker['exitCode'] = $exitCode;
+                    if (isset($worker['exitCode'])) {
+                        continue;
+                    }
+                    $pid = pcntl_waitpid($worker['pid'], $status, WNOHANG);
+                    if ($pid > 0) {
+                        echo "REAP $pid\n";
                         $worker['active'] = false;
+                        $worker['exitCode'] = pcntl_wexitstatus($status);
                         $found = true;
-                        break;
                     }
                 }
             }
-            if (!$found) {
-                $this->externalProcessExitCodes[$pid] = $exitCode;
-            }
-            $pid = pcntl_waitpid(-1, $status, WNOHANG);
-        }
+        } while ($found);
     }
 
     /**
