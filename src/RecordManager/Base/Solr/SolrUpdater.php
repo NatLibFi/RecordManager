@@ -1075,20 +1075,10 @@ class SolrUpdater
                 'Waiting for any pending requests to complete...'
             );
             $this->workerPoolManager->waitUntilDone('solr');
-            $this->log->logInfo(
-                'updateRecords',
-                'All requests complete'
-            );
+            $this->log->logInfo('updateRecords', 'All requests complete');
 
             if ($count > 0) {
                 $needCommit = true;
-            }
-            if (isset($lastIndexingDate)) {
-                $state = [
-                    '_id' => $lastUpdateKey,
-                    'value' => $lastIndexingDate
-                ];
-                $this->db->saveState($state);
             }
 
             $this->log->logInfo(
@@ -1101,17 +1091,19 @@ class SolrUpdater
                 // Wait for child to finish
                 while (1) {
                     $pid = pcntl_waitpid($childPid, $status, WNOHANG);
-                    if ($pid > 0) {
-                        if (pcntl_wexitstatus($status) == 1) {
+                    if (0 !== $pid) {
+                        $exitCode = $pid > 0 ? pcntl_wexitstatus($status) : 2;
+                        if ($exitCode == 1) {
                             $needCommit = true;
+                        } elseif ($exitCode) {
+                            $this->log->logError(
+                                'updateRecords',
+                                'Merged record update process failed, aborting'
+                            );
+                            throw new \Exception(
+                                'Merged record update process failed'
+                            );
                         }
-                        break;
-                    } elseif ($pid < 0) {
-                        $this->log->logError(
-                            'updateRecords',
-                            'Could not get merged record handler results'
-                        );
-                        $needCommit = true;
                         break;
                     }
                     sleep(1);
