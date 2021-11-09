@@ -46,6 +46,13 @@ class Ini
     protected $overrides = [];
 
     /**
+     * Config file cache
+     *
+     * @var array
+     */
+    protected $cachedConfigs = [];
+
+    /**
      * Add configuration file overrides e.g. from command line
      *
      * @param string $filename Ini file
@@ -69,15 +76,22 @@ class Ini
     public function get(string $filename): array
     {
         $fullPath = RECMAN_BASE_PATH . "/conf/$filename";
-        $result = parse_ini_file($fullPath, true);
-        if (false === $result) {
-            $error = error_get_last();
-            $message = $error['message'] ?? 'unknown error occurred';
-            throw new \Exception(
-                "Could not load configuration from file '$fullPath': $message"
-            );
+        $cacheKey = md5($fullPath);
+        if (!isset($this->cachedConfigs[$cacheKey])) {
+            $result = parse_ini_file($fullPath, true);
+            if (false === $result) {
+                $error = error_get_last();
+                $message = $error['message'] ?? 'unknown error occurred';
+                throw new \Exception(
+                    "Could not load configuration from file '$fullPath': $message"
+                );
+            }
+            $this->cachedConfigs[$cacheKey] = $result;
         }
-        return $this->applyOverrides($result, $this->overrides[$filename] ?? []);
+        return $this->applyOverrides(
+            $this->cachedConfigs[$cacheKey],
+            $this->overrides[$filename] ?? []
+        );
     }
 
     /**
