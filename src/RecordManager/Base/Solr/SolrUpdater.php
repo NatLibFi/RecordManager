@@ -721,7 +721,6 @@ class SolrUpdater
     {
         echo '[' . getmypid() . "]: Termination requested\n";
         $this->terminate = true;
-        debug_print_backtrace(0, 3);
     }
 
     /**
