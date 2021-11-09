@@ -515,8 +515,8 @@ class MetadataUtils
         // Remove trailing parenthesis and square backets if they don't have
         // counterparts
         $last = substr($str, -1);
-        if (($last == ')' && strstr($str, '(') === false)
-            || ($last == ']' && strstr($str, '[') === false)
+        if (($last == ')' && strpos($str, '(') === false)
+            || ($last == ']' && strpos($str, '[') === false)
         ) {
             $str = substr($str, 0, -1);
         }
