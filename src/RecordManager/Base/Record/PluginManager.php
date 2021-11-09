@@ -27,6 +27,9 @@
  */
 namespace RecordManager\Base\Record;
 
+use Laminas\ServiceManager\Exception\InvalidServiceException;
+use Laminas\ServiceManager\Exception\ServiceNotFoundException;
+
 /**
  * Record plugin manager
  *
@@ -38,6 +41,13 @@ namespace RecordManager\Base\Record;
  */
 class PluginManager extends \Laminas\ServiceManager\AbstractPluginManager
 {
+    /**
+     * Cached clean record objects
+     *
+     * @var array
+     */
+    protected $cachedObjects = [];
+
     /**
      * Constructor
      *
@@ -57,5 +67,34 @@ class PluginManager extends \Laminas\ServiceManager\AbstractPluginManager
         $this->sharedByDefault = false;
 
         parent::__construct($configOrContainerInstance, $v3config);
+    }
+
+    /**
+     * Get a service by its name
+     *
+     * @param string     $name    Service name of plugin to retrieve.
+     * @param null|array $options Options to use when creating the instance.
+     *
+     * @return mixed
+     *
+     * @throws ServiceNotFoundException If the manager does not have
+     *         a service definition for the instance, and the service is not
+     *         auto-invokable.
+     * @throws InvalidServiceException If the plugin created is invalid for the
+     *         plugin context.
+     *
+     * Ignore parameter name mismatch with Psr\Container\ContainerInterface:
+     *
+     * @psalm-suppress ParamNameMismatch
+     */
+    public function get($name, ?array $options = null)
+    {
+        if (!empty($options)) {
+            throw new \Exception('Unexpected options passed');
+        }
+        if (!isset($this->cachedObjects[$name])) {
+            $this->cachedObjects[$name] = parent::get($name, $options);
+        }
+        return clone $this->cachedObjects[$name];
     }
 }
