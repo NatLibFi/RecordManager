@@ -30,6 +30,7 @@ namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Http\ClientManager as HttpClientManager;
+use RecordManager\Base\Record\AbstractRecord;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -95,18 +96,25 @@ abstract class AuthEnrichment extends AbstractEnrichment
     /**
      * Enrich the record and return any additions in solrArray
      *
-     * @param array  $solrArray          Metadata to be sent to Solr
-     * @param string $id                 Authority record id
-     * @param string $solrField          Target Solr field
-     * @param bool   $includeInAllfields Whether to include the enriched
-     *                                   value also in allFields
+     * @param string         $sourceId           Source ID
+     * @param AbstractRecord $record             Metadata record
+     * @param array          $solrArray          Metadata to be sent to Solr
+     * @param string         $id                 Onki id
+     * @param string         $solrField          Target Solr field
+     * @param string         $solrCheckField     Solr field to check for existing
+     *                                           values
+     * @param bool           $includeInAllfields Whether to include the enriched
+     *                                           value also in allFields
      *
      * @return void
      */
     protected function enrichField(
+        string $sourceId,
+        AbstractRecord $record,
         &$solrArray,
         $id,
         $solrField,
+        $solrCheckField = '',
         $includeInAllfields = false
     ) {
         if (!($data = $this->authorityDb->getRecord($id))) {
