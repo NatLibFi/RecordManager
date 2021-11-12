@@ -247,6 +247,7 @@ class Lido extends AbstractRecord
                 $priority = (string)$appellationValue['pref'];
                 $titleLang = (string)$appellationValue['lang'];
                 if (('preferred' === $priority && $titleLang === $lang)
+                    || (!$priority && $titleLang === $lang)
                     || (!$priority && !$titleLang)
                 ) {
                     $titles[] = $title;
