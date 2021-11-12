@@ -237,10 +237,20 @@ class Lido extends AbstractRecord
         $allTitles = [];
         foreach ($this->getTitleSetNodes() as $set) {
             foreach ($set->appellationValue as $appellationValue) {
-                if ($lang == null || $appellationValue['lang'] == $lang) {
-                    $titles[] = (string)$appellationValue;
+                if (!($title = trim((string)$appellationValue))) {
+                    continue;
                 }
-                $allTitles[] = (string)$appellationValue;
+                $allTitles[] = $title;
+                if (!$lang) {
+                    continue;
+                }
+                $priority = (string)$appellationValue['pref'];
+                $titleLang = (string)$appellationValue['lang'];
+                if (('preferred' === $priority && $titleLang === $lang)
+                    || (!$priority && !$titleLang)
+                ) {
+                    $titles[] = $title;
+                }
             }
         }
         // Fallback to use any title in case none found with the specified language
