@@ -1143,7 +1143,7 @@ class PDODatabase extends AbstractDatabase
         } elseif ($this->pid !== getmypid()) {
             throw new \Exception(
                 'PID ' . getmypid() . ': database already connected by PID '
-                . getmypid()
+                . $this->pid
             );
         }
         return $this->db;
