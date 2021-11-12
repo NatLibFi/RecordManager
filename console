@@ -18,6 +18,16 @@ if ($profilerBaseUrl = getenv('RECMAN_PROFILE')) {
     $profiler->start();
 }
 
+// Register a signal handler so that any shutdown functions run if execution is
+// interrupted
+$signalHandler = function ($signo) {
+    exit(255);
+};
+if (function_exists('pcntl_signal')) {
+    pcntl_signal(SIGINT, $signalHandler);
+    pcntl_signal(SIGTERM, $signalHandler);
+}
+
 // Handle basepath and config overrides ("--config.Section.parameter = value"):
 $basepath = null;
 $overrides = [];

@@ -411,7 +411,9 @@ class MongoDatabase extends AbstractDatabase
      */
     public function getNewTrackingCollection()
     {
-        return 'tracking_' . getmypid() . '_' . time();
+        $collectionName = 'tracking_' . getmypid() . '_' . time();
+        $this->trackingCollections[$collectionName] = true;
+        return $collectionName;
     }
 
     /**
@@ -429,6 +431,9 @@ class MongoDatabase extends AbstractDatabase
             );
         }
         $res = (array)$this->getDb()->dropCollection($collectionName);
+        if (isset($this->trackingCollections[$collectionName])) {
+            unset($this->trackingCollections[$collectionName]);
+        }
         return (bool)$res['ok'];
     }
 
@@ -442,17 +447,21 @@ class MongoDatabase extends AbstractDatabase
      */
     public function addIdToTrackingCollection($collectionName, $id)
     {
-        $params = [
-            'writeConcern' => new \MongoDB\Driver\WriteConcern(1),
-            'upsert' => true
-        ];
-        $res = $this->getDb()->{$collectionName}->replaceOne(
+        // Check for existing record first. This will avoid initializing a write
+        // request in the first place.
+        $existing = $this->getDb()->{$collectionName}->findOne(
+            ['_id' => $id]
+        );
+        if (null !== $existing) {
+            return false;
+        }
+
+        $this->getDb()->{$collectionName}->insertOne(
             ['_id' => $id],
-            ['_id' => $id],
-            $params
+            ['_id' => $id]
         );
 
-        return $res->getMatchedCount() === 0;
+        return true;
     }
 
     /**

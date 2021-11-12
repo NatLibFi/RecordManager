@@ -152,13 +152,6 @@ class SolrUpdater
     protected $allJournalFormats;
 
     /**
-     * Termination flag
-     *
-     * @var bool
-     */
-    protected $terminate;
-
-    /**
      * File name prefix when dumping records
      *
      * @var string
@@ -736,16 +729,15 @@ class SolrUpdater
     }
 
     /**
-     * Catch the SIGINT signal and signal the main thread to terminate
+     * Backtrace signal handler
      *
-     * @param int $signal Signal ID
+     * @param int $signo Signal number
      *
      * @return void
      */
-    public function sigIntHandler($signal)
+    public function backtraceSignalHandler($signo)
     {
-        echo '[' . getmypid() . "]: Termination requested\n";
-        $this->terminate = true;
+        debug_print_backtrace(0, 5);
     }
 
     /**
@@ -808,19 +800,6 @@ class SolrUpdater
         }
         if ($delete && !$sourceId) {
             throw new \Exception('Delete without source id specified');
-        }
-        // Install a signal handler so that we can exit cleanly if interrupted
-        unset($this->terminate);
-        if (function_exists('pcntl_signal')) {
-            pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
-            pcntl_signal(SIGTERM, [$this, 'sigIntHandler']);
-            $this->log
-                ->logInfo('updateRecords', 'Interrupt handler set');
-        } else {
-            $this->log->logInfo(
-                'updateRecords',
-                'Could not set an interrupt handler -- pcntl not available'
-            );
         }
 
         $lastUpdateKey = 'Last Index Update';
@@ -928,10 +907,6 @@ class SolrUpdater
                 $sourceId,
                 $delete
             ) {
-                if (isset($this->terminate)) {
-                    return false;
-                }
-
                 // Add deduplicated records to their own processing pool:
                 if (isset($record['dedup_id'])) {
                     $id = (string)$record['dedup_id'];
@@ -976,8 +951,8 @@ class SolrUpdater
             $this->handleRecords(true, $noCommit);
 
             // Process dedup records:
-            if (!$delete && !isset($this->terminate)) {
-                $this->log->logWarning('updateRecords', 'Processing dedup records');
+            if (!$delete) {
+                $this->log->logInfo('updateRecords', 'Processing dedup records');
                 $dedupParams = [];
                 if ($singleId) {
                     $dedupParams['ids'] = $singleId;
@@ -993,31 +968,33 @@ class SolrUpdater
                     );
                 }
 
+                $count = 0;
                 $this->db->iterateDedups(
                     $dedupParams,
                     [],
-                    function ($record) use (
-                        $handler
-                    ) {
-                        if (isset($this->terminate)) {
-                            return false;
-                        }
-
+                    function ($record) use ($handler, &$count) {
                         $record = [
                             'dedup_id' => (string)$record['_id']
                         ];
-                        return $handler($record);
+                        $result = $handler($record);
+
+                        if (++$count % 10000 === 0) {
+                            $this->log->logInfo(
+                                'updateRecords',
+                                "$count dedup records processed"
+                            );
+                        }
+
+                        return $result;
                     }
                 );
-                $this->log->logWarning('updateRecords', 'Dedup records processed');
+                $this->log->logInfo(
+                    'updateRecords',
+                    "Total $count dedup records processed"
+                );
             }
 
             $this->db->dropTrackingCollection($trackingName);
-
-            if (isset($this->terminate)) {
-                $this->log->logInfo('updateRecords', 'Termination upon request');
-                exit(1);
-            }
 
             $this->handleRecords(true, $noCommit);
 
@@ -1079,13 +1056,10 @@ class SolrUpdater
      */
     protected function handleRecords(bool $block, bool $noCommit): void
     {
-        while (!isset($this->terminate)
-            && ($this->workerPoolManager->checkForResults('record')
-            || $this->workerPoolManager->requestsPending('record'))
+        while ($this->workerPoolManager->checkForResults('record')
+            || $this->workerPoolManager->requestsPending('record')
         ) {
-            while (!isset($this->terminate)
-                && $this->workerPoolManager->checkForResults('record')
-            ) {
+            while ($this->workerPoolManager->checkForResults('record')) {
                 $result = $this->workerPoolManager->getResult('record');
                 $this->mergedComponents += $result['mergedComponents'];
                 foreach ($result['deleted'] as $id) {
@@ -1105,13 +1079,10 @@ class SolrUpdater
         }
 
         // Check for results in the deduplicated record pool:
-        while (!isset($this->terminate)
-            && ($this->workerPoolManager->checkForResults('dedup')
-            || $this->workerPoolManager->requestsPending('dedup'))
+        while ($this->workerPoolManager->checkForResults('dedup')
+            || $this->workerPoolManager->requestsPending('dedup')
         ) {
-            while (!isset($this->terminate)
-                && $this->workerPoolManager->checkForResults('dedup')
-            ) {
+            while ($this->workerPoolManager->checkForResults('dedup')) {
                 $result = $this->workerPoolManager->getResult('dedup');
                 $this->mergedComponents += $result['mergedComponents'];
                 foreach ($result['deleted'] as $id) {

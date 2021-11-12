@@ -82,13 +82,6 @@ class WorkerPoolManager
     protected $maxPendingRequests = 8;
 
     /**
-     * Termination flag for child processes
-     *
-     * @var bool
-     */
-    protected $terminate = false;
-
-    /**
      * Constructor
      */
     public function __construct()
@@ -191,11 +184,6 @@ class WorkerPoolManager
                     'active' => false
                 ];
             } else {
-                // Handle signals:
-                pcntl_signal(SIGINT, SIG_DFL);
-                pcntl_signal(SIGTERM, SIG_DFL);
-                pcntl_signal(SIGINT, [$this, 'childSignalHandler']);
-                pcntl_signal(SIGTERM, [$this, 'childSignalHandler']);
                 if (is_callable('cli_set_process_title')) {
                     // This doesn't work with macOS, so suppress warnings.
                     @cli_set_process_title(
@@ -425,9 +413,6 @@ class WorkerPoolManager
         $received = 0;
         $interrupted = 0;
         do {
-            if ($this->terminate) {
-                return null;
-            }
             if ($checkParent) {
                 $this->checkParentIsAlive();
             }
@@ -478,9 +463,6 @@ class WorkerPoolManager
         $message = '';
         $received = 0;
         while ($received < $messageLength) {
-            if ($this->terminate) {
-                return null;
-            }
             if ($checkParent) {
                 $this->checkParentIsAlive();
             }
@@ -531,9 +513,6 @@ class WorkerPoolManager
         $written = 0;
         $startTime = microtime(true);
         while (true) {
-            if ($this->terminate) {
-                return false;
-            }
             if ($checkParent) {
                 $this->checkParentIsAlive();
             }
@@ -586,18 +565,6 @@ class WorkerPoolManager
     }
 
     /**
-     * Child process signal handler
-     *
-     * @param int $signo Signal number
-     *
-     * @return void
-     */
-    public function childSignalHandler($signo)
-    {
-        $this->terminate = true;
-    }
-
-    /**
      * Child process reaper
      *
      * @return void
@@ -613,7 +580,6 @@ class WorkerPoolManager
                     }
                     $pid = pcntl_waitpid($worker['pid'], $status, WNOHANG);
                     if ($pid > 0) {
-                        echo "REAP $pid\n";
                         $worker['active'] = false;
                         $worker['exitCode'] = pcntl_wexitstatus($status);
                         $found = true;

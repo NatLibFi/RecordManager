@@ -88,6 +88,15 @@ abstract class AbstractDatabase implements DatabaseInterface
     protected $logMessageCollection = 'logMessage';
 
     /**
+     * Active tracking collections
+     *
+     * Collection names in array keys
+     *
+     * @var array
+     */
+    protected $trackingCollections = [];
+
+    /**
      * Constructor.
      *
      * @param array $config Database settings
@@ -114,6 +123,21 @@ abstract class AbstractDatabase implements DatabaseInterface
         }
         if (!empty($config['log_message_collection'])) {
             $this->logMessageCollection = $config['log_message_collection'];
+        }
+
+        register_shutdown_function([$this, 'dropCurrentTrackingCollections']);
+    }
+
+    /**
+     * Clean up any tracking collections created during current execution
+     *
+     * @return void
+     */
+    public function dropCurrentTrackingCollections(): void
+    {
+        $collections = $this->trackingCollections;
+        foreach (array_keys($collections) as $collectionName) {
+            $this->dropTrackingCollection($collectionName);
         }
     }
 

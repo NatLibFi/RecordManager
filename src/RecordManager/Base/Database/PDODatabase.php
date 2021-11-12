@@ -401,6 +401,7 @@ class PDODatabase extends AbstractDatabase
             . '_id VARCHAR(255) PRIMARY KEY'
             . ')'
         );
+        $this->trackingCollections[$collectionName] = true;
         return $collectionName;
     }
 
@@ -422,6 +423,9 @@ class PDODatabase extends AbstractDatabase
             $this->dbQuery("drop table $collectionName");
         } catch (\Exception $e) {
             return false;
+        }
+        if (isset($this->trackingCollections[$collectionName])) {
+            unset($this->trackingCollections[$collectionName]);
         }
         return true;
     }
@@ -661,7 +665,11 @@ class PDODatabase extends AbstractDatabase
     ) {
         [$where, $params] = $this->filterToSQL($collection, $filter);
         [, $sqlOptions] = $this->optionsToSQL($options);
-        $sql = "select count(*) from $collection where $where $sqlOptions";
+        $sql = "select count(*) from $collection";
+        if ($where) {
+            $sql .= "where $where";
+        }
+        $sql .= " $sqlOptions";
         return $this->dbQuery($sql, $params)->fetchColumn();
     }
 
