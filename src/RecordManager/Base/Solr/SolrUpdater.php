@@ -861,13 +861,14 @@ class SolrUpdater
                 $lastIndexingDate = null;
             }
 
+            // Init worker pools before accessing the database:
+            $this->initWorkerPools();
+
             $trackingName = $this->db->getNewTrackingCollection();
             $this->log->logInfo(
                 'updateRecords',
                 "Tracking deduplicated records with collection $trackingName"
             );
-
-            $this->initWorkerPools();
 
             $fromTimestamp = $this->getStartTimestamp($fromDate, $lastUpdateKey);
             $from = null !== $fromTimestamp
