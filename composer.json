@@ -44,5 +44,8 @@
         "phpunit/phpunit": "8.5.21",
         "squizlabs/php_codesniffer": "3.6.1",
         "vimeo/psalm": "4.11.2"
+    },
+    "scripts": {
+        "qa": "phing ci-tasks"
     }
 }
