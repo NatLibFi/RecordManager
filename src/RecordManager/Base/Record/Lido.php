@@ -878,7 +878,7 @@ class Lido extends AbstractRecord
      */
     protected function getDefaultLanguage()
     {
-        return $this->getDriverParam('defaultDisplayLanguage', 'en');;
+        return $this->getDriverParam('defaultDisplayLanguage', 'en');
     }
 
     /**
