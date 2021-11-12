@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2020.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -77,8 +77,8 @@ class Delete extends AbstractBase
         if (!empty($this->config['Solr']['merge_records'])) {
             $this->logger->logInfo(
                 'deleteSolr',
-                "Deleting data source '$sourceId' from merged records via Solr "
-                    . 'update for merged records'
+                "Deleting data source '$sourceId' via Solr update to process"
+                    . ' deduplicated records'
             );
             $this->solrUpdater->updateRecords('', $sourceId, '', false, true);
         }

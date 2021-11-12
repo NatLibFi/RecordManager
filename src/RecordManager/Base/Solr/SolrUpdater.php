@@ -59,7 +59,6 @@ if (function_exists('pcntl_async_signals')) {
 class SolrUpdater
 {
     use \RecordManager\Base\Record\CreateRecordTrait;
-    use \RecordManager\Base\Utils\ParentProcessCheckTrait;
 
     /**
      * Database
@@ -202,13 +201,6 @@ class SolrUpdater
     protected $updateRetryWait;
 
     /**
-     * Whether to run merged record update in parallel with single records
-     *
-     * @var bool
-     */
-    protected $parallelMergedRecordUpdate;
-
-    /**
      * Solr Update Buffer
      *
      * @var string
@@ -237,6 +229,34 @@ class SolrUpdater
     protected $bufferedDeletions;
 
     /**
+     * Count of records processed when last commit was done
+     *
+     * @var int
+     */
+    protected $lastCommitRecords;
+
+    /**
+     * Count of records deleted
+     *
+     * @var int
+     */
+    protected $deletedRecords = 0;
+
+    /**
+     * Count of records updated
+     *
+     * @var int
+     */
+    protected $updatedRecords = 0;
+
+    /**
+     * Count of merged component parts
+     *
+     * @var int
+     */
+    protected $mergedComponents = 0;
+
+    /**
      * HTTP Client
      *
      * @var \HTTP_Request2
@@ -244,7 +264,7 @@ class SolrUpdater
     protected $request = null;
 
     /**
-     * Fields to merge when merging deduplicated records
+     * Fields to merge when processing deduplicated records
      *
      * @var array
      */
@@ -287,7 +307,7 @@ class SolrUpdater
     ];
 
     /**
-     * Fields to copy back from the merged record to all the member records
+     * Fields to copy back from the merged dedup record to all the member records
      *
      * @var array
      */
@@ -367,11 +387,18 @@ class SolrUpdater
     protected $hierarchicalFacets = [];
 
     /**
-     * How many record worker processes to use
+     * How many individual record worker processes to use
      *
      * @var int
      */
     protected $recordWorkers;
+
+    /**
+     * How many deduplicated record worker processes to use
+     *
+     * @var int
+     */
+    protected $dedupWorkers;
 
     /**
      * How many Solr update worker processes to use
@@ -632,11 +659,9 @@ class SolrUpdater
         $this->maxUpdateTries = $config['Solr']['max_update_tries'] ?? 15;
         $this->updateRetryWait = $config['Solr']['update_retry_wait'] ?? 60;
         $this->recordWorkers = $config['Solr']['record_workers'] ?? 0;
+        $this->dedupWorkers = $config['Solr']['dedup_workers']
+            ?? $this->recordWorkers;
         $this->solrUpdateWorkers = $config['Solr']['solr_update_workers'] ?? 0;
-        $this->parallelMergedRecordUpdate
-            = $config['Solr']['parallel_merged_record_update']
-                ?? $config['Solr']['threaded_merged_record_update']
-                ?? false;
         $this->clusterStateCheckInterval
             = $config['Solr']['cluster_state_check_interval'] ?? 0;
         if (empty($config['Solr']['admin_url'])) {
@@ -750,7 +775,7 @@ class SolrUpdater
     }
 
     /**
-     * Update Solr index (merged records and individual records)
+     * Update Solr index
      *
      * @param string|null $fromDate      Starting date for updates (if null, last
      *                                   update date stored in the database is used
@@ -781,6 +806,9 @@ class SolrUpdater
         if ('*' === $sourceId) {
             $sourceId = '';
         }
+        if ($delete && !$sourceId) {
+            throw new \Exception('Delete without source id specified');
+        }
         // Install a signal handler so that we can exit cleanly if interrupted
         unset($this->terminate);
         if (function_exists('pcntl_signal')) {
@@ -805,13 +833,18 @@ class SolrUpdater
         $verb = $this->dumpPrefix ? 'dumped' : 'indexed';
         $initVerb = $this->dumpPrefix ? 'Dumping' : 'Indexing';
 
-        $childPid = null;
         $fromTimestamp = null;
         try {
             if ($this->recordWorkers) {
                 $this->log->logInfo(
                     'updateRecords',
-                    "Using {$this->recordWorkers} record workers"
+                    "Using {$this->recordWorkers} individual record workers"
+                );
+            }
+            if ($this->dedupWorkers) {
+                $this->log->logInfo(
+                    'updateRecords',
+                    "Using {$this->dedupWorkers} deduplicated record workers"
                 );
             }
             if ($this->solrUpdateWorkers) {
@@ -821,7 +854,6 @@ class SolrUpdater
                 );
             }
 
-            $needCommit = false;
             // Take the last indexing date now and store it when done
             if (!$sourceId && !$singleId && null === $fromDate) {
                 $lastIndexingDate = time();
@@ -829,111 +861,23 @@ class SolrUpdater
                 $lastIndexingDate = null;
             }
 
-            // Only process merged records if any of the selected sources has
-            // deduplication enabled
-            $processDedupRecords = true;
-            if ($sourceId) {
-                $sources = explode(',', $sourceId);
-                foreach ($sources as $source) {
-                    if (strncmp($source, '-', 1) === 0
-                        || '' === trim($source)
-                    ) {
-                        continue;
-                    }
-                    $processDedupRecords = false;
-                    if (isset($this->settings[$source]['dedup'])
-                        && $this->settings[$source]['dedup']
-                    ) {
-                        $processDedupRecords = true;
-                        break;
-                    }
-                }
-            }
+            $trackingName = $this->db->getNewTrackingCollection();
+            $this->log->logInfo(
+                'updateRecords',
+                "Tracking deduplicated records with collection $trackingName"
+            );
 
-            if (!$this->parallelMergedRecordUpdate) {
-                // Create worker pools before merged records are processed to avoid
-                // sharing the database connection between processes
-                $this->initSingleRecordWorkerPools();
-            }
-
-            if ($processDedupRecords) {
-                if (!$delete && $this->parallelMergedRecordUpdate) {
-                    $childPid = pcntl_fork();
-                    if ($childPid == -1) {
-                        throw new \Exception(
-                            'Could not fork merged record background update child'
-                        );
-                    }
-                    if ($childPid) {
-                        $this->log->logInfo(
-                            'updateRecords',
-                            "Started process $childPid for parallel processing of"
-                            . ' merged records'
-                        );
-                    }
-                }
-
-                if (!$childPid) {
-                    // Not forked or this is the child process for merged records
-                    $this->initWorkerPoolManager();
-                    try {
-                        $needCommit = $this->processMerged(
-                            $fromDate,
-                            $sourceId,
-                            $singleId,
-                            $noCommit,
-                            $delete,
-                            null !== $childPid,
-                            $lastUpdateKey
-                        );
-                        if (null !== $childPid) {
-                            // This is a forked child process, deinit and exit
-                            $this->deInitWorkerPoolManager();
-                            exit($needCommit ? 1 : 0);
-                        }
-                    } catch (\Exception $e) {
-                        $this->log->logError(
-                            'updateRecords',
-                            'Exception from merged record processing: '
-                                . $e->getMessage() . ' at ' . $e->getFile() . ':'
-                                . $e->getLine()
-                        );
-                        if (null === $childPid) {
-                            // Not forked, throw an exception
-                            throw $e;
-                        }
-                        $this->deInitWorkerPoolManager();
-                        $this->log->logError(
-                            'updateRecords',
-                            'Merged record process exiting with status 2'
-                        );
-                        exit(2);
-                    }
-                }
-            }
-
-            if ($delete) {
-                return;
-            }
-
-            if ($this->parallelMergedRecordUpdate) {
-                // Create worker pools only after merged record forked process has
-                // been started to avoid sharing the worker pool manager
-                $this->initSingleRecordWorkerPools();
-            }
+            $this->initWorkerPools();
 
             $fromTimestamp = $this->getStartTimestamp($fromDate, $lastUpdateKey);
             $from = null !== $fromTimestamp
                 ? gmdate('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
 
-            $this->log->logInfo(
-                'updateRecords',
-                "Creating individual record list (from $from)"
-            );
+            $this->log
+                ->logInfo('updateRecords', "Creating record list (from $from)");
             $params = [];
             if ($singleId) {
                 $params['_id'] = $singleId;
-                $params['dedup_id'] = ['$exists' => false];
                 $lastIndexingDate = null;
             } else {
                 if (null !== $fromTimestamp) {
@@ -947,124 +891,134 @@ class SolrUpdater
                 if ($sourceNor) {
                     $params['$nor'] = $sourceNor;
                 }
-                $params['dedup_id'] = ['$exists' => false];
+                if ($delete) {
+                    // Process only deduplicated records for deletion:
+                    $params['dedup_id'] = ['$exists' => true];
+                }
             }
             $total = $this->db->countRecords($params);
-            $count = 0;
             $lastDisplayedCount = 0;
-            $mergedComponents = 0;
-            $deleted = 0;
+            $this->updatedRecords = 0;
+            $this->deletedRecords = 0;
+            $this->mergedComponents = 0;
             if ($noCommit) {
                 $this->log->logInfo(
                     'updateRecords',
-                    "$initVerb $total individual records (with no forced commits)"
+                    "$initVerb $total records (with no forced commits)"
                 );
             } else {
                 $this->log->logInfo(
                     'updateRecords',
-                    "$initVerb $total individual records (max commit interval "
+                    "$initVerb $total records (max commit interval "
                         . "{$this->commitInterval} records)"
                 );
             }
             $pc = new PerformanceCounter();
             $this->initBufferedUpdate();
-            $this->db->iterateRecords(
-                $params,
-                [],
-                function ($record) use (
-                    &$childPid,
-                    $pc,
-                    &$mergedComponents,
-                    &$count,
-                    &$deleted,
-                    $verb,
-                    $noCommit,
-                    &$lastDisplayedCount,
-                    &$needCommit
-                ) {
-                    if (isset($this->terminate)) {
-                        return false;
+            $prevId = null;
+
+            $handler = function ($record) use (
+                $pc,
+                $verb,
+                $noCommit,
+                &$lastDisplayedCount,
+                $trackingName,
+                &$prevId,
+                $sourceId,
+                $delete
+            ) {
+                if (isset($this->terminate)) {
+                    return false;
+                }
+
+                // Add deduplicated records to their own processing pool:
+                if (isset($record['dedup_id'])) {
+                    $id = (string)$record['dedup_id'];
+                    if ($prevId !== $id
+                        && $this->db->addIdToTrackingCollection($trackingName, $id)
+                    ) {
+                        $this->workerPoolManager->addRequest(
+                            'dedup',
+                            $id,
+                            $sourceId,
+                            $delete
+                        );
+                        $prevId = $id;
                     }
+                } else {
                     if (in_array($record['source_id'], $this->nonIndexedSources)) {
                         return true;
                     }
-
                     $this->workerPoolManager->addRequest('record', $record);
-
-                    while ($this->workerPoolManager->checkForResults('record')) {
-                        $result = $this->workerPoolManager->getResult('record');
-                        $mergedComponents += $result['mergedComponents'];
-                        foreach ($result['deleted'] as $id) {
-                            ++$deleted;
-                            $this->bufferedDelete($id);
-                        }
-                        foreach ($result['records'] as $record) {
-                            ++$count;
-                            $this->bufferedUpdate($record, $count, $noCommit);
-                        }
-                    }
-                    if ($count + $deleted >= $lastDisplayedCount + 1000) {
-                        $lastDisplayedCount = $count + $deleted;
-                        $pc->add($lastDisplayedCount);
-                        $avg = $pc->getSpeed();
-                        $this->log->logInfo(
-                            'updateRecords',
-                            "$count individual, $deleted deleted and"
-                                . " $mergedComponents included child records $verb"
-                                . ", $avg records/sec"
-                        );
-                    }
-
-                    // Check status of the child process for merged record:
-                    if ($childPid) {
-                        $pid = pcntl_waitpid($childPid, $status, WNOHANG);
-                        if (0 !== $pid) {
-                            $exitCode = $pid > 0 ? pcntl_wexitstatus($status) : 2;
-                            $childPid = null;
-                            if ($exitCode == 1) {
-                                $needCommit = true;
-                            } elseif ($exitCode) {
-                                $this->log->logError(
-                                    'updateRecords',
-                                    'Merged record update process failed, aborting'
-                                );
-                                throw new \Exception(
-                                    'Merged record update process failed'
-                                );
-                            }
-                        }
-                    }
                 }
-            );
+
+                // Handle any results in the record pools:
+                $this->handleRecords(false, $noCommit);
+
+                $total = $this->deletedRecords + $this->updatedRecords;
+                if ($total >= $lastDisplayedCount + 1000) {
+                    $lastDisplayedCount = $total;
+                    $pc->add($lastDisplayedCount);
+                    $avg = $pc->getSpeed();
+                    $this->log->logInfo(
+                        'updateRecords',
+                        "{$this->updatedRecords} updated,"
+                            . " {$this->deletedRecords} deleted and"
+                            . " {$this->mergedComponents} included child records"
+                            . " $verb, $avg records/sec"
+                    );
+                }
+            };
+
+            $this->db->iterateRecords($params, [], $handler);
+
+            $this->handleRecords(true, $noCommit);
+
+            // Process dedup records:
+            if (!$delete && !isset($this->terminate)) {
+                $this->log->logWarning('updateRecords', 'Processing dedup records');
+                $dedupParams = [];
+                if ($singleId) {
+                    $dedupParams['ids'] = $singleId;
+                } elseif (null !== $fromTimestamp) {
+                    $dedupParams['changed']
+                        = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
+                } else {
+                    $this->log->logWarning(
+                        'updateRecords',
+                        'Processing all dedup records -- this may be a lengthy'
+                            . ' process if deleted records have not been purged'
+                            . ' regularly'
+                    );
+                }
+
+                $this->db->iterateDedups(
+                    $dedupParams,
+                    [],
+                    function ($record) use (
+                        $handler
+                    ) {
+                        if (isset($this->terminate)) {
+                            return false;
+                        }
+
+                        $record = [
+                            'dedup_id' => (string)$record['_id']
+                        ];
+                        return $handler($record);
+                    }
+                );
+                $this->log->logWarning('updateRecords', 'Dedup records processed');
+            }
+
+            $this->db->dropTrackingCollection($trackingName);
 
             if (isset($this->terminate)) {
-                if ($childPid) {
-                    $this->waitForChildProcessExit('updateRecords', $childPid, 600);
-                }
-                $this->log->logInfo(
-                    'updateRecords',
-                    'Termination upon request (individual record handler)'
-                );
+                $this->log->logInfo('updateRecords', 'Termination upon request');
                 exit(1);
             }
 
-            while ($this->workerPoolManager->requestsPending('record')
-                || $this->workerPoolManager->checkForResults('record')
-            ) {
-                while ($this->workerPoolManager->checkForResults('record')) {
-                    $result = $this->workerPoolManager->getResult('record');
-                    $mergedComponents += $result['mergedComponents'];
-                    foreach ($result['deleted'] as $id) {
-                        ++$deleted;
-                        $this->bufferedDelete($id);
-                    }
-                    foreach ($result['records'] as $record) {
-                        ++$count;
-                        $this->bufferedUpdate($record, $count, $noCommit);
-                    }
-                }
-                usleep(10);
-            }
+            $this->handleRecords(true, $noCommit);
 
             // Flush update buffer and wait for any subsequent pending Solr updates
             // to complete.
@@ -1077,38 +1031,13 @@ class SolrUpdater
             $this->workerPoolManager->waitUntilDone('solr');
             $this->log->logInfo('updateRecords', 'All requests complete');
 
-            if ($count > 0) {
-                $needCommit = true;
-            }
-
             $this->log->logInfo(
                 'updateRecords',
-                "Total $count individual, $deleted deleted and"
-                    . " $mergedComponents included child records $verb"
+                "Total {$this->updatedRecords} updated,"
+                    . " {$this->deletedRecords} deleted and"
+                    . " {$this->mergedComponents} included child records"
+                    . " $verb"
             );
-
-            if ($childPid) {
-                // Wait for child to finish
-                while (1) {
-                    $pid = pcntl_waitpid($childPid, $status, WNOHANG);
-                    if (0 !== $pid) {
-                        $exitCode = $pid > 0 ? pcntl_wexitstatus($status) : 2;
-                        if ($exitCode == 1) {
-                            $needCommit = true;
-                        } elseif ($exitCode) {
-                            $this->log->logError(
-                                'updateRecords',
-                                'Merged record update process failed, aborting'
-                            );
-                            throw new \Exception(
-                                'Merged record update process failed'
-                            );
-                        }
-                        break;
-                    }
-                    sleep(1);
-                }
-            }
 
             if (isset($lastIndexingDate)) {
                 $state = [
@@ -1118,7 +1047,9 @@ class SolrUpdater
                 $this->db->saveState($state);
             }
 
-            if (!$noCommit && $needCommit && !$this->dumpPrefix) {
+            if (!$noCommit && !$this->dumpPrefix
+                && ($this->deletedRecords > 0 || $this->updatedRecords > 0)
+            ) {
                 $this->log->logInfo('updateRecords', 'Final commit...');
                 $this->solrRequest('{ "commit": {} }', 3600);
                 $this->log->logInfo('updateRecords', 'Commit complete');
@@ -1129,22 +1060,6 @@ class SolrUpdater
                 'Exception: ' . $e->getMessage() . ' at ' . $e->getFile() . ':'
                     . $e->getLine()
             );
-            if ($childPid) {
-                $this->log->logInfo(
-                    'updateRecords',
-                    "Terminating child process $childPid"
-                );
-                // Kill the child process too
-                posix_kill($childPid, SIGINT);
-                // Wait for child to finish (times out in 10 minutes)
-                $this->waitForChildProcessExit('updateRecords', $childPid, 60);
-            }
-
-            if ($this->parallelMergedRecordUpdate && !$childPid) {
-                exit(2);
-            } else {
-                $this->deInitWorkerPoolManager();
-            }
         }
         $this->deInitWorkerPoolManager();
         if (function_exists('pcntl_signal')) {
@@ -1154,44 +1069,65 @@ class SolrUpdater
     }
 
     /**
-     * Wait for the given child process to terminate
+     * Handle records processed by record workers
      *
-     * @param string $methodName Waiting method name for logging purposes
-     * @param int    $childPid   Child process id
-     * @param int    $timeout    Wait timeout in seconds
+     * @param bool $block    Whether to block until all requests are completed
+     * @param bool $noCommit Whether to disable automatic commits
      *
-     * @return bool Whether the process terminated properly
+     * @return void
      */
-    protected function waitForChildProcessExit(
-        string $methodName,
-        int $childPid,
-        int $timeout
-    ): bool {
-        $this->log->logInfo(
-            $methodName,
-            "Waiting $timeout seconds for child process $childPid to terminate..."
-        );
-        $startTime = time();
-        $pid = 0;
-        while (time() - $startTime < $timeout) {
-            $pid = pcntl_waitpid($childPid, $status, WNOHANG);
-            if ($pid !== 0) {
+    protected function handleRecords(bool $block, bool $noCommit): void
+    {
+        while (!isset($this->terminate)
+            && ($this->workerPoolManager->checkForResults('record')
+            || $this->workerPoolManager->requestsPending('record'))
+        ) {
+            while (!isset($this->terminate)
+                && $this->workerPoolManager->checkForResults('record')
+            ) {
+                $result = $this->workerPoolManager->getResult('record');
+                $this->mergedComponents += $result['mergedComponents'];
+                foreach ($result['deleted'] as $id) {
+                    ++$this->deletedRecords;
+                    $this->bufferedDelete($id);
+                }
+                foreach ($result['records'] as $record) {
+                    ++$this->updatedRecords;
+                    $this->bufferedUpdate($record, $noCommit);
+                }
+            }
+            if ($block) {
+                usleep(10);
+            } else {
                 break;
             }
-            sleep(1);
         }
-        if ($pid === 0) {
-            $this->log->logInfo(
-                $methodName,
-                "Timed out waiting for child process $childPid to terminate"
-            );
-            return false;
+
+        // Check for results in the deduplicated record pool:
+        while (!isset($this->terminate)
+            && ($this->workerPoolManager->checkForResults('dedup')
+            || $this->workerPoolManager->requestsPending('dedup'))
+        ) {
+            while (!isset($this->terminate)
+                && $this->workerPoolManager->checkForResults('dedup')
+            ) {
+                $result = $this->workerPoolManager->getResult('dedup');
+                $this->mergedComponents += $result['mergedComponents'];
+                foreach ($result['deleted'] as $id) {
+                    ++$this->deletedRecords;
+                    $this->bufferedDelete($id);
+                }
+                foreach ($result['records'] as $record) {
+                    ++$this->updatedRecords;
+                    $this->bufferedUpdate($record, $noCommit);
+                }
+            }
+            if ($block) {
+                usleep(10);
+            } else {
+                break;
+            }
         }
-        $this->log->logInfo(
-            $methodName,
-            "Child process $childPid terminated"
-        );
-        return true;
     }
 
     /**
@@ -1207,169 +1143,10 @@ class SolrUpdater
     }
 
     /**
-     * Process merged (deduplicated) records
-     *
-     * @param string|null $fromDate      Start date
-     * @param string      $sourceId      Comma-separated list of source IDs to
-     *                                   update, or empty or * for all sources
-     * @param string      $singleId      Process only the record with the given ID
-     * @param bool        $noCommit      If true, changes are not explicitly
-     *                                   committed
-     * @param bool        $delete        If true, records in the given $sourceId are
-     *                                   all deleted
-     * @param bool        $checkParent   Whether to check that a parent process is
-     *                                   alive
-     * @param string      $lastUpdateKey Database state key for last index update
-     *
-     * @throws \Exception
-     * @return boolean Whether anything was updated
-     */
-    protected function processMerged(
-        $fromDate,
-        $sourceId,
-        $singleId,
-        $noCommit,
-        $delete,
-        $checkParent,
-        $lastUpdateKey
-    ) {
-        // Create workers first before we need the database
-        $this->workerPoolManager->createWorkerPool(
-            'solr',
-            $this->solrUpdateWorkers,
-            $this->solrUpdateWorkers,
-            [$this, 'solrRequest']
-        );
-        $this->workerPoolManager->createWorkerPool(
-            'merge',
-            $this->recordWorkers,
-            $this->recordWorkers,
-            [$this, 'processDedupRecord']
-        );
-
-        $verb = $this->dumpPrefix ? 'dumped' : 'indexed';
-        $initVerb = $this->dumpPrefix ? 'Dumping' : 'Indexing';
-
-        $count = 0;
-        $lastDisplayedCount = 0;
-        $mergedComponents = 0;
-        $deleted = 0;
-        $this->initBufferedUpdate();
-        if ($noCommit) {
-            $this->log->logInfo(
-                'processMerged',
-                "$initVerb the merged records (with no forced commits)"
-            );
-        } else {
-            $this->log->logInfo(
-                'processMerged',
-                "$initVerb the merged records (max commit interval "
-                . "{$this->commitInterval} records)"
-            );
-        }
-        $pc = new PerformanceCounter();
-        $this->iterateMergedRecords(
-            $fromDate,
-            $sourceId,
-            $singleId,
-            $lastUpdateKey,
-            $checkParent,
-            function (string $mergeId) use (
-                $sourceId,
-                $delete,
-                &$mergedComponents,
-                &$deleted,
-                &$count,
-                $noCommit,
-                &$lastDisplayedCount,
-                $pc,
-                $verb
-            ) {
-                $this->workerPoolManager->addRequest(
-                    'merge',
-                    $mergeId,
-                    $sourceId,
-                    $delete
-                );
-
-                while (!isset($this->terminate)
-                    && $this->workerPoolManager->checkForResults('merge')
-                ) {
-                    $result = $this->workerPoolManager->getResult('merge');
-                    $mergedComponents += $result['mergedComponents'];
-                    foreach ($result['deleted'] as $id) {
-                        ++$deleted;
-                        ++$count;
-                        $this->bufferedDelete($id);
-                    }
-                    foreach ($result['records'] as $record) {
-                        ++$count;
-                        $this->bufferedUpdate($record, $count, $noCommit);
-                    }
-                }
-                if ($count + $deleted >= $lastDisplayedCount + 1000) {
-                    $lastDisplayedCount = $count + $deleted;
-                    $pc->add($lastDisplayedCount);
-                    $avg = $pc->getSpeed();
-                    $this->log->logInfo(
-                        'processMerged',
-                        "$count merged, $deleted deleted and $mergedComponents"
-                            . " included child records $verb, $avg records/sec"
-                    );
-                }
-            }
-        );
-
-        while (!isset($this->terminate)
-            && ($this->workerPoolManager->requestsPending('merge')
-            || $this->workerPoolManager->checkForResults('merge'))
-        ) {
-            while (!isset($this->terminate)
-                && $this->workerPoolManager->checkForResults('merge')
-            ) {
-                $result = $this->workerPoolManager->getResult('merge');
-                $mergedComponents += $result['mergedComponents'];
-                foreach ($result['deleted'] as $id) {
-                    ++$deleted;
-                    ++$count;
-                    $this->bufferedDelete($id);
-                }
-                foreach ($result['records'] as $record) {
-                    ++$count;
-                    $this->bufferedUpdate($record, $count, $noCommit);
-                }
-            }
-            usleep(1000);
-        }
-
-        // Flush update buffer and wait for any subsequent pending Solr updates
-        // to complete.
-        $this->flushUpdateBuffer();
-
-        $this->log->logInfo(
-            'processMerged',
-            'Waiting for any pending requests to complete...'
-        );
-        $this->workerPoolManager->waitUntilDone('solr');
-        $this->log->logInfo(
-            'processMerged',
-            'All requests complete'
-        );
-
-        $this->log->logInfo(
-            'processMerged',
-            "Total $count merged, $deleted deleted and $mergedComponents"
-                . " included child records $verb"
-        );
-
-        return $count > 0;
-    }
-
-    /**
      * Process a dedup record and return results
      *
      * @param string $dedupId  Dedup record id
-     * @param string $sourceId Source id, if any
+     * @param string $sourceId Source id to process, if any
      * @param bool   $delete   Whether a data source deletion is in progress
      *
      * @return array
@@ -1442,7 +1219,7 @@ class SolrUpdater
             $member = $members[0];
             if (!$delete) {
                 $this->log->logWarning(
-                    'processMerged',
+                    'updateRecords',
                     'Found a single record with a dedup id: '
                         . $member['solr']['id']
                 );
@@ -1509,7 +1286,7 @@ class SolrUpdater
                 $merged['merged_boolean'] = true;
 
                 if ($this->verbose) {
-                    echo "Merged record {$merged['id']}:\n";
+                    echo "Dedup record {$merged['id']}:\n";
                     $this->prettyPrint($merged);
                 }
 
@@ -1757,11 +1534,12 @@ class SolrUpdater
     }
 
     /**
-     * Initialize worker pool manager and the pools for processing single records
+     * Initialize worker pool manager and the pools for processing records and
+     * Solr updates
      *
      * @return void
      */
-    protected function initSingleRecordWorkerPools()
+    protected function initWorkerPools()
     {
         $this->initWorkerPoolManager();
         $this->workerPoolManager->createWorkerPool(
@@ -1776,170 +1554,12 @@ class SolrUpdater
             $this->recordWorkers,
             [$this, 'processSingleRecord']
         );
-    }
-
-    /**
-     * Iterate all merged records
-     *
-     * @param string|null $fromDate      Start date
-     * @param string      $sourceId      Comma-separated list of source IDs to
-     *                                   update, or empty or * for all sources
-     * @param string      $singleId      Process only the record with the given ID
-     * @param string      $lastUpdateKey Database state key for last index update
-     * @param bool        $checkParent   Whether to check that a parent process is
-     *                                   alive
-     * @param Callable    $callback      Callback to call for each record
-     *
-     * @return void
-     *
-     * @throws \Exception
-     */
-    protected function iterateMergedRecords(
-        $fromDate,
-        $sourceId,
-        $singleId,
-        $lastUpdateKey,
-        $checkParent,
-        $callback
-    ) {
-        // Clean up any left over tracking collections
-        $res = $this->db->cleanupTrackingCollections();
-        if ($res['removed']) {
-            $this->log->logInfo(
-                'processMerged',
-                'Cleanup: dropped old tracking collections: '
-                    . implode(', ', $res['removed'])
-            );
-        }
-        if ($res['failed']) {
-            $this->log->logWarning(
-                'processMerged',
-                'Failed to drop old tracking collections: '
-                    . implode(', ', $res['failed'])
-            );
-        }
-
-        $fromTimestamp = $this->getStartTimestamp($fromDate, $lastUpdateKey);
-        $params = [];
-        if ($singleId) {
-            $params['_id'] = $singleId;
-            $params['dedup_id'] = ['$exists' => true];
-        } else {
-            if (null !== $fromTimestamp) {
-                $params['updated']
-                    = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
-            }
-            [$sourceOr, $sourceNor] = $this->createSourceFilter($sourceId);
-            if ($sourceOr) {
-                $params['$or'] = $sourceOr;
-            }
-            if ($sourceNor) {
-                $params['$nor'] = $sourceNor;
-            }
-            $params['dedup_id'] = ['$exists' => true];
-        }
-
-        $trackingName = $this->db->getNewTrackingCollection();
-        $this->log->logInfo(
-            'iterateMergedRecords',
-            "Tracking progress with collection $trackingName"
+        $this->workerPoolManager->createWorkerPool(
+            'dedup',
+            $this->dedupWorkers,
+            $this->dedupWorkers,
+            [$this, 'processDedupRecord']
         );
-
-        $from = null !== $fromTimestamp
-            ? gmdate('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
-
-        $this->log->logInfo(
-            'iterateMergedRecords',
-            "Processing records (from $from, stage 1/2)"
-        );
-
-        $prevId = null;
-        $count = 0;
-        $this->db->iterateRecords(
-            $params,
-            ['projection' => ['_id' => 1, 'dedup_id' => 1]],
-            function ($record) use (
-                $checkParent,
-                $trackingName,
-                &$count,
-                &$prevId,
-                $callback
-            ) {
-                if ($checkParent) {
-                    $this->checkParentIsAlive();
-                }
-                if (isset($this->terminate)) {
-                    return false;
-                }
-                $id = (string)$record['dedup_id'];
-
-                if ($prevId !== $id
-                    && $this->db->addIdToTrackingCollection($trackingName, $id)
-                ) {
-                    $callback($id);
-                    ++$count;
-                }
-                $prevId = $id;
-            }
-        );
-        if (isset($this->terminate)) {
-            $this->log->logInfo('iterateMergedRecords', 'Termination upon request');
-            $this->db->dropTrackingCollection($trackingName);
-            exit(1);
-        }
-        $this->log->logInfo('iterateMergedRecords', "$count records processed");
-
-        $this->log->logInfo(
-            'iterateMergedRecords',
-            "Processing merge records (from $from, stage 2/2)"
-        );
-
-        $dedupParams = [];
-        if ($singleId) {
-            $dedupParams['ids'] = $singleId;
-        } elseif (null !== $fromTimestamp) {
-            $dedupParams['changed']
-                = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
-        } else {
-            $this->log->logWarning(
-                'iterateMergedRecords',
-                'Processing all merge records -- this may be a lengthy process'
-                    . ' if deleted records have not been purged regularly'
-            );
-        }
-
-        $count = 0;
-        $this->db->iterateDedups(
-            $dedupParams,
-            [],
-            function ($record) use (
-                $checkParent,
-                &$count,
-                $trackingName,
-                $callback
-            ) {
-                if ($checkParent) {
-                    $this->checkParentIsAlive();
-                }
-                if (isset($this->terminate)) {
-                    return false;
-                }
-                $id = (string)$record['_id'];
-                if ($this->db->addIdToTrackingCollection($trackingName, $id)) {
-                    $callback($id);
-                    ++$count;
-                }
-            }
-        );
-        $this->log
-            ->logInfo('iterateMergedRecords', "$count merge records processed");
-
-        $this->db->dropTrackingCollection($trackingName);
-
-        if (isset($this->terminate)) {
-            $this->log->logInfo('iterateMergedRecords', 'Termination upon request');
-            exit(1);
-        }
     }
 
     /**
@@ -2578,12 +2198,12 @@ class SolrUpdater
     }
 
     /**
-     * Merge Solr records into a merged record
+     * Merge Solr records into a dedup record
      *
      * @param array $records Array of records to merge including the database record
      *                       and Solr array
      *
-     * @return array Merged Solr array
+     * @return array Dedup record Solr array
      */
     protected function mergeRecords($records)
     {
@@ -2675,7 +2295,7 @@ class SolrUpdater
     }
 
     /**
-     * Copy configured fields from merged record to the member records
+     * Copy configured fields from merged dedup record to the member records
      *
      * @param array $merged  Merged record
      * @param array $records Array of member records
@@ -2971,18 +2591,18 @@ class SolrUpdater
         $this->bufferLen = 0;
         $this->buffered = 0;
         $this->bufferedDeletions = [];
+        $this->lastCommitRecords = 0;
     }
 
     /**
      * Update Solr index in a batch
      *
      * @param array $data     Record metadata
-     * @param int   $count    Number of records processed so far
      * @param bool  $noCommit Whether to not do any explicit commits
      *
-     * @return boolean        False when buffering, true when buffer is flushed
+     * @return bool           False when buffering, true when buffer is flushed
      */
-    protected function bufferedUpdate($data, $count, $noCommit)
+    protected function bufferedUpdate($data, $noCommit)
     {
         $result = false;
 
@@ -3017,8 +2637,11 @@ class SolrUpdater
             $this->buffered = 0;
             $result = true;
         }
-        if (!$noCommit && !$this->dumpPrefix && $count % $this->commitInterval == 0
+        $sinceLastCommit = $this->updatedRecords - $this->lastCommitRecords;
+        if (!$noCommit && !$this->dumpPrefix
+            && $sinceLastCommit >= $this->commitInterval
         ) {
+            $this->lastCommitRecords = $this->updatedRecords;
             $this->log->logInfo(
                 'bufferedUpdate',
                 'Waiting for any pending requests to complete...'

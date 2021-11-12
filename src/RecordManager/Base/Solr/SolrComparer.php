@@ -78,94 +78,16 @@ class SolrComparer extends SolrUpdater
             file_put_contents($logFile, '');
         }
 
-        $fromTimestamp = null;
         try {
-            // Only process merged records if any of the selected sources has
-            // deduplication enabled
-            $processDedupRecords = true;
-            if ($sourceId && '*' !== $sourceId) {
-                $sources = explode(',', $sourceId);
-                foreach ($sources as $source) {
-                    if (strncmp($source, '-', 1) === 0
-                        || '' === trim($source)
-                    ) {
-                        continue;
-                    }
-                    $processDedupRecords = false;
-                    if (isset($this->settings[$source]['dedup'])
-                        && $this->settings[$source]['dedup']
-                    ) {
-                        $processDedupRecords = true;
-                        break;
-                    }
-                }
-            }
-
-            if ($processDedupRecords) {
-                $count = 0;
-                $lastDisplayedCount = 0;
-                $mergedComponents = 0;
-                $deleted = 0;
-                $pc = new PerformanceCounter();
-                $this->iterateMergedRecords(
-                    $fromDate,
-                    $sourceId,
-                    $singleId,
-                    '',
-                    false,
-                    function (string $dedupId) use (
-                        $sourceId,
-                        &$mergedComponents,
-                        $logFile,
-                        &$deleted,
-                        &$count,
-                        &$lastDisplayedCount,
-                        $pc
-                    ) {
-                        $result = $this->processDedupRecord(
-                            $dedupId,
-                            $sourceId,
-                            false
-                        );
-
-                        foreach ($result['records'] as $record) {
-                            ++$count;
-                            $this->compareWithSolrRecord($record, $logFile);
-                        }
-                        $mergedComponents += $result['mergedComponents'];
-                        $deleted += count($result['deleted']);
-                        if ($count + $deleted >= $lastDisplayedCount + 1000) {
-                            $lastDisplayedCount = $count + $deleted;
-                            $pc->add($count);
-                            $avg = $pc->getSpeed();
-                            $this->log->logInfo(
-                                'compareRecords',
-                                "$count merged, $deleted deleted and"
-                                    . " $mergedComponents included child records"
-                                    . " compared, $avg records/sec"
-                            );
-                        }
-                    }
-                );
-            }
-
-            if (isset($this->terminate)) {
-                $this->log->logInfo('compareRecords', 'Termination upon request');
-                exit(1);
-            }
-
             $fromTimestamp = $this->getStartTimestamp($fromDate, '');
             $from = null !== $fromTimestamp
                 ? date('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
 
-            $this->log->logInfo(
-                'compareRecords',
-                "Creating individual record list (from $from)"
-            );
+            $this->log
+                ->logInfo('compareRecords', "Creating record list (from $from)");
             $params = [];
             if ($singleId) {
                 $params['_id'] = $singleId;
-                $params['dedup_id'] = ['$exists' => false];
             } else {
                 if (null !== $fromTimestamp) {
                     $params['updated']
@@ -178,36 +100,62 @@ class SolrComparer extends SolrUpdater
                 if ($sourceNor) {
                     $params['$nor'] = $sourceNor;
                 }
-                $params['dedup_id'] = ['$exists' => false];
             }
+
+            $trackingName = $this->db->getNewTrackingCollection();
+            $this->log->logInfo(
+                'updateRecords',
+                "Tracking deduplicated records with collection $trackingName"
+            );
+
             $total = $this->db->countRecords($params);
             $count = 0;
             $lastDisplayedCount = 0;
             $mergedComponents = 0;
             $deleted = 0;
+            $prevId = '';
             $this->log->logInfo(
                 'compareRecords',
                 "Comparing $total individual records"
             );
             $pc = new PerformanceCounter();
-            $this->db->iterateRecords(
-                $params,
-                [],
-                function ($record) use (
-                    $pc,
-                    &$mergedComponents,
-                    $logFile,
-                    &$count,
-                    &$deleted,
-                    &$lastDisplayedCount
-                ) {
-                    if (isset($this->terminate)) {
-                        return false;
-                    }
-                    if (in_array($record['source_id'], $this->nonIndexedSources)) {
-                        return true;
-                    }
 
+            $handler = function ($record) use (
+                $pc,
+                &$mergedComponents,
+                $logFile,
+                &$count,
+                &$deleted,
+                &$lastDisplayedCount,
+                $trackingName,
+                &$prevId
+            ) {
+                if (isset($this->terminate)) {
+                    return false;
+                }
+                if (in_array($record['source_id'], $this->nonIndexedSources)) {
+                    return true;
+                }
+
+                if (isset($record['dedup_id'])) {
+                    $id = $record['dedup_id'];
+                    if ($prevId !== $id
+                        && $this->db->addIdToTrackingCollection($trackingName, $id)
+                    ) {
+                        $result = $this->processDedupRecord(
+                            $id,
+                            $record['source_id'],
+                            false
+                        );
+
+                        foreach ($result['records'] as $record) {
+                            ++$count;
+                            $this->compareWithSolrRecord($record, $logFile);
+                        }
+                        $mergedComponents += $result['mergedComponents'];
+                        $deleted += count($result['deleted']);
+                    }
+                } else {
                     $result = $this->processSingleRecord($record);
                     $mergedComponents += $result['mergedComponents'];
                     $deleted += count($result['deleted']);
@@ -215,19 +163,27 @@ class SolrComparer extends SolrUpdater
                         ++$count;
                         $this->compareWithSolrRecord($record, $logFile);
                     }
-                    if ($count + $deleted >= $lastDisplayedCount + 1000) {
-                        $lastDisplayedCount = $count + $deleted;
-                        $pc->add($count);
-                        $avg = $pc->getSpeed();
-                        $this->log->logInfo(
-                            'compareRecords',
-                            "$count individual, $deleted deleted and"
-                                . " $mergedComponents included child records"
-                                . " compared, $avg records/sec"
-                        );
-                    }
                 }
+                if ($count + $deleted >= $lastDisplayedCount + 1000) {
+                    $lastDisplayedCount = $count + $deleted;
+                    $pc->add($count);
+                    $avg = $pc->getSpeed();
+                    $this->log->logInfo(
+                        'compareRecords',
+                        "$count normal, $deleted deleted and"
+                            . " $mergedComponents included child records"
+                            . " compared, $avg records/sec"
+                    );
+                }
+            };
+
+            $this->db->iterateRecords(
+                $params,
+                [],
+                $handler
             );
+
+            $this->db->dropTrackingCollection($trackingName);
 
             if (isset($this->terminate)) {
                 $this->log->logInfo('compareRecords', 'Termination upon request');
@@ -236,7 +192,7 @@ class SolrComparer extends SolrUpdater
 
             $this->log->logInfo(
                 'compareRecords',
-                "Total $count individual, $deleted deleted and"
+                "Total $count normal, $deleted deleted and"
                     . " $mergedComponents included child records compared"
             );
         } catch (\Exception $e) {
