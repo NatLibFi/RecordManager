@@ -22,11 +22,12 @@ This is a major release that contains a lot of refactoring and underlying change
 ### Changed
 
 - Refactor the code to use Laminas module manager and service manager. This includes a lot of cleaning up as well.
-- Setting `threaded_merged_record_update` has been renamed to `parallel_merged_record_update`.
+- Deduplicated record update mechanism has been simplified. Setting `threaded_merged_record_update` no longer exists. Instead there's an optional new setting for controlling the number of workers for deduplicated records.
 
 ### Removed
 
 - Remove Finna module (moved to the [RecordManager-Finna](https://github.com/NatLibFi/RecordManager-Finna) repository).
+- The MySQL/MariaDB database no longer uses a trigger to check dedup record deletion as it did not work correctly. It is recommended to drop this trigger in `mysql` if it exists: `DROP TRIGGER if exists dedup_before_update;`
 
 ## [1.9.0] - 2021-10-27
 
