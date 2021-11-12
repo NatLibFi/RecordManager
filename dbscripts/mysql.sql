@@ -95,18 +95,4 @@ BEGIN
 END$$
 delimiter ;
 
--- A trigger to make sure we're not deleting a linked dedup record
-delimiter $$
-CREATE TRIGGER dedup_before_update
-BEFORE UPDATE
-ON dedup FOR EACH ROW
-BEGIN
-    IF old.deleted=0 AND new.deleted=1 AND EXISTS (SELECT * FROM record WHERE dedup_id=new._id) THEN
-        set @msg = CONCAT('Attempted deletion of linked dedup record ', new._id);
-        SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = @msg;
-    END IF;
-END$$
-delimiter ;
-
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
