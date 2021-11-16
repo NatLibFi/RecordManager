@@ -60,20 +60,6 @@ class SolrComparer extends SolrUpdater
         ?string $sourceId,
         ?string $singleId
     ): void {
-        // Install a signal handler so that we can exit cleanly if interrupted
-        unset($this->terminate);
-        if (function_exists('pcntl_signal')) {
-            pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
-            pcntl_signal(SIGTERM, [$this, 'sigIntHandler']);
-            $this->log
-                ->logInfo('compareRecords', 'Interrupt handler set');
-        } else {
-            $this->log->logInfo(
-                'compareRecords',
-                'Could not set an interrupt handler -- pcntl not available'
-            );
-        }
-
         if ($logFile) {
             file_put_contents($logFile, '');
         }
@@ -201,10 +187,6 @@ class SolrComparer extends SolrUpdater
                 'Exception: ' . $e->getMessage() . ' at ' . $e->getFile() . ':'
                     . $e->getLine()
             );
-        }
-        if (function_exists('pcntl_signal')) {
-            pcntl_signal(SIGINT, SIG_DFL);
-            pcntl_signal(SIGTERM, SIG_DFL);
         }
     }
 

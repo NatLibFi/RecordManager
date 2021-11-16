@@ -1040,10 +1040,6 @@ class SolrUpdater
             );
         }
         $this->deInitWorkerPoolManager();
-        if (function_exists('pcntl_signal')) {
-            pcntl_signal(SIGINT, SIG_DFL);
-            pcntl_signal(SIGTERM, SIG_DFL);
-        }
     }
 
     /**
