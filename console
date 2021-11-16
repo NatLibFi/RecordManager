@@ -39,6 +39,7 @@ foreach ($_SERVER['argv'] as $parameter) {
     }
     $parsed = @parse_ini_string(substr($parameter, 2));
     if (false === $parsed) {
+        $remainingArgs[] = $parameter;
         continue;
     }
     if (isset($parsed['basepath'])) {
