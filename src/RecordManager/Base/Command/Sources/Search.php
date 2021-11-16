@@ -114,7 +114,9 @@ class Search extends AbstractBase
                     if (is_bool($single)) {
                         $single = $single ? '1' : '0';
                     }
-                    if (preg_match($regexp, "$setting=$single")) {
+                    if (!is_object($single)
+                        && preg_match($regexp, "$setting=$single")
+                    ) {
                         $matches[] = $source;
                         break 2;
                     }
