@@ -950,8 +950,8 @@ class SolrUpdater
 
             $this->handleRecords(true, $noCommit);
 
-            // Process dedup records:
-            if (!$delete) {
+            // Process dedup records if necessary:
+            if (!$delete && $this->needToProcessDedupRecords($sourceId)) {
                 $this->log->logInfo('updateRecords', 'Processing dedup records');
                 $dedupParams = [];
                 if ($singleId) {
@@ -1040,6 +1040,33 @@ class SolrUpdater
             );
         }
         $this->deInitWorkerPoolManager();
+    }
+
+    /**
+     * Determine if processing dedup records is needed for the given source
+     * specification
+     *
+     * @param string $sourceId Source specification
+     *
+     * @return bool
+     */
+    protected function needToProcessDedupRecords(string $sourceId): bool
+    {
+        if (!$sourceId) {
+            return true;
+        }
+        $sources = explode(',', $sourceId);
+        foreach ($sources as $source) {
+            $source = trim($source);
+            if ('' === $source || strncmp($source, '-', 1) === 0) {
+                continue;
+            }
+            if ($this->settings[$source]['dedup'] ?? false) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -1176,7 +1203,7 @@ class SolrUpdater
 
         if (empty($members)) {
             $this->log->logInfo(
-                'processMerged',
+                'updateRecords',
                 "Found no records with dedup id: $dedupId, ids: "
                     . implode(',', (array)$dedupRecord['ids'])
             );
@@ -1240,7 +1267,7 @@ class SolrUpdater
                 );
             } else {
                 $this->log->logWarning(
-                    'processMerged',
+                    'updateRecords',
                     "allfields missing in merged record for dedup key $dedupId"
                 );
             }
