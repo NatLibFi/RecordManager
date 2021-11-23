@@ -85,11 +85,14 @@ Purging of deleted records means that RecordManager no longer has any knowledge 
 them. They cannot be included in e.g. Solr updates or OAI-PMH responses.
 This prompt can be suppressed with the --no-interacfive option.
 
+
 EOT;
 
             $questionHelper = $this->getHelper('question');
-            $question
-                = new ConfirmationQuestion('Continue with this action?', false);
+            $question = new ConfirmationQuestion(
+                '<question>Continue with this action?</question> (y/N)',
+                false
+            );
 
             if (!$questionHelper->ask($input, $output, $question)) {
                 return Command::SUCCESS;
