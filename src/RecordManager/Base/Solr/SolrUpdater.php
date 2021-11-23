@@ -1574,7 +1574,9 @@ class SolrUpdater
         $this->settings = [];
         foreach ($dataSourceConfig as $source => $settings) {
             if (!isset($settings['format'])) {
-                throw new \Exception("Error: format not set for $source\n");
+                throw new \Exception(
+                    "Error: format not set for data source $source"
+                );
             }
             $this->settings[$source] = $settings;
             $this->settings[$source]['idPrefix'] = isset($settings['idPrefix'])

@@ -231,9 +231,11 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
             if (!isset($settings['format'])) {
                 $this->logger->logFatal(
                     'initSourceSettings',
-                    "format not set for $source"
+                    "format not set for data source $source"
                 );
-                throw new \Exception("Error: format not set for $source\n");
+                throw new \Exception(
+                    "Error: format not set for data source $source"
+                );
             }
             if (empty($settings['idPrefix'])) {
                 $settings['idPrefix'] = $source;
