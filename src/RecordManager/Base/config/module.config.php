@@ -55,6 +55,8 @@ return [
                     \RecordManager\Base\Command\Solr\DumpUpdates::class => \RecordManager\Base\Command\Solr\AbstractBaseWithSolrUpdaterFactory::class,
                     \RecordManager\Base\Command\Solr\Optimize::class => \RecordManager\Base\Command\Solr\AbstractBaseWithSolrUpdaterFactory::class,
                     \RecordManager\Base\Command\Solr\UpdateIndex::class => \RecordManager\Base\Command\Solr\AbstractBaseWithSolrUpdaterFactory::class,
+                    \RecordManager\Base\Command\Sources\AddSetting::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
+                    \RecordManager\Base\Command\Sources\RemoveSetting::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
                     \RecordManager\Base\Command\Sources\Search::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
                 ],
             ],
