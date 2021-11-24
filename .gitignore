@@ -22,6 +22,7 @@ conf/*.lst
 .phpstan_cache
 *.log
 mappings/*.map
+mappings/*.php
 reports
 transformations/*.properties
 transformations/*.xsl

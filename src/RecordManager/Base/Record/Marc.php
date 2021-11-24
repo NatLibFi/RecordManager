@@ -612,16 +612,27 @@ class Marc extends AbstractRecord
                 ]
             )
         );
+        $useHILCC = $this->getDriverParam('useHILCC', false);
+        $sortKey = '';
         foreach ($data['callnumber-raw'] as $callnumber) {
             $cn = new LcCallNumber($callnumber);
-            if ($cn->isValid()) {
+            // Store sort key even from an invalid CN in case we don't find a valid
+            // one:
+            if ('' === $sortKey) {
+                $sortKey = $cn->getSortKey();
+            }
+            if (!$cn->isValid()) {
+                continue;
+            }
+            if (empty($data['callnumber-sort'])) {
                 $data['callnumber-sort'] = $cn->getSortKey();
-                break;
+            }
+            if ($useHILCC && $category = $cn->getCategory()) {
+                $data['category_str_mv'][] = $category;
             }
         }
-        if (empty($data['callnumber-sort']) && !empty($data['callnumber-raw'])) {
-            $cn = new LcCallNumber($data['callnumber-raw'][0]);
-            $data['callnumber-sort'] = $cn->getSortKey();
+        if (empty($data['callnumber-sort']) && $sortKey) {
+            $data['callnumber-sort'] = $sortKey;
         }
 
         $data['topic'] = $this->getTopics();

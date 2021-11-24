@@ -173,4 +173,51 @@ class LcCallNumber extends AbstractCallNumber
         }
         return $key;
     }
+
+    /**
+     * Get a hierarchical category for the call number
+     *
+     * Requires the HILCC mapping file. See RecordManager wiki for more information.
+     *
+     * @return string
+     */
+    public function getCategory(): string
+    {
+        if (!$this->isValid()) {
+            return '';
+        }
+
+        static $mapping = null;
+        static $cache = [];
+        if (null === $mapping) {
+            $mappingFile = RECMAN_BASE_PATH . '/mappings/LcCallNumberCategories.php';
+            if (!file_exists($mappingFile)) {
+                throw new \Exception(
+                    "$mappingFile not available. Install it to use the categories."
+                );
+            }
+            $mapping = include $mappingFile;
+        }
+
+        $digits = intval($this->digits);
+        $decimal = intval($this->decimal);
+        $cacheKey = $this->letters . '/' . $digits . '/' . $decimal;
+        if (isset($cache[$cacheKey])) {
+            $ptr = $cache[$cacheKey];
+            return '' === $ptr ? '' : $mapping[$ptr]['cat'];
+        }
+        foreach ($mapping as $key => $item) {
+            if ($this->letters >= $item['a1']
+                && $this->letters <= $item['a2']
+                && $digits >= $item['d1']
+                && $digits <= $item['d2']
+                && $decimal >= $item['f1']
+                && $decimal <= $item['f2']
+            ) {
+                $cache[$cacheKey] = $key;
+                return $item['cat'];
+            }
+        }
+        return $cache[$cacheKey] = '';
+    }
 }
