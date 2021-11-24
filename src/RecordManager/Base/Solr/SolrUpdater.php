@@ -972,11 +972,19 @@ class SolrUpdater
                 $this->db->iterateDedups(
                     $dedupParams,
                     [],
-                    function ($record) use ($handler, &$count) {
-                        $record = [
-                            'dedup_id' => (string)$record['_id']
-                        ];
-                        $result = $handler($record);
+                    function ($record) use ($handler, &$count, $sourceId) {
+                        $validIds = $this->idsInSources(
+                            (array)$record['ids'] ?? [],
+                            $sourceId
+                        );
+                        if ($validIds) {
+                            $record = [
+                                'dedup_id' => (string)$record['_id']
+                            ];
+                            $result = $handler($record);
+                        } else {
+                            $result = true;
+                        }
 
                         if (++$count % 10000 === 0) {
                             $this->log->logInfo(
@@ -1058,10 +1066,53 @@ class SolrUpdater
         $sources = explode(',', $sourceId);
         foreach ($sources as $source) {
             $source = trim($source);
-            if ('' === $source || strncmp($source, '-', 1) === 0) {
+            if ('' === $source) {
                 continue;
             }
+            if (strncmp($source, '-', 1) === 0) {
+                return true;
+            }
             if ($this->settings[$source]['dedup'] ?? false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if any of the IDs matches the source specification
+     *
+     * @param array  $ids      Record IDs
+     * @param string $sourceId Source specification
+     *
+     * @return bool
+     */
+    protected function idsInSources(array $ids, string $sourceId): bool
+    {
+        if (!$sourceId) {
+            return true;
+        }
+
+        $idSources = array_map(
+            function ($a) {
+                [$src] = explode('.', $a, 2);
+                return $src;
+            },
+            $ids
+        );
+
+        $sources = explode(',', $sourceId);
+        foreach ($sources as $source) {
+            $source = trim($source);
+            if ('' === $source) {
+                continue;
+            }
+            if (strncmp($source, '-', 1) === 0) {
+                if (in_array(substr($source, 2), $idSources)) {
+                    return false;
+                }
+            } elseif (in_array($source, $idSources)) {
                 return true;
             }
         }
