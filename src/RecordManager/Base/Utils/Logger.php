@@ -357,7 +357,7 @@ class Logger
      *
      * @return void
      */
-    public function writelnVerbose(string|callable $msg): void
+    public function writelnVerbose($msg): void
     {
         $this->writelnConsole($msg, OutputInterface::VERBOSITY_VERBOSE);
     }
@@ -369,7 +369,7 @@ class Logger
      *
      * @return void
      */
-    public function writelnVeryVerbose(string|callable $msg): void
+    public function writelnVeryVerbose($msg): void
     {
         $this->writelnConsole($msg, OutputInterface::VERBOSITY_VERY_VERBOSE);
     }
@@ -381,7 +381,7 @@ class Logger
      *
      * @return void
      */
-    public function writelnDebug(string|callable $msg): void
+    public function writelnDebug($msg): void
     {
         $this->writelnConsole($msg, OutputInterface::VERBOSITY_DEBUG);
     }
@@ -397,7 +397,7 @@ class Logger
      * @return void
      */
     public function writelnConsole(
-        string|callable $msg,
+        $msg,
         $verbosity = OutputInterface::VERBOSITY_NORMAL
     ): void {
         if (!$this->consoleOutput) {
@@ -420,7 +420,7 @@ class Logger
      * @return void
      */
     public function writeConsole(
-        string|callable $msg,
+        $msg,
         $verbosity = OutputInterface::VERBOSITY_NORMAL
     ): void {
         if (!$this->consoleOutput) {
