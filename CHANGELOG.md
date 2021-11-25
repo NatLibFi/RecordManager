@@ -18,11 +18,13 @@ This is a major release that contains a lot of refactoring and underlying change
   - Record splitters
 - Introduce ./console (based on Symfony console) as the new interface for console tasks. Old scripts remain as a simple compatibility layer but don't provide proper parameter error handling etc. anymore.
 - Add possibility to define the base path for configuration files with the RECMAN_BASE_PATH environment variable.
+- Colorize output by message type.
 
 ### Changed
 
 - Refactor the code to use Laminas module manager and service manager. This includes a lot of cleaning up as well.
-- Deduplicated record update mechanism has been simplified. Setting `threaded_merged_record_update` no longer exists. Instead there's an optional new setting for controlling the number of workers for deduplicated records.
+- Simplify the deduplicated record update mechanism. Setting `threaded_merged_record_update` no longer exists. Instead there's an optional new setting for controlling the number of workers for deduplicated records.
+- Make different verbosity levels have an effect on output of many commands.
 
 ### Removed
 
