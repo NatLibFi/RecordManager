@@ -134,6 +134,7 @@ return [
             'splitter' => [
                 'factories' => [
                     \RecordManager\Base\Splitter\Ead::class => \RecordManager\Base\Splitter\AbstractBaseFactory::class,
+                    \RecordManager\Base\Splitter\Ead3::class => \RecordManager\Base\Splitter\AbstractBaseFactory::class,
                     \RecordManager\Base\Splitter\File::class => \RecordManager\Base\Splitter\AbstractBaseFactory::class,
                 ],
             ],
