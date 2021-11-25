@@ -648,7 +648,7 @@ class DedupHandler implements DedupHandlerInterface
                 $this->db->saveRecord($otherRecord);
             } elseif (empty($dedupRecord['ids'])) {
                 // No records remaining => just mark dedup record deleted.
-                // This shouldn't happen since dedup record should always contain
+                // This shouldn't happen since a dedup record should always contain
                 // at least two records
                 $dedupRecord['deleted'] = true;
             }
@@ -1169,6 +1169,22 @@ class DedupHandler implements DedupHandlerInterface
                 }
             }
         );
+
+        if (0 === $marked) {
+            // Make sure the components part don't remain deduplicated with anything
+            foreach ($components1 as $component) {
+                if (isset($component['dedup_id'])) {
+                    $this->removeFromDedupRecord(
+                        $component['dedup_id'],
+                        $component['_id']
+                    );
+                    unset($component['dedup_id']);
+                    $component['updated'] = $this->db->getTimestamp();
+                    $this->db->saveRecord($component);
+                }
+            }
+        }
+
         return $marked;
     }
 
