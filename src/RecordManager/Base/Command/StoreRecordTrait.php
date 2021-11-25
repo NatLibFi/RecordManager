@@ -4,6 +4,7 @@
  *
  * Prerequisites:
  * - MetadataUtils as $this->metadataUtils.
+ * - Logger as $this->logger
  *
  * PHP version 7
  *
@@ -80,9 +81,7 @@ trait StoreRecordTrait
         $dataArray = [];
         $settings = $this->dataSourceConfig[$sourceId];
         if ($settings['recordSplitter']) {
-            if ($this->verbose) {
-                echo "Splitting records\n";
-            }
+            $this->logger->writelnDebug('Splitting records');
             if (!($settings['recordSplitter'] instanceof \XSLTProcessor)) {
                 $splitterParams = !empty($settings['recordSplitterParams'])
                     ? $settings['recordSplitterParams']
@@ -105,17 +104,11 @@ trait StoreRecordTrait
             } else {
                 $doc = new \DOMDocument();
                 $doc->loadXML($recordData);
-                if ($this->verbose) {
-                    echo "XML Doc Created\n";
-                }
+                $this->logger->writelnDebug('XML Doc Created');
                 $transformedDoc = $settings['recordSplitter']->transformToDoc($doc);
-                if ($this->verbose) {
-                    echo "XML Transformation Done\n";
-                }
+                $this->logger->writelnDebug('XML Transformation Done');
                 $records = simplexml_import_dom($transformedDoc);
-                if ($this->verbose) {
-                    echo "Creating record array\n";
-                }
+                $this->logger->writelnDebug('Creating record array');
                 foreach ($records as $record) {
                     $dataArray[] = $record->saveXML();
                 }
@@ -124,9 +117,9 @@ trait StoreRecordTrait
             $dataArray = [$recordData];
         }
 
-        if ($this->verbose) {
-            echo "Storing array of " . count($dataArray) . " records\n";
-        }
+        $this->logger->writelnDebug(
+            'Storing array of ' . count($dataArray) . ' records'
+        );
 
         // Store start time so that we can mark deleted any child records not
         // present anymore
@@ -185,18 +178,14 @@ trait StoreRecordTrait
             $dbRecord = $this->db->getRecord($id);
             if ($dbRecord) {
                 $dbRecord['updated'] = $this->db->getTimestamp();
-                if ($this->verbose) {
-                    echo "Updating record $id\n";
-                }
+                $this->logger->writelnDebug("Updating record $id");
             } else {
                 $dbRecord = [];
                 $dbRecord['source_id'] = $sourceId;
                 $dbRecord['_id'] = $id;
                 $dbRecord['created'] = $dbRecord['updated']
                     = $this->db->getTimestamp();
-                if ($this->verbose) {
-                    echo "Adding record $id\n";
-                }
+                $this->logger->writelnDebug("Adding record $id");
             }
             $dbRecord['date'] = $dbRecord['updated'];
             if ($normalizedData) {
@@ -373,9 +362,9 @@ trait StoreRecordTrait
             ['source_id' => $sourceId, 'oai_id' => $oaiID],
             [],
             function ($record) use (&$count, $oaiID) {
-                if ($this->verbose) {
-                    echo "Delete by oai_id $oaiID: {$record['_id']}\n";
-                }
+                $this->logger->writelnDebug(
+                    "Delete by oai_id $oaiID: {$record['_id']}"
+                );
                 $this->markRecordDeleted($record);
                 ++$count;
             }

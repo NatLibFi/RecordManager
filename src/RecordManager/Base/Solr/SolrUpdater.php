@@ -75,13 +75,6 @@ class SolrUpdater
     protected $log;
 
     /**
-     * Verbose mode
-     *
-     * @var bool
-     */
-    protected $verbose;
-
-    /**
      * Main configuration
      *
      * @var array
@@ -405,7 +398,7 @@ class SolrUpdater
      *
      * @var WorkerPoolManager
      */
-    protected $workerPoolManager = null;
+    protected $workerPoolManager;
 
     /**
      * Field mapper
@@ -558,16 +551,17 @@ class SolrUpdater
     /**
      * Constructor
      *
-     * @param array                   $config           Main configuration
-     * @param array                   $dataSourceConfig Data source settings
-     * @param Database                $db               Database connection
-     * @param object                  $log              Logger
-     * @param RecordPluginManager     $recordPM         Record plugin manager
-     * @param EnrichmentPluginManager $enrichmentPM     Enrichment plugin manager
-     * @param HttpClientManager       $httpManager      HTTP client manager
-     * @param Ini                     $configReader     Configuration reader
-     * @param FieldMapper             $fieldMapper      Field mapper
-     * @param MetadataUtils           $metadataUtils    Metadata utilities
+     * @param array                   $config            Main configuration
+     * @param array                   $dataSourceConfig  Data source settings
+     * @param Database                $db                Database connection
+     * @param Logger                  $log               Logger
+     * @param RecordPluginManager     $recordPM          Record plugin manager
+     * @param EnrichmentPluginManager $enrichmentPM      Enrichment plugin manager
+     * @param HttpClientManager       $httpManager       HTTP client manager
+     * @param Ini                     $configReader      Configuration reader
+     * @param FieldMapper             $fieldMapper       Field mapper
+     * @param MetadataUtils           $metadataUtils     Metadata utilities
+     * @param WorkerPoolManager       $workerPoolManager Worker pool manager
      *
      * @throws \Exception
      */
@@ -581,7 +575,8 @@ class SolrUpdater
         HttpClientManager $httpManager,
         Ini $configReader,
         FieldMapper $fieldMapper,
-        MetadataUtils $metadataUtils
+        MetadataUtils $metadataUtils,
+        WorkerPoolManager $workerPoolManager
     ) {
         $this->config = $config;
         $this->db = $db;
@@ -592,6 +587,7 @@ class SolrUpdater
         $this->configReader = $configReader;
         $this->fieldMapper = $fieldMapper;
         $this->metadataUtils = $metadataUtils;
+        $this->workerPoolManager = $workerPoolManager;
 
         $this->metadataRecordCache = new \cash\LRUCache(100);
         $this->recordDataCache = new \cash\LRUCache(100);
@@ -717,18 +713,6 @@ class SolrUpdater
     }
 
     /**
-     * Get/set verbose mode
-     *
-     * @param $verbose New mode or null for no change
-     *
-     * @return bool
-     */
-    public function setVerboseMode(?bool $verbose): bool
-    {
-        return $this->verbose = ($verbose ?? $this->verbose);
-    }
-
-    /**
      * Backtrace signal handler
      *
      * @param int $signo Signal number
@@ -738,32 +722,6 @@ class SolrUpdater
     public function backtraceSignalHandler($signo)
     {
         debug_print_backtrace(0, 5);
-    }
-
-    /**
-     * Initialize worker pool manager
-     *
-     * @return void
-     */
-    protected function initWorkerPoolManager()
-    {
-        if (null === $this->workerPoolManager) {
-            $this->workerPoolManager = new WorkerPoolManager();
-        }
-    }
-
-    /**
-     * Deinitialize worker pool manager
-     *
-     * @return void
-     */
-    protected function deInitWorkerPoolManager()
-    {
-        if (null !== $this->workerPoolManager) {
-            $this->workerPoolManager->destroyWorkerPools();
-            unset($this->workerPoolManager);
-            $this->workerPoolManager = null;
-        }
     }
 
     /**
@@ -1047,7 +1005,7 @@ class SolrUpdater
                     . $e->getLine()
             );
         }
-        $this->deInitWorkerPoolManager();
+        $this->workerPoolManager->destroyWorkerPools();
     }
 
     /**
@@ -1270,11 +1228,15 @@ class SolrUpdater
                         . $member['solr']['id']
                 );
             }
-            if ($this->verbose) {
-                echo 'Original deduplicated but single record '
-                    . $member['solr']['id'] . ":\n";
-                print_r($member['solr']);
-            }
+            $this->log->writelnVeryVerbose(
+                'Original deduplicated but single record '
+                . $member['solr']['id']
+            );
+            $this->log->writelnVeryVerbose(
+                function () use ($member) {
+                    return $this->prettyPrint($member['solr'], true);
+                }
+            );
 
             $result['records'][] = $member['solr'];
             $result['deleted'][] = $dedupRecord['_id'];
@@ -1282,11 +1244,14 @@ class SolrUpdater
             foreach ($members as $member) {
                 $member['solr']['merged_child_boolean'] = true;
 
-                if ($this->verbose) {
-                    echo 'Original deduplicated record '
-                        . $member['solr']['id'] . ":\n";
-                    $this->prettyPrint($member['solr']);
-                }
+                $this->log->writelnVeryVerbose(
+                    'Original deduplicated record ' . $member['solr']['id']
+                );
+                $this->log->writelnVeryVerbose(
+                    function () use ($member) {
+                        return $this->prettyPrint($member['solr'], true);
+                    }
+                );
 
                 $result['records'][] = $member['solr'];
             }
@@ -1331,10 +1296,14 @@ class SolrUpdater
                 $merged['record_format'] = 'merged';
                 $merged['merged_boolean'] = true;
 
-                if ($this->verbose) {
-                    echo "Dedup record {$merged['id']}:\n";
-                    $this->prettyPrint($merged);
-                }
+                $this->log->writelnVerbose(
+                    "Dedup record {$merged['id']}"
+                );
+                $this->log->writelnVeryVerbose(
+                    function () use ($merged) {
+                        return $this->prettyPrint($merged, true);
+                    }
+                );
 
                 $result['records'][] = $merged;
             }
@@ -1363,10 +1332,12 @@ class SolrUpdater
             $mergedComponents = 0;
             $data = $this->createSolrArray($record, $mergedComponents);
             if ($data !== false) {
-                if ($this->verbose) {
-                    echo "Metadata for record {$record['_id']}: \n";
-                    $this->prettyPrint($data);
-                }
+                $this->log->writelnVerbose("Single record {$record['_id']}");
+                $this->log->writelnVeryVerbose(
+                    function () use ($data) {
+                        return $this->prettyPrint($data, true);
+                    }
+                );
 
                 $result['records'][] = $data;
                 $result['mergedComponents'] = $mergedComponents;
@@ -1480,21 +1451,31 @@ class SolrUpdater
                 ++$count;
                 if ($count % 1000 == 0) {
                     $this->log->logInfo('countValues', "$count records processed");
-                    if ($this->verbose) {
-                        echo "Current list:\n";
-                        arsort($values, SORT_NUMERIC);
-                        foreach ($values as $key => $value) {
-                            echo str_pad($value, 10, ' ', STR_PAD_LEFT) . ": $key\n";
+                    $this->log->writelnVerbose(
+                        'Current list has ' . count($values) . ' entries'
+                    );
+
+                    $this->log->writelnVeryVerbose(
+                        function () use (&$values) {
+                            $result = [];
+                            arsort($values, SORT_NUMERIC);
+                            foreach ($values as $key => $value) {
+                                $result[] = str_pad($value, 10, ' ', STR_PAD_LEFT)
+                                    . ": $key";
+                            }
+                            return implode(PHP_EOL, $result) . PHP_EOL . PHP_EOL;
                         }
-                        echo "\n";
-                    }
+                    );
                 }
             }
         );
         arsort($values, SORT_NUMERIC);
-        echo "Result list:\n";
+        $this->log
+            ->writelnConsole('Result list has ' . count($values) . ' entries:');
         foreach ($values as $key => $value) {
-            echo str_pad($value, 10, ' ', STR_PAD_LEFT) . ": $key\n";
+            $this->log->writelnConsole(
+                str_pad($value, 10, ' ', STR_PAD_LEFT) . ": $key"
+            );
         }
     }
 
@@ -1587,7 +1568,6 @@ class SolrUpdater
      */
     protected function initWorkerPools()
     {
-        $this->initWorkerPoolManager();
         $this->workerPoolManager->createWorkerPool(
             'solr',
             $this->solrUpdateWorkers,
@@ -2833,10 +2813,9 @@ class SolrUpdater
         } else {
             $res = print_r($data, true);
         }
-        if ($return) {
-            return $res;
+        if (!$return) {
+            $this->log->writelnConsole($res);
         }
-        echo $res;
         return $res;
     }
 

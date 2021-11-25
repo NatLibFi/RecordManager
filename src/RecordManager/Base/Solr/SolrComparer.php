@@ -275,7 +275,7 @@ class SolrComparer extends SolrUpdater
             $msg = "Record {$record['id']} would be changed: " . PHP_EOL
                 . $differences . PHP_EOL;
             if (!$logFile) {
-                echo $msg;
+                $this->log->writeConsole($msg);
             } else {
                 file_put_contents($logFile, $msg, FILE_APPEND);
             }

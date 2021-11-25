@@ -109,7 +109,9 @@ class Deduplicate extends AbstractBase
 
         $this->logger->logInfo('deduplicate', 'Deduplication started');
 
-        // Install a signal handler so that we can exit cleanly if interrupted
+        // Install a signal handler so that we can exit cleanly if interrupted.
+        // This makes sure deduplication of a single record is not interrupted in
+        // the middle.
         if (function_exists('pcntl_signal')) {
             pcntl_signal(SIGINT, [$this, 'sigIntHandler']);
             pcntl_signal(SIGTERM, [$this, 'sigIntHandler']);
@@ -214,7 +216,6 @@ class Deduplicate extends AbstractBase
                     'deduplicate',
                     "Processing $total records for '$source'"
                 );
-                $verbose = $this->verbose;
                 $this->db->iterateRecords(
                     $params,
                     [],
@@ -224,8 +225,7 @@ class Deduplicate extends AbstractBase
                         &$count,
                         &$deduped,
                         $pc,
-                        $source,
-                        $verbose
+                        $source
                     ) {
                         if (!$singleId && empty($record['update_needed'])) {
                             return true;
@@ -235,28 +235,28 @@ class Deduplicate extends AbstractBase
                         }
                         $startRecordTime = microtime(true);
                         if ($dedupHandler->dedupRecord($record)) {
-                            if ($verbose) {
-                                echo '+';
-                            }
+                            $this->logger->writeConsole(
+                                '+',
+                                OutputInterface::VERBOSITY_VERY_VERBOSE
+                            );
                             ++$deduped;
                         } else {
-                            if ($verbose) {
-                                echo '.';
-                            }
+                            $this->logger->writeConsole(
+                                '.',
+                                OutputInterface::VERBOSITY_VERY_VERBOSE
+                            );
                         }
-                        if ($verbose
-                            && microtime(true) - $startRecordTime > 0.7
-                        ) {
-                            echo "\nDeduplication of " . $record['_id'] . ' took '
-                                . (microtime(true) - $startRecordTime) . "\n";
+                        if (microtime(true) - $startRecordTime > 0.7) {
+                            $this->logger->writelnVerbose(
+                                PHP_EOL . 'Deduplication of ' . $record['_id']
+                                . ' took ' . (microtime(true) - $startRecordTime)
+                            );
                         }
                         ++$count;
                         if ($count % 1000 == 0) {
                             $pc->add($count);
                             $avg = $pc->getSpeed();
-                            if ($this->verbose) {
-                                echo "\n";
-                            }
+                            $this->logger->writelnVeryVerbose('');
                             $this->logger->logInfo(
                                 'deduplicate',
                                 "$count records processed for '$source', $deduped "
@@ -300,6 +300,6 @@ class Deduplicate extends AbstractBase
     public function sigIntHandler($signal)
     {
         $this->terminate = true;
-        echo "Termination requested\n";
+        $this->logger->writelnConsole('Termination requested');
     }
 }

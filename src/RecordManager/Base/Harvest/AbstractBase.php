@@ -531,20 +531,6 @@ abstract class AbstractBase
     }
 
     /**
-     * Print a message if in verbose mode
-     *
-     * @param string $msg Message
-     *
-     * @return void
-     */
-    protected function printVerboseMsg($msg)
-    {
-        if ($this->verbose) {
-            echo "$msg\n";
-        }
-    }
-
-    /**
      * Log a message and display on console in verbose mode.
      *
      * @param string $msg Message
@@ -554,7 +540,6 @@ abstract class AbstractBase
     protected function infoMsg($msg)
     {
         $msg = $this->formatLogMessage($msg);
-        $this->printVerboseMsg($msg);
         $this->log->logInfo($this->getLogClass(), $msg);
     }
 
@@ -568,7 +553,6 @@ abstract class AbstractBase
     protected function errorMsg($msg)
     {
         $msg = $this->formatLogMessage($msg);
-        $this->printVerboseMsg($msg);
         $this->log->logError($this->getLogClass(), $msg);
     }
 
@@ -582,7 +566,6 @@ abstract class AbstractBase
     protected function warningMsg($msg)
     {
         $msg = $this->formatLogMessage($msg);
-        $this->printVerboseMsg($msg);
         $this->log->logWarning($this->getLogClass(), $msg);
     }
 
@@ -596,7 +579,6 @@ abstract class AbstractBase
     protected function fatalMsg($msg)
     {
         $msg = $this->formatLogMessage($msg);
-        $this->printVerboseMsg($msg);
         $this->log->logFatal($this->getLogClass(), $msg);
     }
 

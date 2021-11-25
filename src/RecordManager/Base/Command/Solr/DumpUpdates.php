@@ -105,7 +105,6 @@ class DumpUpdates extends AbstractBase
         if ($input->getOption('unmapped')) {
             $this->solrUpdater->disableFieldMappings(true);
         }
-        $this->solrUpdater->setVerboseMode($this->verbose);
         $this->solrUpdater->updateRecords(
             $input->getOption('all') ? '' : $input->getOption('from'),
             $input->getOption('source'),

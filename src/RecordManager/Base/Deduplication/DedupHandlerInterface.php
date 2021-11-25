@@ -41,15 +41,6 @@ namespace RecordManager\Base\Deduplication;
 interface DedupHandlerInterface
 {
     /**
-     * Get/set verbose mode
-     *
-     * @param $verbose New mode or null for no change
-     *
-     * @return bool
-     */
-    public function setVerboseMode(?bool $verbose): bool;
-
-    /**
      * Verify dedup record consistency
      *
      * @param array $dedupRecord Dedup record

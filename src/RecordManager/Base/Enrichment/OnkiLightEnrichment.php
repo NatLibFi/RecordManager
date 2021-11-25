@@ -153,7 +153,8 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
         if (!$match) {
             $this->logger->logDebug(
                 'enrichField',
-                "Ignoring unlisted URI '$id', record $sourceId." . $record->getID()
+                "Ignoring unlisted URI '$id', record $sourceId." . $record->getID(),
+                true
             );
             return;
         }

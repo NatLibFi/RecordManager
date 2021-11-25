@@ -100,7 +100,8 @@ class UpdateIndex extends AbstractBase
      */
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
-        $this->solrUpdater->setVerboseMode($this->verbose);
+        // Override the default verbosity:
+        $this->verbose = $output->isVerbose();
         $this->solrUpdater->updateRecords(
             $input->getOption('all') ? '' : $input->getOption('from'),
             $input->getOption('source'),

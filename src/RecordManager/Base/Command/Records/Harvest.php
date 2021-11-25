@@ -285,9 +285,9 @@ class Harvest extends AbstractBase
                             ],
                             [],
                             function ($record) use (&$count) {
-                                if ($this->verbose) {
-                                    echo "Marking {$record['_id']} deleted\n";
-                                }
+                                $this->logger->writelnVeryVerbose(
+                                    "Marking {$record['_id']} deleted"
+                                );
                                 $this->markRecordDeleted($record, true);
                                 if (++$count % 1000 == 0) {
                                     $this->logger->logInfo(

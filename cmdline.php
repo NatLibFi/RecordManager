@@ -41,6 +41,9 @@
  */
 function convertOptions(array $mappings): void
 {
+    $mappings['verbose'] = [
+        'rawOpt' => '-vvv'
+    ];
     $args = $_SERVER['argv'];
     $executable = array_shift($args);
     $command = '';
@@ -72,6 +75,8 @@ function convertOptions(array $mappings): void
             } elseif (preg_match("/^--$src$/", $option)) {
                 if (isset($dst['opt'])) {
                     $options[] = '--' . $dst['opt'];
+                } elseif (isset($dst['rawOpt'])) {
+                    $options[] = $dst['rawOpt'];
                 }
                 $mapped = true;
                 break;

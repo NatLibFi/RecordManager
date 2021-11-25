@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2020.
+ * Copyright (C) The National Library of Finland 2011-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -68,13 +68,6 @@ class DedupHandler implements DedupHandlerInterface
      * @var RecordPluginManager
      */
     protected $recordPluginManager;
-
-    /**
-     * Verbose mode
-     *
-     * @var bool
-     */
-    protected $verbose;
 
     /**
      * FieldMapper for format mapping
@@ -141,18 +134,6 @@ class DedupHandler implements DedupHandlerInterface
 
         $this->normalizationForm
             = $config['Site']['unicode_normalization_form'] ?? 'NFKC';
-    }
-
-    /**
-     * Get/set verbose mode
-     *
-     * @param $verbose New mode or null for no change
-     *
-     * @return bool
-     */
-    public function setVerboseMode(?bool $verbose): bool
-    {
-        return $this->verbose = ($verbose ?? $this->verbose);
     }
 
     /**
@@ -352,10 +333,12 @@ class DedupHandler implements DedupHandlerInterface
             return false;
         }
         $startTime = microtime(true);
-        if ($this->verbose) {
-            echo 'Original ' . $record['_id'] . ":\n"
-                . $this->metadataUtils->getRecordData($record, true) . "\n";
-        }
+        $this->log->writelnVerbose('Deduplicating ' . $record['_id']);
+        $this->log->writelnDebug(
+            function () use ($record) {
+                return $this->metadataUtils->getRecordData($record, true);
+            }
+        );
 
         $origRecord = null;
         $matchRecords = [];
@@ -408,9 +391,9 @@ class DedupHandler implements DedupHandlerInterface
             }
             $type = $rule['type'];
 
-            if ($this->verbose) {
-                echo "Search: $type => [" . implode(', ', $rule['keys']) . "]\n";
-            }
+            $this->log->writelnVerbose(
+                "Search: $type => [" . implode(', ', $rule['keys']) . ']'
+            );
             $params = [
                 $type => ['$in' => $rule['keys']],
                 'deleted' => false,
@@ -455,11 +438,10 @@ class DedupHandler implements DedupHandlerInterface
                         ]
                     );
                     if ($existingDuplicate) {
-                        if ($this->verbose) {
-                            echo "Candidate {$candidate['_id']}"
-                                . ' already deduplicated with '
-                                . $existingDuplicate['_id'] . "\n";
-                        }
+                        $this->log->writelnVerbose(
+                            "Candidate {$candidate['_id']}" . ' already deduplicated'
+                            . ' with ' . $existingDuplicate['_id']
+                        );
                         continue;
                     }
                 }
@@ -483,12 +465,16 @@ class DedupHandler implements DedupHandlerInterface
                     );
                 }
                 if ($this->matchRecords($record, $origRecord, $candidate)) {
-                    if ($this->verbose && ($processed > 300
-                        || microtime(true) - $startTime > 0.7)
-                    ) {
-                        echo "Found match $type with candidate "
-                            . "$processed in " . (microtime(true) - $startTime)
-                            . "\n";
+                    $msg = sprintf(
+                        'Found match %s with candidate %s in %0.5f',
+                        $type,
+                        $processed,
+                        microtime(true) - $startTime
+                    );
+                    if ($processed > 300 || microtime(true) - $startTime > 0.7) {
+                        $this->log->writelnVerbose($msg);
+                    } else {
+                        $this->log->writelnVeryVerbose($msg);
                     }
                     $matchRecords[] = $candidate;
                 } else {
@@ -500,10 +486,16 @@ class DedupHandler implements DedupHandlerInterface
             }
         }
 
-        if ($this->verbose && microtime(true) - $startTime > 0.2) {
-            echo "Candidate search among $candidateCount records ("
-                . count($matchRecords) . " matches) completed in "
-                . (microtime(true) - $startTime) . "\n";
+        $msg = sprintf(
+            'Candidate search among %d records (%d) matches) completed in %0.5f',
+            $candidateCount,
+            count($matchRecords),
+            microtime(true) - $startTime
+        );
+        if (microtime(true) - $startTime > 0.2) {
+            $this->log->writelnVerbose($msg);
+        } else {
+            $this->log->writelnVeryVerbose($msg);
         }
 
         if ($matchRecords) {
@@ -550,15 +542,25 @@ class DedupHandler implements DedupHandlerInterface
                     }
                 }
             }
-            if ($this->verbose) {
-                if ($bestMatchRecords) {
-                    echo "DedupRecord among $candidateCount candidates found a match"
-                        . " with $bestMatchRecords existing members in "
-                        . (microtime(true) - $startTime) . "\n";
-                } else {
-                    echo "DedupRecord among $candidateCount candidates found a match"
-                        . ' in ' . (microtime(true) - $startTime) . "\n";
-                }
+
+            if ($bestMatchRecords) {
+                $this->log->writelnVerbose(
+                    sprintf(
+                        'Match with %d existing members found in %0.5f among %d'
+                        . ' candidates',
+                        count($matchRecords),
+                        microtime(true) - $startTime,
+                        $candidateCount
+                    )
+                );
+            } else {
+                $this->log->writelnVerbose(
+                    sprintf(
+                        'Match found in %0.5f among %d candidates',
+                        microtime(true) - $startTime,
+                        $candidateCount
+                    )
+                );
             }
 
             if (null === $bestMatch) {
@@ -586,9 +588,15 @@ class DedupHandler implements DedupHandlerInterface
             }
         }
 
-        if ($this->verbose && microtime(true) - $startTime > 0.2) {
-            echo "DedupRecord among $candidateCount records did not find a match"
-                . " in " . (microtime(true) - $startTime) . "\n";
+        $msg = sprintf(
+            'No match found in %0.5f among %d candidates',
+            $candidateCount,
+            microtime(true) - $startTime
+        );
+        if (microtime(true) - $startTime > 0.2) {
+            $this->log->writelnVerbose($msg);
+        } else {
+            $this->log->writelnVeryVerbose($msg);
         }
 
         return false;
@@ -679,10 +687,12 @@ class DedupHandler implements DedupHandlerInterface
             $candidate['oai_id'],
             $candidate['source_id']
         );
-        if ($this->verbose) {
-            echo "\nCandidate " . $candidate['_id'] . ":\n"
-                . $this->metadataUtils->getRecordData($candidate, true) . "\n";
-        }
+        $this->log->writelnVeryVerbose('Check candidate ' . $candidate['_id']);
+        $this->log->writelnDebug(
+            function () use ($candidate) {
+                return $this->metadataUtils->getRecordData($candidate, true);
+            }
+        );
 
         $recordHidden = $this->metadataUtils->isHiddenComponentPart(
             $this->dataSourceConfig[$record['source_id']],
@@ -697,12 +707,14 @@ class DedupHandler implements DedupHandlerInterface
 
         // Check that both records are hidden component parts or neither is
         if ($recordHidden != $candidateHidden) {
-            if ($this->verbose) {
-                if ($candidateHidden) {
-                    echo "--Candidate is a hidden component part\n";
-                } else {
-                    echo "--Candidate is not a hidden component part\n";
-                }
+            if ($candidateHidden) {
+                $this->log->writelnVeryVerbose(
+                    '--Candidate is a hidden component part'
+                );
+            } else {
+                $this->log->writelnVeryVerbose(
+                    '--Candidate is not a hidden component part'
+                );
             }
             return false;
         }
@@ -710,9 +722,9 @@ class DedupHandler implements DedupHandlerInterface
         // Check access restrictions
         if ($cRecord->getAccessRestrictions() != $origRecord->getAccessRestrictions()
         ) {
-            if ($this->verbose) {
-                echo "--Candidate has different access restrictions\n";
-            }
+            $this->log->writelnVeryVerbose(
+                '--Candidate has different access restrictions'
+            );
             return false;
         }
 
@@ -725,10 +737,10 @@ class DedupHandler implements DedupHandlerInterface
         );
         $cMapped = $this->fieldMapper->mapFormat($candidate['source_id'], $cFormat);
         if ($origFormat != $cFormat && $origMapped != $cMapped) {
-            if ($this->verbose) {
-                echo "--Format mismatch: $origFormat != $cFormat "
-                    . "and $origMapped != $cMapped\n";
-            }
+            $this->log->writelnVeryVerbose(
+                "--Format mismatch: $origFormat != $cFormat and $origMapped != "
+                . $cMapped
+            );
             return false;
         }
 
@@ -738,13 +750,15 @@ class DedupHandler implements DedupHandlerInterface
         $isect = array_intersect($origISBNs, $cISBNs);
         if (!empty($isect)) {
             // Shared ISBN -> match
-            if ($this->verbose) {
-                echo "++ISBN match:\n";
-                print_r($origISBNs);
-                print_r($cISBNs);
-                echo $origRecord->getFullTitle() . "\n";
-                echo $cRecord->getFullTitle() . "\n";
-            }
+            $this->log->writelnVeryVerbose(
+                function () use ($origISBNs, $cISBNs, $origRecord, $cRecord) {
+                    return '++ISBN match:' . PHP_EOL
+                        . print_r($origISBNs, true) . PHP_EOL
+                        . print_r($cISBNs, true) . PHP_EOL
+                        . $origRecord->getFullTitle()
+                        . $cRecord->getFullTitle();
+                }
+            );
             return true;
         }
 
@@ -754,13 +768,15 @@ class DedupHandler implements DedupHandlerInterface
         $isect = array_intersect($origIDs, $cIDs);
         if (!empty($isect)) {
             // Shared ID -> match
-            if ($this->verbose) {
-                echo "++ID match:\n";
-                print_r($origIDs);
-                print_r($cIDs);
-                echo $origRecord->getFullTitle() . "\n";
-                echo $cRecord->getFullTitle() . "\n";
-            }
+            $this->log->writelnVeryVerbose(
+                function () use ($origIDs, $cIDs, $origRecord, $cRecord) {
+                    return '++ID match:' . PHP_EOL
+                        . print_r($origIDs, true) . PHP_EOL
+                        . print_r($cIDs, true) . PHP_EOL
+                        . $origRecord->getFullTitle()
+                        . $cRecord->getFullTitle();
+                }
+            );
             return true;
         }
 
@@ -769,30 +785,28 @@ class DedupHandler implements DedupHandlerInterface
         $commonISSNs = array_intersect($origISSNs, $cISSNs);
         if (!empty($origISSNs) && !empty($cISSNs) && empty($commonISSNs)) {
             // Both have ISSNs but none match
-            if ($this->verbose) {
-                echo "++ISSN mismatch:\n";
-                print_r($origISSNs);
-                print_r($cISSNs);
-                echo $origRecord->getFullTitle() . "\n";
-                echo $cRecord->getFullTitle() . "\n";
-            }
+            $this->log->writelnVeryVerbose(
+                function () use ($origISSNs, $cISSNs, $origRecord, $cRecord) {
+                    return '++ISSN match:' . PHP_EOL
+                        . print_r($origISSNs, true) . PHP_EOL
+                        . print_r($cISSNs, true) . PHP_EOL
+                        . $origRecord->getFullTitle()
+                        . $cRecord->getFullTitle();
+                }
+            );
             return false;
         }
 
         $origYear = $origRecord->getPublicationYear();
         $cYear = $cRecord->getPublicationYear();
         if ($origYear && $cYear && $origYear != $cYear) {
-            if ($this->verbose) {
-                echo "--Year mismatch: $origYear != $cYear\n";
-            }
+            $this->log->writelnVeryVerbose("--Year mismatch: $origYear != $cYear");
             return false;
         }
         $pages = $origRecord->getPageCount();
         $cPages = $cRecord->getPageCount();
         if ($pages && $cPages && abs($pages - $cPages) > 10) {
-            if ($this->verbose) {
-                echo "--Pages mismatch ($pages != $cPages)\n";
-            }
+            $this->log->writelnVeryVerbose("--Pages mismatch ($pages != $cPages)");
             return false;
         }
 
@@ -813,18 +827,17 @@ class DedupHandler implements DedupHandlerInterface
         );
         if (!$origTitle || !$cTitle) {
             // No title match without title...
-            if ($this->verbose) {
-                echo "No title - no further matching\n";
-            }
+            $this->log->writelnVeryVerbose('--No title - no further matching');
             return false;
         }
         $lev = levenshtein(substr($origTitle, 0, 255), substr($cTitle, 0, 255));
         $lev = $lev / strlen($origTitle) * 100;
         if ($lev >= 10) {
-            if ($this->verbose) {
-                echo "--Title lev discard: $lev\nOriginal:  $origTitle\n"
-                    . "Candidate: $cTitle\n";
-            }
+            $this->log->writelnVeryVerbose(
+                "--Title distance discard: $lev" . PHP_EOL
+                . "Original:  $origTitle" . PHP_EOL
+                . "Candidate: $cTitle"
+            );
             return false;
         }
 
@@ -839,10 +852,11 @@ class DedupHandler implements DedupHandlerInterface
         $authorLev = 0;
         if ($origAuthor || $cAuthor) {
             if (!$origAuthor || !$cAuthor) {
-                if ($this->verbose) {
-                    echo "\nAuthor discard:\nOriginal:  $origAuthor\n"
-                        . "Candidate: $cAuthor\n";
-                }
+                $this->log->writelnVeryVerbose(
+                    "--Author discard:" . PHP_EOL
+                    . "Original:  $origAuthor" . PHP_EOL
+                    . "Candidate: $cAuthor"
+                );
                 return false;
             }
             if (!$this->metadataUtils->authorMatch($origAuthor, $cAuthor)) {
@@ -852,23 +866,35 @@ class DedupHandler implements DedupHandlerInterface
                 );
                 $authorLev = $authorLev / mb_strlen($origAuthor) * 100;
                 if ($authorLev > 20) {
-                    if ($this->verbose) {
-                        echo "\nAuthor lev discard (lev: $lev, authorLev: "
-                            . "$authorLev):\nOriginal:  $origAuthor\n"
-                            . "Candidate: $cAuthor\n";
-                    }
+                    $this->log->writelnVeryVerbose(
+                        "--Author distance discard: $authorLev" . PHP_EOL
+                        . "Original:  $origAuthor" . PHP_EOL
+                        . "Candidate: $cAuthor"
+                    );
                     return false;
                 }
             }
         }
 
-        if ($this->verbose) {
-            echo "\nTitle match (lev: $lev, authorLev: $authorLev):\n";
-            echo $origRecord->getFullTitle() . "\n";
-            echo "   $origAuthor - $origTitle.\n";
-            echo $cRecord->getFullTitle() . "\n";
-            echo "   $cAuthor - $cTitle.\n";
-        }
+        $this->log->writelnVeryVerbose(
+            function () use (
+                $lev,
+                $authorLev,
+                $origRecord,
+                $origAuthor,
+                $origTitle,
+                $cRecord,
+                $cAuthor,
+                $cTitle
+            ) {
+                return "++Title match (distance: $lev, author distance: $authorLev):"
+                    . PHP_EOL
+                    . $origRecord->getFullTitle() . PHP_EOL
+                    . "   $origAuthor - $origTitle." . PHP_EOL
+                    . $cRecord->getFullTitle() . PHP_EOL
+                    . "   $cAuthor - $cTitle.";
+            }
+        );
         // We have a match!
         return true;
     }
@@ -954,10 +980,10 @@ class DedupHandler implements DedupHandlerInterface
                     = $this->createDedupRecord($rec1['_id'], $rec2['_id']);
             }
         }
-        if ($this->verbose) {
-            echo "Marking {$rec1['_id']} as duplicate with {$rec2['_id']} "
-                . "with dedup id {$rec2['dedup_id']}\n";
-        }
+        $this->log->writelnVerbose(
+            "Marking {$rec1['_id']} as duplicate with {$rec2['_id']} "
+            . "with dedup id {$rec2['dedup_id']}"
+        );
 
         $this->db->updateRecords(
             ['_id' => ['$in' => [$rec1['_id'], $rec2['_id']]]],
@@ -970,8 +996,10 @@ class DedupHandler implements DedupHandlerInterface
 
         if (!isset($rec1['host_record_id'])) {
             $count = $this->dedupComponentParts($rec1);
-            if ($this->verbose && $count > 0) {
-                echo "Deduplicated $count component parts for {$rec1['_id']}\n";
+            if ($count > 0) {
+                $this->log->writelnVerbose(
+                    "Deduplicated $count component parts for {$rec1['_id']}"
+                );
             }
         }
     }
@@ -1041,9 +1069,6 @@ class DedupHandler implements DedupHandlerInterface
      */
     protected function dedupComponentParts($hostRecord)
     {
-        if ($this->verbose) {
-            echo "Deduplicating component parts\n";
-        }
         if (!$hostRecord['linking_id']) {
             $this->log->logError(
                 'dedupComponentParts',
@@ -1056,6 +1081,11 @@ class DedupHandler implements DedupHandlerInterface
             $hostRecord['linking_id']
         );
         $component1count = count($components1);
+        if ($component1count === 0) {
+            return 0;
+        }
+
+        $this->log->writelnVerbose('Deduplicating component parts');
 
         // Go through all other records with same dedup id and see if their
         // component parts match
@@ -1089,16 +1119,16 @@ class DedupHandler implements DedupHandlerInterface
                     $idx = -1;
                     foreach ($components1 as $component1) {
                         $component2 = $components2[++$idx];
-                        if ($this->verbose) {
-                            echo "Comparing {$component1['_id']} with "
-                                . "{$component2['_id']}\n";
-                        }
-                        if ($this->verbose) {
-                            echo 'Original ' . $component1['_id'] . ":\n"
-                                . $this->metadataUtils
-                                    ->getRecordData($component1, true)
-                                . "\n";
-                        }
+                        $this->log->writelnVerbose(
+                            "Comparing {$component1['_id']} with "
+                            . $component2['_id']
+                        );
+                        $this->log->writelnDebug(
+                            function () use ($component1) {
+                                return $this->metadataUtils
+                                    ->getRecordData($component1, true);
+                            }
+                        );
                         $metadataComponent1 = $this->createRecord(
                             $component1['format'],
                             $this->metadataUtils->getRecordData($component1, true),
@@ -1118,10 +1148,10 @@ class DedupHandler implements DedupHandlerInterface
                 }
 
                 if ($allMatch) {
-                    if ($this->verbose) {
-                        echo microtime(true) . " All component parts match between "
-                            . "{$hostRecord['_id']} and {$otherRecord['_id']}\n";
-                    }
+                    $this->log->writelnVerbose(
+                        "All component parts match between {$hostRecord['_id']}"
+                        . " and {$otherRecord['_id']}"
+                    );
                     $idx = -1;
                     foreach ($components1 as $component1) {
                         $component2 = $components2[++$idx];
@@ -1129,13 +1159,13 @@ class DedupHandler implements DedupHandlerInterface
                             ->markDuplicates($component1['_id'], $component2['_id']);
                         ++$marked;
                     }
+                    // Stop processing further records:
                     return false;
                 } else {
-                    if ($this->verbose) {
-                        echo microtime(true) . ' Not all component parts match'
-                            . " between {$hostRecord['_id']} and"
-                            . " {$otherRecord['_id']}\n";
-                    }
+                    $this->log->writelnVerbose(
+                        "Not all component parts match between {$hostRecord['_id']}"
+                        . " and {$otherRecord['_id']}"
+                    );
                 }
             }
         );

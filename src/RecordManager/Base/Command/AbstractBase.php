@@ -177,8 +177,8 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
     {
         $this->initSourceSettings();
 
-        $this->verbose = $input->getOption('verbose') !== false;
-        $this->dedupHandler->setVerboseMode($this->verbose);
+        $this->verbose = $output->isDebug();
+        $this->logger->setConsoleOutput($output);
 
         $lock = $input->getOption('lock');
         if (false !== $lock) {
@@ -187,7 +187,9 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
             }
             if (!$this->lock($lock)) {
                 if ($output->isVerbose()) {
-                    echo "Another process has this task locked. Exiting..\n";
+                    $output->writeln(
+                        'Another process has this task locked. Exiting..'
+                    );
                 }
                 return Command::SUCCESS;
             }

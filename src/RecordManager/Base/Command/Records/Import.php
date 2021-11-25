@@ -159,9 +159,7 @@ class Import extends AbstractBase
             }
             $data = $xml->readOuterXML();
             if ($settings['preTransformation']) {
-                if ($this->verbose) {
-                    echo "Executing pretransformation\n";
-                }
+                $this->logger->writelnDebug("Executing pretransformation");
                 $data = $this->pretransform($data, $source);
             }
 
@@ -185,9 +183,7 @@ class Import extends AbstractBase
             }
 
             $count += $this->storeRecord($source, $oaiID, $delete, $data);
-            if ($this->verbose) {
-                echo "Stored records: $count\n";
-            }
+            $this->logger->writelnDebug("Stored records: $count");
             if ($count % 1000 === 0) {
                 $this->logger->logInfo('import', "$count records loaded");
             }
@@ -214,15 +210,11 @@ class Import extends AbstractBase
         }
 
         if ($settings['preTransformation']) {
-            if ($this->verbose) {
-                echo "Executing pretransformation\n";
-            }
+            $this->logger->writelnDebug('Executing pretransformation');
             $data = $this->pretransform($data, $source);
         }
 
-        if ($this->verbose) {
-            echo "Creating File splitter\n";
-        }
+        $this->logger->writelnDebug('Creating File splitter');
         $params = [];
         if (!empty($settings['recordXPath'])) {
             $params['recordXPath'] = $settings['recordXPath'];
@@ -235,9 +227,7 @@ class Import extends AbstractBase
         $splitter->init($params);
         $splitter->setData($data);
 
-        if ($this->verbose) {
-            echo "Storing records\n";
-        }
+        $this->logger->writelnDebug('Storing records');
         $count = 0;
         while (!$splitter->getEOF()) {
             $data = $splitter->getNextRecord();
@@ -247,9 +237,7 @@ class Import extends AbstractBase
                 $delete,
                 $data['metadata']
             );
-            if ($this->verbose) {
-                echo "Stored records: $count\n";
-            }
+            $this->logger->writelnDebug("Stored records: $count");
         }
         return $count;
     }

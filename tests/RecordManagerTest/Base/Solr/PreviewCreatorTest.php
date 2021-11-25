@@ -34,6 +34,7 @@ use RecordManager\Base\Settings\Ini;
 use RecordManager\Base\Solr\PreviewCreator;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\WorkerPoolManager;
 
 /**
  * Preview creation tests
@@ -169,7 +170,8 @@ EOT;
             $this->createMock(HttpClientManager::class),
             $this->createMock(Ini::class),
             $fieldMapper,
-            $metadataUtils
+            $metadataUtils,
+            $this->createMock(WorkerPoolManager::class)
         );
 
         return $preview;

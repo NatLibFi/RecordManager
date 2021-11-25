@@ -80,14 +80,15 @@ class PurgeDeleted extends AbstractBase
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
         if ($input->isInteractive()) {
-            echo <<<EOT
-Purging of deleted records means that RecordManager no longer has any knowledge of
-them. They cannot be included in e.g. Solr updates or OAI-PMH responses.
-This prompt can be suppressed with the --no-interacfive option.
-
-
-EOT;
-
+            $output->writeln(
+                [
+                    '<comment>Purging of deleted records means that RecordManager no'
+                    . ' longer has any knowledge of them. They cannot be included in'
+                    . ' e.g. Solr updates or OAI-PMH responses.</comment>',
+                    '<comment>This prompt can be suppressed with the'
+                    . ' --no-interactive option.</comment>'
+                ]
+            );
             $questionHelper = $this->getHelper('question');
             $question = new ConfirmationQuestion(
                 '<question>Continue with this action?</question> (y/N)',

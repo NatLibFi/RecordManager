@@ -123,7 +123,7 @@ class Search extends AbstractBase
                 }
             }
         }
-        echo implode($separator, $matches) . "\n";
+        $output->writeln(implode($separator, $matches));
 
         return Command::SUCCESS;
     }

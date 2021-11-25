@@ -44,7 +44,12 @@ if (function_exists('pcntl_async_signals')) {
  */
 class WorkerPoolManager
 {
-    use ParentProcessCheckTrait;
+    /**
+     * Logger
+     *
+     * @var Logger
+     */
+    protected $logger;
 
     /**
      * Request queue
@@ -82,10 +87,20 @@ class WorkerPoolManager
     protected $maxPendingRequests = 8;
 
     /**
-     * Constructor
+     * Last time the parent alive check was made
+     *
+     * @var int
      */
-    public function __construct()
+    protected $lastParentCheckTime = 0;
+
+    /**
+     * Constructor
+     *
+     * @param Logger $logger Logger
+     */
+    public function __construct(Logger $logger)
     {
+        $this->logger = $logger;
         if (function_exists('pcntl_signal')) {
             if (false === pcntl_signal(SIGCHLD, [$this, 'signalHandler'])) {
                 throw new \Exception('Could not set SIGCHLD handler');
@@ -208,9 +223,12 @@ class WorkerPoolManager
                     }
                     exit(0);
                 } catch (\Exception $e) {
-                    echo 'Fatal: Worker ' . getmypid()
-                        . " exception in pool $poolId: " . $e->getMessage()
-                        . "\nStack trace: " . $e->getTraceAsString();
+                    $this->logger->logFatal(
+                        'WorkerPool',
+                        'Worker ' . getmypid() . " exception in pool $poolId: "
+                        . $e->getMessage() . PHP_EOL . "Stack trace: "
+                        . $e->getTraceAsString()
+                    );
                     try {
                         $this->writeSocket(
                             $childSocket,
@@ -610,6 +628,33 @@ class WorkerPoolManager
                     );
                 }
             }
+        }
+    }
+
+    /**
+     * Check that the parent process is alive
+     *
+     * @return void
+     * @throws \Exception
+     */
+    protected function checkParentIsAlive()
+    {
+        $time = microtime(true);
+        if (0 === $this->lastParentCheckTime
+            || $time - $this->lastParentCheckTime > 5
+        ) {
+            $parentPid = posix_getpgrp();
+            if (!posix_kill($parentPid, 0)) {
+                $pid = getmypid();
+                $this->logger->logFatal(
+                    'Worker',
+                    "Worker $pid parent process $parentPid has died unexpectedly"
+                );
+                throw new \Exception(
+                    "Parent process $parentPid has died unexpectedly"
+                );
+            }
+            $this->lastParentCheckTime = $time;
         }
     }
 }

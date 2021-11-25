@@ -34,6 +34,7 @@ use RecordManager\Base\Settings\Ini;
 use RecordManager\Base\Solr\SolrUpdater;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\WorkerPoolManager;
 
 /**
  * Tests for SolrUpdater
@@ -187,7 +188,8 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
             $this->createMock(HttpClientManager::class),
             $this->createMock(Ini::class),
             $fieldMapper,
-            $metadataUtils
+            $metadataUtils,
+            $this->createMock(WorkerPoolManager::class)
         );
 
         return $solrUpdater;

@@ -512,8 +512,10 @@ class OaiPmh extends AbstractBase
 
             // Bypass the record if the record is missing its header:
             if ($header === false) {
-                $this->errorMsg('Record header missing');
-                echo $this->xml->saveXML($record) . "\n";
+                $this->errorMsg(
+                    'Record header missing: ' . PHP_EOL
+                    . $this->xml->saveXML($record)
+                );
                 continue;
             }
 

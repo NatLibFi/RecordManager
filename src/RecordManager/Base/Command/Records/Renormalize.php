@@ -207,18 +207,20 @@ class Renormalize extends AbstractBase
                 $record['updated'] = $this->db->getTimestamp();
                 $this->db->saveRecord($record);
 
-                if ($this->verbose) {
-                    echo "Metadata for record {$record['_id']}: \n";
-                    $record['normalized_data']
-                        = $this->metadataUtils->getRecordData($record, true);
-                    $record['original_data']
-                        = $this->metadataUtils->getRecordData($record, false);
-                    if ($record['normalized_data'] === $record['original_data']
-                    ) {
-                        $record['normalized_data'] = '';
+                $this->logger->writelnVerbose(
+                    function () use ($record) {
+                        $record['normalized_data']
+                            = $this->metadataUtils->getRecordData($record, true);
+                        $record['original_data']
+                            = $this->metadataUtils->getRecordData($record, false);
+                        if ($record['normalized_data'] === $record['original_data']
+                        ) {
+                            $record['normalized_data'] = '';
+                        }
+                        return "Metadata for record {$record['_id']}:" . PHP_EOL
+                            . print_r($record, true);
                     }
-                    print_r($record);
-                }
+                );
 
                 ++$count;
                 if ($count % 1000 == 0) {

@@ -78,7 +78,8 @@ class SolrUpdaterFactory implements \Laminas\ServiceManager\Factory\FactoryInter
             $container->get(\RecordManager\Base\Http\ClientManager::class),
             $configReader,
             $container->get(\RecordManager\Base\Utils\FieldMapper::class),
-            $container->get(\RecordManager\Base\Utils\MetadataUtils::class)
+            $container->get(\RecordManager\Base\Utils\MetadataUtils::class),
+            $container->get(\RecordManager\Base\Utils\WorkerPoolManager::class)
         );
     }
 }

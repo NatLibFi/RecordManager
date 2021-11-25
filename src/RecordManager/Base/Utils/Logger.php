@@ -28,6 +28,8 @@
 namespace RecordManager\Base\Utils;
 
 use RecordManager\Base\Database\DatabaseInterface;
+use Symfony\Component\Console\Output\ConsoleOutputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Logger
@@ -50,11 +52,11 @@ class Logger
     public const DEBUG = 4;
 
     /**
-     * Whether to output messages also to console
+     * Console output interface
      *
-     * @var bool
+     * @var OutputInterface $output
      */
-    protected $logToConsole = true;
+    protected $consoleOutput = null;
 
     /**
      * Logging level
@@ -126,19 +128,18 @@ class Logger
         if (isset($config['Log']['store_message_level'])) {
             $this->storeMessageLevel = $config['Log']['store_message_level'];
         }
-        $this->logToConsole = PHP_SAPI === 'cli';
     }
 
     /**
-     * Set console logging mode
+     * Set console output handler
      *
-     * @param bool $console Whether console output is enabled
+     * @param OutputInterface $output Output handler
      *
      * @return void
      */
-    public function setLogToConsole(bool $console): void
+    public function setConsoleOutput(OutputInterface $output): void
     {
-        $this->logToConsole = $console;
+        $this->consoleOutput = $output;
     }
 
     /**
@@ -156,14 +157,22 @@ class Logger
     /**
      * Write a debug message to the log
      *
-     * @param string $context Context of the log message (e.g. current function)
-     * @param string $msg     Actual message
+     * @param string   $context   Context of the log message (e.g. current function)
+     * @param string   $msg       Actual message
+     * @param int|true $verbosity Verbosity level of the message or true for verbose
+     *                            (see OutputInterface)
      *
      * @return void
      */
-    public function logDebug($context, $msg)
-    {
-        $this->log($context, $msg, Logger::DEBUG);
+    public function logDebug(
+        $context,
+        $msg,
+        $verbosity = OutputInterface::VERBOSITY_NORMAL
+    ) {
+        if (true === $verbosity) {
+            $verbosity = OutputInterface::VERBOSITY_VERBOSE;
+        }
+        $this->log($context, $msg, Logger::DEBUG, $verbosity);
     }
 
     /**
@@ -245,21 +254,26 @@ class Logger
     /**
      * Write a message to the log
      *
-     * @param string $context Context of the log message (e.g. current function)
-     * @param string $msg     Actual message
-     * @param int    $level   Message level used to filter logged messages. Default
-     *                        is INFO (3)
+     * @param string $context   Context of the log message (e.g. current function)
+     * @param string $msg       Actual message
+     * @param int    $level     Message level used to filter logged messages. Default
+     *                          is INFO (3)
+     * @param int    $verbosity Verbosity level of the message (see OutputInterface)
      *
      * @return void
      */
-    protected function log($context, $msg, $level = Logger::INFO)
-    {
+    protected function log(
+        $context,
+        $msg,
+        $level = Logger::INFO,
+        $verbosity = OutputInterface::VERBOSITY_NORMAL
+    ) {
         if ($this->logLevel < $level) {
             return;
         }
         $timestamp = time();
         $logMsg = date('Y-m-d H:i:s', $timestamp) . ' [' . getmypid() . '] ['
-            . $this->logLevelToStr($level) . "] [$context] $msg\n";
+            . $this->logLevelToStr($level) . "] [$context] $msg";
         if ($this->logFile) {
             if ($this->maxFileSize && file_exists($this->logFile)
                 && filesize($this->logFile) > $this->maxFileSize * 1024 * 1024
@@ -276,7 +290,7 @@ class Logger
                 }
                 rename($this->logFile, $this->logFile . '.0');
             }
-            file_put_contents($this->logFile, $logMsg, FILE_APPEND);
+            file_put_contents($this->logFile, "$logMsg\n", FILE_APPEND);
         }
         // Avoid a too long error on the console or in the email
         if (mb_strlen($logMsg, 'UTF-8') > 4096 + 50) {
@@ -287,7 +301,7 @@ class Logger
 
         if ($level == Logger::FATAL && $this->errorEmail) {
             $email = "RecordManager encountered the following fatal error: "
-                . PHP_EOL . PHP_EOL . $logMsg;
+                . PHP_EOL . PHP_EOL . $logMsg . PHP_EOL;
             mail(
                 $this->errorEmail,
                 'RecordManager Error Report (' . gethostname() . ')',
@@ -295,12 +309,27 @@ class Logger
             );
         }
 
-        if ($this->logToConsole) {
-            if ($level == Logger::INFO) {
-                echo $logMsg;
-            } else {
-                file_put_contents('php://stderr', $logMsg, FILE_APPEND);
+        if ($this->consoleOutput
+            && $this->consoleOutput->getVerbosity() >= $verbosity
+        ) {
+            $output = $this->consoleOutput;
+            $consoleMsg = $logMsg;
+            switch ($level) {
+            case Logger::ERROR:
+            case Logger::FATAL:
+                if ($output instanceof ConsoleOutputInterface) {
+                    $output = $output->getErrorOutput();
+                }
+                $consoleMsg = "<error>$logMsg</error>";
+                break;
+            case Logger::WARNING:
+                $consoleMsg = "<fg=#ff8542;bg=black>$logMsg</>";
+                break;
+            case Logger::INFO:
+                $consoleMsg = "<info>$logMsg</info>";
+                break;
             }
+            $output->writeln($consoleMsg);
         }
 
         if ($level <= $this->storeMessageLevel && $this->db) {
@@ -318,6 +347,88 @@ class Logger
                 getmypid(),
                 $timestamp
             );
+        }
+    }
+
+    /**
+     * Write a message to the console with 'verbose' verbosity
+     *
+     * @param string|callable $msg Message or a function that returns the message
+     *
+     * @return void
+     */
+    public function writelnVerbose(string|callable $msg): void
+    {
+        $this->writelnConsole($msg, OutputInterface::VERBOSITY_VERBOSE);
+    }
+
+    /**
+     * Write a message to the console with 'very verbose' verbosity
+     *
+     * @param string|callable $msg Message or a function that returns the message
+     *
+     * @return void
+     */
+    public function writelnVeryVerbose(string|callable $msg): void
+    {
+        $this->writelnConsole($msg, OutputInterface::VERBOSITY_VERY_VERBOSE);
+    }
+
+    /**
+     * Write a message to the console with 'debug' verbosity
+     *
+     * @param string|callable $msg Message or a function that returns the message
+     *
+     * @return void
+     */
+    public function writelnDebug(string|callable $msg): void
+    {
+        $this->writelnConsole($msg, OutputInterface::VERBOSITY_DEBUG);
+    }
+
+    /**
+     * Write a message to the console
+     *
+     * @param string|callable $msg       Message or a function that returns the
+     *                                   message
+     * @param int             $verbosity Verbosity level of the message (see
+     *                                   OutputInterface)
+     *
+     * @return void
+     */
+    public function writelnConsole(
+        string|callable $msg,
+        $verbosity = OutputInterface::VERBOSITY_NORMAL
+    ): void {
+        if (!$this->consoleOutput) {
+            return;
+        }
+        if ($this->consoleOutput->getVerbosity() >= $verbosity) {
+            $message = is_callable($msg) ? $msg() : $msg;
+            $this->consoleOutput->writeln($message);
+        }
+    }
+
+    /**
+     * Write a message to the console without a line feed
+     *
+     * @param string|callable $msg       Message or a function that returns the
+     *                                   message
+     * @param int             $verbosity Verbosity level of the message (see
+     *                                   OutputInterface)
+     *
+     * @return void
+     */
+    public function writeConsole(
+        string|callable $msg,
+        $verbosity = OutputInterface::VERBOSITY_NORMAL
+    ): void {
+        if (!$this->consoleOutput) {
+            return;
+        }
+        if ($this->consoleOutput->getVerbosity() >= $verbosity) {
+            $message = is_callable($msg) ? $msg() : $msg;
+            $this->consoleOutput->write($message);
         }
     }
 }
