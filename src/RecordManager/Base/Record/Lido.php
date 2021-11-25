@@ -224,15 +224,15 @@ class Lido extends AbstractRecord
      *                                       filing (e.g. sorting, non-filing
      *                                       characters should be removed)
      * @param string   $lang                 Language
-     * @param string[] $excludedDescriptions Description types to exclude
+     * @param array    $excludedDescriptions Description types to exclude
      *
      * @return string
      */
     public function getTitle(
-        $forFiling = false,
-        $lang = null,
-        $excludedDescriptions = ['provenance']
-    ) {
+        bool $forFiling = false,
+        ?string $lang = null,
+        array $excludedDescriptions = ['provenance']
+    ): string {
         $titles = [];
         $allTitles = [];
         foreach ($this->getTitleSetNodes() as $set) {
@@ -241,16 +241,9 @@ class Lido extends AbstractRecord
                     continue;
                 }
                 $allTitles[] = $title;
-                if (!$lang) {
-                    continue;
-                }
-                $priority = (string)$appellationValue['pref'];
-                $titleLang = (string)$appellationValue['lang'];
-                if (('preferred' === $priority && $titleLang === $lang)
-                    || ('preferred' === $priority && !$titleLang)
-                    || (!$priority && $titleLang === $lang)
-                    || (!$priority && !$titleLang)
-                ) {
+                $priority = (string)($appellationValue['pref'] ?? 'preferred');
+                $titleLang = (string)($appellationValue['lang'] ?? $lang ?? '');
+                if ('preferred' === $priority && ($titleLang === $lang || !$lang)) {
                     $titles[] = $title;
                 }
             }
