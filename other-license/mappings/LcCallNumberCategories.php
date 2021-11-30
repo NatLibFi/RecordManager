@@ -1101,7 +1101,7 @@ return [
         'a2' => 'HD',
         'd2' => 5520,
         'f2' => 00,
-        'cat' => "Business & Economics/Economics/Labor & Workers' Economics/ "
+        'cat' => "Business & Economics/Economics/Labor & Workers' Economics"
     ],
     [
         'a1' => 'HD',
@@ -1119,7 +1119,7 @@ return [
         'a2' => 'HD',
         'd2' => 7284,
         'f2' => 00,
-        'cat' => "Business & Economics/Economics/Labor & Workers' Economics/ "
+        'cat' => "Business & Economics/Economics/Labor & Workers' Economics"
     ],
     [
         'a1' => 'HD',
@@ -1137,7 +1137,7 @@ return [
         'a2' => 'HD',
         'd2' => 8999,
         'f2' => 00,
-        'cat' => "Business & Economics/Economics/Labor & Workers' Economics/ "
+        'cat' => "Business & Economics/Economics/Labor & Workers' Economics"
     ],
     [
         'a1' => 'HD',
@@ -1560,7 +1560,7 @@ return [
         'a2' => 'HQ',
         'd2' => 2030,
         'f2' => 70,
-        'cat' => "Social Sciences/Women's Studies/ / "
+        'cat' => "Social Sciences/Women's Studies"
     ],
     [
         'a1' => 'HS',
