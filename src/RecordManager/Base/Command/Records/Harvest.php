@@ -189,11 +189,11 @@ class Harvest extends AbstractBase
             $this->logger->logFatal(
                 'harvest',
                 'Reharvest start date must be specified when used with the'
-                    . ' startposition option'
+                    . ' --start-position option'
             );
             throw new \Exception(
                 'Reharvest start date must be specified when used with the'
-                . ' startposition option'
+                . ' --start-position option'
             );
         }
 
