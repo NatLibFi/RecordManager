@@ -71,9 +71,9 @@
 ;                         driver               Add whatever the driver returns in the institution field
 ;                         "none"               Don't add a top level. Note that due to PHP ini file handling, the quotes are required.
 ;                         institution/source   Use institution and source id separated with a slash
-; extrafields[]         An array of extra fields added to each record from this data source when sending records to Solr.
+; extraFields[]         An array of extra fields added to each record from this data source when sending records to Solr.
 ;                       Use format fieldname:contents, e.g.
-;                         extrafields[] = sector_str_mv:library
+;                         extraFields[] = sector_str_mv:library
 ; driverParams[]        An array of extra parameters that can be used to customize record driver behavior
 ; enrichments[]         An array of enrichment class names that can be used to enrich records. ",final" can be appended to indicate that enrichment is executed to the
 ;                       final record after mappings etc. have been processed. By default it is executed before mappings, normalization etc.
