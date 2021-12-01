@@ -19,12 +19,14 @@ This is a major release that contains a lot of refactoring and underlying change
 - Introduce ./console (based on Symfony console) as the new interface for console tasks. Old scripts remain as a simple compatibility layer but don't provide proper parameter error handling etc. anymore.
 - Add possibility to define the base path for configuration files with the RECMAN_BASE_PATH environment variable.
 - Colorize output by message type.
+- Add support for hierarchical categories based on [HILCC](https://www1.columbia.edu/sec/cu/libraries/bts/hilcc/). See [useHILCC driver param](https://github.com/NatLibFi/RecordManager/wiki/Data-Source-Configuration#possible-settings-for-driverparams) for more information.
 
 ### Changed
 
 - Refactor the code to use Laminas module manager and service manager. This includes a lot of cleaning up as well.
 - Simplify the deduplicated record update mechanism. Setting `threaded_merged_record_update` no longer exists. Instead there's an optional new setting for controlling the number of workers for deduplicated records.
 - Make different verbosity levels have an effect on output of many commands.
+- Reharvest (records:harvest with the --reharvest option) uses a different mechanism than before for more robust operation.
 
 ### Removed
 
