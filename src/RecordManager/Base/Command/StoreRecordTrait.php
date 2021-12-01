@@ -57,6 +57,13 @@ trait StoreRecordTrait
     protected $dedupHandler;
 
     /**
+     * Whether to set mark ("seen" flag) true for stored records
+     *
+     * @var bool
+     */
+    protected $markRecords = false;
+
+    /**
      * Save a record into the database. Used by e.g. file import and OAI-PMH
      * harvesting.
      *
@@ -188,6 +195,9 @@ trait StoreRecordTrait
                 $this->logger->writelnDebug("Adding record $id");
             }
             $dbRecord['date'] = $dbRecord['updated'];
+            if ($this->markRecords) {
+                $dbRecord['mark'] = true;
+            }
             if ($normalizedData) {
                 if ($originalData == $normalizedData) {
                     $normalizedData = '';
