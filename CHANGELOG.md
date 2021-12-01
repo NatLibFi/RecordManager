@@ -26,7 +26,6 @@ This is a major release that contains a lot of refactoring and underlying change
 - Refactor the code to use Laminas module manager and service manager. This includes a lot of cleaning up as well.
 - Simplify the deduplicated record update mechanism. Setting `threaded_merged_record_update` no longer exists. Instead there's an optional new setting for controlling the number of workers for deduplicated records.
 - Make different verbosity levels have an effect on output of many commands.
-- Reharvest (records:harvest with the --reharvest option) uses a different mechanism than before for more robust operation.
 
 ### Removed
 
