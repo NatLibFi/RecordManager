@@ -401,8 +401,10 @@ class Harvest extends AbstractBase
      *
      * @return void
      */
-    protected function markUnseenRecordsDeleted(string $source, int $dateThreshold)
-    : void {
+    protected function markUnseenRecordsDeleted(
+        string $source,
+        int $dateThreshold
+    ): void {
         $this->logger->logInfo('harvest', 'Marking unseen records deleted');
 
         $count = 0;
