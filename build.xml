@@ -9,6 +9,7 @@
 
   <!-- Main Target -->
   <target name="main" description="main target">
+    <echo>No main build target. Use ci-tasks for normal tests.</echo>
   </target>
 
   <!-- Continuous Integration Tasks -->
