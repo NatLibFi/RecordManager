@@ -268,37 +268,8 @@ class Harvest extends AbstractBase
                                 . ' skipping marking records deleted'
                         );
                     } else {
-                        $this->logger->logInfo(
-                            'harvest',
-                            'Marking deleted all records not received during'
-                            . ' the harvesting'
-                        );
-                        $count = 0;
-                        $this->db->iterateRecords(
-                            [
-                                'source_id' => $source,
-                                'deleted' => false,
-                                'updated' => [
-                                    '$lt' =>
-                                        $this->db->getTimestamp($dateThreshold)
-                                ]
-                            ],
-                            [],
-                            function ($record) use (&$count) {
-                                $this->logger->writelnVeryVerbose(
-                                    "Marking {$record['_id']} deleted"
-                                );
-                                $this->markRecordDeleted($record, true);
-                                if (++$count % 1000 == 0) {
-                                    $this->logger->logInfo(
-                                        'harvest',
-                                        "Deleted $count records"
-                                    );
-                                }
-                            }
-                        );
-                        $this->logger
-                            ->logInfo('harvest', "Deleted $count records");
+                        $this->markUnseenRecordsDeleted($source, $dateThreshold);
+
                         // Deduplication will update timestamps from deferred
                         // update with markRecordDeleted, but handle non-dedup
                         // sources here to avoid need for deduplication:
@@ -368,52 +339,15 @@ class Harvest extends AbstractBase
                                 ? " ($interval days since last time)" : '')
                         );
 
-                        $this->logger->logInfo('harvest', 'Unmarking records');
-                        $this->db->updateRecords(
-                            ['source_id' => $source, 'deleted' => false],
-                            [],
-                            ['mark' => 1]
-                        );
-
                         $this->logger
                             ->logInfo('harvest', 'Fetching identifiers');
                         // Reset any overridden initial position:
                         $harvester->setInitialPosition('');
-                        $harvester->listIdentifiers([$this, 'markRecord']);
 
-                        $this->logger
-                            ->logInfo('harvest', 'Marking deleted records');
+                        $dateThreshold = time();
+                        $harvester->listIdentifiers([$this, 'markRecordSeen']);
 
-                        $count = 0;
-                        $this->db->iterateRecords(
-                            [
-                                'source_id' => $source,
-                                'deleted' => false,
-                                'mark' => ['$exists' => false]
-                            ],
-                            [],
-                            function ($record) use (&$count, $source) {
-                                if (!empty($record['oai_id'])) {
-                                    $this->storeRecord(
-                                        $source,
-                                        $record['oai_id'],
-                                        true,
-                                        ''
-                                    );
-                                } else {
-                                    $this->markRecordDeleted($record);
-                                }
-
-                                if (++$count % 1000 == 0) {
-                                    $this->logger->logInfo(
-                                        'harvest',
-                                        "Deleted $count records"
-                                    );
-                                }
-                            }
-                        );
-                        $this->logger
-                            ->logInfo('harvest', "Deleted $count records");
+                        $this->markUnseenRecordsDeleted($source, $dateThreshold);
 
                         $state = [
                             '_id' => "Last Deletion Processing Time $source",
@@ -445,7 +379,7 @@ class Harvest extends AbstractBase
      * @throws \Exception
      * @return void
      */
-    public function markRecord($sourceId, $oaiId, $deleted)
+    public function markRecordSeen($sourceId, $oaiId, $deleted)
     {
         if ($deleted) {
             // Don't mark deleted records...
@@ -453,7 +387,55 @@ class Harvest extends AbstractBase
         }
         $this->db->updateRecords(
             ['source_id' => $sourceId, 'oai_id' => $oaiId],
-            ['mark' => true]
+            ['date' => $this->db->getTimestamp()]
         );
+    }
+
+    /**
+     * Set deleted all records that were not "seen" during harvest
+     *
+     * Uses the 'date' field that only gets updated when a record is received.
+     *
+     * @param string $source        Record source
+     * @param int    $dateThreshold Date threshold for deletion
+     *
+     * @return void
+     */
+    protected function markUnseenRecordsDeleted(string $source, int $dateThreshold)
+    : void {
+        $this->logger->logInfo('harvest', 'Marking unseen records deleted');
+
+        $count = 0;
+        $this->db->iterateRecords(
+            [
+                'source_id' => $source,
+                'deleted' => false,
+                'date' => [
+                    '$lt' =>
+                        $this->db->getTimestamp($dateThreshold)
+                ]
+            ],
+            [],
+            function ($record) use (&$count, $source) {
+                if (!empty($record['oai_id'])) {
+                    $this->storeRecord(
+                        $source,
+                        $record['oai_id'],
+                        true,
+                        ''
+                    );
+                } else {
+                    $this->markRecordDeleted($record);
+                }
+
+                if (++$count % 1000 == 0) {
+                    $this->logger->logInfo(
+                        'harvest',
+                        "Deleted $count records"
+                    );
+                }
+            }
+        );
+        $this->logger->logInfo('harvest', "Deleted $count records");
     }
 }
