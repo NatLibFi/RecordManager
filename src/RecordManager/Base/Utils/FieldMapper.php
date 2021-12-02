@@ -249,7 +249,7 @@ class FieldMapper
                     $matches = false;
                     foreach ($replacement as $current) {
                         $newValue = preg_replace(
-                            "/$pattern/u",
+                            "/$pattern/us",
                             $current,
                             $value,
                             -1,
@@ -268,7 +268,7 @@ class FieldMapper
                     }
                 } else {
                     $newValue = preg_replace(
-                        "/$pattern/u",
+                        "/$pattern/us",
                         $replacement,
                         $value,
                         -1,
