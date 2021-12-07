@@ -465,6 +465,8 @@ abstract class AbstractBase
         if ($result === false || $errors) {
             $this->warningMsg('Invalid XML received, trying encoding fix...');
             $xml = iconv('UTF-8', 'UTF-8//IGNORE', $xml);
+            // Replace any control characters not allowed in XML 1.0:
+            $xml = preg_replace('/[\x01-\x08,\x0B,\x0C,\x0E-\x1F]/', ' ', $xml);
             $result = $this->metadataUtils->loadXML($xml, $doc, 0, $errors);
         }
         if ($result === false || $errors) {
