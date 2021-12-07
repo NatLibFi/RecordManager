@@ -215,7 +215,7 @@ class Harvest extends AbstractBase
                 }
                 $this->logger->logInfo(
                     'harvest',
-                    "Harvesting from '$source'"
+                    "[$source] Start harvesting"
                     . ($reharvest ? ' (full reharvest)' : '')
                 );
 
@@ -228,7 +228,7 @@ class Harvest extends AbstractBase
                     }
                     $this->logger->logInfo(
                         'harvest',
-                        'Reharvest date threshold: '
+                        "[$source] Reharvest date threshold: "
                         . gmdate('Y-m-d\TH:i:s\Z', $dateThreshold)
                     );
                 }
@@ -243,8 +243,8 @@ class Harvest extends AbstractBase
                     } else {
                         $this->logger->logWarning(
                             'harvest',
-                            get_class($harvester) . ' does not support overriding'
-                            . ' of start position'
+                            "[$source] " . get_class($harvester) . ' does not'
+                            . ' support overriding of start position'
                         );
                     }
                 }
@@ -263,9 +263,9 @@ class Harvest extends AbstractBase
                     if ($harvester->getHarvestedRecordCount() == 0) {
                         $this->logger->logFatal(
                             'harvest',
-                            "No records received from '$source' during"
-                                . ' reharvesting -- assuming an error and'
-                                . ' skipping marking records deleted'
+                            "[$source] No records received during reharvesting"
+                                . ' -- assuming an error and skipping marking'
+                                . ' records deleted'
                         );
                     } else {
                         $this->markUnseenRecordsDeleted($source, $dateThreshold);
@@ -276,8 +276,8 @@ class Harvest extends AbstractBase
                         if (empty($this->dataSourceConfig[$source]['dedup'])) {
                             $this->logger->logInfo(
                                 'harvest',
-                                'Updating timestamps for any host records of'
-                                . ' records deleted'
+                                "[$source] Updating timestamps for any host records"
+                                . ' of records deleted'
                             );
                             $this->db->updateRecords(
                                 [
@@ -306,7 +306,7 @@ class Harvest extends AbstractBase
 
                     if (!is_callable([$harvester, 'listIdentifiers'])) {
                         throw new \Exception(
-                            get_class($harvester)
+                            "[$source] " . get_class($harvester)
                             . ' does not support listing identifiers'
                         );
                     }
@@ -324,8 +324,8 @@ class Harvest extends AbstractBase
                             if ($interval < $deletions[1]) {
                                 $this->logger->logInfo(
                                     'harvest',
-                                    "Not processing deletions, $interval days"
-                                    . ' since last time'
+                                    "[$source] Not processing deletions, $interval"
+                                    . ' days since last time'
                                 );
                                 $processDeletions = false;
                             }
@@ -335,7 +335,7 @@ class Harvest extends AbstractBase
                     if ($processDeletions) {
                         $this->logger->logInfo(
                             'harvest',
-                            'Processing deletions' . (isset($interval)
+                            "[$source] Processing deletions" . (isset($interval)
                                 ? " ($interval days since last time)" : '')
                         );
 
@@ -358,10 +358,13 @@ class Harvest extends AbstractBase
                 }
                 $this->logger->logInfo(
                     'harvest',
-                    "Harvesting from '$source' completed"
+                    "[$source] Harvesting completed"
                 );
             } catch (\Exception $e) {
-                $this->logger->logFatal('harvest', 'Exception: ' . $e->getMessage());
+                $this->logger->logFatal(
+                    'harvest',
+                    "[$source] Exception: " . $e->getMessage()
+                );
                 $returnCode = Command::FAILURE;
             }
         }

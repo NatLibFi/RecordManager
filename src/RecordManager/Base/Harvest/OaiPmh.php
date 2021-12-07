@@ -293,7 +293,7 @@ class OaiPmh extends AbstractBase
             if (++$this->sameResumptionTokenCount >= $this->sameResumptionTokenLimit
             ) {
                 throw new \Exception(
-                    "{$this->source}: same resumptionToken received"
+                    "Same resumptionToken received"
                     . " {$this->sameResumptionTokenCount} times, aborting"
                 );
             }
@@ -395,7 +395,7 @@ class OaiPmh extends AbstractBase
                         continue;
                     }
                     $this->fatalMsg("Request '$urlStr' failed: $code");
-                    throw new \Exception("{$this->source}: Request failed: $code");
+                    throw new \Exception("Request failed: $code");
                 }
 
                 $responseStr = $response->getBody();
@@ -420,10 +420,10 @@ class OaiPmh extends AbstractBase
                     sleep($this->retryWait);
                     continue;
                 }
-                throw new \Exception("{$this->source}: " . $e->getMessage());
+                throw $e;
             }
         }
-        throw new \Exception("{$this->source}: Request failed");
+        throw new \Exception('Request failed');
     }
 
     /**
@@ -445,7 +445,9 @@ class OaiPmh extends AbstractBase
             $tempfile = $this->getTempFileName('oai-pmh-error-', '.xml');
             file_put_contents($tempfile, $xml);
             $this->errorMsg("Invalid XML stored in $tempfile");
-            throw new \Exception("{$this->source}: Failed to parse XML response");
+            throw new \Exception(
+                "Failed to parse XML response: " . $e->getMessage()
+            );
         }
 
         // Detect errors and throw an exception if one is found:
@@ -458,8 +460,7 @@ class OaiPmh extends AbstractBase
                 $value = $result->saveXML($error);
                 $this->errorMsg("OAI-PMH server returned error $code ($value)");
                 throw new \Exception(
-                    "{$this->source}: OAI-PMH error -- code: $code, " .
-                    "value: $value"
+                    "OAI-PMH error -- code: $code, value: $value"
                 );
             }
         }
@@ -754,8 +755,7 @@ class OaiPmh extends AbstractBase
             $identify = $this->getSingleNode($response, 'Identify');
             if ($identify === false) {
                 throw new \Exception(
-                    "{$this->source}: Could not find Identify node in the Identify"
-                    . ' response'
+                    'Could not find Identify node in the Identify response'
                 );
             }
             $granularity = $this->getSingleNode(
@@ -764,8 +764,7 @@ class OaiPmh extends AbstractBase
             );
             if ($granularity === false) {
                 throw new \Exception(
-                    "{$this->source}: Could not find date granularity in the"
-                    . ' Identify response'
+                    'Could not find date granularity in the Identify response'
                 );
             }
             $this->granularity = trim(

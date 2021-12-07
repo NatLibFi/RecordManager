@@ -127,7 +127,7 @@ class SierraApi extends AbstractBase
         if (empty($settings['sierraApiKey']) || empty($settings['sierraApiSecret'])
         ) {
             throw new \Exception(
-                "sierraApiKey or sierraApiSecret missing from settings of '$source'"
+                'sierraApiKey or sierraApiSecret missing from settings'
             );
         }
         $this->apiKey = $settings['sierraApiKey'];
@@ -323,7 +323,7 @@ class SierraApi extends AbstractBase
                         continue;
                     }
                     $this->fatalMsg("Request '$urlStr' failed: $code");
-                    throw new \Exception("{$this->source}: Request failed: $code");
+                    throw new \Exception("Request failed: $code");
                 }
 
                 return $response;
@@ -336,10 +336,10 @@ class SierraApi extends AbstractBase
                     sleep($this->retryWait);
                     continue;
                 }
-                throw new \Exception("{$this->source}: " . $e->getMessage());
+                throw $e;
             }
         }
-        throw new \Exception("{$this->source}: Request failed");
+        throw new \Exception('Request failed');
     }
 
     /**
@@ -439,7 +439,7 @@ class SierraApi extends AbstractBase
                         "Request '$apiUrl' failed ($code: " . $response->getBody()
                         . ')'
                     );
-                    throw new \Exception("{$this->source}: Request failed: $code");
+                    throw new \Exception("Access token request failed: $code");
                 }
 
                 $json = json_decode($response->getBody(), true);
@@ -459,7 +459,7 @@ class SierraApi extends AbstractBase
                     sleep($this->retryWait);
                     continue;
                 }
-                throw new \Exception("{$this->source}: " . $e->getMessage());
+                throw $e;
             }
         }
     }

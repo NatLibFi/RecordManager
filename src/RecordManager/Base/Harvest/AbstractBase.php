@@ -248,7 +248,7 @@ abstract class AbstractBase
 
         // Set up base URL:
         if (empty($settings['url'])) {
-            throw new \Exception("Missing base URL for {$source}");
+            throw new \Exception('Missing base URL');
         }
         $this->baseURL = $settings['url'];
 
@@ -471,7 +471,7 @@ abstract class AbstractBase
         }
         if ($result === false || $errors) {
             $this->fatalMsg("Could not parse XML: $errors");
-            throw new \Exception("Failed to parse XML");
+            throw new \Exception('Failed to parse XML');
         }
 
         if ($this->reParseTransformed) {
@@ -482,7 +482,7 @@ abstract class AbstractBase
             }
             if ($result === false || $errors) {
                 $this->fatalMsg("Could not parse XML: $errors");
-                throw new \Exception("Failed to parse XML");
+                throw new \Exception('Failed to parse XML');
             }
         } else {
             foreach ($this->preXslt as $xslt) {

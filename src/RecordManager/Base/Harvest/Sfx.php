@@ -72,7 +72,7 @@ class Sfx extends HTTPFiles
     {
         $nodes = $record->xpath("datafield[@tag='090']/subfield[@code='a']");
         if (empty($nodes)) {
-            throw new \Exception("{$this->source}: No ID found in harvested record");
+            throw new \Exception('No ID found in harvested record');
         }
         return trim((string)$nodes[0]);
     }
