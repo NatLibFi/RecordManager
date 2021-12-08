@@ -221,8 +221,8 @@ class Lido extends AbstractRecord
      * Return record title
      *
      * @param bool   $forFiling            Whether the title is to be used in
-     *                                       filing (e.g. sorting, non-filing
-     *                                       characters should be removed)
+     *                                     filing (e.g. sorting, non-filing
+     *                                     characters should be removed)
      * @param string $lang                 Language
      * @param array  $excludedDescriptions Description types to exclude
      *
