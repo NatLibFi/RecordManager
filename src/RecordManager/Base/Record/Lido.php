@@ -220,11 +220,11 @@ class Lido extends AbstractRecord
     /**
      * Return record title
      *
-     * @param bool     $forFiling            Whether the title is to be used in
-     *                                       filing (e.g. sorting, non-filing
-     *                                       characters should be removed)
-     * @param string   $lang                 Language
-     * @param string[] $excludedDescriptions Description types to exclude
+     * @param bool   $forFiling            Whether the title is to be used in
+     *                                     filing (e.g. sorting, non-filing
+     *                                     characters should be removed)
+     * @param string $lang                 Language
+     * @param array  $excludedDescriptions Description types to exclude
      *
      * @return string
      */
@@ -237,10 +237,15 @@ class Lido extends AbstractRecord
         $allTitles = [];
         foreach ($this->getTitleSetNodes() as $set) {
             foreach ($set->appellationValue as $appellationValue) {
-                if ($lang == null || $appellationValue['lang'] == $lang) {
-                    $titles[] = (string)$appellationValue;
+                if (!($title = trim((string)$appellationValue))) {
+                    continue;
                 }
-                $allTitles[] = (string)$appellationValue;
+                $allTitles[] = $title;
+                $priority = (string)($appellationValue['pref'] ?? 'preferred');
+                $titleLang = (string)($appellationValue['lang'] ?? $lang ?? '');
+                if ('preferred' === $priority && ($titleLang === $lang || !$lang)) {
+                    $titles[] = $title;
+                }
             }
         }
         // Fallback to use any title in case none found with the specified language
