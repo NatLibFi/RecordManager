@@ -232,7 +232,7 @@ class Lido extends AbstractRecord
         $forFiling = false,
         $lang = null,
         $excludedDescriptions = ['provenance']
-    ): string {
+    ) {
         $titles = [];
         $allTitles = [];
         foreach ($this->getTitleSetNodes() as $set) {
