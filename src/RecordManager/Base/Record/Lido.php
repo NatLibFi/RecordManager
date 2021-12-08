@@ -229,9 +229,9 @@ class Lido extends AbstractRecord
      * @return string
      */
     public function getTitle(
-        bool $forFiling = false,
-        ?string $lang = null,
-        array $excludedDescriptions = ['provenance']
+        $forFiling = false,
+        $lang = null,
+        $excludedDescriptions = ['provenance']
     ): string {
         $titles = [];
         $allTitles = [];
