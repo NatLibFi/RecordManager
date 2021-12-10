@@ -2117,7 +2117,7 @@ class Marc extends AbstractRecord
      */
     protected function getAlternateScriptField(
         $tag,
-        $sub6,
+        $sub6
     ) {
         $findSub6 = "$tag-" . substr($sub6, 4, 2);
         foreach ($this->fields['880'] as $field880) {
