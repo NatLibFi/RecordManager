@@ -43,6 +43,13 @@ use RecordManager\Base\Utils\PerformanceCounter;
 class SolrComparer extends SolrUpdater
 {
     /**
+     * Fields to compare
+     *
+     * @var array
+     */
+    protected $compareFields;
+
+    /**
      * Compare records with the Solr index
      *
      * @param string      $logFile  Log file to use for any record differences
@@ -51,6 +58,7 @@ class SolrComparer extends SolrUpdater
      * @param string      $sourceId Comma-separated list of source IDs to
      *                              update, or empty or * for all sources
      * @param string      $singleId Process only the record with the given ID
+     * @param string      $fields   Compare only the given fields
      *
      * @return void
      */
@@ -58,11 +66,14 @@ class SolrComparer extends SolrUpdater
         ?string $logFile,
         ?string $fromDate,
         ?string $sourceId,
-        ?string $singleId
+        ?string $singleId,
+        ?string $fields
     ): void {
         if ($logFile) {
             file_put_contents($logFile, '');
         }
+
+        $this->compareFields = $fields ? explode(',', $fields) : [];
 
         try {
             $fromTimestamp = $this->getStartTimestamp($fromDate, '');
@@ -244,7 +255,9 @@ class SolrComparer extends SolrUpdater
         $allFields = array_unique(
             array_merge(array_keys($record), array_keys($solrRecord))
         );
-        $allFields = array_diff($allFields, $ignoreFields);
+        $allFields = $this->compareFields
+            ? array_intersect($allFields, $this->compareFields)
+            : array_diff($allFields, $ignoreFields);
         foreach ($allFields as $field) {
             if (!isset($solrRecord[$field])
                 || !isset($record[$field])
