@@ -456,24 +456,33 @@ abstract class AbstractRecord
     /**
      * Get key data that can be used to identify expressions of a work
      *
-     * Returns an associative array like this:
+     * Returns an associative array like this where each set of keys defines the
+     * keys for a work (multiple sets can be returned for compound works):
      *
      * [
-     *   'titles' => [
-     *     ['type' => 'title', 'value' => 'Title'],
-     *     ['type' => 'uniform', 'value' => 'Uniform Title']
-     *    ],
-     *   'authors' => [
-     *     ['type' => 'author', 'value' => 'Name 1'],
-     *     ['type' => 'author', 'value' => 'Name 2']
+     *   [
+     *     'titles' => [
+     *       ['type' => 'title', 'value' => 'Title'],
+     *       ['type' => 'uniform', 'value' => 'Uniform Title']
+     *      ],
+     *     'authors' => [
+     *       ['type' => 'author', 'value' => 'Name 1'],
+     *       ['type' => 'author', 'value' => 'Name 2']
+     *     ],
+     *     'titlesAltScript' => [
+     *       ['type' => 'title', 'value' => 'Title in alternate script'],
+     *       ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
+     *     ],
+     *     'authorsAltScript' => [
+     *       ['type' => 'author', 'value' => 'Name 1 in alternate script'],
+     *       ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *     ]
      *   ],
-     *   'titlesAltScript' => [
-     *     ['type' => 'title', 'value' => 'Title in alternate script'],
-     *     ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
-     *   ],
-     *   'authorsAltScript' => [
-     *     ['type' => 'author', 'value' => 'Name 1 in alternate script'],
-     *     ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *   [
+     *     'titles' => [...],
+     *     'authors' => [...],
+     *     'titlesAltScript' => [...]
+     *     'authorsAltScript' => [...]
      *   ]
      * ]
      *
@@ -496,7 +505,7 @@ abstract class AbstractRecord
         }
         $titlesAltScript = [];
         $authorsAltScript = [];
-        return compact('titles', 'authors', 'titlesAltScript', 'authorsAltScript');
+        return [compact('titles', 'authors', 'titlesAltScript', 'authorsAltScript')];
     }
 
     /**

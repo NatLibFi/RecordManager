@@ -1198,26 +1198,28 @@ class ForwardTest extends RecordTest
         $keys = $record->getWorkIdentificationData();
 
         $expected = [
-            'authors' => [
-                0 => [
-                    'type' => 'author',
-                    'value' => 'Kaurismäki, Aki',
+            [
+                'authors' => [
+                    0 => [
+                        'type' => 'author',
+                        'value' => 'Kaurismäki, Aki',
+                    ],
                 ],
-            ],
-            'authorsAltScript' => [
-            ],
-            'titles' => [
-                0 => [
-                    'type' => 'title',
-                    'value' => 'Havre',
+                'authorsAltScript' => [
                 ],
-                1 => [
-                    'type' => 'title',
-                    'value' => 'Le Havre',
+                'titles' => [
+                    0 => [
+                        'type' => 'title',
+                        'value' => 'Havre',
+                    ],
+                    1 => [
+                        'type' => 'title',
+                        'value' => 'Le Havre',
+                    ],
                 ],
-            ],
-            'titlesAltScript' => [
-            ],
+                'titlesAltScript' => [
+                ],
+            ]
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');

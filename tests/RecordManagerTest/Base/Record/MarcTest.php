@@ -214,22 +214,22 @@ class MarcTest extends RecordTest
         $keys = $record->getWorkIdentificationData();
 
         $expected = [
-            'authors' => [
-                [
-                    'type' => 'author',
-                    'value' => 'Hirsjärvi, Sirkka.',
+            [
+                'authors' => [
+                    [
+                        'type' => 'author',
+                        'value' => 'Hirsjärvi, Sirkka.',
+                    ],
                 ],
-            ],
-            'authorsAltScript' => [
-            ],
-            'titles' => [
-                [
-                    'type' => 'title',
-                    'value' => 'Tutki ja kirjoita /',
+                'authorsAltScript' => [],
+                'titles' => [
+                    [
+                        'type' => 'title',
+                        'value' => 'Tutki ja kirjoita /',
+                    ],
                 ],
-            ],
-            'titlesAltScript' => [
-            ],
+                'titlesAltScript' => [],
+            ]
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
@@ -387,22 +387,22 @@ class MarcTest extends RecordTest
         $keys = $record->getWorkIdentificationData();
 
         $expected = [
-            'authors' => [
-                [
-                    'type' => 'author',
-                    'value' => 'Kalat, James W.',
+            [
+                'authors' => [
+                    [
+                        'type' => 'author',
+                        'value' => 'Kalat, James W.',
+                    ],
                 ],
-            ],
-            'authorsAltScript' => [
-            ],
-            'titles' => [
-                [
-                    'type' => 'title',
-                    'value' => 'Biological psychology /',
+                'authorsAltScript' => [],
+                'titles' => [
+                    [
+                        'type' => 'title',
+                        'value' => 'Biological psychology /',
+                    ],
                 ],
-            ],
-            'titlesAltScript' => [
-            ],
+                'titlesAltScript' => [],
+            ]
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
@@ -841,5 +841,107 @@ class MarcTest extends RecordTest
         $this->assertEquals('__unit_test_no_source__.4132317', $w);
         $w = $record->getSubfield($marc776[1], 'w');
         $this->assertEquals('__unit_test_no_source__.xyzzy', $w);
+    }
+
+    /**
+     * Tests for getWorkIdentificationData
+     *
+     * @return void
+     */
+    public function testGetWorkIdentificationData()
+    {
+        $record = $this->createRecord(Marc::class, 'marc_alt_script.xml');
+        $keys = $record->getWorkIdentificationData();
+        $expected = [
+            [
+                'authors' => [
+                    [
+                        'type' => 'author',
+                        'value' => 'Kageyama, Terukuni,',
+                    ],
+                ],
+                'authorsAltScript' => [
+                    [
+                        'type' => 'author',
+                        'value' => '影山, 輝国,',
+                    ],
+                ],
+                'titles' => [
+                    [
+                        'type' => 'title',
+                        'value' => 'Shinmeikai gendai kanwa jiten /',
+                    ],
+                    [
+                        'type' => 'title',
+                        'value' => 'Ōkina katsuji no shinmeikai gendai kanwa jiten',
+                    ],
+                ],
+                'titlesAltScript' => [
+                    [
+                        'type' => 'title',
+                        'value' => '漢字源 : 上級漢和辞典  /',
+                    ],
+                ],
+            ]
+        ];
+        $this->compareArray($expected, $keys, 'getWorkIdentificationData');
+
+        $record = $this->createRecord(Marc::class, 'marc_analytical.xml');
+        $keys = $record->getWorkIdentificationData();
+        $expected = [
+            [
+                'authors' => [
+                    [
+                        'type' => 'author',
+                        'value' => 'Shakespeare, William.',
+                    ],
+                ],
+                'authorsAltScript' => [],
+                'titles' => [
+                    [
+                        'type' => 'title',
+                        'value' => 'William Shakespearen suuret draamat. 2 /',
+                    ],
+                    [
+                        'type' => 'title',
+                        'value' => 'Suuret draamat',
+                    ],
+                ],
+                'titlesAltScript' => [],
+            ],
+            [
+                'authors' => [
+                    [
+                        'type' => 'author',
+                        'value' => 'Shakespeare, William.',
+                    ],
+                ],
+                'authorsAltScript' => [],
+                'titles' => [
+                    [
+                        'type' => 'title',
+                        'value' => 'Hamlet,',
+                    ],
+                ],
+                'titlesAltScript' => [],
+            ],
+            [
+                'authors' => [
+                    [
+                        'type' => 'author',
+                        'value' => 'Shakespeare, William.',
+                    ],
+                ],
+                'authorsAltScript' => [],
+                'titles' => [
+                    [
+                        'type' => 'title',
+                        'value' => 'Othello,',
+                    ],
+                ],
+                'titlesAltScript' => [],
+            ]
+        ];
+        $this->compareArray($expected, $keys, 'getWorkIdentificationData');
     }
 }

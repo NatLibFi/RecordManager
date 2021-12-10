@@ -110,18 +110,17 @@ class LidoTest extends RecordTest
 
         $keys = $record->getWorkIdentificationData();
         $expected = [
-            'authors' => [
-            ],
-            'authorsAltScript' => [
-            ],
-            'titles' => [
-                [
-                    'type' => 'title',
-                    'value' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+            [
+                'authors' => [],
+                'authorsAltScript' => [],
+                'titles' => [
+                    [
+                        'type' => 'title',
+                        'value' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+                    ],
                 ],
-            ],
-            'titlesAltScript' => [
-            ],
+                'titlesAltScript' => [],
+            ]
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');

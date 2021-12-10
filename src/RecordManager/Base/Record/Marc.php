@@ -2107,6 +2107,28 @@ class Marc extends AbstractRecord
     }
 
     /**
+     * Get any alternate script field
+     *
+     * @param string $tag  Field code
+     * @param string $sub6 Subfield 6 in original script identifying the
+     *                     alt field
+     *
+     * @return string
+     */
+    protected function getAlternateScriptField(
+        $tag,
+        $sub6,
+    ) {
+        $findSub6 = "$tag-" . substr($sub6, 4, 2);
+        foreach ($this->fields['880'] as $field880) {
+            if (strncmp($this->getSubfield($field880, '6'), $findSub6, 6) === 0) {
+                return $field880;
+            }
+        }
+        return '';
+    }
+
+    /**
      * Get the subfields for any alternate script field
      *
      * @param string  $tag            Field code
@@ -2125,11 +2147,7 @@ class Marc extends AbstractRecord
         $splitSubfields = false
     ) {
         $data = [];
-        $findSub6 = "$tag-" . substr($sub6, 4, 2);
-        foreach ($this->fields['880'] as $field880) {
-            if (strncmp($this->getSubfield($field880, '6'), $findSub6, 6) != 0) {
-                continue;
-            }
+        if ($field880 = $this->getAlternateScriptField($tag, $sub6)) {
             if ($codes) {
                 if ($splitSubfields) {
                     foreach ($field880['s'] as $subfield) {
@@ -2693,24 +2711,33 @@ class Marc extends AbstractRecord
     /**
      * Get key data that can be used to identify expressions of a work
      *
-     * Returns an associative array like this:
+     * Returns an associative array like this where each set of keys defines the
+     * keys for a work (multiple sets can be returned for compound works):
      *
      * [
-     *   'titles' => [
-     *     ['type' => 'title', 'value' => 'Title'],
-     *     ['type' => 'uniform', 'value' => 'Uniform Title']
-     *    ],
-     *   'authors' => [
-     *     ['type' => 'author', 'value' => 'Name 1'],
-     *     ['type' => 'author', 'value' => 'Name 2']
+     *   [
+     *     'titles' => [
+     *       ['type' => 'title', 'value' => 'Title'],
+     *       ['type' => 'uniform', 'value' => 'Uniform Title']
+     *      ],
+     *     'authors' => [
+     *       ['type' => 'author', 'value' => 'Name 1'],
+     *       ['type' => 'author', 'value' => 'Name 2']
+     *     ],
+     *     'titlesAltScript' => [
+     *       ['type' => 'title', 'value' => 'Title in alternate script'],
+     *       ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
+     *     ],
+     *     'authorsAltScript' => [
+     *       ['type' => 'author', 'value' => 'Name 1 in alternate script'],
+     *       ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *     ]
      *   ],
-     *   'titlesAltScript' => [
-     *     ['type' => 'title', 'value' => 'Title in alternate script'],
-     *     ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
-     *   ],
-     *   'authorsAltScript' => [
-     *     ['type' => 'author', 'value' => 'Name 1 in alternate script'],
-     *     ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *   [
+     *     'titles' => [...],
+     *     'authors' => [...],
+     *     'titlesAltScript' => [...]
+     *     'authorsAltScript' => [...]
      *   ]
      * ]
      *
@@ -2740,61 +2767,89 @@ class Marc extends AbstractRecord
         $titles = [];
         $titlesAltScript = [];
 
+        $analytical = [];
+
         foreach ($authorFields as $tag => $subfields) {
-            $auths = $this->getFieldsSubfields(
-                [[self::GET_BOTH, $tag, $subfields]],
-                true,
-                false
-            );
-            if (isset($auths[1])) {
-                $authorsAltScript[] = [
-                    'type' => 'author',
-                    'value' => $auths[1]
-                ];
-            }
-            if (isset($auths[0])) {
-                $authors[] = [
-                    'type' => 'author',
-                    'value' => $auths[0]
-                ];
-                break;
+            foreach ($this->getFields($tag) as $field) {
+                // Check for analytical entries to be processed later:
+                if (in_array($tag, ['700', '710', '711'])
+                    && (int)$this->getIndicator($field, 2) === 2
+                ) {
+                    $analytical[$tag][] = $field;
+                    continue;
+                }
+
+                // Take only first author:
+                if ($authors) {
+                    continue;
+                }
+
+                $author = $this->getSubfields($field, $subfields);
+                if ($author) {
+                    $authors[] = [
+                        'type' => 'author',
+                        'value' => $author
+                    ];
+
+                    $sub6 = $this->getSubfield($field, '6');
+                    if ($sub6 && $f880 = $this->getAlternateScriptField($tag, $sub6)
+                    ) {
+                        $author = $this->getSubfields($f880, $subfields);
+                        if ($author) {
+                            $authorsAltScript[] = [
+                                'type' => 'author',
+                                'value' => $author
+                            ];
+                        }
+                    }
+                }
             }
         }
 
         foreach ($titleFields as $tag => $subfields) {
+            $tag = (string)$tag;
             $field = $this->getField($tag);
             $title = '';
             $altTitles = [];
-            $ind = ('130' == $tag || '730' == $tag) ? 1 : 2;
+            switch ($tag) {
+            case '130':
+            case '730':
+                $nonFilingInd = 1;
+                break;
+            case '246':
+                $nonFilingInd = null;
+                break;
+            default:
+                $nonFilingInd = 2;
+            }
             if ($field && !empty($field['s'])) {
                 $title = $this->getSubfield($field, 'a');
-                $nonfiling = (int)$this->getIndicator($field, $ind);
-                if ($nonfiling > 0) {
-                    $title = substr($title, $nonfiling);
+                if (null !== $nonFilingInd) {
+                    $nonfiling = (int)$this->getIndicator($field, $nonFilingInd);
+                    if ($nonfiling > 0) {
+                        $title = substr($title, $nonfiling);
+                    }
                 }
                 $rest = $this->getSubfields($field, $subfields);
                 if ($rest) {
                     $title .= " $rest";
                 }
                 $sub6 = $this->getSubfield($field, '6');
-                if ($sub6) {
-                    $sub6 = "$tag-" . substr($sub6, 4, 2);
-                    foreach ($this->getFields('880') as $f880) {
-                        if (strncmp($this->getSubfield($f880, '6'), $sub6, 6) != 0) {
-                            continue;
-                        }
-                        $altTitle = $this->getSubfield($f880, 'a');
-                        $nonfiling = (int)$this->getIndicator($f880, $ind);
+                if ($sub6 && $f880 = $this->getAlternateScriptField($tag, $sub6)
+                ) {
+                    $altTitle = $this->getSubfield($f880, 'a');
+                    if (null !== $nonFilingInd) {
+                        $nonfiling = (int)$this->getIndicator($f880, $nonFilingInd);
                         if ($nonfiling > 0) {
                             $altTitle = substr($altTitle, $nonfiling);
                         }
-                        $rest = $this->getSubfields($f880, $subfields);
-                        if ($rest) {
-                            $altTitle .= " $rest";
-                        }
-                        if ($altTitle) {
-                            $altTitles[] = $altTitle;
-                        }
+                    }
+                    $rest = $this->getSubfields($f880, $subfields);
+                    if ($rest) {
+                        $altTitle .= " $rest";
+                    }
+                    if ($altTitle) {
+                        $altTitles[] = $altTitle;
                     }
                 }
             }
@@ -2817,7 +2872,44 @@ class Marc extends AbstractRecord
             return [];
         }
 
-        return compact('authors', 'authorsAltScript', 'titles', 'titlesAltScript');
+        $result = [
+            compact('authors', 'authorsAltScript', 'titles', 'titlesAltScript')
+        ];
+
+        // Process any analytical entries
+        foreach ($analytical as $tag => $fields) {
+            foreach ($fields as $field) {
+                $title = $this->getSubfield($field, 't');
+                if (!$title) {
+                    continue;
+                }
+                $author = $this->getSubfields($field, $authorFields[$tag]);
+                $altTitle = '';
+                $altAuthor = '';
+                $sub6 = $this->getSubfield($field, '6');
+                if ($sub6 && $f880 = $this->getAlternateScriptField($tag, $sub6)
+                ) {
+                    $altTitle = $this->getSubfield($f880, 'a');
+                    if ($altTitle) {
+                        $altAuthor
+                            = $this->getSubfields($field, $authorFields[$tag]);
+                    }
+                }
+
+                $result[] = [
+                    'authors' => [['type' => 'author', 'value' => $author]],
+                    'authorsAltScript' => $altAuthor
+                        ? [['type' => 'author', 'value' => $altAuthor]]
+                        : [],
+                    'titles' => [['type' => 'title', 'value' => $title]],
+                    'titlesAltScript' => $altTitle
+                        ? [['type' => 'title', 'value' => $altTitle]]
+                        : []
+                ];
+            }
+        }
+
+        return $result;
     }
 
     /**

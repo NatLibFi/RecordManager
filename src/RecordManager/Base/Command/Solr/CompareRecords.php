@@ -114,6 +114,12 @@ class CompareRecords extends AbstractBase
                 InputOption::VALUE_REQUIRED,
                 'Log results to the given file'
             )->addOption(
+                'fields',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Compare only a comma-separated list of fields',
+                ''
+            )->addOption(
                 'from',
                 null,
                 InputOption::VALUE_REQUIRED,
@@ -147,7 +153,8 @@ class CompareRecords extends AbstractBase
             $input->getOption('log'),
             $input->getOption('from'),
             $input->getOption('source'),
-            $input->getOption('single')
+            $input->getOption('single'),
+            $input->getOption('fields')
         );
 
         return Command::SUCCESS;

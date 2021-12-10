@@ -1927,10 +1927,13 @@ class SolrUpdater
      */
     protected function addWorkKeys(array &$data, AbstractRecord $metadataRecord)
     {
-        if ($this->workKeysField
-            && $workIds = $metadataRecord->getWorkIdentificationData()
+        if (!$this->workKeysField
+            || !($workIdSets = $metadataRecord->getWorkIdentificationData())
         ) {
-            $keys = [];
+            return;
+        }
+        $keys = [];
+        foreach ($workIdSets as $workIds) {
             foreach ($workIds['titles'] ?? [] as $titleData) {
                 $title = $this->metadataUtils->normalizeKey(
                     $titleData['value'],
@@ -1965,9 +1968,9 @@ class SolrUpdater
                     }
                 }
             }
-            if ($keys) {
-                $data[$this->workKeysField] = $keys;
-            }
+        }
+        if ($keys) {
+            $data[$this->workKeysField] = $keys;
         }
     }
 

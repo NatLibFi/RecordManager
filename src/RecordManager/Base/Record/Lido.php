@@ -220,11 +220,11 @@ class Lido extends AbstractRecord
     /**
      * Return record title
      *
-     * @param bool   $forFiling            Whether the title is to be used in
-     *                                     filing (e.g. sorting, non-filing
-     *                                     characters should be removed)
-     * @param string $lang                 Language
-     * @param array  $excludedDescriptions Description types to exclude
+     * @param bool     $forFiling            Whether the title is to be used in
+     *                                       filing (e.g. sorting, non-filing
+     *                                       characters should be removed)
+     * @param string   $lang                 Language
+     * @param string[] $excludedDescriptions Description types to exclude
      *
      * @return string
      */
@@ -237,15 +237,10 @@ class Lido extends AbstractRecord
         $allTitles = [];
         foreach ($this->getTitleSetNodes() as $set) {
             foreach ($set->appellationValue as $appellationValue) {
-                if (!($title = trim((string)$appellationValue))) {
-                    continue;
+                if ($lang == null || $appellationValue['lang'] == $lang) {
+                    $titles[] = (string)$appellationValue;
                 }
-                $allTitles[] = $title;
-                $priority = (string)($appellationValue['pref'] ?? 'preferred');
-                $titleLang = (string)($appellationValue['lang'] ?? $lang ?? '');
-                if ('preferred' === $priority && ($titleLang === $lang || !$lang)) {
-                    $titles[] = $title;
-                }
+                $allTitles[] = (string)$appellationValue;
             }
         }
         // Fallback to use any title in case none found with the specified language
@@ -353,24 +348,33 @@ class Lido extends AbstractRecord
     /**
      * Get key data that can be used to identify expressions of a work
      *
-     * Returns an associative array like this:
+     * Returns an associative array like this where each set of keys defines the
+     * keys for a work (multiple sets can be returned for compound works):
      *
      * [
-     *   'titles' => [
-     *     ['type' => 'title', 'value' => 'Title'],
-     *     ['type' => 'uniform', 'value' => 'Uniform Title']
-     *    ],
-     *   'authors' => [
-     *     ['type' => 'author', 'value' => 'Name 1'],
-     *     ['type' => 'author', 'value' => 'Name 2']
+     *   [
+     *     'titles' => [
+     *       ['type' => 'title', 'value' => 'Title'],
+     *       ['type' => 'uniform', 'value' => 'Uniform Title']
+     *      ],
+     *     'authors' => [
+     *       ['type' => 'author', 'value' => 'Name 1'],
+     *       ['type' => 'author', 'value' => 'Name 2']
+     *     ],
+     *     'titlesAltScript' => [
+     *       ['type' => 'title', 'value' => 'Title in alternate script'],
+     *       ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
+     *     ],
+     *     'authorsAltScript' => [
+     *       ['type' => 'author', 'value' => 'Name 1 in alternate script'],
+     *       ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *     ]
      *   ],
-     *   'titlesAltScript' => [
-     *     ['type' => 'title', 'value' => 'Title in alternate script'],
-     *     ['type' => 'uniform', 'value' => 'Uniform Title in alternate script']
-     *   ],
-     *   'authorsAltScript' => [
-     *     ['type' => 'author', 'value' => 'Name 1 in alternate script'],
-     *     ['type' => 'author', 'value' => 'Name 2 in alternate script']
+     *   [
+     *     'titles' => [...],
+     *     'authors' => [...],
+     *     'titlesAltScript' => [...]
+     *     'authorsAltScript' => [...]
      *   ]
      * ]
      *
@@ -405,7 +409,7 @@ class Lido extends AbstractRecord
         }
         $titlesAltScript = [];
         $authorsAltScript = [];
-        return compact('titles', 'authors', 'titlesAltScript', 'authorsAltScript');
+        return [compact('titles', 'authors', 'titlesAltScript', 'authorsAltScript')];
     }
 
     /**
