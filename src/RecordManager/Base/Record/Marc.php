@@ -2734,6 +2734,7 @@ class Marc extends AbstractRecord
      *     ]
      *   ],
      *   [
+     *     'type' => 'analytical',
      *     'titles' => [...],
      *     'authors' => [...],
      *     'titlesAltScript' => [...]
@@ -2768,7 +2769,6 @@ class Marc extends AbstractRecord
         $titlesAltScript = [];
 
         $analytical = [];
-
         foreach ($authorFields as $tag => $subfields) {
             foreach ($this->getFields($tag) as $field) {
                 // Check for analytical entries to be processed later:
@@ -2879,7 +2879,10 @@ class Marc extends AbstractRecord
         // Process any analytical entries
         foreach ($analytical as $tag => $fields) {
             foreach ($fields as $field) {
-                $title = $this->getSubfield($field, 't');
+                $title = $this->getSubfields(
+                    $field,
+                    ['t' => 1, 'n' => 1, 'p' => 1, 'm' => 1, 'r' => 1]
+                );
                 if (!$title) {
                     continue;
                 }
@@ -2897,6 +2900,7 @@ class Marc extends AbstractRecord
                 }
 
                 $result[] = [
+                    'type' => 'analytical',
                     'authors' => [['type' => 'author', 'value' => $author]],
                     'authorsAltScript' => $altAuthor
                         ? [['type' => 'author', 'value' => $altAuthor]]

@@ -1933,7 +1933,13 @@ class SolrUpdater
             return;
         }
         $keys = [];
+        $addAnalytical = $this->config['Solr']['work_keys_from_analytical_entries']
+            ?? false;
         foreach ($workIdSets as $workIds) {
+            $setType = $workIds['type'] ?? 'main';
+            if (!$addAnalytical && 'analytical' === $setType) {
+                continue;
+            }
             foreach ($workIds['titles'] ?? [] as $titleData) {
                 $title = $this->metadataUtils->normalizeKey(
                     $titleData['value'],

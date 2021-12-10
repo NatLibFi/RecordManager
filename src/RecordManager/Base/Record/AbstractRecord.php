@@ -479,6 +479,7 @@ abstract class AbstractRecord
      *     ]
      *   ],
      *   [
+     *     'type' => 'analytical',
      *     'titles' => [...],
      *     'authors' => [...],
      *     'titlesAltScript' => [...]

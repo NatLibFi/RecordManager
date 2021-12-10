@@ -910,6 +910,7 @@ class MarcTest extends RecordTest
                 'titlesAltScript' => [],
             ],
             [
+                'type' => 'analytical',
                 'authors' => [
                     [
                         'type' => 'author',
@@ -926,6 +927,7 @@ class MarcTest extends RecordTest
                 'titlesAltScript' => [],
             ],
             [
+                'type' => 'analytical',
                 'authors' => [
                     [
                         'type' => 'author',

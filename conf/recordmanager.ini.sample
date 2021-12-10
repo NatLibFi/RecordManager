@@ -131,6 +131,9 @@ unicode_normalization_form = NFKC
 ; Enrichments used with all data sources
 ;enrichment[] = NominatimGeocoder
 ;enrichment[] = MusicBrainzEnrichment
+; Whether to add work identification keys from analytical entries (MARC 7xx fields).
+; Default is false.
+;work_keys_from_analytical_entries = true
 
 ; The following section can be used to change the Solr fields used when indexing
 ; records, particularly for hierarchical records. Any field can also be set to empty

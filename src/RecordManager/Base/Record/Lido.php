@@ -371,6 +371,7 @@ class Lido extends AbstractRecord
      *     ]
      *   ],
      *   [
+     *     'type' => 'analytical',
      *     'titles' => [...],
      *     'authors' => [...],
      *     'titlesAltScript' => [...]
