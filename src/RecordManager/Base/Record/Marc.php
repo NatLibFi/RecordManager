@@ -2113,19 +2113,19 @@ class Marc extends AbstractRecord
      * @param string $sub6 Subfield 6 in original script identifying the
      *                     alt field
      *
-     * @return string
+     * @return array
      */
     protected function getAlternateScriptField(
         $tag,
         $sub6
     ) {
         $findSub6 = "$tag-" . substr($sub6, 4, 2);
-        foreach ($this->fields['880'] as $field880) {
+        foreach ($this->fields['880'] ?? [] as $field880) {
             if (strncmp($this->getSubfield($field880, '6'), $findSub6, 6) === 0) {
                 return $field880;
             }
         }
-        return '';
+        return [];
     }
 
     /**
