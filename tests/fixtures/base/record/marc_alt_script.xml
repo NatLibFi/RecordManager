@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+ <record>
+  <leader>01536cam a22003494i 4500</leader>
+  <controlfield tag="001">9933385663506253</controlfield>
+  <controlfield tag="005">20210220014632.0</controlfield>
+  <controlfield tag="008">200617s2018    ja            ||| | jpn|c</controlfield>
+  <datafield tag="020" ind1=" " ind2=" ">
+   <subfield code="a">9784385137575</subfield>
+   <subfield code="q">sidottu</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+   <subfield code="a">(FI-HELKA)3338566-helkadb</subfield>
+  </datafield>
+  <datafield tag="040" ind1=" " ind2=" ">
+   <subfield code="a">FI-Hul</subfield>
+   <subfield code="b">fin</subfield>
+   <subfield code="e">rda</subfield>
+  </datafield>
+  <datafield tag="041" ind1="0" ind2=" ">
+   <subfield code="a">jpn</subfield>
+  </datafield>
+  <datafield tag="090" ind1=" " ind2=" ">
+   <subfield code="a">(Alma)9933385663506253</subfield>
+  </datafield>
+  <datafield tag="245" ind1="0" ind2="0">
+   <subfield code="6">880-01</subfield>
+   <subfield code="a">Shinmeikai gendai kanwa jiten /</subfield>
+   <subfield code="c">Kageyama Terukuni [hoka] hencho.</subfield>
+  </datafield>
+  <datafield tag="246" ind1="0" ind2="3">
+   <subfield code="a">Ōkina katsuji no shinmeikai gendai kanwa jiten</subfield>
+  </datafield>
+  <datafield tag="264" ind1=" " ind2="1">
+   <subfield code="6">880-02</subfield>
+   <subfield code="a">Tōkyō :</subfield>
+   <subfield code="b">Sanseidō,</subfield>
+   <subfield code="c">2012.</subfield>
+  </datafield>
+  <datafield tag="300" ind1=" " ind2=" ">
+   <subfield code="a">160, 1613 sivua</subfield>
+  </datafield>
+  <datafield tag="336" ind1=" " ind2=" ">
+   <subfield code="a">teksti</subfield>
+   <subfield code="b">txt</subfield>
+   <subfield code="2">rdacontent</subfield>
+  </datafield>
+  <datafield tag="337" ind1=" " ind2=" ">
+   <subfield code="a">käytettävissä ilman laitetta</subfield>
+   <subfield code="b">n</subfield>
+   <subfield code="2">rdamedia</subfield>
+  </datafield>
+  <datafield tag="338" ind1=" " ind2=" ">
+   <subfield code="a">nide</subfield>
+   <subfield code="b">nc</subfield>
+   <subfield code="2">rdacarrier</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">japanin kieli.</subfield>
+   <subfield code="0">http://www.yso.fi/onto/yso/p19175</subfield>
+   <subfield code="2">yso/fin</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+   <subfield code="a">japanska.</subfield>
+   <subfield code="0">http://www.yso.fi/onto/yso/p19175</subfield>
+   <subfield code="2">yso/swe</subfield>
+  </datafield>
+  <datafield tag="655" ind1=" " ind2="7">
+   <subfield code="a">sanakirjat.</subfield>
+   <subfield code="0">http://urn.fi/URN:NBN:fi:au:slm:s1144</subfield>
+   <subfield code="2">slm/fin</subfield>
+  </datafield>
+  <datafield tag="655" ind1=" " ind2="7">
+   <subfield code="a">ordböcker.</subfield>
+   <subfield code="0">http://urn.fi/URN:NBN:fi:au:slm:s1144</subfield>
+   <subfield code="2">slm/swe</subfield>
+  </datafield>
+  <datafield tag="700" ind1="1" ind2=" ">
+   <subfield code="6">880-03</subfield>
+   <subfield code="a">Kageyama, Terukuni,</subfield>
+   <subfield code="e">toimittaja.</subfield>
+  </datafield>
+  <datafield tag="852" ind1="8" ind2=" ">
+   <subfield code="a">Hc</subfield>
+   <subfield code="b">KAISA</subfield>
+   <subfield code="c">06EIKOTI</subfield>
+   <subfield code="8">22219439490006253</subfield>
+  </datafield>
+  <datafield tag="852" ind1="8" ind2=" ">
+   <subfield code="a">Hc</subfield>
+   <subfield code="b">KAISA</subfield>
+   <subfield code="c">06LAINA</subfield>
+   <subfield code="8">22121097080006253</subfield>
+  </datafield>
+  <datafield tag="880" ind1="0" ind2="0">
+   <subfield code="6">245-01</subfield>
+   <subfield code="a">漢字源 :</subfield>
+   <subfield code="b">上級漢和辞典  /</subfield>
+   <subfield code="c">藤堂明保影山輝國 [ほか] 編著.</subfield>
+  </datafield>
+  <datafield tag="880" ind1=" " ind2="1">
+   <subfield code="6">264-02</subfield>
+   <subfield code="a">東京 :</subfield>
+   <subfield code="b">三省堂,</subfield>
+   <subfield code="c">2012.</subfield>
+  </datafield>
+  <datafield tag="880" ind1="1" ind2=" ">
+   <subfield code="6">700-03</subfield>
+   <subfield code="a">影山, 輝国,</subfield>
+   <subfield code="e">toimittaja.</subfield>
+  </datafield>
+  <datafield tag="952" ind1=" " ind2=" ">
+   <subfield code="b">KAISA</subfield>
+   <subfield code="c">06LAINA</subfield>
+   <subfield code="o">Hc 6. krs Aasian ja Afrikan tutkimus Om 512 Shinmeikai</subfield>
+  </datafield>
+  <datafield tag="952" ind1=" " ind2=" ">
+   <subfield code="b">KAISA</subfield>
+   <subfield code="c">06EIKOTI</subfield>
+   <subfield code="o">Hc 6. krs Aasian ja Afrikan tutkimus Om 511 Shinmeikai</subfield>
+  </datafield>
+ </record>
+</collection>

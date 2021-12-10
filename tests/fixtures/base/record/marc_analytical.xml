@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+ <record>
+  <leader>01267cam a22003734i 4500</leader>
+  <controlfield tag="001">99164434206249</controlfield>
+  <controlfield tag="005">20210303090424.0</controlfield>
+  <controlfield tag="008">930301s1955    fi |||||||||||||||||fin||</controlfield>
+  <datafield tag="035" ind1=" " ind2=" ">
+   <subfield code="a">16443</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+   <subfield code="a">(FI-MELINDA)000559531</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+   <subfield code="a">(FI-TaiY)16443-sibeliusdb</subfield>
+  </datafield>
+  <datafield tag="041" ind1="1" ind2=" ">
+   <subfield code="a">fin</subfield>
+   <subfield code="h">eng</subfield>
+  </datafield>
+  <datafield tag="084" ind1=" " ind2=" ">
+   <subfield code="a">Teat 150a</subfield>
+   <subfield code="2">teatkl</subfield>
+  </datafield>
+  <datafield tag="084" ind1=" " ind2=" ">
+   <subfield code="a">Srn 05.01</subfield>
+   <subfield code="2">srnlcs</subfield>
+  </datafield>
+  <datafield tag="090" ind1=" " ind2=" ">
+   <subfield code="a">(Alma)99164434206249</subfield>
+  </datafield>
+  <datafield tag="100" ind1="1" ind2=" ">
+   <subfield code="a">Shakespeare, William.</subfield>
+  </datafield>
+  <datafield tag="243" ind1="1" ind2="0">
+   <subfield code="a">Näytelmät.</subfield>
+   <subfield code="k">Valikoima,</subfield>
+   <subfield code="l">suomi</subfield>
+  </datafield>
+  <datafield tag="245" ind1="1" ind2="0">
+   <subfield code="a">William Shakespearen suuret draamat.</subfield>
+   <subfield code="n">2 /</subfield>
+   <subfield code="c">suom. Yrjö Jylhä.</subfield>
+  </datafield>
+  <datafield tag="246" ind1="1" ind2=" ">
+   <subfield code="i">Selkänimeke:</subfield>
+   <subfield code="a">Suuret draamat</subfield>
+  </datafield>
+  <datafield tag="260" ind1=" " ind2=" ">
+   <subfield code="a">Helsinki :</subfield>
+   <subfield code="b">Otava,</subfield>
+   <subfield code="c">1955.</subfield>
+  </datafield>
+  <datafield tag="300" ind1=" " ind2=" ">
+   <subfield code="a">319 sivua ; 21 cm</subfield>
+  </datafield>
+  <datafield tag="336" ind1=" " ind2=" ">
+   <subfield code="a">teksti</subfield>
+   <subfield code="b">txt</subfield>
+   <subfield code="2">rdacontent</subfield>
+  </datafield>
+  <datafield tag="337" ind1=" " ind2=" ">
+   <subfield code="a">käytettävissä ilman laitetta</subfield>
+   <subfield code="b">n</subfield>
+   <subfield code="2">rdamedia</subfield>
+  </datafield>
+  <datafield tag="338" ind1=" " ind2=" ">
+   <subfield code="a">nide</subfield>
+   <subfield code="b">nc</subfield>
+   <subfield code="2">rdacarrier</subfield>
+  </datafield>
+  <datafield tag="500" ind1=" " ind2=" ">
+   <subfield code="a">Lisäpainokset: 2. p. 1961.</subfield>
+  </datafield>
+  <datafield tag="505" ind1="0" ind2=" ">
+   <subfield code="a">Hamlet ; Othello.</subfield>
+  </datafield>
+  <datafield tag="655" ind1=" " ind2="7">
+   <subfield code="a">näytelmät</subfield>
+   <subfield code="2">slm/fin</subfield>
+  </datafield>
+  <datafield tag="700" ind1="1" ind2=" ">
+   <subfield code="a">Jylhä, Yrjö,</subfield>
+   <subfield code="e">kääntäjä.</subfield>
+  </datafield>
+  <datafield tag="700" ind1="1" ind2="2">
+   <subfield code="a">Shakespeare, William.</subfield>
+   <subfield code="t">Hamlet,</subfield>
+   <subfield code="l">suomi</subfield>
+   <subfield code="s">(Jylhä)</subfield>
+  </datafield>
+  <datafield tag="700" ind1="1" ind2="2">
+   <subfield code="a">Shakespeare, William.</subfield>
+   <subfield code="t">Othello,</subfield>
+   <subfield code="l">suomi</subfield>
+   <subfield code="s">(Jylhä)</subfield>
+  </datafield>
+  <datafield tag="740" ind1="0" ind2=" ">
+   <subfield code="a">Hamlet.</subfield>
+  </datafield>
+  <datafield tag="740" ind1="0" ind2=" ">
+   <subfield code="a">Othello.</subfield>
+  </datafield>
+  <datafield tag="852" ind1="8" ind2=" ">
+   <subfield code="b">SORNAINEN</subfield>
+   <subfield code="c">SN-KIR</subfield>
+   <subfield code="h">Srn 05.01 Shakespeare</subfield>
+   <subfield code="8">2225729970006249</subfield>
+  </datafield>
+  <datafield tag="952" ind1=" " ind2=" ">
+   <subfield code="b">SORNAINEN</subfield>
+   <subfield code="c">SN-KIR</subfield>
+   <subfield code="o">Srn 05.01 Shakespeare</subfield>
+   <subfield code="9">1</subfield>
+  </datafield>
+ </record>
+</collection>
