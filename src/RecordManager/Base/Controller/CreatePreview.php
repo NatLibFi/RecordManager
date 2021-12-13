@@ -136,6 +136,11 @@ class CreatePreview extends AbstractBase
             $format = $settings['format'];
         }
 
+        // Check for line-based MARC and convert as necessary:
+        if ('marc' === $format && preg_match('/^\s*(LDR|\d{3})\s/', $metadata)) {
+            $metadata = $this->convertLineBasedMarcToXml($metadata);
+        }
+
         if (!empty($settings['preTransformation'])) {
             $metadata = $this->pretransform($metadata, $source);
         } elseif (!empty($settings['oaipmhTransformation'])) {
@@ -268,5 +273,89 @@ class CreatePreview extends AbstractBase
             }
         }
         return $doc->saveXML();
+    }
+
+    /**
+     * Convert a line-based MARC record ("tagged" output) to MARCXML
+     *
+     * Supports formats from Alma MARC record view and OCLC tagged output
+     *
+     * @param string $metadata Metadata
+     *
+     * @return string
+     */
+    protected function convertLineBasedMarcToXml(string $metadata)
+    {
+        $xml = simplexml_load_string(
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n"
+            . "<collection><record></record></collection>"
+        );
+        $record = $xml->record[0];
+
+        // Determine subfield format:
+        $pipeCount = substr_count($metadata, '|');
+        $dollarCount = substr_count($metadata, '$');
+        if ($dollarCount > $pipeCount) {
+            $subfieldRegExp = '/\$([a-z0-9])/';
+        } else {
+            $subfieldRegExp = '/\|([a-z0-9]) /';
+        }
+
+        foreach (explode("\n", $metadata) as $line) {
+            $line = trim($line);
+            if (!$line) {
+                continue;
+            }
+            $tag = substr($line, 0, 3);
+            $content = substr($line, 4);
+            if (strncmp($content, "'", 1) === 0 && substr($content, -1) === "'") {
+                $content = substr($content, 1, -1);
+            }
+            if ('LDR' === $tag || '000' === $tag) {
+                // Make sure leader is 24 characters:
+                $leader = str_pad(substr($content, 4, 24), 24);
+                $record->addChild('leader', htmlspecialchars($leader));
+            } elseif (intval($tag) < 10) {
+                $field = $record->addChild(
+                    'controlfield',
+                    htmlspecialchars($content, ENT_NOQUOTES)
+                );
+                $field->addAttribute('tag', $tag);
+            } else {
+                $ind1 = substr($content, 4, 1);
+                if ('_' === $ind1) {
+                    $ind1 = ' ';
+                }
+                $ind2 = substr($content, 5, 1);
+                if ('_' === $ind2) {
+                    $ind2 = ' ';
+                }
+                $field = $record->addChild('datafield');
+                $field->addAttribute('tag', $tag);
+                $field->addAttribute('ind1', $ind1);
+                $field->addAttribute('ind2', $ind2);
+
+                $subs = preg_split(
+                    $subfieldRegExp,
+                    substr($content, 3),
+                    -1,
+                    PREG_SPLIT_DELIM_CAPTURE
+                );
+                array_shift($subs);
+                while ($subs) {
+                    $code = array_shift($subs);
+                    $value = array_shift($subs);
+                    if ('' === $value) {
+                        continue;
+                    }
+                    $subfield = $field->addChild(
+                        'subfield',
+                        htmlspecialchars($value, ENT_NOQUOTES)
+                    );
+                    $subfield->addAttribute('code', $code);
+                }
+            }
+        }
+        return $record->asXML();
     }
 }
