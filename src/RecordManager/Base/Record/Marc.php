@@ -270,7 +270,7 @@ class Marc extends AbstractRecord
         if (isset($this->fields['000'])) {
             // Voyager is often missing the last '0' of the leader...
             $leader = str_pad(substr($this->fields['000'], 0, 24), 24);
-            $record->addChild('leader', $leader);
+            $record->addChild('leader', htmlspecialchars($leader));
         }
 
         foreach ($this->fields as $tag => $fields) {
