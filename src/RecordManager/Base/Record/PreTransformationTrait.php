@@ -77,7 +77,7 @@ trait PreTransformationTrait
                 $xslt->setParameter(
                     '',
                     'id_prefix',
-                    $settings['idPrefix']
+                    $settings['idPrefix'] ?? ''
                 );
                 $settings['preXSLT'][] = $xslt;
             }

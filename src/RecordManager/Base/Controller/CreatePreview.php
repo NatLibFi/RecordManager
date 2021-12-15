@@ -93,26 +93,6 @@ class CreatePreview extends AbstractBase
         );
 
         $this->previewCreator = $previewCreator;
-
-        if (empty($this->dataSourceConfig['_preview'])) {
-            $this->dataSourceConfig['_preview'] = [
-                'institution' => '_preview',
-                'componentParts' => null,
-                'format' => '_preview',
-                'preTransformation' => 'strip_namespaces.xsl',
-                'extraFields' => [],
-                'mappingFiles' => []
-            ];
-        }
-        if (empty($this->dataSourceConfig['_marc_preview'])) {
-            $this->dataSourceConfig['_marc_preview'] = [
-                'institution' => '_preview',
-                'componentParts' => null,
-                'format' => 'marc',
-                'extraFields' => [],
-                'mappingFiles' => []
-            ];
-        }
     }
 
     /**
@@ -127,7 +107,7 @@ class CreatePreview extends AbstractBase
     public function launch($metadata, $format, $source)
     {
         if (!$source || !isset($this->dataSourceConfig[$source])) {
-            $source = "_preview";
+            $source = 'marc' === $format ? '_marc_preview' : '_preview';
         }
 
         $settings = $this->dataSourceConfig[$source];
@@ -180,7 +160,7 @@ class CreatePreview extends AbstractBase
                 'source_id' => $source,
                 'institution' => $settings['institution'],
                 'format' => $settings['format'],
-                'id_prefix' => $settings['idPrefix']
+                'id_prefix' => $settings['idPrefix'] ?? ''
             ];
             $normalizationXSLT = new XslTransformation(
                 RECMAN_BASE_PATH . '/transformations',

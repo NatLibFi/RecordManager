@@ -29,41 +29,78 @@
  */
 require_once __DIR__ . '/vendor/autoload.php';
 
-define('RECMAN_BASE_PATH', getenv('RECMAN_BASE_PATH') ?: __DIR__);
-$app = \Laminas\Mvc\Application::init(
-    include RECMAN_BASE_PATH . '/conf/application.config.php'
-);
-$sm = $app->getServiceManager();
-$createPreview = $sm->get(\RecordManager\Base\Controller\CreatePreview::class);
+try {
+    ob_start();
 
-$func = $_REQUEST['func'] ?? '';
-if ($func === 'get_sources') {
-    $record = $createPreview->getDataSources($_REQUEST['format'] ?? '');
-} else {
-    if (!isset($_REQUEST['source']) || !isset($_REQUEST['data'])) {
-        http_response_code(400);
-        echo json_encode(['error_message' => 'Missing parameters']);
-        return;
+    define('RECMAN_BASE_PATH', getenv('RECMAN_BASE_PATH') ?: __DIR__);
+    $app = \Laminas\Mvc\Application::init(
+        include RECMAN_BASE_PATH . '/conf/application.config.php'
+    );
+    $sm = $app->getServiceManager();
+
+    $configReader = $sm->get(\RecordManager\Base\Settings\Ini::class);
+    $dataSourceConfig = $configReader->get('datasources.ini');
+    if (!isset($dataSourceConfig['_preview'])) {
+        $configReader->addOverrides(
+            'datasources.ini',
+            [
+                '_preview' => [
+                    'institution' => '_preview',
+                    'componentParts' => null,
+                    'format' => '_preview',
+                    'preTransformation' => 'strip_namespaces.xsl',
+                    'extraFields' => [],
+                    'mappingFiles' => []
+                ]
+            ]
+        );
     }
-    $format = $_REQUEST['format'] ?? '';
-    $source = $_REQUEST['source'] ?? '';
-
-    if (!preg_match('/^[\w_]*$/', $format) || !preg_match('/^[\w_-]*$/', $source)) {
-        http_response_code(400);
-        echo json_encode(['error_message' => 'Invalid parameters']);
-        return;
+    if (!isset($dataSourceConfig['_marc_preview'])) {
+        $configReader->addOverrides(
+            'datasources.ini',
+            [
+                '_marc_preview' => [
+                    'institution' => '_preview',
+                    'componentParts' => null,
+                    'format' => 'marc',
+                    'extraFields' => [],
+                    'mappingFiles' => []
+                ]
+            ]
+        );
     }
 
-    try {
-        ob_start();
+    $createPreview = $sm->get(\RecordManager\Base\Controller\CreatePreview::class);
+
+    $func = $_REQUEST['func'] ?? '';
+    if ($func === 'get_sources') {
+        $record = $createPreview->getDataSources($_REQUEST['format'] ?? '');
+    } else {
+        if (!isset($_REQUEST['source']) || !isset($_REQUEST['data'])) {
+            http_response_code(400);
+            echo json_encode(['error_message' => 'Missing parameters']);
+            return;
+        }
+        $format = $_REQUEST['format'] ?? '';
+        $source = $_REQUEST['source'] ?? '';
+
+        if (!preg_match('/^[\w_]*$/', $format) || !preg_match('/^[\w_-]*$/', $source)) {
+            http_response_code(400);
+            echo json_encode(['error_message' => 'Invalid parameters']);
+            return;
+        }
+
         $record = $createPreview->launch($_REQUEST['data'], $format, $source);
-    } catch (\Exception $e) {
-        $res = ob_clean();
-        http_response_code(400);
-        echo json_encode(['error_message' => $e->getMessage()]);
-        return;
+        if (false === $record) {
+            throw new \Exception('A record could not be created');
+        }
     }
+    header('Content-Type: application/json');
+    echo json_encode($record);
+} catch (\Exception $e) {
+    $res = ob_clean();
+    http_response_code(400);
+    echo json_encode(['error_message' => $e->getMessage()]);
+    return;
 }
 
-header('Content-Type: application/json');
-echo json_encode($record);

@@ -57,12 +57,23 @@ class Ini
      *
      * @param string $filename Ini file
      * @param array  $settings Settings (associative array)
+     * @param bool   $merge    Whether to merge with any existing overrides
      *
-     * @return void
+     * @return array
      */
-    public function addOverrides(string $filename, array $settings)
-    {
-        $this->overrides[$filename] = $settings;
+    public function addOverrides(
+        string $filename,
+        array $settings,
+        bool $merge = true
+    ) {
+        if ($merge && isset($this->overrides[$filename])) {
+            $this->overrides[$filename]
+                = array_replace_recursive($this->overrides[$filename], $settings);
+        } else {
+            $this->overrides[$filename] = $settings;
+        }
+
+        return $this->overrides[$filename];
     }
 
     /**
