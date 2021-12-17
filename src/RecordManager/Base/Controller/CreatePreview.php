@@ -286,14 +286,19 @@ class CreatePreview extends AbstractBase
             if (!$line) {
                 continue;
             }
-            $tag = substr($line, 0, 3);
-            $content = substr($line, 4);
-            if (strncmp($content, "'", 1) === 0 && substr($content, -1) === "'") {
-                $content = substr($content, 1, -1);
+            $tag = mb_substr($line, 0, 3, 'UTF-8');
+            $content = mb_substr($line, 4, null, 'UTF-8');
+            if (mb_substr($content, 0, 1, 'UTF-8') === "'"
+                && mb_substr($content, -1, null, 'UTF-8') === "'"
+            ) {
+                $content = mb_substr($content, 1, -1, 'UTF-8');
             }
             if ('LDR' === $tag || '000' === $tag) {
                 // Make sure leader is 24 characters:
-                $leader = str_pad(substr($content, 4, 24), 24);
+                $leader = mb_substr($content, 4, 24, 'UTF-8');
+                while (mb_strlen($leader, 'UTF-8') < 24) {
+                    $leader .= ' ';
+                }
                 $record->addChild('leader', htmlspecialchars($leader));
             } elseif (intval($tag) < 10) {
                 $field = $record->addChild(
@@ -302,11 +307,11 @@ class CreatePreview extends AbstractBase
                 );
                 $field->addAttribute('tag', $tag);
             } else {
-                $ind1 = substr($content, 4, 1);
+                $ind1 = mb_substr($content, 4, 1, 'UTF-8');
                 if ('_' === $ind1) {
                     $ind1 = ' ';
                 }
-                $ind2 = substr($content, 5, 1);
+                $ind2 = mb_substr($content, 5, 1, 'UTF-8');
                 if ('_' === $ind2) {
                     $ind2 = ' ';
                 }
