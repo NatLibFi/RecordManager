@@ -50,6 +50,23 @@ class CreatePreview extends AbstractBase
     use \RecordManager\Base\Record\PreTransformationTrait;
 
     /**
+     * Format definitions for line based MARC formats
+     *
+     * @var array
+     */
+    protected $lineBasedMarcFormats = [
+        [
+            'subfieldRegExp' => '/\$([a-z0-9])/'
+        ],
+        [
+            'subfieldRegExp' => '/\|([a-z0-9]) /'
+        ],
+        [
+            'subfieldRegExp' => '/‡([a-z0-9]) /'
+        ],
+    ];
+
+    /**
      * Preview creator
      *
      * @var PreviewCreator
@@ -273,12 +290,15 @@ class CreatePreview extends AbstractBase
         $record = $xml->record[0];
 
         // Determine subfield format:
-        $pipeCount = substr_count($metadata, '|');
-        $dollarCount = substr_count($metadata, '$');
-        if ($dollarCount > $pipeCount) {
-            $subfieldRegExp = '/\$([a-z0-9])/';
-        } else {
-            $subfieldRegExp = '/\|([a-z0-9]) /';
+        $delimCount = 0;
+        $format = null;
+        foreach ($this->lineBasedMarcFormats as $current) {
+            preg_match_all($current['subfieldRegExp'] . 's', $metadata, $matches);
+            $cnt = count($matches[1] ?? []);
+            if (null === $format || $cnt > $delimCount) {
+                $format = $current;
+                $delimCount = $cnt;
+            }
         }
 
         foreach (explode("\n", $metadata) as $line) {
@@ -321,7 +341,7 @@ class CreatePreview extends AbstractBase
                 $field->addAttribute('ind2', $ind2);
 
                 $subs = preg_split(
-                    $subfieldRegExp,
+                    $format['subfieldRegExp'],
                     substr($content, 3),
                     -1,
                     PREG_SPLIT_DELIM_CAPTURE
