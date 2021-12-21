@@ -28,6 +28,7 @@
 namespace RecordManager\Base\Utils;
 
 use RecordManager\Base\Database\DatabaseInterface;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Output\ConsoleOutputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -313,7 +314,7 @@ class Logger
             && $this->consoleOutput->getVerbosity() >= $verbosity
         ) {
             $output = $this->consoleOutput;
-            $consoleMsg = $logMsg;
+            $consoleMsg = OutputFormatter::escape($logMsg);
             switch ($level) {
             case Logger::ERROR:
             case Logger::FATAL:
@@ -353,37 +354,41 @@ class Logger
     /**
      * Write a message to the console with 'verbose' verbosity
      *
-     * @param string|callable $msg Message or a function that returns the message
+     * @param string|callable $msg    Message or a function that returns the message
+     * @param bool            $escape Whether the output should be escaped
      *
      * @return void
      */
-    public function writelnVerbose($msg): void
+    public function writelnVerbose($msg, bool $escape = true): void
     {
-        $this->writelnConsole($msg, OutputInterface::VERBOSITY_VERBOSE);
+        $this->writelnConsole($msg, OutputInterface::VERBOSITY_VERBOSE, $escape);
     }
 
     /**
      * Write a message to the console with 'very verbose' verbosity
      *
-     * @param string|callable $msg Message or a function that returns the message
+     * @param string|callable $msg    Message or a function that returns the message
+     * @param bool            $escape Whether the output should be escaped
      *
      * @return void
      */
-    public function writelnVeryVerbose($msg): void
+    public function writelnVeryVerbose($msg, bool $escape = true): void
     {
-        $this->writelnConsole($msg, OutputInterface::VERBOSITY_VERY_VERBOSE);
+        $this
+            ->writelnConsole($msg, OutputInterface::VERBOSITY_VERY_VERBOSE, $escape);
     }
 
     /**
      * Write a message to the console with 'debug' verbosity
      *
-     * @param string|callable $msg Message or a function that returns the message
+     * @param string|callable $msg    Message or a function that returns the message
+     * @param bool            $escape Whether the output should be escaped
      *
      * @return void
      */
-    public function writelnDebug($msg): void
+    public function writelnDebug($msg, bool $escape = true): void
     {
-        $this->writelnConsole($msg, OutputInterface::VERBOSITY_DEBUG);
+        $this->writelnConsole($msg, OutputInterface::VERBOSITY_DEBUG, $escape);
     }
 
     /**
@@ -393,18 +398,23 @@ class Logger
      *                                   message
      * @param int             $verbosity Verbosity level of the message (see
      *                                   OutputInterface)
+     * @param bool            $escape    Whether the output should be escaped
      *
      * @return void
      */
     public function writelnConsole(
         $msg,
-        $verbosity = OutputInterface::VERBOSITY_NORMAL
+        $verbosity = OutputInterface::VERBOSITY_NORMAL,
+        bool $escape = true
     ): void {
         if (!$this->consoleOutput) {
             return;
         }
         if ($this->consoleOutput->getVerbosity() >= $verbosity) {
             $message = is_callable($msg) ? $msg() : $msg;
+            if ($escape) {
+                $message = OutputFormatter::escape($message);
+            }
             $this->consoleOutput->writeln($message);
         }
     }
@@ -416,18 +426,23 @@ class Logger
      *                                   message
      * @param int             $verbosity Verbosity level of the message (see
      *                                   OutputInterface)
+     * @param bool            $escape    Whether the output should be escaped
      *
      * @return void
      */
     public function writeConsole(
         $msg,
-        $verbosity = OutputInterface::VERBOSITY_NORMAL
+        $verbosity = OutputInterface::VERBOSITY_NORMAL,
+        bool $escape = true
     ): void {
         if (!$this->consoleOutput) {
             return;
         }
         if ($this->consoleOutput->getVerbosity() >= $verbosity) {
             $message = is_callable($msg) ? $msg() : $msg;
+            if ($escape) {
+                $message = OutputFormatter::escape($message);
+            }
             $this->consoleOutput->write($message);
         }
     }

@@ -29,6 +29,7 @@ namespace RecordManager\Base\Command\Sources;
 
 use RecordManager\Base\Command\AbstractBase;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -188,8 +189,11 @@ class AddSetting extends AbstractBase
             // Check for existing setting:
             $lineAnalyzed = parse_ini_string($line);
             if (false === $lineAnalyzed) {
-                $output
-                    ->writeln("<error>Could not parse line $count: $line</error>");
+                $output->writeln(
+                    "<error>Could not parse line $count:"
+                    . ' ' . OutputFormatter::escape($line)
+                    . '</error>'
+                );
                 return Command::INVALID;
             }
             if ($analyzed === $lineAnalyzed) {

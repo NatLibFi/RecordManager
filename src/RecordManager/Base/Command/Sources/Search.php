@@ -29,6 +29,7 @@ namespace RecordManager\Base\Command\Sources;
 
 use RecordManager\Base\Command\AbstractBase;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -123,7 +124,7 @@ class Search extends AbstractBase
                 }
             }
         }
-        $output->writeln(implode($separator, $matches));
+        $output->writeln(OutputFormatter::escape(implode($separator, $matches)));
 
         return Command::SUCCESS;
     }
