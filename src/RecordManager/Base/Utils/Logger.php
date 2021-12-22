@@ -321,13 +321,13 @@ class Logger
                 if ($output instanceof ConsoleOutputInterface) {
                     $output = $output->getErrorOutput();
                 }
-                $consoleMsg = "<error>$logMsg</error>";
+                $consoleMsg = "<error>$consoleMsg</error>";
                 break;
             case Logger::WARNING:
-                $consoleMsg = "<fg=#ff8542;bg=black>$logMsg</>";
+                $consoleMsg = "<fg=#ff8542;bg=black>$consoleMsg</>";
                 break;
             case Logger::INFO:
-                $consoleMsg = "<info>$logMsg</info>";
+                $consoleMsg = "<info>$consoleMsg</info>";
                 break;
             }
             $output->writeln($consoleMsg);
