@@ -99,8 +99,8 @@ class RemoveSetting extends AbstractBase
     {
         $sources = $input->getOption('source');
         $sources = $sources === '*' ? null : explode(',', $sources);
-        $highlight = $input->getOption('highlight') === null;
-        $writeChanges = $input->getOption('write') === null;
+        $highlight = $input->getOption('highlight') !== false;
+        $writeChanges = $input->getOption('write') !== false;
         if ($highlight && $writeChanges) {
             $output->writeln(
                 '<error>--highlight cannot be used with --write</error>'
@@ -133,6 +133,10 @@ class RemoveSetting extends AbstractBase
 
         $count = 0;
         foreach ($contents as $line) {
+            if (!$writeChanges) {
+                // Escape the line for outputting:
+                $line = OutputFormatter::escape($line);
+            }
             ++$count;
             [$commentless] = explode(';', $line, 2);
             $commentless = trim($commentless);
