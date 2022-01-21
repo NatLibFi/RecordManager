@@ -59,6 +59,7 @@ return [
                     \RecordManager\Base\Command\Sources\Delete::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
                     \RecordManager\Base\Command\Sources\RemoveSetting::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
                     \RecordManager\Base\Command\Sources\Search::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
+                    \RecordManager\Base\Command\Sources\ShowConfig::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
                 ],
             ],
             'enrichment' => [
