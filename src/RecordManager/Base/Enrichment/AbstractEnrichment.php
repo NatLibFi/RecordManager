@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2014-2021.
+ * Copyright (C) The National Library of Finland 2014-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -181,17 +181,6 @@ abstract class AbstractEnrichment
         $this->maxTries = $this->config['Enrichment']['max_tries'] ?? 90;
         $this->retryWait = $this->config['Enrichment']['retry_wait'] ?? 5;
     }
-
-    /**
-     * Enrich the record and return any additions in solrArray
-     *
-     * @param string $sourceId  Source ID
-     * @param object $record    Metadata Record
-     * @param array  $solrArray Metadata to be sent to Solr
-     *
-     * @return void
-     */
-    abstract public function enrich($sourceId, $record, &$solrArray);
 
     /**
      * A helper function that retrieves external metadata and caches it

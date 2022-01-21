@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2021.
+ * Copyright (C) The National Library of Finland 2021-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -83,15 +83,6 @@ abstract class AbstractBase
     }
 
     /**
-     * Set metadata
-     *
-     * @param string $data Record metadata
-     *
-     * @return void
-     */
-    abstract public function setData($data);
-
-    /**
      * Check whether EOF has been encountered
      *
      * @return bool
@@ -100,15 +91,4 @@ abstract class AbstractBase
     {
         return $this->currentPos >= $this->recordCount;
     }
-
-    /**
-     * Get next record
-     *
-     * Returns false on EOF or an associative array with the following keys:
-     * - string metadata       Actual metadata
-     * - array  additionalData Any additional data
-     *
-     * @return array|bool
-     */
-    abstract public function getNextRecord();
 }
