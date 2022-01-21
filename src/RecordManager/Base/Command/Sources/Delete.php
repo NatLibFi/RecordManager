@@ -107,8 +107,8 @@ class Delete extends AbstractBase
         }
 
         // Check for existing records in any of the given sources:
+        $recordsExist = false;
         foreach ($sources as $source) {
-            $recordsExist = false;
             if ($this->db->findRecord(['source_id' => $source])) {
                 $output->writeln(
                     "<error>Data source '$source' contains records and cannot be"
@@ -116,9 +116,9 @@ class Delete extends AbstractBase
                 );
                 $recordsExist = true;
             }
-            if ($recordsExist) {
-                return Command::FAILURE;
-            }
+        }
+        if ($recordsExist) {
+            return Command::FAILURE;
         }
 
         $fullPath = RECMAN_BASE_PATH . '/conf/datasources.ini';
