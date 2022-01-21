@@ -86,7 +86,7 @@ class PurgeDeleted extends AbstractBase
                     . ' longer has any knowledge of them. They cannot be included in'
                     . ' e.g. Solr updates or OAI-PMH responses.</comment>',
                     '<comment>This prompt can be suppressed with the'
-                    . ' --no-interactive option.</comment>'
+                    . ' --no-interaction option.</comment>'
                 ]
             );
             $questionHelper = $this->getHelper('question');
