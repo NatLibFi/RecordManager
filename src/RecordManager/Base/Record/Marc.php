@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2021.
+ * Copyright (C) The National Library of Finland 2011-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -127,12 +127,6 @@ class Marc extends AbstractRecord
         '^\(EXLNZ-.+\).+',  // Ex Libris Network Zone
         '^\(\w\w-\w+\).+',  // ISIL style
     ];
-
-    /**
-     * A record-specific transient cache for results from methods that may get called
-     * multiple times with same parameters e.g. during deduplication.
-     */
-    protected $resultCache = [];
 
     /**
      * Constructor

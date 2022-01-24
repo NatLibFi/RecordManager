@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2021.
+ * Copyright (C) The National Library of Finland 2011-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -75,6 +75,13 @@ class Lido extends AbstractRecord
     ];
 
     /**
+     * Description types to exclude from title
+     *
+     * @var array
+     */
+    protected $descriptionTypesExcludedFromTitle = ['provenance'];
+
+    /**
      * Set record data
      *
      * @param string $source Source ID
@@ -134,8 +141,7 @@ class Lido extends AbstractRecord
         $data = [];
 
         $data['record_format'] = 'lido';
-        $lang = $this->getDefaultLanguage();
-        $title = $this->getTitle(false, $lang);
+        $title = $this->getTitle(false);
         if ($this->getDriverParam('splitTitles', false)) {
             $titlePart = $this->metadataUtils->splitTitle($title);
             if ($titlePart) {
@@ -144,13 +150,9 @@ class Lido extends AbstractRecord
             }
         }
         $data['title'] = $data['title_short'] = $data['title_full'] = $title;
-        $allTitles = $this->getTitle(false);
-        foreach (explode('; ', $allTitles) as $title) {
-            if ($title != $data['title']) {
-                $data['title_alt'][] = $title;
-            }
-        }
-        $data['title_sort'] = $this->getTitle(true, $lang);
+        $data['title_sort'] = $this->getTitle(true);
+        $data['title_alt'] = $this->getAltTitles();
+
         $description = $this->getDescription();
         if ($description) {
             if (!empty($data['description'])
@@ -220,67 +222,15 @@ class Lido extends AbstractRecord
     /**
      * Return record title
      *
-     * @param bool   $forFiling            Whether the title is to be used in
-     *                                     filing (e.g. sorting, non-filing
-     *                                     characters should be removed)
-     * @param string $lang                 Language
-     * @param array  $excludedDescriptions Description types to exclude
+     * @param bool $forFiling Whether the title is to be used in filing
+     *                        (e.g. sorting, non-filing characters should be removed)
      *
      * @return string
      */
-    public function getTitle(
-        $forFiling = false,
-        $lang = null,
-        $excludedDescriptions = ['provenance']
-    ) {
-        $titles = [];
-        $allTitles = [];
-        foreach ($this->getTitleSetNodes() as $set) {
-            foreach ($set->appellationValue as $appellationValue) {
-                if (!($title = trim((string)$appellationValue))) {
-                    continue;
-                }
-                $allTitles[] = $title;
-                $priority = (string)($appellationValue['pref'] ?? 'preferred');
-                $titleLang = (string)($appellationValue['lang'] ?? $lang ?? '');
-                if ('preferred' === $priority && ($titleLang === $lang || !$lang)) {
-                    $titles[] = $title;
-                }
-            }
-        }
-        // Fallback to use any title in case none found with the specified language
-        if (empty($titles)) {
-            $titles = $allTitles;
-        }
-        if (empty($titles)) {
-            return null;
-        }
-        $title = implode('; ', array_unique(array_filter($titles)));
-
-        // Use description if title is the same as the work type
-        // From LIDO specs:
-        // "For objects from natural, technical, cultural history e.g. the object
-        // name given here and the object type, recorded in the object / work
-        // type element are often identical."
-        $workType = $this->getObjectWorkType();
-        if (is_array($workType)) {
-            $workType = $workType[0];
-        }
-        if (strcasecmp($workType, $title) == 0) {
-            $descriptionWrapDescriptions = [];
-            foreach ($this->getObjectDescriptionSetNodes($excludedDescriptions)
-                as $set
-            ) {
-                if ($set->descriptiveNoteValue) {
-                    $descriptionWrapDescriptions[]
-                        = (string)$set->descriptiveNoteValue;
-                }
-            }
-            if ($descriptionWrapDescriptions) {
-                $title = implode('; ', $descriptionWrapDescriptions);
-            }
-        }
-
+    public function getTitle($forFiling = false)
+    {
+        $titles = $this->getTitles();
+        $title = implode('; ', $titles['preferred']);
         if ($forFiling) {
             $title = $this->metadataUtils->stripLeadingPunctuation($title);
         }
@@ -388,24 +338,27 @@ class Lido extends AbstractRecord
      */
     public function getWorkIdentificationData()
     {
-        $titlesByLang = [];
+        $titlesByPrefAndLang = [];
         foreach ($this->getTitleSetNodes() as $set) {
             foreach ($set->appellationValue as $appellationValue) {
                 $title = trim((string)$appellationValue);
                 if ('' !== $title) {
+                    $pref = (string)($appellationValue['pref'] ?? 'NA');
                     $lang = (string)($appellationValue['lang'] ?? 'NA');
-                    $titlesByLang[$lang][] = $title;
+                    $titlesByPrefAndLang[$pref][$lang][] = $title;
                 }
             }
         }
 
         $titles = [];
-        foreach ($titlesByLang as $titleParts) {
-            $title = implode(' ', $titleParts);
-            $titles[] = ['type' => 'title', 'value' => $title];
-            $sortTitle = $this->metadataUtils->stripLeadingPunctuation($title);
-            if ($sortTitle !== $title) {
-                $titles[] = ['type' => 'title', 'value' => $sortTitle];
+        foreach ($titlesByPrefAndLang as $titlesByPref) {
+            foreach ($titlesByPref as $titleParts) {
+                $title = implode(' ', $titleParts);
+                $titles[] = ['type' => 'title', 'value' => $title];
+                $sortTitle = $this->metadataUtils->stripLeadingPunctuation($title);
+                if ($sortTitle !== $title) {
+                    $titles[] = ['type' => 'title', 'value' => $sortTitle];
+                }
             }
         }
 
@@ -450,6 +403,84 @@ class Lido extends AbstractRecord
     public function getISSNs()
     {
         return $this->getIdentifiersByType(['issn'], []);
+    }
+
+    /**
+     * Return record titles
+     *
+     * @return array Associative array with keys 'preferred' and 'alternate'
+     */
+    protected function getTitles()
+    {
+        $key = __METHOD__ . '/'
+            . implode(';', $this->descriptionTypesExcludedFromTitle);
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
+        }
+        $preferred = [];
+        $alternate = [];
+        $defaultLanguage = $this->getDefaultLanguage();
+        foreach ($this->getTitleSetNodes() as $set) {
+            foreach ($set->appellationValue as $appellationValue) {
+                if (!($title = trim((string)$appellationValue))) {
+                    continue;
+                }
+                $preference = (string)($appellationValue['pref'] ?? 'preferred');
+                $titleLang
+                    = (string)($appellationValue['lang'] ?? $defaultLanguage ?? '');
+                if ('preferred' === $preference
+                    && (!$defaultLanguage || $titleLang === $defaultLanguage)
+                ) {
+                    $preferred[] = $title;
+                } else {
+                    $alternate[] = $title;
+                }
+            }
+        }
+        if (!$preferred) {
+            $preferred = (array)array_shift($alternate) ?: [];
+        }
+        $preferred = array_values(array_unique($preferred));
+        $alternate = array_values(array_unique($alternate));
+
+        // Use description if title is the same as the work type
+        // From LIDO specs:
+        // "For objects from natural, technical, cultural history e.g. the object
+        // name given here and the object type, recorded in the object / work
+        // type element are often identical."
+        $workType = $this->getObjectWorkType();
+        if (is_array($workType)) {
+            $workType = $workType[0];
+        }
+        $title = implode('; ', $preferred);
+        if (strcasecmp($workType, $title) == 0) {
+            $descriptionWrapDescriptions = [];
+            $nodes = $this->getObjectDescriptionSetNodes(
+                $this->descriptionTypesExcludedFromTitle
+            );
+            foreach ($nodes as $set) {
+                if ($set->descriptiveNoteValue) {
+                    $descriptionWrapDescriptions[]
+                        = (string)$set->descriptiveNoteValue;
+                }
+            }
+            if ($descriptionWrapDescriptions) {
+                $prefTitles = $descriptionWrapDescriptions;
+            }
+        }
+
+        return $this->resultCache[$key] = compact('preferred', 'alternate');
+    }
+
+    /**
+     * Get alternate titles
+     *
+     * @return array
+     */
+    protected function getAltTitles()
+    {
+        $titles = $this->getTitles();
+        return $titles['alternate'];
     }
 
     /**

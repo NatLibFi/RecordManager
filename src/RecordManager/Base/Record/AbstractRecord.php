@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2020.
+ * Copyright (C) The National Library of Finland 2011-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -94,6 +94,12 @@ abstract class AbstractRecord
     protected $warnings = [];
 
     /**
+     * A record-specific transient cache for results from methods that may get called
+     * multiple times with same parameters e.g. during deduplication.
+     */
+    protected $resultCache = [];
+
+    /**
      * Constructor
      *
      * @param array         $config           Main configuration
@@ -129,6 +135,7 @@ abstract class AbstractRecord
         $this->idPrefix
             = $this->dataSourceConfig[$source]['idPrefix']
             ?? $source;
+        $this->resultCache = [];
     }
 
     /**
