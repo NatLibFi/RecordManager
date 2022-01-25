@@ -53,6 +53,105 @@ class LidoTest extends RecordTest
 
         $expected = [
             'record_format' => 'lido',
+            'title_full' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
+            'title_short' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
+            'title' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
+            'title_sort' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
+            'title_alt' => [],
+            'format' => 'Kirja',
+            'institution' => 'Test Institution',
+            'author' => [
+            ],
+            'topic_facet' => [
+                'retkeily',
+                'ulkoilu',
+            ],
+            'topic' => [
+                'retkeily',
+                'ulkoilu',
+            ],
+            'material' => [
+            ],
+            'geographic_facet' => [
+            ],
+            'geographic' => [
+            ],
+            'collection' => '',
+            'ctrlnum' => [
+                '(knp)M011-320623',
+            ],
+            'isbn' => [
+                '9789518593730',
+                '9789518593731',
+                '9789518593732',
+            ],
+            'issn' => [
+                '0357-5284',
+            ],
+            'allfields' => [
+                'knp-247394',
+                'Kirja',
+                'Säädökset',
+                'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+                'Test Institution',
+                '26054',
+                '9518593736',
+                '9789518593731',
+                '9789518593732',
+                '0357-5284',
+                'retkeily',
+                'ulkoilu',
+                'Luhtanen, Raimo',
+                'M011-320623',
+                'Test Institution',
+                '247394',
+            ]
+        ];
+
+        $this->compareArray($expected, $fields, 'toSolrArray');
+
+        $keys = $record->getWorkIdentificationData();
+        $expected = [
+            [
+                'authors' => [],
+                'authorsAltScript' => [],
+                'titles' => [
+                    [
+                        'type' => 'title',
+                        'value' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
+                    ],
+                ],
+                'titlesAltScript' => [],
+            ]
+        ];
+
+        $this->compareArray($expected, $keys, 'getWorkIdentificationData');
+    }
+
+    /**
+     * Test LIDO record handling with title merging disabled
+     *
+     * @return void
+     */
+    public function testLido1NonMergedTitle()
+    {
+        $record = $this->createRecord(
+            Lido::class,
+            'lido1.xml',
+            [
+                '__unit_test_no_source__' => [
+                    'driverParams' => [
+                        'mergeTitleValues=false',
+                        'mergeTitleSets=false'
+                    ]
+                ]
+            ]
+        );
+        $fields = $record->toSolrArray();
+        unset($fields['fullrecord']);
+
+        $expected = [
+            'record_format' => 'lido',
             'title_full' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
             'title_short' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
             'title' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
@@ -120,11 +219,11 @@ class LidoTest extends RecordTest
                 'titles' => [
                     [
                         'type' => 'title',
-                        'value' => 'Säädökset',
+                        'value' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
                     ],
                     [
                         'type' => 'title',
-                        'value' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+                        'value' => 'Säädökset',
                     ],
                 ],
                 'titlesAltScript' => [],
@@ -150,7 +249,11 @@ class LidoTest extends RecordTest
                 'titles' => [
                     [
                         'type' => 'title',
-                        'value' => 'Kitchen tool Scissors',
+                        'value' => 'Kitchen tool; Scissors',
+                    ],
+                    [
+                        'type' => 'title',
+                        'value' => 'Keittiövälineet; Sakset',
                     ],
                 ],
                 'titlesAltScript' => [],
