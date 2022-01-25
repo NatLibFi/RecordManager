@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2020-2021.
+ * Copyright (C) The National Library of Finland 2020-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -53,21 +53,22 @@ class LidoTest extends RecordTest
 
         $expected = [
             'record_format' => 'lido',
-            'title_full' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
-            'title_short' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
-            'title' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
-            'title_sort' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+            'title_full' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
+            'title_short' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
+            'title' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
+            'title_sort' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
+            'title_alt' => [],
             'format' => 'Kirja',
             'institution' => 'Test Institution',
             'author' => [
             ],
             'topic_facet' => [
-                0 => 'retkeily',
-                1 => 'ulkoilu',
+                'retkeily',
+                'ulkoilu',
             ],
             'topic' => [
-                0 => 'retkeily',
-                1 => 'ulkoilu',
+                'retkeily',
+                'ulkoilu',
             ],
             'material' => [
             ],
@@ -77,32 +78,134 @@ class LidoTest extends RecordTest
             ],
             'collection' => '',
             'ctrlnum' => [
-                0 => '(knp)M011-320623',
+                '(knp)M011-320623',
             ],
             'isbn' => [
-                0 => '9789518593730',
-                1 => '9789518593731',
-                2 => '9789518593732',
+                '9789518593730',
+                '9789518593731',
+                '9789518593732',
             ],
             'issn' => [
-                0 => '0357-5284',
+                '0357-5284',
             ],
             'allfields' => [
-                0 => 'knp-247394',
-                1 => 'Kirja',
-                2 => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
-                3 => 'Test Institution',
-                4 => '26054',
-                5 => '9518593736',
-                6 => '9789518593731',
-                7 => '9789518593732',
-                8 => '0357-5284',
-                9 => 'retkeily',
-                10 => 'ulkoilu',
-                11 => 'Luhtanen, Raimo',
-                12 => 'M011-320623',
-                13 => 'Test Institution',
-                14 => '247394',
+                'knp-247394',
+                'Kirja',
+                'Säädökset',
+                'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+                'Test Institution',
+                '26054',
+                '9518593736',
+                '9789518593731',
+                '9789518593732',
+                '0357-5284',
+                'retkeily',
+                'ulkoilu',
+                'Luhtanen, Raimo',
+                'M011-320623',
+                'Test Institution',
+                '247394',
+            ]
+        ];
+
+        $this->compareArray($expected, $fields, 'toSolrArray');
+
+        $keys = $record->getWorkIdentificationData();
+        $expected = [
+            [
+                'authors' => [],
+                'authorsAltScript' => [],
+                'titles' => [
+                    [
+                        'type' => 'title',
+                        'value' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
+                    ],
+                ],
+                'titlesAltScript' => [],
+            ]
+        ];
+
+        $this->compareArray($expected, $keys, 'getWorkIdentificationData');
+    }
+
+    /**
+     * Test LIDO record handling with title merging disabled
+     *
+     * @return void
+     */
+    public function testLido1NonMergedTitle()
+    {
+        $record = $this->createRecord(
+            Lido::class,
+            'lido1.xml',
+            [
+                '__unit_test_no_source__' => [
+                    'driverParams' => [
+                        'mergeTitleValues=false',
+                        'mergeTitleSets=false'
+                    ]
+                ]
+            ]
+        );
+        $fields = $record->toSolrArray();
+        unset($fields['fullrecord']);
+
+        $expected = [
+            'record_format' => 'lido',
+            'title_full' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+            'title_short' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+            'title' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+            'title_sort' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+            'title_alt' => [
+                'Säädökset'
+            ],
+            'format' => 'Kirja',
+            'institution' => 'Test Institution',
+            'author' => [
+            ],
+            'topic_facet' => [
+                'retkeily',
+                'ulkoilu',
+            ],
+            'topic' => [
+                'retkeily',
+                'ulkoilu',
+            ],
+            'material' => [
+            ],
+            'geographic_facet' => [
+            ],
+            'geographic' => [
+            ],
+            'collection' => '',
+            'ctrlnum' => [
+                '(knp)M011-320623',
+            ],
+            'isbn' => [
+                '9789518593730',
+                '9789518593731',
+                '9789518593732',
+            ],
+            'issn' => [
+                '0357-5284',
+            ],
+            'allfields' => [
+                'knp-247394',
+                'Kirja',
+                'Säädökset',
+                'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+                'Test Institution',
+                '26054',
+                '9518593736',
+                '9789518593731',
+                '9789518593732',
+                '0357-5284',
+                'retkeily',
+                'ulkoilu',
+                'Luhtanen, Raimo',
+                'M011-320623',
+                'Test Institution',
+                '247394',
             ]
         ];
 
@@ -117,6 +220,40 @@ class LidoTest extends RecordTest
                     [
                         'type' => 'title',
                         'value' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+                    ],
+                    [
+                        'type' => 'title',
+                        'value' => 'Säädökset',
+                    ],
+                ],
+                'titlesAltScript' => [],
+            ]
+        ];
+
+        $this->compareArray($expected, $keys, 'getWorkIdentificationData');
+    }
+
+    /**
+     * Test LIDO work identification data handling
+     *
+     * @return void
+     */
+    public function testLidoWorkKeys()
+    {
+        $record = $this->createRecord(Lido::class, 'lido2.xml');
+        $keys = $record->getWorkIdentificationData();
+        $expected = [
+            [
+                'authors' => [],
+                'authorsAltScript' => [],
+                'titles' => [
+                    [
+                        'type' => 'title',
+                        'value' => 'Kitchen tool; Scissors',
+                    ],
+                    [
+                        'type' => 'title',
+                        'value' => 'Keittiövälineet; Sakset',
                     ],
                 ],
                 'titlesAltScript' => [],

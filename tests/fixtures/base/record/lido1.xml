@@ -13,7 +13,8 @@
       <objectIdentificationWrap>
         <titleWrap>
           <titleSet>
-            <appellationValue>Luonnonsuojelus&#xE4;&#xE4;d&#xF6;kset / toimittanut Raimo Luhtanen</appellationValue>
+            <appellationValue pref="alternate">S&#xE4;&#xE4;d&#xF6;kset</appellationValue>
+            <appellationValue pref="preferred">Luonnonsuojelus&#xE4;&#xE4;d&#xF6;kset / toimittanut Raimo Luhtanen</appellationValue>
           </titleSet>
         </titleWrap>
         <inscriptionsWrap/>
