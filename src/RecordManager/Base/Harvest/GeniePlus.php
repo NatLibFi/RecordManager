@@ -99,6 +99,20 @@ class GeniePlus extends AbstractBase
     protected $batchSize = 100;
 
     /**
+     * Database field name for unique record ID.
+     *
+     * @var string
+     */
+    protected $idField;
+
+    /**
+     * Database field name for MARC record.
+     *
+     * @var string
+     */
+    protected $marcField;
+
+    /**
      * HTTP client options
      *
      * @var array
@@ -136,6 +150,8 @@ class GeniePlus extends AbstractBase
         $this->username = $settings['geniePlusUsername'];
         $this->password = $settings['geniePlusPassword'];
         $this->batchSize = $settings['batchSize'] ?? 100;
+        $this->idField = $settings['geniePlusIdField'] ?? 'UniqRecNum';
+        $this->marcField = $settings['MarcRecord'] ?? 'MarcRecord';
     }
 
     /**
@@ -165,7 +181,7 @@ class GeniePlus extends AbstractBase
         $apiParams = [
             'page-size' => $this->batchSize,
             'page' => floor($this->startPosition / $this->batchSize),
-            'fields' => 'MarcRecord',
+            'fields' => $this->idField . ',' . $this->marcField,
             'command' => "DtTmModifd > '1/1/1980 1:00:00 PM' sortby DtTmModifd"
         ];
 
@@ -308,52 +324,36 @@ class GeniePlus extends AbstractBase
      */
     protected function processResponse($response)
     {
-        var_dump($response);
-        /* TODO
         $this->infoMsg('Processing received records');
         if (empty($response)) {
             return 0;
         }
         $json = json_decode($response, true);
-        if (isset($json['ErrorCodes'])) {
-            $this->errorMsg(
-                'Sierra API returned error: '
-                . $json['ErrorCodes']['code'] . ' ' . $json['ErrorCodes']['name']
-                . ': ' . $json['ErrorCodes']['description']
-            );
-            throw new \Exception(
-                '{$this->source}: Server returned error: '
-                . $json['ErrorCodes']['code'] . ' ' . $json['ErrorCodes']['name']
-                . ': ' . $json['ErrorCodes']['description']
-            );
+        if (isset($json['total'])) {
+            throw new \Exception("Total missing from response; unexpected format!");
         }
 
-        if (!isset($json['entries'])) {
+        if (!isset($json['records'])) {
             return 0;
         }
 
         $count = 0;
-        foreach ($json['entries'] as $record) {
+        foreach ($json['records'] as $record) {
             ++$count;
-            $id = $record['id'];
-            $oaiId = $this->createOaiId($this->source, $id);
-            $deleted = $this->isDeleted($record);
-            if ($deleted) {
-                call_user_func($this->callback, $this->source, $oaiId, true, null);
-                $this->deletedRecords++;
-            } else {
-                $this->changedRecords += call_user_func(
-                    $this->callback,
-                    $this->source,
-                    $oaiId,
-                    false,
-                    $this->convertRecordToMarcArray($record)
-                );
+            if (!isset($record[$this->idField])) {
+                throw new \Exception("Missing ID field: {$this->idField}");
             }
+            $id = $record[$this->idField];
+            $oaiId = $this->createOaiId($this->source, $id);
+            $this->changedRecords += call_user_func(
+                $this->callback,
+                $this->source,
+                $oaiId,
+                false,
+                $this->convertRecordToMarcArray($record)
+            );
         }
         return $count;
-        */
-        return 0;
     }
 
     /**
@@ -431,6 +431,23 @@ class GeniePlus extends AbstractBase
     protected function createOaiId($sourceId, $id)
     {
         return "genieplus:$sourceId:$id";
+    }
+
+    /**
+     * Convert GeniePlus record to our internal MARC array format
+     *
+     * @param array $record GeniePlus record from API response
+     *
+     * @return array
+     */
+    protected function convertRecordToMarcArray($record)
+    {
+        if (!isset($record[$this->marcField])) {
+            throw new \Exception("Missing MARC field: {$this->marcField}");
+        }
+        $marc = $record[$this->marcField];
+        // TODO: finish this!
+        return [];
     }
 
     /**
