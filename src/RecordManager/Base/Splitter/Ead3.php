@@ -133,7 +133,7 @@ class Ead3 extends Ead
         $addData = $record->addChild('add-data');
         $unitId = '';
 
-        if (!empty($record->did->unitid)) {
+        if ($record->did->unitid) {
             $firstId = '';
             foreach ($record->did->unitid as $i) {
                 $attr = $i->attributes();
