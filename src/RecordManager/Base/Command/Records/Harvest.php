@@ -171,7 +171,10 @@ class Harvest extends AbstractBase
             throw new \Exception('Data source settings missing in datasources.ini');
         }
 
-        $repository = $input->getOption('source');
+        $includedSources = explode(',', $input->getOption('source'));
+        if (in_array('*', $includedSources)) {
+            $includedSources = [];
+        }
         $harvestFromDate = $input->getOption('from');
         $harvestUntilDate = $input->getOption('until');
         $startPosition = $input->getOption('start-position');
@@ -204,13 +207,10 @@ class Harvest extends AbstractBase
         // Loop through all the sources and perform harvests
         foreach ($this->dataSourceConfig as $source => $settings) {
             try {
-                if ($repository && $repository != '*' && $source != $repository) {
-                    continue;
-                }
-                if (in_array($source, $excludedSources)) {
-                    continue;
-                }
-                if (empty($source) || empty($settings) || !isset($settings['url'])) {
+                if (empty($source) || empty($settings) || !isset($settings['url'])
+                    || ($includedSources && !in_array($source, $includedSources))
+                    || in_array($source, $excludedSources)
+                ) {
                     continue;
                 }
                 $this->logger->logInfo(
