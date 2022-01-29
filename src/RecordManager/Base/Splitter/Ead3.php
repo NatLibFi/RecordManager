@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2021.
+ * Copyright (C) The National Library of Finland 2012-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -247,8 +247,6 @@ class Ead3 extends Ead
                 if ($pid = $this->getParentUnitId($parentDid)) {
                     $parentTitle = $pid . ' ' . $parentTitle;
                 }
-
-                $parentTitle = $pid . ' ' . $parentTitle;
             }
 
             $parentNode = $original->xpath('parent::*[@level]');
