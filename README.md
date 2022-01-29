@@ -10,9 +10,9 @@ For a stable version, see the stable branch.
 
 - Minimum supported PHP version is 7.3.
 - Composer is required for dependencies. Run `composer install` (or `php /path/to/composer.phar install`) in the directory where RecordManager is installed.
-- The following PHP modules are required: xml, xslt, mbstring, intl
-- The following PECL module is required for MongoDB support: mongodb
-- With MongoDB, the minimum supported version is 3.6. Older versions may still work, but `session = false` needs to be specified in recordmanager.ini.
+- The following PHP extensions are required: xml, xslt, mbstring, intl
+- For MongoDB support, the mongodb PECL module is required (see below for examples on installation). MongoDB is recommended for a large number of records (typically tens of millions), though it may require more system resources than MySQL or MariaDB.
+- With MongoDB, the minimum supported version is 3.6.
 
 ## Upgrading
 
@@ -60,8 +60,8 @@ These are quick instructions on how to set up RecordManager. Please refer to the
 
 - MongoDB support
 
-  RecordManager supports both MongoDB (recommended) and any MySQL compatible
-  database. You may opt to skip the MongoDB requirements if you only use MySQL.
+  RecordManager supports both MongoDB and any MySQL compatible database. You may opt
+  to skip the MongoDB requirements if you only use MySQL.
 
   - Required pecl modules for MongoDB support: mongodb
 
