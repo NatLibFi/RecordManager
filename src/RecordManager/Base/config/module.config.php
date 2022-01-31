@@ -95,7 +95,7 @@ return [
                     \RecordManager\Base\Harvest\SierraApi::class => \RecordManager\Base\Harvest\AbstractBaseFactory::class,
                 ],
                 'aliases' => [
-                    'genieplus' => \RecordManager\Base\Harvest\GeniePlus::class,
+                    'GeniePlus' => \RecordManager\Base\Harvest\GeniePlus::class,
                     'OAI-PMH' => \RecordManager\Base\Harvest\OaiPmh::class,
                     'SFX' => \RecordManager\Base\Harvest\Sfx::class,
                     // Legacy alias:
