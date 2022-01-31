@@ -421,13 +421,12 @@ class Harvest extends AbstractBase
                 ]
             ],
             [],
-            function ($record) use (&$count, $source) {
+            function ($record) use (&$count, $source, $dateThreshold) {
                 if (!empty($record['oai_id'])) {
-                    $this->storeRecord(
+                    $this->deleteByOaiId(
                         $source,
                         $record['oai_id'],
-                        true,
-                        ''
+                        $dateThreshold
                     );
                 } else {
                     $this->markRecordDeleted($record);
