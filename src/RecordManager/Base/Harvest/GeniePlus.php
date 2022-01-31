@@ -200,6 +200,21 @@ class GeniePlus extends AbstractBase
     }
 
     /**
+     * Reformat a date for use in API queries
+     *
+     * @param string $date Date in YYYY-MM-DD format
+     *
+     * @return string      Date in MM/DD/YYYY format.
+     */
+    protected function reformatDate($date)
+    {
+        $parts = explode('-', $date);
+        $year = array_shift($parts);
+        array_push($parts, $year);
+        return implode('/', $parts);
+    }
+
+    /**
      * Harvest all available documents.
      *
      * @param callable $callback Function to be called to store a harvested record
@@ -219,10 +234,21 @@ class GeniePlus extends AbstractBase
         ];
 
         if (!empty($this->startDate) || !empty($this->endDate)) {
-            // TODO: implement date range support
-            $startDate = $this->startDate;
-            $endDate = $this->endDate;
-            $this->infoMsg("Incremental harvest: $startDate-$endDate");
+            $clauses = [];
+            if (!empty($this->startDate)) {
+                $startDate = $this->reformatDate($this->startDate);
+                $clauses[] = "DtTmModifd >= '$startDate'";
+            }
+            if (!empty($this->endDate)) {
+                $endDate = $this->reformatDate($this->endDate);
+                $clauses[] = "DtTmModifd <= '$endDate'";
+            }
+            $apiParams['command'] = implode(' AND ', $clauses)
+                . ' sortby DtTmModifd';
+            $this->infoMsg($apiParams['command']);
+            $this->infoMsg(
+                "Incremental harvest: {$this->startDate}-{$this->endDate}"
+            );
         } else {
             $this->infoMsg('Initial harvest for all records');
         }
@@ -372,7 +398,6 @@ class GeniePlus extends AbstractBase
         if (!isset($json['total'])) {
             throw new \Exception("Total missing from response; unexpected format!");
         }
-
         if (!isset($json['records'])) {
             return 0;
         }
