@@ -329,7 +329,7 @@ class GeniePlus extends AbstractBase
             return 0;
         }
         $json = json_decode($response, true);
-        if (isset($json['total'])) {
+        if (!isset($json['total'])) {
             throw new \Exception("Total missing from response; unexpected format!");
         }
 
@@ -340,17 +340,17 @@ class GeniePlus extends AbstractBase
         $count = 0;
         foreach ($json['records'] as $record) {
             ++$count;
-            if (!isset($record[$this->idField])) {
+            if (!isset($record[$this->idField][0]['display'])) {
                 throw new \Exception("Missing ID field: {$this->idField}");
             }
-            $id = $record[$this->idField];
+            $id = $record[$this->idField][0]['display'];
             $oaiId = $this->createOaiId($this->source, $id);
             $this->changedRecords += call_user_func(
                 $this->callback,
                 $this->source,
                 $oaiId,
                 false,
-                $this->convertRecordToMarcArray($record)
+                $this->processMarcRecord($record)
             );
         }
         return $count;
@@ -372,8 +372,14 @@ class GeniePlus extends AbstractBase
             \HTTP_Request2::METHOD_POST
         );
         $request->setHeader('Accept', 'application/json');
-        // TODO: encode properly
-        $request->setBody('client_id=' . $this->oauthId . '&grant_type=password&database=' . $this->database . '&username=' . $this->username . '&password=' . $this->password);
+        $params = [
+            'client_id' => $this->oauthId,
+            'grant_type' => 'password',
+            'database' => $this->database,
+            'username' => $this->username,
+            'password' => $this->password,
+        ];
+        $request->setBody(http_build_query($params));
 
         // Perform request and throw an exception on error:
         for ($try = 1; $try <= $this->maxTries; $try++) {
@@ -434,20 +440,18 @@ class GeniePlus extends AbstractBase
     }
 
     /**
-     * Convert GeniePlus record to our internal MARC array format
+     * Extract/format MARC record found in API response
      *
      * @param array $record GeniePlus record from API response
      *
      * @return array
      */
-    protected function convertRecordToMarcArray($record)
+    protected function processMarcRecord($record)
     {
-        if (!isset($record[$this->marcField])) {
+        if (!isset($record[$this->marcField][0]['display'])) {
             throw new \Exception("Missing MARC field: {$this->marcField}");
         }
-        $marc = $record[$this->marcField];
-        // TODO: finish this!
-        return [];
+        return $record[$this->marcField][0]['display'];
     }
 
     /**
