@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Base\Harvest;
 
+use RecordManager\Base\Utils\LineBasedMarcFormatter;
+
 /**
  * GeniePlus Class
  *
@@ -122,6 +124,33 @@ class GeniePlus extends AbstractBase
     ];
 
     /**
+     * Helper for converting line-based MARC to XML.
+     *
+     * @var LineBasedMarcFormatter
+     */
+    protected $lineBasedFormatter;
+
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        parent::__construct(...func_get_args());
+        $this->lineBasedFormatter = new LineBasedMarcFormatter(
+            [
+                [
+                    'subfieldRegExp' => '/‡([a-z0-9])/',
+                    'endOfLineMarker' => '^',
+                    'ind1Offset' => 3,
+                    'ind2Offset' => 4,
+                    'contentOffset' => 4,
+                    'firstSubfieldOffset' => 5,
+                ],
+            ]
+        );
+    }
+
+    /**
      * Initialize harvesting
      *
      * @param string $source    Source ID
@@ -197,7 +226,14 @@ class GeniePlus extends AbstractBase
         // Keep harvesting as long as a records are received:
         do {
             $response = $this->sendRequest(
-                ['_rest', 'databases', $this->database, 'templates', $this->template, 'search-result'],
+                [
+                    '_rest',
+                    'databases',
+                    $this->database,
+                    'templates',
+                    $this->template,
+                    'search-result',
+                ],
                 $apiParams
             );
             $count = $this->processResponse($response->getBody());
@@ -451,7 +487,8 @@ class GeniePlus extends AbstractBase
         if (!isset($record[$this->marcField][0]['display'])) {
             throw new \Exception("Missing MARC field: {$this->marcField}");
         }
-        return $record[$this->marcField][0]['display'];
+        $marc = $record[$this->marcField][0]['display'];
+        return $this->lineBasedFormatter->convertLineBasedMarcToXml($marc);
     }
 
     /**
