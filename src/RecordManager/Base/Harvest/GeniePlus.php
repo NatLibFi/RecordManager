@@ -516,20 +516,33 @@ class GeniePlus extends AbstractBase
         if (!isset($record[$this->marcField][0]['display'])) {
             throw new \Exception("Missing MARC field: {$this->marcField}");
         }
-        // Extract MARC from API response
+        // Extract MARC and ID from API response
         $marc = $record[$this->marcField][0]['display'];
+        $id = $record[$this->idField][0]['display'];
 
-        // Convert to XML
-        $xml = simplexml_load_string(
-            $this->lineBasedFormatter->convertLineBasedMarcToXml($marc)
+        // Convert to XML (and strip any illegal characters that slipped through)
+        $replacementCount = 0;
+        $rawXml = preg_replace(
+            '/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u',
+            '',
+            $this->lineBasedFormatter->convertLineBasedMarcToXml($marc),
+            -1,
+            $replacementCount
         );
+        if ($replacementCount > 0) {
+            $this->infoMsg("Replaced $replacementCount bad chars in record $id");
+        }
+        $xml = simplexml_load_string($rawXml);
+        if (!$xml) {
+            throw new \Exception("Problem processing MARC record $id");
+        }
 
         // Inject unique GeniePlus record ID
         $field = $xml->addChild('datafield');
         $field->addAttribute('tag', $this->uniqueIdOutputField);
         $field->addAttribute('ind1', ' ');
         $field->addAttribute('ind2', ' ');
-        $sub = $field->addChild('subfield', $record[$this->idField][0]['display']);
+        $sub = $field->addChild('subfield', $id);
         $sub->addAttribute('code', $this->uniqueIdOutputSubfield);
 
         return $xml->asXML();
