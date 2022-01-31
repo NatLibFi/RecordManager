@@ -152,8 +152,8 @@ class Forward extends AbstractRecord
         $doc = $this->getMainElement();
         $id = (string)$doc->Identifier;
         $attributes = $doc->Identifier->attributes();
-        if (!empty($attributes->IDTypeName)) {
-            $id = (string)$attributes->IDTypeName . '_' . $id;
+        if (!empty($attributes['IDTypeName'])) {
+            $id = ((string)$attributes['IDTypeName']) . '_' . $id;
         }
         return $id;
     }
