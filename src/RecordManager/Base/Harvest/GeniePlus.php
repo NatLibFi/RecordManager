@@ -181,6 +181,10 @@ class GeniePlus extends AbstractBase
         $this->batchSize = $settings['batchSize'] ?? 100;
         $this->idField = $settings['geniePlusIdField'] ?? 'UniqRecNum';
         $this->marcField = $settings['MarcRecord'] ?? 'MarcRecord';
+        $this->uniqueIdOutputField
+            = $settings['geniePlusUniqueIdOutputField'] ?? 999;
+        $this->uniqueIdOutputSubfield
+            = $settings['geniePlusUniqueIdOutputSubfield'] ?? 'c';
     }
 
     /**
@@ -487,8 +491,23 @@ class GeniePlus extends AbstractBase
         if (!isset($record[$this->marcField][0]['display'])) {
             throw new \Exception("Missing MARC field: {$this->marcField}");
         }
+        // Extract MARC from API response
         $marc = $record[$this->marcField][0]['display'];
-        return $this->lineBasedFormatter->convertLineBasedMarcToXml($marc);
+
+        // Convert to XML
+        $xml = simplexml_load_string(
+            $this->lineBasedFormatter->convertLineBasedMarcToXml($marc)
+        );
+
+        // Inject unique GeniePlus record ID
+        $field = $xml->addChild('datafield');
+        $field->addAttribute('tag', $this->uniqueIdOutputField);
+        $field->addAttribute('ind1', ' ');
+        $field->addAttribute('ind2', ' ');
+        $sub = $field->addChild('subfield', $record[$this->idField][0]['display']);
+        $sub->addAttribute('code', $this->uniqueIdOutputSubfield);
+
+        return $xml->asXML();
     }
 
     /**
