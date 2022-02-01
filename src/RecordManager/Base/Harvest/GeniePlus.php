@@ -134,6 +134,7 @@ class GeniePlus extends AbstractBase
      * @var string
      */
     protected $callnumberField;
+
     /**
      * Database field name for item barcode.
      *
@@ -547,6 +548,8 @@ class GeniePlus extends AbstractBase
     /**
      * Extract display values from an API response field.
      *
+     * @param array $field Array of values from API
+     *
      * @return array
      */
     protected function extractDisplayValues($field): array
@@ -560,6 +563,8 @@ class GeniePlus extends AbstractBase
     /**
      * Extract holdings data from an API response. Return an array of arrays
      * representing 852 fields (indexed by subfield code).
+     *
+     * @param array $record Record from API response
      *
      * @return array
      */
