@@ -32,6 +32,7 @@ use RecordManager\Base\Deduplication\DedupHandlerInterface;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Solr\PreviewCreator;
 use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
+use RecordManager\Base\Utils\LineBasedMarcFormatter;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\XslTransformation;
@@ -50,23 +51,6 @@ class CreatePreview extends AbstractBase
     use \RecordManager\Base\Record\PreTransformationTrait;
 
     /**
-     * Format definitions for line based MARC formats
-     *
-     * @var array
-     */
-    protected $lineBasedMarcFormats = [
-        [
-            'subfieldRegExp' => '/\$([a-z0-9])/'
-        ],
-        [
-            'subfieldRegExp' => '/\|([a-z0-9]) /'
-        ],
-        [
-            'subfieldRegExp' => '/‡([a-z0-9]) /'
-        ],
-    ];
-
-    /**
      * Preview creator
      *
      * @var PreviewCreator
@@ -74,18 +58,26 @@ class CreatePreview extends AbstractBase
     protected $previewCreator;
 
     /**
+     * Line-based MARC formatter
+     *
+     * @var LineBasedMarcFormatter
+     */
+    protected $lineBasedFormatter;
+
+    /**
      * Constructor
      *
-     * @param array                 $config              Main configuration
-     * @param array                 $datasourceConfig    Datasource configuration
-     * @param Logger                $logger              Logger
-     * @param DatabaseInterface     $database            Database
-     * @param RecordPluginManager   $recordPluginManager Record plugin manager
-     * @param SplitterPluginManager $splitterManager     Record splitter plugin
-     *                                                   manager
-     * @param DedupHandlerInterface $dedupHandler        Deduplication handler
-     * @param MetadataUtils         $metadataUtils       Metadata utilities
-     * @param PreviewCreator        $previewCreator      Preview creator
+     * @param array                  $config              Main configuration
+     * @param array                  $datasourceConfig    Datasource configuration
+     * @param Logger                 $logger              Logger
+     * @param DatabaseInterface      $database            Database
+     * @param RecordPluginManager    $recordPluginManager Record plugin manager
+     * @param SplitterPluginManager  $splitterManager     Record splitter plugin
+     *                                                    manager
+     * @param DedupHandlerInterface  $dedupHandler        Deduplication handler
+     * @param MetadataUtils          $metadataUtils       Metadata utilities
+     * @param PreviewCreator         $previewCreator      Preview creator
+     * @param LineBasedMarcFormatter $lineBasedFormatter  Line-based MARC formatter
      */
     public function __construct(
         array $config,
@@ -96,7 +88,8 @@ class CreatePreview extends AbstractBase
         SplitterPluginManager $splitterManager,
         DedupHandlerInterface $dedupHandler,
         MetadataUtils $metadataUtils,
-        PreviewCreator $previewCreator
+        PreviewCreator $previewCreator,
+        LineBasedMarcFormatter $lineBasedFormatter
     ) {
         parent::__construct(
             $config,
@@ -110,6 +103,7 @@ class CreatePreview extends AbstractBase
         );
 
         $this->previewCreator = $previewCreator;
+        $this->lineBasedFormatter = $lineBasedFormatter;
     }
 
     /**
@@ -135,7 +129,8 @@ class CreatePreview extends AbstractBase
 
         // Check for line-based MARC and convert as necessary:
         if ('marc' === $format && preg_match('/^\s*(LDR|\d{3})\s/', $metadata)) {
-            $metadata = $this->convertLineBasedMarcToXml($metadata);
+            $metadata = $this->lineBasedFormatter
+                ->convertLineBasedMarcToXml($metadata);
         }
 
         if (!empty($settings['preTransformation'])) {
@@ -270,97 +265,5 @@ class CreatePreview extends AbstractBase
             }
         }
         return $doc->saveXML();
-    }
-
-    /**
-     * Convert a line-based MARC record ("tagged" output) to MARCXML
-     *
-     * Supports formats from Alma MARC record view and OCLC tagged output
-     *
-     * @param string $metadata Metadata
-     *
-     * @return string
-     */
-    protected function convertLineBasedMarcToXml(string $metadata)
-    {
-        $xml = simplexml_load_string(
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n"
-            . "<collection><record></record></collection>"
-        );
-        $record = $xml->record[0];
-
-        // Determine subfield format:
-        $delimCount = 0;
-        $format = null;
-        foreach ($this->lineBasedMarcFormats as $current) {
-            preg_match_all($current['subfieldRegExp'] . 's', $metadata, $matches);
-            $cnt = count($matches[1] ?? []);
-            if (null === $format || $cnt > $delimCount) {
-                $format = $current;
-                $delimCount = $cnt;
-            }
-        }
-
-        foreach (explode("\n", $metadata) as $line) {
-            $line = trim($line);
-            if (!$line) {
-                continue;
-            }
-            $tag = mb_substr($line, 0, 3, 'UTF-8');
-            $content = mb_substr($line, 4, null, 'UTF-8');
-            if (mb_substr($content, 0, 1, 'UTF-8') === "'"
-                && mb_substr($content, -1, null, 'UTF-8') === "'"
-            ) {
-                $content = mb_substr($content, 1, -1, 'UTF-8');
-            }
-            if ('LDR' === $tag || '000' === $tag) {
-                // Make sure leader is 24 characters:
-                $leader = mb_substr($content, 4, 24, 'UTF-8');
-                while (mb_strlen($leader, 'UTF-8') < 24) {
-                    $leader .= ' ';
-                }
-                $record->addChild('leader', htmlspecialchars($leader));
-            } elseif (intval($tag) < 10) {
-                $field = $record->addChild(
-                    'controlfield',
-                    htmlspecialchars($content, ENT_NOQUOTES)
-                );
-                $field->addAttribute('tag', $tag);
-            } else {
-                $ind1 = mb_substr($content, 4, 1, 'UTF-8');
-                if ('_' === $ind1) {
-                    $ind1 = ' ';
-                }
-                $ind2 = mb_substr($content, 5, 1, 'UTF-8');
-                if ('_' === $ind2) {
-                    $ind2 = ' ';
-                }
-                $field = $record->addChild('datafield');
-                $field->addAttribute('tag', $tag);
-                $field->addAttribute('ind1', $ind1);
-                $field->addAttribute('ind2', $ind2);
-
-                $subs = preg_split(
-                    $format['subfieldRegExp'],
-                    substr($content, 3),
-                    -1,
-                    PREG_SPLIT_DELIM_CAPTURE
-                );
-                array_shift($subs);
-                while ($subs) {
-                    $code = array_shift($subs);
-                    $value = array_shift($subs);
-                    if ('' === $value) {
-                        continue;
-                    }
-                    $subfield = $field->addChild(
-                        'subfield',
-                        htmlspecialchars($value, ENT_NOQUOTES)
-                    );
-                    $subfield->addAttribute('code', $code);
-                }
-            }
-        }
-        return $record->asXML();
     }
 }

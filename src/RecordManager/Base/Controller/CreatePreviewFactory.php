@@ -77,7 +77,8 @@ class CreatePreviewFactory
             $container->get(\RecordManager\Base\Splitter\PluginManager::class),
             $container->get(\RecordManager\Base\Deduplication\DedupHandler::class),
             $container->get(\RecordManager\Base\Utils\MetadataUtils::class),
-            $container->get(\RecordManager\Base\Solr\PreviewCreator::class)
+            $container->get(\RecordManager\Base\Solr\PreviewCreator::class),
+            $container->get(\RecordManager\Base\Utils\LineBasedMarcFormatter::class)
         );
     }
 }
