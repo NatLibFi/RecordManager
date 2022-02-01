@@ -143,6 +143,20 @@ class GeniePlus extends AbstractBase
     protected $barcodeField;
 
     /**
+     * MARC field to output unique ID into.
+     *
+     * @var int
+     */
+    protected $uniqueIdOutputField;
+
+    /**
+     * MARC subfield to output unique ID into.
+     *
+     * @var int
+     */
+    protected $uniqueIdOutputSubfield;
+
+    /**
      * HTTP client options
      *
      * @var array
