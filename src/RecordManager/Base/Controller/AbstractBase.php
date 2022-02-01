@@ -133,7 +133,9 @@ abstract class AbstractBase
         DedupHandlerInterface $dedupHandler,
         MetadataUtils $metadataUtils
     ) {
-        date_default_timezone_set($config['Site']['timezone']);
+        if (isset($config['Site']['timezone'])) {
+            date_default_timezone_set($config['Site']['timezone']);
+        }
 
         $this->config = $config;
         $this->logger = $logger;
