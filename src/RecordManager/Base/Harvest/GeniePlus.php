@@ -115,6 +115,33 @@ class GeniePlus extends AbstractBase
     protected $marcField;
 
     /**
+     * Database field name for item location.
+     *
+     * @var string
+     */
+    protected $locationField;
+
+    /**
+     * Database field name for item sublocation.
+     *
+     * @var string
+     */
+    protected $sublocationField;
+
+    /**
+     * Database field name for item call number.
+     *
+     * @var string
+     */
+    protected $callnumberField;
+    /**
+     * Database field name for item barcode.
+     *
+     * @var string
+     */
+    protected $barcodeField;
+
+    /**
      * HTTP client options
      *
      * @var array
@@ -181,6 +208,14 @@ class GeniePlus extends AbstractBase
         $this->batchSize = $settings['batchSize'] ?? 100;
         $this->idField = $settings['geniePlusIdField'] ?? 'UniqRecNum';
         $this->marcField = $settings['MarcRecord'] ?? 'MarcRecord';
+        $this->locationField = $settings['geniePlusLocationField']
+            ?? 'Inventory.Location.CodeDesc';
+        $this->sublocationField = $settings['geniePlusSublocationField']
+            ?? 'Inventory.SubLoc.CodeDesc';
+        $this->callnumberField = $settings['geniePlusCallnumberField']
+            ?? 'Inventory.CallNumLC';
+        $this->barcodeField = $settings['geniePlusBarcodeField']
+            ?? 'Inventory.Barcode';
         $this->uniqueIdOutputField
             = $settings['geniePlusUniqueIdOutputField'] ?? 999;
         $this->uniqueIdOutputSubfield
@@ -208,10 +243,7 @@ class GeniePlus extends AbstractBase
      */
     protected function reformatDate($date)
     {
-        $parts = explode('-', $date);
-        $year = array_shift($parts);
-        array_push($parts, $year);
-        return implode('/', $parts);
+        return date('n/j/Y', strtotime($date));
     }
 
     /**
@@ -226,10 +258,18 @@ class GeniePlus extends AbstractBase
         $this->initHarvest($callback);
 
         $harvestStartTime = $this->getHarvestStartTime();
+        $fields = [
+            $this->idField,
+            $this->marcField,
+            $this->locationField,
+            $this->sublocationField,
+            $this->callnumberField,
+            $this->barcodeField,
+        ];
         $apiParams = [
             'page-size' => $this->batchSize,
             'page' => floor($this->startPosition / $this->batchSize),
-            'fields' => $this->idField . ',' . $this->marcField,
+            'fields' => implode(',', $fields),
             'command' => "DtTmModifd > '1/1/1980 1:00:00 PM' sortby DtTmModifd"
         ];
 
@@ -505,6 +545,54 @@ class GeniePlus extends AbstractBase
     }
 
     /**
+     * Extract display values from an API response field.
+     *
+     * @return array
+     */
+    protected function extractDisplayValues($field): array
+    {
+        $callback = function ($value) {
+            return $value['display'];
+        };
+        return array_map($callback, $field);
+    }
+
+    /**
+     * Extract holdings data from an API response. Return an array of arrays
+     * representing 852 fields (indexed by subfield code).
+     *
+     * @return array
+     */
+    protected function getHoldings($record): array
+    {
+        $locations = $this
+            ->extractDisplayValues($record[$this->locationField] ?? []);
+        $sublocations = $this
+            ->extractDisplayValues($record[$this->sublocationField] ?? []);
+        $callNos = $this
+            ->extractDisplayValues($record[$this->callnumberField] ?? []);
+        $barcodes = $this->extractDisplayValues($record[$this->barcodeField] ?? []);
+        $total = max(
+            [
+                count($locations),
+                count($sublocations),
+                count($callNos),
+                count($barcodes),
+            ]
+        );
+        $result = [];
+        for ($i = 0; $i < $total; $i++) {
+            $result[] = [
+                'a' => $locations[$i] ?? '',
+                'b' => $sublocations[$i] ?? '',
+                'h' => $callNos[$i] ?? '',
+                'p' => $barcodes[$i] ?? '',
+            ];
+        }
+        return $result;
+    }
+
+    /**
      * Extract/format MARC record found in API response
      *
      * @param array $record GeniePlus record from API response
@@ -544,6 +632,18 @@ class GeniePlus extends AbstractBase
         $field->addAttribute('ind2', ' ');
         $sub = $field->addChild('subfield', $id);
         $sub->addAttribute('code', $this->uniqueIdOutputSubfield);
+
+        // Inject holdings data
+        foreach ($this->getHoldings($record) as $holding) {
+            $field = $xml->addChild('datafield');
+            $field->addAttribute('tag', '852');
+            $field->addAttribute('ind1', ' ');
+            $field->addAttribute('ind2', ' ');
+            foreach ($holding as $code => $value) {
+                $sub = $field->addChild('subfield', $value);
+                $sub->addAttribute('code', $code);
+            }
+        }
 
         return $xml->asXML();
     }
