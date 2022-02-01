@@ -1,0 +1,20 @@
+001‡9042810^
+005‡19830728123748.0^
+008‡821118s1983    miu      b    00110 eng  ^
+010  ‡a82021744^
+020  ‡a0835713954^
+040  ‡aDLC‡cDLC‡dVLA^
+043  ‡an-us---^
+049  ‡aVLAM^
+090  ‡aKF2920.3‡b.St1 1983^
+10020‡aSt. Pierre, Kent E.‡q(Kent Edgar)^
+24510‡aAuditor risk and legal liability /‡cby Kent E. St. Pierre^
+2600 ‡aAnn Arbor, Mich. :‡bUMI Research Press,‡cc1983^
+300  ‡a124 p. ;‡c24 cm^
+440 0‡aResearch for businesss decisions ;‡vno. 59^
+500  ‡aRevision of thesis (Ph. D.)--Washington University, St. Louis, 1981^
+500  ‡aIncludes index^
+504  ‡aBibliography: p. [123]-124^
+650 0‡aAuditors‡zUnited States^
+907  ‡a.b1001449^
+998  ‡amissg^"

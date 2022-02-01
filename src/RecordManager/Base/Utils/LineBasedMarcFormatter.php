@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2021.
+ * Copyright (C) The National Library of Finland 2011-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -22,6 +22,7 @@
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Demian Katz <demian.katz@villanova.edu>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
@@ -33,6 +34,7 @@ namespace RecordManager\Base\Utils;
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Demian Katz <demian.katz@villanova.edu>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */

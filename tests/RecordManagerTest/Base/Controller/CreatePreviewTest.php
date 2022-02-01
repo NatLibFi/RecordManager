@@ -32,6 +32,7 @@ use RecordManager\Base\Database\PDODatabase;
 use RecordManager\Base\Deduplication\DedupHandler;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
+use RecordManager\Base\Utils\LineBasedMarcFormatter;
 use RecordManager\Base\Utils\Logger;
 use RecordManagerTest\Base\Feature\FixtureTrait;
 use RecordManagerTest\Base\Feature\PreviewCreatorTrait;
@@ -121,7 +122,8 @@ class CreatePreviewTest extends \PHPUnit\Framework\TestCase
             $this->createMock(SplitterPluginManager::class),
             $this->createMock(DedupHandler::class),
             $metadataUtils,
-            $this->getPreviewCreator()
+            $this->getPreviewCreator(),
+            $this->createMock(LineBasedMarcFormatter::class)
         );
     }
 }
