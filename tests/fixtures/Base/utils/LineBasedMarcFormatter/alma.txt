@@ -1,0 +1,19 @@
+LDR	00936cam a22002654i 4500
+001	9917651679506252
+005	20211213124319.0
+006	m d
+007	cr#|||||||||||
+008	200511s2020 fi |||||sm||||||||||fin|c
+037	__ |b Oamk intra
+040	__ |a FI-O |b fin |e rda
+041	__ |a fin |b eng
+100	1_ |a , |e kirjoittaja.
+245	10 |a testitietue testaamiseen / |c .
+264	_1 |a [Oulu] : |b Oulun ammattikorkeakoulu, |c kevät 2020.
+300	__ |a 1 verkkoaineisto (30 sivua)
+336	__ |a teksti |b txt |2 rdacontent
+337	__ |a tietokonekäyttöinen |b c |2 rdamedia
+338	__ |a verkkoaineisto |b cr |2 rdacarrier
+538	__ |a Adobe Acrobat Reader.
+567	__ |a .
+650	_7 |a pystyviiva | |2 yso/fin
