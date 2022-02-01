@@ -35,6 +35,7 @@ use RecordManager\Base\Solr\PreviewCreator;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\WorkerPoolManager;
+use RecordManagerTest\Base\Feature\FixtureTrait;
 
 /**
  * Preview creation tests
@@ -47,41 +48,7 @@ use RecordManager\Base\Utils\WorkerPoolManager;
  */
 class PreviewCreatorTest extends \PHPUnit\Framework\TestCase
 {
-    /**
-     * Location of configuration files
-     *
-     * @var string
-     */
-    const CONFIG_DIR = __DIR__ . '/../../../fixtures/base/config/basic';
-
-    /**
-     * Holding test record
-     *
-     * @var string
-     */
-    protected $holdingRecord = <<<EOT
-<record>
-  <datafield tag="852">
-    <subfield code="b">B1</subfield>
-  </datafield>
-  <datafield tag="852">
-    <subfield code="b">A1</subfield>
-    <subfield code="c">2</subfield>
-  </datafield>
-  <datafield tag="852">
-    <subfield code="b">A1</subfield>
-    <subfield code="c">X</subfield>
-  </datafield>
-  <datafield tag="852">
-    <subfield code="b">C1</subfield>
-    <subfield code="c">2</subfield>
-  </datafield>
-  <datafield tag="852">
-    <subfield code="b">D1</subfield>
-    <subfield code="c">2</subfield>
-  </datafield>
-</record>
-EOT;
+    use FixtureTrait;
 
     /**
      * Data source settings
@@ -112,10 +79,11 @@ EOT;
         $preview = $this->getPreviewCreator();
 
         $timestamp = time();
+        $xml = $this->getFixture('Solr/holdings_record.xml');
         $record = [
             'format' => 'marc',
-            'original_data' => $this->holdingRecord,
-            'normalized_data' => $this->holdingRecord,
+            'original_data' => $xml,
+            'normalized_data' => $xml,
             'source_id' => 'test',
             'linking_id' => '_preview',
             'oai_id' => '_preview',
@@ -156,7 +124,7 @@ EOT;
             ->will($this->returnValue($record));
 
         $fieldMapper = new FieldMapper(
-          self::CONFIG_DIR,
+          $this->getFixtureDir() . 'config/basic',
           [],
           $this->dataSourceConfig
         );
