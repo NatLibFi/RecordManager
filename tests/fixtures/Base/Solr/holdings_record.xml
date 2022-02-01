@@ -1,0 +1,21 @@
+<record>
+  <datafield tag="852">
+    <subfield code="b">B1</subfield>
+  </datafield>
+  <datafield tag="852">
+    <subfield code="b">A1</subfield>
+    <subfield code="c">2</subfield>
+  </datafield>
+  <datafield tag="852">
+    <subfield code="b">A1</subfield>
+    <subfield code="c">X</subfield>
+  </datafield>
+  <datafield tag="852">
+    <subfield code="b">C1</subfield>
+    <subfield code="c">2</subfield>
+  </datafield>
+  <datafield tag="852">
+    <subfield code="b">D1</subfield>
+    <subfield code="c">2</subfield>
+  </datafield>
+</record>

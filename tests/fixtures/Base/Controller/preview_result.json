@@ -1,0 +1,48 @@
+{
+    "record_format": "marc",
+    "building": [
+        "150"
+    ],
+    "fullrecord": "00340cam a22001094i 4500001000400000005001700004008004100021020002200062100003300084245007500117852003800192\u001e123\u001e20160322194428.0\u001e140327s2013    fi            000 0 fin d\u001e  \u001fa978-951-31-4836-2\u001e1 \u001faHirsj\u00e4rvi, Sirkka.\u001f0(TEST)1\u001e10\u001faTutki ja kirjoita \/\u001fcSirkka Hirsj\u00e4rvi, Pirkko Remes, Paula Sajavaara.\u001e8 \u001faE\u001fb150\u001fh38 Hir\u001fz18. p. 2013\u001f9Test\u001e\u001d",
+    "allfields": [
+        "Hirsj\u00e4rvi, Sirkka",
+        "Tutki ja kirjoita",
+        "Sirkka Hirsj\u00e4rvi, Pirkko Remes, Paula Sajavaara"
+    ],
+    "language": [
+        "fin"
+    ],
+    "format": "Book",
+    "author": [
+        "Hirsj\u00e4rvi, Sirkka"
+    ],
+    "author_role": [
+        "-"
+    ],
+    "author_sort": "Hirsj\u00e4rvi, Sirkka",
+    "author2": [
+        "Hirsj\u00e4rvi, Sirkka"
+    ],
+    "author2_role": [
+        "-"
+    ],
+    "title": "Tutki ja kirjoita",
+    "title_short": "Tutki ja kirjoita",
+    "title_full": "Tutki ja kirjoita \/ Sirkka Hirsj\u00e4rvi, Pirkko Remes, Paula Sajavaara",
+    "title_sort": "tutki ja kirjoita \/ sirkka hirsj\u00e4rvi, pirkko remes, paula sajavaara",
+    "publishDateSort": "2013",
+    "publishDate": [
+        "2013"
+    ],
+    "isbn": [
+        "9789513148362"
+    ],
+    "illustrated": "Not Illustrated",
+    "id": "test.123",
+    "work_keys_str_mv": [
+        "AT hirsjarvisirkka tutkijakirjoita"
+    ],
+    "institution": "Test",
+    "first_indexed": "1970-01-01T00:00:00Z",
+    "last_indexed": "1970-01-01T00:00:00Z"
+}

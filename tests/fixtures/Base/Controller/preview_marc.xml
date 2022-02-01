@@ -1,0 +1,26 @@
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+  <record>
+    <leader>01195cam a22004094i 4500</leader>
+    <controlfield tag="001">123</controlfield>
+    <controlfield tag="005">20160322194428.0</controlfield>
+    <controlfield tag="008">140327s2013    fi            000 0 fin d</controlfield>
+    <datafield tag="020" ind1=" " ind2=" ">
+      <subfield code="a">978-951-31-4836-2</subfield>
+    </datafield>
+    <datafield tag="100" ind1="1" ind2=" ">
+      <subfield code="a">Hirsjärvi, Sirkka.</subfield>
+      <subfield code="0">(TEST)1</subfield>
+    </datafield>
+    <datafield tag="245" ind1="1" ind2="0">
+      <subfield code="a">Tutki ja kirjoita /</subfield>
+      <subfield code="c">Sirkka Hirsjärvi, Pirkko Remes, Paula Sajavaara.</subfield>
+    </datafield>
+    <datafield tag="852" ind1="8" ind2=" ">
+      <subfield code="a">E</subfield>
+      <subfield code="b">150</subfield>
+      <subfield code="h">38 Hir</subfield>
+      <subfield code="z">18. p. 2013</subfield>
+      <subfield code="9">Test</subfield>
+    </datafield>
+  </record>
+</collection>

@@ -308,11 +308,11 @@ class Ead extends AbstractRecord
     }
 
     /**
-     * Get topic URIs.
+     * Get topic identifiers.
      *
      * @return array
      */
-    public function getTopicURIs()
+    public function getTopicIDs()
     {
         return $this->getTopicTerms(true);
     }
@@ -347,16 +347,16 @@ class Ead extends AbstractRecord
     /**
      * Get topic labels or URIs.
      *
-     * @param boolean $uri Whether to return topic URIs or labels.
+     * @param bool $identifiers Whether to return topic identifiers instead of labels
      *
      * @return array
      */
-    protected function getTopicTerms($uri = false)
+    protected function getTopicTerms($identifiers = false)
     {
         if ($subjects = $this->doc->xpath('controlaccess/subject')) {
             $result = [];
             foreach ($subjects as $subject) {
-                if (!$uri) {
+                if (!$identifiers) {
                     $label = trim((string)$subject);
                     if ($label !== '-') {
                         $result[] = $label;

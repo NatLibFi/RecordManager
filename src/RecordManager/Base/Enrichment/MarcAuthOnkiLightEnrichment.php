@@ -62,6 +62,7 @@ class MarcAuthOnkiLightEnrichment extends OnkiLightEnrichment
                     $id,
                     'occupation_str_mv',
                     '',
+                    '',
                     true
                 );
             }

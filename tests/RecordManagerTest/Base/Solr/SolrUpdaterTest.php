@@ -35,6 +35,8 @@ use RecordManager\Base\Solr\SolrUpdater;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\WorkerPoolManager;
+use RecordManagerTest\Base\Feature\FixtureTrait;
+use RecordManagerTest\Base\Record\CreateSampleRecordTrait;
 
 /**
  * Tests for SolrUpdater
@@ -47,14 +49,8 @@ use RecordManager\Base\Utils\WorkerPoolManager;
  */
 class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
 {
-    use \RecordManagerTest\Base\Record\CreateSampleRecordTrait;
-
-    /**
-     * Location of configuration files
-     *
-     * @var string
-     */
-    const CONFIG_DIR = __DIR__ . '/../../../fixtures/base/config/basic';
+    use FixtureTrait;
+    use CreateSampleRecordTrait;
 
     /**
      * Main configuration
@@ -164,19 +160,19 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
             $logger,
         );
         $record = new \RecordManager\Base\Record\Marc(
-          [],
-          $this->dataSourceConfig,
-          $logger,
-          $metadataUtils,
+            [],
+            $this->dataSourceConfig,
+            $logger,
+            $metadataUtils,
         );
         $recordPM = $this->createMock(RecordPluginManager::class);
         $recordPM->expects($this->once())
             ->method('get')
             ->will($this->returnValue($record));
         $fieldMapper = new FieldMapper(
-          self::CONFIG_DIR,
-          [],
-          $this->dataSourceConfig
+            $this->getFixtureDir() . 'config/basic',
+            [],
+            $this->dataSourceConfig
         );
         $solrUpdater = new SolrUpdater(
             $this->config,
