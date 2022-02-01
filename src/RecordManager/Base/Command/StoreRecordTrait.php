@@ -348,18 +348,27 @@ trait StoreRecordTrait
     /**
      * Delete records with an OAI identifier
      *
-     * @param string $sourceId Source ID
-     * @param string $oaiID    ID of the record as received from OAI-PMH
+     * @param string $sourceId      Source ID
+     * @param string $oaiID         ID of the record as received from OAI-PMH
+     * @param int    $dateThreshold Optional date threshold (newer records are not
+     *                              deleted)
      *
      * @return int Count of records deleted
      */
-    protected function deleteByOaiId($sourceId, $oaiID)
+    protected function deleteByOaiId($sourceId, $oaiID, $dateThreshold = null)
     {
         // A single OAI-PMH record may have been split to multiple records. Find
-        // all occurrences.
+        // all occurrences and delete them:
         $count = 0;
+        $params = ['source_id' => $sourceId, 'oai_id' => $oaiID, 'deleted' => false];
+        if (null !== $dateThreshold) {
+            $params['date'] = [
+                '$lt' =>
+                    $this->db->getTimestamp($dateThreshold)
+            ];
+        }
         $this->db->iterateRecords(
-            ['source_id' => $sourceId, 'oai_id' => $oaiID],
+            $params,
             [],
             function ($record) use (&$count, $oaiID) {
                 $this->logger->writelnDebug(

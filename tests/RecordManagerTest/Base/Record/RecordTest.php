@@ -27,7 +27,7 @@
  */
 namespace RecordManagerTest\Base\Record;
 
-use RecordManager\Base\Utils\MetadataUtils;
+use RecordManagerTest\Base\Feature\FixtureTrait;
 
 /**
  * Generic Record Driver Test Class
@@ -40,6 +40,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 abstract class RecordTest extends \PHPUnit\Framework\TestCase
 {
+    use FixtureTrait;
     use CreateSampleRecordTrait;
 
     /**
@@ -64,7 +65,8 @@ abstract class RecordTest extends \PHPUnit\Framework\TestCase
             );
         }
         foreach ($provided as $key => $value) {
-            $this->assertTrue(array_key_exists($key, $expected) !== false,
+            $this->assertTrue(
+                array_key_exists($key, $expected) !== false,
                 "[$method] Unexpected field $key: " . var_export($value, true)
             );
         }

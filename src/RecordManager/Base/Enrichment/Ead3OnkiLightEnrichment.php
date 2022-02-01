@@ -1,10 +1,10 @@
 <?php
 /**
- * LcCallNumber tests
+ * Ead3OnkiLightEnrichment Class
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2015
+ * Copyright (C) The National Library of Finland 2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,12 +25,12 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManagerTest\Base\Utils;
-
-use RecordManager\Base\Utils\LcCallNumber;
+namespace RecordManager\Base\Enrichment;
 
 /**
- * LcCallNumber tests
+ * Ead3OnkiLightEnrichment Class
+ *
+ * This is a class for enrichment of EAD3 records from an ONKI Light source.
  *
  * @category DataManagement
  * @package  RecordManager
@@ -38,30 +38,32 @@ use RecordManager\Base\Utils\LcCallNumber;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class LcCallNumberTest extends \PHPUnit\Framework\TestCase
+class Ead3OnkiLightEnrichment extends OnkiLightEnrichment
 {
     /**
-     * Tests for call number handling
+     * Enrich the record and return any additions in solrArray
+     *
+     * @param string $sourceId  Source ID
+     * @param object $record    Metadata Record
+     * @param array  $solrArray Metadata to be sent to Solr
      *
      * @return void
      */
-    public function testCallNumber()
+    public function enrich($sourceId, $record, &$solrArray)
     {
-        $cn = new LcCallNumber('AC901.M5 vol. 1013, no. 8');
-        $this->assertTrue($cn->isValid());
-        $this->assertEquals(
-            'AC 3901',
-            $cn->getSortKey()
-        );
-
-        $cn = new LcCallNumber('GV1101 .D7 1980');
-        $this->assertTrue($cn->isValid());
-        $this->assertEquals(
-            'GV 41101',
-            $cn->getSortKey()
-        );
-
-        $cn = new LcCallNumber('XV1101 .D7 1980');
-        $this->assertFalse($cn->isValid());
+        if (!($record instanceof \RecordManager\Base\Record\Ead3)) {
+            return;
+        }
+        foreach ($record->getTopicIDs() as $id) {
+            $this->enrichField(
+                $sourceId,
+                $record,
+                $solrArray,
+                $id,
+                'topic_add_txt_mv',
+                'topic_alt_txt_mv',
+                'topic'
+            );
+        }
     }
 }

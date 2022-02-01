@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2021.
+ * Copyright (C) The National Library of Finland 2012-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -81,9 +81,9 @@ class Ead3 extends Ead
         $this->currentPos = 0;
 
         $this->agency
-            = (string)$this->doc->control->maintenanceagency->agencycode;
+            = (string)($this->doc->control->maintenanceagency->agencycode ?? '');
 
-        foreach ($this->doc->archdesc->did->unitid as $i) {
+        foreach ($this->doc->archdesc->did->unitid ?? [] as $i) {
             $attr = $i->attributes();
             if (!isset($attr->identifier)) {
                 continue;
@@ -198,16 +198,12 @@ class Ead3 extends Ead
             }
         }
 
-        if ($this->doc->archdesc->bibliography) {
-            foreach ($this->doc->archdesc->bibliography as $elem) {
-                $this->appendXML($record, $elem);
-            }
+        foreach ($this->doc->archdesc->bibliography ?? [] as $elem) {
+            $this->appendXML($record, $elem);
         }
 
-        if ($this->doc->archdesc->accessrestrict) {
-            foreach ($this->doc->archdesc->accessrestrict as $elem) {
-                $this->appendXML($record, $elem);
-            }
+        foreach ($this->doc->archdesc->accessrestrict ?? [] as $elem) {
+            $this->appendXML($record, $elem);
         }
 
         $parentDid = $original->xpath('parent::*/did');
@@ -217,8 +213,7 @@ class Ead3 extends Ead
             $parentAddData = $original->xpath('parent::*/add-data');
 
             if ($parentAddData) {
-                $parentID
-                    = (string)$parentAddData[0]->attributes()->identifier;
+                $parentID = (string)$parentAddData[0]->attributes()->identifier;
             } else {
                 //generate
                 $parentID = urlencode(
@@ -247,8 +242,6 @@ class Ead3 extends Ead
                 if ($pid = $this->getParentUnitId($parentDid)) {
                     $parentTitle = $pid . ' ' . $parentTitle;
                 }
-
-                $parentTitle = $pid . ' ' . $parentTitle;
             }
 
             $parentNode = $original->xpath('parent::*[@level]');

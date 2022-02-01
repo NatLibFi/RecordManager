@@ -53,10 +53,14 @@ class LidoTest extends RecordTest
 
         $expected = [
             'record_format' => 'lido',
-            'title_full' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
-            'title_short' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
-            'title' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
-            'title_sort' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
+            'title_full' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen;'
+                . ' Säädökset',
+            'title_short' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen;'
+                . ' Säädökset',
+            'title' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen;'
+                . ' Säädökset',
+            'title_sort' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen;'
+                . ' Säädökset',
             'title_alt' => [],
             'format' => 'Kirja',
             'institution' => 'Test Institution',
@@ -118,7 +122,8 @@ class LidoTest extends RecordTest
                 'titles' => [
                     [
                         'type' => 'title',
-                        'value' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
+                        'value' => 'Luonnonsuojelusäädökset / toimittanut Raimo'
+                        . ' Luhtanen; Säädökset',
                     ],
                 ],
                 'titlesAltScript' => [],
@@ -219,7 +224,8 @@ class LidoTest extends RecordTest
                 'titles' => [
                     [
                         'type' => 'title',
-                        'value' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+                        'value' => 'Luonnonsuojelusäädökset / toimittanut Raimo'
+                        . ' Luhtanen',
                     ],
                     [
                         'type' => 'title',

@@ -28,6 +28,7 @@
 namespace RecordManagerTest\Base\Utils;
 
 use RecordManager\Base\Utils\FieldMapper;
+use RecordManagerTest\Base\Feature\FixtureTrait;
 
 /**
  * FieldMapper tests
@@ -40,12 +41,7 @@ use RecordManager\Base\Utils\FieldMapper;
  */
 class FieldMapperTest extends \PHPUnit\Framework\TestCase
 {
-    /**
-     * Location of configuration files
-     *
-     * @var string
-     */
-    const CONFIG_DIR = __DIR__ . '/../../../fixtures/base/config/fieldmappertest';
+    use FixtureTrait;
 
     /**
      * Data source settings
@@ -127,40 +123,52 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
             [
                 'type' => 'normal',
                 'map' => $this->callProtected(
-                   $fieldMapper,
-                   'readMappingFile',
-                   [self::CONFIG_DIR . '/mappings/building-basic.map']
+                    $fieldMapper,
+                    'readMappingFile',
+                    [$this->getConfigDir() . '/mappings/building-basic.map']
                 )
             ]
         ];
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val1', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['val1', $mapping]
         );
         $this->assertEquals('a/b', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val2', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['val2', $mapping]
         );
         $this->assertEquals('', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val3', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['val3', $mapping]
         );
         $this->assertEquals(['a', 'b'], $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['fi=val4', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['fi=val4', $mapping]
         );
         $this->assertEquals('c', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val4', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['val4', $mapping]
         );
         $this->assertEquals('def', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['', $mapping]
         );
         $this->assertEquals('def', $result);
     }
@@ -178,38 +186,50 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
             [
                 'type' => 'regexp',
                 'map' => $this->callProtected(
-                   $fieldMapper,
-                   'readMappingFile',
-                   [self::CONFIG_DIR . '/mappings/building-regexp.map']
+                    $fieldMapper,
+                    'readMappingFile',
+                    [$this->getConfigDir() . '/mappings/building-regexp.map']
                 )
             ]
         ];
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val1', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['val1', $mapping]
         );
         $this->assertEquals('val/1', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['val', $mapping]
         );
         $this->assertEquals('string', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['!21!', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['!21!', $mapping]
         );
         $this->assertEquals('def', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['21!', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['21!', $mapping]
         );
         $this->assertEquals('!', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['21', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['21', $mapping]
         );
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['FOO123', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['FOO123', $mapping]
         );
         $this->assertEquals(['BAR', 'BAZ'], $result);
     }
@@ -227,35 +247,48 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
             [
                 'type' => 'regexp',
                 'map' => $this->callProtected(
-                   $fieldMapper,
-                   'readMappingFile',
-                   [self::CONFIG_DIR . '/mappings/building-regexp-no-default.map']
+                    $fieldMapper,
+                    'readMappingFile',
+                    [
+                        $this->getConfigDir()
+                        . '/mappings/building-regexp-no-default.map'
+                    ]
                 )
             ]
         ];
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val1', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['val1', $mapping]
         );
         $this->assertEquals('val/1', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['val', $mapping]
         );
         $this->assertEquals('string', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['!21!', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['!21!', $mapping]
         );
         $this->assertEquals('!21!', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['21!', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['21!', $mapping]
         );
         $this->assertEquals('!', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['21', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['21', $mapping]
         );
         $this->assertEquals('', $result);
     }
@@ -273,35 +306,45 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
             [
                 'type' => 'regexp-multi',
                 'map' => $this->callProtected(
-                   $fieldMapper,
-                   'readMappingFile',
-                   [self::CONFIG_DIR . '/mappings/building-regexp-multi.map']
+                    $fieldMapper,
+                    'readMappingFile',
+                    [$this->getConfigDir() . '/mappings/building-regexp-multi.map']
                 )
             ]
         ];
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val1', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['val1', $mapping]
         );
         $this->assertEquals(['val/1', 'string1'], $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['val', $mapping]
         );
         $this->assertEquals(['string'], $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['!21!', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['!21!', $mapping]
         );
         $this->assertEquals('def', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['21!', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['21!', $mapping]
         );
         $this->assertEquals(['!'], $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['21', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['21', $mapping]
         );
         $this->assertEquals([''], $result);
     }
@@ -320,35 +363,45 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
             [
                 'type' => 'regexp-multi',
                 'map' => $this->callProtected(
-                   $fieldMapper,
-                   'readMappingFile',
-                   [self::CONFIG_DIR . '/mappings/building-regexp-multi.map']
+                    $fieldMapper,
+                    'readMappingFile',
+                    [$this->getConfigDir() . '/mappings/building-regexp-multi.map']
                 )
             ]
         ];
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val1', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['val1', $mapping]
         );
         $this->assertEquals(['val/1', 'string1'], $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['val', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['val', $mapping]
         );
         $this->assertEquals(['string'], $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['!21!', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['!21!', $mapping]
         );
         $this->assertEquals('def', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['21!', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['21!', $mapping]
         );
         $this->assertEquals(['!'], $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', ['21', $mapping]
+            $fieldMapper,
+            'mapValue',
+            ['21', $mapping]
         );
         $this->assertEquals([''], $result);
     }
@@ -366,33 +419,39 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
             [
                 'type' => 'normal',
                 'map' => $this->callProtected(
-                   $fieldMapper,
-                   'readMappingFile',
-                   [self::CONFIG_DIR . '/mappings/building-basic.map']
+                    $fieldMapper,
+                    'readMappingFile',
+                    [$this->getConfigDir() . '/mappings/building-basic.map']
                 )
             ],
             [
                 'type' => 'regexp',
                 'map' => $this->callProtected(
-                   $fieldMapper,
-                   'readMappingFile',
-                   [self::CONFIG_DIR . '/mappings/building-regexp.map']
+                    $fieldMapper,
+                    'readMappingFile',
+                    [$this->getConfigDir() . '/mappings/building-regexp.map']
                 )
             ]
         ];
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', [['val1', 'val1'], $mapping]
+            $fieldMapper,
+            'mapValue',
+            [['val1', 'val1'], $mapping]
         );
         $this->assertEquals('a/b/val/1', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', [['val2', 'val1'], $mapping]
+            $fieldMapper,
+            'mapValue',
+            [['val2', 'val1'], $mapping]
         );
         $this->assertEquals('', $result);
 
         $result = $this->callProtected(
-            $fieldMapper, 'mapValue', [['val1', '21'], $mapping]
+            $fieldMapper,
+            'mapValue',
+            [['val1', '21'], $mapping]
         );
         $this->assertEquals('a/b', $result);
     }
@@ -420,6 +479,16 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
      */
     protected function getFieldMapper()
     {
-        return new FieldMapper(self::CONFIG_DIR, [], $this->dataSourceConfig);
+        return new FieldMapper($this->getConfigDir(), [], $this->dataSourceConfig);
+    }
+
+    /**
+     * Get config directory
+     *
+     * @return string
+     */
+    protected function getConfigDir()
+    {
+        return $this->getFixtureDir() . 'config/fieldmappertest';
     }
 }

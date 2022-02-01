@@ -65,6 +65,7 @@ class LrmiOnkiLightEnrichment extends OnkiLightEnrichment
                     $solrArray,
                     $id,
                     'topic_add_txt_mv',
+                    'topic_alt_txt_mv',
                     'topic'
                 );
             }

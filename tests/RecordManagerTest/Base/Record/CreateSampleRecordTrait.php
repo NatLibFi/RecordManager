@@ -2,9 +2,12 @@
 /**
  * Trait for creating records
  *
+ * Prerequisites:
+ * - FixtureTrait
+ *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2020-2021.
+ * Copyright (C) The National Library of Finland 2020-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -48,6 +51,7 @@ trait CreateSampleRecordTrait
      * @param string $class             Record class
      * @param string $sample            Sample record file
      * @param array  $dsConfig          Datasource config
+     * @param string $module            Module name
      * @param array  $constructorParams Additional constructor params
      *
      * @return \RecordManager\Base\Record\AbstractRecord
@@ -56,7 +60,7 @@ trait CreateSampleRecordTrait
         string $class,
         string $sample,
         array $dsConfig = [],
-        string $ns = 'base',
+        string $module = 'Base',
         array $constructorParams = []
     ) {
         $logger = $this->createMock(Logger::class);
@@ -66,7 +70,7 @@ trait CreateSampleRecordTrait
             ],
         ];
         $metadataUtils = new \RecordManager\Base\Utils\MetadataUtils(
-            __DIR__ . '/../../../fixtures/base/config/recorddrivertest',
+            $this->getFixtureDir() . 'config/recorddrivertest',
             $config,
             $logger
         );
@@ -77,7 +81,7 @@ trait CreateSampleRecordTrait
             $metadataUtils,
             ...$constructorParams
         );
-        $data = file_get_contents(__DIR__ . "/../../../fixtures/$ns/record/$sample");
+        $data = $this->getFixture("record/$sample", $module);
         $record->setData('__unit_test_no_source__', '__unit_test_no_id__', $data);
         return $record;
     }

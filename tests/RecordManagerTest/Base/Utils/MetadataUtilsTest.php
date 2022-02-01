@@ -70,11 +70,13 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
     public function testNormalizeKey()
     {
         $this->assertEquals(
-            'abc', $this->metadataUtils->normalizeKey('A -.*B  C', 'NFKC')
+            'abc',
+            $this->metadataUtils->normalizeKey('A -.*B  C', 'NFKC')
         );
 
         $this->assertEquals(
-            'oaaoaauie', $this->metadataUtils->normalizeKey('ÖÄÅöäåüïé', 'NFKC')
+            'oaaoaauie',
+            $this->metadataUtils->normalizeKey('ÖÄÅöäåüïé', 'NFKC')
         );
 
         $metadataUtils = new MetadataUtils(
@@ -87,7 +89,8 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
             $this->createMock(Logger::class)
         );
         $this->assertEquals(
-            'aaöäåöäåui', $metadataUtils->normalizeKey('AaÖÄÅöäåüï', 'NFKC')
+            'aaöäåöäåui',
+            $metadataUtils->normalizeKey('AaÖÄÅöäåüï', 'NFKC')
         );
     }
 
@@ -106,12 +109,15 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
         ];
         foreach ($values as $from => $to) {
             $this->assertEquals(
-                $to, $this->metadataUtils->stripLeadingPunctuation($from), $from
+                $to,
+                $this->metadataUtils->stripLeadingPunctuation($from),
+                $from
             );
         }
 
         $this->assertEquals(
-            'foo', $this->metadataUtils->stripLeadingPunctuation('foo', '.-')
+            'foo',
+            $this->metadataUtils->stripLeadingPunctuation('foo', '.-')
         );
     }
 
@@ -131,16 +137,20 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
         ];
         foreach ($values as $from => $to) {
             $this->assertEquals(
-                $to, $this->metadataUtils->stripTrailingPunctuation($from), $from
+                $to,
+                $this->metadataUtils->stripTrailingPunctuation($from),
+                $from
             );
         }
 
         $this->assertEquals(
-            'foo', $this->metadataUtils->stripTrailingPunctuation('foo/]', ']')
+            'foo',
+            $this->metadataUtils->stripTrailingPunctuation('foo/]', ']')
         );
 
         $this->assertEquals(
-            'foo', $this->metadataUtils->stripTrailingPunctuation('foo/:©', '©')
+            'foo',
+            $this->metadataUtils->stripTrailingPunctuation('foo/:©', '©')
         );
     }
 
@@ -175,7 +185,9 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
 
         foreach ($values as $from => $to) {
             $this->assertEquals(
-                $to, $this->metadataUtils->coordinateToDecimal($from), $from
+                $to,
+                $this->metadataUtils->coordinateToDecimal($from),
+                $from
             );
         }
     }
@@ -189,14 +201,19 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
     {
         $this->assertEquals(false, $this->metadataUtils->isbn10to13(''));
         $this->assertEquals(false, $this->metadataUtils->isbn10to13('foo'));
-        $this->assertEquals(false, $this->metadataUtils->isbn10to13('9514920988 foo'));
+        $this->assertEquals(
+            false,
+            $this->metadataUtils->isbn10to13('9514920988 foo')
+        );
         // Invalid ISBN:
         $this->assertEquals(false, $this->metadataUtils->isbn10to13('9514920096'));
         $this->assertEquals(
-            '9789514920981', $this->metadataUtils->isbn10to13('9514920988')
+            '9789514920981',
+            $this->metadataUtils->isbn10to13('9514920988')
         );
         $this->assertEquals(
-            false, $this->metadataUtils->isbn10to13('951-492-098-8')
+            false,
+            $this->metadataUtils->isbn10to13('951-492-098-8')
         );
     }
 
@@ -212,16 +229,20 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
         // Invalid ISBN:
         $this->assertEquals('', $this->metadataUtils->normalizeISBN('9514920096'));
         $this->assertEquals(
-            '9789514920981', $this->metadataUtils->normalizeISBN('9514920988')
+            '9789514920981',
+            $this->metadataUtils->normalizeISBN('9514920988')
         );
         $this->assertEquals(
-            '9789514920981', $this->metadataUtils->normalizeISBN('951-492-098-8')
+            '9789514920981',
+            $this->metadataUtils->normalizeISBN('951-492-098-8')
         );
         $this->assertEquals(
-            '9789514920981', $this->metadataUtils->normalizeISBN('9789514920981')
+            '9789514920981',
+            $this->metadataUtils->normalizeISBN('9789514920981')
         );
         $this->assertEquals(
-            '9789514920981', $this->metadataUtils->normalizeISBN('978-951-492098-1')
+            '9789514920981',
+            $this->metadataUtils->normalizeISBN('978-951-492098-1')
         );
     }
 }
