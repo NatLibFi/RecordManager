@@ -130,14 +130,16 @@ class MarcTest extends RecordTest
             'title' => 'Tutki ja kirjoita',
             'title_sub' => '',
             'title_short' => 'Tutki ja kirjoita',
-            'title_full' => 'Tutki ja kirjoita / Sirkka Hirsjärvi, Pirkko Remes, Paula Sajavaara',
+            'title_full' => 'Tutki ja kirjoita / Sirkka Hirsjärvi, Pirkko Remes,'
+                . ' Paula Sajavaara',
             'title_alt' => [
             ],
             'title_old' => [
             ],
             'title_new' => [
             ],
-            'title_sort' => 'tutki ja kirjoita / sirkka hirsjärvi, pirkko remes, paula sajavaara',
+            'title_sort' => 'tutki ja kirjoita / sirkka hirsjärvi, pirkko remes,'
+                . ' paula sajavaara',
             'series' => [
             ],
             'publisher' => [
@@ -591,7 +593,8 @@ class MarcTest extends RecordTest
             'allfields' => [
                 'Braudel, Fernand',
                 'kirjoittaja',
-                'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle',
+                'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe'
+                    . ' siècle',
                 'le possible et l\'impossible',
                 'Tome 1',
                 'Les structures du quotidien : le possible et l\'impossible',
@@ -658,17 +661,27 @@ class MarcTest extends RecordTest
             ],
             'author_additional' => [
             ],
-            'title' => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle : le possible et l\'impossible. Tome 1, Les structures du quotidien : le possible et l\'impossible',
-            'title_sub' => 'le possible et l\'impossible. Tome 1, Les structures du quotidien : le possible et l\'impossible',
-            'title_short' => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle',
-            'title_full' => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe siècle : le possible et l\'impossible. Tome 1, Les structures du quotidien : le possible et l\'impossible / Fernand Braudel',
+            'title' => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe'
+                . ' siècle : le possible et l\'impossible. Tome 1, Les structures du'
+                . ' quotidien : le possible et l\'impossible',
+            'title_sub' => 'le possible et l\'impossible. Tome 1, Les structures du'
+                . ' quotidien : le possible et l\'impossible',
+            'title_short' => 'Civilisation matérielle, économie et capitalisme,'
+                . ' XVe-XVIIIe siècle',
+            'title_full' => 'Civilisation matérielle, économie et capitalisme,'
+                . ' XVe-XVIIIe siècle : le possible et l\'impossible. Tome 1, Les'
+                . ' structures du quotidien : le possible et l\'impossible / Fernand'
+                . ' Braudel',
             'title_alt' => [
             ],
             'title_old' => [
             ],
             'title_new' => [
             ],
-            'title_sort' => 'civilisation matérielle, économie et capitalisme, xve-xviiie siècle : le possible et l\'impossible. tome 1, les structures du quotidien : le possible et l\'impossible / fernand braudel',
+            'title_sort' => 'civilisation matérielle, économie et capitalisme,'
+                . ' xve-xviiie siècle : le possible et l\'impossible. tome 1, les'
+                . ' structures du quotidien : le possible et l\'impossible / fernand'
+                . ' braudel',
             'series' => [
             ],
             'publisher' => [

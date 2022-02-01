@@ -2,6 +2,7 @@
 <ruleset name="RecordManager Coding Standards" namespace="RecordManager\PHPCS">
   <description>Coding standards for RecordManager.</description>
   <file>../src</file>
+  <file>../tests</file>
   <exclude-pattern>src/RecordManager/[^/]+/config/*</exclude-pattern>
   <arg name="extensions" value="php"/>
   <rule ref="PEAR"/>

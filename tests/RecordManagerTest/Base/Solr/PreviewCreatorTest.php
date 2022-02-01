@@ -79,10 +79,10 @@ class PreviewCreatorTest extends \PHPUnit\Framework\TestCase
             $logger
         );
         $marc = new \RecordManager\Base\Record\Marc(
-          [],
-          $this->dataSourceConfig,
-          $logger,
-          $metadataUtils
+            [],
+            $this->dataSourceConfig,
+            $logger,
+            $metadataUtils
         );
         $recordPM = $this->createMock(RecordPluginManager::class);
         $recordPM->expects($this->once())

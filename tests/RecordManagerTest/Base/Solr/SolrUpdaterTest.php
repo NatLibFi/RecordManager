@@ -160,19 +160,19 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
             $logger,
         );
         $record = new \RecordManager\Base\Record\Marc(
-          [],
-          $this->dataSourceConfig,
-          $logger,
-          $metadataUtils,
+            [],
+            $this->dataSourceConfig,
+            $logger,
+            $metadataUtils,
         );
         $recordPM = $this->createMock(RecordPluginManager::class);
         $recordPM->expects($this->once())
             ->method('get')
             ->will($this->returnValue($record));
         $fieldMapper = new FieldMapper(
-          $this->getFixtureDir() . 'config/basic',
-          [],
-          $this->dataSourceConfig
+            $this->getFixtureDir() . 'config/basic',
+            [],
+            $this->dataSourceConfig
         );
         $solrUpdater = new SolrUpdater(
             $this->config,

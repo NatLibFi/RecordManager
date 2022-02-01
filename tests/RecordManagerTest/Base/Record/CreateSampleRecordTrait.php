@@ -51,6 +51,7 @@ trait CreateSampleRecordTrait
      * @param string $class             Record class
      * @param string $sample            Sample record file
      * @param array  $dsConfig          Datasource config
+     * @param string $module            Module name
      * @param array  $constructorParams Additional constructor params
      *
      * @return \RecordManager\Base\Record\AbstractRecord
@@ -59,7 +60,7 @@ trait CreateSampleRecordTrait
         string $class,
         string $sample,
         array $dsConfig = [],
-        string $ns = 'Base',
+        string $module = 'Base',
         array $constructorParams = []
     ) {
         $logger = $this->createMock(Logger::class);
@@ -80,7 +81,7 @@ trait CreateSampleRecordTrait
             $metadataUtils,
             ...$constructorParams
         );
-        $data = $this->getFixture("record/$sample", $ns);
+        $data = $this->getFixture("record/$sample", $module);
         $record->setData('__unit_test_no_source__', '__unit_test_no_id__', $data);
         return $record;
     }

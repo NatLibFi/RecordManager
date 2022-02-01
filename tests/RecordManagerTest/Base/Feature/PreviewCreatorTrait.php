@@ -65,10 +65,10 @@ trait PreviewCreatorTrait
             $logger
         );
         $record = new \RecordManager\Base\Record\Marc(
-          [],
-          $this->dataSourceConfig,
-          $logger,
-          $metadataUtils
+            [],
+            $this->dataSourceConfig,
+            $logger,
+            $metadataUtils
         );
         if (null === $recordPM) {
             $recordPM = $this->createMock(RecordPluginManager::class);
@@ -78,9 +78,9 @@ trait PreviewCreatorTrait
         }
 
         $fieldMapper = new FieldMapper(
-          $this->getFixtureDir() . 'config/basic',
-          [],
-          $this->dataSourceConfig
+            $this->getFixtureDir() . 'config/basic',
+            [],
+            $this->dataSourceConfig
         );
         $preview = new PreviewCreator(
             [],
