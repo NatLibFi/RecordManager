@@ -28,6 +28,7 @@
 namespace RecordManagerTest\Base\Record;
 
 use RecordManager\Base\Utils\MetadataUtils;
+use RecordManagerTest\Base\Feature\FixtureTrait;
 
 /**
  * Generic Record Driver Test Class
@@ -40,6 +41,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 abstract class RecordTest extends \PHPUnit\Framework\TestCase
 {
+    use FixtureTrait;
     use CreateSampleRecordTrait;
 
     /**

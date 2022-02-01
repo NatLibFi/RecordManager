@@ -28,6 +28,7 @@
 namespace RecordManagerTest\Base\Utils;
 
 use RecordManager\Base\Utils\FieldMapper;
+use RecordManagerTest\Base\Feature\FixtureTrait;
 
 /**
  * FieldMapper tests
@@ -40,12 +41,7 @@ use RecordManager\Base\Utils\FieldMapper;
  */
 class FieldMapperTest extends \PHPUnit\Framework\TestCase
 {
-    /**
-     * Location of configuration files
-     *
-     * @var string
-     */
-    const CONFIG_DIR = __DIR__ . '/../../../fixtures/base/config/fieldmappertest';
+    use FixtureTrait;
 
     /**
      * Data source settings
@@ -129,7 +125,7 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
                 'map' => $this->callProtected(
                    $fieldMapper,
                    'readMappingFile',
-                   [self::CONFIG_DIR . '/mappings/building-basic.map']
+                   [$this->getConfigDir() . '/mappings/building-basic.map']
                 )
             ]
         ];
@@ -180,7 +176,7 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
                 'map' => $this->callProtected(
                    $fieldMapper,
                    'readMappingFile',
-                   [self::CONFIG_DIR . '/mappings/building-regexp.map']
+                   [$this->getConfigDir() . '/mappings/building-regexp.map']
                 )
             ]
         ];
@@ -227,9 +223,12 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
             [
                 'type' => 'regexp',
                 'map' => $this->callProtected(
-                   $fieldMapper,
-                   'readMappingFile',
-                   [self::CONFIG_DIR . '/mappings/building-regexp-no-default.map']
+                    $fieldMapper,
+                    'readMappingFile',
+                    [
+                        $this->getConfigDir()
+                        . '/mappings/building-regexp-no-default.map'
+                    ]
                 )
             ]
         ];
@@ -273,9 +272,9 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
             [
                 'type' => 'regexp-multi',
                 'map' => $this->callProtected(
-                   $fieldMapper,
-                   'readMappingFile',
-                   [self::CONFIG_DIR . '/mappings/building-regexp-multi.map']
+                    $fieldMapper,
+                    'readMappingFile',
+                    [$this->getConfigDir() . '/mappings/building-regexp-multi.map']
                 )
             ]
         ];
@@ -320,9 +319,9 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
             [
                 'type' => 'regexp-multi',
                 'map' => $this->callProtected(
-                   $fieldMapper,
-                   'readMappingFile',
-                   [self::CONFIG_DIR . '/mappings/building-regexp-multi.map']
+                    $fieldMapper,
+                    'readMappingFile',
+                    [$this->getConfigDir() . '/mappings/building-regexp-multi.map']
                 )
             ]
         ];
@@ -366,17 +365,17 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
             [
                 'type' => 'normal',
                 'map' => $this->callProtected(
-                   $fieldMapper,
-                   'readMappingFile',
-                   [self::CONFIG_DIR . '/mappings/building-basic.map']
+                    $fieldMapper,
+                    'readMappingFile',
+                    [$this->getConfigDir() . '/mappings/building-basic.map']
                 )
             ],
             [
                 'type' => 'regexp',
                 'map' => $this->callProtected(
-                   $fieldMapper,
-                   'readMappingFile',
-                   [self::CONFIG_DIR . '/mappings/building-regexp.map']
+                    $fieldMapper,
+                    'readMappingFile',
+                    [$this->getConfigDir() . '/mappings/building-regexp.map']
                 )
             ]
         ];
@@ -420,6 +419,16 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
      */
     protected function getFieldMapper()
     {
-        return new FieldMapper(self::CONFIG_DIR, [], $this->dataSourceConfig);
+        return new FieldMapper($this->getConfigDir(), [], $this->dataSourceConfig);
+    }
+
+    /**
+     * Get config directory
+     *
+     * @return string
+     */
+    protected function getConfigDir()
+    {
+        return $this->getFixtureDir() . 'config/fieldmappertest';
     }
 }

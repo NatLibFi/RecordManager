@@ -1,2 +1,2 @@
 <?php
-define('RECMAN_BASE_PATH', __DIR__ . '/fixtures/base/config/basic');
+define('RECMAN_BASE_PATH', __DIR__ . '/fixtures/Base/config/basic');
