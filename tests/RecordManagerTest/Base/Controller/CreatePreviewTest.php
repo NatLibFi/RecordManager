@@ -1,10 +1,10 @@
 <?php
 /**
- * Tests for preview creation (stresses mapping file handling)
+ * Tests for CreatePreview controller
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2017-2021.
+ * Copyright (C) The National Library of Finland 2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,15 +25,25 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManagerTest\Base\Solr;
+namespace RecordManagerTest\Base\Controller;
 
+use RecordManager\Base\Controller\CreatePreview;
+use RecordManager\Base\Database\PDODatabase;
+use RecordManager\Base\Deduplication\DedupHandler;
+use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
+use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
+use RecordManager\Base\Settings\Ini;
+use RecordManager\Base\Solr\PreviewCreator;
+use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
+use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\WorkerPoolManager;
 use RecordManagerTest\Base\Feature\FixtureTrait;
 use RecordManagerTest\Base\Feature\PreviewCreatorTrait;
 
 /**
- * Preview creation tests
+ * CreatePreview controller tests
  *
  * @category DataManagement
  * @package  RecordManager
@@ -41,7 +51,7 @@ use RecordManagerTest\Base\Feature\PreviewCreatorTrait;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class PreviewCreatorTest extends \PHPUnit\Framework\TestCase
+class CreatePreviewTest extends \PHPUnit\Framework\TestCase
 {
     use FixtureTrait;
     use PreviewCreatorTrait;
@@ -55,13 +65,6 @@ class PreviewCreatorTest extends \PHPUnit\Framework\TestCase
         'test' => [
             'institution' => 'Test',
             'format' => 'marc',
-            'building_mapping' => [
-                'building.map',
-                'building_sub.map,regexp'
-            ],
-            'driverParams' => [
-                'subLocationInBuilding=c'
-            ]
         ]
     ];
 
@@ -70,7 +73,30 @@ class PreviewCreatorTest extends \PHPUnit\Framework\TestCase
      *
      * @return void
      */
-    public function testBuilding()
+    public function testCreatePreview()
+    {
+        $record = $this->getFixture('Controller/preview_marc.xml');
+        $preview = $this->getCreatePreview($record);
+
+        $result = $preview->launch(
+            $record,
+            'marc',
+            'test'
+        );
+        $expected = json_decode(
+            $this->getFixture('Controller/preview_result.json'),
+            true
+        );
+
+        $this->assertEquals($expected, $result);
+    }
+
+    /**
+     * Create CreatePreview controller
+     *
+     * @return CreatePreview
+     */
+    protected function getCreatePreview()
     {
         $logger = $this->createMock(Logger::class);
         $metadataUtils = new \RecordManager\Base\Utils\MetadataUtils(
@@ -86,28 +112,22 @@ class PreviewCreatorTest extends \PHPUnit\Framework\TestCase
         );
         $recordPM = $this->createMock(RecordPluginManager::class);
         $recordPM->expects($this->once())
+            ->method('has')
+            ->with('marc')
+            ->will($this->returnValue(true));
+        $recordPM->expects($this->once())
             ->method('get')
             ->will($this->returnValue($marc));
-        $preview = $this->getPreviewCreator($recordPM);
-
-        $timestamp = time();
-        $xml = $this->getFixture('Solr/holdings_record.xml');
-        $record = [
-            'format' => 'marc',
-            'original_data' => $xml,
-            'normalized_data' => $xml,
-            'source_id' => 'test',
-            'linking_id' => '_preview',
-            'oai_id' => '_preview',
-            '_id' => '_preview',
-            'created' => $timestamp,
-            'date' => $timestamp
-        ];
-
-        $result = $preview->create($record);
-        $this->assertEquals(
-            ['B', 'A/2', 'A', 'DEF/2'],
-            $result['building']
+        return new CreatePreview(
+            [],
+            $this->dataSourceConfig,
+            $logger,
+            $this->createMock(PDODatabase::class),
+            $recordPM,
+            $this->createMock(SplitterPluginManager::class),
+            $this->createMock(DedupHandler::class),
+            $metadataUtils,
+            $this->getPreviewCreator()
         );
     }
 }
