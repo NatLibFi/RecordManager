@@ -205,7 +205,7 @@ geniePlusMarcField = MarcRecord
 ; These settings specify the GeniePlus API response fields containing item
 ; information, to be injected into 852 fields in the MARC record.
 geniePlusLocationField = Inventory.Location.CodeDesc
-geniePlusSublocationField = Inventory.Location.CodeDesc
+geniePlusSublocationField = Inventory.SubLoc.CodeDesc
 geniePlusCallnumberField = Inventory.CallNumLC
 geniePlusBarcodeField = Inventory.Barcode
 ; These settings control the MARC field/subfield in which unique GeniePlus IDs will
