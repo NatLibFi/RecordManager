@@ -465,7 +465,7 @@ class MarcTest extends RecordTest
                 'kartat',
                 'Suomi',
                 'Turun ja Porin lääni',
-                'ysa',
+                'yso/fin',
                 'Uudenmaan lääni',
                 'Ahvenanmaa',
             ],

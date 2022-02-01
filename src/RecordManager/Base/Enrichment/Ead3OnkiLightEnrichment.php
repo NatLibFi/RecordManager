@@ -1,10 +1,10 @@
 <?php
 /**
- * Enrich Marc authority records with data from ONKI Light.
+ * Ead3OnkiLightEnrichment Class
  *
- * PHP version 5
+ * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2014-2020.
+ * Copyright (C) The National Library of Finland 2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -21,22 +21,24 @@
  *
  * @category DataManagement
  * @package  RecordManager
- * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
 namespace RecordManager\Base\Enrichment;
 
 /**
- * Enrich Marc authority records with data from ONKI Light.
+ * Ead3OnkiLightEnrichment Class
+ *
+ * This is a class for enrichment of EAD3 records from an ONKI Light source.
  *
  * @category DataManagement
  * @package  RecordManager
- * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class MarcAuthOnkiLightEnrichment extends OnkiLightEnrichment
+class Ead3OnkiLightEnrichment extends OnkiLightEnrichment
 {
     /**
      * Enrich the record and return any additions in solrArray
@@ -45,27 +47,23 @@ class MarcAuthOnkiLightEnrichment extends OnkiLightEnrichment
      * @param object $record    Metadata Record
      * @param array  $solrArray Metadata to be sent to Solr
      *
-     * @throws \Exception
      * @return void
      */
     public function enrich($sourceId, $record, &$solrArray)
     {
-        if (!($record instanceof \RecordManager\Base\Record\Marc)) {
+        if (!($record instanceof \RecordManager\Base\Record\Ead3)) {
             return;
         }
-        foreach ($record->getFields('374') as $recField) {
-            if ($id = $record->getSubfield($recField, '0')) {
-                $this->enrichField(
-                    $sourceId,
-                    $record,
-                    $solrArray,
-                    $id,
-                    'occupation_str_mv',
-                    '',
-                    '',
-                    true
-                );
-            }
+        foreach ($record->getTopicIDs() as $id) {
+            $this->enrichField(
+                $sourceId,
+                $record,
+                $solrArray,
+                $id,
+                'topic_add_txt_mv',
+                'topic_alt_txt_mv',
+                'topic'
+            );
         }
     }
 }

@@ -212,6 +212,16 @@ class Ead3 extends Ead
     }
 
     /**
+     * Get topic identifiers.
+     *
+     * @return array
+     */
+    public function getTopicIDs()
+    {
+        return $this->getTopicTermsFromNode('subject', true);
+    }
+
+    /**
      *  Get description
      *
      * @return string
@@ -306,12 +316,12 @@ class Ead3 extends Ead
      * Helper function for getting controlaccess child
      * elements with their identifiers.
      *
-     * @param string $nodeName Element name to search for
-     * @param bool   $uri      Whether to return identifiers instead of labels.
+     * @param string $nodeName    Element name to search for
+     * @param bool   $identifiers Whether to return identifiers instead of labels.
      *
      * @return array
      */
-    protected function getTopicTermsFromNode($nodeName, $uri = false)
+    protected function getTopicTermsFromNode($nodeName, $identifiers = false)
     {
         $result = [];
         if (!isset($this->doc->controlaccess->{$nodeName})) {
@@ -319,9 +329,12 @@ class Ead3 extends Ead
         }
 
         foreach ($this->doc->controlaccess->{$nodeName} as $node) {
-            $attr = $node->attributes();
-            if ($value = trim((string)$node->part)) {
-                $result[] = $uri ? $attr->identifier : $value;
+            if ($identifiers) {
+                if ($id = $node['identifier']) {
+                    $result[] = (string)$id;
+                }
+            } elseif ($value = trim((string)$node->part)) {
+                $result[] = $value;
             }
         }
         return $result;

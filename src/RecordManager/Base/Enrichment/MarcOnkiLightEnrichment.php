@@ -58,11 +58,13 @@ class MarcOnkiLightEnrichment extends OnkiLightEnrichment
         }
         $fields = [
             '650' => [
-                'add' => 'topic_add_txt_mv',
+                'pref' => 'topic_add_txt_mv',
+                'alt' => 'topic_alt_txt_mv',
                 'check' => 'topic'
             ],
             '651' => [
-                'add' => 'geographic_add_txt_mv',
+                'pref' => 'geographic_add_txt_mv',
+                'alt' => 'geographic_alt_txt_mv',
                 'check' => 'geographic'
             ]
         ];
@@ -74,7 +76,8 @@ class MarcOnkiLightEnrichment extends OnkiLightEnrichment
                         $record,
                         $solrArray,
                         $id,
-                        $spec['add'],
+                        $spec['pref'],
+                        $spec['alt'],
                         $spec['check']
                     );
                 }

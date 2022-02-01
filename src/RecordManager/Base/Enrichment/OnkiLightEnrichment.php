@@ -109,7 +109,11 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
      * @param AbstractRecord $record             Metadata record
      * @param array          $solrArray          Metadata to be sent to Solr
      * @param string         $id                 Onki id
-     * @param string         $solrField          Target Solr field
+     * @param string         $solrPrefField      Target Solr field for preferred
+     *                                           values (e.g. for terms in other
+     *                                           languages)
+     * @param string         $solrAltField       Target Solr field for alternative
+     *                                           values
      * @param string         $solrCheckField     Solr field to check for existing
      *                                           values
      * @param bool           $includeInAllfields Whether to include the enriched
@@ -122,7 +126,8 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
         AbstractRecord $record,
         &$solrArray,
         $id,
-        $solrField,
+        $solrPrefField,
+        $solrAltField,
         $solrCheckField = '',
         $includeInAllfields = false
     ) {
@@ -132,14 +137,6 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
             [],
             $id
         );
-
-        // TODO: Deprecated, remove in future:
-        $solrFieldBaseName = str_replace(
-            ['_add_txt_mv', '_txt_mv', '_str_mv'],
-            '',
-            $solrField
-        );
-        $solrArray[$solrFieldBaseName . '_uri_str_mv'][] = $id;
 
         // Check that the ID prefix matches that of the allowed ones
         $match = false;
@@ -160,21 +157,32 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
         }
 
         $checkFieldContents = $solrCheckField
-            ? (array)($solrArray[$solrCheckField] ?? [])
-            : [];
+            ? array_map(
+                function ($s) {
+                    return mb_strtolower($s, 'UTF-8');
+                },
+                (array)($solrArray[$solrCheckField] ?? [])
+            ) : [];
 
         $localData = $this->db->findOntologyEnrichment(['_id' => $id]);
         if ($localData) {
-            $values = array_merge(
-                explode('|', $localData['prefLabels'] ?? ''),
-                explode('|', $localData['altLabels'] ?? '')
-            );
-            $values = array_diff($values, $checkFieldContents);
-            $solrArray[$solrField]
-                = array_merge($solrArray[$solrField] ?? [], $values);
-            if ($includeInAllfields) {
-                $solrArray['allfields']
-                    = array_merge($solrArray['allfields'], $values);
+            $map = [
+                'prefLabels' => $solrPrefField,
+                'altLabels' => $solrAltField
+            ];
+            foreach ($map as $labelField => $solrField) {
+                $values = $this->filterDuplicates(
+                    explode('|', $localData[$labelField] ?? ''),
+                    $checkFieldContents
+                );
+                if ($solrField) {
+                    $solrArray[$solrField]
+                        = array_merge($solrArray[$solrField] ?? [], $values);
+                }
+                if ($includeInAllfields) {
+                    $solrArray['allfields']
+                        = array_merge($solrArray['allfields'], $values);
+                }
             }
             return;
         }
@@ -218,9 +226,12 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
                 }
                 $val = $item['altLabel']['value'] ?? null;
                 if ($item['uri'] == $id && $val
-                    && !in_array($val, $checkFieldContents)
+                    && $this->filterDuplicates([$val], $checkFieldContents)
                 ) {
-                    $solrArray[$solrField][] = $val;
+                    $checkFieldContents[] = mb_strtolower($val, 'UTF-8');
+                    if ($solrAltField) {
+                        $solrArray[$solrAltField][] = $val;
+                    }
                     if ($includeInAllfields) {
                         $solrArray['allfields'][] = $val;
                     }
@@ -281,12 +292,21 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
                             foreach ((array)($matchItem['altLabel'] ?? [])
                                 as $label
                             ) {
-                                $val = $label['value'] ?? null;
-                                if (!$val || in_array($val, $checkFieldContents)) {
+                                if (!($val = $label['value'] ?? null)) {
+                                    continue;
+                                }
+                                $existing = !$this->filterDuplicates(
+                                    [$val],
+                                    $checkFieldContents
+                                );
+                                if ($existing) {
                                     continue;
                                 }
 
-                                $solrArray[$solrField][] = $val;
+                                $checkFieldContents[] = mb_strtolower($val, 'UTF-8');
+                                if ($solrAltField) {
+                                    $solrArray[$solrAltField][] = $val;
+                                }
                                 if ($includeInAllfields) {
                                     $solrArray['allfields'][] = $val;
                                 }
@@ -295,10 +315,21 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
                             foreach ((array)($matchItem['prefLabel'] ?? [])
                                 as $label
                             ) {
-                                if (!$val = $label['value'] ?? null) {
+                                if (!($val = $label['value'] ?? null)) {
                                     continue;
                                 }
-                                $solrArray[$solrField][] = $val;
+                                $existing = !$this->filterDuplicates(
+                                    [$val],
+                                    $checkFieldContents
+                                );
+                                if ($existing) {
+                                    continue;
+                                }
+
+                                $checkFieldContents[] = mb_strtolower($val, 'UTF-8');
+                                if ($solrPrefField) {
+                                    $solrArray[$solrPrefField][] = $val;
+                                }
                                 if ($includeInAllfields) {
                                     $solrArray['allfields'][] = $val;
                                 }
@@ -308,6 +339,28 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
                 }
             }
         }
+    }
+
+    /**
+     * Filter duplicate values case-insensitively
+     *
+     * @param array $values Values to filter
+     * @param array $check  Values to check against (expected to be lowercase)
+     *
+     * @return array Non-duplicates
+     */
+    protected function filterDuplicates(array $values, array $check)
+    {
+        return array_filter(
+            $values,
+            function ($v) use (&$check) {
+                $v = mb_strtolower($v, 'UTF-8');
+                if ($res = !in_array($v, $check)) {
+                    $check[] = $v;
+                }
+                return $res;
+            }
+        );
     }
 
     /**

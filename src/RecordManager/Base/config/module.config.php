@@ -66,6 +66,7 @@ return [
                 'factories' => [
                     \RecordManager\Base\Enrichment\AuthEnrichment::class => \RecordManager\Base\Enrichment\AuthEnrichmentFactory::class,
                     \RecordManager\Base\Enrichment\EadOnkiLightEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\Ead3OnkiLightEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
                     \RecordManager\Base\Enrichment\LrmiOnkiLightEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
                     \RecordManager\Base\Enrichment\MarcAuthEnrichment::class => \RecordManager\Base\Enrichment\AuthEnrichmentFactory::class,
                     \RecordManager\Base\Enrichment\MarcAuthOnkiLightEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
@@ -77,6 +78,7 @@ return [
                 'aliases' => [
                     'AuthEnrichment' => \RecordManager\Base\Enrichment\AuthEnrichment::class,
                     'EadOnkiLightEnrichment' => \RecordManager\Base\Enrichment\EadOnkiLightEnrichment::class,
+                    'Ead3OnkiLightEnrichment' => \RecordManager\Base\Enrichment\Ead3OnkiLightEnrichment::class,
                     'LrmiOnkiLightEnrichment' => \RecordManager\Base\Enrichment\LrmiOnkiLightEnrichment::class,
                     'MarcAuthEnrichment' => \RecordManager\Base\Enrichment\MarcAuthEnrichment::class,
                     'MarcAuthOnkiLightEnrichment' => \RecordManager\Base\Enrichment\MarcAuthOnkiLightEnrichment::class,
