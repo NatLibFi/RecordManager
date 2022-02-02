@@ -64,8 +64,9 @@ CREATE TABLE `uriCache` (
 CREATE TABLE `ontologyEnrichment` (
   `_id` varchar(255) NOT NULL PRIMARY KEY,
   `type` varchar(255) NOT NULL,
-  `prefLabels` varchar(8192) NULL,
-  `altLabels` varchar(8192) NULL
+  `prefLabels` MEDIUMTEXT NULL,
+  `altLabels` MEDIUMTEXT NULL,
+  `hiddenLabels` MEDIUMTEXT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `logMessage` (

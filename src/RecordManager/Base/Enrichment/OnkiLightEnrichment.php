@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2014-2021.
+ * Copyright (C) The National Library of Finland 2014-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -132,10 +132,12 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
         $includeInAllfields = false
     ) {
         // Clean up any invalid characters from the id
-        $id = str_replace(
-            ['|', '!', '"', '#', '€', '$', '%', '&', '<', '>'],
-            [],
-            $id
+        $id = trim(
+            str_replace(
+                ['|', '!', '"', '#', '€', '$', '%', '&', '<', '>'],
+                [],
+                $id
+            )
         );
 
         // Check that the ID prefix matches that of the allowed ones
@@ -168,7 +170,8 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
         if ($localData) {
             $map = [
                 'prefLabels' => $solrPrefField,
-                'altLabels' => $solrAltField
+                'altLabels' => $solrAltField,
+                'hiddenLabels' => $solrAltField
             ];
             foreach ($map as $labelField => $solrField) {
                 $values = $this->filterDuplicates(
@@ -224,16 +227,24 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
                 } elseif ($item['type'] != 'skos:Concept') {
                     continue;
                 }
-                $val = $item['altLabel']['value'] ?? null;
-                if ($item['uri'] == $id && $val
-                    && $this->filterDuplicates([$val], $checkFieldContents)
-                ) {
-                    $checkFieldContents[] = mb_strtolower($val, 'UTF-8');
-                    if ($solrAltField) {
-                        $solrArray[$solrAltField][] = $val;
-                    }
-                    if ($includeInAllfields) {
-                        $solrArray['allfields'][] = $val;
+                $vals = [];
+                if ($val = $item['altLabel']['value'] ?? null) {
+                    $vals[] = $val;
+                }
+                if ($val = $item['hiddenLabel']['value'] ?? null) {
+                    $vals[] = $val;
+                }
+                if ($item['uri'] == $id && $vals) {
+                    foreach ($this->filterDuplicates($vals, $checkFieldContents)
+                        as $val
+                    ) {
+                        $checkFieldContents[] = mb_strtolower($val, 'UTF-8');
+                        if ($solrAltField) {
+                            $solrArray[$solrAltField][] = $val;
+                        }
+                        if ($includeInAllfields) {
+                            $solrArray['allfields'][] = $val;
+                        }
                     }
                 }
 

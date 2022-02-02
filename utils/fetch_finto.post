@@ -1,0 +1,30 @@
+query=PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+SELECT
+	(?uri AS ?_id)
+	('finto' as ?type)
+    (GROUP_CONCAT(DISTINCT STR(?prefLabel); separator='|') AS ?prefLabels)
+    (GROUP_CONCAT(DISTINCT STR(?altLabel); separator='|') AS ?altLabels)
+    (GROUP_CONCAT(DISTINCT STR(?hiddenLabel); separator='|') AS ?hiddenLabels)
+WHERE {
+  VALUES ?graph {
+    <http://www.yso.fi/onto/yso/>
+    <http://www.yso.fi/onto/ysa/>
+    <http://www.yso.fi/onto/allars/>
+    <http://www.yso.fi/onto/yso-paikat/>
+    <http://www.yso.fi/onto/koko/>
+    <http://www.yso.fi/onto/kauno/>
+  }
+  GRAPH ?graph {
+    ?uri a skos:Concept .
+    FILTER NOT EXISTS { ?uri owl:deprecated true }
+    ?uri skos:prefLabel ?prefLabel .
+    OPTIONAL {
+      ?uri skos:altLabel ?altLabel
+    }
+    OPTIONAL {
+      ?uri skos:hiddenLabel ?hiddenLabel
+    }
+  }
+}
+GROUP BY ?uri
