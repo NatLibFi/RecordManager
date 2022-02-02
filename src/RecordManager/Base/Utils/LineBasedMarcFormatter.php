@@ -41,6 +41,13 @@ namespace RecordManager\Base\Utils;
 class LineBasedMarcFormatter
 {
     /**
+     * Count of bad characters encountered during most recent conversion.
+     *
+     * @var int
+     */
+    protected $badChars = 0;
+
+    /**
      * Format definitions for line based MARC formats
      *
      * @var array
@@ -70,6 +77,17 @@ class LineBasedMarcFormatter
     }
 
     /**
+     * Get count of bad characters encountered during the last call to
+     * convertLineBasedMarcToXml().
+     *
+     * @return int
+     */
+    public function getIllegalXmlCharacterCount(): int
+    {
+        return $this->badChars;
+    }
+
+    /**
      * Convert a line-based MARC record ("tagged" output) to MARCXML
      *
      * Supports formats from Alma MARC record view and OCLC tagged output
@@ -78,7 +96,7 @@ class LineBasedMarcFormatter
      *
      * @return string
      */
-    public function convertLineBasedMarcToXml(string $metadata)
+    public function convertLineBasedMarcToXml(string $metadata): string
     {
         $xml = simplexml_load_string(
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n"
@@ -169,6 +187,13 @@ class LineBasedMarcFormatter
                 }
             }
         }
-        return $record->asXML();
+        // Strip illegal characters from XML, and save a count for reference:
+        return preg_replace(
+            '/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u',
+            '',
+            $record->asXML(),
+            -1,
+            $this->badChars
+        );
     }
 }

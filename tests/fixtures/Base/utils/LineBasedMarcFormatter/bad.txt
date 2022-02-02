@@ -1,0 +1,36 @@
+LDR‡04114cam a2200445Ii 4500^
+001‡ocn875586868^
+003‡OCoLC^
+005‡20180731020322.0^
+006‡m     o  d        ^
+008‡140403t20142014nju     ob    001 0 eng d^
+020  ‡a9781118433829^
+020  ‡a1118433823^
+020  ‡a9781118419496^
+020  ‡a1118419499^
+020  ‡a9781118421017^
+020  ‡a1118421019^
+020  ‡a9781306550758^
+020  ‡a1306550750^
+040  ‡aN$T‡beng‡erda‡epn‡cN$T‡dIDEBK‡dEBLCP‡dMHW‡dUKMGB‡dE7B‡dYDXCP‡dUMI‡dRECBK‡dB24X7‡dDEBBG‡dCOO‡dCDX‡dOCLCQ‡dOCLCF‡dDG1‡dDEBSZ‡dLOA‡dYDX‡dOCLCA‡dCOCUF‡dDG1‡dMOR‡dZ5A‡dCCO‡dLIP‡dPIFAG‡dZCU‡dLIV‡dMERUC‡dOCLCQ‡dU3W‡dMNS‡dREB‡dUCO‡dOCLCQ‡dOCL‡dSTF‡dCEF‡dNRAMU^
+049  ‡aBNAM^
+1001 ‡aSmallwood, Robert F.,‡d1959-^
+24510‡aInformation governance :‡bconcepts, strategies and best practices /‡cRobert F. Smallwood^
+260  ‡aHoboken, New Jersey :‡bJohn Wiley & Sons, Inc.,‡c[2014]^
+260  ‡c©2014^
+300  ‡a1 online resource^
+4901 ‡aWiley CIO series^
+504  ‡aIncludes bibliographical references and index^
+5050 ‡aPart 1: Information Governance Concepts, Definitions, and Principles. The Onslaught of Big Data and the Information Governance Imperative -- Information Governance, IT Governance, Data Governance: What's the Difference? -- Information Governance Principles -- Part 2: Information Governance Risk Assessment and Strategic Planning. Information Risk Planning and Management -- Strategic Planning and Best Practices for Information Governance -- Information Governance Policy Development  Part 3: Information Governance Key Impact Areas Based on the IG Reference Model. Business Considerations for a Successful IG Program / Barclay T Blair -- Information Governance and Legal Functions / Robert Smallwood, Randy Esq Kahn, Barry Murphy -- Information Governance and Records and Information Management Functions -- Information Governance and Information Technology Functions -- Information Governance and Privacy and Security Functions  Part 4: Information Governance for Delivery Platforms. Information Governance for E-Mail and Instant Messaging -- Information Governance for Social Media / Patricia Franks, Robert Smallwood -- Information Governance for Mobile Devices -- Information Governance for Cloud Computing / Monica Crocker, Robert Smallwood -- SharePoint® Information Governance / Monica Crocker, Robert Smallwood -- Long-Term Program Issues. Long-Term Digital Preservation / Charles M Dollar, Lori J Ashley -- Maintaining an Information Governance Program and Culture of Compliance -- Information Organization and Classification: Taxonomies and Metadata -- Laws and Major Regulations Related to Records Management -- Laws and Major Regulations Related to Privacy^
+520  ‡a"Information Governance (IG) is a rapidly emerging "super discipline" and is now being applied to electronic document and records management, email, social media, cloud computing, mobile computing, and, in fact, the management and output of information organization-wide. IG leverages information technologies to enforce policies, procedures and controls to manage information risk in compliance with legal and litigation demands, external regulatory requirements, and internal governance objectives. Information Governance: Concepts, Strategies, and Best Practices reveals how, and why, to utilize IG and leverage information technologies to control, monitor, and enforce information access and security policies"--Publisher's website^
+5880 ‡aOnline resource (Wiley, Bloomberg Law, viewed March 12, 2018)^
+650 0‡aInformation resources management^
+650 0‡aElectronic records‡xManagement^
+650 0‡aInformation storage and retrieval systems‡xBusiness^
+650 0‡aKnowledge management^
+650 0‡aManagement information systems^
+77608‡iPrint version:‡aSmallwood, Robert F., 1959-‡tInformation governance.‡dHoboken, NJ : Wiley, 2014‡z9781118218303‡w(DLC)  2013045072‡w(OCoLC)809616892^
+830 0‡aWiley CIO series^
+85640‡3Bloomberg Law‡uhttps://www.bloomberglaw.com/browser/105.525412^
+907  ‡a.b238551x^
+998  ‡ainter^

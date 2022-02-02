@@ -43,47 +43,58 @@ class LineBasedMarcFormatterTest extends \PHPUnit\Framework\TestCase
     use \RecordManagerTest\Base\Feature\FixtureTrait;
 
     /**
-     * Test that an Alma example parses correctly.
+     * Data provider for testConversion()
      *
-     * @return void
+     * @return array
      */
-    public function testAlmaExample()
+    public function getConversionTests(): array
     {
-        // This should work with default configs:
-        $formatter = new LineBasedMarcFormatter();
+        $genieConfig = [
+            [
+                'subfieldRegExp' => '/‡([a-z0-9])/',
+                'endOfLineMarker' => '^',
+                'ind1Offset' => 3,
+                'ind2Offset' => 4,
+                'contentOffset' => 4,
+                'firstSubfieldOffset' => 5,
+            ],
+        ];
 
-        $input = $this->getFixture('utils/LineBasedMarcFormatter/alma.txt');
-        $this->assertXmlStringEqualsXmlFile(
-            $this->getFixturePath('utils/LineBasedMarcFormatter/alma.xml'),
-            $formatter->convertLineBasedMarcToXml($input)
-        );
+        return [
+            'Alma example' => ['alma'],
+            'GeniePlus example (good data)' => ['genieplus', $genieConfig],
+            'GeniePlus example (with bad XML characters)' =>
+                ['bad', $genieConfig, 2],
+        ];
     }
 
     /**
-     * Test that a GeniePlus example parses correctly.
+     * Test that an Alma example parses correctly.
+     *
+     * @param string $fixtureName Base name for test fixtures (assumes .txt file with
+     *                            line-based data and .xml file w/ expected results)
+     * @param ?array $configs     Custom configurations (if any)
+     * @param int    $badChars    Expected number of bad XML characters encountered
+     *                            during conversion
      *
      * @return void
+     *
+     * @dataProvider getConversionTests
      */
-    public function testGeniePlusExample()
-    {
-        // This format requires non-default configs:
-        $formatter = new LineBasedMarcFormatter(
-            [
-                [
-                    'subfieldRegExp' => '/‡([a-z0-9])/',
-                    'endOfLineMarker' => '^',
-                    'ind1Offset' => 3,
-                    'ind2Offset' => 4,
-                    'contentOffset' => 4,
-                    'firstSubfieldOffset' => 5,
-                ],
-            ]
-        );
+    public function testConversion(
+        string $fixtureName,
+        ?array $configs = null,
+        int $badChars = 0
+    ): void {
+        // This should work with default configs:
+        $formatter = new LineBasedMarcFormatter($configs);
 
-        $input = $this->getFixture('utils/LineBasedMarcFormatter/genieplus.txt');
+        $fixtureBase = 'utils/LineBasedMarcFormatter/' . $fixtureName;
+        $input = $this->getFixture($fixtureBase . '.txt');
         $this->assertXmlStringEqualsXmlFile(
-            $this->getFixturePath('utils/LineBasedMarcFormatter/genieplus.xml'),
+            $this->getFixturePath($fixtureBase . '.xml'),
             $formatter->convertLineBasedMarcToXml($input)
         );
+        $this->assertEquals($badChars, $formatter->getIllegalXmlCharacterCount());
     }
 }
