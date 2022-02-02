@@ -92,12 +92,14 @@ return [
             ],
             'harvest' => [
                 'factories' => [
+                    \RecordManager\Base\Harvest\GeniePlus::class => \RecordManager\Base\Harvest\AbstractBaseFactory::class,
                     \RecordManager\Base\Harvest\HTTPFiles::class => \RecordManager\Base\Harvest\AbstractBaseFactory::class,
                     \RecordManager\Base\Harvest\OaiPmh::class => \RecordManager\Base\Harvest\AbstractBaseFactory::class,
                     \RecordManager\Base\Harvest\Sfx::class => \RecordManager\Base\Harvest\AbstractBaseFactory::class,
                     \RecordManager\Base\Harvest\SierraApi::class => \RecordManager\Base\Harvest\AbstractBaseFactory::class,
                 ],
                 'aliases' => [
+                    'GeniePlus' => \RecordManager\Base\Harvest\GeniePlus::class,
                     'OAI-PMH' => \RecordManager\Base\Harvest\OaiPmh::class,
                     'SFX' => \RecordManager\Base\Harvest\Sfx::class,
                     // Legacy alias:

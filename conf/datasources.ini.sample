@@ -187,3 +187,33 @@ institution = SierraLib
 format = marc
 dedup = true
 building_mapping = sierra_locations.map
+
+; Sample configuration for GeniePlus REST API
+[GeniePlus]
+type = GeniePlus
+geniePlusDatabase = "[api_database_name]"
+geniePlusOauthId = "[api_oauth_identifier]"
+geniePlusUsername = "[api_username]"
+geniePlusPassword = "[api_password]"
+; This setting specifies the template within the API which contains catalog
+; records:
+geniePlusTemplate = Catalog
+; These settings specify the GeniePlus API response fields containing unique ID
+; and MARC data.
+geniePlusIdField = UniqRecNum
+geniePlusMarcField = MarcRecord
+; These settings specify the GeniePlus API response fields containing item
+; information, to be injected into 852 fields in the MARC record.
+geniePlusLocationField = Inventory.Location.CodeDesc
+geniePlusSublocationField = Inventory.SubLoc.CodeDesc
+geniePlusCallnumberField = Inventory.CallNumLC
+geniePlusBarcodeField = Inventory.Barcode
+; These settings control the MARC field/subfield in which unique GeniePlus IDs will
+; be injected:
+geniePlusUniqueIdOutputField = 999
+geniePlusUniqueIdOutputSubfield = c
+url = "[api_url]"
+batchSize = 100
+institution = GeniePlusLib
+format = marc
+dedup = false
