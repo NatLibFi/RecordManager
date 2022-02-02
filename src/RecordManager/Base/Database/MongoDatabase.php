@@ -486,7 +486,17 @@ class MongoDatabase extends AbstractDatabase
      */
     public function saveUriCache($record)
     {
-        return $this->saveMongoRecord($this->uriCacheCollection, $record);
+        try {
+            return $this->saveMongoRecord($this->uriCacheCollection, $record);
+        } catch (\Exception $e) {
+            // Since this can be done by multiple workers simultaneously, we might
+            // encounter duplicate inserts at the same time, so ignore duplicate key
+            // errors.
+            if (strncmp($e->getMessage(), 'E11000 ', 7) === 0) {
+                return $record;
+            }
+            throw $e;
+        }
     }
 
     /**

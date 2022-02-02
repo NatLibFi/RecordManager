@@ -299,23 +299,15 @@ abstract class AbstractEnrichment
 
         $data = $code < 300 ? $response->getBody() : '';
 
-        try {
-            $this->db->saveUriCache(
-                [
-                    '_id' => $id,
-                    'timestamp' => $this->db->getTimestamp(),
-                    'url' => $url,
-                    'headers' => $headers,
-                    'data' => $data
-                ]
-            );
-        } catch (\Exception $e) {
-            // Since this can be run in multiple processes, we might encounter
-            // duplicate inserts at the same time, so ignore duplicate key errors.
-            if (strncmp($e->getMessage(), 'E11000 ', 7) !== 0) {
-                throw $e;
-            }
-        }
+        $this->db->saveUriCache(
+            [
+                '_id' => $id,
+                'timestamp' => $this->db->getTimestamp(),
+                'url' => $url,
+                'headers' => $headers,
+                'data' => $data
+            ]
+        );
 
         return $data;
     }

@@ -469,7 +469,17 @@ class PDODatabase extends AbstractDatabase
      */
     public function saveUriCache($record)
     {
-        return $this->savePDORecord($this->uriCacheCollection, $record);
+        try {
+            return $this->savePDORecord($this->uriCacheCollection, $record);
+        } catch (\PDOException $e) {
+            // Since this can be done by multiple workers simultaneously, we might
+            // encounter duplicate inserts at the same time, so ignore duplicate key
+            // errors.
+            if (($e->errorInfo[1] ?? 0) == 1062) {
+                return $record;
+            }
+            throw $e;
+        }
     }
 
     /**
