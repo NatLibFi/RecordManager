@@ -191,13 +191,13 @@ building_mapping = sierra_locations.map
 ; Sample configuration for GeniePlus REST API
 [GeniePlus]
 type = GeniePlus
-genieplusDatabase = "[api_database_name]"
+geniePlusDatabase = "[api_database_name]"
 geniePlusOauthId = "[api_oauth_identifier]"
 geniePlusUsername = "[api_username]"
 geniePlusPassword = "[api_password]"
 ; This setting specifies the template within the API which contains catalog
 ; records:
-genieplusTemplate = Catalog
+geniePlusTemplate = Catalog
 ; These settings specify the GeniePlus API response fields containing unique ID
 ; and MARC data.
 geniePlusIdField = UniqRecNum

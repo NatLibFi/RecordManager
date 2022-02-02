@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2016-2021.
+ * Copyright (c) Villanova University 2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -21,7 +21,7 @@
  *
  * @category DataManagement
  * @package  RecordManager
- * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Demian Katz <demian.katz@villanova.edu>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
@@ -37,7 +37,7 @@ use RecordManager\Base\Utils\LineBasedMarcFormatter;
  *
  * @category DataManagement
  * @package  RecordManager
- * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Demian Katz <demian.katz@villanova.edu>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
@@ -206,7 +206,7 @@ class GeniePlus extends AbstractBase
         parent::init($source, $verbose, $reharvest);
 
         $settings = $this->dataSourceConfig[$source] ?? [];
-        if (empty($settings['genieplusDatabase'])
+        if (empty($settings['geniePlusDatabase'])
             || empty($settings['geniePlusOauthId'])
             || empty($settings['geniePlusUsername'])
             || empty($settings['geniePlusPassword'])
@@ -215,14 +215,14 @@ class GeniePlus extends AbstractBase
                 'Required GeniePlus setting missing from settings'
             );
         }
-        $this->database = $settings['genieplusDatabase'];
-        $this->template = $settings['genieplusTemplate'] ?? 'Catalog';
+        $this->database = $settings['geniePlusDatabase'];
+        $this->template = $settings['geniePlusTemplate'] ?? 'Catalog';
         $this->oauthId = $settings['geniePlusOauthId'];
         $this->username = $settings['geniePlusUsername'];
         $this->password = $settings['geniePlusPassword'];
         $this->batchSize = $settings['batchSize'] ?? 100;
         $this->idField = $settings['geniePlusIdField'] ?? 'UniqRecNum';
-        $this->marcField = $settings['MarcRecord'] ?? 'MarcRecord';
+        $this->marcField = $settings['geniePlusMarcField'] ?? 'MarcRecord';
         $this->locationField = $settings['geniePlusLocationField']
             ?? 'Inventory.Location.CodeDesc';
         $this->sublocationField = $settings['geniePlusSublocationField']
@@ -628,16 +628,10 @@ class GeniePlus extends AbstractBase
         $id = $record[$this->idField][0]['display'];
 
         // Convert to XML (and strip any illegal characters that slipped through)
-        $replacementCount = 0;
-        $rawXml = preg_replace(
-            '/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u',
-            '',
-            $this->lineBasedFormatter->convertLineBasedMarcToXml($marc),
-            -1,
-            $replacementCount
-        );
+        $rawXml = $this->lineBasedFormatter->convertLineBasedMarcToXml($marc);
+        $replacementCount = $this->lineBasedFormatter->getIllegalXmlCharacterCount();
         if ($replacementCount > 0) {
-            $this->infoMsg("Replaced $replacementCount bad chars in record $id");
+            $this->warningMsg("Replaced $replacementCount bad chars in record $id");
         }
         $xml = simplexml_load_string($rawXml);
         if (!$xml) {
