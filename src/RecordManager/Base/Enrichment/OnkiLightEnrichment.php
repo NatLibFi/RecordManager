@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2014-2021.
+ * Copyright (C) The National Library of Finland 2014-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -132,10 +132,12 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
         $includeInAllfields = false
     ) {
         // Clean up any invalid characters from the id
-        $id = str_replace(
-            ['|', '!', '"', '#', '€', '$', '%', '&', '<', '>'],
-            [],
-            $id
+        $id = trim(
+            str_replace(
+                ['|', '!', '"', '#', '€', '$', '%', '&', '<', '>'],
+                [],
+                $id
+            )
         );
 
         // Check that the ID prefix matches that of the allowed ones
