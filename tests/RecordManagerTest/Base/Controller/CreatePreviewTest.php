@@ -70,7 +70,7 @@ class CreatePreviewTest extends \PHPUnit\Framework\TestCase
      */
     public function testCreatePreview()
     {
-        $record = $this->getFixture('Controller/preview_marc.xml');
+        $record = $this->getFixture('Controller/CreatePreview/preview_marc.xml');
         $preview = $this->getCreatePreview($record);
 
         $result = $preview->launch(
@@ -79,7 +79,7 @@ class CreatePreviewTest extends \PHPUnit\Framework\TestCase
             'test'
         );
         $expected = json_decode(
-            $this->getFixture('Controller/preview_result.json'),
+            $this->getFixture('Controller/CreatePreview/preview_result.json'),
             true
         );
 
