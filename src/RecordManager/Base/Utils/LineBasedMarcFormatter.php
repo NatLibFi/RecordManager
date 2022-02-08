@@ -118,7 +118,7 @@ class LineBasedMarcFormatter
 
         // Set up offsets from format config (if available):
         $contentOffset = $format['contentOffset'] ?? 4;
-        $leaderOffset = $format['leaderOffset'] ?? 4;
+        $leaderOffset = $format['leaderOffset'] ?? 0;
         $ind1Offset = $format['ind1Offset'] ?? 4;
         $ind2Offset = $format['ind2Offset'] ?? 5;
         $firstSubfieldOffset = $format['firstSubfieldOffset'] ?? 7;
