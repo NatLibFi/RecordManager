@@ -56,6 +56,7 @@ class LineBasedMarcFormatterTest extends \PHPUnit\Framework\TestCase
                 'ind1Offset' => 3,
                 'ind2Offset' => 4,
                 'contentOffset' => 4,
+                'leaderOffset' => 0,
                 'firstSubfieldOffset' => 5,
             ],
         ];

@@ -1,20 +1,42 @@
-001‡9042810^
-005‡19830728123748.0^
-008‡821118s1983    miu      b    00110 eng  ^
-010  ‡a82021744^
-020  ‡a0835713954^
-040  ‡aDLC‡cDLC‡dVLA^
+LDR‡02558cmm  2200529Ii 4500^
+001‡on1287119441^
+003‡OCoLC^
+005‡20220208124506.0^
+006‡m     o  d        ^
+007‡cr mn|||||||||^
+008‡211203s2021    inu     o     000 0 eng d^
+035  ‡a(OCoLC)1287119441^
+040  ‡aHLR‡beng‡erda‡cHLR‡dYLS‡dHUL‡dOCL‡dOCLCO^
 043  ‡an-us---^
-049  ‡aVLAM^
-090  ‡aKF2920.3‡b.St1 1983^
-10020‡aSt. Pierre, Kent E.‡q(Kent Edgar)^
-24510‡aAuditor risk and legal liability /‡cby Kent E. St. Pierre^
-2600 ‡aAnn Arbor, Mich. :‡bUMI Research Press,‡cc1983^
-300  ‡a124 p. ;‡c24 cm^
-440 0‡aResearch for businesss decisions ;‡vno. 59^
-500  ‡aRevision of thesis (Ph. D.)--Washington University, St. Louis, 1981^
-500  ‡aIncludes index^
-504  ‡aBibliography: p. [123]-124^
-650 0‡aAuditors‡zUnited States^
-907  ‡a.b1001449^
-998  ‡amissg^"
+24504‡aThe COVID crisis in legal education :‡b2021 Annual survey results  /‡cLSSSE, Law School Survey of Student Engagement.^
+24617‡aLaw School Survey of Student Engagement :‡b2021 annual survey results^
+260  ‡aBloomington, IN :‡bCenter for Postsecondary Research, School of Education, Indiana University Bloomington,‡c[2021]^
+300  ‡a1 online resource (17 pages ):‡bdigital, PDF file^
+336  ‡atext‡btxt‡2rdacontent^
+337  ‡acomputer‡bc‡2rdamedia^
+338  ‡aonline resource‡bcr‡2rdacarrier^
+347  ‡atext file‡bPDF‡2rda^
+520  ‡aProvides public access to an open-access annual report to reveal structural inequalities that had previously created disparities based on race, ethnicity, gender, socioeconomic status, and other markers exploded due to the COVID-19 pandemic in legal education.^
+5880 ‡aContents viewed December 3, 2021; title from home page.^
+647 7‡aCOVID-19 Pandemic‡d(2020-)‡2fast‡0(OCoLC)fst02024716^
+650 0‡aLaw‡xStudy and teaching‡zUnited States.^
+650 0‡aLaw students‡zUnited States‡xAttitudes.^
+650 0‡aLaw schools‡zUnited States.^
+650 0‡aCOVID-19 (Disease)‡xSocial aspects‡zUnited States.^
+650 0‡aCOVID-19 Pandemic, 2020-‡zUnited States‡xInfluence.^
+650 0‡aPublic health‡xSocial aspects‡zUnited States.^
+650 0‡aEpidemics‡xSocial aspects‡zUnited States.^
+650 7‡aInfluence (Literary, artistic, etc.)‡2fast‡0(OCoLC)fst00972484^
+650 7‡aLaw‡xStudy and teaching.‡2fast‡0(OCoLC)fst00993829^
+650 7‡aLaw students‡xAttitudes.‡2fast‡0(OCoLC)fst00994147^
+650 7‡aLaw schools.‡2fast‡0(OCoLC)fst00994121^
+650 7‡aCOVID-19 (Disease)‡xSocial aspects.‡2fast‡0(OCoLC)fst01984649^
+650 7‡aPublic health‡xSocial aspects.‡2fast‡0(OCoLC)fst01082307^
+650 7‡aEpidemics‡xSocial aspects.‡2fast‡0(OCoLC)fst00914088^
+651 7‡aUnited States.‡2fast‡0(OCoLC)fst01204155^
+655 4‡aElectronic books.^
+7102 ‡aIndiana University, Bloomington.‡bCenter for Postsecondary Research,‡eissuing body.^
+85640‡uhttps://lssse.indiana.edu/wp-content/uploads/2015/12/COVID-Crisis-in-Legal-Education-Final-10.28.21.pdf^
+948  ‡hNO HOLDINGS IN VLA - 15 OTHER HOLDINGS^
+994  ‡aZ0‡bVLA^
+998  ‡ainter^
