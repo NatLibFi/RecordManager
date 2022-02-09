@@ -67,11 +67,11 @@ counts = false
 
 [Solr]
 ; Update URL. Note that RecordManager requires that the json update method be available.
-update_url = http://localhost:8080/solr/biblio/update/json
+update_url = http://localhost:8983/solr/biblio/update/json
 ; Search URL. Used in comparesolr function.
-search_url = http://localhost:8080/solr/biblio2/search
+search_url = http://localhost:8983/solr/biblio2/search
 ; Admin URL. Used for watching SolrCloud cluster state.
-admin_url = http://localhost:8080/solr/admin
+admin_url = http://localhost:8983/solr/admin
 ; SolrCloud status check interval in seconds. If enabled, updates are disables when
 ; a degraded status is detected. Do not enable for non-cloud installations.
 ;cluster_state_check_interval = 30
