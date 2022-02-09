@@ -1053,6 +1053,7 @@ class MetadataUtils
         $options = 0,
         &$errors = null
     ) {
+        $xml = trim($xml);
         $options |= LIBXML_PARSEHUGE | LIBXML_COMPACT;
         if (null === $errors) {
             return XmlSecurity::scan($xml, $dom, $options);
