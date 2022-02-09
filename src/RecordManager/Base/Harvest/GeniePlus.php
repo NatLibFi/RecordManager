@@ -643,7 +643,7 @@ class GeniePlus extends AbstractBase
         $field->addAttribute('tag', $this->uniqueIdOutputField);
         $field->addAttribute('ind1', ' ');
         $field->addAttribute('ind2', ' ');
-        $sub = $field->addChild('subfield', $id);
+        $sub = $field->addChild('subfield', htmlspecialchars($id, ENT_NOQUOTES));
         $sub->addAttribute('code', $this->uniqueIdOutputSubfield);
 
         // Inject holdings data
@@ -653,7 +653,8 @@ class GeniePlus extends AbstractBase
             $field->addAttribute('ind1', ' ');
             $field->addAttribute('ind2', ' ');
             foreach ($holding as $code => $value) {
-                $sub = $field->addChild('subfield', $value);
+                $sub = $field
+                    ->addChild('subfield', htmlspecialchars($value, ENT_NOQUOTES));
                 $sub->addAttribute('code', $code);
             }
         }
