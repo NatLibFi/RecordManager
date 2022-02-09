@@ -118,6 +118,7 @@ class LineBasedMarcFormatter
 
         // Set up offsets from format config (if available):
         $contentOffset = $format['contentOffset'] ?? 4;
+        $leaderOffset = $format['leaderOffset'] ?? 0;
         $ind1Offset = $format['ind1Offset'] ?? 4;
         $ind2Offset = $format['ind2Offset'] ?? 5;
         $firstSubfieldOffset = $format['firstSubfieldOffset'] ?? 7;
@@ -141,7 +142,7 @@ class LineBasedMarcFormatter
             }
             if ('LDR' === $tag || '000' === $tag) {
                 // Make sure leader is 24 characters:
-                $leader = mb_substr($content, 4, 24, 'UTF-8');
+                $leader = mb_substr($content, $leaderOffset, 24, 'UTF-8');
                 while (mb_strlen($leader, 'UTF-8') < 24) {
                     $leader .= ' ';
                 }
