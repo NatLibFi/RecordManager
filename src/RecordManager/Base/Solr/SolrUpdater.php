@@ -2053,8 +2053,16 @@ class SolrUpdater
                 if ($datavalue === '') {
                     continue;
                 }
-                $values = is_array($datavalue) ? $datavalue
-                    : explode('/', $datavalue);
+                if (is_array($datavalue)) {
+                    $values = array_map(
+                        function ($s) {
+                            return str_replace('/', ' ', $s);
+                        },
+                        $datavalue
+                    );
+                } else {
+                    $values = explode('/', $datavalue);
+                }
                 $hierarchyString = '';
                 $valueCount = count($values);
                 for ($i = 0; $i < $valueCount; $i++) {
