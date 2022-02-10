@@ -449,7 +449,7 @@ class Lido extends AbstractRecord
         $alternateTitles = [];
         $defaultLanguage = $this->getDefaultLanguage();
         foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap
-            ->titleWrap->titleSet as $set
+            ->titleWrap->titleSet ?? [] as $set
         ) {
             $preferredParts = [];
             $alternateParts = [];
