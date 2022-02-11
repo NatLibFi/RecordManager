@@ -208,6 +208,13 @@ geniePlusLocationField = Inventory.Location.CodeDesc
 geniePlusSublocationField = Inventory.SubLoc.CodeDesc
 geniePlusCallnumberField = Inventory.CallNumLC
 geniePlusBarcodeField = Inventory.Barcode
+; When injecting 852 fields, you can limit the number of barcodes injected per
+; location-sublocation-callnumber combination in order to control the length
+; of generated MARC records. If you only need to index holdings-level data
+; instead of item-level data, it is recommended that you set this to 1. If you
+; do not want any location data, set it to 0. You can set it to -1 for no limit
+; (the default setting).
+geniePlusItemLimitPerLocationGroup = -1
 ; These settings control the MARC field/subfield in which unique GeniePlus IDs will
 ; be injected:
 geniePlusUniqueIdOutputField = 999
