@@ -622,7 +622,7 @@ class GeniePlus extends AbstractBase
             if (empty($barcode) && $groupKey === '--') {
                 continue;
             }
-            if (!isset($result[$groupKey])) {
+            if (!isset($groups[$groupKey])) {
                 $groups[$groupKey] = [];
             }
             $groups[$groupKey][] = [
@@ -643,7 +643,7 @@ class GeniePlus extends AbstractBase
      *
      * @return array
      */
-    protected function getHoldings($record): array
+    protected function getHoldings(array $record): array
     {
         // Special case: short circuit if disabled:
         if ($this->itemLimitPerLocationGroup === 0) {
