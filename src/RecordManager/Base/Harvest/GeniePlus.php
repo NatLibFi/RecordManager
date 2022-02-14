@@ -157,6 +157,13 @@ class GeniePlus extends AbstractBase
     protected $uniqueIdOutputSubfield;
 
     /**
+     * Item limit per location group.
+     *
+     * @var int
+     */
+    protected $itemLimitPerLocationGroup = -1;
+
+    /**
      * HTTP client options
      *
      * @var array
@@ -235,6 +242,8 @@ class GeniePlus extends AbstractBase
             = $settings['geniePlusUniqueIdOutputField'] ?? 999;
         $this->uniqueIdOutputSubfield
             = $settings['geniePlusUniqueIdOutputSubfield'] ?? 'c';
+        $this->itemLimitPerLocationGroup
+            = $settings['geniePlusItemLimitPerLocationGroup'] ?? -1;
     }
 
     /**
@@ -575,22 +584,24 @@ class GeniePlus extends AbstractBase
     }
 
     /**
-     * Extract holdings data from an API response. Return an array of arrays
-     * representing 852 fields (indexed by subfield code).
+     * Given independent arrays of locations, sublocations, call numbers and
+     * barcodes, create an array of arrays of holdings data, grouped by the
+     * location-sublocation-callnumber key.
      *
-     * @param array $record Record from API response
+     * @param string[] $locations    Location data
+     * @param string[] $sublocations Sublocation data
+     * @param string[] $callNos      Call number data
+     * @param string[] $barcodes     Barcode data
      *
      * @return array
      */
-    protected function getHoldings($record): array
-    {
-        $locations = $this
-            ->extractDisplayValues($record[$this->locationField] ?? []);
-        $sublocations = $this
-            ->extractDisplayValues($record[$this->sublocationField] ?? []);
-        $callNos = $this
-            ->extractDisplayValues($record[$this->callnumberField] ?? []);
-        $barcodes = $this->extractDisplayValues($record[$this->barcodeField] ?? []);
+    protected function getGroupedHoldingsData(
+        array $locations,
+        array $sublocations,
+        array $callNos,
+        array $barcodes
+    ): array {
+        // Figure out how many iterations are needed to group everything:
         $total = max(
             [
                 count($locations),
@@ -599,14 +610,66 @@ class GeniePlus extends AbstractBase
                 count($barcodes),
             ]
         );
-        $result = [];
+        // Create a collection of location-sublocation-callnumber groups:
+        $groups = [];
         for ($i = 0; $i < $total; $i++) {
-            $result[] = [
-                'a' => $locations[$i] ?? '',
-                'b' => $sublocations[$i] ?? '',
-                'h' => $callNos[$i] ?? '',
-                'p' => $barcodes[$i] ?? '',
+            $location = $locations[$i] ?? '';
+            $sublocation = $sublocations[$i] ?? '';
+            $callNo = $callNos[$i] ?? '';
+            $barcode = $barcodes[$i] ?? '';
+            $groupKey = implode('-', [$location, $sublocation, $callNo]);
+            // If everything is empty, we should skip this one:
+            if (empty($barcode) && $groupKey === '--') {
+                continue;
+            }
+            if (!isset($groups[$groupKey])) {
+                $groups[$groupKey] = [];
+            }
+            $groups[$groupKey][] = [
+                'a' => $location,
+                'b' => $sublocation,
+                'h' => $callNo,
+                'p' => $barcode,
             ];
+        }
+        return $groups;
+    }
+
+    /**
+     * Extract holdings data from an API response. Return an array of arrays
+     * representing 852 fields (indexed by subfield code).
+     *
+     * @param array $record Record from API response
+     *
+     * @return array
+     */
+    protected function getHoldings(array $record): array
+    {
+        // Special case: short circuit if disabled:
+        if ($this->itemLimitPerLocationGroup === 0) {
+            return [];
+        }
+
+        // Extract all the details from the record and group the data:
+        $groups = $this->getGroupedHoldingsData(
+            $this->extractDisplayValues($record[$this->locationField] ?? []),
+            $this->extractDisplayValues($record[$this->sublocationField] ?? []),
+            $this->extractDisplayValues($record[$this->callnumberField] ?? []),
+            $this->extractDisplayValues($record[$this->barcodeField] ?? [])
+        );
+
+        // Now create a result set by applying the per-group limit to the groups:
+        $result = [];
+        foreach ($groups as $group) {
+            // Negative number means "keep everything"
+            if ($this->itemLimitPerLocationGroup < 0) {
+                $result = array_merge($result, $group);
+            } else {
+                $result = array_merge(
+                    $result,
+                    array_slice($group, 0, $this->itemLimitPerLocationGroup)
+                );
+            }
         }
         return $result;
     }
