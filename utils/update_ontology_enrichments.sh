@@ -28,7 +28,8 @@ curl -s -H "Accept: text/csv" --data @${DIR}/${QFILE} ${URL} > ${TMPDIR}/fetch_r
 FIRSTLINE=`head -1 ${TMPDIR}/fetch_result.csv`
 FIRSTLINE=${FIRSTLINE%$'\r'}
 if [ "$FIRSTLINE" != "_id,type,prefLabels,altLabels,hiddenLabels" ]; then
-  echo "Columns not found on first line of ${TMPDIR}/fetch_result.csv: '$FIRSTLINE'"
+  FIRSTLINES=`head -20 ${TMPDIR}/fetch_result.csv`
+  echo "Columns not found on first line of ${TMPDIR}/fetch_result.csv: '$FIRSTLINES'"
 else
   mongoimport --quiet -d ${DATABASE} -c ${COLLECTION} --file ${TMPDIR}/fetch_result.csv --type=csv --headerline --mode=upsert
 fi
