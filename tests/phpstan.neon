@@ -1,6 +1,8 @@
 parameters:
     paths:
         - %currentWorkingDirectory%/src
+    excludePaths:
+        - %currentWorkingDirectory%/src/RecordManager/Base/Database/MongoDatabase.php
     tmpDir: %currentWorkingDirectory%/.phpstan_cache
     level: 0
     parallel:
