@@ -79,83 +79,9 @@ class ForwardTest extends RecordTest
             'title_sort' => 'Havre',
             'description' => 'Marcel Marx, a former author and a well-known'
                 . ' bohemian, has retreated into a voluntary exile in the port city'
-                . ' of Le Havre, where he feels he has reached a closer rapport with'
-                . ' the people serving them in the occupation of the honourable, but'
-                . ' not too profitable, of a shoe-shiner. He has buried his dreams'
-                . ' of a literary breakthrough and lives happily within the triangle'
-                . ' of his favourite bar, his work, and his wife Arletty, when fate'
-                . ' suddenly throws in his path an underage immigrant refugee from'
-                . ' the darkest Africa.<br /><br />As Arletty at the same time gets'
-                . ' seriously ill and is bedridden, Marcel once more has to rise'
-                . ' against the cold wall of human indifference with his only weapon'
-                . ' of innate optimism and the unwavering solidarity of the people'
-                . ' of his quartier, but against him stands the whole blind'
-                . ' machinery of the Western constitutionally governed state, this'
-                . ' time represented by the dragnet of the police, moment by moment'
-                . ' drawing closer around the refugee boy.<br /><br />It\'s time for'
-                . ' Marcel to polish his shoes and reveal his teeth. Marcel Marx,'
-                . ' entinen kirjailija, elää Ranskassa Le Havressa vaatimattomasti'
-                . ' kengänkiillottajana vaimonsa Arlettyn kanssa. Satamakaupungissa'
-                . ' kuohuu: tavarakontista löydetään laittomia'
-                . ' afrikkalaissiirtolaisia. Eräs pakolaisista, nuori Idrissa,'
-                . ' juoksee karkuun poliiseilta. Seuraavana päivänä Marcel löytää'
-                . ' pojan satamasta. Komisario Monet osuu paikalle, mutta Marcel ei'
-                . ' ilmianna karkulaista. Yön turvin mies vie ruokaa Idrissalle ja'
-                . ' laittaa paperipussiin myös rahaa.<br /><br />Kotona Laika-koira'
-                . ' on levoton: Arletty ei voi hyvin. Naapuri, Yvette, vie'
-                . ' pariskunnan sairaalaan, mutta tohtori Becker kehottaa Marcelia'
-                . ' palaamaan kotiin. Marcel löytää Idrissan vajastaan. Poika on'
-                . ' tullut maksamaan velkansa ja kertoo haluavansa Lontooseen'
-                . ' äitinsä luo. Marcel päättää auttaa ja antaa pojalle'
-                . ' piilopaikan.<br /><br />Arletty kuulee tohtorilta, että hänen'
-                . ' elämänsä on ihmeen varassa. ”Ihmeitä ei tapahdu minun'
-                . ' korttelissani”, nainen tuumaa ja kieltää kertomasta tilansa'
-                . ' vakavuutta puolisolleen. Marcelilla on huolta myös Idrissasta,'
-                . ' mutta koko hänen naapurustonsa on suureksi avuksi. Ainoastaan'
-                . ' vastapäisen talon vanhus soittaa poliisille'
-                . ' siirtolaishavainnostaan. Komisario Monet kehottaa Marcelia'
-                . ' varomaan naapuriaan.<br /> <br />Marcel ryhtyy selvittämään,'
-                . ' miten Idrissa löytäisi äitinsä Lontoosta. Hän jättää pojan'
-                . ' Yvetten hoitoon ja lähtee Calais’hen tapaamaan pakolaisleirillä'
-                . ' olevaa Idrissan isoisää. Pakolaiskeskuksen'
-                . ' maahanmuuttoviranomaisia Marcel hämmentää väittämällä kivenkovaa'
-                . ' olevansa sukua, ”perheen albiino”. Isoisä antaa matkaohjeet ja'
-                . ' osoitteen. Sillä välin Idrissa karkaa Yvetten luota'
-                . ' kiillottamaan kenkiä asemalle. Marcelin naapuri yrittää ottaa'
-                . ' pojan kiinni, mutta Marcelin työtoveri Chang tulee hätiin ja'
-                . ' poika pääsee jälleen turvaan. <br /><br />Sairaalan'
-                . ' vierastunnilla Arletty valehtelee tilastaan aviomiehelleen. Hän'
-                . ' kieltää hoitojensa vuoksi Marcelia tulemasta tervehtimään ja'
-                . ' käskee tätä palaamaan kahden viikon päästä ja tuomaan hänen'
-                . ' keltaisen leninkinsä. Yvetten ja kapakoitsija Clairen kanssa'
-                . ' Arletty ei vaihda kuulumisia sen pirteämmin, vaan on'
-                . ' huonokuntoinen ja väsynyt.<br /><br />Komisario Monet tekee'
-                . ' tutkimuksiaan. Hän tarkkailee Marcelin liikkeitä ja kyselee'
-                . ' vihanneskauppiaalta tietoja miehestä. Ananas muassaan hän menee'
-                . ' myös Clairen baariin. Claire häätää asiakkaat pois ja istahtaa'
-                . ' juttusille Monet’n kanssa. He ovat vanhoja tuttuja; komisario'
-                . ' toimitti Clairen aviomiesvainaan telkien taa.<br /><br />Marcel'
-                . ' sopii satamassa Idrissan pakojärjestelyistä. Venekyytiin'
-                . ' tarvitaan 3000 euroa. Ystävät ehdottavat, että Marcel'
-                . ' järjestäisi muodikkaan tukikonsertin. Kun Marcel saa hierottua'
-                . ' paikallisen rock-legendan Little Bobin ja tämän kipakan vaimon'
-                . ' Mimien välille sovinnon, voidaan konsertti järjestää. Marcel'
-                . ' itse erehtyy päivästä ja joutuu lähettämään Idrissan sairaalaan'
-                . ' Arlettyn mekkoa viemään. Idrissa kehottaa Arlettya paranemaan'
-                . ' pian, sillä Marcel ei pärjää ilman vaimoaan.<br /><br />Little'
-                . ' Bobin konsertti on menestys, ja Marcel saa tarvittavan summan'
-                . ' kasaan, ennen kuin poliisit saapuvat. Tilanne kotikulmilla käy'
-                . ' kuumaksi, ja Monet varoittaa Marcelia viime tipassa. Poliisit'
-                . ' rynnivät kengänkiillottajan asuntoon, mutta Idrissa pakenee'
-                . ' ikkunasta. Hänet kuskataan satamaan vihanneskärryissä. Poika'
-                . ' saadaan veneeseen ja raha-asiat hoidettua, kun poliisit'
-                . ' saartavat sataman. Monet saapuu hätiin ja on tarkistavinaan'
-                . ' laivan, jossa Marcel ja Idrissa ovat. Hän ei ilmianna'
-                . ' pakolaista, vaan poika pääsee matkaan. Marcel ja Monet'
-                . ' ystävystyvät.<br /><br />Sairaalassa on tapahtunut ihme:'
-                . ' Arletty on toipunut ja pariskunta pääsee palaamaan kotiin.'
-                . ' Kotona kirsikkapuu kukkii.<br /><br /><i>Teksti: Suomen'
-                . ' kansallisfilmografia / Tytti Rantanen 2016</i>',
+                . ' of Le Havre[...] Marcel Marx, entinen kirjailija, elää Ranskassa'
+                . ' Le Havressa vaatimattomasti kengänkiillottajana vaimonsa'
+                . ' Arlettyn kanssa[...]',
             'topic_facet' => [
                 0 => 'ananas',
                 1 => 'auttaminen',
@@ -1003,376 +929,506 @@ class ForwardTest extends RecordTest
             'publisher' => [
             ],
             'allfields' => [
-                0 => 'Le Havre',
-                1 => 'Le Havre',
-                2 => 'Le Havre',
-                3 => 'Mannen från Le Havre',
-                4 => 'Le Havre',
-                5 => 'Le Havre',
-                6 => 'Le Havre',
-                7 => 'El Havre',
-                8 => 'El Puerto',
-                9 => 'El Puerto',
-                10 => 'Le Havre: el puerto de la esperanza',
-                11 => 'Hof mivtahim',
-                12 => 'Miracolo a Le Havre',
-                13 => 'To limani tis Havris',
-                14 => 'Havras',
-                15 => 'Le Havre',
-                16 => 'O Porto',
-                17 => 'Czlowiek z Hawru',
-                18 => 'Miraklet i Le Havre',
-                19 => 'Umut Limani',
-                20 => 'Kikötői történet',
-                21 => 'Gavr',
-                22 => 'Le Havre: Sadamalinn',
-                23 => 'Le Havre',
-                24 => 'Suomi',
-                25 => 'Ranska',
-                26 => 'Saksa',
-                27 => '2011',
-                28 => 'Aki Kaurismäki',
-                29 => 'Aki Kaurismäki',
-                30 => 'Aki Kaurismäki',
-                31 => 'Timo Salminen',
-                32 => 'Timo Linnasalo',
-                33 => 'Tero Malmberg',
-                34 => 'Wouter Zoon',
-                35 => 'Fred Cambier',
-                36 => 'Valérie Théry-Hamel',
-                37 => 'Gilles Charmant',
-                38 => 'Olli Varja',
-                39 => 'Claire Langmann',
-                40 => 'Rémi Pradinas',
-                41 => 'Mark Lwoff',
-                42 => 'Fabienne Vonier',
-                43 => 'Reinhard Brundig',
-                44 => 'Michel Reilhac',
-                45 => 'Rémi Burah',
-                46 => 'Meinolf Zurhorst',
-                47 => 'Lucas Loubaresse',
-                48 => 'Renaud Gast',
-                49 => 'Irmeli Debarle',
-                50 => 'Malla Hukkanen',
-                51 => 'Mika Ailasmäki',
-                52 => 'Anne Vahlsten',
-                53 => 'Kalle Penttilä',
-                54 => 'Ville Väänänen',
-                55 => 'Éric Garzena',
-                56 => 'Cyril Dupont',
-                57 => 'Lazar Abdelkebir',
-                58 => 'Benjamin Laurent',
-                59 => 'Tero Malmberg',
-                60 => 'Konsta Hormia',
-                61 => 'Iisakki Hormia',
-                62 => 'Olli Pärnänen',
-                63 => 'Thomas Pitre',
-                64 => 'Pomme Delépine',
-                65 => 'Ireneusz (Irek) Spiewak',
-                66 => 'Gérard Simonet',
-                67 => 'Jean-Claude Guilleman',
-                68 => 'Sébastien Gallien',
-                69 => 'Pascal Courtinel',
-                70 => 'Laurent Thévenot',
-                71 => 'Clara Lyonnet',
-                72 => 'Diane Wehrly',
-                73 => 'Paula Oinonen',
-                74 => 'Élise Pradinas',
-                75 => 'Elsa Pharaon',
-                76 => 'Jean Eninger',
-                77 => 'Augustin Werkoff',
-                78 => 'Guillaume Moinard',
-                79 => 'Marine Longuet',
-                80 => 'Pauline Reichenbach',
-                81 => 'Yoann Le Gruiec',
-                82 => 'Agnès Fanget',
-                83 => 'Stéphanie Jossec',
-                84 => 'Frank Lesniak',
-                85 => 'Frédéric Sibeud',
-                86 => 'Thibault Spiral',
-                87 => 'Mathieu Raab',
-                88 => 'Lucien Lefèbvre',
-                89 => 'Éric Morel',
-                90 => 'Didier Guéroult',
-                91 => 'Gilbert Devaux',
-                92 => 'Bruno Joignant',
-                93 => 'Thomas Guérin',
-                94 => 'Stéphane Livonnen',
-                95 => 'Patrice Campelli',
-                96 => 'Karl Lemeray',
-                97 => 'Jean-Marie Paillette',
-                98 => 'Guillaume Macquet',
-                99 => 'Patrick Leboucher',
-                100 => 'Irmeli Debarle',
-                101 => 'Mikko Lyytikäinen',
-                102 => 'Ève Bruant',
-                103 => 'Hanna Hemilä',
-                104 => 'Haije Tulokas',
-                105 => 'Eevi Kareinen',
-                106 => 'Kirsi Hatara',
-                107 => 'Heikki Keskinen',
-                108 => 'Stéphane Parthenay',
-                109 => 'Valérie Farthouat',
-                110 => 'Philippe Leconte',
-                111 => 'Anne Berjon',
-                112 => 'Fanette Martinie',
-                113 => 'Louise Lehec',
-                114 => 'Karl Baumgartner',
-                115 => 'Rainer Teusner',
-                116 => 'Viola Fügen',
-                117 => 'Camelia Förster',
-                118 => 'Frédéric Baroudel',
-                119 => 'Catherine Athon',
-                120 => 'Frédéric Casnin',
-                121 => 'Frédéric Jupin',
-                122 => 'Dominique Champel',
-                123 => 'Gérard Estival',
-                124 => 'Thierry Gazaud',
-                125 => 'Franck Tassoul',
-                126 => 'Eric Sithavaja',
-                127 => 'Jan-Eric Nyström',
-                128 => 'Cinéstéréo',
-                129 => 'Sputnik Oy',
-                130 => 'Ciné Lumières de Paris',
-                131 => 'Cinésyl',
-                132 => 'Cinéma le studio Le Havre',
-                133 => 'Studio Honolulu',
-                134 => 'Ptit Bernard Location',
-                135 => 'ATP Autocars',
-                136 => 'Bus Océane',
-                137 => 'Association La Roue en Bois',
-                138 => 'Groupe TSF',
-                139 => 'Cinéboutique',
-                140 => 'Maratier',
-                141 => 'Le Vestiaire',
-                142 => 'Any d\'Avray',
-                143 => 'Rubini & Associés',
-                144 => 'Yrittäjäin Fennia',
-                145 => 'André Wilms',
-                146 => 'Kati Outinen',
-                147 => 'Jean-Pierre Darroussin',
-                148 => 'Blondin Miguel',
-                149 => 'Elina Salo',
-                150 => 'Evelyne Didi',
-                151 => 'Quoc Dung Nguyen',
-                152 => 'François Monnié',
-                153 => 'Roberto Piazza',
-                154 => 'Pierre Étaix',
-                155 => 'Jean-Pierre Léaud',
-                156 => 'Vincent Lebodo',
-                157 => 'Umbañ Uksët',
-                158 => 'Patrick Bonnel',
-                159 => 'Ilkka Koivula',
-                160 => 'Myriam "Mimie" Piazza',
-                161 => 'Luce Vigo',
-                162 => 'Valérie Caron',
-                163 => 'Jérôme Boyer',
-                164 => 'Jean-Luc Guion-Firmin',
-                165 => 'Pierre Morineau',
-                166 => 'Johann Rioux',
-                167 => 'Julien Flematti',
-                168 => 'Éric Duteil',
-                169 => 'Corinne Belet',
-                170 => 'Dominique Lepagne',
-                171 => 'Anne Lizy',
-                172 => 'Pierre Richards',
-                173 => 'Loïck Jamet',
-                174 => 'Little Bob',
-                175 => 'Nico Garotin',
-                176 => 'Bertrand Couloume',
-                177 => 'Nicolas Noël',
-                178 => 'Gilles Mallet',
-                179 => 'Gilles Adam',
-                180 => 'Patrick Leboucher',
-                181 => 'Michel Lacaille',
-                182 => 'Stéphane Livonnen',
-                183 => 'Arnaud Clément',
-                184 => 'Dominique Comont',
-                185 => 'Alain Guillot',
-                186 => 'Philippe Hubschwerlin',
-                187 => 'Franck Durand',
-                188 => 'Christian Amyard',
-                189 => 'Rudy Amyard',
-                190 => 'Brice Augé',
-                191 => 'Lucas Loubaresse',
-                192 => 'Ireneusz (Irek) Spiewak',
-                193 => 'Gilles Charmant',
-                194 => 'Mary Berkelmans',
-                195 => 'Seluna Lemercier',
-                196 => 'Fanette Martinie',
-                197 => 'Rémi Pradinas',
-                198 => 'Stéphane Parthenay',
-                199 => 'Alain Chapelain',
-                200 => 'Gilles Adam',
-                201 => 'Rachid Bessal',
-                202 => 'Oumar Ly',
-                203 => 'Emmanuel Ingweiller',
-                204 => 'Matthieu Hébert',
-                205 => 'Frank Atinault',
-                206 => 'Dominique Mare',
-                207 => 'Brice Niel',
-                208 => 'Alban Rutten',
-                209 => 'Franck Rutten',
-                210 => 'Sputnik Oy',
-                211 => 'Pyramide Productions',
-                212 => 'Pandora Filmproduktion GmbH',
-                213 => 'Arte France Cinéma',
-                214 => 'ZDF / ARTE',
-                215 => 'Suomen elokuvasäätiö SES',
-                216 => 'Canal+',
-                217 => 'Nordisk Film & TV Fond NFTF',
-                218 => 'Le Centre National du Cinéma et de l\'Image Animée',
-                219 => 'YLE Yhteistuotannot',
-                220 => 'CinéCinéma',
-                221 => 'Arte France',
-                222 => 'Arte G.E.I.E',
-                223 => 'Suomen elokuvasäätiö SES',
-                224 => 'Suomen elokuvasäätiö SES',
-                225 => 'Suomen elokuvasäätiö SES',
-                226 => 'Future Film Oy',
-                227 => 'Future Film Oy',
-                228 => 'The Match Factory GmbH',
-                229 => 'Paula Oinonen',
-                230 => 'ananas',
-                231 => 'auttaminen',
-                232 => 'avioliitto',
-                233 => 'baarit',
-                234 => 'kauppiaat',
-                235 => 'koira',
-                236 => 'konsertit',
-                237 => 'laiton maahanmuutto',
-                238 => 'laivat',
-                239 => 'Le Havre',
-                240 => 'maahanmuuttajat',
-                241 => 'maahanmuuttopolitiikka',
-                242 => 'naapuruus',
-                243 => 'pakolaiset',
-                244 => 'pakolaisleirit',
-                245 => 'ihmeparantuminen',
-                246 => 'poliisit',
-                247 => 'Ranska',
-                248 => 'ranskan kieli',
-                249 => 'ravintolat',
-                250 => 'rock',
-                251 => 'sairastuminen',
-                252 => 'sairaalat',
-                253 => 'satamat',
-                254 => 'siirtolaiset',
-                255 => 'siirtolaisuus',
-                256 => 'sosiaaliset ongelmat',
-                257 => 'taudit',
-                258 => 'viranomaiset',
-                259 => 'vähävaraisuus',
-                260 => 'ystävyys',
-                261 => 'Cannesin elokuvajuhlat, Cannes, Ranska 2011: FIPRESCI:n'
-                    . ' palkinto; Palme Dog: Laika; kirkollisen tuomariston'
-                    . ' erikoispalkinto.<br />Filmfest München, München, Saksa 2011:'
-                    . ' paras ulkomainen elokuva (ARRI Award).<br />St. Petersburg'
-                    . ' International Film Festival “Kinoforum”, Pietari, Venäjä'
-                    . ' 2011: yleisöpalkinto.<br />Festival del film Locarno,'
-                    . ' Locarno, Sveitsi 2011: Premio Boccalino -kriitikkopalkinto:'
-                    . ' paras naisnäyttelijä: Kati Outinen.<br />Reykjavik'
-                    . ' International Film Festival, Reykjavik, Islanti 2011:'
-                    . ' yleisöpalkinto.<br />Chicago International Film Festival,'
-                    . ' Chicago (IL), Yhdysvallat 2011: pääpalkinto (Gold Hugo)'
-                    . ' kansainvälisten elokuvien sarjassa.<br />National Board of'
-                    . ' Review Awards, Yhdysvallat 2011: palkinto Top 5 Foreign'
-                    . ' Language Films -sarjassa.<br />Prix Louis-Delluc, Ranska'
-                    . ' 2011.<br /><br />Jussit 2012: paras elokuva; paras ohjaus:'
-                    . ' Aki Kaurismäki; paras käsikirjoitus: Aki Kaurismäki; paras'
-                    . ' kuvaus: Timo Salminen; paras leikkaus: Timo Linnasalo; paras'
-                    . ' naissivuosa: Elina Salo.<br />Viitasaaren elokuvaviikko'
-                    . ' 2012: Humanismin käsi: Aki Kaurismäki',
-                262 => 'Aki Kaurismäen ohjaama, tuottama ja käsikirjoittama <i>Le'
-                    . ' Havre</i> (2011) kertoo ranskalaisesta kengänkiillottajasta,'
-                    . ' Marcel Marxista (André Wilms), joka haluaa auttaa nuorta'
-                    . ' laitonta afrikkalaissiirtolaista, Idrissaa (Blondin Miguel).'
-                    . ' Marcel saa hankkeessaan tukea naapurustoltaan, mutta samaan'
-                    . ' aikaan huolta tuottaa Arletty-vaimon (Kati Outinen)'
-                    . ' sairastuminen',
-                263 => 'Marcel Marx, entinen kirjailija, elää Ranskassa Le Havressa'
+                'Le Havre',
+                'Le Havre',
+                'Le Havre',
+                'Mannen från Le Havre',
+                'Le Havre',
+                'Le Havre',
+                'Le Havre',
+                'El Havre',
+                'El Puerto',
+                'El Puerto',
+                'Le Havre: el puerto de la esperanza',
+                'Hof mivtahim',
+                'Miracolo a Le Havre',
+                'To limani tis Havris',
+                'Havras',
+                'Le Havre',
+                'O Porto',
+                'Czlowiek z Hawru',
+                'Miraklet i Le Havre',
+                'Umut Limani',
+                'Kikötői történet',
+                'Gavr',
+                'Le Havre: Sadamalinn',
+                'Le Havre',
+                'Suomi',
+                'Ranska',
+                'Saksa',
+                '2011',
+                'Aki Kaurismäki',
+                'Aki Kaurismäki',
+                'Aki Kaurismäki',
+                'Timo Salminen',
+                'Timo Linnasalo',
+                'Tero Malmberg',
+                'Wouter Zoon',
+                'Fred Cambier',
+                'Valérie Théry-Hamel',
+                'Gilles Charmant',
+                'Olli Varja',
+                'Claire Langmann',
+                'Rémi Pradinas',
+                'Mark Lwoff',
+                'Fabienne Vonier',
+                'Reinhard Brundig',
+                'Michel Reilhac',
+                'Rémi Burah',
+                'Meinolf Zurhorst',
+                'Lucas Loubaresse',
+                'Renaud Gast',
+                'Irmeli Debarle',
+                'Malla Hukkanen',
+                'Mika Ailasmäki',
+                'Anne Vahlsten',
+                'Kalle Penttilä',
+                'Ville Väänänen',
+                'Éric Garzena',
+                'Cyril Dupont',
+                'Lazar Abdelkebir',
+                'Benjamin Laurent',
+                'Tero Malmberg',
+                'Konsta Hormia',
+                'Iisakki Hormia',
+                'Olli Pärnänen',
+                'Thomas Pitre',
+                'Pomme Delépine',
+                'Ireneusz (Irek) Spiewak',
+                'Gérard Simonet',
+                'Jean-Claude Guilleman',
+                'Sébastien Gallien',
+                'Pascal Courtinel',
+                'Laurent Thévenot',
+                'Clara Lyonnet',
+                'Diane Wehrly',
+                'Paula Oinonen',
+                'Élise Pradinas',
+                'Elsa Pharaon',
+                'Jean Eninger',
+                'Augustin Werkoff',
+                'Guillaume Moinard',
+                'Marine Longuet',
+                'Pauline Reichenbach',
+                'Yoann Le Gruiec',
+                'Agnès Fanget',
+                'Stéphanie Jossec',
+                'Frank Lesniak',
+                'Frédéric Sibeud',
+                'Thibault Spiral',
+                'Mathieu Raab',
+                'Lucien Lefèbvre',
+                'Éric Morel',
+                'Didier Guéroult',
+                'Gilbert Devaux',
+                'Bruno Joignant',
+                'Thomas Guérin',
+                'Stéphane Livonnen',
+                'Patrice Campelli',
+                'Karl Lemeray',
+                'Jean-Marie Paillette',
+                'Guillaume Macquet',
+                'Patrick Leboucher',
+                'Irmeli Debarle',
+                'Mikko Lyytikäinen',
+                'Ève Bruant',
+                'Hanna Hemilä',
+                'Haije Tulokas',
+                'Eevi Kareinen',
+                'Kirsi Hatara',
+                'Heikki Keskinen',
+                'Stéphane Parthenay',
+                'Valérie Farthouat',
+                'Philippe Leconte',
+                'Anne Berjon',
+                'Fanette Martinie',
+                'Louise Lehec',
+                'Karl Baumgartner',
+                'Rainer Teusner',
+                'Viola Fügen',
+                'Camelia Förster',
+                'Frédéric Baroudel',
+                'Catherine Athon',
+                'Frédéric Casnin',
+                'Frédéric Jupin',
+                'Dominique Champel',
+                'Gérard Estival',
+                'Thierry Gazaud',
+                'Franck Tassoul',
+                'Eric Sithavaja',
+                'Jan-Eric Nyström',
+                'Cinéstéréo',
+                'Sputnik Oy',
+                'Ciné Lumières de Paris',
+                'Cinésyl',
+                'Cinéma le studio Le Havre',
+                'Studio Honolulu',
+                'Ptit Bernard Location',
+                'ATP Autocars',
+                'Bus Océane',
+                'Association La Roue en Bois',
+                'Groupe TSF',
+                'Cinéboutique',
+                'Maratier',
+                'Le Vestiaire',
+                'Any d\'Avray',
+                'Rubini & Associés',
+                'Yrittäjäin Fennia',
+                'André Wilms',
+                'Kati Outinen',
+                'Jean-Pierre Darroussin',
+                'Blondin Miguel',
+                'Elina Salo',
+                'Evelyne Didi',
+                'Quoc Dung Nguyen',
+                'François Monnié',
+                'Roberto Piazza',
+                'Pierre Étaix',
+                'Jean-Pierre Léaud',
+                'Vincent Lebodo',
+                'Umbañ Uksët',
+                'Patrick Bonnel',
+                'Ilkka Koivula',
+                'Myriam "Mimie" Piazza',
+                'Luce Vigo',
+                'Valérie Caron',
+                'Jérôme Boyer',
+                'Jean-Luc Guion-Firmin',
+                'Pierre Morineau',
+                'Johann Rioux',
+                'Julien Flematti',
+                'Éric Duteil',
+                'Corinne Belet',
+                'Dominique Lepagne',
+                'Anne Lizy',
+                'Pierre Richards',
+                'Loïck Jamet',
+                'Little Bob',
+                'Nico Garotin',
+                'Bertrand Couloume',
+                'Nicolas Noël',
+                'Gilles Mallet',
+                'Gilles Adam',
+                'Patrick Leboucher',
+                'Michel Lacaille',
+                'Stéphane Livonnen',
+                'Arnaud Clément',
+                'Dominique Comont',
+                'Alain Guillot',
+                'Philippe Hubschwerlin',
+                'Franck Durand',
+                'Christian Amyard',
+                'Rudy Amyard',
+                'Brice Augé',
+                'Lucas Loubaresse',
+                'Ireneusz (Irek) Spiewak',
+                'Gilles Charmant',
+                'Mary Berkelmans',
+                'Seluna Lemercier',
+                'Fanette Martinie',
+                'Rémi Pradinas',
+                'Stéphane Parthenay',
+                'Alain Chapelain',
+                'Gilles Adam',
+                'Rachid Bessal',
+                'Oumar Ly',
+                'Emmanuel Ingweiller',
+                'Matthieu Hébert',
+                'Frank Atinault',
+                'Dominique Mare',
+                'Brice Niel',
+                'Alban Rutten',
+                'Franck Rutten',
+                'Sputnik Oy',
+                'Pyramide Productions',
+                'Pandora Filmproduktion GmbH',
+                'Arte France Cinéma',
+                'ZDF / ARTE',
+                'Suomen elokuvasäätiö SES',
+                'Canal+',
+                'Nordisk Film & TV Fond NFTF',
+                'Le Centre National du Cinéma et de l\'Image Animée',
+                'YLE Yhteistuotannot',
+                'CinéCinéma',
+                'Arte France',
+                'Arte G.E.I.E',
+                'Suomen elokuvasäätiö SES',
+                'Suomen elokuvasäätiö SES',
+                'Suomen elokuvasäätiö SES',
+                'Future Film Oy',
+                'Future Film Oy',
+                'The Match Factory GmbH',
+                'Paula Oinonen',
+                '11.08.2011',
+                '15.04.2014',
+                'Cannes, Ranska',
+                '2011',
+                'Sodankylä, Suomi',
+                '2011',
+                'Bratislava, Slovakia',
+                '2011',
+                'München, Saksa',
+                '2011',
+                'Karlovy Vary, Tšekki',
+                '2011',
+                'Pietari, Venäjä',
+                '2011',
+                'Melbourne, Australia',
+                '2011',
+                'Odessa, Ukraina',
+                '2011',
+                'Wroclaw, Puola',
+                '2011',
+                'Sarajevo, Bosnia ja Hertsegovina',
+                '2011',
+                'Uherské Hradiště, Tšekki',
+                '2011',
+                'Locarno, Sveitsi',
+                '2011',
+                'San Sebastián, Espanja',
+                '2011',
+                'Toronto (ON), Kanada',
+                '2011',
+                'Vladivostok, Venäjä',
+                '2011',
+                'Quebec (QC), Kanada',
+                '2011',
+                'Reykjavik, Islanti',
+                '2011',
+                'Edmonton (AB), Kanada',
+                '2011',
+                'New York (NY), Yhdysvallat',
+                '2011',
+                'Rio de Janeiro, Brasilia',
+                '2011',
+                'Valdivia, Chile',
+                '2011',
+                'Bukarest, Romania',
+                '2011',
+                'Wien, Itävalta',
+                '2011',
+                'Kaliningrad, Venäjä',
+                '2011',
+                'Taipei, Taiwan',
+                '2011',
+                'Chicago (IL), Yhdysvallat',
+                '2011',
+                'Busan, Etelä-Korea',
+                '2011',
+                'Morelia, Meksiko',
+                '2011',
+                'Honolulu (HI), Yhdysvallat',
+                '2011',
+                'Santa Fe (NM), Yhdysvallat',
+                '2011',
+                'Denver (CO), Yhdysvallat',
+                '2011',
+                'Montreal (QC), Kanada',
+                '2011',
+                'Malatya, Turkki',
+                '2011',
+                'Mexico City, Meksiko',
+                '2011',
+                'Tukholma, Ruotsi',
+                '2011',
+                'Ankara, Turkki',
+                '2011',
+                'Torino, Italia',
+                '2011',
+                'Buenos Aires, Argentiina',
+                '2011',
+                'Kiova, Ukraina',
+                '2011',
+                'Dubai, Yhdistyneet arabiemiirikunnat',
+                '2011',
+                'Bydgoszcz, Puola',
+                '2011',
+                'Chennai (Tamil Nadu), Intia',
+                '2011',
+                'Palm Springs (CA), Yhdysvallat',
+                '2012',
+                'Rotterdam, Alankomaat',
+                '2012',
+                'Glasgow, Iso-Britannia',
+                '2012',
+                'Pinamar, Argentiina',
+                '2012',
+                'Belgrad, Serbia',
+                '2012',
+                'Eskişehir, Turkki',
+                '2012',
+                'Durban, Etelä-Afrikka',
+                '2012',
+                'Hongkong, Kiina',
+                '2012',
+                'Rauma, Suomi',
+                '2012',
+                'Espoo, Suomi',
+                '2012',
+                'Tokio, Japani',
+                '2012',
+                'Thessaloniki, Kreikka',
+                '2012',
+                'St. Louis (MO), Yhdysvallat',
+                '2012',
+                'Manila, Filippiinit',
+                '2012',
+                'Thiruvananthapuram, Intia',
+                '2012',
+                'Bangalore (Karnataka), Intia',
+                '2012',
+                '09.09.2011',
+                'Espoo: Bio Rex Sello 4, Kino Tapiola, Omena 3; Forssa: Bio-Kaari;'
+                    . ' Helsinki: Kinopalatsi 7, Tennispalatsi 2; Järvenpää: Studio'
+                    . ' Järvenpää; Kuopio: Kuvakukko; Lahti: Kuvapalatsi, Kino'
+                    . ' Iiris; Oulu: Plaza, Star; Pori: Promenadi 5; Tampere:'
+                    . ' Niagara; Turku: Kinopalatsi 5 & 7; Vantaa: Bio Grand,'
+                    . ' Flamingo 5, Kino Myyri',
+                'Alankomaat',
+                'Alankomaat',
+                'Alankomaat',
+                'Alankomaat',
+                'Argentiina',
+                'Argentiina',
+                'Australia',
+                'Belgia',
+                'Belgia',
+                'Brasilia',
+                'Brasilia',
+                'Bulgaria',
+                'Bulgaria',
+                'Chile',
+                'Espanja',
+                'Espanja',
+                'Etelä-Korea',
+                'Hongkong (Kiina)',
+                'Hongkong (Kiina)',
+                'Irlanti',
+                'Iso-Britannia',
+                'Iso-Britannia',
+                'Israel',
+                'Israel',
+                'Italia',
+                'Italia',
+                'Itsenäisten valtioiden yhteisö',
+                'Itävalta',
+                'Itävalta',
+                'Japani',
+                'Japani',
+                'Kanada',
+                'Kanada',
+                'Kiina',
+                'Kolumbia',
+                'Kolumbia',
+                'Kreikka',
+                'Kreikka',
+                'Kroatia',
+                'Latvia',
+                'Liettua',
+                'Liettua',
+                'Luxemburg',
+                'Luxemburg',
+                'Meksiko',
+                'Meksiko',
+                'Norja',
+                'Paraguay',
+                'Peru',
+                'Portugali',
+                'Portugali',
+                'Puola',
+                'Puola',
+                'Ranska',
+                'Romania',
+                'Romania',
+                'Ruotsi',
+                'Ruotsi',
+                'Ruotsi',
+                'Saksa',
+                'Serbia',
+                'Serbia',
+                'Slovakia',
+                'Slovakia',
+                'Slovenia',
+                'Sveitsi',
+                'Taiwan',
+                'Tanska',
+                'Tanska',
+                'Tšekki',
+                'Tšekki',
+                'Turkki',
+                'Turkki',
+                'Unkari',
+                'Unkari',
+                'Uruguay',
+                'Uruguay',
+                'Uusi-Seelanti',
+                'Uusi-Seelanti',
+                'Venäjä',
+                'Viro',
+                'Viro',
+                'Yhdysvallat',
+                'Yhdysvallat',
+                'Yhdysvallat',
+                'Helsinki: Tennispalatsi [Eduskunnan näytös]',
+                '08.09.2011',
+                'ananas',
+                'auttaminen',
+                'avioliitto',
+                'baarit',
+                'kauppiaat',
+                'koira',
+                'konsertit',
+                'laiton maahanmuutto',
+                'laivat',
+                'Le Havre',
+                'maahanmuuttajat',
+                'maahanmuuttopolitiikka',
+                'naapuruus',
+                'pakolaiset',
+                'pakolaisleirit',
+                'ihmeparantuminen',
+                'poliisit',
+                'Ranska',
+                'ranskan kieli',
+                'ravintolat',
+                'rock',
+                'sairastuminen',
+                'sairaalat',
+                'satamat',
+                'siirtolaiset',
+                'siirtolaisuus',
+                'sosiaaliset ongelmat',
+                'taudit',
+                'viranomaiset',
+                'vähävaraisuus',
+                'ystävyys',
+                'Cannesin elokuvajuhlat, Cannes, Ranska 2011: FIPRESCI:n palkinto'
+                    . '[...]',
+                'Aki Kaurismäen ohjaama, tuottama ja käsikirjoittama <i>Le Havre</i>'
+                    . '[...]',
+                'Marcel Marx, entinen kirjailija, elää Ranskassa Le Havressa'
                     . ' vaatimattomasti kengänkiillottajana vaimonsa Arlettyn'
-                    . ' kanssa. Satamakaupungissa kuohuu: tavarakontista löydetään'
-                    . ' laittomia afrikkalaissiirtolaisia. Eräs pakolaisista,'
-                    . ' nuori Idrissa, juoksee karkuun poliiseilta. Seuraavana'
-                    . ' päivänä Marcel löytää pojan satamasta. Komisario Monet'
-                    . ' osuu paikalle, mutta Marcel ei ilmianna karkulaista. Yön'
-                    . ' turvin mies vie ruokaa Idrissalle ja laittaa paperipussiin'
-                    . ' myös rahaa.<br /><br />Kotona Laika-koira on levoton:'
-                    . ' Arletty ei voi hyvin. Naapuri, Yvette, vie pariskunnan'
-                    . ' sairaalaan, mutta tohtori Becker kehottaa Marcelia palaamaan'
-                    . ' kotiin. Marcel löytää Idrissan vajastaan. Poika on tullut'
-                    . ' maksamaan velkansa ja kertoo haluavansa Lontooseen äitinsä'
-                    . ' luo. Marcel päättää auttaa ja antaa pojalle piilopaikan.'
-                    . '<br /><br />Arletty kuulee tohtorilta, että hänen elämänsä on'
-                    . ' ihmeen varassa. ”Ihmeitä ei tapahdu minun korttelissani”,'
-                    . ' nainen tuumaa ja kieltää kertomasta tilansa vakavuutta'
-                    . ' puolisolleen. Marcelilla on huolta myös Idrissasta, mutta'
-                    . ' koko hänen naapurustonsa on suureksi avuksi. Ainoastaan'
-                    . ' vastapäisen talon vanhus soittaa poliisille'
-                    . ' siirtolaishavainnostaan. Komisario Monet kehottaa Marcelia'
-                    . ' varomaan naapuriaan.<br /> <br />Marcel ryhtyy selvittämään,'
-                    . ' miten Idrissa löytäisi äitinsä Lontoosta. Hän jättää pojan'
-                    . ' Yvetten hoitoon ja lähtee Calais’hen tapaamaan'
-                    . ' pakolaisleirillä olevaa Idrissan isoisää. Pakolaiskeskuksen'
-                    . ' maahanmuuttoviranomaisia Marcel hämmentää väittämällä'
-                    . ' kivenkovaa olevansa sukua, ”perheen albiino”. Isoisä antaa'
-                    . ' matkaohjeet ja osoitteen. Sillä välin Idrissa karkaa Yvetten'
-                    . ' luota kiillottamaan kenkiä asemalle. Marcelin naapuri'
-                    . ' yrittää ottaa pojan kiinni, mutta Marcelin työtoveri Chang'
-                    . ' tulee hätiin ja poika pääsee jälleen turvaan. <br /><br />'
-                    . 'Sairaalan vierastunnilla Arletty valehtelee tilastaan'
-                    . ' aviomiehelleen. Hän kieltää hoitojensa vuoksi Marcelia'
-                    . ' tulemasta tervehtimään ja käskee tätä palaamaan kahden'
-                    . ' viikon päästä ja tuomaan hänen keltaisen leninkinsä. Yvetten'
-                    . ' ja kapakoitsija Clairen kanssa Arletty ei vaihda kuulumisia'
-                    . ' sen pirteämmin, vaan on huonokuntoinen ja väsynyt.<br />'
-                    . '<br />Komisario Monet tekee tutkimuksiaan. Hän tarkkailee'
-                    . ' Marcelin liikkeitä ja kyselee vihanneskauppiaalta tietoja'
-                    . ' miehestä. Ananas muassaan hän menee myös Clairen baariin.'
-                    . ' Claire häätää asiakkaat pois ja istahtaa juttusille Monet’n'
-                    . ' kanssa. He ovat vanhoja tuttuja; komisario toimitti Clairen'
-                    . ' aviomiesvainaan telkien taa.<br /><br />Marcel sopii'
-                    . ' satamassa Idrissan pakojärjestelyistä. Venekyytiin tarvitaan'
-                    . ' 3000 euroa. Ystävät ehdottavat, että Marcel järjestäisi'
-                    . ' muodikkaan tukikonsertin. Kun Marcel saa hierottua'
-                    . ' paikallisen rock-legendan Little Bobin ja tämän kipakan'
-                    . ' vaimon Mimien välille sovinnon, voidaan konsertti järjestää.'
-                    . ' Marcel itse erehtyy päivästä ja joutuu lähettämään Idrissan'
-                    . ' sairaalaan Arlettyn mekkoa viemään. Idrissa kehottaa'
-                    . ' Arlettya paranemaan pian, sillä Marcel ei pärjää ilman'
-                    . ' vaimoaan.<br /><br />Little Bobin konsertti on menestys, ja'
-                    . ' Marcel saa tarvittavan summan kasaan, ennen kuin poliisit'
-                    . ' saapuvat. Tilanne kotikulmilla käy kuumaksi, ja Monet'
-                    . ' varoittaa Marcelia viime tipassa. Poliisit rynnivät'
-                    . ' kengänkiillottajan asuntoon, mutta Idrissa pakenee'
-                    . ' ikkunasta. Hänet kuskataan satamaan vihanneskärryissä.'
-                    . ' Poika saadaan veneeseen ja raha-asiat hoidettua, kun'
-                    . ' poliisit saartavat sataman. Monet saapuu hätiin ja on'
-                    . ' tarkistavinaan laivan, jossa Marcel ja Idrissa ovat. Hän ei'
-                    . ' ilmianna pakolaista, vaan poika pääsee matkaan. Marcel ja'
-                    . ' Monet ystävystyvät.<br /><br />Sairaalassa on tapahtunut'
-                    . ' ihme: Arletty on toipunut ja pariskunta pääsee palaamaan'
-                    . ' kotiin. Kotona kirsikkapuu kukkii.<br /><br /><i>Teksti:'
-                    . ' Suomen kansallisfilmografia / Tytti Rantanen 2016</i>',
-                264 => 'Marcel Marx, a former author and a well-known bohemian, has'
+                    . ' kanssa[...]',
+                'Marcel Marx, a former author and a well-known bohemian, has'
                     . ' retreated into a voluntary exile in the port city of Le'
-                    . ' Havre, where he feels he has reached a closer rapport with'
-                    . ' the people serving them in the occupation of the honourable,'
-                    . ' but not too profitable, of a shoe-shiner. He has buried his'
-                    . ' dreams of a literary breakthrough and lives happily within'
-                    . ' the triangle of his favourite bar, his work, and his wife'
-                    . ' Arletty, when fate suddenly throws in his path an underage'
-                    . ' immigrant refugee from the darkest Africa.<br /><br />As'
-                    . ' Arletty at the same time gets seriously ill and is'
-                    . ' bedridden, Marcel once more has to rise against the cold'
-                    . ' wall of human indifference with his only weapon of innate'
-                    . ' optimism and the unwavering solidarity of the people of his'
-                    . ' quartier, but against him stands the whole blind machinery'
-                    . ' of the Western constitutionally governed state, this time'
-                    . ' represented by the dragnet of the police, moment by moment'
-                    . ' drawing closer around the refugee boy.<br /><br />It\'s time'
-                    . ' for Marcel to polish his shoes and reveal his teeth',
+                    . ' Havre[...]',
+                '<i>Apotheosis</i><br />Einojuhani Rautavaara[...]',
+                'fiktio',
+                'Aki Kaurismäen tuore elokuva hurmasi kriitikot. ”Maailmassa on enää'
+                    . ' harvoja ohjaajia, joiden persoonallisen käsialan tunnistaa'
+                    . ' heti filmin ensimmäisestä otoksesta lähtien”, aloitti Tapani'
+                    . ' Maskula (Turun Sanomat 9.9.2011)',
+                'Ohjaaja-tuottaja-käsikirjoittaja Aki Kaurismäki (s. 1957) on tehnyt'
+                    . ' elokuvissa pitkän uran 1980-luvun alusta lähtien[...]',
+                'Ranska: <br />Le Havre: <br />Rue des Drapiers (<I>Marcel'
+                    . ' kiillottaa kenkiä rautatieasemalla, italialainen ammutaan,'
+                    . ' Idrissa ja Laika pakenevat poliiseja</I>)[...]',
+                'Ranska:<br />Le Havre: <br />tyhjillään ollut'
+                    . ' kahvila-hotellirakennus 27 boulevard Amiral Mouchez[...]',
+                'Ranska:<br />Le Havre: 45 rue Gustave Nicolle (<I>Marcelin ja'
+                    . ' Arlettyn asunto ja sen puutarha[...]',
+                'Marcelin asuinkorttelit aiottiin purkaa kesken elokuvan kuvausten.'
+                    . ' Talot purettiin heti kun elokuva oli kuvattu[...]',
             ],
         ];
 

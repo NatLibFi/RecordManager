@@ -79,7 +79,7 @@ class Forward extends AbstractRecord
 
     protected $filterFromAllFields = [
         'Identifier', 'RecordSource', 'TitleRelationship', 'Activity',
-        'AgentIdentifier', 'ProductionEvent', 'DescriptionType', 'Language'
+        'AgentIdentifier', 'ProductionEventType', 'DescriptionType', 'Language'
     ];
 
     /**
