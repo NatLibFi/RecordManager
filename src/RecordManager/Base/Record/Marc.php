@@ -901,9 +901,9 @@ class Marc extends AbstractRecord
             if ($field && !empty($field['s'])) {
                 $title = $this->getSubfield($field, 'a');
                 if ($forFiling) {
-                    $nonfiling = (int)$this->getIndicator($field, 2);
+                    $nonfiling = intval($this->getIndicator($field, 2));
                     if ($nonfiling > 0) {
-                        $title = substr($title, $nonfiling);
+                        $title = mb_substr($title, $nonfiling, null, 'UTF-8');
                     }
                 }
                 foreach ($field['s'] as $subfield) {
