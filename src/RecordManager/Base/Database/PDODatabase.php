@@ -1218,7 +1218,7 @@ class PDOResultIterator extends \IteratorIterator
      *
      * @return mixed
      */
-    public function current()
+    public function current(): mixed
     {
         $result = parent::current();
         if ($result) {

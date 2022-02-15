@@ -734,7 +734,7 @@ class MetadataUtils
     public function formatTimestamp($timestamp)
     {
         $date = new \DateTime('', new \DateTimeZone('UTC'));
-        $date->setTimeStamp($timestamp);
+        $date->setTimeStamp($timestamp ?? 0);
         return $date->format('Y-m-d') . 'T' . $date->format('H:i:s') . 'Z';
     }
 
