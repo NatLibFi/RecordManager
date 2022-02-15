@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2021.
+ * Copyright (C) The National Library of Finland 2011-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -130,6 +130,11 @@ class CompareRecords extends AbstractBase
                 InputOption::VALUE_REQUIRED,
                 'Process only the specified record'
             )->addOption(
+                'skip-missing',
+                null,
+                InputOption::VALUE_NONE,
+                'Skip records missing from index'
+            )->addOption(
                 'source',
                 null,
                 InputOption::VALUE_REQUIRED,
@@ -154,7 +159,8 @@ class CompareRecords extends AbstractBase
             $input->getOption('from'),
             $input->getOption('source'),
             $input->getOption('single'),
-            $input->getOption('fields')
+            $input->getOption('fields'),
+            $input->getOption('skip-missing')
         );
 
         return Command::SUCCESS;

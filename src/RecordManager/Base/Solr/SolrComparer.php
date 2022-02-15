@@ -50,15 +50,23 @@ class SolrComparer extends SolrUpdater
     protected $compareFields;
 
     /**
+     * Whether to skip missing records
+     *
+     * @var bool
+     */
+    protected $skipMissing;
+
+    /**
      * Compare records with the Solr index
      *
-     * @param string      $logFile  Log file to use for any record differences
-     * @param string|null $fromDate Starting date for updates (if empty
-     *                              string, all records are processed)
-     * @param string      $sourceId Comma-separated list of source IDs to
-     *                              update, or empty or * for all sources
-     * @param string      $singleId Process only the record with the given ID
-     * @param string      $fields   Compare only the given fields
+     * @param string      $logFile     Log file to use for any record differences
+     * @param string|null $fromDate    Starting date for updates (if empty
+     *                                 string, all records are processed)
+     * @param string      $sourceId    Comma-separated list of source IDs to
+     *                                 update, or empty or * for all sources
+     * @param string      $singleId    Process only the record with the given ID
+     * @param string      $fields      Compare only the given fields
+     * @param bool        $skipMissing Whether to skip records missing from index
      *
      * @return void
      */
@@ -67,8 +75,10 @@ class SolrComparer extends SolrUpdater
         ?string $fromDate,
         ?string $sourceId,
         ?string $singleId,
-        ?string $fields
+        ?string $fields,
+        bool $skipMissing
     ): void {
+        $this->skipMissing = $skipMissing;
         if ($logFile) {
             file_put_contents($logFile, '');
         }
@@ -250,6 +260,10 @@ class SolrComparer extends SolrUpdater
         $solrResponse = json_decode($response->getBody(), true);
         $solrRecord = $solrResponse['response']['docs'][0]
             ?? [];
+
+        if ($this->skipMissing && [] === $solrRecord) {
+            return;
+        }
 
         $differences = '';
         $allFields = array_unique(
