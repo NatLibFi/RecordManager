@@ -41,7 +41,8 @@
 
   <!-- Report rule violations with PHPMD (mess detector) -->
   <target name="phpmd">
-    <exec command="${basedir}/vendor/bin/phpmd ${srcdir} html ${basedir}/tests/phpmd.xml --reportfile ${basedir}/reports/phpmd.html" />
+    <echo>Make sure you have phpmd installed in path. It's not installed by default due to its dependencies.</echo>
+    <exec command="phpmd ${srcdir} html ${basedir}/tests/phpmd.xml --reportfile ${basedir}/reports/phpmd.html" />
   </target>
 
   <!-- Psalm -->
