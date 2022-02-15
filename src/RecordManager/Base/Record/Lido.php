@@ -1350,7 +1350,7 @@ class Lido extends AbstractRecord
                 ?? [] as $set
             ) {
                 foreach ($set->workID as $workId) {
-                    $type = trim($workId['type']);
+                    $type = trim($workId['type'] ?? '');
                     if ($include && !in_array($type, $include)) {
                         continue;
                     }
