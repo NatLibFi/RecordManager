@@ -100,10 +100,13 @@ class Deduplicate extends AbstractBase
      */
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
-        $sourceId = $input->getOption('source');
         $allRecords = $input->getOption('all');
         $singleId = $input->getOption('single');
         $markOnly = $input->getOption('mark');
+        $includedSources = explode(',', $input->getOption('source'));
+        if (in_array('*', $includedSources)) {
+            $includedSources = [];
+        }
 
         $this->terminate = false;
 
@@ -125,12 +128,12 @@ class Deduplicate extends AbstractBase
 
         if ($allRecords || $markOnly) {
             foreach ($this->dataSourceConfig as $source => $settings) {
-                if ($sourceId && $sourceId != '*' && $source != $sourceId) {
+                if (empty($source) || empty($settings)
+                    || ($includedSources && !in_array($source, $includedSources))
+                ) {
                     continue;
                 }
-                if (empty($source) || empty($settings)) {
-                    continue;
-                }
+
                 $this->logger->logInfo(
                     'deduplicate',
                     "Marking all records for processing in '$source'"
@@ -188,10 +191,9 @@ class Deduplicate extends AbstractBase
 
         foreach ($this->dataSourceConfig as $source => $settings) {
             try {
-                if ($sourceId && $sourceId != '*' && $source != $sourceId) {
-                    continue;
-                }
-                if (empty($source) || empty($settings)) {
+                if (empty($source) || empty($settings)
+                    || ($includedSources && !in_array($source, $includedSources))
+                ) {
                     continue;
                 }
 
