@@ -401,11 +401,8 @@ class Ead3 extends Ead
     protected function getThumbnail()
     {
         foreach ([$this->doc->did ?? [], $this->doc->did->daoset ?? []] as $root) {
-            foreach ($root as $daoset) {
-                if (!isset($daoset->dao)) {
-                    continue;
-                }
-                foreach ($daoset->dao as $dao) {
+            foreach ($root as $set) {
+                foreach ($set->dao ?? [] as $dao) {
                     $attrs = $dao->attributes();
                     if ('thumbnail' === (string)$attrs->localtype
                         && !empty($attrs->href)
