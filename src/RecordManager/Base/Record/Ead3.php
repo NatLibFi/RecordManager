@@ -400,14 +400,16 @@ class Ead3 extends Ead
      */
     protected function getThumbnail()
     {
-        $nodes = isset($this->doc->did->daogrp)
-            ? $this->doc->did->daogrp->xpath('daoloc[@role="image_thumbnail"]')
-            : null;
-        if ($nodes) {
-            // store first thumbnail
-            $node = $nodes[0];
-            if (isset($node->attributes()->href)) {
-                return (string)$node->attributes()->href;
+        foreach ([$this->doc->did ?? [], $this->doc->did->daoset ?? []] as $root) {
+            foreach ($root as $set) {
+                foreach ($set->dao ?? [] as $dao) {
+                    $attrs = $dao->attributes();
+                    if ('thumbnail' === (string)$attrs->localtype
+                        && !empty($attrs->href)
+                    ) {
+                        return (string)$attrs->href;
+                    }
+                }
             }
         }
         return '';
