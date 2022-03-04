@@ -502,6 +502,8 @@ class MarcTest extends RecordTest
             'title_short' => 'Suomen tiekartta',
             'title_full' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
             'title_alt' => [
+                'Vägkarta över Finland',
+                'Suomen tiekartta 1'
             ],
             'title_old' => [
             ],
@@ -673,6 +675,7 @@ class MarcTest extends RecordTest
                 . ' structures du quotidien : le possible et l\'impossible / Fernand'
                 . ' Braudel',
             'title_alt' => [
+                'Les structures du quotidien : le possible et l\'impossible'
             ],
             'title_old' => [
             ],

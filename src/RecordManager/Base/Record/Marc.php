@@ -463,7 +463,9 @@ class Marc extends AbstractRecord
                             'l' => 1, 'n' => 1, 'p' => 1, 's' => 1, 't' => 1
                         ]],
                         [self::GET_BOTH, '240', ['a' => 1]],
-                        [self::GET_BOTH, '246', ['g' => 1]],
+                        [self::GET_BOTH, '246', [
+                            'a' => 1, 'b' => 1, 'n' => 1, 'p' => 1]
+                        ],
                         [self::GET_BOTH, '730', [
                             'a' => 1, 'd' => 1, 'f' => 1, 'g' => 1, 'k' => 1,
                             'l' => 1, 'n' => 1, 'p' => 1, 's' => 1, 't' => 1
