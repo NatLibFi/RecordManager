@@ -186,7 +186,7 @@ class Lido extends AbstractRecord
         }
 
         $data['topic'] = $data['topic_facet'] = $this->getSubjectTerms();
-        $data['material'] = $this->getEventMaterials($this->mainEvent);
+        $data['material_str_mv'] = $this->getEventMaterials($this->mainEvent);
 
         if ($dates = $this->getSubjectDisplayDates()) {
             $data['era'] = $data['era_facet'] = $dates;

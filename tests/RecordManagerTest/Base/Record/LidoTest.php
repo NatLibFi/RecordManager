@@ -74,7 +74,7 @@ class LidoTest extends RecordTest
                 'retkeily',
                 'ulkoilu',
             ],
-            'material' => [
+            'material_str_mv' => [
             ],
             'geographic_facet' => [
             ],
@@ -176,7 +176,7 @@ class LidoTest extends RecordTest
                 'retkeily',
                 'ulkoilu',
             ],
-            'material' => [
+            'material_str_mv' => [
             ],
             'geographic_facet' => [
             ],
