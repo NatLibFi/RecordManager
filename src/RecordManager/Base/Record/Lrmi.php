@@ -63,21 +63,10 @@ class Lrmi extends Qdc
     {
         $data = parent::toSolrArray();
         $data['record_format'] = 'lrmi';
-
-        $doc = $this->doc;
-
         $data['title'] = $data['title_full'] = $data['title_short']
             = $this->getTitle();
         $data['title_sort'] = $this->getTitle(true);
-
-        $languages = [];
-        if (isset($doc->material)) {
-            foreach ($doc->material as $material) {
-                $languages[] = (string)$material->inLanguage ?? '';
-            }
-        }
-        $data['language'] = $this->metadataUtils
-            ->normalizeLanguageStrings(array_unique($languages));
+        $data['language'] = $this->getLanguages();
 
         return $data;
     }
@@ -268,7 +257,14 @@ class Lrmi extends Qdc
      */
     protected function getLanguages()
     {
-        // Resolved together with doc->material
-        return [];
+        $languages = [];
+        foreach ($this->doc->material ?? [] as $material) {
+            $languages[] = (string)$material->inLanguage ?? '';
+        }
+        foreach ($this->doc->inLanguage ?? [] as $language) {
+            $languages[] = (string)$language;
+        }
+        return $this->metadataUtils
+            ->normalizeLanguageStrings(array_unique($languages));
     }
 }
