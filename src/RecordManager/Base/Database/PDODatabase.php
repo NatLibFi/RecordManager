@@ -809,7 +809,13 @@ class PDODatabase extends AbstractDatabase
             }
             $db->commit();
         } catch (\Exception $e) {
-            $db->rollback();
+            // Try to roll back, but make sure not to mask any issue that could have
+            // been caused during commit:
+            try {
+                $db->rollback();
+            } catch (\Exception $e) {
+                // Do nothing
+            }
             throw $e;
         }
         return $record;
