@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2013-2021.
+ * Copyright (C) The National Library of Finland 2013-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -243,6 +243,11 @@ class NominatimGeocoder extends AbstractEnrichment
     protected function enrichLocations($locations, &$solrArray)
     {
         $result = false;
+        $center = !empty($this->solrCenterField) &&
+            isset($solrArray[$this->solrCenterField]) ?
+            \geoPHP::load('POINT(' . $solrArray[$this->solrCenterField] . ')', 'wkt')
+            : null;
+
         foreach ($locations as $location) {
             if ($this->blocklist) {
                 foreach ($this->blocklist as $entry) {
@@ -255,15 +260,23 @@ class NominatimGeocoder extends AbstractEnrichment
                 $geocoded = $this->geocode($location);
                 if ($geocoded) {
                     $wkts = array_column($geocoded, 'wkt');
-                    if (!isset($solrArray[$this->solrField])) {
-                        $solrArray[$this->solrField] = $wkts;
-                    } else {
-                        $solrArray[$this->solrField] = array_merge(
-                            $solrArray[$this->solrField],
-                            $wkts
-                        );
+                    $poly = \geoPHP::load($wkts[0], 'wkt');
+
+                    if (null === $center || $poly->contains($center)) {
+                        if (!isset($solrArray[$this->solrField])) {
+                            $solrArray[$this->solrField] = $wkts;
+                        } else {
+                            $solrArray[$this->solrField] = array_merge(
+                                $solrArray[$this->solrField],
+                                $wkts
+                            );
+                        }
                     }
-                    if (!empty($this->solrCenterField)) {
+                    // Set new center coordinates only if the field is in use and has
+                    // no previous value
+                    if (!empty($this->solrCenterField)
+                        && !isset($solrArray[$this->solrCenterField])
+                    ) {
                         $solrArray[$this->solrCenterField]
                             = $geocoded[0]['lon'] . ' ' . $geocoded[0]['lat'];
                     }

@@ -67,6 +67,7 @@ CREATE TABLE `ontologyEnrichment` (
   `prefLabels` MEDIUMTEXT NULL,
   `altLabels` MEDIUMTEXT NULL,
   `hiddenLabels` MEDIUMTEXT NULL
+  `geoLocation` MEDIUMTEXT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `logMessage` (
