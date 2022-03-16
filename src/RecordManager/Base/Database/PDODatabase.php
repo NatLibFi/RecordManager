@@ -1087,13 +1087,12 @@ class PDODatabase extends AbstractDatabase
         if (in_array($field, $mainFields)) {
             return "$field$operator";
         }
-        $result = "EXISTS (SELECT * FROM {$collection}_attrs ca WHERE"
-            . " ca.parent_id={$collection}._id AND ca.attr='$field'"
-            . " AND ca.value$operator)";
+        $result = "_id IN (SELECT parent_id FROM {$collection}_attrs ca WHERE"
+            . " ca.attr='$field' AND ca.value$operator)";
 
         if (' IS NULL' === $operator) {
-            $result = "($result OR NOT EXISTS (SELECT * FROM {$collection}_attrs"
-                . " ca WHERE ca.parent_id={$collection}._id AND ca.attr='$field'))";
+            $result = "($result OR _id NOT IN (SELECT parent_id FROM"
+                . " {$collection}_attrs ca WHERE ca.attr='$field'))";
         }
 
         return $result;
