@@ -12,5 +12,8 @@
     <projectFiles>
         <file name="*.php" />
         <directory name="src" />
+        <ignoreFiles>
+            <file name="src/RecordManager/Base/Database/MongoDatabase.php" />
+        </ignoreFiles>
     </projectFiles>
 </psalm>
