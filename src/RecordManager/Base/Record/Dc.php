@@ -45,6 +45,9 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Dc extends AbstractRecord
 {
+    use XmlRecordTrait {
+        XmlRecordTrait::setData as XmlTraitSetData;
+    }
     use FullTextTrait;
 
     /**
@@ -93,9 +96,8 @@ class Dc extends AbstractRecord
      */
     public function setData($source, $oaiID, $data)
     {
-        parent::setData($source, $oaiID, $data);
+        $this->XmlTraitSetData($source, $oaiID, $data);
 
-        $this->doc = $this->parseXMLRecord($data);
         if (empty($this->doc->recordID)) {
             $p = strpos($oaiID, ':');
             $p = strpos($oaiID, ':', $p + 1);
@@ -111,26 +113,6 @@ class Dc extends AbstractRecord
     public function getID()
     {
         return (string)$this->doc->recordID[0];
-    }
-
-    /**
-     * Serialize the record for storing in the database
-     *
-     * @return string
-     */
-    public function serialize()
-    {
-        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
-    }
-
-    /**
-     * Serialize the record into XML for export
-     *
-     * @return string
-     */
-    public function toXML()
-    {
-        return $this->doc->asXML();
     }
 
     /**
@@ -178,11 +160,9 @@ class Dc extends AbstractRecord
         $data['title'] = $data['title_full'] = $this->metadataUtils
             ->stripTrailingPunctuation(trim((string)$doc->title));
         $titleParts = explode(' : ', $data['title'], 2);
-        if (!empty($titleParts)) {
-            $data['title_short'] = $titleParts[0];
-            if (isset($titleParts[1])) {
-                $data['title_sub'] = $titleParts[1];
-            }
+        $data['title_short'] = $titleParts[0];
+        if (isset($titleParts[1])) {
+            $data['title_sub'] = $titleParts[1];
         }
         $data['title_sort'] = $this->getTitle(true);
 
@@ -318,7 +298,7 @@ class Dc extends AbstractRecord
         foreach ($this->doc->date as $date) {
             $date = trim((string)$date);
             if (preg_match('{^(\d{4})$}', $date)) {
-                return (string)$date;
+                return $date;
             }
         }
         return '';

@@ -69,7 +69,7 @@ class MarcOnkiLightEnrichment extends OnkiLightEnrichment
             ]
         ];
         foreach ($fields as $marcField => $spec) {
-            foreach ($record->getFields($marcField) as $recField) {
+            foreach ($record->getFields((string)$marcField) as $recField) {
                 if ($id = $record->getSubfield($recField, '0')) {
                     $this->enrichField(
                         $sourceId,

@@ -42,7 +42,7 @@ use RecordManager\Base\Database\DatabaseInterface as Database;
  */
 class Ead extends AbstractRecord
 {
-    protected $doc = null;
+    use XmlRecordTrait;
 
     /**
      * Archive fonds format
@@ -94,23 +94,6 @@ class Ead extends AbstractRecord
     protected $geoCenterField = '';
 
     /**
-     * Set record data
-     *
-     * @param string $source Source ID
-     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     *                       file import)
-     * @param string $data   Metadata
-     *
-     * @return void
-     */
-    public function setData($source, $oaiID, $data)
-    {
-        parent::setData($source, $oaiID, $data);
-
-        $this->doc = $this->parseXMLRecord($data);
-    }
-
-    /**
      * Return record ID (local)
      *
      * @return string
@@ -149,7 +132,14 @@ class Ead extends AbstractRecord
      */
     public function toXML()
     {
-        return $this->doc->asXML();
+        $xml = $this->doc->asXML();
+        if (false === $xml) {
+            throw new \Exception(
+                "Could not serialize record '{$this->source}."
+                . $this->getId() . "' to XML"
+            );
+        }
+        return $xml;
     }
 
     /**

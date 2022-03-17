@@ -71,7 +71,7 @@ abstract class AbstractCallNumber
         $str = preg_replace_callback(
             '/(\d+)/',
             function ($matches) {
-                return strlen((int)$matches[1]) . $matches[1];
+                return strlen((string)(intval($matches[1]))) . $matches[1];
             },
             strtoupper($str)
         );

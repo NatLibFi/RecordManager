@@ -175,11 +175,9 @@ class Delete extends AbstractBase
                         $line = $section['lines'][$i];
                         if ('' === trim($line) || !$this->isCommentLine($line)) {
                             if ($comments) {
-                                $sections[$sectionIdx + 1]['lines'] = array_values(
-                                    array_merge(
-                                        $comments,
-                                        $sections[$sectionIdx + 1]['lines']
-                                    )
+                                $sections[$sectionIdx + 1]['lines'] = array_merge(
+                                    $comments,
+                                    $sections[$sectionIdx + 1]['lines']
                                 );
                                 $section['lines'] = array_slice(
                                     $section['lines'],

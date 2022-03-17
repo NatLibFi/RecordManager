@@ -145,14 +145,14 @@ class GeniePlus extends AbstractBase
     /**
      * MARC field to output unique ID into.
      *
-     * @var int
+     * @var string
      */
     protected $uniqueIdOutputField;
 
     /**
      * MARC subfield to output unique ID into.
      *
-     * @var int
+     * @var string
      */
     protected $uniqueIdOutputSubfield;
 
@@ -239,7 +239,7 @@ class GeniePlus extends AbstractBase
         $this->barcodeField = $settings['geniePlusBarcodeField']
             ?? 'Inventory.Barcode';
         $this->uniqueIdOutputField
-            = $settings['geniePlusUniqueIdOutputField'] ?? 999;
+            = $settings['geniePlusUniqueIdOutputField'] ?? '999';
         $this->uniqueIdOutputSubfield
             = $settings['geniePlusUniqueIdOutputSubfield'] ?? 'c';
         $this->itemLimitPerLocationGroup
@@ -679,7 +679,7 @@ class GeniePlus extends AbstractBase
      *
      * @param array $record GeniePlus record from API response
      *
-     * @return array
+     * @return string
      */
     protected function processMarcRecord($record)
     {
@@ -722,7 +722,11 @@ class GeniePlus extends AbstractBase
             }
         }
 
-        return $xml->asXML();
+        $xmlString = $xml->asXML();
+        if (false === $xmlString) {
+            throw new \Exception("Problem converting MARC record $id to XML string");
+        }
+        return $xmlString;
     }
 
     /**

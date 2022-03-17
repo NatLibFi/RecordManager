@@ -371,6 +371,20 @@ class HTTPFiles extends AbstractBase
     }
 
     /**
+     * Check if the record is deleted.
+     * This implementation works for MARC records.
+     *
+     * @param \SimpleXMLElement $record Record
+     *
+     * @return bool
+     */
+    protected function isDeleted($record)
+    {
+        $status = substr($record->leader, 5, 1);
+        return $status == 'd';
+    }
+
+    /**
      * Extract file date from the file name
      *
      * @param string $filename File name

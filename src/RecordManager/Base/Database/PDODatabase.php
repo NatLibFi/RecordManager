@@ -181,7 +181,7 @@ class PDODatabase extends AbstractDatabase
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
-     * @return int
+     * @return int|string
      */
     public function countRecords($filter, $options = [])
     {
@@ -326,7 +326,7 @@ class PDODatabase extends AbstractDatabase
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
-     * @return int
+     * @return int|string
      */
     public function countDedups($filter, $options = [])
     {
@@ -781,7 +781,7 @@ class PDODatabase extends AbstractDatabase
                     }
                 }
                 foreach ($deleteAttrs as $key => $values) {
-                    foreach ((array)$values as $value) {
+                    foreach ($values as $value) {
                         $this->dbQuery(
                             "DELETE FROM {$collection}_attrs WHERE parent_id=?"
                             . ' AND attr=? AND value=?',
@@ -794,7 +794,7 @@ class PDODatabase extends AbstractDatabase
                     }
                 }
                 foreach ($insertAttrs as $key => $values) {
-                    foreach ((array)$values as $value) {
+                    foreach ($values as $value) {
                         $this->dbQuery(
                             "INSERT INTO {$collection}_attrs"
                             . ' (parent_id, attr, value) VALUES (?, ?, ?)',
@@ -902,8 +902,10 @@ class PDODatabase extends AbstractDatabase
     {
         $stmt = $this->getDb()->prepare($sql);
         if (false === $stmt) {
+            $errorInfo = $this->getDb()->errorInfo();
+            $error = implode('; ', $errorInfo);
             throw new \Exception(
-                "Prepare failed for '$sql': " . $this->getDb()->error
+                "Prepare failed for '$sql': $error"
             );
         }
         foreach ($params as &$param) {

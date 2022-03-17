@@ -40,6 +40,11 @@ namespace RecordManager\Base\Utils;
  */
 class PerformanceCounter
 {
+    /**
+     * Array of previous counts
+     *
+     * @var array
+     */
     protected $counts = [];
 
     /**
@@ -90,7 +95,7 @@ class PerformanceCounter
         $count = $last['c'] - $first['c'];
         $time = $last['t'] - $first['t'];
         if ($time > 0) {
-            return round($count / $time);
+            return (int)round($count / $time);
         }
         return 0;
     }

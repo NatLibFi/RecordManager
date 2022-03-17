@@ -82,14 +82,14 @@ class WorkerPoolManager
     /**
      * Maximum request queue length
      *
-     * @var array
+     * @var int
      */
     protected $maxPendingRequests = 8;
 
     /**
      * Last time the parent alive check was made
      *
-     * @var int
+     * @var float
      */
     protected $lastParentCheckTime = 0;
 
@@ -419,9 +419,9 @@ class WorkerPoolManager
     /**
      * Read from a socket
      *
-     * @param resource $socket      Socket
-     * @param bool     $block       Whether to block waiting for data
-     * @param bool     $checkParent Whether to chek that the parent process is alive
+     * @param mixed $socket      Socket
+     * @param bool  $block       Whether to block waiting for data
+     * @param bool  $checkParent Whether to chek that the parent process is alive
      *
      * @return mixed
      */
@@ -512,9 +512,9 @@ class WorkerPoolManager
     /**
      * Write to a socket
      *
-     * @param resource $socket      Socket
-     * @param mixed    $data        Serializable data
-     * @param bool     $checkParent Whether to check that parent process is alive
+     * @param mixed $socket      Socket
+     * @param mixed $data        Serializable data
+     * @param bool  $checkParent Whether to check that parent process is alive
      *
      * @return bool
      */

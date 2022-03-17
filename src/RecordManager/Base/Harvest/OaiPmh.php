@@ -105,7 +105,7 @@ class OaiPmh extends AbstractBase
      * Date received from server via Identify command. Used to set the last
      * harvest date.
      *
-     * @var string
+     * @var int
      */
     protected $serverDate = null;
 
@@ -348,7 +348,7 @@ class OaiPmh extends AbstractBase
 
     /**
      * Make an OAI-PMH request.  Throw an exception if there is an error;
-     * return a SimpleXML object on success.
+     * return a \DOMDocument object on success.
      *
      * @param string $verb   OAI-PMH verb to execute.
      * @param array  $params GET parameters for ListRecords method.
@@ -427,7 +427,7 @@ class OaiPmh extends AbstractBase
     }
 
     /**
-     * Process an OAI-PMH response into a SimpleXML object.
+     * Process an OAI-PMH response into a \DOMDocument object.
      * Throw exception if an error is detected.
      *
      * @param string $xml        OAI-PMH response XML
@@ -440,7 +440,7 @@ class OaiPmh extends AbstractBase
     protected function processResponse($xml, $resumption)
     {
         try {
-            $result = $this->transform($xml, true);
+            $result = $this->transformToDoc($xml);
         } catch (\Exception $e) {
             $tempfile = $this->getTempFileName('oai-pmh-error-', '.xml');
             file_put_contents($tempfile, $xml);
@@ -476,7 +476,7 @@ class OaiPmh extends AbstractBase
      *
      * @return string The ID value
      */
-    protected function extractID($record)
+    protected function extractIDFromDom($record)
     {
         // Normalize to string:
         $id = $this->getSingleNode($record, 'identifier')->nodeValue;
@@ -498,7 +498,7 @@ class OaiPmh extends AbstractBase
     /**
      * Process the records.
      *
-     * @param object $records SimpleXML records.
+     * @param array $records DOM records
      *
      * @return void
      */
@@ -521,10 +521,10 @@ class OaiPmh extends AbstractBase
             }
 
             // Get the ID of the current record:
-            $id = $this->extractID($header);
+            $id = $this->extractIDFromDom($header);
 
             // Save the current record, either as a deleted or as a regular record:
-            $status = strtolower((string)$header->getAttribute('status'));
+            $status = strtolower($header->getAttribute('status'));
             if ($status === 'deleted') {
                 call_user_func($this->callback, $this->source, $id, true, null);
                 $this->deletedRecords++;
@@ -547,7 +547,7 @@ class OaiPmh extends AbstractBase
                         continue;
                     }
                     // Check whether the attribute already exists
-                    if ($recordNode->getAttributeNode($node->nodeName) !== false) {
+                    if ($recordNode->hasAttribute($node->nodeName)) {
                         continue;
                     }
                     $attr = $this->xml->createAttribute($node->nodeName);
@@ -681,7 +681,7 @@ class OaiPmh extends AbstractBase
     /**
      * Process fetched identifiers.
      *
-     * @param object $headers SimpleXML headers
+     * @param array $headers DOM headers
      *
      * @return void
      */
@@ -692,7 +692,7 @@ class OaiPmh extends AbstractBase
         // Loop through the records:
         foreach ($headers as $header) {
             // Get the ID of the current record:
-            $id = $this->extractID($header);
+            $id = $this->extractIDFromDom($header);
 
             // Process the current header, either as a deleted or as a regular record
             if (strcasecmp($header->getAttribute('status'), 'deleted') == 0) {
@@ -708,8 +708,8 @@ class OaiPmh extends AbstractBase
     /**
      * Get the first XML child node with the given name
      *
-     * @param \DOMElement $xml      The XML Node
-     * @param string      $nodeName Node to get
+     * @param \DOMDocument|\DOMElement $xml      The XML Node
+     * @param string                   $nodeName Node to get
      *
      * @return \DOMElement|false  Result node or false if not found
      */

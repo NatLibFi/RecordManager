@@ -99,9 +99,7 @@ class Ead3 extends Ead
                 break;
             }
         }
-        $this->archiveTitle = $this->getArchiveTitle();
-        $this->archiveTitle = $this->archiveTitle ?? $this->archiveId;
-
+        $this->archiveTitle = $this->getArchiveTitle() ?: $this->archiveId;
         $this->archiveSubTitle = '';
     }
 
@@ -182,7 +180,7 @@ class Ead3 extends Ead
         $absolute->addAttribute('title', $this->archiveTitle);
         $absolute->addAttribute(
             'sequence',
-            str_pad($this->currentPos, 7, '0', STR_PAD_LEFT)
+            str_pad((string)$this->currentPos, 7, '0', STR_PAD_LEFT)
         );
 
         if ($this->archiveSubTitle) {

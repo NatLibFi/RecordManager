@@ -46,6 +46,10 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Marc extends AbstractRecord
 {
+    use XmlRecordTrait {
+        XmlRecordTrait::parseXMLRecord as parseXMLRecord;
+    }
+
     public const SUBFIELD_INDICATOR = "\x1F";
     public const END_OF_FIELD = "\x1E";
     public const END_OF_RECORD = "\x1D";
@@ -185,7 +189,7 @@ class Marc extends AbstractRecord
                             );
                             foreach ($subfields as $subfield) {
                                 $newField['s'][] = [
-                                    (string)$subfield[0] => substr($subfield, 1)
+                                    $subfield[0] => substr($subfield, 1)
                                 ];
                             }
                             $this->fields[$tag][] = $newField;
@@ -314,8 +318,9 @@ class Marc extends AbstractRecord
      */
     public function toSolrArray(Database $db = null)
     {
-        $data = [];
-        $data['record_format'] = 'marc';
+        $data = [
+            'record_format' => 'marc'
+        ];
 
         // Try to find matches for IDs in link fields
         $fields = ['760', '762', '765', '767', '770', '772', '773', '774',
@@ -376,16 +381,18 @@ class Marc extends AbstractRecord
         // Location coordinates
         if ($geoField = $this->getDriverParam('geoField', $this->defaultGeoField)) {
             if ($geoLocations = $this->getGeographicLocations()) {
-                $data[$geoField] = $geoLocations;
+                $data[(string)$geoField] = $geoLocations;
                 $centerField = $this->getDriverParam(
                     'geoCenterField',
                     $this->defaultGeoCenterField
                 );
                 if ($centerField) {
+                    $centers = [];
                     foreach ($geoLocations as $geoLocation) {
-                        $data[$centerField][] = $this->metadataUtils
+                        $centers = $this->metadataUtils
                             ->getCenterCoordinates($geoLocation);
                     }
+                    $data[$centerField] = $centers;
                 }
                 $displayField = $this->getDriverParam(
                     'geoDisplayField',
@@ -660,9 +667,9 @@ class Marc extends AbstractRecord
             $data['dewey-hundreds'] = $deweyCallNumber->getNumber(100);
             $data['dewey-tens'] = $deweyCallNumber->getNumber(10);
             $data['dewey-ones'] = $deweyCallNumber->getNumber(1);
-            $data['dewey-full'] = $deweyCallNumber->getSearchString($deweyFields);
+            $data['dewey-full'] = $deweyCallNumber->getSearchString();
             if (empty($data['dewey-sort'])) {
-                $data['dewey-sort'] = $deweyCallNumber->getSortKey($deweyFields);
+                $data['dewey-sort'] = $deweyCallNumber->getSortKey();
             }
             $data['dewey-raw'] = $field;
         }
@@ -686,7 +693,7 @@ class Marc extends AbstractRecord
                 return $id;
             }
         }
-        return $this->getField('001');
+        return (string)$this->getField('001');
     }
 
     /**
@@ -757,9 +764,10 @@ class Marc extends AbstractRecord
     {
         $field = $this->getField('941');
         if ($field) {
-            return $this->metadataUtils->stripControlCharacters(
+            $hostId = $this->metadataUtils->stripControlCharacters(
                 $this->getSubfield($field, 'a')
             );
+            return [$hostId];
         }
         $ids = $this->getFieldsSubfields(
             [[self::GET_NORMAL, '773', ['w' => 1]]],
@@ -1575,7 +1583,7 @@ class Marc extends AbstractRecord
         $offset = 0;
         while ($offset < $dirLen) {
             $tag = substr($marc, self::LEADER_LEN + $offset, 3);
-            $len = substr($marc, self::LEADER_LEN + $offset + 3, 4);
+            $len = (int)substr($marc, self::LEADER_LEN + $offset + 3, 4);
             $dataOffset
                 = (int)substr($marc, self::LEADER_LEN + $offset + 7, 5);
 
@@ -1600,7 +1608,7 @@ class Marc extends AbstractRecord
                 );
                 foreach ($subfields as $subfield) {
                     $newField['s'][] = [
-                        (string)$subfield[0] => substr($subfield, 1)
+                        $subfield[0] => substr($subfield, 1)
                     ];
                 }
                 $this->fields[$tag][] = $newField;
@@ -1661,8 +1669,8 @@ class Marc extends AbstractRecord
                 if ($datapos > 99999) {
                     return '';
                 }
-                $directory .= $tag . str_pad($len, 4, '0', STR_PAD_LEFT)
-                    . str_pad($datapos, 5, '0', STR_PAD_LEFT);
+                $directory .= $tag . str_pad((string)$len, 4, '0', STR_PAD_LEFT)
+                    . str_pad((string)$datapos, 5, '0', STR_PAD_LEFT);
                 $datapos += $len;
                 $data .= $fieldStr;
             }
@@ -1675,9 +1683,9 @@ class Marc extends AbstractRecord
             return '';
         }
 
-        $leader = str_pad($recordLen, 5, '0', STR_PAD_LEFT)
+        $leader = str_pad((string)$recordLen, 5, '0', STR_PAD_LEFT)
             . substr($leader, 5, 7)
-            . str_pad($dataStart, 5, '0', STR_PAD_LEFT)
+            . str_pad((string)$dataStart, 5, '0', STR_PAD_LEFT)
             . substr($leader, 17);
         return $leader . $directory . $data;
     }
@@ -1685,7 +1693,7 @@ class Marc extends AbstractRecord
     /**
      * Check if the work is illustrated
      *
-     * @return boolean
+     * @return string
      */
     protected function getIllustrated()
     {
@@ -2237,7 +2245,7 @@ class Marc extends AbstractRecord
     protected function getAllSubfields($field, $filter = null)
     {
         if (!$field) {
-            return '';
+            return [];
         }
         if (!isset($field['s'])) {
             $this->logger->logDebug(
@@ -2443,7 +2451,7 @@ class Marc extends AbstractRecord
      */
     protected function getGenreFacets()
     {
-        return $this->metadataUtils->ucFirst(
+        return (array)$this->metadataUtils->ucFirst(
             $this->getFieldsSubfields(
                 [
                     [self::GET_NORMAL, '600', ['v' => 1]],
@@ -2766,6 +2774,7 @@ class Marc extends AbstractRecord
 
         $analytical = [];
         foreach ($authorFields as $tag => $subfields) {
+            $tag = (string)$tag;
             foreach ($this->getFields($tag) as $field) {
                 // Check for analytical entries to be processed later:
                 if (in_array($tag, ['700', '710', '711'])
@@ -2788,7 +2797,8 @@ class Marc extends AbstractRecord
                     ];
 
                     $sub6 = $this->getSubfield($field, '6');
-                    if ($sub6 && $f880 = $this->getAlternateScriptField($tag, $sub6)
+                    if ($sub6
+                        && $f880 = $this->getAlternateScriptField($tag, $sub6)
                     ) {
                         $author = $this->getSubfields($f880, $subfields);
                         if ($author) {
@@ -2886,7 +2896,8 @@ class Marc extends AbstractRecord
                 $altTitle = '';
                 $altAuthor = '';
                 $sub6 = $this->getSubfield($field, '6');
-                if ($sub6 && $f880 = $this->getAlternateScriptField($tag, $sub6)
+                if ($sub6
+                    && $f880 = $this->getAlternateScriptField((string)$tag, $sub6)
                 ) {
                     $altTitle = $this->getSubfield($f880, 'a');
                     if ($altTitle) {

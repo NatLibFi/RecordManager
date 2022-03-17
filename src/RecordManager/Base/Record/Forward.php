@@ -44,12 +44,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Forward extends AbstractRecord
 {
-    /**
-     * The XML document
-     *
-     * @var \SimpleXMLElement
-     */
-    protected $doc = null;
+    use XmlRecordTrait;
 
     /**
      * Default primary author relator codes, may be overridden in configuration.
@@ -126,23 +121,6 @@ class Forward extends AbstractRecord
     }
 
     /**
-     * Set record data
-     *
-     * @param string $source Source ID
-     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     *                       file import)
-     * @param string $data   Metadata
-     *
-     * @return void
-     */
-    public function setData($source, $oaiID, $data)
-    {
-        parent::setData($source, $oaiID, $data);
-
-        $this->doc = $this->parseXMLRecord($data);
-    }
-
-    /**
      * Return record ID (local)
      *
      * @return string
@@ -156,26 +134,6 @@ class Forward extends AbstractRecord
             $id = ((string)$attributes['IDTypeName']) . '_' . $id;
         }
         return $id;
-    }
-
-    /**
-     * Serialize the record for storing in the database
-     *
-     * @return string
-     */
-    public function serialize()
-    {
-        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
-    }
-
-    /**
-     * Serialize the record into XML for export
-     *
-     * @return string
-     */
-    public function toXML()
-    {
-        return $this->doc->asXML();
     }
 
     /**

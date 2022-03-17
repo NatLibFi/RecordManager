@@ -259,7 +259,7 @@ class Lrmi extends Qdc
     {
         $languages = [];
         foreach ($this->doc->material ?? [] as $material) {
-            $languages[] = (string)$material->inLanguage ?? '';
+            $languages[] = (string)($material->inLanguage ?? '');
         }
         foreach ($this->doc->inLanguage ?? [] as $language) {
             $languages[] = (string)$language;

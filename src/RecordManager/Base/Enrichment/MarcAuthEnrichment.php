@@ -61,6 +61,7 @@ class MarcAuthEnrichment extends AuthEnrichment
                 $solrArray,
                 $id,
                 'author_variant',
+                'author_variant',
                 true
             );
         }

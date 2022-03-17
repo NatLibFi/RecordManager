@@ -52,7 +52,7 @@ class PreviewCreator extends SolrUpdater
      */
     public function create($record)
     {
-        $components = [];
-        return $this->createSolrArray($record, $components);
+        $components = 0;
+        return $this->createSolrArray($record, $components) ?: [];
     }
 }

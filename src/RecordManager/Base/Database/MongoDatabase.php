@@ -188,7 +188,7 @@ class MongoDatabase extends AbstractDatabase
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
-     * @return int
+     * @return int|string
      */
     public function countRecords($filter, $options = [])
     {
@@ -340,7 +340,7 @@ class MongoDatabase extends AbstractDatabase
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
-     * @return int
+     * @return int|string
      */
     public function countDedups($filter, $options = [])
     {
@@ -662,7 +662,7 @@ class MongoDatabase extends AbstractDatabase
      * @param array  $filter     Search filter
      * @param array  $options    Options such as sorting
      *
-     * @return int
+     * @return int|string
      */
     protected function countMongoRecords($collection, $filter, $options)
     {

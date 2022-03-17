@@ -128,7 +128,6 @@ class RemoveSetting extends AbstractBase
         }
         $modified = [];
         $currentSource = null;
-        $skipSource = false;
         $modifyCurrentSource = false;
 
         $count = 0;
@@ -141,14 +140,13 @@ class RemoveSetting extends AbstractBase
             [$commentless] = explode(';', $line, 2);
             $commentless = trim($commentless);
 
-            $modifyCurrentSource = $currentSource && !$skipSource
+            $modifyCurrentSource = $currentSource
                 && (!$sources || in_array($currentSource, $sources));
             if (strncmp($commentless, '[', 1) === 0
                 && substr($commentless, -1) === ']'
                 && strlen($commentless) > 2
             ) {
                 $currentSource = substr($commentless, 1, -1);
-                $skipSource = false;
                 $modified[] = $line;
                 continue;
             }

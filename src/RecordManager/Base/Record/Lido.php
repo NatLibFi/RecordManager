@@ -42,12 +42,7 @@ use RecordManager\Base\Database\DatabaseInterface as Database;
  */
 class Lido extends AbstractRecord
 {
-    /**
-     * The XML document
-     *
-     * @var \SimpleXMLElement
-     */
-    protected $doc = null;
+    use XmlRecordTrait;
 
     /**
      * Main event name reflecting the terminology in the particular LIDO records.
@@ -68,7 +63,7 @@ class Lido extends AbstractRecord
      * Related work relation types reflecting the terminology in the particular LIDO
      * records.
      *
-     * @var string
+     * @var array
      */
     protected $relatedWorkRelationTypes = [
         'Collection', 'belongs to collection', 'collection'
@@ -89,23 +84,6 @@ class Lido extends AbstractRecord
     protected $subjectConceptIDTypes = ['uri', 'url'];
 
     /**
-     * Set record data
-     *
-     * @param string $source Source ID
-     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     *                       file import)
-     * @param string $data   Metadata
-     *
-     * @return void
-     */
-    public function setData($source, $oaiID, $data)
-    {
-        parent::setData($source, $oaiID, $data);
-
-        $this->doc = $this->parseXMLRecord($data);
-    }
-
-    /**
      * Return record ID (local)
      *
      * @return string
@@ -113,26 +91,6 @@ class Lido extends AbstractRecord
     public function getID()
     {
         return (string)$this->doc->lido->lidoRecID;
-    }
-
-    /**
-     * Serialize the record for storing in the database
-     *
-     * @return string
-     */
-    public function serialize()
-    {
-        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
-    }
-
-    /**
-     * Serialize the record into XML for export
-     *
-     * @return string
-     */
-    public function toXML()
-    {
-        return $this->doc->asXML();
     }
 
     /**
@@ -564,6 +522,8 @@ class Lido extends AbstractRecord
      * @param int               $levels    How many levels up to traverse
      *
      * @return string
+     *
+     * @psalm-suppress RedundantCondition
      */
     protected function getInheritedXmlAttribute(
         \SimpleXMLElement $node,
@@ -582,7 +542,7 @@ class Lido extends AbstractRecord
                 break;
             }
         }
-        return null === $value ? $default : (string)$value;
+        return null === $value ? $default : $value;
     }
 
     /**
@@ -1049,11 +1009,12 @@ class Lido extends AbstractRecord
      *
      * @param string $input Date range
      *
-     * @return string Two ISO 8601 dates separated with a comma on success, and null
-     * on failure
+     * @return string|null Two ISO 8601 dates separated with a comma on success, or
+     * null on failure
      */
     protected function parseDateRange($input)
     {
+        static $dmyRe = '/(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)/';
         $input = trim(strtolower($input));
 
         if (preg_match('/(\d\d\d\d) ?- (\d\d\d\d)/', $input, $matches) > 0) {
@@ -1066,13 +1027,7 @@ class Lido extends AbstractRecord
             $startDate = $year . '-' . $month . '-' . $day . 'T00:00:00Z';
             $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
             $noprocess = true;
-        } elseif (true
-            && preg_match(
-                '/(\d\d?)\s*.\s*(\d\d?)\s*.\s*(\d\d\d\d)/',
-                $input,
-                $matches
-            ) > 0
-        ) {
+        } elseif (preg_match($dmyRe, $input, $matches) > 0) {
             $year = $matches[3];
             $month = sprintf('%02d', $matches[2]);
             $day = sprintf('%02d', $matches[1]);
@@ -1080,7 +1035,7 @@ class Lido extends AbstractRecord
             $endDate = $year . '-' . $month . '-' . $day . 'T23:59:59Z';
             $noprocess = true;
         } elseif (preg_match('/(\d?\d?\d\d) ?\?/', $input, $matches) > 0) {
-            $year = $matches[1];
+            $year = (int)$matches[1];
 
             $startDate = $year - 3;
             $endDate = $year + 3;
@@ -1093,11 +1048,11 @@ class Lido extends AbstractRecord
             return null;
         }
 
-        if (strlen($startDate) == 2) {
+        if (strlen((string)$startDate) == 2) {
             $startDate = 1900 + (int)$startDate;
         }
-        if (strlen($endDate) == 2) {
-            $century = substr($startDate, 0, 2) . '00';
+        if (strlen((string)$endDate) == 2) {
+            $century = substr((string)$startDate, 0, 2) . '00';
             $endDate = (int)$century + (int)$endDate;
         }
 
@@ -1112,8 +1067,8 @@ class Lido extends AbstractRecord
             return null;
         }
 
-        if ($this->metadataUtils->validateISO8601Date($startDate) === false
-            || $this->metadataUtils->validateISO8601Date($endDate) === false
+        if ($this->metadataUtils->validateISO8601Date((string)$startDate) === false
+            || $this->metadataUtils->validateISO8601Date((string)$endDate) === false
         ) {
             return null;
         }
@@ -1145,12 +1100,11 @@ class Lido extends AbstractRecord
                             $eventTypes[] = mb_strtolower((string)$term, 'UTF-8');
                         }
                     }
-                    if (true
-                        && !array_intersect(
-                            $eventTypes,
-                            is_array($event) ? $event : [$event]
-                        )
-                    ) {
+                    $intersect = array_intersect(
+                        $eventTypes,
+                        is_array($event) ? $event : [$event]
+                    );
+                    if (!$intersect) {
                         continue;
                     }
                 }
@@ -1163,7 +1117,7 @@ class Lido extends AbstractRecord
     /**
      * Get all subject sets
      *
-     * @return \simpleXMLElement[] Array of subjectSet nodes
+     * @return array Array of subjectSet nodes
      */
     protected function getSubjectSetNodes()
     {
@@ -1188,7 +1142,7 @@ class Lido extends AbstractRecord
      *
      * @param string|string[] $exclude Which subject types to exclude
      *
-     * @return \simpleXMLElement[] Array of subject nodes
+     * @return array Array of subjectSet nodes
      */
     protected function getSubjectNodes($exclude = [])
     {
@@ -1214,7 +1168,7 @@ class Lido extends AbstractRecord
      *
      * @param string|string[] $exclude Which description types to exclude
      *
-     * @return \simpleXMLElement[] Array of objectDescriptionSet nodes
+     * @return array Array of objectDescriptionSet nodes
      */
     protected function getObjectDescriptionSetNodes($exclude = [])
     {
@@ -1247,7 +1201,7 @@ class Lido extends AbstractRecord
      *
      * @param string[] $relatedWorkRelType Which relation types to include
      *
-     * @return \simpleXMLElement[] Array of relatedWorkSet nodes
+     * @return array Array of relatedWorkSet nodes
      */
     protected function getRelatedWorkSetNodes($relatedWorkRelType = [])
     {

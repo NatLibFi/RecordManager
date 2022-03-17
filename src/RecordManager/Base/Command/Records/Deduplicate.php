@@ -97,6 +97,8 @@ class Deduplicate extends AbstractBase
      * @param OutputInterface $output Console output
      *
      * @return int 0 if everything went fine, or an exit code
+     *
+     * @psalm-suppress TypeDoesNotContainType
      */
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {

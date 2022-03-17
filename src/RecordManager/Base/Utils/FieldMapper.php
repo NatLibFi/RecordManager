@@ -179,16 +179,14 @@ class FieldMapper
                             $newValues[] = $replacement;
                         }
                     }
-                    if (null !== $newValues) {
-                        $data[$field] = array_values(
-                            array_filter(
-                                array_unique($newValues),
-                                function ($s) {
-                                    return '' !== $s;
-                                }
-                            )
-                        );
-                    }
+                    $data[$field] = array_values(
+                        array_filter(
+                            array_unique($newValues),
+                            function ($s) {
+                                return '' !== $s;
+                            }
+                        )
+                    );
                 } else {
                     $data[$field] = $this->mapValue($data[$field], $mappingFile);
                 }

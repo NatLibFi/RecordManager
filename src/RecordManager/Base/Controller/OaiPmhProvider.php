@@ -229,7 +229,7 @@ EOT;
     /**
      * ListRecords/ListIdentifiers handler
      *
-     * @param boolean $verb 'ListRecords' or 'ListIdentifiers'
+     * @param string $verb Verb; 'ListRecords' or 'ListIdentifiers'
      *
      * @return void
      */

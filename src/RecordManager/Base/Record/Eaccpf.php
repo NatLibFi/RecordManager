@@ -44,24 +44,7 @@ use RecordManager\Base\Database\DatabaseInterface as Database;
  */
 class Eaccpf extends AbstractRecord
 {
-    protected $doc = null;
-
-    /**
-     * Set record data
-     *
-     * @param string $source Source ID
-     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     *                       file import)
-     * @param string $data   Metadata
-     *
-     * @return void
-     */
-    public function setData($source, $oaiID, $data)
-    {
-        parent::setData($source, $oaiID, $data);
-
-        $this->doc = $this->parseXMLRecord($data);
-    }
+    use XmlRecordTrait;
 
     /**
      * Return record ID (local)
@@ -75,26 +58,6 @@ class Eaccpf extends AbstractRecord
         }
         $id = (string)$this->doc->control->recordId;
         return urlencode($id);
-    }
-
-    /**
-     * Serialize the record for storing in the database
-     *
-     * @return string
-     */
-    public function serialize()
-    {
-        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
-    }
-
-    /**
-     * Serialize the record into XML for export
-     *
-     * @return string
-     */
-    public function toXML()
-    {
-        return $this->doc->asXML();
     }
 
     /**
@@ -132,7 +95,7 @@ class Eaccpf extends AbstractRecord
     /**
      * Get agency name
      *
-     * @return array
+     * @return string
      */
     protected function getAgencyName()
     {
@@ -144,7 +107,7 @@ class Eaccpf extends AbstractRecord
     /**
      * Get all XML fields
      *
-     * @return string
+     * @return array
      */
     protected function getAllFields()
     {
@@ -381,7 +344,7 @@ class Eaccpf extends AbstractRecord
     protected function getRelatedPlaces()
     {
         if (!isset($this->doc->cpfDescription->description->places->place)) {
-            return '';
+            return [];
         }
         $result = [];
         foreach ($this->doc->cpfDescription->description->places->place as $place) {

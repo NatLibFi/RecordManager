@@ -63,7 +63,7 @@ class SolrUpdater
     /**
      * Database
      *
-     * @var \RecordManager\Base\Database\AbstractDatabase
+     * @var ?\RecordManager\Base\Database\AbstractDatabase
      */
     protected $db;
 
@@ -553,7 +553,7 @@ class SolrUpdater
      *
      * @param array                   $config            Main configuration
      * @param array                   $dataSourceConfig  Data source settings
-     * @param Database                $db                Database connection
+     * @param ?Database               $db                Database connection
      * @param Logger                  $log               Logger
      * @param RecordPluginManager     $recordPM          Record plugin manager
      * @param EnrichmentPluginManager $enrichmentPM      Enrichment plugin manager
@@ -743,6 +743,8 @@ class SolrUpdater
      * @param bool        $datePerServer Track last Solr update date per server url
      *
      * @return void
+     *
+     * @psalm-suppress TypeDoesNotContainType
      */
     public function updateRecords(
         $fromDate = null,
@@ -1365,6 +1367,8 @@ class SolrUpdater
      *                         are processed
      *
      * @return void
+     *
+     * @psalm-suppress RedundantCondition
      */
     public function countValues($sourceId, $field, $mapped = false)
     {
@@ -1636,6 +1640,8 @@ class SolrUpdater
      *
      * @return array|false
      * @throws \Exception
+     *
+     * @psalm-suppress RedundantCondition
      */
     protected function createSolrArray(
         array $record,
@@ -2566,7 +2572,7 @@ class SolrUpdater
             $this->log->logError(
                 'checkClusterState',
                 'Unable to decode zookeeper status from response: '
-                    . (null !== $response ? $response->getBody() : '')
+                    . $response->getBody()
             );
             $this->clusterState = 'error';
             return 'error';

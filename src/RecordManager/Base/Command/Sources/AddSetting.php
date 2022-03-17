@@ -168,7 +168,7 @@ class AddSetting extends AbstractBase
                 && strlen($commentless) > 2
             ) {
                 // Switching source, write any remaining values:
-                if ($modifyCurrentSource && !$skipSource) {
+                if ($modifyCurrentSource) {
                     $modified[] = $setting;
                 }
                 $modified = array_merge($modified, $emptyLines);
@@ -204,9 +204,7 @@ class AddSetting extends AbstractBase
                 $skipSource = true;
             }
             if (!$skipSource) {
-                if (is_array($analyzed) && is_array($lineAnalyzed)
-                    && key($analyzed) === key($lineAnalyzed)
-                ) {
+                if (key($analyzed) === key($lineAnalyzed)) {
                     $arrayFound = true;
                 } elseif ($arrayFound) {
                     // Output the new value at the end of the array:

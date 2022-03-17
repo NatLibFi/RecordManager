@@ -42,24 +42,7 @@ use RecordManager\Base\Database\DatabaseInterface as Database;
  */
 class Ese extends AbstractRecord
 {
-    protected $doc = null;
-
-    /**
-     * Set record data
-     *
-     * @param string $source Source ID
-     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     *                       file import)
-     * @param string $data   Metadata
-     *
-     * @return void
-     */
-    public function setData($source, $oaiID, $data)
-    {
-        parent::setData($source, $oaiID, $data);
-
-        $this->doc = $this->parseXMLRecord($data);
-    }
+    use XmlRecordTrait;
 
     /**
      * Return record ID (local)
@@ -69,26 +52,6 @@ class Ese extends AbstractRecord
     public function getID()
     {
         return '';
-    }
-
-    /**
-     * Serialize the record for storing in the database
-     *
-     * @return string
-     */
-    public function serialize()
-    {
-        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
-    }
-
-    /**
-     * Serialize the record into XML for export
-     *
-     * @return string
-     */
-    public function toXML()
-    {
-        return $this->doc->asXML();
     }
 
     /**
@@ -126,11 +89,9 @@ class Ese extends AbstractRecord
 
         $data['title'] = $data['title_full'] = (string)$doc->title;
         $titleParts = explode(' : ', $data['title']);
-        if (!empty($titleParts)) {
-            $data['title_short'] = $titleParts[0];
-            if (isset($titleParts[1])) {
-                $data['title_sub'] = $titleParts[1];
-            }
+        $data['title_short'] = $titleParts[0];
+        if (isset($titleParts[1])) {
+            $data['title_sub'] = $titleParts[1];
         }
         $data['title_sort'] = $this->getTitle(true);
 

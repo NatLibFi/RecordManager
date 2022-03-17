@@ -246,7 +246,7 @@ interface DatabaseInterface
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
-     * @return int
+     * @return int|string
      */
     public function countDedups($filter, $options = []);
 

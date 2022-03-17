@@ -158,9 +158,9 @@ class XslTransformation
             $this->xslt->setParameter('', $params);
         }
         $result = $this->xslt->transformToXml($doc);
-        if (null === $result) {
+        if (!is_string($result)) {
             throw new \Exception(
-                'Transformation resulted in null: ' . $this->filename
+                'Transformation failed: ' . $this->filename
             );
         }
         return $result;

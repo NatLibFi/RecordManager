@@ -387,20 +387,6 @@ abstract class AbstractBase
     }
 
     /**
-     * Check if the record is deleted.
-     * This implementation works for MARC records.
-     *
-     * @param \SimpleXMLElement $record Record
-     *
-     * @return bool
-     */
-    protected function isDeleted($record)
-    {
-        $status = substr($record->leader, 5, 1);
-        return $status == 'd';
-    }
-
-    /**
      * Check if the record is modified.
      * This implementation works for MARC records.
      *
@@ -420,7 +406,7 @@ abstract class AbstractBase
      *
      * @param \SimpleXMLElement $record Record
      *
-     * @return string|bool ID if found, false if record is missing ID
+     * @return string|false ID if found, false if record is missing ID
      * @throws \Exception
      */
     protected function extractID($record)
@@ -460,6 +446,23 @@ abstract class AbstractBase
      */
     protected function transform($xml, $returnDoc = false)
     {
+        $doc = $this->transformToDoc($xml);
+        return $returnDoc ? $doc : $doc->saveXML();
+    }
+
+    /**
+     * Do transformation to DOM Document
+     *
+     * Always returns a string to make sure any elements added as unescaped strings
+     * are properly parsed.
+     *
+     * @param string $xml XML to transform
+     *
+     * @return \DOMDocument Transformed XML
+     * @throws \Exception
+     */
+    protected function transformToDoc(string $xml): \DOMDocument
+    {
         $doc = new \DOMDocument();
         $result = $this->metadataUtils->loadXML($xml, $doc, 0, $errors);
         if ($result === false || $errors) {
@@ -490,7 +493,7 @@ abstract class AbstractBase
             }
         }
 
-        return $returnDoc ? $doc : $doc->saveXML();
+        return $doc;
     }
 
     /**

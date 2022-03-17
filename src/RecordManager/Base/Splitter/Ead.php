@@ -138,7 +138,7 @@ class Ead extends AbstractBase
      */
     public function setData($data)
     {
-        $this->doc = $this->metadataUtils->loadXML($data);
+        $this->doc = $this->metadataUtils->loadSimpleXML($data);
         $this->recordNodes = $this->doc->xpath('archdesc | archdesc/dsc//*[@level]');
         $this->recordCount = count($this->recordNodes);
         $this->currentPos = 0;
@@ -205,7 +205,7 @@ class Ead extends AbstractBase
         $absolute->addAttribute('title', $this->archiveTitle);
         $absolute->addAttribute(
             'sequence',
-            str_pad($this->currentPos, 7, '0', STR_PAD_LEFT)
+            str_pad((string)$this->currentPos, 7, '0', STR_PAD_LEFT)
         );
         if ($this->archiveSubTitle) {
             $absolute->addAttribute('subtitle', $this->archiveSubTitle);
@@ -294,7 +294,7 @@ class Ead extends AbstractBase
                 $xml = $simplexml->addChild($name, $data);
                 foreach ($append->attributes() as $key => $value) {
                     if (!$xml->attributes()->{$key}) {
-                        $xml->addAttribute($key, $value);
+                        $xml->addAttribute($key, (string)$value);
                     }
                 }
             }
@@ -328,7 +328,7 @@ class Ead extends AbstractBase
             $data = str_replace('&', '&amp;', $data);
             $xml = $simplexml->addChild($name, $data);
             foreach ($append->attributes() as $key => $value) {
-                $xml->addAttribute($key, $value);
+                $xml->addAttribute($key, (string)$value);
             }
             foreach ($append->children() as $child) {
                 $this->appendXMLFiltered($xml, $child);

@@ -42,28 +42,7 @@ use RecordManager\Base\Database\DatabaseInterface as Database;
  */
 class ForwardAuthority extends AbstractRecord
 {
-    /**
-     * The XML document
-     *
-     * @var \SimpleXMLElement
-     */
-    protected $doc = null;
-
-    /**
-     * Set record data
-     *
-     * @param string $source Source ID
-     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     *                       file import)
-     * @param string $data   Metadata
-     *
-     * @return void
-     */
-    public function setData($source, $oaiID, $data)
-    {
-        parent::setData($source, $oaiID, $data);
-        $this->doc = $this->metadataUtils->loadXML($data);
-    }
+    use XmlRecordTrait;
 
     /**
      * Return record ID (local)
@@ -75,26 +54,6 @@ class ForwardAuthority extends AbstractRecord
         $doc = $this->getMainElement();
         return (string)$doc->AgentIdentifier->IDTypeName . '_'
             . (string)$doc->AgentIdentifier->IDValue;
-    }
-
-    /**
-     * Serialize the record for storing in the database
-     *
-     * @return string
-     */
-    public function serialize()
-    {
-        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
-    }
-
-    /**
-     * Serialize the record into XML for export
-     *
-     * @return string
-     */
-    public function toXML()
-    {
-        return $this->doc->asXML();
     }
 
     /**
@@ -135,7 +94,7 @@ class ForwardAuthority extends AbstractRecord
     /**
      * Get agency name
      *
-     * @return array
+     * @return string
      */
     protected function getAgencyName()
     {
@@ -154,7 +113,7 @@ class ForwardAuthority extends AbstractRecord
     /**
      * Get all XML fields
      *
-     * @return string
+     * @return array
      */
     protected function getAllFields()
     {

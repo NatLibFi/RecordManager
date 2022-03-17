@@ -106,7 +106,7 @@ abstract class AbstractBase
     /**
      * Metadata utilities
      *
-     * @var MetadataUtils;
+     * @var MetadataUtils
      */
     protected $metadataUtils;
 

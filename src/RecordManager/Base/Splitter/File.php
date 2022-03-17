@@ -139,12 +139,9 @@ class File extends AbstractBase
             }
             $result['additionalData']['oaiId'] = $xNodes->item(0)->nodeValue;
         }
-        if ($node->nodeType !== XML_DOCUMENT_NODE) {
-            $childNode = $node;
-            $node = new \DomDocument;
-            $node->appendChild($node->importNode($childNode, true));
-        }
-        $result['metadata'] = $node->saveXML();
+        $result['metadata'] = ($node instanceof \DOMDocument)
+            ? $node->saveXML()
+            : $node->ownerDocument->saveXML($node);
 
         return $result;
     }

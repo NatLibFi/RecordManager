@@ -64,14 +64,14 @@ class NominatimGeocoder extends AbstractEnrichment
     /**
      * Delay between requests
      *
-     * @var int
+     * @var float
      */
     protected $delay = 1500;
 
     /**
      * Last request time
      *
-     * @var int
+     * @var float
      */
     protected $lastRequestTime = null;
 
@@ -159,10 +159,7 @@ class NominatimGeocoder extends AbstractEnrichment
             $this->preferredArea = $settings['preferred_area'];
         }
         if (isset($settings['delay'])) {
-            $this->delay = $settings['delay'];
-        }
-        if (isset($settings['delay'])) {
-            $this->delay = $settings['delay'];
+            $this->delay = floatval($settings['delay']);
         }
         if (isset($settings['simplification_tolerance'])) {
             if (!\geoPHP::geosInstalled()) {
@@ -332,7 +329,7 @@ class NominatimGeocoder extends AbstractEnrichment
         if (null !== $this->lastRequestTime) {
             $sinceLast = microtime(true) - $this->lastRequestTime;
             if ($sinceLast < $this->delay) {
-                usleep($this->delay - $sinceLast);
+                usleep((int)round(($this->delay - $sinceLast) * 1000));
             }
         }
         $this->lastRequestTime = microtime(true);

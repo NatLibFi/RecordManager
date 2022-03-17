@@ -79,16 +79,17 @@ class Ini
     /**
      * Parse an ini file to an array
      *
-     * @param string $filename Ini file
+     * @param string $filename      Ini file
+     * @param bool   $overrideCache Whether to ignore any cached data
      *
      * @return array
      * @throws \Exception
      */
-    public function get(string $filename): array
+    public function get(string $filename, bool $overrideCache = false): array
     {
         $fullPath = RECMAN_BASE_PATH . "/conf/$filename";
         $cacheKey = md5($fullPath);
-        if (!isset($this->cachedConfigs[$cacheKey])) {
+        if ($overrideCache || !isset($this->cachedConfigs[$cacheKey])) {
             $result = parse_ini_file($fullPath, true);
             if (false === $result) {
                 $error = error_get_last();

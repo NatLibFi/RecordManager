@@ -3,7 +3,7 @@
  * Record storage trait
  *
  * Prerequisites:
- * - MetadataUtils as $this->metadataUtils.
+ * - MetadataUtils as $this->metadataUtils
  * - Logger as $this->logger
  *
  * PHP version 7
@@ -54,7 +54,7 @@ trait StoreRecordTrait
      *
      * @var \RecordManager\Base\Deduplication\DedupHandlerInterface
      */
-    protected $dedupHandler;
+    protected $dedupHandler = null;
 
     /**
      * Save a record into the database. Used by e.g. file import and OAI-PMH
@@ -70,7 +70,7 @@ trait StoreRecordTrait
      */
     public function storeRecord($sourceId, $oaiID, $deleted, $recordData)
     {
-        if (!isset($this->dedupHandler)) {
+        if (null === $this->dedupHandler) {
             throw new \Exception('Dedup handler missing');
         }
 

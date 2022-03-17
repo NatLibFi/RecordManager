@@ -100,7 +100,14 @@ class Ead3 extends Ead
      */
     public function toXML()
     {
-        return $this->doc->asXML();
+        $xml = $this->doc->asXML();
+        if (false === $xml) {
+            throw new \Exception(
+                "Could not serialize record '{$this->source}."
+                . $this->getId() . "' to XML"
+            );
+        }
+        return $xml;
     }
 
     /**
