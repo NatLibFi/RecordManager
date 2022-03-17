@@ -51,7 +51,7 @@ class Qdc extends AbstractRecord
     use FullTextTrait;
 
     /**
-     * HTTP client manager
+     * HTTP client manager for FullTextTrait
      *
      * @var HttpClientManager
      */
@@ -459,7 +459,7 @@ class Qdc extends AbstractRecord
         foreach ($this->doc->description as $description) {
             $trimmed = trim((string)$description);
             if (!preg_match('/(^https?)|(^\d+\.\d+$)/', $trimmed)) {
-                $all[] = $description;
+                $all[] = (string)$description;
                 if (!$primary) {
                     $descLang = (string)$description->attributes()->{'lang'};
                     if ($descLang === $lang) {
