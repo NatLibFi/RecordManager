@@ -304,8 +304,8 @@ class Qdc extends AbstractRecord
     public function getISSNs()
     {
         $result = [];
-        foreach ([$this->doc->relation, $this->doc->identifier] as $field) {
-            foreach ($field ?? [] as $current) {
+        foreach ([$this->doc->relation, $this->doc->identifier] as $fields) {
+            foreach ($fields as $current) {
                 if ((string)$current->attributes()->{'type'} === 'issn') {
                     $result[] = trim((string)$current);
                 }

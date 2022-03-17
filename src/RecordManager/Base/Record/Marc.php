@@ -159,10 +159,10 @@ class Marc extends AbstractRecord
     /**
      * Set record data
      *
-     * @param string $source Source ID
-     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     *                       file import)
-     * @param string $data   Metadata
+     * @param string       $source Source ID
+     * @param string       $oaiID  Record ID received from OAI-PMH (or empty string
+     *                             for file import)
+     * @param string|array $data   Metadata
      *
      * @return void
      */
@@ -1161,6 +1161,7 @@ class Marc extends AbstractRecord
                 default:
                     return 'Map';
                 }
+                // @phpstan-ignore-next-line
                 break;
             case 'C':
                 switch ($formatCode2) {
@@ -1202,6 +1203,7 @@ class Marc extends AbstractRecord
                 default:
                     return 'Slide';
                 }
+                // @phpstan-ignore-next-line
                 break;
             case 'H':
                 return 'Microfilm';
@@ -1228,6 +1230,7 @@ class Marc extends AbstractRecord
                 default:
                     return 'Photo';
                 }
+                // @phpstan-ignore-next-line
                 break;
             case 'M':
                 switch ($formatCode2) {
@@ -1238,6 +1241,7 @@ class Marc extends AbstractRecord
                 default:
                     return 'MotionPicture';
                 }
+                // @phpstan-ignore-next-line
                 break;
             case 'O':
                 return 'Kit';
@@ -1262,6 +1266,7 @@ class Marc extends AbstractRecord
                 default:
                     return 'SoundRecording';
                 }
+                // @phpstan-ignore-next-line
                 break;
             case 'V':
                 $videoFormat = strtoupper(substr($contents, 4, 1));
@@ -1284,6 +1289,7 @@ class Marc extends AbstractRecord
                 default:
                     return 'Video';
                 }
+                // @phpstan-ignore-next-line
                 break;
             }
         }
@@ -1306,7 +1312,6 @@ class Marc extends AbstractRecord
             return 'MusicRecording';
         case 'K':
             return 'Photo';
-            break;
         case 'M':
             return 'Electronic';
         case 'O':
@@ -1333,6 +1338,7 @@ class Marc extends AbstractRecord
             } else {
                 return 'Book';
             }
+            // @phpstan-ignore-next-line
             break;
         // Serial
         case 'S':
@@ -1346,6 +1352,7 @@ class Marc extends AbstractRecord
             default:
                 return $online ? 'eSerial' : 'Serial';
             }
+            // @phpstan-ignore-next-line
             break;
 
         case 'A':

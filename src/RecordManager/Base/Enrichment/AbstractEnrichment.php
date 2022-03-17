@@ -77,7 +77,7 @@ abstract class AbstractEnrichment
     /**
      * HTTP Request
      *
-     * @var \HTTP_Request2
+     * @var ?\HTTP_Request2
      */
     protected $request = null;
 

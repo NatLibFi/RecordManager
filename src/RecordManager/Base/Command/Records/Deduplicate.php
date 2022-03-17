@@ -174,6 +174,7 @@ class Deduplicate extends AbstractBase
                         return true;
                     }
                 );
+                // @phpstan-ignore-next-line
                 if ($this->terminate) {
                     $this->logger
                         ->logInfo('deduplicate', 'Termination upon request');
@@ -270,6 +271,7 @@ class Deduplicate extends AbstractBase
                         return true;
                     }
                 );
+                // @phpstan-ignore-next-line
                 if ($this->terminate) {
                     $this->logger
                         ->logInfo('deduplicate', 'Termination upon request');

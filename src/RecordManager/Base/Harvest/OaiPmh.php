@@ -142,7 +142,7 @@ class OaiPmh extends AbstractBase
     /**
      * Current response being processed
      *
-     * @var \DOMDocument
+     * @var ?\DOMDocument
      */
     protected $xml = null;
 

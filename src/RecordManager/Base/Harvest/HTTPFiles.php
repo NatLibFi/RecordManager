@@ -93,7 +93,7 @@ class HTTPFiles extends AbstractBase
     {
         $this->initHarvest($callback);
 
-        if (isset($this->startDate)) {
+        if (null !== $this->startDate) {
             $this->infoMsg('Incremental harvest from timestamp ' . $this->startDate);
         } else {
             $this->infoMsg('Initial harvest for all records');

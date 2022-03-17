@@ -44,7 +44,7 @@ trait FullTextTrait
     /**
      * HTTP Request class
      *
-     * @var \HTTP_Request2
+     * @var ?\HTTP_Request2
      */
     protected $urlRequest = null;
 

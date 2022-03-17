@@ -3,7 +3,9 @@ parameters:
         - %currentWorkingDirectory%/src
     excludePaths:
         - %currentWorkingDirectory%/src/RecordManager/Base/Database/MongoDatabase.php
+    bootstrapFiles:
+        - %currentWorkingDirectory%/tests/bootstrap.php
     tmpDir: %currentWorkingDirectory%/.phpstan_cache
-    level: 0
+    level: 4
     parallel:
         processTimeout: 600.0

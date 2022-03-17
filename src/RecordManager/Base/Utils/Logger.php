@@ -104,7 +104,7 @@ class Logger
     /**
      * Database
      *
-     * @var DatabaseInterface
+     * @var ?DatabaseInterface
      */
     protected $db = null;
 
@@ -146,7 +146,7 @@ class Logger
     /**
      * Set database
      *
-     * @param DatabaseInterface $db Database
+     * @param ?DatabaseInterface $db Database
      *
      * @return void
      */

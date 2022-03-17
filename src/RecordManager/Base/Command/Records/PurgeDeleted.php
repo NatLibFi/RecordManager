@@ -129,6 +129,7 @@ class PurgeDeleted extends AbstractBase
         // Process normal records
         $dateStr = '';
         $params = ['deleted' => true];
+        $date = null;
         if ($daysToKeep) {
             $date = strtotime("-$daysToKeep day");
             $dateStr = ' until ' . date('Y-m-d', $date);
@@ -182,7 +183,7 @@ class PurgeDeleted extends AbstractBase
 
         // Process dedup records
         $params = ['deleted' => true];
-        if ($daysToKeep) {
+        if (null !== $date) {
             $params['changed'] = ['$lt' => $this->db->getTimestamp($date)];
         }
         $this->logger->logInfo(

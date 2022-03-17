@@ -143,7 +143,8 @@ class Ead3 extends Ead
                     $firstId = $id;
                 }
                 if (!$this->unitIdLabel
-                    || (string)$attr->label === $this->unitIdLabel
+                    || (isset($attr->label)
+                    && (string)$attr->label === $this->unitIdLabel)
                 ) {
                     $unitId = $id;
                     if ($unitId != $this->archiveId) {

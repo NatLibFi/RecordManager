@@ -63,7 +63,7 @@ class SolrUpdater
     /**
      * Database
      *
-     * @var ?\RecordManager\Base\Database\AbstractDatabase
+     * @var ?\RecordManager\Base\Database\DatabaseInterface
      */
     protected $db;
 
@@ -1503,7 +1503,8 @@ class SolrUpdater
 
             foreach ($records as $record) {
                 $id = $record['id'];
-                if ('merged' === $record['record_format'] ?? $record['recordtype']) {
+                if ('merged' === ($record['record_format'] ?? $record['recordtype'])
+                ) {
                     $dbRecord = $this->db->getDedup($id);
                 } else {
                     $dbRecord = $this->db->getRecord($id);
@@ -1534,6 +1535,7 @@ class SolrUpdater
         }
         $this->flushUpdateBuffer();
 
+        $avg = $pc->getSpeed();
         $this->log->logInfo(
             'checkIndexedRecords',
             "$count records checked with $orphanRecordCount orphaned records"
@@ -1746,6 +1748,7 @@ class SolrUpdater
                 $changeDate
             );
             // Use latest date as the host record date
+            // @phpstan-ignore-next-line
             if (null !== $changeDate && $changeDate > $record['date']) {
                 $record['date'] = $changeDate;
             }
@@ -1774,7 +1777,6 @@ class SolrUpdater
         // Record links between host records and component parts
         $hostDataToCopy = [];
         if ($metadataRecord->getIsComponentPart()) {
-            $hostRecords = [];
             if ($this->db && !empty($record['host_record_id'])) {
                 $hostRecords = $this->db->findRecords(
                     [
@@ -1785,22 +1787,9 @@ class SolrUpdater
                     ],
                     ['limit' => 10000] // An arbitrary limit, but we need something
                 );
-                if (!$hostRecords) {
-                    $this->log->logWarning(
-                        'createSolrArray',
-                        "Any of host records ["
-                            . implode(', ', (array)$record['host_record_id'])
-                            . "] not found for record '" . $record['_id'] . "'"
-                    );
-                    $warnings[] = 'host record missing';
-                    if ($this->containerTitleField) {
-                        $data[$this->containerTitleField]
-                            = $metadataRecord->getContainerTitle();
-                    }
-                }
-            }
-            if ($hostRecords) {
+                $hostRecordsFound = false;
                 foreach ($hostRecords as $hostRecord) {
+                    $hostRecordsFound = true;
                     if ($this->hierarchyParentIdField) {
                         $data[$this->hierarchyParentIdField][]
                             = $this->createSolrId($hostRecord['_id']);
@@ -1845,7 +1834,22 @@ class SolrUpdater
                         $hostDataToCopy[] = $hostData;
                     }
                 }
+
+                if (!$hostRecordsFound) {
+                    $this->log->logWarning(
+                        'createSolrArray',
+                        "Any of host records ["
+                            . implode(', ', (array)$record['host_record_id'])
+                            . "] not found for record '" . $record['_id'] . "'"
+                    );
+                    $warnings[] = 'host record missing';
+                    if ($this->containerTitleField) {
+                        $data[$this->containerTitleField]
+                            = $metadataRecord->getContainerTitle();
+                    }
+                }
             }
+
             if ($this->containerVolumeField) {
                 $data[$this->containerVolumeField] = $metadataRecord->getVolume();
             }
@@ -2152,23 +2156,26 @@ class SolrUpdater
                         $this->unicodeNormalizationForm
                     );
                     $value = $this->trimFieldLength($key, $value);
-                    if (empty($value) || $value === 0 || $value === 0.0
-                        || $value === '0'
-                    ) {
+                    if ('' === $value || '0' === $value || '0.0' === $value) {
                         unset($values[$key2]);
                     }
                 }
-                $values = array_values(array_unique($values));
-            } elseif ($key != 'fullrecord') {
+                if (empty($values)) {
+                    unset($data[$key]);
+                } else {
+                    $values = array_values(array_unique($values));
+                }
+            } elseif ($key !== 'fullrecord') {
                 $values = $this->metadataUtils->normalizeUnicode(
                     $values,
                     $this->unicodeNormalizationForm
                 );
                 $values = $this->trimFieldLength($key, $values);
-            }
-            if (empty($values) || $values === 0 || $values === 0.0 || $values === '0'
-            ) {
-                unset($data[$key]);
+
+                if ('' === $values || '0' === $values || '0.0' === $values
+                ) {
+                    unset($data[$key]);
+                }
             }
         }
     }
@@ -2445,6 +2452,7 @@ class SolrUpdater
         $maxTries = $this->maxUpdateTries;
         for ($try = 1; $try <= $maxTries; $try++) {
             try {
+                // @phpstan-ignore-next-line
                 if (!$this->waitForClusterStateOk()) {
                     throw new \Exception(
                         'Failed to check that the cluster state is ok'
@@ -2464,7 +2472,7 @@ class SolrUpdater
                 throw $e;
             }
             if ($try < $maxTries) {
-                $code = null === $response ? 999 : $response->getStatus();
+                $code = $response->getStatus();
                 if ($code >= 300) {
                     $this->log->logWarning(
                         'solrRequest',
@@ -2558,7 +2566,7 @@ class SolrUpdater
             return 'error';
         }
 
-        $code = null === $response ? 999 : $response->getStatus();
+        $code = $response->getStatus();
         if (200 !== $code) {
             $this->log->logError(
                 'checkClusterState',
@@ -2949,8 +2957,8 @@ class SolrUpdater
     /**
      * Get a unix timestamp for the update start time
      *
-     * @param string $fromDate      User-given start date
-     * @param string $lastUpdateKey Last index update key in database
+     * @param string|null $fromDate      User-given start date
+     * @param string      $lastUpdateKey Last index update key in database
      *
      * @return int|null
      */

@@ -84,18 +84,20 @@ trait PreTransformationTrait
         }
         $doc = new \DOMDocument();
         $errors = '';
-        $result = $this->metadataUtils->loadXML($data, $doc, 0, $errors);
-        if (false === $result || $errors) {
+        $status = $this->metadataUtils->loadXML($data, $doc, 0, $errors);
+        if (false === $status || $errors) {
             throw new \Exception($errors ?: 'Unknown error');
         }
 
         if (!empty($settings['reParseTransformed'])) {
-            $xml = $xslt->transformToXml($doc);
-            $doc = new \DOMDocument();
-            $errors = '';
-            $result = $this->metadataUtils->loadXML($xml, $doc, 0, $errors);
-            if (false === $result || $errors) {
-                throw new \Exception($errors ?: 'Unknown error');
+            foreach ($settings['preXSLT'] as $xslt) {
+                $xml = $xslt->transformToXml($doc);
+                $doc = new \DOMDocument();
+                $errors = '';
+                $status = $this->metadataUtils->loadXML($xml, $doc, 0, $errors);
+                if (false === $status || $errors) {
+                    throw new \Exception($errors ?: 'Unknown error');
+                }
             }
         } else {
             foreach ($settings['preXSLT'] as $xslt) {

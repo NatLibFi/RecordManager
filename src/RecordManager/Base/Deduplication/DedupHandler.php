@@ -400,9 +400,7 @@ class DedupHandler implements DedupHandlerInterface
                 'suppressed' => ['$in' => [null, false]],
                 'source_id' => ['$ne' => $record['source_id']],
             ];
-            if (!empty($rule['filters'])) {
-                $params += $rule['filters'];
-            }
+            $params += $rule['filters'];
             $candidates = $this->db->findRecords(
                 $params,
                 [

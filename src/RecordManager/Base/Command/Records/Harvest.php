@@ -342,7 +342,9 @@ class Harvest extends AbstractBase
                         $this->logger
                             ->logInfo('harvest', 'Fetching identifiers');
                         // Reset any overridden initial position:
-                        $harvester->setInitialPosition('');
+                        if (is_callable([$harvester, 'setInitialPosition'])) {
+                            $harvester->setInitialPosition('');
+                        }
 
                         $dateThreshold = time();
                         $harvester->listIdentifiers([$this, 'markRecordSeen']);

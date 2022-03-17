@@ -91,7 +91,7 @@ class WorkerPoolManager
      *
      * @var float
      */
-    protected $lastParentCheckTime = 0;
+    protected $lastParentCheckTime = 0.0;
 
     /**
      * Constructor
@@ -640,7 +640,7 @@ class WorkerPoolManager
     protected function checkParentIsAlive()
     {
         $time = microtime(true);
-        if (0 === $this->lastParentCheckTime
+        if (0.0 === $this->lastParentCheckTime
             || $time - $this->lastParentCheckTime > 5
         ) {
             $parentPid = posix_getpgrp();

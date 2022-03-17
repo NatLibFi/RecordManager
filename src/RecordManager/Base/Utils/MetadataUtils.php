@@ -70,7 +70,7 @@ class MetadataUtils
      *
      * @var array
      */
-    protected $fullTitlePrefixes = null;
+    protected $fullTitlePrefixes = [];
 
     /**
      * Abbreviations that require the following period to be retained.
@@ -328,7 +328,7 @@ class MetadataUtils
     public function createTitleKey($title, $form)
     {
         $full = false;
-        if (isset($this->fullTitlePrefixes)) {
+        if ($this->fullTitlePrefixes) {
             $normalTitle = $this->normalizeKey($title);
             foreach ($this->fullTitlePrefixes as $prefix) {
                 if ($prefix
@@ -666,34 +666,6 @@ class MetadataUtils
     }
 
     /**
-     * Convert a date range to a Solr date range string,
-     * e.g. [1970-01-01 TO 1981-01-01]
-     *
-     * @param array $range Start and end date
-     *
-     * @return string|null Start and end date in Solr format, or null if no range
-     * @throws \Exception
-     */
-    public function dateRangeToStr($range)
-    {
-        if (!isset($range)) {
-            return null;
-        }
-        $oldTZ = date_default_timezone_get();
-        try {
-            date_default_timezone_set('UTC');
-            $start = date('Y-m-d', strtotime($range[0]));
-            $end = date('Y-m-d', strtotime($range[1]));
-        } catch (\Exception $e) {
-            date_default_timezone_set($oldTZ);
-            throw $e;
-        }
-        date_default_timezone_set($oldTZ);
-
-        return $start === $end ? $start : "[$start TO $end]";
-    }
-
-    /**
      * Trim whitespace between tags (but not in data)
      *
      * @param string $xml XML string
@@ -729,7 +701,7 @@ class MetadataUtils
     /**
      * Create a timestamp string from the given unix timestamp
      *
-     * @param int $timestamp Unix timestamp
+     * @param ?int $timestamp Unix timestamp
      *
      * @return string Formatted string
      */

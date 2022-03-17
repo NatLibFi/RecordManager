@@ -104,7 +104,7 @@ abstract class AbstractBase
     /**
      * Harvest start date (null for all records)
      *
-     * @var string
+     * @var ?string
      */
     protected $startDate = null;
 
