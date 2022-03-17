@@ -251,28 +251,29 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
                 } elseif ($item['type'] != 'skos:Concept') {
                     continue;
                 }
-                $vals = [];
-                if ($val = $item['altLabel']['value'] ?? null) {
-                    $vals[] = $val;
-                }
-                if ($val = $item['hiddenLabel']['value'] ?? null) {
-                    $vals[] = $val;
-                }
 
-                if ($item['uri'] == $id) {
+                if ($item['uri'] === $id) {
                     $this->processLocationWgs84($item, $solrArray);
-                }
+                    $vals = [];
 
-                if ($item['uri'] == $id && $vals) {
-                    foreach ($this->filterDuplicates($vals, $checkFieldContents)
-                        as $val
-                    ) {
-                        $checkFieldContents[] = mb_strtolower($val, 'UTF-8');
-                        if ($solrAltField) {
-                            $solrArray[$solrAltField][] = $val;
-                        }
-                        if ($includeInAllfields) {
-                            $solrArray['allfields'][] = $val;
+                    if ($val = $item['altLabel']['value'] ?? null) {
+                        $vals[] = $val;
+                    }
+                    if ($val = $item['hiddenLabel']['value'] ?? null) {
+                        $vals[] = $val;
+                    }
+
+                    if ($vals) {
+                        foreach ($this->filterDuplicates($vals, $checkFieldContents)
+                            as $val
+                        ) {
+                            $checkFieldContents[] = mb_strtolower($val, 'UTF-8');
+                            if ($solrAltField) {
+                                $solrArray[$solrAltField][] = $val;
+                            }
+                            if ($includeInAllfields) {
+                                $solrArray['allfields'][] = $val;
+                            }
                         }
                     }
                 }
@@ -432,7 +433,7 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
             $wktItem = [
                 'lat' => $lat,
                 'lon' => $lon,
-                'wkt' => 'POINT(' . $lon . ' ' . $lat . ')'
+                'wkt' => "POINT($lon $lat)"
             ];
             $this->processLocationItem($wktItem, $solrArray);
         }
@@ -448,9 +449,7 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
      */
     protected function processLocationItem($locItem, &$solrArray): void
     {
-        if (!empty($this->solrCenterField)
-            && !isset($solrArray[$this->solrCenterField])
-        ) {
+        if ($this->solrCenterField && !isset($solrArray[$this->solrCenterField])) {
             $coords = $locItem['lon'] . ' ' . $locItem['lat'];
             $solrArray[$this->solrCenterField] = $coords;
         }

@@ -243,9 +243,9 @@ class NominatimGeocoder extends AbstractEnrichment
     protected function enrichLocations($locations, &$solrArray)
     {
         $result = false;
-        $center = !empty($this->solrCenterField) &&
-            isset($solrArray[$this->solrCenterField]) ?
-            \geoPHP::load('POINT(' . $solrArray[$this->solrCenterField] . ')', 'wkt')
+        $cf = $this->solrCenterField;
+        $center = $cf && isset($solrArray[$cf])
+            ? \geoPHP::load('POINT(' . $solrArray[$cf] . ')', 'wkt')
             : null;
 
         foreach ($locations as $location) {
@@ -274,10 +274,8 @@ class NominatimGeocoder extends AbstractEnrichment
                     }
                     // Set new center coordinates only if the field is in use and has
                     // no previous value
-                    if (!empty($this->solrCenterField)
-                        && !isset($solrArray[$this->solrCenterField])
-                    ) {
-                        $solrArray[$this->solrCenterField]
+                    if ($cf && !isset($solrArray[$cf])) {
+                        $solrArray[$cf]
                             = $geocoded[0]['lon'] . ' ' . $geocoded[0]['lat'];
                     }
                     $result = true;
