@@ -5,7 +5,7 @@
   <property name="builddir" value="${tmp}/build/${phing.project.name}" override="true" />
   <property name="basedir"  value="${project.basedir}" override="true" />
   <property name="srcdir"   value="${basedir}/src/RecordManager" override="true" />
-  <property name="php-cs-fixer-extra-params" value=""/>
+  <property name="phpunit_extra_params" value="" />
 
   <!-- Main Target -->
   <target name="main" description="main target">
@@ -23,7 +23,7 @@
 
   <!-- PHPUnit -->
   <target name="phpunit" description="Run tests">
-    <exec command="${basedir}/vendor/bin/phpunit -dzend.enable_gc=0 -c ${basedir}/tests/phpunit.xml ${basedir}/tests" passthru="true" checkreturn="true" />
+    <exec command="${basedir}/vendor/bin/phpunit -c ${basedir}/tests/phpunit.xml ${basedir}/tests ${phpunit_extra_params}" passthru="true" checkreturn="true" />
   </target>
 
   <!-- PHP CodeSniffer -->

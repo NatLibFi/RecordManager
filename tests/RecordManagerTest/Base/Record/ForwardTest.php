@@ -1,6 +1,6 @@
 <?php
 /**
- * MARC Record Driver Test Class
+ * FORWARD Record Driver Test Class
  *
  * PHP version 7
  *

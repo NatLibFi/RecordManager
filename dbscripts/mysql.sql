@@ -22,7 +22,7 @@ CREATE TABLE `record` (
   KEY `updated` (`updated`),
   KEY `source_update_needed` (`source_id`, `update_needed`),
   CONSTRAINT `fk_record_dedup_id` FOREIGN KEY (`dedup_id`) REFERENCES `dedup` (`_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `record_attrs` (
   `_id` integer NOT NULL PRIMARY KEY AUTO_INCREMENT,
@@ -31,14 +31,14 @@ CREATE TABLE `record_attrs` (
   `value` varchar(255) NOT NULL,
   CONSTRAINT `fk_record_attrs_parent` FOREIGN KEY (`parent_id`) REFERENCES `record` (`_id`) ON DELETE CASCADE,
   KEY `attr_value` (`attr`, `value`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `dedup` (
   `_id` bigint NOT NULL PRIMARY KEY AUTO_INCREMENT,
   `changed` datetime NOT NULL,
   `deleted` tinyint(1) NOT NULL DEFAULT 0,
   KEY `changed` (`changed`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `dedup_attrs` (
   `_id` integer NOT NULL PRIMARY KEY AUTO_INCREMENT,
@@ -47,19 +47,19 @@ CREATE TABLE `dedup_attrs` (
   `value` varchar(255) NOT NULL,
   CONSTRAINT `dedup_attrs_parent` FOREIGN KEY (`parent_id`) REFERENCES `dedup` (`_id`) ON DELETE CASCADE,
   CONSTRAINT `dedup_attrs_value` FOREIGN KEY (`value`) REFERENCES `record` (`_id`) ON DELETE CASCADE -- This is always a record id
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `state` (
   `_id` varchar(255) NOT NULL PRIMARY KEY,
   `value` varchar(255) NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `uriCache` (
   `_id` varchar(255) NOT NULL PRIMARY KEY,
   `timestamp` datetime NOT NULL,
   `url` varchar(8192) NULL,
   `data` longtext NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `ontologyEnrichment` (
   `_id` varchar(255) NOT NULL PRIMARY KEY,
@@ -68,7 +68,7 @@ CREATE TABLE `ontologyEnrichment` (
   `altLabels` MEDIUMTEXT NULL,
   `hiddenLabels` MEDIUMTEXT NULL
   `geoLocation` MEDIUMTEXT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `logMessage` (
   `_id` integer NOT NULL PRIMARY KEY AUTO_INCREMENT,
@@ -77,7 +77,7 @@ CREATE TABLE `logMessage` (
   `message` longtext NOT NULL,
   `level` int(2) NOT NULL,
   `pid` int(9) NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- A trigger to make sure we're not linking to a deleted dedup record
 DROP TRIGGER IF EXISTS record_before_update;
