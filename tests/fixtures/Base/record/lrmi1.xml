@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<dc schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd">
+  <id>oai:aoe.fi:11</id>
+  <title lang="fi">Opetuksen ja oppimisen suunnittelu, Learning Design</title>
+  <title lang="sv">Planering av undevisning och l&#xE4;rande</title>
+  <title lang="en">Designing Learning Processes</title>
+  <date>2019-12-17T08:51:19Z</date>
+  <description lang="fi">Learning Design &#x2013; opetuksen ja oppimisen suunnittelu tarkoittaa sek&#xE4; opettajan opetuksen suunnittelua ja valmistelua...</description>
+  <description lang="en">Learning Design means planning teaching and student&#x2019;s goal-oriented learning...</description>
+  <description lang="sv">Learning Design &#x2013; planering av undervisning och l&#xE4;rande betyder b&#xE5;de att l&#xE4;raren planerar sin egen undervisning...</description>
+  <rights>CCBY4.0</rights>
+  <type>video</type>
+  <type>teksti</type>
+  <dateCreated>2019-12-17T08:51:19Z</dateCreated>
+  <dateModified>2020-10-15T09:24:47Z</dateModified>
+  <author>
+    <person>
+      <name>Koli, Hanne</name>
+    </person>
+  </author>
+  <about>
+    <thing>
+      <name>oppiminen</name>
+      <identifier>https://www.yso.fi/onto/yso/p2945</identifier>
+    </thing>
+  </about>
+  <about>
+    <thing>
+      <name>opetus</name>
+      <identifier>https://www.yso.fi/onto/yso/p2630</identifier>
+    </thing>
+  </about>
+  <about>
+    <thing>
+      <name>oppimisprosessi</name>
+      <identifier>https://www.yso.fi/onto/yso/p5103</identifier>
+    </thing>
+  </about>
+  <about>
+    <thing>
+      <name>oppimisteht&#xE4;v&#xE4;</name>
+      <identifier>https:oppimistehtv</identifier>
+    </thing>
+  </about>
+  <about>
+    <thing>
+      <name>ohjaus (neuvonta ja opastus)</name>
+      <identifier>https://www.yso.fi/onto/yso/p178</identifier>
+    </thing>
+  </about>
+  <about>
+    <thing>
+      <name>pedagogiikka</name>
+      <identifier>https://www.yso.fi/onto/yso/p1584</identifier>
+    </thing>
+  </about>
+  <about>
+    <thing>
+      <name>digipedagogiikka</name>
+      <identifier>https:digipedagogiikka</identifier>
+    </thing>
+  </about>
+  <about>
+    <thing>
+      <name>oppimisymp&#xE4;rist&#xF6;</name>
+      <identifier>https://www.yso.fi/onto/yso/p4835</identifier>
+    </thing>
+  </about>
+  <material>
+    <name lang="fi">A Video Learning design</name>
+    <name lang="sv">A Video Learning design</name>
+    <name lang="en">A Video Learning design</name>
+    <url>https://aoe.fi/api/download/AVideoLearningdesign-1576572679231.mp4</url>
+    <position>6</position>
+    <format>video/mp4</format>
+    <filesize>31820850</filesize>
+    <inLanguage>en</inLanguage>
+  </material>
+  <material>
+    <name lang="fi">A Video Planering av undervisning och la&#x308;rande</name>
+    <name lang="sv">A Video Planering av undervisning och la&#x308;rande</name>
+    <name lang="en">A Video Planering av undervisning och la&#x308;rande</name>
+    <url>https://aoe.fi/api/download/AVideoPlaneringavundervisningochlarande-1576572679208.mp4</url>
+    <position>3</position>
+    <format>video/mp4</format>
+    <filesize>30562026</filesize>
+    <inLanguage>sv</inLanguage>
+  </material>
+  <material>
+    <name lang="fi">A Video Opetuksen ja oppimisen suunnittelu</name>
+    <name lang="sv">A Video Opetuksen ja oppimisen suunnittelu</name>
+    <name lang="en">A Video Opetuksen ja oppimisen suunnittelu</name>
+    <url>https://aoe.fi/api/download/AVideoOpetuksenjaoppimisensuunnittelu-1576572679174.mp4</url>
+    <position>0</position>
+    <format>video/mp4</format>
+    <filesize>31795910</filesize>
+    <inLanguage>fi</inLanguage>
+  </material>
+  <educationalAudience>
+    <educationalRole>Ohjaaja tai mentori</educationalRole>
+  </educationalAudience>
+  <educationalAudience>
+    <educationalRole>Opettaja</educationalRole>
+  </educationalAudience>
+  <educationalAudience>
+    <educationalRole>Asiantuntija tai ammattilainen</educationalRole>
+  </educationalAudience>
+  <accessibilityFeature>k&#xE4;sikirjoitus</accessibilityFeature>
+  <inLanguage>sv</inLanguage>
+  <inLanguage>fi</inLanguage>
+  <inLanguage>en</inLanguage>
+  <learningResource>
+    <educationalLevel>lukiokoulutus</educationalLevel>
+    <educationalLevel>ammatillinen koulutus</educationalLevel>
+    <educationalLevel>omaehtoinen osaamisen kehitt&#xE4;minen</educationalLevel>
+    <educationalLevel>korkeakoulutus</educationalLevel>
+    <educationalUse>Itsen&#xE4;inen opiskelu</educationalUse>
+    <educationalUse>Opettajan materiaalit ja osaamisen kehitt&#xE4;minen</educationalUse>
+    <educationalAlignment>
+      <educationalSubject>Kasvatustieteet</educationalSubject>
+    </educationalAlignment>
+  </learningResource>
+  <recordID>11</recordID>
+</dc>
