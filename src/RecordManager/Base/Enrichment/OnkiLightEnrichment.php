@@ -198,6 +198,14 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
                     explode('|', $localData[$labelField] ?? ''),
                     $checkFieldContents
                 );
+                // Additionally, filter empty strings
+                $values = array_filter(
+                    $values,
+                    fn ($v) => !is_string($v) || '' !== trim($v)
+                );
+                if (empty($values)) {
+                    continue;
+                }
                 if ($solrField) {
                     $solrArray[$solrField]
                         = array_merge($solrArray[$solrField] ?? [], $values);

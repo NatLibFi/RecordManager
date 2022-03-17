@@ -174,9 +174,8 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     'linking_id' => '1212',
                 ],
                 [],
-                "select * from record where deleted=? AND EXISTS (SELECT * FROM"
-                . " record_attrs ca WHERE ca.parent_id=record._id AND"
-                . " ca.attr='linking_id' AND ca.value=?)",
+                "select * from record where deleted=? AND _id IN (SELECT parent_id"
+                . " FROM record_attrs ca WHERE ca.attr='linking_id' AND ca.value=?)",
                 [
                     false,
                     '1212'
@@ -190,10 +189,10 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     'source_id' => ['$ne' => 'source'],
                 ],
                 [],
-                "select * from record where EXISTS (SELECT * FROM record_attrs ca"
-                . " WHERE ca.parent_id=record._id AND ca.attr='isbn_keys' AND"
-                . " ca.value in (?,?)) AND deleted=? AND (suppressed IS NULL OR"
-                . " suppressed=?) AND source_id<>?",
+                "select * from record where _id IN (SELECT parent_id FROM"
+                . " record_attrs ca WHERE ca.attr='isbn_keys' AND ca.value in (?,?))"
+                . " AND deleted=? AND (suppressed IS NULL OR suppressed=?) AND"
+                . " source_id<>?",
                 [
                     'isbn',
                     'isbn2',
