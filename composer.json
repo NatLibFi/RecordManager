@@ -31,24 +31,24 @@
     },
     "require": {
         "cash/lrucache": "1.0.0",
-        "laminas/laminas-mvc": "3.3.2",
+        "laminas/laminas-mvc": "3.3.3",
         "laminas/laminas-router": "3.5.0",
         "laminas/laminas-servicemanager": "3.10.0",
-        "laminas/laminas-xml": "1.3.1",
+        "laminas/laminas-xml": "1.4.0",
         "mongodb/mongodb": "1.8.0",
-        "ocramius/proxy-manager": "2.13.0",
+        "ocramius/proxy-manager": "2.13.1",
         "pear/http_request2": "2.5.1",
         "phayes/geophp": "1.2",
-        "symfony/console": "5.4.3",
-        "symfony/lock": "5.4.3"
+        "symfony/console": "5.4.5",
+        "symfony/lock": "5.4.5"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "3.6.0",
+        "friendsofphp/php-cs-fixer": "3.7.0",
         "phing/phing": "2.17.2",
-        "phpstan/phpstan": "1.4.6",
-        "phpunit/phpunit": "9.5.13",
+        "phpstan/phpstan": "1.4.10",
+        "phpunit/phpunit": "9.5.19",
         "squizlabs/php_codesniffer": "3.6.2",
-        "vimeo/psalm": "4.20.0"
+        "vimeo/psalm": "4.22.0"
     },
     "scripts": {
         "qa": "phing ci-tasks"
