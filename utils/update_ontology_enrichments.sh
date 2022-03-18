@@ -27,7 +27,7 @@ done
 curl -s -H "Accept: text/csv" --data @${DIR}/${QFILE} ${URL} > ${TMPDIR}/fetch_result.csv
 FIRSTLINE=`head -1 ${TMPDIR}/fetch_result.csv`
 FIRSTLINE=${FIRSTLINE%$'\r'}
-if [ "$FIRSTLINE" != "_id,type,prefLabels,altLabels,hiddenLabels" ]; then
+if [ "$FIRSTLINE" != "_id,type,prefLabels,altLabels,hiddenLabels,geoLocation" ]; then
   FIRSTLINES=`head -20 ${TMPDIR}/fetch_result.csv`
   echo "Columns not found on first line of ${TMPDIR}/fetch_result.csv: '$FIRSTLINES'"
 else
