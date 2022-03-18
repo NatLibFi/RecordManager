@@ -682,7 +682,7 @@ class PDODatabase extends AbstractDatabase
         if ($sqlOptions) {
             $sql .= " $sqlOptions";
         }
-        return $this->dbQuery($sql, $params)->fetchColumn() ?? 0;
+        return intval($this->dbQuery($sql, $params)->fetchColumn() ?: 0);
     }
 
     /**
