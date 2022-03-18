@@ -372,7 +372,7 @@ class PDODatabase extends AbstractDatabase
 
         $res = $this->dbQuery("show tables like 'tracking_%'");
         while ($collection = $res->fetchColumn()) {
-            $nameParts = explode('_', $collection);
+            $nameParts = explode('_', (string)$collection);
             $collTime = $nameParts[2] ?? null;
             if (is_numeric($collTime)
                 && $collTime != time() - $minAge * 60 * 60 * 24
@@ -682,7 +682,7 @@ class PDODatabase extends AbstractDatabase
         if ($sqlOptions) {
             $sql .= " $sqlOptions";
         }
-        return $this->dbQuery($sql, $params)->fetchColumn();
+        return $this->dbQuery($sql, $params)->fetchColumn() ?? 0;
     }
 
     /**
