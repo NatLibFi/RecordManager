@@ -389,7 +389,7 @@ class Marc extends AbstractRecord
                 if ($centerField) {
                     $centers = [];
                     foreach ($geoLocations as $geoLocation) {
-                        $centers = $this->metadataUtils
+                        $centers[] = $this->metadataUtils
                             ->getCenterCoordinates($geoLocation);
                     }
                     $data[$centerField] = $centers;
@@ -399,10 +399,12 @@ class Marc extends AbstractRecord
                     $this->defaultGeoDisplayField
                 );
                 if ($displayField) {
+                    $display = [];
                     foreach ($geoLocations as $geoLocation) {
-                        $data[$displayField][] = $this->metadataUtils
+                        $display[] = $this->metadataUtils
                             ->getGeoDisplayField($geoLocation);
                     }
+                    $data[$displayField] = $display;
                 }
             }
         }

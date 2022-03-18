@@ -417,7 +417,14 @@ class MarcTest extends RecordTest
      */
     public function testMarcGeo()
     {
-        $record = $this->createRecord(Marc::class, 'marc_geo.xml');
+        $dsConfig = [
+            '__unit_test_no_source__' => [
+                'driverParams' => [
+                    'geoCenterField=center_coords'
+                ]
+            ]
+        ];
+        $record = $this->createRecord(Marc::class, 'marc_geo.xml', $dsConfig);
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -425,6 +432,10 @@ class MarcTest extends RecordTest
             'record_format' => 'marc',
             'building' => [
                 '001',
+            ],
+            'center_coords' => [
+                '22.125 60.233333333333',
+                '22.125 60.233472222223',
             ],
             'long_lat' => [
                 'ENVELOPE(19.5, 24.75, 60.666666666667, 59.8)',
