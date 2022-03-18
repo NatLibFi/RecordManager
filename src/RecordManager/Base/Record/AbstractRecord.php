@@ -232,10 +232,11 @@ abstract class AbstractRecord
      * @param mixed        $changeDate     Latest database timestamp for the
      *                                     component part set
      *
-     * @return void
+     * @return int
      */
     public function mergeComponentParts($componentParts, &$changeDate)
     {
+        return 0;
     }
 
     /**
