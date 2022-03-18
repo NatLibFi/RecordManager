@@ -284,10 +284,10 @@ replace[] = '\1 street'
 ; URI prefixes where exact matches in other vocabularies are also retrieved
 ;uri_prefix_exact_matches[] = "http://somewhere/vocab/"
 ; Solr field that contains the location data
-;solr_location_field = location_geo
+;solr_location_field = location_geo_mv
 ; Solr field that contains centroids for the locations. Set to empty if no suitable
 ; field is available.
-;solr_center_field = center_coords
+;solr_center_field = center_coords_mv
 
 [MusicBrainzEnrichment]
 ; Note that you need to add the following line to any data source in datasources.ini

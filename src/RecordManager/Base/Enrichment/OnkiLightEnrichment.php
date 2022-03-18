@@ -73,14 +73,14 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
      *
      * @var string
      */
-    protected $solrLocationField = 'location_geo';
+    protected $solrLocationField = '';
 
     /**
      * Solr field to use for the center coordinates of locations
      *
      * @var string
      */
-    protected $solrCenterField = 'center_coords';
+    protected $solrCenterField = '';
 
     /**
      * Initialize settings
@@ -461,7 +461,9 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
             $coords = $locItem['lon'] . ' ' . $locItem['lat'];
             $solrArray[$this->solrCenterField] = $coords;
         }
-        if (!in_array($locItem['wkt'], $solrArray[$this->solrLocationField] ?? [])) {
+        if ($this->solrLocationField
+            && !in_array($locItem['wkt'], $solrArray[$this->solrLocationField] ?? [])
+        ) {
             $solrArray[$this->solrLocationField][] = $locItem['wkt'];
         }
     }
