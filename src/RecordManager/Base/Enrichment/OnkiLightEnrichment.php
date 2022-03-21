@@ -458,7 +458,7 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
     protected function processLocationItem($locItem, &$solrArray): void
     {
         if ($this->solrCenterField && !isset($solrArray[$this->solrCenterField])) {
-            $coords = $locItem['lon'] . ' ' . $locItem['lat'];
+            $coords = $locItem['lat'] . ', ' . $locItem['lon'];
             $solrArray[$this->solrCenterField] = $coords;
         }
         if ($this->solrLocationField
