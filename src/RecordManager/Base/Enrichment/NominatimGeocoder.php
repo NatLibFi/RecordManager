@@ -451,7 +451,7 @@ class NominatimGeocoder extends AbstractEnrichment
         $simplifiedWKT = '';
         $pointCount = null;
         for ($try = 1; $try < 100; $try++) {
-            $simplified = $polygon->simplify($tolerance);
+            $simplified = $polygon->simplify($tolerance, true);
             if (null === $simplified) {
                 throw new \Exception('Shape simplification failed');
             }
@@ -459,8 +459,13 @@ class NominatimGeocoder extends AbstractEnrichment
             if (strstr($simplifiedWKT, 'EMPTY') !== false) {
                 // Got empty shape as result, return bounding box
                 $bbox = $polygon->getBBox();
-                return "ENVELOPE({$bbox['minx']}, {$bbox['maxx']}, {$bbox['maxy']}, "
-                    . "{$bbox['miny']})";
+                $minX = $bbox['minx'];
+                $maxX = $bbox['maxx'];
+                $minY = $bbox['miny'];
+                $maxY = $bbox['maxy'];
+
+                return "POLYGON(($minX $minY, $minX $maxY, $maxX $maxY, $maxX $minY,"
+                    . " $minX $minY))";
             }
             $pointCount = substr_count($simplifiedWKT, ',') + 1;
             if (!$this->simplificationMaxLength
