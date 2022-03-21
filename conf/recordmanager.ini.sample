@@ -259,10 +259,10 @@ dewey-ones = dewey_ones.map
 ; Maximum number of polygon elements
 ;simplification_max_length = 1000
 ; Solr field that contains the location data
-;solr_field = location_geo
+;solr_field = location_geo_mv
 ; Solr field that contains centroids for the locations. Set to empty if no suitable
-; field is available.
-;solr_center_field = center_coords
+; field is available. The field should be a LatLonPointSpatialField.
+;solr_center_field = center_coords_mv
 ; Ignored OSM Classes overriding the default list
 ;ignored_classes[] = 'amenity'
 ;ignored_classes[] = 'office'
@@ -286,7 +286,7 @@ replace[] = '\1 street'
 ; Solr field that contains the location data
 ;solr_location_field = location_geo_mv
 ; Solr field that contains centroids for the locations. Set to empty if no suitable
-; field is available.
+; field is available. The field should be a LatLonPointSpatialField.
 ;solr_center_field = center_coords_mv
 
 [MusicBrainzEnrichment]
