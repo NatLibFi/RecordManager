@@ -254,10 +254,11 @@ dewey-ones = dewey_ones.map
 ;delay = 1500
 ; A preferred area for the results may be defined but is not mandatory.
 ;preferred_area = "-2.75,70.42,36.63,55.21"
-; Polygon simplification tolerance
+; Polygon simplification tolerance in degrees with which the geometry may differ from
+; the original geometry. A higher tolerance means simpler and less accurate polygons.
+; Suitable values depend on the use case, but values from 0.001 to 0.01 can be used
+; as a starting point. This parameter is passed to Nominatim as polygon_threshold.
 ;simplification_tolerance = 0.001
-; Maximum number of polygon elements
-;simplification_max_length = 1000
 ; Solr field that contains the location data
 ;solr_field = location_geo_mv
 ; Solr field that contains centroids for the locations. Set to empty if no suitable
