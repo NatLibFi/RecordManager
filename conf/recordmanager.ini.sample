@@ -258,6 +258,11 @@ dewey-ones = dewey_ones.map
 ; the original geometry. A higher tolerance means simpler and less accurate polygons.
 ; Suitable values depend on the use case, but values from 0.001 to 0.01 can be used
 ; as a starting point. This parameter is passed to Nominatim as polygon_threshold.
+; Note that simplification may result in invalid polygons, so the Solr field must use
+; a repairing validation rule, e.g.
+;   <fieldType name="geo" class="solr.SpatialRecursivePrefixTreeFieldType"
+;    spatialContextFactory="JTS" geo="true" distErrPct="0.25" maxDistErr="1"
+;    autoIndex="true" uninvertible="false" validationRule="repairBuffer0" />
 ;simplification_tolerance = 0.001
 ; Solr field that contains the location data
 ;solr_field = location_geo_mv
