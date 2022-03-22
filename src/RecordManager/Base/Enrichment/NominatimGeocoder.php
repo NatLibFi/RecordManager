@@ -78,16 +78,9 @@ class NominatimGeocoder extends AbstractEnrichment
     /**
      * Tolerance in the polygon simplification
      *
-     * @var int
+     * @var float
      */
-    protected $simplificationTolerance = 0;
-
-    /**
-     * Maximum simplified polygon length
-     *
-     * @var int
-     */
-    protected $simplificationMaxLength = 0;
+    protected $simplificationTolerance = 0.01;
 
     /**
      * Solr field to use for the location data
@@ -162,15 +155,7 @@ class NominatimGeocoder extends AbstractEnrichment
             $this->delay = floatval($settings['delay']);
         }
         if (isset($settings['simplification_tolerance'])) {
-            if (!\geoPHP::geosInstalled()) {
-                throw new \Exception(
-                    'PHP GEOS extension is required for simplification_tolerance'
-                );
-            }
             $this->simplificationTolerance = $settings['simplification_tolerance'];
-        }
-        if (isset($settings['simplification_max_length'])) {
-            $this->simplificationMaxLength = $settings['simplification_max_length'];
         }
         if (isset($settings['solr_field'])) {
             $this->solrField = $settings['solr_field'];
@@ -371,6 +356,9 @@ class NominatimGeocoder extends AbstractEnrichment
         if ($this->preferredArea) {
             $params['viewbox'] = $this->preferredArea;
         }
+        if ($this->simplificationTolerance) {
+            $params['polygon_threshold'] = $this->simplificationTolerance;
+        }
 
         $url = $this->baseUrl . '?' . http_build_query($params);
         $response = $this->getExternalData(
@@ -404,18 +392,8 @@ class NominatimGeocoder extends AbstractEnrichment
             } elseif ($importance < $highestImportance) {
                 continue;
             }
-            $wkt = $place['geotext'];
-            if ($this->simplificationTolerance) {
-                if (strcasecmp(substr($wkt, 0, 7), 'POLYGON') == 0
-                    || strcasecmp(substr($wkt, 0, 12), 'MULTIPOLYGON') == 0
-                    || strcasecmp(substr($wkt, 0, 10), 'LINESTRING') == 0
-                    || strcasecmp(substr($wkt, 0, 15), 'MULTILINESTRING') == 0
-                ) {
-                    $wkt = $this->simplify($wkt);
-                }
-            }
             $items[] = [
-                'wkt' => $wkt,
+                'wkt' => $place['geotext'],
                 'lat' => $place['lat'],
                 'lon' => $place['lon'],
                 'importance' => $importance
@@ -431,57 +409,6 @@ class NominatimGeocoder extends AbstractEnrichment
         }
         $results = $this->mergeLineStrings($results);
         return $results;
-    }
-
-    /**
-     * Simplify a shape
-     *
-     * @param string $location WKT shape
-     *
-     * @return string Simplified WKT shape
-     */
-    protected function simplify($location)
-    {
-        $origPointCount = substr_count($location, ',') + 1;
-        if ($origPointCount <= $this->simplificationMaxLength) {
-            return $location;
-        }
-        $polygon = \geoPHP::load($location, 'wkt');
-        $tolerance = $this->simplificationTolerance;
-        $simplifiedWKT = '';
-        $pointCount = null;
-        for ($try = 1; $try < 100; $try++) {
-            $simplified = $polygon->simplify($tolerance, true);
-            if (null === $simplified) {
-                throw new \Exception('Shape simplification failed');
-            }
-            $simplifiedWKT = $simplified->out('wkt');
-            if (strstr($simplifiedWKT, 'EMPTY') !== false) {
-                // Got empty shape as result, return bounding box
-                $bbox = $polygon->getBBox();
-                $minX = $bbox['minx'];
-                $maxX = $bbox['maxx'];
-                $minY = $bbox['miny'];
-                $maxY = $bbox['maxy'];
-
-                return "POLYGON(($minX $minY, $minX $maxY, $maxX $maxY, $maxX $minY,"
-                    . " $minX $minY))";
-            }
-            $pointCount = substr_count($simplifiedWKT, ',') + 1;
-            if (!$this->simplificationMaxLength
-                || $pointCount <= $this->simplificationMaxLength
-            ) {
-                break;
-            }
-            $tolerance *= 2;
-        }
-        if (null !== $pointCount && $origPointCount > $pointCount) {
-            return $simplifiedWKT;
-        }
-        // Simplification failed, return bounding box
-        $bbox = $polygon->getBBox();
-        return "ENVELOPE({$bbox['minx']}, {$bbox['maxx']}, {$bbox['maxy']}, "
-            . "{$bbox['miny']})";
     }
 
     /**

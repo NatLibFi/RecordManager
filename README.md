@@ -46,18 +46,6 @@ These are quick instructions on how to set up RecordManager. Please refer to the
 
       yum install php php-pear php-xml php-devel php-mbstring php-intl
 
-- Required PHP packages for polygon simplification in NominatimGeocoder (optional):
-
-      yum install geos geos-php
-
-  Note that as of September 2017 CentOS comes with geo 3.4.2 which has memory leaks
-  and problems with polygon simplification, so building at least version 3.6.2 from
-  source is recommended (see https://trac.osgeo.org/geos). With PHP 7 a recent
-  version of GEOS PHP bindings from https://git.osgeo.org/gogs/geos/php-geos is
-  required anyway.
-  `yum install geos-devel` will be needed to compile the bindings unless GEOS is
-  installed from source.
-
 - MongoDB support
 
   RecordManager supports both MongoDB and any MySQL compatible database. You may opt
