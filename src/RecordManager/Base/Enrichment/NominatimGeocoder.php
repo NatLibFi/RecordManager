@@ -254,6 +254,10 @@ class NominatimGeocoder extends AbstractEnrichment
                 }
             }
             for ($i = 0; $i < 10; $i++) {
+                $words = explode(' ', $location);
+                if (count($words) > 10) {
+                    $location = implode(' ', array_slice($words, 0, 10));
+                }
                 $geocoded = $this->geocode($location);
                 if ($geocoded) {
                     $wkts = array_column($geocoded, 'wkt');
