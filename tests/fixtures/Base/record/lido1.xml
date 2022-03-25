@@ -56,7 +56,7 @@
           <event>
             <eventID type=""/>
             <eventType>
-              <term>valmistus</term>
+              <term>creation</term>
             </eventType>
             <eventActor>
               <actorInRole>
@@ -68,6 +68,27 @@
                 </actor>
                 <roleActor>
                   <term>Kirjoittajat</term>
+                </roleActor>
+              </actorInRole>
+            </eventActor>
+          </event>
+        </eventSet>
+        <eventSet>
+          <event>
+            <eventID type=""/>
+            <eventType>
+              <term>design</term>
+            </eventType>
+            <eventActor>
+              <actorInRole>
+                <actor>
+                  <actorID type=""/>
+                  <nameActorSet>
+                    <appellationValue>Designer, Test</appellationValue>
+                  </nameActorSet>
+                </actor>
+                <roleActor>
+                  <term>Designer</term>
                 </roleActor>
               </actorInRole>
             </eventActor>

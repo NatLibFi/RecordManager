@@ -65,7 +65,10 @@ class LidoTest extends RecordTest
             'format' => 'Kirja',
             'institution' => 'Test Institution',
             'author' => [
+                'Designer, Test',
+                'Luhtanen, Raimo'
             ],
+            'author_sort' => 'Designer, Test',
             'topic_facet' => [
                 'retkeily',
                 'ulkoilu',
@@ -106,6 +109,7 @@ class LidoTest extends RecordTest
                 'retkeily',
                 'ulkoilu',
                 'Luhtanen, Raimo',
+                'Designer, Test',
                 'M011-320623',
                 'Test Institution',
                 '247394',
@@ -117,7 +121,16 @@ class LidoTest extends RecordTest
         $keys = $record->getWorkIdentificationData();
         $expected = [
             [
-                'authors' => [],
+                'authors' => [
+                    [
+                        'type' => 'author',
+                        'value' => 'Designer, Test',
+                    ],
+                    [
+                        'type' => 'author',
+                        'value' => 'Luhtanen, Raimo',
+                    ]
+                ],
                 'authorsAltScript' => [],
                 'titles' => [
                     [
@@ -167,7 +180,10 @@ class LidoTest extends RecordTest
             'format' => 'Kirja',
             'institution' => 'Test Institution',
             'author' => [
+                'Designer, Test',
+                'Luhtanen, Raimo'
             ],
+            'author_sort' => 'Designer, Test',
             'topic_facet' => [
                 'retkeily',
                 'ulkoilu',
@@ -208,6 +224,7 @@ class LidoTest extends RecordTest
                 'retkeily',
                 'ulkoilu',
                 'Luhtanen, Raimo',
+                'Designer, Test',
                 'M011-320623',
                 'Test Institution',
                 '247394',
@@ -219,7 +236,16 @@ class LidoTest extends RecordTest
         $keys = $record->getWorkIdentificationData();
         $expected = [
             [
-                'authors' => [],
+                'authors' => [
+                    [
+                        'type' => 'author',
+                        'value' => 'Designer, Test',
+                    ],
+                    [
+                        'type' => 'author',
+                        'value' => 'Luhtanen, Raimo',
+                    ]
+                ],
                 'authorsAltScript' => [],
                 'titles' => [
                     [
