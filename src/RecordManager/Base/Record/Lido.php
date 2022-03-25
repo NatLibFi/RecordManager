@@ -57,14 +57,13 @@ class Lido extends AbstractRecord
     ];
 
     /**
-     * Usage place event names reflecting the terminology in the particular LIDO
-     * records.
+     * Place event names reflecting the terminology in the particular LIDO records.
      *
      * Key is event type, value is priority (smaller more important).
      *
      * @var array
      */
-    protected $usagePlaceEvents = [
+    protected $placeEvents = [
         'usage' => 0,
     ];
 
@@ -157,40 +156,26 @@ class Lido extends AbstractRecord
 
         $data['institution'] = $this->getLegalBodyName();
 
-        $data['author'] = $this->getActors($this->mainEvents);
+        $data['author'] = $this->getAuthors();
         if (!empty($data['author'])) {
             $data['author_sort'] = $data['author'][0];
         }
         if ($this->secondaryAuthorEvents) {
-            $data['author2'] = $this->getActors($this->secondaryAuthorEvents);
+            $data['author2'] = $this->getSecondaryAuthors();
         }
 
         $data['topic'] = $data['topic_facet'] = $this->getSubjectTerms();
-        $data['material_str_mv'] = $this->getEventMaterials($this->mainEvents);
+        $data['material_str_mv'] = $this->getMaterials();
 
-        if ($dates = $this->getSubjectDisplayDates()) {
-            $data['era'] = $data['era_facet'] = $dates;
-        } elseif ($date = $this->getEventDisplayDate($this->mainEvents)) {
-            $data['era'] = $data['era_facet'] = $date;
-        }
+        $data['era'] = $data['era_facet'] = $this->getDisplayDates();
 
-        $data['geographic_facet'] = [];
-        $eventPlace = $this->getEventDisplayPlace($this->usagePlaceEvents);
-        if ($eventPlace) {
-            $data['geographic_facet'][] = $eventPlace;
-        }
-        $data['geographic_facet'] = array_merge(
-            $data['geographic_facet'],
-            $this->getSubjectDisplayPlaces()
-        );
-        $data['geographic'] = $data['geographic_facet'];
-        // Index the other place forms only to facets
+        $data['geographic'] = $data['geographic_facet'] = $this->getDisplayPlaces();
+        // Index the other place forms only to facets:
         $data['geographic_facet'] = array_merge(
             $data['geographic_facet'],
             $this->getSubjectPlaces()
         );
-        $data['collection']
-            = $this->getRelatedWorkDisplayObject($this->relatedWorkRelationTypes);
+        $data['collection'] = $this->getCollection();
 
         $urls = $this->getURLs();
         if (count($urls)) {
@@ -235,7 +220,7 @@ class Lido extends AbstractRecord
     public function getLocations()
     {
         $locations = [];
-        foreach ([$this->mainEvents, $this->usagePlaceEvents] as $event) {
+        foreach ([$this->getMainEvents(), $this->getPlaceEvents()] as $event) {
             foreach ($this->getEventNodes($event) as $eventNode) {
                 // If there is already gml in the record, don't return anything for
                 // geocoding
@@ -284,7 +269,7 @@ class Lido extends AbstractRecord
      */
     public function getMainAuthor()
     {
-        $authors = $this->getActors($this->mainEvents);
+        $authors = $this->getAuthors();
         return $authors ? $authors[0] : '';
     }
 
@@ -336,7 +321,7 @@ class Lido extends AbstractRecord
         }
 
         $authors = [];
-        foreach ($this->getActors($this->mainEvents, null, false) as $author) {
+        foreach ($this->getActors($this->getMainEvents(), null, false) as $author) {
             $authors[] = ['type' => 'author', 'value' => $author];
         }
         $titlesAltScript = [];
@@ -1359,5 +1344,109 @@ class Lido extends AbstractRecord
             }
         }
         return $result;
+    }
+
+    /**
+     * Get main event types
+     *
+     * @return array
+     */
+    protected function getMainEvents(): array
+    {
+        return $this->mainEvents;
+    }
+
+    /**
+     * Get secondary author event types
+     *
+     * @return array
+     */
+    protected function getSecondaryAuthorEvents(): array
+    {
+        return $this->secondaryAuthorEvents;
+    }
+
+    /**
+     * Get place event types
+     *
+     * @return array
+     */
+    protected function getPlaceEvents(): array
+    {
+        return $this->placeEvents;
+    }
+
+    /**
+     * Get authors
+     *
+     * @return array
+     */
+    protected function getAuthors(): array
+    {
+        return $this->getActors($this->getMainEvents());
+    }
+
+    /**
+     * Get secondary authors
+     *
+     * @return array
+     */
+    protected function getSecondaryAuthors(): array
+    {
+        return $this->getActors($this->getSecondaryAuthorEvents());
+    }
+
+    /**
+     * Get materials
+     *
+     * @return array
+     */
+    protected function getMaterials(): array
+    {
+        return $this->getEventMaterials($this->getMainEvents());
+    }
+
+    /**
+     * Get Display dates
+     *
+     * @return array
+     */
+    protected function getDisplayDates(): array
+    {
+        $result = $this->getSubjectDisplayDates();
+        if (!$result && $date = $this->getEventDisplayDate($this->getMainEvents())) {
+            $result = (array)$date;
+        }
+        return $result;
+    }
+
+    /**
+     * Get Display places
+     *
+     * @return array
+     */
+    protected function getDisplayPlaces(): array
+    {
+        $result = [];
+        if ($place = $this->getEventDisplayPlace($this->getPlaceEvents())) {
+            $result[] = $place;
+        }
+        if ($places = $this->getSubjectDisplayPlaces()) {
+            $result = array_merge(
+                $result,
+                $places
+            );
+        }
+        return $result;
+    }
+
+    /**
+     * Get collection
+     *
+     * @return string
+     */
+    protected function getCollection(): string
+    {
+        return $this->getRelatedWorkDisplayObject($this->relatedWorkRelationTypes);
     }
 }

@@ -83,6 +83,8 @@ class LidoTest extends RecordTest
             ],
             'geographic' => [
             ],
+            'era' => [],
+            'era_facet' => [],
             'collection' => '',
             'ctrlnum' => [
                 '(knp)M011-320623',
@@ -198,6 +200,8 @@ class LidoTest extends RecordTest
             ],
             'geographic' => [
             ],
+            'era' => [],
+            'era_facet' => [],
             'collection' => '',
             'ctrlnum' => [
                 '(knp)M011-320623',
