@@ -115,6 +115,10 @@ These are quick instructions on how to set up RecordManager. Please refer to the
 
       ./console solr:update-index
 
+## Autocomplete for Commands (BASH only)
+
+See `./console --help completion` to see how you can enable autocompletion of commands with bash.
+
 ## Creating Additional Modules
 
 RecordManager supports modules that can modify and add new
