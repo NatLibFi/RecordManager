@@ -64,6 +64,11 @@ class MarkDeleted extends AbstractBase
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Mark only the specified record deleted'
+            )->addOption(
+                'id-file',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'A file of record id\'s (one per line) to mark deleted'
             );
     }
 
@@ -79,23 +84,43 @@ class MarkDeleted extends AbstractBase
     {
         $sourceId = $input->getOption('source');
         $singleId = $input->getOption('single') ?: '';
+        $idFile = $input->getOption('id-file') ?: '';
 
-        if (empty($sourceId) && empty($singleId)) {
-            $this->logger
-                ->logFatal('markDeleted', 'No source or record id specified');
+        if (empty($sourceId) && empty($singleId) && empty($idFile)) {
+            $this->logger->logFatal(
+                'markDeleted',
+                'No source, record id or id-file specified'
+            );
             return Command::INVALID;
+        }
+
+        if (!empty($idFile)) {
+            if (!file_exists($idFile)) {
+                $this->logger->logFatal(
+                    'markDeleted',
+                    "ID file $idFile does not exist"
+                );
+                return Command::INVALID;
+            }
+            $this->logger->logInfo(
+                'markDeleted',
+                "Marking records from ID file $idFile deleted"
+            );
+            return $this->markDeletedFromIdFile($idFile)
+                ? Command::SUCCESS : Command::FAILURE;
         }
 
         if (empty($sourceId)) {
             $this->logger
                 ->logInfo('markDeleted', "Marking record $singleId deleted");
             $this->markDeleted('', $singleId);
-        } else {
-            foreach (explode(',', $sourceId) as $source) {
-                $this->logger
-                    ->logInfo('markDeleted', "Marking $source deleted");
-                $this->markDeleted($source, $singleId);
-            }
+            return Command::SUCCESS;
+        }
+
+        foreach (explode(',', $sourceId) as $source) {
+            $this->logger
+                ->logInfo('markDeleted', "Marking $source deleted");
+            $this->markDeleted($source, $singleId);
         }
 
         return Command::SUCCESS;
@@ -169,5 +194,67 @@ class MarkDeleted extends AbstractBase
         }
 
         $this->logger->logInfo('markDeleted', 'Marking of record deleted completed');
+    }
+
+    /**
+     * Mark record(s) deleted based on an id file
+     *
+     * @param string $idFile File name
+     *
+     * @return bool
+     */
+    protected function markDeletedFromIdFile(string $idFile): bool
+    {
+        $count = 0;
+        $pc = new PerformanceCounter();
+        $f = fopen($idFile, 'r');
+        if (false === $f) {
+            $this->logger->logFatal(
+                'markDeleted',
+                "Could not open ID file $idFile"
+            );
+        }
+
+        while (!feof($f)) {
+            $id = trim(fgets($f));
+            if ('' === $id) {
+                continue;
+            }
+            $record = $this->db->getRecord($id);
+            if (null === $record) {
+                $this->logger->writelnVerbose("Record $id not found");
+                continue;
+            }
+            if ($record['deleted']) {
+                $this->logger->writelnVeryVerbose("Record $id already deleted");
+                continue;
+            }
+            if (isset($record['dedup_id'])) {
+                $this->dedupHandler->removeFromDedupRecord(
+                    $record['dedup_id'],
+                    $record['_id']
+                );
+                unset($record['dedup_id']);
+            }
+            $record['deleted'] = true;
+            $record['updated'] = $this->db->getTimestamp();
+            $this->db->saveRecord($record);
+            $this->logger->writelnVeryVerbose("Record $id deleted");
+
+            ++$count;
+            if ($count % 1000 == 0) {
+                $pc->add($count);
+                $avg = $pc->getSpeed();
+                $this->logger->logInfo(
+                    'markDeleted',
+                    "$count records marked deleted, $avg records/sec"
+                );
+            }
+        }
+        $this->logger->logInfo(
+            'markDeleted',
+            "Completed with $count records marked deleted"
+        );
+        return true;
     }
 }
