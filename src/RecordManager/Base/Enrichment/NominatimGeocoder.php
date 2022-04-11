@@ -258,6 +258,15 @@ class NominatimGeocoder extends AbstractEnrichment
                 if (count($words) > 10) {
                     $location = implode(' ', array_slice($words, 0, 10));
                 }
+
+                // Try to remove any trailing letter and optionally flat number from
+                // an address:
+                $location = preg_replace(
+                    '/(.{3,}\s+(\d{1,3}))\s*[a-zA-Z]\s*\d*$/',
+                    "$1",
+                    $location
+                );
+
                 $geocoded = $this->geocode($location);
                 if ($geocoded) {
                     $wkts = array_column($geocoded, 'wkt');
