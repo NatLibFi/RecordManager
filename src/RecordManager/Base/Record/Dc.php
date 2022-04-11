@@ -58,11 +58,18 @@ class Dc extends AbstractRecord
     protected $doc = null;
 
     /**
-     * HTTP client manager
+     * HTTP client manager for FullTextTrait
      *
      * @var HttpClientManager
      */
     protected $httpClientManager;
+
+    /**
+     * Database for FullTextTrait
+     *
+     * @var ?Database
+     */
+    protected $db;
 
     /**
      * Constructor
@@ -72,16 +79,19 @@ class Dc extends AbstractRecord
      * @param Logger            $logger           Logger
      * @param MetadataUtils     $metadataUtils    Metadata utilities
      * @param HttpClientManager $httpManager      HTTP client manager
+     * @param ?Database         $db               Database
      */
     public function __construct(
         $config,
         $dataSourceConfig,
         Logger $logger,
         MetadataUtils $metadataUtils,
-        HttpClientManager $httpManager
+        HttpClientManager $httpManager,
+        Database $db = null
     ) {
         parent::__construct($config, $dataSourceConfig, $logger, $metadataUtils);
         $this->httpClientManager = $httpManager;
+        $this->db = $db;
     }
 
     /**

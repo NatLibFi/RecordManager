@@ -58,6 +58,13 @@ class Qdc extends AbstractRecord
     protected $httpClientManager;
 
     /**
+     * Database for FullTextTrait
+     *
+     * @var ?Database
+     */
+    protected $db;
+
+    /**
      * Constructor
      *
      * @param array             $config           Main configuration
@@ -65,16 +72,19 @@ class Qdc extends AbstractRecord
      * @param Logger            $logger           Logger
      * @param MetadataUtils     $metadataUtils    Metadata utilities
      * @param HttpClientManager $httpManager      HTTP client manager
+     * @param ?Database         $db               Database
      */
     public function __construct(
         $config,
         $dataSourceConfig,
         Logger $logger,
         MetadataUtils $metadataUtils,
-        HttpClientManager $httpManager
+        HttpClientManager $httpManager,
+        Database $db = null
     ) {
         parent::__construct($config, $dataSourceConfig, $logger, $metadataUtils);
         $this->httpClientManager = $httpManager;
+        $this->db = $db;
     }
 
     /**

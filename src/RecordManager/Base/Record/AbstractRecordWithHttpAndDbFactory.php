@@ -33,7 +33,7 @@ use Laminas\ServiceManager\Exception\ServiceNotCreatedException;
 use Laminas\ServiceManager\Exception\ServiceNotFoundException;
 
 /**
- * Record factory for records with HTTP client manager
+ * Record factory for records with HTTP client manager and database
  *
  * @category DataManagement
  * @package  RecordManager
@@ -41,7 +41,7 @@ use Laminas\ServiceManager\Exception\ServiceNotFoundException;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class AbstractRecordWithHttpClientManagerFactory
+class AbstractRecordWithHttpAndDbFactory
     implements \Laminas\ServiceManager\Factory\FactoryInterface
 {
     /**
@@ -74,7 +74,8 @@ class AbstractRecordWithHttpClientManagerFactory
             $configReader->get('datasources.ini'),
             $container->get(\RecordManager\Base\Utils\Logger::class),
             $container->get(\RecordManager\Base\Utils\MetadataUtils::class),
-            $container->get(\RecordManager\Base\Http\ClientManager::class)
+            $container->get(\RecordManager\Base\Http\ClientManager::class),
+            $container->get(\RecordManager\Base\Database\AbstractDatabase::class)
         );
     }
 }

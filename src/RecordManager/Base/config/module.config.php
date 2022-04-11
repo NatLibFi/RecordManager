@@ -111,7 +111,7 @@ return [
             ],
             'record' => [
                 'factories' => [
-                    \RecordManager\Base\Record\Dc::class => \RecordManager\Base\Record\AbstractRecordWithHttpClientManagerFactory::class,
+                    \RecordManager\Base\Record\Dc::class => \RecordManager\Base\Record\AbstractRecordWithHttpAndDbFactory::class,
                     \RecordManager\Base\Record\Eaccpf::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\Ead::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\Ead3::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
@@ -119,10 +119,10 @@ return [
                     \RecordManager\Base\Record\Forward::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\ForwardAuthority::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\Lido::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
-                    \RecordManager\Base\Record\Lrmi::class => \RecordManager\Base\Record\AbstractRecordWithHttpClientManagerFactory::class,
+                    \RecordManager\Base\Record\Lrmi::class => \RecordManager\Base\Record\AbstractRecordWithHttpAndDbFactory::class,
                     \RecordManager\Base\Record\Marc::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\MarcAuthority::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
-                    \RecordManager\Base\Record\Qdc::class => \RecordManager\Base\Record\AbstractRecordWithHttpClientManagerFactory::class,
+                    \RecordManager\Base\Record\Qdc::class => \RecordManager\Base\Record\AbstractRecordWithHttpAndDbFactory::class,
                 ],
                 'aliases' => [
                     'dc' => \RecordManager\Base\Record\Dc::class,

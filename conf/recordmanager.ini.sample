@@ -319,3 +319,12 @@ replace[] = '\1 street'
 ; MySQL password
 ;password = "topsecret"
 
+; Settings for full-text enrichment
+[FullTextEnrichment]
+; Maximum lifetime of cached entries in minutes. Default is 43200 (30 days). Set to 0
+; to disable caching of full-text data.
+;cache_expiration = 1440
+; Number of attempts to fetch data from the url. Default is 90.
+;max_tries = 10
+; Wait time between request attempts in seconds. Default is 5.
+;retry_wait = 120

@@ -4,10 +4,11 @@
  *
  * Prerequisites:
  * - HTTP\ClientManager as $this->httpClientManager
+ * - Database as $this->db
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2020-2021.
+ * Copyright (C) The National Library of Finland 2020-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -93,7 +94,16 @@ trait FullTextTrait
             foreach ($doc->xpath($xpath) as $field) {
                 $url = (string)$field;
                 if (preg_match('/^https?:\/\//', $url)) {
-                    $fulltext[] = $this->getUrl($url);
+                    try {
+                        $fulltext[] = $this->getUrl($url);
+                    } catch (\Exception $e) {
+                        $id = $this->source . '.' . $this->getID();
+                        $this->logger->logWarning(
+                            get_class($this),
+                            "Full text enrichment failed for record '$id': "
+                            . $e->getMessage()
+                        );
+                    }
                 }
             }
         }
@@ -119,11 +129,28 @@ trait FullTextTrait
      */
     protected function getUrl($url)
     {
-        $maxTries = $this->config['Enrichment']['max_tries'] ?? 90;
-        $retryWait = $this->config['Enrichment']['retry_wait'] ?? 5;
+        $maxCacheAge
+            = ($this->config['FullTextEnrichment']['cache_expiration'] ?? 43200)
+            * 60;
+        $maxTries = $this->config['FullTextEnrichment']['max_tries'] ?? 90;
+        $retryWait = $this->config['FullTextEnrichment']['retry_wait'] ?? 5;
         $httpOptions = [
             'follow_redirects' => true
         ];
+
+        if ($maxCacheAge && null !== $this->db) {
+            $cached = $this->db->findUriCache(
+                [
+                    '_id' => $url,
+                    'timestamp' => [
+                        '$gt' => $this->db->getTimestamp(time() - $maxCacheAge)
+                    ]
+                ]
+            );
+            if (null !== $cached) {
+                return $cached['data'];
+            }
+        }
 
         $host = parse_url($url, PHP_URL_HOST);
         $port = parse_url($url, PHP_URL_PORT);
@@ -216,6 +243,23 @@ trait FullTextTrait
         $code = null === $response ? 999 : $response->getStatus();
         if ($code >= 300 && $code != 404) {
             throw new \Exception("Failed to fetch full text url '$url': $code");
+        }
+
+        // Make sure the text is valid UTF-8:
+        $body = iconv('UTF-8', 'UTF-8//IGNORE', $body);
+        // Replace also any control characters not allowed in XML 1.0:
+        $body = preg_replace('/[\x01-\x08,\x0B,\x0C,\x0E-\x1F]/', ' ', $body);
+
+        if ($maxCacheAge && null !== $this->db) {
+            $this->db->saveUriCache(
+                [
+                    '_id' => $url,
+                    'timestamp' => $this->db->getTimestamp(),
+                    'url' => $url,
+                    'headers' => [],
+                    'data' => $body
+                ]
+            );
         }
 
         return $body;
