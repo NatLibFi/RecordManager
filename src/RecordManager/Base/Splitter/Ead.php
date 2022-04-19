@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2021.
+ * Copyright (C) The National Library of Finland 2012-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -219,14 +219,13 @@ class Ead extends AbstractBase
             }
         }
 
-        if ($this->doc->archdesc->bibliography) {
-            foreach ($this->doc->archdesc->bibliography as $elem) {
-                $this->appendXML($record, $elem);
+        if ($record->getName() !== 'archdesc') {
+            foreach ($this->doc->archdesc->bibliography ?? [] as $elem) {
+                $this->appendXML($record, $elem, $this->nonInheritedFields);
             }
-        }
-        if ($this->doc->archdesc->accessrestrict) {
-            foreach ($this->doc->archdesc->accessrestrict as $elem) {
-                $this->appendXML($record, $elem);
+
+            foreach ($this->doc->archdesc->accessrestrict ?? [] as $elem) {
+                $this->appendXML($record, $elem, $this->nonInheritedFields);
             }
         }
 
@@ -285,6 +284,9 @@ class Ead extends AbstractBase
     {
         if ($append !== null) {
             $name = $append->getName();
+            if (isset($ignore[$name])) {
+                return;
+            }
             // addChild doesn't encode & ...
             $data = (string)$append;
             $data = str_replace('&', '&amp;', $data);

@@ -197,12 +197,14 @@ class Ead3 extends Ead
             }
         }
 
-        foreach ($this->doc->archdesc->bibliography ?? [] as $elem) {
-            $this->appendXML($record, $elem);
-        }
+        if ($record->getName() !== 'archdesc') {
+            foreach ($this->doc->archdesc->bibliography ?? [] as $elem) {
+                $this->appendXML($record, $elem, $this->nonInheritedFields);
+            }
 
-        foreach ($this->doc->archdesc->accessrestrict ?? [] as $elem) {
-            $this->appendXML($record, $elem);
+            foreach ($this->doc->archdesc->accessrestrict ?? [] as $elem) {
+                $this->appendXML($record, $elem, $this->nonInheritedFields);
+            }
         }
 
         $parentDid = $original->xpath('parent::*/did');
