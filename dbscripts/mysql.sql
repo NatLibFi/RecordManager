@@ -66,7 +66,7 @@ CREATE TABLE `ontologyEnrichment` (
   `type` varchar(255) NOT NULL,
   `prefLabels` MEDIUMTEXT NULL,
   `altLabels` MEDIUMTEXT NULL,
-  `hiddenLabels` MEDIUMTEXT NULL
+  `hiddenLabels` MEDIUMTEXT NULL,
   `geoLocation` MEDIUMTEXT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
