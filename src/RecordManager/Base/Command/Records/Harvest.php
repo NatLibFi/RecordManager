@@ -365,7 +365,7 @@ class Harvest extends AbstractBase
             } catch (\Exception $e) {
                 $this->logger->logFatal(
                     'harvest',
-                    "[$source] Exception: " . $e->getMessage()
+                    "[$source] Exception: " . (string)$e
                 );
                 $returnCode = Command::FAILURE;
             }
