@@ -101,7 +101,7 @@ trait FullTextTrait
                         $this->logger->logWarning(
                             get_class($this),
                             "Full text enrichment failed for record '$id': "
-                            . $e->getMessage()
+                            . (string)$e
                         );
                     }
                 }

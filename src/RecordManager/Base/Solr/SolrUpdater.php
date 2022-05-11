@@ -1027,8 +1027,7 @@ class SolrUpdater
         } catch (\Exception $e) {
             $this->log->logFatal(
                 'updateRecords',
-                'Exception: ' . $e->getMessage() . ' at ' . $e->getFile() . ':'
-                    . $e->getLine()
+                'Exception: ' . (string)$e
             );
         }
         $this->workerPoolManager->destroyWorkerPools();

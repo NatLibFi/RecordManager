@@ -331,7 +331,7 @@ class Export extends AbstractBase
         } catch (\Exception $e) {
             $this->logger->logFatal(
                 'exportRecords',
-                'Exception: ' . $e->getMessage()
+                'Exception: ' . (string)$e
             );
             $returnCode = Command::FAILURE;
         }

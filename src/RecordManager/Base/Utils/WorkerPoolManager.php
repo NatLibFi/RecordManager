@@ -226,15 +226,13 @@ class WorkerPoolManager
                     $this->logger->logFatal(
                         'WorkerPool',
                         'Worker ' . getmypid() . " exception in pool $poolId: "
-                        . $e->getMessage() . PHP_EOL . "Stack trace: "
-                        . $e->getTraceAsString()
+                        . (string)$e
                     );
                     try {
                         $this->writeSocket(
                             $childSocket,
                             [
-                                'exception' => $e->getMessage() . "\nStack trace: "
-                                . $e->getTraceAsString()
+                                'exception' => (string)$e
                             ],
                             true
                         );

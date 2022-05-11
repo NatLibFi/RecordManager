@@ -285,7 +285,7 @@ class Deduplicate extends AbstractBase
             } catch (\Exception $e) {
                 $this->logger->logFatal(
                     'deduplicate',
-                    'Exception: ' . $e->getMessage()
+                    'Exception: ' . (string)$e
                 );
                 throw $e;
             }

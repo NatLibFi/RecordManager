@@ -205,8 +205,7 @@ class SolrComparer extends SolrUpdater
         } catch (\Exception $e) {
             $this->log->logFatal(
                 'compareRecords',
-                'Exception: ' . $e->getMessage() . ' at ' . $e->getFile() . ':'
-                    . $e->getLine()
+                'Exception: ' . (string)$e
             );
         }
     }
