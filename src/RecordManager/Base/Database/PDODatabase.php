@@ -813,7 +813,7 @@ class PDODatabase extends AbstractDatabase
             // been caused during commit:
             try {
                 $db->rollback();
-            } catch (\Exception $e) {
+            } catch (\Exception $e2) {
                 // Do nothing
             }
             throw $e;
