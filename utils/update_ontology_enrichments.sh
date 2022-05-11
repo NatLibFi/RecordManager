@@ -9,7 +9,7 @@ if [ "$4" == "" ]; then
   echo "See https://github.com/NatLibFi/Finto-data/blob/master/conf/finto.fi/config.ttl"
   echo "for the sparqlEndpoint addresses for different vocabularies if querying Finto."
   echo
-  echo "Example: $0 https://api.finto.fi/sparql recman ontologyEnrichment fetch_finto.post"
+  echo "Example: $0 https://api.finto.fi/sparql recman ontologyEnrichment fetch_finto_koko.post"
   echo
   exit
 fi
