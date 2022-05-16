@@ -65,7 +65,7 @@ class PDODatabase extends AbstractDatabase
     /**
      * Database
      *
-     * @var \PDO
+     * @var ?\PDO
      */
     protected $db = null;
 

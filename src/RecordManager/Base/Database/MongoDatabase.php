@@ -57,9 +57,9 @@ class MongoDatabase extends AbstractDatabase
     /**
      * Mongo database
      *
-     * @var \MongoDB\Database
+     * @var ?\MongoDB\Database
      */
-    protected $db;
+    protected $db = null;
 
     /**
      * Database name
