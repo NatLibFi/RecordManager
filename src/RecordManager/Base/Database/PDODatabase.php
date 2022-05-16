@@ -553,6 +553,16 @@ class PDODatabase extends AbstractDatabase
     }
 
     /**
+     * Reset the database connection if it's open
+     *
+     * @return void
+     */
+    public function resetConnection(): void
+    {
+        $this->db = null;
+    }
+
+    /**
      * Get all attributes for a record
      *
      * @param string $collection Collection

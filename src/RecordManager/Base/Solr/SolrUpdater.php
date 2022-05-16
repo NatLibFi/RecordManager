@@ -1014,6 +1014,9 @@ class SolrUpdater
                     '_id' => $lastUpdateKey,
                     'value' => $lastIndexingDate
                 ];
+                // Reset database connection since it could have timed out during
+                // the process:
+                $this->db->resetConnection();
                 $this->db->saveState($state);
             }
 

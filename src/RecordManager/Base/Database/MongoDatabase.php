@@ -574,6 +574,16 @@ class MongoDatabase extends AbstractDatabase
     }
 
     /**
+     * Reset the database connection if it's open
+     *
+     * @return void
+     */
+    public function resetConnection(): void
+    {
+        $this->db = null;
+    }
+
+    /**
      * Get a database connection
      *
      * @return \MongoDB\Database

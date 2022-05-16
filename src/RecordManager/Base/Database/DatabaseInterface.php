@@ -370,4 +370,11 @@ interface DatabaseInterface
      * @return void
      */
     public function deleteLogMessage($id): void;
+
+    /**
+     * Reset the database connection if it's open
+     *
+     * @return void
+     */
+    public function resetConnection(): void;
 }

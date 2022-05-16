@@ -383,6 +383,9 @@ abstract class AbstractBase
     protected function saveLastHarvestedDate($date)
     {
         $state = ['_id' => "Last Harvest Date {$this->source}", 'value' => $date];
+        // Reset database connection since it could have timed out during the
+        // process:
+        $this->db->resetConnection();
         $this->db->saveState($state);
     }
 
