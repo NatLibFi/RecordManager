@@ -13,7 +13,8 @@
             "php": "7.4.1"
         },
         "allow-plugins": {
-            "composer/package-versions-deprecated": true
+            "composer/package-versions-deprecated": true,
+            "wikimedia/composer-merge-plugin": true
         }
     },
     "autoload": {
@@ -40,7 +41,8 @@
         "pear/http_request2": "2.5.1",
         "phayes/geophp": "1.2",
         "symfony/console": "5.4.5",
-        "symfony/lock": "5.4.5"
+        "symfony/lock": "5.4.5",
+        "wikimedia/composer-merge-plugin": "2.0.1"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "3.7.0",
@@ -52,5 +54,19 @@
     },
     "scripts": {
         "qa": "phing ci-tasks"
+    },
+    "extra": {
+        "merge-plugin": {
+            "include": [
+                "composer.local.json"
+            ],
+            "recurse": true,
+            "replace": true,
+            "ignore-duplicates": false,
+            "merge-dev": true,
+            "merge-extra": false,
+            "merge-extra-deep": false,
+            "merge-scripts": true
+        }
     }
 }
