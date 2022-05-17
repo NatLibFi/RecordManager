@@ -234,10 +234,12 @@ class Ead extends AbstractRecord
             'UTF-8'
         );
 
-        foreach ($doc->did->langmaterial->language ?? [] as $lang) {
-            $l = $lang->attributes()->langcode ?? $lang;
-            $data['language'][] = $this->metadataUtils
-                ->normalizeLanguageStrings($l);
+        foreach ($doc->did->langmaterial ?? [] as $langmaterial) {
+            foreach ($langmaterial->language ?? [] as $lang) {
+                $l = $lang->attributes()->langcode ?? $lang;
+                $data['language'][] = $this->metadataUtils
+                    ->normalizeLanguageStrings($l);
+            }
         }
 
         if ($extents = $doc->did->xpath('physdesc/extent')) {
