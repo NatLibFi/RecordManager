@@ -591,4 +591,28 @@ abstract class AbstractRecord
         }
         return '';
     }
+
+    /**
+     * Return extraFields as assoc array, key => value
+     *
+     * @return array
+     */
+    protected function getExtraFields(): array
+    {
+        $cacheKey = __FUNCTION__;
+        if (isset($this->resultCache[$cacheKey])) {
+            return $this->resultCache[$cacheKey];
+        }
+        $result = [];
+        $extraFields = $this->dataSourceConfig[$this->source]['extraFields']
+            ?? $this->dataSourceConfig[$this->source]['extrafields']
+            ?? [];
+        foreach ($extraFields as $value) {
+            $exploded = explode(':', $value, 2);
+            if (count($exploded) === 2) {
+                $result[$exploded[0]] = $exploded[1];
+            }
+        }
+        return $this->resultCache[$cacheKey] = $result;
+    }
 }
