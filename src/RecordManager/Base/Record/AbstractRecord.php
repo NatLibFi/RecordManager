@@ -593,9 +593,9 @@ abstract class AbstractRecord
     }
 
     /**
-     * Return extraFields as assoc array, key => value
+     * Return extraFields as assoc array
      *
-     * @return array
+     * @return array [key => value, ...]
      */
     protected function getExtraFields(): array
     {
