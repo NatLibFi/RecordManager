@@ -593,7 +593,7 @@ abstract class AbstractRecord
     }
 
     /**
-     * Return extraFields as assoc array
+     * Return extraFields as an assoc array
      *
      * @return array [key => value, ...]
      */
