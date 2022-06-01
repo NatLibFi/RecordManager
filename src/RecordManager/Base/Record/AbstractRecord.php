@@ -424,7 +424,7 @@ abstract class AbstractRecord
      */
     public function getAccessRestrictions()
     {
-        return '';
+        return $this->getDriverParam('accessRestrictions', '');
     }
 
     /**
@@ -555,14 +555,16 @@ abstract class AbstractRecord
         ) {
             return $default;
         }
-        $iniValues = parse_ini_string(
-            implode(
-                PHP_EOL,
-                $this->dataSourceConfig[$this->source]['driverParams']
-            )
-        );
-
-        return $iniValues[$parameter] ?? $default;
+        $cacheKey = __METHOD__;
+        if (!isset($this->resultCache[$cacheKey])) {
+            $this->resultCache[$cacheKey] = parse_ini_string(
+                implode(
+                    PHP_EOL,
+                    $this->dataSourceConfig[$this->source]['driverParams']
+                )
+            );
+        }
+        return $this->resultCache[$cacheKey][$parameter] ?? $default;
     }
 
     /**
