@@ -424,7 +424,7 @@ abstract class AbstractRecord
      */
     public function getAccessRestrictions()
     {
-        return $this->getDriverParam('accessRestriction', '');
+        return $this->getDriverParam('accessRestrictions', '');
     }
 
     /**
