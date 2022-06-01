@@ -557,16 +557,14 @@ abstract class AbstractRecord
         }
         $cacheKey = __METHOD__;
         if (!isset($this->resultCache[$cacheKey])) {
-            $this->resultCache[$cacheKey] = $iniValues = parse_ini_string(
+            $this->resultCache[$cacheKey] = parse_ini_string(
                 implode(
                     PHP_EOL,
                     $this->dataSourceConfig[$this->source]['driverParams']
                 )
             );
-        } else {
-            $iniValues = $this->resultCache[$cacheKey];
         }
-        return $iniValues[$parameter] ?? $default;
+        return $this->resultCache[$cacheKey][$parameter] ?? $default;
     }
 
     /**
