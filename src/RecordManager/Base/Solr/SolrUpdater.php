@@ -2265,7 +2265,7 @@ class SolrUpdater
 
                     $upper = preg_match_all('/[\p{Lu}]/u', $field);
                     $all = preg_match_all('/[\p{L}0-9]/u', $field);
-                    if ($upper / $all > 0.95) {
+                    if ($all && $upper / $all > 0.95) {
                         ++$uppercase;
                     }
                 }
