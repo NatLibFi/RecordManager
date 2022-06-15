@@ -2254,19 +2254,19 @@ class SolrUpdater
         // Analyze the records to find the best record to be used as the base
         foreach ($records as &$record) {
             $fieldCount = 0;
-            $capsRatios = 0;
+            $uppercase = 0;
             $titleLen = isset($record['solr']['title'])
                 ? mb_strlen($record['solr']['title'], 'UTF-8') : 0;
             $fields = array_intersect_key($record['solr'], $this->scoredFields);
             array_walk_recursive(
                 $fields,
-                function ($field) use (&$fieldCount, &$capsRatios) {
+                function ($field) use (&$fieldCount, &$uppercase) {
                     ++$fieldCount;
 
-                    $uppercase = preg_match_all('/[\p{Lu}]/u', $field);
-                    $length = mb_strlen($field, 'UTF-8');
-                    if ($length) {
-                        $capsRatios += $uppercase / $length;
+                    $upper = preg_match_all('/[\p{Lu}]/u', $field);
+                    $all = preg_match_all('/[\p{L}0-9]/u', $field);
+                    if ($upper / $all > 0.95) {
+                        ++$uppercase;
                     }
                 }
             );
@@ -2274,9 +2274,9 @@ class SolrUpdater
                 $record['score'] = 0;
             } else {
                 $baseScore = $fieldCount + $titleLen;
-                $capsRatio = $capsRatios / $fieldCount;
-                $record['score'] = 0 == $capsRatio ? $fieldCount
-                    : $baseScore / $capsRatio;
+                $uppercaseRatio = $uppercase / $fieldCount;
+                $record['score'] = 0 == $uppercaseRatio ? $fieldCount
+                    : $baseScore / $uppercaseRatio;
             }
         }
         unset($record);
