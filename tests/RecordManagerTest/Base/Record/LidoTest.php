@@ -63,6 +63,7 @@ class LidoTest extends RecordTest
                 . ' Säädökset',
             'title_alt' => [],
             'format' => 'Kirja',
+            'identifier' => '26054',
             'institution' => 'Test Institution',
             'author' => [
                 'Designer, Test',
@@ -180,6 +181,7 @@ class LidoTest extends RecordTest
                 'Säädökset'
             ],
             'format' => 'Kirja',
+            'identifier' => '26054',
             'institution' => 'Test Institution',
             'author' => [
                 'Designer, Test',

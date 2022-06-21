@@ -153,7 +153,7 @@ class Lido extends AbstractRecord
         }
 
         $data['format'] = $this->getObjectWorkType();
-
+        $data['identifier'] = $this->getIdentifier();
         $data['institution'] = $this->getLegalBodyName();
 
         $data['author'] = $this->getAuthors();
@@ -186,6 +186,8 @@ class Lido extends AbstractRecord
         $data['ctrlnum'] = $this->getRecordInfoIDs();
         $data['isbn'] = $this->getISBNs();
         $data['issn'] = $this->getISSNs();
+
+        $this->getHierarchyFields($data);
 
         $data['allfields'] = $this->getAllFields($this->doc);
 
@@ -1448,5 +1450,93 @@ class Lido extends AbstractRecord
     protected function getCollection(): string
     {
         return $this->getRelatedWorkDisplayObject($this->relatedWorkRelationTypes);
+    }
+
+    /**
+     * Return the object identifier. This is "an unambiguous numeric or alphanumeric
+     * identification number, assigned to the object by the institution of custody."
+     * (usually differs from a technical database id)
+     *
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
+     * #repositorySetComplexType
+     * @return string
+     */
+    protected function getIdentifier()
+    {
+        $nodeExists = !empty(
+            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
+                ->repositoryWrap->repositorySet
+        );
+        if (!$nodeExists) {
+            return '';
+        }
+        foreach ($this->doc->lido->descriptiveMetadata->objectIdentificationWrap
+            ->repositoryWrap->repositorySet as $set
+        ) {
+            if (!empty($set->workID)) {
+                return (string)$set->workID;
+            }
+        }
+        return '';
+    }
+
+    /**
+     * Get hierarchy fields
+     *
+     * @param array $data Reference to the target array
+     *
+     * @return void
+     */
+    protected function getHierarchyFields(array &$data): void
+    {
+        foreach ($this->getRelatedWorkSetNodes(['is part of']) as $set) {
+            if (!($relatedWork = $set->relatedWork)) {
+                continue;
+            }
+            $relatedId = (string)($relatedWork->object->objectID ?? '');
+            if (!$relatedId) {
+                $this->logger
+                    ->logDebug('Lido', 'Related record ID missing', true);
+                continue;
+            }
+            $relatedTitle = (string)($relatedWork->displayObject ?? '');
+            if (!$relatedTitle) {
+                $this->logger
+                    ->logDebug('Lido', 'Related record title missing', true);
+                continue;
+            }
+
+            $type = (string)$relatedWork['type'];
+            if ('collection' === $type) {
+                $data['hierarchy_top_id'] = $relatedId;
+                $data['hierarchy_top_title'] = $relatedTitle;
+            } elseif ('parent' === $type) {
+                if ($relatedId === $this->getID()) {
+                    $data['is_hierarchy_id'] = $relatedId;
+                    $data['is_hierarchy_title'] = $relatedTitle;
+                } else {
+                    $data['hierarchy_parent_id'] = $relatedId;
+                    $data['hierarchy_parent_title'] = $relatedTitle;
+                }
+            }
+        }
+        // If there is hierarchy top id but no parent id, assume this is the top
+        // record:
+        if (!empty($data['hierarchy_top_id'])
+            && empty($data['hierarchy_parent_id'])
+        ) {
+            $data['is_hierarchy_id'] = $data['hierarchy_top_id'];
+            $data['is_hierarchy_title'] = $data['hierarchy_top_title'];
+        }
+        if (!empty($data['hierarchy_parent_id'])) {
+            // Build a sequence for sorting:
+            $data['hierarchy_sequence'] = preg_replace_callback(
+                '/(\d+)/',
+                function ($matches) {
+                    return str_pad($matches[1], 9, '0', STR_PAD_LEFT);
+                },
+                $this->getIdentifier()
+            );
+        }
     }
 }
