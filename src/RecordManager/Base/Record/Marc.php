@@ -1091,6 +1091,9 @@ class Marc extends AbstractRecord
         $fields = $this->getFields('020');
         foreach ($fields as $field) {
             $original = $isbn = $this->getSubfield($field, 'a');
+            if (!$isbn) {
+                continue;
+            }
             $isbn = $this->metadataUtils->normalizeISBN($isbn);
             if ($isbn) {
                 $arr[] = $isbn;
