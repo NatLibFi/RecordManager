@@ -28,6 +28,7 @@
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Exception\HttpRequestException;
 use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
@@ -249,7 +250,7 @@ abstract class AbstractEnrichment
                     sleep($retryWait);
                     continue;
                 }
-                throw $e;
+                throw HttpRequestException::fromException($e);
             }
             if ($try < $this->maxTries) {
                 $code = $response->getStatus();
@@ -294,7 +295,10 @@ abstract class AbstractEnrichment
 
         $code = null === $response ? 999 : $response->getStatus();
         if ($code >= 300 && $code != 404 && !in_array($code, $ignoreErrors)) {
-            throw new \Exception("Enrichment failed to fetch '$url': $code");
+            throw new HttpRequestException(
+                "Enrichment failed to fetch '$url': $code",
+                $code
+            );
         }
 
         $data = $code < 300 ? $response->getBody() : '';

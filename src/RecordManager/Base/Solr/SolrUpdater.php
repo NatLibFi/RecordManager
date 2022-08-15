@@ -29,6 +29,7 @@ namespace RecordManager\Base\Solr;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
+use RecordManager\Base\Exception\HttpRequestException;
 use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Record\AbstractRecord;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
@@ -2471,7 +2472,7 @@ class SolrUpdater
                     sleep($this->updateRetryWait);
                     continue;
                 }
-                throw $e;
+                throw HttpRequestException::fromException($e);
             }
             if ($try < $maxTries) {
                 $code = $response->getStatus();
@@ -2491,11 +2492,12 @@ class SolrUpdater
         }
         $code = null === $response ? 999 : $response->getStatus();
         if ($code >= 300) {
-            throw new \Exception(
+            throw new HttpRequestException(
                 "Solr server request failed ($code). URL:\n"
                 . $this->config['Solr']['update_url']
                 . "\nRequest:\n$body\n\nResponse:\n"
-                . (null !== $response ? $response->getBody() : '')
+                . (null !== $response ? $response->getBody() : ''),
+                $code
             );
         }
     }

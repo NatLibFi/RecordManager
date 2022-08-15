@@ -27,6 +27,7 @@
  */
 namespace RecordManager\Base\Harvest;
 
+use RecordManager\Base\Exception\HttpRequestException;
 use RecordManager\Base\Utils\XmlSecurity;
 
 /**
@@ -196,7 +197,7 @@ class HTTPFiles extends AbstractBase
                     sleep(30);
                     continue;
                 }
-                throw $e;
+                throw HttpRequestException::fromException($e);
             }
             if ($try < 5) {
                 $code = $response->getStatus();
@@ -214,7 +215,7 @@ class HTTPFiles extends AbstractBase
         $code = null === $response ? 999 : $response->getStatus();
         if ($code >= 300) {
             $this->fatalMsg("Request '$urlStr' failed: $code");
-            throw new \Exception("Request failed: $code");
+            throw new HttpRequestException("Request failed: $code", $code);
         }
 
         $responseStr = $response->getBody();
@@ -278,7 +279,7 @@ class HTTPFiles extends AbstractBase
                     sleep(30);
                     continue;
                 }
-                throw $e;
+                throw HttpRequestException::fromException($e);
             }
             if ($try < 5) {
                 $code = $response->getStatus();
@@ -296,7 +297,7 @@ class HTTPFiles extends AbstractBase
         $code = null === $response ? 999 : $response->getStatus();
         if ($code >= 300) {
             $this->fatalMsg("Request '$urlStr' failed: $code");
-            throw new \Exception("Request failed: $code");
+            throw new HttpRequestException("Request failed: $code", $code);
         }
 
         return $response->getBody();

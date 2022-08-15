@@ -30,6 +30,7 @@ namespace RecordManager\Base\Command\Records;
 use RecordManager\Base\Command\AbstractBase;
 use RecordManager\Base\Database\DatabaseInterface;
 use RecordManager\Base\Deduplication\DedupHandlerInterface;
+use RecordManager\Base\Exception\HttpRequestException;
 use RecordManager\Base\Harvest\PluginManager as HarvesterPluginManager;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
@@ -365,6 +366,14 @@ class Harvest extends AbstractBase
                     'harvest',
                     "[$source] Harvesting completed"
                 );
+            } catch (HttpRequestException $e) {
+                // Log only exception message from HTTP requests to avoid messy error
+                // logging from failing services:
+                $this->logger->logFatal(
+                    'harvest',
+                    "[$source] Exception: " . $e->getMessage()
+                );
+                $returnCode = Command::FAILURE;
             } catch (\Exception $e) {
                 $this->logger->logFatal(
                     'harvest',

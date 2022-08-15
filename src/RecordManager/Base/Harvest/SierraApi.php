@@ -27,6 +27,8 @@
  */
 namespace RecordManager\Base\Harvest;
 
+use RecordManager\Base\Exception\HttpRequestException;
+
 /**
  * SierraApi Class
  *
@@ -323,7 +325,7 @@ class SierraApi extends AbstractBase
                         continue;
                     }
                     $this->fatalMsg("Request '$urlStr' failed: $code");
-                    throw new \Exception("Request failed: $code");
+                    throw new HttpRequestException("Request failed: $code", $code);
                 }
 
                 return $response;
@@ -336,7 +338,7 @@ class SierraApi extends AbstractBase
                     sleep($this->retryWait);
                     continue;
                 }
-                throw $e;
+                throw HttpRequestException::fromException($e);
             }
         }
         throw new \Exception('Request failed');
@@ -439,7 +441,10 @@ class SierraApi extends AbstractBase
                         "Request '$apiUrl' failed ($code: " . $response->getBody()
                         . ')'
                     );
-                    throw new \Exception("Access token request failed: $code");
+                    throw new HttpRequestException(
+                        "Access token request failed: $code",
+                        $code
+                    );
                 }
 
                 $json = json_decode($response->getBody(), true);
@@ -459,7 +464,7 @@ class SierraApi extends AbstractBase
                     sleep($this->retryWait);
                     continue;
                 }
-                throw $e;
+                throw HttpRequestException::fromException($e);
             }
         }
     }

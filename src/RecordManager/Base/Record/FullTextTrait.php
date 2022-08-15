@@ -31,6 +31,8 @@
  */
 namespace RecordManager\Base\Record;
 
+use RecordManager\Base\Exception\HttpRequestException;
+
 /**
  * Trait for handling full text
  *
@@ -192,7 +194,7 @@ trait FullTextTrait
                     sleep($retryWait);
                     continue;
                 }
-                throw $e;
+                throw HttpRequestException::fromException($e);
             }
             if ($try < $maxTries) {
                 $code = $response->getStatus();
@@ -242,7 +244,10 @@ trait FullTextTrait
 
         $code = null === $response ? 999 : $response->getStatus();
         if ($code >= 300 && $code != 404) {
-            throw new \Exception("Failed to fetch full text url '$url': $code");
+            throw new HttpRequestException(
+                "Failed to fetch full text url '$url': $code",
+                $code
+            );
         }
 
         // Make sure the text is valid UTF-8:

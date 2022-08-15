@@ -31,6 +31,8 @@
  */
 namespace RecordManager\Base\Harvest;
 
+use RecordManager\Base\Exception\HttpRequestException;
+
 /**
  * OaiPmh Class
  *
@@ -395,7 +397,7 @@ class OaiPmh extends AbstractBase
                         continue;
                     }
                     $this->fatalMsg("Request '$urlStr' failed: $code");
-                    throw new \Exception("Request failed: $code");
+                    throw new HttpRequestException("Request failed: $code", $code);
                 }
 
                 $responseStr = $response->getBody();
@@ -420,7 +422,7 @@ class OaiPmh extends AbstractBase
                     sleep($this->retryWait);
                     continue;
                 }
-                throw $e;
+                throw HttpRequestException::fromException($e);
             }
         }
         throw new \Exception('Request failed');
