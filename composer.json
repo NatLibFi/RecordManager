@@ -36,7 +36,7 @@
         "laminas/laminas-router": "3.5.0",
         "laminas/laminas-servicemanager": "3.10.0",
         "laminas/laminas-xml": "1.4.0",
-        "mongodb/mongodb": "1.8.0",
+        "mongodb/mongodb": "1.11.0",
         "ocramius/proxy-manager": "2.13.1",
         "pear/http_request2": "2.5.1",
         "phayes/geophp": "1.2",
