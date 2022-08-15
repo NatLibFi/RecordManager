@@ -47,6 +47,7 @@ class RequestException extends \Exception
      */
     public static function fromException(\Exception $e): RequestException
     {
-        return new (get_called_class())($e->getMessage(), intval($e->getCode()), $e);
+        $className = static::class;
+        return new $className($e->getMessage(), intval($e->getCode()), $e);
     }
 }
