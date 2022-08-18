@@ -80,7 +80,7 @@ class FieldMapper
     ) {
         $this->basePath = $basePath;
         $this->defaultMappings = $defaultMappings;
-        $this->initdataSourceConfig($dataSourceConfig);
+        $this->initDataSourceConfig($dataSourceConfig);
     }
 
     /**
@@ -90,7 +90,7 @@ class FieldMapper
      *
      * @return void
      */
-    public function initdataSourceConfig(array $dataSourceConfig): void
+    public function initDataSourceConfig(array $dataSourceConfig): void
     {
         foreach ($dataSourceConfig as $source => $settings) {
             $this->settings[$source]['mappingFiles'] = [];

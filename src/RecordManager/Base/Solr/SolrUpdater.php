@@ -1593,7 +1593,7 @@ class SolrUpdater
     {
         if (null === $dataSourceConfig) {
             $dataSourceConfig = $this->configReader->get('datasources.ini', true);
-            $this->fieldMapper->initdataSourceConfig($dataSourceConfig);
+            $this->fieldMapper->initDataSourceConfig($dataSourceConfig);
         }
         $this->settings = [];
         foreach ($dataSourceConfig as $source => $settings) {
