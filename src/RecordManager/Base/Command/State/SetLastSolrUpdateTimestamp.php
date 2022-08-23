@@ -82,7 +82,8 @@ class SetLastSolrUpdateTimestamp extends AbstractBase
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
         $key = $this->solrUpdater->getLastUpdateStateKey(
-            $input->getOption('date-per-server') ?? true
+            $input->getOption('date-per-server')
+                ?: !empty($this->config['Solr']['track_updates_per_update_url'])
         );
         if ($output->isVerbose()) {
             $output->writeln($key);
