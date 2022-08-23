@@ -80,7 +80,7 @@ max_commit_interval = 1000000
 username =
 password =
 ; Whether to track last update date per update_url. Default is false.
-;track_updates_per_update_url = true
+track_updates_per_update_url = true
 ; Hierarchical facets. These facet fields have special handling that makes them
 ; compatible with VuFind's hierarchical facets. The levels in a hierarchical facets
 ; are delimited with a slash, e.g. "MainLibrary/Fiction"

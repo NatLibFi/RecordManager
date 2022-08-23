@@ -49,6 +49,8 @@ return [
                     \RecordManager\Base\Command\Records\Renormalize::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
                     \RecordManager\Base\Command\Records\Suppress::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
                     \RecordManager\Base\Command\Records\Unsuppress::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
+                    \RecordManager\Base\Command\State\GetLastSolrUpdateTimestamp::class => \RecordManager\Base\Command\Solr\AbstractBaseWithSolrUpdaterFactory::class,
+                    \RecordManager\Base\Command\State\SetLastSolrUpdateTimestamp::class => \RecordManager\Base\Command\Solr\AbstractBaseWithSolrUpdaterFactory::class,
                     \RecordManager\Base\Command\Solr\CheckIndex::class => \RecordManager\Base\Command\Solr\AbstractBaseWithSolrUpdaterFactory::class,
                     \RecordManager\Base\Command\Solr\CompareRecords::class => \RecordManager\Base\Command\Solr\CompareRecordsFactory::class,
                     \RecordManager\Base\Command\Solr\Delete::class => \RecordManager\Base\Command\Solr\AbstractBaseWithSolrUpdaterFactory::class,

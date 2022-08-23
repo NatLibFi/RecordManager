@@ -1,10 +1,10 @@
 <?php
 /**
- * Solr Update
+ * Get last Solr update timestamp
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2021.
+ * Copyright (C) The National Library of Finland 2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -25,16 +25,17 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Base\Command\Solr;
+namespace RecordManager\Base\Command\State;
 
 use RecordManager\Base\Command\AbstractBase;
+use RecordManager\Base\Command\Solr\CommandWithSolrUpdaterTrait;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
- * Solr Update
+ * Get last Solr update timestamp
  *
  * @category DataManagement
  * @package  RecordManager
@@ -42,7 +43,7 @@ use Symfony\Component\Console\Output\OutputInterface;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class UpdateIndex extends AbstractBase
+class GetLastSolrUpdateTimestamp extends AbstractBase
 {
     use CommandWithSolrUpdaterTrait;
 
@@ -54,35 +55,8 @@ class UpdateIndex extends AbstractBase
     protected function configure()
     {
         $this
-            ->setDescription('Update Solr index')
+            ->setDescription('Get timestamp of last Solr update')
             ->addOption(
-                'from',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Process records updated since the given timestamp'
-            )->addOption(
-                'all',
-                null,
-                InputOption::VALUE_NONE,
-                'Process all records'
-            )->addOption(
-                'single',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Process only the specified record'
-            )->addOption(
-                'source',
-                null,
-                InputOption::VALUE_REQUIRED,
-                'Process only a comma-separated list of data sources',
-                '*'
-            )->addOption(
-                'no-commit',
-                null,
-                InputOption::VALUE_OPTIONAL,
-                'Disable commit requests',
-                false
-            )->addOption(
                 'date-per-server',
                 null,
                 InputOption::VALUE_NONE,
@@ -92,7 +66,7 @@ class UpdateIndex extends AbstractBase
     }
 
     /**
-     * Send updates to the Solr index
+     * Get the timestamp
      *
      * @param InputInterface  $input  Console input
      * @param OutputInterface $output Console output
@@ -101,16 +75,16 @@ class UpdateIndex extends AbstractBase
      */
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
-        // Override the default verbosity:
-        $this->verbose = $output->isVerbose();
-        $this->solrUpdater->updateRecords(
-            $input->getOption('all') ? '' : $input->getOption('from'),
-            $input->getOption('source'),
-            $input->getOption('single'),
-            $input->getOption('no-commit') === null,
-            false,
-            '',
-            $input->getOption('date-per-server')
+        $key = $this->solrUpdater->getLastUpdateStateKey(
+            $input->getOption('date-per-server') ?? true
+        );
+        if ($output->isVerbose()) {
+            $output->writeln($key);
+        }
+        $timestamp = $this->solrUpdater->getLastUpdateDate($key);
+
+        $output->writeln(
+            null === $timestamp ? 'not stored' : gmdate('Y-m-d H:i:s\Z', $timestamp)
         );
 
         return Command::SUCCESS;

@@ -763,10 +763,9 @@ class SolrUpdater
             throw new \Exception('Delete without source id specified');
         }
 
-        $lastUpdateKey = 'Last Index Update';
-        if ($datePerServer || $this->datePerServer) {
-            $lastUpdateKey .= ' ' . $this->config['Solr']['update_url'];
-        }
+        $lastUpdateKey = $this->getLastUpdateStateKey(
+            $datePerServer || $this->datePerServer
+        );
 
         $this->dumpPrefix = $dumpPrefix;
 
@@ -1011,14 +1010,10 @@ class SolrUpdater
             );
 
             if (isset($lastIndexingDate)) {
-                $state = [
-                    '_id' => $lastUpdateKey,
-                    'value' => $lastIndexingDate
-                ];
                 // Reset database connection since it could have timed out during
                 // the process:
                 $this->db->resetConnection();
-                $this->db->saveState($state);
+                $this->setLastUpdateDate($lastUpdateKey, $lastIndexingDate);
             }
 
             if (!$noCommit && !$this->dumpPrefix
@@ -1551,6 +1546,64 @@ class SolrUpdater
             $this->solrRequest('{ "commit": {} }', 3600);
             $this->log->logInfo('checkIndexedRecords', 'Commit complete');
         }
+    }
+
+    /**
+     * Get last update date (unix timestamp) by key
+     *
+     * @param string $stateKey State key
+     *
+     * @return ?int
+     */
+    public function getLastUpdateDate(string $stateKey)
+    {
+        $state = $this->db->getState($stateKey);
+        if (null !== $state) {
+            // Back-compatibility check:
+            if (is_a($state['value'], 'MongoDB\BSON\UTCDateTime')) {
+                return $state['value']->toDateTime()->getTimestamp();
+            }
+            return $state['value'];
+        }
+        return null;
+    }
+
+    /**
+     * Set last update date (unix timestamp) by key
+     *
+     * @param string $stateKey  State key
+     * @param ?int   $timestamp New timestamp or null to erase existing one
+     *
+     * @return void
+     */
+    public function setLastUpdateDate(string $stateKey, ?int $timestamp): void
+    {
+        if (null === $timestamp) {
+            $this->db->deleteState($stateKey);
+        } else {
+            $this->db->saveState(
+                [
+                    '_id' => $stateKey,
+                    'value' => $timestamp
+                ]
+            );
+        }
+    }
+
+    /**
+     * Get state key for last Solr update date
+     *
+     * @param bool $datePerServer Whether to use server-specific date
+     *
+     * @return string
+     */
+    public function getLastUpdateStateKey(bool $datePerServer): string
+    {
+        $result = 'Last Index Update';
+        if ($datePerServer) {
+            $result .= ' ' . $this->config['Solr']['update_url'];
+        }
+        return $result;
     }
 
     /**
@@ -2976,14 +3029,7 @@ class SolrUpdater
             if (!$lastUpdateKey) {
                 return null;
             }
-            $state = $this->db->getState($lastUpdateKey);
-            if (null !== $state) {
-                // Back-compatibility check:
-                if (is_a($state['value'], 'MongoDB\BSON\UTCDateTime')) {
-                    return $state['value']->toDateTime()->getTimestamp();
-                }
-                return $state['value'];
-            }
+            return $this->getLastUpdateDate($lastUpdateKey);
         }
         return null;
     }
