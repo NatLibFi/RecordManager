@@ -156,6 +156,7 @@ class DedupHandler implements DedupHandlerInterface
                 . ' non-deleted dedup record)'
             ];
         }
+        $removed = [];
         foreach ((array)($dedupRecord['ids'] ?? []) as $id) {
             $problem = '';
             $record = $this->db->getRecord($id);
@@ -191,7 +192,7 @@ class DedupHandler implements DedupHandlerInterface
                 );
 
                 foreach ((array)($dedupRecord['ids'] ?? []) as $otherId) {
-                    if ($otherId === $id) {
+                    if ($otherId === $id or in_array($otherId, $removed)) {
                         continue;
                     }
                     $otherRec = $this->db->getRecord($otherId);
@@ -222,6 +223,7 @@ class DedupHandler implements DedupHandlerInterface
                 }
                 $results[] = "Removed '$id' from dedup record "
                     . "'{$dedupRecord['_id']}' ($problem)";
+                $removed[] = $id;
             }
         }
         return $results;
