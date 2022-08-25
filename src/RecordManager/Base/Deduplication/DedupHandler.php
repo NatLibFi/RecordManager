@@ -157,9 +157,19 @@ class DedupHandler implements DedupHandlerInterface
             ];
         }
         $removed = [];
+        $recordCache = [];
+        $getCachedRecord = function ($id) use (&$recordCache) {
+            if (!isset($recordCache[$id])) {
+                $recordCache[$id] = $this->db->getRecord($id);
+            }
+            return $recordCache[$id];
+        };
         foreach ((array)($dedupRecord['ids'] ?? []) as $id) {
             $problem = '';
-            $record = $this->db->getRecord($id);
+            if (!isset($recordCache[$id])) {
+                $recordCache[$id] = $this->db->getRecord($id);
+            }
+            $record = $getCachedRecord($id);
             $sourceAlreadyExists = false;
             if ($record) {
                 $source = $record['source_id'];
@@ -195,7 +205,7 @@ class DedupHandler implements DedupHandlerInterface
                     if ($otherId === $id or in_array($otherId, $removed)) {
                         continue;
                     }
-                    $otherRec = $this->db->getRecord($otherId);
+                    $otherRec = $getCachedRecord($otherId);
                     if (!$otherRec || $otherRec['deleted']) {
                         continue;
                     }
