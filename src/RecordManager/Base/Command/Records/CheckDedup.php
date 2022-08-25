@@ -62,6 +62,11 @@ class CheckDedup extends AbstractBase
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Process only the specified record'
+            )->addOption(
+                'strict',
+                null,
+                InputOption::VALUE_NONE,
+                'Check all dedup groups for compatible member records'
             );
     }
 
@@ -76,8 +81,13 @@ class CheckDedup extends AbstractBase
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
         $singleId = $input->getOption('single');
-        $this->logger
-            ->logInfo('checkDedup', 'Checking dedup record consistency');
+        $strict = $input->getOption('strict');
+        $this->logger->logInfo(
+            'checkDedup',
+            'Checking dedup record consistency '
+                . ($strict ? 'including' : 'excluding')
+                . ' member record compatibility'
+        );
 
         $params = [];
         if ($singleId) {
@@ -100,7 +110,6 @@ class CheckDedup extends AbstractBase
         }
 
         $this->logger->logInfo('checkDedup', 'Checking dedup records');
-        $dedupHandler = $this->dedupHandler;
         $count = 0;
         $fixed = 0;
         $pc = new PerformanceCounter();
@@ -108,17 +117,18 @@ class CheckDedup extends AbstractBase
             $params,
             ['projection' => ['_id' => 1]],
             function (array $dedupRecordId) use (
-                $dedupHandler,
                 &$count,
                 &$fixed,
-                $pc
+                $pc,
+                $strict
             ) {
                 // Avoid stale data by reading the record just before processing
                 $dedupRecord = $this->db->getDedup($dedupRecordId['_id']);
                 if (null === $dedupRecord) {
                     return true;
                 }
-                $results = $dedupHandler->checkDedupRecord($dedupRecord);
+                $results = $this->dedupHandler
+                    ->checkDedupRecord($dedupRecord, $strict);
                 if ($results) {
                     $fixed += count($results);
                     foreach ($results as $result) {
@@ -156,9 +166,9 @@ class CheckDedup extends AbstractBase
         $this->db->iterateRecords(
             $params,
             ['projection' => ['_id' => 1]],
-            function (array $recordId) use ($dedupHandler, &$count, &$fixed, $pc) {
+            function (array $recordId) use (&$count, &$fixed, $pc) {
                 $record = $this->db->getRecord($recordId['_id']);
-                $result = $dedupHandler->checkRecordLinks($record);
+                $result = $this->dedupHandler->checkRecordLinks($record);
                 if ($result) {
                     ++$fixed;
                     $this->logger->logInfo('checkDedup', $result);

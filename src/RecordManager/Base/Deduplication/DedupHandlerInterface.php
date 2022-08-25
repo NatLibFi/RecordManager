@@ -44,10 +44,12 @@ interface DedupHandlerInterface
      * Verify dedup record consistency
      *
      * @param array $dedupRecord Dedup record
+     * @param bool  $strictCheck Whether to do a thorough check for compatibility
+     *                           between member records
      *
      * @return array An array with a line per fixed record
      */
-    public function checkDedupRecord($dedupRecord);
+    public function checkDedupRecord($dedupRecord, bool $strictCheck = false);
 
     /**
      * Verify record links
