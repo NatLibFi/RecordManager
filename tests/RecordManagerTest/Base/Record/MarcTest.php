@@ -71,7 +71,7 @@ class MarcTest extends RecordTest
                 '17. uud. p.',
                 'Helsinki',
                 'Tammi',
-                '2345 [2013]',
+                '2345 [2013?]',
                 'teksti',
                 'txt',
                 'rdacontent',

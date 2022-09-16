@@ -3066,8 +3066,10 @@ class Marc extends AbstractRecord
     protected function extractYear($field)
     {
         // First look for a year in brackets
-        if (preg_match('/\[(\d{4})\]/', $field, $matches)) {
-            return $matches[1];
+        if (preg_match('/\[(.+)\]/', $field, $matches)) {
+            if (preg_match('/(\d{4})/', $matches[1], $matches)) {
+                return $matches[1];
+            }
         }
         // Then look for any year
         if (preg_match('/(\d{4})/', $field, $matches)) {
