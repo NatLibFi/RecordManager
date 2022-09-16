@@ -147,4 +147,5 @@ The file needs to contain a Module class that provides the module configuration:
         }
     }
 
-This, alone, doesn't really do anything. Please see the [Customizing RecordManager](https://github.com/NatLibFi/RecordManager/wiki/Customizing-RecordManager) wiki page for further information. See also the [Finna module](https://github.com/NatLibFi/RecordManager-Finna/blob/dev/src/RecordManager/Finna/) for an example of a module that does a number of different things.
+This, alone, doesn't really do anything. Please see the [Customizing RecordManager](https://github.com/NatLibFi/RecordManager/wiki/Customizing-RecordManager) wiki page for further information.
+See also the [Finna module](https://github.com/NatLibFi/RecordManager-Finna/blob/dev/src/RecordManager/Finna/) for an example of a module that does a number of different things.
