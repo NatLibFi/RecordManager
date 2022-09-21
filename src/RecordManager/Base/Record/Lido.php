@@ -733,10 +733,10 @@ class Lido extends AbstractRecord
                             $value = (string)$roleNode->actor->nameActorSet
                                 ->appellationValue[0];
                             $value = trim($value);
-                            if ($includeRoles && $actorRole) {
-                                $value .= ", $actorRole";
-                            }
                             if ($value) {
+                                if ($includeRoles && $actorRole) {
+                                    $value .= ", $actorRole";
+                                }
                                 $result[] = $value;
                             }
                         }
