@@ -176,6 +176,7 @@ class Qdc extends AbstractRecord
         $data['description'] = $descriptions['primary'];
 
         $data['series'] = $this->getSeries();
+        $this->getHierarchyFields($data);
 
         return $data;
     }
@@ -508,5 +509,16 @@ class Qdc extends AbstractRecord
     public function getSeries()
     {
         return [];
+    }
+
+    /**
+     * Get hierarchy fields
+     *
+     * @param array $data Reference to the target array
+     *
+     * @return void
+     */
+    protected function getHierarchyFields(array &$data): void
+    {
     }
 }
