@@ -124,8 +124,13 @@ class Ead extends AbstractBase
             = !empty($params['prependParentTitleWithUnitId']);
 
         if (!empty($params['nonInheritedFields'])) {
-            $fields = explode(',', $params['nonInheritedFields']);
-            $this->nonInheritedFields = array_flip($fields);
+            if (is_array($params['nonInheritedFields'])) {
+                $this->nonInheritedFields += $params['nonInheritedFields'];
+            } else {
+                foreach (explode(',', $params['nonInheritedFields']) as $field) {
+                    $this->nonInheritedFields[$field] = true;
+                }
+            }
         }
     }
 
@@ -277,6 +282,7 @@ class Ead extends AbstractBase
      * @param \SimpleXMLElement $simplexml Node to append to
      * @param \SimpleXMLElement $append    Node to be appended
      * @param array             $ignore    Keyed array of node names to be ignored
+     *                                     (unless value is false)
      *
      * @return void
      */
@@ -289,7 +295,7 @@ class Ead extends AbstractBase
             }
             // addChild doesn't encode & ...
             $data = (string)$append;
-            $data = str_replace('&', '&amp;', $data);
+            $data = trim(str_replace('&', '&amp;', $data));
             if ($simplexml->{$name}) {
                 $xml = $simplexml->{$name};
             } else {
@@ -301,7 +307,7 @@ class Ead extends AbstractBase
                 }
             }
             foreach ($append->children() as $child) {
-                if (!isset($ignore[$child->getName()])) {
+                if (!($ignore[$child->getName()] ?? false)) {
                     $this->appendXML($xml, $child);
                 }
             }

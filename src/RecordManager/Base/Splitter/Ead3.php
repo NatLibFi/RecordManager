@@ -52,6 +52,17 @@ class Ead3 extends Ead
     protected $unitIdLabel = null;
 
     /**
+     * Keyed list of fields within record did element not to be inherited to child
+     * nodes
+     *
+     * @var array
+     */
+    protected $nonInheritedFields = [
+        'dao' => true,
+        'daoset' => true,
+    ];
+
+    /**
      * Initializer
      *
      * @param array $params Splitter configuration
