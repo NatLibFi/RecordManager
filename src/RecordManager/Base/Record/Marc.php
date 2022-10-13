@@ -430,7 +430,6 @@ class Marc extends AbstractRecord
         $data['author'] = $primaryAuthors['names'];
         // Support for author_variant is currently not implemented
         $data['author_role'] = $primaryAuthors['relators'];
-        $data['author_fuller'] = $primaryAuthors['fuller'];
         if (isset($primaryAuthors['names'][0])) {
             $data['author_sort'] = $primaryAuthors['names'][0];
         }
@@ -439,7 +438,6 @@ class Marc extends AbstractRecord
         $data['author2'] = $secondaryAuthors['names'];
         // Support for author2_variant is currently not implemented
         $data['author2_role'] = $secondaryAuthors['relators'];
-        $data['author2_fuller'] = $secondaryAuthors['fuller'];
 
         $corporateAuthors = $this->getCorporateAuthors();
         $data['author_corporate'] = $corporateAuthors['names'];

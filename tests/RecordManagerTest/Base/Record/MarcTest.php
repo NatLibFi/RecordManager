@@ -107,7 +107,6 @@ class MarcTest extends RecordTest
             'author_role' => [
                 '-',
             ],
-            'author_fuller' => [],
             'author_sort' => 'Hirsjärvi, Sirkka',
             'author2' => [
                 'Hirsjärvi, Sirkka',
@@ -118,8 +117,6 @@ class MarcTest extends RecordTest
                 '-',
                 '-',
                 '-',
-            ],
-            'author2_fuller' => [
             ],
             'author_corporate' => [
             ],
@@ -301,16 +298,12 @@ class MarcTest extends RecordTest
             'author_role' => [
                 '-',
             ],
-            'author_fuller' => [
-            ],
             'author_sort' => 'Kalat, James W.',
             'author2' => [
                 'Kalat, James W.',
             ],
             'author2_role' => [
                 '-',
-            ],
-            'author2_fuller' => [
             ],
             'author_corporate' => [
             ],
@@ -492,13 +485,9 @@ class MarcTest extends RecordTest
             ],
             'author_role' => [
             ],
-            'author_fuller' => [
-            ],
             'author2' => [
             ],
             'author2_role' => [
-            ],
-            'author2_fuller' => [
             ],
             'author_corporate' => [
                 'Maanmittaushallitus',
@@ -658,15 +647,11 @@ class MarcTest extends RecordTest
             ],
             'author_role' => [
             ],
-            'author_fuller' => [
-            ],
             'author2' => [
                 'Braudel, Fernand',
             ],
             'author2_role' => [
                 'kirjoittaja',
-            ],
-            'author2_fuller' => [
             ],
             'author_corporate' => [
             ],
