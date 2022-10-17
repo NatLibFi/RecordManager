@@ -182,8 +182,8 @@ result_limit = 1000
 id_prefix = "oai:base.address:"
 
 [Enrichment]
-; Maximum lifetime of cached entries in minutes. Default is 1440 (24 hours)
-;cache_expiration = 1440
+; Maximum lifetime of cached entries in minutes. Default is 10080 (1 week)
+;cache_expiration = 10080
 
 [Log]
 log_file        = /var/log/recman.log

@@ -176,9 +176,9 @@ abstract class AbstractEnrichment
      */
     public function init()
     {
-        $this->maxCacheAge = isset($this->config['Enrichment']['cache_expiration'])
-            ? $this->config['Enrichment']['cache_expiration'] * 60
-            : 86400;
+        // Default to 7 week:
+        $this->maxCacheAge
+            = ($this->config['Enrichment']['cache_expiration'] ?? 10080) * 60;
         $this->maxTries = $this->config['Enrichment']['max_tries'] ?? 90;
         $this->retryWait = $this->config['Enrichment']['retry_wait'] ?? 5;
     }
