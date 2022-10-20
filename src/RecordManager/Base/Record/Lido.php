@@ -749,28 +749,31 @@ class Lido extends AbstractRecord
     }
 
     /**
-     * Return the place associated with specified event
+     * Return places associated with specified event
      *
      * @param string|array $event Event type(s) allowed (null = all types)
      *
-     * @return string
+     * @return array
      */
-    protected function getEventDisplayPlace($event = null)
+    protected function getEventDisplayPlaces($event = null)
     {
+        $results = [];
         foreach ($this->getEventNodes($event) as $eventNode) {
-            if (!empty($eventNode->eventPlace->displayPlace)) {
-                $str = trim(
-                    $this->metadataUtils->stripTrailingPunctuation(
-                        (string)$eventNode->eventPlace->displayPlace,
-                        '.'
-                    )
-                );
-                if ('' !== $str) {
-                    return $str;
+            foreach ($eventNode->eventPlace as $placeNode) {
+                if (!empty($placeNode->displayPlace)) {
+                    $str = trim(
+                        $this->metadataUtils->stripTrailingPunctuation(
+                            (string)$placeNode->displayPlace,
+                            '.'
+                        )
+                    );
+                    if ($str) {
+                        $results[] = $str;
+                    }
                 }
             }
         }
-        return '';
+        return $results;
     }
 
     /**
@@ -1429,10 +1432,7 @@ class Lido extends AbstractRecord
      */
     protected function getDisplayPlaces(): array
     {
-        $result = [];
-        if ($place = $this->getEventDisplayPlace($this->getPlaceEvents())) {
-            $result[] = $place;
-        }
+        $result = $this->getEventDisplayPlaces($this->getPlaceEvents());
         if ($places = $this->getSubjectDisplayPlaces()) {
             $result = array_merge(
                 $result,
