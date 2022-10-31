@@ -224,37 +224,39 @@ class Lido extends AbstractRecord
         $locations = [];
         foreach ([$this->getMainEvents(), $this->getPlaceEvents()] as $event) {
             foreach ($this->getEventNodes($event) as $eventNode) {
-                // If there is already gml in the record, don't return anything for
-                // geocoding
-                if (!empty($eventNode->eventPlace->gml)) {
-                    return [];
-                }
-                $hasValue = !empty(
-                    $eventNode->eventPlace->place->namePlaceSet->appellationValue
-                );
-                if ($hasValue) {
-                    $mainPlace = (string)$eventNode->eventPlace->place->namePlaceSet
-                        ->appellationValue;
-                    $subLocation = $this->getSubLocation(
-                        $eventNode->eventPlace->place
+                foreach ($eventNode->eventPlace as $placeNode) {
+                    // If there is already gml in the record,
+                    // don't return anything for geocoding
+                    if (!empty($placeNode->gml)) {
+                        return [];
+                    }
+                    $hasValue = !empty(
+                        $placeNode->place->namePlaceSet->appellationValue
                     );
-                    if ($mainPlace && !$subLocation) {
+                    if ($hasValue) {
+                        $mainPlace = (string)$placeNode->place->namePlaceSet
+                            ->appellationValue;
+                        $subLocation = $this->getSubLocation(
+                            $placeNode->place
+                        );
+                        if ($mainPlace && !$subLocation) {
+                            $locations = array_merge(
+                                $locations,
+                                explode('/', $mainPlace)
+                            );
+                        } else {
+                            $locations[] = "$mainPlace $subLocation";
+                        }
+                    } elseif (!empty($placeNode->displayPlace)) {
+                        // Split multiple locations separated with a slash
                         $locations = array_merge(
                             $locations,
-                            explode('/', $mainPlace)
+                            preg_split(
+                                '/[\/;]/',
+                                (string)$placeNode->displayPlace
+                            )
                         );
-                    } else {
-                        $locations[] = "$mainPlace $subLocation";
                     }
-                } elseif (!empty($eventNode->eventPlace->displayPlace)) {
-                    // Split multiple locations separated with a slash
-                    $locations = array_merge(
-                        $locations,
-                        preg_split(
-                            '/[\/;]/',
-                            (string)$eventNode->eventPlace->displayPlace
-                        )
-                    );
                 }
             }
         }
@@ -749,28 +751,31 @@ class Lido extends AbstractRecord
     }
 
     /**
-     * Return the place associated with specified event
+     * Return places associated with specified event
      *
      * @param string|array $event Event type(s) allowed (null = all types)
      *
-     * @return string
+     * @return array
      */
-    protected function getEventDisplayPlace($event = null)
+    protected function getEventDisplayPlaces($event = null)
     {
+        $results = [];
         foreach ($this->getEventNodes($event) as $eventNode) {
-            if (!empty($eventNode->eventPlace->displayPlace)) {
-                $str = trim(
-                    $this->metadataUtils->stripTrailingPunctuation(
-                        (string)$eventNode->eventPlace->displayPlace,
-                        '.'
-                    )
-                );
-                if ('' !== $str) {
-                    return $str;
+            foreach ($eventNode->eventPlace as $placeNode) {
+                if (!empty($placeNode->displayPlace)) {
+                    $str = trim(
+                        $this->metadataUtils->stripTrailingPunctuation(
+                            (string)$placeNode->displayPlace,
+                            '.'
+                        )
+                    );
+                    if ($str) {
+                        $results[] = $str;
+                    }
                 }
             }
         }
-        return '';
+        return $results;
     }
 
     /**
@@ -1429,10 +1434,7 @@ class Lido extends AbstractRecord
      */
     protected function getDisplayPlaces(): array
     {
-        $result = [];
-        if ($place = $this->getEventDisplayPlace($this->getPlaceEvents())) {
-            $result[] = $place;
-        }
+        $result = $this->getEventDisplayPlaces($this->getPlaceEvents());
         if ($places = $this->getSubjectDisplayPlaces()) {
             $result = array_merge(
                 $result,
