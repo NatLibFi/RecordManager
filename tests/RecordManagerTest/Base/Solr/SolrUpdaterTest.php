@@ -91,7 +91,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
     {
         $solrUpdater = $this->getSolrUpdater();
 
-        $record = $this->createRecord(
+        $record = $this->createMarcRecord(
             \RecordManager\Base\Record\Marc::class,
             'marc-broken.xml'
         );
@@ -141,7 +141,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(1024, $maxlen($record['topic_facet']));
         $this->assertIsArray($record['work_keys_str_mv']);
         $this->assertEquals(20, $maxlen($record['work_keys_str_mv']));
-        $this->assertEquals(146159, mb_strlen($record['fullrecord'], 'UTF-8'));
+        $this->assertEquals(143225, mb_strlen($record['fullrecord'], 'UTF-8'));
         $this->assertEquals(30, mb_strlen($record['title_short'], 'UTF-8'));
         $this->assertEquals(40, mb_strlen($record['title_sort'], 'UTF-8'));
     }
@@ -164,6 +164,9 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
             $this->dataSourceConfig,
             $logger,
             $metadataUtils,
+            function ($data) {
+                return new \RecordManager\Base\Marc\Marc($data);
+            }
         );
         $recordPM = $this->createMock(RecordPluginManager::class);
         $recordPM->expects($this->once())

@@ -122,8 +122,8 @@ return [
                     \RecordManager\Base\Record\ForwardAuthority::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\Lido::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\Lrmi::class => \RecordManager\Base\Record\AbstractRecordWithHttpAndDbFactory::class,
-                    \RecordManager\Base\Record\Marc::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
-                    \RecordManager\Base\Record\MarcAuthority::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
+                    \RecordManager\Base\Record\Marc::class => \RecordManager\Base\Record\MarcFactory::class,
+                    \RecordManager\Base\Record\MarcAuthority::class => \RecordManager\Base\Record\MarcFactory::class,
                     \RecordManager\Base\Record\Qdc::class => \RecordManager\Base\Record\AbstractRecordWithHttpAndDbFactory::class,
                 ],
                 'aliases' => [

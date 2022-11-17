@@ -221,6 +221,11 @@ disable_proxy_hosts[] = "::1"
 ; The following setting can be used to override the default RDA relator codes that
 ; are used to classify authors between primary and secondary
 ;primary_author_relators = "adp,aut,cmp"
+; Serialization format for Solr index. Valid values are:
+; JSON    - MARC-in-JSON (default)
+; MARCXML - MARCXML
+; ISO2709 - ISO 2709 with MARCXML for too long records
+;solr_serialization = JSON
 
 [ForwardRecord]
 ; The following settings can be used to override the default relator codes that

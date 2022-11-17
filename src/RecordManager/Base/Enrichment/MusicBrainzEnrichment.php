@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2019-2021.
+ * Copyright (C) The National Library of Finland 2019-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -65,43 +65,38 @@ class MusicBrainzEnrichment extends AbstractEnrichment
             return;
         }
 
-        $leader = $record->getField('000');
-        if (substr($leader, 6, 1) !== 'j') {
-            return;
+        $mbIds = [];
+        foreach ($record->getMusicIds() as $identifier) {
+            $id = $this->sanitizeId($identifier['id']);
+            $type = $this->sanitizeId($identifier['type']);
+            switch ($type) {
+            case 'isrc':
+                break;
+            case 'upc':
+            case 'ismn':
+            case 'ian':
+                $type = 'catno';
+                break;
+            case 'musicb':
+                $type = 'reid';
+                break;
+            default:
+                continue 2;
+            }
+            $query = "$type:\"" . addcslashes($id, '"\\') . '"';
+            if ('catno' === $type) {
+                $query .= ' AND releaseaccent:"'
+                    . addcslashes($solrArray['title_short'], '"\\')
+                    . '"';
+            }
+            $mbIds = array_merge($mbIds, $this->getMBIDs($query));
         }
 
-        $mbIds = [];
-        foreach ($record->getFields('024') as $field024) {
-            $ind1 = $record->getIndicator($field024, 1);
-            if (in_array($ind1, ['0', '1', '2', '3', '7'])
-                && ($id = $this->sanitizeId($record->getSubfield($field024, 'a')))
-            ) {
-                switch ($ind1) {
-                case '0':
-                    $type = 'isrc';
-                    break;
-                case '7':
-                    $source = $record->getSubfield($field024, '2');
-                    if ('musicb' !== $source) {
-                        continue 2;
-                    }
-                    $type = 'reid';
-                    break;
-                default:
-                    $type = 'catno';
-                }
-                $query = "$type:\"" . addcslashes($id, '"\\') . '"';
-                if ('catno' === $type) {
-                    $query .= ' AND releaseaccent:"'
-                        . addcslashes($solrArray['title_short'], '"\\')
-                        . '"';
-                }
-                $mbIds = array_merge($mbIds, $this->getMBIDs($query));
-            }
-        }
-        foreach ($record->getFields('028') as $field028) {
-            $id = $this->sanitizeId($record->getSubfield($field028, 'a'));
-            $source = $this->sanitizeId($record->getSubfield($field028, 'b'));
+        $shortTitle = $record->getShortTitle();
+
+        foreach ($record->getPublisherNumbers() as $number) {
+            $id = $this->sanitizeId($number['id']);
+            $source = $this->sanitizeId($number['source']);
             $newIds = [];
             if ($id && $source) {
                 $query = 'catno:"' . addcslashes("$source $id", '"\\') . '"';
@@ -110,7 +105,7 @@ class MusicBrainzEnrichment extends AbstractEnrichment
             if (!$newIds && $id) {
                 $query = 'catno:"' . addcslashes($id, '"\\')
                     . '" AND releaseaccent:"'
-                    . addcslashes($solrArray['title_short'], '"\\')
+                    . addcslashes($shortTitle, '"\\')
                     . '"';
                 $newIds = $this->getMBIDs($query);
             }

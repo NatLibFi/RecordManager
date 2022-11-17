@@ -72,12 +72,7 @@ class MarcAuthority extends Marc
         $data = [];
 
         $data['record_format'] = 'marcAuthority';
-        $data['fullrecord'] = $this->toISO2709();
-        if (!$data['fullrecord']) {
-            // In case the record exceeds 99999 bytes...
-            $data['fullrecord'] = $this->toXML();
-        }
-
+        $data['fullrecord'] = $this->getFullRecord();
         $data['allfields'] = $this->getAllFields();
         $data['source'] = $this->getRecordSource();
 
@@ -118,13 +113,23 @@ class MarcAuthority extends Marc
         foreach (array_merge(['400', '410', '500', '510'], $additional)
             as $code
         ) {
-            foreach ($this->getFields($code) as $field) {
-                if ($activity = $this->getSubfield($field, 'a')) {
+            foreach ($this->record->getFields($code) as $field) {
+                if ($activity = $this->record->getSubfield($field, 'a')) {
                     $result[] = $activity;
                 }
             }
         }
         return $this->trimFields(array_unique($result));
+    }
+
+    /**
+     * Get occupation control numbers (for enrichment)
+     *
+     * @return array
+     */
+    public function getOccupationIds(): array
+    {
+        return $this->record->getFieldsSubfields('374', ['0']);
     }
 
     /**
@@ -135,8 +140,8 @@ class MarcAuthority extends Marc
     protected function getOccupations()
     {
         $result = [];
-        foreach ($this->getFields('374') as $field) {
-            if ($activity = $this->getSubfield($field, 'a')) {
+        foreach ($this->record->getFields('374') as $field) {
+            if ($activity = $this->record->getSubfield($field, 'a')) {
                 $result[] = $activity;
             }
         }
@@ -151,10 +156,10 @@ class MarcAuthority extends Marc
     protected function getFieldsOfActivity()
     {
         $result = [];
-        foreach ($this->getFields('372') as $field) {
+        foreach ($this->record->getFields('372') as $field) {
             $result = array_merge(
                 $result,
-                $this->getSubfieldsArray($field, ['a' => 1])
+                $this->getSubfieldsArray($field, ['a'])
             );
         }
         return $result;
@@ -171,14 +176,14 @@ class MarcAuthority extends Marc
             return rtrim($name, ' .');
         }
         foreach (['110', '111'] as $code) {
-            if ($field = $this->getFields($code)) {
-                if (!$sub = $this->getSubfield($field[0], 'a')) {
+            if ($field = $this->record->getField($code)) {
+                if (!($sub = $this->record->getSubfield($field, 'a'))) {
                     continue;
                 }
                 $fields = [$sub];
                 $fields = array_merge(
                     $fields,
-                    $this->getSubfieldsArray($field[0], ['b' => true])
+                    $this->getSubfieldsArray($field, ['b'])
                 );
                 return implode($this->nameDelimiter, $this->trimFields($fields));
             }
@@ -238,7 +243,7 @@ class MarcAuthority extends Marc
      */
     protected function isPerson()
     {
-        return !empty($this->getField('100'));
+        return !empty($this->record->getField('100'));
     }
 
     /**

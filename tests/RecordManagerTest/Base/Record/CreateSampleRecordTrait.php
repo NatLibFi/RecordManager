@@ -85,4 +85,36 @@ trait CreateSampleRecordTrait
         $record->setData('__unit_test_no_source__', '__unit_test_no_id__', $data);
         return $record;
     }
+
+    /**
+     * Create a sample MARC record driver
+     *
+     * @param string $class             Record class
+     * @param string $sample            Sample record file
+     * @param array  $dsConfig          Datasource config
+     * @param string $module            Module name
+     * @param array  $constructorParams Additional constructor params
+     *
+     * @return \RecordManager\Base\Record\AbstractRecord
+     */
+    protected function createMarcRecord(
+        string $class,
+        string $sample,
+        array $dsConfig = [],
+        string $module = 'Base',
+        array $constructorParams = []
+    ) {
+        return $this->createRecord(
+            $class,
+            $sample,
+            $dsConfig,
+            $module,
+            [
+                function ($data) {
+                    return new \RecordManager\Base\Marc\Marc($data);
+                },
+                ...$constructorParams
+            ]
+        );
+    }
 }

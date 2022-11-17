@@ -57,30 +57,28 @@ class MarcOnkiLightEnrichment extends OnkiLightEnrichment
             return;
         }
         $fields = [
-            '650' => [
+            'getRawTopicIds' => [
                 'pref' => 'topic_add_txt_mv',
                 'alt' => 'topic_alt_txt_mv',
                 'check' => 'topic'
             ],
-            '651' => [
+            'getRawGeographicTopicIds' => [
                 'pref' => 'geographic_add_txt_mv',
                 'alt' => 'geographic_alt_txt_mv',
                 'check' => 'geographic'
             ]
         ];
-        foreach ($fields as $marcField => $spec) {
-            foreach ($record->getFields((string)$marcField) as $recField) {
-                if ($id = $record->getSubfield($recField, '0')) {
-                    $this->enrichField(
-                        $sourceId,
-                        $record,
-                        $solrArray,
-                        $id,
-                        $spec['pref'],
-                        $spec['alt'],
-                        $spec['check']
-                    );
-                }
+        foreach ($fields as $method => $spec) {
+            foreach (call_user_func([$record, $method]) as $id) {
+                $this->enrichField(
+                    $sourceId,
+                    $record,
+                    $solrArray,
+                    $id,
+                    $spec['pref'],
+                    $spec['alt'],
+                    $spec['check']
+                );
             }
         }
     }

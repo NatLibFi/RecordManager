@@ -48,7 +48,7 @@ class MarcTest extends RecordTest
      */
     public function testMarc1()
     {
-        $record = $this->createRecord(Marc::class, 'marc1.xml');
+        $record = $this->createMarcRecord(Marc::class, 'marc1.xml');
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -243,7 +243,7 @@ class MarcTest extends RecordTest
      */
     public function testMarc2()
     {
-        $record = $this->createRecord(Marc::class, 'marc2.xml');
+        $record = $this->createMarcRecord(Marc::class, 'marc2.xml');
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -417,7 +417,7 @@ class MarcTest extends RecordTest
                 ]
             ]
         ];
-        $record = $this->createRecord(Marc::class, 'marc_geo.xml', $dsConfig);
+        $record = $this->createMarcRecord(Marc::class, 'marc_geo.xml', $dsConfig);
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -578,7 +578,7 @@ class MarcTest extends RecordTest
      */
     public function testMarcDewey()
     {
-        $record = $this->createRecord(Marc::class, 'marc_dewey.xml');
+        $record = $this->createMarcRecord(Marc::class, 'marc_dewey.xml');
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -828,16 +828,17 @@ class MarcTest extends RecordTest
             ->method('findRecord')
             ->will($this->returnValueMap($map));
 
-        $record = $this->createRecord(Marc::class, 'marc_links.xml');
+        $record = $this->createMarcRecord(Marc::class, 'marc_links.xml');
         $record->toSolrArray($db);
-        $marc776 = $record->getFields('776');
+        $marc = new \VuFind\Marc\MarcReader($record->serialize());
+        $marc776 = $marc->getFields('776');
         $this->assertEquals(2, count($marc776));
-        $w = $record->getSubfield($marc776[0], 'w');
+        $w = $marc->getSubfield($marc776[0], 'w');
         $this->assertEquals('__unit_test_no_source__.4112121', $w);
-        $w = $record->getSubfield($marc776[1], 'w');
+        $w = $marc->getSubfield($marc776[1], 'w');
         $this->assertEquals('__unit_test_no_source__.xyzzy', $w);
 
-        $record = $this->createRecord(
+        $record = $this->createMarcRecord(
             Marc::class,
             'marc_links.xml',
             [
@@ -847,11 +848,12 @@ class MarcTest extends RecordTest
             ]
         );
         $record->toSolrArray($db);
-        $marc776 = $record->getFields('776');
+        $marc = new \VuFind\Marc\MarcReader($record->serialize());
+        $marc776 = $marc->getFields('776');
         $this->assertEquals(2, count($marc776));
-        $w = $record->getSubfield($marc776[0], 'w');
+        $w = $marc->getSubfield($marc776[0], 'w');
         $this->assertEquals('__unit_test_no_source__.4132317', $w);
-        $w = $record->getSubfield($marc776[1], 'w');
+        $w = $marc->getSubfield($marc776[1], 'w');
         $this->assertEquals('__unit_test_no_source__.xyzzy', $w);
     }
 
@@ -862,7 +864,7 @@ class MarcTest extends RecordTest
      */
     public function testGetWorkIdentificationData()
     {
-        $record = $this->createRecord(Marc::class, 'marc_alt_script.xml');
+        $record = $this->createMarcRecord(Marc::class, 'marc_alt_script.xml');
         $keys = $record->getWorkIdentificationData();
         $expected = [
             [
@@ -898,7 +900,7 @@ class MarcTest extends RecordTest
         ];
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
 
-        $record = $this->createRecord(Marc::class, 'marc_analytical.xml');
+        $record = $this->createMarcRecord(Marc::class, 'marc_analytical.xml');
         $keys = $record->getWorkIdentificationData();
         $expected = [
             [

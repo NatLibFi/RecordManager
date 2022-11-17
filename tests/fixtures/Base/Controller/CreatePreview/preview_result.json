@@ -3,7 +3,7 @@
     "building": [
         "150"
     ],
-    "fullrecord": "00340cam a22001094i 4500001000400000005001700004008004100021020002200062100003300084245007500117852003800192\u001e123\u001e20160322194428.0\u001e140327s2013    fi            000 0 fin d\u001e  \u001fa978-951-31-4836-2\u001e1 \u001faHirsj\u00e4rvi, Sirkka.\u001f0(TEST)1\u001e10\u001faTutki ja kirjoita \/\u001fcSirkka Hirsj\u00e4rvi, Pirkko Remes, Paula Sajavaara.\u001e8 \u001faE\u001fb150\u001fh38 Hir\u001fz18. p. 2013\u001f9Test\u001e\u001d",
+    "fullrecord": "{\"leader\":\"00000cam a22000004i 4500\",\"fields\":[{\"001\":\"123\"},{\"005\":\"20160322194428.0\"},{\"008\":\"140327s2013    fi            000 0 fin d\"},{\"020\":{\"ind1\":\" \",\"ind2\":\" \",\"subfields\":[{\"a\":\"978-951-31-4836-2\"}]}},{\"100\":{\"ind1\":\"1\",\"ind2\":\" \",\"subfields\":[{\"a\":\"Hirsjärvi, Sirkka.\"},{\"0\":\"(TEST)1\"}]}},{\"245\":{\"ind1\":\"1\",\"ind2\":\"0\",\"subfields\":[{\"a\":\"Tutki ja kirjoita \\/\"},{\"c\":\"Sirkka Hirsjärvi, Pirkko Remes, Paula Sajavaara.\"}]}},{\"852\":{\"ind1\":\"8\",\"ind2\":\" \",\"subfields\":[{\"a\":\"E\"},{\"b\":\"150\"},{\"h\":\"38 Hir\"},{\"z\":\"18. p. 2013\"},{\"9\":\"Test\"}]}}]}",
     "allfields": [
         "Hirsj\u00e4rvi, Sirkka",
         "Tutki ja kirjoita",
