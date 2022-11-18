@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2016-2021.
+ * Copyright (c) The National Library of Finland 2016-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -483,7 +483,7 @@ class SierraApi extends AbstractBase
     }
 
     /**
-     * Convert Sierra record to our internal MARC array format
+     * Convert Sierra record to MARC-in-JSON -style array format
      *
      * @param array $record Sierra BIB record varFields
      *
@@ -493,9 +493,10 @@ class SierraApi extends AbstractBase
     {
         $id = $record['id'];
         $marc = [];
+        $marc['fields'][] = ['001' => $id];
         foreach ($record['varFields'] as $varField) {
             if ($varField['fieldTag'] == '_') {
-                $marc['000'] = $varField['content'];
+                $marc['leader'] = $varField['content'];
                 continue;
             }
             if (!isset($varField['marcTag']) || $varField['marcTag'] == '852') {
@@ -511,49 +512,58 @@ class SierraApi extends AbstractBase
                             $subfield['tag'] => $subfield['content']
                         ];
                     }
-                    $marc[$marcTag][] = [
-                        'i1' => $varField['ind1'],
-                        'i2' => $varField['ind2'],
-                        's' => $subfields
+                    $marc['fields'][] = [
+                        $marcTag => [
+                            'ind1' => $varField['ind1'],
+                            'ind2' => $varField['ind2'],
+                            'subfields' => $subfields
+                        ]
                     ];
                 }
             } else {
-                $marc[$marcTag][] = $varField['content'];
+                $marc['fields'][] = [$marcTag => $varField['content']];
             }
-        }
-
-        if (isset($record['fixedFields']['30']['value'])) {
-            $marc['977'][] = [
-                'i1' => ' ',
-                'i2' => ' ',
-                's' => [
-                    ['a' => trim($record['fixedFields']['30']['value'])]
-                ]
-            ];
         }
 
         if (!empty($record['locations'])) {
             foreach ($record['locations'] as $location) {
-                $marc['852'][] = [
-                    'i1' => ' ',
-                    'i2' => ' ',
-                    's' => [
-                        ['b' => $location['code']]
+                $marc['fields'][] = [
+                    '852' => [
+                        'ind1' => ' ',
+                        'ind2' => ' ',
+                        'subfields' => [
+                            ['b' => $location['code']]
+                        ]
                     ]
                 ];
             }
         }
 
-        $marc['001'] = [$id];
-
-        if (empty($marc['000'])) {
-            $this->warningMsg("No leader found for record $id in {$this->source}");
-            $marc['000'] = '00000nam  2200000   4500';
+        if (isset($record['fixedFields']['30']['value'])) {
+            $marc['fields'][] = [
+                '977' => [
+                    'ind1' => ' ',
+                    'ind2' => ' ',
+                    'subfields' => [
+                        ['a' => trim($record['fixedFields']['30']['value'])]
+                    ]
+                ]
+            ];
         }
 
-        ksort($marc);
+        if (empty($marc['leader'])) {
+            $this->warningMsg("No leader found for record $id in {$this->source}");
+            $marc['leader'] = '00000nam  2200000   4500';
+        }
 
-        return ['v' => 3, 'f' => $marc];
+        uasort(
+            $marc['fields'],
+            function ($a, $b) {
+                return key($a) <=> key($b);
+            }
+        );
+
+        return $marc;
     }
 
     /**
