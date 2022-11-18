@@ -103,7 +103,10 @@ class CreatePreviewTest extends \PHPUnit\Framework\TestCase
             [],
             $this->dataSourceConfig,
             $logger,
-            $metadataUtils
+            $metadataUtils,
+            function ($data) {
+                return new \RecordManager\Base\Marc\Marc($data);
+            }
         );
         $recordPM = $this->createMock(RecordPluginManager::class);
         $recordPM->expects($this->once())

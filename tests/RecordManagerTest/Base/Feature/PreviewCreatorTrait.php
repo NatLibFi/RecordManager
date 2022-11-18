@@ -68,7 +68,10 @@ trait PreviewCreatorTrait
             [],
             $this->dataSourceConfig,
             $logger,
-            $metadataUtils
+            $metadataUtils,
+            function ($data) {
+                return new \RecordManager\Base\Marc\Marc($data);
+            }
         );
         if (null === $recordPM) {
             $recordPM = $this->createMock(RecordPluginManager::class);

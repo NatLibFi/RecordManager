@@ -38,10 +38,12 @@
         "laminas/laminas-xml": "1.4.0",
         "mongodb/mongodb": "1.11.0",
         "ocramius/proxy-manager": "2.13.1",
+        "pcrov/jsonreader": "1.0.2",
         "pear/http_request2": "2.5.1",
         "phayes/geophp": "1.2",
         "symfony/console": "5.4.5",
         "symfony/lock": "5.4.5",
+        "vufind-org/vufind-marc": "1.0.0",
         "wikimedia/composer-merge-plugin": "2.0.1"
     },
     "require-dev": {

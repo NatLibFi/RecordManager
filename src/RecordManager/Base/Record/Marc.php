@@ -28,6 +28,7 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Marc\Marc as MarcHandler;
 use RecordManager\Base\Utils\DeweyCallNumber;
 use RecordManager\Base\Utils\LcCallNumber;
 use RecordManager\Base\Utils\Logger;
@@ -46,29 +47,12 @@ use RecordManager\Base\Utils\MetadataUtils;
  */
 class Marc extends AbstractRecord
 {
-    use XmlRecordTrait {
-        XmlRecordTrait::parseXMLRecord as parseXMLRecord;
-    }
-
-    public const SUBFIELD_INDICATOR = "\x1F";
-    public const END_OF_FIELD = "\x1E";
-    public const END_OF_RECORD = "\x1D";
-    public const LEADER_LEN = 24;
-
-    public const GET_NORMAL = 0;
-    public const GET_ALT = 1;
-    public const GET_BOTH = 2;
-
     /**
-     * MARC is stored in a multidimensional array:
-     *  [001] - "12345"
-     *  [245] - i1: '0'
-     *          i2: '1'
-     *          s:  [{a => "Title"},
-     *               {p => "Part"}
-     *              ]
+     * MARC record
+     *
+     * @var \RecordManager\Base\Marc\Marc
      */
-    protected $fields = [];
+    protected $record = null;
 
     /**
      * Default primary author relator codes, may be overridden in configuration
@@ -133,21 +117,31 @@ class Marc extends AbstractRecord
     ];
 
     /**
+     * MARC record creation callback
+     *
+     * @var callable
+     */
+    protected $createRecordCallback;
+
+    /**
      * Constructor
      *
      * @param array         $config           Main configuration
      * @param array         $dataSourceConfig Data source settings
      * @param Logger        $logger           Logger
      * @param MetadataUtils $metadataUtils    Metadata utilities
+     * @param callable      $recordCallback   MARC record creation callback
      */
     public function __construct(
         array $config,
         array $dataSourceConfig,
         Logger $logger,
-        MetadataUtils $metadataUtils
+        MetadataUtils $metadataUtils,
+        callable $recordCallback
     ) {
         parent::__construct($config, $dataSourceConfig, $logger, $metadataUtils);
 
+        $this->createRecordCallback = $recordCallback;
         if (isset($config['MarcRecord']['primary_author_relators'])) {
             $this->primaryAuthorRelators = explode(
                 ',',
@@ -170,76 +164,7 @@ class Marc extends AbstractRecord
     {
         parent::setData($source, $oaiID, $data);
 
-        $firstChar = is_array($data) ? '{' : substr($data, 0, 1);
-        if ($firstChar === '{') {
-            $fields = is_array($data) ? $data : json_decode($data, true);
-            if (!isset($fields['v'])) {
-                // Old format, convert...
-                $this->fields = [];
-                foreach ($fields as $tag => $field) {
-                    foreach ($field as $data) {
-                        if (strstr($data, self::SUBFIELD_INDICATOR)) {
-                            $newField = [
-                                'i1' => $data[0],
-                                'i2' => $data[1]
-                            ];
-                            $subfields = explode(
-                                self::SUBFIELD_INDICATOR,
-                                substr($data, 3)
-                            );
-                            foreach ($subfields as $subfield) {
-                                $newField['s'][] = [
-                                    $subfield[0] => substr($subfield, 1)
-                                ];
-                            }
-                            $this->fields[$tag][] = $newField;
-                        } else {
-                            $this->fields[$tag][] = $data;
-                        }
-                    }
-                }
-            } else {
-                if ($fields['v'] == 2) {
-                    // Convert from previous field format
-                    $this->fields = [];
-                    foreach ($fields['f'] as $code => $codeFields) {
-                        if (!is_array($codeFields)) {
-                            // 000
-                            $this->fields[$code] = $codeFields;
-                            continue;
-                        }
-                        foreach ($codeFields as $field) {
-                            if (is_array($field)) {
-                                $newField = [
-                                    'i1' => $field['i1'],
-                                    'i2' => $field['i2'],
-                                    's' => []
-                                ];
-                                if (isset($field['s'])) {
-                                    foreach ($field['s'] as $subfield) {
-                                        $newField['s'][] = [
-                                            $subfield['c'] => $subfield['v']
-                                        ];
-                                    }
-                                }
-                                $this->fields[$code][] = $newField;
-                            } else {
-                                $this->fields[$code][] = $field;
-                            }
-                        }
-                    }
-                } else {
-                    $this->fields = $fields['f'];
-                }
-            }
-        } elseif ($firstChar === '<') {
-            $this->parseXML($data);
-        } else {
-            $this->parseISO2709($data);
-        }
-        if (isset($this->fields['000']) && is_array($this->fields['000'])) {
-            $this->fields['000'] = $this->fields['000'][0];
-        }
+        $this->record = ($this->createRecordCallback)($data);
     }
 
     /**
@@ -249,7 +174,7 @@ class Marc extends AbstractRecord
      */
     public function serialize()
     {
-        return json_encode(['v' => 3, 'f' => $this->fields]);
+        return $this->record->toFormat('JSON');
     }
 
     /**
@@ -259,53 +184,7 @@ class Marc extends AbstractRecord
      */
     public function toXML()
     {
-        $xml = simplexml_load_string(
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n"
-            . "<collection><record></record></collection>"
-        );
-        $record = $xml->record[0];
-
-        if (isset($this->fields['000'])) {
-            // Voyager is often missing the last '0' of the leader...
-            $leader = str_pad(substr($this->fields['000'], 0, 24), 24);
-            $record->addChild('leader', htmlspecialchars($leader));
-        }
-
-        foreach ($this->fields as $tag => $fields) {
-            if ($tag == '000') {
-                continue;
-            }
-            foreach ($fields as $data) {
-                if (!is_array($data)) {
-                    $field = $record->addChild(
-                        'controlfield',
-                        htmlspecialchars($data, ENT_NOQUOTES)
-                    );
-                    $field->addAttribute('tag', $tag);
-                } else {
-                    $field = $record->addChild('datafield');
-                    $field->addAttribute('tag', $tag);
-                    $field->addAttribute('ind1', $data['i1']);
-                    $field->addAttribute('ind2', $data['i2']);
-                    if (isset($data['s'])) {
-                        foreach ($data['s'] as $subfield) {
-                            $subfieldData = current($subfield);
-                            $subfieldCode = key($subfield);
-                            if ($subfieldData == '') {
-                                continue;
-                            }
-                            $subfield = $field->addChild(
-                                'subfield',
-                                htmlspecialchars($subfieldData, ENT_NOQUOTES)
-                            );
-                            $subfield->addAttribute('code', $subfieldCode);
-                        }
-                    }
-                }
-            }
-        }
-
-        return $record->asXML();
+        return $this->record->toFormat('MARCXML');
     }
 
     /**
@@ -323,56 +202,51 @@ class Marc extends AbstractRecord
         ];
 
         // Try to find matches for IDs in link fields
-        $fields = ['760', '762', '765', '767', '770', '772', '773', '774',
-            '775', '776', '777', '780', '785', '786', '787'];
+        $fields = [
+            '760', '762', '765', '767', '770', '772', '773', '774',
+            '775', '776', '777', '780', '785', '786', '787'
+        ];
         foreach ($fields as $code) {
-            // Make sure not to use null coalescing with references. That won't work.
-            if (!isset($this->fields[$code])) {
-                continue;
-            }
-            foreach ($this->fields[$code] as &$marcfield) {
-                // Make sure not to use null coalescing with references. That won't
-                // work.
-                if (!isset($marcfield['s'])) {
-                    continue;
-                }
-                foreach ($marcfield['s'] as &$marcsubfield) {
-                    if (key($marcsubfield) == 'w') {
-                        $targetId = current($marcsubfield);
-                        $targetRecord = null;
-                        if ($db) {
-                            $linkingId = $this->createLinkingId($targetId);
+            foreach ($this->record->getFields($code) as $fieldIdx => $marcfield) {
+                foreach ($this->record->getSubfields($marcfield, 'w')
+                    as $subfieldIdx => $marcsubfield
+                ) {
+                    $targetId = $marcsubfield;
+                    $targetRecord = null;
+                    if ($db) {
+                        $linkingId = $this->createLinkingId($targetId);
+                        $targetRecord = $db->findRecord(
+                            [
+                                'source_id' => $this->source,
+                                'linking_id' => $linkingId
+                            ],
+                            ['projection' => ['_id' => 1]]
+                        );
+                        // Try with the original id if no exact match
+                        if (!$targetRecord && $targetId !== $linkingId) {
                             $targetRecord = $db->findRecord(
                                 [
                                     'source_id' => $this->source,
-                                    'linking_id' => $linkingId
+                                    'linking_id' => $targetId
                                 ],
                                 ['projection' => ['_id' => 1]]
                             );
-                            // Try with the original id if no exact match
-                            if (!$targetRecord && $targetId !== $linkingId) {
-                                $targetRecord = $db->findRecord(
-                                    [
-                                        'source_id' => $this->source,
-                                        'linking_id' => $targetId
-                                    ],
-                                    ['projection' => ['_id' => 1]]
-                                );
-                            }
                         }
-                        if ($targetRecord) {
-                            $targetId = $targetRecord['_id'];
-                        } else {
-                            $targetId = $this->idPrefix . '.' . $targetId;
-                        }
-                        $marcsubfield = [
-                            'w' => $targetId
-                        ];
                     }
+                    if ($targetRecord) {
+                        $targetId = $targetRecord['_id'];
+                    } else {
+                        $targetId = $this->idPrefix . '.' . $targetId;
+                    }
+                    $this->record->updateFieldSubfield(
+                        $code,
+                        $fieldIdx,
+                        'w',
+                        $subfieldIdx,
+                        $targetId
+                    );
                 }
-                unset($marcsubfield);
             }
-            unset($marcfield);
         }
 
         // building
@@ -410,15 +284,11 @@ class Marc extends AbstractRecord
         }
 
         // lccn
-        $data['lccn'] = $this->getFieldSubfields('010', ['a' => 1]);
+        $data['lccn'] = $this->getFieldSubfields('010', ['a']);
         $data['ctrlnum'] = $this->getFieldsSubfields(
-            [[self::GET_NORMAL, '035', ['a' => 1]]]
+            [[MarcHandler::GET_NORMAL, '035', ['a']]]
         );
-        $data['fullrecord'] = $this->toISO2709();
-        if (!$data['fullrecord']) {
-            // In case the record exceeds 99999 bytes...
-            $data['fullrecord'] = $this->toXML();
-        }
+        $data['fullrecord'] = $this->getFullRecord();
         $data['allfields'] = $this->getAllFields();
 
         // language
@@ -444,7 +314,7 @@ class Marc extends AbstractRecord
         $data['author_corporate_role'] = $corporateAuthors['relators'];
         $data['author_additional'] = $this->getFieldsSubfields(
             [
-                [self::GET_BOTH, '505', ['r' => 1]]
+                [MarcHandler::GET_BOTH, '505', ['r']]
             ],
             true
         );
@@ -452,53 +322,28 @@ class Marc extends AbstractRecord
         $data['title'] = $this->getTitle();
         $data['title_sub'] = $this->getFieldSubfields(
             '245',
-            ['b' => 1, 'n' => 1, 'p' => 1]
+            ['b', 'n', 'p']
         );
-        $data['title_short'] = $this->getFieldSubfields('245', ['a' => 1]);
+        $data['title_short'] = $this->getShortTitle();
         $data['title_full'] = $this->getFieldSubfields(
             '245',
-            ['a' => 1, 'b' => 1, 'c' => 1, 'f' => 1, 'g' => 1, 'h' => 1, 'k' => 1,
-                'n' => 1, 'p' => 1, 's' => 1]
+            ['a', 'b', 'c', 'f', 'g', 'h', 'k', 'n', 'p', 's']
         );
-        $data['title_alt'] = array_values(
-            array_unique(
-                $this->getFieldsSubfields(
-                    [
-                        [self::GET_ALT, '245', ['a' => 1, 'b' => 1]],
-                        [self::GET_BOTH, '130', [
-                            'a' => 1, 'd' => 1, 'f' => 1, 'g' => 1, 'k' => 1,
-                            'l' => 1, 'n' => 1, 'p' => 1, 's' => 1, 't' => 1
-                        ]],
-                        [self::GET_BOTH, '240', ['a' => 1]],
-                        [self::GET_BOTH, '246', [
-                            'a' => 1, 'b' => 1, 'n' => 1, 'p' => 1]
-                        ],
-                        [self::GET_BOTH, '730', [
-                            'a' => 1, 'd' => 1, 'f' => 1, 'g' => 1, 'k' => 1,
-                            'l' => 1, 'n' => 1, 'p' => 1, 's' => 1, 't' => 1
-                        ]],
-                        [self::GET_BOTH, '740', ['a' => 1]]
-                    ]
-                )
-            )
-        );
+        $data['title_alt'] = $this->getAltTitles();
         $data['title_old'] = $this->getFieldsSubfields(
             [
-                [self::GET_BOTH, '780', ['a' => 1, 's' => 1, 't' => 1]]
+                [MarcHandler::GET_BOTH, '780', ['a', 's', 't']]
             ]
         );
         $data['title_new'] = $this->getFieldsSubfields(
             [
-                [self::GET_BOTH, '785', ['a' => 1, 's' => 1, 't' => 1]]
+                [MarcHandler::GET_BOTH, '785', ['a', 's', 't']]
             ]
         );
         $data['title_sort'] = $this->getTitle(true);
 
         if (!$data['title_short']) {
-            $data['title_short'] = $this->getFieldSubfields(
-                '240',
-                ['a' => 1, 'n' => 1, 'p' => 1]
-            );
+            $data['title_short'] = $this->getFieldSubfields('240', ['a', 'n', 'p']);
             $data['title_full'] = $this->getFieldSubfields('240');
         }
 
@@ -506,18 +351,18 @@ class Marc extends AbstractRecord
 
         $data['publisher'] = $this->getFieldsSubfields(
             [
-                [self::GET_BOTH, '260', ['b' => 1]]
+                [MarcHandler::GET_BOTH, '260', ['b']]
             ],
             false,
             true
         );
         if (!$data['publisher']) {
-            $fields = $this->getFields('264');
+            $fields = $this->record->getFields('264');
             foreach ($fields as $field) {
-                if ($this->getIndicator($field, 2) == '1') {
+                if ($this->record->getIndicator($field, 2) == '1') {
                     $data['publisher'] = [
                         $this->metadataUtils->stripTrailingPunctuation(
-                            $this->getSubfield($field, 'b')
+                            $this->record->getSubfield($field, 'b')
                         )
                     ];
                     break;
@@ -531,29 +376,25 @@ class Marc extends AbstractRecord
         }
         $data['physical'] = $this->getFieldsSubfields(
             [
-                [self::GET_BOTH, '300', [
-                    'a' => 1, 'b' => 1, 'c' => 1, 'e' => 1, 'f' => 1, 'g' => 1
-                ]],
-                [self::GET_BOTH, '530', [
-                    'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1
-                ]]
+                [MarcHandler::GET_BOTH, '300', ['a', 'b', 'c', 'e', 'f', 'g']],
+                [MarcHandler::GET_BOTH, '530', ['a', 'b', 'c', 'd']]
             ]
         );
         $data['dateSpan'] = $this->getFieldsSubfields(
-            [[self::GET_BOTH, '362', ['a' => 1]]]
+            [[MarcHandler::GET_BOTH, '362', ['a']]]
         );
-        $data['edition'] = $this->getFieldSubfields('250', ['a' => 1]);
+        $data['edition'] = $this->getFieldSubfields('250', ['a']);
         $data['contents'] = $this->getFieldsSubfields(
             [
-                [self::GET_BOTH, '505', ['a' => 1]],
-                [self::GET_BOTH, '505', ['t' => 1]]
+                [MarcHandler::GET_BOTH, '505', ['a']],
+                [MarcHandler::GET_BOTH, '505', ['t']]
             ]
         );
 
         $data['isbn'] = $this->getISBNs();
         foreach ($this->getFieldsSubfields(
             [
-                [self::GET_NORMAL, '773', ['z' => 1]]
+                [MarcHandler::GET_NORMAL, '773', ['z']]
             ]
         ) as $isbn) {
             $isbn = str_replace('-', '', $isbn);
@@ -570,14 +411,14 @@ class Marc extends AbstractRecord
         }
         $data['issn'] = $this->getFieldsSubfields(
             [
-                [self::GET_NORMAL, '022', ['a' => 1]],
-                [self::GET_NORMAL, '440', ['x' => 1]],
-                [self::GET_NORMAL, '490', ['x' => 1]],
-                [self::GET_NORMAL, '730', ['x' => 1]],
-                [self::GET_NORMAL, '773', ['x' => 1]],
-                [self::GET_NORMAL, '776', ['x' => 1]],
-                [self::GET_NORMAL, '780', ['x' => 1]],
-                [self::GET_NORMAL, '785', ['x' => 1]]
+                [MarcHandler::GET_NORMAL, '022', ['a']],
+                [MarcHandler::GET_NORMAL, '440', ['x']],
+                [MarcHandler::GET_NORMAL, '490', ['x']],
+                [MarcHandler::GET_NORMAL, '730', ['x']],
+                [MarcHandler::GET_NORMAL, '773', ['x']],
+                [MarcHandler::GET_NORMAL, '776', ['x']],
+                [MarcHandler::GET_NORMAL, '780', ['x']],
+                [MarcHandler::GET_NORMAL, '785', ['x']]
             ]
         );
         foreach ($data['issn'] as &$value) {
@@ -586,15 +427,15 @@ class Marc extends AbstractRecord
 
         $data['callnumber-first'] = $this->getFirstFieldSubfields(
             [
-                [self::GET_NORMAL, '099', ['a' => 1]],
-                [self::GET_NORMAL, '090', ['a' => 1]],
-                [self::GET_NORMAL, '050', ['a' => 1]]
+                [MarcHandler::GET_NORMAL, '099', ['a']],
+                [MarcHandler::GET_NORMAL, '090', ['a']],
+                [MarcHandler::GET_NORMAL, '050', ['a']]
             ]
         );
         $value = $this->getFirstFieldSubfields(
             [
-                [self::GET_NORMAL, '090', ['a' => 1]],
-                [self::GET_NORMAL, '050', ['a' => 1]]
+                [MarcHandler::GET_NORMAL, '090', ['a']],
+                [MarcHandler::GET_NORMAL, '050', ['a']]
             ]
         );
         if ($value) {
@@ -609,9 +450,9 @@ class Marc extends AbstractRecord
             'strtoupper',
             $this->getFieldsSubfields(
                 [
-                    [self::GET_NORMAL, '080', ['a' => 1, 'b' => 1]],
-                    [self::GET_NORMAL, '084', ['a' => 1, 'b' => 1]],
-                    [self::GET_NORMAL, '050', ['a' => 1, 'b' => 1]]
+                    [MarcHandler::GET_NORMAL, '080', ['a', 'b']],
+                    [MarcHandler::GET_NORMAL, '084', ['a', 'b']],
+                    [MarcHandler::GET_NORMAL, '050', ['a', 'b']]
                 ]
             )
         );
@@ -650,7 +491,7 @@ class Marc extends AbstractRecord
 
         $data['url'] = $this->getFieldsSubfields(
             [
-                [self::GET_NORMAL, '856', ['u' => 1]]
+                [MarcHandler::GET_NORMAL, '856', ['u']]
             ]
         );
 
@@ -658,8 +499,8 @@ class Marc extends AbstractRecord
 
         $deweyFields = $this->getFieldsSubfields(
             [
-                [self::GET_NORMAL, '082', ['a' => '1']],
-                [self::GET_NORMAL, '083', ['a' => '1']],
+                [MarcHandler::GET_NORMAL, '082', ['a']],
+                [MarcHandler::GET_NORMAL, '083', ['a']],
             ]
         );
         foreach ($deweyFields as $field) {
@@ -678,6 +519,11 @@ class Marc extends AbstractRecord
             $data['oclc_num'] = $res;
         }
 
+        // Get warnings from the MARC handler last:
+        foreach ($this->record->getWarnings() as $warning) {
+            $this->storeWarning($warning);
+        }
+
         return $data;
     }
 
@@ -693,7 +539,7 @@ class Marc extends AbstractRecord
                 return $id;
             }
         }
-        return (string)$this->getField('001');
+        return $this->record->getControlField('001');
     }
 
     /**
@@ -704,7 +550,7 @@ class Marc extends AbstractRecord
      */
     public function getLinkingIDs()
     {
-        $id = $this->getField('001');
+        $id = $this->record->getControlField('001');
         if ('' === $id && $this->getDriverParam('idIn999', false)) {
             // Koha style ID fallback
             $id = $this->getFieldSubfield('999', 'c');
@@ -714,7 +560,7 @@ class Marc extends AbstractRecord
 
         $cns = $this->getFieldsSubfields(
             [
-                [self::GET_NORMAL, '035', ['a' => 1]]
+                [MarcHandler::GET_NORMAL, '035', ['a']]
             ]
         );
         if ($cns) {
@@ -734,8 +580,9 @@ class Marc extends AbstractRecord
     protected function createLinkingId($id)
     {
         if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
-            $source = $this->getField('003');
-            $source = $this->metadataUtils->stripTrailingPunctuation($source);
+            $source = $this->metadataUtils->stripTrailingPunctuation(
+                $this->record->getControlField('003')
+            );
             if ($source) {
                 $id = "($source)$id";
             }
@@ -752,7 +599,7 @@ class Marc extends AbstractRecord
     {
         // We could look at the bibliographic level, but we need 773 to do anything
         // useful anyway..
-        return isset($this->fields['773']);
+        return !empty($this->record->getField('773'));
     }
 
     /**
@@ -762,15 +609,15 @@ class Marc extends AbstractRecord
      */
     public function getHostRecordIDs()
     {
-        $field = $this->getField('941');
+        $field = $this->record->getField('941');
         if ($field) {
             $hostId = $this->metadataUtils->stripControlCharacters(
-                $this->getSubfield($field, 'a')
+                $this->record->getSubfield($field, 'a')
             );
             return [$hostId];
         }
         $ids = $this->getFieldsSubfields(
-            [[self::GET_NORMAL, '773', ['w' => 1]]],
+            [[MarcHandler::GET_NORMAL, '773', ['w']]],
             false,
             true,
             true
@@ -785,9 +632,10 @@ class Marc extends AbstractRecord
             foreach ($ids as &$id) {
                 if (strncmp('(', $id, 1) !== 0) {
                     if (null === $record003) {
-                        $field = $this->getField('003');
+                        $field = $this->record->getControlField('003');
                         $record003 = $field
-                            ? $this->metadataUtils->stripControlCharacters($field)
+                            ? $this->metadataUtils
+                                ->stripControlCharacters($field)
                             : '';
                     }
                     if ('' !== $record003) {
@@ -806,7 +654,7 @@ class Marc extends AbstractRecord
      */
     public function getVolume()
     {
-        $field773g = $this->getFieldSubfields('773', ['g' => 1]);
+        $field773g = $this->getFieldSubfields('773', ['g']);
         if (!$field773g) {
             return '';
         }
@@ -826,7 +674,7 @@ class Marc extends AbstractRecord
      */
     public function getIssue()
     {
-        $field773g = $this->getFieldSubfields('773', ['g' => 1]);
+        $field773g = $this->getFieldSubfields('773', ['g']);
         if (!$field773g) {
             return '';
         }
@@ -849,7 +697,7 @@ class Marc extends AbstractRecord
      */
     public function getStartPage()
     {
-        $field773g = $this->getFieldSubfields('773', ['g' => 1]);
+        $field773g = $this->getFieldSubfields('773', ['g']);
         if (!$field773g) {
             return '';
         }
@@ -872,9 +720,9 @@ class Marc extends AbstractRecord
      */
     public function getContainerTitle()
     {
-        $first773 = $this->getField('773');
+        $first773 = $this->record->getField('773');
         return $this->metadataUtils->stripTrailingPunctuation(
-            $this->getSubfield($first773, 't')
+            $this->record->getSubfield($first773, 't')
         );
     }
 
@@ -885,9 +733,9 @@ class Marc extends AbstractRecord
      */
     public function getContainerReference()
     {
-        $first773 = $this->getField('773');
+        $first773 = $this->record->getField('773');
         return $this->metadataUtils->stripTrailingPunctuation(
-            $this->getSubfield($first773, 'g')
+            $this->record->getSubfield($first773, 'g')
         );
     }
 
@@ -907,25 +755,25 @@ class Marc extends AbstractRecord
             $acceptSubfields[] = 'c';
         }
         foreach (['245', '240'] as $fieldCode) {
-            $field = $this->getField($fieldCode);
-            if ($field && !empty($field['s'])) {
-                $title = $this->getSubfield($field, 'a');
+            $field = $this->record->getField($fieldCode);
+            if ($field) {
+                $title = $this->record->getSubfield($field, 'a');
                 if ($forFiling) {
-                    $nonfiling = intval($this->getIndicator($field, 2));
+                    $nonfiling = intval($this->record->getIndicator($field, 2));
                     if ($nonfiling > 0) {
                         $title = mb_substr($title, $nonfiling, null, 'UTF-8');
                     }
                 }
-                foreach ($field['s'] as $subfield) {
-                    if (!in_array(key($subfield), $acceptSubfields)) {
+                foreach ($field['subfields'] as $subfield) {
+                    if (!in_array($subfield['code'], $acceptSubfields)) {
                         continue;
                     }
                     if (!$this->metadataUtils->hasTrailingPunctuation($title)) {
-                        $title .= $punctuation[key($subfield)];
+                        $title .= $punctuation[$subfield['code']];
                     } else {
                         $title .= ' ';
                     }
-                    $title .= current($subfield);
+                    $title .= $subfield['data'];
                 }
                 if ($forFiling) {
                     $title = $this->metadataUtils->stripLeadingPunctuation($title);
@@ -947,17 +795,17 @@ class Marc extends AbstractRecord
      */
     public function getMainAuthor()
     {
-        $f100 = $this->getField('100');
+        $f100 = $this->record->getField('100');
         if ($f100) {
-            $author = $this->getSubfield($f100, 'a');
-            $order = $this->getIndicator($f100, 1);
+            $author = $this->record->getSubfield($f100, 'a');
+            $order = $this->record->getIndicator($f100, 1);
             if ($order == 0 && strpos($author, ',') === false) {
                 $author = $this->metadataUtils->convertAuthorLastFirst($author);
             }
             return $this->metadataUtils->stripTrailingPunctuation($author);
-        } elseif ($f700 = $this->getField('700')) {
-            $author = $this->getSubfield($f700, 'a');
-            $order = $this->getIndicator($f700, 1);
+        } elseif ($f700 = $this->record->getField('700')) {
+            $author = $this->record->getSubfield($f700, 'a');
+            $order = $this->record->getIndicator($f700, 1);
             if ($order == 0 && strpos($author, ',') === false) {
                 $author = $this->metadataUtils->convertAuthorLastFirst($author);
             }
@@ -988,45 +836,45 @@ class Marc extends AbstractRecord
         }
         $arr = [];
         $form = $this->config['Site']['unicode_normalization_form'] ?? 'NFKC';
-        $f010 = $this->getField('010');
+        $f010 = $this->record->getField('010');
         if ($f010) {
             $lccn = $this->metadataUtils
-                ->normalizeKey($this->getSubfield($f010, 'a'));
+                ->normalizeKey($this->record->getSubfield($f010, 'a'));
             if ($lccn) {
                 $arr[] = "(lccn)$lccn";
             }
             $nucmc = $this->metadataUtils
-                ->normalizeKey($this->getSubfield($f010, 'b'));
+                ->normalizeKey($this->record->getSubfield($f010, 'b'));
             if ($nucmc) {
                 $arr[] = "(nucmc)$lccn";
             }
         }
-        $nbn = $this->getField('015');
+        $nbn = $this->record->getField('015');
         if ($nbn) {
             $nr = $this->metadataUtils->normalizeKey(
-                $this->getSubfield($nbn, 'a'),
+                $this->record->getSubfield($nbn, 'a'),
                 $form
             );
-            $src = $this->getSubfield($nbn, '2');
+            $src = $this->record->getSubfield($nbn, '2');
             if ($src && $nr) {
                 $arr[] = "($src)$nr";
             }
         }
-        $nba = $this->getField('016');
+        $nba = $this->record->getField('016');
         if ($nba) {
             $nr = $this->metadataUtils->normalizeKey(
-                $this->getSubfield($nba, 'a'),
+                $this->record->getSubfield($nba, 'a'),
                 $form
             );
-            $src = $this->getSubfield($nba, '2');
+            $src = $this->record->getSubfield($nba, '2');
             if ($src && $nr) {
                 $arr[] = "($src)$nr";
             }
         }
-        $id = $this->getField('024');
+        $id = $this->record->getField('024');
         if ($id) {
-            $nr = $this->getSubfield($id, 'a');
-            switch ($this->getIndicator($id, 1)) {
+            $nr = $this->record->getSubfield($id, 'a');
+            switch ($this->record->getIndicator($id, 1)) {
             case '0':
                 $src = 'istc';
                 break;
@@ -1046,7 +894,7 @@ class Marc extends AbstractRecord
                 $src = 'sici';
                 break;
             case '7':
-                $src = $this->getSubfield($id, '2');
+                $src = $this->record->getSubfield($id, '2');
                 break;
             default:
                 $src = '';
@@ -1060,8 +908,11 @@ class Marc extends AbstractRecord
                 $arr[] = "($src)$nr";
             }
         }
-        foreach ($this->getFields('035') as $field) {
-            $nr = $this->getSubfield($field, 'a');
+        foreach ($this->record->getFields('035') as $field) {
+            $nr = $this->record->getSubfield($field, 'a');
+            if ('' === $nr) {
+                continue;
+            }
             $match = false;
             foreach ($this->scnPatterns as $pattern) {
                 if (preg_match("/$pattern/", $nr)) {
@@ -1086,9 +937,9 @@ class Marc extends AbstractRecord
     public function getISBNs()
     {
         $arr = [];
-        $fields = $this->getFields('020');
+        $fields = $this->record->getFields('020');
         foreach ($fields as $field) {
-            $original = $isbn = $this->getSubfield($field, 'a');
+            $original = $isbn = $this->record->getSubfield($field, 'a');
             if (!$isbn) {
                 continue;
             }
@@ -1111,9 +962,9 @@ class Marc extends AbstractRecord
     public function getISSNs()
     {
         $arr = [];
-        $fields = $this->getFields('022');
+        $fields = $this->record->getFields('022');
         foreach ($fields as $field) {
-            $issn = $this->getSubfield($field, 'a');
+            $issn = $this->record->getSubfield($field, 'a');
             if ($issn) {
                 $arr[] = $issn;
             }
@@ -1150,10 +1001,9 @@ class Marc extends AbstractRecord
     public function getFormat()
     {
         // check the 007 - this is a repeating field
-        $fields = $this->getFields('007');
+        $fields = $this->record->getControlFields('007');
         $online = false;
-        foreach ($fields as $field) {
-            $contents = $field;
+        foreach ($fields as $contents) {
             $formatCode = strtoupper(substr($contents, 0, 1));
             $formatCode2 = strtoupper(substr($contents, 1, 1));
             switch ($formatCode) {
@@ -1298,7 +1148,7 @@ class Marc extends AbstractRecord
         }
 
         // check the Leader at position 6
-        $leader = $this->getField('000');
+        $leader = $this->record->getLeader();
         $leaderBit = substr($leader, 6, 1);
         switch (strtoupper($leaderBit)) {
         case 'C':
@@ -1326,7 +1176,7 @@ class Marc extends AbstractRecord
             return 'Manuscript';
         }
 
-        $field008 = $this->getField('008');
+        $field008 = $this->record->getControlField('008');
         if (!$online) {
             $online = substr($field008, 23, 1) === 'o';
         }
@@ -1384,23 +1234,23 @@ class Marc extends AbstractRecord
      */
     public function getPublicationYear()
     {
-        $field = $this->getField('260');
+        $field = $this->record->getField('260');
         if ($field) {
-            $year = $this->extractYear($this->getSubfield($field, 'c'));
+            $year = $this->extractYear($this->record->getSubfield($field, 'c'));
             if ($year) {
                 return $year;
             }
         }
-        $fields = $this->getFields('264');
+        $fields = $this->record->getFields('264');
         foreach ($fields as $field) {
-            if ($this->getIndicator($field, 2) == '1') {
-                $year = $this->extractYear($this->getSubfield($field, 'c'));
+            if ($this->record->getIndicator($field, 2) == '1') {
+                $year = $this->extractYear($this->record->getSubfield($field, 'c'));
                 if ($year) {
                     return $year;
                 }
             }
         }
-        $field008 = $this->getField('008');
+        $field008 = $this->record->getControlField('008');
         if (!$field008) {
             return '';
         }
@@ -1418,9 +1268,9 @@ class Marc extends AbstractRecord
      */
     public function getPageCount()
     {
-        $field = $this->getField('300');
+        $field = $this->record->getField('300');
         if ($field) {
-            $extent = $this->getSubfield($field, 'a');
+            $extent = $this->record->getSubfield($field, 'a');
             if ($extent && preg_match('/(\d+)/', $extent, $matches)) {
                 return $matches[1];
             }
@@ -1439,19 +1289,16 @@ class Marc extends AbstractRecord
     public function addDedupKeyToMetadata($dedupKey)
     {
         if ($dedupKey) {
-            $this->fields['995'] = [
+            $this->record->addField(
+                '995',
+                ' ',
+                ' ',
                 [
-                    'i1' => ' ',
-                    'i2' => ' ',
-                    's' => [
-                        [
-                            'a' => $dedupKey
-                        ]
-                    ]
+                    ['a' => $dedupKey]
                 ]
-            ];
+            );
         } else {
-            $this->fields['995'] = [];
+            $this->record->deleteFields('995');
         }
     }
 
@@ -1483,14 +1330,17 @@ class Marc extends AbstractRecord
             }
 
             foreach ($buildingFields as $buildingField) {
-                foreach ($this->getFields($buildingField['field']) as $field) {
-                    $location = $this->getSubfield($field, $buildingField['loc']);
+                foreach ($this->record->getFields($buildingField['field']) as $field
+                ) {
+                    $location
+                        = $this->record->getSubfield($field, $buildingField['loc']);
                     if ($location) {
                         $subLocField = $buildingField['sub'];
-                        if ($subLocField
-                            && $sub = $this->getSubfield($field, $subLocField)
-                        ) {
-                            $location = [$location, $sub];
+                        if ($subLocField) {
+                            $sub = $this->record->getSubfield($field, $subLocField);
+                            if ($sub) {
+                                $location = [$location, $sub];
+                            }
                         }
                         $building[] = $location;
                     }
@@ -1529,175 +1379,30 @@ class Marc extends AbstractRecord
     }
 
     /**
-     * Parse MARCXML
+     * Get alternate titles
      *
-     * @param string $marc MARCXML
-     *
-     * @throws \Exception
-     * @return void
+     * @return array
      */
-    protected function parseXML($marc)
+    protected function getAltTitles(): array
     {
-        $xmlHead = '<?xml version';
-        if (strcasecmp(substr($marc, 0, strlen($xmlHead)), $xmlHead) === 0) {
-            $decl = substr($marc, 0, strpos($marc, '?>'));
-            if (strstr($decl, 'encoding') === false) {
-                $marc = $decl . ' encoding="utf-8"' . substr($marc, strlen($decl));
-            }
-        } else {
-            $marc = '<?xml version="1.0" encoding="utf-8"?>' . "\n\n$marc";
-        }
-        $xml = $this->parseXMLRecord($marc);
-
-        // Move to the record element if we were given a collection
-        if ($xml->record) {
-            $xml = $xml->record;
-        }
-
-        $this->fields['000'] = isset($xml->leader) ? (string)$xml->leader[0] : '';
-
-        foreach ($xml->controlfield as $field) {
-            $tag = (string)$field['tag'];
-            if ('000' === $tag) {
-                continue;
-            }
-            $this->fields[$tag][] = (string)$field;
-        }
-
-        foreach ($xml->datafield as $field) {
-            $newField = [
-                'i1' => str_pad((string)$field['ind1'], 1),
-                'i2' => str_pad((string)$field['ind2'], 1)
-            ];
-            foreach ($field->subfield as $subfield) {
-                $newField['s'][] = [(string)$subfield['code'] => (string)$subfield];
-            }
-            $this->fields[(string)$field['tag']][] = $newField;
-        }
-    }
-
-    /**
-     * Parse ISO2709 exchange format
-     *
-     * @param string $marc ISO2709 string
-     *
-     * @throws \Exception
-     * @return void
-     */
-    protected function parseISO2709($marc)
-    {
-        $this->fields['000'] = substr($marc, 0, 24);
-        $dataStart = 0 + (int)substr($marc, 12, 5);
-        $dirLen = $dataStart - self::LEADER_LEN - 1;
-
-        $offset = 0;
-        while ($offset < $dirLen) {
-            $tag = substr($marc, self::LEADER_LEN + $offset, 3);
-            $len = (int)substr($marc, self::LEADER_LEN + $offset + 3, 4);
-            $dataOffset
-                = (int)substr($marc, self::LEADER_LEN + $offset + 7, 5);
-
-            $tagData = substr($marc, $dataStart + $dataOffset, $len);
-
-            if (substr($tagData, -1, 1) == self::END_OF_FIELD) {
-                $tagData = substr($tagData, 0, -1);
-            } else {
-                throw new \Exception(
-                    "Invalid MARC record (end of field not found): $marc"
-                );
-            }
-
-            if (strstr($tagData, self::SUBFIELD_INDICATOR)) {
-                $newField = [
-                    'i1' => $tagData[0],
-                    'i2' => $tagData[1]
-                ];
-                $subfields = explode(
-                    self::SUBFIELD_INDICATOR,
-                    substr($tagData, 3)
-                );
-                foreach ($subfields as $subfield) {
-                    $newField['s'][] = [
-                        $subfield[0] => substr($subfield, 1)
-                    ];
-                }
-                $this->fields[$tag][] = $newField;
-            } else {
-                $this->fields[$tag][] = $tagData;
-            }
-
-            $offset += 12;
-        }
-    }
-
-    /**
-     * Convert to ISO2709. Return empty string if record too long.
-     *
-     * @return string
-     */
-    protected function toISO2709()
-    {
-        $leader = str_pad(substr($this->fields['000'], 0, 24), 24);
-
-        $directory = '';
-        $data = '';
-        $datapos = 0;
-        foreach ($this->fields as $tag => $fields) {
-            if ($tag == '000') {
-                continue;
-            }
-            if (strlen($tag) != 3) {
-                $this->logger->logError(
-                    'Marc',
-                    "Invalid field tag: '$tag', record {$this->source}."
-                        . $this->getID()
-                );
-                $this->storeWarning("invalid field tag '$tag'");
-                continue;
-            }
-            foreach ($fields as $field) {
-                if (is_array($field)) {
-                    $fieldStr = $field['i1'] . $field['i2'];
-                    if (isset($field['s']) && is_array($field['s'])) {
-                        foreach ($field['s'] as $subfield) {
-                            $subfieldCode = key($subfield);
-                            $fieldStr .= self::SUBFIELD_INDICATOR
-                                . $subfieldCode . current($subfield);
-                        }
-                    }
-                } else {
-                    // Additional normalization here so that we don't break ISO2709
-                    // directory in SolrUpdater
-                    $fieldStr = $this->metadataUtils
-                        ->normalizeUnicode($field, 'NFKC');
-                }
-                $fieldStr .= self::END_OF_FIELD;
-                $len = strlen($fieldStr);
-                if ($len > 9999) {
-                    return '';
-                }
-                if ($datapos > 99999) {
-                    return '';
-                }
-                $directory .= $tag . str_pad((string)$len, 4, '0', STR_PAD_LEFT)
-                    . str_pad((string)$datapos, 5, '0', STR_PAD_LEFT);
-                $datapos += $len;
-                $data .= $fieldStr;
-            }
-        }
-        $directory .= self::END_OF_FIELD;
-        $data .= self::END_OF_RECORD;
-        $dataStart = strlen($leader) + strlen($directory);
-        $recordLen = $dataStart + strlen($data);
-        if ($recordLen > 99999) {
-            return '';
-        }
-
-        $leader = str_pad((string)$recordLen, 5, '0', STR_PAD_LEFT)
-            . substr($leader, 5, 7)
-            . str_pad((string)$dataStart, 5, '0', STR_PAD_LEFT)
-            . substr($leader, 17);
-        return $leader . $directory . $data;
+        return array_values(
+            array_unique(
+                $this->getFieldsSubfields(
+                    [
+                        [MarcHandler::GET_ALT, '245', ['a', 'b']],
+                        [MarcHandler::GET_BOTH, '130', [
+                            'a', 'd', 'f', 'g', 'k', 'l', 'n', 'p', 's', 't'
+                        ]],
+                        [MarcHandler::GET_BOTH, '240', ['a']],
+                        [MarcHandler::GET_BOTH, '246', ['a', 'b', 'n', 'p']],
+                        [MarcHandler::GET_BOTH, '730', [
+                            'a', 'd', 'f', 'g', 'k', 'l', 'n', 'p', 's', 't'
+                        ]],
+                        [MarcHandler::GET_BOTH, '740', ['a']]
+                    ]
+                )
+            )
+        );
     }
 
     /**
@@ -1707,7 +1412,7 @@ class Marc extends AbstractRecord
      */
     protected function getIllustrated()
     {
-        $leader = $this->getField('000');
+        $leader = $this->record->getLeader();
         if (in_array(substr($leader, 6, 1), ['a', 't'])) {
             $illustratedCodes = [
                 'a' => 1,
@@ -1728,7 +1433,7 @@ class Marc extends AbstractRecord
             ];
 
             // 008
-            $field008 = $this->getField('008');
+            $field008 = $this->record->getControlField('008');
             for ($pos = 18; $pos <= 21; $pos++) {
                 $ch = substr($field008, $pos, 1);
                 if ('' !== $ch && isset($illustratedCodes[$ch])) {
@@ -1737,7 +1442,7 @@ class Marc extends AbstractRecord
             }
 
             // 006
-            foreach ($this->getFields('006') as $field006) {
+            foreach ($this->record->getControlFields('006') as $field006) {
                 for ($pos = 1; $pos <= 4; $pos++) {
                     $ch = substr($field006, $pos, 1);
                     if ('' !== $ch && isset($illustratedCodes[$ch])) {
@@ -1748,8 +1453,8 @@ class Marc extends AbstractRecord
         }
 
         // Now check for interesting strings in 300 subfield b:
-        foreach ($this->getFields('300') as $field300) {
-            $sub = strtolower($this->getSubfield($field300, 'b'));
+        foreach ($this->record->getFields('300') as $field300) {
+            $sub = strtolower($this->record->getSubfield($field300, 'b'));
             foreach ($this->illustrationStrings as $illStr) {
                 if (strpos($sub, $illStr) !== false) {
                     return 'Illustrated';
@@ -1757,969 +1462,6 @@ class Marc extends AbstractRecord
             }
         }
         return 'Not Illustrated';
-    }
-
-    /**
-     * Get first matching field
-     *
-     * @param string $field Tag to get
-     *
-     * @return string|array String for controlfields, array for datafields
-     */
-    public function getField($field)
-    {
-        if (isset($this->fields[$field])) {
-            if (is_array($this->fields[$field])) {
-                return $this->fields[$field][0];
-            } else {
-                return $this->fields[$field];
-            }
-        }
-        return '';
-    }
-
-    /**
-     * Get all matching fields
-     *
-     * @param string $field Tag to get
-     *
-     * @return mixed[]
-     */
-    public function getFields($field)
-    {
-        if (isset($this->fields[$field])) {
-            return $this->fields[$field];
-        }
-        return [];
-    }
-
-    /**
-     * Get indicator value
-     *
-     * @param array $field     MARC field
-     * @param int   $indicator Indicator nr, 1 or 2
-     *
-     * @return string
-     */
-    public function getIndicator($field, $indicator)
-    {
-        switch ($indicator) {
-        case 1:
-            if (!isset($field['i1'])) {
-                $this->logger->logError(
-                    'Marc',
-                    'Indicator 1 missing from field:' . print_r($field, true)
-                        . ", record {$this->source}." . $this->getID()
-                );
-                $this->storeWarning('indicator 1 missing');
-                return ' ';
-            }
-            return $field['i1'];
-        case 2:
-            if (!isset($field['i2'])) {
-                $this->logger->logError(
-                    'Marc',
-                    'Indicator 2 missing from field:' . print_r($field, true)
-                        . ", record {$this->source}." . $this->getID()
-                );
-                $this->storeWarning('indicator 2 missing');
-                return ' ';
-            }
-            return $field['i2'];
-        default:
-            throw new \Exception("Invalid indicator '$indicator' requested");
-        }
-    }
-
-    /**
-     * Get a single subfield from the given field
-     *
-     * @param array  $field Field
-     * @param string $code  Subfield code
-     *
-     * @return string Subfield
-     */
-    public function getSubfield($field, $code)
-    {
-        if (!$field || !isset($field['s']) || !is_array($field['s'])) {
-            return '';
-        }
-        foreach ($field['s'] as $subfield) {
-            if ((string)key($subfield) === (string)$code) {
-                return current($subfield);
-            }
-        }
-        return '';
-    }
-
-    /**
-     * Get specified subfields
-     *
-     * @param array $field MARC Field
-     * @param array $codes Array with keys of accepted subfield codes
-     *
-     * @return array Subfields
-     */
-    public function getSubfieldsArray($field, $codes)
-    {
-        $data = [];
-        if (!$field || !isset($field['s']) || !is_array($field['s'])) {
-            return $data;
-        }
-        foreach ($field['s'] as $subfield) {
-            $code = key($subfield);
-            if (isset($codes[(string)$code])) {
-                $data[] = current($subfield);
-            }
-        }
-        return $data;
-    }
-
-    /**
-     * Get specified subfields
-     *
-     * @param array $field MARC Field
-     * @param array $codes Array with keys of accepted subfield codes
-     *
-     * @return string Concatenated subfields (space-separated)
-     */
-    protected function getSubfields($field, $codes)
-    {
-        $data = $this->getSubfieldsArray($field, $codes);
-        return implode(' ', $data);
-    }
-
-    /**
-     * Get field data
-     *
-     * @param string  $tag                      Field to get
-     * @param array   $codes                    Optional array with keys of accepted
-     *                                          subfields
-     * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
-     *                                          from the results
-     *
-     * @return string Concatenated subfields (space-separated)
-     */
-    protected function getFieldSubfields(
-        $tag,
-        $codes = null,
-        $stripTrailingPunctuation = true
-    ) {
-        $key = __METHOD__ . "$tag-" . implode(',', array_keys($codes ?? [])) . '-'
-            . ($stripTrailingPunctuation ? '1' : '0');
-
-        if (isset($this->resultCache[$key])) {
-            return $this->resultCache[$key];
-        }
-
-        $subfields = [];
-        foreach ($this->fields[$tag] ?? [] as $field) {
-            if (!isset($field['s'])) {
-                continue;
-            }
-            foreach ($field['s'] as $subfield) {
-                if ($codes && !isset($codes[(string)key($subfield)])) {
-                    continue;
-                }
-                $subfields[] = current($subfield);
-            }
-        }
-        $result = implode(' ', $subfields);
-        if ($result && $stripTrailingPunctuation) {
-            $result = $this->metadataUtils->stripTrailingPunctuation($result);
-        }
-        $this->resultCache[$key] = $result;
-        return $result;
-    }
-
-    /**
-     * Get first occurrence of the requested subfield
-     *
-     * @param string  $tag                      Field to get
-     * @param string  $code                     Subfield to get
-     * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
-     *                                          from the result
-     *
-     * @return string
-     */
-    protected function getFieldSubfield(
-        $tag,
-        $code,
-        $stripTrailingPunctuation = true
-    ) {
-        $key = __METHOD__ . "-$tag-$code-"
-            . ($stripTrailingPunctuation ? '1' : '0');
-        if (isset($this->resultCache[$key])) {
-            return $this->resultCache[$key];
-        }
-
-        $result = '';
-        foreach ($this->fields[$tag] ?? [] as $field) {
-            if (!isset($field['s'])) {
-                continue;
-            }
-            foreach ($field['s'] as $subfield) {
-                if (key($subfield) === $code) {
-                    $result = current($subfield);
-                    if ($stripTrailingPunctuation) {
-                        $result = $this->metadataUtils
-                            ->stripTrailingPunctuation($result);
-                    }
-                    break 2;
-                }
-            }
-        }
-        $this->resultCache[$key] = $result;
-        return $result;
-    }
-
-    /**
-     * Return an array of fields according to the fieldspecs.
-     *
-     * Format of fieldspecs:
-     * [
-     *   type (e.g. self::GET_BOTH),
-     *   field code (e.g. '245'),
-     *   subfields (e.g. ['a'=>1, 'b'=>1, 'c'=>1]),
-     *   required subfields (e.g. ['t'=>1])
-     * ]
-     *
-     * @param array   $fieldspecs               Fields to get
-     * @param boolean $firstOnly                Return only first matching field
-     * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
-     *                                          from the results
-     * @param boolean $splitSubfields           Whether to split subfields to
-     *                                          separate array items
-     *
-     * @return array Subfields
-     */
-    protected function getFieldsSubfields(
-        $fieldspecs,
-        $firstOnly = false,
-        $stripTrailingPunctuation = true,
-        $splitSubfields = false
-    ) {
-        $key = __METHOD__ . '-' . json_encode($fieldspecs) . '-'
-            . ($firstOnly ? '1' : '0') . ($stripTrailingPunctuation ? '1' : '0')
-            . ($splitSubfields ? '1' : '0');
-        if (isset($this->resultCache[$key])) {
-            return $this->resultCache[$key];
-        }
-
-        $data = [];
-        foreach ($fieldspecs as $fieldspec) {
-            $type = $fieldspec[0];
-            $tag = $fieldspec[1];
-            $codes = $fieldspec[2];
-
-            if (!isset($this->fields[$tag])) {
-                continue;
-            }
-
-            foreach ($this->fields[$tag] as $field) {
-                if (!isset($field['s'])) {
-                    $this->logger->logDebug(
-                        'Marc',
-                        "Subfields missing in field $tag, record {$this->source}."
-                            . $this->getID()
-                    );
-                    $this->storeWarning("missing subfields in $tag");
-                    continue;
-                }
-                if (!is_array($field['s'])) {
-                    $this->logger->logDebug(
-                        'Marc',
-                        "Invalid subfields in field $tag, record {$this->source}."
-                            . $this->getID()
-                    );
-                    $this->storeWarning("invalid subfields in $tag");
-                    continue;
-                }
-
-                // Check for required subfields
-                if (isset($fieldspec[3])) {
-                    foreach (array_keys($fieldspec[3]) as $required) {
-                        $found = false;
-                        foreach ($field['s'] as $subfield) {
-                            if ($required == key($subfield)) {
-                                $found = true;
-                                break;
-                            }
-                        }
-                        if (!$found) {
-                            continue 2;
-                        }
-                    }
-                }
-
-                if ($type != self::GET_ALT) {
-                    // Handle normal field
-                    if ($codes) {
-                        if ($splitSubfields) {
-                            foreach ($field['s'] as $subfield) {
-                                $code = key($subfield);
-                                if ($code === 0) {
-                                    $code = '0';
-                                }
-                                if (isset($codes[(string)$code])) {
-                                    $data[] = current($subfield);
-                                }
-                            }
-                        } else {
-                            $fieldContents = '';
-                            foreach ($field['s'] as $subfield) {
-                                $code = key($subfield);
-                                if (isset($codes[(string)$code])) {
-                                    if ($fieldContents) {
-                                        $fieldContents .= ' ';
-                                    }
-                                    $fieldContents .= current($subfield);
-                                }
-                            }
-                            if ($fieldContents) {
-                                $data[] = $fieldContents;
-                            }
-                        }
-                    } else {
-                        $fieldContents = '';
-                        foreach ($field['s'] as $subfield) {
-                            if ($fieldContents) {
-                                $fieldContents .= ' ';
-                            }
-                            $fieldContents .= current($subfield);
-                        }
-                        if ($fieldContents) {
-                            $data[] = $fieldContents;
-                        }
-                    }
-                }
-                if (($type == self::GET_ALT || $type == self::GET_BOTH)
-                    && isset($this->fields['880'])
-                    && ($origSub6 = $this->getSubfield($field, '6'))
-                ) {
-                    $altSubfields = $this->getAlternateScriptSubfields(
-                        $tag,
-                        $origSub6,
-                        $codes,
-                        $splitSubfields
-                    );
-                    $data = array_merge($data, $altSubfields);
-                }
-                if ($firstOnly) {
-                    break 2;
-                }
-            }
-        }
-        if ($stripTrailingPunctuation) {
-            $data = array_map(
-                [$this->metadataUtils, 'stripTrailingPunctuation'],
-                $data
-            );
-        }
-        $this->resultCache[$key] = $data;
-        return $data;
-    }
-
-    /**
-     * Get any alternate script field
-     *
-     * @param string $tag  Field code
-     * @param string $sub6 Subfield 6 in original script identifying the
-     *                     alt field
-     *
-     * @return array
-     */
-    protected function getAlternateScriptField(
-        $tag,
-        $sub6
-    ) {
-        $findSub6 = "$tag-" . substr($sub6, 4, 2);
-        foreach ($this->fields['880'] ?? [] as $field880) {
-            if (strncmp($this->getSubfield($field880, '6'), $findSub6, 6) === 0) {
-                return $field880;
-            }
-        }
-        return [];
-    }
-
-    /**
-     * Get the subfields for any alternate script field
-     *
-     * @param string  $tag            Field code
-     * @param string  $sub6           Subfield 6 in original script identifying the
-     *                                alt field
-     * @param array   $codes          Array of subfield codes in keys
-     * @param boolean $splitSubfields Whether to split subfields to separate array
-     *                                items
-     *
-     * @return array
-     */
-    protected function getAlternateScriptSubfields(
-        $tag,
-        $sub6,
-        $codes,
-        $splitSubfields = false
-    ) {
-        $data = [];
-        if ($field880 = $this->getAlternateScriptField($tag, $sub6)) {
-            if ($codes) {
-                if ($splitSubfields) {
-                    foreach ($field880['s'] as $subfield) {
-                        $code = key($subfield);
-                        if (isset($codes[(string)$code])) {
-                            $data[] = current($subfield);
-                        }
-                    }
-                } else {
-                    $fieldContents = '';
-                    foreach ($field880['s'] as $subfield) {
-                        $code = key($subfield);
-                        if ($code === 0) {
-                            $code = '0';
-                        }
-                        if (isset($codes[(string)$code])) {
-                            if ($fieldContents) {
-                                $fieldContents .= ' ';
-                            }
-                            $fieldContents .= current($subfield);
-                        }
-                    }
-                    if ($fieldContents) {
-                        $data[] = $fieldContents;
-                    }
-                }
-            } else {
-                $fieldContents = '';
-                foreach ($field880['s'] as $subfield) {
-                    if ($fieldContents) {
-                        $fieldContents .= ' ';
-                    }
-                    $fieldContents .= current($subfield);
-                }
-                if ($fieldContents) {
-                    $data[] = $fieldContents;
-                }
-            }
-        }
-        return $data;
-    }
-
-    /**
-     * Get all subfields of specified fields
-     *
-     * @param string $tag Field tag
-     *
-     * @return array
-     */
-    protected function getFieldsAllSubfields($tag)
-    {
-        $data = [];
-        foreach ($this->getFields($tag) as $field) {
-            $fieldContents = $this->getAllSubfields($field);
-            if ($fieldContents) {
-                $data[] = $fieldContents;
-            }
-        }
-        return $data;
-    }
-
-    /**
-     * Get subfields for the first found field according to the fieldspecs
-     *
-     * Format of fieldspecs: [+*][fieldcode][subfields]:...
-     *              + = return only alternate script fields (880 equivalents)
-     *              * = return normal and alternate script fields
-     *
-     * @param array $fieldspecs Field specifications
-     *
-     * @return string Concatenated subfields (space-separated)
-     */
-    protected function getFirstFieldSubfields($fieldspecs)
-    {
-        $data = $this->getFieldsSubfields($fieldspecs, true);
-        if (!empty($data)) {
-            return $data[0];
-        }
-        return '';
-    }
-
-    /**
-     * Get all subfields of the given field
-     *
-     * @param array $field  Field
-     * @param array $filter Optional array with keys of subfields codes to be
-     *                      excluded
-     *
-     * @return array All subfields
-     */
-    protected function getAllSubfields($field, $filter = null)
-    {
-        if (!$field) {
-            return [];
-        }
-        if (!isset($field['s'])) {
-            $this->logger->logDebug(
-                'Marc',
-                "Subfields missing in field: " . print_r($field, true)
-                    . ", record {$this->source}." . $this->getID()
-            );
-            $this->storeWarning('missing subfields');
-            return [];
-        }
-        if (!is_array($field['s'])) {
-            $this->logger->logError(
-                'Marc',
-                'Invalid subfields in field: '
-                    . print_r($field, true) . ", record {$this->source}."
-                    . $this->getID()
-            );
-            $this->storeWarning('invalid subfields');
-            return [];
-        }
-
-        $subfields = [];
-        foreach ($field['s'] as $subfield) {
-            if (isset($filter) && isset($filter[(string)key($subfield)])) {
-                continue;
-            }
-            $subfields[] = current($subfield);
-        }
-        return $subfields;
-    }
-
-    /**
-     * Set field to given value
-     *
-     * @param string $field Field tag
-     * @param array  $value Field data
-     *
-     * @return void
-     */
-    protected function setField($field, $value)
-    {
-        $this->fields[$field] = $value;
-        // Invalidate cache
-        $this->resultCache = [];
-    }
-
-    /**
-     * Get an array of all fields relevant to allfields search
-     *
-     * @return array
-     */
-    protected function getAllFields()
-    {
-        $subfieldFilter = [
-            '650' => ['0' => 1, '2' => 1, '6' => 1, '8' => 1],
-            '773' => ['6' => 1, '7' => 1, '8' => 1, 'w' => 1],
-            '856' => ['6' => 1, '8' => 1, 'q' => 1]
-        ];
-        $allFields = [];
-        foreach ($this->fields as $tag => $fields) {
-            if (($tag >= 100 && $tag < 841) || $tag == 856 || $tag == 880) {
-                foreach ($fields as $field) {
-                    $subfields = $this->getAllSubfields(
-                        $field,
-                        $subfieldFilter[$tag] ?? ['0' => 1, '6' => 1, '8' => 1]
-                    );
-                    if ($subfields) {
-                        $allFields = array_merge($allFields, $subfields);
-                    }
-                }
-            }
-        }
-        $allFields = array_map(
-            function ($str) {
-                return $this->metadataUtils->stripTrailingPunctuation(
-                    $this->metadataUtils->stripLeadingPunctuation($str)
-                );
-            },
-            $allFields
-        );
-        return array_values(array_unique($allFields));
-    }
-
-    /**
-     * Get all non-specific topics
-     *
-     * @return array
-     */
-    protected function getTopics()
-    {
-        return $this->getFieldsSubfields(
-            [
-                [self::GET_BOTH, '600', [
-                    'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1, 'f' => 1,
-                    'g' => 1, 'h' => 1, 'j' => 1, 'k' => 1, 'l' => 1, 'm' => 1,
-                    'n' => 1, 'o' => 1, 'p' => 1, 'q' => 1, 'r' => 1, 's' => 1,
-                    't' => 1, 'u' => 1, 'v' => 1, 'x' => 1, 'y' => 1, 'z' => 1
-                ]],
-                [self::GET_BOTH, '610', [
-                    'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1, 'f' => 1,
-                    'g' => 1, 'h' => 1, 'k' => 1, 'l' => 1, 'm' => 1, 'n' => 1,
-                    'o' => 1, 'p' => 1, 'r' => 1, 's' => 1, 't' => 1, 'u' => 1,
-                    'v' => 1, 'x' => 1, 'y' => 1, 'z' => 1
-                ]],
-                [self::GET_BOTH, '611', [
-                    'a' => 1, 'c' => 1, 'd' => 1, 'e' => 1, 'f' => 1, 'g' => 1,
-                    'h' => 1, 'j' => 1, 'k' => 1, 'l' => 1, 'n' => 1, 'p' => 1,
-                    'q' => 1, 's' => 1, 't' => 1, 'u' => 1, 'v' => 1, 'x' => 1,
-                    'y' => 1, 'z' => 1
-                ]],
-                [self::GET_BOTH, '630', [
-                    'a' => 1, 'd' => 1, 'e' => 1, 'f' => 1, 'g' => 1, 'h' => 1,
-                    'k' => 1, 'l' => 1, 'm' => 1, 'n' => 1, 'o' => 1, 'p' => 1,
-                    'r' => 1, 's' => 1, 't' => 1, 'v' => 1, 'x' => 1, 'y' => 1,
-                    'z' => 1
-                ]],
-                [self::GET_BOTH, '650', [
-                    'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'e' => 1, 'v' => 1,
-                    'x' => 1, 'y' => 1, 'z' => 1
-                ]]
-            ]
-        );
-    }
-
-    /**
-     * Get all genre topics
-     *
-     * @return array
-     */
-    protected function getGenres()
-    {
-        return $this->getFieldsSubfields(
-            [
-                [self::GET_BOTH, '655', [
-                    'a' => 1, 'b' => 1, 'c' => 1, 'v' => 1, 'x' => 1, 'y' => 1,
-                    'z' => 1
-                ]]
-            ]
-        );
-    }
-
-    /**
-     * Get all geographic topics
-     *
-     * @return array
-     */
-    protected function getGeographicTopics()
-    {
-        return $this->getFieldsSubfields(
-            [
-                [self::GET_BOTH, '651', [
-                    'a' => 1, 'e' => 1, 'v' => 1, 'x' => 1, 'y' => 1, 'z' => 1
-                ]]
-            ]
-        );
-    }
-
-    /**
-     * Get all era topics
-     *
-     * @return array
-     */
-    protected function getEras()
-    {
-        return $this->getFieldsSubfields(
-            [
-                [self::GET_BOTH, '648', [
-                    'a' => 1, 'v' => 1, 'x' => 1, 'y' => 1, 'z' => 1
-                ]]
-            ]
-        );
-    }
-
-    /**
-     * Get topic facet fields
-     *
-     * @return array Topics
-     */
-    protected function getTopicFacets()
-    {
-        return $this->getFieldsSubfields(
-            [
-                [self::GET_NORMAL, '600', ['x' => 1]],
-                [self::GET_NORMAL, '610', ['x' => 1]],
-                [self::GET_NORMAL, '611', ['x' => 1]],
-                [self::GET_NORMAL, '630', ['x' => 1]],
-                [self::GET_NORMAL, '648', ['x' => 1]],
-                [self::GET_NORMAL, '650', ['a' => 1]],
-                [self::GET_NORMAL, '650', ['x' => 1]],
-                [self::GET_NORMAL, '651', ['x' => 1]],
-                [self::GET_NORMAL, '655', ['x' => 1]]
-            ],
-            false,
-            true,
-            true
-        );
-    }
-
-    /**
-     * Get genre facet fields
-     *
-     * @return array Topics
-     */
-    protected function getGenreFacets()
-    {
-        return (array)$this->metadataUtils->ucFirst(
-            $this->getFieldsSubfields(
-                [
-                    [self::GET_NORMAL, '600', ['v' => 1]],
-                    [self::GET_NORMAL, '610', ['v' => 1]],
-                    [self::GET_NORMAL, '611', ['v' => 1]],
-                    [self::GET_NORMAL, '630', ['v' => 1]],
-                    [self::GET_NORMAL, '648', ['v' => 1]],
-                    [self::GET_NORMAL, '650', ['v' => 1]],
-                    [self::GET_NORMAL, '651', ['v' => 1]],
-                    [self::GET_NORMAL, '655', ['a' => 1]],
-                    [self::GET_NORMAL, '655', ['v' => 1]]
-                ],
-                false,
-                true,
-                true
-            )
-        );
-    }
-
-    /**
-     * Get geographic facet fields
-     *
-     * @return array Topics
-     */
-    protected function getGeographicFacets()
-    {
-        return $this->getFieldsSubfields(
-            [
-                [self::GET_NORMAL, '600', ['z' => 1]],
-                [self::GET_NORMAL, '610', ['z' => 1]],
-                [self::GET_NORMAL, '611', ['z' => 1]],
-                [self::GET_NORMAL, '630', ['z' => 1]],
-                [self::GET_NORMAL, '648', ['z' => 1]],
-                [self::GET_NORMAL, '650', ['z' => 1]],
-                [self::GET_NORMAL, '651', ['a' => 1]],
-                [self::GET_NORMAL, '651', ['z' => 1]],
-                [self::GET_NORMAL, '655', ['z' => 1]]
-            ],
-            false,
-            true,
-            true
-        );
-    }
-
-    /**
-     * Get era facet fields
-     *
-     * @return array Topics
-     */
-    protected function getEraFacets()
-    {
-        return $this->getFieldsSubfields(
-            [
-                [self::GET_NORMAL, '630', ['y' => 1]],
-                [self::GET_NORMAL, '648', ['a' => 1]],
-                [self::GET_NORMAL, '648', ['y' => 1]],
-                [self::GET_NORMAL, '650', ['y' => 1]],
-                [self::GET_NORMAL, '651', ['y' => 1]],
-                [self::GET_NORMAL, '655', ['y' => 1]]
-            ],
-            false,
-            true,
-            true
-        );
-    }
-
-    /**
-     * Get all language codes
-     *
-     * @return array Language codes
-     */
-    protected function getLanguages()
-    {
-        $languages = [substr($this->getField('008'), 35, 3)];
-        $languages2 = $this->getFieldsSubfields(
-            [
-                [self::GET_NORMAL, '041', ['a' => 1]],
-                [self::GET_NORMAL, '041', ['d' => 1]],
-                [self::GET_NORMAL, '041', ['h' => 1]],
-                [self::GET_NORMAL, '041', ['j' => 1]]
-            ],
-            false,
-            true,
-            true
-        );
-        $result = array_merge($languages, $languages2);
-        return $this->metadataUtils->normalizeLanguageStrings($result);
-    }
-
-    /**
-     * Normalize relator codes
-     *
-     * @param array $relators Relators
-     *
-     * @return array
-     */
-    protected function normalizeRelators($relators)
-    {
-        return array_map(
-            [$this->metadataUtils, 'normalizeRelator'],
-            $relators
-        );
-    }
-
-    /**
-     * Get authors by relator codes
-     *
-     * @param array $fieldSpecs        Fields to retrieve
-     * @param array $relators          Allowed relators
-     * @param array $noRelatorRequired Field that is accepted if it doesn't have a
-     *                                 relator
-     * @param bool  $altScript         Whether to return also alternate scripts
-     *                                 relator
-     * @param bool  $invertMatch       Return authors that DON'T HAVE an allowed
-     *                                 relator
-     *
-     * @return array Array keyed by 'names' for author names, 'fuller' for fuller
-     * forms and 'relators' for relator codes
-     */
-    protected function getAuthorsByRelator(
-        $fieldSpecs,
-        $relators,
-        $noRelatorRequired,
-        $altScript = true,
-        $invertMatch = false
-    ) {
-        $result = [
-            'names' => [], 'fuller' => [], 'relators' => [],
-            'ids' => [], 'idRoles' => []
-        ];
-        foreach ($fieldSpecs as $tag => $subfieldList) {
-            foreach ($this->getFields($tag) as $field) {
-                $fieldRelators = $this->normalizeRelators(
-                    $this->getSubfieldsArray($field, ['4' => 1, 'e' => 1])
-                );
-
-                $match = empty($relators);
-                if (!$match) {
-                    $match = empty($fieldRelators)
-                        && in_array($tag, $noRelatorRequired);
-                }
-                if (!$match) {
-                    $match = !empty(array_intersect($relators, $fieldRelators));
-                    if ($invertMatch) {
-                        $match = !$match;
-                    }
-                }
-                if (!$match) {
-                    continue;
-                }
-
-                $terms = $this->getSubfields($field, $subfieldList);
-                if ($altScript
-                    && isset($this->fields['880'])
-                    && $sub6 = $this->getSubfield($field, '6')
-                ) {
-                    $terms .= ' ' . implode(
-                        ' ',
-                        $this->getAlternateScriptSubfields(
-                            $tag,
-                            $sub6,
-                            $subfieldList
-                        )
-                    );
-                }
-                $result['names'][] = $this->metadataUtils->stripTrailingPunctuation(
-                    trim($terms)
-                );
-
-                $fuller = ($tag == '100' || $tag == '700')
-                    ? $this->getSubfields($field, ['q' => 1]) : '';
-                if ($fuller) {
-                    $result['fuller'][] = $this->metadataUtils
-                        ->stripTrailingPunctuation(trim($fuller));
-                }
-
-                if ($fieldRelators) {
-                    $result['relators'][] = reset($fieldRelators);
-                } else {
-                    $result['relators'][] = '-';
-                }
-                if ($authId = $this->getSubField($field, '0')) {
-                    $result['ids'][] = $authId;
-                    if ($role = $this->getSubField($field, 'e')) {
-                        $result['idRoles'][]
-                            = $this->formatAuthorIdWithRole(
-                                $authId,
-                                $this->metadataUtils
-                                    ->stripTrailingPunctuation($role, '. ')
-                            );
-                    }
-                }
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Get primary authors
-     *
-     * @return array
-     */
-    protected function getPrimaryAuthors()
-    {
-        $fieldSpecs = [
-            '100' => ['a' => 1, 'b' => 1, 'c' => 1, 'd' => 1],
-            '700' => [
-                'a' => 1, 'q' => 1, 'b' => 1, 'c' => 1, 'd' => 1
-            ]
-        ];
-        return $this->getAuthorsByRelator(
-            $fieldSpecs,
-            $this->primaryAuthorRelators,
-            ['100']
-        );
-    }
-
-    /**
-     * Get secondary authors
-     *
-     * @return array
-     */
-    protected function getSecondaryAuthors()
-    {
-        $fieldSpecs = [
-            '100' => ['a' => 1, 'b' => 1, 'c' => 1, 'd' => 1],
-            '700' => [
-                'a' => 1, 'q' => 1, 'b' => 1, 'c' => 1, 'd' => 1
-            ]
-        ];
-        return $this->getAuthorsByRelator(
-            $fieldSpecs,
-            $this->primaryAuthorRelators,
-            ['700'],
-            true,
-            true
-        );
-    }
-
-    /**
-     * Get corporate authors
-     *
-     * @return array
-     */
-    protected function getCorporateAuthors()
-    {
-        $fieldSpecs = [
-            '110' => ['a' => 1, 'b' => 1],
-            '111' => ['a' => 1, 'b' => 1],
-            '710' => ['a' => 1, 'b' => 1],
-            '711' => ['a' => 1, 'b' => 1]
-        ];
-        return $this->getAuthorsByRelator(
-            $fieldSpecs,
-            [],
-            ['110', '111', '710', '711']
-        );
     }
 
     /**
@@ -2761,20 +1503,20 @@ class Marc extends AbstractRecord
     public function getWorkIdentificationData()
     {
         $authorFields = [
-            '100' => ['a' => 1, 'b' => 1],
-            '110' => ['a' => 1, 'b' => 1],
-            '111' => ['a' => 1, 'c' => 1],
-            '700' => ['a' => 1, 'b' => 1],
-            '710' => ['a' => 1, 'b' => 1],
-            '711' => ['a' => 1, 'c' => 1]
+            '100' => ['a', 'b'],
+            '110' => ['a', 'b'],
+            '111' => ['a', 'c'],
+            '700' => ['a', 'b'],
+            '710' => ['a', 'b'],
+            '711' => ['a', 'c']
         ];
         $titleFields = [
-            '130' => ['n' => 1, 'p' => 1],
-            '730' => ['n' => 1, 'p' => 1],
-            '240' => ['n' => 1, 'p' => 1, 'm' => 1, 'r' => 1],
-            '245' => ['b' => 1, 'n' => 1],
-            '246' => ['b' => 1, 'n' => 1],
-            '247' => ['b' => 1, 'n' => 1],
+            '130' => ['n', 'p'],
+            '730' => ['n', 'p'],
+            '240' => ['n', 'p', 'm', 'r'],
+            '245' => ['b', 'n'],
+            '246' => ['b', 'n'],
+            '247' => ['b', 'n'],
         ];
 
         $authors = [];
@@ -2785,10 +1527,10 @@ class Marc extends AbstractRecord
         $analytical = [];
         foreach ($authorFields as $tag => $subfields) {
             $tag = (string)$tag;
-            foreach ($this->getFields($tag) as $field) {
+            foreach ($this->record->getFields($tag) as $field) {
                 // Check for analytical entries to be processed later:
                 if (in_array($tag, ['700', '710', '711'])
-                    && (int)$this->getIndicator($field, 2) === 2
+                    && (int)$this->record->getIndicator($field, 2) === 2
                 ) {
                     $analytical[$tag][] = $field;
                     continue;
@@ -2806,17 +1548,17 @@ class Marc extends AbstractRecord
                         'value' => $author
                     ];
 
-                    $sub6 = $this->getSubfield($field, '6');
-                    if ($sub6
-                        && $f880 = $this->getAlternateScriptField($tag, $sub6)
-                    ) {
-                        $author = $this->getSubfields($f880, $subfields);
-                        if ($author) {
-                            $authorsAltScript[] = [
-                                'type' => 'author',
-                                'value' => $author
-                            ];
-                        }
+                    $linkedAuthors = $this->record->getLinkedSubfieldsFrom880(
+                        $tag,
+                        $this->record->getSubfield($field, '6'),
+                        $subfields
+                    );
+
+                    foreach ($linkedAuthors as $altAuthor) {
+                        $authorsAltScript[] = [
+                            'type' => 'author',
+                            'value' => $altAuthor
+                        ];
                     }
                 }
             }
@@ -2824,7 +1566,11 @@ class Marc extends AbstractRecord
 
         foreach ($titleFields as $tag => $subfields) {
             $tag = (string)$tag;
-            $field = $this->getField($tag);
+            $field = $this->record->getField($tag);
+            if (!$field) {
+                continue;
+            }
+
             $title = '';
             $altTitles = [];
             switch ($tag) {
@@ -2838,35 +1584,38 @@ class Marc extends AbstractRecord
             default:
                 $nonFilingInd = 2;
             }
-            if ($field && !empty($field['s'])) {
-                $title = $this->getSubfield($field, 'a');
+
+            $title = $this->record->getSubfield($field, 'a');
+            if (null !== $nonFilingInd) {
+                $nonfiling = (int)$this->record->getIndicator($field, $nonFilingInd);
+                if ($nonfiling > 0) {
+                    $title = mb_substr($title, $nonfiling, null, 'UTF-8');
+                }
+            }
+            $rest = $this->getSubfields($field, $subfields);
+            if ($rest) {
+                $title .= " $rest";
+            }
+
+            $linkedFields = $this->record->getLinkedFieldsFrom880(
+                $tag,
+                $this->record->getSubfield($field, '6')
+            );
+            foreach ($linkedFields as $f880) {
+                $altTitle = $this->record->getSubfield($f880, 'a');
                 if (null !== $nonFilingInd) {
-                    $nonfiling = (int)$this->getIndicator($field, $nonFilingInd);
+                    $nonfiling
+                        = (int)$this->record->getIndicator($f880, $nonFilingInd);
                     if ($nonfiling > 0) {
-                        $title = substr($title, $nonfiling);
+                        $altTitle = mb_substr($altTitle, $nonfiling, null, 'UTF-8');
                     }
                 }
-                $rest = $this->getSubfields($field, $subfields);
+                $rest = $this->getSubfields($f880, $subfields);
                 if ($rest) {
-                    $title .= " $rest";
+                    $altTitle .= " $rest";
                 }
-                $sub6 = $this->getSubfield($field, '6');
-                if ($sub6 && $f880 = $this->getAlternateScriptField($tag, $sub6)
-                ) {
-                    $altTitle = $this->getSubfield($f880, 'a');
-                    if (null !== $nonFilingInd) {
-                        $nonfiling = (int)$this->getIndicator($f880, $nonFilingInd);
-                        if ($nonfiling > 0) {
-                            $altTitle = substr($altTitle, $nonfiling);
-                        }
-                    }
-                    $rest = $this->getSubfields($f880, $subfields);
-                    if ($rest) {
-                        $altTitle .= " $rest";
-                    }
-                    if ($altTitle) {
-                        $altTitles[] = $altTitle;
-                    }
+                if ($altTitle) {
+                    $altTitles[] = $altTitle;
                 }
             }
             $titleType = ('130' == $tag || '730' == $tag) ? 'uniform' : 'title';
@@ -2897,7 +1646,7 @@ class Marc extends AbstractRecord
             foreach ($fields as $field) {
                 $title = $this->getSubfields(
                     $field,
-                    ['t' => 1, 'n' => 1, 'p' => 1, 'm' => 1, 'r' => 1]
+                    ['t', 'n', 'p', 'm', 'r']
                 );
                 if (!$title) {
                     continue;
@@ -2905,14 +1654,15 @@ class Marc extends AbstractRecord
                 $author = $this->getSubfields($field, $authorFields[$tag]);
                 $altTitle = '';
                 $altAuthor = '';
-                $sub6 = $this->getSubfield($field, '6');
-                if ($sub6
-                    && $f880 = $this->getAlternateScriptField((string)$tag, $sub6)
-                ) {
-                    $altTitle = $this->getSubfield($f880, 'a');
+
+                $altTitleField = $this->record->getLinkedField('880', (string)$tag);
+                if ($altTitleField) {
+                    $altTitle = $this->record->getSubfield($altTitleField, 'a');
                     if ($altTitle) {
-                        $altAuthor
-                            = $this->getSubfields($field, $authorFields[$tag]);
+                        $altAuthor = $this->getSubfields(
+                            $altTitleField,
+                            $authorFields[$tag]
+                        );
                     }
                 }
 
@@ -2971,16 +1721,17 @@ class Marc extends AbstractRecord
             $useHome = $koha && $this->getDriverParam('kohaUseHomeBranch', false);
             $holdings = [];
             $availableBuildings = [];
-            foreach ($this->getFields('952') as $field952) {
+            foreach ($this->record->getFields('952') as $field952) {
                 $key = [];
                 $holding = [];
-                $branch = $this->getSubfield($field952, $useHome ? 'a' : 'b');
+                $branch
+                    = $this->record->getSubfield($field952, $useHome ? 'a' : 'b');
                 $key[] = $branch;
                 // Always use subfield 'b' for location regardless of where it came
                 // from
                 $holding[] = ['b' => $branch];
                 foreach (['c', 'h', 'o', '8'] as $code) {
-                    $value = $this->getSubfield($field952, $code);
+                    $value = $this->record->getSubfield($field952, $code);
                     $key[] = $value;
                     if ('' !== $value) {
                         $holding[] = [$code => $value];
@@ -2988,7 +1739,7 @@ class Marc extends AbstractRecord
                 }
 
                 if ($alma) {
-                    $available = $this->getSubfield($field952, '1') == 1;
+                    $available = $this->record->getSubfield($field952, '1') == 1;
                 } else {
                     // Availability
                     static $subfieldsExist = [
@@ -2999,13 +1750,14 @@ class Marc extends AbstractRecord
                     ];
                     $available = true;
                     foreach ($subfieldsExist as $code) {
-                        if ($this->getSubfield($field952, $code)) {
+                        if ($this->record->getSubfield($field952, $code)) {
                             $available = false;
                             break;
                         }
                     }
                     if ($available) {
-                        $status = $this->getSubfield($field952, '7'); // Not for loan
+                        // Not for loan?
+                        $status = $this->record->getSubfield($field952, '7');
                         $available = $status === '0' || $status === '1';
                     }
                 }
@@ -3017,24 +1769,21 @@ class Marc extends AbstractRecord
 
                 $holdings[$key] = $holding;
             }
-            $this->fields['952'] = [];
+            $this->record->deleteFields('952');
             foreach ($holdings as $key => $holding) {
                 if (isset($availableBuildings[$key])) {
                     $holding[] = ['9' => 1];
                 }
-                $this->fields['952'][] = [
-                    'i1' => ' ',
-                    'i2' => ' ',
-                    's' => $holding
-                ];
+                $this->record->addField('952', ' ', ' ', $holding);
             }
         }
 
         if ($koha) {
             // Verify that 001 exists
-            if ('' === $this->getField('001')) {
-                if ($id = $this->getFieldSubfields('999', ['c' => 1])) {
-                    $this->fields['001'] = [$id];
+            if ('' === $this->record->getControlField('001')) {
+                if ($id = $this->getFieldSubfields('999', ['c'])) {
+                    $this->record->deleteFields('001');
+                    $this->record->addField('001', '', '', $id);
                 }
             }
         }
@@ -3042,16 +1791,685 @@ class Marc extends AbstractRecord
         if ($alma) {
             // Add a prefixed id to field 090 to indicate that the record is from
             // Alma. Used at least with OpenURL.
-            $id = $this->getField('001');
-            $this->fields['090'][] = [
-                'i1' => ' ',
-                'i2' => ' ',
-                's' => [
-                    ['a' => "(Alma)$id"]
-                ]
-            ];
-            ksort($this->fields);
+            $id = $this->record->getControlField('001');
+            $this->record->addField('090', ' ', ' ', [['a' => "(Alma)$id"]]);
         }
+    }
+
+    /**
+     * Get all topic identifiers (for enrichment)
+     *
+     * @return array
+     */
+    public function getRawTopicIds(): array
+    {
+        return $this->record->getFieldsSubfields('650', ['0'], null);
+    }
+
+    /**
+     * Get all geographic topic identifiers (for enrichment)
+     *
+     * @return array
+     */
+    public function getRawGeographicTopicIds(): array
+    {
+        return $this->record->getFieldsSubfields('651', ['0'], null);
+    }
+
+    /**
+     * Get music identifiers (for enrichment)
+     *
+     * @return array
+     */
+    public function getMusicIds(): array
+    {
+        $leader = $this->record->getLeader();
+        if (substr($leader, 6, 1) !== 'j') {
+            return [];
+        }
+
+        $indToTypeMap = [
+            'x0' => 'isrc',
+            'x1' => 'upc',
+            'x2' => 'ismn',
+            'x3' => 'ian',
+        ];
+
+        $result = [];
+        foreach ($this->record->getFields('024') as $field024) {
+            $ind1 = $this->record->getIndicator($field024, 1);
+            if (in_array($ind1, ['0', '1', '2', '3', '7'])
+                && ($id = $this->record->getSubfield($field024, 'a'))
+            ) {
+                $type = $indToTypeMap["x$ind1"]
+                    ?? $this->record->getSubfield($field024, '2');
+                $result[] = compact('id', 'type');
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get publisher numbers (for enrichment)
+     *
+     * @return array
+     */
+    public function getPublisherNumbers(): array
+    {
+        $result = [];
+        foreach ($this->record->getFields('028') as $field028) {
+            $id = $this->record->getSubfield($field028, 'a');
+            $source = $this->record->getSubfield($field028, 'b');
+            $result[] = compact('id', 'source');
+        }
+        return $result;
+    }
+
+    /**
+     * Get short title
+     *
+     * @return string
+     */
+    public function getShortTitle(): string
+    {
+        return $this->getFieldSubfields('245', ['a']);
+    }
+
+    /**
+     * Get specified subfields
+     *
+     * @param array $field MARC Field
+     * @param array $codes Accepted subfield codes
+     *
+     * @return array Subfields
+     */
+    protected function getSubfieldsArray(array $field, array $codes): array
+    {
+        $data = [];
+        if (!is_array($field['subfields'] ?? null)) {
+            return $data;
+        }
+        foreach ($field['subfields'] as $subfield) {
+            if (in_array((string)$subfield['code'], $codes)) {
+                $data[] = $subfield['data'];
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * Get specified subfields
+     *
+     * @param array $field MARC Field
+     * @param array $codes Accepted subfield codes
+     *
+     * @return string Concatenated subfields (space-separated)
+     */
+    protected function getSubfields(array $field, array $codes): string
+    {
+        $data = $this->getSubfieldsArray($field, $codes);
+        return implode(' ', $data);
+    }
+
+    /**
+     * Get specified subfields from all occurrences of a field
+     *
+     * @param string  $tag                      Field to get
+     * @param array   $codes                    Accepted subfields (optional)
+     * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
+     *                                          from the results
+     *
+     * @return string Concatenated subfields (space-separated)
+     */
+    protected function getFieldSubfields(
+        string $tag,
+        array $codes = [],
+        bool $stripTrailingPunctuation = true
+    ): string {
+        $key = __METHOD__ . "$tag-" . implode(',', $codes) . '-'
+            . ($stripTrailingPunctuation ? '1' : '0');
+
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
+        }
+
+        $result = $this->record->getFieldsSubfields($tag, $codes);
+        $result = implode(' ', $result);
+        if ($result && $stripTrailingPunctuation) {
+            $result = $this->metadataUtils->stripTrailingPunctuation($result);
+        }
+
+        $this->resultCache[$key] = $result;
+        return $result;
+    }
+
+    /**
+     * Get first occurrence of the requested subfield
+     *
+     * @param string  $tag                      Field to get
+     * @param string  $code                     Subfield to get
+     * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
+     *                                          from the result
+     *
+     * @return string
+     */
+    protected function getFieldSubfield(
+        string $tag,
+        string $code,
+        bool $stripTrailingPunctuation = true
+    ) {
+        $key = __METHOD__ . "-$tag-$code-" . ($stripTrailingPunctuation ? '1' : '0');
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
+        }
+
+        $result = '';
+        foreach ($this->record->getFields($tag) as $field) {
+            if ($result = $this->record->getSubfield($field, $code)) {
+                if ($stripTrailingPunctuation) {
+                    $result
+                        = $this->metadataUtils->stripTrailingPunctuation($result);
+                }
+                break;
+            }
+        }
+        $this->resultCache[$key] = $result;
+        return $result;
+    }
+
+    /**
+     * Get all subfields of specified fields
+     *
+     * @param string $tag Field tag
+     *
+     * @return array
+     */
+    protected function getFieldsAllSubfields(string $tag): array
+    {
+        $data = [];
+        foreach ($this->record->getFields($tag) as $field) {
+            $fieldContents = $this->getAllSubfields($field);
+            if ($fieldContents) {
+                $data[] = $fieldContents;
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * Get subfields for the first found field according to the fieldspecs
+     *
+     * @param array $fieldspecs Fields to get
+     *
+     * @return string Concatenated subfields (space-separated)
+     */
+    protected function getFirstFieldSubfields(array $fieldspecs): string
+    {
+        $data = $this->getFieldsSubfields($fieldspecs, true);
+        if (!empty($data)) {
+            return $data[0];
+        }
+        return '';
+    }
+
+    /**
+     * Get all subfields of the given field
+     *
+     * @param array $field   Field
+     * @param array $exclude Subfields codes to be excluded (optional)
+     *
+     * @return array All subfields
+     */
+    protected function getAllSubfields(array $field, array $exclude = []): array
+    {
+        if (!$field) {
+            return [];
+        }
+
+        $subfields = [];
+        foreach ($field['subfields'] as $subfield) {
+            if (in_array($subfield['code'], $exclude)) {
+                continue;
+            }
+            $subfields[] = $subfield['data'];
+        }
+        return $subfields;
+    }
+
+    /**
+     * Get an array of all fields relevant to allfields search
+     *
+     * @return array
+     */
+    protected function getAllFields(): array
+    {
+        $excludedSubfields = [
+            '650' => ['0', '2', '6', '8'],
+            '773' => ['6', '7', '8', 'w'],
+            '856' => ['6', '8', 'q']
+        ];
+        $allFields = [];
+        foreach ($this->record->getAllFields() as $field) {
+            $tag = $field['tag'];
+            if (($tag >= 100 && $tag < 841) || $tag == 856 || $tag == 880) {
+                $subfields = $this->getAllSubfields(
+                    $field,
+                    $excludedSubfields[$tag] ?? ['0', '6', '8']
+                );
+                if ($subfields) {
+                    $allFields = array_merge($allFields, $subfields);
+                }
+            }
+        }
+        $allFields = array_map(
+            function ($str) {
+                return $this->metadataUtils->stripTrailingPunctuation(
+                    $this->metadataUtils->stripLeadingPunctuation($str)
+                );
+            },
+            $allFields
+        );
+        return array_values(array_unique($allFields));
+    }
+
+    /**
+     * Return an array of fields according to the fieldspecs.
+     *
+     * @param array   $fieldspecs               Fields to get
+     * @param boolean $firstOnly                Return only first matching field
+     * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
+     *                                          from the results
+     * @param boolean $splitSubfields           Whether to split subfields to
+     *                                          separate array items
+     *
+     * @return array Subfields
+     */
+    protected function getFieldsSubfields(
+        array $fieldspecs,
+        bool $firstOnly = false,
+        bool $stripTrailingPunctuation = true,
+        bool $splitSubfields = false
+    ): array {
+        $result = $this->record->getFieldsSubfieldsBySpecs(
+            $fieldspecs,
+            $firstOnly,
+            $splitSubfields
+        );
+        if ($result && $stripTrailingPunctuation) {
+            $result = array_map(
+                [$this->metadataUtils, 'stripTrailingPunctuation'],
+                $result
+            );
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get all non-specific topics
+     *
+     * @return array
+     */
+    protected function getTopics()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_BOTH, '600', [
+                    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'm',
+                    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'x', 'y', 'z'
+                ]],
+                [MarcHandler::GET_BOTH, '610', [
+                    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'k', 'l', 'm', 'n',
+                    'o', 'p', 'r', 's', 't', 'u', 'v', 'x', 'y', 'z'
+                ]],
+                [MarcHandler::GET_BOTH, '611', [
+                    'a', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'n', 'p',
+                    'q', 's', 't', 'u', 'v', 'x', 'y', 'z'
+                ]],
+                [MarcHandler::GET_BOTH, '630', [
+                    'a', 'd', 'e', 'f', 'g', 'h', 'k', 'l', 'm', 'n', 'o', 'p',
+                    'r', 's', 't', 'v', 'x', 'y', 'z'
+                ]],
+                [MarcHandler::GET_BOTH, '650', [
+                    'a', 'b', 'c', 'd', 'e', 'v', 'x', 'y', 'z'
+                ]]
+            ]
+        );
+    }
+
+    /**
+     * Get all genre topics
+     *
+     * @return array
+     */
+    protected function getGenres()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_BOTH, '655', ['a', 'b', 'c', 'v', 'x', 'y', 'z']]
+            ]
+        );
+    }
+
+    /**
+     * Get all geographic topics
+     *
+     * @return array
+     */
+    protected function getGeographicTopics()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_BOTH, '651', ['a', 'e', 'v', 'x', 'y', 'z']]
+            ]
+        );
+    }
+
+    /**
+     * Get all era topics
+     *
+     * @return array
+     */
+    protected function getEras()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_BOTH, '648', ['a', 'v', 'x', 'y', 'z']]
+            ]
+        );
+    }
+
+    /**
+     * Get topic facet fields
+     *
+     * @return array Topics
+     */
+    protected function getTopicFacets()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_NORMAL, '600', ['x']],
+                [MarcHandler::GET_NORMAL, '610', ['x']],
+                [MarcHandler::GET_NORMAL, '611', ['x']],
+                [MarcHandler::GET_NORMAL, '630', ['x']],
+                [MarcHandler::GET_NORMAL, '648', ['x']],
+                [MarcHandler::GET_NORMAL, '650', ['a']],
+                [MarcHandler::GET_NORMAL, '650', ['x']],
+                [MarcHandler::GET_NORMAL, '651', ['x']],
+                [MarcHandler::GET_NORMAL, '655', ['x']]
+            ],
+            false,
+            true,
+            true
+        );
+    }
+
+    /**
+     * Get genre facet fields
+     *
+     * @return array Topics
+     */
+    protected function getGenreFacets()
+    {
+        return (array)$this->metadataUtils->ucFirst(
+            $this->getFieldsSubfields(
+                [
+                    [MarcHandler::GET_NORMAL, '600', ['v']],
+                    [MarcHandler::GET_NORMAL, '610', ['v']],
+                    [MarcHandler::GET_NORMAL, '611', ['v']],
+                    [MarcHandler::GET_NORMAL, '630', ['v']],
+                    [MarcHandler::GET_NORMAL, '648', ['v']],
+                    [MarcHandler::GET_NORMAL, '650', ['v']],
+                    [MarcHandler::GET_NORMAL, '651', ['v']],
+                    [MarcHandler::GET_NORMAL, '655', ['a']],
+                    [MarcHandler::GET_NORMAL, '655', ['v']]
+                ],
+                false,
+                true,
+                true
+            )
+        );
+    }
+
+    /**
+     * Get geographic facet fields
+     *
+     * @return array Topics
+     */
+    protected function getGeographicFacets()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_NORMAL, '600', ['z']],
+                [MarcHandler::GET_NORMAL, '610', ['z']],
+                [MarcHandler::GET_NORMAL, '611', ['z']],
+                [MarcHandler::GET_NORMAL, '630', ['z']],
+                [MarcHandler::GET_NORMAL, '648', ['z']],
+                [MarcHandler::GET_NORMAL, '650', ['z']],
+                [MarcHandler::GET_NORMAL, '651', ['a']],
+                [MarcHandler::GET_NORMAL, '651', ['z']],
+                [MarcHandler::GET_NORMAL, '655', ['z']]
+            ],
+            false,
+            true,
+            true
+        );
+    }
+
+    /**
+     * Get era facet fields
+     *
+     * @return array Topics
+     */
+    protected function getEraFacets()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_NORMAL, '630', ['y']],
+                [MarcHandler::GET_NORMAL, '648', ['a']],
+                [MarcHandler::GET_NORMAL, '648', ['y']],
+                [MarcHandler::GET_NORMAL, '650', ['y']],
+                [MarcHandler::GET_NORMAL, '651', ['y']],
+                [MarcHandler::GET_NORMAL, '655', ['y']]
+            ],
+            false,
+            true,
+            true
+        );
+    }
+
+    /**
+     * Get all language codes
+     *
+     * @return array Language codes
+     */
+    protected function getLanguages()
+    {
+        $languages = [substr($this->record->getControlField('008'), 35, 3)];
+        $languages2 = $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_NORMAL, '041', ['a']],
+                [MarcHandler::GET_NORMAL, '041', ['d']],
+                [MarcHandler::GET_NORMAL, '041', ['h']],
+                [MarcHandler::GET_NORMAL, '041', ['j']]
+            ],
+            false,
+            true,
+            true
+        );
+        $result = array_merge($languages, $languages2);
+        return $this->metadataUtils->normalizeLanguageStrings($result);
+    }
+
+    /**
+     * Normalize relator codes
+     *
+     * @param array $relators Relators
+     *
+     * @return array
+     */
+    protected function normalizeRelators($relators)
+    {
+        return array_map(
+            [$this->metadataUtils, 'normalizeRelator'],
+            $relators
+        );
+    }
+
+    /**
+     * Get authors by relator codes
+     *
+     * @param array $fieldSpecs        Fields to retrieve
+     * @param array $relators          Allowed relators
+     * @param array $noRelatorRequired Field that is accepted if it doesn't have a
+     *                                 relator
+     * @param bool  $altScript         Whether to return also alternate scripts
+     *                                 relator
+     * @param bool  $invertMatch       Return authors that DON'T HAVE an allowed
+     *                                 relator
+     *
+     * @return array Array keyed by 'names' for author names, 'fuller' for fuller
+     * forms and 'relators' for relator codes
+     */
+    protected function getAuthorsByRelator(
+        $fieldSpecs,
+        $relators,
+        $noRelatorRequired,
+        $altScript = true,
+        $invertMatch = false
+    ) {
+        $result = [
+            'names' => [], 'fuller' => [], 'relators' => [],
+            'ids' => [], 'idRoles' => []
+        ];
+        foreach ($fieldSpecs as $tag => $subfieldList) {
+            foreach ($this->record->getFields($tag) as $field) {
+                $fieldRelators = $this->normalizeRelators(
+                    $this->getSubfieldsArray($field, ['4', 'e'])
+                );
+
+                $match = empty($relators);
+                if (!$match) {
+                    $match = empty($fieldRelators)
+                        && in_array($tag, $noRelatorRequired);
+                }
+                if (!$match) {
+                    $match = !empty(array_intersect($relators, $fieldRelators));
+                    if ($invertMatch) {
+                        $match = !$match;
+                    }
+                }
+                if (!$match) {
+                    continue;
+                }
+
+                $terms = $this->getSubfields($field, $subfieldList);
+
+                if ($altScript) {
+                    $linkedTerms = $this->record->getLinkedSubfieldsFrom880(
+                        $tag,
+                        $this->record->getSubfield($field, '6'),
+                        $subfieldList
+                    );
+
+                    if ($linkedTerms) {
+                        $terms .= ' ' . implode(' ', $linkedTerms);
+                    }
+                }
+                $result['names'][] = $this->metadataUtils->stripTrailingPunctuation(
+                    trim($terms)
+                );
+
+                $fuller = ($tag == '100' || $tag == '700')
+                    ? $this->record->getSubfields($field, 'q') : '';
+                if ($fuller) {
+                    $result['fuller'][] = $this->metadataUtils
+                        ->stripTrailingPunctuation(trim(implode(' ', $fuller)));
+                }
+
+                if ($fieldRelators) {
+                    $result['relators'][] = reset($fieldRelators);
+                } else {
+                    $result['relators'][] = '-';
+                }
+                if ($authId = $this->record->getSubfield($field, '0')) {
+                    $result['ids'][] = $authId;
+                    if ($role = $this->record->getSubfield($field, 'e')) {
+                        $result['idRoles'][]
+                            = $this->formatAuthorIdWithRole(
+                                $authId,
+                                $this->metadataUtils
+                                    ->stripTrailingPunctuation($role, '. ')
+                            );
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get primary authors
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthors()
+    {
+        $fieldSpecs = [
+            '100' => ['a', 'b', 'c', 'd'],
+            '700' => [
+                'a', 'q', 'b', 'c', 'd'
+            ]
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs,
+            $this->primaryAuthorRelators,
+            ['100']
+        );
+    }
+
+    /**
+     * Get secondary authors
+     *
+     * @return array
+     */
+    protected function getSecondaryAuthors()
+    {
+        $fieldSpecs = [
+            '100' => ['a', 'b', 'c', 'd'],
+            '700' => [
+                'a', 'b', 'c', 'd'
+            ]
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs,
+            $this->primaryAuthorRelators,
+            ['700'],
+            true,
+            true
+        );
+    }
+
+    /**
+     * Get corporate authors
+     *
+     * @return array
+     */
+    protected function getCorporateAuthors()
+    {
+        $fieldSpecs = [
+            '110' => ['a', 'b'],
+            '111' => ['a', 'b'],
+            '710' => ['a', 'b'],
+            '711' => ['a', 'b']
+        ];
+        return $this->getAuthorsByRelator(
+            $fieldSpecs,
+            [],
+            ['110', '111', '710', '711']
+        );
     }
 
     /**
@@ -3085,11 +2503,11 @@ class Marc extends AbstractRecord
     protected function getGeographicLocations()
     {
         $result = [];
-        foreach ($this->getFields('034') as $field) {
-            $westOrig = $this->getSubfield($field, 'd');
-            $eastOrig = $this->getSubfield($field, 'e');
-            $northOrig = $this->getSubfield($field, 'f');
-            $southOrig = $this->getSubfield($field, 'g');
+        foreach ($this->record->getFields('034') as $field) {
+            $westOrig = $this->record->getSubfield($field, 'd');
+            $eastOrig = $this->record->getSubfield($field, 'e');
+            $northOrig = $this->record->getSubfield($field, 'f');
+            $southOrig = $this->record->getSubfield($field, 'g');
             $west = $this->metadataUtils->coordinateToDecimal($westOrig);
             $east = $this->metadataUtils->coordinateToDecimal($eastOrig);
             $north = $this->metadataUtils->coordinateToDecimal($northOrig);
@@ -3150,7 +2568,7 @@ class Marc extends AbstractRecord
 
         $ctrlNums = $this->getFieldsSubfields(
             [
-                [self::GET_NORMAL, '035', ['a' => 1]]
+                [MarcHandler::GET_NORMAL, '035', ['a']]
             ]
         );
         foreach ($ctrlNums as $ctrlNum) {
@@ -3194,14 +2612,30 @@ class Marc extends AbstractRecord
     {
         return $this->getFieldsSubfields(
             [
-                [self::GET_BOTH, '440', ['a' => 1]],
-                [self::GET_BOTH, '490', ['a' => 1]],
-                [self::GET_BOTH, '800', [
-                    'a' => 1, 'b' => 1, 'c' => 1, 'd' => 1, 'f' => 1, 'p' => 1,
-                    'q' => 1, 't' => 1
+                [MarcHandler::GET_BOTH, '440', ['a']],
+                [MarcHandler::GET_BOTH, '490', ['a']],
+                [MarcHandler::GET_BOTH, '800', [
+                    'a', 'b', 'c', 'd', 'f', 'p', 'q', 't'
                 ]],
-                [self::GET_BOTH, '830', ['a' => 1, 'p' => 1]]
+                [MarcHandler::GET_BOTH, '830', ['a', 'p']]
             ]
         );
+    }
+
+    /**
+     * Serialize full record to a string
+     *
+     * @return string
+     */
+    protected function getFullRecord(): string
+    {
+        $format = $this->config['MarcRecord']['solr_serialization'] ?? 'JSON';
+        $result = $this->record->toFormat($format);
+        if (!$result && 'ISO2709' === $format) {
+            // If the record exceeds 99999 bytes, it doesn't fit into ISO 2709, so
+            // use MARCXML as a fallback:
+            $result = $this->record->toFormat('MARCXML');
+        }
+        return $result;
     }
 }

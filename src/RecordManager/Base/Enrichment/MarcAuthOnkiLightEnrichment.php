@@ -4,7 +4,7 @@
  *
  * PHP version 5
  *
- * Copyright (C) The National Library of Finland 2014-2020.
+ * Copyright (C) The National Library of Finland 2014-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -50,22 +50,20 @@ class MarcAuthOnkiLightEnrichment extends OnkiLightEnrichment
      */
     public function enrich($sourceId, $record, &$solrArray)
     {
-        if (!($record instanceof \RecordManager\Base\Record\Marc)) {
+        if (!($record instanceof \RecordManager\Base\Record\MarcAuthority)) {
             return;
         }
-        foreach ($record->getFields('374') as $recField) {
-            if ($id = $record->getSubfield($recField, '0')) {
-                $this->enrichField(
-                    $sourceId,
-                    $record,
-                    $solrArray,
-                    $id,
-                    'occupation_str_mv',
-                    '',
-                    '',
-                    true
-                );
-            }
+        foreach ($record->getOccupationIds() as $id) {
+            $this->enrichField(
+                $sourceId,
+                $record,
+                $solrArray,
+                $id,
+                'occupation_str_mv',
+                '',
+                '',
+                true
+            );
         }
     }
 }

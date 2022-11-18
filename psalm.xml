@@ -14,6 +14,7 @@
         <directory name="src" />
         <ignoreFiles>
             <file name="src/RecordManager/Base/Database/MongoDatabase.php" />
+            <directory name="vendor" />
         </ignoreFiles>
     </projectFiles>
 </psalm>
