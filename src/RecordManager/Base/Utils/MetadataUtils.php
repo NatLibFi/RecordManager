@@ -479,13 +479,19 @@ class MetadataUtils
     /**
      * Strip trailing spaces and punctuation characters from a string
      *
-     * @param string $str        String to strip
-     * @param string $additional Additional chars to strip
+     * @param string $str                     String to strip
+     * @param string $additional              Additional chars to strip
+     * @param bool   $preservePunctuationOnly Return the original string if it
+     *                                        contains only punctuation
      *
      * @return string
      */
-    public function stripTrailingPunctuation($str, $additional = '')
-    {
+    public function stripTrailingPunctuation(
+        string $str,
+        string $additional = '',
+        bool $preservePunctuationOnly = false
+    ): string {
+        $originalStr = $str;
         $basic = ' /:;,=([';
         if ($additional) {
             // Use preg_replace for multibyte support
@@ -525,27 +531,39 @@ class MetadataUtils
             $str = substr($str, 0, -1);
         }
 
+        if ($preservePunctuationOnly && '' === $str) {
+            return $originalStr;
+        }
         return $str;
     }
 
     /**
      * Strip leading spaces and punctuation characters from a string
      *
-     * @param string $str         String to strip
-     * @param string $punctuation String of punctuation characters
+     * @param string  $str                     String to strip
+     * @param ?string $punctuation             String of punctuation characters or
+     *                                         null for default
+     * @param bool    $preservePunctuationOnly Return the original string if it
+     *                                         contains only punctuation
      *
      * @return string
      */
     public function stripLeadingPunctuation(
-        $str,
-        $punctuation = " \t\\#*!¡?/:;.,=(['\"´`” ̈"
+        string $str,
+        ?string $punctuation = null,
+        bool $preservePunctuationOnly = true
     ) {
+        $punctuation = $punctuation ?? " \t\\#*!¡?/:;.,=(['\"´`” ̈";
         // Use preg_replace for multibyte support
-        return preg_replace(
+        $result = preg_replace(
             '/^[' . preg_quote($punctuation, '/') . ']*/u',
             '',
             $str
         );
+        if ($preservePunctuationOnly && '' === $result) {
+            return $str;
+        }
+        return $result;
     }
 
     /**

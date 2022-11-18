@@ -167,8 +167,7 @@ class Dc extends AbstractRecord
         );
         $data['author2'] = $this->getValues('contributor');
 
-        $data['title'] = $data['title_full'] = $this->metadataUtils
-            ->stripTrailingPunctuation(trim((string)$doc->title));
+        $data['title'] = $data['title_full'] = $this->getTitle();
         $titleParts = explode(' : ', $data['title'], 2);
         $data['title_short'] = $titleParts[0];
         if (isset($titleParts[1])) {
@@ -233,7 +232,7 @@ class Dc extends AbstractRecord
             $title = $this->metadataUtils->stripLeadingPunctuation($title);
             $title = mb_strtolower($title, 'UTF-8');
         }
-        $title = $this->metadataUtils->stripTrailingPunctuation($title);
+        $title = $this->metadataUtils->stripTrailingPunctuation($title, '', true);
         return $title;
     }
 

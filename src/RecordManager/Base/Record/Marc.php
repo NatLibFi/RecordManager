@@ -325,10 +325,7 @@ class Marc extends AbstractRecord
             ['b', 'n', 'p']
         );
         $data['title_short'] = $this->getShortTitle();
-        $data['title_full'] = $this->getFieldSubfields(
-            '245',
-            ['a', 'b', 'c', 'f', 'g', 'h', 'k', 'n', 'p', 's']
-        );
+        $data['title_full'] = $this->getFullTitle();
         $data['title_alt'] = $this->getAltTitles();
         $data['title_old'] = $this->getFieldsSubfields(
             [
@@ -754,6 +751,7 @@ class Marc extends AbstractRecord
         if ($forFiling) {
             $acceptSubfields[] = 'c';
         }
+        $fallbackTitle = '';
         foreach (['245', '240'] as $fieldCode) {
             $field = $this->record->getField($fieldCode);
             if ($field) {
@@ -779,13 +777,18 @@ class Marc extends AbstractRecord
                     $title = $this->metadataUtils->stripLeadingPunctuation($title);
                     $title = mb_strtolower($title, 'UTF-8');
                 }
-                $title = $this->metadataUtils->stripTrailingPunctuation($title);
-                if (!empty($title)) {
-                    return $title;
+                $cleanTitle
+                    = $this->metadataUtils->stripTrailingPunctuation($title);
+                if (!empty($cleanTitle)) {
+                    return $cleanTitle;
+                } elseif ('' === $fallbackTitle) {
+                    // Store a fallback title that we can return if as a last resort
+                    // in case it contains only punctuation:
+                    $fallbackTitle = $title;
                 }
             }
         }
-        return '';
+        return $fallbackTitle;
     }
 
     /**
@@ -821,7 +824,7 @@ class Marc extends AbstractRecord
      */
     public function getFullTitleForDebugging()
     {
-        return $this->getFieldSubfields('245');
+        return $this->getFullTitle();
     }
 
     /**
@@ -1873,7 +1876,27 @@ class Marc extends AbstractRecord
      */
     public function getShortTitle(): string
     {
-        return $this->getFieldSubfields('245', ['a']);
+        $title = $this->getFieldSubfields('245', ['a'], false);
+        // Try to clean up the title but return original if it only contains
+        // punctuation:
+        return $this->metadataUtils->stripTrailingPunctuation($title, '', true);
+    }
+
+    /**
+     * Get full title
+     *
+     * @return string
+     */
+    protected function getFullTitle(): string
+    {
+        $title = $this->getFieldSubfields(
+            '245',
+            ['a', 'b', 'c', 'f', 'g', 'h', 'k', 'n', 'p', 's'],
+            false
+        );
+        // Try to clean up the title but return original if it only contains
+        // punctuation:
+        return $this->metadataUtils->stripTrailingPunctuation($title, '', true);
     }
 
     /**
@@ -2065,7 +2088,7 @@ class Marc extends AbstractRecord
         $allFields = array_map(
             function ($str) {
                 return $this->metadataUtils->stripTrailingPunctuation(
-                    $this->metadataUtils->stripLeadingPunctuation($str)
+                    $this->metadataUtils->stripLeadingPunctuation($str, null, false)
                 );
             },
             $allFields

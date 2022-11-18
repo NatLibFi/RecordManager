@@ -106,6 +106,7 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
             '/ . foo.' => 'foo.',
             '© 1979' => '© 1979',
             '-foo' => '-foo',
+            '...' => '...',
         ];
         foreach ($values as $from => $to) {
             $this->assertEquals(
@@ -118,6 +119,11 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(
             'foo',
             $this->metadataUtils->stripLeadingPunctuation('foo', '.-')
+        );
+
+        $this->assertEquals(
+            'foo',
+            $this->metadataUtils->stripLeadingPunctuation('... foo', ' .-', false)
         );
     }
 
