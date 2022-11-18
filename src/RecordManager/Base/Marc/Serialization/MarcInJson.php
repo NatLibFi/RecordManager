@@ -92,66 +92,64 @@ class MarcInJson extends \VuFind\Marc\Serialization\MarcInJson
                     }
                 }
             }
-        } else {
-            if ($json['v'] == 2) {
-                // Legacy v2 format
-                foreach ($json['f'] as $code => $codeFields) {
-                    if (!is_array($codeFields)) {
-                        // 000
-                        $result['leader'] = $codeFields;
-                        continue;
-                    }
-                    foreach ($codeFields as $field) {
-                        if (is_array($field)) {
-                            $newField = [
-                                'ind1' => $field['i1'],
-                                'ind2' => $field['i2'],
-                                'subfields' => [],
-                            ];
-                            if (isset($field['s'])) {
-                                foreach ($field['s'] as $subfield) {
-                                    $newField['subfields'][] = [
-                                        $subfield['c'] => $subfield['v']
-                                    ];
-                                }
+        } elseif ($json['v'] == 2) {
+            // Legacy v2 format
+            foreach ($json['f'] as $code => $codeFields) {
+                if (!is_array($codeFields)) {
+                    // 000
+                    $result['leader'] = $codeFields;
+                    continue;
+                }
+                foreach ($codeFields as $field) {
+                    if (is_array($field)) {
+                        $newField = [
+                            'ind1' => $field['i1'],
+                            'ind2' => $field['i2'],
+                            'subfields' => [],
+                        ];
+                        if (isset($field['s'])) {
+                            foreach ($field['s'] as $subfield) {
+                                $newField['subfields'][] = [
+                                    $subfield['c'] => $subfield['v']
+                                ];
                             }
-                            $result['fields'][] = [$code => $newField];
-                        } else {
-                            $result['fields'][] = [$code => $field];
                         }
+                        $result['fields'][] = [$code => $newField];
+                    } else {
+                        $result['fields'][] = [$code => $field];
                     }
                 }
-            } elseif ($json['v'] == 3) {
-                // Legacy v3 format
-                foreach ($json['f'] as $code => $codeFields) {
-                    if ('000' === $code) {
-                        $result['leader'] = is_array($codeFields)
-                            ? reset($codeFields) : $codeFields;
-                        continue;
-                    }
-                    foreach ($codeFields as $field) {
-                        if (is_array($field)) {
-                            $newField = [
-                                'ind1' => $field['i1'],
-                                'ind2' => $field['i2'],
-                                'subfields' => [],
-                            ];
-                            if (isset($field['s'])) {
-                                foreach ($field['s'] as $subfield) {
-                                    $newField['subfields'][] = [
-                                        (string)key($subfield) => current($subfield)
-                                    ];
-                                }
-                            }
-                            $result['fields'][] = [$code => $newField];
-                        } else {
-                            $result['fields'][] = [$code => $field];
-                        }
-                    }
-                }
-            } else {
-                throw new \Exception("Unrecognized MARC JSON format: $marc");
             }
+        } elseif ($json['v'] == 3) {
+            // Legacy v3 format
+            foreach ($json['f'] as $code => $codeFields) {
+                if ('000' === $code) {
+                    $result['leader'] = is_array($codeFields)
+                        ? reset($codeFields) : $codeFields;
+                    continue;
+                }
+                foreach ($codeFields as $field) {
+                    if (is_array($field)) {
+                        $newField = [
+                            'ind1' => $field['i1'],
+                            'ind2' => $field['i2'],
+                            'subfields' => [],
+                        ];
+                        if (isset($field['s'])) {
+                            foreach ($field['s'] as $subfield) {
+                                $newField['subfields'][] = [
+                                    (string)key($subfield) => current($subfield)
+                                ];
+                            }
+                        }
+                        $result['fields'][] = [$code => $newField];
+                    } else {
+                        $result['fields'][] = [$code => $field];
+                    }
+                }
+            }
+        } else {
+            throw new \Exception("Unrecognized MARC JSON format: $marc");
         }
 
         return $result;
