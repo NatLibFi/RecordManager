@@ -513,7 +513,7 @@ class SierraApi extends AbstractBase
                         ];
                     }
                     $marc['fields'][] = [
-                        $marcTag => [
+                        (string)$marcTag => [
                             'ind1' => $varField['ind1'],
                             'ind2' => $varField['ind2'],
                             'subfields' => $subfields
@@ -521,7 +521,7 @@ class SierraApi extends AbstractBase
                     ];
                 }
             } else {
-                $marc['fields'][] = [$marcTag => $varField['content']];
+                $marc['fields'][] = [(string)$marcTag => $varField['content']];
             }
         }
 
