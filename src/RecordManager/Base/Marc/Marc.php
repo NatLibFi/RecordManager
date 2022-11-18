@@ -408,7 +408,8 @@ class Marc extends \VuFind\Marc\MarcReader
      * @param string $fieldTag     Field tag
      * @param int    $fieldIdx     Index of field (0-based)
      * @param string $subfieldCode Subfield code
-     * @param int    $subfieldIdx  Index of subfield (0-based) or null for
+     * @param ?int   $subfieldIdx  Index of subfield (0-based) or null to add a new
+     *                             subfield
      * @param string $newValue     New subfield content
      *
      * @throws \RuntimeException
@@ -418,7 +419,7 @@ class Marc extends \VuFind\Marc\MarcReader
         string $fieldTag,
         int $fieldIdx,
         string $subfieldCode,
-        int $subfieldIdx,
+        ?int $subfieldIdx,
         string $newValue
     ): void {
         $currentFieldIdx = -1;
@@ -427,6 +428,15 @@ class Marc extends \VuFind\Marc\MarcReader
             if ((string)key($field) === $fieldTag) {
                 ++$currentFieldIdx;
                 if ($currentFieldIdx === $fieldIdx) {
+                    if (null === $subfieldIdx) {
+                        // Add new subfield:
+                        $field[$fieldTag]['subfields'][] = [
+                            $subfieldCode => $newValue
+                        ];
+                        $this->resultCache = [];
+                        return;
+                    }
+                    // Find the subfield to update:
                     foreach ($field[$fieldTag]['subfields'] as &$subfield) {
                         if ((string)key($subfield) === $subfieldCode) {
                             ++$currentSubfieldIdx;
