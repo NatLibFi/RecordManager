@@ -44,7 +44,7 @@ jobs:
       - name: Cache php-cs-fixer data
         uses: actions/cache@v3
         with:
-          path: .php_cs.cache
+          path: .php_cs_cache
           key: "php-${{ matrix.php-version }}-php-cs-fixer-${{ github.sha }}"
           restore-keys: "php-${{ matrix.php-version }}-php-cs-fixer-"
 
