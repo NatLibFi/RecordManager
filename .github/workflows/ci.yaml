@@ -48,6 +48,13 @@ jobs:
           key: "php-${{ matrix.php-version }}-php-cs-fixer-${{ github.sha }}"
           restore-keys: "php-${{ matrix.php-version }}-php-cs-fixer-"
 
+      - name: Cache php-stan data
+        uses: actions/cache@v3
+        with:
+          path: .phpstan_cache
+          key: "php-${{ matrix.php-version }}-phpstan-${{ github.sha }}"
+          restore-keys: "php-${{ matrix.php-version }}-phpstan-"
+
       - name: Install composer dependencies
         run: composer install
 
