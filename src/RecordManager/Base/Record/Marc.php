@@ -819,7 +819,7 @@ class Marc extends AbstractRecord
      *
      * @return string
      */
-    public function getFullTitle()
+    public function getFullTitleForDebugging()
     {
         return $this->getFieldSubfields('245');
     }

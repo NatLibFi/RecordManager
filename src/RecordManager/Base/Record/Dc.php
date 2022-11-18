@@ -210,7 +210,7 @@ class Dc extends AbstractRecord
      *
      * @return string
      */
-    public function getFullTitle()
+    public function getFullTitleForDebugging()
     {
         return trim((string)$this->doc->title);
     }

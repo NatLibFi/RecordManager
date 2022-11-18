@@ -121,7 +121,7 @@ class Ese extends AbstractRecord
      *
      * @return string
      */
-    public function getFullTitle()
+    public function getFullTitleForDebugging()
     {
         return (string)$this->doc->title;
     }

@@ -329,7 +329,7 @@ abstract class AbstractRecord
      *
      * @return string
      */
-    public function getFullTitle()
+    public function getFullTitleForDebugging()
     {
         return '';
     }

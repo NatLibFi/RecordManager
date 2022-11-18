@@ -786,8 +786,8 @@ class DedupHandler implements DedupHandlerInterface
                     return '++ISBN match:' . PHP_EOL
                         . print_r($origISBNs, true) . PHP_EOL
                         . print_r($cISBNs, true) . PHP_EOL
-                        . $origRecord->getFullTitle()
-                        . $cRecord->getFullTitle();
+                        . $origRecord->getFullTitleForDebugging()
+                        . $cRecord->getFullTitleForDebugging();
                 }
             );
             return true;
@@ -804,8 +804,8 @@ class DedupHandler implements DedupHandlerInterface
                     return '++ID match:' . PHP_EOL
                         . print_r($origIDs, true) . PHP_EOL
                         . print_r($cIDs, true) . PHP_EOL
-                        . $origRecord->getFullTitle()
-                        . $cRecord->getFullTitle();
+                        . $origRecord->getFullTitleForDebugging()
+                        . $cRecord->getFullTitleForDebugging();
                 }
             );
             return true;
@@ -821,8 +821,8 @@ class DedupHandler implements DedupHandlerInterface
                     return '++ISSN match:' . PHP_EOL
                         . print_r($origISSNs, true) . PHP_EOL
                         . print_r($cISSNs, true) . PHP_EOL
-                        . $origRecord->getFullTitle()
-                        . $cRecord->getFullTitle();
+                        . $origRecord->getFullTitleForDebugging()
+                        . $cRecord->getFullTitleForDebugging();
                 }
             );
             return false;
@@ -920,9 +920,9 @@ class DedupHandler implements DedupHandlerInterface
             ) {
                 return "++Title match (distance: $lev, author distance: $authorLev):"
                     . PHP_EOL
-                    . $origRecord->getFullTitle() . PHP_EOL
+                    . $origRecord->getFullTitleForDebugging() . PHP_EOL
                     . "   $origAuthor - $origTitle." . PHP_EOL
-                    . $cRecord->getFullTitle() . PHP_EOL
+                    . $cRecord->getFullTitleForDebugging() . PHP_EOL
                     . "   $cAuthor - $cTitle.";
             }
         );
