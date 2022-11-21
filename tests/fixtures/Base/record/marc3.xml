@@ -1,0 +1,150 @@
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+<record>
+  <leader>01195cam a22004094i 4500</leader>
+  <controlfield tag="001">123</controlfield>
+  <controlfield tag="005">20160322194428.0</controlfield>
+  <controlfield tag="008">140327s2013    fi            000 0 fin d</controlfield>
+  <datafield tag="020" ind1=" " ind2=" ">
+    <subfield code="a">978-951-31-4836-2</subfield>
+    <subfield code="q">nidottu</subfield>
+  </datafield>
+  <datafield tag="024" ind1="7" ind2=" ">
+    <subfield code="a">2345</subfield>
+    <subfield code="2">FOO</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+    <subfield code="a">FCC005246184</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+    <subfield code="a">378890</subfield>
+  </datafield>
+  <datafield tag="035" ind1=" " ind2=" ">
+    <subfield code="a">401416</subfield>
+  </datafield>
+  <datafield tag="041" ind1="0" ind2=" ">
+    <subfield code="a">fin</subfield>
+  </datafield>
+  <datafield tag="050" ind1="0" ind2=" ">
+    <subfield code="a">QC861.2</subfield>
+    <subfield code="b">.B36</subfield>
+  </datafield>
+  <datafield tag="084" ind1=" " ind2=" ">
+    <subfield code="a">38.04</subfield>
+    <subfield code="2">ekl</subfield>
+  </datafield>
+  <datafield tag="084" ind1=" " ind2=" ">
+    <subfield code="a">38.03</subfield>
+    <subfield code="2">ekl</subfield>
+  </datafield>
+  <datafield tag="100" ind1="1" ind2=" ">
+    <subfield code="a">Hirsjärvi, Sirkka.</subfield>
+    <subfield code="0">(TEST)1</subfield>
+  </datafield>
+  <datafield tag="245" ind1="1" ind2="0">
+    <subfield code="a">Tutki ja kirjoita /</subfield>
+    <subfield code="c">Sirkka Hirsjärvi, Pirkko Remes, Paula Sajavaara.</subfield>
+  </datafield>
+  <datafield tag="250" ind1=" " ind2=" ">
+    <subfield code="a">17. uud. p.</subfield>
+  </datafield>
+  <datafield tag="264" ind1=" " ind2="1">
+    <subfield code="a">Helsinki :</subfield>
+    <subfield code="b">Tammi,</subfield>
+    <subfield code="c">2345 [2013?].</subfield>
+  </datafield>
+  <datafield tag="336" ind1=" " ind2=" ">
+    <subfield code="a">teksti</subfield>
+    <subfield code="b">txt</subfield>
+    <subfield code="2">rdacontent</subfield>
+  </datafield>
+  <datafield tag="337" ind1=" " ind2=" ">
+    <subfield code="a">käytettävissä ilman laitetta</subfield>
+    <subfield code="b">n</subfield>
+    <subfield code="2">rdamedia</subfield>
+  </datafield>
+  <datafield tag="338" ind1=" " ind2=" ">
+    <subfield code="a">nide</subfield>
+    <subfield code="b">nc</subfield>
+    <subfield code="2">rdacarrier</subfield>
+  </datafield>
+  <datafield tag="500" ind1=" " ind2=" ">
+    <subfield code="a">18. p. 2013</subfield>
+  </datafield>
+  <datafield tag="520" ind1=" " ind2=" ">
+    <subfield code="a">Summary field</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+    <subfield code="a">oppaat</subfield>
+    <subfield code="2">eks</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+    <subfield code="a">ft: kirjoittaminen</subfield>
+    <subfield code="2">eks</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+    <subfield code="a">apurahat</subfield>
+    <subfield code="2">eks</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+    <subfield code="a">tutkimusrahoitus</subfield>
+    <subfield code="2">eks</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+    <subfield code="a">tutkimuspolitiikka</subfield>
+    <subfield code="2">eks</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+    <subfield code="a">opinnäytteet</subfield>
+    <subfield code="2">eks</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+    <subfield code="a">tiedonhaku</subfield>
+    <subfield code="2">eks</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+    <subfield code="a">kielioppaat</subfield>
+    <subfield code="2">eks</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+    <subfield code="a">tutkimustyö</subfield>
+    <subfield code="2">eks</subfield>
+  </datafield>
+  <datafield tag="650" ind1=" " ind2="7">
+    <subfield code="a">tutkimus</subfield>
+    <subfield code="2">eks</subfield>
+  </datafield>
+  <datafield tag="700" ind1="1" ind2=" ">
+    <subfield code="a">Remes, Pirkko.</subfield>
+    <subfield code="0">(TEST)2</subfield>
+  </datafield>
+  <datafield tag="760" ind1="0" ind2=" ">
+    <subfield code="a">Main Series</subfield>
+    <subfield code="w">12</subfield>
+  </datafield>
+  <datafield tag="762" ind1="0" ind2=" ">
+    <subfield code="a">Subseries</subfield>
+  </datafield>
+  <datafield tag="762" ind1="0" ind2=" ">
+    <subfield code="a">Subseries ID</subfield>
+    <subfield code="w">123</subfield>
+  </datafield>
+  <datafield tag="762" ind1="0" ind2=" ">
+    <subfield code="a">Subseries 2 ID</subfield>
+    <subfield code="w">234</subfield>
+  </datafield>
+  <datafield tag="852" ind1="8" ind2=" ">
+    <subfield code="a">E</subfield>
+    <subfield code="b">150</subfield>
+    <subfield code="h">38 Hir</subfield>
+    <subfield code="z">18. p. 2013</subfield>
+    <subfield code="9">Test</subfield>
+  </datafield>
+  <datafield tag="852" ind1="8" ind2=" ">
+    <subfield code="a">E</subfield>
+    <subfield code="b">150</subfield>
+    <subfield code="h">38 Hir</subfield>
+    <subfield code="z">18. p. 2013</subfield>
+    <subfield code="9">Test</subfield>
+  </datafield>
+</record>
+</collection>

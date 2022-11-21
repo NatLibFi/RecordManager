@@ -1,0 +1,18 @@
+{
+	"leader": "00000ccm a22000004i 4500",
+	"fields": [{
+		"001": "291103"
+	}, {
+		"008": "000531q1967uuuufi ppz||||||||||||||fin||"
+	}, {
+		"245": {
+			"ind1": "1",
+			"ind2": "0",
+			"subfields": [{
+				"a": "Tuhat tarinaa ;"
+			}, {
+				"b": "Jos muistelet mua ; Rakasta, kärsi ja unhoita."
+			}]
+		}
+	}]
+}
