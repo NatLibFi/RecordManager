@@ -322,6 +322,85 @@ class MarcTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Test updating a subfield when there is an empty field
+     *
+     * @return void
+     */
+    public function testUpdateWithEmptyField(): void
+    {
+        $marc = new Marc($this->getFixture('record/marc_empty_field.json'));
+
+        foreach ($marc->getFields('762') as $fieldIdx => $marcfield) {
+            foreach ($marc->getSubfields($marcfield, 'w')
+                as $subfieldIdx => $marcsubfield
+            ) {
+                $targetId = 'foo.' . $marcsubfield;
+                $marc->updateFieldSubfield(
+                    '762',
+                    $fieldIdx,
+                    'w',
+                    $subfieldIdx,
+                    $targetId
+                );
+            }
+        }
+
+        $this->assertEquals(
+            [
+                [
+                    'tag' => '762',
+                    'i1' => '0',
+                    'i2' => ' ',
+                    'subfields' =>
+                    [
+                        [
+                            'code' => 'w',
+                            'data' => 'foo.1020471',
+                        ],
+                    ],
+                ],
+                [
+                    'tag' => '762',
+                    'i1' => '0',
+                    'i2' => ' ',
+                    'subfields' =>
+                    [
+                        [
+                            'code' => 'w',
+                            'data' => 'foo.1020472',
+                        ],
+                    ],
+                ],
+                [
+                    'tag' => '762',
+                    'i1' => '0',
+                    'i2' => ' ',
+                    'subfields' =>
+                    [
+                        [
+                            'code' => 'w',
+                            'data' => 'foo.1020473',
+                        ],
+                    ],
+                ],
+                [
+                    'tag' => '762',
+                    'i1' => '0',
+                    'i2' => ' ',
+                    'subfields' =>
+                    [
+                        [
+                            'code' => 'w',
+                            'data' => 'foo.1028245',
+                        ],
+                    ],
+                ],
+            ],
+            $marc->getFields('762')
+        );
+    }
+
+    /**
      * Test updating an invalid field
      *
      * @return void

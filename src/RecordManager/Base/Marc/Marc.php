@@ -416,6 +416,10 @@ class Marc extends \VuFind\Marc\MarcReader
         $currentFieldIdx = -1;
         $currentSubfieldIdx = -1;
         foreach ($this->data['fields'] as &$field) {
+            // Ignore fields without subfields
+            if (empty(current($field)['subfields'])) {
+                continue;
+            }
             if ((string)key($field) === $fieldTag) {
                 ++$currentFieldIdx;
                 if ($currentFieldIdx === $fieldIdx) {
