@@ -57,7 +57,7 @@ class File extends AbstractBase
     /**
      * XPath query handler
      *
-     * @var \DOMXpath
+     * @var \DOMXPath
      */
     protected $xpath;
 
@@ -107,7 +107,7 @@ class File extends AbstractBase
         } else {
             $this->xmlDoc = $data;
         }
-        $this->xpath = new \DOMXpath($this->xmlDoc);
+        $this->xpath = new \DOMXPath($this->xmlDoc);
         $this->recordNodes = $this->xpath->query($this->recordXPath);
         $this->recordCount = $this->recordNodes->length;
         $this->currentPos = 0;

@@ -1054,12 +1054,12 @@ class MetadataUtils
      * Load XML into DOM or SimpleXMLElement (if $dom is null)
      *
      * @param string       $xml     XML
-     * @param \DomDocument $dom     DOM
+     * @param \DOMDocument $dom     DOM
      * @param int          $options Additional libxml options (LIBXML_PARSEHUGE and
      *                              LIBXML_COMPACT are set by default)
      * @param string       $errors  Any errors encountered
      *
-     * @return \SimpleXMLElement|\DomDocument|bool
+     * @return \SimpleXMLElement|\DOMDocument|bool
      */
     public function loadXML(
         $xml,

@@ -1104,7 +1104,7 @@ class Lido extends AbstractRecord
      *
      * @param string|array $events Event type(s) allowed (null = all types)
      *
-     * @return \simpleXMLElement[] Array of event nodes
+     * @return \SimpleXMLElement[] Array of event nodes
      */
     protected function getEventNodes($events = null)
     {
@@ -1270,7 +1270,7 @@ class Lido extends AbstractRecord
     /**
      * Get resource sets
      *
-     * @return \simpleXMLElement[] Array of resourceSet nodes
+     * @return \SimpleXMLElement[] Array of resourceSet nodes
      */
     protected function getResourceSetNodes()
     {

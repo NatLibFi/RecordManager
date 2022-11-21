@@ -564,7 +564,7 @@ EOT;
      */
     protected function getParam($param)
     {
-        return $_REQUEST[$param] ?? '';
+        return (string)($_REQUEST[$param] ?? '');
     }
 
     /**

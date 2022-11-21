@@ -167,7 +167,7 @@ class Import extends AbstractBase
             if ($settings['oaiIDXPath']) {
                 $doc = new \DOMDocument();
                 $doc->loadXML($data);
-                $xpath = new \DOMXpath($doc);
+                $xpath = new \DOMXPath($doc);
                 $xNodes = $xpath->query($settings['oaiIDXPath']);
                 if ($xNodes->length == 0 || !$xNodes->item(0)->nodeValue) {
                     $this->logger->logFatal(
