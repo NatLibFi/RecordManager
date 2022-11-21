@@ -163,15 +163,17 @@ class Marc extends \VuFind\Marc\MarcReader
                             }
                         }
                     } else {
-                        $fieldContents = '';
-                        foreach ($field['subfields'] as $subfield) {
-                            if ($fieldContents) {
-                                $fieldContents .= ' ';
+                        $fieldContents = [];
+                        array_walk(
+                            $field['subfields'],
+                            function ($s) use (&$fieldContents) {
+                                $fieldContents[] = current($s);
                             }
-                            $fieldContents .= current($subfield);
-                        }
-                        if ($fieldContents) {
-                            $data[] = $fieldContents;
+                        );
+                        if ($splitSubfields) {
+                            $data = array_merge($data, $fieldContents);
+                        } else {
+                            $data[] = implode(' ', $fieldContents);
                         }
                     }
                 }
@@ -340,7 +342,7 @@ class Marc extends \VuFind\Marc\MarcReader
         $contents
     ): void {
         if (is_string($contents)) {
-            $this->data['fields'] = [$fieldTag => $contents];
+            $this->data['fields'][] = [$fieldTag => $contents];
         } else {
             $field = [
                 'ind1' => $ind1,
@@ -387,19 +389,8 @@ class Marc extends \VuFind\Marc\MarcReader
         string $subfieldCode,
         string $value
     ): void {
-        $currentFieldIdx = -1;
-        foreach ($this->data['fields'] as &$field) {
-            if ((string)key($field) === $fieldTag) {
-                ++$currentFieldIdx;
-                if ($currentFieldIdx === $fieldIdx) {
-                    $field['subfields'][] = [$subfieldCode => $value];
-                    $this->resultCache = [];
-                    return;
-                }
-            }
-        }
-        unset($field);
-        throw new \RuntimeException("Field {$fieldTag}[{$fieldIdx}] not found");
+        $this
+            ->updateFieldSubfield($fieldTag, $fieldIdx, $subfieldCode, null, $value);
     }
 
     /**
@@ -450,6 +441,10 @@ class Marc extends \VuFind\Marc\MarcReader
                         }
                     }
                     unset($subfield);
+                    throw new \RuntimeException(
+                        "Subfield {$fieldTag}[{$fieldIdx}]/"
+                        . "{$subfieldCode}[{$subfieldIdx}] not found"
+                    );
                 }
             }
         }
