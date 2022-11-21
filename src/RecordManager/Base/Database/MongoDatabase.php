@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2017-2021.
+ * Copyright (c) The National Library of Finland 2017-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -458,7 +458,7 @@ class MongoDatabase extends AbstractDatabase
 
         $this->getDb()->{$collectionName}->insertOne(
             ['_id' => $id],
-            ['_id' => $id]
+            ['writeConcern' => new \MongoDB\Driver\WriteConcern(0)]
         );
 
         return true;
