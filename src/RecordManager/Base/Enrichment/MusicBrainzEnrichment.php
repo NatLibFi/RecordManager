@@ -89,7 +89,8 @@ class MusicBrainzEnrichment extends AbstractEnrichment
                     . addcslashes($solrArray['title_short'], '"\\')
                     . '"';
             }
-            $mbIds = array_merge($mbIds, $this->getMBIDs($query));
+            $newIds = $this->getMBIDs($query);
+            $mbIds = [...$mbIds, ...$newIds];
         }
 
         $shortTitle = $record->getShortTitle();
@@ -110,7 +111,7 @@ class MusicBrainzEnrichment extends AbstractEnrichment
                 $newIds = $this->getMBIDs($query);
             }
             if ($newIds) {
-                $mbIds = array_merge($mbIds, $newIds);
+                $mbIds = [...$mbIds, ...$newIds];
             }
         }
         if ($mbIds) {
@@ -138,7 +139,7 @@ class MusicBrainzEnrichment extends AbstractEnrichment
      * @param string $query     Query
      * @param bool   $skipGroup Whether to skip checking release group
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getMBIDs($query, $skipGroup = false)
     {

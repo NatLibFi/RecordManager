@@ -207,12 +207,16 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
                     continue;
                 }
                 if ($solrField) {
-                    $solrArray[$solrField]
-                        = array_merge($solrArray[$solrField] ?? [], $values);
+                    $solrArray[$solrField] = [
+                        ...($solrArray[$solrField] ?? []),
+                        ...$values
+                    ];
                 }
                 if ($includeInAllfields) {
-                    $solrArray['allfields']
-                        = array_merge($solrArray['allfields'], $values);
+                    $solrArray['allfields'] = [
+                        ...($solrArray['allfields'] ?? []),
+                        ...$values
+                    ];
                 }
             }
             $wktLocationStr = $localData['geoLocation'] ?? '';
@@ -474,7 +478,7 @@ abstract class OnkiLightEnrichment extends AbstractEnrichment
      * @param array $values Values to filter
      * @param array $check  Values to check against (expected to be lowercase)
      *
-     * @return array Non-duplicates
+     * @return array<int, string> Non-duplicates
      */
     protected function filterDuplicates(array $values, array $check)
     {

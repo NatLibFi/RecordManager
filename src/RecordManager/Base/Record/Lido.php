@@ -117,7 +117,7 @@ class Lido extends AbstractRecord
      * @param Database $db Database connection. Omit to avoid database lookups for
      *                     related records.
      *
-     * @return array
+     * @return array<string, string|array<int, string>>
      */
     public function toSolrArray(Database $db = null)
     {
@@ -171,10 +171,10 @@ class Lido extends AbstractRecord
 
         $data['geographic'] = $data['geographic_facet'] = $this->getDisplayPlaces();
         // Index the other place forms only to facets:
-        $data['geographic_facet'] = array_merge(
-            $data['geographic_facet'],
-            $this->getSubjectPlaces()
-        );
+        $data['geographic_facet'] = [
+            ...$data['geographic_facet'],
+            ...$this->getSubjectPlaces()
+        ];
         $data['collection'] = $this->getCollection();
 
         $urls = $this->getURLs();
@@ -240,22 +240,22 @@ class Lido extends AbstractRecord
                             $placeNode->place
                         );
                         if ($mainPlace && !$subLocation) {
-                            $locations = array_merge(
-                                $locations,
-                                explode('/', $mainPlace)
-                            );
+                            $locations = [
+                                ...$locations,
+                                ...explode('/', $mainPlace)
+                            ];
                         } else {
                             $locations[] = "$mainPlace $subLocation";
                         }
                     } elseif (!empty($placeNode->displayPlace)) {
                         // Split multiple locations separated with a slash
-                        $locations = array_merge(
-                            $locations,
-                            preg_split(
+                        $locations = [
+                            ...$locations,
+                            ...preg_split(
                                 '/[\/;]/',
                                 (string)$placeNode->displayPlace
                             )
-                        );
+                        ];
                     }
                 }
             }
@@ -441,7 +441,7 @@ class Lido extends AbstractRecord
             foreach ($preferredParts as $lang => $parts) {
                 // Merge repeated parts in a single titleSet if configured:
                 if ($mergeValues && isset($alternateParts[$lang])) {
-                    $parts = array_merge($parts, $alternateParts[$lang]);
+                    $parts = [...$parts, ...$alternateParts[$lang]];
                     unset($alternateParts[$lang]);
                 }
                 if (!isset($preferredTitles[$lang])) {
@@ -502,9 +502,6 @@ class Lido extends AbstractRecord
         // name given here and the object type, recorded in the object / work
         // type element are often identical."
         $workType = $this->getObjectWorkType();
-        if (is_array($workType)) {
-            $workType = $workType[0];
-        }
         if (strcasecmp($workType, $preferred) == 0) {
             $descriptionWrapDescriptions = [];
             $nodes = $this->getObjectDescriptionSetNodes(
@@ -668,7 +665,7 @@ class Lido extends AbstractRecord
      *
      * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
      * #objectWorkTypeWrap
-     * @return string|array
+     * @return string
      */
     protected function getObjectWorkType()
     {
@@ -719,7 +716,7 @@ class Lido extends AbstractRecord
      * @param bool         $includeRoles Whether to include actor roles in the
      *                                   results
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getActors($event = null, $role = null, $includeRoles = false)
     {
@@ -755,7 +752,7 @@ class Lido extends AbstractRecord
      *
      * @param string|array $event Event type(s) allowed (null = all types)
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getEventDisplayPlaces($event = null)
     {
@@ -892,7 +889,7 @@ class Lido extends AbstractRecord
     /**
      * Return the subject display places
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getSubjectDisplayPlaces()
     {
@@ -918,7 +915,7 @@ class Lido extends AbstractRecord
     /**
      * Return the subject places
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getSubjectPlaces()
     {
@@ -986,7 +983,7 @@ class Lido extends AbstractRecord
      *
      * @param \SimpleXMLElement $xml The XML document
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getAllFields($xml)
     {
@@ -1007,7 +1004,7 @@ class Lido extends AbstractRecord
             }
             $s = $this->getAllFields($field);
             if ($s) {
-                $allFields = array_merge($allFields, $s);
+                $allFields = [...$allFields, ...$s];
             }
         }
         return $allFields;
@@ -1430,16 +1427,13 @@ class Lido extends AbstractRecord
     /**
      * Get Display places
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getDisplayPlaces(): array
     {
         $result = $this->getEventDisplayPlaces($this->getPlaceEvents());
         if ($places = $this->getSubjectDisplayPlaces()) {
-            $result = array_merge(
-                $result,
-                $places
-            );
+            $result = [...$result, ...$places];
         }
         return $result;
     }

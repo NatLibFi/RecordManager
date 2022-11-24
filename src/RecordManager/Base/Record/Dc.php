@@ -131,7 +131,7 @@ class Dc extends AbstractRecord
      * @param Database $db Database connection. Omit to avoid database lookups for
      *                     related records.
      *
-     * @return array
+     * @return array<string, string|array<int, string>>
      */
     public function toSolrArray(Database $db = null)
     {
@@ -328,7 +328,7 @@ class Dc extends AbstractRecord
      *
      * @param string $tag XML tag to get
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getValues($tag)
     {

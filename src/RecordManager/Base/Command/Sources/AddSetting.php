@@ -171,7 +171,7 @@ class AddSetting extends AbstractBase
                 if ($modifyCurrentSource) {
                     $modified[] = $setting;
                 }
-                $modified = array_merge($modified, $emptyLines);
+                $modified = [...$modified, ...$emptyLines];
                 $emptyLines = [];
 
                 $currentSource = substr($commentless, 1, -1);
@@ -184,7 +184,7 @@ class AddSetting extends AbstractBase
 
             // Skip rest if current source is not one to be modified:
             if (!$modifyCurrentSource) {
-                $modified = array_merge($modified, $emptyLines);
+                $modified = [...$modified, ...$emptyLines];
                 $emptyLines = [];
                 $modified[] = $line;
                 continue;
@@ -213,7 +213,7 @@ class AddSetting extends AbstractBase
                 }
             }
 
-            $modified = array_merge($modified, $emptyLines);
+            $modified = [...$modified, ...$emptyLines];
             $emptyLines = [];
             $modified[] = $line;
         }
@@ -223,7 +223,7 @@ class AddSetting extends AbstractBase
             $modified[] = $setting;
         }
         if ($emptyLines) {
-            $modified = array_merge($modified, $emptyLines);
+            $modified = [...$modified, ...$emptyLines];
         }
 
         if ($addSources) {

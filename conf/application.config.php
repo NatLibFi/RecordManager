@@ -7,7 +7,7 @@ if (file_exists(__DIR__ . '/modules.config.php')) {
     /**
      * @psalm-suppress MissingFile
      */
-    $modules = array_merge($modules, include __DIR__ . '/modules.config.php');
+    $modules = [...$modules, ...include __DIR__ . '/modules.config.php'];
 }
 
 return [

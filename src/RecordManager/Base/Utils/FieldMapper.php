@@ -174,7 +174,7 @@ class FieldMapper
                     foreach ($data[$field] as $value) {
                         $replacement = $this->mapValue($value, $mappingFile);
                         if (is_array($replacement)) {
-                            $newValues = array_merge($newValues, $replacement);
+                            $newValues = [...$newValues, ...$replacement];
                         } else {
                             $newValues[] = $replacement;
                         }
@@ -214,7 +214,7 @@ class FieldMapper
      * @param array $mappingFile Mapping file
      * @param int   $index       Mapping index for sub-entry mappings
      *
-     * @return mixed
+     * @return string|array<int, string>
      */
     protected function mapValue($value, $mappingFile, $index = 0)
     {
@@ -228,7 +228,7 @@ class FieldMapper
                     break;
                 }
                 if (is_array($v)) {
-                    $newValue = array_merge($newValue, $v);
+                    $newValue = [...$newValue, ...$v];
                 } else {
                     $newValue[] = $v;
                 }

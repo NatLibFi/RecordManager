@@ -193,7 +193,7 @@ class Marc extends AbstractRecord
      * @param Database $db Database connection. Omit to avoid database lookups for
      *                     related records.
      *
-     * @return array
+     * @return array<string, string|array<int, string>>
      */
     public function toSolrArray(Database $db = null)
     {
@@ -561,7 +561,7 @@ class Marc extends AbstractRecord
             ]
         );
         if ($cns) {
-            $results = array_merge($results, $cns);
+            $results = [...$results, ...$cns];
         }
 
         return $results;
@@ -1905,7 +1905,7 @@ class Marc extends AbstractRecord
      * @param array $field MARC Field
      * @param array $codes Accepted subfield codes
      *
-     * @return array Subfields
+     * @return array<int, string> Subfields
      */
     protected function getSubfieldsArray(array $field, array $codes): array
     {
@@ -2002,25 +2002,6 @@ class Marc extends AbstractRecord
     }
 
     /**
-     * Get all subfields of specified fields
-     *
-     * @param string $tag Field tag
-     *
-     * @return array
-     */
-    protected function getFieldsAllSubfields(string $tag): array
-    {
-        $data = [];
-        foreach ($this->record->getFields($tag) as $field) {
-            $fieldContents = $this->getAllSubfields($field);
-            if ($fieldContents) {
-                $data[] = $fieldContents;
-            }
-        }
-        return $data;
-    }
-
-    /**
      * Get subfields for the first found field according to the fieldspecs
      *
      * @param array $fieldspecs Fields to get
@@ -2042,7 +2023,7 @@ class Marc extends AbstractRecord
      * @param array $field   Field
      * @param array $exclude Subfields codes to be excluded (optional)
      *
-     * @return array All subfields
+     * @return array<int, string> All subfields
      */
     protected function getAllSubfields(array $field, array $exclude = []): array
     {
@@ -2081,7 +2062,7 @@ class Marc extends AbstractRecord
                     $excludedSubfields[$tag] ?? ['0', '6', '8']
                 );
                 if ($subfields) {
-                    $allFields = array_merge($allFields, $subfields);
+                    $allFields = [...$allFields, ...$subfields];
                 }
             }
         }
@@ -2106,7 +2087,7 @@ class Marc extends AbstractRecord
      * @param boolean $splitSubfields           Whether to split subfields to
      *                                          separate array items
      *
-     * @return array Subfields
+     * @return array<int, string> Subfields
      */
     protected function getFieldsSubfields(
         array $fieldspecs,
@@ -2132,7 +2113,7 @@ class Marc extends AbstractRecord
     /**
      * Get all non-specific topics
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getTopics()
     {
@@ -2164,7 +2145,7 @@ class Marc extends AbstractRecord
     /**
      * Get all genre topics
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getGenres()
     {
@@ -2178,7 +2159,7 @@ class Marc extends AbstractRecord
     /**
      * Get all geographic topics
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getGeographicTopics()
     {
@@ -2192,7 +2173,7 @@ class Marc extends AbstractRecord
     /**
      * Get all era topics
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getEras()
     {
@@ -2206,7 +2187,7 @@ class Marc extends AbstractRecord
     /**
      * Get topic facet fields
      *
-     * @return array Topics
+     * @return array<int, string> Topics
      */
     protected function getTopicFacets()
     {
@@ -2231,7 +2212,7 @@ class Marc extends AbstractRecord
     /**
      * Get genre facet fields
      *
-     * @return array Topics
+     * @return array<int, string> Topics
      */
     protected function getGenreFacets()
     {
@@ -2258,7 +2239,7 @@ class Marc extends AbstractRecord
     /**
      * Get geographic facet fields
      *
-     * @return array Topics
+     * @return array<int, string> Topics
      */
     protected function getGeographicFacets()
     {
@@ -2283,7 +2264,7 @@ class Marc extends AbstractRecord
     /**
      * Get era facet fields
      *
-     * @return array Topics
+     * @return array<int, string> Topics
      */
     protected function getEraFacets()
     {
@@ -2305,7 +2286,7 @@ class Marc extends AbstractRecord
     /**
      * Get all language codes
      *
-     * @return array Language codes
+     * @return array<int, string> Language codes
      */
     protected function getLanguages()
     {
@@ -2321,7 +2302,7 @@ class Marc extends AbstractRecord
             true,
             true
         );
-        $result = array_merge($languages, $languages2);
+        $result = [...$languages, ...$languages2];
         return $this->metadataUtils->normalizeLanguageStrings($result);
     }
 
@@ -2330,7 +2311,7 @@ class Marc extends AbstractRecord
      *
      * @param array $relators Relators
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function normalizeRelators($relators)
     {

@@ -62,7 +62,7 @@ class ForwardAuthority extends AbstractRecord
      * @param Database $db Database connection. Omit to avoid database lookups for
      *                     related records.
      *
-     * @return array
+     * @return array<string, string|array<int, string>>
      */
     public function toSolrArray(Database $db = null)
     {
@@ -127,7 +127,7 @@ class ForwardAuthority extends AbstractRecord
             $fields[] = (string)$doc->BiographicalNote;
         }
         $fields[] = $this->getHeading();
-        $fields = array_merge($fields, $this->getUseForHeadings());
+        $fields = [...$fields, ...$this->getUseForHeadings()];
 
         return $fields;
     }
@@ -320,7 +320,7 @@ class ForwardAuthority extends AbstractRecord
     /**
      * Get use for headings
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getUseForHeadings()
     {

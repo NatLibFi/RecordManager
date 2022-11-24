@@ -171,13 +171,15 @@ class Marc extends \VuFind\Marc\MarcReader
                             }
                         );
                         if ($splitSubfields) {
-                            $data = array_merge($data, $fieldContents);
+                            $data = [...$data, ...$fieldContents];
                         } else {
                             $data[] = implode(' ', $fieldContents);
                         }
                     }
                 }
                 if (($type == self::GET_ALT || $type == self::GET_BOTH)) {
+                    // phpcs:ignore
+                    /** @psalm-var list<string> */
                     $linkedFields = $this->getLinkedSubfieldsFrom880(
                         $tag,
                         $this->getInternalSubfield($field, '6'),
@@ -185,7 +187,7 @@ class Marc extends \VuFind\Marc\MarcReader
                         $splitSubfields ? null : ' '
                     );
                     if ($linkedFields) {
-                        $data = array_merge($data, $linkedFields);
+                        $data = [...$data, ...$linkedFields];
                     }
                 }
                 if ($firstOnly) {
@@ -250,12 +252,14 @@ class Marc extends \VuFind\Marc\MarcReader
         foreach ($this->getLinkedFields('880', $tag, $subfields) as $linkedField) {
             if ($link['occurrence'] === $linkedField['link']['occurrence']
             ) {
+                // phpcs:ignore
+                /** @psalm-var list<string> */
                 $contents = $this->getSubfields($linkedField);
 
                 if (null !== $separator) {
                     $result[] = implode($separator, $contents);
                 } else {
-                    $result = array_merge($result, $contents);
+                    $result = [...$result, ...$contents];
                 }
             }
         }

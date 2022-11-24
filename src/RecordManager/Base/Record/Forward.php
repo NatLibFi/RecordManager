@@ -142,7 +142,7 @@ class Forward extends AbstractRecord
      * @param Database $db Database connection. Omit to avoid database lookups for
      *                     related records.
      *
-     * @return array
+     * @return array<string, string|array<int, string>>
      */
     public function toSolrArray(Database $db = null)
     {
@@ -174,7 +174,7 @@ class Forward extends AbstractRecord
         if (empty($contents)) {
             $contents = $this->getContents();
         }
-        $descriptions = array_merge($descriptions, $contents);
+        $descriptions = [...$descriptions, ...$contents];
         $data['description'] = implode(' ', $descriptions);
 
         $data['topic'] = $data['topic_facet'] = $this->getSubjects();
@@ -250,7 +250,7 @@ class Forward extends AbstractRecord
      *
      * @param string $fields Fields to use (optional)
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getAllFields($fields = null)
     {
@@ -268,7 +268,7 @@ class Forward extends AbstractRecord
             }
             $subs = $this->getAllFields($field->children());
             if ($subs) {
-                $results = array_merge($results, $subs);
+                $results = [...$results, ...$subs];
             }
         }
         return $results;
@@ -367,8 +367,8 @@ class Forward extends AbstractRecord
             }
         }
         return [
-            'names' => array_merge($directors['names'], $others['names']),
-            'relators' => array_merge($directors['relators'], $others['relators']),
+            'names' => [...$directors['names'], ...$others['names']],
+            'relators' => [...$directors['relators'], ...$others['relators']],
         ];
     }
 
@@ -377,7 +377,7 @@ class Forward extends AbstractRecord
      *
      * @param string $language Optionally take only description in the given language
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getContents($language = null)
     {
@@ -400,7 +400,7 @@ class Forward extends AbstractRecord
      *
      * @param string $language Optionally take only description in the given language
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getDescriptions($language = null)
     {
@@ -489,7 +489,7 @@ class Forward extends AbstractRecord
     /**
      * Get all subjects
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getSubjects()
     {
