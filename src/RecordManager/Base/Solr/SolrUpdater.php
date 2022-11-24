@@ -1554,6 +1554,8 @@ class SolrUpdater
      * @param string $stateKey State key
      *
      * @return ?int
+     *
+     * @psalm-suppress UndefinedClass
      */
     public function getLastUpdateDate(string $stateKey)
     {
