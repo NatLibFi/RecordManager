@@ -43,7 +43,7 @@
 
   <!-- PHP CodeSniffer -->
   <target name="phpcs">
-    <exec command="${basedir}/vendor/bin/phpcs --standard=${basedir}/tests/phpcs.xml" escape="false" passthru="true" checkreturn="true" />
+    <exec command="${basedir}/vendor/bin/phpcs -s --standard=${basedir}/tests/phpcs.xml" escape="false" passthru="true" checkreturn="true" />
   </target>
 
   <!-- php-cs-fixer (first task applies fixes, second task simply checks if they are needed) -->
