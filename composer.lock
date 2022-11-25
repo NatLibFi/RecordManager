@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6f2ea2e16ace483c31a61aaf5b73d7c6",
+    "content-hash": "490a1f4277a97e3355289395b2bc3e61",
     "packages": [
         {
             "name": "brick/varexporter",
@@ -3119,16 +3119,16 @@
         },
         {
             "name": "vufind-org/vufind-marc",
-            "version": "v1.0.1",
+            "version": "v1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vufind-org/vufind-marc.git",
-                "reference": "d9e62b4bb496f7d22693ef8a32c6849b8352a0c4"
+                "reference": "21e2ba512b6ce4361c5100849eda24837c488ab3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vufind-org/vufind-marc/zipball/d9e62b4bb496f7d22693ef8a32c6849b8352a0c4",
-                "reference": "d9e62b4bb496f7d22693ef8a32c6849b8352a0c4",
+                "url": "https://api.github.com/repos/vufind-org/vufind-marc/zipball/21e2ba512b6ce4361c5100849eda24837c488ab3",
+                "reference": "21e2ba512b6ce4361c5100849eda24837c488ab3",
                 "shasum": ""
             },
             "require": {
@@ -3172,9 +3172,9 @@
             "homepage": "https://vufind.org/",
             "support": {
                 "issues": "https://vufind.org/jira",
-                "source": "https://github.com/vufind-org/vufind-marc/tree/v1.0.1"
+                "source": "https://github.com/vufind-org/vufind-marc/tree/v1.0.2"
             },
-            "time": "2022-11-18T12:02:24+00:00"
+            "time": "2022-11-25T06:43:38+00:00"
         },
         {
             "name": "vufind-org/vufindcode",

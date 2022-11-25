@@ -43,7 +43,7 @@
         "phayes/geophp": "1.2",
         "symfony/console": "5.4.5",
         "symfony/lock": "5.4.5",
-        "vufind-org/vufind-marc": "1.0.1",
+        "vufind-org/vufind-marc": "1.0.2",
         "wikimedia/composer-merge-plugin": "2.0.1"
     },
     "require-dev": {
