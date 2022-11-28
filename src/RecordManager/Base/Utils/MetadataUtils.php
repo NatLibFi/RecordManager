@@ -183,10 +183,10 @@ class MetadataUtils
 
         $this->eArticleFormats = $config['Solr']['earticle_formats'] ?? ['eArticle'];
 
-        $this->allArticleFormats = array_merge(
-            $this->articleFormats,
-            $this->eArticleFormats
-        );
+        $this->allArticleFormats = [
+            ...$this->articleFormats,
+            ...$this->eArticleFormats
+        ];
 
         $this->unicodeNormalizationForm
             = $config['Solr']['unicode_normalization_form'] ?? '';
@@ -500,6 +500,15 @@ class MetadataUtils
                 '',
                 $str
             );
+            if (null === $str) {
+                // Possibly invalid UTF-8, log and return:
+                $this->logger->logError(
+                    'stripLeadingPunctuation',
+                    "Failed to replace punctuation for '$originalStr': "
+                    . preg_last_error_msg()
+                );
+                return $originalStr;
+            }
         } else {
             $str = rtrim($str, $basic);
         }
@@ -560,6 +569,14 @@ class MetadataUtils
             '',
             $str
         );
+        if (null === $result) {
+            // Possibly invalid UTF-8, log and return:
+            $this->logger->logError(
+                'stripLeadingPunctuation',
+                "Failed to replace punctuation for '$str': " . preg_last_error_msg()
+            );
+            return $str;
+        }
         if ($preservePunctuationOnly && '' === $result) {
             return $str;
         }

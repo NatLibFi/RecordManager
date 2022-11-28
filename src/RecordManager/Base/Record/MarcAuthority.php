@@ -65,7 +65,7 @@ class MarcAuthority extends Marc
      * @param Database $db Database connection. Omit to avoid database lookups for
      *                     related records.
      *
-     * @return array
+     * @return array<string, string|array<int, string>>
      */
     public function toSolrArray(Database $db = null)
     {
@@ -103,16 +103,15 @@ class MarcAuthority extends Marc
     /**
      * Get fields of activity
      *
-     * @param array $additional List of additional fields to return
+     * @param array<int, string> $additional List of additional fields to return
      *
      * @return array
      */
     public function getAlternativeNames($additional = [])
     {
         $result = [];
-        foreach (array_merge(['400', '410', '500', '510'], $additional)
-            as $code
-        ) {
+        $defaultFields = ['400', '410', '500', '510'];
+        foreach ([...$defaultFields, ...$additional] as $code) {
             foreach ($this->record->getFields($code) as $field) {
                 if ($activity = $this->record->getSubfield($field, 'a')) {
                     $result[] = $activity;
@@ -157,10 +156,10 @@ class MarcAuthority extends Marc
     {
         $result = [];
         foreach ($this->record->getFields('372') as $field) {
-            $result = array_merge(
-                $result,
-                $this->getSubfieldsArray($field, ['a'])
-            );
+            $result = [
+                ...$result,
+                ...$this->getSubfieldsArray($field, ['a'])
+            ];
         }
         return $result;
     }
@@ -181,10 +180,10 @@ class MarcAuthority extends Marc
                     continue;
                 }
                 $fields = [$sub];
-                $fields = array_merge(
-                    $fields,
-                    $this->getSubfieldsArray($field, ['b'])
-                );
+                $fields = [
+                    ...$fields,
+                    ...$this->getSubfieldsArray($field, ['b'])
+                ];
                 return implode($this->nameDelimiter, $this->trimFields($fields));
             }
         }

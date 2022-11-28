@@ -116,7 +116,7 @@ class Ead3 extends Ead
      * @param Database $db Database connection. Omit to avoid database lookups for
      *                     related records.
      *
-     * @return array
+     * @return array<string, string|array<int, string>>
      */
     public function toSolrArray(Database $db = null)
     {
@@ -484,7 +484,7 @@ class Ead3 extends Ead
      *
      * @param \SimpleXMLElement $xml The XML document
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getAllFields($xml)
     {
@@ -496,7 +496,7 @@ class Ead3 extends Ead
             }
             $s = $this->getAllFields($field);
             if ($s) {
-                $allFields = array_merge($allFields, $s);
+                $allFields = [...$allFields, ...$s];
             }
         }
         return $allFields;

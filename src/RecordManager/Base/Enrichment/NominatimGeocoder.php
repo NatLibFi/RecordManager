@@ -288,10 +288,10 @@ class NominatimGeocoder extends AbstractEnrichment
                         if (!isset($solrArray[$this->solrField])) {
                             $solrArray[$this->solrField] = $wkts;
                         } else {
-                            $solrArray[$this->solrField] = array_merge(
-                                $solrArray[$this->solrField],
-                                $wkts
-                            );
+                            $solrArray[$this->solrField] = [
+                                ...$solrArray[$this->solrField],
+                                ...$wkts
+                            ];
                         }
                     }
                     // Set new center coordinates only if the field is in use and has

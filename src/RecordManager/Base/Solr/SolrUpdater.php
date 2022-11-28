@@ -601,7 +601,7 @@ class SolrUpdater
             : ['eJournal'];
 
         $this->allJournalFormats
-            = array_merge($this->journalFormats, $this->eJournalFormats);
+            = [...$this->journalFormats, ...$this->eJournalFormats];
 
         if (isset($config['Solr']['hierarchical_facets'])) {
             $this->hierarchicalFacets = $config['Solr']['hierarchical_facets'];
@@ -1971,10 +1971,10 @@ class SolrUpdater
         }
 
         if (!empty($this->warningsField)) {
-            $warnings = array_merge(
-                $warnings,
-                $metadataRecord->getProcessingWarnings()
-            );
+            $warnings = [
+                ...$warnings,
+                ...$metadataRecord->getProcessingWarnings()
+            ];
             if ($warnings) {
                 $data[$this->warningsField] = $warnings;
             }
@@ -2143,6 +2143,8 @@ class SolrUpdater
 
         if (!isset($data['allfields'])) {
             $all = [];
+            // phpcs:ignore
+            /** @psalm-var string|array<int, string> $field */
             foreach ($data as $key => $field) {
                 if (in_array(
                     $key,
@@ -2155,7 +2157,7 @@ class SolrUpdater
                     continue;
                 }
                 if (is_array($field)) {
-                    $all = array_merge($all, $field);
+                    $all = [...$all, ...$field];
                 } else {
                     $all[] = $field;
                 }
@@ -2345,6 +2347,8 @@ class SolrUpdater
             }
         );
 
+        // phpcs:ignore
+        /** @psalm-var list<string> $merged */
         $merged = [];
 
         foreach ($records as $record) {
@@ -2355,6 +2359,8 @@ class SolrUpdater
             } else {
                 $merged['local_ids_str_mv'][] = $add['id'];
             }
+            // phpcs:ignore
+            /** @psalm-var string|list<string> $value */
             foreach ($add as $key => $value) {
                 $authorSpecial = $key == 'author'
                     && isset($this->mergedFields['author=author2']);
@@ -2370,10 +2376,11 @@ class SolrUpdater
                     } elseif (!is_array($merged[$key])) {
                         $merged[$key] = [$merged[$key]];
                     }
-                    $values = is_array($value) ? $value : [$value];
-                    $merged[$key] = array_values(
-                        array_merge($merged[$key], $values)
-                    );
+                    if (is_array($value)) {
+                        $merged[$key] = [...$merged[$key], ...$value];
+                    } else {
+                        $merged[$key][] = (string)$value;
+                    }
                 } elseif (isset($this->singleFields[$key])
                     || ($authorSpecial && !isset($merged[$key]))
                 ) {
@@ -2381,12 +2388,8 @@ class SolrUpdater
                         $merged[$key] = $value;
                     }
                 } elseif ($key == 'allfields') {
-                    if (!isset($merged['allfields'])) {
-                        $merged['allfields'] = [];
-                    }
-                    $merged['allfields'] = array_values(
-                        array_merge($merged['allfields'], $add['allfields'])
-                    );
+                    $merged['allfields']
+                        = [...$merged['allfields'] ?? [], ...$add['allfields']];
                 }
             }
         }
@@ -2397,8 +2400,9 @@ class SolrUpdater
     /**
      * Copy configured fields from merged dedup record to the member records
      *
-     * @param array $merged  Merged record
-     * @param array $records Array of member records
+     * @param array<string, string|array<int, string>> $merged  Merged record
+     * @param array                                    $records Array of member
+     *                                                          records
      *
      * @return void
      */
@@ -2408,13 +2412,15 @@ class SolrUpdater
             if (empty($merged[$copyField])) {
                 continue;
             }
+            // phpcs:ignore
+            /** @psalm-var array<string, string|array<int, string>> $member */
             foreach ($records as &$member) {
                 $member['solr'][$copyField] = array_values(
                     array_unique(
-                        array_merge(
-                            (array)($member['solr'][$copyField] ?? []),
-                            (array)$merged[$copyField]
-                        )
+                        [
+                            ...(array)($member['solr'][$copyField] ?? []),
+                            ...(array)$merged[$copyField]
+                        ]
                     )
                 );
             }
@@ -2426,8 +2432,8 @@ class SolrUpdater
      *
      * This may add duplicate fields.
      *
-     * @param array $parent Parent record
-     * @param array $child  Child record array
+     * @param array<string, string|array<int, string>> $parent Parent record
+     * @param array<string, string|array<int, string>> $child  Child record array
      *
      * @return void
      */
@@ -2440,10 +2446,10 @@ class SolrUpdater
             if (empty($child[$copyField])) {
                 $child[$copyField] = (array)$parent[$copyField];
             } else {
-                $child[$copyField] = array_merge(
-                    (array)($child[$copyField] ?? []),
-                    (array)$parent[$copyField]
-                );
+                $child[$copyField] = [
+                    ...(array)($child[$copyField] ?? []),
+                    ...(array)$parent[$copyField]
+                ];
             }
         }
     }
@@ -2826,11 +2832,17 @@ class SolrUpdater
      */
     protected function enrich($source, $settings, $record, &$data, $stage = '')
     {
+        // phpcs:ignore
+        /** @psalm-var list<string> $globalEnrichments */
+        $globalEnrichments = (array)($this->config['Solr']['enrichment'] ?? []);
+        // phpcs:ignore
+        /** @psalm-var list<string> $dsEnrichments */
+        $dsEnrichments = (array)($settings['enrichments'] ?? []);
         $enrichments = array_unique(
-            array_merge(
-                (array)($this->config['Solr']['enrichment'] ?? []),
-                (array)($settings['enrichments'] ?? [])
-            )
+            [
+                ...$globalEnrichments,
+                ...$dsEnrichments
+            ]
         );
         foreach ($enrichments as $enrichmentSettings) {
             $parts = explode(',', $enrichmentSettings);

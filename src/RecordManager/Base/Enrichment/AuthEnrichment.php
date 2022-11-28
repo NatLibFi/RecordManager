@@ -96,15 +96,21 @@ abstract class AuthEnrichment extends AbstractEnrichment
     /**
      * Enrich the record and return any additions in solrArray
      *
-     * @param string         $sourceId           Source ID
-     * @param AbstractRecord $record             Metadata record
-     * @param array          $solrArray          Metadata to be sent to Solr
-     * @param string         $id                 Onki id
-     * @param string         $solrField          Target Solr field
-     * @param string         $solrCheckField     Solr field to check for existing
-     *                                           values
-     * @param bool           $includeInAllfields Whether to include the enriched
-     *                                           value also in allFields
+     * @param string                                   $sourceId     Source ID
+     * @param AbstractRecord                           $record       Metadata record
+     * @param array<string, string|array<int, string>> $solrArray    Metadata to be
+     *                                                               sent to Solr
+     * @param string                                   $id           Onki id
+     * @param string                                   $solrField    Target Solr
+     *                                                               field
+     * @param string                                   $solrCheckFld Solr field to
+     *                                                               check for
+     *                                                               existing values
+     * @param bool                                     $includeInAll Whether to
+     *                                                               include the
+     *                                                               enriched value
+     *                                                               also in
+     *                                                               allFields
      *
      * @return void
      */
@@ -114,8 +120,8 @@ abstract class AuthEnrichment extends AbstractEnrichment
         &$solrArray,
         $id,
         $solrField,
-        $solrCheckField = '',
-        $includeInAllfields = false
+        $solrCheckFld = '',
+        $includeInAll = false
     ) {
         if (!($data = $this->authorityDb->getRecord($id))) {
             return;
@@ -129,11 +135,15 @@ abstract class AuthEnrichment extends AbstractEnrichment
         );
 
         if ($altNames = $authRecord->getAlternativeNames()) {
-            $solrArray[$solrField]
-                = array_merge($solrArray[$solrField] ?? [], $altNames);
-            if ($includeInAllfields) {
-                $solrArray['allfields']
-                    = array_merge($solrArray['allfields'], $altNames);
+            $solrArray[$solrField] = [
+                ...(array)($solrArray[$solrField] ?? []),
+                ...$altNames
+            ];
+            if ($includeInAll) {
+                $solrArray['allfields'] = [
+                    ...(array)($solrArray['allfields'] ?? []),
+                    ...$altNames
+                ];
             }
         }
     }
