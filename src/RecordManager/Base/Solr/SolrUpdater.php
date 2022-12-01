@@ -1310,13 +1310,28 @@ class SolrUpdater
             'mergedComponents' => 0
         ];
 
+        $recordId = (string)$record['_id'];
         if ($record['deleted'] || ($record['suppressed'] ?? false)) {
-            $result['deleted'][] = (string)$record['_id'];
+            $result['deleted'][] = $recordId;
         } else {
             $mergedComponents = 0;
-            $data = $this->createSolrArray($record, $mergedComponents);
+            $this->log->writelnVerbose("Single record $recordId");
+            try {
+                $data = $this->createSolrArray($record, $mergedComponents);
+            } catch (\TypeError $e) {
+                $this->log->logFatal(
+                    'processSingleRecord',
+                    "Failed to create Solr array for $recordId: " . (string)$e
+                );
+                throw $e;
+            } catch (\Exception $e) {
+                $this->log->logFatal(
+                    'processSingleRecord',
+                    "Failed to create Solr array for $recordId: " . (string)$e
+                );
+                throw $e;
+            }
             if ($data !== false) {
-                $this->log->writelnVerbose("Single record {$record['_id']}");
                 $this->log->writelnVeryVerbose(
                     function () use ($data) {
                         return $this->prettyPrint($data, true);
@@ -1699,6 +1714,7 @@ class SolrUpdater
      * @param array $dedupRecord      Database dedup record
      *
      * @return array|false
+     * @throws \TypeError
      * @throws \Exception
      *
      * @psalm-suppress RedundantCondition
@@ -2974,7 +2990,7 @@ class SolrUpdater
      *
      * @return string
      */
-    protected function trimFieldLength($field, $value)
+    protected function trimFieldLength(string $field, string $value): string
     {
         if (empty($this->maxFieldLengths)) {
             return $value;
