@@ -190,22 +190,30 @@ abstract class AbstractEnrichment
      * @param string   $id           ID of the entity to fetch
      * @param string[] $headers      Optional headers to add to the request
      * @param array    $ignoreErrors Error codes to ignore
+     * @param bool     $useCache     Whether to use cache for the request
      *
      * @return string Metadata (typically XML)
      * @throws \Exception
      */
-    protected function getExternalData($url, $id, $headers = [], $ignoreErrors = [])
-    {
-        $cached = $this->db->findUriCache(
-            [
-                '_id' => $id,
-                'timestamp' => [
-                    '$gt' => $this->db->getTimestamp(time() - $this->maxCacheAge)
-                 ]
-            ]
-        );
-        if (null !== $cached) {
-            return $cached['data'];
+    protected function getExternalData(
+        $url,
+        $id,
+        $headers = [],
+        $ignoreErrors = [],
+        bool $useCache = true
+    ) {
+        if ($useCache) {
+            $cached = $this->db->findUriCache(
+                [
+                    '_id' => $id,
+                    'timestamp' => [
+                        '$gt' => $this->db->getTimestamp(time() - $this->maxCacheAge)
+                    ]
+                ]
+            );
+            if (null !== $cached) {
+                return $cached['data'];
+            }
         }
 
         $host = parse_url($url, PHP_URL_HOST);
@@ -303,15 +311,17 @@ abstract class AbstractEnrichment
 
         $data = $code < 300 ? $response->getBody() : '';
 
-        $this->db->saveUriCache(
-            [
-                '_id' => $id,
-                'timestamp' => $this->db->getTimestamp(),
-                'url' => $url,
-                'headers' => $headers,
-                'data' => $data
-            ]
-        );
+        if ($useCache) {
+            $this->db->saveUriCache(
+                [
+                    '_id' => $id,
+                    'timestamp' => $this->db->getTimestamp(),
+                    'url' => $url,
+                    'headers' => $headers,
+                    'data' => $data
+                ]
+            );
+        }
 
         return $data;
     }

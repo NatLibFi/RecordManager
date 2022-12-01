@@ -219,13 +219,33 @@ class Ead3 extends Ead
     }
 
     /**
+     * Get all topic identifiers (for enrichment)
+     *
+     * @return array
+     */
+    public function getRawTopicIds(): array
+    {
+        return $this->getTopicTermsFromNode('subject', true);
+    }
+
+    /**
+     * Get all geographic topic identifiers (for enrichment)
+     *
+     * @return array
+     */
+    public function getRawGeographicTopicIds(): array
+    {
+        return [];
+    }
+
+    /**
      * Get topic identifiers.
      *
      * @return array
      */
-    public function getTopicIDs()
+    protected function getTopicIDs(): array
     {
-        return $this->getTopicTermsFromNode('subject', true);
+        return $this->getRawTopicIds();
     }
 
     /**

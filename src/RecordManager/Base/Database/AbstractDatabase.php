@@ -81,6 +81,13 @@ abstract class AbstractDatabase implements DatabaseInterface
     protected $ontologyEnrichmentCollection = 'ontologyEnrichment';
 
     /**
+     * Linked data enrichment collection name
+     *
+     * @var string
+     */
+    protected $linkedDataEnrichmentCollection = 'ldEnrichment';
+
+    /**
      * Log message collection name
      *
      * @var string

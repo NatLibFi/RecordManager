@@ -324,14 +324,23 @@ interface DatabaseInterface
     public function saveUriCache($record);
 
     /**
-     * Find a single ontology enrichment record
+     * Find a single linked data enrichment record
      *
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
      * @return array|null
      */
-    public function findOntologyEnrichment($filter, $options = []);
+    public function findLinkedDataEnrichment($filter, $options = []);
+
+    /**
+     * Save a linked data enrichment record
+     *
+     * @param array $record Linked data enrichment record
+     *
+     * @return array Saved record (with a new _id if it didn't have one)
+     */
+    public function saveLinkedDataEnrichment($record);
 
     /**
      * Save a log message

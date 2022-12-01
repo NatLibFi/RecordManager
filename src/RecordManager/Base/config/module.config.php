@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2021.
+ * Copyright (C) The National Library of Finland 2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -62,34 +62,43 @@ return [
                     \RecordManager\Base\Command\Sources\RemoveSetting::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
                     \RecordManager\Base\Command\Sources\Search::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
                     \RecordManager\Base\Command\Sources\ShowConfig::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
+                    \RecordManager\Base\Command\Util\ImportRdf::class => \RecordManager\Base\Command\AbstractBaseFactory::class,
                 ],
             ],
             'enrichment' => [
                 'factories' => [
                     \RecordManager\Base\Enrichment\AuthEnrichment::class => \RecordManager\Base\Enrichment\AuthEnrichmentFactory::class,
-                    \RecordManager\Base\Enrichment\EadOnkiLightEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
-                    \RecordManager\Base\Enrichment\Ead3OnkiLightEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
-                    \RecordManager\Base\Enrichment\LidoOnkiLightEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
-                    \RecordManager\Base\Enrichment\LrmiOnkiLightEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\EadSkosmosEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\Ead3SkosmosEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\LidoSkosmosEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\LrmiSkosmosEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
                     \RecordManager\Base\Enrichment\MarcAuthEnrichment::class => \RecordManager\Base\Enrichment\AuthEnrichmentFactory::class,
-                    \RecordManager\Base\Enrichment\MarcAuthOnkiLightEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
-                    \RecordManager\Base\Enrichment\MarcOnkiLightEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\MarcAuthSkosmosEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\MarcSkosmosEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
                     \RecordManager\Base\Enrichment\MusicBrainzEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
                     \RecordManager\Base\Enrichment\NominatimGeocoder::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
-                    \RecordManager\Base\Enrichment\OnkiLightEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
+                    \RecordManager\Base\Enrichment\SkosmosEnrichment::class => \RecordManager\Base\Enrichment\AbstractEnrichmentFactory::class,
                 ],
                 'aliases' => [
                     'AuthEnrichment' => \RecordManager\Base\Enrichment\AuthEnrichment::class,
-                    'EadOnkiLightEnrichment' => \RecordManager\Base\Enrichment\EadOnkiLightEnrichment::class,
-                    'Ead3OnkiLightEnrichment' => \RecordManager\Base\Enrichment\Ead3OnkiLightEnrichment::class,
-                    'LidoOnkiLightEnrichment' => \RecordManager\Base\Enrichment\LidoOnkiLightEnrichment::class,
-                    'LrmiOnkiLightEnrichment' => \RecordManager\Base\Enrichment\LrmiOnkiLightEnrichment::class,
+                    'EadSkosmosEnrichment' => \RecordManager\Base\Enrichment\EadSkosmosEnrichment::class,
+                    'Ead3SkosmosEnrichment' => \RecordManager\Base\Enrichment\Ead3SkosmosEnrichment::class,
+                    'LidoSkosmosEnrichment' => \RecordManager\Base\Enrichment\LidoSkosmosEnrichment::class,
+                    'LrmiSkosmosEnrichment' => \RecordManager\Base\Enrichment\LrmiSkosmosEnrichment::class,
                     'MarcAuthEnrichment' => \RecordManager\Base\Enrichment\MarcAuthEnrichment::class,
-                    'MarcAuthOnkiLightEnrichment' => \RecordManager\Base\Enrichment\MarcAuthOnkiLightEnrichment::class,
-                    'MarcOnkiLightEnrichment' => \RecordManager\Base\Enrichment\MarcOnkiLightEnrichment::class,
+                    'MarcAuthSkosmosEnrichment' => \RecordManager\Base\Enrichment\MarcAuthSkosmosEnrichment::class,
+                    'MarcSkosmosEnrichment' => \RecordManager\Base\Enrichment\MarcSkosmosEnrichment::class,
                     'MusicBrainzEnrichment' => \RecordManager\Base\Enrichment\MusicBrainzEnrichment::class,
                     'NominatimGeocoder' => \RecordManager\Base\Enrichment\NominatimGeocoder::class,
-                    'OnkiLightEnrichment' => \RecordManager\Base\Enrichment\OnkiLightEnrichment::class,
+                    'SkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+
+                    'EadOnkiLightEnrichment' => 'EadSkosmosEnrichment',
+                    'Ead3OnkiLightEnrichment' => 'Ead3SkosmosEnrichment',
+                    'LidoOnkiLightEnrichment' => 'LidoSkosmosEnrichment',
+                    'LrmiOnkiLightEnrichment' => 'LrmiSkosmosEnrichment',
+                    'MarcAuthOnkiLightEnrichment' => 'MarcAuthSkosmosEnrichment',
+                    'MarcOnkiLightEnrichment' => 'MarcSkosmosEnrichment',
+                    'OnkiLightEnrichment' => 'SkosmosEnrichment',
                 ],
             ],
             'harvest' => [
