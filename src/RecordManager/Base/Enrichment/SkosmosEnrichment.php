@@ -408,7 +408,7 @@ class SkosmosEnrichment extends AbstractEnrichment
      * @param \ML\JsonLD\Node $node Node
      * @param string          $prop Property
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getSkosPropertyValues(
         \ML\JsonLD\Node $node,
@@ -431,7 +431,7 @@ class SkosmosEnrichment extends AbstractEnrichment
             },
             is_array($vals) ? $vals : [$vals]
         );
-        return array_filter($result);
+        return array_values(array_filter($result));
     }
 
     /**
