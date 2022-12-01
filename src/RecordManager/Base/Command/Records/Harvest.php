@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2021.
+ * Copyright (C) The National Library of Finland 2011-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -176,10 +176,16 @@ class Harvest extends AbstractBase
         if (in_array('*', $includedSources)) {
             $includedSources = [];
         }
+        $exclude = $input->getOption('exclude');
+        $excludedSources = !empty($exclude) ? explode(',', $exclude) : [];
+        $sourceList = array_diff(
+            $includedSources ?: array_keys($this->dataSourceConfig),
+            $excludedSources
+        );
+
         $harvestFromDate = $input->getOption('from');
         $harvestUntilDate = $input->getOption('until');
         $startPosition = $input->getOption('start-position');
-        $exclude = $input->getOption('exclude');
         $reharvest = $input->getOption('reharvest');
         // Default is false, so null means reharvest with no value:
         if (null === $reharvest) {
@@ -201,17 +207,24 @@ class Harvest extends AbstractBase
             );
         }
 
-        $excludedSources = isset($exclude) ? explode(',', $exclude) : [];
-
         $returnCode = Command::SUCCESS;
 
         // Loop through all the sources and perform harvests
-        foreach ($this->dataSourceConfig as $source => $settings) {
+        foreach ($sourceList as $source) {
+            $settings = $this->dataSourceConfig[$source] ?? [];
             try {
-                if (empty($source) || empty($settings) || !isset($settings['url'])
-                    || ($includedSources && !in_array($source, $includedSources))
-                    || in_array($source, $excludedSources)
-                ) {
+                if (empty($settings)) {
+                    $this->logger->logWarning(
+                        'harvest',
+                        "[$source] Skipped; no configuration found"
+                    );
+                    continue;
+                }
+                if (empty($settings['url'])) {
+                    $this->logger->logWarning(
+                        'harvest',
+                        "[$source] Skipped; no url in configuration"
+                    );
                     continue;
                 }
                 $this->logger->logInfo(
