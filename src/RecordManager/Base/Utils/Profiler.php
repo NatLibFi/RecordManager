@@ -109,6 +109,6 @@ class Profiler
         }
         file_put_contents("$dir/$runId.$suffix.xhprof", serialize($data));
         $url = $this->baseUrl . "?run=$runId&source=$suffix";
-        echo "\nProfiler output: $url\n";
+        echo "\nProfiler output for " . getmypid() . ": $url\n";
     }
 }
