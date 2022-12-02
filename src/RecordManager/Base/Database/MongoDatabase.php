@@ -525,6 +525,7 @@ class MongoDatabase extends AbstractDatabase
      */
     public function saveLinkedDataEnrichment($record)
     {
+        $record['timestamp'] = $this->getTimestamp();
         try {
             return $this->saveMongoRecord(
                 $this->linkedDataEnrichmentCollection,

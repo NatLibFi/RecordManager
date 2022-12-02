@@ -63,6 +63,7 @@ CREATE TABLE `uriCache` (
 
 CREATE TABLE `ldEnrichment` (
   `_id` varchar(255) NOT NULL PRIMARY KEY,
+  `timestamp` datetime NOT NULL,
   `data` LONGTEXT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
