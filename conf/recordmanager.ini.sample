@@ -131,6 +131,7 @@ unicode_normalization_form = NFKC
 ; Enrichments used with all data sources
 ;enrichment[] = NominatimGeocoder
 ;enrichment[] = MusicBrainzEnrichment
+;enrichment[] = SkosmosEnrichment
 ; Whether to add work identification keys from analytical entries (MARC 7xx fields).
 ; Default is false.
 ;work_keys_from_analytical_entries = true
@@ -287,8 +288,10 @@ dewey-ones = dewey_ones.map
 search[] = '([^\s]+ st)\.'
 replace[] = '\1 street'
 
-[OnkiLightEnrichment]
-; Service base URL
+; Skosmos enrichment settings
+[SkosmosEnrichment]
+; Service base URL or "database" to only use local records imported with
+; e.g. util:import-rdf
 ;base_url = "http://api.somewhere/rest/v1"
 ; URL prefixes to process
 ;url_prefix_allowed_list[] = "http://somewhere/"
@@ -299,6 +302,9 @@ replace[] = '\1 street'
 ; Solr field that contains centroids for the locations. Set to empty if no suitable
 ; field is available. The field should be a LatLonPointSpatialField.
 ;solr_center_field = center_coords_mv
+; Allowed languages in enriched data. Default is to allow everything.
+;languages[] = "en"
+;languages[] = "fi"
 
 [MusicBrainzEnrichment]
 ; Note that you need to add the following line to any data source in datasources.ini

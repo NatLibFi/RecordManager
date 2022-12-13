@@ -61,13 +61,10 @@ CREATE TABLE `uriCache` (
   `data` longtext NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `ontologyEnrichment` (
+CREATE TABLE `ldEnrichment` (
   `_id` varchar(255) NOT NULL PRIMARY KEY,
-  `type` varchar(255) NOT NULL,
-  `prefLabels` MEDIUMTEXT NULL,
-  `altLabels` MEDIUMTEXT NULL,
-  `hiddenLabels` MEDIUMTEXT NULL,
-  `geoLocation` MEDIUMTEXT NULL
+  `timestamp` datetime NOT NULL,
+  `data` LONGTEXT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `logMessage` (

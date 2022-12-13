@@ -1,6 +1,6 @@
 <?php
 /**
- * LidoOnkiLightEnrichment Class
+ * LidoSkosmosEnrichment Class
  *
  * PHP version 7
  *
@@ -28,9 +28,9 @@
 namespace RecordManager\Base\Enrichment;
 
 /**
- * LidoOnkiLightEnrichment Class
+ * LidoSkosmosEnrichment Class
  *
- * This is a class for enrichment of LIDO records from an ONKI Light source.
+ * This is a class for enrichment of LIDO records from a Skosmos instance.
  *
  * @category DataManagement
  * @package  RecordManager
@@ -38,7 +38,7 @@ namespace RecordManager\Base\Enrichment;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class LidoOnkiLightEnrichment extends OnkiLightEnrichment
+class LidoSkosmosEnrichment extends SkosmosEnrichment
 {
     /**
      * Enrich the record and return any additions in solrArray
@@ -54,16 +54,6 @@ class LidoOnkiLightEnrichment extends OnkiLightEnrichment
         if (!($record instanceof \RecordManager\Base\Record\Lido)) {
             return;
         }
-        foreach ($record->getTopicIDs() as $id) {
-            $this->enrichField(
-                $sourceId,
-                $record,
-                $solrArray,
-                $id,
-                'topic_add_txt_mv',
-                'topic_alt_txt_mv',
-                'topic'
-            );
-        }
+        parent::enrich($sourceId, $record, $solrArray);
     }
 }

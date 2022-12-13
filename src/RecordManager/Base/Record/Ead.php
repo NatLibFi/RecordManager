@@ -301,13 +301,23 @@ class Ead extends AbstractRecord
     }
 
     /**
-     * Get topic identifiers.
+     * Get all topic identifiers (for enrichment)
      *
      * @return array
      */
-    public function getTopicIDs()
+    public function getRawTopicIds(): array
     {
         return $this->getTopicTerms(true);
+    }
+
+    /**
+     * Get all geographic topic identifiers (for enrichment)
+     *
+     * @return array
+     */
+    public function getRawGeographicTopicIds(): array
+    {
+        return [];
     }
 
     /**
@@ -335,6 +345,16 @@ class Ead extends AbstractRecord
     protected function getTopics()
     {
         return $this->getTopicTerms(false);
+    }
+
+    /**
+     * Get topic identifiers.
+     *
+     * @return array
+     */
+    protected function getTopicIDs(): array
+    {
+        return $this->getRawTopicIds();
     }
 
     /**

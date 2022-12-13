@@ -483,20 +483,46 @@ class PDODatabase extends AbstractDatabase
     }
 
     /**
-     * Find a single ontology enrichment record
+     * Find a single linked data enrichment record
      *
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
      * @return array|null
      */
-    public function findOntologyEnrichment($filter, $options = [])
+    public function findLinkedDataEnrichment($filter, $options = [])
     {
         return $this->findPDORecord(
-            $this->ontologyEnrichmentCollection,
+            $this->linkedDataEnrichmentCollection,
             $filter,
             $options
         );
+    }
+
+    /**
+     * Save a linked data enrichment record
+     *
+     * @param array $record Linked data enrichment record
+     *
+     * @return array Saved record (with a new _id if it didn't have one)
+     */
+    public function saveLinkedDataEnrichment($record)
+    {
+        $record['timestamp'] = $this->getTimestamp();
+        try {
+            return $this->savePDORecord(
+                $this->linkedDataEnrichmentCollection,
+                $record
+            );
+        } catch (\PDOException $e) {
+            // Since this can be done by multiple workers simultaneously, we might
+            // encounter duplicate inserts at the same time, so ignore duplicate key
+            // errors.
+            if (($e->errorInfo[1] ?? 0) == 1062) {
+                return $record;
+            }
+            throw $e;
+        }
     }
 
     /**

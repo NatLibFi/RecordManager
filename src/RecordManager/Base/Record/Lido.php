@@ -368,6 +368,26 @@ class Lido extends AbstractRecord
     }
 
     /**
+     * Get all topic identifiers (for enrichment)
+     *
+     * @return array
+     */
+    public function getRawTopicIds(): array
+    {
+        return $this->getTopicIDs();
+    }
+
+    /**
+     * Get all geographic topic identifiers (for enrichment)
+     *
+     * @return array
+     */
+    public function getRawGeographicTopicIds(): array
+    {
+        return [];
+    }
+
+    /**
      * Return subject identifiers associated with object.
      *
      * @param string[] $exclude List of subject types to exclude (defaults to
@@ -378,7 +398,7 @@ class Lido extends AbstractRecord
      * #subjectComplexType
      * @return array
      */
-    public function getTopicIDs($exclude = ['iconclass'])
+    protected function getTopicIDs($exclude = ['iconclass']): array
     {
         $result = [];
         foreach ($this->getSubjectNodes($exclude) as $subject) {

@@ -500,20 +500,46 @@ class MongoDatabase extends AbstractDatabase
     }
 
     /**
-     * Find a single ontology enrichment record
+     * Find a single linked data enrichment record
      *
      * @param array $filter  Search filter
      * @param array $options Options such as sorting
      *
      * @return array|null
      */
-    public function findOntologyEnrichment($filter, $options = [])
+    public function findLinkedDataEnrichment($filter, $options = [])
     {
         return $this->findMongoRecord(
-            $this->ontologyEnrichmentCollection,
+            $this->linkedDataEnrichmentCollection,
             $filter,
             $options
         );
+    }
+
+    /**
+     * Save a linked data enrichment record
+     *
+     * @param array $record URI cache record
+     *
+     * @return array Saved record (with a new _id if it didn't have one)
+     */
+    public function saveLinkedDataEnrichment($record)
+    {
+        $record['timestamp'] = $this->getTimestamp();
+        try {
+            return $this->saveMongoRecord(
+                $this->linkedDataEnrichmentCollection,
+                $record
+            );
+        } catch (\Exception $e) {
+            // Since this can be done by multiple workers simultaneously, we might
+            // encounter duplicate inserts at the same time, so ignore duplicate key
+            // errors.
+            if (strncmp($e->getMessage(), 'E11000 ', 7) === 0) {
+                return $record;
+            }
+            throw $e;
+        }
     }
 
     /**

@@ -176,20 +176,27 @@ class Lrmi extends Qdc
      */
     public function getTopics()
     {
-        return array_map(
-            function ($topic) {
-                return $topic['value'];
-            },
-            $this->getTopicsExtended()
-        );
+        return $this->getTopicData(false);
     }
 
     /**
-     * Get topics with value and id.
+     * Get all topic identifiers (for enrichment)
      *
      * @return array
      */
-    public function getTopicsExtended()
+    public function getRawTopicIds(): array
+    {
+        return $this->getTopicData(true);
+    }
+
+    /**
+     * Get topics with value or id.
+     *
+     * @param bool $ids Whether to return identifiers instead of values
+     *
+     * @return array
+     */
+    protected function getTopicData(bool $ids)
     {
         $result = [];
         foreach ($this->doc->about as $about) {
@@ -197,18 +204,15 @@ class Lrmi extends Qdc
                 continue;
             }
             $subject = $about->thing;
-            $value = (string)$subject->name;
-            $id = (string)($subject->identifier ?? '');
+            if (!$ids) {
+                $result[] = (string)$subject->name;
+            } else {
+                $id = (string)($subject->identifier ?? '');
 
-            if (!preg_match('/(http|https):\/\/(.*)/', $id, $matches)) {
-                $id = null;
+                if (preg_match('/(http|https):\/\/(.+)/', $id, $matches)) {
+                    $result[] = 'http://' . $matches[2];
+                }
             }
-
-            if ($id && isset($matches[2])) {
-                $id = 'http://' . $matches[2];
-            }
-
-            $result[] = compact('value', 'id');
         }
         return $result;
     }
