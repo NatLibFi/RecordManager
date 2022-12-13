@@ -290,7 +290,8 @@ replace[] = '\1 street'
 
 ; Skosmos enrichment settings
 [SkosmosEnrichment]
-; Service base URL
+; Service base URL or "database" to only use local records imported with
+; e.g. util:import-rdf
 ;base_url = "http://api.somewhere/rest/v1"
 ; URL prefixes to process
 ;url_prefix_allowed_list[] = "http://somewhere/"

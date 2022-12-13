@@ -209,6 +209,10 @@ class SkosmosEnrichment extends AbstractEnrichment
         $solrCheckField = '',
         $includeInAllfields = false
     ) {
+        if (!$this->apiBaseURL) {
+            return;
+        }
+
         // Clean up any invalid characters from the id
         $id = trim(
             str_replace(
@@ -369,9 +373,6 @@ class SkosmosEnrichment extends AbstractEnrichment
      */
     protected function getJsonLdDoc(string $id): ?\ML\JsonLD\Document
     {
-        if (!($url = $this->getEntityUrl($id))) {
-            return null;
-        }
         if ($data = $this->db->findLinkedDataEnrichment(['_id' => $id])) {
             $doc = unserialize($data['data']);
             if (false === $doc) {
@@ -382,6 +383,10 @@ class SkosmosEnrichment extends AbstractEnrichment
             } else {
                 return $doc;
             }
+        }
+
+        if (!($url = $this->getEntityUrl($id))) {
+            return null;
         }
 
         $data = $this->getExternalData(
@@ -577,7 +582,7 @@ class SkosmosEnrichment extends AbstractEnrichment
     protected function getEntityUrl($id)
     {
         $url = $this->apiBaseURL;
-        if (!$url) {
+        if (!$url || 'database' === $url) {
             return '';
         }
         if (substr($url, -1) !== '/') {
