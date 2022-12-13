@@ -117,6 +117,16 @@ class Marc extends AbstractRecord
     ];
 
     /**
+     * Field specs for ISBN fields
+     *
+     * @var array
+     */
+    protected $isbnFields = [
+        [MarcHandler::GET_NORMAL, '020', ['a']],
+        [MarcHandler::GET_NORMAL, '773', ['z']],
+    ];
+
+    /**
      * MARC record creation callback
      *
      * @var callable
@@ -388,22 +398,13 @@ class Marc extends AbstractRecord
             ]
         );
 
-        $data['isbn'] = $this->getISBNs();
-        foreach ($this->getFieldsSubfields(
-            [
-                [MarcHandler::GET_NORMAL, '773', ['z']]
-            ]
-        ) as $isbn) {
-            $isbn = str_replace('-', '', $isbn);
-            if (!preg_match('{([0-9]{9,12}[0-9xX])}', $isbn, $matches)) {
-                continue;
-            }
-            $isbn = $matches[1];
-            if (strlen($isbn) == 10) {
-                $isbn = $this->metadataUtils->isbn10to13($isbn);
-            }
-            if ($isbn) {
-                $data['isbn'][] = $isbn;
+        foreach ($this->getFieldsSubfields($this->isbnFields, false, true, true)
+            as $isbn
+        ) {
+            if ($normalized = $this->metadataUtils->normalizeISBN($isbn)) {
+                $data['isbn'][] = $normalized;
+            } else {
+                $this->storeWarning("Invalid ISBN '$isbn'");
             }
         }
         $data['issn'] = $this->getFieldsSubfields(

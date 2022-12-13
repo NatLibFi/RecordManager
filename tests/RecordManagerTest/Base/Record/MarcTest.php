@@ -481,7 +481,6 @@ class MarcTest extends RecordTest
             'dateSpan' => [],
             'edition' => '',
             'contents' => [],
-            'isbn' => [],
             'issn' => [],
             'callnumber-first' => '',
             'callnumber-raw' => [
