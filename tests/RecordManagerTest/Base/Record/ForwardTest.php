@@ -921,13 +921,10 @@ class ForwardTest extends RecordTest
                 1 => 'Ranska',
                 2 => 'Saksa',
             ],
-            'genre_facet' => [
-            ],
-            'genre' => [
-            ],
+            'genre_facet' => [],
+            'genre' => [],
             'format' => 'MotionPicture',
-            'publisher' => [
-            ],
+            'publisher' => [],
             'allfields' => [
                 'Le Havre',
                 'Le Havre',

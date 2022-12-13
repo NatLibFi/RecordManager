@@ -78,12 +78,9 @@ class LidoTest extends RecordTest
                 'retkeily',
                 'ulkoilu',
             ],
-            'material_str_mv' => [
-            ],
-            'geographic_facet' => [
-            ],
-            'geographic' => [
-            ],
+            'material_str_mv' => [],
+            'geographic_facet' => [],
+            'geographic' => [],
             'era' => [],
             'era_facet' => [],
             'collection' => '',
@@ -196,12 +193,9 @@ class LidoTest extends RecordTest
                 'retkeily',
                 'ulkoilu',
             ],
-            'material_str_mv' => [
-            ],
-            'geographic_facet' => [
-            ],
-            'geographic' => [
-            ],
+            'material_str_mv' => [],
+            'geographic_facet' => [],
+            'geographic' => [],
             'era' => [],
             'era_facet' => [],
             'collection' => '',

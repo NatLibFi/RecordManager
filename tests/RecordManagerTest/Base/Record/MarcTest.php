@@ -118,27 +118,20 @@ class MarcTest extends RecordTest
                 '-',
                 '-',
             ],
-            'author_corporate' => [
-            ],
-            'author_corporate_role' => [
-            ],
-            'author_additional' => [
-            ],
+            'author_corporate' => [],
+            'author_corporate_role' => [],
+            'author_additional' => [],
             'title' => 'Tutki ja kirjoita',
             'title_sub' => '',
             'title_short' => 'Tutki ja kirjoita',
             'title_full' => 'Tutki ja kirjoita / Sirkka Hirsjärvi, Pirkko Remes,'
                 . ' Paula Sajavaara',
-            'title_alt' => [
-            ],
-            'title_old' => [
-            ],
-            'title_new' => [
-            ],
+            'title_alt' => [],
+            'title_old' => [],
+            'title_new' => [],
             'title_sort' => 'tutki ja kirjoita / sirkka hirsjärvi, pirkko remes,'
                 . ' paula sajavaara',
-            'series' => [
-            ],
+            'series' => [],
             'publisher' => [
                 'Tammi',
             ],
@@ -146,18 +139,14 @@ class MarcTest extends RecordTest
             'publishDate' => [
                 '2013',
             ],
-            'physical' => [
-            ],
-            'dateSpan' => [
-            ],
+            'physical' => [],
+            'dateSpan' => [],
             'edition' => '17. uud. p.',
-            'contents' => [
-            ],
+            'contents' => [],
             'isbn' => [
                 '9789513148362',
             ],
-            'issn' => [
-            ],
+            'issn' => [],
             'callnumber-first' => 'QC861.2',
             'callnumber-raw' => [
                 '38.04',
@@ -179,12 +168,9 @@ class MarcTest extends RecordTest
                 'tutkimustyö',
                 'tutkimus',
             ],
-            'genre' => [
-            ],
-            'geographic' => [
-            ],
-            'era' => [
-            ],
+            'genre' => [],
+            'geographic' => [],
+            'era' => [],
             'topic_facet' => [
                 'oppaat',
                 'ft: kirjoittaminen',
@@ -197,14 +183,10 @@ class MarcTest extends RecordTest
                 'tutkimustyö',
                 'tutkimus',
             ],
-            'genre_facet' => [
-            ],
-            'geographic_facet' => [
-            ],
-            'era_facet' => [
-            ],
-            'url' => [
-            ],
+            'genre_facet' => [],
+            'geographic_facet' => [],
+            'era_facet' => [],
+            'url' => [],
             'illustrated' => 'Not Illustrated',
         ];
 
@@ -305,25 +287,18 @@ class MarcTest extends RecordTest
             'author2_role' => [
                 '-',
             ],
-            'author_corporate' => [
-            ],
-            'author_corporate_role' => [
-            ],
-            'author_additional' => [
-            ],
+            'author_corporate' => [],
+            'author_corporate_role' => [],
+            'author_additional' => [],
             'title' => 'Biological psychology',
             'title_sub' => '',
             'title_short' => 'Biological psychology',
             'title_full' => 'Biological psychology / James W. Kalat',
-            'title_alt' => [
-            ],
-            'title_old' => [
-            ],
-            'title_new' => [
-            ],
+            'title_alt' => [],
+            'title_old' => [],
+            'title_new' => [],
             'title_sort' => 'biological psychology / james w. kalat',
-            'series' => [
-            ],
+            'series' => [],
             'publisher' => [
                 'Wadsworth',
             ],
@@ -334,46 +309,35 @@ class MarcTest extends RecordTest
             'physical' => [
                 'xxiii, 551 sivua : kuvitettu + CD-ROM -levy',
             ],
-            'dateSpan' => [
-            ],
+            'dateSpan' => [],
             'edition' => '7th ed',
-            'contents' => [
-            ],
+            'contents' => [],
             'isbn' => [
                 '9780534514099',
                 '9780534514006',
             ],
-            'issn' => [
-            ],
+            'issn' => [],
             'callnumber-first' => '',
-            'callnumber-raw' => [
-            ],
+            'callnumber-raw' => [],
             'topic' => [
                 'neuropsykologia',
                 'biopsykologia',
                 'neuropsykologi',
                 'biopsykologi',
             ],
-            'genre' => [
-            ],
-            'geographic' => [
-            ],
-            'era' => [
-            ],
+            'genre' => [],
+            'geographic' => [],
+            'era' => [],
             'topic_facet' => [
                 'neuropsykologia',
                 'biopsykologia',
                 'neuropsykologi',
                 'biopsykologi',
             ],
-            'genre_facet' => [
-            ],
-            'geographic_facet' => [
-            ],
-            'era_facet' => [
-            ],
-            'url' => [
-            ],
+            'genre_facet' => [],
+            'geographic_facet' => [],
+            'era_facet' => [],
+            'url' => [],
             'illustrated' => 'Not Illustrated',
         ];
 
@@ -481,22 +445,17 @@ class MarcTest extends RecordTest
                 'swe',
             ],
             'format' => 'Map',
-            'author' => [
-            ],
-            'author_role' => [
-            ],
-            'author2' => [
-            ],
-            'author2_role' => [
-            ],
+            'author' => [],
+            'author_role' => [],
+            'author2' => [],
+            'author2_role' => [],
             'author_corporate' => [
                 'Maanmittaushallitus',
             ],
             'author_corporate_role' => [
                 '-',
             ],
-            'author_additional' => [
-            ],
+            'author_additional' => [],
             'title' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
             'title_sub' => 'Vägkarta över Finland. 1.',
             'title_short' => 'Suomen tiekartta',
@@ -505,13 +464,10 @@ class MarcTest extends RecordTest
                 'Vägkarta över Finland',
                 'Suomen tiekartta 1'
             ],
-            'title_old' => [
-            ],
-            'title_new' => [
-            ],
+            'title_old' => [],
+            'title_new' => [],
             'title_sort' => 'suomen tiekartta = vägkarta över finland. 1.',
-            'series' => [
-            ],
+            'series' => [],
             'publisher' => [
                 '[Maanmittaushallitus]',
             ],
@@ -522,15 +478,11 @@ class MarcTest extends RecordTest
             'physical' => [
                 '1 kartta : värillinen ; taitettuna 26 x 13 cm',
             ],
-            'dateSpan' => [
-            ],
+            'dateSpan' => [],
             'edition' => '',
-            'contents' => [
-            ],
-            'isbn' => [
-            ],
-            'issn' => [
-            ],
+            'contents' => [],
+            'isbn' => [],
+            'issn' => [],
             'callnumber-first' => '',
             'callnumber-raw' => [
                 '42.02',
@@ -540,31 +492,26 @@ class MarcTest extends RecordTest
                 'tiekartat',
                 'kartat Suomi',
             ],
-            'genre' => [
-            ],
+            'genre' => [],
             'geographic' => [
                 'Turun ja Porin lääni',
                 'Uudenmaan lääni',
                 'Ahvenanmaa',
             ],
-            'era' => [
-            ],
+            'era' => [],
             'topic_facet' => [
                 'tiekartat',
                 'kartat',
             ],
-            'genre_facet' => [
-            ],
+            'genre_facet' => [],
             'geographic_facet' => [
                 'Suomi',
                 'Turun ja Porin lääni',
                 'Uudenmaan lääni',
                 'Ahvenanmaa',
             ],
-            'era_facet' => [
-            ],
-            'url' => [
-            ],
+            'era_facet' => [],
+            'url' => [],
             'illustrated' => 'Not Illustrated',
         ];
 
@@ -584,8 +531,7 @@ class MarcTest extends RecordTest
 
         $expected = [
             'record_format' => 'marc',
-            'building' => [
-            ],
+            'building' => [],
             'lccn' => '',
             'ctrlnum' => [
                 'FCC016234029',
@@ -643,22 +589,17 @@ class MarcTest extends RecordTest
                 'fre',
             ],
             'format' => 'Book',
-            'author' => [
-            ],
-            'author_role' => [
-            ],
+            'author' => [],
+            'author_role' => [],
             'author2' => [
                 'Braudel, Fernand',
             ],
             'author2_role' => [
                 'kirjoittaja',
             ],
-            'author_corporate' => [
-            ],
-            'author_corporate_role' => [
-            ],
-            'author_additional' => [
-            ],
+            'author_corporate' => [],
+            'author_corporate_role' => [],
+            'author_additional' => [],
             'title' => 'Civilisation matérielle, économie et capitalisme, XVe-XVIIIe'
                 . ' siècle : le possible et l\'impossible. Tome 1, Les structures du'
                 . ' quotidien : le possible et l\'impossible',
@@ -673,16 +614,13 @@ class MarcTest extends RecordTest
             'title_alt' => [
                 'Les structures du quotidien : le possible et l\'impossible'
             ],
-            'title_old' => [
-            ],
-            'title_new' => [
-            ],
+            'title_old' => [],
+            'title_new' => [],
             'title_sort' => 'civilisation matérielle, économie et capitalisme,'
                 . ' xve-xviiie siècle : le possible et l\'impossible. tome 1, les'
                 . ' structures du quotidien : le possible et l\'impossible / fernand'
                 . ' braudel',
-            'series' => [
-            ],
+            'series' => [],
             'publisher' => [
                 'Armand Colin',
             ],
@@ -693,16 +631,13 @@ class MarcTest extends RecordTest
             'physical' => [
                 '543 sivua : kuvitettu ; 24 cm',
             ],
-            'dateSpan' => [
-            ],
+            'dateSpan' => [],
             'edition' => '',
-            'contents' => [
-            ],
+            'contents' => [],
             'isbn' => [
                 '9782200371005',
             ],
-            'issn' => [
-            ],
+            'issn' => [],
             'callnumber-first' => '',
             'callnumber-raw' => [
                 '940.',
@@ -726,12 +661,9 @@ class MarcTest extends RecordTest
                 'Social history',
                 'Civilization, Modern History',
             ],
-            'genre' => [
-            ],
-            'geographic' => [
-            ],
-            'era' => [
-            ],
+            'genre' => [],
+            'geographic' => [],
+            'era' => [],
             'topic_facet' => [
                 'Moeurs et coutumes',
                 'Sociologie du quotidien',
@@ -754,16 +686,13 @@ class MarcTest extends RecordTest
                 'Histoire',
                 'History',
             ],
-            'genre_facet' => [
-            ],
-            'geographic_facet' => [
-            ],
+            'genre_facet' => [],
+            'geographic_facet' => [],
             'era_facet' => [
                 '1500-1800',
                 '1500-1800',
             ],
-            'url' => [
-            ],
+            'url' => [],
             'illustrated' => 'Illustrated',
             'dewey-hundreds' => '300',
             'dewey-tens' => '330',
