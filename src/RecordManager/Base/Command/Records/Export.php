@@ -140,9 +140,9 @@ class Export extends AbstractBase
                 InputOption::VALUE_REQUIRED,
                 'Export multiple files with a batch of records in each one. The file'
                 . ' argument is used as a template. If it contains {n}, that will be'
-                . ' replaced with the file number (example: "export-{n}.xml)".'
-                . ' Otherwise a dash and the file number'
-                . ' is appended.'
+                . ' replaced with the file number (example: "export-{n}.xml").'
+                . ' Otherwise a dash and the file number is appended before any file'
+                . ' extension.'
             )->addOption(
                 'skip',
                 null,
@@ -429,7 +429,14 @@ class Export extends AbstractBase
         $result
             = str_replace('{n}', (string)$this->currentBatch, $this->fileTemplate);
         if ($result === $this->fileTemplate) {
-            $result .= "-$this->currentBatch";
+            // Add the batch number before file extension, if present:
+            if (false !== ($p = strrpos($result, '.'))) {
+                $result = substr($result, 0, $p) . "-$this->currentBatch"
+                    . substr($result, $p);
+            } else {
+                // No extension, just append to the end:
+                $result .= "-$this->currentBatch";
+            }
         }
         return $result;
     }
@@ -445,13 +452,12 @@ class Export extends AbstractBase
      */
     protected function writeRecord(string $record): void
     {
-        ++$this->currentBatchCount;
         if (!$this->currentFile
-            || ($this->batchSize && $this->currentBatchCount > $this->batchSize)
+            || ($this->batchSize && $this->currentBatchCount >= $this->batchSize)
         ) {
             $this->startNewBatch();
-            $this->currentBatchCount = 1;
         }
+        ++$this->currentBatchCount;
         file_put_contents($this->currentFile, $record . "\n", FILE_APPEND);
     }
 }
