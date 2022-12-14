@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2021.
+ * Copyright (C) The National Library of Finland 2011-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -45,6 +45,41 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class Export extends AbstractBase
 {
+    /**
+     * Batch size
+     *
+     * @var int
+     */
+    protected $batchSize = 0;
+
+    /**
+     * Current batch sequence
+     *
+     * @var int
+     */
+    protected $currentBatch = 0;
+
+    /**
+     * Current batch record count
+     *
+     * @var int
+     */
+    protected $currentBatchCount = 0;
+
+    /**
+     * File name template
+     *
+     * @var string
+     */
+    protected $fileTemplate = '';
+
+    /**
+     * Current file name
+     *
+     * @var ?string
+     */
+    protected $currentFile = null;
+
     /**
      * Configure the command.
      *
@@ -100,6 +135,15 @@ class Export extends AbstractBase
                 InputOption::VALUE_REQUIRED,
                 'Export only records matching an XPath expression'
             )->addOption(
+                'batch-size',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Export multiple files with a batch of records in each one. The file'
+                . ' argument is used as a template. If it contains {n}, that will be'
+                . ' replaced with the file number (example: "export-{n}.xml").'
+                . ' Otherwise a dash and the file number is appended before any file'
+                . ' extension.'
+            )->addOption(
                 'skip',
                 null,
                 InputOption::VALUE_REQUIRED,
@@ -129,7 +173,7 @@ class Export extends AbstractBase
      */
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
-        $file = $input->getArgument('file');
+        $this->fileTemplate = $input->getArgument('file');
         $deletedFile = $input->getOption('deleted');
         $fromDate = $input->getOption('from');
         $untilDate = $input->getOption('until');
@@ -141,24 +185,14 @@ class Export extends AbstractBase
         $xpath = $input->getOption('xpath');
         $sortDedup = $input->getOption('sort-dedup');
         $addDedupId = $input->getOption('dedup-id');
+        $this->batchSize = $input->getOption('batch-size') ?: 0;
 
         $returnCode = Command::SUCCESS;
 
-        if ($file == '-') {
-            $file = 'php://stdout';
-        }
-
-        if (file_exists($file)) {
-            unlink($file);
-        }
+        $this->startNewBatch();
         if ($deletedFile && file_exists($deletedFile)) {
             unlink($deletedFile);
         }
-        file_put_contents(
-            $file,
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n<collection>\n",
-            FILE_APPEND
-        );
 
         try {
             $this->logger->logInfo('exportRecords', 'Creating record list');
@@ -235,9 +269,9 @@ class Export extends AbstractBase
             }
 
             $total = $this->db->countRecords($params, $options);
-            $count = 0;
             $deduped = 0;
             $deleted = 0;
+            $count = 0;
             $this->logger->logInfo('exportRecords', "Exporting $total records");
             if ($skipRecords) {
                 $this->logger->logInfo(
@@ -249,12 +283,11 @@ class Export extends AbstractBase
                 $params,
                 $options,
                 function ($record) use (
-                    &$count,
                     &$deduped,
                     &$deleted,
+                    &$count,
                     $skipRecords,
                     $xpath,
-                    $file,
                     $deletedFile,
                     $addDedupId
                 ) {
@@ -312,7 +345,7 @@ class Export extends AbstractBase
                         }
                         $xml = $metadataRecord->toXML();
                         $xml = preg_replace('/^<\?xml.*?\?>[\n\r]*/', '', $xml);
-                        file_put_contents($file, $xml . "\n", FILE_APPEND);
+                        $this->writeRecord($xml);
                     }
                     if ($count % 1000 == 0) {
                         $this->logger->logInfo(
@@ -335,8 +368,96 @@ class Export extends AbstractBase
             );
             $returnCode = Command::FAILURE;
         }
-        file_put_contents($file, "</collection>\n", FILE_APPEND);
+        $this->finishBatch();
 
         return $returnCode;
+    }
+
+    /**
+     * Start a new batch
+     *
+     * @return void
+     */
+    protected function startNewBatch(): void
+    {
+        if ($this->currentFile) {
+            $this->finishBatch();
+        }
+        $this->currentBatch += 1;
+        $this->currentBatchCount = 0;
+        $this->currentFile = $this->getBatchFileName();
+        $this->logger
+            ->logInfo('exportRecords', "Exporting to file: $this->currentFile");
+        if (file_exists($this->currentFile)) {
+            unlink($this->currentFile);
+        }
+        file_put_contents(
+            $this->currentFile,
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n<collection>\n",
+            FILE_APPEND
+        );
+    }
+
+    /**
+     * Finish writing to a batch
+     *
+     * @return void
+     */
+    protected function finishBatch(): void
+    {
+        if (!$this->currentFile) {
+            throw new \Exception('Batch not properly started');
+        }
+        file_put_contents($this->currentFile, "</collection>\n", FILE_APPEND);
+        $this->currentFile = null;
+    }
+
+    /**
+     * Get a batch file name
+     *
+     * @return string
+     */
+    protected function getBatchFileName(): string
+    {
+        if ('-' === $this->fileTemplate) {
+            return 'php://stdout';
+        }
+
+        if (!$this->batchSize) {
+            return $this->fileTemplate;
+        }
+        $result
+            = str_replace('{n}', (string)$this->currentBatch, $this->fileTemplate);
+        if ($result === $this->fileTemplate) {
+            // Add the batch number before file extension, if present:
+            if (false !== ($p = strrpos($result, '.'))) {
+                $result = substr($result, 0, $p) . "-$this->currentBatch"
+                    . substr($result, $p);
+            } else {
+                // No extension, just append to the end:
+                $result .= "-$this->currentBatch";
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Write a record
+     *
+     * Start a new batch if necessary.
+     *
+     * @param string $record Record
+     *
+     * @return void
+     */
+    protected function writeRecord(string $record): void
+    {
+        if (!$this->currentFile
+            || ($this->batchSize && $this->currentBatchCount >= $this->batchSize)
+        ) {
+            $this->startNewBatch();
+        }
+        ++$this->currentBatchCount;
+        file_put_contents($this->currentFile, $record . "\n", FILE_APPEND);
     }
 }
