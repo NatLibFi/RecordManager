@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2020-2021.
+ * Copyright (C) The National Library of Finland 2020-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -112,7 +112,7 @@ class Unsuppress extends AbstractBase
     {
         $params = [
             'deleted' => false,
-            'suppressed' => ['$in' => [null, false]],
+            'suppressed' => true,
         ];
         if ($sourceId) {
             $params['source_id'] = $sourceId;
@@ -122,7 +122,7 @@ class Unsuppress extends AbstractBase
         }
         $total = $this->db->countRecords($params);
         $count = 0;
-        $this->logger->logInfo('suppress', "Processing $total records");
+        $this->logger->logInfo('unsuppress', "Processing $total records");
         $pc = new PerformanceCounter();
 
         $this->db->iterateRecords(
@@ -132,14 +132,14 @@ class Unsuppress extends AbstractBase
                 $source = $record['source_id'];
                 if (!isset($this->dataSourceConfig[$source])) {
                     $this->logger->logFatal(
-                        'suppress',
+                        'unsuppress',
                         "Data source configuration missing for '$source'"
                     );
                     return false;
                 }
                 $settings = $this->dataSourceConfig[$source];
                 $record['suppressed'] = false;
-                if ($settings['dedup']) {
+                if ($settings['dedup'] ?? false) {
                     $record['update_needed'] = true;
                 }
                 $record['updated'] = $this->db->getTimestamp();

@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2020-2021.
+ * Copyright (C) The National Library of Finland 2020-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -142,7 +142,7 @@ class Suppress extends AbstractBase
                 }
                 $settings = $this->dataSourceConfig[$source];
                 $record['suppressed'] = true;
-                if ($settings['dedup'] && isset($record['dedup_id'])) {
+                if (($settings['dedup'] ?? false) && isset($record['dedup_id'])) {
                     $this->dedupHandler->removeFromDedupRecord(
                         $record['dedup_id'],
                         $record['_id']
