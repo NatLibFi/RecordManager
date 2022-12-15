@@ -573,7 +573,7 @@ class SkosmosEnrichment extends AbstractEnrichment
      * @param \ML\JsonLD\Node $node Decoded JSON array item from which to extract
      *                              location data
      *
-     * @return array
+     * @return array<int, array>
      */
     protected function processLocationWgs84(\ML\JsonLD\Node $node): array
     {
