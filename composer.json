@@ -37,7 +37,7 @@
         "laminas/laminas-servicemanager": "3.10.0",
         "laminas/laminas-xml": "1.4.0",
         "ml/json-ld": "1.2.1",
-        "mongodb/mongodb": "1.11.0",
+        "mongodb/mongodb": "1.15.0",
         "ocramius/proxy-manager": "2.13.1",
         "pcrov/jsonreader": "1.0.2",
         "pear/http_request2": "2.5.1",
