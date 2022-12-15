@@ -305,6 +305,9 @@ replace[] = '\1 street'
 ; Allowed languages in enriched data. Default is to allow everything.
 ;languages[] = "en"
 ;languages[] = "fi"
+; In-memory cache size for linked data records. Default is 1000. Set to 0 to
+; disable the cache.
+;record_cache_size = 1000
 
 [MusicBrainzEnrichment]
 ; Note that you need to add the following line to any data source in datasources.ini

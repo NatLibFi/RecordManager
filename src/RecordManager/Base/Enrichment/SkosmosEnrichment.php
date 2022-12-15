@@ -104,6 +104,13 @@ class SkosmosEnrichment extends AbstractEnrichment
     protected $languages = [];
 
     /**
+     * Cache for recent records
+     *
+     * @var ?\cash\LRUCache
+     */
+    protected $recordCache = null;
+
+    /**
      * Initialize settings
      *
      * @return void
@@ -135,6 +142,10 @@ class SkosmosEnrichment extends AbstractEnrichment
         }
         if (!empty($settings['languages'])) {
             $this->languages = (array)$settings['languages'];
+        }
+
+        if ($cacheSize = $settings['record_cache_size'] ?? 10000) {
+            $this->recordCache = new \cash\LRUCache((int)$cacheSize);
         }
     }
 
@@ -373,6 +384,9 @@ class SkosmosEnrichment extends AbstractEnrichment
      */
     protected function getJsonLdDoc(string $id): ?\ML\JsonLD\Document
     {
+        if ($this->recordCache && $doc = $this->recordCache->get($id)) {
+            return $doc;
+        }
         if ($data = $this->db->findLinkedDataEnrichment(['_id' => $id])) {
             $doc = unserialize($data['data']);
             if (false === $doc) {
@@ -381,6 +395,9 @@ class SkosmosEnrichment extends AbstractEnrichment
                     "Cannot unserialize document for $id:\n" . $data['data']
                 );
             } else {
+                if ($this->recordCache) {
+                    $this->recordCache->put($id, $doc);
+                }
                 return $doc;
             }
         }
@@ -404,6 +421,10 @@ class SkosmosEnrichment extends AbstractEnrichment
                 'data' => serialize($doc)
             ]
         );
+        if ($this->recordCache) {
+            $this->recordCache->put($id, $doc);
+        }
+
         return $doc;
     }
 
