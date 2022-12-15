@@ -111,6 +111,13 @@ class SkosmosEnrichment extends AbstractEnrichment
     protected $recordCache = null;
 
     /**
+     * Cache for recent enrichment results
+     *
+     * @var ?\cash\LRUCache
+     */
+    protected $enrichmentCache = null;
+
+    /**
      * Initialize settings
      *
      * @return void
@@ -144,8 +151,12 @@ class SkosmosEnrichment extends AbstractEnrichment
             $this->languages = (array)$settings['languages'];
         }
 
-        if ($cacheSize = $settings['record_cache_size'] ?? 10000) {
+        if ($cacheSize = $settings['record_cache_size'] ?? 1000) {
             $this->recordCache = new \cash\LRUCache((int)$cacheSize);
+        }
+
+        if ($cacheSize = $settings['enrichment_cache_size'] ?? 10000) {
+            $this->enrichmentCache = new \cash\LRUCache((int)$cacheSize);
         }
     }
 
@@ -233,6 +244,93 @@ class SkosmosEnrichment extends AbstractEnrichment
             )
         );
 
+        // Get enrichment results
+        $data = null;
+        if ($this->enrichmentCache) {
+            $data = $this->enrichmentCache->get($id);
+        }
+        if (null === $data) {
+            $data = $this->getEnrichmentData($id, "$sourceId." . $record->getID());
+            if ($this->enrichmentCache) {
+                $this->enrichmentCache->put($id, $data);
+            }
+        }
+
+        if (!$data['preferred'] && !$data['alternative']) {
+            return;
+        }
+
+        // Process results
+        $checkFieldContents = $solrCheckField
+            ? array_map(
+                function ($s) {
+                    return mb_strtolower($s, 'UTF-8');
+                },
+                (array)($solrArray[$solrCheckField] ?? [])
+            ) : [];
+
+        $map = [
+            'preferred' => $solrPrefField,
+            'alternative' => $solrAltField,
+            'matchPreferred' => $solrPrefField,
+            'matchAlternative' => $solrAltField,
+        ];
+
+        foreach ($map as $dataKey => $solrField) {
+            foreach ($data[$dataKey] as $label) {
+                $labelLc = mb_strtolower($label, 'UTF-8');
+                if (in_array($labelLc, $checkFieldContents)) {
+                    continue;
+                }
+                $checkFieldContents[] = $labelLc;
+                if ($solrField) {
+                    $solrArray[$solrField][] = $label;
+                }
+                if ($includeInAllfields) {
+                    $solrArray['allfields'][] = $label;
+                }
+            }
+        }
+
+        if ($this->solrCenterField || $this->solrLocationField) {
+            foreach ($data['locations'] as $location) {
+                if ($this->solrCenterField
+                    && !isset($solrArray[$this->solrCenterField])
+                ) {
+                    $solrArray[$this->solrCenterField]
+                        = $location['lat'] . ', ' . $location['lon'];
+                }
+                if ($this->solrLocationField) {
+                    $exists = in_array(
+                        $location['wkt'],
+                        $solrArray[$this->solrLocationField] ?? []
+                    );
+                    if (!$exists) {
+                        $solrArray[$this->solrLocationField][] = $location['wkt'];
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Get enrichment data for an identifier
+     *
+     * @param string $id       Entity ID
+     * @param string $recordId Metadata record ID
+     *
+     * @return array Associative array with results
+     */
+    protected function getEnrichmentData(string $id, string $recordId): array
+    {
+        $result = [
+            'preferred' => [],
+            'alternative' => [],
+            'matchPreferred' => [],
+            'matchAlternative' => [],
+            'locations' => [],
+        ];
+
         // Check that the ID prefix matches that of the allowed ones
         $match = false;
         foreach ($this->urlPrefixAllowedList as $prefix) {
@@ -245,35 +343,27 @@ class SkosmosEnrichment extends AbstractEnrichment
         if (!$match) {
             $this->logger->logDebug(
                 'enrichField',
-                "Ignoring unlisted URI '$id', record $sourceId." . $record->getID(),
+                "Ignoring unlisted URI '$id', record $recordId",
                 true
             );
-            return;
+            return $result;
         }
-
-        $checkFieldContents = $solrCheckField
-            ? array_map(
-                function ($s) {
-                    return mb_strtolower($s, 'UTF-8');
-                },
-                (array)($solrArray[$solrCheckField] ?? [])
-            ) : [];
 
         try {
             if (!($doc = $this->getJsonLdDoc($id))) {
-                return;
+                return $result;
             }
         } catch (\Exception $e) {
             $this->logger->logDebug(
                 'enrichField',
-                "Enrichment failed for record {$solrArray['id']}: " . (string)$e
+                "Enrichment failed for record $recordId: " . (string)$e
             );
-            return;
+            return $result;
         }
 
         $graph = $doc->getGraph();
         if (null === $graph) {
-            return;
+            return $result;
         }
         foreach ($graph->getNodes() as $node) {
             if (!$this->isConceptNode($node)) {
@@ -281,39 +371,22 @@ class SkosmosEnrichment extends AbstractEnrichment
             }
 
             if ($node->getId() === $id) {
-                $this->processLocationWgs84($node, $solrArray);
-
-                $labels = $this->getSkosPropertyValues($node, 'prefLabel');
-                foreach ($this->filterDuplicates($labels, $checkFieldContents)
-                    as $label
-                ) {
-                    $checkFieldContents[] = mb_strtolower($label, 'UTF-8');
-                    if ($solrPrefField) {
-                        $solrArray[$solrPrefField][] = $label;
-                    }
-                    if ($includeInAllfields) {
-                        $solrArray['allfields'][] = $label;
-                    }
+                if ($locs = $this->processLocationWgs84($node)) {
+                    $result['locations'] = [
+                        ...$result['locations'],
+                        ...$locs
+                    ];
                 }
 
-                $altLabels = [];
+                if ($labels = $this->getSkosPropertyValues($node, 'prefLabel')) {
+                    $result['preferred'] = [...$result['preferred'], ...$labels];
+                }
+
                 if ($labels = $this->getSkosPropertyValues($node, 'altLabel')) {
-                    $altLabels = [...$altLabels, ...$labels];
+                    $result['alternative'] = [...$result['alternative'], ...$labels];
                 }
                 if ($labels = $this->getSkosPropertyValues($node, 'hiddenLabel')) {
-                    $altLabels = [...$altLabels, ...$labels];
-                }
-
-                foreach ($this->filterDuplicates($altLabels, $checkFieldContents)
-                    as $label
-                ) {
-                    $checkFieldContents[] = mb_strtolower($label, 'UTF-8');
-                    if ($solrAltField) {
-                        $solrArray[$solrAltField][] = $label;
-                    }
-                    if ($includeInAllfields) {
-                        $solrArray['allfields'][] = $label;
-                    }
+                    $result['alternative'] = [...$result['alternative'], ...$labels];
                 }
             }
 
@@ -341,36 +414,33 @@ class SkosmosEnrichment extends AbstractEnrichment
                         continue;
                     }
 
-                    $this->processLocationWgs84($matchNode, $solrArray);
+                    if ($locs = $this->processLocationWgs84($matchNode)) {
+                        $result['locations'] = [
+                            ...$result['locations'],
+                            ...$locs
+                        ];
+                    }
 
                     $labels = $this->getSkosPropertyValues($matchNode, 'prefLabel');
-                    foreach ($this->filterDuplicates($labels, $checkFieldContents)
-                        as $label
-                    ) {
-                        $checkFieldContents[] = mb_strtolower($label, 'UTF-8');
-                        if ($solrPrefField) {
-                            $solrArray[$solrPrefField][] = $label;
-                        }
-                        if ($includeInAllfields) {
-                            $solrArray['allfields'][] = $label;
-                        }
+                    if ($labels) {
+                        $result['matchPreferred'] = [
+                            ...$result['matchPreferred'],
+                            ...$labels
+                        ];
                     }
 
                     $labels = $this->getSkosPropertyValues($matchNode, 'altLabel');
-                    foreach ($this->filterDuplicates($labels, $checkFieldContents)
-                        as $label
-                    ) {
-                        $checkFieldContents[] = mb_strtolower($label, 'UTF-8');
-                        if ($solrAltField) {
-                            $solrArray[$solrAltField][] = $label;
-                        }
-                        if ($includeInAllfields) {
-                            $solrArray['allfields'][] = $label;
-                        }
+                    if ($labels) {
+                        $result['matchAlternative'] = [
+                            ...$result['matchAlternative'],
+                            ...$labels
+                        ];
                     }
                 }
             }
         }
+
+        return $result;
     }
 
     /**
@@ -498,99 +568,28 @@ class SkosmosEnrichment extends AbstractEnrichment
     }
 
     /**
-     * Process WKT location data and add that information to solrArray
+     * Process WGS 84 location data
      *
-     * Implementation notes
-     * Currently supports only single, non-empty 2D WKT point data format
+     * @param \ML\JsonLD\Node $node Decoded JSON array item from which to extract
+     *                              location data
      *
-     * @param string $wkt       Well-known text to be processed
-     * @param array  $solrArray Metadata to be sent to Solr
-     *
-     * @return void
+     * @return array
      */
-    protected function processLocationWkt($wkt, &$solrArray): void
+    protected function processLocationWgs84(\ML\JsonLD\Node $node): array
     {
-        preg_match(
-            '/^POINT\s*\((?P<lon>-?\d+(?:\.?\d+)?)\s*(?P<lat>-?\d+(?:\.?\d+)?)\)/',
-            $wkt,
-            $matches
-        );
-        if ($matches) {
-            $wktItem = [
-                'lat' => $matches['lat'],
-                'lon' => $matches['lon'],
-                'wkt' => 'POINT(' . $matches['lon'] . ' ' . $matches['lat'] . ')'
-            ];
-            $this->processLocationItem($wktItem, $solrArray);
-        }
-    }
-
-    /**
-     * Process WGS 84 location data and add that information to solrArray
-     *
-     * @param \ML\JsonLD\Node $node      Decoded JSON array item from which to
-     *                                   extract loc data
-     * @param array           $solrArray Metadata to be sent to Solr
-     *
-     * @return void
-     */
-    protected function processLocationWgs84(\ML\JsonLD\Node $node, &$solrArray): void
-    {
+        $result = [];
         $lat = $node->getProperty(self::WGS84_POS . 'lat');
         $lon = $node->getProperty(self::WGS84_POS . 'long');
         if ($lat && $lon) {
             $lat = is_array($lat) ? $lat[0]->getValue() : $lat->getValue();
             $lon = is_array($lon) ? $lon[0]->getValue() : $lon->getValue();
-            $wktItem = [
+            $result[] = [
                 'lat' => $lat,
                 'lon' => $lon,
                 'wkt' => "POINT($lon $lat)"
             ];
-            $this->processLocationItem($wktItem, $solrArray);
         }
-    }
-
-    /**
-     * Add location information to solrArray
-     *
-     * @param array $locItem   Keyed array with keys wkt, lat and lon for each loc
-     * @param array $solrArray Metadata to be sent to Solr
-     *
-     * @return void
-     */
-    protected function processLocationItem($locItem, &$solrArray): void
-    {
-        if ($this->solrCenterField && !isset($solrArray[$this->solrCenterField])) {
-            $coords = $locItem['lat'] . ', ' . $locItem['lon'];
-            $solrArray[$this->solrCenterField] = $coords;
-        }
-        if ($this->solrLocationField
-            && !in_array($locItem['wkt'], $solrArray[$this->solrLocationField] ?? [])
-        ) {
-            $solrArray[$this->solrLocationField][] = $locItem['wkt'];
-        }
-    }
-
-    /**
-     * Filter duplicate values case-insensitively
-     *
-     * @param array $values Values to filter
-     * @param array $check  Values to check against (expected to be lowercase)
-     *
-     * @return array Non-duplicates
-     */
-    protected function filterDuplicates(array $values, array $check)
-    {
-        return array_filter(
-            $values,
-            function ($v) use (&$check) {
-                $v = mb_strtolower($v, 'UTF-8');
-                if ($res = !in_array($v, $check)) {
-                    $check[] = $v;
-                }
-                return $res;
-            }
-        );
+        return $result;
     }
 
     /**

@@ -305,8 +305,16 @@ replace[] = '\1 street'
 ; Allowed languages in enriched data. Default is to allow everything.
 ;languages[] = "en"
 ;languages[] = "fi"
+; In-memory cache size for enrichment results. Default is 10000. Set to 0 to
+; disable the cache. This cache contains enrichment results by identifier, which are
+; smaller and faster to use than record cache. Note that there is a separate cache
+; for each record worker (see Solr/record_workers).
+;enrichment_cache_size = 1000
 ; In-memory cache size for linked data records. Default is 1000. Set to 0 to
-; disable the cache.
+; disable the cache. This cache contains full linked data records, so it can be used
+; for retrieving main entities as well as exact matches, but the records are larger
+; than in the enrichment result cache. Note that there is a separate cache for each
+; record worker (see Solr/record_workers).
 ;record_cache_size = 1000
 
 [MusicBrainzEnrichment]
