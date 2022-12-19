@@ -76,7 +76,8 @@ class MarcFactory
             $container->get(\RecordManager\Base\Utils\MetadataUtils::class),
             function ($data) {
                 return new \RecordManager\Base\Marc\Marc($data);
-            }
+            },
+            $container->get(\RecordManager\Base\Record\Marc\FormatCalculator::class)
         );
     }
 }

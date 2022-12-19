@@ -29,6 +29,7 @@ namespace RecordManagerTest\Base\Solr;
 
 use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
 use RecordManager\Base\Http\ClientManager as HttpClientManager;
+use RecordManager\Base\Record\Marc\FormatCalculator;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Settings\Ini;
 use RecordManager\Base\Solr\SolrUpdater;
@@ -166,7 +167,8 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
             $metadataUtils,
             function ($data) {
                 return new \RecordManager\Base\Marc\Marc($data);
-            }
+            },
+            new FormatCalculator()
         );
         $recordPM = $this->createMock(RecordPluginManager::class);
         $recordPM->expects($this->once())

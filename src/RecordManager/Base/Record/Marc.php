@@ -29,6 +29,7 @@ namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Marc\Marc as MarcHandler;
+use RecordManager\Base\Record\Marc\FormatCalculator;
 use RecordManager\Base\Utils\DeweyCallNumber;
 use RecordManager\Base\Utils\LcCallNumber;
 use RecordManager\Base\Utils\Logger;
@@ -134,24 +135,35 @@ class Marc extends AbstractRecord
     protected $createRecordCallback;
 
     /**
+     * Format calculator
+     *
+     * @var FormatCalculator
+     */
+    protected $formatCalculator;
+
+    /**
      * Constructor
      *
-     * @param array         $config           Main configuration
-     * @param array         $dataSourceConfig Data source settings
-     * @param Logger        $logger           Logger
-     * @param MetadataUtils $metadataUtils    Metadata utilities
-     * @param callable      $recordCallback   MARC record creation callback
+     * @param array            $config           Main configuration
+     * @param array            $dataSourceConfig Data source settings
+     * @param Logger           $logger           Logger
+     * @param MetadataUtils    $metadataUtils    Metadata utilities
+     * @param callable         $recordCallback   MARC record creation callback
+     * @param FormatCalculator $formatCalculator Record format calculator
      */
     public function __construct(
         array $config,
         array $dataSourceConfig,
         Logger $logger,
         MetadataUtils $metadataUtils,
-        callable $recordCallback
+        callable $recordCallback,
+        FormatCalculator $formatCalculator
     ) {
         parent::__construct($config, $dataSourceConfig, $logger, $metadataUtils);
 
         $this->createRecordCallback = $recordCallback;
+        $this->formatCalculator = $formatCalculator;
+
         if (isset($config['MarcRecord']['primary_author_relators'])) {
             $this->primaryAuthorRelators = explode(
                 ',',
@@ -1000,235 +1012,11 @@ class Marc extends AbstractRecord
     /**
      * Dedup: Return format from predefined values
      *
-     * @return string
+     * @return string|array
      */
     public function getFormat()
     {
-        // check the 007 - this is a repeating field
-        $fields = $this->record->getControlFields('007');
-        $online = false;
-        foreach ($fields as $contents) {
-            $formatCode = strtoupper(substr($contents, 0, 1));
-            $formatCode2 = strtoupper(substr($contents, 1, 1));
-            switch ($formatCode) {
-            case 'A':
-                switch ($formatCode2) {
-                case 'D':
-                    return 'Atlas';
-                default:
-                    return 'Map';
-                }
-                // @phpstan-ignore-next-line
-                break;
-            case 'C':
-                switch ($formatCode2) {
-                case 'A':
-                    return 'TapeCartridge';
-                case 'B':
-                    return 'ChipCartridge';
-                case 'C':
-                    return 'DiscCartridge';
-                case 'F':
-                    return 'TapeCassette';
-                case 'H':
-                    return 'TapeReel';
-                case 'J':
-                    return 'FloppyDisk';
-                case 'M':
-                case 'O':
-                    return 'CDROM';
-                case 'R':
-                    // Do not return - this will cause anything with an
-                    // 856 field to be labeled as "Electronic"
-                    $online = true;
-                    break;
-                default:
-                    return 'Electronic';
-                }
-                break;
-            case 'D':
-                return 'Globe';
-            case 'F':
-                return 'Braille';
-            case 'G':
-                switch ($formatCode2) {
-                case 'C':
-                case 'D':
-                    return 'Filmstrip';
-                case 'T':
-                    return 'Transparency';
-                default:
-                    return 'Slide';
-                }
-                // @phpstan-ignore-next-line
-                break;
-            case 'H':
-                return 'Microfilm';
-            case 'K':
-                switch ($formatCode2) {
-                case 'C':
-                    return 'Collage';
-                case 'D':
-                    return 'Drawing';
-                case 'E':
-                    return 'Painting';
-                case 'F':
-                    return 'Print';
-                case 'G':
-                    return 'Photonegative';
-                case 'J':
-                    return 'Print';
-                case 'L':
-                    return 'TechnicalDrawing';
-                case 'O':
-                    return 'FlashCard';
-                case 'N':
-                    return 'Chart';
-                default:
-                    return 'Photo';
-                }
-                // @phpstan-ignore-next-line
-                break;
-            case 'M':
-                switch ($formatCode2) {
-                case 'F':
-                    return 'VideoCassette';
-                case 'R':
-                    return 'Filmstrip';
-                default:
-                    return 'MotionPicture';
-                }
-                // @phpstan-ignore-next-line
-                break;
-            case 'O':
-                return 'Kit';
-            case 'Q':
-                return 'MusicalScore';
-            case 'R':
-                return 'SensorImage';
-            case 'S':
-                switch ($formatCode2) {
-                case 'D':
-                    $size = strtoupper(substr($contents, 6, 1));
-                    $material = strtoupper(substr($contents, 10, 1));
-                    $soundTech = strtoupper(substr($contents, 13, 1));
-                    if ($soundTech == 'D'
-                        || ($size == 'G' && $material == 'M')
-                    ) {
-                        return 'CD';
-                    }
-                    return 'SoundDisc';
-                case 'S':
-                    return 'SoundCassette';
-                default:
-                    return 'SoundRecording';
-                }
-                // @phpstan-ignore-next-line
-                break;
-            case 'V':
-                $videoFormat = strtoupper(substr($contents, 4, 1));
-                switch ($videoFormat) {
-                case 'S':
-                    return 'BluRay';
-                case 'V':
-                    return 'DVD';
-                }
-
-                switch ($formatCode2) {
-                case 'C':
-                    return 'VideoCartridge';
-                case 'D':
-                    return 'VideoDisc';
-                case 'F':
-                    return 'VideoCassette';
-                case 'R':
-                    return 'VideoReel';
-                default:
-                    return 'Video';
-                }
-                // @phpstan-ignore-next-line
-                break;
-            }
-        }
-
-        // check the Leader at position 6
-        $leader = $this->record->getLeader();
-        $leaderBit = substr($leader, 6, 1);
-        switch (strtoupper($leaderBit)) {
-        case 'C':
-        case 'D':
-            return 'MusicalScore';
-        case 'E':
-        case 'F':
-            return 'Map';
-        case 'G':
-            return 'Slide';
-        case 'I':
-            return 'SoundRecording';
-        case 'J':
-            return 'MusicRecording';
-        case 'K':
-            return 'Photo';
-        case 'M':
-            return 'Electronic';
-        case 'O':
-        case 'P':
-            return 'Kit';
-        case 'R':
-            return 'PhysicalObject';
-        case 'T':
-            return 'Manuscript';
-        }
-
-        $field008 = $this->record->getControlField('008');
-        if (!$online) {
-            $online = substr($field008, 23, 1) === 'o';
-        }
-
-        // check the Leader at position 7
-        $leaderBit = substr($leader, 7, 1);
-        switch (strtoupper($leaderBit)) {
-        // Monograph
-        case 'M':
-            if ($online) {
-                return 'eBook';
-            } else {
-                return 'Book';
-            }
-            // @phpstan-ignore-next-line
-            break;
-        // Serial
-        case 'S':
-            // Look in 008 to determine what type of Continuing Resource
-            $formatCode = strtoupper(substr($field008, 21, 1));
-            switch ($formatCode) {
-            case 'N':
-                return $online ? 'eNewspaper' : 'Newspaper';
-            case 'P':
-                return $online ? 'eJournal' : 'Journal';
-            default:
-                return $online ? 'eSerial' : 'Serial';
-            }
-            // @phpstan-ignore-next-line
-            break;
-
-        case 'A':
-            // Component part in monograph
-            return $online ? 'eBookSection' : 'BookSection';
-        case 'B':
-            // Component part in serial
-            return $online ? 'eArticle' : 'Article';
-        case 'C':
-            // Collection
-            return 'Collection';
-        case 'D':
-            // Component part in collection (sub unit)
-            return 'SubUnit';
-        case 'I':
-            // Integrating resource
-            return 'ContinuouslyUpdatedResource';
-        }
-        return 'Other';
+        return $this->formatCalculator->getFormats($this->record);
     }
 
     /**

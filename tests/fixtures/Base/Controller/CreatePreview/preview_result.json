@@ -12,7 +12,7 @@
     "language": [
         "fin"
     ],
-    "format": "Book",
+    "format": ["Book"],
     "author": [
         "Hirsj\u00e4rvi, Sirkka"
     ],

@@ -27,6 +27,7 @@
  */
 namespace RecordManagerTest\Base\Solr;
 
+use RecordManager\Base\Record\Marc\FormatCalculator;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManagerTest\Base\Feature\FixtureTrait;
@@ -85,7 +86,8 @@ class PreviewCreatorTest extends \PHPUnit\Framework\TestCase
             $metadataUtils,
             function ($data) {
                 return new \RecordManager\Base\Marc\Marc($data);
-            }
+            },
+            new FormatCalculator()
         );
         $recordPM = $this->createMock(RecordPluginManager::class);
         $recordPM->expects($this->once())

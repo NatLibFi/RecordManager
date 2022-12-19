@@ -170,7 +170,7 @@ class Ead3 extends Ead
     /**
      * Return format from predefined values
      *
-     * @return string
+     * @return string|array
      */
     public function getFormat()
     {

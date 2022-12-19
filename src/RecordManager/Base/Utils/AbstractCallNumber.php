@@ -73,7 +73,7 @@ abstract class AbstractCallNumber
             function ($matches) {
                 return strlen((string)(intval($matches[1]))) . $matches[1];
             },
-            strtoupper($str)
+            mb_strtoupper($str, 'UTF-8')
         );
         return preg_replace('/\s{2,}/', ' ', $str);
     }

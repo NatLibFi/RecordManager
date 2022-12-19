@@ -175,6 +175,7 @@ return [
             \RecordManager\Base\Harvest\SierraApi::class => \RecordManager\Base\Harvest\AbstractBaseFactory::class,
             \RecordManager\Base\Harvest\PluginManager::class => \RecordManager\Base\ServiceManager\AbstractPluginManagerFactory::class,
             \RecordManager\Base\Http\ClientManager::class => \RecordManager\Base\Http\ClientManagerFactory::class,
+            \RecordManager\Base\Record\Marc\FormatCalculator::class => InvokableFactory::class,
             \RecordManager\Base\Record\PluginManager::class => \RecordManager\Base\ServiceManager\AbstractPluginManagerFactory::class,
             \RecordManager\Base\Settings\Ini::class => InvokableFactory::class,
             \RecordManager\Base\Solr\PreviewCreator::class => \RecordManager\Base\Solr\SolrUpdaterFactory::class,

@@ -443,7 +443,7 @@ class Forward extends AbstractRecord
     /**
      * Return format from predefined values
      *
-     * @return string
+     * @return string|array
      */
     public function getFormat()
     {

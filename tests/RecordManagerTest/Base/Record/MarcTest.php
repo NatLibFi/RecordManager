@@ -100,7 +100,7 @@ class MarcTest extends RecordTest
                 'fin',
                 'fin',
             ],
-            'format' => 'Book',
+            'format' => ['Book'],
             'author' => [
                 'Hirsjärvi, Sirkka',
             ],
@@ -273,7 +273,7 @@ class MarcTest extends RecordTest
                 'eng',
                 'eng',
             ],
-            'format' => 'Book',
+            'format' => ['Book'],
             'author' => [
                 'Kalat, James W.',
             ],
@@ -444,7 +444,7 @@ class MarcTest extends RecordTest
                 'fin',
                 'swe',
             ],
-            'format' => 'Map',
+            'format' => ['Map'],
             'author' => [],
             'author_role' => [],
             'author2' => [],
@@ -587,7 +587,7 @@ class MarcTest extends RecordTest
                 'fre',
                 'fre',
             ],
-            'format' => 'Book',
+            'format' => ['Book'],
             'author' => [],
             'author_role' => [],
             'author2' => [

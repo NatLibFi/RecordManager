@@ -760,17 +760,22 @@ class DedupHandler implements DedupHandlerInterface
         }
 
         // Check format
-        $origFormat = $origRecord->getFormat();
-        $cFormat = $cRecord->getFormat();
+        $origFormat = (array)$origRecord->getFormat();
+        $cFormat = (array)$cRecord->getFormat();
         $origMapped = $this->fieldMapper->mapFormat(
             $record['source_id'],
             $origFormat
         );
         $cMapped = $this->fieldMapper->mapFormat($candidate['source_id'], $cFormat);
+        sort($origFormat);
+        sort($cFormat);
+        sort($origMapped);
+        sort($cMapped);
         if ($origFormat != $cFormat && $origMapped != $cMapped) {
             $this->log->writelnVeryVerbose(
-                "--Format mismatch: $origFormat != $cFormat and $origMapped != "
-                . $cMapped
+                '--Format mismatch: ' . implode(',', $origFormat) . ' != ' .
+                implode(',', $cFormat) . ' and ' . implode(',', $origMapped)
+                . ' != ' . implode(',', $cMapped)
             );
             return false;
         }

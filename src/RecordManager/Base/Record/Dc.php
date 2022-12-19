@@ -290,7 +290,7 @@ class Dc extends AbstractRecord
     /**
      * Dedup: Return format from predefined values
      *
-     * @return string
+     * @return string|array
      */
     public function getFormat()
     {
