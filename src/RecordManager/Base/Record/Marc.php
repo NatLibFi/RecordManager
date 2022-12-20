@@ -435,9 +435,6 @@ class Marc extends AbstractRecord
                 [MarcHandler::GET_NORMAL, '785', ['x']]
             ]
         );
-        foreach ($data['issn'] as &$value) {
-            $value = str_replace('-', '', $value);
-        }
 
         $data['callnumber-first'] = $this->getFirstFieldSubfields(
             [
