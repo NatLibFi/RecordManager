@@ -1124,6 +1124,60 @@ class MetadataUtils
     }
 
     /**
+     * Get author initials
+     *
+     * Based on VuFind CreatorTools processInitials
+     *
+     * @param string $authorName Author name
+     *
+     * @return string
+     */
+    public function getAuthorInitials(string $authorName): string
+    {
+        // we guess that if there is a comma before the end - this is a personal name
+        $p = strpos($authorName, ',');
+        $isPersonalName = $p && $p < strlen($authorName) - 1;
+        // get rid of non-alphabet chars but keep hyphens and accents
+        $authorName = mb_strtolower(
+            preg_replace('/[^\\p{L} -]/', '', $authorName),
+            'UTF-8'
+        );
+        // Split into tokens on spaces:
+        $names = explode(' ', $authorName);
+        // If this is a personal name we'll reorganise to put lastname at the end:
+        if ($isPersonalName) {
+            $lastName = array_shift($names);
+            $names[] = $lastName;
+        }
+        // Put all the initials together in a space separated string:
+        $result = '';
+        foreach ($names as $name) {
+            if ('' !== $name) {
+                $initial = mb_substr($name, 0, 1, 'UTF-8');
+                // If there is a hyphenated name, use both initials:
+                $p = mb_strpos($name, '-', 0, 'UTF-8');
+                if ($p && $p < mb_strlen($name, 'UTF-8') - 1) {
+                    $initial .= ' ' . mb_substr($name, $p + 1, 1, 'UTF-8');
+                }
+                $result .= " $initial";
+            }
+        }
+        // Grab all initials and stick them together:
+        $smushAll = str_replace(' ', '', $result);
+        // If it's a long personal name, get all but the last initials as well
+        // e.g. wb for william butler yeats:
+        if (count($names) > 2 && $isPersonalName) {
+            $smushPers = str_replace(' ', '', mb_substr($result, 0, -1, 'UTF-8'));
+            $result .= ' ' . $smushPers;
+        }
+        // Now we have initials separate and together
+        if (!trim($result) !== $smushAll) {
+            $result .= " $smushAll";
+        }
+        return trim($result);
+    }
+
+    /**
      * Read a list file into an array
      *
      * @param string $filename List file name

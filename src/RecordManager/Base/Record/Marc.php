@@ -320,7 +320,9 @@ class Marc extends AbstractRecord
 
         $primaryAuthors = $this->getPrimaryAuthors();
         $data['author'] = $primaryAuthors['names'];
-        // Support for author_variant is currently not implemented
+        if ($variants = $this->getAuthorVariants($primaryAuthors)) {
+            $data['author_variant'] = $variants;
+        }
         $data['author_role'] = $primaryAuthors['relators'];
         if (isset($primaryAuthors['names'][0])) {
             $data['author_sort'] = $primaryAuthors['names'][0];
@@ -328,7 +330,9 @@ class Marc extends AbstractRecord
 
         $secondaryAuthors = $this->getSecondaryAuthors();
         $data['author2'] = $secondaryAuthors['names'];
-        // Support for author2_variant is currently not implemented
+        if ($variants = $this->getAuthorVariants($secondaryAuthors)) {
+            $data['author2_variant'] = $variants;
+        }
         $data['author2_role'] = $secondaryAuthors['relators'];
 
         $corporateAuthors = $this->getCorporateAuthors();
@@ -2134,7 +2138,7 @@ class Marc extends AbstractRecord
     ) {
         $result = [
             'names' => [], 'fuller' => [], 'relators' => [],
-            'ids' => [], 'idRoles' => []
+            'ids' => [], 'idRoles' => [], 'subA' => [],
         ];
         foreach ($fieldSpecs as $tag => $subfieldList) {
             foreach ($this->record->getFields($tag) as $field) {
@@ -2149,9 +2153,9 @@ class Marc extends AbstractRecord
                 }
                 if (!$match) {
                     $match = !empty(array_intersect($relators, $fieldRelators));
-                    if ($invertMatch) {
-                        $match = !$match;
-                    }
+                }
+                if ($invertMatch) {
+                    $match = !$match;
                 }
                 if (!$match) {
                     continue;
@@ -2184,7 +2188,7 @@ class Marc extends AbstractRecord
                 if ($fieldRelators) {
                     $result['relators'][] = reset($fieldRelators);
                 } else {
-                    $result['relators'][] = '-';
+                    $result['relators'][] = '';
                 }
                 if ($authId = $this->record->getSubfield($field, '0')) {
                     $result['ids'][] = $authId;
@@ -2196,6 +2200,9 @@ class Marc extends AbstractRecord
                                     ->stripTrailingPunctuation($role, '. ')
                             );
                     }
+                }
+                if ($a = $this->record->getSubfield($field, 'a')) {
+                    $result['subA'][] = $a;
                 }
             }
         }
@@ -2211,10 +2218,8 @@ class Marc extends AbstractRecord
     protected function getPrimaryAuthors()
     {
         $fieldSpecs = [
-            '100' => ['a', 'b', 'c', 'd'],
-            '700' => [
-                'a', 'q', 'b', 'c', 'd'
-            ]
+            '100' => ['a', 'b', 'c', 'q', 'd'],
+            '700' => ['a', 'b', 'c', 'q', 'd']
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,
@@ -2231,15 +2236,13 @@ class Marc extends AbstractRecord
     protected function getSecondaryAuthors()
     {
         $fieldSpecs = [
-            '100' => ['a', 'b', 'c', 'd'],
-            '700' => [
-                'a', 'b', 'c', 'd'
-            ]
+            '100' => ['a', 'b', 'c', 'q', 'd'],
+            '700' => ['a', 'b', 'c', 'q', 'd']
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,
             $this->primaryAuthorRelators,
-            ['700'],
+            ['100'],
             true,
             true
         );
@@ -2262,6 +2265,25 @@ class Marc extends AbstractRecord
             $fieldSpecs,
             [],
             ['110', '111', '710', '711']
+        );
+    }
+
+    /**
+     * Get variant author name forms from author array
+     *
+     * @param array $authors Author array
+     *
+     * @return array
+     */
+    protected function getAuthorVariants(array $authors): array
+    {
+        return array_values(
+            array_filter(
+                array_map(
+                    [$this->metadataUtils, 'getAuthorInitials'],
+                    $authors['subA']
+                )
+            )
         );
     }
 

@@ -104,19 +104,24 @@ class MarcTest extends RecordTest
             'author' => [
                 'Hirsjärvi, Sirkka',
             ],
+            'author_variant' => [
+                's h sh',
+            ],
             'author_role' => [
-                '-',
+                '',
             ],
             'author_sort' => 'Hirsjärvi, Sirkka',
             'author2' => [
-                'Hirsjärvi, Sirkka',
                 'Remes, Pirkko',
                 'Sajavaara, Paula',
             ],
+            'author2_variant' => [
+               'p r pr',
+               'p s ps',
+            ],
             'author2_role' => [
-                '-',
-                '-',
-                '-',
+                '',
+                '',
             ],
             'author_corporate' => [],
             'author_corporate_role' => [],
@@ -201,6 +206,14 @@ class MarcTest extends RecordTest
                         'type' => 'author',
                         'value' => 'Hirsjärvi, Sirkka.',
                     ],
+                    [
+                        'type' => 'author',
+                        'value' => 'Remes, Pirkko.',
+                    ],
+                    [
+                        'type' => 'author',
+                        'value' => 'Sajavaara, Paula.',
+                    ],
                 ],
                 'authorsAltScript' => [],
                 'titles' => [
@@ -277,16 +290,15 @@ class MarcTest extends RecordTest
             'author' => [
                 'Kalat, James W.',
             ],
+            'author_variant' => [
+                'j w k jw jwk',
+            ],
             'author_role' => [
-                '-',
+                '',
             ],
             'author_sort' => 'Kalat, James W.',
-            'author2' => [
-                'Kalat, James W.',
-            ],
-            'author2_role' => [
-                '-',
-            ],
+            'author2' => [],
+            'author2_role' => [],
             'author_corporate' => [],
             'author_corporate_role' => [],
             'author_additional' => [],
@@ -453,7 +465,7 @@ class MarcTest extends RecordTest
                 'Maanmittaushallitus',
             ],
             'author_corporate_role' => [
-                '-',
+                '',
             ],
             'author_additional' => [],
             'title' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
@@ -592,6 +604,9 @@ class MarcTest extends RecordTest
             'author_role' => [],
             'author2' => [
                 'Braudel, Fernand',
+            ],
+            'author2_variant' => [
+                'f b fb',
             ],
             'author2_role' => [
                 'kirjoittaja',
@@ -836,6 +851,10 @@ class MarcTest extends RecordTest
                     [
                         'type' => 'author',
                         'value' => 'Shakespeare, William.',
+                    ],
+                    [
+                        'type' => 'author',
+                        'value' => 'Jylhä, Yrjö,',
                     ],
                 ],
                 'authorsAltScript' => [],
