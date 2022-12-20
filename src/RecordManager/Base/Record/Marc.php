@@ -547,10 +547,10 @@ class Marc extends AbstractRecord
     {
         if ($this->getDriverParam('idIn999', false)) {
             if ($id = $this->getFieldSubfield('999', 'c')) {
-                return $id;
+                return trim($id);
             }
         }
-        return $this->record->getControlField('001');
+        return trim($this->record->getControlField('001'));
     }
 
     /**
