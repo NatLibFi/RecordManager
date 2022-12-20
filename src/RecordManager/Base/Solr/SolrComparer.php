@@ -243,7 +243,7 @@ class SolrComparer extends SolrUpdater
 
         $this->request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
         $url = $this->config['Solr']['search_url'];
-        $url .= '?q=id:"' . urlencode($record['id']) . '"&wt=json';
+        $url .= '?q=id:"' . urlencode(addcslashes($record['id'], '"')) . '"&wt=json';
         $this->request->setUrl($url);
 
         $response = $this->request->send();
