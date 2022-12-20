@@ -143,6 +143,21 @@ class MetadataUtils
     ];
 
     /**
+     * UNICODE folding rules for keys
+     *
+     * @var string
+     */
+    protected $keyFoldingRules
+        = ":: NFD; :: lower; :: Latin; :: [^[:letter:] [:number:]] Remove; :: NFKC;";
+
+    /**
+     * Transliterator for folding keys
+     *
+     * @var ?\Transliterator
+     */
+    protected $keyFoldingTransliterator = null;
+
+    /**
      * Constructor
      *
      * @param string $basePath Base path for referenced files
@@ -157,6 +172,11 @@ class MetadataUtils
         $this->basePath = $basePath;
         $this->config = $config;
         $this->logger = $logger;
+
+        // Set things up before normalizeKey is used below:
+        if (isset($config['Site']['key_folding_rules'])) {
+            $this->keyFoldingRules = $config['Site']['key_folding_rules'];
+        }
 
         if (isset($config['Site']['full_title_prefixes'])) {
             $this->fullTitlePrefixes = array_map(
@@ -364,7 +384,7 @@ class MetadataUtils
 
     /**
      * Normalize a string for comparison while using lowercasing and configured
-     * UNICODE normalization form.
+     * UNICODE normalization form and/or folding rules.
      *
      * @param string $str  String to be normalized
      * @param string $form UNICODE normalization form to use
@@ -373,7 +393,11 @@ class MetadataUtils
      */
     public function normalizeKey($str, $form = 'NFKC')
     {
-        $str = $this->normalizeUnicode($str, 'NFKC');
+        // If a transliterator is available, use it and ignore everything else:
+        if ($transliterator = $this->getKeyFoldingTransliterator()) {
+            return $transliterator->transliterate($str);
+        }
+
         $str = strtr($str, $this->foldingTable);
         $str = preg_replace(
             '/[\x00-\x20\x21-\x2F\x3A-\x40,\x5B-\x60,\x7B-\x7F]/',
@@ -383,8 +407,25 @@ class MetadataUtils
         if ('NFKC' !== $form) {
             $str = $this->normalizeUnicode($str, $form);
         }
-        $str = mb_strtolower(trim($str), 'UTF-8');
-        return $str;
+        return mb_strtolower(trim($str), 'UTF-8');
+    }
+
+    /**
+     * Get the transliterator for folding keys
+     *
+     * @return ?\Transliterator
+     */
+    protected function getKeyFoldingTransliterator(): ?\Transliterator
+    {
+        if (!$this->keyFoldingRules) {
+            return null;
+        }
+        if (null === $this->keyFoldingTransliterator) {
+            $this->keyFoldingTransliterator = \Transliterator::createFromRules(
+                $this->keyFoldingRules
+            );
+        }
+        return $this->keyFoldingTransliterator;
     }
 
     /**

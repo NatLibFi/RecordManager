@@ -83,7 +83,35 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
             '.',
             [
                 'Site' => [
+                    'key_folding_rules' => '',
                     'folding_ignore_characters' => 'åäöÅÄÖ',
+                ],
+            ],
+            $this->createMock(Logger::class)
+        );
+        $this->assertEquals(
+            'aaöäåöäåui',
+            $metadataUtils->normalizeKey('AaÖÄÅöäåüï', 'NFKC')
+        );
+
+        $metadataUtils = new MetadataUtils(
+            '.',
+            [],
+            $this->createMock(Logger::class)
+        );
+        $this->assertEquals(
+            'aaoaaoaaui',
+            $metadataUtils->normalizeKey('AaÖÄÅöäåüï', 'NFKC')
+        );
+
+        $metadataUtils = new MetadataUtils(
+            '.',
+            [
+                'Site' => [
+                    'key_folding_rules' => ':: NFD; :: lower; a\U00000308>AE;'
+                        . ' o\U00000308>OE; a\U0000030A>AA; :: Latin; ::'
+                        . ' [:Nonspacing Mark:] Remove; :: [:Punctuation:] Remove;'
+                        . ' :: [:Whitespace:] Remove; :: NFKC; AE>ä; OE>ö; AA>å',
                 ],
             ],
             $this->createMock(Logger::class)
