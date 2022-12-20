@@ -257,7 +257,7 @@ class Marc extends AbstractRecord
                     }
                     if ($targetRecord) {
                         $targetId = $targetRecord['_id'];
-                    } else {
+                    } elseif ($this->idPrefix) {
                         $targetId = $this->idPrefix . '.' . $targetId;
                     }
                     $this->record->updateFieldSubfield(

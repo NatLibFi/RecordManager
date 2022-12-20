@@ -68,17 +68,9 @@ trait PreTransformationTrait
                 $xslt = new \XSLTProcessor();
                 $xslt->importStylesheet($style);
                 $xslt->setParameter('', 'source_id', $source);
-                $xslt->setParameter(
-                    '',
-                    'institution',
-                    $settings['institution']
-                );
+                $xslt->setParameter('', 'institution', $settings['institution']);
                 $xslt->setParameter('', 'format', $settings['format']);
-                $xslt->setParameter(
-                    '',
-                    'id_prefix',
-                    $settings['idPrefix'] ?? ''
-                );
+                $xslt->setParameter('', 'id_prefix', $settings['idPrefix'] ?? '');
                 $settings['preXSLT'][] = $xslt;
             }
         }
