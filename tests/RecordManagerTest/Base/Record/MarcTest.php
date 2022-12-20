@@ -160,7 +160,7 @@ class MarcTest extends RecordTest
             ],
             'callnumber-subject' => 'QC',
             'callnumber-label' => 'QC861',
-            'callnumber-sort' => 'QC 3861.2',
+            'callnumber-sort' => 'QC 3861.2 B236',
             'topic' => [
                 'oppaat',
                 'ft: kirjoittaminen',

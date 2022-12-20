@@ -93,7 +93,7 @@ class LcCallNumber extends AbstractCallNumber
 
         $rest = '';
         $found = preg_match(
-            '/^([a-zA-Z]+) *(?:(\d+)(\.\d+)?)?/',
+            '/^([a-zA-Z]+) *(?:(\d+)(\.\d+)?)?(.*)$/',
             $callnumber,
             $matches
         );
@@ -102,15 +102,20 @@ class LcCallNumber extends AbstractCallNumber
             $this->letters = isset($matches[1]) ? trim($matches[1]) : '';
             $this->digits = isset($matches[2]) ? trim($matches[2]) : '';
             $this->decimal = isset($matches[3]) ? trim($matches[3]) : '';
-            $rest = isset($matches[5]) ? trim($matches[4]) : '';
+            $rest = isset($matches[4]) ? trim($matches[4]) : '';
         }
 
         $this->cutter = '';
         if ($rest) {
-            $parts = preg_split('/[A-Za-z]\d+/', $rest, 2);
+            preg_match(
+                '/(\\.?[A-Za-z]\\d+|^\\.[A-Za-z]| \\.[A-Za-z])/',
+                $rest,
+                $parts,
+                PREG_OFFSET_CAPTURE
+            );
             if (isset($parts[1])) {
-                $this->suffix = trim($parts[0]);
-                $this->cutter = trim($parts[1]);
+                $this->suffix = trim(substr($rest, 0, $parts[1][1]));
+                $this->cutter = trim(substr($rest, $parts[1][1]));
             } else {
                 $this->suffix = trim($rest);
             }
@@ -163,11 +168,14 @@ class LcCallNumber extends AbstractCallNumber
             $key .= $this->createSortableString($this->suffix);
         }
         if ($this->cutter) {
-            foreach (preg_split('/[A-Za-z]\d+/', $this->cutter) as $part) {
+            $o = 0;
+            $pt = '/[A-Za-z]\d+/';
+            while (preg_match($pt, $this->cutter, $m, PREG_OFFSET_CAPTURE, $o)) {
                 if ($key) {
                     $key .= ' ';
                 }
-                $key .= $this->createSortableString($part);
+                $key .= $this->createSortableString($m[0][0]);
+                $o = $m[0][1] + 1;
             }
         }
         return $key;
