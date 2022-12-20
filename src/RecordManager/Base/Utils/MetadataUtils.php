@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2021.
+ * Copyright (C) The National Library of Finland 2011-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -189,7 +189,7 @@ class MetadataUtils
         ];
 
         $this->unicodeNormalizationForm
-            = $config['Solr']['unicode_normalization_form'] ?? '';
+            = $config['Site']['unicode_normalization_form'] ?? '';
 
         $this->lowercaseLanguageStrings
             = $config['Site']['lowercase_language_strings'] ?? true;
@@ -474,6 +474,44 @@ class MetadataUtils
             $punctuation = substr($str, -1) == '.' && !substr($str, -3, 1) != ' ';
         }
         return $punctuation;
+    }
+
+    /**
+     * Strip all punctuation characters from a string
+     *
+     * @param string  $str                     String to strip
+     * @param ?string $punctuation             Regular expression matching
+     *                                         punctuation or null for default
+     * @param bool    $preservePunctuationOnly Return the original string if it
+     *                                         contains only punctuation
+     *
+     * @return string
+     */
+    public function stripPunctuation(
+        string $str,
+        ?string $punctuation = null,
+        bool $preservePunctuationOnly = true
+    ) {
+        $punctuation = $punctuation ?? "[\\t\\p{P}=´`” ̈]+";
+        // Use preg_replace for multibyte support
+        $result = preg_replace(
+            '/' . $punctuation . '/u',
+            ' ',
+            $str
+        );
+        if (null === $result) {
+            // Possibly invalid UTF-8, log and return:
+            $this->logger->logError(
+                'stripPunctuation',
+                "Failed to replace punctuation for '$str': " . preg_last_error_msg()
+            );
+            return $str;
+        }
+        $result = trim($result);
+        if ($preservePunctuationOnly && '' === $result) {
+            return $str;
+        }
+        return $result;
     }
 
     /**

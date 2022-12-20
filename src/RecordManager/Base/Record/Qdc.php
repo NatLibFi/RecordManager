@@ -203,13 +203,12 @@ class Qdc extends AbstractRecord
     {
         $title = trim((string)$this->doc->title);
         if ($forFiling) {
-            $title = $this->metadataUtils->stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripPunctuation($title);
             $title = $this->metadataUtils->stripLeadingArticle($title);
-            // Again, just in case stripping the article affected this
-            $title = $this->metadataUtils->stripLeadingPunctuation($title);
             $title = mb_strtolower($title, 'UTF-8');
+        } else {
+            $title = $this->metadataUtils->stripTrailingPunctuation($title);
         }
-        $title = $this->metadataUtils->stripTrailingPunctuation($title);
         return $title;
     }
 

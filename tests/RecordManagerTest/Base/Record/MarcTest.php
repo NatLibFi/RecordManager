@@ -134,7 +134,7 @@ class MarcTest extends RecordTest
             'title_alt' => [],
             'title_old' => [],
             'title_new' => [],
-            'title_sort' => 'tutki ja kirjoita / sirkka hirsjärvi, pirkko remes,'
+            'title_sort' => 'tutki ja kirjoita sirkka hirsjärvi pirkko remes'
                 . ' paula sajavaara',
             'series' => [],
             'publisher' => [
@@ -309,7 +309,7 @@ class MarcTest extends RecordTest
             'title_alt' => [],
             'title_old' => [],
             'title_new' => [],
-            'title_sort' => 'biological psychology / james w. kalat',
+            'title_sort' => 'biological psychology james w kalat',
             'series' => [],
             'publisher' => [
                 'Wadsworth',
@@ -478,7 +478,7 @@ class MarcTest extends RecordTest
             ],
             'title_old' => [],
             'title_new' => [],
-            'title_sort' => 'suomen tiekartta = vägkarta över finland. 1.',
+            'title_sort' => 'suomen tiekartta vägkarta över finland 1',
             'series' => [],
             'publisher' => [
                 '[Maanmittaushallitus]',
@@ -602,6 +602,7 @@ class MarcTest extends RecordTest
             'format' => ['Book'],
             'author' => [],
             'author_role' => [],
+            'author_sort' => 'Braudel, Fernand',
             'author2' => [
                 'Braudel, Fernand',
             ],
@@ -630,9 +631,9 @@ class MarcTest extends RecordTest
             ],
             'title_old' => [],
             'title_new' => [],
-            'title_sort' => 'civilisation matérielle, économie et capitalisme,'
-                . ' xve-xviiie siècle : le possible et l\'impossible. tome 1, les'
-                . ' structures du quotidien : le possible et l\'impossible / fernand'
+            'title_sort' => 'civilisation matérielle économie et capitalisme'
+                . ' xve xviiie siècle le possible et l impossible tome 1 les'
+                . ' structures du quotidien le possible et l impossible fernand'
                 . ' braudel',
             'series' => [],
             'publisher' => [

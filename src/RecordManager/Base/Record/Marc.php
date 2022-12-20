@@ -799,7 +799,7 @@ class Marc extends AbstractRecord
                     $title .= $subfield['data'];
                 }
                 if ($forFiling) {
-                    $title = $this->metadataUtils->stripLeadingPunctuation($title);
+                    $title = $this->metadataUtils->stripPunctuation($title);
                     $title = mb_strtolower($title, 'UTF-8');
                 }
                 $cleanTitle
