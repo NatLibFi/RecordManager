@@ -306,7 +306,9 @@ class Marc extends AbstractRecord
         }
 
         // lccn
-        $data['lccn'] = $this->getFieldSubfields('010', ['a']);
+        if ($lccn = trim($this->getFieldSubfields('010', ['a']))) {
+            $data['lccn'] = $lccn;
+        }
         $data['ctrlnum'] = $this->getFieldsSubfields(
             [[MarcHandler::GET_NORMAL, '035', ['a']]]
         );
@@ -334,6 +336,9 @@ class Marc extends AbstractRecord
             $data['author2_variant'] = $variants;
         }
         $data['author2_role'] = $secondaryAuthors['relators'];
+        if (!isset($data['author_sort']) && isset($secondaryAuthors['names'][0])) {
+            $data['author_sort'] = $secondaryAuthors['names'][0];
+        }
 
         $corporateAuthors = $this->getCorporateAuthors();
         $data['author_corporate'] = $corporateAuthors['names'];
@@ -346,10 +351,13 @@ class Marc extends AbstractRecord
         );
 
         $data['title'] = $this->getTitle();
-        $data['title_sub'] = $this->getFieldSubfields(
+        $titleSub = $this->getFieldSubfields(
             '245',
             ['b', 'n', 'p']
         );
+        if ($titleSub) {
+            $data['title_sub'] = $titleSub;
+        }
         $data['title_short'] = $this->getShortTitle();
         $data['title_full'] = $this->getFullTitle();
         $data['title_alt'] = $this->getAltTitles();
@@ -436,13 +444,16 @@ class Marc extends AbstractRecord
             ]
         );
 
-        $data['callnumber-first'] = $this->getFirstFieldSubfields(
+        $cn = $this->getFirstFieldSubfields(
             [
                 [MarcHandler::GET_NORMAL, '099', ['a']],
                 [MarcHandler::GET_NORMAL, '090', ['a']],
                 [MarcHandler::GET_NORMAL, '050', ['a']]
             ]
         );
+        if ($cn) {
+            $data['callnumber-first'] = $cn;
+        }
         $value = $this->getFirstFieldSubfields(
             [
                 [MarcHandler::GET_NORMAL, '090', ['a']],
