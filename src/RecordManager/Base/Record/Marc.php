@@ -1340,11 +1340,6 @@ class Marc extends AbstractRecord
                     continue;
                 }
 
-                // Take only first author:
-                if ($authors) {
-                    continue;
-                }
-
                 $author = $this->getSubfields($field, $subfields);
                 if ($author) {
                     $authors[] = [
@@ -1390,36 +1385,15 @@ class Marc extends AbstractRecord
             }
 
             $title = $this->record->getSubfield($field, 'a');
-            if (null !== $nonFilingInd) {
-                $nonfiling = (int)$this->record->getIndicator($field, $nonFilingInd);
-                if ($nonfiling > 0) {
-                    $title = mb_substr($title, $nonfiling, null, 'UTF-8');
-                }
-            }
             $rest = $this->getSubfields($field, $subfields);
             if ($rest) {
                 $title .= " $rest";
             }
-
-            $linkedFields = $this->record->getLinkedFieldsFrom880(
-                $tag,
-                $this->record->getSubfield($field, '6')
-            );
-            foreach ($linkedFields as $f880) {
-                $altTitle = $this->record->getSubfield($f880, 'a');
-                if (null !== $nonFilingInd) {
-                    $nonfiling
-                        = (int)$this->record->getIndicator($f880, $nonFilingInd);
-                    if ($nonfiling > 0) {
-                        $altTitle = mb_substr($altTitle, $nonfiling, null, 'UTF-8');
-                    }
-                }
-                $rest = $this->getSubfields($f880, $subfields);
-                if ($rest) {
-                    $altTitle .= " $rest";
-                }
-                if ($altTitle) {
-                    $altTitles[] = $altTitle;
+            $titleOrig = $title;
+            if (null !== $nonFilingInd) {
+                $nonfiling = (int)$this->record->getIndicator($field, $nonFilingInd);
+                if ($nonfiling > 0) {
+                    $title = mb_substr($title, $nonfiling, null, 'UTF-8');
                 }
             }
             $titleType = ('130' == $tag || '730' == $tag) ? 'uniform' : 'title';
@@ -1428,12 +1402,44 @@ class Marc extends AbstractRecord
                     'type' => $titleType,
                     'value' => $title
                 ];
+                if ($titleOrig !== $title) {
+                    $titles[] = [
+                        'type' => $titleType,
+                        'value' => $titleOrig
+                    ];
+                }
             }
-            foreach ($altTitles as $altTitle) {
-                $titlesAltScript[] = [
-                    'type' => $titleType,
-                    'value' => $altTitle
-                ];
+
+            $linkedFields = $this->record->getLinkedFieldsFrom880(
+                $tag,
+                $this->record->getSubfield($field, '6')
+            );
+            foreach ($linkedFields as $f880) {
+                $altTitle = $this->record->getSubfield($f880, 'a');
+                $rest = $this->getSubfields($f880, $subfields);
+                if ($rest) {
+                    $altTitle .= " $rest";
+                }
+                $altTitleOrig = $altTitle;
+                if (null !== $nonFilingInd) {
+                    $nonfiling
+                        = (int)$this->record->getIndicator($f880, $nonFilingInd);
+                    if ($nonfiling > 0) {
+                        $altTitle = mb_substr($altTitle, $nonfiling, null, 'UTF-8');
+                    }
+                }
+                if ($altTitle) {
+                    $titlesAltScript[] = [
+                        'type' => $titleType,
+                        'value' => $altTitle
+                    ];
+                    if ($altTitleOrig !== $altTitle) {
+                        $titlesAltScript[] = [
+                            'type' => $titleType,
+                            'value' => $altTitleOrig
+                        ];
+                    }
+                }
             }
         }
 
