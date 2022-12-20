@@ -188,6 +188,13 @@ class SolrUpdater
     protected $updateRetryWait;
 
     /**
+     * Field values that are not indexed
+     *
+     * @var array
+     */
+    protected $nonIndexedValues = [0, 0.0, ''];
+
+    /**
      * Solr Update Buffer
      *
      * @var string
@@ -707,6 +714,13 @@ class SolrUpdater
         }
         if (isset($config['Solr Field Limits'])) {
             $this->maxFieldLengths = $config['Solr Field Limits'];
+        }
+
+        if (isset($config['Solr']['non_indexed_values'])) {
+            $this->nonIndexedValues
+                = '' !== $config['Solr']['non_indexed_values']
+                ? (array)$config['Solr']['non_indexed_values']
+                : [];
         }
 
         // Load settings
@@ -2234,7 +2248,7 @@ class SolrUpdater
                         $this->unicodeNormalizationForm
                     );
                     $value = $this->trimFieldLength($key, $value);
-                    if ('' === $value || '0' === $value || '0.0' === $value) {
+                    if (in_array($value, $this->nonIndexedValues, true)) {
                         unset($values[$key2]);
                     }
                 }
@@ -2250,8 +2264,7 @@ class SolrUpdater
                 );
                 $values = $this->trimFieldLength($key, $values);
 
-                if ('' === $values || '0' === $values || '0.0' === $values
-                ) {
+                if (in_array($values, $this->nonIndexedValues, true)) {
                     unset($data[$key]);
                 }
             }
