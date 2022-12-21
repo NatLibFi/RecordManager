@@ -29,6 +29,7 @@ namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Marc\Marc as MarcHandler;
+use RecordManager\Base\Record\Marc\FormatCalculator;
 use RecordManager\Base\Utils\DeweyCallNumber;
 use RecordManager\Base\Utils\LcCallNumber;
 use RecordManager\Base\Utils\Logger;
@@ -134,24 +135,35 @@ class Marc extends AbstractRecord
     protected $createRecordCallback;
 
     /**
+     * Format calculator
+     *
+     * @var FormatCalculator
+     */
+    protected $formatCalculator;
+
+    /**
      * Constructor
      *
-     * @param array         $config           Main configuration
-     * @param array         $dataSourceConfig Data source settings
-     * @param Logger        $logger           Logger
-     * @param MetadataUtils $metadataUtils    Metadata utilities
-     * @param callable      $recordCallback   MARC record creation callback
+     * @param array            $config           Main configuration
+     * @param array            $dataSourceConfig Data source settings
+     * @param Logger           $logger           Logger
+     * @param MetadataUtils    $metadataUtils    Metadata utilities
+     * @param callable         $recordCallback   MARC record creation callback
+     * @param FormatCalculator $formatCalculator Record format calculator
      */
     public function __construct(
         array $config,
         array $dataSourceConfig,
         Logger $logger,
         MetadataUtils $metadataUtils,
-        callable $recordCallback
+        callable $recordCallback,
+        FormatCalculator $formatCalculator
     ) {
         parent::__construct($config, $dataSourceConfig, $logger, $metadataUtils);
 
         $this->createRecordCallback = $recordCallback;
+        $this->formatCalculator = $formatCalculator;
+
         if (isset($config['MarcRecord']['primary_author_relators'])) {
             $this->primaryAuthorRelators = explode(
                 ',',
@@ -245,7 +257,7 @@ class Marc extends AbstractRecord
                     }
                     if ($targetRecord) {
                         $targetId = $targetRecord['_id'];
-                    } else {
+                    } elseif ($this->idPrefix) {
                         $targetId = $this->idPrefix . '.' . $targetId;
                     }
                     $this->record->updateFieldSubfield(
@@ -294,7 +306,9 @@ class Marc extends AbstractRecord
         }
 
         // lccn
-        $data['lccn'] = $this->getFieldSubfields('010', ['a']);
+        if ($lccn = trim($this->getFieldSubfields('010', ['a']))) {
+            $data['lccn'] = $lccn;
+        }
         $data['ctrlnum'] = $this->getFieldsSubfields(
             [[MarcHandler::GET_NORMAL, '035', ['a']]]
         );
@@ -308,7 +322,9 @@ class Marc extends AbstractRecord
 
         $primaryAuthors = $this->getPrimaryAuthors();
         $data['author'] = $primaryAuthors['names'];
-        // Support for author_variant is currently not implemented
+        if ($variants = $this->getAuthorVariants($primaryAuthors)) {
+            $data['author_variant'] = $variants;
+        }
         $data['author_role'] = $primaryAuthors['relators'];
         if (isset($primaryAuthors['names'][0])) {
             $data['author_sort'] = $primaryAuthors['names'][0];
@@ -316,8 +332,13 @@ class Marc extends AbstractRecord
 
         $secondaryAuthors = $this->getSecondaryAuthors();
         $data['author2'] = $secondaryAuthors['names'];
-        // Support for author2_variant is currently not implemented
+        if ($variants = $this->getAuthorVariants($secondaryAuthors)) {
+            $data['author2_variant'] = $variants;
+        }
         $data['author2_role'] = $secondaryAuthors['relators'];
+        if (!isset($data['author_sort']) && isset($secondaryAuthors['names'][0])) {
+            $data['author_sort'] = $secondaryAuthors['names'][0];
+        }
 
         $corporateAuthors = $this->getCorporateAuthors();
         $data['author_corporate'] = $corporateAuthors['names'];
@@ -330,10 +351,13 @@ class Marc extends AbstractRecord
         );
 
         $data['title'] = $this->getTitle();
-        $data['title_sub'] = $this->getFieldSubfields(
+        $titleSub = $this->getFieldSubfields(
             '245',
             ['b', 'n', 'p']
         );
+        if ($titleSub) {
+            $data['title_sub'] = $titleSub;
+        }
         $data['title_short'] = $this->getShortTitle();
         $data['title_full'] = $this->getFullTitle();
         $data['title_alt'] = $this->getAltTitles();
@@ -419,17 +443,17 @@ class Marc extends AbstractRecord
                 [MarcHandler::GET_NORMAL, '785', ['x']]
             ]
         );
-        foreach ($data['issn'] as &$value) {
-            $value = str_replace('-', '', $value);
-        }
 
-        $data['callnumber-first'] = $this->getFirstFieldSubfields(
+        $cn = $this->getFirstFieldSubfields(
             [
                 [MarcHandler::GET_NORMAL, '099', ['a']],
                 [MarcHandler::GET_NORMAL, '090', ['a']],
                 [MarcHandler::GET_NORMAL, '050', ['a']]
             ]
         );
+        if ($cn) {
+            $data['callnumber-first'] = $cn;
+        }
         $value = $this->getFirstFieldSubfields(
             [
                 [MarcHandler::GET_NORMAL, '090', ['a']],
@@ -534,10 +558,10 @@ class Marc extends AbstractRecord
     {
         if ($this->getDriverParam('idIn999', false)) {
             if ($id = $this->getFieldSubfield('999', 'c')) {
-                return $id;
+                return trim($id);
             }
         }
-        return $this->record->getControlField('001');
+        return trim($this->record->getControlField('001'));
     }
 
     /**
@@ -775,7 +799,7 @@ class Marc extends AbstractRecord
                     $title .= $subfield['data'];
                 }
                 if ($forFiling) {
-                    $title = $this->metadataUtils->stripLeadingPunctuation($title);
+                    $title = $this->metadataUtils->stripPunctuation($title);
                     $title = mb_strtolower($title, 'UTF-8');
                 }
                 $cleanTitle
@@ -1000,235 +1024,11 @@ class Marc extends AbstractRecord
     /**
      * Dedup: Return format from predefined values
      *
-     * @return string
+     * @return string|array
      */
     public function getFormat()
     {
-        // check the 007 - this is a repeating field
-        $fields = $this->record->getControlFields('007');
-        $online = false;
-        foreach ($fields as $contents) {
-            $formatCode = strtoupper(substr($contents, 0, 1));
-            $formatCode2 = strtoupper(substr($contents, 1, 1));
-            switch ($formatCode) {
-            case 'A':
-                switch ($formatCode2) {
-                case 'D':
-                    return 'Atlas';
-                default:
-                    return 'Map';
-                }
-                // @phpstan-ignore-next-line
-                break;
-            case 'C':
-                switch ($formatCode2) {
-                case 'A':
-                    return 'TapeCartridge';
-                case 'B':
-                    return 'ChipCartridge';
-                case 'C':
-                    return 'DiscCartridge';
-                case 'F':
-                    return 'TapeCassette';
-                case 'H':
-                    return 'TapeReel';
-                case 'J':
-                    return 'FloppyDisk';
-                case 'M':
-                case 'O':
-                    return 'CDROM';
-                case 'R':
-                    // Do not return - this will cause anything with an
-                    // 856 field to be labeled as "Electronic"
-                    $online = true;
-                    break;
-                default:
-                    return 'Electronic';
-                }
-                break;
-            case 'D':
-                return 'Globe';
-            case 'F':
-                return 'Braille';
-            case 'G':
-                switch ($formatCode2) {
-                case 'C':
-                case 'D':
-                    return 'Filmstrip';
-                case 'T':
-                    return 'Transparency';
-                default:
-                    return 'Slide';
-                }
-                // @phpstan-ignore-next-line
-                break;
-            case 'H':
-                return 'Microfilm';
-            case 'K':
-                switch ($formatCode2) {
-                case 'C':
-                    return 'Collage';
-                case 'D':
-                    return 'Drawing';
-                case 'E':
-                    return 'Painting';
-                case 'F':
-                    return 'Print';
-                case 'G':
-                    return 'Photonegative';
-                case 'J':
-                    return 'Print';
-                case 'L':
-                    return 'TechnicalDrawing';
-                case 'O':
-                    return 'FlashCard';
-                case 'N':
-                    return 'Chart';
-                default:
-                    return 'Photo';
-                }
-                // @phpstan-ignore-next-line
-                break;
-            case 'M':
-                switch ($formatCode2) {
-                case 'F':
-                    return 'VideoCassette';
-                case 'R':
-                    return 'Filmstrip';
-                default:
-                    return 'MotionPicture';
-                }
-                // @phpstan-ignore-next-line
-                break;
-            case 'O':
-                return 'Kit';
-            case 'Q':
-                return 'MusicalScore';
-            case 'R':
-                return 'SensorImage';
-            case 'S':
-                switch ($formatCode2) {
-                case 'D':
-                    $size = strtoupper(substr($contents, 6, 1));
-                    $material = strtoupper(substr($contents, 10, 1));
-                    $soundTech = strtoupper(substr($contents, 13, 1));
-                    if ($soundTech == 'D'
-                        || ($size == 'G' && $material == 'M')
-                    ) {
-                        return 'CD';
-                    }
-                    return 'SoundDisc';
-                case 'S':
-                    return 'SoundCassette';
-                default:
-                    return 'SoundRecording';
-                }
-                // @phpstan-ignore-next-line
-                break;
-            case 'V':
-                $videoFormat = strtoupper(substr($contents, 4, 1));
-                switch ($videoFormat) {
-                case 'S':
-                    return 'BluRay';
-                case 'V':
-                    return 'DVD';
-                }
-
-                switch ($formatCode2) {
-                case 'C':
-                    return 'VideoCartridge';
-                case 'D':
-                    return 'VideoDisc';
-                case 'F':
-                    return 'VideoCassette';
-                case 'R':
-                    return 'VideoReel';
-                default:
-                    return 'Video';
-                }
-                // @phpstan-ignore-next-line
-                break;
-            }
-        }
-
-        // check the Leader at position 6
-        $leader = $this->record->getLeader();
-        $leaderBit = substr($leader, 6, 1);
-        switch (strtoupper($leaderBit)) {
-        case 'C':
-        case 'D':
-            return 'MusicalScore';
-        case 'E':
-        case 'F':
-            return 'Map';
-        case 'G':
-            return 'Slide';
-        case 'I':
-            return 'SoundRecording';
-        case 'J':
-            return 'MusicRecording';
-        case 'K':
-            return 'Photo';
-        case 'M':
-            return 'Electronic';
-        case 'O':
-        case 'P':
-            return 'Kit';
-        case 'R':
-            return 'PhysicalObject';
-        case 'T':
-            return 'Manuscript';
-        }
-
-        $field008 = $this->record->getControlField('008');
-        if (!$online) {
-            $online = substr($field008, 23, 1) === 'o';
-        }
-
-        // check the Leader at position 7
-        $leaderBit = substr($leader, 7, 1);
-        switch (strtoupper($leaderBit)) {
-        // Monograph
-        case 'M':
-            if ($online) {
-                return 'eBook';
-            } else {
-                return 'Book';
-            }
-            // @phpstan-ignore-next-line
-            break;
-        // Serial
-        case 'S':
-            // Look in 008 to determine what type of Continuing Resource
-            $formatCode = strtoupper(substr($field008, 21, 1));
-            switch ($formatCode) {
-            case 'N':
-                return $online ? 'eNewspaper' : 'Newspaper';
-            case 'P':
-                return $online ? 'eJournal' : 'Journal';
-            default:
-                return $online ? 'eSerial' : 'Serial';
-            }
-            // @phpstan-ignore-next-line
-            break;
-
-        case 'A':
-            // Component part in monograph
-            return $online ? 'eBookSection' : 'BookSection';
-        case 'B':
-            // Component part in serial
-            return $online ? 'eArticle' : 'Article';
-        case 'C':
-            // Collection
-            return 'Collection';
-        case 'D':
-            // Component part in collection (sub unit)
-            return 'SubUnit';
-        case 'I':
-            // Integrating resource
-            return 'ContinuouslyUpdatedResource';
-        }
-        return 'Other';
+        return $this->formatCalculator->getFormats($this->record);
     }
 
     /**
@@ -1540,11 +1340,6 @@ class Marc extends AbstractRecord
                     continue;
                 }
 
-                // Take only first author:
-                if ($authors) {
-                    continue;
-                }
-
                 $author = $this->getSubfields($field, $subfields);
                 if ($author) {
                     $authors[] = [
@@ -1590,36 +1385,15 @@ class Marc extends AbstractRecord
             }
 
             $title = $this->record->getSubfield($field, 'a');
-            if (null !== $nonFilingInd) {
-                $nonfiling = (int)$this->record->getIndicator($field, $nonFilingInd);
-                if ($nonfiling > 0) {
-                    $title = mb_substr($title, $nonfiling, null, 'UTF-8');
-                }
-            }
             $rest = $this->getSubfields($field, $subfields);
             if ($rest) {
                 $title .= " $rest";
             }
-
-            $linkedFields = $this->record->getLinkedFieldsFrom880(
-                $tag,
-                $this->record->getSubfield($field, '6')
-            );
-            foreach ($linkedFields as $f880) {
-                $altTitle = $this->record->getSubfield($f880, 'a');
-                if (null !== $nonFilingInd) {
-                    $nonfiling
-                        = (int)$this->record->getIndicator($f880, $nonFilingInd);
-                    if ($nonfiling > 0) {
-                        $altTitle = mb_substr($altTitle, $nonfiling, null, 'UTF-8');
-                    }
-                }
-                $rest = $this->getSubfields($f880, $subfields);
-                if ($rest) {
-                    $altTitle .= " $rest";
-                }
-                if ($altTitle) {
-                    $altTitles[] = $altTitle;
+            $titleOrig = $title;
+            if (null !== $nonFilingInd) {
+                $nonfiling = (int)$this->record->getIndicator($field, $nonFilingInd);
+                if ($nonfiling > 0) {
+                    $title = mb_substr($title, $nonfiling, null, 'UTF-8');
                 }
             }
             $titleType = ('130' == $tag || '730' == $tag) ? 'uniform' : 'title';
@@ -1628,12 +1402,44 @@ class Marc extends AbstractRecord
                     'type' => $titleType,
                     'value' => $title
                 ];
+                if ($titleOrig !== $title) {
+                    $titles[] = [
+                        'type' => $titleType,
+                        'value' => $titleOrig
+                    ];
+                }
             }
-            foreach ($altTitles as $altTitle) {
-                $titlesAltScript[] = [
-                    'type' => $titleType,
-                    'value' => $altTitle
-                ];
+
+            $linkedFields = $this->record->getLinkedFieldsFrom880(
+                $tag,
+                $this->record->getSubfield($field, '6')
+            );
+            foreach ($linkedFields as $f880) {
+                $altTitle = $this->record->getSubfield($f880, 'a');
+                $rest = $this->getSubfields($f880, $subfields);
+                if ($rest) {
+                    $altTitle .= " $rest";
+                }
+                $altTitleOrig = $altTitle;
+                if (null !== $nonFilingInd) {
+                    $nonfiling
+                        = (int)$this->record->getIndicator($f880, $nonFilingInd);
+                    if ($nonfiling > 0) {
+                        $altTitle = mb_substr($altTitle, $nonfiling, null, 'UTF-8');
+                    }
+                }
+                if ($altTitle) {
+                    $titlesAltScript[] = [
+                        'type' => $titleType,
+                        'value' => $altTitle
+                    ];
+                    if ($altTitleOrig !== $altTitle) {
+                        $titlesAltScript[] = [
+                            'type' => $titleType,
+                            'value' => $altTitleOrig
+                        ];
+                    }
+                }
             }
         }
 
@@ -2346,7 +2152,7 @@ class Marc extends AbstractRecord
     ) {
         $result = [
             'names' => [], 'fuller' => [], 'relators' => [],
-            'ids' => [], 'idRoles' => []
+            'ids' => [], 'idRoles' => [], 'subA' => [],
         ];
         foreach ($fieldSpecs as $tag => $subfieldList) {
             foreach ($this->record->getFields($tag) as $field) {
@@ -2361,9 +2167,9 @@ class Marc extends AbstractRecord
                 }
                 if (!$match) {
                     $match = !empty(array_intersect($relators, $fieldRelators));
-                    if ($invertMatch) {
-                        $match = !$match;
-                    }
+                }
+                if ($invertMatch) {
+                    $match = !$match;
                 }
                 if (!$match) {
                     continue;
@@ -2396,7 +2202,7 @@ class Marc extends AbstractRecord
                 if ($fieldRelators) {
                     $result['relators'][] = reset($fieldRelators);
                 } else {
-                    $result['relators'][] = '-';
+                    $result['relators'][] = '';
                 }
                 if ($authId = $this->record->getSubfield($field, '0')) {
                     $result['ids'][] = $authId;
@@ -2408,6 +2214,9 @@ class Marc extends AbstractRecord
                                     ->stripTrailingPunctuation($role, '. ')
                             );
                     }
+                }
+                if ($a = $this->record->getSubfield($field, 'a')) {
+                    $result['subA'][] = $a;
                 }
             }
         }
@@ -2423,10 +2232,8 @@ class Marc extends AbstractRecord
     protected function getPrimaryAuthors()
     {
         $fieldSpecs = [
-            '100' => ['a', 'b', 'c', 'd'],
-            '700' => [
-                'a', 'q', 'b', 'c', 'd'
-            ]
+            '100' => ['a', 'b', 'c', 'q', 'd'],
+            '700' => ['a', 'b', 'c', 'q', 'd']
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,
@@ -2443,15 +2250,13 @@ class Marc extends AbstractRecord
     protected function getSecondaryAuthors()
     {
         $fieldSpecs = [
-            '100' => ['a', 'b', 'c', 'd'],
-            '700' => [
-                'a', 'b', 'c', 'd'
-            ]
+            '100' => ['a', 'b', 'c', 'q', 'd'],
+            '700' => ['a', 'b', 'c', 'q', 'd']
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,
             $this->primaryAuthorRelators,
-            ['700'],
+            ['100'],
             true,
             true
         );
@@ -2474,6 +2279,25 @@ class Marc extends AbstractRecord
             $fieldSpecs,
             [],
             ['110', '111', '710', '711']
+        );
+    }
+
+    /**
+     * Get variant author name forms from author array
+     *
+     * @param array $authors Author array
+     *
+     * @return array
+     */
+    protected function getAuthorVariants(array $authors): array
+    {
+        return array_values(
+            array_filter(
+                array_map(
+                    [$this->metadataUtils, 'getAuthorInitials'],
+                    $authors['subA']
+                )
+            )
         );
     }
 

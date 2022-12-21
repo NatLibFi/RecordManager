@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2021.
+ * Copyright (C) The National Library of Finland 2012-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -186,6 +186,13 @@ class SolrUpdater
      * @var int
      */
     protected $updateRetryWait;
+
+    /**
+     * Field values that are not indexed
+     *
+     * @var array
+     */
+    protected $nonIndexedValues = [0, 0.0, ''];
 
     /**
      * Solr Update Buffer
@@ -707,6 +714,13 @@ class SolrUpdater
         }
         if (isset($config['Solr Field Limits'])) {
             $this->maxFieldLengths = $config['Solr Field Limits'];
+        }
+
+        if (isset($config['Solr']['non_indexed_values'])) {
+            $this->nonIndexedValues
+                = '' !== $config['Solr']['non_indexed_values']
+                ? (array)$config['Solr']['non_indexed_values']
+                : [];
         }
 
         // Load settings
@@ -1354,7 +1368,9 @@ class SolrUpdater
      */
     public function deleteDataSource($sourceId)
     {
-        $this->solrRequest('{ "delete": { "query": "id:' . $sourceId . '.*" } }');
+        $this->solrRequest(
+            '{ "delete": { "query": "id:' . json_encode($sourceId) . '.*" } }'
+        );
         $this->solrRequest('{ "commit": {} }', 4 * 60 * 60);
     }
 
@@ -2019,6 +2035,7 @@ class SolrUpdater
         $keys = [];
         $addAnalytical = $this->config['Solr']['work_keys_from_analytical_entries']
             ?? false;
+        $allAuthors = $this->config['Solr']['work_keys_from_all_authors'] ?? true;
         foreach ($workIdSets as $workIds) {
             $setType = $workIds['type'] ?? 'main';
             if (!$addAnalytical && 'analytical' === $setType) {
@@ -2038,6 +2055,9 @@ class SolrUpdater
                             $this->unicodeNormalizationForm
                         );
                         $keys[] = "AT $author $title";
+                        if (!$allAuthors) {
+                            break;
+                        }
                     }
                 }
             }
@@ -2055,6 +2075,9 @@ class SolrUpdater
                             $this->unicodeNormalizationForm
                         );
                         $keys[] = "AT $author $title";
+                        if (!$allAuthors) {
+                            break;
+                        }
                     }
                 }
             }
@@ -2232,7 +2255,7 @@ class SolrUpdater
                         $this->unicodeNormalizationForm
                     );
                     $value = $this->trimFieldLength($key, $value);
-                    if ('' === $value || '0' === $value || '0.0' === $value) {
+                    if (in_array($value, $this->nonIndexedValues, true)) {
                         unset($values[$key2]);
                     }
                 }
@@ -2248,8 +2271,7 @@ class SolrUpdater
                 );
                 $values = $this->trimFieldLength($key, $values);
 
-                if ('' === $values || '0' === $values || '0.0' === $values
-                ) {
+                if (in_array($values, $this->nonIndexedValues, true)) {
                     unset($data[$key]);
                 }
             }
@@ -2791,7 +2813,8 @@ class SolrUpdater
             return false;
         }
         $id = $this->createSolrId($id);
-        $this->bufferedDeletions[] = '"delete":{"id":"' . $id . '"}';
+        // Note: this is not quite JSON as the delete key is repeated
+        $this->bufferedDeletions[] = '"delete":{"id":' . json_encode($id) . '}';
         if (count($this->bufferedDeletions) >= 1000) {
             $request = "{" . implode(',', $this->bufferedDeletions) . "}";
             if (null !== $this->workerPoolManager

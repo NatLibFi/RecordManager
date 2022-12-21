@@ -255,9 +255,9 @@ abstract class AbstractRecord
     }
 
     /**
-     * Return format from predefined values
+     * Return format(s) from predefined values
      *
-     * @return string
+     * @return string|array
      */
     public function getFormat()
     {

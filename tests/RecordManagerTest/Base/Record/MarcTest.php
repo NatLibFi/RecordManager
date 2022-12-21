@@ -100,23 +100,28 @@ class MarcTest extends RecordTest
                 'fin',
                 'fin',
             ],
-            'format' => 'Book',
+            'format' => ['Book'],
             'author' => [
                 'Hirsjärvi, Sirkka',
             ],
+            'author_variant' => [
+                's h sh',
+            ],
             'author_role' => [
-                '-',
+                '',
             ],
             'author_sort' => 'Hirsjärvi, Sirkka',
             'author2' => [
-                'Hirsjärvi, Sirkka',
                 'Remes, Pirkko',
                 'Sajavaara, Paula',
             ],
+            'author2_variant' => [
+               'p r pr',
+               'p s ps',
+            ],
             'author2_role' => [
-                '-',
-                '-',
-                '-',
+                '',
+                '',
             ],
             'author_corporate' => [],
             'author_corporate_role' => [],
@@ -129,7 +134,7 @@ class MarcTest extends RecordTest
             'title_alt' => [],
             'title_old' => [],
             'title_new' => [],
-            'title_sort' => 'tutki ja kirjoita / sirkka hirsjärvi, pirkko remes,'
+            'title_sort' => 'tutki ja kirjoita sirkka hirsjärvi pirkko remes'
                 . ' paula sajavaara',
             'series' => [],
             'publisher' => [
@@ -155,7 +160,7 @@ class MarcTest extends RecordTest
             ],
             'callnumber-subject' => 'QC',
             'callnumber-label' => 'QC861',
-            'callnumber-sort' => 'QC 3861.2',
+            'callnumber-sort' => 'QC 3861.2 B236',
             'topic' => [
                 'oppaat',
                 'ft: kirjoittaminen',
@@ -200,6 +205,14 @@ class MarcTest extends RecordTest
                     [
                         'type' => 'author',
                         'value' => 'Hirsjärvi, Sirkka.',
+                    ],
+                    [
+                        'type' => 'author',
+                        'value' => 'Remes, Pirkko.',
+                    ],
+                    [
+                        'type' => 'author',
+                        'value' => 'Sajavaara, Paula.',
                     ],
                 ],
                 'authorsAltScript' => [],
@@ -273,20 +286,19 @@ class MarcTest extends RecordTest
                 'eng',
                 'eng',
             ],
-            'format' => 'Book',
+            'format' => ['Book'],
             'author' => [
                 'Kalat, James W.',
             ],
+            'author_variant' => [
+                'j w k jw jwk',
+            ],
             'author_role' => [
-                '-',
+                '',
             ],
             'author_sort' => 'Kalat, James W.',
-            'author2' => [
-                'Kalat, James W.',
-            ],
-            'author2_role' => [
-                '-',
-            ],
+            'author2' => [],
+            'author2_role' => [],
             'author_corporate' => [],
             'author_corporate_role' => [],
             'author_additional' => [],
@@ -297,7 +309,7 @@ class MarcTest extends RecordTest
             'title_alt' => [],
             'title_old' => [],
             'title_new' => [],
-            'title_sort' => 'biological psychology / james w. kalat',
+            'title_sort' => 'biological psychology james w kalat',
             'series' => [],
             'publisher' => [
                 'Wadsworth',
@@ -444,7 +456,7 @@ class MarcTest extends RecordTest
                 'fin',
                 'swe',
             ],
-            'format' => 'Map',
+            'format' => ['Map'],
             'author' => [],
             'author_role' => [],
             'author2' => [],
@@ -453,7 +465,7 @@ class MarcTest extends RecordTest
                 'Maanmittaushallitus',
             ],
             'author_corporate_role' => [
-                '-',
+                '',
             ],
             'author_additional' => [],
             'title' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
@@ -466,7 +478,7 @@ class MarcTest extends RecordTest
             ],
             'title_old' => [],
             'title_new' => [],
-            'title_sort' => 'suomen tiekartta = vägkarta över finland. 1.',
+            'title_sort' => 'suomen tiekartta vägkarta över finland 1',
             'series' => [],
             'publisher' => [
                 '[Maanmittaushallitus]',
@@ -587,11 +599,15 @@ class MarcTest extends RecordTest
                 'fre',
                 'fre',
             ],
-            'format' => 'Book',
+            'format' => ['Book'],
             'author' => [],
             'author_role' => [],
+            'author_sort' => 'Braudel, Fernand',
             'author2' => [
                 'Braudel, Fernand',
+            ],
+            'author2_variant' => [
+                'f b fb',
             ],
             'author2_role' => [
                 'kirjoittaja',
@@ -615,9 +631,9 @@ class MarcTest extends RecordTest
             ],
             'title_old' => [],
             'title_new' => [],
-            'title_sort' => 'civilisation matérielle, économie et capitalisme,'
-                . ' xve-xviiie siècle : le possible et l\'impossible. tome 1, les'
-                . ' structures du quotidien : le possible et l\'impossible / fernand'
+            'title_sort' => 'civilisation matérielle économie et capitalisme'
+                . ' xve xviiie siècle le possible et l impossible tome 1 les'
+                . ' structures du quotidien le possible et l impossible fernand'
                 . ' braudel',
             'series' => [],
             'publisher' => [
@@ -836,6 +852,10 @@ class MarcTest extends RecordTest
                     [
                         'type' => 'author',
                         'value' => 'Shakespeare, William.',
+                    ],
+                    [
+                        'type' => 'author',
+                        'value' => 'Jylhä, Yrjö,',
                     ],
                 ],
                 'authorsAltScript' => [],

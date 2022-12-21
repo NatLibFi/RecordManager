@@ -239,7 +239,7 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
                     "Error: format not set for data source $source"
                 );
             }
-            if (empty($settings['idPrefix'])) {
+            if (!isset($settings['idPrefix'])) {
                 $settings['idPrefix'] = $source;
             }
             if (!isset($settings['recordXPath'])) {

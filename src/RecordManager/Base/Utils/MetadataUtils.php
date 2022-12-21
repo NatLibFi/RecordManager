@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2021.
+ * Copyright (C) The National Library of Finland 2011-2022.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -143,6 +143,21 @@ class MetadataUtils
     ];
 
     /**
+     * UNICODE folding rules for keys
+     *
+     * @var string
+     */
+    protected $keyFoldingRules
+        = ":: NFD; :: lower; :: Latin; :: [^[:letter:] [:number:]] Remove; :: NFKC;";
+
+    /**
+     * Transliterator for folding keys
+     *
+     * @var ?\Transliterator
+     */
+    protected $keyFoldingTransliterator = null;
+
+    /**
      * Constructor
      *
      * @param string $basePath Base path for referenced files
@@ -157,6 +172,11 @@ class MetadataUtils
         $this->basePath = $basePath;
         $this->config = $config;
         $this->logger = $logger;
+
+        // Set things up before normalizeKey is used below:
+        if (isset($config['Site']['key_folding_rules'])) {
+            $this->keyFoldingRules = $config['Site']['key_folding_rules'];
+        }
 
         if (isset($config['Site']['full_title_prefixes'])) {
             $this->fullTitlePrefixes = array_map(
@@ -189,7 +209,7 @@ class MetadataUtils
         ];
 
         $this->unicodeNormalizationForm
-            = $config['Solr']['unicode_normalization_form'] ?? '';
+            = $config['Site']['unicode_normalization_form'] ?? '';
 
         $this->lowercaseLanguageStrings
             = $config['Site']['lowercase_language_strings'] ?? true;
@@ -364,7 +384,7 @@ class MetadataUtils
 
     /**
      * Normalize a string for comparison while using lowercasing and configured
-     * UNICODE normalization form.
+     * UNICODE normalization form and/or folding rules.
      *
      * @param string $str  String to be normalized
      * @param string $form UNICODE normalization form to use
@@ -373,7 +393,11 @@ class MetadataUtils
      */
     public function normalizeKey($str, $form = 'NFKC')
     {
-        $str = $this->normalizeUnicode($str, 'NFKC');
+        // If a transliterator is available, use it and ignore everything else:
+        if ($transliterator = $this->getKeyFoldingTransliterator()) {
+            return $transliterator->transliterate($str);
+        }
+
         $str = strtr($str, $this->foldingTable);
         $str = preg_replace(
             '/[\x00-\x20\x21-\x2F\x3A-\x40,\x5B-\x60,\x7B-\x7F]/',
@@ -383,8 +407,25 @@ class MetadataUtils
         if ('NFKC' !== $form) {
             $str = $this->normalizeUnicode($str, $form);
         }
-        $str = mb_strtolower(trim($str), 'UTF-8');
-        return $str;
+        return mb_strtolower(trim($str), 'UTF-8');
+    }
+
+    /**
+     * Get the transliterator for folding keys
+     *
+     * @return ?\Transliterator
+     */
+    protected function getKeyFoldingTransliterator(): ?\Transliterator
+    {
+        if (!$this->keyFoldingRules) {
+            return null;
+        }
+        if (null === $this->keyFoldingTransliterator) {
+            $this->keyFoldingTransliterator = \Transliterator::createFromRules(
+                $this->keyFoldingRules
+            );
+        }
+        return $this->keyFoldingTransliterator;
     }
 
     /**
@@ -474,6 +515,44 @@ class MetadataUtils
             $punctuation = substr($str, -1) == '.' && !substr($str, -3, 1) != ' ';
         }
         return $punctuation;
+    }
+
+    /**
+     * Strip all punctuation characters from a string
+     *
+     * @param string  $str                     String to strip
+     * @param ?string $punctuation             Regular expression matching
+     *                                         punctuation or null for default
+     * @param bool    $preservePunctuationOnly Return the original string if it
+     *                                         contains only punctuation
+     *
+     * @return string
+     */
+    public function stripPunctuation(
+        string $str,
+        ?string $punctuation = null,
+        bool $preservePunctuationOnly = true
+    ) {
+        $punctuation = $punctuation ?? "[\\t\\p{P}=´`” ̈]+";
+        // Use preg_replace for multibyte support
+        $result = preg_replace(
+            '/' . $punctuation . '/u',
+            ' ',
+            $str
+        );
+        if (null === $result) {
+            // Possibly invalid UTF-8, log and return:
+            $this->logger->logError(
+                'stripPunctuation',
+                "Failed to replace punctuation for '$str': " . preg_last_error_msg()
+            );
+            return $str;
+        }
+        $result = trim($result);
+        if ($preservePunctuationOnly && '' === $result) {
+            return $str;
+        }
+        return $result;
     }
 
     /**
@@ -1121,6 +1200,60 @@ class MetadataUtils
                 . substr($author, 0, $p);
         }
         return $author;
+    }
+
+    /**
+     * Get author initials
+     *
+     * Based on VuFind CreatorTools processInitials
+     *
+     * @param string $authorName Author name
+     *
+     * @return string
+     */
+    public function getAuthorInitials(string $authorName): string
+    {
+        // we guess that if there is a comma before the end - this is a personal name
+        $p = strpos($authorName, ',');
+        $isPersonalName = $p && $p < strlen($authorName) - 1;
+        // get rid of non-alphabet chars but keep hyphens and accents
+        $authorName = mb_strtolower(
+            preg_replace('/[^\\p{L} -]/', '', $authorName),
+            'UTF-8'
+        );
+        // Split into tokens on spaces:
+        $names = explode(' ', $authorName);
+        // If this is a personal name we'll reorganise to put lastname at the end:
+        if ($isPersonalName) {
+            $lastName = array_shift($names);
+            $names[] = $lastName;
+        }
+        // Put all the initials together in a space separated string:
+        $result = '';
+        foreach ($names as $name) {
+            if ('' !== $name) {
+                $initial = mb_substr($name, 0, 1, 'UTF-8');
+                // If there is a hyphenated name, use both initials:
+                $p = mb_strpos($name, '-', 0, 'UTF-8');
+                if ($p && $p < mb_strlen($name, 'UTF-8') - 1) {
+                    $initial .= ' ' . mb_substr($name, $p + 1, 1, 'UTF-8');
+                }
+                $result .= " $initial";
+            }
+        }
+        // Grab all initials and stick them together:
+        $smushAll = str_replace(' ', '', $result);
+        // If it's a long personal name, get all but the last initials as well
+        // e.g. wb for william butler yeats:
+        if (count($names) > 2 && $isPersonalName) {
+            $smushPers = str_replace(' ', '', mb_substr($result, 0, -1, 'UTF-8'));
+            $result .= ' ' . $smushPers;
+        }
+        // Now we have initials separate and together
+        if (!trim($result) !== $smushAll) {
+            $result .= " $smushAll";
+        }
+        return trim($result);
     }
 
     /**

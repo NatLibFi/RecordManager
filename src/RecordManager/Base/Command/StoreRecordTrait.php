@@ -173,7 +173,9 @@ trait StoreRecordTrait
             }
 
             $this->previousStoredId = $id;
-            $id = $settings['idPrefix'] . '.' . $id;
+            if ($settings['idPrefix']) {
+                $id = $settings['idPrefix'] . '.' . $id;
+            }
             $hostIDs = $metadataRecord->getHostRecordIDs();
             $dbRecord = $this->db->getRecord($id);
             if ($dbRecord) {

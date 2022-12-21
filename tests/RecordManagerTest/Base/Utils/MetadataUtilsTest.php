@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2015-2021
+ * Copyright (C) The National Library of Finland 2015-2022
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -83,6 +83,7 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
             '.',
             [
                 'Site' => [
+                    'key_folding_rules' => '',
                     'folding_ignore_characters' => 'åäöÅÄÖ',
                 ],
             ],
@@ -91,6 +92,77 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(
             'aaöäåöäåui',
             $metadataUtils->normalizeKey('AaÖÄÅöäåüï', 'NFKC')
+        );
+
+        $metadataUtils = new MetadataUtils(
+            '.',
+            [],
+            $this->createMock(Logger::class)
+        );
+        $this->assertEquals(
+            'aaoaaoaaui',
+            $metadataUtils->normalizeKey('AaÖÄÅöäåüï', 'NFKC')
+        );
+
+        $metadataUtils = new MetadataUtils(
+            '.',
+            [
+                'Site' => [
+                    'key_folding_rules' => ':: NFD; :: lower; a\U00000308>AE;'
+                        . ' o\U00000308>OE; a\U0000030A>AA; :: Latin; ::'
+                        . ' [:Nonspacing Mark:] Remove; :: [:Punctuation:] Remove;'
+                        . ' :: [:Whitespace:] Remove; :: NFKC; AE>ä; OE>ö; AA>å',
+                ],
+            ],
+            $this->createMock(Logger::class)
+        );
+        $this->assertEquals(
+            'aaöäåöäåui',
+            $metadataUtils->normalizeKey('AaÖÄÅöäåüï', 'NFKC')
+        );
+    }
+
+    /**
+     * Data provider for testStripPunctuation
+     *
+     * @return array
+     */
+    public function stripPunctuationProvider(): array
+    {
+        return [
+            ['123', '.123',],
+            ['foo', '/ . foo.',],
+            ['© 1979', '© 1979',],
+            ['foo bar',' foo-bar ',],
+            [
+                'foo bar',
+                "\t\\#*!¡?/:;., foo \t\\#*!¡?/:;.,=(['\"´`” ̈ bar =(['\"´`” ̈",
+            ],
+            ['...', '...',],
+            ['foo', 'foo', '[\.\-]',],
+            ['foo', '... foo', '[\.\-]',],
+        ];
+    }
+
+    /**
+     * Test punctuation removal
+     *
+     * @param string  $expected    Expected result
+     * @param string  $str         String to process
+     * @param ?string $punctuation Punctuation regexp to override default
+     *
+     * @dataProvider stripPunctuationProvider
+     *
+     * @return void
+     */
+    public function testStripPunctuation(
+        string $expected,
+        string $str,
+        ?string $punctuation = null
+    ): void {
+        $this->assertEquals(
+            $expected,
+            $this->metadataUtils->stripPunctuation($str, $punctuation),
         );
     }
 

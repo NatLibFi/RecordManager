@@ -133,11 +133,11 @@ class FieldMapper
      * Map source format to Solr format
      *
      * @param string $source Source ID
-     * @param string $format Format
+     * @param array  $format Format(s)
      *
-     * @return string Mapped format string
+     * @return array Mapped format(s)
      */
-    public function mapFormat($source, $format)
+    public function mapFormat(string $source, array $format): array
     {
         $settings = $this->settings[$source];
 
@@ -146,11 +146,11 @@ class FieldMapper
             $map = $mappingFile[0]['map'];
             if (!empty($format)) {
                 $format = $this->mapValue($format, $mappingFile);
-                return is_array($format) ? $format[0] : $format;
+                return (array)$format;
             } elseif (isset($map['##empty'])) {
-                return $map['##empty'];
+                return (array)$map['##empty'];
             } elseif (isset($map['##emptyarray'])) {
-                return $map['##emptyarray'];
+                return (array)$map['##emptyarray'];
             }
         }
         return $format;

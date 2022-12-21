@@ -16,11 +16,19 @@ articles = articles.lst
 ;lowercase_language_strings = true
 ; Directory for temporary files (default is system's temp directory)
 ;temp_dir = /tmp
-; Which normalization form to use for UNICODE normalization when creating search keys
-; e.g. for deduplication. Default is NFKC. See http://unicode.org/reports/tr15/ for
+; UNICODE rules for folding/normalizing keys (e.g. work keys or deduplication search
+; keys). If not empty, these rules override the internal folding table and the
+; unicode_normalization_form and folding_ignore_characters settings below.
+; Default is:
+; ":: NFD; :: lower; :: Latin; :: [^[:letter:] [:number:]] Remove; :: NFKC;"
+; The following example will preserve Å, Ä and Ö:
+;key_folding_rules = ":: NFD; :: lower; a\U00000308>AE; o\U00000308>OE; a\U0000030A>AA; :: Latin; :: [:Nonspacing Mark:] Remove; :: [:Punctuation:] Remove; :: [:Whitespace:] Remove; :: NFKC; AE>ä; OE>ö; AA>å"
+; Which normalization form to use for UNICODE normalization e.g. when creating search
+; keys for deduplication. Default is NFKC. See http://unicode.org/reports/tr15/ for
 ; more information.
 unicode_normalization_form = NFKC
-; Which characters to keep intact when folding characters for normalized keys.
+; Which characters to keep intact when folding characters for normalized keys. Only
+; used when key_folding_rules is set to an empty string.
 ; e.g. folding_ignore_characters = 'åäöÅÄÖ'
 ;folding_ignore_characters = ''
 
@@ -134,7 +142,9 @@ unicode_normalization_form = NFKC
 ;enrichment[] = SkosmosEnrichment
 ; Whether to add work identification keys from analytical entries (MARC 7xx fields).
 ; Default is false.
-;work_keys_from_analytical_entries = true
+;work_keys_from_analytical_entries = false
+; Whether to add work identification keys from more than one author. Default is true.
+;work_keys_from_all_authors = true
 
 ; The following section can be used to change the Solr fields used when indexing
 ; records, particularly for hierarchical records. Any field can also be set to empty

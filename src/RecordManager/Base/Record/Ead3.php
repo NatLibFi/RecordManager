@@ -154,7 +154,7 @@ class Ead3 extends Ead
         $data['title'] .= $data['title_short'];
         $data['title_full'] = $data['title_sort'] = $data['title'];
         $data['title_sort'] = mb_strtolower(
-            $this->metadataUtils->stripLeadingPunctuation($data['title_sort']),
+            $this->metadataUtils->stripPunctuation($data['title_sort']),
             'UTF-8'
         );
 
@@ -170,7 +170,7 @@ class Ead3 extends Ead
     /**
      * Return format from predefined values
      *
-     * @return string
+     * @return string|array
      */
     public function getFormat()
     {

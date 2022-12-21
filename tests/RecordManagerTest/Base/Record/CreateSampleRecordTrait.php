@@ -31,6 +31,7 @@
  */
 namespace RecordManagerTest\Base\Record;
 
+use RecordManager\Base\Record\Marc\FormatCalculator;
 use RecordManager\Base\Utils\Logger;
 
 /**
@@ -113,6 +114,7 @@ trait CreateSampleRecordTrait
                 function ($data) {
                     return new \RecordManager\Base\Marc\Marc($data);
                 },
+                new FormatCalculator(),
                 ...$constructorParams
             ]
         );

@@ -22,27 +22,12 @@ MongoDB is recommended for a large number of records (typically tens of millions
 
 ## Upgrading
 
+**See CHANGELOG.md for information on changes and anything affecting backward-compatibility.**
+
 Generally upgrading should be straightforward by replacing the old version with the new one and running
 `composer install` (or `php /path/to/composer.phar install`).
 With MongoDB you need to manually check that all indexes are present (see dbscripts/mongo.js).
 With MySQL/MariaDB make sure all tables are present (see dbscripts/mysql.sql).
-
-Note that since 8 Jul 2021 there is a new method for tracking updates of deduplicated records. Since RecordManager no longer uses the old method, there may be old tracking collections left dangling. With Mongo shell with the correct database active, you can use the following script to remove them:
-
-    var count = 0;
-    db.getCollectionNames().forEach(function(c) {
-        if (c.match("^tmp_mr_record") || c.match("^mr_record")) {
-            db.getCollection(c).drop();
-            count++;
-        }
-    });
-    print(count + " collections dropped");
-
-With MySQL/MariaDB you can identify the tables with the following SQL query:
-
-    show tables like '%mr_record_%';
-
-You can then use the `drop table` command to remove them.
 
 ## Installation Notes on CentOS 7
 

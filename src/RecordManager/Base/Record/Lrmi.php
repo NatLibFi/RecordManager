@@ -83,10 +83,8 @@ class Lrmi extends Qdc
     {
         $title = (string)$this->doc->title;
         if ($forFiling) {
-            $title = $this->metadataUtils->stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripPunctuation($title);
             $title = $this->metadataUtils->stripLeadingArticle($title);
-            // Again, just in case stripping the article affected this
-            $title = $this->metadataUtils->stripLeadingPunctuation($title);
             $title = mb_strtolower($title, 'UTF-8');
         }
         return $title;
@@ -95,7 +93,7 @@ class Lrmi extends Qdc
     /**
      * Return format from predefined values
      *
-     * @return string
+     * @return string|array
      */
     public function getFormat()
     {

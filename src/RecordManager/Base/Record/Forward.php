@@ -162,8 +162,8 @@ class Forward extends AbstractRecord
             }
         }
         $data['title_short'] = $data['title_full'] = $data['title'];
-        $data['title_sort'] = $this->metadataUtils->stripLeadingPunctuation(
-            $this->metadataUtils->stripLeadingArticle($data['title'])
+        $data['title_sort'] = $this->metadataUtils->stripLeadingArticle(
+            $this->metadataUtils->stripPunctuation($data['title'])
         );
 
         $descriptions = $this->getDescriptions($this->primaryLanguage);
@@ -443,7 +443,7 @@ class Forward extends AbstractRecord
     /**
      * Return format from predefined values
      *
-     * @return string
+     * @return string|array
      */
     public function getFormat()
     {

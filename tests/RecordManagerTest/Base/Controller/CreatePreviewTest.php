@@ -30,6 +30,7 @@ namespace RecordManagerTest\Base\Controller;
 use RecordManager\Base\Controller\CreatePreview;
 use RecordManager\Base\Database\PDODatabase;
 use RecordManager\Base\Deduplication\DedupHandler;
+use RecordManager\Base\Record\Marc\FormatCalculator;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Splitter\PluginManager as SplitterPluginManager;
 use RecordManager\Base\Utils\LineBasedMarcFormatter;
@@ -106,7 +107,8 @@ class CreatePreviewTest extends \PHPUnit\Framework\TestCase
             $metadataUtils,
             function ($data) {
                 return new \RecordManager\Base\Marc\Marc($data);
-            }
+            },
+            new FormatCalculator()
         );
         $recordPM = $this->createMock(RecordPluginManager::class);
         $recordPM->expects($this->once())

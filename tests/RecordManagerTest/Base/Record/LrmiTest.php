@@ -156,7 +156,7 @@ class LrmiTest extends RecordTest
                 'Planering av undevisning och lärande',
                 'Designing Learning Processes',
             ],
-            'title_sort' => 'opetuksen ja oppimisen suunnittelu, learning design',
+            'title_sort' => 'opetuksen ja oppimisen suunnittelu learning design',
             'publisher' => [
                 '',
             ],
@@ -204,7 +204,7 @@ class LrmiTest extends RecordTest
         $expected = [
             [
                 'authors' => [
-                    0 => [
+                    [
                         'type' => 'author',
                         'value' => 'Koli, Hanne',
                     ],
@@ -212,12 +212,12 @@ class LrmiTest extends RecordTest
                 'authorsAltScript' => [
                 ],
                 'titles' => [
-                    0 => [
+                    [
                         'type' => 'title',
                         'value'
-                            => 'opetuksen ja oppimisen suunnittelu, learning design',
+                            => 'opetuksen ja oppimisen suunnittelu learning design',
                     ],
-                    1 => [
+                    [
                         'type' => 'title',
                         'value'
                             => 'Opetuksen ja oppimisen suunnittelu, Learning Design',

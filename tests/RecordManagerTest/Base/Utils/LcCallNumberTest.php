@@ -50,14 +50,14 @@ class LcCallNumberTest extends \PHPUnit\Framework\TestCase
         $cn = new LcCallNumber('AC901.M5 vol. 1013, no. 8');
         $this->assertTrue($cn->isValid());
         $this->assertEquals(
-            'AC 3901',
+            'AC 3901 M15',
             $cn->getSortKey()
         );
 
         $cn = new LcCallNumber('GV1101 .D7 1980');
         $this->assertTrue($cn->isValid());
         $this->assertEquals(
-            'GV 41101',
+            'GV 41101 D17',
             $cn->getSortKey()
         );
 

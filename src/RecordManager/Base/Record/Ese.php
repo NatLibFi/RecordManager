@@ -138,10 +138,8 @@ class Ese extends AbstractRecord
     {
         $title = trim((string)$this->doc->title);
         if ($forFiling) {
-            $title = $this->metadataUtils->stripLeadingPunctuation($title);
+            $title = $this->metadataUtils->stripPunctuation($title);
             $title = $this->metadataUtils->stripLeadingArticle($title);
-            // Again, just in case stripping the article affected this
-            $title = $this->metadataUtils->stripLeadingPunctuation($title);
             $title = mb_strtolower($title, 'UTF-8');
         }
         return $title;
@@ -201,7 +199,7 @@ class Ese extends AbstractRecord
     /**
      * Dedup: Return format from predefined values
      *
-     * @return string
+     * @return string|array
      */
     public function getFormat()
     {

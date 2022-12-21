@@ -59,7 +59,7 @@ class LidoTest extends RecordTest
                 . ' Säädökset',
             'title' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen;'
                 . ' Säädökset',
-            'title_sort' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen;'
+            'title_sort' => 'Luonnonsuojelusäädökset toimittanut Raimo Luhtanen'
                 . ' Säädökset',
             'title_alt' => [],
             'format' => 'Kirja',
@@ -173,7 +173,7 @@ class LidoTest extends RecordTest
             'title_full' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
             'title_short' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
             'title' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
-            'title_sort' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+            'title_sort' => 'Luonnonsuojelusäädökset toimittanut Raimo Luhtanen',
             'title_alt' => [
                 'Säädökset'
             ],
