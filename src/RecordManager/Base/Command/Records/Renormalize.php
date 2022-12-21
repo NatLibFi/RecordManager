@@ -77,21 +77,18 @@ class Renormalize extends AbstractBase
      */
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
-        $sourceId = $input->getOption('source');
+        $sourceId = $input->getOption('source') ?: '';
         $singleId = $input->getOption('single') ?: '';
 
-        if (empty($sourceId) && empty($singleId)) {
-            $this->logger
-                ->logFatal('renormalize', 'No source or record id specified');
-            return Command::INVALID;
-        }
-
-        if (empty($sourceId)) {
+        if (!empty($singleId)) {
             $this->logger->logInfo('renormalize', "Renormalizing record $singleId");
             $this->process('', $singleId);
         } else {
             foreach (explode(',', $sourceId) as $source) {
-                $this->logger->logInfo('renormalize', "Renormalizing $source");
+                $this->logger->logInfo(
+                    'renormalize',
+                    "Renormalizing " . ($source ?: 'all records')
+                );
                 $this->process($source, $singleId);
             }
         }
