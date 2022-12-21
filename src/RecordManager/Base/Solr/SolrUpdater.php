@@ -2035,6 +2035,7 @@ class SolrUpdater
         $keys = [];
         $addAnalytical = $this->config['Solr']['work_keys_from_analytical_entries']
             ?? false;
+        $allAuthors = $this->config['Solr']['work_keys_from_all_authors'] ?? true;
         foreach ($workIdSets as $workIds) {
             $setType = $workIds['type'] ?? 'main';
             if (!$addAnalytical && 'analytical' === $setType) {
@@ -2054,6 +2055,9 @@ class SolrUpdater
                             $this->unicodeNormalizationForm
                         );
                         $keys[] = "AT $author $title";
+                        if (!$allAuthors) {
+                            break;
+                        }
                     }
                 }
             }
@@ -2071,6 +2075,9 @@ class SolrUpdater
                             $this->unicodeNormalizationForm
                         );
                         $keys[] = "AT $author $title";
+                        if (!$allAuthors) {
+                            break;
+                        }
                     }
                 }
             }
