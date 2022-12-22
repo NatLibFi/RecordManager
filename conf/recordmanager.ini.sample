@@ -10,7 +10,7 @@ abbreviations = abbreviations.lst
 ;full_title_prefixes = full-title-prefixes.lst
 ; Articles that should be removed from the beginning of a title for sorting
 articles = articles.lst
-; Deduplication handler class
+; Deduplication handler class (deprecated; use module configuration instead)
 ;dedup_handler = "\RecordManager\Base\Deduplication\DedupHandler"
 ; Whether to convert all language strings to lower case. Default is true.
 ;lowercase_language_strings = true
@@ -175,6 +175,13 @@ long_lat = 0
 contents = 0
 description = 0
 *_txt* = 0
+
+[Deduplication]
+; Identifiers ignored when deduplicating records. May be used to block e.g. invalid
+; ISBNs known to cause false matches. Use dashless ISBN-13 for ISBNs.
+; Optionally, a pipe and the beginning of a title may be added to limit the filtering
+; to a specific title.
+;ignored_ids[] = "9789511272229|Punaisen sirpin Karjala"
 
 ; OAI-PMH base configuration. Additionally, formats are configured in
 ; oai-pmh-formats.ini and sets in oai-pmh-sets.ini.
