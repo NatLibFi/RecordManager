@@ -1555,6 +1555,11 @@ class Lido extends AbstractRecord
                 },
                 $this->getIdentifier()
             );
+            // Add title field if needed:
+            if ($this->getDriverParam('addIdToHierarchyTitle', true)) {
+                $data['title_in_hierarchy']
+                    = trim($this->getIdentifier() . ' ' . $this->getTitle());
+            }
         }
     }
 }
