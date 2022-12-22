@@ -68,7 +68,7 @@ class Deduplicate extends AbstractBase
                 'all',
                 null,
                 InputOption::VALUE_NONE,
-                'Process all records regardless of their status (otherwise only '
+                'Process all records regardless of their status (otherwise only'
                 . ' modified records are processed)'
             )->addOption(
                 'mark',
