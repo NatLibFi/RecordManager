@@ -64,7 +64,7 @@
 ; solrIdPrefix          Prefix to be used with the record ID's in Solr (optional, overrides idPrefix but does not modify the prefix used in the Database).
 ; indexMergedParts      Whether to index merged component parts also separately with hidden_component_boolean field set to true. Defaults to true.
 ; indexUnprefixedIds    Whether to index record ID's without the source prefix. Default is false.
-; {field}_mapping       A mapping file (.ini-style) to be used to map values of {field} when updating Solr index. Useful for e.g. mapping multiple location codes to one.
+; {field}_mapping       A mapping file (.ini-style) to be used to map values of a field when updating Solr index. Useful for e.g. mapping multiple location codes to one.
 ; institutionInBuilding If building hierarchy is in use, what to add as institution on the top level:
 ;                         institution          Add the institution code (default)
 ;                         source               Add the source id
@@ -74,6 +74,16 @@
 ; extraFields[]         An array of extra fields added to each record from this data source when sending records to Solr.
 ;                       Use format fieldname:contents, e.g.
 ;                         extraFields[] = sector_str_mv:library
+; fieldRules[]          An array of rules for changing fields before they're sent to Solr. Allows deleting, copying and moving of fields.
+;                       Rules are processed in order before processing mappings and converting hierarchical facets.
+;                       The following rules are available:
+;                         delete <field>             Removes a field
+;                         copy <from> <to> [default] Copies field <from> to <to>. A default value can be specified in case the field is empty or doesn't exist.
+;                         move <from> <to> [default] Moves field <from> to <to>. A default value can be specified in case the field is empty or doesn't exist.
+;                       Examples:
+;                         fieldRules[] = "delete collection"
+;                         fieldRules[] = "copy building building2_str_mv MAIN"
+;                         fieldRules[] = "move author author2"
 ; driverParams[]        An array of extra parameters that can be used to customize record driver behavior
 ; enrichments[]         An array of enrichment class names that can be used to enrich records. ",final" can be appended to indicate that enrichment is executed to the
 ;                       final record after mappings etc. have been processed. By default it is executed before mappings, normalization etc.

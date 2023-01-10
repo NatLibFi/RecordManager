@@ -83,6 +83,7 @@ class FieldMapperTest extends \PHPUnit\Framework\TestCase
         $mapped = $fieldMapper->mapValues('test', $record);
 
         $this->assertIsArray($mapped);
+        $this->assertEquals($expected, $record);
         $this->assertEquals($expected, $mapped);
     }
 
