@@ -2331,7 +2331,7 @@ class SolrUpdater
     }
 
     /**
-     * Process any field ryles
+     * Process any field rules
      *
      * @param string                                   $source Source ID
      * @param array<string, string|array<int, string>> $data   Field array
