@@ -2337,6 +2337,8 @@ class SolrUpdater
      * @param array<string, string|array<int, string>> $data   Field array
      *
      * @return void
+     *
+     * @psalm-suppress DuplicateArrayKey
      */
     protected function processFieldRules(string $source, array &$data): void
     {
