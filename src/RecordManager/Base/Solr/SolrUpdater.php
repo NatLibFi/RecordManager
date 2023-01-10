@@ -2333,8 +2333,8 @@ class SolrUpdater
     /**
      * Process any field ryles
      *
-     * @param string $source Source ID
-     * @param array  $data   Field array
+     * @param string                                   $source Source ID
+     * @param array<string, string|array<int, string>> $data   Field array
      *
      * @return void
      */
@@ -2367,9 +2367,9 @@ class SolrUpdater
     /**
      * Prefix building with institution code according to the settings
      *
-     * @param array  $data     Record data
-     * @param string $source   Source ID
-     * @param array  $settings Data source settings
+     * @param array<string, string|array<int, string>> $data     Record data
+     * @param string                                   $source   Source ID
+     * @param array                                    $settings Data source settings
      *
      * @return void
      */
@@ -2404,9 +2404,7 @@ class SolrUpdater
                             // mapping tables
                             if (is_array($building)) {
                                 // Predefined hierarchy, prepend to it
-                                if (!empty($building)) {
-                                    array_unshift($building, $institutionCode);
-                                }
+                                array_unshift($building, $institutionCode);
                             } elseif ($building !== '') {
                                 $building = "$institutionCode/$building";
                             } elseif ('building' === $field) {

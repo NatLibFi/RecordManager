@@ -159,8 +159,8 @@ class FieldMapper
     /**
      * Map all fields in an array
      *
-     * @param string $source Source ID
-     * @param array  $data   Fields to process
+     * @param string                                   $source Source ID
+     * @param array<string, string|array<int, string>> $data   Fields to process
      *
      * @return array
      */
