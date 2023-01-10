@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2017.
+ * Copyright (C) The National Library of Finland 2012-2023.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -159,12 +159,12 @@ class FieldMapper
     /**
      * Map all fields in an array
      *
-     * @param string $source Source ID
-     * @param array  $data   Fields to process
+     * @param string                                   $source Source ID
+     * @param array<string, string|array<int, string>> $data   Fields to process
      *
      * @return array
      */
-    public function mapValues($source, $data)
+    public function mapValues($source, &$data)
     {
         $settings = $this->settings[$source];
         foreach ($settings['mappingFiles'] as $field => $mappingFile) {

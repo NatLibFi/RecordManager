@@ -25,6 +25,7 @@ Anything marked with [**BC**] is known to affect backward compatibility with pre
 - Colorized output by message type.
 - Added support for hierarchical categories based on [HILCC](https://www1.columbia.edu/sec/cu/libraries/bts/hilcc/). See [useHILCC driver param](https://github.com/NatLibFi/RecordManager/wiki/Data-Source-Configuration#possible-settings-for-driverparams) for more information.
 - [**BC**] Added support for UNICODE folding of key fields. Enabled by default and replaces the internal folding table, but can be disabled or configured with the `Site/key_folding_rules` setting in recordmanager.ini. It is recommended that `./console records:renormalize` is run to update all keys in the database to use the rules.
+- Added support for specifying rules (fieldRules[] in datasources.ini) for copying, moving and deleting fields before they are sent to Solr.
 
 ### Changed
 

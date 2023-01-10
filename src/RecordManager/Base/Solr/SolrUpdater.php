@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2012-2022.
+ * Copyright (C) The National Library of Finland 2012-2023.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -60,6 +60,38 @@ if (function_exists('pcntl_async_signals')) {
 class SolrUpdater
 {
     use \RecordManager\Base\Record\CreateRecordTrait;
+
+    /**
+     * Field processing rule for copy
+     *
+     * @var int
+     */
+    public const RULE_COPY = 1;
+
+    /**
+     * Field processing rule for delete
+     *
+     * @var int
+     */
+    public const RULE_DELETE = 2;
+
+    /**
+     * Field processing rule for move
+     *
+     * @var int
+     */
+    public const RULE_MOVE = 3;
+
+    /**
+     * Mappings from keywords to field processing rules
+     *
+     * @var array
+     */
+    protected $ruleMap = [
+        'copy' => self::RULE_COPY,
+        'delete' => self::RULE_DELETE,
+        'move' => self::RULE_MOVE,
+    ];
 
     /**
      * Database
@@ -1718,6 +1750,23 @@ class SolrUpdater
             if (isset($settings['index']) && !$settings['index']) {
                 $this->nonIndexedSources[] = $source;
             }
+
+            foreach ($settings['fieldRules'] ?? [] as $ruleStr) {
+                $ruleParts = explode(' ', $ruleStr);
+                $rule['op'] = $this->ruleMap[$ruleParts[0]] ?? null;
+                if (null === $rule['op']
+                    || (self::RULE_DELETE === $rule['op'] && empty($ruleParts[1]))
+                    || (self::RULE_DELETE !== $rule['op'] && empty($ruleParts[2]))
+                ) {
+                    throw new \Exception(
+                        "Invalid field rule for $source: '$ruleStr'"
+                    );
+                }
+                $rule['src'] = $ruleParts[1];
+                $rule['dst'] = $ruleParts[2] ?? null;
+                $rule['extra'] = $ruleParts[3] ?? null;
+                $this->settings[$source]['fieldProcessingRules'][] = $rule;
+            }
         }
     }
 
@@ -2132,9 +2181,12 @@ class SolrUpdater
             $this->addInstitutionToBuilding($data, $source, $settings);
         }
 
+        // Process any field rules:
+        $this->processFieldRules($source, $data);
+
         // Map field values according to any mapping files
         if (!$this->disableMappings) {
-            $data = $this->fieldMapper->mapValues($source, $data);
+            $this->fieldMapper->mapValues($source, $data);
         }
 
         // Special case: Special values for building (institution/location).
@@ -2279,11 +2331,47 @@ class SolrUpdater
     }
 
     /**
+     * Process any field rules
+     *
+     * @param string                                   $source Source ID
+     * @param array<string, string|array<int, string>> $data   Field array
+     *
+     * @return void
+     *
+     * @psalm-suppress DuplicateArrayKey
+     */
+    protected function processFieldRules(string $source, array &$data): void
+    {
+        foreach ($this->settings[$source]['fieldProcessingRules'] ?? [] as $rule) {
+            $src = $rule['src'];
+            if (!($fieldValue = ($data[$src] ?? null) ?: $rule['extra'])) {
+                continue;
+            }
+            $dst = $rule['dst'];
+            if (in_array($rule['op'], [self::RULE_COPY, self::RULE_MOVE])) {
+                if (!isset($data[$dst])) {
+                    $data[$dst] = $fieldValue;
+                } else {
+                    $data[$dst] = [
+                        ...(array)$data[$dst],
+                        ...(array)$fieldValue
+                    ];
+                }
+            }
+            if (in_array($rule['op'], [self::RULE_DELETE, self::RULE_MOVE])
+                && isset($data[$src])
+            ) {
+                unset($data[$src]);
+            }
+        }
+    }
+
+    /**
      * Prefix building with institution code according to the settings
      *
-     * @param array  $data     Record data
-     * @param string $source   Source ID
-     * @param array  $settings Data source settings
+     * @param array<string, string|array<int, string>> $data     Record data
+     * @param string                                   $source   Source ID
+     * @param array                                    $settings Data source settings
      *
      * @return void
      */
@@ -2318,9 +2406,7 @@ class SolrUpdater
                             // mapping tables
                             if (is_array($building)) {
                                 // Predefined hierarchy, prepend to it
-                                if (!empty($building)) {
-                                    array_unshift($building, $institutionCode);
-                                }
+                                array_unshift($building, $institutionCode);
                             } elseif ($building !== '') {
                                 $building = "$institutionCode/$building";
                             } elseif ('building' === $field) {
