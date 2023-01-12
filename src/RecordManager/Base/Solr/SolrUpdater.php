@@ -1126,7 +1126,7 @@ class SolrUpdater
                 $this->mergedComponents += $result['mergedComponents'];
                 foreach ($result['deleted'] as $id) {
                     ++$this->deletedRecords;
-                    $this->bufferedDelete($id);
+                    $this->bufferedDelete((string)$id);
                 }
                 foreach ($result['records'] as $record) {
                     ++$this->updatedRecords;
@@ -1149,7 +1149,7 @@ class SolrUpdater
                 $this->mergedComponents += $result['mergedComponents'];
                 foreach ($result['deleted'] as $id) {
                     ++$this->deletedRecords;
-                    $this->bufferedDelete($id);
+                    $this->bufferedDelete((string)$id);
                 }
                 foreach ($result['records'] as $record) {
                     ++$this->updatedRecords;
@@ -1571,7 +1571,7 @@ class SolrUpdater
                     $dbRecord = $this->db->getRecord($id);
                 }
                 if (!$dbRecord || !empty($dbRecord['deleted'])) {
-                    $this->bufferedDelete($id);
+                    $this->bufferedDelete((string)$id);
                     ++$orphanRecordCount;
                     if ('merged' === $record['record_format']) {
                         ++$orphanDedupCount;
@@ -2891,9 +2891,9 @@ class SolrUpdater
      *
      * @param string $id Record ID
      *
-     * @return boolean False when buffering, true when buffer is flushed
+     * @return bool False when buffering, true when buffer is flushed
      */
-    protected function bufferedDelete($id)
+    protected function bufferedDelete(string $id): bool
     {
         if ($this->dumpPrefix) {
             return false;
@@ -3037,7 +3037,7 @@ class SolrUpdater
      *
      * @return string
      */
-    protected function createSolrId($recordId)
+    protected function createSolrId(string $recordId): string
     {
         $parts = explode('.', $recordId, 2);
         if ($id = ($parts[1] ?? null)) {
