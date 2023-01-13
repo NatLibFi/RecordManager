@@ -5,6 +5,20 @@ Notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2.0.1 - 2023-01-13
+
+### Added
+
+Nothing
+
+### Changed
+
+- Fixed dedup merge record deletion from Solr when using MongoDB.
+
+### Removed
+
+Nothing
+
 ## 2.0.0 - 2023-01-10
 
 This is a major release that contains a lot of refactoring and underlying changes. The basic directory structure remains the same, but the introduction of Laminas module manager and service manager change how objects are instantiated.
