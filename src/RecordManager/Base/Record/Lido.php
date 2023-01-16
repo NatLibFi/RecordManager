@@ -1269,7 +1269,6 @@ class Lido extends AbstractRecord
             ->relatedWorksWrap->relatedWorkSet as $relatedWorkSetNode
         ) {
             if (empty($relatedWorkRelType)
-                || empty($relatedWorkSetNode->relatedWorkRelType->term)
                 || in_array(
                     trim(
                         mb_strtolower(
