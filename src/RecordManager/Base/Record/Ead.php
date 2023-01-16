@@ -524,10 +524,10 @@ class Ead extends AbstractRecord
                     }
                     [$lat, $lon] = $coordinates;
                     if ($this->geoField) {
-                        $data[$this->geoField] = "POINT(${lon} ${lat})";
+                        $data[$this->geoField] = "POINT($lon $lat)";
                     }
                     if ($this->geoCenterField) {
-                        $data[$this->geoCenterField] = "${lon} ${lat}";
+                        $data[$this->geoCenterField] = "$lon $lat";
                     }
                 }
             }
