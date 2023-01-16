@@ -511,7 +511,7 @@ class Qdc extends AbstractRecord
     }
 
     /**
-     * Get hierarchy fields
+     * Get hierarchy fields. Must be called after title is present in the array.
      *
      * @param array $data Reference to the target array
      *

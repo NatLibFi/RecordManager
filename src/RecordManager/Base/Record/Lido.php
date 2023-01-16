@@ -1499,7 +1499,7 @@ class Lido extends AbstractRecord
     }
 
     /**
-     * Get hierarchy fields
+     * Get hierarchy fields. Must be called after title is present in the array.
      *
      * @param array $data Reference to the target array
      *
@@ -1558,7 +1558,7 @@ class Lido extends AbstractRecord
             // Add title field if needed:
             if ($this->getDriverParam('addIdToHierarchyTitle', true)) {
                 $data['title_in_hierarchy']
-                    = trim($this->getIdentifier() . ' ' . $this->getTitle());
+                    = trim($this->getIdentifier() . ' ' . $data['title']);
             }
         }
     }

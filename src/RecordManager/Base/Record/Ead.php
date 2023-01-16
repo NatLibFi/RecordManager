@@ -287,7 +287,7 @@ class Ead extends AbstractRecord
         }
         if ($this->getDriverParam('addIdToHierarchyTitle', true)) {
             $data['title_in_hierarchy']
-                = trim($this->getUnitId() . ' ' . $this->getTitle());
+                = trim($this->getUnitId() . ' ' . $data['title']);
         }
 
         return $data;

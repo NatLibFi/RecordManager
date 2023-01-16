@@ -162,7 +162,7 @@ class Ead3 extends Ead
         $data['physical'] = $this->getPhysicalExtent();
         $data['thumbnail'] = $this->getThumbnail();
 
-        $data = array_merge($data, $this->getHierarchyFields());
+        $this->getHierarchyFields($data);
 
         return $data;
     }
@@ -453,15 +453,15 @@ class Ead3 extends Ead
     }
 
     /**
-     * Get hierarchy fields
+     * Get hierarchy fields. Must be called after title is present in the array.
      *
-     * @return array
+     * @param array $data Reference to the target array
+     *
+     * @return void
      */
-    protected function getHierarchyFields()
+    protected function getHierarchyFields(array &$data): void
     {
-        $data = [
-            'hierarchytype' => 'Default'
-        ];
+        $data['hierarchytype'] = 'Default';
         $sequenceUnitId = '';
         if ($this->doc->{'add-data'}->archive) {
             $archiveAttr = $this->doc->{'add-data'}->archive->attributes();
@@ -501,10 +501,8 @@ class Ead3 extends Ead
             && $this->getDriverParam('addIdToHierarchyTitle', true)
         ) {
             $data['title_in_hierarchy']
-                = trim("$sequenceUnitId " . $this->getTitle());
+                = trim("$sequenceUnitId " . $data['title']);
         }
-
-        return $data;
     }
 
     /**
