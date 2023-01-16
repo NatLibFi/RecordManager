@@ -1268,17 +1268,14 @@ class Lido extends AbstractRecord
         foreach ($this->doc->lido->descriptiveMetadata->objectRelationWrap
             ->relatedWorksWrap->relatedWorkSet as $relatedWorkSetNode
         ) {
-            if (empty($relatedWorkRelType)
-                || empty($relatedWorkSetNode->relatedWorkRelType->term)
-                || in_array(
-                    trim(
-                        mb_strtolower(
-                            $relatedWorkSetNode->relatedWorkRelType->term,
-                            'UTF-8'
-                        )
-                    ),
-                    $relatedWorkRelType
+            $relType = trim(
+                mb_strtolower(
+                    $relatedWorkSetNode->relatedWorkRelType->term ?? '',
+                    'UTF-8'
                 )
+            );
+            if (empty($relatedWorkRelType)
+                || in_array($relType, $relatedWorkRelType)
             ) {
                 $setList[] = $relatedWorkSetNode;
             }
