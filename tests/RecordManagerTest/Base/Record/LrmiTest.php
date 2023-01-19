@@ -163,6 +163,7 @@ class LrmiTest extends RecordTest
             'publishDate' => '2019',
             'isbn' => [],
             'issn' => [],
+            'doi_str_mv' => [],
             'topic_facet' => [
                 'oppiminen',
                 'opetus',

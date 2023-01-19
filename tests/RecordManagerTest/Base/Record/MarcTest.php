@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2020.
+ * Copyright (C) The National Library of Finland 2020-2023.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -95,6 +95,10 @@ class MarcTest extends RecordTest
                 'tutkimus',
                 'Remes, Pirkko',
                 'Sajavaara, Paula',
+                'urn:doi:doi2',
+                'urn:doif:not-doi',
+                'http://doi.org/doi%3a3',
+                'https://dx.doi.org/doi4',
             ],
             'language' => [
                 'fin',
@@ -152,6 +156,12 @@ class MarcTest extends RecordTest
                 '9789513148362',
             ],
             'issn' => [],
+            'doi_str_mv' => [
+                'doi1',
+                'doi2',
+                'doi:3',
+                'doi4',
+            ],
             'callnumber-first' => 'QC861.2',
             'callnumber-raw' => [
                 '38.04',
@@ -191,7 +201,12 @@ class MarcTest extends RecordTest
             'genre_facet' => [],
             'geographic_facet' => [],
             'era_facet' => [],
-            'url' => [],
+            'url' => [
+                'urn:doi:doi2',
+                'urn:doif:not-doi',
+                'http://doi.org/doi%3a3',
+                'https://dx.doi.org/doi4',
+            ],
             'illustrated' => 'Not Illustrated',
         ];
 
@@ -329,6 +344,7 @@ class MarcTest extends RecordTest
                 '9780534514006',
             ],
             'issn' => [],
+            'doi_str_mv' => [],
             'callnumber-first' => '',
             'callnumber-raw' => [],
             'topic' => [
@@ -494,6 +510,7 @@ class MarcTest extends RecordTest
             'edition' => '',
             'contents' => [],
             'issn' => [],
+            'doi_str_mv' => [],
             'callnumber-first' => '',
             'callnumber-raw' => [
                 '42.02',
@@ -653,6 +670,7 @@ class MarcTest extends RecordTest
                 '9782200371005',
             ],
             'issn' => [],
+            'doi_str_mv' => [],
             'callnumber-first' => '',
             'callnumber-raw' => [
                 '940.',

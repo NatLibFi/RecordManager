@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2021.
+ * Copyright (C) The National Library of Finland 2011-2023.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -183,6 +183,7 @@ class Dc extends AbstractRecord
         $data['publishDate'] = $this->getPublicationYear();
 
         $data['isbn'] = $this->getISBNs();
+        $data['doi_str_mv'] = $this->getDOIs();
 
         $data['topic'] = $data['topic_facet'] = $this->getValues('subject');
 
@@ -321,6 +322,28 @@ class Dc extends AbstractRecord
     public function getPageCount()
     {
         return '';
+    }
+
+    /**
+     * Get DOIs
+     *
+     * @return array
+     */
+    protected function getDOIs(): array
+    {
+        $result = [];
+
+        foreach ($this->getValues('identifier') as $identifier) {
+            $found = preg_match(
+                '{(urn:doi:|https?://doi.org/|https?://dx.doi.org/)([^?#]+)}',
+                $identifier,
+                $matches
+            );
+            if ($found) {
+                $result[] = urldecode($matches[2]);
+            }
+        }
+        return $result;
     }
 
     /**

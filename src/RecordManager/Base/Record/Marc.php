@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2022.
+ * Copyright (C) The National Library of Finland 2011-2023.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -443,6 +443,7 @@ class Marc extends AbstractRecord
                 [MarcHandler::GET_NORMAL, '785', ['x']]
             ]
         );
+        $data['doi_str_mv'] = $this->getDOIs();
 
         $cn = $this->getFirstFieldSubfields(
             [
@@ -1704,6 +1705,36 @@ class Marc extends AbstractRecord
         // Try to clean up the title but return original if it only contains
         // punctuation:
         return $this->metadataUtils->stripTrailingPunctuation($title, '', true);
+    }
+
+    /**
+     * Get DOIs
+     *
+     * @return array
+     */
+    protected function getDOIs(): array
+    {
+        $result = [];
+
+        foreach ($this->record->getFields('024') as $f024) {
+            if (strcasecmp($this->record->getSubfield($f024, '2'), 'doi') === 0
+                && $doi = trim($this->record->getSubfield($f024, 'a'))
+            ) {
+                $result[] = $doi;
+            }
+        }
+
+        foreach ($this->record->getFieldsSubfields('856', ['u'], null) as $u) {
+            $found = preg_match(
+                '{(urn:doi:|https?://doi.org/|https?://dx.doi.org/)([^?#]+)}',
+                $u,
+                $matches
+            );
+            if ($found) {
+                $result[] = urldecode($matches[2]);
+            }
+        }
+        return $result;
     }
 
     /**
