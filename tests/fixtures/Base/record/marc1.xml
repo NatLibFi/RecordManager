@@ -12,6 +12,10 @@
     <subfield code="a">2345</subfield>
     <subfield code="2">FOO</subfield>
   </datafield>
+  <datafield tag="024" ind1="2" ind2=" ">
+    <subfield code="a">doi1</subfield>
+    <subfield code="2">doi</subfield>
+  </datafield>
   <datafield tag="035" ind1=" " ind2=" ">
     <subfield code="a">FCC005246184</subfield>
   </datafield>
@@ -134,6 +138,18 @@
     <subfield code="h">38 Hir</subfield>
     <subfield code="z">18. p. 2013</subfield>
     <subfield code="9">Test</subfield>
+  </datafield>
+  <datafield tag="856" ind1=" " ind2=" ">
+    <subfield code="u">urn:doi:doi2</subfield>
+  </datafield>
+  <datafield tag="856" ind1=" " ind2=" ">
+    <subfield code="u">urn:doif:not-doi</subfield>
+  </datafield>
+  <datafield tag="856" ind1=" " ind2=" ">
+    <subfield code="u">http://doi.org/doi%3a3</subfield>
+  </datafield>
+  <datafield tag="856" ind1=" " ind2=" ">
+    <subfield code="u">https://dx.doi.org/doi4</subfield>
   </datafield>
 </record>
 </collection>

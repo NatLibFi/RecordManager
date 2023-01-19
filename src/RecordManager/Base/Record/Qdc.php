@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2021.
+ * Copyright (C) The National Library of Finland 2011-2023.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -167,6 +167,7 @@ class Qdc extends AbstractRecord
 
         $data['isbn'] = $this->getISBNs();
         $data['issn'] = $this->getISSNs();
+        $data['doi_str_mv'] = $this->getDOIs();
 
         $data['topic'] = $data['topic_facet'] = $this->getTopics();
         $data['url'] = $this->getUrls();
@@ -426,6 +427,30 @@ class Qdc extends AbstractRecord
     }
 
     /**
+     * Get DOIs
+     *
+     * @return array
+     */
+    protected function getDOIs(): array
+    {
+        $result = [];
+
+        foreach ($this->getValues('identifier', ['type' => 'doi']) as $identifier) {
+            $found = preg_match(
+                '{(urn:doi:|https?://doi.org/|https?://dx.doi.org/)([^?#]+)}',
+                $identifier,
+                $matches
+            );
+            if ($found) {
+                $result[] = urldecode($matches[2]);
+            } else {
+                $result[] = $identifier;
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Get languages
      *
      * @return array
@@ -487,15 +512,21 @@ class Qdc extends AbstractRecord
     /**
      * Get xml field values
      *
-     * @param string $tag Field name
+     * @param string $tag        Field name
+     * @param array  $attributes Attributes filter for the field
      *
      * @return array
      */
-    protected function getValues($tag)
+    protected function getValues($tag, array $attributes = [])
     {
         $values = [];
-        foreach ($this->doc->{$tag} as $value) {
-            $values[] = trim((string)$value);
+        foreach ($this->doc->{$tag} as $element) {
+            foreach ($attributes as $attr => $value) {
+                if ((string)$element[$attr] !== $value) {
+                    continue 2;
+                }
+            }
+            $values[] = trim((string)$element);
         }
         return $values;
     }
