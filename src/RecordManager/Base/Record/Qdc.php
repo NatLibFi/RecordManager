@@ -366,7 +366,7 @@ class Qdc extends AbstractRecord
             $date = trim($date);
             if (preg_match('{^(\d{4})$}', $date)) {
                 return $date;
-            } elseif (preg_match('{^(\d{4})-}', $date, $matches)) {
+            } elseif (preg_match('{^(\d{4})(-|\/)}', $date, $matches)) {
                 return $matches[1];
             }
         }
@@ -374,7 +374,7 @@ class Qdc extends AbstractRecord
             $date = trim($date);
             if (preg_match('{^(\d{4})$}', $date)) {
                 return $date;
-            } elseif (preg_match('{^(\d{4})-}', $date, $matches)) {
+            } elseif (preg_match('{^(\d{4})(-|\/)}', $date, $matches)) {
                 return $matches[1];
             }
         }
