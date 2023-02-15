@@ -409,6 +409,9 @@ class OaiPmh extends AbstractBase
                         FILE_APPEND
                     );
                 }
+                if ('' === $responseStr) {
+                    throw new \Exception('Empty response from server');
+                }
                 return $this->processResponse(
                     $responseStr,
                     isset($params['resumptionToken'])
