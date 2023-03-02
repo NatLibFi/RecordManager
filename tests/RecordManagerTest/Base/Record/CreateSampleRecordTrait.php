@@ -64,6 +64,31 @@ trait CreateSampleRecordTrait
         string $module = 'Base',
         array $constructorParams = []
     ) {
+        $recordString = $this->getFixture("record/$sample", $module);
+        return $this->createRecordFromString(
+            $recordString,
+            $class,
+            $dsConfig,
+            $constructorParams
+        );
+    }
+
+    /**
+     * Create a sample record driver from a record string
+     *
+     * @param string $recordString      Record as a string
+     * @param string $class             Record class
+     * @param array  $dsConfig          Datasource config
+     * @param array  $constructorParams Additional constructor params
+     *
+     * @return \RecordManager\Base\Record\AbstractRecord
+     */
+    protected function createRecordFromString(
+        string $recordString,
+        string $class,
+        array $dsConfig = [],
+        array $constructorParams = []
+    ) {
         $logger = $this->createMock(Logger::class);
         $config = [
             'Site' => [
@@ -82,8 +107,11 @@ trait CreateSampleRecordTrait
             $metadataUtils,
             ...$constructorParams
         );
-        $data = $this->getFixture("record/$sample", $module);
-        $record->setData('__unit_test_no_source__', '__unit_test_no_id__', $data);
+        $record->setData(
+            '__unit_test_no_source__',
+            '__unit_test_no_id__',
+            $recordString
+        );
         return $record;
     }
 
