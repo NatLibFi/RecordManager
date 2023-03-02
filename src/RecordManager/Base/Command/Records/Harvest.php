@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2022.
+ * Copyright (C) The National Library of Finland 2011-2023.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -143,6 +143,12 @@ class Harvest extends AbstractBase
                 'Specify start position (e.g. a resumption token) to continue'
                 . ' an interrupted harvesting process'
             )->addOption(
+                'single',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Harvest a single record by its identifier. Depending on harvesting'
+                . ' method this can be e.g. an OAI-PMH identifier.',
+            )->addOption(
                 'reharvest',
                 null,
                 InputOption::VALUE_OPTIONAL,
@@ -186,6 +192,7 @@ class Harvest extends AbstractBase
         $harvestFromDate = $input->getOption('from');
         $harvestUntilDate = $input->getOption('until');
         $startPosition = $input->getOption('start-position');
+        $singleId = $input->getOption('single');
         $reharvest = $input->getOption('reharvest');
         // Default is false, so null means reharvest with no value:
         if (null === $reharvest) {
@@ -204,6 +211,16 @@ class Harvest extends AbstractBase
             throw new \Exception(
                 'Reharvest start date must be specified when used with the'
                 . ' --start-position option'
+            );
+        }
+
+        if ($singleId && count($sourceList) !== 1) {
+            $this->logger->logFatal(
+                'harvest',
+                'A single source with --source parameter is required to use --single'
+            );
+            throw new \Exception(
+                'A single source with --source parameter is required to use --single'
             );
         }
 
@@ -250,6 +267,11 @@ class Harvest extends AbstractBase
                 $type = ($settings['type'] ?? null) ?: 'OAI-PMH';
                 $harvester = $this->harvesterPluginManager->get($type);
                 $harvester->init($source, $this->verbose, $reharvest ? true : false);
+
+                if ($singleId) {
+                    $harvester->harvestSingle([$this, 'storeRecord'], $singleId);
+                    continue;
+                }
 
                 if ($startPosition) {
                     if (is_callable([$harvester, 'setInitialPosition'])) {

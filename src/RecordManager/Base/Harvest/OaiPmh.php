@@ -242,6 +242,35 @@ class OaiPmh extends AbstractBase
     }
 
     /**
+     * Harvest a single record.
+     *
+     * @param callable $callback Function to be called to store a harvested record
+     * @param string   $id       Record ID
+     *
+     * @return void
+     */
+    public function harvestSingle(callable $callback, string $id): void
+    {
+        $this->initHarvest($callback);
+
+        // Make the OAI-PMH request:
+        $params = [
+            'metadataPrefix' => $this->metadataPrefix,
+            'identifier' => $id
+        ];
+        $this->xml = $this->sendRequest('GetRecord', $params);
+
+        // Save the records from the response:
+        $getRecord = $this->getSingleNode($this->xml, 'GetRecord');
+        if ($getRecord !== false) {
+            $records = $this->getImmediateChildrenByTagName($getRecord, 'record');
+            if ($records) {
+                $this->processRecords($records);
+            }
+        }
+    }
+
+    /**
      * List identifiers of all available documents.
      *
      * @param callable $callback Function to be called to process an identifier

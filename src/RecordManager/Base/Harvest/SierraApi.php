@@ -228,6 +228,33 @@ class SierraApi extends AbstractBase
     }
 
     /**
+     * Harvest a single record.
+     *
+     * @param callable $callback Function to be called to store a harvested record
+     * @param string   $id       Record ID
+     *
+     * @return void
+     */
+    public function harvestSingle(callable $callback, string $id): void
+    {
+        $this->initHarvest($callback);
+
+        $apiParams = [
+            'limit' => $this->batchSize,
+            'offset' => $this->startPosition,
+            'fields' => 'id,deleted,locations,fixedFields,varFields',
+            'id' => $id,
+        ];
+        if (null !== $this->suppressedRecords) {
+            $apiParams['suppressed'] = $this->suppressedRecords ? 'true' : 'false';
+        }
+
+        $response = $this->sendRequest([$this->apiVersion, 'bibs'], $apiParams);
+        $this->processResponse($response->getBody());
+        $this->reportResults();
+    }
+
+    /**
      * Get server date as a unix timestamp
      *
      * @return int

@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (c) The National Library of Finland 2011-2021.
+ * Copyright (c) The National Library of Finland 2011-2023.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -278,6 +278,21 @@ abstract class AbstractBase
      * @return void
      */
     abstract public function harvest($callback);
+
+    /**
+     * Harvest a single record.
+     *
+     * @param callable $callback Function to be called to store a harvested record
+     * @param string   $id       Record ID
+     *
+     * @return void
+     */
+    public function harvestSingle(callable $callback, string $id): void
+    {
+        throw new \Exception(
+            'Harvesting a single record not supported by the harvesting method'
+        );
+    }
 
     /**
      * Return the number of changed records
