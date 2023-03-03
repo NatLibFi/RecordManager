@@ -206,7 +206,13 @@ class Marc extends AbstractRecord
      */
     public function toXML()
     {
-        return $this->record->toFormat('MARCXML');
+        $collection = $this->record->toFormat('MARCXML');
+        $startPos = strpos($collection, '<record>');
+        $endPos = strrpos($collection, '</record>');
+        if (false === $startPos || false === $endPos) {
+            throw new \Exception('MARCXML could not be parsed for record element');
+        }
+        return substr($collection, $startPos, $endPos + 9 - $startPos);
     }
 
     /**
