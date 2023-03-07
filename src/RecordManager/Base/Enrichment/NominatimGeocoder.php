@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2013-2022.
+ * Copyright (C) The National Library of Finland 2013-2023.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -406,9 +406,9 @@ class NominatimGeocoder extends AbstractEnrichment
                 continue;
             }
             $items[] = [
-                'wkt' => $place['geotext'],
-                'lat' => $place['lat'],
-                'lon' => $place['lon'],
+                'wkt' => $place['geotext'] ?? '',
+                'lat' => $place['lat'] ?? '',
+                'lon' => $place['lon'] ?? '',
                 'importance' => $importance
             ];
         }
