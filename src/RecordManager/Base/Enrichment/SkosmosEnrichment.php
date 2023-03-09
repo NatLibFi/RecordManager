@@ -172,9 +172,6 @@ class SkosmosEnrichment extends AbstractEnrichment
      */
     public function enrich($sourceId, $record, &$solrArray)
     {
-        if (!($record instanceof \RecordManager\Base\Record\Marc)) {
-            return;
-        }
         $fields = [
             'getRawTopicIds' => [
                 'pref' => 'topic_add_txt_mv',
@@ -188,6 +185,9 @@ class SkosmosEnrichment extends AbstractEnrichment
             ]
         ];
         foreach ($fields as $method => $spec) {
+            if (!is_callable([$record, $method])) {
+                continue;
+            }
             foreach (call_user_func([$record, $method]) as $id) {
                 $this->enrichField(
                     $sourceId,
