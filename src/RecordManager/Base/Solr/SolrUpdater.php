@@ -1531,9 +1531,12 @@ class SolrUpdater
     /**
      * Check Solr index for orphaned records
      *
+     * @param bool $reportOnly Whether to just print record IDs instead of deleting
+     *                         them from the index.
+     *
      * @return void
      */
-    public function checkIndexedRecords()
+    public function checkIndexedRecords(bool $reportOnly)
     {
         $request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
         $baseUrl = $this->config['Solr']['search_url']
@@ -1564,17 +1567,26 @@ class SolrUpdater
 
             foreach ($records as $record) {
                 $id = $record['id'];
-                if ('merged' === ($record['record_format'] ?? $record['recordtype'])
-                ) {
+                $format = $record['record_format'] ?? $record['recordtype'];
+                $merged = 'merged' === $format;
+                if ($merged) {
                     $dbRecord = $this->db->getDedup($id);
                 } else {
                     $dbRecord = $this->db->getRecord($id);
                 }
                 if (!$dbRecord || !empty($dbRecord['deleted'])) {
-                    $this->bufferedDelete((string)$id);
-                    ++$orphanRecordCount;
-                    if ('merged' === $record['record_format']) {
-                        ++$orphanDedupCount;
+                    if ($reportOnly) {
+                        $msg = 'Found orphan ' . ($merged ? 'merged' : 'single')
+                            . " record $id in index ("
+                            . (!$dbRecord ? 'record missing' : 'record deleted')
+                            . ')';
+                        $this->log->logWarning('SolrCheck', $msg);
+                    } else {
+                        $this->bufferedDelete((string)$id);
+                        ++$orphanRecordCount;
+                        if ($merged) {
+                            ++$orphanDedupCount;
+                        }
                     }
                 }
             }

@@ -30,6 +30,7 @@ namespace RecordManager\Base\Command\Solr;
 use RecordManager\Base\Command\AbstractBase;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -54,7 +55,13 @@ class CheckIndex extends AbstractBase
      */
     protected function configure()
     {
-        $this->setDescription('Check Solr index consistency');
+        $this->setDescription('Check Solr index consistency')
+            ->addOption(
+                'report-only',
+                null,
+                InputOption::VALUE_NONE,
+                'Only report invalid records instead of deleting them'
+            );
     }
 
     /**
@@ -67,8 +74,12 @@ class CheckIndex extends AbstractBase
      */
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
-        $this->logger->logInfo('SolrCheck', 'Checking Solr index');
-        $this->solrUpdater->checkIndexedRecords();
+        $reportOnly = (bool)$input->getOption('report-only');
+        $this->logger->logInfo(
+            'SolrCheck',
+            'Checking Solr index' . ($reportOnly ? ' (report only)' : '')
+        );
+        $this->solrUpdater->checkIndexedRecords($reportOnly);
         $this->logger->logInfo('SolrCheck', 'Solr check completed');
         return Command::SUCCESS;
     }
