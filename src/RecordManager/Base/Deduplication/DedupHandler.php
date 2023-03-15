@@ -174,9 +174,11 @@ class DedupHandler implements DedupHandlerInterface
         $results = [];
         $sources = [];
         if (!$dedupRecord['deleted'] && empty($dedupRecord['ids'])) {
-            $this->db->deleteDedup($dedupRecord['_id']);
+            $dedupRecord['deleted'] = true;
+            $dedupRecord['changed'] = $this->db->getTimestamp();
+            $this->db->saveDedup($dedupRecord);
             return [
-                "Deleted dedup record '{$dedupRecord['_id']}' (no records in"
+                "Marked dedup record '{$dedupRecord['_id']}' deleted (no records in"
                 . ' non-deleted dedup record)'
             ];
         }
