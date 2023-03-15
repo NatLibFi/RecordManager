@@ -1577,9 +1577,16 @@ class SolrUpdater
                 if (!$dbRecord || !empty($dbRecord['deleted'])) {
                     if ($reportOnly) {
                         $msg = 'Found orphan ' . ($merged ? 'merged' : 'single')
-                            . " record $id in index ("
-                            . (!$dbRecord ? 'record missing' : 'record deleted')
-                            . ')';
+                            . " record $id in index (database record ";
+                        if ($dbRecord) {
+                            $ts = $this->db->getUnixTime(
+                                $dbRecord[$merged ? 'changed' : 'updated']
+                            );
+                            $msg .= 'deleted ' . date('Y-m-d H:i:s', $ts);
+                        } else {
+                            $msg .= 'missing';
+                        }
+                        $msg .= ')';
                         $this->log->logWarning('SolrCheck', $msg);
                     } else {
                         $this->bufferedDelete((string)$id);
