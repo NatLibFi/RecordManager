@@ -57,6 +57,12 @@ class CheckIndex extends AbstractBase
     {
         $this->setDescription('Check Solr index consistency')
             ->addOption(
+                'query',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Query to use to find records in Solr (default is *:*)'
+            )
+            ->addOption(
                 'report-only',
                 null,
                 InputOption::VALUE_NONE,
@@ -79,7 +85,10 @@ class CheckIndex extends AbstractBase
             'SolrCheck',
             'Checking Solr index' . ($reportOnly ? ' (report only)' : '')
         );
-        $this->solrUpdater->checkIndexedRecords($reportOnly);
+        $this->solrUpdater->checkIndexedRecords(
+            $reportOnly,
+            $input->getOption('query')
+        );
         $this->logger->logInfo('SolrCheck', 'Solr check completed');
         return Command::SUCCESS;
     }

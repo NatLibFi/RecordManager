@@ -1531,16 +1531,22 @@ class SolrUpdater
     /**
      * Check Solr index for orphaned records
      *
-     * @param bool $reportOnly Whether to just print record IDs instead of deleting
-     *                         them from the index.
+     * @param bool    $reportOnly Whether to just print record IDs instead of
+     *                            deleting them from the index.
+     * @param ?string $query      Query to use for Solr records (use null for default
+     *                            '*:*')
      *
      * @return void
      */
-    public function checkIndexedRecords(bool $reportOnly)
+    public function checkIndexedRecords(bool $reportOnly, ?string $query)
     {
+        if (null === $query) {
+            $query = '*:*';
+        }
         $request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
         $baseUrl = $this->config['Solr']['search_url']
-            . '?q=*:*&sort=id+asc&wt=json&fl=id,record_format&rows=1000';
+            . '?q=' . urlencode($query)
+            . '&sort=id+asc&wt=json&fl=id,record_format&rows=1000';
 
         $this->initBufferedUpdate();
         $count = 0;
