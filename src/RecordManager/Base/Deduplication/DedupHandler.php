@@ -1128,6 +1128,7 @@ class DedupHandler implements DedupHandlerInterface
         // Deferred removal to keep database checks happy
         $removeFromDedup = [];
         if (!empty($rec2['dedup_id'])) {
+            // Record 2 is already deduplicated, try to add to it:
             if (!$this->addToDedupRecord($rec2['dedup_id'], $rec1['_id'])) {
                 $removeFromDedup[] = [
                     'dedup_id' => $rec2['dedup_id'],
@@ -1138,6 +1139,7 @@ class DedupHandler implements DedupHandlerInterface
                     $rec2['_id']
                 );
             }
+            // If record 1 was previously deduplicated, remove it from that group:
             if (isset($rec1['dedup_id']) && $rec1['dedup_id'] != $rec2['dedup_id']) {
                 $removeFromDedup[] = [
                     'dedup_id' => $rec1['dedup_id'],
@@ -1145,20 +1147,23 @@ class DedupHandler implements DedupHandlerInterface
                 ];
             }
             $setValues['dedup_id'] = $rec1['dedup_id'] = $rec2['dedup_id'];
-        } else {
-            if (!empty($rec1['dedup_id'])) {
-                if (!$this->addToDedupRecord($rec1['dedup_id'], $rec2['_id'])) {
-                    $this->removeFromDedupRecord($rec1['dedup_id'], $rec1['_id']);
-                    $rec1['dedup_id'] = $this->createDedupRecord(
-                        $rec1['_id'],
-                        $rec2['_id']
-                    );
-                }
-                $setValues['dedup_id'] = $rec2['dedup_id'] = $rec1['dedup_id'];
-            } else {
-                $setValues['dedup_id'] = $rec1['dedup_id'] = $rec2['dedup_id']
-                    = $this->createDedupRecord($rec1['_id'], $rec2['_id']);
+        } elseif (!empty($rec1['dedup_id'])) {
+            // Record 1 is already deduplicated, try to add to it:
+            if (!$this->addToDedupRecord($rec1['dedup_id'], $rec2['_id'])) {
+                $removeFromDedup[] = [
+                    'dedup_id' => $rec1['dedup_id'],
+                    '_id' => $rec1['_id']
+                ];
+                $rec1['dedup_id'] = $this->createDedupRecord(
+                    $rec1['_id'],
+                    $rec2['_id']
+                );
             }
+            $setValues['dedup_id'] = $rec2['dedup_id'] = $rec1['dedup_id'];
+        } else {
+            // Create a new dedup record:
+            $setValues['dedup_id'] = $rec1['dedup_id'] = $rec2['dedup_id']
+                = $this->createDedupRecord($rec1['_id'], $rec2['_id']);
         }
         $this->log->writelnVerbose(
             "Marking {$rec1['_id']} as duplicate with {$rec2['_id']} "
