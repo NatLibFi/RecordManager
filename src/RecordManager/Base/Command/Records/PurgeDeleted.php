@@ -65,7 +65,7 @@ class PurgeDeleted extends AbstractBase
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Keep the specified number of days (e.g. 14 = last two weeks)',
-                0
+                14
             );
     }
 
