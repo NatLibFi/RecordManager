@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<eac-cpf>
+  <control>
+    <recordId>EAC_12345678</recordId>
+    <maintenanceAgency>
+      <agencyName>Kansallisarkisto</agencyName>
+    </maintenanceAgency>
+    <languageDeclaration>
+      <language languageCode="fin">suomi</language>
+    </languageDeclaration>
+    <sources>
+      <source href="https://fi.wikipedia.org/">
+        <sourceEntry lang="fin">Wikipedia</sourceEntry>
+      </source>
+      <source href="https://www.geni.com/">
+        <sourceEntry lang="fin">Geni</sourceEntry>
+      </source>
+    </sources>
+  </control>
+  <cpfDescription>
+    <identity>
+      <entityId localType="tekninen">102485775</entityId>
+      <entityId localType="">5602322606</entityId>
+      <entityId localType="">SKS-AM_914.SKS</entityId>
+      <entityId localType="">SKS/VAKKA-AM_tunnus: 914.SKS</entityId>
+      <entityType>person</entityType>
+      <nameEntry lang="fin">
+        <part localType="http://rdaregistry.info/Elements/a/P50117">Sukunimi, Etunimi</part>
+        <part localType="TONI1">Sukunimi</part>
+        <part localType="TONI4">Etunimi</part>
+        <authorizedForm>AHAA/National Name Authority</authorizedForm>
+      </nameEntry>
+      <nameEntryParallel>
+        <nameEntry lang="fin">
+          <part localType="http://rdaregistry.info/Elements/a/P50103">Toinensuku, Toinennimi</part>
+          <part localType="TONI1">Toinensuku</part>
+          <part localType="TONI4">Toinennimi</part>
+        </nameEntry>
+      </nameEntryParallel>
+    </identity>
+    <description>
+      <existDates>
+        <dateSet>
+          <date localType="http://rdaregistry.info/Elements/a/P50121" standardDate="1950"/>
+          <date localType="http://rdaregistry.info/Elements/a/P50120" standardDate="2000"/>
+        </dateSet>
+      </existDates>
+      <places localType="YSO-Places">
+        <place lang="fin" localType="http://rdaregistry.info/Elements/a/P50118">
+          <placeEntry vocabularySource="http://www.yso.fi/onto/yso/p94166" lang="fin">Joensuu</placeEntry>
+        </place>
+        <place lang="swe" localType="muu">
+          <placeEntry lang="fin">Helsinki</placeEntry>
+        </place>
+        <place lang="swe" localType="muu">
+          <placeEntry lang="fin">Oulu</placeEntry>
+        </place>
+        <place lang="fin" localType="http://rdaregistry.info/Elements/a/P50119">
+          <placeEntry vocabularySource="http://www.yso.fi/onto/yso/p94436" lang="fin">Tampere</placeEntry>
+        </place>
+      </places>
+      <occupations>
+        <occupation>
+          <term vocabularySource="http://urn.fi/URN:NBN:fi:au:mts:m3285" lang="fin">runoilija</term>
+        </occupation>
+        <occupation>
+          <term vocabularySource="http://urn.fi/URN:NBN:fi:au:mts:m3004" lang="fin">kirjailija</term>
+        </occupation>
+      </occupations>
+      <localDescriptions>
+        <localDescription lang="fin" localType="TJ17">
+          <citation lang="fin" type="simple" href="">Kirjailija, Anonyymi 1996: Etunimi Sukunimen kiehtova elämä. Otava, Helsinki.</citation>
+        </localDescription>
+        <localDescription lang="fin" localType="TJ17">
+          <citation lang="fin" type="simple" href="http://kansallisbiografia.fi">Kansallisbiografia</citation>
+        </localDescription>
+      </localDescriptions>
+      <biogHist>
+        <p lang="fin">Tietoa kirjailijan elämästä</p>
+      </biogHist>
+    </description>
+  </cpfDescription>
+</eac-cpf>
