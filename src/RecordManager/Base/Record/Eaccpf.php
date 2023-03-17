@@ -369,9 +369,13 @@ class Eaccpf extends AbstractRecord
      */
     protected function getRecordSource()
     {
-        return isset($this->doc->control->sources->source->sourceEntry)
-            ? (string)$this->doc->control->sources->source->sourceEntry
-            : $this->source;
+        if ($name = trim(
+            (string)($this->doc->control->maintenanceAgency->agencyName ?? '')
+        )
+        ) {
+            return $name;
+        }
+        return $this->source;
     }
 
     /**
