@@ -436,6 +436,7 @@ class Lido extends AbstractRecord
         }
         $mergeValues = $this->getDriverParam('mergeTitleValues', true);
         $mergeSets = $this->getDriverParam('mergeTitleSets', true);
+        $formatInTitle = $this->getDriverParam('allowTitleToMatchFormat', false);
         $preferredTitles = [];
         $alternateTitles = [];
         $defaultLanguage = $this->getDefaultLanguage();
@@ -524,15 +525,14 @@ class Lido extends AbstractRecord
         // name given here and the object type, recorded in the object / work
         // type element are often identical."
         $workType = $this->getObjectWorkType();
-        if (strcasecmp($workType, $preferred) == 0) {
+        if (!$formatInTitle && strcasecmp($workType, $preferred) == 0) {
             $descriptionWrapDescriptions = [];
             $nodes = $this->getObjectDescriptionSetNodes(
                 $this->descriptionTypesExcludedFromTitle
             );
             foreach ($nodes as $set) {
-                if ($set->descriptiveNoteValue) {
-                    $descriptionWrapDescriptions[]
-                        = (string)$set->descriptiveNoteValue;
+                if ($value = trim((string)($set->descriptiveNoteValue ?? ''))) {
+                    $descriptionWrapDescriptions[] = $value;
                 }
             }
             if ($descriptionWrapDescriptions) {
