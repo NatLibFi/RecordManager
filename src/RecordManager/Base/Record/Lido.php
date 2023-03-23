@@ -519,7 +519,7 @@ class Lido extends AbstractRecord
         }
         $alternate = array_values(array_unique(array_column($alternateTitles, 0)));
 
-        // Use description if title is the same as the work type
+        // If configured, use description if title is the same as the work type.
         // From LIDO specs:
         // "For objects from natural, technical, cultural history e.g. the object
         // name given here and the object type, recorded in the object / work
