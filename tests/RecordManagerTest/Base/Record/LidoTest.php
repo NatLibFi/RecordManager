@@ -266,6 +266,40 @@ class LidoTest extends RecordTest
     }
 
     /**
+     * Test LIDO title handling when title equals work type
+     *
+     * @return void
+     */
+    public function testLido3TitleEqualsWorkType()
+    {
+        $record = $this->createRecord(Lido::class, 'lido3.xml');
+        $fields = $record->toSolrArray();
+
+        $this->assertEquals('Maisema', $fields['title']);
+        $this->assertEquals('Maisema', $fields['title_full']);
+        $this->assertEquals('Maisema', $fields['title_short']);
+        $this->assertEquals('Maisema', $fields['title_sort']);
+
+        $record = $this->createRecord(
+            Lido::class,
+            'lido3.xml',
+            [
+                '__unit_test_no_source__' => [
+                    'driverParams' => [
+                        'allowTitleToMatchFormat=true'
+                    ]
+                ]
+            ]
+        );
+        $fields = $record->toSolrArray();
+
+        $this->assertEquals('Maalaus', $fields['title']);
+        $this->assertEquals('Maalaus', $fields['title_full']);
+        $this->assertEquals('Maalaus', $fields['title_short']);
+        $this->assertEquals('Maalaus', $fields['title_sort']);
+    }
+
+    /**
      * Test LIDO work identification data handling
      *
      * @return void
