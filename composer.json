@@ -57,7 +57,7 @@
         "vimeo/psalm": "4.30.0"
     },
     "scripts": {
-        "qa": "phing ci-tasks"
+        "qa": "phing qa-tasks"
     },
     "extra": {
         "merge-plugin": {

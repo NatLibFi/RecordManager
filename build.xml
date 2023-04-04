@@ -9,12 +9,12 @@
 
   <!-- Main Target -->
   <target name="main" description="main target">
-    <echo>No main build target. Use ci-tasks for normal tests.</echo>
+    <echo>No main build target. Use qa-tasks for normal tests.</echo>
   </target>
 
-  <!-- Continuous Integration Tasks -->
-  <target name="ci-tasks" description="continuous integration tasks">
-    <phingcall target="phpunit"/>
+  <!-- Quality Assurance Tasks -->
+  <target name="qa-tasks" description="Quality assurance tasks">
+    <phingcall target="phpunitfast"/>
     <phingcall target="phpcs"/>
     <phingcall target="php-cs-fixer-dryrun"/>
     <phingcall target="psalm"/>
