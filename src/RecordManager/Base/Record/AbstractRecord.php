@@ -168,20 +168,7 @@ abstract class AbstractRecord
      *
      * @return string
      */
-    public function toXML()
-    {
-        if (!isset($this->doc)) {
-            throw new \Exception('Document not set');
-        }
-        $xml = $this->doc->asXML();
-        if (false === $xml) {
-            throw new \Exception(
-                "Could not serialize record '{$this->source}."
-                . $this->getId() . "' to XML"
-            );
-        }
-        return $xml;
-    }
+    abstract public function toXML();
 
     /**
      * Normalize the record (optional)
