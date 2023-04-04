@@ -227,9 +227,7 @@ class Dc extends AbstractRecord
     {
         $title = trim((string)$this->doc->title);
         if ($forFiling) {
-            $title = $this->metadataUtils->stripPunctuation($title);
-            $title = $this->metadataUtils->stripLeadingArticle($title);
-            $title = mb_strtolower($title, 'UTF-8');
+            $title = $this->metadataUtils->createSortTitle($title);
         } else {
             $title
                 = $this->metadataUtils->stripTrailingPunctuation($title, '', true);

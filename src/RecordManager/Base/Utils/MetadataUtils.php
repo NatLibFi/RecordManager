@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2011-2022.
+ * Copyright (C) The National Library of Finland 2011-2023.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -679,6 +679,29 @@ class MetadataUtils
             }
         }
         return $str;
+    }
+
+    /**
+     * Create a sort title
+     *
+     * @param string $title        Title
+     * @param bool   $stripArticle Whether to strip any leading article
+     *
+     * @return string
+     */
+    public function createSortTitle(string $title, bool $stripArticle = true): string
+    {
+        if ($stripArticle) {
+            $title = $this->stripLeadingArticle($title);
+        }
+        $titleStart = mb_substr($title, 0, 1, 'UTF-8');
+        $title = $this->stripPunctuation($title);
+        // Strip article again just in case punctuation made a difference:
+        if ($stripArticle && mb_substr($title, 0, 1, 'UTF-8') !== $titleStart) {
+            $title = $this->stripLeadingArticle($title);
+        }
+        $title = mb_strtolower($title, 'UTF-8');
+        return $title;
     }
 
     /**

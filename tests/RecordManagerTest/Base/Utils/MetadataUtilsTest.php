@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2015-2022
+ * Copyright (C) The National Library of Finland 2015-2023
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -57,7 +57,11 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
     {
         $this->metadataUtils = new MetadataUtils(
             RECMAN_BASE_PATH,
-            [],
+            [
+                'Site' => [
+                    'articles' => 'articles.lst',
+                ],
+            ],
             $this->createMock(\RecordManager\Base\Utils\Logger::class)
         );
     }
@@ -324,6 +328,46 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(
             '9789514920981',
             $this->metadataUtils->normalizeISBN('978-951-492098-1')
+        );
+    }
+
+    /**
+     * Data provider for testCreateSortTitle
+     *
+     * @return array
+     */
+    public function createSortTitleProvider(): array
+    {
+        return [
+            ['', '', true],
+            ['Theme is this', 'theme is this', true],
+            ['The Me', 'me', true],
+            ['The Me', 'the me', false],
+            ['"The Others"', 'others', true],
+            ["L'Avion", 'avion', true],
+            ["Ll'Avion", 'll avion', true],
+        ];
+    }
+
+    /**
+     * Tests for cretateSortTitle
+     *
+     * @param string $title        Title
+     * @param string $expected     Expected result
+     * @param bool   $stripArticle Whether to strip any article from the beginning
+     *
+     * @return void
+     *
+     * @dataProvider createSortTitleProvider
+     */
+    public function testCreateSortTitle(
+        string $title,
+        string $expected,
+        bool $stripArticle
+    ): void {
+        $this->assertEquals(
+            $expected,
+            $this->metadataUtils->createSortTitle($title, $stripArticle)
         );
     }
 }

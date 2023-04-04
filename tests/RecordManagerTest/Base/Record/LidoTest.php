@@ -59,8 +59,8 @@ class LidoTest extends RecordTest
                 . ' Säädökset',
             'title' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen;'
                 . ' Säädökset',
-            'title_sort' => 'Luonnonsuojelusäädökset toimittanut Raimo Luhtanen'
-                . ' Säädökset',
+            'title_sort' => 'luonnonsuojelusäädökset toimittanut raimo luhtanen'
+                . ' säädökset',
             'title_alt' => [],
             'format' => 'Kirja',
             'identifier' => '26054',
@@ -173,7 +173,7 @@ class LidoTest extends RecordTest
             'title_full' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
             'title_short' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
             'title' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
-            'title_sort' => 'Luonnonsuojelusäädökset toimittanut Raimo Luhtanen',
+            'title_sort' => 'luonnonsuojelusäädökset toimittanut raimo luhtanen',
             'title_alt' => [
                 'Säädökset'
             ],
@@ -278,7 +278,7 @@ class LidoTest extends RecordTest
         $this->assertEquals('Maisema', $fields['title']);
         $this->assertEquals('Maisema', $fields['title_full']);
         $this->assertEquals('Maisema', $fields['title_short']);
-        $this->assertEquals('Maisema', $fields['title_sort']);
+        $this->assertEquals('maisema', $fields['title_sort']);
 
         $record = $this->createRecord(
             Lido::class,
@@ -296,7 +296,7 @@ class LidoTest extends RecordTest
         $this->assertEquals('Maalaus', $fields['title']);
         $this->assertEquals('Maalaus', $fields['title_full']);
         $this->assertEquals('Maalaus', $fields['title_short']);
-        $this->assertEquals('Maalaus', $fields['title_sort']);
+        $this->assertEquals('maalaus', $fields['title_sort']);
     }
 
     /**

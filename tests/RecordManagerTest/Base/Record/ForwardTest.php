@@ -76,7 +76,7 @@ class ForwardTest extends RecordTest
             ],
             'title_full' => 'Le Havre',
             'title_short' => 'Le Havre',
-            'title_sort' => 'Havre',
+            'title_sort' => 'havre',
             'description' => 'Marcel Marx, a former author and a well-known'
                 . ' bohemian, has retreated into a voluntary exile in the port city'
                 . ' of Le Havre[...] Marcel Marx, entinen kirjailija, elää Ranskassa'
@@ -1446,7 +1446,7 @@ class ForwardTest extends RecordTest
                 'titles' => [
                     0 => [
                         'type' => 'title',
-                        'value' => 'Havre',
+                        'value' => 'havre',
                     ],
                     1 => [
                         'type' => 'title',

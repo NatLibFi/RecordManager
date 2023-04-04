@@ -162,9 +162,7 @@ class Forward extends AbstractRecord
             }
         }
         $data['title_short'] = $data['title_full'] = $data['title'];
-        $data['title_sort'] = $this->metadataUtils->stripLeadingArticle(
-            $this->metadataUtils->stripPunctuation($data['title'])
-        );
+        $data['title_sort'] = $this->getTitle(true);
 
         $descriptions = $this->getDescriptions($this->primaryLanguage);
         if (empty($descriptions)) {
@@ -434,7 +432,7 @@ class Forward extends AbstractRecord
         $title = (string)$doc->IdentifyingTitle;
 
         if ($forFiling) {
-            $title = $this->metadataUtils->stripLeadingArticle($title);
+            $title = $this->metadataUtils->createSortTitle($title);
         }
 
         return $title;
