@@ -126,9 +126,11 @@ class PurgeDeleted extends AbstractBase
      */
     protected function purge($daysToKeep, $sourceId)
     {
-        // Process normal records
+        // Process normal records. We iterate all records, because querying only
+        // deleted records is too slow on large databases and can cause the query to
+        // time out.
         $dateStr = '';
-        $params = ['deleted' => true];
+        $params = [];
         $date = null;
         if ($daysToKeep) {
             $date = strtotime("-$daysToKeep day");
@@ -140,33 +142,31 @@ class PurgeDeleted extends AbstractBase
         }
         $this->logger->logInfo(
             'purgeDeletedRecords',
-            "Creating record list$dateStr" . ($sourceId ? " for '$sourceId'" : '')
+            "Purging records$dateStr" . ($sourceId ? " for '$sourceId'" : '')
         );
-        $total = $this->db->countRecords($params);
         $count = 0;
-
-        $this->logger->logInfo('purgeDeletedRecords', "Purging $total records");
+        $total = 0;
         $pc = new PerformanceCounter();
-
-        do {
-            // Fetch a set of records at a time since the remaining set will be
-            // changing during this process.
-            $records = $this->db->findRecords($params, ['limit' => 1000]);
-            $more = false;
-            foreach ($records as $record) {
-                $more = true;
-                $this->db->deleteRecord($record['_id']);
-                ++$count;
-                if ($count % 1000 == 0) {
-                    $pc->add($count);
+        $this->db->iterateRecords(
+            $params,
+            [],
+            function ($record) use (&$count, &$total, $pc) {
+                ++$total;
+                if ($record['deleted']) {
+                    ++$count;
+                    $this->db->deleteRecord($record['_id']);
+                }
+                if ($total % 1000 == 0) {
+                    $pc->add($total);
                     $avg = $pc->getSpeed();
                     $this->logger->logInfo(
                         'purgeDeletedRecords',
-                        "$count records purged, $avg records/sec"
+                        "$total records processed with $count records purged,"
+                        . " $avg records/sec"
                     );
                 }
             }
-        } while ($more);
+        );
 
         $this->logger->logInfo(
             'purgeDeletedRecords',
@@ -181,32 +181,36 @@ class PurgeDeleted extends AbstractBase
             return;
         }
 
-        // Process dedup records
-        $params = ['deleted' => true];
+        // Process dedup records. We iterate all records, because querying only
+        // deleted records is too slow on large databases and can cause the query to
+        // time out.
+        $params = [];
         if (null !== $date) {
             $params['changed'] = ['$lt' => $this->db->getTimestamp($date)];
         }
         $this->logger->logInfo(
             'purgeDeletedRecords',
-            "Creating dedup record list$dateStr"
+            "Purging deleted dedup records$dateStr"
         );
-        $total = $this->db->countDedups($params);
         $count = 0;
-        $this->logger
-            ->logInfo('purgeDeletedRecords', "Purging $total dedup records");
+        $total = 0;
         $pc = new PerformanceCounter();
         $this->db->iterateDedups(
             $params,
             [],
-            function ($record) use (&$count, $pc) {
-                $this->db->deleteDedup($record['_id']);
-                ++$count;
-                if ($count % 1000 == 0) {
-                    $pc->add($count);
+            function ($record) use (&$count, &$total, $pc) {
+                ++$total;
+                if ($record['deleted']) {
+                    $this->db->deleteDedup($record['_id']);
+                    ++$count;
+                }
+                if ($total % 1000 == 0) {
+                    $pc->add($total);
                     $avg = $pc->getSpeed();
                     $this->logger->logInfo(
                         'purgeDeletedRecords',
-                        "$count dedup records purged, $avg records/sec"
+                        "$total dedup records processed with $count records purged,"
+                        . " $avg records/sec"
                     );
                 }
             }
