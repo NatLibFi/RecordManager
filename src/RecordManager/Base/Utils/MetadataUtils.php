@@ -84,7 +84,7 @@ class MetadataUtils
      *
      * @var array
      */
-    protected $articles = null;
+    protected $articles = [];
 
     /**
      * Non-electronic article formats
@@ -190,14 +190,20 @@ class MetadataUtils
         }
 
         // Read the abbreviations file
-        $this->abbreviations = isset($config['Site']['abbreviations'])
-            ? array_flip(
-                $this->readListFile($config['Site']['abbreviations'])
-            ) : [];
+        $this->abbreviations = array_flip(
+            $this->readListFile($config['Site']['abbreviations'] ?? '')
+        );
 
         // Read the artices file
-        $this->articles = isset($config['Site']['articles'])
-            ? $this->readListFile($config['Site']['articles']) : [];
+        $this->articles = array_map(
+            function ($s) {
+                return [
+                    'article' => mb_strtolower($s, 'UTF-8'),
+                    'length' => mb_strlen($s, 'UTF-8'),
+                ];
+            },
+            $this->readListFile($config['Site']['articles'] ?? '')
+        );
 
         $this->articleFormats = $config['Solr']['article_formats'] ?? ['Article'];
 
@@ -602,7 +608,7 @@ class MetadataUtils
                 $lastWord = substr($str, 0, -1);
             }
             if (!is_numeric($lastWord)
-                && !isset($this->abbreviations[strtolower($lastWord)])
+                && !isset($this->abbreviations[mb_strtolower($lastWord, 'UTF-8')])
             ) {
                 $str = substr($str, 0, -1);
             }
@@ -671,10 +677,10 @@ class MetadataUtils
      */
     public function stripLeadingArticle($str)
     {
+        $str = mb_strtolower($str, 'UTF-8');
         foreach ($this->articles as $article) {
-            $len = strlen($article);
-            if (strncasecmp($article, $str, $len) == 0) {
-                $str = substr($str, $len);
+            if (mb_substr($str, 0, $article['length']) === $article['article']) {
+                $str = mb_substr($str, $article['length']);
                 break;
             }
         }
@@ -1288,6 +1294,9 @@ class MetadataUtils
      */
     protected function readListFile($filename)
     {
+        if ('' === $filename) {
+            return [];
+        }
         $filename = $this->basePath . "/conf/$filename";
         $lines = file($filename, FILE_IGNORE_NEW_LINES);
         if ($lines === false) {
@@ -1296,7 +1305,17 @@ class MetadataUtils
         array_walk(
             $lines,
             function (&$value) {
-                $value = trim($value, "'");
+                $start = 0;
+                $end = null;
+                if (strncmp($value, "'", 1) === 0) {
+                    $start = 1;
+                }
+                if (substr($value, -1) === "'") {
+                    $end = -1;
+                }
+                if ($start || $end) {
+                    $value = substr($value, $start, $end);
+                }
             }
         );
 
