@@ -860,7 +860,7 @@ class SolrUpdater
                 ? gmdate('Y-m-d H:i:s\Z', $fromTimestamp) : 'the beginning';
 
             $this->log
-                ->logInfo('updateRecords', "Creating record list (from $from)");
+                ->logInfo('updateRecords', "Creating record list from $from");
             $params = [];
             if ($singleId) {
                 $params['_id'] = $singleId;
@@ -988,7 +988,7 @@ class SolrUpdater
                     $this->log->logInfo(
                         'updateRecords',
                         'Processing dedup records from '
-                        . gmdate('Y-m-d\TH:i:s\Z', $earliestRecordTimestamp)
+                        . gmdate('Y-m-d H:i:s\Z', $earliestRecordTimestamp)
                     );
                 } elseif (null !== $fromTimestamp) {
                     $dedupParams['changed']
@@ -996,7 +996,7 @@ class SolrUpdater
                     $this->log->logInfo(
                         'updateRecords',
                         'Processing dedup records from '
-                        . gmdate('Y-m-d\TH:i:s\Z', $fromTimestamp)
+                        . gmdate('Y-m-d H:i:s\Z', $fromTimestamp)
                     );
                 } else {
                     $this->log->logWarning(
