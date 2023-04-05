@@ -14,16 +14,16 @@ jobs:
         php-version: ['7.4', '8.0', '8.1', '8.1-no-mongo']
         include:
           - php-version: 7.4
-            phing_tasks: "ci-tasks"
+            phing_tasks: "qa-tasks"
             php-extensions: intl, xsl, mongodb
           - php-version: 8.0
-            phing_tasks: "ci-tasks"
+            phing_tasks: "qa-tasks"
             php-extensions: intl, xsl, mongodb
           - php-version: 8.1
-            phing_tasks: "ci-tasks"
+            phing_tasks: "qa-tasks"
             php-extensions: intl, xsl, mongodb
           - php-version: 8.1-no-mongo
-            phing_tasks: "ci-tasks"
+            phing_tasks: "qa-tasks"
             php-extensions: intl, xsl
 
     steps:
