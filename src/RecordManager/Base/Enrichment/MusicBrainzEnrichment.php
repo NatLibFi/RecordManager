@@ -4,7 +4,7 @@
  *
  * PHP version 7
  *
- * Copyright (C) The National Library of Finland 2019-2022.
+ * Copyright (C) The National Library of Finland 2019-2023.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -46,6 +46,23 @@ class MusicBrainzEnrichment extends AbstractEnrichment
      * @var string
      */
     protected $baseURL;
+
+    /**
+     * Initialize settings
+     *
+     * @return void
+     */
+    public function init()
+    {
+        parent::init();
+
+        // Allow overriding of default cache expiration:
+        $expiration = $this->config['MusicBrainzEnrichment']['cache_expiration']
+            ?? null;
+        if (null !== $expiration) {
+            $this->maxCacheAge = 60 * $expiration;
+        }
+    }
 
     /**
      * Enrich the record and return any additions in solrArray

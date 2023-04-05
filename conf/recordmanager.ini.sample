@@ -200,7 +200,7 @@ result_limit = 1000
 id_prefix = "oai:base.address:"
 
 [Enrichment]
-; Maximum lifetime of cached entries in minutes. Default is 10080 (1 week)
+; Maximum lifetime of cached entries in minutes. Default is 10080 (1 week).
 ;cache_expiration = 10080
 
 [Log]
@@ -304,6 +304,9 @@ dewey-ones = dewey_ones.map
 ; Term transformations regular expressions applied if a match is not found
 search[] = '([^\s]+ st)\.'
 replace[] = '\1 street'
+; Maximum lifetime of cached entries in minutes. Default is taken from the Enrichment
+; section.
+;cache_expiration = 10080
 
 ; Skosmos enrichment settings
 [SkosmosEnrichment]
@@ -338,8 +341,13 @@ replace[] = '\1 street'
 ; Note that you need to add the following line to any data source in datasources.ini
 ; for it to actually use the enrichment:
 ; enrichments[] = MusicBrainzEnrichment
+; or the following in Solr section of this file:
+; enrichment[] = MusicBrainzEnrichment
 ; Base url for the MusicBrainz server.
 ;url = "http://localhost:5000"
+; Maximum lifetime of cached entries in minutes. Default is taken from the Enrichment
+; section.
+;cache_expiration = 10080
 
 ; Settings for connecting to an authority database for enrichment.
 ; Settings defined in Database section are used if these are not defined.

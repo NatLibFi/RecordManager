@@ -188,6 +188,12 @@ class NominatimGeocoder extends AbstractEnrichment
                 ];
             }
         }
+
+        // Allow overriding of default cache expiration:
+        $expiration = $settings['cache_expiration'] ?? null;
+        if (null !== $expiration) {
+            $this->maxCacheAge = 60 * $expiration;
+        }
     }
 
     /**
