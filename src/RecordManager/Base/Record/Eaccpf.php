@@ -307,11 +307,11 @@ class Eaccpf extends AbstractRecord
      */
     protected function getHeadingLanguage()
     {
-        if (!isset($this->doc->cpfDescription->identity->nameEntry)) {
+        if (!isset($this->doc->control->languageDeclaration->language)) {
             return '';
         }
-        $attrs = $this->doc->cpfDescription->identity->nameEntry->attributes();
-        return (string)$attrs->language;
+        $attrs = $this->doc->control->languageDeclaration->language->attributes();
+        return trim((string)$attrs->languageCode);
     }
 
     /**

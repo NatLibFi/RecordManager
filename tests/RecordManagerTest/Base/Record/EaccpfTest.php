@@ -84,7 +84,7 @@ class EaccpfTest extends RecordTest
                 'runoilija',
                 'kirjailija'
             ],
-            'language' => ''
+            'language' => 'fin'
           ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
