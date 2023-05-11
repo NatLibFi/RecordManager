@@ -166,7 +166,7 @@ class Marc extends \VuFind\Marc\MarcReader
                         $fieldContents2 = [];
                         array_walk(
                             $field['subfields'],
-                            function ($s) use (&$fieldContents) {
+                            function ($s) use (&$fieldContents2) {
                                 $fieldContents2[] = current($s);
                             }
                         );
