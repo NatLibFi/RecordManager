@@ -8,6 +8,9 @@
     xmlns="https://getpsalm.org/schema/config"
     xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
     autoloader="tests/psalm-autoload.php"
+    findUnusedBaselineEntry="true"
+    findUnusedCode="false"
+    phpVersion="7.4"
 >
     <projectFiles>
         <file name="*.php" />

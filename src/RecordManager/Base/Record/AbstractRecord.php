@@ -89,7 +89,7 @@ abstract class AbstractRecord
     /**
      * Warnings about problems in the record
      *
-     * @var array
+     * @var array<string>
      */
     protected $warnings = [];
 
@@ -205,7 +205,7 @@ abstract class AbstractRecord
      * @param Database $db Database connection. Omit to avoid database lookups for
      *                     related records.
      *
-     * @return array<string, string|array<int, string>>
+     * @return array<string, mixed>
      */
     public function toSolrArray(Database $db = null)
     {
@@ -419,9 +419,9 @@ abstract class AbstractRecord
      *
      * @return array
      */
-    public function getProcessingWarnings()
+    public function getProcessingWarnings(): array
     {
-        return array_unique($this->warnings);
+        return array_values(array_unique($this->warnings));
     }
 
     /**

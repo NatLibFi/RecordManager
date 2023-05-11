@@ -97,6 +97,8 @@ class Marc extends \VuFind\Marc\MarcReader
      *                                items
      *
      * @return array Subfields
+     *
+     * @psalm-suppress InvalidOperand
      */
     public function getFieldsSubfieldsBySpecs(
         array $fieldspecs,

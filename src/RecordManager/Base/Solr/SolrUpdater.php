@@ -159,21 +159,21 @@ class SolrUpdater
     /**
      * Formats that denote journals
      *
-     * @var array
+     * @var array<string>
      */
     protected $journalFormats;
 
     /**
      * Formats that denote ejournals
      *
-     * @var array
+     * @var array<string>
      */
     protected $eJournalFormats;
 
     /**
      * Formats that denote journals and ejournals
      *
-     * @var array
+     * @var array<string>
      */
     protected $allJournalFormats;
 
@@ -604,6 +604,8 @@ class SolrUpdater
      * @param WorkerPoolManager       $workerPoolManager Worker pool manager
      *
      * @throws \Exception
+     *
+     * @psalm-suppress DuplicateArrayKey
      */
     public function __construct(
         array $config,
@@ -632,12 +634,11 @@ class SolrUpdater
         $this->metadataRecordCache = new \cash\LRUCache(100);
         $this->recordDataCache = new \cash\LRUCache(100);
 
-        $this->journalFormats = $config['Solr']['journal_formats']
-            ?? ['Journal', 'Serial', 'Newspaper'];
+        $this->journalFormats = (array)($config['Solr']['journal_formats']
+            ?? ['Journal', 'Serial', 'Newspaper']);
 
-        $this->eJournalFormats = isset($config['Solr']['ejournal_formats'])
-            ? $config['Solr']['journal_formats']
-            : ['eJournal'];
+        $this->eJournalFormats = (array)($config['Solr']['ejournal_formats']
+            ?? ['eJournal']);
 
         $this->allJournalFormats
             = [...$this->journalFormats, ...$this->eJournalFormats];
@@ -1808,6 +1809,7 @@ class SolrUpdater
      * @throws \Exception
      *
      * @psalm-suppress RedundantCondition
+     * @psalm-suppress DuplicateArrayKey
      */
     protected function createSolrArray(
         array $record,
@@ -2079,7 +2081,7 @@ class SolrUpdater
         if (!empty($this->warningsField)) {
             $warnings = [
                 ...$warnings,
-                ...$metadataRecord->getProcessingWarnings()
+                ...(array)$metadataRecord->getProcessingWarnings()
             ];
             if ($warnings) {
                 $data[$this->warningsField] = $warnings;
@@ -2455,6 +2457,8 @@ class SolrUpdater
      *                       and Solr array
      *
      * @return array Dedup record Solr array
+     *
+     * @psalm-suppress DuplicateArrayKey
      */
     protected function mergeRecords($records)
     {
@@ -2537,8 +2541,10 @@ class SolrUpdater
                         $merged[$key] = $value;
                     }
                 } elseif ($key == 'allfields') {
-                    $merged['allfields']
-                        = [...$merged['allfields'] ?? [], ...$add['allfields']];
+                    $merged['allfields'] = [
+                        ...(array)($merged['allfields'] ?? []),
+                        ...(array)$add['allfields']
+                    ];
                 }
             }
         }
