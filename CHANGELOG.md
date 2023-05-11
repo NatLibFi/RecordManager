@@ -5,15 +5,42 @@ Notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 2.1.0 - TBD
+## 2.1.0 - 2023-05-11
+
+Anything marked with [**BC**] is known to affect backward compatibility with previous versions.
 
 ### Added
 
-Nothing
+- DOIs are indexed in doi_str_mv field.
+- A single record can be harvested by ID.
+- Index checking using `solr:check-index` has been enhanced:
+    - `--report-only` option can be used to just report inconsistencies.
+    - Date and time a record was deleted is now reported when a record that should have been deleted is found in the index.
+    - Index check can be limited by a Solr query
+- EAC-CPF: Record source is indexed from maintenanceAgency
+
 
 ### Changed
 
-- AbstractRecord no longer implements `toXML` method. Proper implementation is in `XmlRecordTrait.php`.
+- [**BC**] AbstractRecord no longer implements `toXML` method. Proper implementation is in `XmlRecordTrait.php`.
+- The final title is now used for the title_in_hierarchy field for consistency.
+- LIDO records
+    - Related works missing a relation type are no longer indexed.
+    - Handling of titles matching work type has been improved.
+- Empty responses are now handled properly when harvesting OAI-PMH sources.
+- QDC: Fixed indexing of publication year ranges that use slash as the separator.
+- Fixed MARC export to not create multiple collection nodes.
+- Fixed Nominatim Geocoder to handle empty WKT properly.
+- Changed Skosmos enrichment to work with all record formats.
+- Fixed record consistency check to mark a dedup record deleted instead of deleting it directly.
+- Default retention time for deleted records has been changed from 0 to 14 days.
+- Deferred removal is now used in all cases in deduplication handler.
+- Performance of purging of deleted records has been improved particularly with large Mongo databases.
+- title_sort field is now created in a unified way for all record formats.
+- Abbrevian and leading article handling now supports UTF-8 properly.
+- Enrichment cache life times can now be set individually.
+- EAC-CPF: Language code is now properly indexed.
+
 
 ### Removed
 
