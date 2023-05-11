@@ -604,6 +604,8 @@ class SolrUpdater
      * @param WorkerPoolManager       $workerPoolManager Worker pool manager
      *
      * @throws \Exception
+     *
+     * @psalm-suppress DuplicateArrayKey
      */
     public function __construct(
         array $config,
@@ -1807,6 +1809,7 @@ class SolrUpdater
      * @throws \Exception
      *
      * @psalm-suppress RedundantCondition
+     * @psalm-suppress DuplicateArrayKey
      */
     protected function createSolrArray(
         array $record,
@@ -2454,6 +2457,8 @@ class SolrUpdater
      *                       and Solr array
      *
      * @return array Dedup record Solr array
+     *
+     * @psalm-suppress DuplicateArrayKey
      */
     protected function mergeRecords($records)
     {

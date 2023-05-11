@@ -163,17 +163,17 @@ class Marc extends \VuFind\Marc\MarcReader
                             }
                         }
                     } else {
-                        $fieldContents = [];
+                        $fieldContents2 = [];
                         array_walk(
                             $field['subfields'],
                             function ($s) use (&$fieldContents) {
-                                $fieldContents[] = current($s);
+                                $fieldContents2[] = current($s);
                             }
                         );
                         if ($splitSubfields) {
-                            $data = [...$data, ...(array)$fieldContents];
+                            $data = [...$data, ...$fieldContents2];
                         } else {
-                            $data[] = implode(' ', $fieldContents);
+                            $data[] = implode(' ', $fieldContents2);
                         }
                     }
                 }

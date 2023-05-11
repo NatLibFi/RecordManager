@@ -163,6 +163,8 @@ class MetadataUtils
      * @param string $basePath Base path for referenced files
      * @param array  $config   Main configuration
      * @param Logger $logger   Logger
+     *
+     * @psalm-suppress DuplicateArrayKey
      */
     public function __construct(
         string $basePath,
