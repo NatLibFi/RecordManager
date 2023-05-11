@@ -97,6 +97,8 @@ class Marc extends \VuFind\Marc\MarcReader
      *                                items
      *
      * @return array Subfields
+     *
+     * @psalm-suppress InvalidOperand
      */
     public function getFieldsSubfieldsBySpecs(
         array $fieldspecs,
@@ -163,17 +165,17 @@ class Marc extends \VuFind\Marc\MarcReader
                             }
                         }
                     } else {
-                        $fieldContents2 = [];
+                        $fieldContents = [];
                         array_walk(
                             $field['subfields'],
-                            function ($s) use (&$fieldContents2) {
-                                $fieldContents2[] = current($s);
+                            function ($s) use (&$fieldContents) {
+                                $fieldContents[] = current($s);
                             }
                         );
                         if ($splitSubfields) {
-                            $data = [...$data, ...$fieldContents2];
+                            $data = [...$data, ...$fieldContents];
                         } else {
-                            $data[] = implode(' ', $fieldContents2);
+                            $data[] = implode(' ', $fieldContents);
                         }
                     }
                 }
