@@ -265,6 +265,8 @@ class GeniePlus extends AbstractBase
      * @param string $date Date in YYYY-MM-DD format
      *
      * @return string      Date in MM/DD/YYYY format.
+     *
+     * @psalm-suppress FalsableReturnStatement
      */
     protected function reformatDate($date)
     {
