@@ -753,7 +753,7 @@ class OaiPmh extends AbstractBase
         if ($nodes->length == 0) {
             return false;
         }
-        return $nodes->item(0);
+        return $nodes->item(0) ?? false;
     }
 
     /**

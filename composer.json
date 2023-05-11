@@ -36,6 +36,7 @@
         "laminas/laminas-router": "3.5.0",
         "laminas/laminas-servicemanager": "3.10.0",
         "laminas/laminas-xml": "1.4.0",
+        "league/mime-type-detection": "1.11.0",
         "ml/json-ld": "1.2.1",
         "mongodb/mongodb": "1.15.0",
         "ocramius/proxy-manager": "2.13.1",
@@ -54,7 +55,7 @@
         "phpstan/phpstan": "1.4.10",
         "phpunit/phpunit": "9.5.19",
         "squizlabs/php_codesniffer": "3.6.2",
-        "vimeo/psalm": "4.30.0"
+        "vimeo/psalm": "5.11.0"
     },
     "scripts": {
         "qa": "phing qa-tasks"

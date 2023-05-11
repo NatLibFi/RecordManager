@@ -171,7 +171,7 @@ class Marc extends \VuFind\Marc\MarcReader
                             }
                         );
                         if ($splitSubfields) {
-                            $data = [...$data, ...$fieldContents];
+                            $data = [...$data, ...(array)$fieldContents];
                         } else {
                             $data[] = implode(' ', $fieldContents);
                         }

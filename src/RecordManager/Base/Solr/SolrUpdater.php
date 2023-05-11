@@ -159,21 +159,21 @@ class SolrUpdater
     /**
      * Formats that denote journals
      *
-     * @var array
+     * @var array<string>
      */
     protected $journalFormats;
 
     /**
      * Formats that denote ejournals
      *
-     * @var array
+     * @var array<string>
      */
     protected $eJournalFormats;
 
     /**
      * Formats that denote journals and ejournals
      *
-     * @var array
+     * @var array<string>
      */
     protected $allJournalFormats;
 
@@ -632,12 +632,11 @@ class SolrUpdater
         $this->metadataRecordCache = new \cash\LRUCache(100);
         $this->recordDataCache = new \cash\LRUCache(100);
 
-        $this->journalFormats = $config['Solr']['journal_formats']
-            ?? ['Journal', 'Serial', 'Newspaper'];
+        $this->journalFormats = (array)($config['Solr']['journal_formats']
+            ?? ['Journal', 'Serial', 'Newspaper']);
 
-        $this->eJournalFormats = isset($config['Solr']['ejournal_formats'])
-            ? $config['Solr']['journal_formats']
-            : ['eJournal'];
+        $this->eJournalFormats = (array)($config['Solr']['ejournal_formats']
+            ?? ['eJournal']);
 
         $this->allJournalFormats
             = [...$this->journalFormats, ...$this->eJournalFormats];
@@ -2079,7 +2078,7 @@ class SolrUpdater
         if (!empty($this->warningsField)) {
             $warnings = [
                 ...$warnings,
-                ...$metadataRecord->getProcessingWarnings()
+                ...(array)$metadataRecord->getProcessingWarnings()
             ];
             if ($warnings) {
                 $data[$this->warningsField] = $warnings;
@@ -2537,8 +2536,10 @@ class SolrUpdater
                         $merged[$key] = $value;
                     }
                 } elseif ($key == 'allfields') {
-                    $merged['allfields']
-                        = [...$merged['allfields'] ?? [], ...$add['allfields']];
+                    $merged['allfields'] = [
+                        ...(array)($merged['allfields'] ?? []),
+                        ...(array)$add['allfields']
+                    ];
                 }
             }
         }

@@ -1221,6 +1221,8 @@ class PDODatabase extends AbstractDatabase
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
+ *
+ * @psalm-suppress MissingTemplateParam
  */
 class PDOResultIterator extends \IteratorIterator
 {

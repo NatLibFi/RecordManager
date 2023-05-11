@@ -205,9 +205,11 @@ class MetadataUtils
             $this->readListFile($config['Site']['articles'] ?? '')
         );
 
-        $this->articleFormats = $config['Solr']['article_formats'] ?? ['Article'];
+        $this->articleFormats
+            = (array)($config['Solr']['article_formats'] ?? ['Article']);
 
-        $this->eArticleFormats = $config['Solr']['earticle_formats'] ?? ['eArticle'];
+        $this->eArticleFormats
+            = (array)($config['Solr']['earticle_formats'] ?? ['eArticle']);
 
         $this->allArticleFormats = [
             ...$this->articleFormats,
@@ -1279,7 +1281,7 @@ class MetadataUtils
             $result .= ' ' . $smushPers;
         }
         // Now we have initials separate and together
-        if (!trim($result) !== $smushAll) {
+        if (trim($result) !== $smushAll) {
             $result .= " $smushAll";
         }
         return trim($result);
