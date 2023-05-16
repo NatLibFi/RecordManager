@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Harvest
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command\Records;
 
 use RecordManager\Base\Command\AbstractBase;
@@ -329,7 +331,8 @@ class Harvest extends AbstractBase
                     }
                 }
 
-                if (!$reharvest && isset($settings['deletions'])
+                if (
+                    !$reharvest && isset($settings['deletions'])
                     && strncmp(
                         $settings['deletions'],
                         'ListIdentifiers',

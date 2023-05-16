@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Sierra API Harvesting Class
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Exception\HttpRequestException;
@@ -126,7 +128,8 @@ class SierraApi extends AbstractBase
         parent::init($source, $verbose, $reharvest);
 
         $settings = $this->dataSourceConfig[$source] ?? [];
-        if (empty($settings['sierraApiKey']) || empty($settings['sierraApiSecret'])
+        if (
+            empty($settings['sierraApiKey']) || empty($settings['sierraApiSecret'])
         ) {
             throw new \Exception(
                 'sierraApiKey or sierraApiSecret missing from settings'

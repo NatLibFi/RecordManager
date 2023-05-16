@@ -1,4 +1,5 @@
 <?php
+
 /**
  * PDO access class
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Database;
 
 /**
@@ -374,7 +376,8 @@ class PDODatabase extends AbstractDatabase
         while ($collection = $res->fetchColumn()) {
             $nameParts = explode('_', (string)$collection);
             $collTime = $nameParts[2] ?? null;
-            if (is_numeric($collTime)
+            if (
+                is_numeric($collTime)
                 && $collTime != time() - $minAge * 60 * 60 * 24
             ) {
                 try {
@@ -1145,7 +1148,8 @@ class PDODatabase extends AbstractDatabase
      */
     protected function optionsToSQL(array $options): array
     {
-        if (array_diff(array_keys($options), ['skip', 'limit', 'sort', 'projection'])
+        if (
+            array_diff(array_keys($options), ['skip', 'limit', 'sort', 'projection'])
         ) {
             throw new \Exception('Unsupported options: ' . print_r($options, true));
         }
@@ -1210,66 +1214,5 @@ class PDODatabase extends AbstractDatabase
             );
         }
         return $this->db;
-    }
-}
-
-/**
- * Result iterator class that adds any attributes to each returned record
- *
- * @category DataManagement
- * @package  RecordManager
- * @author   Ere Maijala <ere.maijala@helsinki.fi>
- * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
- * @link     https://github.com/NatLibFi/RecordManager
- *
- * @psalm-suppress MissingTemplateParam
- */
-class PDOResultIterator extends \IteratorIterator
-{
-    /**
-     * Database
-     *
-     * @var PDODatabase
-     */
-    protected $db;
-
-    /**
-     * Collection
-     *
-     * @var string
-     */
-    protected $collection;
-
-    /**
-     * Constructor
-     *
-     * @param \Traversable $iterator   Iterator
-     * @param PDODatabase  $db         Database
-     * @param string       $collection Collection
-     */
-    public function __construct(
-        \Traversable $iterator,
-        PDODatabase $db,
-        string $collection
-    ) {
-        parent::__construct($iterator);
-
-        $this->db = $db;
-        $this->collection = $collection;
-    }
-
-    /**
-     * Get the current value
-     *
-     * @return mixed
-     */
-    #[\ReturnTypeWillChange]
-    public function current()
-    {
-        $result = parent::current();
-        if ($result) {
-            $result += $this->db->getRecordAttrs($this->collection, $result['_id']);
-        }
-        return $result;
     }
 }

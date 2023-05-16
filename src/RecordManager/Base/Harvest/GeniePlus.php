@@ -1,4 +1,5 @@
 <?php
+
 /**
  * GeniePlus API Harvesting Class
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Exception\HttpRequestException;
@@ -214,7 +216,8 @@ class GeniePlus extends AbstractBase
         parent::init($source, $verbose, $reharvest);
 
         $settings = $this->dataSourceConfig[$source] ?? [];
-        if (empty($settings['geniePlusDatabase'])
+        if (
+            empty($settings['geniePlusDatabase'])
             || empty($settings['geniePlusOauthId'])
             || empty($settings['geniePlusUsername'])
             || empty($settings['geniePlusPassword'])

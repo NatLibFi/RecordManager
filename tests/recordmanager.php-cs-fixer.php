@@ -1,4 +1,5 @@
 <?php
+
 /**
  * PHP-CS-Fixer configuration
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://vufind.org/wiki/development:testing:unit_tests Wiki
  */
+
 $finder = new PhpCsFixer\Finder();
 $finder->in(__DIR__ . '/../src');
 $finder->in(__DIR__ . '/../tests');

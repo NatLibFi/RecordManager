@@ -1,4 +1,5 @@
 <?php
+
 /**
  * MARC Handler Test Class
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManagerTest\Base\Marc;
 
 use RecordManager\Base\Marc\Marc;
@@ -182,9 +184,7 @@ class MarcTest extends \PHPUnit\Framework\TestCase
         $fields = ['760', '762', '765'];
         foreach ($fields as $code) {
             foreach ($marc->getFields($code) as $fieldIdx => $marcfield) {
-                foreach ($marc->getSubfields($marcfield, 'w')
-                    as $subfieldIdx => $marcsubfield
-                ) {
+                foreach ($marc->getSubfields($marcfield, 'w') as $subfieldIdx => $marcsubfield) {
                     $targetId = 'foo.' . $marcsubfield;
                     $marc->updateFieldSubfield(
                         $code,
@@ -331,9 +331,7 @@ class MarcTest extends \PHPUnit\Framework\TestCase
         $marc = new Marc($this->getFixture('record/marc_empty_field.json'));
 
         foreach ($marc->getFields('762') as $fieldIdx => $marcfield) {
-            foreach ($marc->getSubfields($marcfield, 'w')
-                as $subfieldIdx => $marcsubfield
-            ) {
+            foreach ($marc->getSubfields($marcfield, 'w') as $subfieldIdx => $marcsubfield) {
                 $targetId = 'foo.' . $marcsubfield;
                 $marc->updateFieldSubfield(
                     '762',

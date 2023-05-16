@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Tests for SolrUpdater
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManagerTest\Base\Solr;
 
 use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;

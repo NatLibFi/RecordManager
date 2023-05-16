@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Ead record class
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
@@ -100,7 +102,8 @@ class Ead extends AbstractRecord
      */
     public function getID()
     {
-        if (isset($this->doc->{'add-data'})
+        if (
+            isset($this->doc->{'add-data'})
             && isset($this->doc->{'add-data'}->attributes()->identifier)
         ) {
             return (string)$this->doc->{'add-data'}->attributes()->identifier;
@@ -220,7 +223,8 @@ class Ead extends AbstractRecord
         $data['title'] = '';
         // Ini handling returns true as '1':
         $prependTitle = $this->getDriverParam('prependTitleWithSubtitle', '1');
-        if ('1' === $prependTitle
+        if (
+            '1' === $prependTitle
             || ('children' === $prependTitle && $this->doc->{'add-data'}->{'parent'})
         ) {
             if ($data['title_sub'] && $data['title_sub'] != $data['title_short']) {
@@ -432,7 +436,8 @@ class Ead extends AbstractRecord
             if ($this->doc->{'add-data'}->archive) {
                 // Check that parent is not top-level record (archive)
                 $archiveAttr = $addData->archive->attributes();
-                if (isset($parentAttr->id) && isset($archiveAttr->id)
+                if (
+                    isset($parentAttr->id) && isset($archiveAttr->id)
                     && (string)$parentAttr->id === (string)$archiveAttr->id
                 ) {
                     return '';
@@ -512,7 +517,8 @@ class Ead extends AbstractRecord
             }
             if (isset($el->geographiccoordinates)) {
                 $attr = $el->geographiccoordinates->attributes();
-                if (isset($attr->coordinatesystem)
+                if (
+                    isset($attr->coordinatesystem)
                     && (string)$attr->coordinatesystem === 'WGS84'
                 ) {
                     $coordinates = array_map(

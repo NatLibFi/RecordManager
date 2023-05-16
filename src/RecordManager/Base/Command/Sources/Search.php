@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Search Data Source Settings
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command\Sources;
 
 use RecordManager\Base\Command\AbstractBase;
@@ -115,7 +117,8 @@ class Search extends AbstractBase
                     if (is_bool($single)) {
                         $single = $single ? '1' : '0';
                     }
-                    if (!is_object($single)
+                    if (
+                        !is_object($single)
                         && preg_match($regexp, "$setting=$single")
                     ) {
                         $matches[] = $source;

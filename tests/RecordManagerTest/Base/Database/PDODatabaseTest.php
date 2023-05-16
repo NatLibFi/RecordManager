@@ -1,4 +1,5 @@
 <?php
+
 /**
  * PDO Database Test Class
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManagerTest\Base\Database;
 
 use RecordManager\Base\Database\PDODatabase;
@@ -222,7 +224,10 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
         string $expectedSql,
         array $expectedParams
     ): void {
-        $checkQuery = function (string $sql, array $params = []) use (
+        $checkQuery = function (
+            string $sql,
+            array $params = []
+        ) use (
             $expectedSql,
             $expectedParams
         ) {

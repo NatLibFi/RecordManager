@@ -1,4 +1,5 @@
 <?php
+
 /**
  * MARC record handler class
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Marc;
 
 /**
@@ -220,7 +222,8 @@ class Marc extends \VuFind\Marc\MarcReader
         $link = $this->parseLinkageField($linkData);
         $result = [];
         foreach ($this->getLinkedFields('880', $tag) as $linkedField) {
-            if ($link['occurrence'] === $linkedField['link']['occurrence']
+            if (
+                $link['occurrence'] === $linkedField['link']['occurrence']
             ) {
                 $result[] = $linkedField;
             }
@@ -252,7 +255,8 @@ class Marc extends \VuFind\Marc\MarcReader
         $link = $this->parseLinkageField($linkData);
         $result = [];
         foreach ($this->getLinkedFields('880', $tag, $subfields) as $linkedField) {
-            if ($link['occurrence'] === $linkedField['link']['occurrence']
+            if (
+                $link['occurrence'] === $linkedField['link']['occurrence']
             ) {
                 // phpcs:ignore
                 /** @psalm-var list<string> */
@@ -313,20 +317,20 @@ class Marc extends \VuFind\Marc\MarcReader
         // Note: this handles fields as returned in the non-internal format, so the
         // array keys are i1 and i2.
         switch ($indicator) {
-        case 1:
-            if (!isset($field['i1'])) {
-                $this->storeWarning('indicator 1 missing');
-                return ' ';
-            }
-            return $field['i1'];
-        case 2:
-            if (!isset($field['i2'])) {
-                $this->storeWarning('indicator 2 missing');
-                return ' ';
-            }
-            return $field['i2'];
-        default:
-            throw new \RuntimeException("Invalid indicator '$indicator' requested");
+            case 1:
+                if (!isset($field['i1'])) {
+                    $this->storeWarning('indicator 1 missing');
+                    return ' ';
+                }
+                return $field['i1'];
+            case 2:
+                if (!isset($field['i2'])) {
+                    $this->storeWarning('indicator 2 missing');
+                    return ' ';
+                }
+                return $field['i2'];
+            default:
+                throw new \RuntimeException("Invalid indicator '$indicator' requested");
         }
     }
 

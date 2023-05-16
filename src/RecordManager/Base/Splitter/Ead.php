@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Ead Splitter
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Splitter;
 
 /**
@@ -258,7 +260,8 @@ class Ead extends AbstractBase
             $parentTitle = (string)$parentDid->unittitle;
 
             if ($this->prependParentTitleWithUnitId) {
-                if ((string)$parentDid->unitid
+                if (
+                    (string)$parentDid->unitid
                     && in_array(
                         (string)$record->attributes()->level,
                         ['series', 'subseries', 'item', 'file']
@@ -326,7 +329,8 @@ class Ead extends AbstractBase
     {
         if ($append !== null) {
             $name = $append->getName();
-            if ($name == 'c' || (substr($name, 0, 1) == 'c'
+            if (
+                $name == 'c' || (substr($name, 0, 1) == 'c'
                 && is_numeric(substr($name, 1)))
             ) {
                 return;

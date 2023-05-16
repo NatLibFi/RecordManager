@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Dewey Call Number Class
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Utils;
 
 /**
@@ -91,7 +93,8 @@ class DeweyCallNumber extends AbstractCallNumber
         $this->raw = $callnumber = trim($callnumber);
 
         $rest = '';
-        if ($callnumber
+        if (
+            $callnumber
             && preg_match('/^((\d+)(\.\d+)?)(.*)/', $callnumber, $matches)
         ) {
             $this->classification = $matches[1];

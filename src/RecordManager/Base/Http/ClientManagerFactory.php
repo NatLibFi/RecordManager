@@ -1,4 +1,5 @@
 <?php
+
 /**
  * HTTP client manager factory
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Http;
 
 use Laminas\ServiceManager\Exception\ServiceNotCreatedException;
@@ -41,8 +43,7 @@ use Psr\Container\ContainerInterface;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class ClientManagerFactory
-    implements \Laminas\ServiceManager\Factory\FactoryInterface
+class ClientManagerFactory implements \Laminas\ServiceManager\Factory\FactoryInterface
 {
     /**
      * Create an object

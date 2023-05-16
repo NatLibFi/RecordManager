@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Deduplication Handler
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Deduplication;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
@@ -148,9 +150,7 @@ class DedupHandler implements DedupHandlerInterface
 
         $this->normalizationForm
             = $config['Site']['unicode_normalization_form'] ?? 'NFKC';
-        foreach ((array)($config['Deduplication']['ignored_ids'] ?? [])
-            as $ignored
-        ) {
+        foreach ((array)($config['Deduplication']['ignored_ids'] ?? []) as $ignored) {
             $parts = explode('|', $ignored);
             $this->ignoredIds[] = $parts[0];
             $this->ignoredIdsAndTitles[] = [
@@ -252,7 +252,8 @@ class DedupHandler implements DedupHandlerInterface
                 );
                 // Now update dedup record
                 $this->removeFromDedupRecord($dedupRecord['_id'], $id);
-                if (isset($record['dedup_id'])
+                if (
+                    isset($record['dedup_id'])
                     && $record['dedup_id'] != $dedupRecord['_id']
                 ) {
                     $this->removeFromDedupRecord($record['dedup_id'], $id);
@@ -379,7 +380,9 @@ class DedupHandler implements DedupHandlerInterface
      */
     public function dedupRecord($record)
     {
-        if ($record['deleted'] || ($record['suppressed'] ?? false)
+        if (
+            $record['deleted']
+            || ($record['suppressed'] ?? false)
             || empty($this->dataSourceConfig[$record['source_id']]['dedup'])
         ) {
             if (isset($record['dedup_id'])) {
@@ -478,7 +481,8 @@ class DedupHandler implements DedupHandlerInterface
                 if ($candidateDedupId) {
                     // Check if we already have a candidate with the same dedup id
                     foreach ($matchRecords as $matchRecord) {
-                        if (!empty($matchRecord['dedup_id'])
+                        if (
+                            !empty($matchRecord['dedup_id'])
                             && (string)$matchRecord['dedup_id'] === $candidateDedupId
                         ) {
                             continue 2;
@@ -563,8 +567,7 @@ class DedupHandler implements DedupHandlerInterface
                 foreach ($matchRecords as $matchRecord) {
                     $dedupId = !empty($matchRecord['dedup_id']) ?
                         (string)$matchRecord['dedup_id'] : '';
-                    if ($dedupId && !isset($bestMatchCandidates[$dedupId])
-                    ) {
+                    if ($dedupId && !isset($bestMatchCandidates[$dedupId])) {
                         $bestMatchCandidates[$dedupId] = $matchRecord;
                         $dedupIdKeys[] = $matchRecord['dedup_id'];
                     }
@@ -583,7 +586,9 @@ class DedupHandler implements DedupHandlerInterface
                         ) {
                             $cnt = count($dedupRecord['ids']);
                             $dedupId = (string)$dedupRecord['_id'];
-                            if ($cnt > $bestMatchRecords || '' === $bestDedupId
+                            if (
+                                $cnt > $bestMatchRecords
+                                || '' === $bestDedupId
                                 || ($cnt === $bestMatchRecords
                                 && strcmp($bestDedupId, $dedupId) > 0)
                             ) {
@@ -1052,7 +1057,8 @@ class DedupHandler implements DedupHandlerInterface
                     ) : '';
                 $titleKeyLen = strlen($titleKey);
 
-                if (!$titleKey
+                if (
+                    !$titleKey
                     || array_filter(
                         $recordTitleKeys,
                         function ($s) use ($titleKey, $titleKeyLen) {
@@ -1227,7 +1233,8 @@ class DedupHandler implements DedupHandlerInterface
         }
         $source = $this->metadataUtils->getSourceFromId($id);
         foreach ((array)$record['ids'] as $existingId) {
-            if ($id !== $existingId
+            if (
+                $id !== $existingId
                 && $source === $this->metadataUtils->getSourceFromId($existingId)
             ) {
                 return false;
@@ -1320,11 +1327,12 @@ class DedupHandler implements DedupHandlerInterface
                             $component1['oai_id'],
                             $component1['source_id']
                         );
-                        if (!$this->matchRecords(
-                            $component1,
-                            $metadataComponent1,
-                            $component2
-                        )
+                        if (
+                            !$this->matchRecords(
+                                $component1,
+                                $metadataComponent1,
+                                $component2
+                            )
                         ) {
                             $allMatch = false;
                             break;

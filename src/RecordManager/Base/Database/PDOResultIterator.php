@@ -1,9 +1,9 @@
 <?php
 
 /**
- * HTTP client manager
+ * PDO result iterator class that adds any attributes to each returned record
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (c) The National Library of Finland 2020-2021.
  *
@@ -27,63 +27,65 @@
  * @link     https://github.com/NatLibFi/RecordManager
  */
 
-namespace RecordManager\Base\Http;
+namespace RecordManager\Base\Database;
 
 /**
- * HTTP client manager
+ * PDO result iterator class that adds any attributes to each returned record
  *
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
+ *
+ * @psalm-suppress MissingTemplateParam
  */
-class ClientManager
+class PDOResultIterator extends \IteratorIterator
 {
     /**
-     * Main configuration
+     * Database
      *
-     * @var array
+     * @var PDODatabase
      */
-    protected $config;
+    protected $db;
+
+    /**
+     * Collection
+     *
+     * @var string
+     */
+    protected $collection;
 
     /**
      * Constructor
      *
-     * @param array $config Main configuration
+     * @param \Traversable $iterator   Iterator
+     * @param PDODatabase  $db         Database
+     * @param string       $collection Collection
      */
-    public function __construct(array $config)
-    {
-        $this->config = $config;
+    public function __construct(
+        \Traversable $iterator,
+        PDODatabase $db,
+        string $collection
+    ) {
+        parent::__construct($iterator);
+
+        $this->db = $db;
+        $this->collection = $collection;
     }
 
     /**
-     * Create an \HTTP_Request2 instance
+     * Get the current value
      *
-     * @param string $url     Request URL
-     * @param string $method  Request method
-     * @param array  $options Configuration options
-     *
-     * @return \HTTP_Request2
+     * @return mixed
      */
-    public function createClient(
-        string $url,
-        string $method,
-        array $options = []
-    ): \HTTP_Request2 {
-        $config = $options + ($this->config['HTTP'] ?? []);
-        if (isset($config['disable_proxy_hosts'])) {
-            if ($url && !empty($config['proxy'])) {
-                $host = parse_url($url, PHP_URL_HOST);
-                if (in_array($host, (array)$config['disable_proxy_hosts'])) {
-                    $config['proxy'] = '';
-                }
-            }
-            unset($config['disable_proxy_hosts']);
+    #[\ReturnTypeWillChange]
+    public function current()
+    {
+        $result = parent::current();
+        if ($result) {
+            $result += $this->db->getRecordAttrs($this->collection, $result['_id']);
         }
-
-        $request = new \HTTP_Request2($url, $method, $config);
-        $request->setHeader('User-Agent', 'RecordManager');
-        return $request;
+        return $result;
     }
 }

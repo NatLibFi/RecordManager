@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Trait adding functionality for loading fixtures.
  *
@@ -27,6 +28,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://vufind.org/wiki/development:testing:unit_tests Wiki
  */
+
 namespace RecordManagerTest\Base\Feature;
 
 use RuntimeException;
@@ -67,7 +69,8 @@ trait FixtureTrait
     protected function getFixturePath($filename, $module = 'Base')
     {
         $realFilename = realpath($this->getFixtureDir($module) . $filename);
-        if (!$realFilename || !file_exists($realFilename)
+        if (
+            !$realFilename || !file_exists($realFilename)
             || !is_readable($realFilename)
         ) {
             throw new RuntimeException(

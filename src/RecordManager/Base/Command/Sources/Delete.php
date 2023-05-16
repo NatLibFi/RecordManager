@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Delete a source from data sources
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command\Sources;
 
 use RecordManager\Base\Command\AbstractBase;
@@ -138,7 +140,8 @@ class Delete extends AbstractBase
             }
             [$commentless] = explode(';', $line, 2);
             $commentless = trim($commentless);
-            if (strncmp($commentless, '[', 1) === 0
+            if (
+                strncmp($commentless, '[', 1) === 0
                 && substr($commentless, -1) === ']'
                 && strlen($commentless) > 2
             ) {

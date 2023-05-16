@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Bootstrapper for tests
  *
@@ -25,4 +26,5 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://vufind.org/wiki/development:testing:unit_tests Wiki
  */
+
 define('RECMAN_BASE_PATH', __DIR__ . '/fixtures/Base/config/basic');

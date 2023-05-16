@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Mark Records For Solr Update
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command\Records;
 
 use RecordManager\Base\Command\AbstractBase;

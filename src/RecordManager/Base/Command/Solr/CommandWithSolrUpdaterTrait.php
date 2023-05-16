@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Trait for commands that need SolrUpdater.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command\Solr;
 
 use RecordManager\Base\Database\DatabaseInterface;

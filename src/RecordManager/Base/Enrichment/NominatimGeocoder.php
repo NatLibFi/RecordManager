@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Nominatim Geocoder Class
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Enrichment;
 
 /**
@@ -289,7 +291,8 @@ class NominatimGeocoder extends AbstractEnrichment
                         return false;
                     }
 
-                    if (null === $center || null === $poly->isClosed()
+                    if (
+                        null === $center || null === $poly->isClosed()
                         || $poly->contains($center)
                     ) {
                         if (!isset($solrArray[$this->solrField])) {
@@ -443,7 +446,8 @@ class NominatimGeocoder extends AbstractEnrichment
         $results = [];
         $previous = null;
         foreach ($locations as $current) {
-            if (null === $previous || strncmp($current['wkt'], 'LINESTRING', 10) != 0
+            if (
+                null === $previous || strncmp($current['wkt'], 'LINESTRING', 10) != 0
                 || strncmp($previous['wkt'], 'LINESTRING', 10) != 0
             ) {
                 $results[] = $previous = $current;

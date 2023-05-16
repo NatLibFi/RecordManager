@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Export
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command\Records;
 
 use RecordManager\Base\Command\AbstractBase;
@@ -452,7 +454,8 @@ class Export extends AbstractBase
      */
     protected function writeRecord(string $record): void
     {
-        if (!$this->currentFile
+        if (
+            !$this->currentFile
             || ($this->batchSize && $this->currentBatchCount >= $this->batchSize)
         ) {
             $this->startNewBatch();

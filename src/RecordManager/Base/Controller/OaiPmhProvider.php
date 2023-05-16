@@ -1,4 +1,5 @@
 <?php
+
 /**
  * OAI-PMH Provider
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Database\DatabaseInterface;
@@ -143,25 +145,25 @@ class OaiPmhProvider extends AbstractBase
             return;
         }
         switch ($this->verb) {
-        case 'GetRecord':
-            $this->getRecord();
-            break;
-        case 'Identify':
-            $this->identify();
-            break;
-        case 'ListIdentifiers':
-        case 'ListRecords':
-            $this->listRecords($this->verb);
-            break;
-        case 'ListMetadataFormats':
-            $this->listMetadataFormats();
-            break;
-        case 'ListSets':
-            $this->listSets();
-            break;
-        default:
-            $this->error('badVerb', 'Illegal OAI Verb');
-            break;
+            case 'GetRecord':
+                $this->getRecord();
+                break;
+            case 'Identify':
+                $this->identify();
+                break;
+            case 'ListIdentifiers':
+            case 'ListRecords':
+                $this->listRecords($this->verb);
+                break;
+            case 'ListMetadataFormats':
+                $this->listMetadataFormats();
+                break;
+            case 'ListSets':
+                $this->listSets();
+                break;
+            default:
+                $this->error('badVerb', 'Illegal OAI Verb');
+                break;
         }
         $this->printSuffix();
     }
@@ -177,7 +179,8 @@ class OaiPmhProvider extends AbstractBase
         $prefix = $this->getParam('metadataPrefix');
 
         $record = $this->db->findRecord(['oai_id' => $id]);
-        if (!$record
+        if (
+            !$record
             && strncmp($id, $this->idPrefix, strlen($this->idPrefix)) === 0
         ) {
             $id = substr($id, strlen($this->idPrefix));
@@ -641,98 +644,104 @@ EOT;
         // Check for missing or unknown parameters
         $paramCount = count($paramArray) - 1;
         switch ($this->verb) {
-        case 'GetRecord':
-            if ($paramCount != 2 || !$this->getParam('identifier')
-                || !$this->getParam('metadataPrefix')
-            ) {
-                $this->error('badArgument', 'Missing or extraneous arguments');
-                return false;
-            }
-            break;
-        case 'Identify':
-            if ($paramCount != 0) {
-                $this->error('badArgument', 'Extraneous arguments');
-                return false;
-            }
-            break;
-        case 'ListIdentifiers':
-        case 'ListRecords':
-            if ($this->getParam('resumptionToken')) {
-                if ($paramCount != 1) {
-                    $this->error(
-                        'badArgument',
-                        'Extraneous arguments with resumptionToken'
-                    );
+            case 'GetRecord':
+                if (
+                    $paramCount != 2 || !$this->getParam('identifier')
+                    || !$this->getParam('metadataPrefix')
+                ) {
+                    $this->error('badArgument', 'Missing or extraneous arguments');
                     return false;
                 }
-            } else {
-                if (!($format = $this->getParam('metadataPrefix'))) {
-                    $this->error('badArgument', 'Missing argument "metadataPrefix"');
+                break;
+            case 'Identify':
+                if ($paramCount != 0) {
+                    $this->error('badArgument', 'Extraneous arguments');
                     return false;
                 }
-                foreach (array_keys($_GET) as $key) {
-                    $validVerb = in_array(
-                        $key,
-                        ['verb', 'from', 'until', 'set', 'metadataPrefix']
-                    );
-                    if (!$validVerb) {
-                        $this->error('badArgument', 'Illegal argument');
+                break;
+            case 'ListIdentifiers':
+            case 'ListRecords':
+                if ($this->getParam('resumptionToken')) {
+                    if ($paramCount != 1) {
+                        $this->error(
+                            'badArgument',
+                            'Extraneous arguments with resumptionToken'
+                        );
+                        return false;
+                    }
+                } else {
+                    if (!($format = $this->getParam('metadataPrefix'))) {
+                        $this->error('badArgument', 'Missing argument "metadataPrefix"');
+                        return false;
+                    }
+                    foreach (array_keys($_GET) as $key) {
+                        $validVerb = in_array(
+                            $key,
+                            ['verb', 'from', 'until', 'set', 'metadataPrefix']
+                        );
+                        if (!$validVerb) {
+                            $this->error('badArgument', 'Illegal argument');
+                            return false;
+                        }
+                    }
+                    // Check that the requested format is available at least from one
+                    // source
+                    $format = $this->formats[$format]['format'] ?? '';
+                    $formatValid = false;
+                    foreach ($this->dataSourceConfig as $sourceSettings) {
+                        if (
+                            ($sourceSettings['format'] ?? '') === $format
+                            || !empty($sourceSettings["transformation_to_$format"])
+                        ) {
+                            $formatValid = true;
+                            break;
+                        }
+                    }
+                    if (!$formatValid) {
+                        $this->error('cannotDisseminateFormat', '');
                         return false;
                     }
                 }
-                // Check that the requested format is available at least from one
-                // source
-                $format = $this->formats[$format]['format'] ?? '';
-                $formatValid = false;
-                foreach ($this->dataSourceConfig as $sourceSettings) {
-                    if (($sourceSettings['format'] ?? '') === $format
-                        || !empty($sourceSettings["transformation_to_$format"])
-                    ) {
-                        $formatValid = true;
-                        break;
-                    }
-                }
-                if (!$formatValid) {
-                    $this->error('cannotDisseminateFormat', '');
+                break;
+            case 'ListMetadataFormats':
+                if (
+                    $paramCount > 1
+                    || ($paramCount == 1 && !$this->getParam('identifier'))
+                ) {
+                    $this->error('badArgument', 'Invalid arguments');
                     return false;
                 }
-            }
-            break;
-        case 'ListMetadataFormats':
-            if ($paramCount > 1
-                || ($paramCount == 1 && !$this->getParam('identifier'))
-            ) {
-                $this->error('badArgument', 'Invalid arguments');
+                break;
+            case 'ListSets':
+                if (
+                    $paramCount > 1
+                    || ($paramCount == 1 && !$this->getParam('resumptionToken'))
+                ) {
+                    $this->error('badArgument', 'Invalid arguments');
+                    return false;
+                } elseif ($this->getParam('resumptionToken')) {
+                    $this->error('badResumptionToken', '');
+                    return false;
+                }
+                break;
+            default:
+                $this->error('badVerb', 'Invalid verb');
                 return false;
-            }
-            break;
-        case 'ListSets':
-            if ($paramCount > 1
-                || ($paramCount == 1 && !$this->getParam('resumptionToken'))
-            ) {
-                $this->error('badArgument', 'Invalid arguments');
-                return false;
-            } elseif ($this->getParam('resumptionToken')) {
-                $this->error('badResumptionToken', '');
-                return false;
-            }
-            break;
-        default:
-            $this->error('badVerb', 'Invalid verb');
-            return false;
         }
 
         // Check dates
         $fromType = $this->getOaiDateType($this->getParam('from'));
         $untilType = $this->getOaiDateType($this->getParam('until'));
 
-        if ($fromType == OaiPmhProvider::DT_INVALID
+        if (
+            $fromType == OaiPmhProvider::DT_INVALID
             || $untilType == OaiPmhProvider::DT_INVALID
         ) {
             $this->error('badArgument', 'Invalid date format');
             return false;
         }
-        if ($fromType != OaiPmhProvider::DT_EMPTY
+        if (
+            $fromType != OaiPmhProvider::DT_EMPTY
             && $untilType != OaiPmhProvider::DT_EMPTY && $fromType != $untilType
         ) {
             $this->error('badArgument', 'Incompatible date formats');

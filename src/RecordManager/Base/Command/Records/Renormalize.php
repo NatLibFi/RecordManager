@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Record Renormalization
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command\Records;
 
 use RecordManager\Base\Command\AbstractBase;
@@ -210,7 +212,8 @@ class Renormalize extends AbstractBase
                             = $this->metadataUtils->getRecordData($record, true);
                         $record['original_data']
                             = $this->metadataUtils->getRecordData($record, false);
-                        if ($record['normalized_data'] === $record['original_data']
+                        if (
+                            $record['normalized_data'] === $record['original_data']
                         ) {
                             $record['normalized_data'] = '';
                         }

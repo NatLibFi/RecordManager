@@ -1,4 +1,5 @@
 <?php
+
 /**
  * EAD 3 splitter
  *
@@ -27,6 +28,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Splitter;
 
 /**
@@ -103,7 +105,8 @@ class Ead3 extends Ead
             if (!$this->archiveId) {
                 $this->archiveId = $id;
             }
-            if (!$this->unitIdLabel
+            if (
+                !$this->unitIdLabel
                 || (string)$attr->label === $this->unitIdLabel
             ) {
                 $this->archiveId = $id;
@@ -153,7 +156,8 @@ class Ead3 extends Ead
                 if (!$firstId) {
                     $firstId = $id;
                 }
-                if (!$this->unitIdLabel
+                if (
+                    !$this->unitIdLabel
                     || (isset($attr->label)
                     && (string)$attr->label === $this->unitIdLabel)
                 ) {

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * MusicBrainzEnrichment Class
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Enrichment;
 
 /**
@@ -76,7 +78,8 @@ class MusicBrainzEnrichment extends AbstractEnrichment
     public function enrich($sourceId, $record, &$solrArray)
     {
         $this->baseURL = $this->config['MusicBrainzEnrichment']['url'] ?? '';
-        if (empty($this->baseURL)
+        if (
+            empty($this->baseURL)
             || !($record instanceof \RecordManager\Base\Record\Marc)
         ) {
             return;
@@ -87,18 +90,18 @@ class MusicBrainzEnrichment extends AbstractEnrichment
             $id = $this->sanitizeId($identifier['id']);
             $type = $this->sanitizeId($identifier['type']);
             switch ($type) {
-            case 'isrc':
-                break;
-            case 'upc':
-            case 'ismn':
-            case 'ian':
-                $type = 'catno';
-                break;
-            case 'musicb':
-                $type = 'reid';
-                break;
-            default:
-                continue 2;
+                case 'isrc':
+                    break;
+                case 'upc':
+                case 'ismn':
+                case 'ian':
+                    $type = 'catno';
+                    break;
+                case 'musicb':
+                    $type = 'reid';
+                    break;
+                default:
+                    continue 2;
             }
             $query = "$type:\"" . addcslashes($id, '"\\') . '"';
             if ('catno' === $type) {

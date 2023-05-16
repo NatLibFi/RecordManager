@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Forward record class
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
@@ -384,7 +386,8 @@ class Forward extends AbstractRecord
             if (null !== $language && (string)$description->Language !== $language) {
                 continue;
             }
-            if ((string)$description->DescriptionType == 'Content description'
+            if (
+                (string)$description->DescriptionType == 'Content description'
                 && !empty($description->DescriptionText)
             ) {
                 $results[] = (string)$description->DescriptionText;
@@ -407,7 +410,8 @@ class Forward extends AbstractRecord
             if (null !== $language && (string)$description->Language !== $language) {
                 continue;
             }
-            if ((string)$description->DescriptionType == 'Synopsis'
+            if (
+                (string)$description->DescriptionType == 'Synopsis'
                 && !empty($description->DescriptionText)
             ) {
                 $results[] = (string)$description->DescriptionText;

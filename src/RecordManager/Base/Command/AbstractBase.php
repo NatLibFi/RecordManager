@@ -1,4 +1,5 @@
 <?php
+
 /**
  * RecordManager command base class
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command;
 
 use RecordManager\Base\Database\DatabaseInterface;
@@ -312,7 +314,8 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
             // Check for linked data sources and store information to the linked
             // sources too
             foreach ($settings['componentPartSourceId'] ?? [] as $linked) {
-                if (!isset($this->dataSourceConfig[$linked]['__hostRecordSourceId'])
+                if (
+                    !isset($this->dataSourceConfig[$linked]['__hostRecordSourceId'])
                 ) {
                     $this->dataSourceConfig[$linked]['__hostRecordSourceId']
                         = [$linked];

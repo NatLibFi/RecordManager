@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Factory for controllers that use SolrUpdater.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command\Solr;
 
 use Laminas\ServiceManager\Exception\ServiceNotCreatedException;
@@ -41,8 +43,7 @@ use Psr\Container\ContainerInterface;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class AbstractBaseWithSolrUpdaterFactory
-    implements \Laminas\ServiceManager\Factory\FactoryInterface
+class AbstractBaseWithSolrUpdaterFactory implements \Laminas\ServiceManager\Factory\FactoryInterface
 {
     /**
      * Create an object

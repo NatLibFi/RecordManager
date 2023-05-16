@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Skosmos Enrichment Class
  *
@@ -26,6 +27,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Record\AbstractRecord;
@@ -294,7 +296,8 @@ class SkosmosEnrichment extends AbstractEnrichment
 
         if ($this->solrCenterField || $this->solrLocationField) {
             foreach ($data['locations'] as $location) {
-                if ($this->solrCenterField
+                if (
+                    $this->solrCenterField
                     && !isset($solrArray[$this->solrCenterField])
                 ) {
                     $solrArray[$this->solrCenterField]
@@ -398,7 +401,8 @@ class SkosmosEnrichment extends AbstractEnrichment
 
             foreach ($exactMatches as $exactMatch) {
                 $matchId = $exactMatch->getId();
-                if (!$matchId || !$this->uriPrefixAllowed($matchId)
+                if (
+                    !$matchId || !$this->uriPrefixAllowed($matchId)
                     || !($matchDoc = $this->getJsonLdDoc($matchId))
                 ) {
                     continue;
@@ -408,7 +412,8 @@ class SkosmosEnrichment extends AbstractEnrichment
                     continue;
                 }
                 foreach ($matchGraph->getNodes() as $matchNode) {
-                    if ($matchNode->getId() !== $matchId
+                    if (
+                        $matchNode->getId() !== $matchId
                         || !$this->isConceptNode($matchNode)
                     ) {
                         continue;
@@ -517,7 +522,8 @@ class SkosmosEnrichment extends AbstractEnrichment
         $result = array_map(
             function ($val) {
                 if ($val instanceof \ML\JsonLD\LanguageTaggedString) {
-                    if ($this->languages
+                    if (
+                        $this->languages
                         && !in_array($val->getLanguage(), $this->languages)
                     ) {
                         return false;

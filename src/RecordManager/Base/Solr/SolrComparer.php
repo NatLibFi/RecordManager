@@ -1,4 +1,5 @@
 <?php
+
 /**
  * SolrComparer Class
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Solr;
 
 use RecordManager\Base\Utils\PerformanceCounter;
@@ -146,7 +148,8 @@ class SolrComparer extends SolrUpdater
 
                 if (isset($record['dedup_id'])) {
                     $id = $record['dedup_id'];
-                    if ($prevId !== $id
+                    if (
+                        $prevId !== $id
                         && $this->db->addIdToTrackingCollection($trackingName, $id)
                     ) {
                         $result = $this->processDedupRecord(
@@ -272,7 +275,8 @@ class SolrComparer extends SolrUpdater
             ? array_intersect($allFields, $this->compareFields)
             : array_diff($allFields, $ignoreFields);
         foreach ($allFields as $field) {
-            if (!isset($solrRecord[$field])
+            if (
+                !isset($solrRecord[$field])
                 || !isset($record[$field])
                 || $record[$field] != $solrRecord[$field]
             ) {

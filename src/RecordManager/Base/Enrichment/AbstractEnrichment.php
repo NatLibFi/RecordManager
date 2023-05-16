@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Enrichment Class
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
@@ -262,7 +264,8 @@ abstract class AbstractEnrichment
             }
             if ($try < $this->maxTries) {
                 $code = $response->getStatus();
-                if ($code >= 300 && $code != 404 && !in_array($code, $ignoreErrors)
+                if (
+                    $code >= 300 && $code != 404 && !in_array($code, $ignoreErrors)
                 ) {
                     $this->logger->logWarning(
                         'getExternalData',
