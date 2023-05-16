@@ -38,7 +38,7 @@ use RecordManager\Base\Record\Qdc;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class QdcTest extends RecordTest
+class QdcTest extends RecordTestBase
 {
     /**
      * Test QQDC record handling

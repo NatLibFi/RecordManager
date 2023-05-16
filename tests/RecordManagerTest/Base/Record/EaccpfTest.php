@@ -38,7 +38,7 @@ use RecordManager\Base\Record\Eaccpf;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class EaccpfTest extends RecordTest
+class EaccpfTest extends RecordTestBase
 {
     /**
      * Test EAC-CPF record handling

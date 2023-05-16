@@ -38,7 +38,7 @@ use RecordManager\Base\Record\Lido;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class LidoTest extends RecordTest
+class LidoTest extends RecordTestBase
 {
     /**
      * Test LIDO record handling

@@ -38,7 +38,7 @@ use RecordManager\Base\Record\Forward;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class ForwardTest extends RecordTest
+class ForwardTest extends RecordTestBase
 {
     /**
      * Test FORWARD Record handling
