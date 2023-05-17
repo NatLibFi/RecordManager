@@ -9,13 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **N.B. This version bumps the minimum PHP version to 8.0.**
 
+Anything marked with [**BC**] is known to affect backward compatibility with previous versions.
+
 ### Added
 
 Nothing
 
 ### Changed
 
-Nothing
+- [**BC**] Minimum PHP version has been bumped to 8.0.
+- Internal: Coding style has been updated to PSR-12.
 
 ### Removed
 
