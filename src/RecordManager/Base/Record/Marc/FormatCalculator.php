@@ -78,7 +78,7 @@ class FormatCalculator
         string $marc008
     ): bool {
         switch ($recordType) {
-        // Computer file
+            // Computer file
             case 'm':
                 // Check the type of computer file:
                 // If it is 'Document', 'Interactive multimedia', 'Combination',
@@ -248,7 +248,7 @@ class FormatCalculator
         array $formatCodes007
     ): string {
         switch ($bibLevel) {
-        // Component parts
+            // Component parts
             case 'a':
                 return ($this->hasSerialHost($record))
                 ? 'Article' : 'BookComponentPart';
@@ -259,7 +259,7 @@ class FormatCalculator
             case 'c': // Collection
             case 'd': // Sub-unit
                 return '';
-        // Integrating resources (e.g. loose-leaf binders, databases)
+                // Integrating resources (e.g. loose-leaf binders, databases)
             case 'i':
                 // Look in 008 to determine type of electronic IntegratingResource
                 // Check 008/21 Type of continuing resource
@@ -283,7 +283,7 @@ class FormatCalculator
                     }
                 }
                 return 'PhysicalIntegratingResource';
-        // Monograph
+                // Monograph
             case 'm':
                 if ($couldBeBook) {
                     // Check 008/23 Form of item
@@ -308,7 +308,7 @@ class FormatCalculator
                     return 'Book';
                 }
                 break;
-        // Serial
+                // Serial
             case 's':
                 // Look in 008 to determine what type of Continuing Resource
                 // Make sure we have the applicable LDR/06: Language Material
@@ -349,8 +349,8 @@ class FormatCalculator
         array $formatCodes007
     ) {
         switch ($recordType) {
-        // Language material is mapped to 'Text' below if no other
-        // format can be found. For now return an empty string here.
+            // Language material is mapped to 'Text' below if no other
+            // format can be found. For now return an empty string here.
             case 'a':
                 return '';
             case 'c':
@@ -429,7 +429,7 @@ class FormatCalculator
                 // so return nothing here.
                 // If there is no 007 for Nonprojected Graphic, fall back to "Image"
                 return in_array('k', $formatCodes007) ? '' : 'Image';
-        // Computer file
+                // Computer file
             case 'm':
                 // All computer files return a format of Electronic in isElectronic()
                 // Only set more specific formats here
