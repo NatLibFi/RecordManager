@@ -3,7 +3,7 @@
 /**
  * Trait adding functionality for loading fixtures.
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) Villanova University 2020.
  * Copyright (C) The National Library of Finland 2020-2021.

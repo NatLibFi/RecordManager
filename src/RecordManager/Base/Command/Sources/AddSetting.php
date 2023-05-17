@@ -3,7 +3,7 @@
 /**
  * Add a setting to data sources
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2021.
  *

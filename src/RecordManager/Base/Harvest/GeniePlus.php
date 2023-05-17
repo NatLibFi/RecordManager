@@ -3,7 +3,7 @@
 /**
  * GeniePlus API Harvesting Class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (c) Villanova University 2022.
  *

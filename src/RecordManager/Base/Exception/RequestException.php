@@ -3,7 +3,7 @@
 /**
  * Request Exception Class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (c) The National Library of Finland 2022.
  *

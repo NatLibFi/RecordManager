@@ -3,7 +3,7 @@
 /**
  * Trait for creating a PreviewCreator.
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2022.
  *

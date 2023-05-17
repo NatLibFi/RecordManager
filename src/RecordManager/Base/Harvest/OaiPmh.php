@@ -5,7 +5,7 @@
  *
  * Based on harvest-oai.php in VuFind
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (c) Demian Katz 2010.
  * Copyright (c) The National Library of Finland 2011-2021.
