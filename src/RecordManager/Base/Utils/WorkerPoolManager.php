@@ -192,7 +192,7 @@ class WorkerPoolManager
                 $this->workerPools[$poolId][] = [
                     'pid' => $childPid,
                     'socket' => $parentSocket,
-                    'active' => false
+                    'active' => false,
                 ];
             } else {
                 if (is_callable('cli_set_process_title')) {
@@ -228,7 +228,7 @@ class WorkerPoolManager
                         $this->writeSocket(
                             $childSocket,
                             [
-                                'exception' => (string)$e
+                                'exception' => (string)$e,
                             ],
                             true
                         );

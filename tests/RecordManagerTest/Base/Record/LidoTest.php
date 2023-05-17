@@ -69,7 +69,7 @@ class LidoTest extends RecordTestBase
             'institution' => 'Test Institution',
             'author' => [
                 'Designer, Test',
-                'Luhtanen, Raimo'
+                'Luhtanen, Raimo',
             ],
             'author_sort' => 'Designer, Test',
             'topic_facet' => [
@@ -115,7 +115,7 @@ class LidoTest extends RecordTestBase
                 'M011-320623',
                 'Test Institution',
                 '247394',
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -131,7 +131,7 @@ class LidoTest extends RecordTestBase
                     [
                         'type' => 'author',
                         'value' => 'Luhtanen, Raimo',
-                    ]
+                    ],
                 ],
                 'authorsAltScript' => [],
                 'titles' => [
@@ -142,7 +142,7 @@ class LidoTest extends RecordTestBase
                     ],
                 ],
                 'titlesAltScript' => [],
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
@@ -162,9 +162,9 @@ class LidoTest extends RecordTestBase
                 '__unit_test_no_source__' => [
                     'driverParams' => [
                         'mergeTitleValues=false',
-                        'mergeTitleSets=false'
-                    ]
-                ]
+                        'mergeTitleSets=false',
+                    ],
+                ],
             ]
         );
         $fields = $record->toSolrArray();
@@ -177,14 +177,14 @@ class LidoTest extends RecordTestBase
             'title' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
             'title_sort' => 'luonnonsuojelusäädökset toimittanut raimo luhtanen',
             'title_alt' => [
-                'Säädökset'
+                'Säädökset',
             ],
             'format' => 'Kirja',
             'identifier' => '26054',
             'institution' => 'Test Institution',
             'author' => [
                 'Designer, Test',
-                'Luhtanen, Raimo'
+                'Luhtanen, Raimo',
             ],
             'author_sort' => 'Designer, Test',
             'topic_facet' => [
@@ -230,7 +230,7 @@ class LidoTest extends RecordTestBase
                 'M011-320623',
                 'Test Institution',
                 '247394',
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -246,7 +246,7 @@ class LidoTest extends RecordTestBase
                     [
                         'type' => 'author',
                         'value' => 'Luhtanen, Raimo',
-                    ]
+                    ],
                 ],
                 'authorsAltScript' => [],
                 'titles' => [
@@ -261,7 +261,7 @@ class LidoTest extends RecordTestBase
                     ],
                 ],
                 'titlesAltScript' => [],
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
@@ -288,9 +288,9 @@ class LidoTest extends RecordTestBase
             [
                 '__unit_test_no_source__' => [
                     'driverParams' => [
-                        'allowTitleToMatchFormat=true'
-                    ]
-                ]
+                        'allowTitleToMatchFormat=true',
+                    ],
+                ],
             ]
         );
         $fields = $record->toSolrArray();
@@ -325,7 +325,7 @@ class LidoTest extends RecordTestBase
                     ],
                 ],
                 'titlesAltScript' => [],
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');

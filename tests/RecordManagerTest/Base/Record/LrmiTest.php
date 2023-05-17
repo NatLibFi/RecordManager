@@ -228,7 +228,7 @@ class LrmiTest extends RecordTestBase
                 ],
                 'titlesAltScript' => [
                 ],
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');

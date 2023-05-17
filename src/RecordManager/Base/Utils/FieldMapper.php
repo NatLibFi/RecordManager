@@ -124,7 +124,7 @@ class FieldMapper
                     }
                     $this->settings[$source]['mappingFiles'][$field][] = [
                         'type' => $type,
-                        'map' => &self::$mapCache[$filename]
+                        'map' => &self::$mapCache[$filename],
                     ];
                 }
             }

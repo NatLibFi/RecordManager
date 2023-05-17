@@ -240,7 +240,7 @@ abstract class AbstractDatabase implements DatabaseInterface
             $currentFilter = $filter;
             if (null !== $lastId) {
                 $currentFilter['_id'] = [
-                    '$gt' => $lastId
+                    '$gt' => $lastId,
                 ];
             }
             $records = $findMethod(
@@ -250,7 +250,7 @@ abstract class AbstractDatabase implements DatabaseInterface
                     [
                         'skip' => 0,
                         'limit' => $limit,
-                        'sort' => ['_id' => 1]
+                        'sort' => ['_id' => 1],
                     ]
                 )
             );

@@ -276,7 +276,7 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
                 'source_id' => $source,
                 'institution' => $settings['institution'],
                 'format' => $settings['format'],
-                'id_prefix' => $settings['idPrefix']
+                'id_prefix' => $settings['idPrefix'],
             ];
             $settings['normalizationXSLT'] = !empty($settings['normalization'])
                 ? new XslTransformation(

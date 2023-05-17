@@ -827,7 +827,7 @@ class PDODatabase extends AbstractDatabase
                             [
                                 $record['_id'],
                                 $key,
-                                $value
+                                $value,
                             ]
                         );
                     }
@@ -840,7 +840,7 @@ class PDODatabase extends AbstractDatabase
                             [
                                 $record['_id'],
                                 $key,
-                                $value
+                                $value,
                             ]
                         );
                     }
@@ -1000,7 +1000,7 @@ class PDODatabase extends AbstractDatabase
                 $keys = array_keys($value);
                 $supportedKeys = [
                     '$or', '$nor', '$in', '$ne', '$exists', '$gt', '$gte', '$lt',
-                    '$lte'
+                    '$lte',
                 ];
                 if (array_diff($keys, $supportedKeys)) {
                     throw new \Exception(

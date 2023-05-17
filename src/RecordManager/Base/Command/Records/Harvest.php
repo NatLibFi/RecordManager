@@ -281,7 +281,7 @@ class Harvest extends AbstractBase
                     } else {
                         $this->logger->logWarning(
                             'harvest',
-                            "[$source] " . get_class($harvester) . ' does not'
+                            "[$source] " . $harvester::class . ' does not'
                             . ' support overriding of start position'
                         );
                     }
@@ -320,11 +320,11 @@ class Harvest extends AbstractBase
                             $this->db->updateRecords(
                                 [
                                     'source_id' => $source,
-                                    'update_needed' => true
+                                    'update_needed' => true,
                                 ],
                                 [
                                     'updated' => $this->db->getTimestamp(),
-                                    'update_needed' => false
+                                    'update_needed' => false,
                                 ]
                             );
                         }
@@ -345,7 +345,7 @@ class Harvest extends AbstractBase
 
                     if (!is_callable([$harvester, 'listIdentifiers'])) {
                         throw new \Exception(
-                            "[$source] " . get_class($harvester)
+                            "[$source] " . $harvester::class
                             . ' does not support listing identifiers'
                         );
                     }
@@ -392,7 +392,7 @@ class Harvest extends AbstractBase
 
                         $state = [
                             '_id' => "Last Deletion Processing Time $source",
-                            'value' => time()
+                            'value' => time(),
                         ];
                         // Reset database connection since it could have timed out
                         // during the process:
@@ -469,8 +469,8 @@ class Harvest extends AbstractBase
                 'deleted' => false,
                 'date' => [
                     '$lt' =>
-                        $this->db->getTimestamp($dateThreshold)
-                ]
+                        $this->db->getTimestamp($dateThreshold),
+                ],
             ],
             [],
             function ($record) use (&$count, $source, $dateThreshold) {

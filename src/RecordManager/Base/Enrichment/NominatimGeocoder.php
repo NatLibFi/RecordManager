@@ -105,7 +105,7 @@ class NominatimGeocoder extends AbstractEnrichment
      */
     protected $ignoredClasses = [
         'amenity', 'craft', 'emergency', 'office', 'power', 'public_transport',
-        'shop', 'sport', 'tourism'
+        'shop', 'sport', 'tourism',
     ];
 
     /**
@@ -186,7 +186,7 @@ class NominatimGeocoder extends AbstractEnrichment
                 }
                 $this->transformations[] = [
                     'search' => $search,
-                    'replace' => $settings['replace'][$index]
+                    'replace' => $settings['replace'][$index],
                 ];
             }
         }
@@ -300,7 +300,7 @@ class NominatimGeocoder extends AbstractEnrichment
                         } else {
                             $solrArray[$this->solrField] = [
                                 ...(array)$solrArray[$this->solrField],
-                                ...$wkts
+                                ...$wkts,
                             ];
                         }
                     }
@@ -373,7 +373,7 @@ class NominatimGeocoder extends AbstractEnrichment
             'q' => $location,
             'format' => 'json',
             'polygon_text' => '1',
-            'email' => $this->email
+            'email' => $this->email,
         ];
 
         if ($this->preferredArea) {
@@ -419,7 +419,7 @@ class NominatimGeocoder extends AbstractEnrichment
                 'wkt' => $place['geotext'] ?? '',
                 'lat' => $place['lat'] ?? '',
                 'lon' => $place['lon'] ?? '',
-                'importance' => $importance
+                'importance' => $importance,
             ];
         }
         // Include only items with the highest importance (there may be many with the

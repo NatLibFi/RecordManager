@@ -196,11 +196,11 @@ class OaiPmhProvider extends AbstractBase
         }
         $xml = $this->createRecordXML($record, $prefix, true);
         echo <<<EOT
-  <GetRecord>
-$xml
-  </GetRecord>
+              <GetRecord>
+            $xml
+              </GetRecord>
 
-EOT;
+            EOT;
     }
 
     /**
@@ -216,17 +216,17 @@ EOT;
         $earliestDate = $this->toOaiDate($this->getEarliestDateStamp());
 
         echo <<<EOT
-<Identify>
-  <repositoryName>$name</repositoryName>
-  <baseURL>$base</baseURL>
-  <protocolVersion>2.0</protocolVersion>
-  <adminEmail>$admin</adminEmail>
-  <earliestDatestamp>$earliestDate</earliestDatestamp>
-  <deletedRecord>persistent</deletedRecord>
-  <granularity>YYYY-MM-DDThh:mm:ssZ</granularity>
-</Identify>
+            <Identify>
+              <repositoryName>$name</repositoryName>
+              <baseURL>$base</baseURL>
+              <protocolVersion>2.0</protocolVersion>
+              <adminEmail>$admin</adminEmail>
+              <earliestDatestamp>$earliestDate</earliestDatestamp>
+              <deletedRecord>persistent</deletedRecord>
+              <granularity>YYYY-MM-DDThh:mm:ssZ</granularity>
+            </Identify>
 
-EOT;
+            EOT;
     }
 
     /**
@@ -280,19 +280,19 @@ EOT;
                 ),
                 '$lte' => $this->db->getTimestamp(
                     $this->fromOaiDate($until, '23:59:59')
-                )
+                ),
             ];
         } elseif ($from) {
             $queryParams['updated'] = [
                 '$gte' => $this->db->getTimestamp(
                     $this->fromOaiDate($from, '00:00:00')
-                )
+                ),
             ];
         } elseif ($until) {
             $queryParams['updated'] = [
                 '$lte' => $this->db->getTimestamp(
                     $this->fromOaiDate($until, '23:59:59')
-                )
+                ),
             ];
         }
 
@@ -306,9 +306,9 @@ EOT;
         $sendListElement = function () use (&$listElementSent, $verb) {
             if (!$listElementSent) {
                 echo <<<EOT
-  <$verb>
+                      <$verb>
 
-EOT;
+                    EOT;
                 $listElementSent = true;
             }
         };
@@ -335,9 +335,9 @@ EOT;
                     );
                     $sendListElement();
                     echo <<<EOT
-    <resumptionToken cursor="$position">$token</resumptionToken>
+                            <resumptionToken cursor="$position">$token</resumptionToken>
 
-EOT;
+                        EOT;
                     return false;
                 }
                 $xml = $this->createRecordXML(
@@ -361,9 +361,9 @@ EOT;
 
         if ($listElementSent) {
             echo <<<EOT
-  </$verb>
+                  </$verb>
 
-EOT;
+                EOT;
         }
     }
 
@@ -408,9 +408,9 @@ EOT;
         }
 
         echo <<<EOT
-  <ListMetadataFormats>
+              <ListMetadataFormats>
 
-EOT;
+            EOT;
 
         // Map to OAI-PMH formats
         foreach (array_keys($formats) as $key) {
@@ -421,21 +421,21 @@ EOT;
                     $namespace = $settings['namespace'];
 
                     echo <<<EOT
-    <metadataFormat>
-      <metadataPrefix>$prefix</metadataPrefix>
-      <schema>$schema</schema>
-      <metadataNamespace>$namespace</metadataNamespace>
-    </metadataFormat>
+                            <metadataFormat>
+                              <metadataPrefix>$prefix</metadataPrefix>
+                              <schema>$schema</schema>
+                              <metadataNamespace>$namespace</metadataNamespace>
+                            </metadataFormat>
 
-EOT;
+                        EOT;
                     break;
                 }
             }
         }
         echo <<<EOT
-  </ListMetadataFormats>
+              </ListMetadataFormats>
 
-EOT;
+            EOT;
     }
 
     /**
@@ -446,25 +446,25 @@ EOT;
     protected function listSets()
     {
         echo <<<EOT
-  <ListSets>
+              <ListSets>
 
-EOT;
+            EOT;
 
         foreach ($this->sets as $id => $set) {
             $id = $this->escape($id);
             $name = $this->escape($set['name']);
 
             echo <<<EOT
-    <set>
-      <setSpec>$id</setSpec>
-      <setName>$name</setName>
-    </set>
-EOT;
+                    <set>
+                      <setSpec>$id</setSpec>
+                      <setName>$name</setName>
+                    </set>
+                EOT;
         }
 
         echo <<<EOT
-  </ListSets>
-EOT;
+              </ListSets>
+            EOT;
     }
 
     /**
@@ -504,15 +504,15 @@ EOT;
         }
 
         echo <<<EOT
-<?xml version="1.0" encoding="UTF-8"?>
-<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/
-         http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
-  <responseDate>$date</responseDate>
-  <request$arguments>$base</request>
+            <?xml version="1.0" encoding="UTF-8"?>
+            <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/
+                     http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+              <responseDate>$date</responseDate>
+              <request$arguments>$base</request>
 
-EOT;
+            EOT;
     }
 
     /**
@@ -840,7 +840,7 @@ EOT;
                 $params = [
                     'source_id' => $source,
                     'institution' => $datasource['institution'],
-                    'format' => $record['format']
+                    'format' => $record['format'],
                 ];
                 $metadata = $this->transformations[$transformationKey]
                     ->transform($metadata, $params);
@@ -850,19 +850,19 @@ EOT;
                 $metadata = substr($metadata, $end + 1);
             }
             $metadata = <<<EOT
-      <metadata>
-        $metadata
-      </metadata>
-EOT;
+                      <metadata>
+                        $metadata
+                      </metadata>
+                EOT;
         }
 
         $setSpecs = '';
         foreach ($this->getRecordSets($record) as $id) {
             $id = $this->escape($id);
             $setSpecs .= <<<EOT
-        <setSpec>$id</setSpec>
+                        <setSpec>$id</setSpec>
 
-EOT;
+                EOT;
         }
 
         $id = $this->escape(
@@ -874,20 +874,20 @@ EOT;
         $status = $record['deleted'] ? ' status="deleted"' : '';
 
         $header = <<<EOT
-      <header$status>
-        <identifier>$id</identifier>
-        <datestamp>$date</datestamp>
-$setSpecs      </header>
-EOT;
+                  <header$status>
+                    <identifier>$id</identifier>
+                    <datestamp>$date</datestamp>
+            $setSpecs      </header>
+            EOT;
 
         if ($includeMetadata) {
             return <<<EOT
-    <record>
-$header
-$metadata
-    </record>
+                    <record>
+                $header
+                $metadata
+                    </record>
 
-EOT;
+                EOT;
         }
         return "$header\n";
     }

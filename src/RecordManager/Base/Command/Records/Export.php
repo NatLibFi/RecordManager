@@ -208,15 +208,15 @@ class Export extends AbstractBase
                         [
                             'updated' => [
                                 '$gte'
-                                    => $this->db->getTimestamp(strtotime($fromDate))
-                            ]
+                                    => $this->db->getTimestamp(strtotime($fromDate)),
+                            ],
                         ],
                         [
                             'updated' => [
                                 '$lte'
-                                    => $this->db->getTimestamp(strtotime($untilDate))
-                            ]
-                        ]
+                                    => $this->db->getTimestamp(strtotime($untilDate)),
+                            ],
+                        ],
                     ];
                 } elseif ($fromDate) {
                     $params['updated']
@@ -231,25 +231,25 @@ class Export extends AbstractBase
                             'created' => [
                                 '$gte' => $this->db->getTimestamp(
                                     strtotime($fromCreateDate)
-                                )
-                            ]
+                                ),
+                            ],
                         ],
                         [
                             'created' => [
                                 '$lte' => $this->db->getTimestamp(
                                     strtotime($untilCreateDate)
-                                )
-                            ]
-                        ]
+                                ),
+                            ],
+                        ],
                     ];
                 } elseif ($fromCreateDate) {
                     $params['created'] = [
-                        '$gte' => $this->db->getTimestamp(strtotime($fromCreateDate))
+                        '$gte' => $this->db->getTimestamp(strtotime($fromCreateDate)),
                     ];
                 } elseif ($untilDate) {
                     $params['created'] = [
                         '$lte'
-                            => $this->db->getTimestamp(strtotime($untilCreateDate))
+                            => $this->db->getTimestamp(strtotime($untilCreateDate)),
                     ];
                 }
                 if ($sourceId && $sourceId !== '*') {

@@ -111,7 +111,7 @@ class SierraApi extends AbstractBase
      */
     protected $httpOptions = [
         // Set a timeout since Sierra may sometimes just hang without ever returning.
-        'timeout' => 600
+        'timeout' => 600,
     ];
 
     /**
@@ -173,7 +173,7 @@ class SierraApi extends AbstractBase
         $apiParams = [
             'limit' => $this->batchSize,
             'offset' => $this->startPosition,
-            'fields' => 'id,deleted,locations,fixedFields,varFields'
+            'fields' => 'id,deleted,locations,fixedFields,varFields',
         ];
         if (null !== $this->suppressedRecords) {
             $apiParams['suppressed'] = $this->suppressedRecords ? 'true' : 'false';
@@ -539,15 +539,15 @@ class SierraApi extends AbstractBase
                     $subfields = [];
                     foreach ($varField['subfields'] as $subfield) {
                         $subfields[] = [
-                            $subfield['tag'] => $subfield['content']
+                            $subfield['tag'] => $subfield['content'],
                         ];
                     }
                     $marc['fields'][] = [
                         (string)$marcTag => [
                             'ind1' => $varField['ind1'],
                             'ind2' => $varField['ind2'],
-                            'subfields' => $subfields
-                        ]
+                            'subfields' => $subfields,
+                        ],
                     ];
                 }
             } else {
@@ -562,9 +562,9 @@ class SierraApi extends AbstractBase
                         'ind1' => ' ',
                         'ind2' => ' ',
                         'subfields' => [
-                            ['b' => $location['code']]
-                        ]
-                    ]
+                            ['b' => $location['code']],
+                        ],
+                    ],
                 ];
             }
         }
@@ -575,9 +575,9 @@ class SierraApi extends AbstractBase
                     'ind1' => ' ',
                     'ind2' => ' ',
                     'subfields' => [
-                        ['a' => trim($record['fixedFields']['30']['value'])]
-                    ]
-                ]
+                        ['a' => trim($record['fixedFields']['30']['value'])],
+                    ],
+                ],
             ];
         }
 

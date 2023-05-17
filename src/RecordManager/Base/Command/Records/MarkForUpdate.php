@@ -132,7 +132,7 @@ class MarkForUpdate extends AbstractBase
                 $this->db->updateRecord(
                     $record['_id'],
                     [
-                        'updated' => $this->db->getTimestamp()
+                        'updated' => $this->db->getTimestamp(),
                     ]
                 );
 

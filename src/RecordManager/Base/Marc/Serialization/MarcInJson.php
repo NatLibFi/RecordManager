@@ -83,7 +83,7 @@ class MarcInJson extends \VuFind\Marc\Serialization\MarcInJson
                         );
                         foreach ($subfields as $subfield) {
                             $newField['subfields'][] = [
-                                $subfield[0] => substr($subfield, 1)
+                                $subfield[0] => substr($subfield, 1),
                             ];
                         }
                         $result['fields'][] = [$tag => $newField];
@@ -112,7 +112,7 @@ class MarcInJson extends \VuFind\Marc\Serialization\MarcInJson
                         if (isset($field['s'])) {
                             foreach ($field['s'] as $subfield) {
                                 $newField['subfields'][] = [
-                                    $subfield['c'] => $subfield['v']
+                                    $subfield['c'] => $subfield['v'],
                                 ];
                             }
                         }
@@ -140,7 +140,7 @@ class MarcInJson extends \VuFind\Marc\Serialization\MarcInJson
                         if (isset($field['s'])) {
                             foreach ($field['s'] as $subfield) {
                                 $newField['subfields'][] = [
-                                    (string)key($subfield) => current($subfield)
+                                    (string)key($subfield) => current($subfield),
                                 ];
                             }
                         }

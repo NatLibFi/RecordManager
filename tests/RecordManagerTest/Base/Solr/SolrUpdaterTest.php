@@ -70,7 +70,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
             '*_keys_*' => 20,
             'title_sh*' => 30,
             '*sort' => 40,
-        ]
+        ],
     ];
 
     /**
@@ -82,7 +82,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
         'test' => [
             'institution' => 'Test',
             'format' => 'marc',
-        ]
+        ],
     ];
 
     /**
@@ -129,7 +129,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
         $this->assertIsArray($result['deleted']);
         $this->assertEmpty($result['deleted']);
         $this->assertIsArray($result['records']);
-        $this->assertEquals(1, count($result['records']));
+        $this->assertCount(1, $result['records']);
         $this->assertEquals(0, $result['mergedComponents']);
         $this->assertIsArray($result['records'][0]);
 
@@ -159,33 +159,33 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
         return [
             [
                 [
-                    'copy foo newfield'
+                    'copy foo newfield',
                 ],
-                []
+                [],
             ],
             [
                 [
-                    'copy foo newfield DEFAULT'
+                    'copy foo newfield DEFAULT',
                 ],
                 [
                     'newfield' => 'DEFAULT',
-                ]
+                ],
             ],
             [
                 [
-                    'copy institution newfield'
+                    'copy institution newfield',
                 ],
                 [
                     'newfield' => 'Test',
-                ]
+                ],
             ],
             [
                 [
-                    'delete institution'
+                    'delete institution',
                 ],
                 [
                     'institution' => null,
-                ]
+                ],
             ],
             [
                 [
@@ -199,7 +199,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
                         'marc',
                     ],
                     'institution' => null,
-                ]
+                ],
             ],
             [
                 [
@@ -212,7 +212,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
                         'DEFAULT2',
                     ],
                     'institution' => null,
-                ]
+                ],
             ],
         ];
     }

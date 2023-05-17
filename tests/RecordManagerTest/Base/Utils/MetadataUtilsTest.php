@@ -239,6 +239,43 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Data provider for testHasTrailingPunctuation
+     *
+     * @return array
+     */
+    public function hasTrailingPunctuationProvider(): array
+    {
+        return [
+            [true, '123.'],
+            [false, 'Mattila P.'],
+            [true, 'foo /'],
+            [false, '1979© '],
+            [false, 'foo--'],
+            [true, 'bar /:;,=(['],
+        ];
+    }
+
+    /**
+     * Test hasTrailingPunctuation
+     *
+     * @param bool   $expected Expected result
+     * @param string $str      String to process
+     *
+     * @dataProvider hasTrailingPunctuationProvider
+     *
+     * @return void
+     */
+    public function testHasTrailingPunctuation(
+        bool $expected,
+        string $str
+    ): void {
+        $this->assertEquals(
+            $expected,
+            $this->metadataUtils->hasTrailingPunctuation($str),
+        );
+    }
+
+    /**
      * Test coordinate conversion
      *
      * @return void

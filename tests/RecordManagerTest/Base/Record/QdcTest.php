@@ -177,17 +177,17 @@ class QdcTest extends RecordTestBase
                     [
                         'type' => 'title',
                         'value' => 'urine the potential value chain and its'
-                            . ' sustainable management'
+                            . ' sustainable management',
                     ],
                     [
                         'type' => 'title',
                         'value' => 'Urine : The potential, value chain and its'
-                            . ' sustainable management'
+                            . ' sustainable management',
                     ],
                 ],
                 'titlesAltScript' => [
                 ],
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');

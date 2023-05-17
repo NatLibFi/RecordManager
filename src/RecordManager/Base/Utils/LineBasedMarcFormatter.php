@@ -56,13 +56,13 @@ class LineBasedMarcFormatter
      */
     protected $lineBasedMarcFormats = [
         [
-            'subfieldRegExp' => '/\$([a-z0-9])/'
+            'subfieldRegExp' => '/\$([a-z0-9])/',
         ],
         [
-            'subfieldRegExp' => '/\|([a-z0-9]) /'
+            'subfieldRegExp' => '/\|([a-z0-9]) /',
         ],
         [
-            'subfieldRegExp' => '/‡([a-z0-9]) /'
+            'subfieldRegExp' => '/‡([a-z0-9]) /',
         ],
     ];
 

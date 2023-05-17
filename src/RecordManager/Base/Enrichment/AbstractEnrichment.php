@@ -104,7 +104,7 @@ abstract class AbstractEnrichment
      * @array
      */
     protected $httpOptions = [
-        'follow_redirects' => true
+        'follow_redirects' => true,
     ];
 
     /**
@@ -209,8 +209,8 @@ abstract class AbstractEnrichment
                 [
                     '_id' => $id,
                     'timestamp' => [
-                        '$gt' => $this->db->getTimestamp(time() - $this->maxCacheAge)
-                    ]
+                        '$gt' => $this->db->getTimestamp(time() - $this->maxCacheAge),
+                    ],
                 ]
             );
             if (null !== $cached) {
@@ -321,7 +321,7 @@ abstract class AbstractEnrichment
                     'timestamp' => $this->db->getTimestamp(),
                     'url' => $url,
                     'headers' => $headers,
-                    'data' => $data
+                    'data' => $data,
                 ]
             );
         }

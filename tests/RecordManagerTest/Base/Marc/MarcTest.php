@@ -154,7 +154,7 @@ class MarcTest extends \PHPUnit\Framework\TestCase
 
         $field = [
             'tag' => '035',
-            'subfields' => []
+            'subfields' => [],
         ];
         $this->assertEmpty($marc->getWarnings());
         $marc->getIndicator($field, 1);
@@ -162,7 +162,7 @@ class MarcTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(
             [
                 'indicator 1 missing',
-                'indicator 2 missing'
+                'indicator 2 missing',
             ],
             $marc->getWarnings()
         );
@@ -253,18 +253,18 @@ class MarcTest extends \PHPUnit\Framework\TestCase
         );
 
         // Test adding a field:
-        $this->assertEquals(1, count($marc->getFields('700')));
+        $this->assertCount(1, $marc->getFields('700'));
         $marc->addField(
             '700',
             ' ',
             ' ',
             [
-                ['a' => 'Sajavaara, Paula']
+                ['a' => 'Sajavaara, Paula'],
             ]
         );
 
         $f700s = $marc->getFields('700');
-        $this->assertEquals(2, count($f700s));
+        $this->assertCount(2, $f700s);
         $this->assertEquals(
             'Sajavaara, Paula',
             $marc->getSubfield($f700s[1], 'a')
@@ -300,7 +300,7 @@ class MarcTest extends \PHPUnit\Framework\TestCase
 
         // Test deletion:
         $marc->deleteFields('700');
-        $this->assertEquals(0, count($marc->getFields('700')));
+        $this->assertCount(0, $marc->getFields('700'));
 
         // Test adding an empty field:
         $marc->addField(
@@ -314,7 +314,7 @@ class MarcTest extends \PHPUnit\Framework\TestCase
             [],
             $marc->getFieldsSubfieldsBySpecs(
                 [
-                    [Marc::GET_BOTH, '700', ['a']]
+                    [Marc::GET_BOTH, '700', ['a']],
                 ]
             )
         );

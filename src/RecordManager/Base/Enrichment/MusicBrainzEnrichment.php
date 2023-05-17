@@ -168,7 +168,7 @@ class MusicBrainzEnrichment extends AbstractEnrichment
         // Search for a release
         $params = [
             'query' => $query,
-            'fmt' => 'json'
+            'fmt' => 'json',
         ];
         $url = $this->baseURL . '/ws/2/release?' . http_build_query($params);
         $data = $this->getExternalData($url, $query);

@@ -54,7 +54,7 @@ class Forward extends AbstractRecord
      * @var array
      */
     protected $primaryAuthorRelators = [
-        'd02', 'a00', 'a03', 'a06', 'a50', 'a99'
+        'd02', 'a00', 'a03', 'a06', 'a50', 'a99',
     ];
 
     /**
@@ -63,7 +63,7 @@ class Forward extends AbstractRecord
      * @var array
      */
     protected $secondaryAuthorRelators = [
-        'd01', 'e01', 'f01', 'f02'
+        'd01', 'e01', 'f01', 'f02',
     ];
 
     /**
@@ -76,7 +76,7 @@ class Forward extends AbstractRecord
 
     protected $filterFromAllFields = [
         'Identifier', 'RecordSource', 'TitleRelationship', 'Activity',
-        'AgentIdentifier', 'ProductionEventType', 'DescriptionType', 'Language'
+        'AgentIdentifier', 'ProductionEventType', 'DescriptionType', 'Language',
     ];
 
     /**
@@ -226,7 +226,7 @@ class Forward extends AbstractRecord
         $authors = $this->getPrimaryAuthorsSorted();
         $author = $authors['names'][0] ?? '';
         if ($author) {
-            if (strpos($author, ',') === false) {
+            if (!str_contains($author, ',')) {
                 $author = $this->metadataUtils->convertAuthorLastFirst($author);
             }
         }

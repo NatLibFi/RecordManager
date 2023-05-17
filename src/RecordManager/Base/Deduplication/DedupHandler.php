@@ -179,7 +179,7 @@ class DedupHandler implements DedupHandlerInterface
             $this->db->saveDedup($dedupRecord);
             return [
                 "Marked dedup record '{$dedupRecord['_id']}' deleted (no records in"
-                . ' non-deleted dedup record)'
+                . ' non-deleted dedup record)',
             ];
         }
         $removed = [];
@@ -326,7 +326,7 @@ class DedupHandler implements DedupHandlerInterface
                 . $this->metadataUtils->normalizeKey(
                     $authorParts[0],
                     $this->normalizationForm
-                )
+                ),
             ];
         } else {
             $keys = [];
@@ -415,32 +415,32 @@ class DedupHandler implements DedupHandlerInterface
             [
                 'type' => 'isbn_keys',
                 'keys' => $isbnArray,
-                'filters' => ['dedup_id' => ['$exists' => true]]
+                'filters' => ['dedup_id' => ['$exists' => true]],
             ],
             [
                 'type' => 'id_keys',
                 'keys' => $idArray,
-                'filters' => ['dedup_id' => ['$exists' => true]]
+                'filters' => ['dedup_id' => ['$exists' => true]],
             ],
             [
                 'type' => 'isbn_keys',
                 'keys' => $isbnArray,
-                'filters' => ['dedup_id' => ['$exists' => false]]
+                'filters' => ['dedup_id' => ['$exists' => false]],
             ],
             [
                 'type' => 'id_keys',
                 'keys' => $idArray,
-                'filters' => ['dedup_id' => ['$exists' => false]]
+                'filters' => ['dedup_id' => ['$exists' => false]],
             ],
             [
                 'type' => 'title_keys',
                 'keys' => $titleArray,
-                'filters' => ['dedup_id' => ['$exists' => true]]
+                'filters' => ['dedup_id' => ['$exists' => true]],
             ],
             [
                 'type' => 'title_keys',
                 'keys' => $titleArray,
-                'filters' => ['dedup_id' => ['$exists' => false]]
+                'filters' => ['dedup_id' => ['$exists' => false]],
             ],
         ];
 
@@ -464,7 +464,7 @@ class DedupHandler implements DedupHandlerInterface
                 $params,
                 [
                     'sort' => ['created' => 1],
-                    'limit' => 101
+                    'limit' => 101,
                 ]
             );
             $processed = 0;
@@ -493,7 +493,7 @@ class DedupHandler implements DedupHandlerInterface
                         [
                             'dedup_id' => $candidate['dedup_id'],
                             'source_id' => $record['source_id'],
-                            '_id' => ['$ne' => $record['_id']]
+                            '_id' => ['$ne' => $record['_id']],
                         ]
                     );
                     if ($existingDuplicate) {
@@ -577,7 +577,7 @@ class DedupHandler implements DedupHandlerInterface
                     $this->db->iterateDedups(
                         [
                             '_id' => ['$in' => $dedupIdKeys],
-                            'deleted' => false
+                            'deleted' => false,
                         ],
                         [],
                         function ($dedupRecord) use (
@@ -1129,7 +1129,7 @@ class DedupHandler implements DedupHandlerInterface
 
         $setValues = [
             'updated' => $this->db->getTimestamp(),
-            'update_needed' => false
+            'update_needed' => false,
         ];
         // Deferred removal to keep database checks happy
         $removeFromDedup = [];
@@ -1138,7 +1138,7 @@ class DedupHandler implements DedupHandlerInterface
             if (!$this->addToDedupRecord($rec2['dedup_id'], $rec1['_id'])) {
                 $removeFromDedup[] = [
                     'dedup_id' => $rec2['dedup_id'],
-                    '_id' => $rec2['_id']
+                    '_id' => $rec2['_id'],
                 ];
                 $rec2['dedup_id'] = $this->createDedupRecord(
                     $rec1['_id'],
@@ -1149,7 +1149,7 @@ class DedupHandler implements DedupHandlerInterface
             if (isset($rec1['dedup_id']) && $rec1['dedup_id'] != $rec2['dedup_id']) {
                 $removeFromDedup[] = [
                     'dedup_id' => $rec1['dedup_id'],
-                    '_id' => $rec1['_id']
+                    '_id' => $rec1['_id'],
                 ];
             }
             $setValues['dedup_id'] = $rec1['dedup_id'] = $rec2['dedup_id'];
@@ -1158,7 +1158,7 @@ class DedupHandler implements DedupHandlerInterface
             if (!$this->addToDedupRecord($rec1['dedup_id'], $rec2['_id'])) {
                 $removeFromDedup[] = [
                     'dedup_id' => $rec1['dedup_id'],
-                    '_id' => $rec1['_id']
+                    '_id' => $rec1['_id'],
                 ];
                 $rec1['dedup_id'] = $this->createDedupRecord(
                     $rec1['_id'],
@@ -1210,8 +1210,8 @@ class DedupHandler implements DedupHandlerInterface
             'deleted' => false,
             'ids' => [
                 $id1,
-                $id2
-             ]
+                $id2,
+             ],
         ];
         $record = $this->db->saveDedup($record);
         return $record['_id'];
@@ -1396,7 +1396,7 @@ class DedupHandler implements DedupHandlerInterface
             [
                 'source_id' => $sourceId,
                 'host_record_id' => [
-                    '$in' => array_values((array)$hostRecordId)
+                    '$in' => array_values((array)$hostRecordId),
                 ],
                 'deleted' => false,
                 'suppressed' => ['$in' => [null, false]],

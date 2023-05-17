@@ -357,7 +357,7 @@ class Marc extends \VuFind\Marc\MarcReader
             $field = [
                 'ind1' => $ind1,
                 'ind2' => $ind2,
-                'subfields' => $contents
+                'subfields' => $contents,
             ];
             $this->data['fields'][] = [$fieldTag => $field];
         }
@@ -436,7 +436,7 @@ class Marc extends \VuFind\Marc\MarcReader
                     if (null === $subfieldIdx) {
                         // Add new subfield:
                         $field[$fieldTag]['subfields'][] = [
-                            $subfieldCode => $newValue
+                            $subfieldCode => $newValue,
                         ];
                         $this->resultCache = [];
                         return;
@@ -447,7 +447,7 @@ class Marc extends \VuFind\Marc\MarcReader
                             ++$currentSubfieldIdx;
                             if ($currentSubfieldIdx === $subfieldIdx) {
                                 $subfield = [
-                                    $subfieldCode => $newValue
+                                    $subfieldCode => $newValue,
                                 ];
                                 $this->resultCache = [];
                                 return;

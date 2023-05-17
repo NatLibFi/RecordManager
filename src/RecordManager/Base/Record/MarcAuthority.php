@@ -160,7 +160,7 @@ class MarcAuthority extends Marc
         foreach ($this->record->getFields('372') as $field) {
             $result = [
                 ...$result,
-                ...$this->getSubfieldsArray($field, ['a'])
+                ...$this->getSubfieldsArray($field, ['a']),
             ];
         }
         return $result;
@@ -184,7 +184,7 @@ class MarcAuthority extends Marc
                 $fields = [$sub];
                 $fields = [
                     ...$fields,
-                    ...$this->getSubfieldsArray($field, ['b'])
+                    ...$this->getSubfieldsArray($field, ['b']),
                 ];
                 return implode($this->nameDelimiter, $this->trimFields($fields));
             }
@@ -212,7 +212,7 @@ class MarcAuthority extends Marc
         return array_unique(
             [
                 $this->getFieldSubField('370', 'e', true),
-                $this->getFieldSubField('370', 'f', true)
+                $this->getFieldSubField('370', 'f', true),
             ]
         );
     }

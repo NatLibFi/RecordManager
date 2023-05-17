@@ -240,7 +240,7 @@ class MarcTest extends RecordTestBase
                     ],
                 ],
                 'titlesAltScript' => [],
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
@@ -391,7 +391,7 @@ class MarcTest extends RecordTestBase
                     ],
                 ],
                 'titlesAltScript' => [],
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
@@ -407,9 +407,9 @@ class MarcTest extends RecordTestBase
         $dsConfig = [
             '__unit_test_no_source__' => [
                 'driverParams' => [
-                    'geoCenterField=center_coords'
-                ]
-            ]
+                    'geoCenterField=center_coords',
+                ],
+            ],
         ];
         $record = $this->createMarcRecord(Marc::class, 'marc_geo.xml', $dsConfig);
         $fields = $record->toSolrArray();
@@ -492,7 +492,7 @@ class MarcTest extends RecordTestBase
             'title_full' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
             'title_alt' => [
                 'Vägkarta över Finland',
-                'Suomen tiekartta 1'
+                'Suomen tiekartta 1',
             ],
             'title_old' => [],
             'title_new' => [],
@@ -646,7 +646,7 @@ class MarcTest extends RecordTestBase
                 . ' structures du quotidien : le possible et l\'impossible / Fernand'
                 . ' Braudel',
             'title_alt' => [
-                'Les structures du quotidien : le possible et l\'impossible'
+                'Les structures du quotidien : le possible et l\'impossible',
             ],
             'title_old' => [],
             'title_new' => [],
@@ -737,7 +737,7 @@ class MarcTest extends RecordTestBase
             'dewey-raw' => '330.903',
             'oclc_num' => [
                 '123456',
-                '234567'
+                '234567',
             ],
         ];
 
@@ -756,37 +756,37 @@ class MarcTest extends RecordTestBase
             [
                 [
                     'source_id' => '__unit_test_no_source__',
-                    'linking_id' => '(FI-NL)961827'
+                    'linking_id' => '(FI-NL)961827',
                 ],
                 [
-                    'projection' => ['_id' => 1]
+                    'projection' => ['_id' => 1],
                 ],
                 [
-                    '_id' => '__unit_test_no_source__.4132317'
-                ]
+                    '_id' => '__unit_test_no_source__.4132317',
+                ],
             ],
             [
                 [
                     'source_id' => '__unit_test_no_source__',
-                    'linking_id' => '961827'
+                    'linking_id' => '961827',
                 ],
                 [
-                    'projection' => ['_id' => 1]
+                    'projection' => ['_id' => 1],
                 ],
                 [
-                    '_id' => '__unit_test_no_source__.4112121'
-                ]
+                    '_id' => '__unit_test_no_source__.4112121',
+                ],
             ],
             [
                 [
                     'source_id' => '__unit_test_no_source__',
-                    'linking_id' => '(FI-NL)xyzzy'
+                    'linking_id' => '(FI-NL)xyzzy',
                 ],
                 [
-                    'projection' => ['_id' => 1]
+                    'projection' => ['_id' => 1],
                 ],
-                null
-            ]
+                null,
+            ],
         ];
         $db->expects($this->exactly(5))
             ->method('findRecord')
@@ -796,7 +796,7 @@ class MarcTest extends RecordTestBase
         $record->toSolrArray($db);
         $marc = new \VuFind\Marc\MarcReader($record->serialize());
         $marc776 = $marc->getFields('776');
-        $this->assertEquals(2, count($marc776));
+        $this->assertCount(2, $marc776);
         $w = $marc->getSubfield($marc776[0], 'w');
         $this->assertEquals('__unit_test_no_source__.4112121', $w);
         $w = $marc->getSubfield($marc776[1], 'w');
@@ -807,14 +807,14 @@ class MarcTest extends RecordTestBase
             'marc_links.xml',
             [
                 '__unit_test_no_source__' => [
-                    'driverParams' => ['003InLinkingID=true']
-                ]
+                    'driverParams' => ['003InLinkingID=true'],
+                ],
             ]
         );
         $record->toSolrArray($db);
         $marc = new \VuFind\Marc\MarcReader($record->serialize());
         $marc776 = $marc->getFields('776');
-        $this->assertEquals(2, count($marc776));
+        $this->assertCount(2, $marc776);
         $w = $marc->getSubfield($marc776[0], 'w');
         $this->assertEquals('__unit_test_no_source__.4132317', $w);
         $w = $marc->getSubfield($marc776[1], 'w');
@@ -860,7 +860,7 @@ class MarcTest extends RecordTestBase
                         'value' => '漢字源 : 上級漢和辞典  /',
                     ],
                 ],
-            ]
+            ],
         ];
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
 
@@ -924,7 +924,7 @@ class MarcTest extends RecordTestBase
                     ],
                 ],
                 'titlesAltScript' => [],
-            ]
+            ],
         ];
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
     }

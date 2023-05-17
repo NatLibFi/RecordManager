@@ -149,7 +149,7 @@ class Delete extends AbstractBase
                     $sections[] = [
                         'name' => $currentSource,
                         'lines' => $lines,
-                        'deleted' => in_array($currentSource, $sources)
+                        'deleted' => in_array($currentSource, $sources),
                     ];
                 }
                 $currentSource = substr($commentless, 1, -1);
@@ -161,7 +161,7 @@ class Delete extends AbstractBase
             $sections[] = [
                 'name' => $currentSource,
                 'lines' => $lines,
-                'deleted' => in_array($currentSource, $sources)
+                'deleted' => in_array($currentSource, $sources),
             ];
         }
 

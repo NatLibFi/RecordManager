@@ -178,13 +178,13 @@ class SkosmosEnrichment extends AbstractEnrichment
             'getRawTopicIds' => [
                 'pref' => 'topic_add_txt_mv',
                 'alt' => 'topic_alt_txt_mv',
-                'check' => 'topic'
+                'check' => 'topic',
             ],
             'getRawGeographicTopicIds' => [
                 'pref' => 'geographic_add_txt_mv',
                 'alt' => 'geographic_alt_txt_mv',
-                'check' => 'geographic'
-            ]
+                'check' => 'geographic',
+            ],
         ];
         foreach ($fields as $method => $spec) {
             if (!is_callable([$record, $method])) {
@@ -377,7 +377,7 @@ class SkosmosEnrichment extends AbstractEnrichment
                 if ($locs = $this->processLocationWgs84($node)) {
                     $result['locations'] = [
                         ...$result['locations'],
-                        ...$locs
+                        ...$locs,
                     ];
                 }
 
@@ -422,7 +422,7 @@ class SkosmosEnrichment extends AbstractEnrichment
                     if ($locs = $this->processLocationWgs84($matchNode)) {
                         $result['locations'] = [
                             ...$result['locations'],
-                            ...$locs
+                            ...$locs,
                         ];
                     }
 
@@ -430,7 +430,7 @@ class SkosmosEnrichment extends AbstractEnrichment
                     if ($labels) {
                         $result['matchPreferred'] = [
                             ...$result['matchPreferred'],
-                            ...$labels
+                            ...$labels,
                         ];
                     }
 
@@ -438,7 +438,7 @@ class SkosmosEnrichment extends AbstractEnrichment
                     if ($labels) {
                         $result['matchAlternative'] = [
                             ...$result['matchAlternative'],
-                            ...$labels
+                            ...$labels,
                         ];
                     }
                 }
@@ -493,7 +493,7 @@ class SkosmosEnrichment extends AbstractEnrichment
         $this->db->saveLinkedDataEnrichment(
             [
                 '_id' => $id,
-                'data' => serialize($doc)
+                'data' => serialize($doc),
             ]
         );
         if ($this->recordCache) {
@@ -592,7 +592,7 @@ class SkosmosEnrichment extends AbstractEnrichment
             $result[] = [
                 'lat' => $lat,
                 'lon' => $lon,
-                'wkt' => "POINT($lon $lat)"
+                'wkt' => "POINT($lon $lat)",
             ];
         }
         return $result;

@@ -60,12 +60,12 @@ class PreviewCreatorTest extends \PHPUnit\Framework\TestCase
             'format' => 'marc',
             'building_mapping' => [
                 'building.map',
-                'building_sub.map,regexp'
+                'building_sub.map,regexp',
             ],
             'driverParams' => [
-                'subLocationInBuilding=c'
-            ]
-        ]
+                'subLocationInBuilding=c',
+            ],
+        ],
     ];
 
     /**
@@ -108,7 +108,7 @@ class PreviewCreatorTest extends \PHPUnit\Framework\TestCase
             'oai_id' => '_preview',
             '_id' => '_preview',
             'created' => $timestamp,
-            'date' => $timestamp
+            'date' => $timestamp,
         ];
 
         $result = $preview->create($record);

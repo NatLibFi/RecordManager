@@ -347,7 +347,7 @@ class SolrUpdater
      */
     protected $scoredFields = [
         'title', 'author', 'author2', 'author_corporate', 'topic', 'contents',
-        'series', 'genre', 'era', 'allfields', 'publisher'
+        'series', 'genre', 'era', 'allfields', 'publisher',
     ];
 
     /**
@@ -356,7 +356,7 @@ class SolrUpdater
      * @var array
      */
     protected $buildingFields = [
-        'building'
+        'building',
     ];
 
     /**
@@ -1011,7 +1011,7 @@ class SolrUpdater
                     [],
                     function ($record) use ($handler, &$count) {
                         $record = [
-                            'dedup_id' => (string)$record['_id']
+                            'dedup_id' => (string)$record['_id'],
                         ];
                         $result = $handler($record);
 
@@ -1193,7 +1193,7 @@ class SolrUpdater
         $result = [
             'deleted' => [],
             'records' => [],
-            'mergedComponents' => 0
+            'mergedComponents' => 0,
         ];
         $dedupRecord = $this->db->getDedup($dedupId);
         if (empty($dedupRecord)) {
@@ -1358,7 +1358,7 @@ class SolrUpdater
         $result = [
             'deleted' => [],
             'records' => [],
-            'mergedComponents' => 0
+            'mergedComponents' => 0,
         ];
 
         $recordId = (string)$record['_id'];
@@ -1479,7 +1479,7 @@ class SolrUpdater
                             'source_id' => $source,
                             'institution' => $settings['institution'],
                             'format' => $settings['format'],
-                            'id_prefix' => $settings['idPrefix']
+                            'id_prefix' => $settings['idPrefix'],
                         ];
                         $data = $settings['solrTransformationXSLT']
                             ->transformToSolrArray(
@@ -1679,7 +1679,7 @@ class SolrUpdater
             $this->db->saveState(
                 [
                     '_id' => $stateKey,
-                    'value' => $timestamp
+                    'value' => $timestamp,
                 ]
             );
         }
@@ -1871,7 +1871,7 @@ class SolrUpdater
             } else {
                 $params = [
                     'host_record_id' => [
-                        '$in' => array_values((array)$record['linking_id'])
+                        '$in' => array_values((array)$record['linking_id']),
                     ],
                     'deleted' => false,
                     'suppressed' => ['$in' => [null, false]],
@@ -1927,7 +1927,7 @@ class SolrUpdater
                 'source_id' => $source,
                 'institution' => $settings['institution'],
                 'format' => $settings['format'],
-                'id_prefix' => $settings['idPrefix']
+                'id_prefix' => $settings['idPrefix'],
             ];
             $data = $settings['solrTransformationXSLT']
                 ->transformToSolrArray($metadataRecord->toXML(), $params);
@@ -1951,8 +1951,8 @@ class SolrUpdater
                     [
                         'source_id' => $record['source_id'],
                         'linking_id' => [
-                            '$in' => array_values((array)$record['host_record_id'])
-                        ]
+                            '$in' => array_values((array)$record['host_record_id']),
+                        ],
                     ],
                     ['limit' => 10000] // An arbitrary limit, but we need something
                 );
@@ -2039,7 +2039,7 @@ class SolrUpdater
             $hierarchyFields = [
                 $this->hierarchyTopIdField,
                 $this->hierarchyParentIdField,
-                $this->isHierarchyIdField
+                $this->isHierarchyIdField,
             ];
             foreach ($hierarchyFields as $field) {
                 if (!$field) {
@@ -2085,7 +2085,7 @@ class SolrUpdater
         if (!empty($this->warningsField)) {
             $warnings = [
                 ...$warnings,
-                ...(array)$metadataRecord->getProcessingWarnings()
+                ...(array)$metadataRecord->getProcessingWarnings(),
             ];
             if ($warnings) {
                 $data[$this->warningsField] = $warnings;
@@ -2276,7 +2276,7 @@ class SolrUpdater
                         $key,
                         [
                             'fullrecord', 'thumbnail', 'id', 'recordtype',
-                            'record_format', 'ctrlnum'
+                            'record_format', 'ctrlnum',
                         ]
                     )
                 ) {
@@ -2387,7 +2387,7 @@ class SolrUpdater
                 } else {
                     $data[$dst] = [
                         ...(array)$data[$dst],
-                        ...(array)$fieldValue
+                        ...(array)$fieldValue,
                     ];
                 }
             }
@@ -2553,7 +2553,7 @@ class SolrUpdater
                 } elseif ($key == 'allfields') {
                     $merged['allfields'] = [
                         ...(array)($merged['allfields'] ?? []),
-                        ...(array)$add['allfields']
+                        ...(array)$add['allfields'],
                     ];
                 }
             }
@@ -2584,7 +2584,7 @@ class SolrUpdater
                     array_unique(
                         [
                             ...(array)($member['solr'][$copyField] ?? []),
-                            ...(array)$merged[$copyField]
+                            ...(array)$merged[$copyField],
                         ]
                     )
                 );
@@ -2612,8 +2612,8 @@ class SolrUpdater
                 $child[$copyField] = (array)$parent[$copyField];
             } else {
                 $child[$copyField] = [
-                    ...(array)($child[$copyField] ?? []),
-                    ...(array)$parent[$copyField]
+                    ...(array)$child[$copyField],
+                    ...(array)$parent[$copyField],
                 ];
             }
         }
@@ -3012,7 +3012,7 @@ class SolrUpdater
         $enrichments = array_unique(
             [
                 ...$globalEnrichments,
-                ...$dsEnrichments
+                ...$dsEnrichments,
             ]
         );
         foreach ($enrichments as $enrichmentSettings) {
@@ -3123,11 +3123,11 @@ class SolrUpdater
                 if (preg_match('/^-\/(.+)\/$/', $source, $matches)) {
                     $regex = new \RecordManager\Base\Database\Regex($matches[1]);
                     $sourceExclude[] = [
-                        'source_id' => $regex
+                        'source_id' => $regex,
                     ];
                 } else {
                     $sourceExclude[] = [
-                        'source_id' => substr($source, 1)
+                        'source_id' => substr($source, 1),
                     ];
                 }
             } else {
@@ -3167,7 +3167,7 @@ class SolrUpdater
                 }
 
                 if ($left && $right) {
-                    if (strpos($field, $key) !== false) {
+                    if (str_contains($field, $key)) {
                         $foundLimit = $limit;
                         break;
                     }

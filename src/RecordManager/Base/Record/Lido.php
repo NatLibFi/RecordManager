@@ -86,7 +86,7 @@ class Lido extends AbstractRecord
      * @var array
      */
     protected $relatedWorkRelationTypes = [
-        'Collection', 'belongs to collection', 'collection'
+        'Collection', 'belongs to collection', 'collection',
     ];
 
     /**
@@ -176,7 +176,7 @@ class Lido extends AbstractRecord
         // Index the other place forms only to facets:
         $data['geographic_facet'] = [
             ...$data['geographic_facet'],
-            ...$this->getSubjectPlaces()
+            ...$this->getSubjectPlaces(),
         ];
         $data['collection'] = $this->getCollection();
 
@@ -245,7 +245,7 @@ class Lido extends AbstractRecord
                         if ($mainPlace && !$subLocation) {
                             $locations = [
                                 ...$locations,
-                                ...explode('/', $mainPlace)
+                                ...explode('/', $mainPlace),
                             ];
                         } else {
                             $locations[] = "$mainPlace $subLocation";
@@ -257,7 +257,7 @@ class Lido extends AbstractRecord
                             ...preg_split(
                                 '/[\/;]/',
                                 (string)$placeNode->displayPlace
-                            ) ?: []
+                            ) ?: [],
                         ];
                     }
                 }
@@ -265,7 +265,7 @@ class Lido extends AbstractRecord
         }
         return [
             'primary' => $locations,
-            'secondary' => []
+            'secondary' => [],
         ];
     }
 
@@ -486,12 +486,12 @@ class Lido extends AbstractRecord
         if ($mergeSets) {
             foreach (array_keys($preferredTitles) as $lang) {
                 $preferredTitles[$lang] = [
-                    implode('; ', array_unique($preferredTitles[$lang]))
+                    implode('; ', array_unique($preferredTitles[$lang])),
                 ];
             }
             foreach (array_keys($alternateTitles) as $lang) {
                 $alternateTitles[$lang] = [
-                    implode('; ', array_unique($alternateTitles[$lang]))
+                    implode('; ', array_unique($alternateTitles[$lang])),
                 ];
             }
         }
@@ -979,7 +979,7 @@ class Lido extends AbstractRecord
         $ignoredFields = [
             'conceptID', 'eventType', 'legalBodyWeblink', 'linkResource',
             'objectMeasurementsWrap', 'recordMetadataDate', 'recordType',
-            'resourceWrap', 'relatedWorksWrap', 'rightsType', 'roleActor'
+            'resourceWrap', 'relatedWorksWrap', 'rightsType', 'roleActor',
         ];
 
         $allFields = [];

@@ -63,7 +63,7 @@ class CreatePreviewTest extends \PHPUnit\Framework\TestCase
         'test' => [
             'institution' => 'Test',
             'format' => 'marc',
-        ]
+        ],
     ];
 
     /**

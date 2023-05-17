@@ -256,7 +256,7 @@ class OaiPmh extends AbstractBase
         // Make the OAI-PMH request:
         $params = [
             'metadataPrefix' => $this->metadataPrefix,
-            'identifier' => $id
+            'identifier' => $id,
         ];
         $this->xml = $this->sendRequest('GetRecord', $params);
 

@@ -230,13 +230,13 @@ class SolrComparer extends SolrUpdater
             'publisherStr', 'publishDateSort', 'topic_browse', 'hierarchy_browse',
             'first_indexed', 'last_indexed', '_version_',
             'fullrecord', 'title_full_unstemmed', 'title_fullStr',
-            'author_additionalStr'
+            'author_additionalStr',
         ];
 
         if (isset($this->config['Solr']['ignore_in_comparison'])) {
             $ignoreFields = [
                 ...$ignoreFields,
-                ...explode(',', $this->config['Solr']['ignore_in_comparison'])
+                ...explode(',', $this->config['Solr']['ignore_in_comparison']),
             ];
         }
 

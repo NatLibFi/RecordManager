@@ -1457,7 +1457,7 @@ class ForwardTest extends RecordTestBase
                 ],
                 'titlesAltScript' => [
                 ],
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');

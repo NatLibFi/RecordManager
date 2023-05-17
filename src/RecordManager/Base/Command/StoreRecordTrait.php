@@ -237,7 +237,7 @@ trait StoreRecordTrait
                         $this->db->updateRecords(
                             [
                                 'source_id' => ['$in' => $hostSourceIds],
-                                'linking_id' => ['$in' => (array)$hostIDs]
+                                'linking_id' => ['$in' => (array)$hostIDs],
                             ],
                             ['update_needed' => true]
                         );
@@ -261,7 +261,7 @@ trait StoreRecordTrait
                     $this->db->updateRecords(
                         [
                             'source_id' => ['$in' => $hostSourceIds],
-                            'linking_id' => ['$in' => (array)$hostIDs]
+                            'linking_id' => ['$in' => (array)$hostIDs],
                         ],
                         ['updated' => $this->db->getTimestamp()]
                     );
@@ -287,7 +287,7 @@ trait StoreRecordTrait
                 [
                     'deleted' => true,
                     'updated' => $this->db->getTimestamp(),
-                    'update_needed' => false
+                    'update_needed' => false,
                 ]
             );
         }
@@ -340,7 +340,7 @@ trait StoreRecordTrait
                 [
                     'source_id' => ['$in' => $hostSourceIds],
                     'linking_id' => ['$in' => (array)$hostIDs],
-                    'deleted' => false
+                    'deleted' => false,
                 ],
                 $deferHostUpdate
                     ? ['update_needed' => true]
@@ -368,7 +368,7 @@ trait StoreRecordTrait
         if (null !== $dateThreshold) {
             $params['date'] = [
                 '$lt' =>
-                    $this->db->getTimestamp($dateThreshold)
+                    $this->db->getTimestamp($dateThreshold),
             ];
         }
         $this->db->iterateRecords(

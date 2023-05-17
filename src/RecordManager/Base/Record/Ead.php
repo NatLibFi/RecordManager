@@ -402,7 +402,7 @@ class Ead extends AbstractRecord
     {
         $noSubtitleFormats = [
             $this->fondsType,
-            $this->collectionType
+            $this->collectionType,
         ];
         if (in_array($this->getFormat(), $noSubtitleFormats)) {
             return '';
@@ -423,7 +423,7 @@ class Ead extends AbstractRecord
             $this->collectionType,
             $this->seriesType,
             $this->subseriesType,
-            $this->undefinedType
+            $this->undefinedType,
         ];
 
         if (in_array($this->getFormat(), $nonSeriesFormats)) {

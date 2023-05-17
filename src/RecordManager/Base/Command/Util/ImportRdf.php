@@ -104,7 +104,7 @@ class ImportRdf extends AbstractBase
             &$subjectUri,
             &$count,
             $quiet
-) {
+        ) {
             if (isset($error)) {
                 throw $error;
             } elseif (isset($triple)) {
@@ -114,7 +114,7 @@ class ImportRdf extends AbstractBase
                         $this->db->saveLinkedDataEnrichment(
                             [
                                 '_id' => $subjectUri,
-                                'data' => serialize($doc)
+                                'data' => serialize($doc),
                             ]
                         );
                         ++$count;
@@ -191,7 +191,7 @@ class ImportRdf extends AbstractBase
                     $this->db->saveLinkedDataEnrichment(
                         [
                             '_id' => $subjectUri,
-                            'data' => serialize($doc)
+                            'data' => serialize($doc),
                         ]
                     );
                     ++$count;

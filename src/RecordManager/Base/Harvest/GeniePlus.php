@@ -172,7 +172,7 @@ class GeniePlus extends AbstractBase
      * @var array
      */
     protected $httpOptions = [
-        'timeout' => 600
+        'timeout' => 600,
     ];
 
     /**
@@ -300,7 +300,7 @@ class GeniePlus extends AbstractBase
             'page-size' => $this->batchSize,
             'page' => floor($this->startPosition / $this->batchSize),
             'fields' => implode(',', $fields),
-            'command' => "DtTmModifd > '1/1/1980 1:00:00 PM' sortby DtTmModifd"
+            'command' => "DtTmModifd > '1/1/1980 1:00:00 PM' sortby DtTmModifd",
         ];
 
         if (!empty($this->startDate) || !empty($this->endDate)) {

@@ -141,7 +141,7 @@ class MetadataUtils
         'ë' => 'e', 'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
         'ð' => 'o', 'ñ' => 'n', 'ò' => 'o', 'ó' => 'o', 'ô' => 'o',
         'õ' => 'o', 'ö' => 'o', 'ø' => 'o', 'ù' => 'u', 'ú' => 'u',
-        'û' => 'u', 'ü' => 'u', 'ý' => 'y', 'þ' => 'b', 'ÿ' => 'y'
+        'û' => 'u', 'ü' => 'u', 'ý' => 'y', 'þ' => 'b', 'ÿ' => 'y',
     ];
 
     /**
@@ -217,7 +217,7 @@ class MetadataUtils
 
         $this->allArticleFormats = [
             ...$this->articleFormats,
-            ...$this->eArticleFormats
+            ...$this->eArticleFormats,
         ];
 
         $this->unicodeNormalizationForm
@@ -525,9 +525,9 @@ class MetadataUtils
             --$i;
         }
         $c = $str[$i];
-        $punctuation = strpos('/:;,=([', $c) !== false;
+        $punctuation = str_contains('/:;,=([', $c);
         if (!$punctuation) {
-            $punctuation = substr($str, -1) == '.' && !substr($str, -3, 1) != ' ';
+            $punctuation = str_ends_with($str, '.') && substr($str, -3, 1) !== ' ';
         }
         return $punctuation;
     }
@@ -548,7 +548,7 @@ class MetadataUtils
         ?string $punctuation = null,
         bool $preservePunctuationOnly = true
     ) {
-        $punctuation = $punctuation ?? "[\\t\\p{P}=´`” ̈]+";
+        $punctuation ??= "[\\t\\p{P}=´`” ̈]+";
         // Use preg_replace for multibyte support
         $result = preg_replace(
             '/' . $punctuation . '/u',
@@ -630,8 +630,8 @@ class MetadataUtils
         // counterparts
         $last = substr($str, -1);
         if (
-            ($last == ')' && strpos($str, '(') === false)
-            || ($last == ']' && strpos($str, '[') === false)
+            ($last == ')' && !str_contains($str, '('))
+            || ($last == ']' && !str_contains($str, '['))
         ) {
             $str = substr($str, 0, -1);
         }
@@ -658,7 +658,7 @@ class MetadataUtils
         ?string $punctuation = null,
         bool $preservePunctuationOnly = true
     ) {
-        $punctuation = $punctuation ?? " \t\\#*!¡?/:;.,=(['\"´`” ̈";
+        $punctuation ??= " \t\\#*!¡?/:;.,=(['\"´`” ̈";
         // Use preg_replace for multibyte support
         $result = preg_replace(
             '/^[' . preg_quote($punctuation, '/') . ']*/u',

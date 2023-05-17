@@ -180,7 +180,7 @@ class Dc extends AbstractRecord
         $data['publisher'] = [
             $this->metadataUtils->stripTrailingPunctuation(
                 trim((string)$doc->publisher)
-            )
+            ),
         ];
         $data['publishDate'] = $this->getPublicationYear();
 

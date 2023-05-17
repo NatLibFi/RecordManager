@@ -65,13 +65,13 @@ class EaccpfTest extends RecordTestBase
                 'Kansallisarkisto',
                 'Tietoa kirjailijan elämästä',
                 'Sukunimi Etunimi',
-                'Toinensuku Toinennimi'
+                'Toinensuku Toinennimi',
             ],
             'source' => 'Kansallisarkisto',
             'record_type' => 'person',
             'heading' => 'Sukunimi Etunimi',
             'use_for' => [
-                'Toinensuku Toinennimi'
+                'Toinensuku Toinennimi',
             ],
             'birth_date' => '1950',
             'death_date' => '2000',
@@ -79,14 +79,14 @@ class EaccpfTest extends RecordTestBase
             'death_place' => 'Joensuu',
             'related_place' => [
                 'Helsinki',
-                'Oulu'
+                'Oulu',
             ],
             'field_of_activity' => [],
             'occupation' => [
                 'runoilija',
-                'kirjailija'
+                'kirjailija',
             ],
-            'language' => 'fin'
+            'language' => 'fin',
           ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');

@@ -94,7 +94,7 @@ trait CreateSampleRecordTrait
         $logger = $this->createMock(Logger::class);
         $config = [
             'Site' => [
-                'articles' => 'articles.lst'
+                'articles' => 'articles.lst',
             ],
         ];
         $metadataUtils = new \RecordManager\Base\Utils\MetadataUtils(
@@ -145,7 +145,7 @@ trait CreateSampleRecordTrait
                     return new \RecordManager\Base\Marc\Marc($data);
                 },
                 new FormatCalculator(),
-                ...$constructorParams
+                ...$constructorParams,
             ]
         );
     }
