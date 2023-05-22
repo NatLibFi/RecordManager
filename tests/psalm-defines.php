@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Psalm autoloader
+ * Psalm defines
  *
  * PHP version 8
  *
@@ -27,5 +27,4 @@
  * @link     https://vufind.org/wiki/development:testing:unit_tests Wiki
  */
 
-require 'psalm-defines.php';
-require RECMAN_BASE_PATH . '/vendor/autoload.php';
+define('RECMAN_BASE_PATH', realpath(__DIR__ . '/..'));

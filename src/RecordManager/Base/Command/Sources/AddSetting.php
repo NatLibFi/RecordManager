@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Add a setting to data sources
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2021.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command\Sources;
 
 use RecordManager\Base\Command\AbstractBase;
@@ -163,7 +165,8 @@ class AddSetting extends AbstractBase
             }
             $modifyCurrentSource = $currentSource && !$skipSource
                 && (!$sources || in_array($currentSource, $sources));
-            if (strncmp($commentless, '[', 1) === 0
+            if (
+                strncmp($commentless, '[', 1) === 0
                 && substr($commentless, -1) === ']'
                 && strlen($commentless) > 2
             ) {

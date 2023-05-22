@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Harvest
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2011-2023.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command\Records;
 
 use RecordManager\Base\Command\AbstractBase;
@@ -279,7 +281,7 @@ class Harvest extends AbstractBase
                     } else {
                         $this->logger->logWarning(
                             'harvest',
-                            "[$source] " . get_class($harvester) . ' does not'
+                            "[$source] " . $harvester::class . ' does not'
                             . ' support overriding of start position'
                         );
                     }
@@ -318,18 +320,19 @@ class Harvest extends AbstractBase
                             $this->db->updateRecords(
                                 [
                                     'source_id' => $source,
-                                    'update_needed' => true
+                                    'update_needed' => true,
                                 ],
                                 [
                                     'updated' => $this->db->getTimestamp(),
-                                    'update_needed' => false
+                                    'update_needed' => false,
                                 ]
                             );
                         }
                     }
                 }
 
-                if (!$reharvest && isset($settings['deletions'])
+                if (
+                    !$reharvest && isset($settings['deletions'])
                     && strncmp(
                         $settings['deletions'],
                         'ListIdentifiers',
@@ -342,7 +345,7 @@ class Harvest extends AbstractBase
 
                     if (!is_callable([$harvester, 'listIdentifiers'])) {
                         throw new \Exception(
-                            "[$source] " . get_class($harvester)
+                            "[$source] " . $harvester::class
                             . ' does not support listing identifiers'
                         );
                     }
@@ -389,7 +392,7 @@ class Harvest extends AbstractBase
 
                         $state = [
                             '_id' => "Last Deletion Processing Time $source",
-                            'value' => time()
+                            'value' => time(),
                         ];
                         // Reset database connection since it could have timed out
                         // during the process:
@@ -466,8 +469,8 @@ class Harvest extends AbstractBase
                 'deleted' => false,
                 'date' => [
                     '$lt' =>
-                        $this->db->getTimestamp($dateThreshold)
-                ]
+                        $this->db->getTimestamp($dateThreshold),
+                ],
             ],
             [],
             function ($record) use (&$count, $source, $dateThreshold) {

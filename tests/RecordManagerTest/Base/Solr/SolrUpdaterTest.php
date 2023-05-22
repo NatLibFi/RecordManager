@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Tests for SolrUpdater
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2020-2023.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManagerTest\Base\Solr;
 
 use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
@@ -68,7 +70,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
             '*_keys_*' => 20,
             'title_sh*' => 30,
             '*sort' => 40,
-        ]
+        ],
     ];
 
     /**
@@ -80,7 +82,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
         'test' => [
             'institution' => 'Test',
             'format' => 'marc',
-        ]
+        ],
     ];
 
     /**
@@ -127,7 +129,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
         $this->assertIsArray($result['deleted']);
         $this->assertEmpty($result['deleted']);
         $this->assertIsArray($result['records']);
-        $this->assertEquals(1, count($result['records']));
+        $this->assertCount(1, $result['records']);
         $this->assertEquals(0, $result['mergedComponents']);
         $this->assertIsArray($result['records'][0]);
 
@@ -157,33 +159,33 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
         return [
             [
                 [
-                    'copy foo newfield'
+                    'copy foo newfield',
                 ],
-                []
+                [],
             ],
             [
                 [
-                    'copy foo newfield DEFAULT'
+                    'copy foo newfield DEFAULT',
                 ],
                 [
                     'newfield' => 'DEFAULT',
-                ]
+                ],
             ],
             [
                 [
-                    'copy institution newfield'
+                    'copy institution newfield',
                 ],
                 [
                     'newfield' => 'Test',
-                ]
+                ],
             ],
             [
                 [
-                    'delete institution'
+                    'delete institution',
                 ],
                 [
                     'institution' => null,
-                ]
+                ],
             ],
             [
                 [
@@ -197,7 +199,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
                         'marc',
                     ],
                     'institution' => null,
-                ]
+                ],
             ],
             [
                 [
@@ -210,7 +212,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
                         'DEFAULT2',
                     ],
                     'institution' => null,
-                ]
+                ],
             ],
         ];
     }

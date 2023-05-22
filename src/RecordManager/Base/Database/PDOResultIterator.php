@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Call number base class
+ * PDO result iterator class that adds any attributes to each returned record
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2015-2021.
+ * Copyright (c) The National Library of Finland 2020-2021.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -27,56 +27,65 @@
  * @link     https://github.com/NatLibFi/RecordManager
  */
 
-namespace RecordManager\Base\Utils;
+namespace RecordManager\Base\Database;
 
 /**
- * Call number base class
+ * PDO result iterator class that adds any attributes to each returned record
  *
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
+ *
+ * @psalm-suppress MissingTemplateParam
  */
-abstract class AbstractCallNumber
+class PDOResultIterator extends \IteratorIterator
 {
+    /**
+     * Database
+     *
+     * @var PDODatabase
+     */
+    protected $db;
+
+    /**
+     * Collection
+     *
+     * @var string
+     */
+    protected $collection;
+
     /**
      * Constructor
      *
-     * @param string $callnumber Call Number
+     * @param \Traversable $iterator   Iterator
+     * @param PDODatabase  $db         Database
+     * @param string       $collection Collection
      */
-    abstract public function __construct($callnumber);
+    public function __construct(
+        \Traversable $iterator,
+        PDODatabase $db,
+        string $collection
+    ) {
+        parent::__construct($iterator);
+
+        $this->db = $db;
+        $this->collection = $collection;
+    }
 
     /**
-     * Check if the call number is valid
+     * Get the current value
      *
-     * @return bool
+     * @return mixed
      */
-    abstract public function isValid();
-
-    /**
-     * Create a sort key
-     *
-     * @return string
-     */
-    abstract public function getSortKey();
-
-    /**
-     * Make a string numerically sortable
-     *
-     * @param string $str String
-     *
-     * @return string
-     */
-    protected function createSortableString($str)
+    #[\ReturnTypeWillChange]
+    public function current()
     {
-        $str = preg_replace_callback(
-            '/(\d+)/',
-            function ($matches) {
-                return strlen((string)(intval($matches[1]))) . $matches[1];
-            },
-            mb_strtoupper($str, 'UTF-8')
-        );
-        return preg_replace('/\s{2,}/', ' ', $str);
+        $result = parent::current();
+        if ($result) {
+            $result += $this->db->getRecordAttrs($this->collection, $result['_id']);
+        }
+        return $result;
     }
 }

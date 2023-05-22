@@ -1,10 +1,11 @@
 <?php
+
 /**
  * OAI-PMH Harvesting Class
  *
  * Based on harvest-oai.php in VuFind
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (c) Demian Katz 2010.
  * Copyright (c) The National Library of Finland 2011-2021.
@@ -29,6 +30,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Exception\HttpRequestException;
@@ -170,9 +172,7 @@ class OaiPmh extends AbstractBase
         $this->granularity = $settings['dateGranularity'] ?? 'auto';
         $this->debugLog = $settings['debuglog'] ?? '';
         $this->preXslt = [];
-        foreach ((array)($settings['oaipmhTransformation'] ?? [])
-            as $transformation
-        ) {
+        foreach ((array)($settings['oaipmhTransformation'] ?? []) as $transformation) {
             $style = new \DOMDocument();
             $xsltPath = RECMAN_BASE_PATH . "/transformations/$transformation";
             $loadResult = $style->load($xsltPath);
@@ -256,7 +256,7 @@ class OaiPmh extends AbstractBase
         // Make the OAI-PMH request:
         $params = [
             'metadataPrefix' => $this->metadataPrefix,
-            'identifier' => $id
+            'identifier' => $id,
         ];
         $this->xml = $this->sendRequest('GetRecord', $params);
 
@@ -321,8 +321,7 @@ class OaiPmh extends AbstractBase
     protected function safeguard($resumptionToken)
     {
         if ($this->lastResumptionToken === $resumptionToken) {
-            if (++$this->sameResumptionTokenCount >= $this->sameResumptionTokenLimit
-            ) {
+            if (++$this->sameResumptionTokenCount >= $this->sameResumptionTokenLimit) {
                 throw new \Exception(
                     "Same resumptionToken received"
                     . " {$this->sameResumptionTokenCount} times, aborting"
@@ -488,9 +487,7 @@ class OaiPmh extends AbstractBase
         $error = $this->getSingleNode($result, 'error');
         if ($error) {
             $code = $error->getAttribute('code');
-            if (($resumption && !$this->ignoreNoRecordsMatch)
-                || $code != 'noRecordsMatch'
-            ) {
+            if (($resumption && !$this->ignoreNoRecordsMatch) || $code != 'noRecordsMatch') {
                 $value = $result->saveXML($error);
                 $this->errorMsg("OAI-PMH server returned error $code ($value)");
                 throw new \Exception(

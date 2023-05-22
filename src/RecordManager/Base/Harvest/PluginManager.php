@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Harvest plugin manager
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (c) The National Library of Finland 2021.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Harvest;
 
 /**
@@ -35,6 +37,8 @@ namespace RecordManager\Base\Harvest;
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
+ *
+ * @psalm-suppress MissingTemplateParam
  */
 class PluginManager extends \Laminas\ServiceManager\AbstractPluginManager
 {

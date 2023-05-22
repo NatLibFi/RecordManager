@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Forward record class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2016-2019.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
@@ -52,7 +54,7 @@ class Forward extends AbstractRecord
      * @var array
      */
     protected $primaryAuthorRelators = [
-        'd02', 'a00', 'a03', 'a06', 'a50', 'a99'
+        'd02', 'a00', 'a03', 'a06', 'a50', 'a99',
     ];
 
     /**
@@ -61,7 +63,7 @@ class Forward extends AbstractRecord
      * @var array
      */
     protected $secondaryAuthorRelators = [
-        'd01', 'e01', 'f01', 'f02'
+        'd01', 'e01', 'f01', 'f02',
     ];
 
     /**
@@ -74,7 +76,7 @@ class Forward extends AbstractRecord
 
     protected $filterFromAllFields = [
         'Identifier', 'RecordSource', 'TitleRelationship', 'Activity',
-        'AgentIdentifier', 'ProductionEventType', 'DescriptionType', 'Language'
+        'AgentIdentifier', 'ProductionEventType', 'DescriptionType', 'Language',
     ];
 
     /**
@@ -224,7 +226,7 @@ class Forward extends AbstractRecord
         $authors = $this->getPrimaryAuthorsSorted();
         $author = $authors['names'][0] ?? '';
         if ($author) {
-            if (strpos($author, ',') === false) {
+            if (!str_contains($author, ',')) {
                 $author = $this->metadataUtils->convertAuthorLastFirst($author);
             }
         }
@@ -384,7 +386,8 @@ class Forward extends AbstractRecord
             if (null !== $language && (string)$description->Language !== $language) {
                 continue;
             }
-            if ((string)$description->DescriptionType == 'Content description'
+            if (
+                (string)$description->DescriptionType == 'Content description'
                 && !empty($description->DescriptionText)
             ) {
                 $results[] = (string)$description->DescriptionText;
@@ -407,7 +410,8 @@ class Forward extends AbstractRecord
             if (null !== $language && (string)$description->Language !== $language) {
                 continue;
             }
-            if ((string)$description->DescriptionType == 'Synopsis'
+            if (
+                (string)$description->DescriptionType == 'Synopsis'
                 && !empty($description->DescriptionText)
             ) {
                 $results[] = (string)$description->DescriptionText;

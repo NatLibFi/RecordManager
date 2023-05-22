@@ -1,8 +1,9 @@
 <?php
+
 /**
  * MetadataUtils tests
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2015-2023
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManagerTest\Base\Utils;
 
 use RecordManager\Base\Utils\Logger;
@@ -233,6 +235,43 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(
             'foo',
             $this->metadataUtils->stripTrailingPunctuation('foo/:©', '©')
+        );
+    }
+
+    /**
+     * Data provider for testHasTrailingPunctuation
+     *
+     * @return array
+     */
+    public function hasTrailingPunctuationProvider(): array
+    {
+        return [
+            [true, '123.'],
+            [false, 'Mattila P.'],
+            [true, 'foo /'],
+            [false, '1979© '],
+            [false, 'foo--'],
+            [true, 'bar /:;,=(['],
+        ];
+    }
+
+    /**
+     * Test hasTrailingPunctuation
+     *
+     * @param bool   $expected Expected result
+     * @param string $str      String to process
+     *
+     * @dataProvider hasTrailingPunctuationProvider
+     *
+     * @return void
+     */
+    public function testHasTrailingPunctuation(
+        bool $expected,
+        string $str
+    ): void {
+        $this->assertEquals(
+            $expected,
+            $this->metadataUtils->hasTrailingPunctuation($str),
         );
     }
 

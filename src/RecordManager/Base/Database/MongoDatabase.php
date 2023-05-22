@@ -1,8 +1,9 @@
 <?php
+
 /**
  * MongoDB access class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (c) The National Library of Finland 2017-2022.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Database;
 
 /**
@@ -390,7 +392,8 @@ class MongoDatabase extends AbstractDatabase
             }
             $nameParts = explode('_', $collection);
             $collTime = $nameParts[2] ?? null;
-            if (is_numeric($collTime)
+            if (
+                is_numeric($collTime)
                 && $collTime < time() - $minAge * 60 * 60 * 24
             ) {
                 try {

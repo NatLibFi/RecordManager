@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Display a source configuration from data sources
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2022.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command\Sources;
 
 use RecordManager\Base\Command\AbstractBase;
@@ -86,7 +88,8 @@ class ShowConfig extends AbstractBase
             $line = OutputFormatter::escape($line);
             [$commentless] = explode(';', $line, 2);
             $commentless = trim($commentless);
-            if (strncmp($commentless, '[', 1) === 0
+            if (
+                strncmp($commentless, '[', 1) === 0
                 && substr($commentless, -1) === ']'
                 && strlen($commentless) > 2
             ) {

@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Nominatim Geocoder Class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2013-2023.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Enrichment;
 
 /**
@@ -103,7 +105,7 @@ class NominatimGeocoder extends AbstractEnrichment
      */
     protected $ignoredClasses = [
         'amenity', 'craft', 'emergency', 'office', 'power', 'public_transport',
-        'shop', 'sport', 'tourism'
+        'shop', 'sport', 'tourism',
     ];
 
     /**
@@ -184,7 +186,7 @@ class NominatimGeocoder extends AbstractEnrichment
                 }
                 $this->transformations[] = [
                     'search' => $search,
-                    'replace' => $settings['replace'][$index]
+                    'replace' => $settings['replace'][$index],
                 ];
             }
         }
@@ -289,7 +291,8 @@ class NominatimGeocoder extends AbstractEnrichment
                         return false;
                     }
 
-                    if (null === $center || null === $poly->isClosed()
+                    if (
+                        null === $center || null === $poly->isClosed()
                         || $poly->contains($center)
                     ) {
                         if (!isset($solrArray[$this->solrField])) {
@@ -297,7 +300,7 @@ class NominatimGeocoder extends AbstractEnrichment
                         } else {
                             $solrArray[$this->solrField] = [
                                 ...(array)$solrArray[$this->solrField],
-                                ...$wkts
+                                ...$wkts,
                             ];
                         }
                     }
@@ -370,7 +373,7 @@ class NominatimGeocoder extends AbstractEnrichment
             'q' => $location,
             'format' => 'json',
             'polygon_text' => '1',
-            'email' => $this->email
+            'email' => $this->email,
         ];
 
         if ($this->preferredArea) {
@@ -416,7 +419,7 @@ class NominatimGeocoder extends AbstractEnrichment
                 'wkt' => $place['geotext'] ?? '',
                 'lat' => $place['lat'] ?? '',
                 'lon' => $place['lon'] ?? '',
-                'importance' => $importance
+                'importance' => $importance,
             ];
         }
         // Include only items with the highest importance (there may be many with the
@@ -443,7 +446,8 @@ class NominatimGeocoder extends AbstractEnrichment
         $results = [];
         $previous = null;
         foreach ($locations as $current) {
-            if (null === $previous || strncmp($current['wkt'], 'LINESTRING', 10) != 0
+            if (
+                null === $previous || strncmp($current['wkt'], 'LINESTRING', 10) != 0
                 || strncmp($previous['wkt'], 'LINESTRING', 10) != 0
             ) {
                 $results[] = $previous = $current;

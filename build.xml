@@ -42,6 +42,9 @@
   </target>
 
   <!-- PHP CodeSniffer -->
+  <target name="phpcbf">
+    <exec command="${basedir}/vendor/bin/phpcbf --standard=${basedir}/tests/phpcs.xml" escape="false" passthru="true" checkreturn="true" />
+  </target>
   <target name="phpcs">
     <exec command="${basedir}/vendor/bin/phpcs -s --standard=${basedir}/tests/phpcs.xml" escape="false" passthru="true" checkreturn="true" />
   </target>

@@ -1,11 +1,12 @@
 <?php
+
 /**
  * Trait for instantiating and populating a metadata record driver
  *
  * Prerequisites:
  * - the class must have Record\PluginManager as $this->recordPluginManager
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2021.
  *
@@ -28,6 +29,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Record;
 
 /**

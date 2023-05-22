@@ -1,8 +1,9 @@
 <?php
+
 /**
  * EAC-CPF Record Driver Test Class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2023.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManagerTest\Base\Record;
 
 use RecordManager\Base\Record\Eaccpf;
@@ -38,7 +40,7 @@ use RecordManager\Base\Record\Eaccpf;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class EaccpfTest extends RecordTest
+class EaccpfTest extends RecordTestBase
 {
     /**
      * Test EAC-CPF record handling
@@ -63,13 +65,13 @@ class EaccpfTest extends RecordTest
                 'Kansallisarkisto',
                 'Tietoa kirjailijan elämästä',
                 'Sukunimi Etunimi',
-                'Toinensuku Toinennimi'
+                'Toinensuku Toinennimi',
             ],
             'source' => 'Kansallisarkisto',
             'record_type' => 'person',
             'heading' => 'Sukunimi Etunimi',
             'use_for' => [
-                'Toinensuku Toinennimi'
+                'Toinensuku Toinennimi',
             ],
             'birth_date' => '1950',
             'death_date' => '2000',
@@ -77,14 +79,14 @@ class EaccpfTest extends RecordTest
             'death_place' => 'Joensuu',
             'related_place' => [
                 'Helsinki',
-                'Oulu'
+                'Oulu',
             ],
             'field_of_activity' => [],
             'occupation' => [
                 'runoilija',
-                'kirjailija'
+                'kirjailija',
             ],
-            'language' => 'fin'
+            'language' => 'fin',
           ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');

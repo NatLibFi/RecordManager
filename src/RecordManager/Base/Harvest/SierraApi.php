@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Sierra API Harvesting Class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (c) The National Library of Finland 2016-2022.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Exception\HttpRequestException;
@@ -109,7 +111,7 @@ class SierraApi extends AbstractBase
      */
     protected $httpOptions = [
         // Set a timeout since Sierra may sometimes just hang without ever returning.
-        'timeout' => 600
+        'timeout' => 600,
     ];
 
     /**
@@ -126,7 +128,8 @@ class SierraApi extends AbstractBase
         parent::init($source, $verbose, $reharvest);
 
         $settings = $this->dataSourceConfig[$source] ?? [];
-        if (empty($settings['sierraApiKey']) || empty($settings['sierraApiSecret'])
+        if (
+            empty($settings['sierraApiKey']) || empty($settings['sierraApiSecret'])
         ) {
             throw new \Exception(
                 'sierraApiKey or sierraApiSecret missing from settings'
@@ -170,7 +173,7 @@ class SierraApi extends AbstractBase
         $apiParams = [
             'limit' => $this->batchSize,
             'offset' => $this->startPosition,
-            'fields' => 'id,deleted,locations,fixedFields,varFields'
+            'fields' => 'id,deleted,locations,fixedFields,varFields',
         ];
         if (null !== $this->suppressedRecords) {
             $apiParams['suppressed'] = $this->suppressedRecords ? 'true' : 'false';
@@ -536,15 +539,15 @@ class SierraApi extends AbstractBase
                     $subfields = [];
                     foreach ($varField['subfields'] as $subfield) {
                         $subfields[] = [
-                            $subfield['tag'] => $subfield['content']
+                            $subfield['tag'] => $subfield['content'],
                         ];
                     }
                     $marc['fields'][] = [
                         (string)$marcTag => [
                             'ind1' => $varField['ind1'],
                             'ind2' => $varField['ind2'],
-                            'subfields' => $subfields
-                        ]
+                            'subfields' => $subfields,
+                        ],
                     ];
                 }
             } else {
@@ -559,9 +562,9 @@ class SierraApi extends AbstractBase
                         'ind1' => ' ',
                         'ind2' => ' ',
                         'subfields' => [
-                            ['b' => $location['code']]
-                        ]
-                    ]
+                            ['b' => $location['code']],
+                        ],
+                    ],
                 ];
             }
         }
@@ -572,9 +575,9 @@ class SierraApi extends AbstractBase
                     'ind1' => ' ',
                     'ind2' => ' ',
                     'subfields' => [
-                        ['a' => trim($record['fixedFields']['30']['value'])]
-                    ]
-                ]
+                        ['a' => trim($record['fixedFields']['30']['value'])],
+                    ],
+                ],
             ];
         }
 

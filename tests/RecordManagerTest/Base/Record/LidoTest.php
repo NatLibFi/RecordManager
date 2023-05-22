@@ -1,8 +1,9 @@
 <?php
+
 /**
  * LIDO Record Driver Test Class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2020-2022.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManagerTest\Base\Record;
 
 use RecordManager\Base\Record\Lido;
@@ -38,7 +40,7 @@ use RecordManager\Base\Record\Lido;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class LidoTest extends RecordTest
+class LidoTest extends RecordTestBase
 {
     /**
      * Test LIDO record handling
@@ -67,7 +69,7 @@ class LidoTest extends RecordTest
             'institution' => 'Test Institution',
             'author' => [
                 'Designer, Test',
-                'Luhtanen, Raimo'
+                'Luhtanen, Raimo',
             ],
             'author_sort' => 'Designer, Test',
             'topic_facet' => [
@@ -113,7 +115,7 @@ class LidoTest extends RecordTest
                 'M011-320623',
                 'Test Institution',
                 '247394',
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -129,7 +131,7 @@ class LidoTest extends RecordTest
                     [
                         'type' => 'author',
                         'value' => 'Luhtanen, Raimo',
-                    ]
+                    ],
                 ],
                 'authorsAltScript' => [],
                 'titles' => [
@@ -140,7 +142,7 @@ class LidoTest extends RecordTest
                     ],
                 ],
                 'titlesAltScript' => [],
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
@@ -160,9 +162,9 @@ class LidoTest extends RecordTest
                 '__unit_test_no_source__' => [
                     'driverParams' => [
                         'mergeTitleValues=false',
-                        'mergeTitleSets=false'
-                    ]
-                ]
+                        'mergeTitleSets=false',
+                    ],
+                ],
             ]
         );
         $fields = $record->toSolrArray();
@@ -175,14 +177,14 @@ class LidoTest extends RecordTest
             'title' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
             'title_sort' => 'luonnonsuojelusäädökset toimittanut raimo luhtanen',
             'title_alt' => [
-                'Säädökset'
+                'Säädökset',
             ],
             'format' => 'Kirja',
             'identifier' => '26054',
             'institution' => 'Test Institution',
             'author' => [
                 'Designer, Test',
-                'Luhtanen, Raimo'
+                'Luhtanen, Raimo',
             ],
             'author_sort' => 'Designer, Test',
             'topic_facet' => [
@@ -228,7 +230,7 @@ class LidoTest extends RecordTest
                 'M011-320623',
                 'Test Institution',
                 '247394',
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -244,7 +246,7 @@ class LidoTest extends RecordTest
                     [
                         'type' => 'author',
                         'value' => 'Luhtanen, Raimo',
-                    ]
+                    ],
                 ],
                 'authorsAltScript' => [],
                 'titles' => [
@@ -259,7 +261,7 @@ class LidoTest extends RecordTest
                     ],
                 ],
                 'titlesAltScript' => [],
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
@@ -286,9 +288,9 @@ class LidoTest extends RecordTest
             [
                 '__unit_test_no_source__' => [
                     'driverParams' => [
-                        'allowTitleToMatchFormat=true'
-                    ]
-                ]
+                        'allowTitleToMatchFormat=true',
+                    ],
+                ],
             ]
         );
         $fields = $record->toSolrArray();
@@ -323,7 +325,7 @@ class LidoTest extends RecordTest
                     ],
                 ],
                 'titlesAltScript' => [],
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');

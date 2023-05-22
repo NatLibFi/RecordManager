@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Marc record class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2011-2023.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
@@ -61,7 +63,7 @@ class Marc extends AbstractRecord
      * @var array
      */
     protected $primaryAuthorRelators = [
-        'adp', 'aut', 'cmp', 'cre', 'dub', 'inv'
+        'adp', 'aut', 'cmp', 'cre', 'dub', 'inv',
     ];
 
     /**
@@ -226,19 +228,17 @@ class Marc extends AbstractRecord
     public function toSolrArray(Database $db = null)
     {
         $data = [
-            'record_format' => 'marc'
+            'record_format' => 'marc',
         ];
 
         // Try to find matches for IDs in link fields
         $fields = [
             '760', '762', '765', '767', '770', '772', '773', '774',
-            '775', '776', '777', '780', '785', '786', '787'
+            '775', '776', '777', '780', '785', '786', '787',
         ];
         foreach ($fields as $code) {
             foreach ($this->record->getFields($code) as $fieldIdx => $marcfield) {
-                foreach ($this->record->getSubfields($marcfield, 'w')
-                    as $subfieldIdx => $marcsubfield
-                ) {
+                foreach ($this->record->getSubfields($marcfield, 'w') as $subfieldIdx => $marcsubfield) {
                     $targetId = $marcsubfield;
                     $targetRecord = null;
                     if ($db) {
@@ -246,7 +246,7 @@ class Marc extends AbstractRecord
                         $targetRecord = $db->findRecord(
                             [
                                 'source_id' => $this->source,
-                                'linking_id' => $linkingId
+                                'linking_id' => $linkingId,
                             ],
                             ['projection' => ['_id' => 1]]
                         );
@@ -255,7 +255,7 @@ class Marc extends AbstractRecord
                             $targetRecord = $db->findRecord(
                                 [
                                     'source_id' => $this->source,
-                                    'linking_id' => $targetId
+                                    'linking_id' => $targetId,
                                 ],
                                 ['projection' => ['_id' => 1]]
                             );
@@ -351,7 +351,7 @@ class Marc extends AbstractRecord
         $data['author_corporate_role'] = $corporateAuthors['relators'];
         $data['author_additional'] = $this->getFieldsSubfields(
             [
-                [MarcHandler::GET_BOTH, '505', ['r']]
+                [MarcHandler::GET_BOTH, '505', ['r']],
             ],
             true
         );
@@ -369,12 +369,12 @@ class Marc extends AbstractRecord
         $data['title_alt'] = $this->getAltTitles();
         $data['title_old'] = $this->getFieldsSubfields(
             [
-                [MarcHandler::GET_BOTH, '780', ['a', 's', 't']]
+                [MarcHandler::GET_BOTH, '780', ['a', 's', 't']],
             ]
         );
         $data['title_new'] = $this->getFieldsSubfields(
             [
-                [MarcHandler::GET_BOTH, '785', ['a', 's', 't']]
+                [MarcHandler::GET_BOTH, '785', ['a', 's', 't']],
             ]
         );
         $data['title_sort'] = $this->getTitle(true);
@@ -388,7 +388,7 @@ class Marc extends AbstractRecord
 
         $data['publisher'] = $this->getFieldsSubfields(
             [
-                [MarcHandler::GET_BOTH, '260', ['b']]
+                [MarcHandler::GET_BOTH, '260', ['b']],
             ],
             false,
             true
@@ -400,7 +400,7 @@ class Marc extends AbstractRecord
                     $data['publisher'] = [
                         $this->metadataUtils->stripTrailingPunctuation(
                             $this->record->getSubfield($field, 'b')
-                        )
+                        ),
                     ];
                     break;
                 }
@@ -414,7 +414,7 @@ class Marc extends AbstractRecord
         $data['physical'] = $this->getFieldsSubfields(
             [
                 [MarcHandler::GET_BOTH, '300', ['a', 'b', 'c', 'e', 'f', 'g']],
-                [MarcHandler::GET_BOTH, '530', ['a', 'b', 'c', 'd']]
+                [MarcHandler::GET_BOTH, '530', ['a', 'b', 'c', 'd']],
             ]
         );
         $data['dateSpan'] = $this->getFieldsSubfields(
@@ -424,13 +424,11 @@ class Marc extends AbstractRecord
         $data['contents'] = $this->getFieldsSubfields(
             [
                 [MarcHandler::GET_BOTH, '505', ['a']],
-                [MarcHandler::GET_BOTH, '505', ['t']]
+                [MarcHandler::GET_BOTH, '505', ['t']],
             ]
         );
 
-        foreach ($this->getFieldsSubfields($this->isbnFields, false, true, true)
-            as $isbn
-        ) {
+        foreach ($this->getFieldsSubfields($this->isbnFields, false, true, true) as $isbn) {
             if ($normalized = $this->metadataUtils->normalizeISBN($isbn)) {
                 $data['isbn'][] = $normalized;
             } else {
@@ -446,7 +444,7 @@ class Marc extends AbstractRecord
                 [MarcHandler::GET_NORMAL, '773', ['x']],
                 [MarcHandler::GET_NORMAL, '776', ['x']],
                 [MarcHandler::GET_NORMAL, '780', ['x']],
-                [MarcHandler::GET_NORMAL, '785', ['x']]
+                [MarcHandler::GET_NORMAL, '785', ['x']],
             ]
         );
         $data['doi_str_mv'] = $this->getDOIs();
@@ -455,7 +453,7 @@ class Marc extends AbstractRecord
             [
                 [MarcHandler::GET_NORMAL, '099', ['a']],
                 [MarcHandler::GET_NORMAL, '090', ['a']],
-                [MarcHandler::GET_NORMAL, '050', ['a']]
+                [MarcHandler::GET_NORMAL, '050', ['a']],
             ]
         );
         if ($cn) {
@@ -464,7 +462,7 @@ class Marc extends AbstractRecord
         $value = $this->getFirstFieldSubfields(
             [
                 [MarcHandler::GET_NORMAL, '090', ['a']],
-                [MarcHandler::GET_NORMAL, '050', ['a']]
+                [MarcHandler::GET_NORMAL, '050', ['a']],
             ]
         );
         if ($value) {
@@ -481,7 +479,7 @@ class Marc extends AbstractRecord
                 [
                     [MarcHandler::GET_NORMAL, '080', ['a', 'b']],
                     [MarcHandler::GET_NORMAL, '084', ['a', 'b']],
-                    [MarcHandler::GET_NORMAL, '050', ['a', 'b']]
+                    [MarcHandler::GET_NORMAL, '050', ['a', 'b']],
                 ]
             )
         );
@@ -520,7 +518,7 @@ class Marc extends AbstractRecord
 
         $data['url'] = $this->getFieldsSubfields(
             [
-                [MarcHandler::GET_NORMAL, '856', ['u']]
+                [MarcHandler::GET_NORMAL, '856', ['u']],
             ]
         );
 
@@ -589,7 +587,7 @@ class Marc extends AbstractRecord
 
         $cns = $this->getFieldsSubfields(
             [
-                [MarcHandler::GET_NORMAL, '035', ['a']]
+                [MarcHandler::GET_NORMAL, '035', ['a']],
             ]
         );
         if ($cns) {
@@ -733,7 +731,8 @@ class Marc extends AbstractRecord
 
         // Try to parse the data from different versions of 773g
         $matches = [];
-        if (preg_match('/,\s*\w\.?\s*([\d,\-]+)/', $field773g, $matches)
+        if (
+            preg_match('/,\s*\w\.?\s*([\d,\-]+)/', $field773g, $matches)
             || preg_match('/^\w\.?\s*([\d,\-]+)/', $field773g, $matches)
         ) {
             $pages = explode('-', $matches[1]);
@@ -834,14 +833,14 @@ class Marc extends AbstractRecord
         if ($f100) {
             $author = $this->record->getSubfield($f100, 'a');
             $order = $this->record->getIndicator($f100, 1);
-            if ($order == 0 && strpos($author, ',') === false) {
+            if ($order == 0 && !str_contains($author, ',')) {
                 $author = $this->metadataUtils->convertAuthorLastFirst($author);
             }
             return $this->metadataUtils->stripTrailingPunctuation($author);
         } elseif ($f700 = $this->record->getField('700')) {
             $author = $this->record->getSubfield($f700, 'a');
             $order = $this->record->getIndicator($f700, 1);
-            if ($order == 0 && strpos($author, ',') === false) {
+            if ($order == 0 && !str_contains($author, ',')) {
                 $author = $this->metadataUtils->convertAuthorLastFirst($author);
             }
             return $this->metadataUtils->stripTrailingPunctuation($author);
@@ -910,29 +909,30 @@ class Marc extends AbstractRecord
         if ($id) {
             $nr = $this->record->getSubfield($id, 'a');
             switch ($this->record->getIndicator($id, 1)) {
-            case '0':
-                $src = 'istc';
-                break;
-            case '1':
-                $src = 'upc';
-                break;
-            case '2':
-                $src = 'ismn';
-                break;
-            case '3':
-                $src = 'ian';
-                if ($p = strpos($nr, ' ')) {
-                    $nr = substr($nr, 0, $p);
-                }
-                break;
-            case '4':
-                $src = 'sici';
-                break;
-            case '7':
-                $src = $this->record->getSubfield($id, '2');
-                break;
-            default:
-                $src = '';
+                case '0':
+                    $src = 'istc';
+                    break;
+                case '1':
+                    $src = 'upc';
+                    break;
+                case '2':
+                    $src = 'ismn';
+                    break;
+                case '3':
+                    $src = 'ian';
+                    if ($p = strpos($nr, ' ')) {
+                        $nr = substr($nr, 0, $p);
+                    }
+                    break;
+                case '4':
+                    $src = 'sici';
+                    break;
+                case '7':
+                    $src = $this->record->getSubfield($id, '2');
+                    break;
+                default:
+                    $src = '';
+                    break;
             }
             $nr = $this->metadataUtils->normalizeKey($nr, $form);
             // Ignore any invalid ISMN
@@ -1105,7 +1105,7 @@ class Marc extends AbstractRecord
                 ' ',
                 ' ',
                 [
-                    ['a' => $dedupKey]
+                    ['a' => $dedupKey],
                 ]
             );
         } else {
@@ -1122,7 +1122,8 @@ class Marc extends AbstractRecord
     {
         $building = [];
         $buildingFieldSpec = $this->getDriverParam('buildingFields', false);
-        if ($this->getDriverParam('holdingsInBuilding', true)
+        if (
+            $this->getDriverParam('holdingsInBuilding', true)
             || false !== $buildingFieldSpec
         ) {
             $buildingFieldSpec = $this->getDriverParam('buildingFields', false);
@@ -1141,10 +1142,8 @@ class Marc extends AbstractRecord
             }
 
             foreach ($buildingFields as $buildingField) {
-                foreach ($this->record->getFields($buildingField['field']) as $field
-                ) {
-                    $location
-                        = $this->record->getSubfield($field, $buildingField['loc']);
+                foreach ($this->record->getFields($buildingField['field']) as $field) {
+                    $location = $this->record->getSubfield($field, $buildingField['loc']);
                     if ($location) {
                         $subLocField = $buildingField['sub'];
                         if ($subLocField) {
@@ -1176,7 +1175,8 @@ class Marc extends AbstractRecord
                 'sub' => $useSub,
             ],
         ];
-        if ($this->getDriverParam('kohaNormalization', false)
+        if (
+            $this->getDriverParam('kohaNormalization', false)
             || $this->getDriverParam('almaNormalization', false)
         ) {
             $itemSub = $this->getDriverParam('itemSubLocationInBuilding', $useSub);
@@ -1202,14 +1202,14 @@ class Marc extends AbstractRecord
                     [
                         [MarcHandler::GET_ALT, '245', ['a', 'b']],
                         [MarcHandler::GET_BOTH, '130', [
-                            'a', 'd', 'f', 'g', 'k', 'l', 'n', 'p', 's', 't'
+                            'a', 'd', 'f', 'g', 'k', 'l', 'n', 'p', 's', 't',
                         ]],
                         [MarcHandler::GET_BOTH, '240', ['a']],
                         [MarcHandler::GET_BOTH, '246', ['a', 'b', 'n', 'p']],
                         [MarcHandler::GET_BOTH, '730', [
-                            'a', 'd', 'f', 'g', 'k', 'l', 'n', 'p', 's', 't'
+                            'a', 'd', 'f', 'g', 'k', 'l', 'n', 'p', 's', 't',
                         ]],
-                        [MarcHandler::GET_BOTH, '740', ['a']]
+                        [MarcHandler::GET_BOTH, '740', ['a']],
                     ]
                 )
             )
@@ -1240,7 +1240,7 @@ class Marc extends AbstractRecord
                 'l' => 1,
                 'm' => 1,
                 'o' => 1,
-                'p' => 1
+                'p' => 1,
             ];
 
             // 008
@@ -1267,7 +1267,7 @@ class Marc extends AbstractRecord
         foreach ($this->record->getFields('300') as $field300) {
             $sub = strtolower($this->record->getSubfield($field300, 'b'));
             foreach ($this->illustrationStrings as $illStr) {
-                if (strpos($sub, $illStr) !== false) {
+                if (str_contains($sub, $illStr)) {
                     return 'Illustrated';
                 }
             }
@@ -1319,7 +1319,7 @@ class Marc extends AbstractRecord
             '111' => ['a', 'c'],
             '700' => ['a', 'b'],
             '710' => ['a', 'b'],
-            '711' => ['a', 'c']
+            '711' => ['a', 'c'],
         ];
         $titleFields = [
             '130' => ['n', 'p'],
@@ -1340,7 +1340,8 @@ class Marc extends AbstractRecord
             $tag = (string)$tag;
             foreach ($this->record->getFields($tag) as $field) {
                 // Check for analytical entries to be processed later:
-                if (in_array($tag, ['700', '710', '711'])
+                if (
+                    in_array($tag, ['700', '710', '711'])
                     && (int)$this->record->getIndicator($field, 2) === 2
                 ) {
                     $analytical[$tag][] = $field;
@@ -1351,7 +1352,7 @@ class Marc extends AbstractRecord
                 if ($author) {
                     $authors[] = [
                         'type' => 'author',
-                        'value' => $author
+                        'value' => $author,
                     ];
 
                     $linkedAuthors = $this->record->getLinkedSubfieldsFrom880(
@@ -1363,7 +1364,7 @@ class Marc extends AbstractRecord
                     foreach ($linkedAuthors as $altAuthor) {
                         $authorsAltScript[] = [
                             'type' => 'author',
-                            'value' => $altAuthor
+                            'value' => $altAuthor,
                         ];
                     }
                 }
@@ -1380,15 +1381,15 @@ class Marc extends AbstractRecord
             $title = '';
             $altTitles = [];
             switch ($tag) {
-            case '130':
-            case '730':
-                $nonFilingInd = 1;
-                break;
-            case '246':
-                $nonFilingInd = null;
-                break;
-            default:
-                $nonFilingInd = 2;
+                case '130':
+                case '730':
+                    $nonFilingInd = 1;
+                    break;
+                case '246':
+                    $nonFilingInd = null;
+                    break;
+                default:
+                    $nonFilingInd = 2;
             }
 
             $title = $this->record->getSubfield($field, 'a');
@@ -1407,12 +1408,12 @@ class Marc extends AbstractRecord
             if ($title) {
                 $titles[] = [
                     'type' => $titleType,
-                    'value' => $title
+                    'value' => $title,
                 ];
                 if ($titleOrig !== $title) {
                     $titles[] = [
                         'type' => $titleType,
-                        'value' => $titleOrig
+                        'value' => $titleOrig,
                     ];
                 }
             }
@@ -1438,12 +1439,12 @@ class Marc extends AbstractRecord
                 if ($altTitle) {
                     $titlesAltScript[] = [
                         'type' => $titleType,
-                        'value' => $altTitle
+                        'value' => $altTitle,
                     ];
                     if ($altTitleOrig !== $altTitle) {
                         $titlesAltScript[] = [
                             'type' => $titleType,
-                            'value' => $altTitleOrig
+                            'value' => $altTitleOrig,
                         ];
                     }
                 }
@@ -1455,7 +1456,7 @@ class Marc extends AbstractRecord
         }
 
         $result = [
-            compact('authors', 'authorsAltScript', 'titles', 'titlesAltScript')
+            compact('authors', 'authorsAltScript', 'titles', 'titlesAltScript'),
         ];
 
         // Process any analytical entries
@@ -1492,7 +1493,7 @@ class Marc extends AbstractRecord
                     'titles' => [['type' => 'title', 'value' => $title]],
                     'titlesAltScript' => $altTitle
                         ? [['type' => 'title', 'value' => $altTitle]]
-                        : []
+                        : [],
                 ];
             }
         }
@@ -1655,7 +1656,8 @@ class Marc extends AbstractRecord
         $result = [];
         foreach ($this->record->getFields('024') as $field024) {
             $ind1 = $this->record->getIndicator($field024, 1);
-            if (in_array($ind1, ['0', '1', '2', '3', '7'])
+            if (
+                in_array($ind1, ['0', '1', '2', '3', '7'])
                 && ($id = $this->record->getSubfield($field024, 'a'))
             ) {
                 $type = $indToTypeMap["x$ind1"]
@@ -1723,7 +1725,8 @@ class Marc extends AbstractRecord
         $result = [];
 
         foreach ($this->record->getFields('024') as $f024) {
-            if (strcasecmp($this->record->getSubfield($f024, '2'), 'doi') === 0
+            if (
+                strcasecmp($this->record->getSubfield($f024, '2'), 'doi') === 0
                 && $doi = trim($this->record->getSubfield($f024, 'a'))
             ) {
                 $result[] = $doi;
@@ -1895,7 +1898,7 @@ class Marc extends AbstractRecord
         $excludedSubfields = [
             '650' => ['0', '2', '6', '8'],
             '773' => ['6', '7', '8', 'w'],
-            '856' => ['6', '8', 'q']
+            '856' => ['6', '8', 'q'],
         ];
         $allFields = [];
         foreach ($this->record->getAllFields() as $field) {
@@ -1965,23 +1968,23 @@ class Marc extends AbstractRecord
             [
                 [MarcHandler::GET_BOTH, '600', [
                     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'm',
-                    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'x', 'y', 'z'
+                    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'x', 'y', 'z',
                 ]],
                 [MarcHandler::GET_BOTH, '610', [
                     'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'k', 'l', 'm', 'n',
-                    'o', 'p', 'r', 's', 't', 'u', 'v', 'x', 'y', 'z'
+                    'o', 'p', 'r', 's', 't', 'u', 'v', 'x', 'y', 'z',
                 ]],
                 [MarcHandler::GET_BOTH, '611', [
                     'a', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'n', 'p',
-                    'q', 's', 't', 'u', 'v', 'x', 'y', 'z'
+                    'q', 's', 't', 'u', 'v', 'x', 'y', 'z',
                 ]],
                 [MarcHandler::GET_BOTH, '630', [
                     'a', 'd', 'e', 'f', 'g', 'h', 'k', 'l', 'm', 'n', 'o', 'p',
-                    'r', 's', 't', 'v', 'x', 'y', 'z'
+                    'r', 's', 't', 'v', 'x', 'y', 'z',
                 ]],
                 [MarcHandler::GET_BOTH, '650', [
-                    'a', 'b', 'c', 'd', 'e', 'v', 'x', 'y', 'z'
-                ]]
+                    'a', 'b', 'c', 'd', 'e', 'v', 'x', 'y', 'z',
+                ]],
             ]
         );
     }
@@ -1995,7 +1998,7 @@ class Marc extends AbstractRecord
     {
         return $this->getFieldsSubfields(
             [
-                [MarcHandler::GET_BOTH, '655', ['a', 'b', 'c', 'v', 'x', 'y', 'z']]
+                [MarcHandler::GET_BOTH, '655', ['a', 'b', 'c', 'v', 'x', 'y', 'z']],
             ]
         );
     }
@@ -2009,7 +2012,7 @@ class Marc extends AbstractRecord
     {
         return $this->getFieldsSubfields(
             [
-                [MarcHandler::GET_BOTH, '651', ['a', 'e', 'v', 'x', 'y', 'z']]
+                [MarcHandler::GET_BOTH, '651', ['a', 'e', 'v', 'x', 'y', 'z']],
             ]
         );
     }
@@ -2023,7 +2026,7 @@ class Marc extends AbstractRecord
     {
         return $this->getFieldsSubfields(
             [
-                [MarcHandler::GET_BOTH, '648', ['a', 'v', 'x', 'y', 'z']]
+                [MarcHandler::GET_BOTH, '648', ['a', 'v', 'x', 'y', 'z']],
             ]
         );
     }
@@ -2045,7 +2048,7 @@ class Marc extends AbstractRecord
                 [MarcHandler::GET_NORMAL, '650', ['a']],
                 [MarcHandler::GET_NORMAL, '650', ['x']],
                 [MarcHandler::GET_NORMAL, '651', ['x']],
-                [MarcHandler::GET_NORMAL, '655', ['x']]
+                [MarcHandler::GET_NORMAL, '655', ['x']],
             ],
             false,
             true,
@@ -2071,7 +2074,7 @@ class Marc extends AbstractRecord
                     [MarcHandler::GET_NORMAL, '650', ['v']],
                     [MarcHandler::GET_NORMAL, '651', ['v']],
                     [MarcHandler::GET_NORMAL, '655', ['a']],
-                    [MarcHandler::GET_NORMAL, '655', ['v']]
+                    [MarcHandler::GET_NORMAL, '655', ['v']],
                 ],
                 false,
                 true,
@@ -2097,7 +2100,7 @@ class Marc extends AbstractRecord
                 [MarcHandler::GET_NORMAL, '650', ['z']],
                 [MarcHandler::GET_NORMAL, '651', ['a']],
                 [MarcHandler::GET_NORMAL, '651', ['z']],
-                [MarcHandler::GET_NORMAL, '655', ['z']]
+                [MarcHandler::GET_NORMAL, '655', ['z']],
             ],
             false,
             true,
@@ -2119,7 +2122,7 @@ class Marc extends AbstractRecord
                 [MarcHandler::GET_NORMAL, '648', ['y']],
                 [MarcHandler::GET_NORMAL, '650', ['y']],
                 [MarcHandler::GET_NORMAL, '651', ['y']],
-                [MarcHandler::GET_NORMAL, '655', ['y']]
+                [MarcHandler::GET_NORMAL, '655', ['y']],
             ],
             false,
             true,
@@ -2140,7 +2143,7 @@ class Marc extends AbstractRecord
                 [MarcHandler::GET_NORMAL, '041', ['a']],
                 [MarcHandler::GET_NORMAL, '041', ['d']],
                 [MarcHandler::GET_NORMAL, '041', ['h']],
-                [MarcHandler::GET_NORMAL, '041', ['j']]
+                [MarcHandler::GET_NORMAL, '041', ['j']],
             ],
             false,
             true,
@@ -2270,7 +2273,7 @@ class Marc extends AbstractRecord
     {
         $fieldSpecs = [
             '100' => ['a', 'b', 'c', 'q', 'd'],
-            '700' => ['a', 'b', 'c', 'q', 'd']
+            '700' => ['a', 'b', 'c', 'q', 'd'],
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,
@@ -2288,7 +2291,7 @@ class Marc extends AbstractRecord
     {
         $fieldSpecs = [
             '100' => ['a', 'b', 'c', 'q', 'd'],
-            '700' => ['a', 'b', 'c', 'q', 'd']
+            '700' => ['a', 'b', 'c', 'q', 'd'],
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,
@@ -2310,7 +2313,7 @@ class Marc extends AbstractRecord
             '110' => ['a', 'b'],
             '111' => ['a', 'b'],
             '710' => ['a', 'b'],
-            '711' => ['a', 'b']
+            '711' => ['a', 'b'],
         ];
         return $this->getAuthorsByRelator(
             $fieldSpecs,
@@ -2389,10 +2392,15 @@ class Marc extends AbstractRecord
                     );
                     $this->storeWarning('invalid coordinates in 034');
                 } else {
-                    if (!is_nan($east) && !is_nan($south)
+                    if (
+                        !is_nan($east)
+                        && !is_nan($south)
                         && ($east !== $west || $north !== $south)
                     ) {
-                        if ($east < -180 || $east > 180 || $south < -90
+                        if (
+                            $east < -180
+                            || $east > 180
+                            || $south < -90
                             || $south > 90
                         ) {
                             $this->logger->logDebug(
@@ -2434,12 +2442,13 @@ class Marc extends AbstractRecord
 
         $ctrlNums = $this->getFieldsSubfields(
             [
-                [MarcHandler::GET_NORMAL, '035', ['a']]
+                [MarcHandler::GET_NORMAL, '035', ['a']],
             ]
         );
         foreach ($ctrlNums as $ctrlNum) {
             $ctrlLc = mb_strtolower($ctrlNum, 'UTF-8');
-            if (strncmp($ctrlLc, '(ocolc)', 7) === 0
+            if (
+                strncmp($ctrlLc, '(ocolc)', 7) === 0
                 || strncmp($ctrlLc, 'ocm', 3) === 0
                 || strncmp($ctrlLc, 'ocn', 3) === 0
                 || strncmp($ctrlLc, 'on', 2) === 0
@@ -2481,9 +2490,9 @@ class Marc extends AbstractRecord
                 [MarcHandler::GET_BOTH, '440', ['a']],
                 [MarcHandler::GET_BOTH, '490', ['a']],
                 [MarcHandler::GET_BOTH, '800', [
-                    'a', 'b', 'c', 'd', 'f', 'p', 'q', 't'
+                    'a', 'b', 'c', 'd', 'f', 'p', 'q', 't',
                 ]],
-                [MarcHandler::GET_BOTH, '830', ['a', 'p']]
+                [MarcHandler::GET_BOTH, '830', ['a', 'p']],
             ]
         );
     }

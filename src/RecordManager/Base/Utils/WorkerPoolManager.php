@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Fork-based worker pool manager
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2017-2021.
  *
@@ -25,13 +26,8 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-namespace RecordManager\Base\Utils;
 
-if (function_exists('pcntl_async_signals')) {
-    pcntl_async_signals(true);
-} else {
-    declare(ticks = 10);
-}
+namespace RecordManager\Base\Utils;
 
 /**
  * Worker Pool Manager
@@ -196,7 +192,7 @@ class WorkerPoolManager
                 $this->workerPools[$poolId][] = [
                     'pid' => $childPid,
                     'socket' => $parentSocket,
-                    'active' => false
+                    'active' => false,
                 ];
             } else {
                 if (is_callable('cli_set_process_title')) {
@@ -232,7 +228,7 @@ class WorkerPoolManager
                         $this->writeSocket(
                             $childSocket,
                             [
-                                'exception' => (string)$e
+                                'exception' => (string)$e,
                             ],
                             true
                         );
@@ -280,7 +276,8 @@ class WorkerPoolManager
             );
         } else {
             // Wait until the request queue is short enough
-            while (count($this->requestQueue[$poolId]) >= $this->maxPendingRequests
+            while (
+                count($this->requestQueue[$poolId]) >= $this->maxPendingRequests
             ) {
                 $this->handleRequests($poolId);
                 usleep(100);
@@ -638,7 +635,8 @@ class WorkerPoolManager
     protected function checkParentIsAlive()
     {
         $time = microtime(true);
-        if (0.0 === $this->lastParentCheckTime
+        if (
+            0.0 === $this->lastParentCheckTime
             || $time - $this->lastParentCheckTime > 5
         ) {
             $parentPid = posix_getpgrp();

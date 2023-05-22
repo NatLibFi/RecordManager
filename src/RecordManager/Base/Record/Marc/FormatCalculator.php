@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Marc record format calculator
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) Villanova University 2017.
  * Copyright (C) The National Library of Finland 2022.
@@ -28,6 +29,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Record\Marc;
 
 use RecordManager\Base\Marc\Marc;
@@ -76,25 +78,25 @@ class FormatCalculator
         string $marc008
     ): bool {
         switch ($recordType) {
-        // Computer file
-        case 'm':
-            // Check the type of computer file:
-            // If it is 'Document', 'Interactive multimedia', 'Combination',
-            // 'Unknown', 'Other', it could be a book; otherwise, it is not a book:
-            $fileType = $this->get008Value($marc008, 26);
-            if (in_array($fileType, ['d', 'i', 'm', 'u', 'z'])) {
-                return false;
-            }
-            return true;
-        case 'e':   // Cartographic material
-        case 'f':   // Manuscript cartographic material
-        case 'g':   // Projected medium
-        case 'i':   // Nonmusical sound recording
-        case 'j':   // Musical sound recording
-        case 'k':   // 2-D nonprojectable graphic
-        case 'r':   // 3-D artifact or naturally occurring object
-            // None of these things are books:
-            return true;
+            // Computer file
+            case 'm':
+                // Check the type of computer file:
+                // If it is 'Document', 'Interactive multimedia', 'Combination',
+                // 'Unknown', 'Other', it could be a book; otherwise, it is not a book:
+                $fileType = $this->get008Value($marc008, 26);
+                if (in_array($fileType, ['d', 'i', 'm', 'u', 'z'])) {
+                    return false;
+                }
+                return true;
+            case 'e':   // Cartographic material
+            case 'f':   // Manuscript cartographic material
+            case 'g':   // Projected medium
+            case 'i':   // Nonmusical sound recording
+            case 'j':   // Musical sound recording
+            case 'k':   // 2-D nonprojectable graphic
+            case 'r':   // 3-D artifact or naturally occurring object
+                // None of these things are books:
+                return true;
         }
         return false;
     }
@@ -114,112 +116,112 @@ class FormatCalculator
     ): string {
         $formatCode2 = substr($formatString, 1, 1) ?: ' ';
         switch ($formatCode) {
-        case 'a':
-            return $formatCode2 == 'd' ? 'Atlas' : 'Map';
-        case 'c':
-            switch ($formatCode2) {
             case 'a':
-                return 'TapeCartridge';
-            case 'b':
-                return 'ChipCartridge';
+                return $formatCode2 == 'd' ? 'Atlas' : 'Map';
             case 'c':
-                return 'DiscCartridge';
-            case 'f':
-                return 'TapeCassette';
-            case 'h':
-                return 'TapeReel';
-            case 'j':
-                return 'FloppyDisk';
-            case 'm':
-            case 'o':
-                return 'CDROM';
-            case 'r':
-                // Do not return anything - otherwise anything with an
-                // 856 field would be labeled as "Electronic"
-                return '';
-            }
-            return 'ElectronicResource';
-        case 'd':
-            return 'Globe';
-        case 'f':
-            return 'Braille';
-        case 'g':
-            switch ($formatCode2) {
-            case 'c': // Filmstrip cartridge
-            case 'd': // Filmslip
-            case 'f': // Filmstrip, type unspecified
-            case 'o': // Filmstrip roll
-                return 'Filmstrip';
-            case 't':
-                return 'Transparency';
-            }
-            return 'Slide';
-        case 'h':
-            return 'Microfilm';
-        case 'k':
-            switch ($formatCode2) {
-            case 'c':
-                return 'Collage';
+                switch ($formatCode2) {
+                    case 'a':
+                        return 'TapeCartridge';
+                    case 'b':
+                        return 'ChipCartridge';
+                    case 'c':
+                        return 'DiscCartridge';
+                    case 'f':
+                        return 'TapeCassette';
+                    case 'h':
+                        return 'TapeReel';
+                    case 'j':
+                        return 'FloppyDisk';
+                    case 'm':
+                    case 'o':
+                        return 'CDROM';
+                    case 'r':
+                        // Do not return anything - otherwise anything with an
+                        // 856 field would be labeled as "Electronic"
+                        return '';
+                }
+                return 'ElectronicResource';
             case 'd':
-                return 'Drawing';
-            case 'e':
-                return 'Painting';
-            case 'f': // Photomechanical print
-                return 'Print';
+                return 'Globe';
+            case 'f':
+                return 'Braille';
             case 'g':
-                return 'Photonegative';
-            case 'j':
-                return 'Print';
+                switch ($formatCode2) {
+                    case 'c': // Filmstrip cartridge
+                    case 'd': // Filmslip
+                    case 'f': // Filmstrip, type unspecified
+                    case 'o': // Filmstrip roll
+                        return 'Filmstrip';
+                    case 't':
+                        return 'Transparency';
+                }
+                return 'Slide';
+            case 'h':
+                return 'Microfilm';
             case 'k':
-                return 'Poster';
-            case 'l':
-                return 'Drawing';
-            case 'n':
-                return 'Chart';
+                switch ($formatCode2) {
+                    case 'c':
+                        return 'Collage';
+                    case 'd':
+                        return 'Drawing';
+                    case 'e':
+                        return 'Painting';
+                    case 'f': // Photomechanical print
+                        return 'Print';
+                    case 'g':
+                        return 'Photonegative';
+                    case 'j':
+                        return 'Print';
+                    case 'k':
+                        return 'Poster';
+                    case 'l':
+                        return 'Drawing';
+                    case 'n':
+                        return 'Chart';
+                    case 'o':
+                        return 'FlashCard';
+                    case 'p':
+                        return 'Postcard';
+                    case 's': // Study print
+                        return 'Print';
+                }
+                return 'Photo';
+            case 'm':
+                switch ($formatCode2) {
+                    case 'f':
+                        return 'VideoCassette';
+                    case 'r':
+                        return 'Filmstrip';
+                }
+                return 'MotionPicture';
             case 'o':
-                return 'FlashCard';
-            case 'p':
-                return 'Postcard';
-            case 's': // Study print
-                return 'Print';
-            }
-            return 'Photo';
-        case 'm':
-            switch ($formatCode2) {
-            case 'f':
-                return 'VideoCassette';
+                return 'Kit';
+            case 'q':
+                return 'MusicalScore';
             case 'r':
-                return 'Filmstrip';
-            }
-            return 'MotionPicture';
-        case 'o':
-            return 'Kit';
-        case 'q':
-            return 'MusicalScore';
-        case 'r':
-            return 'SensorImage';
-        case 's':
-            switch ($formatCode2) {
-            case 'd':
-                return 'SoundDisc';
+                return 'SensorImage';
             case 's':
-                return 'SoundCassette';
-            }
-            return 'SoundRecording';
-        case 'v':
-            switch ($formatCode2) {
-            case 'c':
-                return 'VideoCartridge';
-            case 'd':
-                $formatCode5 = substr($formatString, 4, 1) ?: ' ';
-                return $formatCode5 === 's' ? 'BRDisc' : 'VideoDisc';
-            case 'f':
-                return 'VideoCassette';
-            case 'r':
-                return 'VideoReel';
-            }
-            // assume other video is online:
-            return 'VideoOnline';
+                switch ($formatCode2) {
+                    case 'd':
+                        return 'SoundDisc';
+                    case 's':
+                        return 'SoundCassette';
+                }
+                return 'SoundRecording';
+            case 'v':
+                switch ($formatCode2) {
+                    case 'c':
+                        return 'VideoCartridge';
+                    case 'd':
+                        $formatCode5 = substr($formatString, 4, 1) ?: ' ';
+                        return $formatCode5 === 's' ? 'BRDisc' : 'VideoDisc';
+                    case 'f':
+                        return 'VideoCassette';
+                    case 'r':
+                        return 'VideoReel';
+                }
+                // assume other video is online:
+                return 'VideoOnline';
         }
         return '';
     }
@@ -246,85 +248,85 @@ class FormatCalculator
         array $formatCodes007
     ): string {
         switch ($bibLevel) {
-        // Component parts
-        case 'a':
-            return ($this->hasSerialHost($record))
+            // Component parts
+            case 'a':
+                return ($this->hasSerialHost($record))
                 ? 'Article' : 'BookComponentPart';
-        case 'b':
-            return 'SerialComponentPart';
+            case 'b':
+                return 'SerialComponentPart';
         // Collection and sub-unit will be mapped to 'Kit' below if no other
         // format can be found. For now return an empty string here.
-        case 'c': // Collection
-        case 'd': // Sub-unit
-            return '';
-        // Integrating resources (e.g. loose-leaf binders, databases)
-        case 'i':
-            // Look in 008 to determine type of electronic IntegratingResource
-            // Check 008/21 Type of continuing resource
-            // Make sure we have the applicable LDR/06: Language Material
-            if ($recordType === 'a') {
-                switch ($this->get008Value($marc008, 21)) {
-                case 'h': // Blog
-                case 'w': // Updating Web site
-                    return 'Website';
-                default:
-                    break;
-                }
-                // Check 008/22 Form of original item
-                switch ($this->get008Value($marc008, 22)) {
-                case 'o': // Online
-                case 'q': // Direct electronic
-                case 's': // Electronic
-                    return 'OnlineIntegratingResource';
-                default:
-                    break;
-                }
-            }
-            return 'PhysicalIntegratingResource';
-        // Monograph
-        case 'm':
-            if ($couldBeBook) {
-                // Check 008/23 Form of item
-                // Make sure we have the applicable LDR/06: Language Material;
-                // Manuscript Language Material;
-                if ($recordType === 'a' || $recordType === 't') {
-                    switch ($this->get008Value($marc008, 23)) {
-                    case 'o': // Online
-                    case 'q': // Direct electronic
-                    case 's': // Electronic
-                        return 'eBook';
-                    default:
-                        break;
+            case 'c': // Collection
+            case 'd': // Sub-unit
+                return '';
+                // Integrating resources (e.g. loose-leaf binders, databases)
+            case 'i':
+                // Look in 008 to determine type of electronic IntegratingResource
+                // Check 008/21 Type of continuing resource
+                // Make sure we have the applicable LDR/06: Language Material
+                if ($recordType === 'a') {
+                    switch ($this->get008Value($marc008, 21)) {
+                        case 'h': // Blog
+                        case 'w': // Updating Web site
+                            return 'Website';
+                        default:
+                            break;
                     }
-                } elseif ($recordType === 'm') {
-                    // If we made it here and it is a Computer file, set to eBook
-                    // Note: specific types of Computer file, e.g. Video Game, have
-                    // already been excluded in definitelyNotBookBasedOnRecordType()
-                    return 'eBook';
+                    // Check 008/22 Form of original item
+                    switch ($this->get008Value($marc008, 22)) {
+                        case 'o': // Online
+                        case 'q': // Direct electronic
+                        case 's': // Electronic
+                            return 'OnlineIntegratingResource';
+                        default:
+                            break;
+                    }
                 }
-                // If we made it here, it should be Book
-                return 'Book';
-            }
-            break;
-        // Serial
-        case 's':
-            // Look in 008 to determine what type of Continuing Resource
-            // Make sure we have the applicable LDR/06: Language Material
-            if ($recordType === 'a') {
-                switch ($this->get008Value($marc008, 21)) {
-                case 'n':
-                    return 'Newspaper';
-                case 'p':
-                    return 'Journal';
-                default:
-                    break;
+                return 'PhysicalIntegratingResource';
+                // Monograph
+            case 'm':
+                if ($couldBeBook) {
+                    // Check 008/23 Form of item
+                    // Make sure we have the applicable LDR/06: Language Material;
+                    // Manuscript Language Material;
+                    if ($recordType === 'a' || $recordType === 't') {
+                        switch ($this->get008Value($marc008, 23)) {
+                            case 'o': // Online
+                            case 'q': // Direct electronic
+                            case 's': // Electronic
+                                return 'eBook';
+                            default:
+                                break;
+                        }
+                    } elseif ($recordType === 'm') {
+                        // If we made it here and it is a Computer file, set to eBook
+                        // Note: specific types of Computer file, e.g. Video Game, have
+                        // already been excluded in definitelyNotBookBasedOnRecordType()
+                        return 'eBook';
+                    }
+                    // If we made it here, it should be Book
+                    return 'Book';
                 }
-            }
-            // Default to serial even if 008 is missing
-            if (!$this->isConferenceProceeding($record)) {
-                return 'Serial';
-            }
-            break;
+                break;
+                // Serial
+            case 's':
+                // Look in 008 to determine what type of Continuing Resource
+                // Make sure we have the applicable LDR/06: Language Material
+                if ($recordType === 'a') {
+                    switch ($this->get008Value($marc008, 21)) {
+                        case 'n':
+                            return 'Newspaper';
+                        case 'p':
+                            return 'Journal';
+                        default:
+                            break;
+                    }
+                }
+                // Default to serial even if 008 is missing
+                if (!$this->isConferenceProceeding($record)) {
+                    return 'Serial';
+                }
+                break;
         }
         return '';
     }
@@ -347,126 +349,127 @@ class FormatCalculator
         array $formatCodes007
     ) {
         switch ($recordType) {
-        // Language material is mapped to 'Text' below if no other
-        // format can be found. For now return an empty string here.
-        case 'a':
-            return '';
-        case 'c':
-        case 'd':
-            return 'MusicalScore';
-        case 'e':
-        case 'f':
-            // Check 008/25 Type of cartographic material
-            switch ($this->get008Value($marc008, 25)) {
-            case 'd':
-                return 'Globe';
-            case 'e':
-                return 'Atlas';
-            default:
-                break;
-            }
-            return 'Map';
-        case 'g':
-            // Check 008/33 Type of visual material
-            switch ($this->get008Value($marc008, 33)) {
-            case 'f':
-                return 'Filmstrip';
-            case 't':
-                return 'Transparency';
-            case 'm':
-                return 'MotionPicture';
-            case 'v': // Videorecording
-                return 'Video';
-            default:
-                break;
-            }
-            // Check 008/34 Technique
-            // If set, this is a video rather than a slide
-            switch ($this->get008Value($marc008, 34)) {
-            case 'a': // Animation
-            case 'c': // Animation and live action
-            case 'l': // Live action
-            case 'u': // Unknown
-            case 'z': // Other
-                return 'Video';
-            default:
-                break;
-            }
-            // Insufficient info in LDR and 008 to distinguish still from moving
-            // images.
-            // If there is a 007 for either "Projected Graphic", "Motion Picture", or
-            // "Videorecording" that should contain more information, so return
-            // nothing here.
-            // If no such 007 exists, fall back to "ProjectedMedium".
-            if (in_array('g', $formatCodes007)
-                || in_array('m', $formatCodes007)
-                || in_array('v', $formatCodes007)
-            ) {
+            // Language material is mapped to 'Text' below if no other
+            // format can be found. For now return an empty string here.
+            case 'a':
                 return '';
-            }
-            return 'ProjectedMedium';
-        case 'i':
-            return 'SoundRecording';
-        case 'j':
-            return 'MusicRecording';
-        case 'k':
-            // Check 008/33 Type of visual material
-            switch ($this->get008Value($marc008, 33)) {
-            case 'l': // Technical drawing
-                return 'Drawing';
-            case 'n':
-                return 'Chart';
-            case 'o':
-                return 'FlashCard';
-            default:
-                break;
-            }
-            // Insufficient info in LDR and 008 to distinguish image types
-            // If there is a 007 for Nonprojected Graphic, it should have more info,
-            // so return nothing here.
-            // If there is no 007 for Nonprojected Graphic, fall back to "Image"
-            return in_array('k', $formatCodes007) ? '' : 'Image';
-        // Computer file
-        case 'm':
-            // All computer files return a format of Electronic in isElectronic()
-            // Only set more specific formats here
-            // Check 008/26 Type of computer file
-            switch ($this->get008Value($marc008, 26)) {
-            case 'a': // Numeric data
-                return 'DataSet';
-            case 'b': // Computer program
-                return 'Software';
-            case 'c': // Representational
-                return 'Image';
-            case 'd': // Document
-                // Document is too vague and often confusing when combined
-                // with formats derived from elsewhere in the record
-                break;
-            case 'e': //Bibliographic data
-                return 'DataSet';
-            case 'f': // Font
-                return 'Font';
-            case 'g': // Game
-                return 'VideoGame';
-            case 'h': // Sound
+            case 'c':
+            case 'd':
+                return 'MusicalScore';
+            case 'e':
+            case 'f':
+                // Check 008/25 Type of cartographic material
+                switch ($this->get008Value($marc008, 25)) {
+                    case 'd':
+                        return 'Globe';
+                    case 'e':
+                        return 'Atlas';
+                    default:
+                        break;
+                }
+                return 'Map';
+            case 'g':
+                // Check 008/33 Type of visual material
+                switch ($this->get008Value($marc008, 33)) {
+                    case 'f':
+                        return 'Filmstrip';
+                    case 't':
+                        return 'Transparency';
+                    case 'm':
+                        return 'MotionPicture';
+                    case 'v': // Videorecording
+                        return 'Video';
+                    default:
+                        break;
+                }
+                // Check 008/34 Technique
+                // If set, this is a video rather than a slide
+                switch ($this->get008Value($marc008, 34)) {
+                    case 'a': // Animation
+                    case 'c': // Animation and live action
+                    case 'l': // Live action
+                    case 'u': // Unknown
+                    case 'z': // Other
+                        return 'Video';
+                    default:
+                        break;
+                }
+                // Insufficient info in LDR and 008 to distinguish still from moving
+                // images.
+                // If there is a 007 for either "Projected Graphic", "Motion Picture", or
+                // "Videorecording" that should contain more information, so return
+                // nothing here.
+                // If no such 007 exists, fall back to "ProjectedMedium".
+                if (
+                    in_array('g', $formatCodes007)
+                    || in_array('m', $formatCodes007)
+                    || in_array('v', $formatCodes007)
+                ) {
+                    return '';
+                }
+                return 'ProjectedMedium';
+            case 'i':
                 return 'SoundRecording';
-            case 'i': // Interactive multimedia
-                return 'InteractiveMultimedia';
-            default:
+            case 'j':
+                return 'MusicRecording';
+            case 'k':
+                // Check 008/33 Type of visual material
+                switch ($this->get008Value($marc008, 33)) {
+                    case 'l': // Technical drawing
+                        return 'Drawing';
+                    case 'n':
+                        return 'Chart';
+                    case 'o':
+                        return 'FlashCard';
+                    default:
+                        break;
+                }
+                // Insufficient info in LDR and 008 to distinguish image types
+                // If there is a 007 for Nonprojected Graphic, it should have more info,
+                // so return nothing here.
+                // If there is no 007 for Nonprojected Graphic, fall back to "Image"
+                return in_array('k', $formatCodes007) ? '' : 'Image';
+                // Computer file
+            case 'm':
+                // All computer files return a format of Electronic in isElectronic()
+                // Only set more specific formats here
+                // Check 008/26 Type of computer file
+                switch ($this->get008Value($marc008, 26)) {
+                    case 'a': // Numeric data
+                        return 'DataSet';
+                    case 'b': // Computer program
+                        return 'Software';
+                    case 'c': // Representational
+                        return 'Image';
+                    case 'd': // Document
+                        // Document is too vague and often confusing when combined
+                        // with formats derived from elsewhere in the record
+                        break;
+                    case 'e': //Bibliographic data
+                        return 'DataSet';
+                    case 'f': // Font
+                        return 'Font';
+                    case 'g': // Game
+                        return 'VideoGame';
+                    case 'h': // Sound
+                        return 'SoundRecording';
+                    case 'i': // Interactive multimedia
+                        return 'InteractiveMultimedia';
+                    default:
+                        break;
+                }
+                // If we got here, don't return anything
                 break;
-            }
-            // If we got here, don't return anything
-            break;
-        case 'o':
-        case 'p':
-            return 'Kit';
-        case 'r':
-            return 'PhysicalObject';
-        case 't':
-            if (!$this->isThesis($record)) {
-                return 'Manuscript';
-            }
-            break;
+            case 'o':
+            case 'p':
+                return 'Kit';
+            case 'r':
+                return 'PhysicalObject';
+            case 't':
+                if (!$this->isThesis($record)) {
+                    return 'Manuscript';
+                }
+                break;
         }
         return '';
     }
@@ -630,7 +633,8 @@ class FormatCalculator
             $desc = $this->getSubfieldOrDefault($record, $carrierField, 'a', '');
             $code = $this->getSubfieldOrDefault($record, $carrierField, 'b', '');
             $source = $this->getSubfieldOrDefault($record, $carrierField, '2', '');
-            if (('online resource' === $desc || 'cr' === $code)
+            if (
+                ('online resource' === $desc || 'cr' === $code)
                 && 'rdacarrier' === $source
             ) {
                 return true;
@@ -658,7 +662,8 @@ class FormatCalculator
             $desc = $this->getSubfieldOrDefault($record, $typeField, 'a', '');
             $code = $this->getSubfieldOrDefault($record, $typeField, 'b', '');
             $source = $this->getSubfieldOrDefault($record, $typeField, '2', '');
-            if (('two-dimensional moving image' === $desc || 'tdi' === $code)
+            if (
+                ('two-dimensional moving image' === $desc || 'tdi' === $code)
                 && 'rdacontent' === $source
             ) {
                 $video = true;

@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Import an RDF file into an enrichment collection
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2022.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command\Util;
 
 use ML\JsonLD\Document;
@@ -97,7 +99,12 @@ class ImportRdf extends AbstractBase
         $tripleCallback = function (
             $error,
             $triple
-        ) use (&$doc, &$subjectUri, &$count, $quiet) {
+        ) use (
+            &$doc,
+            &$subjectUri,
+            &$count,
+            $quiet
+        ) {
             if (isset($error)) {
                 throw $error;
             } elseif (isset($triple)) {
@@ -107,7 +114,7 @@ class ImportRdf extends AbstractBase
                         $this->db->saveLinkedDataEnrichment(
                             [
                                 '_id' => $subjectUri,
-                                'data' => serialize($doc)
+                                'data' => serialize($doc),
                             ]
                         );
                         ++$count;
@@ -154,7 +161,8 @@ class ImportRdf extends AbstractBase
                             Util::getLiteralType($object)
                         );
                     }
-                } elseif (Util::isBlank($object) || Util::isPrefixedName($object)
+                } elseif (
+                    Util::isBlank($object) || Util::isPrefixedName($object)
                     || Util::isIRI($object)
                 ) {
                     if ($graph->containsNode($object)) {
@@ -183,7 +191,7 @@ class ImportRdf extends AbstractBase
                     $this->db->saveLinkedDataEnrichment(
                         [
                             '_id' => $subjectUri,
-                            'data' => serialize($doc)
+                            'data' => serialize($doc),
                         ]
                     );
                     ++$count;

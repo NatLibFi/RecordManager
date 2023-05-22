@@ -11,18 +11,18 @@ jobs:
       VUFIND_LOCAL_DIR: $GITHUB_WORKSPACE/local
     strategy:
       matrix:
-        php-version: ['7.4', '8.0', '8.1', '8.1-no-mongo']
+        php-version: ['8.0', '8.1', '8.2', '8.2-no-mongo']
         include:
-          - php-version: 7.4
-            phing_tasks: "qa-tasks"
-            php-extensions: intl, xsl, mongodb
           - php-version: 8.0
             phing_tasks: "qa-tasks"
             php-extensions: intl, xsl, mongodb
           - php-version: 8.1
             phing_tasks: "qa-tasks"
             php-extensions: intl, xsl, mongodb
-          - php-version: 8.1-no-mongo
+          - php-version: 8.2
+            phing_tasks: "qa-tasks"
+            php-extensions: intl, xsl, mongodb
+          - php-version: 8.2-no-mongo
             phing_tasks: "qa-tasks"
             php-extensions: intl, xsl
 

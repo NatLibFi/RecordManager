@@ -1,8 +1,9 @@
 <?php
+
 /**
  * HTTP-based File Harvesting Class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (c) The National Library of Finland 2011-2020.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Exception\HttpRequestException;
@@ -235,7 +237,8 @@ class HTTPFiles extends AbstractBase
                 $this->warningMsg("Invalid filename date in '$filename'");
                 continue;
             }
-            if ($date > $this->startDate
+            if (
+                $date > $this->startDate
                 && (!$this->endDate || $date <= $this->endDate)
             ) {
                 $files[] = $filename;
@@ -315,7 +318,7 @@ class HTTPFiles extends AbstractBase
         while ($xml->read() && $xml->name !== $this->recordElem) {
         }
         $count = 0;
-        $doc = new \DOMDocument;
+        $doc = new \DOMDocument();
         while ($xml->name == $this->recordElem) {
             ++$count;
             $expanded = $xml->expand();

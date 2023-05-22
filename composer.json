@@ -10,7 +10,7 @@
     "license": "GPL-2.0",
     "config": {
         "platform": {
-            "php": "7.4.1"
+            "php": "8.0"
         },
         "allow-plugins": {
             "composer/package-versions-deprecated": true,
@@ -32,29 +32,29 @@
     },
     "require": {
         "cash/lrucache": "1.0.0",
-        "laminas/laminas-mvc": "3.3.3",
-        "laminas/laminas-router": "3.5.0",
-        "laminas/laminas-servicemanager": "3.10.0",
-        "laminas/laminas-xml": "1.4.0",
+        "laminas/laminas-mvc": "3.6.1",
+        "laminas/laminas-router": "3.11.1",
+        "laminas/laminas-servicemanager": "3.20.0",
+        "laminas/laminas-xml": "1.5.0",
         "league/mime-type-detection": "1.11.0",
         "ml/json-ld": "1.2.1",
         "mongodb/mongodb": "1.15.0",
-        "ocramius/proxy-manager": "2.13.1",
+        "ocramius/proxy-manager": "2.14.1",
         "pcrov/jsonreader": "1.0.2",
         "pear/http_request2": "2.5.1",
         "phayes/geophp": "1.2",
         "pietercolpaert/hardf": "0.3.1",
-        "symfony/console": "5.4.5",
-        "symfony/lock": "5.4.5",
+        "symfony/console": "5.4.23",
+        "symfony/lock": "5.4.22",
         "vufind-org/vufind-marc": "1.0.2",
-        "wikimedia/composer-merge-plugin": "2.0.1"
+        "wikimedia/composer-merge-plugin": "2.1.0"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "3.7.0",
-        "phing/phing": "2.17.2",
-        "phpstan/phpstan": "1.4.10",
-        "phpunit/phpunit": "9.5.19",
-        "squizlabs/php_codesniffer": "3.6.2",
+        "friendsofphp/php-cs-fixer": "3.15.1",
+        "phing/phing": "2.17.4",
+        "phpstan/phpstan": "1.10.10",
+        "phpunit/phpunit": "9.6.8",
+        "squizlabs/php_codesniffer": "3.7.2",
         "vimeo/psalm": "5.11.0"
     },
     "scripts": {

@@ -1,8 +1,9 @@
 <?php
+
 /**
  * RecordManager command base class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2011-2021.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command;
 
 use RecordManager\Base\Database\DatabaseInterface;
@@ -274,7 +276,7 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
                 'source_id' => $source,
                 'institution' => $settings['institution'],
                 'format' => $settings['format'],
-                'id_prefix' => $settings['idPrefix']
+                'id_prefix' => $settings['idPrefix'],
             ];
             $settings['normalizationXSLT'] = !empty($settings['normalization'])
                 ? new XslTransformation(
@@ -312,7 +314,8 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
             // Check for linked data sources and store information to the linked
             // sources too
             foreach ($settings['componentPartSourceId'] ?? [] as $linked) {
-                if (!isset($this->dataSourceConfig[$linked]['__hostRecordSourceId'])
+                if (
+                    !isset($this->dataSourceConfig[$linked]['__hostRecordSourceId'])
                 ) {
                     $this->dataSourceConfig[$linked]['__hostRecordSourceId']
                         = [$linked];

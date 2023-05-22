@@ -1,8 +1,9 @@
 <?php
+
 /**
  * MetadataUtils Class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2011-2023.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Utils;
 
 use RecordManager\Base\Record\AbstractRecord;
@@ -139,7 +141,7 @@ class MetadataUtils
         'ë' => 'e', 'ì' => 'i', 'í' => 'i', 'î' => 'i', 'ï' => 'i',
         'ð' => 'o', 'ñ' => 'n', 'ò' => 'o', 'ó' => 'o', 'ô' => 'o',
         'õ' => 'o', 'ö' => 'o', 'ø' => 'o', 'ù' => 'u', 'ú' => 'u',
-        'û' => 'u', 'ü' => 'u', 'ý' => 'y', 'þ' => 'b', 'ÿ' => 'y'
+        'û' => 'u', 'ü' => 'u', 'ý' => 'y', 'þ' => 'b', 'ÿ' => 'y',
     ];
 
     /**
@@ -215,7 +217,7 @@ class MetadataUtils
 
         $this->allArticleFormats = [
             ...$this->articleFormats,
-            ...$this->eArticleFormats
+            ...$this->eArticleFormats,
         ];
 
         $this->unicodeNormalizationForm
@@ -313,7 +315,8 @@ class MetadataUtils
             }
             return $dec;
         }
-        if (preg_match('/^([eEwWnNsS])?(\d{3})(\d{2}\.\d+)/', $value, $matches)
+        if (
+            preg_match('/^([eEwWnNsS])?(\d{3})(\d{2}\.\d+)/', $value, $matches)
         ) {
             $dec = (float)$matches[2] + (float)$matches[3] / 60;
             if (in_array($matches[1], ['w', 'W', 's', 'S'])) {
@@ -321,7 +324,8 @@ class MetadataUtils
             }
             return $dec;
         }
-        if (preg_match('/^([eEwWnNsS+-])?(\d+\.\d+)/', $value, $matches)
+        if (
+            preg_match('/^([eEwWnNsS+-])?(\d+\.\d+)/', $value, $matches)
         ) {
             $dec = (float)$matches[2];
             if (in_array($matches[1], ['w', 'W', 's', 'S', '-'])) {
@@ -361,7 +365,8 @@ class MetadataUtils
         if ($this->fullTitlePrefixes) {
             $normalTitle = $this->normalizeKey($title);
             foreach ($this->fullTitlePrefixes as $prefix) {
-                if ($prefix
+                if (
+                    $prefix
                     && strncmp($normalTitle, $prefix, strlen($prefix)) === 0
                 ) {
                     $full = true;
@@ -520,9 +525,9 @@ class MetadataUtils
             --$i;
         }
         $c = $str[$i];
-        $punctuation = strpos('/:;,=([', $c) !== false;
+        $punctuation = str_contains('/:;,=([', $c);
         if (!$punctuation) {
-            $punctuation = substr($str, -1) == '.' && !substr($str, -3, 1) != ' ';
+            $punctuation = str_ends_with($str, '.') && substr($str, -3, 1) !== ' ';
         }
         return $punctuation;
     }
@@ -543,7 +548,7 @@ class MetadataUtils
         ?string $punctuation = null,
         bool $preservePunctuationOnly = true
     ) {
-        $punctuation = $punctuation ?? "[\\t\\p{P}=´`” ̈]+";
+        $punctuation ??= "[\\t\\p{P}=´`” ̈]+";
         // Use preg_replace for multibyte support
         $result = preg_replace(
             '/' . $punctuation . '/u',
@@ -611,7 +616,8 @@ class MetadataUtils
             } else {
                 $lastWord = substr($str, 0, -1);
             }
-            if (!is_numeric($lastWord)
+            if (
+                !is_numeric($lastWord)
                 && !isset($this->abbreviations[mb_strtolower($lastWord, 'UTF-8')])
             ) {
                 $str = substr($str, 0, -1);
@@ -623,8 +629,9 @@ class MetadataUtils
         // Remove trailing parenthesis and square backets if they don't have
         // counterparts
         $last = substr($str, -1);
-        if (($last == ')' && strpos($str, '(') === false)
-            || ($last == ']' && strpos($str, '[') === false)
+        if (
+            ($last == ')' && !str_contains($str, '('))
+            || ($last == ']' && !str_contains($str, '['))
         ) {
             $str = substr($str, 0, -1);
         }
@@ -651,7 +658,7 @@ class MetadataUtils
         ?string $punctuation = null,
         bool $preservePunctuationOnly = true
     ) {
-        $punctuation = $punctuation ?? " \t\\#*!¡?/:;.,=(['\"´`” ̈";
+        $punctuation ??= " \t\\#*!¡?/:;.,=(['\"´`” ̈";
         // Use preg_replace for multibyte support
         $result = preg_replace(
             '/^[' . preg_quote($punctuation, '/') . ']*/u',
@@ -768,7 +775,8 @@ class MetadataUtils
         if (!$found) {
             return false;
         }
-        if ($parts[2] < 1 || $parts[2] > 12
+        if (
+            $parts[2] < 1 || $parts[2] > 12
             || $parts[3] < 1 || $parts[3] > 31
         ) {
             return false;
@@ -797,7 +805,8 @@ class MetadataUtils
         if (!$found) {
             return false;
         }
-        if ($parts[2] < 1 || $parts[2] > 12
+        if (
+            $parts[2] < 1 || $parts[2] > 12
             || $parts[3] < 1 || $parts[3] > 31
             || $parts[4] < 0 || $parts[4] > 23
             || $parts[5] < 0 || $parts[5] > 59
@@ -964,7 +973,8 @@ class MetadataUtils
             $bracketLevel -= substr_count($word, ']');
             if ($parenLevel == 0 && $bracketLevel == 0) {
                 // Try to avoid splitting at short words or the very beginning
-                if (substr($word, -1) == '.' && strlen($word) > 2
+                if (
+                    substr($word, -1) == '.' && strlen($word) > 2
                     && ($i > 1 || strlen($word) > 4)
                 ) {
                     // Verify that the word is strippable (not abbreviation etc.)
@@ -982,7 +992,8 @@ class MetadataUtils
                     // 3.) Next word has to start with a capital or digit
                     // 4.) Not something like 12-p.
                     // 5.) Not initials like A.N.
-                    if ($nextFirst
+                    if (
+                        $nextFirst
                         && ($leadStripped != $stripped
                         || preg_match('/^\d{4}\.$/', $word))
                         && (is_numeric($nextFirst) || !ctype_lower($nextFirst))
@@ -1013,7 +1024,8 @@ class MetadataUtils
         if (isset($record['host_record_id'])) {
             if ($settings['componentParts'] == 'merge_all') {
                 return true;
-            } elseif ($settings['componentParts'] == 'merge_non_articles'
+            } elseif (
+                $settings['componentParts'] == 'merge_non_articles'
                 || $settings['componentParts'] == 'merge_non_earticles'
             ) {
                 $format = $metadataRecord->getFormat();

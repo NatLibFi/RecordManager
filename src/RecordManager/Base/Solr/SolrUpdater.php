@@ -1,8 +1,9 @@
 <?php
+
 /**
  * SolrUpdater Class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2012-2023.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Solr;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
@@ -39,12 +41,6 @@ use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\PerformanceCounter;
 use RecordManager\Base\Utils\WorkerPoolManager;
-
-if (function_exists('pcntl_async_signals')) {
-    pcntl_async_signals(true);
-} else {
-    declare(ticks = 10);
-}
 
 /**
  * SolrUpdater Class
@@ -351,7 +347,7 @@ class SolrUpdater
      */
     protected $scoredFields = [
         'title', 'author', 'author2', 'author_corporate', 'topic', 'contents',
-        'series', 'genre', 'era', 'allfields', 'publisher'
+        'series', 'genre', 'era', 'allfields', 'publisher',
     ];
 
     /**
@@ -360,7 +356,7 @@ class SolrUpdater
      * @var array
      */
     protected $buildingFields = [
-        'building'
+        'building',
     ];
 
     /**
@@ -919,7 +915,8 @@ class SolrUpdater
                 // Track earliest encountered timestamp:
                 if (isset($record['updated'])) {
                     $recordTS = $this->db->getUnixTime($record['updated']);
-                    if (null === $earliestRecordTimestamp
+                    if (
+                        null === $earliestRecordTimestamp
                         || $recordTS < $earliestRecordTimestamp
                     ) {
                         $earliestRecordTimestamp = $recordTS;
@@ -928,7 +925,8 @@ class SolrUpdater
                 // Add deduplicated records to their own processing pool:
                 if (isset($record['dedup_id'])) {
                     $id = (string)$record['dedup_id'];
-                    if ($prevId !== $id
+                    if (
+                        $prevId !== $id
                         && $this->db->addIdToTrackingCollection($trackingName, $id)
                     ) {
                         $this->workerPoolManager->addRequest(
@@ -1013,7 +1011,7 @@ class SolrUpdater
                     [],
                     function ($record) use ($handler, &$count) {
                         $record = [
-                            'dedup_id' => (string)$record['_id']
+                            'dedup_id' => (string)$record['_id'],
                         ];
                         $result = $handler($record);
 
@@ -1063,7 +1061,9 @@ class SolrUpdater
                 $this->setLastUpdateDate($lastUpdateKey, $lastIndexingDate);
             }
 
-            if (!$noCommit && !$this->dumpPrefix
+            if (
+                !$noCommit
+                && !$this->dumpPrefix
                 && ($this->deletedRecords > 0 || $this->updatedRecords > 0)
             ) {
                 $this->log->logInfo('updateRecords', 'Final commit...');
@@ -1119,7 +1119,8 @@ class SolrUpdater
      */
     protected function handleRecords(bool $block, bool $noCommit): void
     {
-        while ($this->workerPoolManager->checkForResults('record')
+        while (
+            $this->workerPoolManager->checkForResults('record')
             || $this->workerPoolManager->requestsPending('record')
         ) {
             while ($this->workerPoolManager->checkForResults('record')) {
@@ -1142,7 +1143,8 @@ class SolrUpdater
         }
 
         // Check for results in the deduplicated record pool:
-        while ($this->workerPoolManager->checkForResults('dedup')
+        while (
+            $this->workerPoolManager->checkForResults('dedup')
             || $this->workerPoolManager->requestsPending('dedup')
         ) {
             while ($this->workerPoolManager->checkForResults('dedup')) {
@@ -1191,7 +1193,7 @@ class SolrUpdater
         $result = [
             'deleted' => [],
             'records' => [],
-            'mergedComponents' => 0
+            'mergedComponents' => 0,
         ];
         $dedupRecord = $this->db->getDedup($dedupId);
         if (empty($dedupRecord)) {
@@ -1222,7 +1224,8 @@ class SolrUpdater
                 if (in_array($record['source_id'], $this->nonIndexedSources)) {
                     return true;
                 }
-                if ($record['deleted'] || ($record['suppressed'] ?? false)
+                if (
+                    $record['deleted'] || ($record['suppressed'] ?? false)
                     || ($sourceId && $delete && $record['source_id'] == $sourceId)
                 ) {
                     $result['deleted'][] = $record['_id'];
@@ -1292,7 +1295,8 @@ class SolrUpdater
                 if ($fieldkey == 'author=author2') {
                     $fieldkey = 'author2';
                 }
-                if (substr($fieldkey, -3, 3) == '_mv'
+                if (
+                    str_ends_with($fieldkey, '_mv')
                     || isset($this->mergedFields[$fieldkey])
                 ) {
                     // For hierarchical fields we need to store all combinations
@@ -1354,7 +1358,7 @@ class SolrUpdater
         $result = [
             'deleted' => [],
             'records' => [],
-            'mergedComponents' => 0
+            'mergedComponents' => 0,
         ];
 
         $recordId = (string)$record['_id'];
@@ -1475,7 +1479,7 @@ class SolrUpdater
                             'source_id' => $source,
                             'institution' => $settings['institution'],
                             'format' => $settings['format'],
-                            'id_prefix' => $settings['idPrefix']
+                            'id_prefix' => $settings['idPrefix'],
                         ];
                         $data = $settings['solrTransformationXSLT']
                             ->transformToSolrArray(
@@ -1675,7 +1679,7 @@ class SolrUpdater
             $this->db->saveState(
                 [
                     '_id' => $stateKey,
-                    'value' => $timestamp
+                    'value' => $timestamp,
                 ]
             );
         }
@@ -1766,9 +1770,7 @@ class SolrUpdater
             }
 
             $this->settings[$source]['extraFields'] = [];
-            foreach ($settings['extraFields'] ?? $settings['extrafields'] ?? []
-                as $extraField
-            ) {
+            foreach ($settings['extraFields'] ?? $settings['extrafields'] ?? [] as $extraField) {
                 [$field, $value] = explode(':', $extraField, 2);
                 $this->settings[$source]['extraFields'][] = [$field => $value];
             }
@@ -1780,7 +1782,8 @@ class SolrUpdater
             foreach ($settings['fieldRules'] ?? [] as $ruleStr) {
                 $ruleParts = explode(' ', $ruleStr);
                 $rule['op'] = $this->ruleMap[$ruleParts[0]] ?? null;
-                if (null === $rule['op']
+                if (
+                    null === $rule['op']
                     || (self::RULE_DELETE === $rule['op'] && empty($ruleParts[1]))
                     || (self::RULE_DELETE !== $rule['op'] && empty($ruleParts[2]))
                 ) {
@@ -1868,15 +1871,14 @@ class SolrUpdater
             } else {
                 $params = [
                     'host_record_id' => [
-                        '$in' => array_values((array)$record['linking_id'])
+                        '$in' => array_values((array)$record['linking_id']),
                     ],
                     'deleted' => false,
                     'suppressed' => ['$in' => [null, false]],
                 ];
                 if (!empty($settings['componentPartSourceId'])) {
                     $sourceParams = [];
-                    foreach ($settings['componentPartSourceId'] as $componentSource
-                    ) {
+                    foreach ($settings['componentPartSourceId'] as $componentSource) {
                         $sourceParams[] = ['source_id' => $componentSource];
                     }
                     $params['$or'] = $sourceParams;
@@ -1892,7 +1894,8 @@ class SolrUpdater
                     $merge = true;
                 } elseif (!in_array($format, $this->allJournalFormats)) {
                     $merge = true;
-                } elseif (in_array($format, $this->journalFormats)
+                } elseif (
+                    in_array($format, $this->journalFormats)
                     && $settings['componentParts'] == 'merge_non_earticles'
                 ) {
                     $merge = true;
@@ -1924,7 +1927,7 @@ class SolrUpdater
                 'source_id' => $source,
                 'institution' => $settings['institution'],
                 'format' => $settings['format'],
-                'id_prefix' => $settings['idPrefix']
+                'id_prefix' => $settings['idPrefix'],
             ];
             $data = $settings['solrTransformationXSLT']
                 ->transformToSolrArray($metadataRecord->toXML(), $params);
@@ -1948,8 +1951,8 @@ class SolrUpdater
                     [
                         'source_id' => $record['source_id'],
                         'linking_id' => [
-                            '$in' => array_values((array)$record['host_record_id'])
-                        ]
+                            '$in' => array_values((array)$record['host_record_id']),
+                        ],
                     ],
                     ['limit' => 10000] // An arbitrary limit, but we need something
                 );
@@ -1976,7 +1979,8 @@ class SolrUpdater
                     if ($this->hierarchyParentTitleField) {
                         $data[$this->hierarchyParentTitleField][] = $hostTitle;
                     }
-                    if ($this->containerTitleField
+                    if (
+                        $this->containerTitleField
                         && empty($data[$this->containerTitleField])
                     ) {
                         $data[$this->containerTitleField] = $hostTitle;
@@ -2035,7 +2039,7 @@ class SolrUpdater
             $hierarchyFields = [
                 $this->hierarchyTopIdField,
                 $this->hierarchyParentIdField,
-                $this->isHierarchyIdField
+                $this->isHierarchyIdField,
             ];
             foreach ($hierarchyFields as $field) {
                 if (!$field) {
@@ -2081,7 +2085,7 @@ class SolrUpdater
         if (!empty($this->warningsField)) {
             $warnings = [
                 ...$warnings,
-                ...(array)$metadataRecord->getProcessingWarnings()
+                ...(array)$metadataRecord->getProcessingWarnings(),
             ];
             if ($warnings) {
                 $data[$this->warningsField] = $warnings;
@@ -2103,7 +2107,8 @@ class SolrUpdater
      */
     protected function addWorkKeys(array &$data, AbstractRecord $metadataRecord)
     {
-        if (!$this->workKeysField
+        if (
+            !$this->workKeysField
             || !($workIdSets = $metadataRecord->getWorkIdentificationData())
         ) {
             return;
@@ -2202,7 +2207,8 @@ class SolrUpdater
         // Used by default if building is set as a hierarchical facet.
         // This version adds institution to building before mapping files are
         // processed.
-        if (($this->buildingHierarchy || isset($settings['institutionInBuilding']))
+        if (
+            ($this->buildingHierarchy || isset($settings['institutionInBuilding']))
             && !empty($settings['addInstitutionToBuildingBeforeMapping'])
         ) {
             $this->addInstitutionToBuilding($data, $source, $settings);
@@ -2220,7 +2226,8 @@ class SolrUpdater
         // Used by default if building is set as a hierarchical facet.
         // This version adds institution to building after mapping files are
         // processed.
-        if (($this->buildingHierarchy || isset($settings['institutionInBuilding']))
+        if (
+            ($this->buildingHierarchy || isset($settings['institutionInBuilding']))
             && empty($settings['addInstitutionToBuildingBeforeMapping'])
         ) {
             $this->addInstitutionToBuilding($data, $source, $settings);
@@ -2264,13 +2271,14 @@ class SolrUpdater
             // phpcs:ignore
             /** @psalm-var string|array<int, string> $field */
             foreach ($data as $key => $field) {
-                if (in_array(
-                    $key,
-                    [
-                        'fullrecord', 'thumbnail', 'id', 'recordtype',
-                        'record_format', 'ctrlnum'
-                    ]
-                )
+                if (
+                    in_array(
+                        $key,
+                        [
+                            'fullrecord', 'thumbnail', 'id', 'recordtype',
+                            'record_format', 'ctrlnum',
+                        ]
+                    )
                 ) {
                     continue;
                 }
@@ -2295,9 +2303,7 @@ class SolrUpdater
             $data['fullrecord'] = $metadataRecord->toXML();
         }
 
-        if (isset($this->config['Solr']['format_in_allfields'])
-            && $this->config['Solr']['format_in_allfields']
-        ) {
+        if ($this->config['Solr']['format_in_allfields'] ?? false) {
             if (!is_array($data['format'])) {
                 $data['format'] = [$data['format']];
             }
@@ -2381,11 +2387,12 @@ class SolrUpdater
                 } else {
                     $data[$dst] = [
                         ...(array)$data[$dst],
-                        ...(array)$fieldValue
+                        ...(array)$fieldValue,
                     ];
                 }
             }
-            if (in_array($rule['op'], [self::RULE_DELETE, self::RULE_MOVE])
+            if (
+                in_array($rule['op'], [self::RULE_DELETE, self::RULE_MOVE])
                 && isset($data[$src])
             ) {
                 unset($data[$src]);
@@ -2406,23 +2413,23 @@ class SolrUpdater
     {
         $useInstitution = $settings['institutionInBuilding'] ?? 'institution';
         switch ($useInstitution) {
-        case 'driver':
-            $institutionCode = $data['institution'];
-            break;
-        case 'none':
-            $institutionCode = '';
-            break;
-        case 'source':
-            $institutionCode = $source;
-            break;
-        case 'institution/source':
-            $institutionCode = isset($settings['institution'])
-                ? $settings['institution'] . '/' . $source
-                : '/' . $source;
-            break;
-        default:
-            $institutionCode = $settings['institution'] ?? '';
-            break;
+            case 'driver':
+                $institutionCode = $data['institution'];
+                break;
+            case 'none':
+                $institutionCode = '';
+                break;
+            case 'source':
+                $institutionCode = $source;
+                break;
+            case 'institution/source':
+                $institutionCode = isset($settings['institution'])
+                    ? $settings['institution'] . '/' . $source
+                    : '/' . $source;
+                break;
+            default:
+                $institutionCode = $settings['institution'] ?? '';
+                break;
         }
         if ($institutionCode) {
             foreach ($this->buildingFields as $field) {
@@ -2517,7 +2524,9 @@ class SolrUpdater
             foreach ($add as $key => $value) {
                 $authorSpecial = $key == 'author'
                     && isset($this->mergedFields['author=author2']);
-                if (substr($key, -3, 3) == '_mv' || isset($this->mergedFields[$key])
+                if (
+                    str_ends_with($key, '_mv')
+                    || isset($this->mergedFields[$key])
                     || ($authorSpecial && isset($merged['author'])
                     && $merged['author'] !== $value)
                 ) {
@@ -2534,7 +2543,8 @@ class SolrUpdater
                     } else {
                         $merged[$key][] = (string)$value;
                     }
-                } elseif (isset($this->singleFields[$key])
+                } elseif (
+                    isset($this->singleFields[$key])
                     || ($authorSpecial && !isset($merged[$key]))
                 ) {
                     if (empty($merged[$key])) {
@@ -2543,7 +2553,7 @@ class SolrUpdater
                 } elseif ($key == 'allfields') {
                     $merged['allfields'] = [
                         ...(array)($merged['allfields'] ?? []),
-                        ...(array)$add['allfields']
+                        ...(array)$add['allfields'],
                     ];
                 }
             }
@@ -2574,7 +2584,7 @@ class SolrUpdater
                     array_unique(
                         [
                             ...(array)($member['solr'][$copyField] ?? []),
-                            ...(array)$merged[$copyField]
+                            ...(array)$merged[$copyField],
                         ]
                     )
                 );
@@ -2602,8 +2612,8 @@ class SolrUpdater
                 $child[$copyField] = (array)$parent[$copyField];
             } else {
                 $child[$copyField] = [
-                    ...(array)($child[$copyField] ?? []),
-                    ...(array)$parent[$copyField]
+                    ...(array)$child[$copyField],
+                    ...(array)$parent[$copyField],
                 ];
             }
         }
@@ -2631,7 +2641,8 @@ class SolrUpdater
         // Content-Length to be set in certain cases. Set follow_redirects to true to
         // invoke the PHP workaround in the curl adapter.
         $request->setConfig('follow_redirects', true);
-        if (isset($this->config['Solr']['username'])
+        if (
+            isset($this->config['Solr']['username'])
             && isset($this->config['Solr']['password'])
         ) {
             $request->setAuth(
@@ -2882,7 +2893,8 @@ class SolrUpdater
         }
         $this->buffer .= $jsonData;
         $this->bufferLen += strlen($jsonData);
-        if (++$this->buffered >= $this->maxUpdateRecords
+        if (
+            ++$this->buffered >= $this->maxUpdateRecords
             || $this->bufferLen > $this->maxUpdateSize
         ) {
             $request = "[\n{$this->buffer}\n]";
@@ -2901,7 +2913,9 @@ class SolrUpdater
             $result = true;
         }
         $sinceLastCommit = $this->updatedRecords - $this->lastCommitRecords;
-        if (!$noCommit && !$this->dumpPrefix
+        if (
+            !$noCommit
+            && !$this->dumpPrefix
             && $sinceLastCommit >= $this->commitInterval
         ) {
             $this->lastCommitRecords = $this->updatedRecords;
@@ -2934,7 +2948,8 @@ class SolrUpdater
         $this->bufferedDeletions[] = '"delete":{"id":' . json_encode($id) . '}';
         if (count($this->bufferedDeletions) >= 1000) {
             $request = "{" . implode(',', $this->bufferedDeletions) . "}";
-            if (null !== $this->workerPoolManager
+            if (
+                null !== $this->workerPoolManager
                 && $this->workerPoolManager->hasWorkerPool('solr')
             ) {
                 $this->workerPoolManager->addRequest('solr', $request);
@@ -2997,7 +3012,7 @@ class SolrUpdater
         $enrichments = array_unique(
             [
                 ...$globalEnrichments,
-                ...$dsEnrichments
+                ...$dsEnrichments,
             ]
         );
         foreach ($enrichments as $enrichmentSettings) {
@@ -3108,11 +3123,11 @@ class SolrUpdater
                 if (preg_match('/^-\/(.+)\/$/', $source, $matches)) {
                     $regex = new \RecordManager\Base\Database\Regex($matches[1]);
                     $sourceExclude[] = [
-                        'source_id' => $regex
+                        'source_id' => $regex,
                     ];
                 } else {
                     $sourceExclude[] = [
-                        'source_id' => substr($source, 1)
+                        'source_id' => substr($source, 1),
                     ];
                 }
             } else {
@@ -3152,7 +3167,7 @@ class SolrUpdater
                 }
 
                 if ($left && $right) {
-                    if (strpos($field, $key) !== false) {
+                    if (str_contains($field, $key)) {
                         $foundLimit = $limit;
                         break;
                     }

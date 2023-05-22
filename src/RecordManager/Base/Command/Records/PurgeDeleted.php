@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Purge deleted records
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2011-2021.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command\Records;
 
 use RecordManager\Base\Command\AbstractBase;
@@ -86,7 +88,7 @@ class PurgeDeleted extends AbstractBase
                     . ' longer has any knowledge of them. They cannot be included in'
                     . ' e.g. Solr updates or OAI-PMH responses.</comment>',
                     '<comment>This prompt can be suppressed with the'
-                    . ' --no-interaction option.</comment>'
+                    . ' --no-interaction option.</comment>',
                 ]
             );
             $questionHelper = $this->getHelper('question');

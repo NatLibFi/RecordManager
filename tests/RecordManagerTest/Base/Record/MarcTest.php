@@ -1,8 +1,9 @@
 <?php
+
 /**
  * MARC Record Driver Test Class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2020-2023.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManagerTest\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
@@ -39,7 +41,7 @@ use RecordManager\Base\Record\Marc;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class MarcTest extends RecordTest
+class MarcTest extends RecordTestBase
 {
     /**
      * Test MARC Record handling
@@ -238,7 +240,7 @@ class MarcTest extends RecordTest
                     ],
                 ],
                 'titlesAltScript' => [],
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
@@ -389,7 +391,7 @@ class MarcTest extends RecordTest
                     ],
                 ],
                 'titlesAltScript' => [],
-            ]
+            ],
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
@@ -405,9 +407,9 @@ class MarcTest extends RecordTest
         $dsConfig = [
             '__unit_test_no_source__' => [
                 'driverParams' => [
-                    'geoCenterField=center_coords'
-                ]
-            ]
+                    'geoCenterField=center_coords',
+                ],
+            ],
         ];
         $record = $this->createMarcRecord(Marc::class, 'marc_geo.xml', $dsConfig);
         $fields = $record->toSolrArray();
@@ -490,7 +492,7 @@ class MarcTest extends RecordTest
             'title_full' => 'Suomen tiekartta = Vägkarta över Finland. 1.',
             'title_alt' => [
                 'Vägkarta över Finland',
-                'Suomen tiekartta 1'
+                'Suomen tiekartta 1',
             ],
             'title_old' => [],
             'title_new' => [],
@@ -644,7 +646,7 @@ class MarcTest extends RecordTest
                 . ' structures du quotidien : le possible et l\'impossible / Fernand'
                 . ' Braudel',
             'title_alt' => [
-                'Les structures du quotidien : le possible et l\'impossible'
+                'Les structures du quotidien : le possible et l\'impossible',
             ],
             'title_old' => [],
             'title_new' => [],
@@ -735,7 +737,7 @@ class MarcTest extends RecordTest
             'dewey-raw' => '330.903',
             'oclc_num' => [
                 '123456',
-                '234567'
+                '234567',
             ],
         ];
 
@@ -754,37 +756,37 @@ class MarcTest extends RecordTest
             [
                 [
                     'source_id' => '__unit_test_no_source__',
-                    'linking_id' => '(FI-NL)961827'
+                    'linking_id' => '(FI-NL)961827',
                 ],
                 [
-                    'projection' => ['_id' => 1]
+                    'projection' => ['_id' => 1],
                 ],
                 [
-                    '_id' => '__unit_test_no_source__.4132317'
-                ]
+                    '_id' => '__unit_test_no_source__.4132317',
+                ],
             ],
             [
                 [
                     'source_id' => '__unit_test_no_source__',
-                    'linking_id' => '961827'
+                    'linking_id' => '961827',
                 ],
                 [
-                    'projection' => ['_id' => 1]
+                    'projection' => ['_id' => 1],
                 ],
                 [
-                    '_id' => '__unit_test_no_source__.4112121'
-                ]
+                    '_id' => '__unit_test_no_source__.4112121',
+                ],
             ],
             [
                 [
                     'source_id' => '__unit_test_no_source__',
-                    'linking_id' => '(FI-NL)xyzzy'
+                    'linking_id' => '(FI-NL)xyzzy',
                 ],
                 [
-                    'projection' => ['_id' => 1]
+                    'projection' => ['_id' => 1],
                 ],
-                null
-            ]
+                null,
+            ],
         ];
         $db->expects($this->exactly(5))
             ->method('findRecord')
@@ -794,7 +796,7 @@ class MarcTest extends RecordTest
         $record->toSolrArray($db);
         $marc = new \VuFind\Marc\MarcReader($record->serialize());
         $marc776 = $marc->getFields('776');
-        $this->assertEquals(2, count($marc776));
+        $this->assertCount(2, $marc776);
         $w = $marc->getSubfield($marc776[0], 'w');
         $this->assertEquals('__unit_test_no_source__.4112121', $w);
         $w = $marc->getSubfield($marc776[1], 'w');
@@ -805,14 +807,14 @@ class MarcTest extends RecordTest
             'marc_links.xml',
             [
                 '__unit_test_no_source__' => [
-                    'driverParams' => ['003InLinkingID=true']
-                ]
+                    'driverParams' => ['003InLinkingID=true'],
+                ],
             ]
         );
         $record->toSolrArray($db);
         $marc = new \VuFind\Marc\MarcReader($record->serialize());
         $marc776 = $marc->getFields('776');
-        $this->assertEquals(2, count($marc776));
+        $this->assertCount(2, $marc776);
         $w = $marc->getSubfield($marc776[0], 'w');
         $this->assertEquals('__unit_test_no_source__.4132317', $w);
         $w = $marc->getSubfield($marc776[1], 'w');
@@ -858,7 +860,7 @@ class MarcTest extends RecordTest
                         'value' => '漢字源 : 上級漢和辞典  /',
                     ],
                 ],
-            ]
+            ],
         ];
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
 
@@ -922,7 +924,7 @@ class MarcTest extends RecordTest
                     ],
                 ],
                 'titlesAltScript' => [],
-            ]
+            ],
         ];
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
     }

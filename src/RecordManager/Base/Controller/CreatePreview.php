@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Create Preview Record
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2011-2021.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Database\DatabaseInterface;
@@ -163,7 +165,7 @@ class CreatePreview extends AbstractBase
             'oai_id' => '_preview',
             '_id' => '_preview',
             'created' => $timestamp,
-            'date' => $timestamp
+            'date' => $timestamp,
         ];
 
         // Normalize the record
@@ -172,7 +174,7 @@ class CreatePreview extends AbstractBase
                 'source_id' => $source,
                 'institution' => $settings['institution'],
                 'format' => $settings['format'],
-                'id_prefix' => $settings['idPrefix'] ?? ''
+                'id_prefix' => $settings['idPrefix'] ?? '',
             ];
             $normalizationXSLT = new XslTransformation(
                 RECMAN_BASE_PATH . '/transformations',
@@ -221,7 +223,7 @@ class CreatePreview extends AbstractBase
             $result[] = [
                 'id' => $id,
                 'format' => $config['format'] ?? '',
-                'institution' => $config['institution']
+                'institution' => $config['institution'],
             ];
         }
 

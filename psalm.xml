@@ -10,7 +10,7 @@
     autoloader="tests/psalm-autoload.php"
     findUnusedBaselineEntry="true"
     findUnusedCode="false"
-    phpVersion="7.4"
+    phpVersion="8.0"
 >
     <projectFiles>
         <file name="*.php" />

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Trait for handling full text
  *
@@ -6,7 +7,7 @@
  * - HTTP\ClientManager as $this->httpClientManager
  * - Database as $this->db
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2020-2022.
  *
@@ -29,6 +30,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Exception\HttpRequestException;
@@ -137,7 +139,7 @@ trait FullTextTrait
         $maxTries = $this->config['FullTextEnrichment']['max_tries'] ?? 90;
         $retryWait = $this->config['FullTextEnrichment']['retry_wait'] ?? 5;
         $httpOptions = [
-            'follow_redirects' => true
+            'follow_redirects' => true,
         ];
 
         if ($maxCacheAge && null !== $this->db) {
@@ -145,8 +147,8 @@ trait FullTextTrait
                 [
                     '_id' => $url,
                     'timestamp' => [
-                        '$gt' => $this->db->getTimestamp(time() - $maxCacheAge)
-                    ]
+                        '$gt' => $this->db->getTimestamp(time() - $maxCacheAge),
+                    ],
                 ]
             );
             if (null !== $cached) {
@@ -262,7 +264,7 @@ trait FullTextTrait
                     'timestamp' => $this->db->getTimestamp(),
                     'url' => $url,
                     'headers' => [],
-                    'data' => $body
+                    'data' => $body,
                 ]
             );
         }

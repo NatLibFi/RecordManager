@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Forward authority Record Class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2019.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
@@ -201,7 +203,8 @@ class ForwardAuthority extends AbstractRecord
                     $dateType = (int)$d->AgentDateEventType;
                     $date = (string)$d->DateText;
                     $place = (string)$d->LocationName;
-                    if (($type === 'birth' && $dateType === 51)
+                    if (
+                        ($type === 'birth' && $dateType === 51)
                         || ($type == 'death' && $dateType === 52)
                     ) {
                         return ['date' => $date, 'place' => $place];

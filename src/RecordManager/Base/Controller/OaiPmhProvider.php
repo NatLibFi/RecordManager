@@ -1,8 +1,9 @@
 <?php
+
 /**
  * OAI-PMH Provider
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2012-2021.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Controller;
 
 use RecordManager\Base\Database\DatabaseInterface;
@@ -143,25 +145,25 @@ class OaiPmhProvider extends AbstractBase
             return;
         }
         switch ($this->verb) {
-        case 'GetRecord':
-            $this->getRecord();
-            break;
-        case 'Identify':
-            $this->identify();
-            break;
-        case 'ListIdentifiers':
-        case 'ListRecords':
-            $this->listRecords($this->verb);
-            break;
-        case 'ListMetadataFormats':
-            $this->listMetadataFormats();
-            break;
-        case 'ListSets':
-            $this->listSets();
-            break;
-        default:
-            $this->error('badVerb', 'Illegal OAI Verb');
-            break;
+            case 'GetRecord':
+                $this->getRecord();
+                break;
+            case 'Identify':
+                $this->identify();
+                break;
+            case 'ListIdentifiers':
+            case 'ListRecords':
+                $this->listRecords($this->verb);
+                break;
+            case 'ListMetadataFormats':
+                $this->listMetadataFormats();
+                break;
+            case 'ListSets':
+                $this->listSets();
+                break;
+            default:
+                $this->error('badVerb', 'Illegal OAI Verb');
+                break;
         }
         $this->printSuffix();
     }
@@ -177,7 +179,8 @@ class OaiPmhProvider extends AbstractBase
         $prefix = $this->getParam('metadataPrefix');
 
         $record = $this->db->findRecord(['oai_id' => $id]);
-        if (!$record
+        if (
+            !$record
             && strncmp($id, $this->idPrefix, strlen($this->idPrefix)) === 0
         ) {
             $id = substr($id, strlen($this->idPrefix));
@@ -193,11 +196,11 @@ class OaiPmhProvider extends AbstractBase
         }
         $xml = $this->createRecordXML($record, $prefix, true);
         echo <<<EOT
-  <GetRecord>
-$xml
-  </GetRecord>
+              <GetRecord>
+            $xml
+              </GetRecord>
 
-EOT;
+            EOT;
     }
 
     /**
@@ -213,17 +216,17 @@ EOT;
         $earliestDate = $this->toOaiDate($this->getEarliestDateStamp());
 
         echo <<<EOT
-<Identify>
-  <repositoryName>$name</repositoryName>
-  <baseURL>$base</baseURL>
-  <protocolVersion>2.0</protocolVersion>
-  <adminEmail>$admin</adminEmail>
-  <earliestDatestamp>$earliestDate</earliestDatestamp>
-  <deletedRecord>persistent</deletedRecord>
-  <granularity>YYYY-MM-DDThh:mm:ssZ</granularity>
-</Identify>
+            <Identify>
+              <repositoryName>$name</repositoryName>
+              <baseURL>$base</baseURL>
+              <protocolVersion>2.0</protocolVersion>
+              <adminEmail>$admin</adminEmail>
+              <earliestDatestamp>$earliestDate</earliestDatestamp>
+              <deletedRecord>persistent</deletedRecord>
+              <granularity>YYYY-MM-DDThh:mm:ssZ</granularity>
+            </Identify>
 
-EOT;
+            EOT;
     }
 
     /**
@@ -277,19 +280,19 @@ EOT;
                 ),
                 '$lte' => $this->db->getTimestamp(
                     $this->fromOaiDate($until, '23:59:59')
-                )
+                ),
             ];
         } elseif ($from) {
             $queryParams['updated'] = [
                 '$gte' => $this->db->getTimestamp(
                     $this->fromOaiDate($from, '00:00:00')
-                )
+                ),
             ];
         } elseif ($until) {
             $queryParams['updated'] = [
                 '$lte' => $this->db->getTimestamp(
                     $this->fromOaiDate($until, '23:59:59')
-                )
+                ),
             ];
         }
 
@@ -303,9 +306,9 @@ EOT;
         $sendListElement = function () use (&$listElementSent, $verb) {
             if (!$listElementSent) {
                 echo <<<EOT
-  <$verb>
+                      <$verb>
 
-EOT;
+                    EOT;
                 $listElementSent = true;
             }
         };
@@ -332,9 +335,9 @@ EOT;
                     );
                     $sendListElement();
                     echo <<<EOT
-    <resumptionToken cursor="$position">$token</resumptionToken>
+                            <resumptionToken cursor="$position">$token</resumptionToken>
 
-EOT;
+                        EOT;
                     return false;
                 }
                 $xml = $this->createRecordXML(
@@ -358,9 +361,9 @@ EOT;
 
         if ($listElementSent) {
             echo <<<EOT
-  </$verb>
+                  </$verb>
 
-EOT;
+                EOT;
         }
     }
 
@@ -405,9 +408,9 @@ EOT;
         }
 
         echo <<<EOT
-  <ListMetadataFormats>
+              <ListMetadataFormats>
 
-EOT;
+            EOT;
 
         // Map to OAI-PMH formats
         foreach (array_keys($formats) as $key) {
@@ -418,21 +421,21 @@ EOT;
                     $namespace = $settings['namespace'];
 
                     echo <<<EOT
-    <metadataFormat>
-      <metadataPrefix>$prefix</metadataPrefix>
-      <schema>$schema</schema>
-      <metadataNamespace>$namespace</metadataNamespace>
-    </metadataFormat>
+                            <metadataFormat>
+                              <metadataPrefix>$prefix</metadataPrefix>
+                              <schema>$schema</schema>
+                              <metadataNamespace>$namespace</metadataNamespace>
+                            </metadataFormat>
 
-EOT;
+                        EOT;
                     break;
                 }
             }
         }
         echo <<<EOT
-  </ListMetadataFormats>
+              </ListMetadataFormats>
 
-EOT;
+            EOT;
     }
 
     /**
@@ -443,25 +446,25 @@ EOT;
     protected function listSets()
     {
         echo <<<EOT
-  <ListSets>
+              <ListSets>
 
-EOT;
+            EOT;
 
         foreach ($this->sets as $id => $set) {
             $id = $this->escape($id);
             $name = $this->escape($set['name']);
 
             echo <<<EOT
-    <set>
-      <setSpec>$id</setSpec>
-      <setName>$name</setName>
-    </set>
-EOT;
+                    <set>
+                      <setSpec>$id</setSpec>
+                      <setName>$name</setName>
+                    </set>
+                EOT;
         }
 
         echo <<<EOT
-  </ListSets>
-EOT;
+              </ListSets>
+            EOT;
     }
 
     /**
@@ -501,15 +504,15 @@ EOT;
         }
 
         echo <<<EOT
-<?xml version="1.0" encoding="UTF-8"?>
-<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/
-         http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
-  <responseDate>$date</responseDate>
-  <request$arguments>$base</request>
+            <?xml version="1.0" encoding="UTF-8"?>
+            <OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                     xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/
+                     http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd">
+              <responseDate>$date</responseDate>
+              <request$arguments>$base</request>
 
-EOT;
+            EOT;
     }
 
     /**
@@ -641,98 +644,104 @@ EOT;
         // Check for missing or unknown parameters
         $paramCount = count($paramArray) - 1;
         switch ($this->verb) {
-        case 'GetRecord':
-            if ($paramCount != 2 || !$this->getParam('identifier')
-                || !$this->getParam('metadataPrefix')
-            ) {
-                $this->error('badArgument', 'Missing or extraneous arguments');
-                return false;
-            }
-            break;
-        case 'Identify':
-            if ($paramCount != 0) {
-                $this->error('badArgument', 'Extraneous arguments');
-                return false;
-            }
-            break;
-        case 'ListIdentifiers':
-        case 'ListRecords':
-            if ($this->getParam('resumptionToken')) {
-                if ($paramCount != 1) {
-                    $this->error(
-                        'badArgument',
-                        'Extraneous arguments with resumptionToken'
-                    );
+            case 'GetRecord':
+                if (
+                    $paramCount != 2 || !$this->getParam('identifier')
+                    || !$this->getParam('metadataPrefix')
+                ) {
+                    $this->error('badArgument', 'Missing or extraneous arguments');
                     return false;
                 }
-            } else {
-                if (!($format = $this->getParam('metadataPrefix'))) {
-                    $this->error('badArgument', 'Missing argument "metadataPrefix"');
+                break;
+            case 'Identify':
+                if ($paramCount != 0) {
+                    $this->error('badArgument', 'Extraneous arguments');
                     return false;
                 }
-                foreach (array_keys($_GET) as $key) {
-                    $validVerb = in_array(
-                        $key,
-                        ['verb', 'from', 'until', 'set', 'metadataPrefix']
-                    );
-                    if (!$validVerb) {
-                        $this->error('badArgument', 'Illegal argument');
+                break;
+            case 'ListIdentifiers':
+            case 'ListRecords':
+                if ($this->getParam('resumptionToken')) {
+                    if ($paramCount != 1) {
+                        $this->error(
+                            'badArgument',
+                            'Extraneous arguments with resumptionToken'
+                        );
+                        return false;
+                    }
+                } else {
+                    if (!($format = $this->getParam('metadataPrefix'))) {
+                        $this->error('badArgument', 'Missing argument "metadataPrefix"');
+                        return false;
+                    }
+                    foreach (array_keys($_GET) as $key) {
+                        $validVerb = in_array(
+                            $key,
+                            ['verb', 'from', 'until', 'set', 'metadataPrefix']
+                        );
+                        if (!$validVerb) {
+                            $this->error('badArgument', 'Illegal argument');
+                            return false;
+                        }
+                    }
+                    // Check that the requested format is available at least from one
+                    // source
+                    $format = $this->formats[$format]['format'] ?? '';
+                    $formatValid = false;
+                    foreach ($this->dataSourceConfig as $sourceSettings) {
+                        if (
+                            ($sourceSettings['format'] ?? '') === $format
+                            || !empty($sourceSettings["transformation_to_$format"])
+                        ) {
+                            $formatValid = true;
+                            break;
+                        }
+                    }
+                    if (!$formatValid) {
+                        $this->error('cannotDisseminateFormat', '');
                         return false;
                     }
                 }
-                // Check that the requested format is available at least from one
-                // source
-                $format = $this->formats[$format]['format'] ?? '';
-                $formatValid = false;
-                foreach ($this->dataSourceConfig as $sourceSettings) {
-                    if (($sourceSettings['format'] ?? '') === $format
-                        || !empty($sourceSettings["transformation_to_$format"])
-                    ) {
-                        $formatValid = true;
-                        break;
-                    }
-                }
-                if (!$formatValid) {
-                    $this->error('cannotDisseminateFormat', '');
+                break;
+            case 'ListMetadataFormats':
+                if (
+                    $paramCount > 1
+                    || ($paramCount == 1 && !$this->getParam('identifier'))
+                ) {
+                    $this->error('badArgument', 'Invalid arguments');
                     return false;
                 }
-            }
-            break;
-        case 'ListMetadataFormats':
-            if ($paramCount > 1
-                || ($paramCount == 1 && !$this->getParam('identifier'))
-            ) {
-                $this->error('badArgument', 'Invalid arguments');
+                break;
+            case 'ListSets':
+                if (
+                    $paramCount > 1
+                    || ($paramCount == 1 && !$this->getParam('resumptionToken'))
+                ) {
+                    $this->error('badArgument', 'Invalid arguments');
+                    return false;
+                } elseif ($this->getParam('resumptionToken')) {
+                    $this->error('badResumptionToken', '');
+                    return false;
+                }
+                break;
+            default:
+                $this->error('badVerb', 'Invalid verb');
                 return false;
-            }
-            break;
-        case 'ListSets':
-            if ($paramCount > 1
-                || ($paramCount == 1 && !$this->getParam('resumptionToken'))
-            ) {
-                $this->error('badArgument', 'Invalid arguments');
-                return false;
-            } elseif ($this->getParam('resumptionToken')) {
-                $this->error('badResumptionToken', '');
-                return false;
-            }
-            break;
-        default:
-            $this->error('badVerb', 'Invalid verb');
-            return false;
         }
 
         // Check dates
         $fromType = $this->getOaiDateType($this->getParam('from'));
         $untilType = $this->getOaiDateType($this->getParam('until'));
 
-        if ($fromType == OaiPmhProvider::DT_INVALID
+        if (
+            $fromType == OaiPmhProvider::DT_INVALID
             || $untilType == OaiPmhProvider::DT_INVALID
         ) {
             $this->error('badArgument', 'Invalid date format');
             return false;
         }
-        if ($fromType != OaiPmhProvider::DT_EMPTY
+        if (
+            $fromType != OaiPmhProvider::DT_EMPTY
             && $untilType != OaiPmhProvider::DT_EMPTY && $fromType != $untilType
         ) {
             $this->error('badArgument', 'Incompatible date formats');
@@ -831,7 +840,7 @@ EOT;
                 $params = [
                     'source_id' => $source,
                     'institution' => $datasource['institution'],
-                    'format' => $record['format']
+                    'format' => $record['format'],
                 ];
                 $metadata = $this->transformations[$transformationKey]
                     ->transform($metadata, $params);
@@ -841,19 +850,19 @@ EOT;
                 $metadata = substr($metadata, $end + 1);
             }
             $metadata = <<<EOT
-      <metadata>
-        $metadata
-      </metadata>
-EOT;
+                      <metadata>
+                        $metadata
+                      </metadata>
+                EOT;
         }
 
         $setSpecs = '';
         foreach ($this->getRecordSets($record) as $id) {
             $id = $this->escape($id);
             $setSpecs .= <<<EOT
-        <setSpec>$id</setSpec>
+                        <setSpec>$id</setSpec>
 
-EOT;
+                EOT;
         }
 
         $id = $this->escape(
@@ -865,20 +874,20 @@ EOT;
         $status = $record['deleted'] ? ' status="deleted"' : '';
 
         $header = <<<EOT
-      <header$status>
-        <identifier>$id</identifier>
-        <datestamp>$date</datestamp>
-$setSpecs      </header>
-EOT;
+                  <header$status>
+                    <identifier>$id</identifier>
+                    <datestamp>$date</datestamp>
+            $setSpecs      </header>
+            EOT;
 
         if ($includeMetadata) {
             return <<<EOT
-    <record>
-$header
-$metadata
-    </record>
+                    <record>
+                $header
+                $metadata
+                    </record>
 
-EOT;
+                EOT;
         }
         return "$header\n";
     }

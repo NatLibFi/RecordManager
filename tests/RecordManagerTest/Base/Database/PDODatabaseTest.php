@@ -1,8 +1,9 @@
 <?php
+
 /**
  * PDO Database Test Class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2022.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManagerTest\Base\Database;
 
 use RecordManager\Base\Database\PDODatabase;
@@ -76,29 +78,29 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                 [],
                 [],
                 "select * from record",
-                []
-            ],
-            [
-                [
-                    '_id' => '1212'
-                ],
                 [],
-                "select * from record where _id=?",
-                [
-                    '1212'
-                ]
             ],
             [
                 [
                     '_id' => '1212',
-                    'deleted' => false
+                ],
+                [],
+                "select * from record where _id=?",
+                [
+                    '1212',
+                ],
+            ],
+            [
+                [
+                    '_id' => '1212',
+                    'deleted' => false,
                 ],
                 [],
                 "select * from record where _id=? AND deleted=?",
                 [
                     '1212',
-                    false
-                ]
+                    false,
+                ],
             ],
             [
                 [
@@ -111,25 +113,8 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                 [
                     true,
                     1234,
-                    'foo'
-                ]
-            ],
-            [
-                [
-                    'deleted' => true,
-                    'updated' => ['$lt' => 1234],
-                    'source_id' => 'foo',
+                    'foo',
                 ],
-                [
-                    'limit' => 1000
-                ],
-                "select * from record where deleted=? AND updated<? AND source_id=?"
-                . " limit 1000",
-                [
-                    true,
-                    1234,
-                    'foo'
-                ]
             ],
             [
                 [
@@ -139,15 +124,32 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                 ],
                 [
                     'limit' => 1000,
-                    'skip' => 1
+                ],
+                "select * from record where deleted=? AND updated<? AND source_id=?"
+                . " limit 1000",
+                [
+                    true,
+                    1234,
+                    'foo',
+                ],
+            ],
+            [
+                [
+                    'deleted' => true,
+                    'updated' => ['$lt' => 1234],
+                    'source_id' => 'foo',
+                ],
+                [
+                    'limit' => 1000,
+                    'skip' => 1,
                 ],
                 "select * from record where deleted=? AND updated<? AND source_id=?"
                 . " limit 1,1000",
                 [
                     true,
                     1234,
-                    'foo'
-                ]
+                    'foo',
+                ],
             ],
             [
                 [
@@ -165,8 +167,8 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                 [
                     true,
                     1234,
-                    'foo'
-                ]
+                    'foo',
+                ],
             ],
             [
                 [
@@ -178,8 +180,8 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                 . " FROM record_attrs ca WHERE ca.attr='linking_id' AND ca.value=?)",
                 [
                     false,
-                    '1212'
-                ]
+                    '1212',
+                ],
             ],
             [
                 [
@@ -198,9 +200,9 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     'isbn2',
                     false,
                     false,
-                    'source'
-                ]
-            ]
+                    'source',
+                ],
+            ],
         ];
     }
 
@@ -222,7 +224,10 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
         string $expectedSql,
         array $expectedParams
     ): void {
-        $checkQuery = function (string $sql, array $params = []) use (
+        $checkQuery = function (
+            string $sql,
+            array $params = []
+        ) use (
             $expectedSql,
             $expectedParams
         ) {

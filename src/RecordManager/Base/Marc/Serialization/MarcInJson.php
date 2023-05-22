@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Extended MARC-in-JSON serializer with support for RecordManager legacy formats
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2022.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Marc\Serialization;
 
 /**
@@ -81,7 +83,7 @@ class MarcInJson extends \VuFind\Marc\Serialization\MarcInJson
                         );
                         foreach ($subfields as $subfield) {
                             $newField['subfields'][] = [
-                                $subfield[0] => substr($subfield, 1)
+                                $subfield[0] => substr($subfield, 1),
                             ];
                         }
                         $result['fields'][] = [$tag => $newField];
@@ -110,7 +112,7 @@ class MarcInJson extends \VuFind\Marc\Serialization\MarcInJson
                         if (isset($field['s'])) {
                             foreach ($field['s'] as $subfield) {
                                 $newField['subfields'][] = [
-                                    $subfield['c'] => $subfield['v']
+                                    $subfield['c'] => $subfield['v'],
                                 ];
                             }
                         }
@@ -138,7 +140,7 @@ class MarcInJson extends \VuFind\Marc\Serialization\MarcInJson
                         if (isset($field['s'])) {
                             foreach ($field['s'] as $subfield) {
                                 $newField['subfields'][] = [
-                                    (string)key($subfield) => current($subfield)
+                                    (string)key($subfield) => current($subfield),
                                 ];
                             }
                         }

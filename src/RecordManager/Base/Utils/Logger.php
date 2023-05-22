@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Logging Utility
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2011-2021.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Utils;
 
 use RecordManager\Base\Database\DatabaseInterface;
@@ -238,16 +240,16 @@ class Logger
     public function logLevelToStr($level)
     {
         switch ($level) {
-        case Logger::FATAL:
-            return 'FATAL';
-        case Logger::ERROR:
-            return 'ERROR';
-        case Logger::WARNING:
-            return 'WARNING';
-        case Logger::INFO:
-            return 'INFO';
-        case Logger::DEBUG:
-            return 'DEBUG';
+            case Logger::FATAL:
+                return 'FATAL';
+            case Logger::ERROR:
+                return 'ERROR';
+            case Logger::WARNING:
+                return 'WARNING';
+            case Logger::INFO:
+                return 'INFO';
+            case Logger::DEBUG:
+                return 'DEBUG';
         }
         return '???';
     }
@@ -276,7 +278,8 @@ class Logger
         $logMsg = date('Y-m-d H:i:s', $timestamp) . ' [' . getmypid() . '] ['
             . $this->logLevelToStr($level) . "] [$context] $msg";
         if ($this->logFile) {
-            if ($this->maxFileSize && file_exists($this->logFile)
+            if (
+                $this->maxFileSize && file_exists($this->logFile)
                 && filesize($this->logFile) > $this->maxFileSize * 1024 * 1024
             ) {
                 if (file_exists($this->logFile . '.' . $this->maxFileHistory)) {
@@ -310,25 +313,26 @@ class Logger
             );
         }
 
-        if ($this->consoleOutput
+        if (
+            $this->consoleOutput
             && $this->consoleOutput->getVerbosity() >= $verbosity
         ) {
             $output = $this->consoleOutput;
             $consoleMsg = OutputFormatter::escape($logMsg);
             switch ($level) {
-            case Logger::ERROR:
-            case Logger::FATAL:
-                if ($output instanceof ConsoleOutputInterface) {
-                    $output = $output->getErrorOutput();
-                }
-                $consoleMsg = "<error>$consoleMsg</error>";
-                break;
-            case Logger::WARNING:
-                $consoleMsg = "<fg=#ff8542;bg=black>$consoleMsg</>";
-                break;
-            case Logger::INFO:
-                $consoleMsg = "<info>$consoleMsg</info>";
-                break;
+                case Logger::ERROR:
+                case Logger::FATAL:
+                    if ($output instanceof ConsoleOutputInterface) {
+                        $output = $output->getErrorOutput();
+                    }
+                    $consoleMsg = "<error>$consoleMsg</error>";
+                    break;
+                case Logger::WARNING:
+                    $consoleMsg = "<fg=#ff8542;bg=black>$consoleMsg</>";
+                    break;
+                case Logger::INFO:
+                    $consoleMsg = "<info>$consoleMsg</info>";
+                    break;
             }
             $output->writeln($consoleMsg);
         }

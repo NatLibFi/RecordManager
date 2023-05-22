@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Qdc record class
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2011-2023.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
@@ -147,7 +149,8 @@ class Qdc extends AbstractRecord
         }
 
         foreach ($doc->title as $title) {
-            if (!isset($data['title'])
+            if (
+                !isset($data['title'])
                 && $title->attributes()->{'type'} !== 'alternative'
             ) {
                 $data['title'] = $data['title_full'] = trim((string)$title);

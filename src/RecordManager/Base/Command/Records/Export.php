@@ -1,8 +1,9 @@
 <?php
+
 /**
  * Export
  *
- * PHP version 7
+ * PHP version 8
  *
  * Copyright (C) The National Library of Finland 2011-2022.
  *
@@ -25,6 +26,7 @@
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
+
 namespace RecordManager\Base\Command\Records;
 
 use RecordManager\Base\Command\AbstractBase;
@@ -206,15 +208,15 @@ class Export extends AbstractBase
                         [
                             'updated' => [
                                 '$gte'
-                                    => $this->db->getTimestamp(strtotime($fromDate))
-                            ]
+                                    => $this->db->getTimestamp(strtotime($fromDate)),
+                            ],
                         ],
                         [
                             'updated' => [
                                 '$lte'
-                                    => $this->db->getTimestamp(strtotime($untilDate))
-                            ]
-                        ]
+                                    => $this->db->getTimestamp(strtotime($untilDate)),
+                            ],
+                        ],
                     ];
                 } elseif ($fromDate) {
                     $params['updated']
@@ -229,25 +231,25 @@ class Export extends AbstractBase
                             'created' => [
                                 '$gte' => $this->db->getTimestamp(
                                     strtotime($fromCreateDate)
-                                )
-                            ]
+                                ),
+                            ],
                         ],
                         [
                             'created' => [
                                 '$lte' => $this->db->getTimestamp(
                                     strtotime($untilCreateDate)
-                                )
-                            ]
-                        ]
+                                ),
+                            ],
+                        ],
                     ];
                 } elseif ($fromCreateDate) {
                     $params['created'] = [
-                        '$gte' => $this->db->getTimestamp(strtotime($fromCreateDate))
+                        '$gte' => $this->db->getTimestamp(strtotime($fromCreateDate)),
                     ];
                 } elseif ($untilDate) {
                     $params['created'] = [
                         '$lte'
-                            => $this->db->getTimestamp(strtotime($untilCreateDate))
+                            => $this->db->getTimestamp(strtotime($untilCreateDate)),
                     ];
                 }
                 if ($sourceId && $sourceId !== '*') {
@@ -452,7 +454,8 @@ class Export extends AbstractBase
      */
     protected function writeRecord(string $record): void
     {
-        if (!$this->currentFile
+        if (
+            !$this->currentFile
             || ($this->batchSize && $this->currentBatchCount >= $this->batchSize)
         ) {
             $this->startNewBatch();
