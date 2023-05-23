@@ -442,8 +442,8 @@ abstract class AbstractRecord
                 }
                 foreach ((array)$solrFields[$field] as $value) {
                     if (
-                        strncmp($value, '/', 1) === 0
-                        && strncmp($value, '/', -1) === 0
+                        str_starts_with($value, '/')
+                        && str_ends_with($value, '/')
                     ) {
                         $res = preg_match($filter, $value);
                         if (false === $res) {

@@ -33,7 +33,7 @@ $basepath = null;
 $overrides = [];
 $remainingArgs = [];
 foreach ($_SERVER['argv'] as $parameter) {
-    if (strncmp('--', $parameter, 2) !== 0 || strpos($parameter, '=') === false) {
+    if (!str_starts_with($parameter, '--') || !str_contains($parameter, '=')) {
         $remainingArgs[] = $parameter;
         continue;
     }

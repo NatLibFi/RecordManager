@@ -115,8 +115,8 @@ class MongoDatabase extends AbstractDatabase
         $this->counts = !empty($config['counts']);
         $this->connectTimeout = $config['connect_timeout'] ?? 300000;
         $this->socketTimeout = $config['socket_timeout'] ?? 300000;
-        if (isset($config['batch_size'])) {
-            $this->defaultPageSize = intval($config['batch_size']);
+        if ($batchSize = $config['batch_size'] ?? null) {
+            $this->defaultPageSize = (int)$batchSize;
         }
     }
 
@@ -387,7 +387,7 @@ class MongoDatabase extends AbstractDatabase
         $failed = [];
         foreach ($this->getDb()->listCollections() as $collection) {
             $collection = $collection->getName();
-            if (strncmp($collection, 'tracking_', 9) !== 0) {
+            if (!str_starts_with($collection, 'tracking_')) {
                 continue;
             }
             $nameParts = explode('_', $collection);
@@ -428,7 +428,7 @@ class MongoDatabase extends AbstractDatabase
      */
     public function dropTrackingCollection($collectionName)
     {
-        if (strncmp($collectionName, 'tracking_', 4) !== 0) {
+        if (!str_starts_with($collectionName, 'tracking_')) {
             throw new \Exception(
                 "Invalid tracking collection name: '$collectionName'"
             );
@@ -495,7 +495,7 @@ class MongoDatabase extends AbstractDatabase
             // Since this can be done by multiple workers simultaneously, we might
             // encounter duplicate inserts at the same time, so ignore duplicate key
             // errors.
-            if (strncmp($e->getMessage(), 'E11000 ', 7) === 0) {
+            if (str_starts_with($e->getMessage(), 'E11000 ')) {
                 return $record;
             }
             throw $e;
@@ -538,7 +538,7 @@ class MongoDatabase extends AbstractDatabase
             // Since this can be done by multiple workers simultaneously, we might
             // encounter duplicate inserts at the same time, so ignore duplicate key
             // errors.
-            if (strncmp($e->getMessage(), 'E11000 ', 7) === 0) {
+            if (str_starts_with($e->getMessage(), 'E11000 ')) {
                 return $record;
             }
             throw $e;

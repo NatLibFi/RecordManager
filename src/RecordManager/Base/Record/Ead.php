@@ -213,8 +213,7 @@ class Ead extends AbstractRecord
 
         if (isset($doc->did->repository)) {
             $data['institution']
-                = (string)($doc->did->repository->corpname
-                ?? $doc->did->repository);
+                = (string)($doc->did->repository->corpname ?? $doc->did->repository);
         }
 
         $data['series'] = $this->getSeries();

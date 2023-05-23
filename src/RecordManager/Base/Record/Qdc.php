@@ -275,7 +275,7 @@ class Qdc extends AbstractRecord
         $form = $this->config['Site']['unicode_normalization_form'] ?? 'NFKC';
         foreach ($this->doc->identifier as $identifier) {
             $identifier = strtolower(trim((string)$identifier));
-            if (strncmp('urn:', $identifier, 4) === 0) {
+            if (str_starts_with($identifier, 'urn:')) {
                 $arr[] = '(urn)' . $this->metadataUtils
                     ->normalizeKey($identifier, $form);
             }

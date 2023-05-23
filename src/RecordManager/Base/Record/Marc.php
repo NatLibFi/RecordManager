@@ -657,7 +657,7 @@ class Marc extends AbstractRecord
             // Check that the linking ids contain something in parenthesis
             $record003 = null;
             foreach ($ids as &$id) {
-                if (strncmp('(', $id, 1) !== 0) {
+                if (!str_starts_with($id, '(')) {
                     if (null === $record003) {
                         $field = $this->record->getControlField('003');
                         $record003 = $field
@@ -2448,10 +2448,10 @@ class Marc extends AbstractRecord
         foreach ($ctrlNums as $ctrlNum) {
             $ctrlLc = mb_strtolower($ctrlNum, 'UTF-8');
             if (
-                strncmp($ctrlLc, '(ocolc)', 7) === 0
-                || strncmp($ctrlLc, 'ocm', 3) === 0
-                || strncmp($ctrlLc, 'ocn', 3) === 0
-                || strncmp($ctrlLc, 'on', 2) === 0
+                str_starts_with($ctrlLc, '(ocolc)')
+                || str_starts_with($ctrlLc, 'ocm')
+                || str_starts_with($ctrlLc, 'ocn')
+                || str_starts_with($ctrlLc, 'on')
             ) {
                 foreach ($this->oclcNumPatterns as $pattern) {
                     if (preg_match($pattern, $ctrlNum, $matches)) {

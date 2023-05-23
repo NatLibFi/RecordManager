@@ -143,11 +143,7 @@ class Lido extends AbstractRecord
         if ($description) {
             if (
                 !empty($data['description'])
-                && strncmp(
-                    $data['description'],
-                    $description,
-                    strlen($data['description'])
-                )
+                && !str_starts_with($description, $data['description'])
             ) {
                 $data['description'] .= " -- $description";
             } else {
@@ -469,15 +465,9 @@ class Lido extends AbstractRecord
                     $parts = [...$parts, ...$alternateParts[$lang]];
                     unset($alternateParts[$lang]);
                 }
-                if (!isset($preferredTitles[$lang])) {
-                    $preferredTitles[$lang] = [];
-                }
                 $preferredTitles[$lang][] = implode('; ', $parts);
             }
             foreach ($alternateParts as $lang => $parts) {
-                if (!isset($alternateTitles[$lang])) {
-                    $alternateTitles[$lang] = [];
-                }
                 $alternateTitles[$lang][] = implode('; ', $parts);
             }
         }

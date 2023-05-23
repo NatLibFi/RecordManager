@@ -89,14 +89,13 @@ class Import extends AbstractBase
         $files = $input->getArgument('file');
         $delete = $input->getOption('delete');
 
-        if (!isset($this->dataSourceConfig[$source])) {
+        if (!($settings = $this->dataSourceConfig[$source] ?? null)) {
             $this->logger->logFatal(
                 'import',
                 "Settings not found for data source $source"
             );
             throw new \Exception("Error: settings not found for $source\n");
         }
-        $settings = &$this->dataSourceConfig[$source];
         $count = 0;
         $filelist = glob($files);
         if (empty($filelist)) {
@@ -257,7 +256,7 @@ class Import extends AbstractBase
         if ($path === $xpath) {
             return true;
         }
-        if (strncmp('//', $xpath, 2) === 0) {
+        if (str_starts_with($xpath, '//')) {
             $xpath = substr($xpath, 1);
             return substr($path, -strlen($xpath)) == $xpath;
         }

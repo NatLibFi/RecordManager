@@ -170,7 +170,7 @@ class FieldMapper
     {
         $settings = $this->settings[$source];
         foreach ($settings['mappingFiles'] as $field => $mappingFile) {
-            if (isset($data[$field]) && !empty($data[$field])) {
+            if (!empty($data[$field])) {
                 if (is_array($data[$field])) {
                     $newValues = [];
                     foreach ($data[$field] as $value) {

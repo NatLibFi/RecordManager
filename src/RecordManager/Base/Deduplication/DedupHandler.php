@@ -515,7 +515,7 @@ class DedupHandler implements DedupHandlerInterface
                     break;
                 }
 
-                if (!isset($origRecord)) {
+                if (null === $origRecord) {
                     $origRecord = $this->createRecord(
                         $record['format'],
                         $this->metadataUtils->getRecordData($record, true),
@@ -1055,14 +1055,13 @@ class DedupHandler implements DedupHandlerInterface
                         $ignored['title'],
                         $this->normalizationForm
                     ) : '';
-                $titleKeyLen = strlen($titleKey);
 
                 if (
                     !$titleKey
                     || array_filter(
                         $recordTitleKeys,
-                        function ($s) use ($titleKey, $titleKeyLen) {
-                            return strncmp($s, $titleKey, $titleKeyLen) === 0;
+                        function ($s) use ($titleKey) {
+                            return str_starts_with($s, $titleKey);
                         }
                     )
                 ) {

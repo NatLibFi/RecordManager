@@ -139,9 +139,6 @@ class SolrComparer extends SolrUpdater
                 $trackingName,
                 &$prevId
             ) {
-                if (isset($this->terminate)) {
-                    return false;
-                }
                 if (in_array($record['source_id'], $this->nonIndexedSources)) {
                     return true;
                 }
@@ -195,11 +192,6 @@ class SolrComparer extends SolrUpdater
 
             $this->db->dropTrackingCollection($trackingName);
 
-            if (isset($this->terminate)) {
-                $this->log->logInfo('compareRecords', 'Termination upon request');
-                exit(1);
-            }
-
             $this->log->logInfo(
                 'compareRecords',
                 "Total $count normal, $deleted deleted and"
@@ -240,12 +232,11 @@ class SolrComparer extends SolrUpdater
             ];
         }
 
-        if (!isset($this->config['Solr']['search_url'])) {
+        if (!($url = $this->config['Solr']['search_url'])) {
             throw new \Exception('search_url not set in ini file Solr section');
         }
 
         $this->request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
-        $url = $this->config['Solr']['search_url'];
         $url .= '?q=id:"' . urlencode(addcslashes($record['id'], '"')) . '"&wt=json';
         $this->request->setUrl($url);
 

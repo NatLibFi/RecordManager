@@ -286,12 +286,12 @@ class Harvest extends AbstractBase
                         );
                     }
                 }
-                if (isset($harvestFromDate)) {
+                if (null !== $harvestFromDate) {
                     $harvester->setStartDate(
                         $harvestFromDate == '-' ? null : $harvestFromDate
                     );
                 }
-                if (isset($harvestUntilDate)) {
+                if (null !== $harvestUntilDate) {
                     $harvester->setEndDate($harvestUntilDate);
                 }
 
@@ -332,12 +332,8 @@ class Harvest extends AbstractBase
                 }
 
                 if (
-                    !$reharvest && isset($settings['deletions'])
-                    && strncmp(
-                        $settings['deletions'],
-                        'ListIdentifiers',
-                        15
-                    ) == 0
+                    !$reharvest
+                    && str_starts_with($settings['deletions'] ?? '', 'ListIdentifiers')
                 ) {
                     // The repository doesn't support reporting deletions, so
                     // list all identifiers and mark deleted records that were
@@ -351,19 +347,19 @@ class Harvest extends AbstractBase
                     }
 
                     $processDeletions = true;
-                    $interval = null;
+                    $daysSinceLast = null;
                     $deletions = explode(':', $settings['deletions']);
-                    if (isset($deletions[1])) {
+                    $deletionInterval = $deletions[1] ?? null;
+                    if (null !== $deletionInterval) {
                         $state = $this->db->getState(
                             "Last Deletion Processing Time $source"
                         );
                         if (null !== $state) {
-                            $interval
-                                = round((time() - $state['value']) / 3600 / 24);
-                            if ($interval < $deletions[1]) {
+                            $daysSinceLast = round((time() - $state['value']) / 3600 / 24);
+                            if ($daysSinceLast < $deletionInterval) {
                                 $this->logger->logInfo(
                                     'harvest',
-                                    "[$source] Not processing deletions, $interval"
+                                    "[$source] Not processing deletions, $daysSinceLast"
                                     . ' days since last time'
                                 );
                                 $processDeletions = false;
@@ -374,8 +370,8 @@ class Harvest extends AbstractBase
                     if ($processDeletions) {
                         $this->logger->logInfo(
                             'harvest',
-                            "[$source] Processing deletions" . (isset($interval)
-                                ? " ($interval days since last time)" : '')
+                            "[$source] Processing deletions"
+                            . (null !== $daysSinceLast ? " ($daysSinceLast days since last time)" : '')
                         );
 
                         $this->logger

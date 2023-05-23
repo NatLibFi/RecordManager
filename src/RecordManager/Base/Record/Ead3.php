@@ -197,10 +197,7 @@ class Ead3 extends Ead
      */
     public function getTitle($forFiling = false)
     {
-        $title = isset($this->doc->did->unittitle)
-            ? (string)$this->doc->did->unittitle
-            : '';
-
+        $title = (string)($this->doc->did->unittitle ?? '');
         if ($forFiling) {
             $title = $this->metadataUtils->createSortTitle($title);
         }
@@ -278,17 +275,13 @@ class Ead3 extends Ead
     protected function getAuthors()
     {
         $result = [];
-        if (isset($this->doc->did->controlaccess->name)) {
-            foreach ($this->doc->did->controlaccess->name as $name) {
-                foreach ($name->part as $part) {
-                    $result[] = trim((string)$part);
-                }
+        foreach ($this->doc->did->controlaccess->name ?? [] as $name) {
+            foreach ($name->part as $part) {
+                $result[] = trim((string)$part);
             }
         }
-        if (isset($this->doc->did->origination->persname)) {
-            foreach ($this->doc->did->origination->persname as $name) {
-                $result[] = trim((string)$name);
-            }
+        foreach ($this->doc->did->origination->persname ?? [] as $name) {
+            $result[] = trim((string)$name);
         }
         return $result;
     }
@@ -375,9 +368,7 @@ class Ead3 extends Ead
      */
     protected function getInstitution()
     {
-        return isset($this->doc->did->repository->corpname->part)
-            ? (string)$this->doc->did->repository->corpname->part
-            : '';
+        return (string)($this->doc->did->repository->corpname->part ?? '');
     }
 
     /**
@@ -388,10 +379,7 @@ class Ead3 extends Ead
     protected function getLanguages()
     {
         $result = [];
-        if (!isset($this->doc->did->langmaterial->language)) {
-            return $result;
-        }
-        foreach ($this->doc->did->langmaterial->language as $lang) {
+        foreach ($this->doc->did->langmaterial->language ?? [] as $lang) {
             if (isset($lang->attributes()->langcode)) {
                 $langCode = trim((string)$lang->attributes()->langcode);
                 if ($langCode != '') {
@@ -410,10 +398,7 @@ class Ead3 extends Ead
     protected function getPhysicalExtent()
     {
         $result = [];
-        if (!isset($this->doc->did->physdesc->extent)) {
-            return $result;
-        }
-        foreach ($this->doc->did->physdesc->extent as $extent) {
+        foreach ($this->doc->did->physdesc->extent ?? [] as $extent) {
             if (trim((string)$extent) !== '-') {
                 $result[] = (string)$extent;
             }
@@ -451,7 +436,7 @@ class Ead3 extends Ead
      */
     protected function getUnitId()
     {
-        return (string)$this->doc->did->unitid;
+        return (string)($this->doc->did->unitid ?? '');
     }
 
     /**

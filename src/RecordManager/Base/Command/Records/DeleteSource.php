@@ -86,9 +86,8 @@ class DeleteSource extends AbstractBase
         $sourceId = $input->getArgument('source');
         $force = $input->getOption('force');
 
-        if (isset($this->dataSourceConfig[$sourceId])) {
-            $settings = $this->dataSourceConfig[$sourceId];
-            if (isset($settings['dedup']) && $settings['dedup']) {
+        if ($settings = $this->dataSourceConfig[$sourceId] ?? null) {
+            if ($settings['dedup'] ?? false) {
                 if ($force) {
                     $this->logger->logWarning(
                         'deleteSource',

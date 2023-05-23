@@ -139,17 +139,15 @@ class NominatimGeocoder extends AbstractEnrichment
         parent::init();
 
         $settings = $this->config['NominatimGeocoder'] ?? [];
-        if (!isset($settings['url']) || !$settings['url']) {
+        if (!($this->baseUrl = $settings['url'] ?? '')) {
             throw new \Exception('url must be specified for Nominatim');
         }
-        if (!isset($settings['email']) || !$settings['email']) {
+        if (!($this->email = $settings['email'] ?? '')) {
             throw new \Exception(
                 'Email address must be specified for Nominatim (see '
                 . 'http://wiki.openstreetmap.org/wiki/Nominatim_usage_policy)'
             );
         }
-        $this->email = $settings['email'];
-        $this->baseUrl = $settings['url'];
         if (isset($settings['preferred_area'])) {
             $this->preferredArea = $settings['preferred_area'];
         }
@@ -447,8 +445,8 @@ class NominatimGeocoder extends AbstractEnrichment
         $previous = null;
         foreach ($locations as $current) {
             if (
-                null === $previous || strncmp($current['wkt'], 'LINESTRING', 10) != 0
-                || strncmp($previous['wkt'], 'LINESTRING', 10) != 0
+                null === $previous || !str_starts_with($current['wkt'], 'LINESTRING')
+                || !str_starts_with($previous['wkt'], 'LINESTRING')
             ) {
                 $results[] = $previous = $current;
                 continue;

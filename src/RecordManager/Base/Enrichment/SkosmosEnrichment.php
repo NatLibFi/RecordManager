@@ -337,7 +337,7 @@ class SkosmosEnrichment extends AbstractEnrichment
         // Check that the ID prefix matches that of the allowed ones
         $match = false;
         foreach ($this->urlPrefixAllowedList as $prefix) {
-            if (strncmp($id, $prefix, strlen($prefix)) === 0) {
+            if (str_starts_with($id, $prefix)) {
                 $match = true;
                 break;
             }
@@ -566,7 +566,7 @@ class SkosmosEnrichment extends AbstractEnrichment
     protected function uriPrefixAllowed(string $uri): bool
     {
         foreach ($this->uriPrefixExactMatches as $prefix) {
-            if (strncmp($uri, $prefix, strlen($prefix)) === 0) {
+            if (str_starts_with($uri, $prefix)) {
                 return true;
             }
         }

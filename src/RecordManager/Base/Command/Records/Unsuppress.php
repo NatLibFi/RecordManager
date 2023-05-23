@@ -132,14 +132,13 @@ class Unsuppress extends AbstractBase
             [],
             function ($record) use (&$count, $pc) {
                 $source = $record['source_id'];
-                if (!isset($this->dataSourceConfig[$source])) {
+                if (!($settings = $this->dataSourceConfig[$source] ?? null)) {
                     $this->logger->logFatal(
                         'unsuppress',
                         "Data source configuration missing for '$source'"
                     );
                     return false;
                 }
-                $settings = $this->dataSourceConfig[$source];
                 $record['suppressed'] = false;
                 if ($settings['dedup'] ?? false) {
                     $record['update_needed'] = true;

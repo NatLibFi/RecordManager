@@ -181,7 +181,7 @@ class OaiPmhProvider extends AbstractBase
         $record = $this->db->findRecord(['oai_id' => $id]);
         if (
             !$record
-            && strncmp($id, $this->idPrefix, strlen($this->idPrefix)) === 0
+            && str_starts_with($id, $this->idPrefix)
         ) {
             $id = substr($id, strlen($this->idPrefix));
             $record = $this->db->getRecord($id);
@@ -267,7 +267,7 @@ class OaiPmhProvider extends AbstractBase
                 return;
             }
             foreach ($this->sets[$set] as $key => $value) {
-                if ($key == 'name') {
+                if ($key === 'name') {
                     continue;
                 }
                 $queryParams[$key] = $value;
@@ -396,10 +396,10 @@ class OaiPmhProvider extends AbstractBase
             if ($source && $sourceId != $source) {
                 continue;
             }
-            if (!isset($datasource['format'])) {
+            if (!($format = $datasource['format'] ?? null)) {
                 continue;
             }
-            $formats[$datasource['format']] = 1;
+            $formats[$format] = 1;
             foreach (array_keys($datasource) as $key) {
                 if (preg_match('/transformation_to_(.+)/', $key, $matches)) {
                     $formats[$matches[1]] = 1;
@@ -497,9 +497,8 @@ class OaiPmhProvider extends AbstractBase
         $arguments = '';
         foreach ($this->getRequestParameters() as $param) {
             $keyValue = explode('=', $param, 2);
-            if (isset($keyValue[1])) {
-                $arguments .= ' ' . $keyValue[0] . '="' . $this->escape($keyValue[1])
-                    . '"';
+            if (null !== ($value = $keyValue[1] ?? null)) {
+                $arguments .= ' ' . $keyValue[0] . '="' . $this->escape($value) . '"';
             }
         }
 
@@ -552,7 +551,7 @@ class OaiPmhProvider extends AbstractBase
      */
     protected function toOaiDate($date = null)
     {
-        if (!isset($date)) {
+        if (null === $date) {
             $date = time();
         }
         return gmdate('Y-m-d\TH:i:s\Z', $date);
@@ -634,19 +633,19 @@ class OaiPmhProvider extends AbstractBase
         $paramArray = $this->getRequestParameters();
         $checkArray = [];
         foreach ($paramArray as $param) {
-            $keyValue = explode('=', $param, 2);
-            if (isset($checkArray[$keyValue[0]])) {
+            [$key] = explode('=', $param, 2);
+            if (isset($checkArray[$key])) {
                 $this->error('badArgument', 'Duplicate arguments not allowed');
                 return false;
             }
-            $checkArray[$keyValue[0]] = 1;
+            $checkArray[$key] = 1;
         }
         // Check for missing or unknown parameters
         $paramCount = count($paramArray) - 1;
         switch ($this->verb) {
             case 'GetRecord':
                 if (
-                    $paramCount != 2 || !$this->getParam('identifier')
+                    $paramCount !== 2 || !$this->getParam('identifier')
                     || !$this->getParam('metadataPrefix')
                 ) {
                     $this->error('badArgument', 'Missing or extraneous arguments');
@@ -654,7 +653,7 @@ class OaiPmhProvider extends AbstractBase
                 }
                 break;
             case 'Identify':
-                if ($paramCount != 0) {
+                if ($paramCount !== 0) {
                     $this->error('badArgument', 'Extraneous arguments');
                     return false;
                 }
@@ -662,7 +661,7 @@ class OaiPmhProvider extends AbstractBase
             case 'ListIdentifiers':
             case 'ListRecords':
                 if ($this->getParam('resumptionToken')) {
-                    if ($paramCount != 1) {
+                    if ($paramCount !== 1) {
                         $this->error(
                             'badArgument',
                             'Extraneous arguments with resumptionToken'
@@ -706,7 +705,7 @@ class OaiPmhProvider extends AbstractBase
             case 'ListMetadataFormats':
                 if (
                     $paramCount > 1
-                    || ($paramCount == 1 && !$this->getParam('identifier'))
+                    || ($paramCount === 1 && !$this->getParam('identifier'))
                 ) {
                     $this->error('badArgument', 'Invalid arguments');
                     return false;
@@ -715,7 +714,7 @@ class OaiPmhProvider extends AbstractBase
             case 'ListSets':
                 if (
                     $paramCount > 1
-                    || ($paramCount == 1 && !$this->getParam('resumptionToken'))
+                    || ($paramCount === 1 && !$this->getParam('resumptionToken'))
                 ) {
                     $this->error('badArgument', 'Invalid arguments');
                     return false;
@@ -845,7 +844,7 @@ class OaiPmhProvider extends AbstractBase
                 $metadata = $this->transformations[$transformationKey]
                     ->transform($metadata, $params);
             }
-            if (strncmp($metadata, '<?xml', 5) == 0) {
+            if (str_starts_with($metadata, '<?xml')) {
                 $end = strpos($metadata, '>');
                 $metadata = substr($metadata, $end + 1);
             }

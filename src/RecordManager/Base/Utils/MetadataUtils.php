@@ -367,7 +367,7 @@ class MetadataUtils
             foreach ($this->fullTitlePrefixes as $prefix) {
                 if (
                     $prefix
-                    && strncmp($normalTitle, $prefix, strlen($prefix)) === 0
+                    && str_starts_with($normalTitle, $prefix)
                 ) {
                     $full = true;
                     break;
@@ -1323,10 +1323,10 @@ class MetadataUtils
             function (&$value) {
                 $start = 0;
                 $end = null;
-                if (strncmp($value, "'", 1) === 0) {
+                if (str_starts_with($value, "'")) {
                     $start = 1;
                 }
-                if (substr($value, -1) === "'") {
+                if (str_ends_with($value, "'")) {
                     $end = -1;
                 }
                 if ($start || $end) {

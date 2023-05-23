@@ -1054,7 +1054,7 @@ class SolrUpdater
                     . " $verb"
             );
 
-            if (isset($lastIndexingDate)) {
+            if (null !== $lastIndexingDate) {
                 // Reset database connection since it could have timed out during
                 // the process:
                 $this->db->resetConnection();
@@ -1098,7 +1098,7 @@ class SolrUpdater
             if ('' === $source) {
                 continue;
             }
-            if (strncmp($source, '-', 1) === 0) {
+            if (str_starts_with($source, '-')) {
                 return true;
             }
             if ($this->settings[$source]['dedup'] ?? false) {
@@ -1751,23 +1751,20 @@ class SolrUpdater
                 );
             }
             $this->settings[$source] = $settings;
-            $this->settings[$source]['idPrefix'] = isset($settings['idPrefix'])
-                && $settings['idPrefix'] ? $settings['idPrefix'] : $source;
+            $this->settings[$source]['idPrefix'] = !empty($settings['idPrefix'])
+                ? $settings['idPrefix'] : $source;
             $this->settings[$source]['componentParts']
-                = isset($settings['componentParts']) && $settings['componentParts']
-                    ? $settings['componentParts'] : 'as_is';
+                = !empty($settings['componentParts'])
+                ? $settings['componentParts'] : 'as_is';
             $this->settings[$source]['indexMergedParts']
                 = $settings['indexMergedParts'] ?? true;
             $this->settings[$source]['solrTransformationXSLT']
-                = isset($settings['solrTransformation'])
-                    && $settings['solrTransformation']
-                    ? new \RecordManager\Base\Utils\XslTransformation(
-                        RECMAN_BASE_PATH . '/transformations',
-                        $settings['solrTransformation']
-                    ) : null;
-            if (!isset($this->settings[$source]['dedup'])) {
-                $this->settings[$source]['dedup'] = false;
-            }
+                = !empty($settings['solrTransformation'])
+                ? new \RecordManager\Base\Utils\XslTransformation(
+                    RECMAN_BASE_PATH . '/transformations',
+                    $settings['solrTransformation']
+                ) : null;
+            $this->settings[$source]['dedup'] ??= false;
 
             $this->settings[$source]['extraFields'] = [];
             foreach ($settings['extraFields'] ?? $settings['extrafields'] ?? [] as $extraField) {
@@ -1775,7 +1772,7 @@ class SolrUpdater
                 $this->settings[$source]['extraFields'][] = [$field => $value];
             }
 
-            if (isset($settings['index']) && !$settings['index']) {
+            if (!($settings['index'] ?? true)) {
                 $this->nonIndexedSources[] = $source;
             }
 
@@ -3119,7 +3116,7 @@ class SolrUpdater
             if ('' === trim($source)) {
                 continue;
             }
-            if (strncmp($source, '-', 1) === 0) {
+            if (str_starts_with($source, '-')) {
                 if (preg_match('/^-\/(.+)\/$/', $source, $matches)) {
                     $regex = new \RecordManager\Base\Database\Regex($matches[1]);
                     $sourceExclude[] = [
@@ -3157,11 +3154,11 @@ class SolrUpdater
                 if ('__default__' === $key) {
                     continue;
                 }
-                $left = strncmp('*', $key, 1) === 0;
+                $left = str_starts_with($key, '*');
                 if ($left) {
                     $key = substr($key, 1);
                 }
-                $right = substr($key, -1) === '*';
+                $right = str_ends_with($key, '*');
                 if ($right) {
                     $key = substr($key, 0, -1);
                 }
@@ -3172,12 +3169,12 @@ class SolrUpdater
                         break;
                     }
                 } elseif ($left) {
-                    if ($key === substr($field, -strlen($key))) {
+                    if (str_ends_with($field, $key)) {
                         $foundLimit = $limit;
                         break;
                     }
                 } elseif ($right) {
-                    if (strncmp($key, $field, strlen($key)) === 0) {
+                    if (str_starts_with($field, $key)) {
                         $foundLimit = $limit;
                         break;
                     }

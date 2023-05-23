@@ -241,36 +241,16 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
                     "Error: format not set for data source $source"
                 );
             }
-            if (!isset($settings['idPrefix'])) {
-                $settings['idPrefix'] = $source;
-            }
-            if (!isset($settings['recordXPath'])) {
-                $settings['recordXPath'] = '//record';
-            }
-            if (!isset($settings['oaiIDXPath'])) {
-                $settings['oaiIDXPath'] = '';
-            }
-            if (!isset($settings['dedup'])) {
-                $settings['dedup'] = false;
-            }
-            if (empty($settings['componentParts'])) {
-                $settings['componentParts'] = 'as_is';
-            }
-            if (!isset($settings['preTransformation'])) {
-                $settings['preTransformation'] = '';
-            }
-            if (!isset($settings['indexMergedParts'])) {
-                $settings['indexMergedParts'] = true;
-            }
-            if (!isset($settings['type'])) {
-                $settings['type'] = '';
-            }
-            if (!isset($settings['non_inherited_fields'])) {
-                $settings['non_inherited_fields'] = [];
-            }
-            if (!isset($settings['keepMissingHierarchyMembers'])) {
-                $settings['keepMissingHierarchyMembers'] = false;
-            }
+            $settings['idPrefix'] ??= $source;
+            $settings['recordXPath'] ??= '//record';
+            $settings['oaiIDXPath'] ??= '';
+            $settings['dedup'] ??= false;
+            $settings['componentParts'] ??= 'as_is';
+            $settings['preTransformation'] ??= '';
+            $settings['indexMergedParts'] ??= true;
+            $settings['type'] ??= '';
+            $settings['non_inherited_fields'] ??= [];
+            $settings['keepMissingHierarchyMembers'] = false;
 
             $params = [
                 'source_id' => $source,
@@ -292,14 +272,12 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
                     $params
                 ) : null;
 
-            if (!empty($settings['recordSplitterClass'])) {
-                $splitterClass = ltrim($settings['recordSplitterClass'], '\\');
-                $settings['recordSplitter'] = $this->splitterPluginManager
-                    ->get($splitterClass);
-            } elseif (!empty($settings['recordSplitter'])) {
+            if ($splitterClass = $settings['recordSplitterClass'] ?? null) {
+                $splitterClass = ltrim($splitterClass, '\\');
+                $settings['recordSplitter'] = $this->splitterPluginManager->get($splitterClass);
+            } elseif ($splitter = $settings['recordSplitter'] ?? null) {
                 $style = new \DOMDocument();
-                $xslFile = RECMAN_BASE_PATH . '/transformations/'
-                    . $settings['recordSplitter'];
+                $xslFile = RECMAN_BASE_PATH . '/transformations/' . $splitter;
                 if ($style->load($xslFile) === false) {
                     throw new \Exception(
                         "Could not load $xslFile for source $source"
