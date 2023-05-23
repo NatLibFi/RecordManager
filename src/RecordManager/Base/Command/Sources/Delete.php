@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2022.
+ * Copyright (C) The National Library of Finland 2022-2023.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -30,6 +30,7 @@
 namespace RecordManager\Base\Command\Sources;
 
 use RecordManager\Base\Command\AbstractBase;
+use RecordManager\Base\Command\Util\IniFileTrait;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Formatter\OutputFormatter;
 use Symfony\Component\Console\Input\InputArgument;
@@ -48,6 +49,8 @@ use Symfony\Component\Console\Output\OutputInterface;
  */
 class Delete extends AbstractBase
 {
+    use IniFileTrait;
+
     /**
      * Configure the command.
      *
@@ -140,11 +143,7 @@ class Delete extends AbstractBase
             }
             [$commentless] = explode(';', $line, 2);
             $commentless = trim($commentless);
-            if (
-                strncmp($commentless, '[', 1) === 0
-                && substr($commentless, -1) === ']'
-                && strlen($commentless) > 2
-            ) {
+            if ($sectionName = $this->getSectionFromLine($commentless)) {
                 if ($lines) {
                     $sections[] = [
                         'name' => $currentSource,
@@ -152,7 +151,7 @@ class Delete extends AbstractBase
                         'deleted' => in_array($currentSource, $sources),
                     ];
                 }
-                $currentSource = substr($commentless, 1, -1);
+                $currentSource = $sectionName;
                 $lines = [];
             }
             $lines[] = $line;
@@ -248,18 +247,5 @@ class Delete extends AbstractBase
         }
 
         return Command::SUCCESS;
-    }
-
-    /**
-     * Check if a line is a comment line (contains a comment and nothing else)
-     *
-     * @param string $line Line to check
-     *
-     * @return bool
-     */
-    protected function isCommentLine(string $line): bool
-    {
-        $line = trim($line);
-        return strncmp($line, ';', 1) === 0;
     }
 }
