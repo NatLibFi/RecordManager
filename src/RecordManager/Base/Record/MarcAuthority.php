@@ -112,7 +112,7 @@ class MarcAuthority extends Marc
     public function getAlternativeNames($additional = [])
     {
         $result = [];
-        $defaultFields = [400, 410];
+        $defaultFields = ['400', '410'];
         foreach ([...$defaultFields, ...$additional] as $code) {
             foreach ($this->record->getFields($code) as $field) {
                 if ($activity = $this->record->getSubfield($field, 'a')) {
