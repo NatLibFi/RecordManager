@@ -417,7 +417,7 @@ class PDODatabase extends AbstractDatabase
      */
     public function dropTrackingCollection($collectionName)
     {
-        if (str_starts_with($collectionName, 'tracking_')) {
+        if (!str_starts_with($collectionName, 'tracking_')) {
             throw new \Exception(
                 "Invalid tracking collection name: '$collectionName'"
             );
