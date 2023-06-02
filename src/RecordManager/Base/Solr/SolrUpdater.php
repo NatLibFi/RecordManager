@@ -806,18 +806,18 @@ class SolrUpdater
             throw new \Exception('Delete without source id specified');
         }
 
-        $lastUpdateKey = $this->getLastUpdateStateKey(
-            $datePerServer || $this->datePerServer
-        );
-
-        $this->dumpPrefix = $dumpPrefix;
-
         if ($sourceId) {
             $this->log->logInfo(
                 'updateRecords',
                 "Updating source(s): {$sourceId}"
             );
         }
+
+        $lastUpdateKey = $this->getLastUpdateStateKey(
+            $datePerServer || $this->datePerServer
+        );
+
+        $this->dumpPrefix = $dumpPrefix;
 
         $verb = $this->dumpPrefix ? 'dumped' : 'indexed';
         $initVerb = $this->dumpPrefix ? 'Dumping' : 'Indexing';
