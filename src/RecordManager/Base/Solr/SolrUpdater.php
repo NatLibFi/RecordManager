@@ -812,6 +812,13 @@ class SolrUpdater
 
         $this->dumpPrefix = $dumpPrefix;
 
+        if ($sourceId) {
+            $this->log->logInfo(
+                'updateRecords',
+                "Updating source(s): {$sourceId}"
+            );
+        }
+
         $verb = $this->dumpPrefix ? 'dumped' : 'indexed';
         $initVerb = $this->dumpPrefix ? 'Dumping' : 'Indexing';
 
