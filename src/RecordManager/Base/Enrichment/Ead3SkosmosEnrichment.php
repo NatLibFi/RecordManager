@@ -42,7 +42,6 @@ namespace RecordManager\Base\Enrichment;
  */
 class Ead3SkosmosEnrichment extends SkosmosEnrichment
 {
-
     /**
      * Default fields to enrich. Key is the method in driver and value is array
      * - pref, preferred field in solr
@@ -73,7 +72,7 @@ class Ead3SkosmosEnrichment extends SkosmosEnrichment
             'check' => 'author2',
         ],
     ];
-    
+
     /**
      * Enrich the record and return any additions in solrArray
      *
