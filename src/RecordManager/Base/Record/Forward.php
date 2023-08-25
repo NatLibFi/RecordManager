@@ -74,6 +74,11 @@ class Forward extends AbstractRecord
     protected $corporateAuthorRelators = [
     ];
 
+    /**
+     * Fields to leave out from allfields
+     *
+     * @var array
+     */
     protected $filterFromAllFields = [
         'Identifier', 'RecordSource', 'TitleRelationship', 'Activity',
         'AgentIdentifier', 'ProductionEventType', 'DescriptionType', 'Language',

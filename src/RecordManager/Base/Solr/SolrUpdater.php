@@ -344,6 +344,8 @@ class SolrUpdater
 
     /**
      * Fields that are analyzed when scoring records for merging order
+     *
+     * @var array
      */
     protected $scoredFields = [
         'title', 'author', 'author2', 'author_corporate', 'topic', 'contents',
@@ -1514,7 +1516,7 @@ class SolrUpdater
                             $result = [];
                             arsort($values, SORT_NUMERIC);
                             foreach ($values as $key => $value) {
-                                $result[] = str_pad($value, 10, ' ', STR_PAD_LEFT)
+                                $result[] = str_pad((string)$value, 10, ' ', STR_PAD_LEFT)
                                     . ": $key";
                             }
                             return implode(PHP_EOL, $result) . PHP_EOL . PHP_EOL;
@@ -1528,7 +1530,7 @@ class SolrUpdater
             ->writelnConsole('Result list has ' . count($values) . ' entries:');
         foreach ($values as $key => $value) {
             $this->log->writelnConsole(
-                str_pad($value, 10, ' ', STR_PAD_LEFT) . ": $key"
+                str_pad((string)$value, 10, ' ', STR_PAD_LEFT) . ": $key"
             );
         }
     }

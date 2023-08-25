@@ -101,7 +101,7 @@ abstract class AbstractEnrichment
     /**
      * HTTP_Request2 options
      *
-     * @array
+     * @var array
      */
     protected $httpOptions = [
         'follow_redirects' => true,

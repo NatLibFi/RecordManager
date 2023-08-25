@@ -45,6 +45,8 @@ class DeweyCallNumber extends AbstractCallNumber
 {
     /**
      * Raw value
+     *
+     * @var string
      */
     protected $raw;
 

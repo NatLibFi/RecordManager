@@ -503,7 +503,7 @@ class OaiPmh extends AbstractBase
     /**
      * Extract the ID from a record object (support method for processRecords()).
      *
-     * @param \DOMNode $record XML record header
+     * @param \DOMElement $record XML record header
      *
      * @return string The ID value
      */
@@ -757,8 +757,8 @@ class OaiPmh extends AbstractBase
      * Traverse all children and collect those nodes that
      * have the tagname specified in $tagName. Non-recursive
      *
-     * @param \DOMElement $element DOM Element
-     * @param string      $tagName Tag to get
+     * @param \DOMNode $element DOM Element
+     * @param string   $tagName Tag to get
      *
      * @return array
      */

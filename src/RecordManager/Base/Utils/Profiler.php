@@ -56,6 +56,8 @@ class Profiler
 
     /**
      * Profiler base URL
+     *
+     * @var string
      */
     protected $baseUrl = '';
 

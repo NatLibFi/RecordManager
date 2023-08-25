@@ -57,7 +57,7 @@ class Logger
     /**
      * Console output interface
      *
-     * @var OutputInterface $output
+     * @var ?OutputInterface
      */
     protected $consoleOutput = null;
 
