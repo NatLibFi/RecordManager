@@ -66,7 +66,7 @@ class Ead3SkosmosEnrichment extends SkosmosEnrichment
             'alt' => 'author_variant',
             'check' => 'author',
         ],
-        'getAuthorIdsForEnrichment' => [
+        'getAuthorIds' => [
             'pref' => 'author2',
             'alt' => 'author2_variant',
             'check' => 'author2',

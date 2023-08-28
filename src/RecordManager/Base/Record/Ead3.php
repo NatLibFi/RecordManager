@@ -287,11 +287,11 @@ class Ead3 extends Ead
     }
 
     /**
-     * Get author identifiers for enrichment purposes.
+     * Get author identifiers
      *
      * @return array
      */
-    public function getAuthorIdsForEnrichment(): array
+    public function getAuthorIds(): array
     {
         return [];
     }
