@@ -281,8 +281,8 @@ class FormatCalculator
                 ? 'Article' : 'BookComponentPart';
             case 'b':
                 return 'SerialComponentPart';
-        // Collection and sub-unit will be mapped to 'Kit' below if no other
-        // format can be found. For now return an empty string here.
+                // Collection and sub-unit will be mapped to 'Kit' below if no other
+                // format can be found. For now return an empty string here.
             case 'c': // Collection
             case 'd': // Sub-unit
                 return '';

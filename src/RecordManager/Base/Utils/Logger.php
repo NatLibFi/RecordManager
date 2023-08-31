@@ -400,7 +400,7 @@ class Logger
         }
 
         if ($level == Logger::FATAL && $this->errorEmail) {
-            $email = "RecordManager encountered the following fatal error: "
+            $email = 'RecordManager encountered the following fatal error: '
                 . PHP_EOL . PHP_EOL . $logMsg . PHP_EOL;
             mail(
                 $this->errorEmail,

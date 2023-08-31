@@ -1352,12 +1352,12 @@ class SolrUpdater
      */
     public function countValues($sourceId, $field, $mapped = false)
     {
-        $this->log->logInfo('countValues', "Creating record list");
+        $this->log->logInfo('countValues', 'Creating record list');
         $params = ['deleted' => false];
         if ($sourceId) {
             $params['source_id'] = $sourceId;
         }
-        $this->log->logInfo('countValues', "Counting values");
+        $this->log->logInfo('countValues', 'Counting values');
         $values = [];
         $count = 0;
         $this->db->iterateRecords(
@@ -1669,7 +1669,7 @@ class SolrUpdater
                         'solrRequest',
                         "Solr server request failed ($code), retrying in "
                             . "{$this->updateRetryWait} seconds..."
-                            . "Beginning of response: "
+                            . 'Beginning of response: '
                             . substr($response->getBody(), 0, 1000)
                     );
                     sleep($this->updateRetryWait);
@@ -2082,7 +2082,7 @@ class SolrUpdater
                 if (!$hostRecordsFound) {
                     $this->log->logWarning(
                         'createSolrArray',
-                        "Any of host records ["
+                        'Any of host records ['
                             . implode(', ', (array)$record['host_record_id'])
                             . "] not found for record '" . $record['_id'] . "'"
                     );
@@ -2946,7 +2946,7 @@ class SolrUpdater
         // Note: this is not quite JSON as the delete key is repeated
         $this->bufferedDeletions[] = '"delete":{"id":' . json_encode($id) . '}';
         if (count($this->bufferedDeletions) >= 1000) {
-            $request = "{" . implode(',', $this->bufferedDeletions) . "}";
+            $request = '{' . implode(',', $this->bufferedDeletions) . '}';
             if (
                 null !== $this->workerPoolManager
                 && $this->workerPoolManager->hasWorkerPool('solr')
@@ -2981,7 +2981,7 @@ class SolrUpdater
             }
         }
         if (!empty($this->bufferedDeletions)) {
-            $this->solrRequest("{" . implode(',', $this->bufferedDeletions) . "}");
+            $this->solrRequest('{' . implode(',', $this->bufferedDeletions) . '}');
             $this->bufferedDeletions = [];
         }
     }

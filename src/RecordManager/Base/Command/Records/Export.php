@@ -353,7 +353,7 @@ class Export extends AbstractBase
                         $this->logger->logInfo(
                             'exportRecords',
                             "$count records (of which $deduped deduped, $deleted "
-                            . "deleted) exported"
+                            . 'deleted) exported'
                         );
                     }
                 }
@@ -361,7 +361,7 @@ class Export extends AbstractBase
             $this->logger->logInfo(
                 'exportRecords',
                 "Completed with $count records (of which $deduped deduped, $deleted "
-                . "deleted) exported"
+                . 'deleted) exported'
             );
         } catch (\Exception $e) {
             $this->logger->logFatal(

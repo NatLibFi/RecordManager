@@ -944,7 +944,7 @@ class DedupHandler implements DedupHandlerInterface
         if ($origAuthor || $candidateAuthor) {
             if (!$origAuthor || !$candidateAuthor) {
                 $this->log->writelnVeryVerbose(
-                    "--Author discard:" . PHP_EOL
+                    '--Author discard:' . PHP_EOL
                     . "Original:  $origAuthor" . PHP_EOL
                     . "Candidate: $candidateAuthor"
                 );

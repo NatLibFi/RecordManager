@@ -466,7 +466,7 @@ class GeniePlus extends AbstractBase
         }
         $json = json_decode($response, true);
         if (!isset($json['total'])) {
-            throw new \Exception("Total missing from response; unexpected format!");
+            throw new \Exception('Total missing from response; unexpected format!');
         }
         if (!isset($json['records'])) {
             return 0;

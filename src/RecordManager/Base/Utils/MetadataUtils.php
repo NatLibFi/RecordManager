@@ -150,7 +150,7 @@ class MetadataUtils
      * @var string
      */
     protected $keyFoldingRules
-        = ":: NFD; :: lower; :: Latin; :: [^[:letter:] [:number:]] Remove; :: NFKC;";
+        = ':: NFD; :: lower; :: Latin; :: [^[:letter:] [:number:]] Remove; :: NFKC;';
 
     /**
      * Transliterator for folding keys
@@ -530,7 +530,7 @@ class MetadataUtils
         ?string $punctuation = null,
         bool $preservePunctuationOnly = true
     ) {
-        $punctuation ??= "[\\t\\p{P}=´`” ̈]+";
+        $punctuation ??= '[\\t\\p{P}=´`” ̈]+';
         // Use preg_replace for multibyte support
         $result = preg_replace(
             '/' . $punctuation . '/u',

@@ -323,7 +323,7 @@ class OaiPmh extends AbstractBase
         if ($this->lastResumptionToken === $resumptionToken) {
             if (++$this->sameResumptionTokenCount >= $this->sameResumptionTokenLimit) {
                 throw new \Exception(
-                    "Same resumptionToken received"
+                    'Same resumptionToken received'
                     . " {$this->sameResumptionTokenCount} times, aborting"
                 );
             }
@@ -479,7 +479,7 @@ class OaiPmh extends AbstractBase
             file_put_contents($tempfile, $xml);
             $this->errorMsg("Invalid XML stored in $tempfile");
             throw new \Exception(
-                "Failed to parse XML response: " . $e->getMessage()
+                'Failed to parse XML response: ' . $e->getMessage()
             );
         }
 

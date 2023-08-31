@@ -77,7 +77,7 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
             [
                 [],
                 [],
-                "select * from record",
+                'select * from record',
                 [],
             ],
             [
@@ -85,7 +85,7 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     '_id' => '1212',
                 ],
                 [],
-                "select * from record where _id=?",
+                'select * from record where _id=?',
                 [
                     '1212',
                 ],
@@ -96,7 +96,7 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     'deleted' => false,
                 ],
                 [],
-                "select * from record where _id=? AND deleted=?",
+                'select * from record where _id=? AND deleted=?',
                 [
                     '1212',
                     false,
@@ -109,7 +109,7 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     'source_id' => 'foo',
                 ],
                 [],
-                "select * from record where deleted=? AND updated<? AND source_id=?",
+                'select * from record where deleted=? AND updated<? AND source_id=?',
                 [
                     true,
                     1234,
@@ -125,8 +125,8 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                 [
                     'limit' => 1000,
                 ],
-                "select * from record where deleted=? AND updated<? AND source_id=?"
-                . " limit 1000",
+                'select * from record where deleted=? AND updated<? AND source_id=?'
+                . ' limit 1000',
                 [
                     true,
                     1234,
@@ -143,8 +143,8 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     'limit' => 1000,
                     'skip' => 1,
                 ],
-                "select * from record where deleted=? AND updated<? AND source_id=?"
-                . " limit 1,1000",
+                'select * from record where deleted=? AND updated<? AND source_id=?'
+                . ' limit 1,1000',
                 [
                     true,
                     1234,
@@ -162,8 +162,8 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     'skip' => 1,
                     'sort' => ['dedup_id' => 1],
                 ],
-                "select * from record where deleted=? AND updated<? AND source_id=?"
-                . " order by dedup_id asc limit 1,1000",
+                'select * from record where deleted=? AND updated<? AND source_id=?'
+                . ' order by dedup_id asc limit 1,1000',
                 [
                     true,
                     1234,
@@ -176,7 +176,7 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     'linking_id' => '1212',
                 ],
                 [],
-                "select * from record where deleted=? AND _id IN (SELECT parent_id"
+                'select * from record where deleted=? AND _id IN (SELECT parent_id'
                 . " FROM record_attrs ca WHERE ca.attr='linking_id' AND ca.value=?)",
                 [
                     false,
@@ -191,10 +191,10 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     'source_id' => ['$ne' => 'source'],
                 ],
                 [],
-                "select * from record where _id IN (SELECT parent_id FROM"
+                'select * from record where _id IN (SELECT parent_id FROM'
                 . " record_attrs ca WHERE ca.attr='isbn_keys' AND ca.value in (?,?))"
-                . " AND deleted=? AND (suppressed IS NULL OR suppressed=?) AND"
-                . " source_id<>?",
+                . ' AND deleted=? AND (suppressed IS NULL OR suppressed=?) AND'
+                . ' source_id<>?',
                 [
                     'isbn',
                     'isbn2',

@@ -113,7 +113,7 @@ class Import extends AbstractBase
             } else {
                 $this->logger->logInfo(
                     'import',
-                    "Complex recordXPath, cannot use streaming loader"
+                    'Complex recordXPath, cannot use streaming loader'
                 );
                 $count += $this->fullLoad($file, $source, $delete);
             }
@@ -160,7 +160,7 @@ class Import extends AbstractBase
             }
             $data = $xml->readOuterXML();
             if ($settings['preTransformation']) {
-                $this->logger->writelnDebug("Executing pretransformation");
+                $this->logger->writelnDebug('Executing pretransformation');
                 $data = $this->pretransform($data, $source);
             }
 

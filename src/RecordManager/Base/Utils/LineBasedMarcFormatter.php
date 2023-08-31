@@ -102,7 +102,7 @@ class LineBasedMarcFormatter
     {
         $xml = simplexml_load_string(
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n"
-            . "<collection><record></record></collection>"
+            . '<collection><record></record></collection>'
         );
         $record = $xml->record[0];
 
