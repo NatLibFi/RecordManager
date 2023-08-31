@@ -120,6 +120,27 @@ class SkosmosEnrichment extends AbstractEnrichment
     protected $enrichmentCache = null;
 
     /**
+     * Default fields to enrich. Key is the method in driver and value is array
+     * - pref, preferred field in solr
+     * - alt, alternative field in solr
+     * - check, check field for existing values
+     *
+     * @var array<string, array>
+     */
+    protected $defaultFields = [
+        'getRawTopicIds' => [
+            'pref' => 'topic_add_txt_mv',
+            'alt' => 'topic_alt_txt_mv',
+            'check' => 'topic',
+        ],
+        'getRawGeographicTopicIds' => [
+            'pref' => 'geographic_add_txt_mv',
+            'alt' => 'geographic_alt_txt_mv',
+            'check' => 'geographic',
+        ],
+    ];
+
+    /**
      * Initialize settings
      *
      * @return void
@@ -174,19 +195,7 @@ class SkosmosEnrichment extends AbstractEnrichment
      */
     public function enrich($sourceId, $record, &$solrArray)
     {
-        $fields = [
-            'getRawTopicIds' => [
-                'pref' => 'topic_add_txt_mv',
-                'alt' => 'topic_alt_txt_mv',
-                'check' => 'topic',
-            ],
-            'getRawGeographicTopicIds' => [
-                'pref' => 'geographic_add_txt_mv',
-                'alt' => 'geographic_alt_txt_mv',
-                'check' => 'geographic',
-            ],
-        ];
-        foreach ($fields as $method => $spec) {
+        foreach ($this->defaultFields as $method => $spec) {
             if (!is_callable([$record, $method])) {
                 continue;
             }

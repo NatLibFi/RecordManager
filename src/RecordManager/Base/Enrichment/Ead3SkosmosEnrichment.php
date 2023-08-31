@@ -43,6 +43,37 @@ namespace RecordManager\Base\Enrichment;
 class Ead3SkosmosEnrichment extends SkosmosEnrichment
 {
     /**
+     * Default fields to enrich. Key is the method in driver and value is array
+     * - pref, preferred field in solr
+     * - alt, alternative field in solr
+     * - check, check field for existing values
+     *
+     * @var array<string, array>
+     */
+    protected $defaultFields = [
+        'getRawTopicIds' => [
+            'pref' => 'topic_add_txt_mv',
+            'alt' => 'topic_alt_txt_mv',
+            'check' => 'topic',
+        ],
+        'getRawGeographicTopicIds' => [
+            'pref' => 'geographic_add_txt_mv',
+            'alt' => 'geographic_alt_txt_mv',
+            'check' => 'geographic',
+        ],
+        'getCorporateAuthorIds' => [
+            'pref' => '',
+            'alt' => 'author_variant',
+            'check' => 'author',
+        ],
+        'getAuthorIds' => [
+            'pref' => 'author2',
+            'alt' => 'author2_variant',
+            'check' => 'author2',
+        ],
+    ];
+
+    /**
      * Enrich the record and return any additions in solrArray
      *
      * @param string $sourceId  Source ID
