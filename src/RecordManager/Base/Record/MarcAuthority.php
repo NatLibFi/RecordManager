@@ -134,6 +134,16 @@ class MarcAuthority extends Marc
     }
 
     /**
+     * Get use for headings
+     *
+     * @return array
+     */
+    public function getUseForHeadings()
+    {
+        return $this->getAlternativeNames(['111', '411', '500', '510', '511']);
+    }
+
+    /**
      * Get fields of activity
      *
      * @return array
@@ -190,16 +200,6 @@ class MarcAuthority extends Marc
             }
         }
         return '';
-    }
-
-    /**
-     * Get use for headings
-     *
-     * @return array
-     */
-    public function getUseForHeadings()
-    {
-        return $this->getAlternativeNames(['111', '411', '500', '510', '511']);
     }
 
     /**

@@ -239,6 +239,38 @@ class Forward extends AbstractRecord
     }
 
     /**
+     * Return record title
+     *
+     * @param bool $forFiling Whether the title is to be used in filing
+     *                        (e.g. sorting, non-filing characters should be removed)
+     *
+     * @return string
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function getTitle($forFiling = false)
+    {
+        $doc = $this->getMainElement();
+        $title = (string)$doc->IdentifyingTitle;
+
+        if ($forFiling) {
+            $title = $this->metadataUtils->createSortTitle($title);
+        }
+
+        return $title;
+    }
+
+    /**
+     * Return format from predefined values
+     *
+     * @return string|array
+     */
+    public function getFormat()
+    {
+        return 'MotionPicture';
+    }
+
+    /**
      * Get the main metadata element
      *
      * @return \SimpleXMLElement
@@ -423,38 +455,6 @@ class Forward extends AbstractRecord
             }
         }
         return $results;
-    }
-
-    /**
-     * Return record title
-     *
-     * @param bool $forFiling Whether the title is to be used in filing
-     *                        (e.g. sorting, non-filing characters should be removed)
-     *
-     * @return string
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    public function getTitle($forFiling = false)
-    {
-        $doc = $this->getMainElement();
-        $title = (string)$doc->IdentifyingTitle;
-
-        if ($forFiling) {
-            $title = $this->metadataUtils->createSortTitle($title);
-        }
-
-        return $title;
-    }
-
-    /**
-     * Return format from predefined values
-     *
-     * @return string|array
-     */
-    public function getFormat()
-    {
-        return 'MotionPicture';
     }
 
     /**

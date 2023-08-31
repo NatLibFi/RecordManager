@@ -426,24 +426,6 @@ class MetadataUtils
     }
 
     /**
-     * Get the transliterator for folding keys
-     *
-     * @return ?\Transliterator
-     */
-    protected function getKeyFoldingTransliterator(): ?\Transliterator
-    {
-        if (!$this->keyFoldingRules) {
-            return null;
-        }
-        if (null === $this->keyFoldingTransliterator) {
-            $this->keyFoldingTransliterator = \Transliterator::createFromRules(
-                $this->keyFoldingRules
-            );
-        }
-        return $this->keyFoldingTransliterator;
-    }
-
-    /**
      * Normalize an ISBN to ISBN-13 without dashes
      *
      * @param string $isbn ISBN to normalize
@@ -1299,6 +1281,24 @@ class MetadataUtils
             $result .= " $smushAll";
         }
         return trim($result);
+    }
+
+    /**
+     * Get the transliterator for folding keys
+     *
+     * @return ?\Transliterator
+     */
+    protected function getKeyFoldingTransliterator(): ?\Transliterator
+    {
+        if (!$this->keyFoldingRules) {
+            return null;
+        }
+        if (null === $this->keyFoldingTransliterator) {
+            $this->keyFoldingTransliterator = \Transliterator::createFromRules(
+                $this->keyFoldingRules
+            );
+        }
+        return $this->keyFoldingTransliterator;
     }
 
     /**

@@ -103,6 +103,29 @@ class Harvest extends AbstractBase
     }
 
     /**
+     * Mark a record "seen". Used by OAI-PMH harvesting when deletions are not
+     * supported.
+     *
+     * @param string $sourceId Source ID
+     * @param string $oaiId    ID of the record as received from OAI-PMH
+     * @param bool   $deleted  Whether the record is to be deleted
+     *
+     * @throws \Exception
+     * @return void
+     */
+    public function markRecordSeen($sourceId, $oaiId, $deleted)
+    {
+        if ($deleted) {
+            // Don't mark deleted records...
+            return;
+        }
+        $this->db->updateRecords(
+            ['source_id' => $sourceId, 'oai_id' => $oaiId],
+            ['date' => $this->db->getTimestamp()]
+        );
+    }
+
+    /**
      * Configure the command.
      *
      * @return void
@@ -417,29 +440,6 @@ class Harvest extends AbstractBase
             }
         }
         return $returnCode;
-    }
-
-    /**
-     * Mark a record "seen". Used by OAI-PMH harvesting when deletions are not
-     * supported.
-     *
-     * @param string $sourceId Source ID
-     * @param string $oaiId    ID of the record as received from OAI-PMH
-     * @param bool   $deleted  Whether the record is to be deleted
-     *
-     * @throws \Exception
-     * @return void
-     */
-    public function markRecordSeen($sourceId, $oaiId, $deleted)
-    {
-        if ($deleted) {
-            // Don't mark deleted records...
-            return;
-        }
-        $this->db->updateRecords(
-            ['source_id' => $sourceId, 'oai_id' => $oaiId],
-            ['date' => $this->db->getTimestamp()]
-        );
     }
 
     /**

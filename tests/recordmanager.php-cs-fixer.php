@@ -73,6 +73,7 @@ $rules = [
     'no_whitespace_in_blank_line' => true,
     'non_printable_character' => true,
     'ordered_imports' => true,
+    'ordered_class_elements' => true,
     'phpdoc_no_access' => true,
     'php_unit_method_casing' => true,
     'pow_to_exponentiation' => true,

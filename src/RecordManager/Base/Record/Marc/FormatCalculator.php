@@ -51,6 +51,33 @@ use RecordManager\Base\Marc\Marc;
 class FormatCalculator
 {
     /**
+     * Determine Record Format(s)
+     *
+     * @param Marc $record MARC record
+     *
+     * @return array<int, string> Record formats
+     */
+    public function getFormats(Marc $record): array
+    {
+        // Deduplicate list:
+        return array_values(array_unique($this->getFormatsAsList($record)));
+    }
+
+    /**
+     * Determine Record Format
+     *
+     * @param Marc $record MARC record
+     *
+     * @return array First format
+     */
+    public function getFormat(Marc $record): array
+    {
+        $result = $this->getFormatsAsList($record);
+        // Return the first format as an array:
+        return [reset($result)];
+    }
+
+    /**
      * Determine whether a record cannot be a book due to findings in 007.
      *
      * @param string $formatCode Format code
@@ -792,32 +819,5 @@ class FormatCalculator
         }
 
         return $result;
-    }
-
-    /**
-     * Determine Record Format(s)
-     *
-     * @param Marc $record MARC record
-     *
-     * @return array<int, string> Record formats
-     */
-    public function getFormats(Marc $record): array
-    {
-        // Deduplicate list:
-        return array_values(array_unique($this->getFormatsAsList($record)));
-    }
-
-    /**
-     * Determine Record Format
-     *
-     * @param Marc $record MARC record
-     *
-     * @return array First format
-     */
-    public function getFormat(Marc $record): array
-    {
-        $result = $this->getFormatsAsList($record);
-        // Return the first format as an array:
-        return [reset($result)];
     }
 }

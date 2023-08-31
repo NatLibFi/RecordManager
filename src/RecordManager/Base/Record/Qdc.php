@@ -225,46 +225,6 @@ class Qdc extends AbstractRecord
     }
 
     /**
-     * Get primary authors
-     *
-     * @return array
-     */
-    protected function getPrimaryAuthors()
-    {
-        $result = [];
-        foreach ($this->getValues('creator') as $author) {
-            $result[]
-                = $this->metadataUtils->stripTrailingPunctuation($author);
-        }
-        return $result;
-    }
-
-    /**
-     * Get secondary authors
-     *
-     * @return array
-     */
-    protected function getSecondaryAuthors()
-    {
-        $result = [];
-        foreach ($this->getValues('contributor') as $contributor) {
-            $result[]
-                = $this->metadataUtils->stripTrailingPunctuation($contributor);
-        }
-        return $result;
-    }
-
-    /**
-     * Get corporate authors
-     *
-     * @return array
-     */
-    protected function getCorporateAuthors()
-    {
-        return [];
-    }
-
-    /**
      * Dedup: Return unique IDs (control numbers)
      *
      * @return array
@@ -393,6 +353,94 @@ class Qdc extends AbstractRecord
     }
 
     /**
+     * Get topics.
+     *
+     * @return array
+     */
+    public function getTopics()
+    {
+        return $this->getValues('subject');
+    }
+
+    /**
+     * Get descriptions as an associative array
+     *
+     * @return array
+     */
+    public function getDescriptions(): array
+    {
+        $all = [];
+        $primary = '';
+        $lang = $this->getDriverParam('defaultDisplayLanguage', 'en');
+        foreach ($this->doc->description as $description) {
+            $trimmed = trim((string)$description);
+            if (!preg_match('/(^https?)|(^\d+\.\d+$)/', $trimmed)) {
+                $all[] = (string)$description;
+                if (!$primary) {
+                    $descLang = (string)$description->attributes()->{'lang'};
+                    if ($descLang === $lang) {
+                        $primary = $trimmed;
+                    }
+                }
+            }
+        }
+        if (!$primary && $all) {
+            $primary = $all[0];
+        }
+        return compact('primary', 'all');
+    }
+
+    /**
+     * Get series information
+     *
+     * @return array
+     */
+    public function getSeries()
+    {
+        return [];
+    }
+
+    /**
+     * Get primary authors
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthors()
+    {
+        $result = [];
+        foreach ($this->getValues('creator') as $author) {
+            $result[]
+                = $this->metadataUtils->stripTrailingPunctuation($author);
+        }
+        return $result;
+    }
+
+    /**
+     * Get secondary authors
+     *
+     * @return array
+     */
+    protected function getSecondaryAuthors()
+    {
+        $result = [];
+        foreach ($this->getValues('contributor') as $contributor) {
+            $result[]
+                = $this->metadataUtils->stripTrailingPunctuation($contributor);
+        }
+        return $result;
+    }
+
+    /**
+     * Get corporate authors
+     *
+     * @return array
+     */
+    protected function getCorporateAuthors()
+    {
+        return [];
+    }
+
+    /**
      * Get an array of all fields relevant to allfields search
      *
      * @return array
@@ -473,44 +521,6 @@ class Qdc extends AbstractRecord
     }
 
     /**
-     * Get topics.
-     *
-     * @return array
-     */
-    public function getTopics()
-    {
-        return $this->getValues('subject');
-    }
-
-    /**
-     * Get descriptions as an associative array
-     *
-     * @return array
-     */
-    public function getDescriptions(): array
-    {
-        $all = [];
-        $primary = '';
-        $lang = $this->getDriverParam('defaultDisplayLanguage', 'en');
-        foreach ($this->doc->description as $description) {
-            $trimmed = trim((string)$description);
-            if (!preg_match('/(^https?)|(^\d+\.\d+$)/', $trimmed)) {
-                $all[] = (string)$description;
-                if (!$primary) {
-                    $descLang = (string)$description->attributes()->{'lang'};
-                    if ($descLang === $lang) {
-                        $primary = $trimmed;
-                    }
-                }
-            }
-        }
-        if (!$primary && $all) {
-            $primary = $all[0];
-        }
-        return compact('primary', 'all');
-    }
-
-    /**
      * Get xml field values
      *
      * @param string $tag        Field name
@@ -530,16 +540,6 @@ class Qdc extends AbstractRecord
             $values[] = trim((string)$element);
         }
         return $values;
-    }
-
-    /**
-     * Get series information
-     *
-     * @return array
-     */
-    public function getSeries()
-    {
-        return [];
     }
 
     /**

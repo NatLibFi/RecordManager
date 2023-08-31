@@ -1082,94 +1082,6 @@ class SolrUpdater
     }
 
     /**
-     * Determine if processing dedup records is needed for the given source
-     * specification
-     *
-     * @param string $sourceId Source specification
-     *
-     * @return bool
-     */
-    protected function needToProcessDedupRecords(string $sourceId): bool
-    {
-        if (!$sourceId) {
-            return true;
-        }
-        $sources = explode(',', $sourceId);
-        foreach ($sources as $source) {
-            $source = trim($source);
-            if ('' === $source) {
-                continue;
-            }
-            if (str_starts_with($source, '-')) {
-                return true;
-            }
-            if ($this->settings[$source]['dedup'] ?? false) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Handle records processed by record workers
-     *
-     * @param bool $block    Whether to block until all requests are completed
-     * @param bool $noCommit Whether to disable automatic commits
-     *
-     * @return void
-     */
-    protected function handleRecords(bool $block, bool $noCommit): void
-    {
-        while (
-            $this->workerPoolManager->checkForResults('record')
-            || $this->workerPoolManager->requestsPending('record')
-        ) {
-            while ($this->workerPoolManager->checkForResults('record')) {
-                $result = $this->workerPoolManager->getResult('record');
-                $this->mergedComponents += $result['mergedComponents'];
-                foreach ($result['deleted'] as $id) {
-                    ++$this->deletedRecords;
-                    $this->bufferedDelete((string)$id);
-                }
-                foreach ($result['records'] as $record) {
-                    ++$this->updatedRecords;
-                    $this->bufferedUpdate($record, $noCommit);
-                }
-            }
-            if ($block) {
-                usleep(10);
-            } else {
-                break;
-            }
-        }
-
-        // Check for results in the deduplicated record pool:
-        while (
-            $this->workerPoolManager->checkForResults('dedup')
-            || $this->workerPoolManager->requestsPending('dedup')
-        ) {
-            while ($this->workerPoolManager->checkForResults('dedup')) {
-                $result = $this->workerPoolManager->getResult('dedup');
-                $this->mergedComponents += $result['mergedComponents'];
-                foreach ($result['deleted'] as $id) {
-                    ++$this->deletedRecords;
-                    $this->bufferedDelete((string)$id);
-                }
-                foreach ($result['records'] as $record) {
-                    ++$this->updatedRecords;
-                    $this->bufferedUpdate($record, $noCommit);
-                }
-            }
-            if ($block) {
-                usleep(10);
-            } else {
-                break;
-            }
-        }
-    }
-
-    /**
      * Toggle field mappings
      *
      * @param bool $disable Whether to disable mappings
@@ -1701,6 +1613,169 @@ class SolrUpdater
             $result .= ' ' . $this->config['Solr']['update_url'];
         }
         return $result;
+    }
+
+    /**
+     * Make a JSON request to the Solr server
+     *
+     * Public visibility so that the workers can call this
+     *
+     * @param string       $body    The JSON request
+     * @param integer|null $timeout If specified, the HTTP call timeout in seconds
+     *
+     * @return void
+     */
+    public function solrRequest($body, $timeout = null)
+    {
+        if (null === $this->request) {
+            $this->request
+                = $this->initSolrRequest(\HTTP_Request2::METHOD_POST, $timeout);
+        }
+
+        if (!$this->waitForClusterStateOk()) {
+            throw new \Exception('Failed to check that the cluster state is ok');
+        }
+
+        $this->request->setHeader('Content-Type', 'application/json');
+        $this->request->setBody($body);
+
+        $response = null;
+        $maxTries = $this->maxUpdateTries;
+        for ($try = 1; $try <= $maxTries; $try++) {
+            try {
+                // @phpstan-ignore-next-line
+                if (!$this->waitForClusterStateOk()) {
+                    throw new \Exception(
+                        'Failed to check that the cluster state is ok'
+                    );
+                }
+                $response = $this->request->send();
+            } catch (\Exception $e) {
+                if ($try < $maxTries) {
+                    $this->log->logWarning(
+                        'solrRequest',
+                        'Solr server request failed (' . $e->getMessage()
+                            . "), retrying in {$this->updateRetryWait} seconds..."
+                    );
+                    sleep($this->updateRetryWait);
+                    continue;
+                }
+                throw HttpRequestException::fromException($e);
+            }
+            if ($try < $maxTries) {
+                $code = $response->getStatus();
+                if ($code >= 300) {
+                    $this->log->logWarning(
+                        'solrRequest',
+                        "Solr server request failed ($code), retrying in "
+                            . "{$this->updateRetryWait} seconds..."
+                            . "Beginning of response: "
+                            . substr($response->getBody(), 0, 1000)
+                    );
+                    sleep($this->updateRetryWait);
+                    continue;
+                }
+            }
+            break;
+        }
+        $code = null === $response ? 999 : $response->getStatus();
+        if ($code >= 300) {
+            throw new HttpRequestException(
+                "Solr server request failed ($code). URL:\n"
+                . $this->config['Solr']['update_url']
+                . "\nRequest:\n$body\n\nResponse:\n"
+                . (null !== $response ? $response->getBody() : ''),
+                $code
+            );
+        }
+    }
+
+    /**
+     * Determine if processing dedup records is needed for the given source
+     * specification
+     *
+     * @param string $sourceId Source specification
+     *
+     * @return bool
+     */
+    protected function needToProcessDedupRecords(string $sourceId): bool
+    {
+        if (!$sourceId) {
+            return true;
+        }
+        $sources = explode(',', $sourceId);
+        foreach ($sources as $source) {
+            $source = trim($source);
+            if ('' === $source) {
+                continue;
+            }
+            if (str_starts_with($source, '-')) {
+                return true;
+            }
+            if ($this->settings[$source]['dedup'] ?? false) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Handle records processed by record workers
+     *
+     * @param bool $block    Whether to block until all requests are completed
+     * @param bool $noCommit Whether to disable automatic commits
+     *
+     * @return void
+     */
+    protected function handleRecords(bool $block, bool $noCommit): void
+    {
+        while (
+            $this->workerPoolManager->checkForResults('record')
+            || $this->workerPoolManager->requestsPending('record')
+        ) {
+            while ($this->workerPoolManager->checkForResults('record')) {
+                $result = $this->workerPoolManager->getResult('record');
+                $this->mergedComponents += $result['mergedComponents'];
+                foreach ($result['deleted'] as $id) {
+                    ++$this->deletedRecords;
+                    $this->bufferedDelete((string)$id);
+                }
+                foreach ($result['records'] as $record) {
+                    ++$this->updatedRecords;
+                    $this->bufferedUpdate($record, $noCommit);
+                }
+            }
+            if ($block) {
+                usleep(10);
+            } else {
+                break;
+            }
+        }
+
+        // Check for results in the deduplicated record pool:
+        while (
+            $this->workerPoolManager->checkForResults('dedup')
+            || $this->workerPoolManager->requestsPending('dedup')
+        ) {
+            while ($this->workerPoolManager->checkForResults('dedup')) {
+                $result = $this->workerPoolManager->getResult('dedup');
+                $this->mergedComponents += $result['mergedComponents'];
+                foreach ($result['deleted'] as $id) {
+                    ++$this->deletedRecords;
+                    $this->bufferedDelete((string)$id);
+                }
+                foreach ($result['records'] as $record) {
+                    ++$this->updatedRecords;
+                    $this->bufferedUpdate($record, $noCommit);
+                }
+            }
+            if ($block) {
+                usleep(10);
+            } else {
+                break;
+            }
+        }
     }
 
     /**
@@ -2651,81 +2726,6 @@ class SolrUpdater
             );
         }
         return $request;
-    }
-
-    /**
-     * Make a JSON request to the Solr server
-     *
-     * Public visibility so that the workers can call this
-     *
-     * @param string       $body    The JSON request
-     * @param integer|null $timeout If specified, the HTTP call timeout in seconds
-     *
-     * @return void
-     */
-    public function solrRequest($body, $timeout = null)
-    {
-        if (null === $this->request) {
-            $this->request
-                = $this->initSolrRequest(\HTTP_Request2::METHOD_POST, $timeout);
-        }
-
-        if (!$this->waitForClusterStateOk()) {
-            throw new \Exception('Failed to check that the cluster state is ok');
-        }
-
-        $this->request->setHeader('Content-Type', 'application/json');
-        $this->request->setBody($body);
-
-        $response = null;
-        $maxTries = $this->maxUpdateTries;
-        for ($try = 1; $try <= $maxTries; $try++) {
-            try {
-                // @phpstan-ignore-next-line
-                if (!$this->waitForClusterStateOk()) {
-                    throw new \Exception(
-                        'Failed to check that the cluster state is ok'
-                    );
-                }
-                $response = $this->request->send();
-            } catch (\Exception $e) {
-                if ($try < $maxTries) {
-                    $this->log->logWarning(
-                        'solrRequest',
-                        'Solr server request failed (' . $e->getMessage()
-                            . "), retrying in {$this->updateRetryWait} seconds..."
-                    );
-                    sleep($this->updateRetryWait);
-                    continue;
-                }
-                throw HttpRequestException::fromException($e);
-            }
-            if ($try < $maxTries) {
-                $code = $response->getStatus();
-                if ($code >= 300) {
-                    $this->log->logWarning(
-                        'solrRequest',
-                        "Solr server request failed ($code), retrying in "
-                            . "{$this->updateRetryWait} seconds..."
-                            . "Beginning of response: "
-                            . substr($response->getBody(), 0, 1000)
-                    );
-                    sleep($this->updateRetryWait);
-                    continue;
-                }
-            }
-            break;
-        }
-        $code = null === $response ? 999 : $response->getStatus();
-        if ($code >= 300) {
-            throw new HttpRequestException(
-                "Solr server request failed ($code). URL:\n"
-                . $this->config['Solr']['update_url']
-                . "\nRequest:\n$body\n\nResponse:\n"
-                . (null !== $response ? $response->getBody() : ''),
-                $code
-            );
-        }
     }
 
     /**

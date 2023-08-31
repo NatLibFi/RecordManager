@@ -263,20 +263,6 @@ class GeniePlus extends AbstractBase
     }
 
     /**
-     * Reformat a date for use in API queries
-     *
-     * @param string $date Date in YYYY-MM-DD format
-     *
-     * @return string      Date in MM/DD/YYYY format.
-     *
-     * @psalm-suppress FalsableReturnStatement
-     */
-    protected function reformatDate($date)
-    {
-        return date('n/j/Y', strtotime($date));
-    }
-
-    /**
      * Harvest all available documents.
      *
      * @param callable $callback Function to be called to store a harvested record
@@ -346,6 +332,20 @@ class GeniePlus extends AbstractBase
                 gmdate('Y-m-d\TH:i:s\Z', $harvestStartTime)
             );
         }
+    }
+
+    /**
+     * Reformat a date for use in API queries
+     *
+     * @param string $date Date in YYYY-MM-DD format
+     *
+     * @return string      Date in MM/DD/YYYY format.
+     *
+     * @psalm-suppress FalsableReturnStatement
+     */
+    protected function reformatDate($date)
+    {
+        return date('n/j/Y', strtotime($date));
     }
 
     /**

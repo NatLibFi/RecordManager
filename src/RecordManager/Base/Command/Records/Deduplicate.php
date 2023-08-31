@@ -55,6 +55,21 @@ class Deduplicate extends AbstractBase
     protected $terminate = false;
 
     /**
+     * Catch the SIGINT signal and signal the main thread to terminate
+     *
+     * Note: this needs to be public so that the int handler can call it.
+     *
+     * @param int $signal Signal ID
+     *
+     * @return void
+     */
+    public function sigIntHandler($signal)
+    {
+        $this->terminate = true;
+        $this->logger->writelnConsole('Termination requested');
+    }
+
+    /**
      * Configure the command.
      *
      * @return void
@@ -296,20 +311,5 @@ class Deduplicate extends AbstractBase
         }
         $this->logger->logInfo('deduplicate', 'Deduplication completed');
         return Command::SUCCESS;
-    }
-
-    /**
-     * Catch the SIGINT signal and signal the main thread to terminate
-     *
-     * Note: this needs to be public so that the int handler can call it.
-     *
-     * @param int $signal Signal ID
-     *
-     * @return void
-     */
-    public function sigIntHandler($signal)
-    {
-        $this->terminate = true;
-        $this->logger->writelnConsole('Termination requested');
     }
 }
