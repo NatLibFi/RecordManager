@@ -34,6 +34,8 @@
 
 namespace RecordManager\Base\Record;
 
+use function assert;
+
 /**
  * XML record trait
  *

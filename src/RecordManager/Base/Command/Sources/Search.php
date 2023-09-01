@@ -37,6 +37,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use function is_array;
+use function is_bool;
+use function is_object;
+
 /**
  * Search Data Source Settings
  *

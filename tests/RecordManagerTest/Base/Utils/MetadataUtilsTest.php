@@ -32,6 +32,9 @@ namespace RecordManagerTest\Base\Utils;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
+use function ini_get;
+use function is_string;
+
 /**
  * MetadataUtils tests
  *

@@ -32,6 +32,8 @@ namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
 
+use function in_array;
+
 /**
  * Lrmi record class
  *

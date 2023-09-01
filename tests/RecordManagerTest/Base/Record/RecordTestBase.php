@@ -31,6 +31,8 @@ namespace RecordManagerTest\Base\Record;
 
 use RecordManagerTest\Base\Feature\FixtureTrait;
 
+use function array_key_exists;
+
 /**
  * Generic Record Driver Test Class
  *

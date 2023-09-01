@@ -29,6 +29,8 @@
 
 namespace RecordManager\Base\Utils;
 
+use function floatval;
+
 /**
  * Dewey Call Number Class
  *

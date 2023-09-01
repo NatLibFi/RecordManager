@@ -35,6 +35,10 @@ namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Exception\HttpRequestException;
 
+use function call_user_func;
+use function count;
+use function strlen;
+
 /**
  * OaiPmh Class
  *

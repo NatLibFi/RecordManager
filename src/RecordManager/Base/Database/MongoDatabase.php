@@ -29,6 +29,8 @@
 
 namespace RecordManager\Base\Database;
 
+use function is_string;
+
 /**
  * MongoDB access class
  *

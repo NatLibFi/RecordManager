@@ -30,6 +30,10 @@
 
 namespace RecordManager\Base\Utils;
 
+use function count;
+use function intval;
+use function strlen;
+
 /**
  * Line-based MARC formatter
  *

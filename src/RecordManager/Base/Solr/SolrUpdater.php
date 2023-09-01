@@ -42,6 +42,12 @@ use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\PerformanceCounter;
 use RecordManager\Base\Utils\WorkerPoolManager;
 
+use function count;
+use function defined;
+use function in_array;
+use function is_array;
+use function strlen;
+
 /**
  * SolrUpdater Class
  *

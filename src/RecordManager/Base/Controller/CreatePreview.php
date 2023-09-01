@@ -39,6 +39,8 @@ use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\XslTransformation;
 
+use function in_array;
+
 /**
  * Create Preview Record
  *

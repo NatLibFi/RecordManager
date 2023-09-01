@@ -29,6 +29,9 @@
 
 namespace RecordManager\Base\Utils;
 
+use function is_array;
+use function is_string;
+
 /**
  * XslTransformation Class
  *

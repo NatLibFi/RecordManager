@@ -32,6 +32,9 @@ namespace RecordManager\Base\Harvest;
 use RecordManager\Base\Exception\HttpRequestException;
 use RecordManager\Base\Utils\XmlSecurity;
 
+use function call_user_func;
+use function count;
+
 /**
  * HTTPFiles Class
  *

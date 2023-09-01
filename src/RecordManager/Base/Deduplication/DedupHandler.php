@@ -35,6 +35,10 @@ use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
+use function count;
+use function in_array;
+use function strlen;
+
 /**
  * Deduplication handler
  *

@@ -31,6 +31,9 @@ namespace RecordManager\Base\Solr;
 
 use RecordManager\Base\Utils\PerformanceCounter;
 
+use function count;
+use function in_array;
+
 /**
  * SolrComparer Class
  *

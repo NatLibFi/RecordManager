@@ -29,6 +29,12 @@
 
 namespace RecordManager\Base\Database;
 
+use function count;
+use function in_array;
+use function intval;
+use function is_array;
+use function is_bool;
+
 /**
  * PDO access class
  *

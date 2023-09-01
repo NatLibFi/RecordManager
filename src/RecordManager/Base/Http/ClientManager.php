@@ -29,6 +29,8 @@
 
 namespace RecordManager\Base\Http;
 
+use function in_array;
+
 /**
  * HTTP client manager
  *

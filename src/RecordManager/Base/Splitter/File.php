@@ -29,6 +29,8 @@
 
 namespace RecordManager\Base\Splitter;
 
+use function is_string;
+
 /**
  * Generic File Splitter
  *
