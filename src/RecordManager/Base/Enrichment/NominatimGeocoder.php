@@ -29,6 +29,13 @@
 
 namespace RecordManager\Base\Enrichment;
 
+use function array_slice;
+use function count;
+use function floatval;
+use function in_array;
+use function is_array;
+use function is_callable;
+
 /**
  * Nominatim Geocoder Class
  *

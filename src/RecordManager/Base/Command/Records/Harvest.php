@@ -43,6 +43,11 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use function count;
+use function in_array;
+use function is_callable;
+use function is_string;
+
 /**
  * Harvest
  *

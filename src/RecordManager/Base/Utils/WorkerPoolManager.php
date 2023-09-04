@@ -29,6 +29,14 @@
 
 namespace RecordManager\Base\Utils;
 
+use function call_user_func;
+use function call_user_func_array;
+use function count;
+use function func_get_args;
+use function function_exists;
+use function is_callable;
+use function strlen;
+
 /**
  * Worker Pool Manager
  *

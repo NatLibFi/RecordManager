@@ -37,6 +37,10 @@ use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\XslTransformation;
 
+use function count;
+use function in_array;
+use function strlen;
+
 /**
  * OAI-PMH Provider
  *

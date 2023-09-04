@@ -29,6 +29,9 @@
 
 namespace RecordManager\Base\Marc;
 
+use function in_array;
+use function is_string;
+
 /**
  * MARC record handler class
  *

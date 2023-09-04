@@ -32,6 +32,12 @@ namespace RecordManager\Base\Harvest;
 use RecordManager\Base\Exception\HttpRequestException;
 use RecordManager\Base\Utils\LineBasedMarcFormatter;
 
+use function array_slice;
+use function call_user_func;
+use function count;
+use function func_get_args;
+use function intval;
+
 /**
  * GeniePlus Class
  *

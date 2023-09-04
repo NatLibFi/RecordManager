@@ -29,6 +29,10 @@
 
 namespace RecordManager\Base\Splitter;
 
+use function count;
+use function in_array;
+use function is_array;
+
 /**
  * Ead Splitter
  *

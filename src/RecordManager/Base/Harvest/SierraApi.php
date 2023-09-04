@@ -31,6 +31,10 @@ namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Exception\HttpRequestException;
 
+use function call_user_func;
+use function in_array;
+use function intval;
+
 /**
  * SierraApi Class
  *

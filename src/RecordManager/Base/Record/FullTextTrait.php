@@ -35,6 +35,9 @@ namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Exception\HttpRequestException;
 
+use function get_class;
+use function strlen;
+
 /**
  * Trait for handling full text
  *

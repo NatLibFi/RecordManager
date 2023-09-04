@@ -32,6 +32,11 @@ namespace RecordManager\Base\Enrichment;
 
 use RecordManager\Base\Record\AbstractRecord;
 
+use function call_user_func;
+use function in_array;
+use function is_array;
+use function is_callable;
+
 /**
  * Skosmos Enrichment Class
  *

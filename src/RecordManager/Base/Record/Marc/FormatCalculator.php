@@ -34,6 +34,8 @@ namespace RecordManager\Base\Record\Marc;
 
 use RecordManager\Base\Marc\Marc;
 
+use function in_array;
+
 /**
  * Marc record format calculator
  *

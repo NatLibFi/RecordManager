@@ -36,6 +36,8 @@ use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
+use function in_array;
+
 /**
  * Enrichment Class
  *

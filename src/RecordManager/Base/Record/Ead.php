@@ -31,6 +31,9 @@ namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
 
+use function count;
+use function in_array;
+
 /**
  * Ead record class
  *

@@ -31,6 +31,13 @@ namespace RecordManager\Base\Utils;
 
 use RecordManager\Base\Record\AbstractRecord;
 
+use function assert;
+use function count;
+use function in_array;
+use function is_array;
+use function is_object;
+use function strlen;
+
 /**
  * MetadataUtils Class
  *

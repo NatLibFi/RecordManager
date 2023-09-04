@@ -29,6 +29,8 @@
 
 namespace RecordManager\Base\Exception;
 
+use function intval;
+
 /**
  * Request Exception Class
  *

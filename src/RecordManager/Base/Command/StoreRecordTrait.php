@@ -33,6 +33,8 @@
 
 namespace RecordManager\Base\Command;
 
+use function count;
+
 /**
  * Record storage trait
  *

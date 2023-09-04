@@ -37,6 +37,10 @@ use RecordManager\Base\Utils\LcCallNumber;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
+use function in_array;
+use function intval;
+use function is_array;
+
 /**
  * Marc record class
  *

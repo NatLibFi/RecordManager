@@ -29,6 +29,9 @@
 
 namespace RecordManager\Base\Utils;
 
+use function intval;
+use function strlen;
+
 /**
  * Call number base class
  *
