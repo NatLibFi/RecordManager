@@ -261,6 +261,7 @@ dewey-tens = dewey_tens.map
 dewey-ones = dewey_ones.map
 ;usage_rights_str_mv = usage_rights.map
 ;language = language_codes.map
+;media_type_str_mv = media_type_default.map
 
 [NominatimGeocoder]
 ; Please see http://wiki.openstreetmap.org/wiki/Nominatim_usage_policy before using
@@ -322,6 +323,10 @@ replace[] = '\1 street'
 ; Solr field that contains centroids for the locations. Set to empty if no suitable
 ; field is available. The field should be a LatLonPointSpatialField.
 ;solr_center_field = center_coords_mv
+; Properties that cause location data of a node to be ignored. The setting key is the
+; property type to check, and value is a list containing all the IDs to ignore.
+;excluded_location_matches[http://www.yso.fi/onto/yso-meta/mmlPlaceType] = "mmlPlaceTypeExclude.lst"
+;excluded_location_matches[http://www.yso.fi/onto/yso-meta/wikidataPlaceType] = "wikidataPlaceTypeExclude.lst"
 ; Allowed languages in enriched data. Default is to allow everything.
 ;languages[] = "en"
 ;languages[] = "fi"

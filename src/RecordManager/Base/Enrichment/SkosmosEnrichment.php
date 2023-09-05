@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2014-2022.
+ * Copyright (C) The National Library of Finland 2014-2023.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -146,6 +146,16 @@ class SkosmosEnrichment extends AbstractEnrichment
     ];
 
     /**
+     * An associative array of property matches that causes the location data of a
+     * node to be ignored.
+     *
+     * Key is property type and value is an array of property id's.
+     *
+     * @var array
+     */
+    protected $excludedLocationMatches = [];
+
+    /**
      * Initialize settings
      *
      * @return void
@@ -185,6 +195,17 @@ class SkosmosEnrichment extends AbstractEnrichment
 
         if ($cacheSize = $settings['enrichment_cache_size'] ?? 10000) {
             $this->enrichmentCache = new \cash\LRUCache((int)$cacheSize);
+        }
+
+        foreach ((array)($settings['excluded_location_matches'] ?? []) as $type => $file) {
+            $listFile = RECMAN_BASE_PATH . "/conf/$file";
+            $ids = file($listFile, FILE_IGNORE_NEW_LINES);
+            if (false === $ids) {
+                throw new \Exception("Could not read $listFile");
+            }
+            if ($ids) {
+                $this->excludedLocationMatches[$type] = $ids;
+            }
         }
     }
 
@@ -601,6 +622,14 @@ class SkosmosEnrichment extends AbstractEnrichment
         $lat = $node->getProperty(self::WGS84_POS . 'lat');
         $lon = $node->getProperty(self::WGS84_POS . 'long');
         if ($lat && $lon) {
+            // Check for excluded types:
+            foreach ($this->excludedLocationMatches as $type => $ids) {
+                if ($prop = $node->getProperty($type)) {
+                    if (in_array($prop->getId(), $ids)) {
+                        return $result;
+                    }
+                }
+            }
             $lat = is_array($lat) ? $lat[0]->getValue() : $lat->getValue();
             $lon = is_array($lon) ? $lon[0]->getValue() : $lon->getValue();
             $result[] = [
