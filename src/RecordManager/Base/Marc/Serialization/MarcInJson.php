@@ -29,6 +29,8 @@
 
 namespace RecordManager\Base\Marc\Serialization;
 
+use function is_array;
+
 /**
  * Extended MARC-in-JSON serializer with support for RecordManager legacy formats
  *

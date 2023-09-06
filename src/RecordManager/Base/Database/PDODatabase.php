@@ -29,6 +29,12 @@
 
 namespace RecordManager\Base\Database;
 
+use function count;
+use function in_array;
+use function intval;
+use function is_array;
+use function is_bool;
+
 /**
  * PDO access class
  *
@@ -619,6 +625,27 @@ class PDODatabase extends AbstractDatabase
     }
 
     /**
+     * Get database handle
+     *
+     * @return \PDO
+     */
+    public function getDb(): \PDO
+    {
+        if (null === $this->db) {
+            $this->db = new \PDO($this->dsn, $this->username, $this->password);
+            $this->db
+                ->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
+            $this->pid = getmypid();
+        } elseif ($this->pid !== getmypid()) {
+            throw new \Exception(
+                'PID ' . getmypid() . ': database already connected by PID '
+                . $this->pid
+            );
+        }
+        return $this->db;
+    }
+
+    /**
      * Get a record
      *
      * @param string $collection Collection
@@ -1193,26 +1220,5 @@ class PDODatabase extends AbstractDatabase
             }
         }
         return $this->mainFields[$collection];
-    }
-
-    /**
-     * Get database handle
-     *
-     * @return \PDO
-     */
-    public function getDb(): \PDO
-    {
-        if (null === $this->db) {
-            $this->db = new \PDO($this->dsn, $this->username, $this->password);
-            $this->db
-                ->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
-            $this->pid = getmypid();
-        } elseif ($this->pid !== getmypid()) {
-            throw new \Exception(
-                'PID ' . getmypid() . ': database already connected by PID '
-                . $this->pid
-            );
-        }
-        return $this->db;
     }
 }

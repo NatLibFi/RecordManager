@@ -37,6 +37,10 @@ use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\XslTransformation;
 
+use function count;
+use function in_array;
+use function strlen;
+
 /**
  * OAI-PMH Provider
  *
@@ -491,7 +495,7 @@ class OaiPmhProvider extends AbstractBase
     protected function printPrefix()
     {
         header('Content-Type: text/xml');
-        header("Cache-Control: no-cache, must-revalidate");
+        header('Cache-Control: no-cache, must-revalidate');
         $date = $this->toOaiDate();
         $base = $this->escape($this->config['OAI-PMH']['base_url']);
         $arguments = '';
@@ -616,7 +620,7 @@ class OaiPmhProvider extends AbstractBase
     protected function getRequestParameters()
     {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $params = file_get_contents("php://input");
+            $params = file_get_contents('php://input');
         } else {
             $params = $_SERVER['QUERY_STRING'];
         }

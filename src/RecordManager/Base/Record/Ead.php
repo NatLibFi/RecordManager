@@ -31,6 +31,9 @@ namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
 
+use function count;
+use function in_array;
+
 /**
  * Ead record class
  *
@@ -49,35 +52,35 @@ class Ead extends AbstractRecord
     /**
      * Archive fonds format
      *
-     * @return string
+     * @var string
      */
     protected $fondsType = 'fonds';
 
     /**
      * Archive collection format
      *
-     * @return string
+     * @var string
      */
     protected $collectionType = 'collection';
 
     /**
      * Archive series format
      *
-     * @return string
+     * @var string
      */
     protected $seriesType = 'series';
 
     /**
      * Archive subseries format
      *
-     * @return string
+     * @var string
      */
     protected $subseriesType = 'subseries';
 
     /**
      * Undefined type
      *
-     * @return string
+     * @var string
      */
     protected $undefinedType = null;
 

@@ -36,6 +36,9 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use function function_exists;
+use function in_array;
+
 /**
  * Deduplication
  *
@@ -53,6 +56,21 @@ class Deduplicate extends AbstractBase
      * @var bool
      */
     protected $terminate = false;
+
+    /**
+     * Catch the SIGINT signal and signal the main thread to terminate
+     *
+     * Note: this needs to be public so that the int handler can call it.
+     *
+     * @param int $signal Signal ID
+     *
+     * @return void
+     */
+    public function sigIntHandler($signal)
+    {
+        $this->terminate = true;
+        $this->logger->writelnConsole('Termination requested');
+    }
 
     /**
      * Configure the command.
@@ -296,20 +314,5 @@ class Deduplicate extends AbstractBase
         }
         $this->logger->logInfo('deduplicate', 'Deduplication completed');
         return Command::SUCCESS;
-    }
-
-    /**
-     * Catch the SIGINT signal and signal the main thread to terminate
-     *
-     * Note: this needs to be public so that the int handler can call it.
-     *
-     * @param int $signal Signal ID
-     *
-     * @return void
-     */
-    public function sigIntHandler($signal)
-    {
-        $this->terminate = true;
-        $this->logger->writelnConsole('Termination requested');
     }
 }

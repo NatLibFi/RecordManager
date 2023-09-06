@@ -29,6 +29,9 @@
 
 namespace RecordManager\Base\Marc;
 
+use function in_array;
+use function is_string;
+
 /**
  * MARC record handler class
  *
@@ -64,6 +67,8 @@ class Marc extends \VuFind\Marc\MarcReader
     /**
      * A record-specific transient cache for results from methods that may get called
      * multiple times with same parameters e.g. during deduplication.
+     *
+     * @var array
      */
     protected $resultCache = [];
 

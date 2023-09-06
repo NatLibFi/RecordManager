@@ -35,6 +35,10 @@ namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Exception\HttpRequestException;
 
+use function call_user_func;
+use function count;
+use function strlen;
+
 /**
  * OaiPmh Class
  *
@@ -323,7 +327,7 @@ class OaiPmh extends AbstractBase
         if ($this->lastResumptionToken === $resumptionToken) {
             if (++$this->sameResumptionTokenCount >= $this->sameResumptionTokenLimit) {
                 throw new \Exception(
-                    "Same resumptionToken received"
+                    'Same resumptionToken received'
                     . " {$this->sameResumptionTokenCount} times, aborting"
                 );
             }
@@ -479,7 +483,7 @@ class OaiPmh extends AbstractBase
             file_put_contents($tempfile, $xml);
             $this->errorMsg("Invalid XML stored in $tempfile");
             throw new \Exception(
-                "Failed to parse XML response: " . $e->getMessage()
+                'Failed to parse XML response: ' . $e->getMessage()
             );
         }
 
@@ -503,7 +507,7 @@ class OaiPmh extends AbstractBase
     /**
      * Extract the ID from a record object (support method for processRecords()).
      *
-     * @param \DOMNode $record XML record header
+     * @param \DOMElement $record XML record header
      *
      * @return string The ID value
      */
@@ -757,8 +761,8 @@ class OaiPmh extends AbstractBase
      * Traverse all children and collect those nodes that
      * have the tagname specified in $tagName. Non-recursive
      *
-     * @param \DOMElement $element DOM Element
-     * @param string      $tagName Tag to get
+     * @param \DOMNode $element DOM Element
+     * @param string   $tagName Tag to get
      *
      * @return array
      */

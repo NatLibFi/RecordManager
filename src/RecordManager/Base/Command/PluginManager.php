@@ -49,6 +49,6 @@ class PluginManager extends \Laminas\ServiceManager\AbstractPluginManager
      */
     public function getCommandList()
     {
-        return array_keys($this->factories);
+        return array_keys((array)$this->factories);
     }
 }

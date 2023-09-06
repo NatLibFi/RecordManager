@@ -92,13 +92,13 @@ class DeleteSource extends AbstractBase
                     $this->logger->logWarning(
                         'deleteSource',
                         "Deduplication enabled for '$sourceId' but deletion forced "
-                        . " - may lead to orphaned dedup records"
+                        . ' - may lead to orphaned dedup records'
                     );
                 } else {
                     $this->logger->logError(
                         'deleteSource',
                         "Deduplication enabled for '$sourceId', aborting "
-                        . "(use markdeleted instead)"
+                        . '(use markdeleted instead)'
                     );
                     return Command::INVALID;
                 }

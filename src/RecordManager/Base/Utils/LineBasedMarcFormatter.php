@@ -30,6 +30,10 @@
 
 namespace RecordManager\Base\Utils;
 
+use function count;
+use function intval;
+use function strlen;
+
 /**
  * Line-based MARC formatter
  *
@@ -102,7 +106,7 @@ class LineBasedMarcFormatter
     {
         $xml = simplexml_load_string(
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n"
-            . "<collection><record></record></collection>"
+            . '<collection><record></record></collection>'
         );
         $record = $xml->record[0];
 

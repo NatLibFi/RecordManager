@@ -31,6 +31,13 @@ namespace RecordManager\Base\Utils;
 
 use RecordManager\Base\Record\AbstractRecord;
 
+use function assert;
+use function count;
+use function in_array;
+use function is_array;
+use function is_object;
+use function strlen;
+
 /**
  * MetadataUtils Class
  *
@@ -150,7 +157,7 @@ class MetadataUtils
      * @var string
      */
     protected $keyFoldingRules
-        = ":: NFD; :: lower; :: Latin; :: [^[:letter:] [:number:]] Remove; :: NFKC;";
+        = ':: NFD; :: lower; :: Latin; :: [^[:letter:] [:number:]] Remove; :: NFKC;';
 
     /**
      * Transliterator for folding keys
@@ -426,24 +433,6 @@ class MetadataUtils
     }
 
     /**
-     * Get the transliterator for folding keys
-     *
-     * @return ?\Transliterator
-     */
-    protected function getKeyFoldingTransliterator(): ?\Transliterator
-    {
-        if (!$this->keyFoldingRules) {
-            return null;
-        }
-        if (null === $this->keyFoldingTransliterator) {
-            $this->keyFoldingTransliterator = \Transliterator::createFromRules(
-                $this->keyFoldingRules
-            );
-        }
-        return $this->keyFoldingTransliterator;
-    }
-
-    /**
      * Normalize an ISBN to ISBN-13 without dashes
      *
      * @param string $isbn ISBN to normalize
@@ -548,7 +537,7 @@ class MetadataUtils
         ?string $punctuation = null,
         bool $preservePunctuationOnly = true
     ) {
-        $punctuation ??= "[\\t\\p{P}=´`” ̈]+";
+        $punctuation ??= '[\\t\\p{P}=´`” ̈]+';
         // Use preg_replace for multibyte support
         $result = preg_replace(
             '/' . $punctuation . '/u',
@@ -1299,6 +1288,24 @@ class MetadataUtils
             $result .= " $smushAll";
         }
         return trim($result);
+    }
+
+    /**
+     * Get the transliterator for folding keys
+     *
+     * @return ?\Transliterator
+     */
+    protected function getKeyFoldingTransliterator(): ?\Transliterator
+    {
+        if (!$this->keyFoldingRules) {
+            return null;
+        }
+        if (null === $this->keyFoldingTransliterator) {
+            $this->keyFoldingTransliterator = \Transliterator::createFromRules(
+                $this->keyFoldingRules
+            );
+        }
+        return $this->keyFoldingTransliterator;
     }
 
     /**

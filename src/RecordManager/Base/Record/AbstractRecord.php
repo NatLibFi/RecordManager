@@ -33,6 +33,8 @@ use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
+use function in_array;
+
 /**
  * Base class for record drivers
  *
@@ -98,6 +100,8 @@ abstract class AbstractRecord
     /**
      * A record-specific transient cache for results from methods that may get called
      * multiple times with same parameters e.g. during deduplication.
+     *
+     * @var array
      */
     protected $resultCache = [];
 

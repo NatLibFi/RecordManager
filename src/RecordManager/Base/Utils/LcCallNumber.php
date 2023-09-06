@@ -29,6 +29,10 @@
 
 namespace RecordManager\Base\Utils;
 
+use function in_array;
+use function intval;
+use function strlen;
+
 /**
  * LcCallNumber Class
  *

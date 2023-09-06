@@ -31,6 +31,8 @@ namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
 
+use function is_array;
+
 /**
  * Forward authority Record Class
  *

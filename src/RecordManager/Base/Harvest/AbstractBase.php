@@ -34,6 +34,8 @@ use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
+use function get_class;
+
 /**
  * Harvesting Base Class
  *

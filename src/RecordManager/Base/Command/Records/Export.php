@@ -36,6 +36,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use function count;
+
 /**
  * Export
  *
@@ -353,7 +355,7 @@ class Export extends AbstractBase
                         $this->logger->logInfo(
                             'exportRecords',
                             "$count records (of which $deduped deduped, $deleted "
-                            . "deleted) exported"
+                            . 'deleted) exported'
                         );
                     }
                 }
@@ -361,7 +363,7 @@ class Export extends AbstractBase
             $this->logger->logInfo(
                 'exportRecords',
                 "Completed with $count records (of which $deduped deduped, $deleted "
-                . "deleted) exported"
+                . 'deleted) exported'
             );
         } catch (\Exception $e) {
             $this->logger->logFatal(

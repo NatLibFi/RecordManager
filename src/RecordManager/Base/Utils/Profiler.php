@@ -29,6 +29,9 @@
 
 namespace RecordManager\Base\Utils;
 
+use function extension_loaded;
+use function ini_get;
+
 /**
  * Profiling support class
  *
@@ -56,6 +59,8 @@ class Profiler
 
     /**
      * Profiler base URL
+     *
+     * @var string
      */
     protected $baseUrl = '';
 

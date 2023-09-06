@@ -89,7 +89,7 @@ class Renormalize extends AbstractBase
             foreach (explode(',', $sourceId) as $source) {
                 $this->logger->logInfo(
                     'renormalize',
-                    "Renormalizing " . ($source ?: 'all records')
+                    'Renormalizing ' . ($source ?: 'all records')
                 );
                 $this->process($source, $singleId);
             }

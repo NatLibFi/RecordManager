@@ -29,6 +29,8 @@
 
 namespace RecordManager\Base\Utils;
 
+use function is_array;
+
 /**
  * Field value mapper
  *

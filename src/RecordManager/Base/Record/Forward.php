@@ -33,6 +33,9 @@ use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
+use function in_array;
+use function is_array;
+
 /**
  * Forward record class
  *
@@ -74,6 +77,11 @@ class Forward extends AbstractRecord
     protected $corporateAuthorRelators = [
     ];
 
+    /**
+     * Fields to leave out from allfields
+     *
+     * @var array
+     */
     protected $filterFromAllFields = [
         'Identifier', 'RecordSource', 'TitleRelationship', 'Activity',
         'AgentIdentifier', 'ProductionEventType', 'DescriptionType', 'Language',
@@ -231,6 +239,38 @@ class Forward extends AbstractRecord
             }
         }
         return $author;
+    }
+
+    /**
+     * Return record title
+     *
+     * @param bool $forFiling Whether the title is to be used in filing
+     *                        (e.g. sorting, non-filing characters should be removed)
+     *
+     * @return string
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function getTitle($forFiling = false)
+    {
+        $doc = $this->getMainElement();
+        $title = (string)$doc->IdentifyingTitle;
+
+        if ($forFiling) {
+            $title = $this->metadataUtils->createSortTitle($title);
+        }
+
+        return $title;
+    }
+
+    /**
+     * Return format from predefined values
+     *
+     * @return string|array
+     */
+    public function getFormat()
+    {
+        return 'MotionPicture';
     }
 
     /**
@@ -418,38 +458,6 @@ class Forward extends AbstractRecord
             }
         }
         return $results;
-    }
-
-    /**
-     * Return record title
-     *
-     * @param bool $forFiling Whether the title is to be used in filing
-     *                        (e.g. sorting, non-filing characters should be removed)
-     *
-     * @return string
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    public function getTitle($forFiling = false)
-    {
-        $doc = $this->getMainElement();
-        $title = (string)$doc->IdentifyingTitle;
-
-        if ($forFiling) {
-            $title = $this->metadataUtils->createSortTitle($title);
-        }
-
-        return $title;
-    }
-
-    /**
-     * Return format from predefined values
-     *
-     * @return string|array
-     */
-    public function getFormat()
-    {
-        return 'MotionPicture';
     }
 
     /**

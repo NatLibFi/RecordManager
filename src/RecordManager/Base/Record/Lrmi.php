@@ -32,6 +32,8 @@ namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
 
+use function in_array;
+
 /**
  * Lrmi record class
  *
@@ -112,6 +114,26 @@ class Lrmi extends Qdc
     }
 
     /**
+     * Get topics.
+     *
+     * @return array
+     */
+    public function getTopics()
+    {
+        return $this->getTopicData(false);
+    }
+
+    /**
+     * Get all topic identifiers (for enrichment)
+     *
+     * @return array
+     */
+    public function getRawTopicIds(): array
+    {
+        return $this->getTopicData(true);
+    }
+
+    /**
      * Get primary authors
      *
      * @return array
@@ -157,26 +179,6 @@ class Lrmi extends Qdc
             }
         }
         return $result;
-    }
-
-    /**
-     * Get topics.
-     *
-     * @return array
-     */
-    public function getTopics()
-    {
-        return $this->getTopicData(false);
-    }
-
-    /**
-     * Get all topic identifiers (for enrichment)
-     *
-     * @return array
-     */
-    public function getRawTopicIds(): array
-    {
-        return $this->getTopicData(true);
     }
 
     /**

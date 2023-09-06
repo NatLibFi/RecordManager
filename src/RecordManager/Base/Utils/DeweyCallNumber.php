@@ -29,6 +29,8 @@
 
 namespace RecordManager\Base\Utils;
 
+use function floatval;
+
 /**
  * Dewey Call Number Class
  *
@@ -45,6 +47,8 @@ class DeweyCallNumber extends AbstractCallNumber
 {
     /**
      * Raw value
+     *
+     * @var string
      */
     protected $raw;
 
@@ -137,7 +141,7 @@ class DeweyCallNumber extends AbstractCallNumber
     {
         if (null !== $this->classification) {
             $val = floatval($this->classification);
-            return sprintf("%03.0F", floor($val / $precision) * $precision);
+            return sprintf('%03.0F', floor($val / $precision) * $precision);
         }
         return '';
     }

@@ -32,6 +32,9 @@ namespace RecordManager\Base\Harvest;
 use RecordManager\Base\Exception\HttpRequestException;
 use RecordManager\Base\Utils\XmlSecurity;
 
+use function call_user_func;
+use function count;
+
 /**
  * HTTPFiles Class
  *
@@ -152,7 +155,7 @@ class HTTPFiles extends AbstractBase
                         . ':' . $error->column . ': ' . $error->message;
                 }
                 $this->fatalMsg("Could not parse XML response: $errors");
-                throw new \Exception("Failed to parse XML response");
+                throw new \Exception('Failed to parse XML response');
             }
             libxml_use_internal_errors($saveUseErrors);
 
@@ -194,7 +197,7 @@ class HTTPFiles extends AbstractBase
                 if ($try < 5) {
                     $this->warningMsg(
                         "Request '$urlStr' failed (" . $e->getMessage()
-                        . "), retrying in 30 seconds..."
+                        . '), retrying in 30 seconds...'
                     );
                     sleep(30);
                     continue;
@@ -206,7 +209,7 @@ class HTTPFiles extends AbstractBase
                 if ($code >= 300) {
                     $this->warningMsg(
                         "Request '$urlStr' failed ($code), "
-                        . "retrying in 30 seconds..."
+                        . 'retrying in 30 seconds...'
                     );
                     sleep(30);
                     continue;
@@ -277,7 +280,7 @@ class HTTPFiles extends AbstractBase
                 if ($try < 5) {
                     $this->warningMsg(
                         "Request '$urlStr' failed (" . $e->getMessage()
-                        . "), retrying in 30 seconds..."
+                        . '), retrying in 30 seconds...'
                     );
                     sleep(30);
                     continue;
@@ -289,7 +292,7 @@ class HTTPFiles extends AbstractBase
                 if ($code >= 300) {
                     $this->warningMsg(
                         "Request '$urlStr' failed ($code), retrying in "
-                        . "30 seconds..."
+                        . '30 seconds...'
                     );
                     sleep(30);
                     continue;

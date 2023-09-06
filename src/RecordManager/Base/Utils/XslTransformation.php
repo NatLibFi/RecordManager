@@ -29,6 +29,9 @@
 
 namespace RecordManager\Base\Utils;
 
+use function is_array;
+use function is_string;
+
 /**
  * XslTransformation Class
  *
@@ -187,7 +190,7 @@ class XslTransformation
         $transformedDoc = $this->xslt->transformToDoc($doc);
         if ($transformedDoc === false) {
             throw new \Exception(
-                "XslTransformation: failed transformation: "
+                'XslTransformation: failed transformation: '
                 . print_r(libxml_get_last_error(), true)
             );
         }

@@ -35,6 +35,10 @@ use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
+use function count;
+use function in_array;
+use function strlen;
+
 /**
  * Deduplication handler
  *
@@ -944,7 +948,7 @@ class DedupHandler implements DedupHandlerInterface
         if ($origAuthor || $candidateAuthor) {
             if (!$origAuthor || !$candidateAuthor) {
                 $this->log->writelnVeryVerbose(
-                    "--Author discard:" . PHP_EOL
+                    '--Author discard:' . PHP_EOL
                     . "Original:  $origAuthor" . PHP_EOL
                     . "Candidate: $candidateAuthor"
                 );

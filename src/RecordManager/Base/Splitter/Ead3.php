@@ -31,6 +31,9 @@
 
 namespace RecordManager\Base\Splitter;
 
+use function count;
+use function in_array;
+
 /**
  * EAD 3 splitter
  *

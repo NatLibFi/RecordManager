@@ -106,7 +106,7 @@ class Send extends AbstractBase
                 ++$count;
             }
             if ($messages) {
-                $message = "RecordManager log summary:" . PHP_EOL . PHP_EOL
+                $message = 'RecordManager log summary:' . PHP_EOL . PHP_EOL
                     . implode(PHP_EOL, $messages);
                 $result = mail(
                     $recipient,

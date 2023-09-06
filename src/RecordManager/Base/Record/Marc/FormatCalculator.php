@@ -34,6 +34,8 @@ namespace RecordManager\Base\Record\Marc;
 
 use RecordManager\Base\Marc\Marc;
 
+use function in_array;
+
 /**
  * Marc record format calculator
  *
@@ -50,6 +52,33 @@ use RecordManager\Base\Marc\Marc;
  */
 class FormatCalculator
 {
+    /**
+     * Determine Record Format(s)
+     *
+     * @param Marc $record MARC record
+     *
+     * @return array<int, string> Record formats
+     */
+    public function getFormats(Marc $record): array
+    {
+        // Deduplicate list:
+        return array_values(array_unique($this->getFormatsAsList($record)));
+    }
+
+    /**
+     * Determine Record Format
+     *
+     * @param Marc $record MARC record
+     *
+     * @return array First format
+     */
+    public function getFormat(Marc $record): array
+    {
+        $result = $this->getFormatsAsList($record);
+        // Return the first format as an array:
+        return [reset($result)];
+    }
+
     /**
      * Determine whether a record cannot be a book due to findings in 007.
      *
@@ -254,8 +283,8 @@ class FormatCalculator
                 ? 'Article' : 'BookComponentPart';
             case 'b':
                 return 'SerialComponentPart';
-        // Collection and sub-unit will be mapped to 'Kit' below if no other
-        // format can be found. For now return an empty string here.
+                // Collection and sub-unit will be mapped to 'Kit' below if no other
+                // format can be found. For now return an empty string here.
             case 'c': // Collection
             case 'd': // Sub-unit
                 return '';
@@ -792,32 +821,5 @@ class FormatCalculator
         }
 
         return $result;
-    }
-
-    /**
-     * Determine Record Format(s)
-     *
-     * @param Marc $record MARC record
-     *
-     * @return array<int, string> Record formats
-     */
-    public function getFormats(Marc $record): array
-    {
-        // Deduplicate list:
-        return array_values(array_unique($this->getFormatsAsList($record)));
-    }
-
-    /**
-     * Determine Record Format
-     *
-     * @param Marc $record MARC record
-     *
-     * @return array First format
-     */
-    public function getFormat(Marc $record): array
-    {
-        $result = $this->getFormatsAsList($record);
-        // Return the first format as an array:
-        return [reset($result)];
     }
 }

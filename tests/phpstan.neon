@@ -6,6 +6,8 @@ parameters:
     bootstrapFiles:
         - %currentWorkingDirectory%/tests/bootstrap.php
     tmpDir: %currentWorkingDirectory%/.phpstan_cache
-    level: 4
     parallel:
         processTimeout: 600.0
+    level: 6
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false

@@ -37,6 +37,10 @@ use RecordManager\Base\Utils\LcCallNumber;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
+use function in_array;
+use function intval;
+use function is_array;
+
 /**
  * Marc record class
  *
@@ -598,26 +602,6 @@ class Marc extends AbstractRecord
     }
 
     /**
-     * Create a linking id from record id
-     *
-     * @param string $id Record id
-     *
-     * @return string
-     */
-    protected function createLinkingId($id)
-    {
-        if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
-            $source = $this->metadataUtils->stripTrailingPunctuation(
-                $this->record->getControlField('003')
-            );
-            if ($source) {
-                $id = "($source)$id";
-            }
-        }
-        return $id;
-    }
-
-    /**
      * Return whether the record is a component part
      *
      * @return boolean
@@ -1114,168 +1098,6 @@ class Marc extends AbstractRecord
     }
 
     /**
-     * Get the building field
-     *
-     * @return array
-     */
-    protected function getBuilding()
-    {
-        $building = [];
-        $buildingFieldSpec = $this->getDriverParam('buildingFields', false);
-        if (
-            $this->getDriverParam('holdingsInBuilding', true)
-            || false !== $buildingFieldSpec
-        ) {
-            $buildingFieldSpec = $this->getDriverParam('buildingFields', false);
-            if (false === $buildingFieldSpec) {
-                $buildingFields = $this->getDefaultBuildingFields();
-            } else {
-                $buildingFields = [];
-                $parts = explode(':', $buildingFieldSpec);
-                foreach ($parts as $part) {
-                    $buildingFields[] = [
-                        'field' => substr($part, 0, 3),
-                        'loc' => substr($part, 3, 1),
-                        'sub' => substr($part, 4, 1),
-                    ];
-                }
-            }
-
-            foreach ($buildingFields as $buildingField) {
-                foreach ($this->record->getFields($buildingField['field']) as $field) {
-                    $location = $this->record->getSubfield($field, $buildingField['loc']);
-                    if ($location) {
-                        $subLocField = $buildingField['sub'];
-                        if ($subLocField) {
-                            $sub = $this->record->getSubfield($field, $subLocField);
-                            if ($sub) {
-                                $location = [$location, $sub];
-                            }
-                        }
-                        $building[] = $location;
-                    }
-                }
-            }
-        }
-        return $building;
-    }
-
-    /**
-     * Get default fields used to populate the building field
-     *
-     * @return array
-     */
-    protected function getDefaultBuildingFields()
-    {
-        $useSub = $this->getDriverParam('subLocationInBuilding', '');
-        $fields = [
-            [
-                'field' => '852',
-                'loc' => 'b',
-                'sub' => $useSub,
-            ],
-        ];
-        if (
-            $this->getDriverParam('kohaNormalization', false)
-            || $this->getDriverParam('almaNormalization', false)
-        ) {
-            $itemSub = $this->getDriverParam('itemSubLocationInBuilding', $useSub);
-            $fields[] = [
-                'field' => '952',
-                'loc' => 'b',
-                'sub' => $itemSub,
-            ];
-        }
-        return $fields;
-    }
-
-    /**
-     * Get alternate titles
-     *
-     * @return array
-     */
-    protected function getAltTitles(): array
-    {
-        return array_values(
-            array_unique(
-                $this->getFieldsSubfields(
-                    [
-                        [MarcHandler::GET_ALT, '245', ['a', 'b']],
-                        [MarcHandler::GET_BOTH, '130', [
-                            'a', 'd', 'f', 'g', 'k', 'l', 'n', 'p', 's', 't',
-                        ]],
-                        [MarcHandler::GET_BOTH, '240', ['a']],
-                        [MarcHandler::GET_BOTH, '246', ['a', 'b', 'n', 'p']],
-                        [MarcHandler::GET_BOTH, '730', [
-                            'a', 'd', 'f', 'g', 'k', 'l', 'n', 'p', 's', 't',
-                        ]],
-                        [MarcHandler::GET_BOTH, '740', ['a']],
-                    ]
-                )
-            )
-        );
-    }
-
-    /**
-     * Check if the work is illustrated
-     *
-     * @return string
-     */
-    protected function getIllustrated()
-    {
-        $leader = $this->record->getLeader();
-        if (in_array(substr($leader, 6, 1), ['a', 't'])) {
-            $illustratedCodes = [
-                'a' => 1,
-                'b' => 1,
-                'c' => 1,
-                'd' => 1,
-                'e' => 1,
-                'f' => 1,
-                'g' => 1,
-                'h' => 1,
-                'i' => 1,
-                'j' => 1,
-                'k' => 1,
-                'l' => 1,
-                'm' => 1,
-                'o' => 1,
-                'p' => 1,
-            ];
-
-            // 008
-            $field008 = $this->record->getControlField('008');
-            for ($pos = 18; $pos <= 21; $pos++) {
-                $ch = substr($field008, $pos, 1);
-                if ('' !== $ch && isset($illustratedCodes[$ch])) {
-                    return 'Illustrated';
-                }
-            }
-
-            // 006
-            foreach ($this->record->getControlFields('006') as $field006) {
-                for ($pos = 1; $pos <= 4; $pos++) {
-                    $ch = substr($field006, $pos, 1);
-                    if ('' !== $ch && isset($illustratedCodes[$ch])) {
-                        return 'Illustrated';
-                    }
-                }
-            }
-        }
-
-        // Now check for interesting strings in 300 subfield b:
-        foreach ($this->record->getFields('300') as $field300) {
-            $sub = strtolower($this->record->getSubfield($field300, 'b'));
-            foreach ($this->illustrationStrings as $illStr) {
-                if (str_contains($sub, $illStr)) {
-                    return 'Illustrated';
-                }
-            }
-        }
-        return 'Not Illustrated';
-    }
-
-    /**
      * Get key data that can be used to identify expressions of a work
      *
      * Returns an associative array like this where each set of keys defines the
@@ -1696,6 +1518,188 @@ class Marc extends AbstractRecord
         // Try to clean up the title but return original if it only contains
         // punctuation:
         return $this->metadataUtils->stripTrailingPunctuation($title, '', true);
+    }
+
+    /**
+     * Create a linking id from record id
+     *
+     * @param string $id Record id
+     *
+     * @return string
+     */
+    protected function createLinkingId($id)
+    {
+        if ('' !== $id && $this->getDriverParam('003InLinkingID', false)) {
+            $source = $this->metadataUtils->stripTrailingPunctuation(
+                $this->record->getControlField('003')
+            );
+            if ($source) {
+                $id = "($source)$id";
+            }
+        }
+        return $id;
+    }
+
+    /**
+     * Get the building field
+     *
+     * @return array
+     */
+    protected function getBuilding()
+    {
+        $building = [];
+        $buildingFieldSpec = $this->getDriverParam('buildingFields', false);
+        if (
+            $this->getDriverParam('holdingsInBuilding', true)
+            || false !== $buildingFieldSpec
+        ) {
+            $buildingFieldSpec = $this->getDriverParam('buildingFields', false);
+            if (false === $buildingFieldSpec) {
+                $buildingFields = $this->getDefaultBuildingFields();
+            } else {
+                $buildingFields = [];
+                $parts = explode(':', $buildingFieldSpec);
+                foreach ($parts as $part) {
+                    $buildingFields[] = [
+                        'field' => substr($part, 0, 3),
+                        'loc' => substr($part, 3, 1),
+                        'sub' => substr($part, 4, 1),
+                    ];
+                }
+            }
+
+            foreach ($buildingFields as $buildingField) {
+                foreach ($this->record->getFields($buildingField['field']) as $field) {
+                    $location = $this->record->getSubfield($field, $buildingField['loc']);
+                    if ($location) {
+                        $subLocField = $buildingField['sub'];
+                        if ($subLocField) {
+                            $sub = $this->record->getSubfield($field, $subLocField);
+                            if ($sub) {
+                                $location = [$location, $sub];
+                            }
+                        }
+                        $building[] = $location;
+                    }
+                }
+            }
+        }
+        return $building;
+    }
+
+    /**
+     * Get default fields used to populate the building field
+     *
+     * @return array
+     */
+    protected function getDefaultBuildingFields()
+    {
+        $useSub = $this->getDriverParam('subLocationInBuilding', '');
+        $fields = [
+            [
+                'field' => '852',
+                'loc' => 'b',
+                'sub' => $useSub,
+            ],
+        ];
+        if (
+            $this->getDriverParam('kohaNormalization', false)
+            || $this->getDriverParam('almaNormalization', false)
+        ) {
+            $itemSub = $this->getDriverParam('itemSubLocationInBuilding', $useSub);
+            $fields[] = [
+                'field' => '952',
+                'loc' => 'b',
+                'sub' => $itemSub,
+            ];
+        }
+        return $fields;
+    }
+
+    /**
+     * Get alternate titles
+     *
+     * @return array
+     */
+    protected function getAltTitles(): array
+    {
+        return array_values(
+            array_unique(
+                $this->getFieldsSubfields(
+                    [
+                        [MarcHandler::GET_ALT, '245', ['a', 'b']],
+                        [MarcHandler::GET_BOTH, '130', [
+                            'a', 'd', 'f', 'g', 'k', 'l', 'n', 'p', 's', 't',
+                        ]],
+                        [MarcHandler::GET_BOTH, '240', ['a']],
+                        [MarcHandler::GET_BOTH, '246', ['a', 'b', 'n', 'p']],
+                        [MarcHandler::GET_BOTH, '730', [
+                            'a', 'd', 'f', 'g', 'k', 'l', 'n', 'p', 's', 't',
+                        ]],
+                        [MarcHandler::GET_BOTH, '740', ['a']],
+                    ]
+                )
+            )
+        );
+    }
+
+    /**
+     * Check if the work is illustrated
+     *
+     * @return string
+     */
+    protected function getIllustrated()
+    {
+        $leader = $this->record->getLeader();
+        if (in_array(substr($leader, 6, 1), ['a', 't'])) {
+            $illustratedCodes = [
+                'a' => 1,
+                'b' => 1,
+                'c' => 1,
+                'd' => 1,
+                'e' => 1,
+                'f' => 1,
+                'g' => 1,
+                'h' => 1,
+                'i' => 1,
+                'j' => 1,
+                'k' => 1,
+                'l' => 1,
+                'm' => 1,
+                'o' => 1,
+                'p' => 1,
+            ];
+
+            // 008
+            $field008 = $this->record->getControlField('008');
+            for ($pos = 18; $pos <= 21; $pos++) {
+                $ch = substr($field008, $pos, 1);
+                if ('' !== $ch && isset($illustratedCodes[$ch])) {
+                    return 'Illustrated';
+                }
+            }
+
+            // 006
+            foreach ($this->record->getControlFields('006') as $field006) {
+                for ($pos = 1; $pos <= 4; $pos++) {
+                    $ch = substr($field006, $pos, 1);
+                    if ('' !== $ch && isset($illustratedCodes[$ch])) {
+                        return 'Illustrated';
+                    }
+                }
+            }
+        }
+
+        // Now check for interesting strings in 300 subfield b:
+        foreach ($this->record->getFields('300') as $field300) {
+            $sub = strtolower($this->record->getSubfield($field300, 'b'));
+            foreach ($this->illustrationStrings as $illStr) {
+                if (str_contains($sub, $illStr)) {
+                    return 'Illustrated';
+                }
+            }
+        }
+        return 'Not Illustrated';
     }
 
     /**

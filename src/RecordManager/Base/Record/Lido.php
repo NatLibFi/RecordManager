@@ -31,6 +31,11 @@ namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
 
+use function count;
+use function in_array;
+use function is_string;
+use function strlen;
+
 /**
  * Lido record class
  *

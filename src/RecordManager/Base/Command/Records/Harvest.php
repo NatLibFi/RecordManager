@@ -43,6 +43,11 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
+use function count;
+use function in_array;
+use function is_callable;
+use function is_string;
+
 /**
  * Harvest
  *
@@ -100,6 +105,29 @@ class Harvest extends AbstractBase
         );
 
         $this->harvesterPluginManager = $harvesterManager;
+    }
+
+    /**
+     * Mark a record "seen". Used by OAI-PMH harvesting when deletions are not
+     * supported.
+     *
+     * @param string $sourceId Source ID
+     * @param string $oaiId    ID of the record as received from OAI-PMH
+     * @param bool   $deleted  Whether the record is to be deleted
+     *
+     * @throws \Exception
+     * @return void
+     */
+    public function markRecordSeen($sourceId, $oaiId, $deleted)
+    {
+        if ($deleted) {
+            // Don't mark deleted records...
+            return;
+        }
+        $this->db->updateRecords(
+            ['source_id' => $sourceId, 'oai_id' => $oaiId],
+            ['date' => $this->db->getTimestamp()]
+        );
     }
 
     /**
@@ -417,29 +445,6 @@ class Harvest extends AbstractBase
             }
         }
         return $returnCode;
-    }
-
-    /**
-     * Mark a record "seen". Used by OAI-PMH harvesting when deletions are not
-     * supported.
-     *
-     * @param string $sourceId Source ID
-     * @param string $oaiId    ID of the record as received from OAI-PMH
-     * @param bool   $deleted  Whether the record is to be deleted
-     *
-     * @throws \Exception
-     * @return void
-     */
-    public function markRecordSeen($sourceId, $oaiId, $deleted)
-    {
-        if ($deleted) {
-            // Don't mark deleted records...
-            return;
-        }
-        $this->db->updateRecords(
-            ['source_id' => $sourceId, 'oai_id' => $oaiId],
-            ['date' => $this->db->getTimestamp()]
-        );
     }
 
     /**

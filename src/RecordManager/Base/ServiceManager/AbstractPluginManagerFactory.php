@@ -35,6 +35,8 @@ use Laminas\ServiceManager\Factory\FactoryInterface;
 use Psr\Container\ContainerExceptionInterface as ContainerException;
 use Psr\Container\ContainerInterface;
 
+use function count;
+
 /**
  * Plugin Manager factory.
  *
@@ -46,31 +48,6 @@ use Psr\Container\ContainerInterface;
  */
 class AbstractPluginManagerFactory implements FactoryInterface
 {
-    /**
-     * Determine the configuration key for the specified class name.
-     *
-     * @param string $requestedName Service being created
-     *
-     * @return string
-     *
-     * @throws ServiceNotCreatedException if an exception is raised when
-     * creating a service.
-     */
-    public function getConfigKey($requestedName)
-    {
-        // Extract namespace of the plugin manager (chop off leading top-level
-        // namespace -- e.g. RecordManager\Base -- and trailing PluginManager class):
-        $parts = explode('\\', $requestedName);
-        if (count($parts) < 4 || array_pop($parts) !== 'PluginManager') {
-            throw new ServiceNotCreatedException(
-                "Cannot determine config key for $requestedName"
-            );
-        }
-        array_shift($parts);
-        array_shift($parts);
-        return strtolower(implode('_', $parts));
-    }
-
     /**
      * Create an object
      *
@@ -111,5 +88,30 @@ class AbstractPluginManagerFactory implements FactoryInterface
             $container,
             $config['recordmanager']['plugin_managers'][$configKey]
         );
+    }
+
+    /**
+     * Determine the configuration key for the specified class name.
+     *
+     * @param string $requestedName Service being created
+     *
+     * @return string
+     *
+     * @throws ServiceNotCreatedException if an exception is raised when
+     * creating a service.
+     */
+    public function getConfigKey($requestedName)
+    {
+        // Extract namespace of the plugin manager (chop off leading top-level
+        // namespace -- e.g. RecordManager\Base -- and trailing PluginManager class):
+        $parts = explode('\\', $requestedName);
+        if (count($parts) < 4 || array_pop($parts) !== 'PluginManager') {
+            throw new ServiceNotCreatedException(
+                "Cannot determine config key for $requestedName"
+            );
+        }
+        array_shift($parts);
+        array_shift($parts);
+        return strtolower(implode('_', $parts));
     }
 }

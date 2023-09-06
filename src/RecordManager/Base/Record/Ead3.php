@@ -237,6 +237,26 @@ class Ead3 extends Ead
     }
 
     /**
+     * Get author identifiers
+     *
+     * @return array
+     */
+    public function getAuthorIds(): array
+    {
+        return [];
+    }
+
+    /**
+     * Get corporate author identifiers
+     *
+     * @return array<int, string>
+     */
+    public function getCorporateAuthorIds()
+    {
+        return [];
+    }
+
+    /**
      * Get topic identifiers.
      *
      * @return array

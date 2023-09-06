@@ -36,6 +36,8 @@ use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
+use function in_array;
+
 /**
  * Enrichment Class
  *
@@ -101,7 +103,7 @@ abstract class AbstractEnrichment
     /**
      * HTTP_Request2 options
      *
-     * @array
+     * @var array
      */
     protected $httpOptions = [
         'follow_redirects' => true,

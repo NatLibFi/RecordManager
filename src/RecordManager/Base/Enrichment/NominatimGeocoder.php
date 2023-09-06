@@ -29,6 +29,13 @@
 
 namespace RecordManager\Base\Enrichment;
 
+use function array_slice;
+use function count;
+use function floatval;
+use function in_array;
+use function is_array;
+use function is_callable;
+
 /**
  * Nominatim Geocoder Class
  *
@@ -270,7 +277,7 @@ class NominatimGeocoder extends AbstractEnrichment
                 // an address:
                 $location = preg_replace(
                     '/(.{3,}\s+(\d{1,3}))\s*[a-zA-Z]\s*\d*$/',
-                    "$1",
+                    '$1',
                     $location
                 );
 
