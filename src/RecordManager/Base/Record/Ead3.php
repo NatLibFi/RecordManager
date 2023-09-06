@@ -179,8 +179,8 @@ class Ead3 extends Ead
      */
     public function getFormat()
     {
-        if (isset($this->doc->did->controlaccess->genreform->part)) {
-            return (string)$this->doc->did->controlaccess->genreform->part;
+        if ($format = trim((string)($this->doc->controlaccess->genreform->part ?? ''))) {
+            return $format;
         }
         return (string)$this->doc->attributes()->level;
     }
@@ -239,7 +239,7 @@ class Ead3 extends Ead
     /**
      * Get author identifiers
      *
-     * @return array
+     * @return array<int, string>
      */
     public function getAuthorIds(): array
     {
@@ -290,18 +290,17 @@ class Ead3 extends Ead
     /**
      * Get authors
      *
-     * @return array
+     * @return array<int, string>
      */
-    protected function getAuthors()
+    protected function getAuthors(): array
     {
         $result = [];
-        foreach ($this->doc->did->controlaccess->name ?? [] as $name) {
+        foreach ($this->getAuthorElements() as $name) {
             foreach ($name->part as $part) {
-                $result[] = trim((string)$part);
+                if ($trimmed = trim((string)$part)) {
+                    $result[] = $trimmed;
+                }
             }
-        }
-        foreach ($this->doc->did->origination->persname ?? [] as $name) {
-            $result[] = trim((string)$name);
         }
         return $result;
     }
@@ -309,25 +308,64 @@ class Ead3 extends Ead
     /**
      * Get corporate authors
      *
-     * @return array
+     * @return array<int, string>
      */
-    protected function getCorporateAuthors()
+    protected function getCorporateAuthors(): array
     {
         $result = [];
-        foreach ($this->doc->did->controlaccess->corpname ?? [] as $name) {
-            if (!isset($name->part)) {
-                $result[] = trim((string)$name);
-            } else {
-                foreach ($name->part as $part) {
-                    $result[] = trim((string)$part);
+        foreach ($this->getCorporateAuthorElements() as $name) {
+            foreach ($name->part as $part) {
+                if ($trimmed = trim((string)$part)) {
+                    $result[] = $trimmed;
                 }
             }
         }
+        return $result;
+    }
+
+    /**
+     * Helper function for getting author elements
+     *
+     * @return \SimpleXMLElement[] Array of author nodes
+     */
+    protected function getAuthorElements(): array
+    {
+        $result = [];
+        foreach ($this->doc->controlaccess as $controlaccess) {
+            foreach ($controlaccess->name as $name) {
+                $result[] = $name;
+            }
+            foreach ($controlaccess->persname as $persname) {
+                $result[] = $persname;
+            }
+        }
         foreach ($this->doc->did->origination ?? [] as $origination) {
-            foreach ($origination->name ?? [] as $name) {
-                foreach ($name->part ?? [] as $part) {
-                    $result[] = trim((string)$part);
-                }
+            foreach ($origination->name as $name) {
+                $result[] = $name;
+            }
+            foreach ($origination->persname as $persname) {
+                $result[] = $persname;
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Helper function for getting corporate author elements
+     *
+     * @return \SimpleXMLElement[] Array of author nodes
+     */
+    protected function getCorporateAuthorElements(): array
+    {
+        $result = [];
+        foreach ($this->doc->controlaccess as $controlaccess) {
+            foreach ($controlaccess->corpname as $name) {
+                $result[] = $name;
+            }
+        }
+        foreach ($this->doc->did->origination ?? [] as $origination) {
+            foreach ($origination->corpname as $name) {
+                $result[] = $name;
             }
         }
         return $result;
