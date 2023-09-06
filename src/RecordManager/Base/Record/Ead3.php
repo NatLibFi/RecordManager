@@ -251,7 +251,7 @@ class Ead3 extends Ead
      *
      * @return array<int, string>
      */
-    public function getCorporateAuthorIds()
+    public function getCorporateAuthorIds(): array
     {
         return [];
     }
