@@ -103,7 +103,10 @@ class Qdc extends AbstractRecord
     {
         $this->XmlTraitSetData($source, $oaiID, $data);
 
-        if (empty($this->doc->recordID)) {
+        if (
+            empty($this->doc->recordID)
+            && empty($this->doc->children('http://www.openarchives.org/OAI/2.0/oai_dc/')->recordID)
+        ) {
             $p = strpos($oaiID, ':');
             $p = strpos($oaiID, ':', $p + 1);
             $this->doc->addChild('recordID', substr($oaiID, $p + 1));
