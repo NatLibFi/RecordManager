@@ -112,8 +112,6 @@
 ;idReplace[] = "ojs-"
 ;idSearch[] = "/\//"
 ;idReplace[] = "-"
-;injectId = "identifier"
-;injectDate = "datestamp"
 ;institution = MyInst
 ;format = dc
 ;solrTransformation = oai_dc.properties
