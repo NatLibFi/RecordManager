@@ -148,7 +148,7 @@ class CreatePreview extends AbstractBase
 
         if ('marc' !== $format && substr(trim($metadata), 0, 1) === '<') {
             $doc = new \DOMDocument();
-            if ($this->metadataUtils->loadXML($metadata, $doc)) {
+            if (false !== $this->metadataUtils->loadXML($metadata, $doc)) {
                 $root = $doc->childNodes->item(0);
                 if (in_array($root->nodeName, ['records', 'collection'])) {
                     // This is a collection of records, get the first one
@@ -243,7 +243,7 @@ class CreatePreview extends AbstractBase
     protected function oaipmhTransform($metadata, $transformations)
     {
         $doc = new \DOMDocument();
-        if (!$this->metadataUtils->loadXML($metadata, $doc)) {
+        if (false === $this->metadataUtils->loadXML($metadata, $doc)) {
             throw new \Exception(
                 'Could not parse XML record'
             );

@@ -331,10 +331,11 @@ class Export extends AbstractBase
                     }
                     $xml = $metadataRecord->toXML();
                     if ($xpath || (($injectId || $injectIdPrefixed) && !$record['deleted'])) {
-                        $dom = $this->metadataUtils->loadXML($xml);
-                        if (!$dom) {
+                        $errors = '';
+                        $dom = $this->metadataUtils->loadXML($xml, null, 0, $errors);
+                        if (false === $dom) {
                             throw new \Exception(
-                                "Failed to parse record '{$record['_id']}'"
+                                "Failed to parse record '{$record['_id']}': $errors"
                             );
                         }
                         if ($xpath) {
