@@ -135,18 +135,18 @@ trait CreateSampleRecordTrait
         string $module = 'Base',
         array $constructorParams = []
     ) {
+        $baseParams = [
+            function ($data) {
+                return new \RecordManager\Base\Marc\Marc($data);
+            },
+            new FormatCalculator(),
+        ];
         return $this->createRecord(
             $class,
             $sample,
             $dsConfig,
             $module,
-            [
-                function ($data) {
-                    return new \RecordManager\Base\Marc\Marc($data);
-                },
-                new FormatCalculator(),
-                ...$constructorParams,
-            ]
+            array_merge($baseParams, $constructorParams),
         );
     }
 }
