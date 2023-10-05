@@ -21,8 +21,4 @@
             <directory name="vendor" />
         </ignoreFiles>
     </projectFiles>
-    <forbiddenFunctions>
-        <function name="dd"/>
-        <function name="var_dump"/>
-    </forbiddenFunctions>
 </psalm>
