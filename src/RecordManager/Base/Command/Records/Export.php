@@ -351,13 +351,18 @@ class Export extends AbstractBase
                         }
                         if (!$record['deleted']) {
                             if ($injectId) {
-                                $dom->addChild($injectId, htmlspecialchars($metadataRecord->getID(), ENT_NOQUOTES));
+                                $id = $record['_id'];
+                                $sourcePrefix = "$sourceId.";
+                                if (str_starts_with($id, "$sourceId.")) {
+                                    $id = substr($id, strlen($sourcePrefix));
+                                }
+                                $dom->addChild($injectId, htmlspecialchars($id, ENT_NOQUOTES));
                                 $xml = $dom->saveXML();
                             }
                             if ($injectIdPrefixed) {
                                 $dom->addChild(
                                     $injectIdPrefixed,
-                                    htmlspecialchars($sourceId . '.' . $metadataRecord->getID(), ENT_NOQUOTES)
+                                    htmlspecialchars($record['_id'], ENT_NOQUOTES)
                                 );
                                 $xml = $dom->saveXML();
                             }
