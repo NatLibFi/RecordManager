@@ -352,10 +352,7 @@ class Export extends AbstractBase
                         if (!$record['deleted']) {
                             if ($injectId) {
                                 $id = $record['_id'];
-                                $sourcePrefix = "$sourceId.";
-                                if (str_starts_with($id, "$sourceId.")) {
-                                    $id = substr($id, strlen($sourcePrefix));
-                                }
+                                $id = substr($id, strlen("$sourceId."));
                                 $dom->addChild($injectId, htmlspecialchars($id, ENT_NOQUOTES));
                                 $xml = $dom->saveXML();
                             }
