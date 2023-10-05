@@ -74,7 +74,7 @@ class CreatePreviewTest extends \PHPUnit\Framework\TestCase
     public function testCreatePreview()
     {
         $record = $this->getFixture('Controller/CreatePreview/preview_marc.xml');
-        $preview = $this->getCreatePreview($record);
+        $preview = $this->getCreatePreview();
 
         $result = $preview->launch(
             $record,
