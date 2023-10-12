@@ -225,6 +225,8 @@ store_message_level = -1
 ; See https://pear.php.net/manual/en/package.http.http-request2.config.php for
 ; documentation on the valid parameters.
 [HTTP]
+; By default redirects (HTTP status 302) are not followed to avoid silent redirect
+; for each request, but they can be enabled by uncommenting the setting below:
 ;follow_redirects = true
 ;adapter = "HTTP_Request2_Adapter_Curl"
 ;ssl_verify_peer = false
