@@ -142,6 +142,20 @@ class Export extends AbstractBase
     protected $idFile;
 
     /**
+     * Number of records to export per query when writing to $idFile.
+     *
+     * @var int
+     */
+    protected $idFileBatchSize = 100;
+
+    /**
+     * Prefix to add to each value read from $idFile.
+     *
+     * @var ?string
+     */
+    protected $idFilePrefix;
+
+    /**
      * Export only records matching this XPath expression (if defined)
      *
      * @var ?string
@@ -262,6 +276,16 @@ class Export extends AbstractBase
                 InputOption::VALUE_REQUIRED,
                 'Process only the records whose IDs are listed in the provided text file'
             )->addOption(
+                'id-file-batch-size',
+                100,
+                InputOption::VALUE_REQUIRED,
+                'Number of records to export per database request when using --id-file'
+            )->addOption(
+                'id-file-prefix',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Source prefix to add to each line read from file when using --id-file'
+            )->addOption(
                 'xpath',
                 null,
                 InputOption::VALUE_REQUIRED,
@@ -324,6 +348,8 @@ class Export extends AbstractBase
         $this->sourceId = $input->getOption('source');
         $this->singleId = $input->getOption('single');
         $this->idFile = $input->getOption('id-file');
+        $this->idFileBatchSize = $input->getOption('id-file-batch-size') ?? $this->idFileBatchSize;
+        $this->idFilePrefix = $input->getOption('id-file-prefix');
         $this->xpath = $input->getOption('xpath');
         $this->sortDedup = $input->getOption('sort-dedup');
         $this->addDedupId = $input->getOption('dedup-id');
@@ -518,7 +544,24 @@ class Export extends AbstractBase
         if ($this->singleId && $this->idFile) {
             throw new \Exception('--single and --id-file options are incompatible');
         } elseif ($this->idFile) {
-            yield ['_id' => ['$in' => array_map('trim', file($this->idFile))]];
+            if (!file_exists($this->idFile) || !($handle = fopen($this->idFile, 'r'))) {
+                throw new \Exception("Cannot read $this->idFile");
+            }
+            $ids = [];
+            while ($id = fgets($handle)) {
+                if ($this->idFilePrefix) {
+                    $id = "$this->idFilePrefix.$id";
+                }
+                $ids[] = trim($id);
+                if (count($ids) >= $this->idFileBatchSize) {
+                    yield ['_id' => ['$in' => $ids]];
+                    $ids = [];
+                }
+            }
+            fclose($handle);
+            if (!empty($ids)) {
+                yield ['_id' => ['$in' => $ids]];
+            }
         } elseif ($this->singleId) {
             yield ['_id' => $this->singleId];
         } else {
