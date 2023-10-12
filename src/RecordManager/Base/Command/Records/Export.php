@@ -135,6 +135,11 @@ class Export extends AbstractBase
                 InputOption::VALUE_REQUIRED,
                 'Process only the specified record'
             )->addOption(
+                'id-file',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Process only the records whose IDs are listed in the provided text file'
+            )->addOption(
                 'xpath',
                 null,
                 InputOption::VALUE_REQUIRED,
@@ -197,6 +202,7 @@ class Export extends AbstractBase
         $skipRecords = $input->getOption('skip');
         $sourceId = $input->getOption('source');
         $singleId = $input->getOption('single');
+        $idFile = $input->getOption('id-file');
         $xpath = $input->getOption('xpath');
         $sortDedup = $input->getOption('sort-dedup');
         $addDedupId = $input->getOption('dedup-id');
@@ -215,7 +221,11 @@ class Export extends AbstractBase
             $this->logger->logInfo('exportRecords', 'Creating record list');
 
             $params = [];
-            if ($singleId) {
+            if ($singleId && $idFile) {
+                throw new \Exception('--single and --id-file options are incompatible');
+            } elseif ($idFile) {
+                $params['_id'] = ['$in' => array_map('trim', file($idFile))];
+            } elseif ($singleId) {
                 $params['_id'] = $singleId;
             } else {
                 if ($fromDate && $untilDate) {
