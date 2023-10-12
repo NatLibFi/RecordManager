@@ -86,6 +86,247 @@ class Export extends AbstractBase
     protected $currentFile = null;
 
     /**
+     * Output file for deleted record IDs
+     *
+     * @var ?string
+     */
+    protected $deletedFile;
+
+    /**
+     * Update date and optional time where to start the export
+     *
+     * @var ?string
+     */
+    protected $fromDate;
+
+    /**
+     * Update date and optional time where to end the export
+     *
+     * @var ?string
+     */
+    protected $untilDate;
+
+    /**
+     * Creation date and optional time where to start the export
+     *
+     * @var ?string
+     */
+    protected $fromCreateDate;
+
+    /**
+     * Creation date and optional time where to end the export
+     *
+     * @var ?string
+     */
+    protected $untilCreateDate;
+
+    /**
+     * Skip every SKIP records to export only a "representative" subset
+     *
+     * @var ?int
+     */
+    protected $skipRecords;
+
+    /**
+     * ID of a single record to export (overrides most other options)
+     *
+     * @var ?string
+     */
+    protected $singleId;
+
+    /**
+     * File containing a list of IDs to export (overrides most other options)
+     *
+     * @var ?string
+     */
+    protected $idFile;
+
+    /**
+     * Number of records to export per query when writing to $idFile.
+     *
+     * @var int
+     */
+    protected $idFileBatchSize = 1000;
+
+    /**
+     * Prefix to add to each value read from $idFile.
+     *
+     * @var ?string
+     */
+    protected $idFilePrefix;
+
+    /**
+     * Export only records matching this XPath expression (if defined)
+     *
+     * @var ?string
+     */
+    protected $xpath;
+
+    /**
+     * Should we sort export file by dedup id?
+     *
+     * @var ?bool
+     */
+    protected $sortDedup;
+
+    /**
+     * Whether to include dedup id's in exported records. Supported values:
+     *   - deduped = if duplicates exist
+     *   - always = always
+     * Default is to not include the dedup id's.
+     *
+     * @var ?string
+     */
+    protected $addDedupId;
+
+    /**
+     * Process only a comma-separated list of data sources
+     *
+     * @var string
+     */
+    protected $sourceId;
+
+    /**
+     * Inject record ID without source prefix to the given XML field
+     *
+     * @var ?string
+     */
+    protected $injectId;
+
+    /**
+     * Inject record ID with source prefix to the given XML field
+     *
+     * @var ?string
+     */
+    protected $injectIdPrefixed;
+
+    /**
+     * Total number of records processed
+     *
+     * @var int
+     */
+    protected $count = 0;
+
+    /**
+     * Total number of deleted records processed
+     *
+     * @var int
+     */
+    protected $deleted = 0;
+
+    /**
+     * Total number of deduplicated records processed
+     *
+     * @var int
+     */
+    protected $deduped = 0;
+
+    /**
+     * Callback to support the iterateRecords method of the database object.
+     *
+     * @param array $record Record details
+     *
+     * @return bool
+     */
+    public function iterateRecordsCallback($record): bool
+    {
+        $metadataRecord = $this->createRecord(
+            $record['format'],
+            $this->metadataUtils->getRecordData($record, true),
+            $record['oai_id'],
+            $record['source_id']
+        );
+        if (!$record['deleted']) {
+            if ($this->addDedupId == 'always') {
+                $metadataRecord->addDedupKeyToMetadata(
+                    $record['dedup_id']
+                    ?? $record['_id']
+                );
+            } elseif ($this->addDedupId == 'deduped') {
+                $metadataRecord->addDedupKeyToMetadata(
+                    $record['dedup_id']
+                    ?? ''
+                );
+            }
+        }
+        $xml = $metadataRecord->toXML();
+        if ($this->xpath || (($this->injectId || $this->injectIdPrefixed) && !$record['deleted'])) {
+            $errors = '';
+            $dom = $this->metadataUtils->loadXML($xml, null, 0, $errors);
+            if (false === $dom) {
+                throw new \Exception(
+                    "Failed to parse record '{$record['_id']}': $errors"
+                );
+            }
+            if ($this->xpath) {
+                $xpathResult = $dom->xpath($this->xpath);
+                if ($xpathResult === false) {
+                    throw new \Exception(
+                        "Failed to evaluate XPath expression '$this->xpath'"
+                    );
+                }
+                if (!$xpathResult) {
+                    return true;
+                }
+            }
+            if (!$record['deleted']) {
+                if ($this->injectId) {
+                    $id = $record['_id'];
+                    $id = substr($id, strlen("$this->sourceId."));
+                    $dom->addChild($this->injectId, htmlspecialchars($id, ENT_NOQUOTES));
+                    $xml = $dom->saveXML();
+                }
+                if ($this->injectIdPrefixed) {
+                    $dom->addChild(
+                        $this->injectIdPrefixed,
+                        htmlspecialchars($record['_id'], ENT_NOQUOTES)
+                    );
+                    $xml = $dom->saveXML();
+                }
+            }
+        }
+        ++$this->count;
+        if ($record['deleted']) {
+            if ($this->deletedFile) {
+                file_put_contents(
+                    $this->deletedFile,
+                    "{$record['_id']}\n",
+                    FILE_APPEND
+                );
+            }
+            ++$this->deleted;
+        } else {
+            if ($this->skipRecords > 0 && $this->count % $this->skipRecords != 0) {
+                return true;
+            }
+            if (isset($record['dedup_id'])) {
+                ++$this->deduped;
+            }
+            if ($this->addDedupId == 'always') {
+                $metadataRecord->addDedupKeyToMetadata(
+                    $record['dedup_id']
+                    ?? $record['_id']
+                );
+            } elseif ($this->addDedupId == 'deduped') {
+                $metadataRecord->addDedupKeyToMetadata(
+                    $record['dedup_id']
+                    ?? ''
+                );
+            }
+            $xml = preg_replace('/^<\?xml.*?\?>[\n\r]*/', '', $xml);
+            $this->writeRecord($xml);
+        }
+        if ($this->count % 1000 == 0) {
+            $this->logger->logInfo(
+                'exportRecords',
+                "$this->count records (of which $this->deduped deduped, $this->deleted "
+                . 'deleted) exported'
+            );
+        }
+        return true;
+    }
+
+    /**
      * Configure the command.
      *
      * @return void
@@ -135,6 +376,21 @@ class Export extends AbstractBase
                 InputOption::VALUE_REQUIRED,
                 'Process only the specified record'
             )->addOption(
+                'id-file',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Process only the records whose IDs are listed in the provided text file'
+            )->addOption(
+                'id-file-batch-size',
+                '1000',
+                InputOption::VALUE_REQUIRED,
+                'Number of records to export per database request when using --id-file'
+            )->addOption(
+                'id-file-prefix',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Source prefix to add to each line read from file when using --id-file'
+            )->addOption(
                 'xpath',
                 null,
                 InputOption::VALUE_REQUIRED,
@@ -179,6 +435,142 @@ class Export extends AbstractBase
     }
 
     /**
+     * Set all user input into class properties.
+     *
+     * @param InputInterface $input Console input
+     *
+     * @return void
+     */
+    protected function collectArgumentsAndOptions(InputInterface $input): void
+    {
+        $this->fileTemplate = $input->getArgument('file');
+        $this->deletedFile = $input->getOption('deleted');
+        $this->fromDate = $input->getOption('from');
+        $this->untilDate = $input->getOption('until');
+        $this->fromCreateDate = $input->getOption('created-from');
+        $this->untilCreateDate = $input->getOption('created-until');
+        $this->skipRecords = $input->getOption('skip');
+        $this->sourceId = $input->getOption('source');
+        $this->singleId = $input->getOption('single');
+        $this->idFile = $input->getOption('id-file');
+        $this->idFileBatchSize = $input->getOption('id-file-batch-size') ?? $this->idFileBatchSize;
+        $this->idFilePrefix = $input->getOption('id-file-prefix');
+        $this->xpath = $input->getOption('xpath');
+        $this->sortDedup = $input->getOption('sort-dedup');
+        $this->addDedupId = $input->getOption('dedup-id');
+        $this->batchSize = $input->getOption('batch-size') ?: 0;
+        $this->injectId = $input->getOption('inject-id');
+        $this->injectIdPrefixed = $input->getOption('inject-id-prefixed');
+    }
+
+    /**
+     * Collect range and source parameters from user-provided options.
+     *
+     * @return array
+     */
+    protected function gatherRangeAndSourceParams(): array
+    {
+        $params = [];
+        if ($this->fromDate && $this->untilDate) {
+            $params['$and'] = [
+                [
+                    'updated' => [
+                        '$gte'
+                            => $this->db->getTimestamp(strtotime($this->fromDate)),
+                    ],
+                ],
+                [
+                    'updated' => [
+                        '$lte'
+                            => $this->db->getTimestamp(strtotime($this->untilDate)),
+                    ],
+                ],
+            ];
+        } elseif ($this->fromDate) {
+            $params['updated']
+                = ['$gte' => $this->db->getTimestamp(strtotime($this->fromDate))];
+        } elseif ($this->untilDate) {
+            $params['updated']
+                = ['$lte' => $this->db->getTimestamp(strtotime($this->untilDate))];
+        }
+        if ($this->fromCreateDate && $this->untilCreateDate) {
+            $params['$and'] = [
+                [
+                    'created' => [
+                        '$gte' => $this->db->getTimestamp(
+                            strtotime($this->fromCreateDate)
+                        ),
+                    ],
+                ],
+                [
+                    'created' => [
+                        '$lte' => $this->db->getTimestamp(
+                            strtotime($this->untilCreateDate)
+                        ),
+                    ],
+                ],
+            ];
+        } elseif ($this->fromCreateDate) {
+            $params['created'] = [
+                '$gte' => $this->db->getTimestamp(strtotime($this->fromCreateDate)),
+            ];
+        } elseif ($this->untilCreateDate) {
+            $params['created'] = [
+                '$lte'
+                    => $this->db->getTimestamp(strtotime($this->untilCreateDate)),
+            ];
+        }
+        if ($this->sourceId && $this->sourceId !== '*') {
+            $sources = explode(',', $this->sourceId);
+            if (count($sources) == 1) {
+                $params['source_id'] = $this->sourceId;
+            } else {
+                $sourceParams = [];
+                foreach ($sources as $source) {
+                    $sourceParams[] = ['source_id' => $source];
+                }
+                $params['$or'] = $sourceParams;
+            }
+        }
+        return $params;
+    }
+
+    /**
+     * Get parameters for the next chunk of records to export
+     *
+     * @return \Generator
+     */
+    protected function getNextParams(): \Generator
+    {
+        if ($this->singleId && $this->idFile) {
+            throw new \Exception('--single and --id-file options are incompatible');
+        } elseif ($this->idFile) {
+            if (!file_exists($this->idFile) || !($handle = fopen($this->idFile, 'r'))) {
+                throw new \Exception("Cannot read $this->idFile");
+            }
+            $ids = [];
+            while ($id = fgets($handle)) {
+                if ($this->idFilePrefix) {
+                    $id = "$this->idFilePrefix.$id";
+                }
+                $ids[] = trim($id);
+                if (count($ids) >= $this->idFileBatchSize) {
+                    yield ['_id' => ['$in' => $ids]];
+                    $ids = [];
+                }
+            }
+            fclose($handle);
+            if (!empty($ids)) {
+                yield ['_id' => ['$in' => $ids]];
+            }
+        } elseif ($this->singleId) {
+            yield ['_id' => $this->singleId];
+        } else {
+            yield $this->gatherRangeAndSourceParams();
+        }
+    }
+
+    /**
      * Export records from the database to a file
      *
      * @param InputInterface  $input  Console input
@@ -188,227 +580,40 @@ class Export extends AbstractBase
      */
     protected function doExecute(InputInterface $input, OutputInterface $output)
     {
-        $this->fileTemplate = $input->getArgument('file');
-        $deletedFile = $input->getOption('deleted');
-        $fromDate = $input->getOption('from');
-        $untilDate = $input->getOption('until');
-        $fromCreateDate = $input->getOption('created-from');
-        $untilCreateDate = $input->getOption('created-until');
-        $skipRecords = $input->getOption('skip');
-        $sourceId = $input->getOption('source');
-        $singleId = $input->getOption('single');
-        $xpath = $input->getOption('xpath');
-        $sortDedup = $input->getOption('sort-dedup');
-        $addDedupId = $input->getOption('dedup-id');
-        $this->batchSize = $input->getOption('batch-size') ?: 0;
-        $injectId = $input->getOption('inject-id');
-        $injectIdPrefixed = $input->getOption('inject-id-prefixed');
+        $this->collectArgumentsAndOptions($input);
 
         $returnCode = Command::SUCCESS;
 
         $this->startNewBatch();
-        if ($deletedFile && file_exists($deletedFile)) {
-            unlink($deletedFile);
+        if ($this->deletedFile && file_exists($this->deletedFile)) {
+            unlink($this->deletedFile);
         }
 
         try {
             $this->logger->logInfo('exportRecords', 'Creating record list');
 
-            $params = [];
-            if ($singleId) {
-                $params['_id'] = $singleId;
-            } else {
-                if ($fromDate && $untilDate) {
-                    $params['$and'] = [
-                        [
-                            'updated' => [
-                                '$gte'
-                                    => $this->db->getTimestamp(strtotime($fromDate)),
-                            ],
-                        ],
-                        [
-                            'updated' => [
-                                '$lte'
-                                    => $this->db->getTimestamp(strtotime($untilDate)),
-                            ],
-                        ],
-                    ];
-                } elseif ($fromDate) {
-                    $params['updated']
-                        = ['$gte' => $this->db->getTimestamp(strtotime($fromDate))];
-                } elseif ($untilDate) {
-                    $params['updated']
-                        = ['$lte' => $this->db->getTimestamp(strtotime($untilDate))];
-                }
-                if ($fromCreateDate && $untilCreateDate) {
-                    $params['$and'] = [
-                        [
-                            'created' => [
-                                '$gte' => $this->db->getTimestamp(
-                                    strtotime($fromCreateDate)
-                                ),
-                            ],
-                        ],
-                        [
-                            'created' => [
-                                '$lte' => $this->db->getTimestamp(
-                                    strtotime($untilCreateDate)
-                                ),
-                            ],
-                        ],
-                    ];
-                } elseif ($fromCreateDate) {
-                    $params['created'] = [
-                        '$gte' => $this->db->getTimestamp(strtotime($fromCreateDate)),
-                    ];
-                } elseif ($untilDate) {
-                    $params['created'] = [
-                        '$lte'
-                            => $this->db->getTimestamp(strtotime($untilCreateDate)),
-                    ];
-                }
-                if ($sourceId && $sourceId !== '*') {
-                    $sources = explode(',', $sourceId);
-                    if (count($sources) == 1) {
-                        $params['source_id'] = $sourceId;
-                    } else {
-                        $sourceParams = [];
-                        foreach ($sources as $source) {
-                            $sourceParams[] = ['source_id' => $source];
-                        }
-                        $params['$or'] = $sourceParams;
-                    }
-                }
-            }
             $options = [];
-            if ($sortDedup) {
+            if ($this->sortDedup) {
                 $options['sort'] = ['dedup_id' => 1];
             }
-
-            $total = $this->db->countRecords($params, $options);
-            $deduped = 0;
-            $deleted = 0;
-            $count = 0;
-            $this->logger->logInfo('exportRecords', "Exporting $total records");
-            if ($skipRecords) {
-                $this->logger->logInfo(
-                    'exportRecords',
-                    "(1 per each $skipRecords records)"
+            foreach ($this->getNextParams() as $params) {
+                $total = $this->db->countRecords($params, $options);
+                $this->logger->logInfo('exportRecords', "Exporting $total records");
+                if ($this->skipRecords) {
+                    $this->logger->logInfo(
+                        'exportRecords',
+                        "(1 per each $this->skipRecords records)"
+                    );
+                }
+                $this->db->iterateRecords(
+                    $params,
+                    $options,
+                    [$this, 'iterateRecordsCallback']
                 );
             }
-            $this->db->iterateRecords(
-                $params,
-                $options,
-                function ($record) use (
-                    &$deduped,
-                    &$deleted,
-                    &$count,
-                    $skipRecords,
-                    $xpath,
-                    $deletedFile,
-                    $addDedupId,
-                    $injectId,
-                    $injectIdPrefixed,
-                    $sourceId
-                ) {
-                    $metadataRecord = $this->createRecord(
-                        $record['format'],
-                        $this->metadataUtils->getRecordData($record, true),
-                        $record['oai_id'],
-                        $record['source_id']
-                    );
-                    if (!$record['deleted']) {
-                        if ($addDedupId == 'always') {
-                            $metadataRecord->addDedupKeyToMetadata(
-                                $record['dedup_id']
-                                ?? $record['_id']
-                            );
-                        } elseif ($addDedupId == 'deduped') {
-                            $metadataRecord->addDedupKeyToMetadata(
-                                $record['dedup_id']
-                                ?? ''
-                            );
-                        }
-                    }
-                    $xml = $metadataRecord->toXML();
-                    if ($xpath || (($injectId || $injectIdPrefixed) && !$record['deleted'])) {
-                        $errors = '';
-                        $dom = $this->metadataUtils->loadXML($xml, null, 0, $errors);
-                        if (false === $dom) {
-                            throw new \Exception(
-                                "Failed to parse record '{$record['_id']}': $errors"
-                            );
-                        }
-                        if ($xpath) {
-                            $xpathResult = $dom->xpath($xpath);
-                            if ($xpathResult === false) {
-                                throw new \Exception(
-                                    "Failed to evaluate XPath expression '$xpath'"
-                                );
-                            }
-                            if (!$xpathResult) {
-                                return true;
-                            }
-                        }
-                        if (!$record['deleted']) {
-                            if ($injectId) {
-                                $id = $record['_id'];
-                                $id = substr($id, strlen("$sourceId."));
-                                $dom->addChild($injectId, htmlspecialchars($id, ENT_NOQUOTES));
-                                $xml = $dom->saveXML();
-                            }
-                            if ($injectIdPrefixed) {
-                                $dom->addChild(
-                                    $injectIdPrefixed,
-                                    htmlspecialchars($record['_id'], ENT_NOQUOTES)
-                                );
-                                $xml = $dom->saveXML();
-                            }
-                        }
-                    }
-                    ++$count;
-                    if ($record['deleted']) {
-                        if ($deletedFile) {
-                            file_put_contents(
-                                $deletedFile,
-                                "{$record['_id']}\n",
-                                FILE_APPEND
-                            );
-                        }
-                        ++$deleted;
-                    } else {
-                        if ($skipRecords > 0 && $count % $skipRecords != 0) {
-                            return true;
-                        }
-                        if (isset($record['dedup_id'])) {
-                            ++$deduped;
-                        }
-                        if ($addDedupId == 'always') {
-                            $metadataRecord->addDedupKeyToMetadata(
-                                $record['dedup_id']
-                                ?? $record['_id']
-                            );
-                        } elseif ($addDedupId == 'deduped') {
-                            $metadataRecord->addDedupKeyToMetadata(
-                                $record['dedup_id']
-                                ?? ''
-                            );
-                        }
-                        $xml = preg_replace('/^<\?xml.*?\?>[\n\r]*/', '', $xml);
-                        $this->writeRecord($xml);
-                    }
-                    if ($count % 1000 == 0) {
-                        $this->logger->logInfo(
-                            'exportRecords',
-                            "$count records (of which $deduped deduped, $deleted "
-                            . 'deleted) exported'
-                        );
-                    }
-                }
-            );
             $this->logger->logInfo(
                 'exportRecords',
-                "Completed with $count records (of which $deduped deduped, $deleted "
+                "Completed with $this->count records (of which $this->deduped deduped, $this->deleted "
                 . 'deleted) exported'
             );
         } catch (\Exception $e) {
