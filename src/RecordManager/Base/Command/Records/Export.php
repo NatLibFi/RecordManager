@@ -146,7 +146,7 @@ class Export extends AbstractBase
      *
      * @var int
      */
-    protected $idFileBatchSize = 100;
+    protected $idFileBatchSize = 1000;
 
     /**
      * Prefix to add to each value read from $idFile.
@@ -382,7 +382,7 @@ class Export extends AbstractBase
                 'Process only the records whose IDs are listed in the provided text file'
             )->addOption(
                 'id-file-batch-size',
-                '100',
+                '1000',
                 InputOption::VALUE_REQUIRED,
                 'Number of records to export per database request when using --id-file'
             )->addOption(
