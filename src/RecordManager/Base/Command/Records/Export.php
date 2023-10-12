@@ -514,7 +514,7 @@ class Export extends AbstractBase
             $params['created'] = [
                 '$gte' => $this->db->getTimestamp(strtotime($this->fromCreateDate)),
             ];
-        } elseif ($this->untilDate) {
+        } elseif ($this->untilCreateDate) {
             $params['created'] = [
                 '$lte'
                     => $this->db->getTimestamp(strtotime($this->untilCreateDate)),
