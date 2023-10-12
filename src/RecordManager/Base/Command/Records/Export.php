@@ -86,6 +86,41 @@ class Export extends AbstractBase
     protected $currentFile = null;
 
     /**
+     * Update date and optional time where to start the export
+     *
+     * @var ?string
+     */
+    protected $fromDate;
+
+    /**
+     * Update date and optional time where to end the export
+     *
+     * @var ?string
+     */
+    protected $untilDate;
+
+    /**
+     * Creation date and optional time where to start the export
+     *
+     * @var ?string
+     */
+    protected $fromCreateDate;
+
+    /**
+     * Creation date and optional time where to end the export
+     *
+     * @var ?string
+     */
+    protected $untilCreateDate;
+
+    /**
+     * Process only a comma-separated list of data sources
+     *
+     * @var string
+     */
+    protected $sourceId;
+
+    /**
      * Configure the command.
      *
      * @return void
@@ -184,6 +219,78 @@ class Export extends AbstractBase
     }
 
     /**
+     * Collect range and source parameters from user-provided options.
+     *
+     * @return array
+     */
+    protected function gatherRangeAndSourceParams(): array
+    {
+        $params = [];
+        if ($this->fromDate && $this->untilDate) {
+            $params['$and'] = [
+                [
+                    'updated' => [
+                        '$gte'
+                            => $this->db->getTimestamp(strtotime($this->fromDate)),
+                    ],
+                ],
+                [
+                    'updated' => [
+                        '$lte'
+                            => $this->db->getTimestamp(strtotime($this->untilDate)),
+                    ],
+                ],
+            ];
+        } elseif ($this->fromDate) {
+            $params['updated']
+                = ['$gte' => $this->db->getTimestamp(strtotime($this->fromDate))];
+        } elseif ($this->untilDate) {
+            $params['updated']
+                = ['$lte' => $this->db->getTimestamp(strtotime($this->untilDate))];
+        }
+        if ($this->fromCreateDate && $this->untilCreateDate) {
+            $params['$and'] = [
+                [
+                    'created' => [
+                        '$gte' => $this->db->getTimestamp(
+                            strtotime($this->fromCreateDate)
+                        ),
+                    ],
+                ],
+                [
+                    'created' => [
+                        '$lte' => $this->db->getTimestamp(
+                            strtotime($this->untilCreateDate)
+                        ),
+                    ],
+                ],
+            ];
+        } elseif ($this->fromCreateDate) {
+            $params['created'] = [
+                '$gte' => $this->db->getTimestamp(strtotime($this->fromCreateDate)),
+            ];
+        } elseif ($this->untilDate) {
+            $params['created'] = [
+                '$lte'
+                    => $this->db->getTimestamp(strtotime($this->untilCreateDate)),
+            ];
+        }
+        if ($this->sourceId && $this->sourceId !== '*') {
+            $sources = explode(',', $this->sourceId);
+            if (count($sources) == 1) {
+                $params['source_id'] = $this->sourceId;
+            } else {
+                $sourceParams = [];
+                foreach ($sources as $source) {
+                    $sourceParams[] = ['source_id' => $source];
+                }
+                $params['$or'] = $sourceParams;
+            }
+        }
+        return $params;
+    }
+
+    /**
      * Export records from the database to a file
      *
      * @param InputInterface  $input  Console input
@@ -195,12 +302,12 @@ class Export extends AbstractBase
     {
         $this->fileTemplate = $input->getArgument('file');
         $deletedFile = $input->getOption('deleted');
-        $fromDate = $input->getOption('from');
-        $untilDate = $input->getOption('until');
-        $fromCreateDate = $input->getOption('created-from');
-        $untilCreateDate = $input->getOption('created-until');
+        $this->fromDate = $input->getOption('from');
+        $this->untilDate = $input->getOption('until');
+        $this->fromCreateDate = $input->getOption('created-from');
+        $this->untilCreateDate = $input->getOption('created-until');
         $skipRecords = $input->getOption('skip');
-        $sourceId = $input->getOption('source');
+        $this->sourceId = $input->getOption('source');
         $singleId = $input->getOption('single');
         $idFile = $input->getOption('id-file');
         $xpath = $input->getOption('xpath');
@@ -220,75 +327,14 @@ class Export extends AbstractBase
         try {
             $this->logger->logInfo('exportRecords', 'Creating record list');
 
-            $params = [];
             if ($singleId && $idFile) {
                 throw new \Exception('--single and --id-file options are incompatible');
             } elseif ($idFile) {
-                $params['_id'] = ['$in' => array_map('trim', file($idFile))];
+                $params = ['_id' => ['$in' => array_map('trim', file($idFile))]];
             } elseif ($singleId) {
-                $params['_id'] = $singleId;
+                $params = ['_id' => $singleId];
             } else {
-                if ($fromDate && $untilDate) {
-                    $params['$and'] = [
-                        [
-                            'updated' => [
-                                '$gte'
-                                    => $this->db->getTimestamp(strtotime($fromDate)),
-                            ],
-                        ],
-                        [
-                            'updated' => [
-                                '$lte'
-                                    => $this->db->getTimestamp(strtotime($untilDate)),
-                            ],
-                        ],
-                    ];
-                } elseif ($fromDate) {
-                    $params['updated']
-                        = ['$gte' => $this->db->getTimestamp(strtotime($fromDate))];
-                } elseif ($untilDate) {
-                    $params['updated']
-                        = ['$lte' => $this->db->getTimestamp(strtotime($untilDate))];
-                }
-                if ($fromCreateDate && $untilCreateDate) {
-                    $params['$and'] = [
-                        [
-                            'created' => [
-                                '$gte' => $this->db->getTimestamp(
-                                    strtotime($fromCreateDate)
-                                ),
-                            ],
-                        ],
-                        [
-                            'created' => [
-                                '$lte' => $this->db->getTimestamp(
-                                    strtotime($untilCreateDate)
-                                ),
-                            ],
-                        ],
-                    ];
-                } elseif ($fromCreateDate) {
-                    $params['created'] = [
-                        '$gte' => $this->db->getTimestamp(strtotime($fromCreateDate)),
-                    ];
-                } elseif ($untilDate) {
-                    $params['created'] = [
-                        '$lte'
-                            => $this->db->getTimestamp(strtotime($untilCreateDate)),
-                    ];
-                }
-                if ($sourceId && $sourceId !== '*') {
-                    $sources = explode(',', $sourceId);
-                    if (count($sources) == 1) {
-                        $params['source_id'] = $sourceId;
-                    } else {
-                        $sourceParams = [];
-                        foreach ($sources as $source) {
-                            $sourceParams[] = ['source_id' => $source];
-                        }
-                        $params['$or'] = $sourceParams;
-                    }
-                }
+                $params = $this->gatherRangeAndSourceParams();
             }
             $options = [];
             if ($sortDedup) {
@@ -318,8 +364,7 @@ class Export extends AbstractBase
                     $deletedFile,
                     $addDedupId,
                     $injectId,
-                    $injectIdPrefixed,
-                    $sourceId
+                    $injectIdPrefixed
                 ) {
                     $metadataRecord = $this->createRecord(
                         $record['format'],
@@ -363,7 +408,7 @@ class Export extends AbstractBase
                         if (!$record['deleted']) {
                             if ($injectId) {
                                 $id = $record['_id'];
-                                $id = substr($id, strlen("$sourceId."));
+                                $id = substr($id, strlen("$this->sourceId."));
                                 $dom->addChild($injectId, htmlspecialchars($id, ENT_NOQUOTES));
                                 $xml = $dom->saveXML();
                             }
