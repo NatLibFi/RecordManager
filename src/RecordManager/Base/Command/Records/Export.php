@@ -509,6 +509,24 @@ class Export extends AbstractBase
     }
 
     /**
+     * Get parameters for the next chunk of records to export
+     *
+     * @return \Generator
+     */
+    protected function getNextParams(): \Generator
+    {
+        if ($this->singleId && $this->idFile) {
+            throw new \Exception('--single and --id-file options are incompatible');
+        } elseif ($this->idFile) {
+            yield ['_id' => ['$in' => array_map('trim', file($this->idFile))]];
+        } elseif ($this->singleId) {
+            yield ['_id' => $this->singleId];
+        } else {
+            yield $this->gatherRangeAndSourceParams();
+        }
+    }
+
+    /**
      * Export records from the database to a file
      *
      * @param InputInterface  $input  Console input
@@ -530,33 +548,25 @@ class Export extends AbstractBase
         try {
             $this->logger->logInfo('exportRecords', 'Creating record list');
 
-            if ($this->singleId && $this->idFile) {
-                throw new \Exception('--single and --id-file options are incompatible');
-            } elseif ($this->idFile) {
-                $params = ['_id' => ['$in' => array_map('trim', file($this->idFile))]];
-            } elseif ($this->singleId) {
-                $params = ['_id' => $this->singleId];
-            } else {
-                $params = $this->gatherRangeAndSourceParams();
-            }
             $options = [];
             if ($this->sortDedup) {
                 $options['sort'] = ['dedup_id' => 1];
             }
-
-            $total = $this->db->countRecords($params, $options);
-            $this->logger->logInfo('exportRecords', "Exporting $total records");
-            if ($this->skipRecords) {
-                $this->logger->logInfo(
-                    'exportRecords',
-                    "(1 per each $this->skipRecords records)"
+            foreach ($this->getNextParams() as $params) {
+                $total = $this->db->countRecords($params, $options);
+                $this->logger->logInfo('exportRecords', "Exporting $total records");
+                if ($this->skipRecords) {
+                    $this->logger->logInfo(
+                        'exportRecords',
+                        "(1 per each $this->skipRecords records)"
+                    );
+                }
+                $this->db->iterateRecords(
+                    $params,
+                    $options,
+                    [$this, 'iterateRecordsCallback']
                 );
             }
-            $this->db->iterateRecords(
-                $params,
-                $options,
-                [$this, 'iterateRecordsCallback']
-            );
             $this->logger->logInfo(
                 'exportRecords',
                 "Completed with $this->count records (of which $this->deduped deduped, $this->deleted "
