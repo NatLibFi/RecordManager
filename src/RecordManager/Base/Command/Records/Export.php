@@ -187,6 +187,27 @@ class Export extends AbstractBase
     protected $injectIdPrefixed;
 
     /**
+     * Total number of records processed
+     *
+     * @var int
+     */
+    protected $count = 0;
+
+    /**
+     * Total number of deleted records processed
+     *
+     * @var int
+     */
+    protected $deleted = 0;
+
+    /**
+     * Total number of deduplicated records processed
+     *
+     * @var int
+     */
+    protected $deduped = 0;
+
+    /**
      * Configure the command.
      *
      * @return void
@@ -384,6 +405,110 @@ class Export extends AbstractBase
     }
 
     /**
+     * Callback to support the iterateRecords method of the database object.
+     *
+     * @param array $record Record details
+     *
+     * @return ?bool
+     */
+    public function iterateRecordsCallback($record)
+    {
+        $metadataRecord = $this->createRecord(
+            $record['format'],
+            $this->metadataUtils->getRecordData($record, true),
+            $record['oai_id'],
+            $record['source_id']
+        );
+        if (!$record['deleted']) {
+            if ($this->addDedupId == 'always') {
+                $metadataRecord->addDedupKeyToMetadata(
+                    $record['dedup_id']
+                    ?? $record['_id']
+                );
+            } elseif ($this->addDedupId == 'deduped') {
+                $metadataRecord->addDedupKeyToMetadata(
+                    $record['dedup_id']
+                    ?? ''
+                );
+            }
+        }
+        $xml = $metadataRecord->toXML();
+        if ($this->xpath || (($this->injectId || $this->injectIdPrefixed) && !$record['deleted'])) {
+            $errors = '';
+            $dom = $this->metadataUtils->loadXML($xml, null, 0, $errors);
+            if (false === $dom) {
+                throw new \Exception(
+                    "Failed to parse record '{$record['_id']}': $errors"
+                );
+            }
+            if ($this->xpath) {
+                $xpathResult = $dom->xpath($this->xpath);
+                if ($xpathResult === false) {
+                    throw new \Exception(
+                        "Failed to evaluate XPath expression '$this->xpath'"
+                    );
+                }
+                if (!$xpathResult) {
+                    return true;
+                }
+            }
+            if (!$record['deleted']) {
+                if ($this->injectId) {
+                    $id = $record['_id'];
+                    $id = substr($id, strlen("$this->sourceId."));
+                    $dom->addChild($this->injectId, htmlspecialchars($id, ENT_NOQUOTES));
+                    $xml = $dom->saveXML();
+                }
+                if ($this->injectIdPrefixed) {
+                    $dom->addChild(
+                        $this->injectIdPrefixed,
+                        htmlspecialchars($record['_id'], ENT_NOQUOTES)
+                    );
+                    $xml = $dom->saveXML();
+                }
+            }
+        }
+        ++$this->count;
+        if ($record['deleted']) {
+            if ($this->deletedFile) {
+                file_put_contents(
+                    $this->deletedFile,
+                    "{$record['_id']}\n",
+                    FILE_APPEND
+                );
+            }
+            ++$this->deleted;
+        } else {
+            if ($this->skipRecords > 0 && $this->count % $this->skipRecords != 0) {
+                return true;
+            }
+            if (isset($record['dedup_id'])) {
+                ++$this->deduped;
+            }
+            if ($this->addDedupId == 'always') {
+                $metadataRecord->addDedupKeyToMetadata(
+                    $record['dedup_id']
+                    ?? $record['_id']
+                );
+            } elseif ($this->addDedupId == 'deduped') {
+                $metadataRecord->addDedupKeyToMetadata(
+                    $record['dedup_id']
+                    ?? ''
+                );
+            }
+            $xml = preg_replace('/^<\?xml.*?\?>[\n\r]*/', '', $xml);
+            $this->writeRecord($xml);
+        }
+        if ($this->count % 1000 == 0) {
+            $this->logger->logInfo(
+                'exportRecords',
+                "$this->count records (of which $this->deduped deduped, $this->deleted "
+                . 'deleted) exported'
+            );
+        }
+    }
+
+    /**
      * Export records from the database to a file
      *
      * @param InputInterface  $input  Console input
@@ -420,9 +545,6 @@ class Export extends AbstractBase
             }
 
             $total = $this->db->countRecords($params, $options);
-            $deduped = 0;
-            $deleted = 0;
-            $count = 0;
             $this->logger->logInfo('exportRecords', "Exporting $total records");
             if ($this->skipRecords) {
                 $this->logger->logInfo(
@@ -433,109 +555,11 @@ class Export extends AbstractBase
             $this->db->iterateRecords(
                 $params,
                 $options,
-                function ($record) use (
-                    &$deduped,
-                    &$deleted,
-                    &$count
-                ) {
-                    $metadataRecord = $this->createRecord(
-                        $record['format'],
-                        $this->metadataUtils->getRecordData($record, true),
-                        $record['oai_id'],
-                        $record['source_id']
-                    );
-                    if (!$record['deleted']) {
-                        if ($this->addDedupId == 'always') {
-                            $metadataRecord->addDedupKeyToMetadata(
-                                $record['dedup_id']
-                                ?? $record['_id']
-                            );
-                        } elseif ($this->addDedupId == 'deduped') {
-                            $metadataRecord->addDedupKeyToMetadata(
-                                $record['dedup_id']
-                                ?? ''
-                            );
-                        }
-                    }
-                    $xml = $metadataRecord->toXML();
-                    if ($this->xpath || (($this->injectId || $this->injectIdPrefixed) && !$record['deleted'])) {
-                        $errors = '';
-                        $dom = $this->metadataUtils->loadXML($xml, null, 0, $errors);
-                        if (false === $dom) {
-                            throw new \Exception(
-                                "Failed to parse record '{$record['_id']}': $errors"
-                            );
-                        }
-                        if ($this->xpath) {
-                            $xpathResult = $dom->xpath($this->xpath);
-                            if ($xpathResult === false) {
-                                throw new \Exception(
-                                    "Failed to evaluate XPath expression '$this->xpath'"
-                                );
-                            }
-                            if (!$xpathResult) {
-                                return true;
-                            }
-                        }
-                        if (!$record['deleted']) {
-                            if ($this->injectId) {
-                                $id = $record['_id'];
-                                $id = substr($id, strlen("$this->sourceId."));
-                                $dom->addChild($this->injectId, htmlspecialchars($id, ENT_NOQUOTES));
-                                $xml = $dom->saveXML();
-                            }
-                            if ($this->injectIdPrefixed) {
-                                $dom->addChild(
-                                    $this->injectIdPrefixed,
-                                    htmlspecialchars($record['_id'], ENT_NOQUOTES)
-                                );
-                                $xml = $dom->saveXML();
-                            }
-                        }
-                    }
-                    ++$count;
-                    if ($record['deleted']) {
-                        if ($this->deletedFile) {
-                            file_put_contents(
-                                $this->deletedFile,
-                                "{$record['_id']}\n",
-                                FILE_APPEND
-                            );
-                        }
-                        ++$deleted;
-                    } else {
-                        if ($this->skipRecords > 0 && $count % $this->skipRecords != 0) {
-                            return true;
-                        }
-                        if (isset($record['dedup_id'])) {
-                            ++$deduped;
-                        }
-                        if ($this->addDedupId == 'always') {
-                            $metadataRecord->addDedupKeyToMetadata(
-                                $record['dedup_id']
-                                ?? $record['_id']
-                            );
-                        } elseif ($this->addDedupId == 'deduped') {
-                            $metadataRecord->addDedupKeyToMetadata(
-                                $record['dedup_id']
-                                ?? ''
-                            );
-                        }
-                        $xml = preg_replace('/^<\?xml.*?\?>[\n\r]*/', '', $xml);
-                        $this->writeRecord($xml);
-                    }
-                    if ($count % 1000 == 0) {
-                        $this->logger->logInfo(
-                            'exportRecords',
-                            "$count records (of which $deduped deduped, $deleted "
-                            . 'deleted) exported'
-                        );
-                    }
-                }
+                [$this, 'iterateRecordsCallback']
             );
             $this->logger->logInfo(
                 'exportRecords',
-                "Completed with $count records (of which $deduped deduped, $deleted "
+                "Completed with $this->count records (of which $this->deduped deduped, $this->deleted "
                 . 'deleted) exported'
             );
         } catch (\Exception $e) {
