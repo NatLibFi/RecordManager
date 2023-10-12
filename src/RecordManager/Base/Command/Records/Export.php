@@ -226,9 +226,9 @@ class Export extends AbstractBase
      *
      * @param array $record Record details
      *
-     * @return ?bool
+     * @return bool
      */
-    public function iterateRecordsCallback($record)
+    public function iterateRecordsCallback($record): bool
     {
         $metadataRecord = $this->createRecord(
             $record['format'],
@@ -323,6 +323,7 @@ class Export extends AbstractBase
                 . 'deleted) exported'
             );
         }
+        return true;
     }
 
     /**
