@@ -1370,6 +1370,27 @@ class Lido extends AbstractRecord
     }
 
     /**
+     * Return identifying places
+     *
+     * @return array
+     */
+    protected function getRepositoryLocations(): array
+    {
+        $result = [];
+        foreach (
+            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap->repositoryWrap->repositorySet
+            ?? [] as $set
+        ) {
+            foreach ($set->repositoryLocation->namePlaceSet ?? [] as $nameSet) {
+                foreach ($nameSet->appellationValue ?? [] as $place) {
+                    $result[] = (string)$place;
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Get main event types
      *
      * @return array
@@ -1454,6 +1475,8 @@ class Lido extends AbstractRecord
         if ($places = $this->getSubjectDisplayPlaces()) {
             $result = [...$result, ...$places];
         }
+        $idPlaces = $this->getRepositoryLocations();
+        $result = array_merge($result, $idPlaces);
         return $result;
     }
 
