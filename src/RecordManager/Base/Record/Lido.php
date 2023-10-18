@@ -1370,7 +1370,7 @@ class Lido extends AbstractRecord
     }
 
     /**
-     * Return identifying places
+     * Return repository locations
      *
      * @return array
      */
