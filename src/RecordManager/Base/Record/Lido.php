@@ -1476,7 +1476,7 @@ class Lido extends AbstractRecord
             $result = [...$result, ...$places];
         }
         $idPlaces = $this->getRepositoryLocations();
-        $result = array_merge($result, $idPlaces);
+        $result = [...$result, ...$idPlaces];
         return $result;
     }
 
