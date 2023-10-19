@@ -1372,7 +1372,7 @@ class Lido extends AbstractRecord
     /**
      * Return repository locations
      *
-     * @return array
+     * @return array<int, string>
      */
     protected function getRepositoryLocations(): array
     {
