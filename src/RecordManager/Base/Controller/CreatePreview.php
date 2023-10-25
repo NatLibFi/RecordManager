@@ -148,6 +148,7 @@ class CreatePreview extends AbstractBase
 
         if ('marc' !== $format && substr(trim($metadata), 0, 1) === '<') {
             $doc = new \DOMDocument();
+            $errors = '';
             if (false === $this->metadataUtils->loadXML($metadata, $doc, 0, $errors)) {
                 throw new \Exception("Could not parse XML record: $errors");
             }
@@ -244,6 +245,7 @@ class CreatePreview extends AbstractBase
     protected function oaipmhTransform($metadata, $transformations)
     {
         $doc = new \DOMDocument();
+        $errors = '';
         if (false === $this->metadataUtils->loadXML($metadata, $doc, 0, $errors)) {
             throw new \Exception("Could not parse XML record: $errors");
         }
