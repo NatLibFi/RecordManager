@@ -124,6 +124,7 @@ return [
             'record' => [
                 'factories' => [
                     \RecordManager\Base\Record\Dc::class => \RecordManager\Base\Record\AbstractRecordWithHttpAndDbFactory::class,
+                    \RecordManager\Base\Record\Doaj::class => \RecordManager\Base\Record\AbstractRecordWithHttpAndDbFactory::class,
                     \RecordManager\Base\Record\Eaccpf::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\Ead::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
                     \RecordManager\Base\Record\Ead3::class => \RecordManager\Base\Record\AbstractRecordFactory::class,
@@ -138,6 +139,7 @@ return [
                 ],
                 'aliases' => [
                     'dc' => \RecordManager\Base\Record\Dc::class,
+                    'doaj' => \RecordManager\Base\Record\Doaj::class,
                     'eaccpf' => \RecordManager\Base\Record\Eaccpf::class,
                     'ead' => \RecordManager\Base\Record\Ead::class,
                     'ead3' => \RecordManager\Base\Record\Ead3::class,
