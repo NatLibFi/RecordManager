@@ -153,14 +153,14 @@ class Doaj extends AbstractRecord
     {
         $data = $this->getFullTextFields($this->doc);
 
-        $doc = $this->doc;
+        $doc = $this->doc->children($this->recordNs);
         $data['record_format'] = 'doaj';
-        $data['ctrlnum'] = trim((string)$doc->recordID);
+        $data['ctrlnum'] = $this->getID();
         $data['fullrecord'] = $doc->asXML();
 
         // allfields
         $allFields = [];
-        foreach ($doc->children() as $field) {
+        foreach ($doc as $field) {
             $allFields[] = $this->metadataUtils->stripTrailingPunctuation(
                 trim((string)$field)
             );
@@ -178,11 +178,15 @@ class Doaj extends AbstractRecord
             ->normalizeLanguageStrings($languages);
 
         $data['format'] = $this->getFormat();
-        /* TODO
-        $data['author'] = $this->metadataUtils->stripTrailingPunctuation(
-            trim((string)$doc->creator)
+
+        $getAuthor = function ($xml) {
+            return (string)($xml->author->name ?? '');
+        };
+        $data['author'] = array_filter(
+            array_values(
+                array_map($getAuthor, iterator_to_array($doc->authors))
+            )
         );
-        */
 
         $data['title'] = $data['title_full'] = $this->getTitle();
         $titleParts = explode(' : ', $data['title'], 2);
@@ -199,9 +203,14 @@ class Doaj extends AbstractRecord
         ];
         $data['publishDate'] = $this->getPublicationYear();
 
-        /* TODO
-        $data['topic'] = $data['topic_facet'] = $this->getValues('subject');
-        */
+        $getTopic = function ($xml) {
+            return (string)($xml->keyword ?? '');
+        };
+        $data['topic'] = $data['topic_facet'] = array_filter(
+            array_values(
+                array_map($getTopic, iterator_to_array($doc->keywords))
+            )
+        );
 
         $data['url'] = $doc->fullTextUrl;
 
@@ -215,7 +224,7 @@ class Doaj extends AbstractRecord
      */
     public function getFullTitleForDebugging()
     {
-        return trim((string)$this->doc->title);
+        return trim((string)$this->doc->children($this->recordNs)->title);
     }
 
     /**
@@ -228,7 +237,7 @@ class Doaj extends AbstractRecord
      */
     public function getTitle($forFiling = false)
     {
-        $title = trim((string)$this->doc->title);
+        $title = trim((string)$this->doc->children($this->recordNs)->title);
         if ($forFiling) {
             $title = $this->metadataUtils->createSortTitle($title);
         } else {
@@ -245,7 +254,7 @@ class Doaj extends AbstractRecord
      */
     public function getMainAuthor()
     {
-        return trim((string)($this?->doc?->authors?->author?->name ?? ''));
+        return trim((string)($this?->doc->children($this->recordNs)?->authors?->author?->name ?? ''));
     }
 
     /**
@@ -255,7 +264,6 @@ class Doaj extends AbstractRecord
      */
     public function getISBNs()
     {
-        // TODO: support
         return [];
     }
 
@@ -296,7 +304,8 @@ class Doaj extends AbstractRecord
      */
     public function getPublicationYear()
     {
-        $date = trim((string)$this->doc->publicationDate);
+        $date = trim((string)$this->doc->children($this->recordNs)->publicationDate);
+        $date = substr($date, 0, 4);
         if (preg_match('{^(\d{4})$}', $date)) {
             return $date;
         }
