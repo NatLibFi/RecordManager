@@ -74,13 +74,13 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
     public function getQueryConversionData(): array
     {
         return [
-            [
+            'no params' => [
                 [],
                 [],
                 'select * from record',
                 [],
             ],
-            [
+            'single param' => [
                 [
                     '_id' => '1212',
                 ],
@@ -90,7 +90,7 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     '1212',
                 ],
             ],
-            [
+            'two params' => [
                 [
                     '_id' => '1212',
                     'deleted' => false,
@@ -102,7 +102,7 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     false,
                 ],
             ],
-            [
+            'params with $lt' => [
                 [
                     'deleted' => true,
                     'updated' => ['$lt' => 1234],
@@ -116,7 +116,7 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     'foo',
                 ],
             ],
-            [
+            'params with $lt and options with limit' => [
                 [
                     'deleted' => true,
                     'updated' => ['$lt' => 1234],
@@ -133,7 +133,7 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     'foo',
                 ],
             ],
-            [
+            'params with $lt and options with limit and skip' => [
                 [
                     'deleted' => true,
                     'updated' => ['$lt' => 1234],
@@ -151,7 +151,7 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     'foo',
                 ],
             ],
-            [
+            'params with $lt and options with limit, skip and sort' => [
                 [
                     'deleted' => true,
                     'updated' => ['$lt' => 1234],
@@ -170,7 +170,7 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     'foo',
                 ],
             ],
-            [
+            'params with linkind_id' => [
                 [
                     'deleted' => false,
                     'linking_id' => '1212',
@@ -183,7 +183,7 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     '1212',
                 ],
             ],
-            [
+            'params with different array operators' => [
                 [
                     'isbn_keys' => ['$in' => ['isbn', 'isbn2']],
                     'deleted' => false,
@@ -201,6 +201,30 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                     false,
                     false,
                     'source',
+                ],
+            ],
+            'params with null in $in' => [
+                [
+                    'isbn_keys' => ['$in' => [null]],
+                ],
+                [],
+                'select * from record where (_id IN (SELECT parent_id FROM'
+                . " record_attrs ca WHERE ca.attr='isbn_keys' AND ca.value IS NULL) OR _id NOT IN"
+                . " (SELECT parent_id FROM record_attrs ca WHERE ca.attr='isbn_keys'))",
+                [],
+            ],
+            'params with null and other values in $in' => [
+                [
+                    'isbn_keys' => ['$in' => [null, '', 'isbn']],
+                ],
+                [],
+                'select * from record where ((_id IN (SELECT parent_id FROM'
+                . " record_attrs ca WHERE ca.attr='isbn_keys' AND ca.value IS NULL) OR _id NOT IN"
+                . " (SELECT parent_id FROM record_attrs ca WHERE ca.attr='isbn_keys')) OR _id IN"
+                . " (SELECT parent_id FROM record_attrs ca WHERE ca.attr='isbn_keys' AND ca.value IN (?,?)))",
+                [
+                    '',
+                    'isbn',
                 ],
             ],
         ];
