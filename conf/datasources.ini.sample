@@ -232,3 +232,10 @@
 ;institution = GeniePlusLib
 ;format = marc
 ;dedup = false
+
+; Sample configuration for DOAJ open access articles
+;[DOAJ]
+;url = https://doaj.org/oai.article
+;metadataPrefix = oai_doaj
+;format = doaj
+;institution = DOAJ
