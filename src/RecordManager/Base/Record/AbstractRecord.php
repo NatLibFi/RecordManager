@@ -159,7 +159,8 @@ abstract class AbstractRecord
      */
     public function getLinkingIDs()
     {
-        return [$this->getID()];
+        $id = $this->getID();
+        return $id ? [$id] : [];
     }
 
     /**
