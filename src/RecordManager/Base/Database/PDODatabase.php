@@ -1053,23 +1053,26 @@ class PDODatabase extends AbstractDatabase
                     $values = (array)$value['$in'];
                     $valueCount = count($values);
                     // Special handling for null
-                    $nullKey = array_search(null, $values);
+                    $nullKey = array_search(null, $values, true);
                     if (false !== $nullKey) {
                         unset($values[$nullKey]);
                         --$valueCount;
                         $whereParts[] = $this->mapFieldToQuery(
                             $collection,
                             $field,
-                            ' IS NULL OR'
+                            ' IS NULL'
                         );
+                        if ($valueCount) {
+                            $whereParts[] = 'OR';
+                        }
                     }
                     if ($valueCount > 1) {
-                        $match = ' in (' . rtrim(str_repeat('?,', $valueCount), ',')
+                        $match = ' IN (' . rtrim(str_repeat('?,', $valueCount), ',')
                             . ')';
                         $whereParts[]
                             = $this->mapFieldToQuery($collection, $field, $match);
                         $params = array_merge($params, $values);
-                    } else {
+                    } elseif ($values) {
                         $whereParts[]
                             = $this->mapFieldToQuery($collection, $field, '=?');
                         $params[] = reset($values);
