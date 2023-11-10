@@ -74,6 +74,13 @@ class Dc extends AbstractRecord
     protected $db;
 
     /**
+     * Record namespace identifier
+     *
+     * @var string
+     */
+    protected $recordNs = 'http://www.openarchives.org/OAI/2.0/oai_dc/';
+
+    /**
      * Constructor
      *
      * @param array             $config           Main configuration
@@ -112,7 +119,7 @@ class Dc extends AbstractRecord
 
         if (
             empty($this->doc->recordID)
-            && empty($this->doc->children('http://www.openarchives.org/OAI/2.0/oai_dc/')->recordID)
+            && empty($this->doc->children($this->recordNs)->recordID)
         ) {
             $parts = explode(':', $oaiID);
             $id = ('oai' === $parts[0] && !empty($parts[2])) ? $parts[2] : $oaiID;
@@ -127,7 +134,11 @@ class Dc extends AbstractRecord
      */
     public function getID()
     {
-        return (string)$this->doc->recordID[0];
+        $id = (string)$this->doc->recordID[0];
+        if ('' === $id) {
+            $id = (string)$this->doc->children($this->recordNs)->recordID[0];
+        }
+        return $id;
     }
 
     /**
