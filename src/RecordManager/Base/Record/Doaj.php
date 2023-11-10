@@ -256,7 +256,7 @@ class Doaj extends AbstractRecord
      */
     public function getMainAuthor()
     {
-        return trim((string)($this?->doc->children($this->recordNs)?->authors?->author?->name ?? ''));
+        return trim((string)($this->doc->children($this->recordNs)?->authors?->author?->name ?? ''));
     }
 
     /**
