@@ -74,6 +74,13 @@ class Doaj extends AbstractRecord
     protected $db;
 
     /**
+     * Record namespace identifier
+     *
+     * @var string
+     */
+    protected $recordNs = 'http://doaj.org/features/oai_doaj/1.0/';
+
+    /**
      * Constructor
      *
      * @param array             $config           Main configuration
@@ -112,7 +119,7 @@ class Doaj extends AbstractRecord
 
         if (
             empty($this->doc->recordID)
-            && empty($this->doc->children('http://doaj.org/features/oai_doaj/1.0/')->recordID)
+            && empty($this->doc->children($this->recordNs)->recordID)
         ) {
             $parts = explode(':', $oaiID);
             $id = ('oai' === $parts[0] && !empty($parts[2])) ? $parts[2] : $oaiID;
@@ -127,7 +134,11 @@ class Doaj extends AbstractRecord
      */
     public function getID()
     {
-        return (string)$this->doc->recordID[0];
+        $id = (string)$this->doc->recordID[0];
+        if ('' === $id) {
+            $id = (string)$this->doc->children($this->recordNs)->recordID[0];
+        }
+        return $id;
     }
 
     /**
@@ -234,7 +245,7 @@ class Doaj extends AbstractRecord
      */
     public function getMainAuthor()
     {
-        return trim((string)$this->doc->authors->author->name);
+        return trim((string)($this?->doc?->authors?->author?->name ?? ''));
     }
 
     /**
