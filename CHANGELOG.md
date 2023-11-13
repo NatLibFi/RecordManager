@@ -5,7 +5,7 @@ Notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 2.2.0 - TBD
+## 2.2.0 - 2023-11-13
 
 **N.B. This version bumps the minimum PHP version to 8.0.**
 
@@ -13,12 +13,29 @@ Anything marked with [**BC**] is known to affect backward compatibility with pre
 
 ### Added
 
-Nothing
+- Support for PHP 8.2 is now complete.
+- Support for filtering location data in Skosmos enrichment.
+- Option to inject record ID to a specified field when exporting records.
+- Option to specify a file with a list of IDs to export.
+- Support for DOAJ article records (oai_doaj format).
 
 ### Changed
 
 - [**BC**] Minimum PHP version has been bumped to 8.0.
-- Internal: Coding style has been updated to PSR-12.
+- DC and QDC: Improved ID handling a bit to support a namespaced identifier.
+- EAD3: Fixed and improved author and format handling.
+- LIDO: Added repository locations to geographic places.
+- LIDO: Added hierarchy title fields from RelatedWorksWrap to allfields.
+- MARC: Removed 5xx fields from alternative names.
+- Improved XML error handling and reporting in record preview.
+- Improved Skosmos enrichment for easier overriding of fields.
+- Fixed deduplication of records that were previously marked as deleted but were imported again after that.
+- Fixed console logging of verbose messages when log file level is lower.
+- Improved null value handling in queries with PDO databases.
+- Updated coding style tools.
+- [**BC**] Internal: Updated coding style to PSR-12.
+- Internal: Cleaned up some ini file handling routines.
+- Internal: Replaced a lot of strncmp, strpos etc. with str_starts_with/str_ends_with/str_contains.
 
 ### Removed
 
