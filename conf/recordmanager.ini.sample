@@ -168,6 +168,7 @@ unicode_normalization_form = NFKC
 ; unlimited. * may be used in the beginning or end as a wildcard.
 [Solr Field Limits]
 __default__ = 1024
+allfields = 32766
 fullrecord = 0
 fulltext = 0
 fulltext_unstemmed = 0
