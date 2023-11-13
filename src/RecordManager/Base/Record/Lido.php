@@ -195,6 +195,21 @@ class Lido extends AbstractRecord
 
         $data['allfields'] = $this->getAllFields($this->doc);
 
+        // Include hierarchy titles from relatedWorksWrap:
+        foreach (
+            ['is_hierarchy_title', 'hierarchy_parent_title', 'hierarchy_top_title', 'title_in_hierarchy'] as $field
+        ) {
+            // phpcs:ignore
+            /** @psalm-var list<string> */
+            $titles = (array)($data[$field] ?? []);
+            if ($titles) {
+                $data['allfields'] = [
+                    ...$data['allfields'],
+                    ...$titles,
+                ];
+            }
+        }
+
         return $data;
     }
 
