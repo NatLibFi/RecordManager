@@ -247,6 +247,16 @@ class Ead3 extends Ead
     }
 
     /**
+     * Get secondary author identifiers
+     *
+     * @return array<int, string>
+     */
+    public function getSecondaryAuthorIds(): array
+    {
+        return [];
+    }
+
+    /**
      * Get corporate author identifiers
      *
      * @return array<int, string>

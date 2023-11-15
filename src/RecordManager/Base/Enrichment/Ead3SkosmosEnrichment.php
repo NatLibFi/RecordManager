@@ -62,11 +62,16 @@ class Ead3SkosmosEnrichment extends SkosmosEnrichment
             'check' => 'geographic',
         ],
         'getCorporateAuthorIds' => [
-            'pref' => '',
+            'pref' => 'author_corporate',
+            'alt' => 'author_variant',
+            'check' => 'author_corporate',
+        ],
+        'getAuthorIds' => [
+            'pref' => 'author',
             'alt' => 'author_variant',
             'check' => 'author',
         ],
-        'getAuthorIds' => [
+        'getSecondaryAuthorIds' => [
             'pref' => 'author2',
             'alt' => 'author2_variant',
             'check' => 'author2',
