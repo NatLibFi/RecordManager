@@ -253,7 +253,7 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
             $settings['indexMergedParts'] ??= true;
             $settings['type'] ??= '';
             $settings['non_inherited_fields'] ??= [];
-            $settings['keepMissingHierarchyMembers'] = false;
+            $settings['keepMissingHierarchyMembers'] ??= false;
 
             $params = [
                 'source_id' => $source,

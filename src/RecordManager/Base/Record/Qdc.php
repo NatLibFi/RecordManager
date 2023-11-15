@@ -67,6 +67,13 @@ class Qdc extends AbstractRecord
     protected $db;
 
     /**
+     * Record namespace identifier
+     *
+     * @var string
+     */
+    protected $recordNs = 'http://www.openarchives.org/OAI/2.0/oai_dc/';
+
+    /**
      * Constructor
      *
      * @param array             $config           Main configuration
@@ -103,10 +110,13 @@ class Qdc extends AbstractRecord
     {
         $this->XmlTraitSetData($source, $oaiID, $data);
 
-        if (empty($this->doc->recordID)) {
-            $p = strpos($oaiID, ':');
-            $p = strpos($oaiID, ':', $p + 1);
-            $this->doc->addChild('recordID', substr($oaiID, $p + 1));
+        if (
+            empty($this->doc->recordID)
+            && empty($this->doc->children($this->recordNs)->recordID)
+        ) {
+            $parts = explode(':', $oaiID);
+            $id = ('oai' === $parts[0] && !empty($parts[2])) ? $parts[2] : $oaiID;
+            $this->doc->addChild('recordID', $id);
         }
     }
 
@@ -117,7 +127,11 @@ class Qdc extends AbstractRecord
      */
     public function getID()
     {
-        return trim((string)$this->doc->recordID[0]);
+        $id = (string)$this->doc->recordID[0];
+        if ('' === $id) {
+            $id = (string)$this->doc->children($this->recordNs)->recordID[0];
+        }
+        return trim($id);
     }
 
     /**

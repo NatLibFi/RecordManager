@@ -409,7 +409,7 @@ class SkosmosEnrichment extends AbstractEnrichment
             }
 
             if ($node->getId() === $id) {
-                if ($locs = $this->processLocationWgs84($node)) {
+                if ($locs = $this->processLocationWgs84($node, $recordId)) {
                     $result['locations'] = [
                         ...$result['locations'],
                         ...$locs,
@@ -454,7 +454,7 @@ class SkosmosEnrichment extends AbstractEnrichment
                         continue;
                     }
 
-                    if ($locs = $this->processLocationWgs84($matchNode)) {
+                    if ($locs = $this->processLocationWgs84($matchNode, $recordId)) {
                         $result['locations'] = [
                             ...$result['locations'],
                             ...$locs,
@@ -611,27 +611,40 @@ class SkosmosEnrichment extends AbstractEnrichment
     /**
      * Process WGS 84 location data
      *
-     * @param \ML\JsonLD\Node $node Decoded JSON array item from which to extract
-     *                              location data
+     * @param \ML\JsonLD\Node $node     Decoded JSON array item from which to extract
+     *                                  location data
+     * @param string          $recordId Record ID
      *
      * @return array<int, array>
      */
-    protected function processLocationWgs84(\ML\JsonLD\Node $node): array
+    protected function processLocationWgs84(\ML\JsonLD\Node $node, string $recordId): array
     {
         $result = [];
         $lat = $node->getProperty(self::WGS84_POS . 'lat');
         $lon = $node->getProperty(self::WGS84_POS . 'long');
         if ($lat && $lon) {
+            $lat = is_array($lat) ? $lat[0]->getValue() : $lat->getValue();
+            $lon = is_array($lon) ? $lon[0]->getValue() : $lon->getValue();
             // Check for excluded types:
             foreach ($this->excludedLocationMatches as $type => $ids) {
-                if ($prop = $node->getProperty($type)) {
-                    if (in_array($prop->getId(), $ids)) {
-                        return $result;
+                if ($props = $node->getProperty($type)) {
+                    foreach (is_array($props) ? $props : [$props] as $prop) {
+                        if (in_array($prop->getId(), $ids)) {
+                            $this->logger->logDebug(
+                                'processLocationWgs84',
+                                "Excluded location $lat,$lon for " . $node->getId() . " ($recordId)",
+                                true
+                            );
+                            return $result;
+                        }
                     }
                 }
             }
-            $lat = is_array($lat) ? $lat[0]->getValue() : $lat->getValue();
-            $lon = is_array($lon) ? $lon[0]->getValue() : $lon->getValue();
+            $this->logger->logDebug(
+                'processLocationWgs84',
+                "Included location $lat,$lon for " . $node->getId() . " ($recordId)",
+                true
+            );
             $result[] = [
                 'lat' => $lat,
                 'lon' => $lon,

@@ -369,13 +369,10 @@ class Logger
         $level = Logger::INFO,
         $verbosity = OutputInterface::VERBOSITY_NORMAL
     ) {
-        if ($this->logLevel < $level) {
-            return;
-        }
         $timestamp = time();
         $logMsg = date('Y-m-d H:i:s', $timestamp) . ' [' . getmypid() . '] ['
             . $this->logLevelToStr($level) . "] [$context] $msg";
-        if ($this->logFile) {
+        if ($this->logFile && $this->logLevel >= $level) {
             if (
                 $this->maxFileSize && file_exists($this->logFile)
                 && filesize($this->logFile) > $this->maxFileSize * 1024 * 1024

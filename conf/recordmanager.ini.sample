@@ -168,6 +168,7 @@ unicode_normalization_form = NFKC
 ; unlimited. * may be used in the beginning or end as a wildcard.
 [Solr Field Limits]
 __default__ = 1024
+allfields = 32766
 fullrecord = 0
 fulltext = 0
 fulltext_unstemmed = 0
@@ -225,6 +226,8 @@ store_message_level = -1
 ; See https://pear.php.net/manual/en/package.http.http-request2.config.php for
 ; documentation on the valid parameters.
 [HTTP]
+; By default redirects (HTTP status 302) are not followed to avoid silent redirect
+; for each request, but they can be enabled by uncommenting the setting below:
 ;follow_redirects = true
 ;adapter = "HTTP_Request2_Adapter_Curl"
 ;ssl_verify_peer = false

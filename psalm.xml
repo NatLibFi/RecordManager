@@ -15,6 +15,7 @@
     <projectFiles>
         <file name="*.php" />
         <directory name="src" />
+        <directory name="tests" />
         <ignoreFiles>
             <file name="src/RecordManager/Base/Database/MongoDatabase.php" />
             <directory name="vendor" />

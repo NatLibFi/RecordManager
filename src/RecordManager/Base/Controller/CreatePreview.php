@@ -148,12 +148,14 @@ class CreatePreview extends AbstractBase
 
         if ('marc' !== $format && substr(trim($metadata), 0, 1) === '<') {
             $doc = new \DOMDocument();
-            if ($this->metadataUtils->loadXML($metadata, $doc)) {
-                $root = $doc->childNodes->item(0);
-                if (in_array($root->nodeName, ['records', 'collection'])) {
-                    // This is a collection of records, get the first one
-                    $metadata = $doc->saveXML($root->childNodes->item(0));
-                }
+            $errors = '';
+            if (false === $this->metadataUtils->loadXML($metadata, $doc, 0, $errors)) {
+                throw new \Exception("Could not parse XML record: $errors");
+            }
+            $root = $doc->childNodes->item(0);
+            if (in_array($root->nodeName, ['records', 'collection'])) {
+                // This is a collection of records, get the first one
+                $metadata = $doc->saveXML($root->childNodes->item(0));
             }
         }
 
@@ -243,10 +245,9 @@ class CreatePreview extends AbstractBase
     protected function oaipmhTransform($metadata, $transformations)
     {
         $doc = new \DOMDocument();
-        if (!$this->metadataUtils->loadXML($metadata, $doc)) {
-            throw new \Exception(
-                'Could not parse XML record'
-            );
+        $errors = '';
+        if (false === $this->metadataUtils->loadXML($metadata, $doc, 0, $errors)) {
+            throw new \Exception("Could not parse XML record: $errors");
         }
         foreach ((array)$transformations as $transformation) {
             $style = new \DOMDocument();

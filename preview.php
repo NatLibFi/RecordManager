@@ -103,4 +103,3 @@ try {
     echo json_encode(['error_message' => $e->getMessage()]);
     return;
 }
-

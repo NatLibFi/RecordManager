@@ -195,6 +195,21 @@ class Lido extends AbstractRecord
 
         $data['allfields'] = $this->getAllFields($this->doc);
 
+        // Include hierarchy titles from relatedWorksWrap:
+        foreach (
+            ['is_hierarchy_title', 'hierarchy_parent_title', 'hierarchy_top_title', 'title_in_hierarchy'] as $field
+        ) {
+            // phpcs:ignore
+            /** @psalm-var list<string> */
+            $titles = (array)($data[$field] ?? []);
+            if ($titles) {
+                $data['allfields'] = [
+                    ...$data['allfields'],
+                    ...$titles,
+                ];
+            }
+        }
+
         return $data;
     }
 
@@ -1294,6 +1309,27 @@ class Lido extends AbstractRecord
     }
 
     /**
+     * Return repository locations
+     *
+     * @return array<int, string>
+     */
+    protected function getRepositoryLocations(): array
+    {
+        $result = [];
+        foreach (
+            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap->repositoryWrap->repositorySet
+            ?? [] as $set
+        ) {
+            foreach ($set->repositoryLocation->namePlaceSet ?? [] as $nameSet) {
+                foreach ($nameSet->appellationValue ?? [] as $place) {
+                    $result[] = (string)$place;
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Get main event types
      *
      * @return array
@@ -1378,6 +1414,8 @@ class Lido extends AbstractRecord
         if ($places = $this->getSubjectDisplayPlaces()) {
             $result = [...$result, ...$places];
         }
+        $idPlaces = $this->getRepositoryLocations();
+        $result = [...$result, ...$idPlaces];
         return $result;
     }
 

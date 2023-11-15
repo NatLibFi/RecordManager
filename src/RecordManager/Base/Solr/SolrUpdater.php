@@ -1940,7 +1940,7 @@ class SolrUpdater
         $components = null;
         if (!isset($record['host_record_id'])) {
             // Fetch info whether component parts exist and need to be merged
-            if (!$record['linking_id']) {
+            if (empty($record['linking_id'])) {
                 if ($this->db) {
                     $this->log->logError(
                         'createSolrArray',

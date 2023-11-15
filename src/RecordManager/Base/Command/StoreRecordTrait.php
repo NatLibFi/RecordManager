@@ -182,9 +182,11 @@ trait StoreRecordTrait
             }
             $hostIDs = $metadataRecord->getHostRecordIDs();
             $dbRecord = $this->db->getRecord($id);
+            $wasDeleted = false;
             if ($dbRecord) {
                 $dbRecord['updated'] = $this->db->getTimestamp();
                 $this->logger->writelnDebug("Updating record $id");
+                $wasDeleted = $dbRecord['deleted'];
             } else {
                 $dbRecord = [];
                 $dbRecord['source_id'] = $sourceId;
@@ -234,7 +236,7 @@ trait StoreRecordTrait
                             = $this->dedupHandler->updateDedupCandidateKeys(
                                 $dbRecord,
                                 $metadataRecord
-                            );
+                            ) || $wasDeleted;
                     } else {
                         $this->db->updateRecords(
                             [

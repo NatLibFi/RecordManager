@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Dublin Core record class
+ * DOAJ record class
  *
  * PHP version 8
  *
@@ -23,6 +23,7 @@
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Demian Katz <demian.katz@villanova.edu>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
@@ -35,17 +36,18 @@ use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 /**
- * Dublin Core record class
+ * DOAJ record class
  *
  * This is a class for processing Dublin Core records.
  *
  * @category DataManagement
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @author   Demian Katz <demian.katz@villanova.edu>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class Dc extends AbstractRecord
+class Doaj extends AbstractRecord
 {
     use XmlRecordTrait {
         XmlRecordTrait::setData as XmlTraitSetData;
@@ -78,7 +80,7 @@ class Dc extends AbstractRecord
      *
      * @var string
      */
-    protected $recordNs = 'http://www.openarchives.org/OAI/2.0/oai_dc/';
+    protected $recordNs = 'http://doaj.org/features/oai_doaj/1.0/';
 
     /**
      * Constructor
@@ -153,14 +155,14 @@ class Dc extends AbstractRecord
     {
         $data = $this->getFullTextFields($this->doc);
 
-        $doc = $this->doc;
-        $data['record_format'] = 'dc';
-        $data['ctrlnum'] = trim((string)$doc->recordID);
+        $doc = $this->doc->children($this->recordNs);
+        $data['record_format'] = 'doaj';
+        $data['ctrlnum'] = $this->getID();
         $data['fullrecord'] = $doc->asXML();
 
         // allfields
         $allFields = [];
-        foreach ($doc->children() as $field) {
+        foreach ($doc as $field) {
             $allFields[] = $this->metadataUtils->stripTrailingPunctuation(
                 trim((string)$field)
             );
@@ -177,11 +179,16 @@ class Dc extends AbstractRecord
         $data['language'] = $this->metadataUtils
             ->normalizeLanguageStrings($languages);
 
-        $data['format'] = (string)$doc->type;
-        $data['author'] = $this->metadataUtils->stripTrailingPunctuation(
-            trim((string)$doc->creator)
+        $data['format'] = $this->getFormat();
+
+        $getAuthor = function ($xml) {
+            return (string)($xml->author->name ?? '');
+        };
+        $data['author'] = array_filter(
+            array_values(
+                array_map($getAuthor, iterator_to_array($doc->authors))
+            )
         );
-        $data['author2'] = $this->getValues('contributor');
 
         $data['title'] = $data['title_full'] = $this->getTitle();
         $titleParts = explode(' : ', $data['title'], 2);
@@ -198,25 +205,16 @@ class Dc extends AbstractRecord
         ];
         $data['publishDate'] = $this->getPublicationYear();
 
-        $data['isbn'] = $this->getISBNs();
-        $data['doi_str_mv'] = $this->getDOIs();
+        $getTopic = function ($xml) {
+            return (string)($xml->keyword ?? '');
+        };
+        $data['topic'] = $data['topic_facet'] = array_filter(
+            array_values(
+                array_map($getTopic, iterator_to_array($doc->keywords))
+            )
+        );
 
-        $data['topic'] = $data['topic_facet'] = $this->getValues('subject');
-
-        foreach ($this->getValues('identifier') as $identifier) {
-            if (preg_match('/^https?/', $identifier)) {
-                $data['url'] = $identifier;
-            }
-        }
-        foreach ($this->getValues('description') as $description) {
-            if (preg_match('/^https?/', $description)) {
-                $data['url'] = $description;
-            } elseif (preg_match('/^\d+\.\d+$/', $description)) {
-                // Classification, put somewhere?
-            } else {
-                $data['contents'][] = $description;
-            }
-        }
+        $data['url'] = $doc->fullTextUrl;
 
         return $data;
     }
@@ -228,7 +226,7 @@ class Dc extends AbstractRecord
      */
     public function getFullTitleForDebugging()
     {
-        return trim((string)$this->doc->title);
+        return trim((string)$this->doc->children($this->recordNs)->title);
     }
 
     /**
@@ -241,7 +239,7 @@ class Dc extends AbstractRecord
      */
     public function getTitle($forFiling = false)
     {
-        $title = trim((string)$this->doc->title);
+        $title = trim((string)$this->doc->children($this->recordNs)->title);
         if ($forFiling) {
             $title = $this->metadataUtils->createSortTitle($title);
         } else {
@@ -258,7 +256,7 @@ class Dc extends AbstractRecord
      */
     public function getMainAuthor()
     {
-        return trim((string)$this->doc->creator);
+        return trim((string)($this->doc->children($this->recordNs)?->authors?->author?->name ?? ''));
     }
 
     /**
@@ -268,18 +266,7 @@ class Dc extends AbstractRecord
      */
     public function getISBNs()
     {
-        $arr = [];
-        foreach ($this->doc->identifier as $identifier) {
-            $identifier = str_replace('-', '', trim($identifier));
-            if (!preg_match('{([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
-                continue;
-            }
-            $isbn = $this->metadataUtils->normalizeISBN($matches[1]);
-            if ($isbn) {
-                $arr[] = $isbn;
-            }
-        }
-        return array_values(array_unique($arr));
+        return [];
     }
 
     /**
@@ -309,7 +296,7 @@ class Dc extends AbstractRecord
      */
     public function getFormat()
     {
-        return $this->doc->type ? trim((string)$this->doc->type) : 'Other';
+        return 'Article';
     }
 
     /**
@@ -319,11 +306,10 @@ class Dc extends AbstractRecord
      */
     public function getPublicationYear()
     {
-        foreach ($this->doc->date as $date) {
-            $date = trim((string)$date);
-            if (preg_match('{^(\d{4})$}', $date)) {
-                return $date;
-            }
+        $date = trim((string)$this->doc->children($this->recordNs)->publicationDate);
+        $date = substr($date, 0, 4);
+        if (preg_match('{^(\d{4})$}', $date)) {
+            return $date;
         }
         return '';
     }
@@ -345,36 +331,6 @@ class Dc extends AbstractRecord
      */
     protected function getDOIs(): array
     {
-        $result = [];
-
-        foreach ($this->getValues('identifier') as $identifier) {
-            $found = preg_match(
-                '{(urn:doi:|https?://doi.org/|https?://dx.doi.org/)([^?#]+)}',
-                $identifier,
-                $matches
-            );
-            if ($found) {
-                $result[] = urldecode($matches[2]);
-            }
-        }
-        return $result;
-    }
-
-    /**
-     * Get all values for a tag
-     *
-     * @param string $tag XML tag to get
-     *
-     * @return array<int, string>
-     */
-    protected function getValues($tag)
-    {
-        $values = [];
-        foreach ($this->doc->{$tag} as $value) {
-            $values[] = $this->metadataUtils->stripTrailingPunctuation(
-                trim((string)$value)
-            );
-        }
-        return $values;
+        return [];
     }
 }
