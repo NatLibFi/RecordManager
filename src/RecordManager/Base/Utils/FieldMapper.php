@@ -30,6 +30,7 @@
 namespace RecordManager\Base\Utils;
 
 use function is_array;
+use function is_string;
 
 /**
  * Field value mapper
@@ -326,16 +327,23 @@ class FieldMapper
             }
             if (!isset($parts[1])) {
                 fclose($handle);
-                throw new \Exception(
-                    "Unable to parse mapping file '$filename' line "
-                    . "(no ' = ' found): ($lineno) $line"
-                );
+                throw new \Exception("Unable to parse mapping file $filename: no ' = ' found on line $lineno: $line");
             }
             $key = trim($parts[0]);
             $value = trim($parts[1]);
             if (substr($key, -2) == '[]') {
-                $mappings[substr($key, 0, -2)][] = $value;
+                $key = substr($key, 0, -2);
+                // @phpstan-ignore-next-line
+                if (is_string($mappings[$key] ?? null)) {
+                    throw new \Exception("$key already defined as a single value in $filename line $lineno: $line");
+                }
+                $mappings[$key][] = $value;
             } else {
+                if (is_array($mappings[$key] ?? null)) {
+                    throw new \Exception(
+                        "$key already defined as an array of values in $filename line $lineno: $line"
+                    );
+                }
                 $mappings[$key] = $value;
             }
         }
