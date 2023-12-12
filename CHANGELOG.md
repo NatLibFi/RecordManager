@@ -11,7 +11,7 @@ Anything marked with [**BC**] is known to affect backward compatibility with pre
 
 ### Changed
 
-- Format of $isbnFields definition array in Marc.php has been changed to include the type of ISBN field. It can be used to avoid reporting invalid ISBNs or extra content in combined fields in the `warnings_field` index field.
+- Format of $isbnFields and $issnFields definition arrays in Marc.php have been changed to include the type of the field. It can be used to avoid reporting invalid e.g. ISBNs or extra content in combined fields in the `warnings_field` index field.
 
 ## 2.2.0 - 2023-11-13
 

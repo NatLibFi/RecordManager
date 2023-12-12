@@ -144,6 +144,30 @@ class Marc extends AbstractRecord
     ];
 
     /**
+     * Field specs for ISSN fields
+     *
+     * 'type' can be 'normal', 'combined' or 'invalid'; it's not currently used but
+     * exists for future needs and compatibility with $isbnFields.
+     *
+     * @var array
+     */
+    protected $issnFields = [
+        [
+            'type' => 'normal',
+            'selector' => [
+                [MarcHandler::GET_NORMAL, '022', ['a']],
+                [MarcHandler::GET_NORMAL, '440', ['x']],
+                [MarcHandler::GET_NORMAL, '490', ['x']],
+                [MarcHandler::GET_NORMAL, '730', ['x']],
+                [MarcHandler::GET_NORMAL, '773', ['x']],
+                [MarcHandler::GET_NORMAL, '776', ['x']],
+                [MarcHandler::GET_NORMAL, '780', ['x']],
+                [MarcHandler::GET_NORMAL, '785', ['x']],
+            ],
+        ],
+    ];
+
+    /**
      * MARC record creation callback
      *
      * @var callable
@@ -451,18 +475,16 @@ class Marc extends AbstractRecord
                 }
             }
         }
-        $data['issn'] = $this->getFieldsSubfields(
-            [
-                [MarcHandler::GET_NORMAL, '022', ['a']],
-                [MarcHandler::GET_NORMAL, '440', ['x']],
-                [MarcHandler::GET_NORMAL, '490', ['x']],
-                [MarcHandler::GET_NORMAL, '730', ['x']],
-                [MarcHandler::GET_NORMAL, '773', ['x']],
-                [MarcHandler::GET_NORMAL, '776', ['x']],
-                [MarcHandler::GET_NORMAL, '780', ['x']],
-                [MarcHandler::GET_NORMAL, '785', ['x']],
-            ]
-        );
+
+        foreach ($this->issnFields as $fieldSpec) {
+            // phpcs:ignore
+            /** @psalm-suppress DuplicateArrayKey,InvalidOperand */
+            $data['issn'] = [
+                ...($data['issn'] ?? []),
+                ...$this->getFieldsSubfields($fieldSpec['selector']),
+            ];
+        }
+
         $data['doi_str_mv'] = $this->getDOIs();
 
         $cn = $this->getFirstFieldSubfields(
