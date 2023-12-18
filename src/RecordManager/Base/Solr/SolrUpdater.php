@@ -335,6 +335,13 @@ class SolrUpdater
     ];
 
     /**
+     * Fields to sum as numeric values when merging deduplicated records
+     *
+     * @var array
+     */
+    protected $summedFields = [];
+
+    /**
      * Fields to copy back from the merged dedup record to all the member records
      *
      * @var array
@@ -672,6 +679,11 @@ class SolrUpdater
             $this->singleFields = explode(',', $config['Solr']['single_fields']);
         }
         $this->singleFields = array_flip($this->singleFields);
+
+        if (isset($config['Solr']['summed_fields'])) {
+            $this->summedFields = explode(',', $config['Solr']['summed_fields']);
+        }
+        $this->summedFields = array_flip($this->summedFields);
 
         if (isset($config['Solr']['scored_fields'])) {
             $this->scoredFields = explode(',', $config['Solr']['scored_fields']);
@@ -2630,6 +2642,8 @@ class SolrUpdater
                     if (empty($merged[$key])) {
                         $merged[$key] = $value;
                     }
+                } elseif (isset($this->summedFields[$key])) {
+                    $merged[$key] = ($merged[$key] ?? 0) + $value;
                 } elseif ($key == 'allfields') {
                     $merged['allfields'] = [
                         ...(array)($merged['allfields'] ?? []),

@@ -104,6 +104,8 @@ track_updates_per_update_url = true
 copy_from_parent_record = building
 ; Fields that are added to the merged record if they don't already exist
 ;single_fields = title,publishDateSort
+; Fields that are summed together when creating the merged record
+;summed_fields = items_int,orders_int
 ; Fields that are used for scoring when selecting the base record for a merged record
 ;scored_fields = title,author,publisher,topic
 ; Fields that are handled as containing building data (e.g. affected by the
