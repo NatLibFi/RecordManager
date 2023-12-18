@@ -119,6 +119,13 @@ class SierraApi extends AbstractBase
     ];
 
     /**
+     * Fields to request from Sierra
+     *
+     * @var string
+     */
+    protected $harvestFields = 'id,deleted,locations,fixedFields,varFields';
+
+    /**
      * Initialize harvesting
      *
      * @param string $source    Source ID
@@ -177,7 +184,7 @@ class SierraApi extends AbstractBase
         $apiParams = [
             'limit' => $this->batchSize,
             'offset' => $this->startPosition,
-            'fields' => 'id,deleted,locations,fixedFields,varFields',
+            'fields' => $this->harvestFields,
         ];
         if (null !== $this->suppressedRecords) {
             $apiParams['suppressed'] = $this->suppressedRecords ? 'true' : 'false';
