@@ -106,6 +106,13 @@ class PDODatabase extends AbstractDatabase
     protected $lastRecordAttrsId = [];
 
     /**
+     * Whether to use index hints (MySQL/MariaDB)
+     *
+     * @var bool
+     */
+    protected $useIndexHints = false;
+
+    /**
      * Constructor.
      *
      * @param array $config Database settings
@@ -119,6 +126,7 @@ class PDODatabase extends AbstractDatabase
         $this->dsn = $config['connection'] ?? '';
         $this->username = $config['username'] ?? '';
         $this->password = $config['password'] ?? '';
+        $this->useIndexHints = (bool)($config['use_index_hints'] ?? true);
     }
 
     /**
@@ -712,6 +720,9 @@ class PDODatabase extends AbstractDatabase
         [$where, $params] = $this->filterToSQL($collection, $filter);
         [$fields, $sqlOptions] = $this->optionsToSQL($options);
         $sql = "select $fields from $collection";
+        if ($hints = $this->getIndexHints($collection, $filter, $options)) {
+            $sql .= " $hints";
+        }
         if ($where) {
             $sql .= " where $where";
         }
@@ -1223,5 +1234,36 @@ class PDODatabase extends AbstractDatabase
             }
         }
         return $this->mainFields[$collection];
+    }
+
+    /**
+     * Check if the database is MySQL or MariaDB
+     *
+     * @return bool
+     */
+    protected function isMySQLCompatible(): bool
+    {
+        return str_starts_with($this->dsn, 'mysql')
+            || str_starts_with($this->dsn, 'mariadb');
+    }
+
+    /**
+     * Get index hints
+     *
+     * @param string $collection Collection
+     * @param array  $filter     Search filter
+     * @param array  $options    Options such as sorting
+     *
+     * @return string
+     */
+    protected function getIndexHints(string $collection, array $filter, array $options): string
+    {
+        if (!$this->useIndexHints || !$this->isMySQLCompatible()) {
+            return '';
+        }
+        if ('record' === $collection && isset($options['sort']['_id'])) {
+            return 'USE INDEX (source_update_needed)';
+        }
+        return '';
     }
 }
