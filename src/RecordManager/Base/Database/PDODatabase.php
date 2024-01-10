@@ -1261,7 +1261,7 @@ class PDODatabase extends AbstractDatabase
         if (!$this->useIndexHints || !$this->isMySQLCompatible()) {
             return '';
         }
-        if ('record' === $collection && isset($options['sort']['_id'])) {
+        if ('record' === $collection && isset($options['sort']['_id']) && isset($filter['source_id'])) {
             return 'USE INDEX (source_update_needed)';
         }
         return '';
