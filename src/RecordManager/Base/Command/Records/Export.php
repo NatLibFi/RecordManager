@@ -277,7 +277,7 @@ class Export extends AbstractBase
                 );
             }
         }
-        $xml = $metadataRecord->toXML();
+        $xmlStr = $metadataRecord->toXML();
         $needsInjection = $this->injectId
             || $this->injectIdPrefixed
             || $this->injectCreationTimestamp
@@ -285,14 +285,14 @@ class Export extends AbstractBase
             || $this->injectInternalTimestamp;
         if ($this->xpath || ($needsInjection && !$record['deleted'])) {
             $errors = '';
-            $dom = $this->metadataUtils->loadXML($xml, null, 0, $errors);
-            if (false === $dom) {
+            $xml = $this->metadataUtils->loadXML($xmlStr, null, 0, $errors);
+            if (false === $xml) {
                 throw new \Exception(
                     "Failed to parse record '{$record['_id']}': $errors"
                 );
             }
             if ($this->xpath) {
-                $xpathResult = $dom->xpath($this->xpath);
+                $xpathResult = $xml->xpath($this->xpath);
                 if ($xpathResult === false) {
                     throw new \Exception(
                         "Failed to evaluate XPath expression '$this->xpath'"
@@ -303,17 +303,25 @@ class Export extends AbstractBase
                 }
             }
             if (!$record['deleted'] && $needsInjection) {
+                if ($this->additionalNamespaces) {
+                    // Add namespace prefixes via DOM because adding them with
+                    // SimpleXML's addAttribute() wouldn't register them properly:
+                    $dom = dom_import_simplexml($xml);
+                    foreach ($this->additionalNamespaces as $prefix => $ns) {
+                        $dom->setAttributeNS('http://www.w3.org/2000/xmlns/', "xmlns:$prefix", $ns);
+                    }
+                }
                 if ($this->injectId) {
                     $id = $record['_id'];
                     $id = substr($id, strlen("$this->sourceId."));
-                    $this->addXmlNode($dom, $this->injectId, $id);
+                    $this->addXmlNode($xml, $this->injectId, $id);
                 }
                 if ($this->injectIdPrefixed) {
-                    $this->addXmlNode($dom, $this->injectId, $record['_id']);
+                    $this->addXmlNode($xml, $this->injectId, $record['_id']);
                 }
                 if ($this->injectCreationTimestamp) {
                     $this->addXmlNode(
-                        $dom,
+                        $xml,
                         $this->injectCreationTimestamp,
                         $this->metadataUtils->formatTimestamp(
                             $this->db->getUnixTime($record['created'])
@@ -322,7 +330,7 @@ class Export extends AbstractBase
                 }
                 if ($this->injectCurrentTimestamp) {
                     $this->addXmlNode(
-                        $dom,
+                        $xml,
                         $this->injectCurrentTimestamp,
                         $this->metadataUtils->formatTimestamp(
                             $this->db->getUnixTime($record['date'])
@@ -331,14 +339,14 @@ class Export extends AbstractBase
                 }
                 if ($this->injectInternalTimestamp) {
                     $this->addXmlNode(
-                        $dom,
+                        $xml,
                         $this->injectInternalTimestamp,
                         $this->metadataUtils->formatTimestamp(
                             $this->db->getUnixTime($record['updated'])
                         )
                     );
                 }
-                $xml = $dom->saveXML();
+                $xmlStr = $xml->saveXML();
             }
         }
         ++$this->count;
@@ -369,8 +377,8 @@ class Export extends AbstractBase
                     ?? ''
                 );
             }
-            $xml = preg_replace('/^<\?xml.*?\?>[\n\r]*/', '', $xml);
-            $this->writeRecord($xml);
+            $xmlStr = preg_replace('/^<\?xml.*?\?>[\n\r]*/', '', $xmlStr);
+            $this->writeRecord($xmlStr);
         }
         if ($this->count % 1000 == 0) {
             $this->logger->logInfo(
@@ -438,14 +446,15 @@ class Export extends AbstractBase
                 'Process only the records whose IDs are listed in the provided text file'
             )->addOption(
                 'id-file-batch-size',
-                '1000',
+                null,
                 InputOption::VALUE_REQUIRED,
-                'Number of records to export per database request when using --id-file'
+                'Number of records to export per database request when using <info>--id-file</info>',
+                1000
             )->addOption(
                 'id-file-prefix',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Source prefix to add to each line read from file when using --id-file'
+                'Source prefix to add to each line read from file when using <info>--id-file</info>'
             )->addOption(
                 'xpath',
                 null,
@@ -456,7 +465,7 @@ class Export extends AbstractBase
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Export multiple files with a batch of records in each one. The file'
-                . ' argument is used as a template. If it contains {n}, that will be'
+                . ' argument is used as a template. If it contains <comment>{n}</comment>, that will be'
                 . ' replaced with the file number (example: "export-{n}.xml").'
                 . ' Otherwise a dash and the file number is appended before any file'
                 . ' extension.'
@@ -475,7 +484,7 @@ class Export extends AbstractBase
                 null,
                 InputOption::VALUE_REQUIRED,
                 "Whether to include dedup id's in exported records. Supported"
-                . ' values: deduped = if duplicates exist, always = always. '
+                . ' values: <comment>deduped</comment> = if duplicates exist, <comment>always</comment> = always. '
                 . " Default is to not include the dedup id's."
             )->addOption(
                 'inject-id',
@@ -492,23 +501,28 @@ class Export extends AbstractBase
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Inject creation (initial harvest or import) timestamp of the record'
-                . ' to the given XML field (ISO 8601 format)'
+                . ' to the given XML field (ISO 8601 format). The field may contain'
+                . ' an XPath-like path with attributes and namespace prefixes'
+                . ' (e.g. <comment>\'custom:elem/subelem[@type="some"]\'</comment>). Additional'
+                . ' namespace prefixes can be defined with the <info>--add-namespace</info>'
+                . ' parameter.'
             )->addOption(
                 'inject-date',
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Inject current (last harvest or import) timestamp of the record'
-                . ' to the given XML field (ISO 8601 format)'
+                . ' (see <info>--inject-created</info> for more information)'
             )->addOption(
                 'inject-internal-timestamp',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Inject last internal update timestamp of the record to the given XML field (ISO 8601 format)'
+                'Inject last internal update timestamp of the record to'
+                . ' (see <info>--inject-created</info> for more information)'
             )->addOption(
                 'add-namespace',
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
-                'Define an additional XML namespace for injected fields (prefix=namespace_identifier). Can be repeated.'
+                'Define an additional XML namespace for injected fields (prefix=namespace_identifier).'
             );
     }
 
@@ -800,7 +814,7 @@ class Export extends AbstractBase
      * Add an node to the XML record
      *
      * @param \SimpleXMLElement $xml       XML record
-     * @param array             $path      XML path
+     * @param array             $path      XML path from parseXmlPath
      * @param string            $nodeValue Node value
      *
      * @return void
@@ -834,7 +848,7 @@ class Export extends AbstractBase
      * Try to find a node in XML element
      *
      * @param \SimpleXMLElement $xml      XML node
-     * @param array             $pathPart Path item
+     * @param array             $pathPart Path item (an element from parseXmlPath)
      *
      * @return ?\SimpleXMLElement
      */
@@ -878,16 +892,12 @@ class Export extends AbstractBase
      */
     protected function getXmlNamespaceFromPrefix(\SimpleXMLElement $xml, ?string $prefix): ?string
     {
-        $ns = null;
-        $namespaces = $xml->getNamespaces();
-        if (null === $prefix) {
-            if (current($namespaces) !== 'http://www.w3.org/2001/XMLSchema-instance') {
-                $ns = current($namespaces);
-            }
-        } else {
-            $ns = $namespaces[$prefix] ?? $this->additionalNamespaces[$prefix] ?? null;
+        if (null !== $prefix) {
+            // Check additional namespaces too since SimpleXML doesn't return newly added prefixes:
+            $namespaces = $xml->getNamespaces();
+            return $namespaces[$prefix] ?? $this->additionalNamespaces[$prefix] ?? null;
         }
-        return $ns;
+        return null;
     }
 
     /**
