@@ -516,7 +516,7 @@ class Export extends AbstractBase
                 'inject-internal-timestamp',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Inject last internal update timestamp of the record to'
+                'Inject last internal update timestamp of the record'
                 . ' (see <info>--inject-created</info> for more information)'
             )->addOption(
                 'add-namespace',
