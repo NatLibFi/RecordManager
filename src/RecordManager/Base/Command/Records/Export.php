@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2011-2022.
+ * Copyright (C) The National Library of Finland 2011-2024.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -187,18 +187,46 @@ class Export extends AbstractBase
     protected $sourceId;
 
     /**
-     * Inject record ID without source prefix to the given XML field
+     * Inject record ID without source prefix to the given XML path
      *
-     * @var ?string
+     * @var array
      */
     protected $injectId;
 
     /**
-     * Inject record ID with source prefix to the given XML field
+     * Inject record ID with source prefix to the given XML path
      *
-     * @var ?string
+     * @var array
      */
     protected $injectIdPrefixed;
+
+    /**
+     * Inject creation (initial harvest) timestamp to the given XML path
+     *
+     * @var array
+     */
+    protected $injectCreationTimestamp;
+
+    /**
+     * Inject timestamp of current timestamp (OAI-PMH timestamp or last import date) to the given XML path
+     *
+     * @var array
+     */
+    protected $injectCurrentTimestamp;
+
+    /**
+     * Inject timestamp of last internal update to the given XML path
+     *
+     * @var array
+     */
+    protected $injectInternalTimestamp;
+
+    /**
+     * Namespaces to add to each record for injected fields
+     *
+     * @var array
+     */
+    protected $additionalNamespaces = [];
 
     /**
      * Total number of records processed
@@ -249,17 +277,22 @@ class Export extends AbstractBase
                 );
             }
         }
-        $xml = $metadataRecord->toXML();
-        if ($this->xpath || (($this->injectId || $this->injectIdPrefixed) && !$record['deleted'])) {
+        $xmlStr = $metadataRecord->toXML();
+        $needsInjection = $this->injectId
+            || $this->injectIdPrefixed
+            || $this->injectCreationTimestamp
+            || $this->injectCurrentTimestamp
+            || $this->injectInternalTimestamp;
+        if ($this->xpath || ($needsInjection && !$record['deleted'])) {
             $errors = '';
-            $dom = $this->metadataUtils->loadXML($xml, null, 0, $errors);
-            if (false === $dom) {
+            $xml = $this->metadataUtils->loadXML($xmlStr, null, 0, $errors);
+            if (false === $xml) {
                 throw new \Exception(
                     "Failed to parse record '{$record['_id']}': $errors"
                 );
             }
             if ($this->xpath) {
-                $xpathResult = $dom->xpath($this->xpath);
+                $xpathResult = $xml->xpath($this->xpath);
                 if ($xpathResult === false) {
                     throw new \Exception(
                         "Failed to evaluate XPath expression '$this->xpath'"
@@ -269,20 +302,51 @@ class Export extends AbstractBase
                     return true;
                 }
             }
-            if (!$record['deleted']) {
+            if (!$record['deleted'] && $needsInjection) {
+                if ($this->additionalNamespaces) {
+                    // Add namespace prefixes via DOM because adding them with
+                    // SimpleXML's addAttribute() wouldn't register them properly:
+                    $dom = dom_import_simplexml($xml);
+                    foreach ($this->additionalNamespaces as $prefix => $ns) {
+                        $dom->setAttributeNS('http://www.w3.org/2000/xmlns/', "xmlns:$prefix", $ns);
+                    }
+                }
                 if ($this->injectId) {
                     $id = $record['_id'];
                     $id = substr($id, strlen("$this->sourceId."));
-                    $dom->addChild($this->injectId, htmlspecialchars($id, ENT_NOQUOTES));
-                    $xml = $dom->saveXML();
+                    $this->addXmlNode($xml, $this->injectId, $id);
                 }
                 if ($this->injectIdPrefixed) {
-                    $dom->addChild(
-                        $this->injectIdPrefixed,
-                        htmlspecialchars($record['_id'], ENT_NOQUOTES)
-                    );
-                    $xml = $dom->saveXML();
+                    $this->addXmlNode($xml, $this->injectId, $record['_id']);
                 }
+                if ($this->injectCreationTimestamp) {
+                    $this->addXmlNode(
+                        $xml,
+                        $this->injectCreationTimestamp,
+                        $this->metadataUtils->formatTimestamp(
+                            $this->db->getUnixTime($record['created'])
+                        )
+                    );
+                }
+                if ($this->injectCurrentTimestamp) {
+                    $this->addXmlNode(
+                        $xml,
+                        $this->injectCurrentTimestamp,
+                        $this->metadataUtils->formatTimestamp(
+                            $this->db->getUnixTime($record['date'])
+                        )
+                    );
+                }
+                if ($this->injectInternalTimestamp) {
+                    $this->addXmlNode(
+                        $xml,
+                        $this->injectInternalTimestamp,
+                        $this->metadataUtils->formatTimestamp(
+                            $this->db->getUnixTime($record['updated'])
+                        )
+                    );
+                }
+                $xmlStr = $xml->saveXML();
             }
         }
         ++$this->count;
@@ -313,8 +377,8 @@ class Export extends AbstractBase
                     ?? ''
                 );
             }
-            $xml = preg_replace('/^<\?xml.*?\?>[\n\r]*/', '', $xml);
-            $this->writeRecord($xml);
+            $xmlStr = preg_replace('/^<\?xml.*?\?>[\n\r]*/', '', $xmlStr);
+            $this->writeRecord($xmlStr);
         }
         if ($this->count % 1000 == 0) {
             $this->logger->logInfo(
@@ -382,14 +446,15 @@ class Export extends AbstractBase
                 'Process only the records whose IDs are listed in the provided text file'
             )->addOption(
                 'id-file-batch-size',
-                '1000',
+                null,
                 InputOption::VALUE_REQUIRED,
-                'Number of records to export per database request when using --id-file'
+                'Number of records to export per database request when using <info>--id-file</info>',
+                1000
             )->addOption(
                 'id-file-prefix',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Source prefix to add to each line read from file when using --id-file'
+                'Source prefix to add to each line read from file when using <info>--id-file</info>'
             )->addOption(
                 'xpath',
                 null,
@@ -400,7 +465,7 @@ class Export extends AbstractBase
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Export multiple files with a batch of records in each one. The file'
-                . ' argument is used as a template. If it contains {n}, that will be'
+                . ' argument is used as a template. If it contains <comment>{n}</comment>, that will be'
                 . ' replaced with the file number (example: "export-{n}.xml").'
                 . ' Otherwise a dash and the file number is appended before any file'
                 . ' extension.'
@@ -419,7 +484,7 @@ class Export extends AbstractBase
                 null,
                 InputOption::VALUE_REQUIRED,
                 "Whether to include dedup id's in exported records. Supported"
-                . ' values: deduped = if duplicates exist, always = always. '
+                . ' values: <comment>deduped</comment> = if duplicates exist, <comment>always</comment> = always. '
                 . " Default is to not include the dedup id's."
             )->addOption(
                 'inject-id',
@@ -431,6 +496,33 @@ class Export extends AbstractBase
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Inject record ID with source prefix to the given XML field'
+            )->addOption(
+                'inject-created',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Inject creation (initial harvest or import) timestamp of the record'
+                . ' to the given XML field (ISO 8601 format). The field may contain'
+                . ' an XPath-like path with attributes and namespace prefixes'
+                . ' (e.g. <comment>\'custom:elem/subelem[@type="some"]\'</comment>). Additional'
+                . ' namespace prefixes can be defined with the <info>--add-namespace</info>'
+                . ' parameter.'
+            )->addOption(
+                'inject-date',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Inject current (last harvest or import) timestamp of the record'
+                . ' (see <info>--inject-created</info> for more information)'
+            )->addOption(
+                'inject-internal-timestamp',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Inject last internal update timestamp of the record'
+                . ' (see <info>--inject-created</info> for more information)'
+            )->addOption(
+                'add-namespace',
+                null,
+                InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
+                'Define an additional XML namespace for injected fields (prefix=namespace_identifier).'
             );
     }
 
@@ -459,8 +551,18 @@ class Export extends AbstractBase
         $this->sortDedup = $input->getOption('sort-dedup');
         $this->addDedupId = $input->getOption('dedup-id');
         $this->batchSize = $input->getOption('batch-size') ?: 0;
-        $this->injectId = $input->getOption('inject-id');
-        $this->injectIdPrefixed = $input->getOption('inject-id-prefixed');
+        $this->injectId = $this->parseXmlPath($input->getOption('inject-id'));
+        $this->injectIdPrefixed = $this->parseXmlPath($input->getOption('inject-id-prefixed'));
+        $this->injectCreationTimestamp = $this->parseXmlPath($input->getOption('inject-created'));
+        $this->injectCurrentTimestamp = $this->parseXmlPath($input->getOption('inject-date'));
+        $this->injectInternalTimestamp = $this->parseXmlPath($input->getOption('inject-internal-timestamp'));
+        foreach ((array)($input->getOption('add-namespace') ?? []) as $namespace) {
+            $parts = explode('=', $namespace, 2);
+            if (!isset($parts[1])) {
+                throw new \Exception("Invalid namespace declaration: $namespace");
+            }
+            $this->additionalNamespaces[$parts[0]] = $parts[1];
+        }
     }
 
     /**
@@ -475,38 +577,30 @@ class Export extends AbstractBase
             $params['$and'] = [
                 [
                     'updated' => [
-                        '$gte'
-                            => $this->db->getTimestamp(strtotime($this->fromDate)),
+                        '$gte' => $this->db->getTimestamp(strtotime($this->fromDate)),
                     ],
                 ],
                 [
                     'updated' => [
-                        '$lte'
-                            => $this->db->getTimestamp(strtotime($this->untilDate)),
+                        '$lte' => $this->db->getTimestamp(strtotime($this->untilDate)),
                     ],
                 ],
             ];
         } elseif ($this->fromDate) {
-            $params['updated']
-                = ['$gte' => $this->db->getTimestamp(strtotime($this->fromDate))];
+            $params['updated'] = ['$gte' => $this->db->getTimestamp(strtotime($this->fromDate))];
         } elseif ($this->untilDate) {
-            $params['updated']
-                = ['$lte' => $this->db->getTimestamp(strtotime($this->untilDate))];
+            $params['updated'] = ['$lte' => $this->db->getTimestamp(strtotime($this->untilDate))];
         }
         if ($this->fromCreateDate && $this->untilCreateDate) {
             $params['$and'] = [
                 [
                     'created' => [
-                        '$gte' => $this->db->getTimestamp(
-                            strtotime($this->fromCreateDate)
-                        ),
+                        '$gte' => $this->db->getTimestamp(strtotime($this->fromCreateDate)),
                     ],
                 ],
                 [
                     'created' => [
-                        '$lte' => $this->db->getTimestamp(
-                            strtotime($this->untilCreateDate)
-                        ),
+                        '$lte' => $this->db->getTimestamp(strtotime($this->untilCreateDate)),
                     ],
                 ],
             ];
@@ -516,8 +610,7 @@ class Export extends AbstractBase
             ];
         } elseif ($this->untilCreateDate) {
             $params['created'] = [
-                '$lte'
-                    => $this->db->getTimestamp(strtotime($this->untilCreateDate)),
+                '$lte' => $this->db->getTimestamp(strtotime($this->untilCreateDate)),
             ];
         }
         if ($this->sourceId && $this->sourceId !== '*') {
@@ -715,5 +808,131 @@ class Export extends AbstractBase
         }
         ++$this->currentBatchCount;
         file_put_contents($this->currentFile, $record . "\n", FILE_APPEND);
+    }
+
+    /**
+     * Add an node to the XML record
+     *
+     * @param \SimpleXMLElement $xml       XML record
+     * @param array             $path      XML path from parseXmlPath
+     * @param string            $nodeValue Node value
+     *
+     * @return void
+     */
+    protected function addXmlNode(\SimpleXMLElement $xml, array $path, string $nodeValue): void
+    {
+        $currentNode = $xml;
+        foreach ($path as $pathPart) {
+            // Check for existing node:
+            if ($node = $this->findXmlNode($currentNode, $pathPart)) {
+                $currentNode = $node;
+                continue;
+            }
+
+            // Add a new node:
+            $currentNode = $currentNode->addChild(
+                $pathPart['nodeName'],
+                null,
+                $this->getXmlNamespaceFromPrefix($xml, $pathPart['prefix'])
+            );
+            foreach ($pathPart['attrs'] as $attr => $value) {
+                $currentNode->addAttribute($attr, $value);
+            }
+        }
+        // See https://github.com/phpstan/phpstan/issues/8236
+        // @phpstan-ignore-next-line
+        $currentNode[0] = $nodeValue;
+    }
+
+    /**
+     * Try to find a node in XML element
+     *
+     * @param \SimpleXMLElement $xml      XML node
+     * @param array             $pathPart Path item (an element from parseXmlPath)
+     *
+     * @return ?\SimpleXMLElement
+     */
+    protected function findXmlNode(\SimpleXMLElement $xml, array $pathPart): ?\SimpleXMLElement
+    {
+        $ns = $this->getXmlNamespaceFromPrefix($xml, $pathPart['prefix']);
+        foreach ($xml->children($ns, true)->{$pathPart['nodeName']} as $candidate) {
+            if ($this->xmlNodeAttributesMatch($candidate, $pathPart['attrs'])) {
+                return $candidate;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Check if node attributes match the given array of attributes
+     *
+     * @param \SimpleXMLElement $node       Node
+     * @param array             $attributes Attributes to check
+     *
+     * @return bool
+     */
+    protected function xmlNodeAttributesMatch(\SimpleXMLElement $node, array $attributes): bool
+    {
+        foreach ($node->attributes() as $attr => $value) {
+            if (($attributes[$attr] ?? null) !== $value) {
+                return false;
+            }
+            unset($attributes[$attr]);
+        }
+        return !$attributes;
+    }
+
+    /**
+     * Get namespace from prefix
+     *
+     * @param \SimpleXMLElement $xml    Node
+     * @param ?string           $prefix Prefix
+     *
+     * @return string
+     */
+    protected function getXmlNamespaceFromPrefix(\SimpleXMLElement $xml, ?string $prefix): ?string
+    {
+        if (null !== $prefix) {
+            // Check additional namespaces too since SimpleXML doesn't return newly added prefixes:
+            $namespaces = $xml->getNamespaces();
+            return $namespaces[$prefix] ?? $this->additionalNamespaces[$prefix] ?? null;
+        }
+        return null;
+    }
+
+    /**
+     * Parse XML path parameter
+     *
+     * @param ?string $path XPath-like path
+     *
+     * @return array
+     */
+    protected function parseXmlPath(?string $path): array
+    {
+        if (!$path) {
+            return [];
+        }
+        $result = [];
+        $pathParts = explode('/', $path);
+        foreach ($pathParts as $pathPart) {
+            // Extract node name and attributes:
+            $parts = explode('[', $pathPart);
+            $nodeParts = explode(':', $parts[0], 2);
+            if (isset($nodeParts[1])) {
+                $prefix = $nodeParts[0];
+                $nodeName = $nodeParts[1];
+            } else {
+                $prefix = null;
+                $nodeName = $nodeParts[0];
+            }
+            $attrs = [];
+            foreach (isset($parts[1]) ? str_getcsv(rtrim($parts[1], ']'), ' ') : [] as $attr) {
+                if (preg_match('/\@([^=]+)="(.*)"$/', $attr, $matches)) {
+                    $attrs[$matches[1]] = $matches[2];
+                }
+            }
+            $result[] = compact('prefix', 'nodeName', 'attrs');
+        }
+        return $result;
     }
 }
