@@ -1337,9 +1337,12 @@ class SolrUpdater
      */
     public function deleteDataSource($sourceId)
     {
-        $this->solrRequest(
-            '{ "delete": { "query": "id:' . json_encode($sourceId) . '.*" } }'
-        );
+        $request = [
+            'delete' => [
+                'query' => "id:$sourceId.*",
+            ],
+        ];
+        $this->solrRequest(json_encode($request));
         $this->solrRequest('{ "commit": {} }', 4 * 60 * 60);
     }
 

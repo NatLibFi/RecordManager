@@ -61,7 +61,7 @@ class Delete extends AbstractBase
             ->addArgument(
                 'source',
                 InputArgument::REQUIRED,
-                'Data source id'
+                'Record ID prefix without the trailing period'
             );
     }
 
