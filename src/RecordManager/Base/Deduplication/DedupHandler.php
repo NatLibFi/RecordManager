@@ -702,14 +702,15 @@ class DedupHandler implements DedupHandlerInterface
                 $dedupRecord['ids'] = [];
                 $dedupRecord['deleted'] = true;
 
-                $otherRecord = $this->db->getRecord($otherId);
-                if (isset($otherRecord['dedup_id'])) {
-                    unset($otherRecord['dedup_id']);
+                if (null !== ($otherRecord = $this->db->getRecord($otherId))) {
+                    if (isset($otherRecord['dedup_id'])) {
+                        unset($otherRecord['dedup_id']);
+                    }
+                    if (!$otherRecord['deleted'] && empty($otherRecord['suppressed'])) {
+                        $otherRecord['update_needed'] = true;
+                    }
+                    $this->db->saveRecord($otherRecord);
                 }
-                if (!$otherRecord['deleted'] && empty($otherRecord['suppressed'])) {
-                    $otherRecord['update_needed'] = true;
-                }
-                $this->db->saveRecord($otherRecord);
             } elseif (empty($dedupRecord['ids'])) {
                 // No records remaining => just mark dedup record deleted.
                 // This shouldn't happen since a dedup record should always contain
