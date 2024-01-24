@@ -72,9 +72,9 @@ counts = false
 ;username = "recman"
 ; Password
 ;password = "topsecret"
-; Whether to use index hints (MySQL/MariaDB). Recommended to keep enabled (default)
+; Whether to use index hints (MySQL/MariaDB). Recommended to keep disbled (default)
 ; unless trying to solve performance issues.
-use_index_hints = true
+use_index_hints = false
 
 [Solr]
 ; Update URL. Note that RecordManager requires that the json update method be available.

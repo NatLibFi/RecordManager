@@ -126,7 +126,7 @@ class PDODatabase extends AbstractDatabase
         $this->dsn = $config['connection'] ?? '';
         $this->username = $config['username'] ?? '';
         $this->password = $config['password'] ?? '';
-        $this->useIndexHints = (bool)($config['use_index_hints'] ?? true);
+        $this->useIndexHints = (bool)($config['use_index_hints'] ?? false);
     }
 
     /**
