@@ -521,14 +521,21 @@ class Qdc extends AbstractRecord
     protected function getLanguages()
     {
         $languages = [];
-        foreach (explode(' ', trim((string)$this->doc->language)) as $language) {
-            $language = preg_replace(
-                '/^http:\/\/lexvo\.org\/id\/iso639-.\/(.*)/',
-                '$1',
-                $language
-            );
-            foreach (str_split($language, 3) as $code) {
-                $languages[] = $code;
+        foreach ($this->doc->language as $language) {
+            foreach (explode(' ', trim((string)$language)) as $part) {
+                $check = preg_replace(
+                    '/^http:\/\/lexvo\.org\/id\/iso639-.\/(.*)/',
+                    '$1',
+                    $part
+                );
+                // Check that the language given is in proper form
+                if (mb_strlen($check) > 9 || (!ctype_upper($check) && !ctype_lower($check))) {
+                    $this->storeWarning("$check suspected to be a nonproper language");
+                    continue;
+                }
+                foreach (str_split($check, 3) as $code) {
+                    $languages[] = $code;
+                }
             }
         }
         return $this->metadataUtils->normalizeLanguageStrings($languages);

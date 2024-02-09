@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<qualifieddc schemaLocation="http://purl.org/dc/terms/ http://dublincore.org/schemas/xmls/qdc/2006/01/06/dcterms.xsd http://purl.org/dc/elements/1.1/ http://dublincore.org/schemas/xmls/qdc/2006/01/06/dc.xsd">
+  <title lang="fi">Language test xml</title>
+  <language type="iso">Davvisám</language>
+  <language type="iso">Davvisámegiella</language>
+  <language type="iso">EnGb</language>
+  <language type="iso">caT</language>
+  <language type="iso">fi</language>
+  <rights>CC BY-NC-ND 4.0</rights>
+  <publisher lang="fi">Sanitation Project, Research Institute for Humanity and Nature</publisher>
+  <permaddress type="doi">http://dx.doi.org/https://doi.org/10.34416/svc.00029</permaddress>
+  <recordID>10138_331330</recordID>
+</qualifieddc>

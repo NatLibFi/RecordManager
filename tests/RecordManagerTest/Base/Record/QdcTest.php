@@ -192,4 +192,32 @@ class QdcTest extends RecordTestBase
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
     }
+
+    /**
+     * Test QQDC processing warnings handling
+     *
+     * @return void
+     */
+    public function testQdc2()
+    {
+        $record = $this->createRecord(
+            Qdc::class,
+            'qdc2.xml',
+            [],
+            'Base',
+            [$this->createMock(\RecordManager\Base\Http\ClientManager::class)]
+        );
+        $fields = $record->toSolrArray();
+        unset($fields['fullrecord']);
+        $this->compareArray(
+            [
+                'Davvisám suspected to be a nonproper language',
+                'Davvisámegiella suspected to be a nonproper language',
+                'EnGb suspected to be a nonproper language',
+                'caT suspected to be a nonproper language',
+            ],
+            $record->getProcessingWarnings(),
+            'getProcessingWarnings'
+        );
+    }
 }
