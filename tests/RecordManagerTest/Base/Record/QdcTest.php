@@ -194,7 +194,7 @@ class QdcTest extends RecordTestBase
     }
 
     /**
-     * Test QQDC processing warnings handling
+     * Test QDC processing warnings handling
      *
      * @return void
      */
