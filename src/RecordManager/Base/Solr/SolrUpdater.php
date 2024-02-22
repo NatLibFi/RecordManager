@@ -2048,6 +2048,7 @@ class SolrUpdater
                         'linking_id' => [
                             '$in' => array_values((array)$record['host_record_id']),
                         ],
+                        'deleted' => false,
                     ],
                     ['limit' => 10000] // An arbitrary limit, but we need something
                 );
