@@ -123,7 +123,7 @@ class Doaj extends AbstractRecord
             empty($this->doc->recordID)
             && empty($this->doc->children($this->recordNs)->recordID)
         ) {
-            $parts = explode(':', $oaiID);
+            $parts = explode(':', $oaiID, 3);
             $id = ('oai' === $parts[0] && !empty($parts[2])) ? $parts[2] : $oaiID;
             $this->doc->addChild('recordID', $id);
         }
