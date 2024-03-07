@@ -549,7 +549,8 @@ class Export extends AbstractBase
                 'no-root',
                 null,
                 InputOption::VALUE_NONE,
-                'Do not add a root element around the XML. Works only when exporting single records or with batch-size 1.'
+                'Do not add a root element around the XML. Works only'
+                . ' when exporting single records or with batch-size 1.'
             )->addOption(
                 'xslTransformation',
                 null,
