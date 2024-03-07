@@ -30,6 +30,7 @@
 namespace RecordManager\Base\Command\Records;
 
 use RecordManager\Base\Command\AbstractBase;
+use RecordManager\Base\Utils\XslTransformation;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -250,6 +251,20 @@ class Export extends AbstractBase
     protected $deduped = 0;
 
     /**
+     * Configuration file for optional XSL transformation to be applied to records
+     *
+     * @var string
+     */
+    protected $xslTransformation;
+
+    /**
+     * Do not add a root element around the XML
+     *
+     * @var ?bool
+     */
+    protected $noRoot;
+
+    /**
      * Callback to support the iterateRecords method of the database object.
      *
      * @param array $record Record details
@@ -278,6 +293,13 @@ class Export extends AbstractBase
             }
         }
         $xmlStr = $metadataRecord->toXML();
+        if ($propertiesFile = $this->xslTransformation) {
+            $transformation = new XslTransformation(
+                RECMAN_BASE_PATH . '/transformations',
+                $propertiesFile
+            );
+            $xmlStr = $transformation->transform($xmlStr);
+        }
         $needsInjection = $this->injectId
             || $this->injectIdPrefixed
             || $this->injectCreationTimestamp
@@ -523,6 +545,16 @@ class Export extends AbstractBase
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Define an additional XML namespace for injected fields (prefix=namespace_identifier).'
+            )->addOption(
+                'no-root',
+                null,
+                InputOption::VALUE_NONE,
+                'Do not add a root element around the XML. Works only when exporting single records or with batch-size 1.'
+            )->addOption(
+                'xslTransformation',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Configuration file for optional XSL transformation to be applied to records'
             );
     }
 
@@ -563,6 +595,8 @@ class Export extends AbstractBase
             }
             $this->additionalNamespaces[$parts[0]] = $parts[1];
         }
+        $this->xslTransformation = $input->getOption('xslTransformation');
+        $this->noRoot = ($input->getOption('no-root') && ($this->batchSize == 1 || $this->singleId));
     }
 
     /**
@@ -739,9 +773,13 @@ class Export extends AbstractBase
         if (file_exists($this->currentFile)) {
             unlink($this->currentFile);
         }
+        $content = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n";
+        if (!$this->noRoot) {
+            $content .= "<collection>\n";
+        }
         file_put_contents(
             $this->currentFile,
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n<collection>\n",
+            $content,
             FILE_APPEND
         );
     }
@@ -756,7 +794,9 @@ class Export extends AbstractBase
         if (!$this->currentFile) {
             throw new \Exception('Batch not properly started');
         }
-        file_put_contents($this->currentFile, "</collection>\n", FILE_APPEND);
+        if (!$this->noRoot) {
+            file_put_contents($this->currentFile, "</collection>\n", FILE_APPEND);
+        }
         $this->currentFile = null;
     }
 
