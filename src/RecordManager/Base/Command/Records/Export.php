@@ -552,7 +552,7 @@ class Export extends AbstractBase
                 'Do not add a root element around the XML. Works only'
                 . ' when exporting single records or with batch-size 1.'
             )->addOption(
-                'xslTransformation',
+                'xslt',
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Configuration file for optional XSL transformation to be applied to records'
@@ -596,7 +596,7 @@ class Export extends AbstractBase
             }
             $this->additionalNamespaces[$parts[0]] = $parts[1];
         }
-        $this->xslTransformation = $input->getOption('xslTransformation');
+        $this->xslTransformation = $input->getOption('xslt');
         $this->noRoot = ($input->getOption('no-root') && ($this->batchSize == 1 || $this->singleId));
     }
 
