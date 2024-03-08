@@ -258,9 +258,9 @@ class Export extends AbstractBase
     protected $noRoot;
 
     /**
-     * Configuration file for optional XSL transformation to be applied to records
+     * XslTransformation
      *
-     * @var string
+     * @var ?XslTransformation
      */
     protected $xslTransformation;
 
@@ -300,12 +300,8 @@ class Export extends AbstractBase
             }
         }
         $xmlStr = $metadataRecord->toXML();
-        if ($this->transformBeforeXPath && $propertiesFile = $this->xslTransformation) {
-            $transformation = new XslTransformation(
-                RECMAN_BASE_PATH . '/transformations',
-                $propertiesFile
-            );
-            $xmlStr = $transformation->transform($xmlStr);
+        if ($this->transformBeforeXPath && isset($this->xslTransformation)) {
+            $xmlStr = $this->xslTransformation->transform($xmlStr);
         }
         $needsInjection = $this->injectId
             || $this->injectIdPrefixed
@@ -378,12 +374,8 @@ class Export extends AbstractBase
                 $xmlStr = $xml->saveXML();
             }
         }
-        if (!$this->transformBeforeXPath && $propertiesFile = $this->xslTransformation) {
-            $transformation = new XslTransformation(
-                RECMAN_BASE_PATH . '/transformations',
-                $propertiesFile
-            );
-            $xmlStr = $transformation->transform($xmlStr);
+        if (!$this->transformBeforeXPath && isset($this->xslTransformation)) {
+            $xmlStr = $this->xslTransformation->transform($xmlStr);
         }
         ++$this->count;
         if ($record['deleted']) {
@@ -616,7 +608,12 @@ class Export extends AbstractBase
             $this->additionalNamespaces[$parts[0]] = $parts[1];
         }
         $this->noRoot = ($input->getOption('no-root') && ($this->batchSize == 1 || $this->singleId));
-        $this->xslTransformation = $input->getOption('xslt');
+        if ($config = $input->getOption('xslt')) {
+            $this->xslTransformation = new XslTransformation(
+                RECMAN_BASE_PATH . '/transformations',
+                $config
+            );
+        }
         $this->transformBeforeXPath = $input->getOption('xslt-first');
     }
 
