@@ -262,7 +262,7 @@ class Export extends AbstractBase
      *
      * @var ?XslTransformation
      */
-    protected $xslTransformation;
+    protected $xslTransformation = null;
 
     /**
      * Apply XSL transformation before trying to match XPath expression
@@ -300,7 +300,7 @@ class Export extends AbstractBase
             }
         }
         $xmlStr = $metadataRecord->toXML();
-        if ($this->transformBeforeXPath && isset($this->xslTransformation)) {
+        if ($this->transformBeforeXPath && null !== $this->xslTransformation) {
             $xmlStr = $this->xslTransformation->transform($xmlStr);
         }
         $needsInjection = $this->injectId
@@ -374,7 +374,7 @@ class Export extends AbstractBase
                 $xmlStr = $xml->saveXML();
             }
         }
-        if (!$this->transformBeforeXPath && isset($this->xslTransformation)) {
+        if (!$this->transformBeforeXPath && null !== $this->xslTransformation) {
             $xmlStr = $this->xslTransformation->transform($xmlStr);
         }
         ++$this->count;
@@ -561,7 +561,7 @@ class Export extends AbstractBase
                 'xslt',
                 null,
                 InputOption::VALUE_REQUIRED,
-                'Configuration file for optional XSL transformation to be applied to records'
+                'Optional XSL transformation to be applied to records'
             )->addOption(
                 'xslt-first',
                 null,
