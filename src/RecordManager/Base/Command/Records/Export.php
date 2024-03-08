@@ -258,7 +258,7 @@ class Export extends AbstractBase
     protected $noRoot;
 
     /**
-     * XslTransformation
+     * Optional XSL transformation to be applied to records
      *
      * @var ?XslTransformation
      */
