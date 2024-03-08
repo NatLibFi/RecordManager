@@ -251,6 +251,13 @@ class Export extends AbstractBase
     protected $deduped = 0;
 
     /**
+     * Do not add a root element around the XML
+     *
+     * @var ?bool
+     */
+    protected $noRoot;
+
+    /**
      * Configuration file for optional XSL transformation to be applied to records
      *
      * @var string
@@ -258,11 +265,11 @@ class Export extends AbstractBase
     protected $xslTransformation;
 
     /**
-     * Do not add a root element around the XML
+     * Apply XSL transformation before trying to match XPath expression
      *
      * @var ?bool
      */
-    protected $noRoot;
+    protected $transformBeforeXPath;
 
     /**
      * Callback to support the iterateRecords method of the database object.
@@ -293,7 +300,7 @@ class Export extends AbstractBase
             }
         }
         $xmlStr = $metadataRecord->toXML();
-        if ($propertiesFile = $this->xslTransformation) {
+        if ($this->transformBeforeXPath && $propertiesFile = $this->xslTransformation) {
             $transformation = new XslTransformation(
                 RECMAN_BASE_PATH . '/transformations',
                 $propertiesFile
@@ -370,6 +377,13 @@ class Export extends AbstractBase
                 }
                 $xmlStr = $xml->saveXML();
             }
+        }
+        if (!$this->transformBeforeXPath && $propertiesFile = $this->xslTransformation) {
+            $transformation = new XslTransformation(
+                RECMAN_BASE_PATH . '/transformations',
+                $propertiesFile
+            );
+            $xmlStr = $transformation->transform($xmlStr);
         }
         ++$this->count;
         if ($record['deleted']) {
@@ -556,6 +570,11 @@ class Export extends AbstractBase
                 null,
                 InputOption::VALUE_REQUIRED,
                 'Configuration file for optional XSL transformation to be applied to records'
+            )->addOption(
+                'xslt-first',
+                null,
+                InputOption::VALUE_NONE,
+                'Apply XSL transformation before trying to match XPath expression'
             );
     }
 
@@ -596,8 +615,9 @@ class Export extends AbstractBase
             }
             $this->additionalNamespaces[$parts[0]] = $parts[1];
         }
-        $this->xslTransformation = $input->getOption('xslt');
         $this->noRoot = ($input->getOption('no-root') && ($this->batchSize == 1 || $this->singleId));
+        $this->xslTransformation = $input->getOption('xslt');
+        $this->transformBeforeXPath = $input->getOption('xslt-first');
     }
 
     /**
