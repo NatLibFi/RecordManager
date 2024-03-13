@@ -30,6 +30,7 @@
 namespace RecordManager\Base\Command\Records;
 
 use RecordManager\Base\Command\AbstractBase;
+use RecordManager\Base\Utils\XslTransformation;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -250,6 +251,27 @@ class Export extends AbstractBase
     protected $deduped = 0;
 
     /**
+     * Do not add a root element around the XML
+     *
+     * @var ?bool
+     */
+    protected $noRoot;
+
+    /**
+     * Optional XSL transformation to be applied to records
+     *
+     * @var ?XslTransformation
+     */
+    protected $xslTransformation = null;
+
+    /**
+     * Apply XSL transformation before trying to match XPath expression
+     *
+     * @var ?bool
+     */
+    protected $transformBeforeXPath;
+
+    /**
      * Callback to support the iterateRecords method of the database object.
      *
      * @param array $record Record details
@@ -278,6 +300,9 @@ class Export extends AbstractBase
             }
         }
         $xmlStr = $metadataRecord->toXML();
+        if ($this->transformBeforeXPath && null !== $this->xslTransformation) {
+            $xmlStr = $this->xslTransformation->transform($xmlStr);
+        }
         $needsInjection = $this->injectId
             || $this->injectIdPrefixed
             || $this->injectCreationTimestamp
@@ -348,6 +373,9 @@ class Export extends AbstractBase
                 }
                 $xmlStr = $xml->saveXML();
             }
+        }
+        if (!$this->transformBeforeXPath && null !== $this->xslTransformation) {
+            $xmlStr = $this->xslTransformation->transform($xmlStr);
         }
         ++$this->count;
         if ($record['deleted']) {
@@ -523,6 +551,22 @@ class Export extends AbstractBase
                 null,
                 InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY,
                 'Define an additional XML namespace for injected fields (prefix=namespace_identifier).'
+            )->addOption(
+                'no-root',
+                null,
+                InputOption::VALUE_NONE,
+                'Do not add a root element around the XML. Works only'
+                . ' when exporting single records or with batch-size 1.'
+            )->addOption(
+                'xslt',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Optional XSL transformation to be applied to records'
+            )->addOption(
+                'xslt-first',
+                null,
+                InputOption::VALUE_NONE,
+                'Apply XSL transformation before trying to match XPath expression'
             );
     }
 
@@ -563,6 +607,14 @@ class Export extends AbstractBase
             }
             $this->additionalNamespaces[$parts[0]] = $parts[1];
         }
+        $this->noRoot = ($input->getOption('no-root') && ($this->batchSize == 1 || $this->singleId));
+        if ($config = $input->getOption('xslt')) {
+            $this->xslTransformation = new XslTransformation(
+                RECMAN_BASE_PATH . '/transformations',
+                $config
+            );
+        }
+        $this->transformBeforeXPath = $input->getOption('xslt-first');
     }
 
     /**
@@ -739,9 +791,13 @@ class Export extends AbstractBase
         if (file_exists($this->currentFile)) {
             unlink($this->currentFile);
         }
+        $content = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n";
+        if (!$this->noRoot) {
+            $content .= "<collection>\n";
+        }
         file_put_contents(
             $this->currentFile,
-            "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n<collection>\n",
+            $content,
             FILE_APPEND
         );
     }
@@ -756,7 +812,9 @@ class Export extends AbstractBase
         if (!$this->currentFile) {
             throw new \Exception('Batch not properly started');
         }
-        file_put_contents($this->currentFile, "</collection>\n", FILE_APPEND);
+        if (!$this->noRoot) {
+            file_put_contents($this->currentFile, "</collection>\n", FILE_APPEND);
+        }
         $this->currentFile = null;
     }
 
