@@ -1003,7 +1003,7 @@ class SolrUpdater
                     // timestamp:
                     $earliestRecordTimestamp -= 5;
                     $dedupParams['changed']
-                        = ['$gte' => $this->db->getTimestamp($fromTimestamp)];
+                        = ['$gte' => $this->db->getTimestamp($earliestRecordTimestamp)];
                     $this->log->logInfo(
                         'updateRecords',
                         'Processing dedup records from '
