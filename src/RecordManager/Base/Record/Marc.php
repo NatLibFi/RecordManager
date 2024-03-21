@@ -1587,22 +1587,7 @@ class Marc extends AbstractRecord
             $this->getDriverParam('holdingsInBuilding', true)
             || false !== $buildingFieldSpec
         ) {
-            $buildingFieldSpec = $this->getDriverParam('buildingFields', false);
-            if (false === $buildingFieldSpec) {
-                $buildingFields = $this->getDefaultBuildingFields();
-            } else {
-                $buildingFields = [];
-                $parts = explode(':', $buildingFieldSpec);
-                foreach ($parts as $part) {
-                    $buildingFields[] = [
-                        'field' => substr($part, 0, 3),
-                        'loc' => substr($part, 3, 1),
-                        'sub' => substr($part, 4, 1),
-                    ];
-                }
-            }
-
-            foreach ($buildingFields as $buildingField) {
+            foreach ($this->getBuildingFieldSpec() as $buildingField) {
                 foreach ($this->record->getFields($buildingField['field']) as $field) {
                     $location = $this->record->getSubfield($field, $buildingField['loc']);
                     if ($location) {
@@ -1648,6 +1633,30 @@ class Marc extends AbstractRecord
             ];
         }
         return $fields;
+    }
+
+    /**
+     * Get building field specs from configuration
+     *
+     * @return array
+     */
+    protected function getBuildingFieldSpec(): array
+    {
+        $buildingFieldSpec = $this->getDriverParam('buildingFields', false);
+        if (false === $buildingFieldSpec) {
+            $buildingFields = $this->getDefaultBuildingFields();
+        } else {
+            $buildingFields = [];
+            $parts = explode(':', $buildingFieldSpec);
+            foreach ($parts as $part) {
+                $buildingFields[] = [
+                    'field' => substr($part, 0, 3),
+                    'loc' => substr($part, 3, 1),
+                    'sub' => substr($part, 4, 1),
+                ];
+            }
+        }
+        return $buildingFields;
     }
 
     /**
