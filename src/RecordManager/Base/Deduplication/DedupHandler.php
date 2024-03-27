@@ -474,6 +474,11 @@ class DedupHandler implements DedupHandlerInterface
             $processed = 0;
             // Go through the candidates, try to match
             foreach ($candidates as $candidate) {
+                // Check that the candidate is in a source that is configured for deduplication
+                if (empty($this->dataSourceConfig[$candidate['source_id']]['dedup'])) {
+                    continue;
+                }
+
                 // Check that we haven't already tried this candidate
                 if (isset($noMatchRecordIds[$candidate['_id']])) {
                     continue;
