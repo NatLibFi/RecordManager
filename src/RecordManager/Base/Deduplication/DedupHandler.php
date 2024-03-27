@@ -478,7 +478,7 @@ class DedupHandler implements DedupHandlerInterface
                 if (empty($this->dataSourceConfig[$candidate['source_id']]['dedup'])) {
                     continue;
                 }
-                
+
                 // Check that we haven't already tried this candidate
                 if (isset($noMatchRecordIds[$candidate['_id']])) {
                     continue;
