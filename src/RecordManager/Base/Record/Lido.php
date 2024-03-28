@@ -1352,7 +1352,11 @@ class Lido extends AbstractRecord
                 foreach ($location->partOfPlace ?? [] as $part) {
                     while ($part->namePlaceSet ?? false) {
                         if ($partName = $part->namePlaceSet->appellationValue ?? '') {
-                            $result[] = trim((string)$partName);
+                            if (
+                                !in_array((string)$partName->attributes()->label, $this->excludedAppellationValueLabels)
+                            ) {
+                                $result[] = trim((string)$partName);
+                            }
                         }
                         $part = $part->partOfPlace;
                     }
