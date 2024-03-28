@@ -109,6 +109,20 @@ class Lido extends AbstractRecord
     protected $subjectConceptIDTypes = ['uri', 'url'];
 
     /**
+     * Repository location types to be filtered.
+     *
+     * @var array
+     */
+    protected $repositoryLocationTypes = ['Current location'];
+
+    /**
+     * Excluded appellationValue labels.
+     *
+     * @var array
+     */
+    protected $excludedAppellationValueLabels = ['tarkempi paikka'];
+
+    /**
      * Return record ID (local)
      *
      * @return string
@@ -1320,9 +1334,28 @@ class Lido extends AbstractRecord
             $this->doc->lido->descriptiveMetadata->objectIdentificationWrap->repositoryWrap->repositorySet
             ?? [] as $set
         ) {
+            $type = (string)($set->attributes()->type ?? '');
+            if (!in_array($type, $this->repositoryLocationTypes)) {
+                continue;
+            }
             foreach ($set->repositoryLocation->namePlaceSet ?? [] as $nameSet) {
                 foreach ($nameSet->appellationValue ?? [] as $place) {
-                    $result[] = (string)$place;
+                    if (
+                        $place
+                        && !in_array((string)$place->attributes()->label, $this->excludedAppellationValueLabels)
+                    ) {
+                        $result[] = trim((string)$place);
+                    }
+                }
+            }
+            foreach ($set->repositoryLocation ?? [] as $location) {
+                foreach ($location->partOfPlace ?? [] as $part) {
+                    while ($part->namePlaceSet ?? false) {
+                        if ($partName = $part->namePlaceSet->appellationValue ?? '') {
+                            $result[] = trim((string)$partName);
+                        }
+                        $part = $part->partOfPlace;
+                    }
                 }
             }
         }
