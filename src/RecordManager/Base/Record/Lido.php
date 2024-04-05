@@ -109,18 +109,18 @@ class Lido extends AbstractRecord
     protected $subjectConceptIDTypes = ['uri', 'url'];
 
     /**
-     * Repository location types to be filtered.
+     * Repository location types to be included.
      *
      * @var array
      */
-    protected $repositoryLocationTypes = ['Current location'];
+    protected $repositoryLocationTypes = [];
 
     /**
-     * Excluded appellationValue labels.
+     * Excluded location appellationValue labels.
      *
      * @var array
      */
-    protected $excludedAppellationValueLabels = ['tarkempi paikka'];
+    protected $excludedLocationAppellationValueLabels = [];
 
     /**
      * Return record ID (local)
@@ -1335,14 +1335,14 @@ class Lido extends AbstractRecord
             ?? [] as $set
         ) {
             $type = (string)($set->attributes()->type ?? '');
-            if (!in_array($type, $this->repositoryLocationTypes)) {
+            if (!empty($this->repositoryLocationTypes) && !in_array($type, $this->repositoryLocationTypes)) {
                 continue;
             }
             foreach ($set->repositoryLocation->namePlaceSet ?? [] as $nameSet) {
                 foreach ($nameSet->appellationValue ?? [] as $place) {
                     if (
                         $place
-                        && !in_array((string)$place->attributes()->label, $this->excludedAppellationValueLabels)
+                        && !in_array((string)$place->attributes()->label, $this->excludedLocationAppellationValueLabels)
                     ) {
                         $result[] = trim((string)$place);
                     }
@@ -1353,7 +1353,10 @@ class Lido extends AbstractRecord
                     while ($part->namePlaceSet ?? false) {
                         if ($partName = $part->namePlaceSet->appellationValue ?? '') {
                             if (
-                                !in_array((string)$partName->attributes()->label, $this->excludedAppellationValueLabels)
+                                !in_array(
+                                    (string)$partName->attributes()->label,
+                                    $this->excludedLocationAppellationValueLabels
+                                )
                             ) {
                                 $result[] = trim((string)$partName);
                             }
