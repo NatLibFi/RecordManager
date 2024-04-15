@@ -1335,7 +1335,7 @@ class Lido extends AbstractRecord
             ?? [] as $set
         ) {
             $type = (string)($set->attributes()->type ?? '');
-            if (!empty($this->repositoryLocationTypes) && !in_array($type, $this->repositoryLocationTypes)) {
+            if ($this->repositoryLocationTypes && !in_array($type, $this->repositoryLocationTypes)) {
                 continue;
             }
             foreach ($set->repositoryLocation->namePlaceSet ?? [] as $nameSet) {
@@ -1350,8 +1350,8 @@ class Lido extends AbstractRecord
             }
             foreach ($set->repositoryLocation ?? [] as $location) {
                 foreach ($location->partOfPlace ?? [] as $part) {
-                    while ($part->namePlaceSet ?? false) {
-                        if ($partName = $part->namePlaceSet->appellationValue ?? '') {
+                    while ($part->namePlaceSet) {
+                        if ($partName = $part->namePlaceSet->appellationValue ?? null) {
                             if (
                                 !in_array(
                                     (string)$partName->attributes()->label,
