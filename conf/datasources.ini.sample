@@ -191,6 +191,7 @@
 ;; unsuppressed to suppressed won't be detected.
 ;;suppressedRecords = false
 ;suppressedBibCode3 = 'c,d,n'
+;keepExisting852Fields = false
 ;institution = SierraLib
 ;format = marc
 ;dedup = true

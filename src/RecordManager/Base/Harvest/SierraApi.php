@@ -109,6 +109,14 @@ class SierraApi extends AbstractBase
     protected $suppressedBibCode3 = [];
 
     /**
+     * Whether to keep existing 852 fields in the MARC records before adding new ones
+     * for the item locations.
+     *
+     * @var bool
+     */
+    protected $keepExisting852Fields = false;
+
+    /**
      * HTTP client options
      *
      * @var array
@@ -154,7 +162,8 @@ class SierraApi extends AbstractBase
             ',',
             $settings['suppressedBibCode3'] ?? ''
         );
-        $this->apiVersion = 'v' . ($settings['sierraApiVersion'] ?? '5');
+        $this->apiVersion = 'v' . ($settings['sierraApiVersion'] ?? '6');
+        $this->keepExisting852Fields = $settings['keepExisting852Fields'] ?? false;
     }
 
     /**
@@ -540,7 +549,10 @@ class SierraApi extends AbstractBase
                 $marc['leader'] = $varField['content'];
                 continue;
             }
-            if (!isset($varField['marcTag']) || $varField['marcTag'] == '852') {
+            if (
+                !isset($varField['marcTag'])
+                || (!$this->keepExisting852Fields && $varField['marcTag'] == '852')
+            ) {
                 continue;
             }
             // Make sure the tag has three characters
