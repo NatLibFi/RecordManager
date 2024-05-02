@@ -1403,12 +1403,7 @@ class SolrUpdater
                 if ($mapped) {
                     $data = $this->createSolrArray($record, $mergedComponents);
                 } else {
-                    $metadataRecord = $this->createRecord(
-                        $record['format'],
-                        $this->metadataUtils->getRecordData($record, true),
-                        $record['oai_id'],
-                        $record['source_id']
-                    );
+                    $metadataRecord = $this->createRecordFromDbRecord($record);
                     if (isset($settings['solrTransformationXSLT'])) {
                         $params = [
                             'source_id' => $source,
@@ -1874,23 +1869,7 @@ class SolrUpdater
                 $this->nonIndexedSources[] = $source;
             }
 
-            foreach ($settings['fieldRules'] ?? [] as $ruleStr) {
-                $ruleParts = explode(' ', $ruleStr);
-                $rule['op'] = $this->ruleMap[$ruleParts[0]] ?? null;
-                if (
-                    null === $rule['op']
-                    || (self::RULE_DELETE === $rule['op'] && empty($ruleParts[1]))
-                    || (self::RULE_DELETE !== $rule['op'] && empty($ruleParts[2]))
-                ) {
-                    throw new \Exception(
-                        "Invalid field rule for $source: '$ruleStr'"
-                    );
-                }
-                $rule['src'] = $ruleParts[1];
-                $rule['dst'] = $ruleParts[2] ?? null;
-                $rule['extra'] = $ruleParts[3] ?? null;
-                $this->settings[$source]['fieldProcessingRules'][] = $rule;
-            }
+            $this->parseFieldRules($source, $settings['fieldRules'] ?? []);
         }
     }
 
@@ -1931,12 +1910,7 @@ class SolrUpdater
             }
         }
 
-        $metadataRecord = $this->createRecord(
-            $record['format'],
-            $this->metadataUtils->getRecordData($record, true),
-            $record['oai_id'],
-            $record['source_id']
-        );
+        $metadataRecord = $this->createRecordFromDbRecord($record);
 
         $settings = $this->settings[$source];
         $hiddenComponent = $this->metadataUtils->isHiddenComponentPart(
@@ -2062,14 +2036,8 @@ class SolrUpdater
                     $hostMetadataRecord = $this->metadataRecordCache
                         ->get($hostRecord['_id']);
                     if (null === $hostMetadataRecord) {
-                        $hostMetadataRecord = $this->createRecord(
-                            $hostRecord['format'],
-                            $this->metadataUtils->getRecordData($hostRecord, true),
-                            $hostRecord['oai_id'],
-                            $hostRecord['source_id']
-                        );
-                        $this->metadataRecordCache
-                            ->put($hostRecord['_id'], $hostMetadataRecord);
+                        $hostMetadataRecord = $this->createRecordFromDbRecord($hostRecord);
+                        $this->metadataRecordCache->put($hostRecord['_id'], $hostMetadataRecord);
                     }
                     $hostTitle = $hostMetadataRecord->getTitle();
                     if ($this->hierarchyParentTitleField) {
@@ -2460,6 +2428,52 @@ class SolrUpdater
     }
 
     /**
+     * Parse field rules
+     *
+     * @param string $source Source ID
+     * @param array  $rules  Field rules
+     *
+     * @return void
+     */
+    protected function parseFieldRules(string $source, array $rules): void
+    {
+        foreach ($rules as $ruleStr) {
+            $ruleParts = explode(' ', $ruleStr);
+            $rule = [
+                'op' => $this->ruleMap[array_shift($ruleParts)] ?? null,
+            ];
+            $src = array_shift($ruleParts);
+            if (
+                null === $rule['op']
+                || null === $src
+                || (self::RULE_DELETE !== $rule['op'] && !$ruleParts)
+            ) {
+                throw new \Exception(
+                    "Invalid field rule for $source: '$ruleStr'"
+                );
+            }
+            $rule['src'] = $src;
+            $rule['dst'] = self::RULE_DELETE !== $rule['op'] ? array_shift($ruleParts) : null;
+            if ($params = $ruleParts ? implode(' ', $ruleParts) : '') {
+                $offset = 0;
+                while (preg_match('/^(match|default)="([^"]*)"\s*/', $params, $matches, 0, $offset)) {
+                    $rule[$matches[1]] = $matches[2];
+                    $offset += strlen($matches[0]);
+                }
+                if ($extra = trim(substr($params, $offset))) {
+                    if (isset($rule['default'])) {
+                        throw new \Exception(
+                            "Could not parse field rule params for $source: '$ruleStr' at $extra"
+                        );
+                    }
+                    $rule['default'] = $extra;
+                }
+            }
+            $this->settings[$source]['fieldProcessingRules'][] = $rule;
+        }
+    }
+
+    /**
      * Process any field rules
      *
      * @param string                                   $source Source ID
@@ -2473,8 +2487,21 @@ class SolrUpdater
     {
         foreach ($this->settings[$source]['fieldProcessingRules'] ?? [] as $rule) {
             $src = $rule['src'];
-            if (!($fieldValue = ($data[$src] ?? null) ?: $rule['extra'])) {
+            $srcValue = $data[$src] ?? null;
+            if (!($fieldValue = $srcValue ?: ($rule['default'] ?? null))) {
                 continue;
+            }
+            if ($match = $rule['match'] ?? null) {
+                if (null === $srcValue) {
+                    continue;
+                }
+                if (str_starts_with($match, '/') && (str_ends_with($match, '/') || str_ends_with($match, '/i'))) {
+                    if (!preg_match($match, $srcValue)) {
+                        continue;
+                    }
+                } elseif ($match !== $srcValue) {
+                    continue;
+                }
             }
             $dst = $rule['dst'];
             if (in_array($rule['op'], [self::RULE_COPY, self::RULE_MOVE])) {

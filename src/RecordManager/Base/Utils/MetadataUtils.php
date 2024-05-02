@@ -756,12 +756,10 @@ class MetadataUtils
      */
     public function validateDate($date)
     {
-        $found = preg_match(
-            '/^(\-?\d{4})-(\d{2})-(\d{2})$/',
-            $date,
-            $parts
-        );
-        if (!$found) {
+        if (!$date || strlen($date) !== 10) {
+            return false;
+        }
+        if (!preg_match('/^(\-?\d{4})-(\d{2})-(\d{2})$/', $date, $parts)) {
             return false;
         }
         if (

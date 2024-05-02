@@ -157,21 +157,29 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
     public function processSingleRecordProvider(): array
     {
         return [
-            [
+            'copy non-existent field' => [
                 [
                     'copy foo newfield',
                 ],
                 [],
             ],
-            [
+            'copy non-existent field with default' => [
                 [
-                    'copy foo newfield DEFAULT',
+                    'copy foo newfield DEFAULT VALUE',
                 ],
                 [
-                    'newfield' => 'DEFAULT',
+                    'newfield' => 'DEFAULT VALUE',
                 ],
             ],
-            [
+            'copy non-existent field with param defaul' => [
+                [
+                    'copy foo newfield default="DEFAULT FIELD"',
+                ],
+                [
+                    'newfield' => 'DEFAULT FIELD',
+                ],
+            ],
+            'copy field' => [
                 [
                     'copy institution newfield',
                 ],
@@ -179,7 +187,39 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
                     'newfield' => 'Test',
                 ],
             ],
-            [
+            'copy field matching value' => [
+                [
+                    'copy institution newfield match="Test"',
+                ],
+                [
+                    'newfield' => 'Test',
+                ],
+            ],
+            'copy field matching regex' => [
+                [
+                    'copy institution newfield match="/^Test$/"',
+                ],
+                [
+                    'newfield' => 'Test',
+                ],
+            ],
+            'copy field matching case-insensitive regex' => [
+                [
+                    'copy institution newfield match="/^test$/i"',
+                ],
+                [
+                    'newfield' => 'Test',
+                ],
+            ],
+            'copy field not matching regex' => [
+                [
+                    'copy institution newfield match="/test/" ',
+                ],
+                [
+                    'newfield' => null,
+                ],
+            ],
+            'delete field' => [
                 [
                     'delete institution',
                 ],
@@ -187,7 +227,15 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
                     'institution' => null,
                 ],
             ],
-            [
+            'delete field matching Test' => [
+                [
+                    'delete institution match="Test"',
+                ],
+                [
+                    'institution' => null,
+                ],
+            ],
+            'copy and delete' => [
                 [
                     'copy institution newfield',
                     'copy record_format newfield',
@@ -201,10 +249,10 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
                     'institution' => null,
                 ],
             ],
-            [
+            'move twice' => [
                 [
                     'move institution newfield DEFAULT',
-                    'move institution newfield DEFAULT2',
+                    'move institution newfield DEFAULT2 ',
                 ],
                 [
                     'newfield' => [

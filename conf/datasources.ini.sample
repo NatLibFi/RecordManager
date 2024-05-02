@@ -77,13 +77,22 @@
 ; fieldRules[]          An array of rules for changing fields before they're sent to Solr. Allows deleting, copying and moving of fields.
 ;                       Rules are processed in order before processing mappings and converting hierarchical facets.
 ;                       The following rules are available:
-;                         delete <field>             Removes a field
-;                         copy <from> <to> [default] Copies field <from> to <to>. A default value can be specified in case the field is empty or doesn't exist.
-;                         move <from> <to> [default] Moves field <from> to <to>. A default value can be specified in case the field is empty or doesn't exist.
+;                         delete <field> [params] Removes a field
+;                         copy <from> <to> [params]   Copies field <from> to <to>
+;                         move <from> <to> [params]   Moves field <from> to <to>
 ;                       Examples:
 ;                         fieldRules[] = "delete collection"
 ;                         fieldRules[] = "copy building building2_str_mv MAIN"
+;                         fieldRules[] = 'copy building building2_str_mv match="/^(MAIN|SUB)$/" default="MAIN"'
 ;                         fieldRules[] = "move author author2"
+;
+;                       Params may be a single word for a default value or a set of further expressions:
+;
+;                         match="value"      Only do the operation if field contents matches the given value.
+;                         match="/regexp/"   Only do the operation if field contents matches the given regular expression.
+;                         match="/regexp/i"  Only do the operation if field contents matches the given regular expression (case insensitive).
+;                         default="value"    Use default value if a value does not exist or doesn't match any regular expression.
+;
 ; driverParams[]        An array of extra parameters that can be used to customize record driver behavior
 ; enrichments[]         An array of enrichment class names that can be used to enrich records. ",final" can be appended to indicate that enrichment is executed to the
 ;                       final record after mappings etc. have been processed. By default it is executed before mappings, normalization etc.
