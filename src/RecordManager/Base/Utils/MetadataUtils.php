@@ -752,7 +752,7 @@ class MetadataUtils
      *
      * @param string $date Date to validate
      *
-     * @return boolean|int False if invalid, resulting time otherwise
+     * @return false|int False if invalid, resulting unix time otherwise
      */
     public function validateDate($date)
     {
