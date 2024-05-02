@@ -9,9 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Anything marked with [**BC**] is known to affect backward compatibility with previous versions.
 
+### Added
+- [**BC**] Additional metadata can be stored in records outside of the main metadata record. This affects the setData method and MySQL schema.
+
 ### Changed
 
-- Format of $isbnFields and $issnFields definition arrays in Marc.php have been changed to include the type of the field. It can be used to avoid reporting invalid e.g. ISBNs or extra content in combined fields in the `warnings_field` index field.
+- Format of $isbnFields and $issnFields definition arrays in Marc.php have been changed to include the type of the field. It can be used to avoid reporting e.g. invalid ISBNs or extra content in combined fields in the `warnings_field` index field.
 
 ## 2.2.0 - 2023-11-13
 
