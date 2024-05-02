@@ -145,7 +145,8 @@ class Renormalize extends AbstractBase
                         $record['format'],
                         $originalData,
                         $record['oai_id'],
-                        $record['source_id']
+                        $record['source_id'],
+                        $record['extra_data'] ?? []
                     );
                     $normalizedData = $settings['normalizationXSLT']->transform(
                         $origMetadataRecord->toXML(),
@@ -157,7 +158,8 @@ class Renormalize extends AbstractBase
                     $record['format'],
                     $normalizedData,
                     $record['oai_id'],
-                    $record['source_id']
+                    $record['source_id'],
+                    $record['extra_data'] ?? []
                 );
                 $metadataRecord->normalize();
 

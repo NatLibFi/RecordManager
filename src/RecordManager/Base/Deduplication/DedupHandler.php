@@ -224,12 +224,7 @@ class DedupHandler implements DedupHandlerInterface
                     = "record linked with dedup record '{$record['dedup_id']}'";
             } elseif ($strictCheck) {
                 // This is slower, so check only if there are no other issues:
-                $metadataRecord = $this->createRecord(
-                    $record['format'],
-                    $this->metadataUtils->getRecordData($record, true),
-                    $record['oai_id'],
-                    $record['source_id']
-                );
+                $metadataRecord = $this->createRecordFromDbRecord($record);
 
                 foreach ((array)($dedupRecord['ids'] ?? []) as $otherId) {
                     if ($otherId === $id or in_array($otherId, $removed)) {
@@ -525,12 +520,7 @@ class DedupHandler implements DedupHandlerInterface
                 }
 
                 if (null === $origRecord) {
-                    $origRecord = $this->createRecord(
-                        $record['format'],
-                        $this->metadataUtils->getRecordData($record, true),
-                        $record['oai_id'],
-                        $record['source_id']
-                    );
+                    $origRecord = $this->createRecordFromDbRecord($record);
                 }
                 if ($this->matchRecords($record, $origRecord, $candidate)) {
                     $msg = sprintf(
@@ -751,14 +741,8 @@ class DedupHandler implements DedupHandlerInterface
      */
     protected function matchRecords($origDbRecord, $origRecord, $candidateDbRecord)
     {
-        $candidateRecord = $this->createRecord(
-            $candidateDbRecord['format'],
-            $this->metadataUtils->getRecordData($candidateDbRecord, true),
-            $candidateDbRecord['oai_id'],
-            $candidateDbRecord['source_id']
-        );
-        $this->log
-            ->writelnVeryVerbose('Check candidate ' . $candidateDbRecord['_id']);
+        $candidateRecord = $this->createRecordFromDbRecord($candidateDbRecord);
+        $this->log->writelnVeryVerbose('Check candidate ' . $candidateDbRecord['_id']);
         $this->log->writelnDebug(
             function () use ($candidateDbRecord) {
                 return $this->metadataUtils->getRecordData($candidateDbRecord, true);
@@ -1330,12 +1314,7 @@ class DedupHandler implements DedupHandlerInterface
                                     ->getRecordData($component1, true);
                             }
                         );
-                        $metadataComponent1 = $this->createRecord(
-                            $component1['format'],
-                            $this->metadataUtils->getRecordData($component1, true),
-                            $component1['oai_id'],
-                            $component1['source_id']
-                        );
+                        $metadataComponent1 = $this->createRecordFromDbRecord($component1);
                         if (
                             !$this->matchRecords(
                                 $component1,

@@ -280,12 +280,7 @@ class Export extends AbstractBase
      */
     public function iterateRecordsCallback($record): bool
     {
-        $metadataRecord = $this->createRecord(
-            $record['format'],
-            $this->metadataUtils->getRecordData($record, true),
-            $record['oai_id'],
-            $record['source_id']
-        );
+        $metadataRecord = $this->createRecordFromDbRecord($record);
         if (!$record['deleted']) {
             if ($this->addDedupId == 'always') {
                 $metadataRecord->addDedupKeyToMetadata(

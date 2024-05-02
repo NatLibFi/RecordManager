@@ -106,16 +106,17 @@ class Dc extends AbstractRecord
     /**
      * Set record data
      *
-     * @param string $source Source ID
-     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     *                       file import)
-     * @param string $data   Metadata
+     * @param string $source    Source ID
+     * @param string $oaiID     Record ID received from OAI-PMH (or empty string for
+     *                          file import)
+     * @param string $data      Record metadata
+     * @param array  $extraData Extra metadata
      *
      * @return void
      */
-    public function setData($source, $oaiID, $data)
+    public function setData($source, $oaiID, $data, $extraData)
     {
-        $this->XmlTraitSetData($source, $oaiID, $data);
+        $this->XmlTraitSetData($source, $oaiID, $data, $extraData);
 
         if (
             empty($this->doc->recordID)

@@ -15,6 +15,7 @@ CREATE TABLE `record` (
   `update_needed` tinyint(1) NOT NULL DEFAULT 0,
   `original_data` longtext NOT NULL,
   `normalized_data` longtext NULL,
+  `extra_data` longtext NULL,
   `mark` tinyint(1) NULL,
   KEY `oai_id` (`oai_id`),
   KEY `main_id` (`main_id`),

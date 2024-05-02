@@ -112,7 +112,8 @@ trait CreateSampleRecordTrait
         $record->setData(
             '__unit_test_no_source__',
             '__unit_test_no_id__',
-            $recordString
+            $recordString,
+            []
         );
         return $record;
     }

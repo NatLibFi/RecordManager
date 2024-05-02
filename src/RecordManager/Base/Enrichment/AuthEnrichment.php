@@ -123,13 +123,7 @@ abstract class AuthEnrichment extends AbstractEnrichment
             return;
         }
 
-        $authRecord = $this->createRecord(
-            $data['format'],
-            $this->metadataUtils->getRecordData($data, true),
-            $id,
-            $data['source_id']
-        );
-
+        $authRecord = $this->createRecordFromDbRecord($data);
         if ($altNames = $authRecord->getAlternativeNames()) {
             $solrArray[$solrField]
                 = array_merge($solrArray[$solrField] ?? [], $altNames);

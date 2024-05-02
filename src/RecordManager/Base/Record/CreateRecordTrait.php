@@ -5,10 +5,11 @@
  *
  * Prerequisites:
  * - the class must have Record\PluginManager as $this->recordPluginManager
+ * - the class must have Utils\MetadataUtils as $this->metadataUtils
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2021.
+ * Copyright (C) The National Library of Finland 2021-2024.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -32,6 +33,8 @@
 
 namespace RecordManager\Base\Record;
 
+use function is_string;
+
 /**
  * Trait for instantiating and populating a metadata record
  *
@@ -46,18 +49,42 @@ trait CreateRecordTrait
     /**
      * Construct a metadata record driver for the specified format
      *
-     * @param string $format Metadata format
-     * @param string $data   Metadata
-     * @param string $oaiID  Record ID received from OAI-PMH
-     * @param string $source Record source
+     * @param string       $format    Metadata format
+     * @param string       $data      Metadata
+     * @param string       $oaiID     Record ID received from OAI-PMH
+     * @param string       $source    Record source
+     * @param string|array $extraData Extra data (JSON string or array)
      *
      * @return object       The record driver for handling the record
      * @throws \Exception
+     *
+     * @todo Improve return type
      */
-    public function createRecord($format, $data, $oaiID, $source)
+    public function createRecord($format, $data, $oaiID, $source, $extraData = [])
     {
         $record = $this->recordPluginManager->get($format);
-        $record->setData($source, $oaiID, $data);
+        $record->setData($source, $oaiID, $data, is_string($extraData) ? json_decode($extraData, true) : $extraData);
         return $record;
+    }
+
+    /**
+     * Construct a metadata record driver for the specified format
+     *
+     * @param array $record Database record
+     *
+     * @return object The record driver for handling the record
+     * @throws \Exception
+     *
+     * @todo Improve return type
+     */
+    public function createRecordFromDbRecord(array $record): object
+    {
+        return $this->createRecord(
+            $record['format'],
+            $this->metadataUtils->getRecordData($record, true),
+            $record['oai_id'],
+            $record['source_id'],
+            $record['extra_data'] ?? []
+        );
     }
 }

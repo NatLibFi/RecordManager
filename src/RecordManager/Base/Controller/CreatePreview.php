@@ -196,12 +196,7 @@ class CreatePreview extends AbstractBase
             throw new \Exception("Format '$format' not supported");
         }
 
-        $metadataRecord = $this->createRecord(
-            $record['format'],
-            $record['normalized_data'],
-            $record['oai_id'],
-            $record['source_id']
-        );
+        $metadataRecord = $this->createRecordFromDbRecord($record);
         $metadataRecord->normalize();
         $record['normalized_data'] = $metadataRecord->serialize();
         $record['_id'] = $record['linking_id']

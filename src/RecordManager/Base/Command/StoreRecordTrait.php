@@ -68,11 +68,12 @@ trait StoreRecordTrait
      * @param string $oaiID      ID of the record as received from OAI-PMH
      * @param bool   $deleted    Whether the record is to be deleted
      * @param string $recordData Record metadata
+     * @param array  $extraData  Extra metadata
      *
      * @throws \Exception
      * @return integer Number of records processed (can be > 1 for split records)
      */
-    public function storeRecord($sourceId, $oaiID, $deleted, $recordData)
+    public function storeRecord($sourceId, $oaiID, $deleted, $recordData, $extraData = [])
     {
         if (null === $this->dedupHandler) {
             throw new \Exception('Dedup handler missing');
@@ -132,13 +133,17 @@ trait StoreRecordTrait
         $count = 0;
         $mainID = '';
         foreach ($dataArray as $data) {
+            // First ensure that $data is valid UTF-8:
+            $data = mb_convert_encoding($data, 'UTF-8', 'UTF-8');
+
             if (null !== $settings['normalizationXSLT']) {
                 $metadataRecord = $this->createRecord(
                     $settings['format'],
                     $settings['normalizationXSLT']
                         ->transform($data, ['oai_id' => $oaiID]),
                     $oaiID,
-                    $sourceId
+                    $sourceId,
+                    $extraData
                 );
                 $metadataRecord->normalize();
                 $normalizedData = $metadataRecord->serialize();
@@ -146,14 +151,16 @@ trait StoreRecordTrait
                     $settings['format'],
                     $data,
                     $oaiID,
-                    $sourceId
+                    $sourceId,
+                    $extraData
                 )->serialize();
             } else {
                 $metadataRecord = $this->createRecord(
                     $settings['format'],
                     $data,
                     $oaiID,
-                    $sourceId
+                    $sourceId,
+                    $extraData
                 );
                 $originalData = $metadataRecord->serialize();
                 $metadataRecord->normalize();
@@ -215,6 +222,11 @@ trait StoreRecordTrait
             $dbRecord['format'] = $settings['format'];
             $dbRecord['original_data'] = $originalData;
             $dbRecord['normalized_data'] = $normalizedData;
+            if ($extraData) {
+                $dbRecord['extra_data'] = json_encode($extraData);
+            } else {
+                unset($dbRecord['extra_data']);
+            }
             $hostSourceIds = !empty($settings['__hostRecordSourceId'])
                 ? $settings['__hostRecordSourceId'] : [$sourceId];
             if ($settings['dedup']) {
@@ -330,12 +342,7 @@ trait StoreRecordTrait
         // Mark host records updated too
         $sourceId = $record['source_id'];
         $settings = $this->dataSourceConfig[$sourceId];
-        $metadataRecord = $this->createRecord(
-            $record['format'],
-            $this->metadataUtils->getRecordData($record, true),
-            $record['oai_id'],
-            $sourceId
-        );
+        $metadataRecord = $this->createRecordFromDbRecord($record);
         $hostIDs = $metadataRecord->getHostRecordIDs();
         if ($hostIDs) {
             $hostSourceIds = !empty($settings['__hostRecordSourceId'])
@@ -343,7 +350,7 @@ trait StoreRecordTrait
             $this->db->updateRecords(
                 [
                     'source_id' => ['$in' => $hostSourceIds],
-                    'linking_id' => ['$in' => (array)$hostIDs],
+                    'linking_id' => ['$in' => $hostIDs],
                     'deleted' => false,
                 ],
                 $deferHostUpdate

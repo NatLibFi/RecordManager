@@ -91,6 +91,13 @@ abstract class AbstractRecord
     protected $idPrefix = '';
 
     /**
+     * Extra metadata
+     *
+     * @var array
+     */
+    protected array $extraData = [];
+
+    /**
      * Warnings about problems in the record
      *
      * @var array<string>
@@ -128,20 +135,20 @@ abstract class AbstractRecord
     /**
      * Set record data
      *
-     * @param string $source Source ID
-     * @param string $oaiID  Record ID received from OAI-PMH (or empty string for
-     *                       file import)
-     * @param string $data   Metadata
+     * @param string $source    Source ID
+     * @param string $oaiID     Record ID received from OAI-PMH (or empty string for
+     *                          file import)
+     * @param string $data      Record metadata
+     * @param array  $extraData Extra metadata
      *
      * @return void
      */
-    public function setData($source, $oaiID, $data)
+    public function setData($source, $oaiID, $data, $extraData)
     {
         $this->source = $source;
-        $this->idPrefix
-            = $this->dataSourceConfig[$source]['idPrefix']
-            ?? $source;
+        $this->idPrefix = $this->dataSourceConfig[$source]['idPrefix'] ?? $source;
         $this->resultCache = [];
+        $this->extraData = $extraData;
     }
 
     /**
@@ -201,7 +208,7 @@ abstract class AbstractRecord
      *
      * @return array
      */
-    public function getHostRecordIDs()
+    public function getHostRecordIDs(): array
     {
         return [];
     }

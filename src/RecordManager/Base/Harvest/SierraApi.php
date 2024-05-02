@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (c) The National Library of Finland 2016-2022.
+ * Copyright (c) The National Library of Finland 2016-2024.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -131,7 +131,7 @@ class SierraApi extends AbstractBase
      *
      * @var string
      */
-    protected $harvestFields = 'id,deleted,locations,fixedFields,varFields';
+    protected $harvestFields = 'default,locations,fixedFields,varFields,catalogDate';
 
     /**
      * Initialize harvesting
@@ -434,7 +434,7 @@ class SierraApi extends AbstractBase
             $oaiId = $this->createOaiId($this->source, $id);
             $deleted = $this->isDeleted($record);
             if ($deleted) {
-                call_user_func($this->callback, $this->source, $oaiId, true, null);
+                call_user_func($this->callback, $this->source, $oaiId, true, null, $this->getExtraMetadata($record));
                 $this->deletedRecords++;
             } else {
                 $this->changedRecords += call_user_func(
@@ -442,7 +442,8 @@ class SierraApi extends AbstractBase
                     $this->source,
                     $oaiId,
                     false,
-                    $this->convertRecordToMarcArray($record)
+                    $this->convertRecordToMarcArray($record),
+                    $this->getExtraMetadata($record)
                 );
             }
         }
@@ -617,6 +618,19 @@ class SierraApi extends AbstractBase
         );
 
         return $marc;
+    }
+
+    /**
+     * Get any extra metadata from the Sierra record
+     *
+     * @param array $record Sierra BIB record
+     *
+     * @return array
+     */
+    protected function getExtraMetadata(array $record): array
+    {
+        $catalogDate = $record['catalogDate'] ?? null;
+        return $catalogDate ? compact('catalogDate') : [];
     }
 
     /**
