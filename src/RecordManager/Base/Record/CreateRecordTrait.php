@@ -70,14 +70,14 @@ trait CreateRecordTrait
     /**
      * Construct a metadata record driver for the specified format
      *
-     * @param array $record Database record
+     * @param mixed $record Database record
      *
      * @return object The record driver for handling the record
      * @throws \Exception
      *
      * @todo Improve return type
      */
-    public function createRecordFromDbRecord(array $record): object
+    public function createRecordFromDbRecord($record): object
     {
         return $this->createRecord(
             $record['format'],
