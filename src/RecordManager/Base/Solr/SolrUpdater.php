@@ -2471,6 +2471,9 @@ class SolrUpdater
             }
             $this->settings[$source]['fieldProcessingRules'][] = $rule;
         }
+        $this->log->writelnVeryVerbose(
+            "Field rules for $source: " . var_export($this->settings[$source]['fieldProcessingRules'] ?? [], true)
+        );
     }
 
     /**
@@ -2487,38 +2490,52 @@ class SolrUpdater
     {
         foreach ($this->settings[$source]['fieldProcessingRules'] ?? [] as $rule) {
             $src = $rule['src'];
-            $srcValue = $data[$src] ?? null;
-            if (!($fieldValue = $srcValue ?: ($rule['default'] ?? null))) {
-                continue;
-            }
+            $srcValues = $data[$src] ?? null;
             if ($match = $rule['match'] ?? null) {
-                if (null === $srcValue) {
+                // If we don't have values, nothing can match:
+                if (null === $srcValues) {
                     continue;
                 }
-                if (str_starts_with($match, '/') && (str_ends_with($match, '/') || str_ends_with($match, '/i'))) {
-                    if (!preg_match($match, $srcValue)) {
-                        continue;
+                // Filter source values by the match rule:
+                $re = str_starts_with($match, '/') && (str_ends_with($match, '/') || str_ends_with($match, '/i'));
+                $matchingValues = array_filter(
+                    (array)$srcValues,
+                    function ($srcValue) use ($re, $match) {
+                        return
+                            ($re && preg_match($match, $srcValue))
+                            || (!$re && $match === $srcValue);
                     }
-                } elseif ($match !== $srcValue) {
+                );
+                // Stop if we don't have any matching values:
+                if (!$matchingValues) {
                     continue;
                 }
+                $srcValues = is_array($srcValues) ? $matchingValues : reset($matchingValues);
+            }
+            if (!($newValues = $srcValues ?: ($rule['default'] ?? null))) {
+                continue;
             }
             $dst = $rule['dst'];
             if (in_array($rule['op'], [self::RULE_COPY, self::RULE_MOVE])) {
                 if (!isset($data[$dst])) {
-                    $data[$dst] = $fieldValue;
+                    $data[$dst] = $newValues;
                 } else {
                     $data[$dst] = [
                         ...(array)$data[$dst],
-                        ...(array)$fieldValue,
+                        ...(array)$newValues,
                     ];
                 }
             }
-            if (
-                in_array($rule['op'], [self::RULE_DELETE, self::RULE_MOVE])
-                && isset($data[$src])
-            ) {
-                unset($data[$src]);
+            if (in_array($rule['op'], [self::RULE_DELETE, self::RULE_MOVE])) {
+                // If we have a match rule and multiple values, only remove matching values:
+                if ($match && is_array($srcValues)) {
+                    $data[$src] = array_diff($data[$src], $srcValues);
+                    if (!$data[$src]) {
+                        unset($data[$src]);
+                    }
+                } else {
+                    unset($data[$src]);
+                }
             }
         }
     }

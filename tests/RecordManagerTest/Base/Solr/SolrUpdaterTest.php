@@ -262,6 +262,75 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
                     'institution' => null,
                 ],
             ],
+            'copy multivalued' => [
+                [
+                    'copy topic newtopic match="/^tutkimus/"',
+                ],
+                [
+                    'newtopic' => [
+                        'tutkimusrahoitus',
+                        'tutkimuspolitiikka',
+                        'tutkimustyö',
+                        'tutkimus',
+                    ],
+                    'topic' => [
+                        'oppaat',
+                        'ft: kirjoittaminen',
+                        'apurahat',
+                        'tutkimusrahoitus',
+                        'tutkimuspolitiikka',
+                        'opinnäytteet',
+                        'tiedonhaku',
+                        'kielioppaat',
+                        'tutkimustyö',
+                        'tutkimus',
+                    ],
+                ],
+            ],
+            'move multivalued' => [
+                [
+                    'move topic newtopic match="/^tutkimus/"',
+                ],
+                [
+                    'newtopic' => [
+                        'tutkimusrahoitus',
+                        'tutkimuspolitiikka',
+                        'tutkimustyö',
+                        'tutkimus',
+                    ],
+                    'topic' => [
+                        'oppaat',
+                        'ft: kirjoittaminen',
+                        'apurahat',
+                        'opinnäytteet',
+                        'tiedonhaku',
+                        'kielioppaat',
+                    ],
+                ],
+            ],
+            'delete multivalued' => [
+                [
+                    'delete topic',
+                ],
+                [
+                    'topic' => null,
+                ],
+            ],
+            'delete multivalued matching' => [
+                [
+                    'delete topic match="/^tutkimus/"',
+                ],
+                [
+                    'topic' => [
+                        'oppaat',
+                        'ft: kirjoittaminen',
+                        'apurahat',
+                        'opinnäytteet',
+                        'tiedonhaku',
+                        'kielioppaat',
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -287,7 +356,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
 
         $record = $this->createMarcRecord(
             \RecordManager\Base\Record\Marc::class,
-            'marc-broken.xml'
+            'marc1.xml'
         );
 
         $date = strtotime('2020-10-20 13:01:00');
