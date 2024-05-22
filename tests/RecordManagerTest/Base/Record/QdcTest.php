@@ -216,7 +216,7 @@ class QdcTest extends RecordTestBase
                 [
                     '__unit_test_no_source__' => [
                         'driverParams' => [
-                            "preferredTypes=$preferredTypes",
+                            "preferredFormatTypes=$preferredTypes",
                         ],
                     ],
                 ],

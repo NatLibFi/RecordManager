@@ -80,7 +80,7 @@ class Qdc extends AbstractRecord
      *
      * @var array
      */
-    protected $excludedFormats = [];
+    protected $excludedFormatTypes = [];
 
     /**
      * Constructor
@@ -336,14 +336,14 @@ class Qdc extends AbstractRecord
      */
     public function getFormat()
     {
-        $param = $this->getDriverParam('preferredTypes', '');
+        $param = $this->getDriverParam('preferredFormatTypes', '');
         $preferredTypes = $param ? explode(',', $param) : [];
         $collectedTypes = [];
         $first = '';
         foreach ($this->doc->type ?? [] as $node) {
             if ($value = trim((string)$node)) {
                 $typeAttr = trim((string)($node->attributes()->type ?? '')) ?: 'no_type';
-                if (!in_array($typeAttr, $this->excludedFormats) && !($collectedTypes[$typeAttr] ?? '')) {
+                if (!in_array($typeAttr, $this->excludedFormatTypes) && !($collectedTypes[$typeAttr] ?? '')) {
                     $collectedTypes[$typeAttr] = $value;
                     $first = $first ?: $typeAttr;
                 }
