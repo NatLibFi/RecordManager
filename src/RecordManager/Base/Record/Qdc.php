@@ -349,12 +349,15 @@ class Qdc extends AbstractRecord
                 }
             }
         }
-        foreach ($preferredTypes as $pref) {
-            if ($collectedTypes[$pref] ?? '') {
-                return $collectedTypes[$pref];
+        if ($collectedTypes) {
+            foreach ($preferredTypes as $pref) {
+                if ($collectedTypes[$pref] ?? '') {
+                    return $collectedTypes[$pref];
+                }
             }
+            return $collectedTypes[$first];
         }
-        return $collectedTypes[$first] ?? 'Unknown';
+        return 'Unknown';
     }
 
     /**
