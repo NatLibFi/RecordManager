@@ -81,6 +81,7 @@ class QdcTest extends RecordTestBase
                 '2021',
                 'Article',
                 'okm_type',
+                'okm_type_2',
                 'other_type',
                 'Eeva-Liisa Viskari, Suvi Lehtoranta, Riikka Malila. Urine : The'
                     . ' potential, value chain and its sustainable management. '
