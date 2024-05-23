@@ -531,7 +531,7 @@ class Ead3 extends Ead
             $seqLabel = $this->getDriverParam('sequenceUnitIdLabel', 'sequence');
             if ($seqLabel) {
                 foreach ($this->doc->did->unitid ?? [] as $unitId) {
-                    $firstId = $firstId ?: $unitId;
+                    $firstId = $firstId ?: (string)$unitId;
                     if ($seqLabel === (string)$unitId->attributes()->label) {
                         $sequenceUnitId = (string)$unitId;
                         $data['hierarchy_sequence']
