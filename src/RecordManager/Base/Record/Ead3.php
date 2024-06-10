@@ -518,7 +518,7 @@ class Ead3 extends Ead
     protected function getHierarchyFields(array &$data): void
     {
         $data['hierarchytype'] = 'Default';
-        $sequenceUnitId = '';
+        $sequenceUnitId = $firstId = '';
         if ($this->doc->{'add-data'}->archive) {
             $archiveAttr = $this->doc->{'add-data'}->archive->attributes();
             $data['hierarchy_top_id'] = (string)$archiveAttr->{'id'};
@@ -531,6 +531,7 @@ class Ead3 extends Ead
             $seqLabel = $this->getDriverParam('sequenceUnitIdLabel', 'sequence');
             if ($seqLabel) {
                 foreach ($this->doc->did->unitid ?? [] as $unitId) {
+                    $firstId = $firstId ?: (string)$unitId;
                     if ($seqLabel === (string)$unitId->attributes()->label) {
                         $sequenceUnitId = (string)$unitId;
                         $data['hierarchy_sequence']
@@ -553,6 +554,7 @@ class Ead3 extends Ead
             $data['is_hierarchy_title'] = $data['hierarchy_top_title']
                 = (string)($this->doc->did->unittitle ?? '');
         }
+        $sequenceUnitId = $sequenceUnitId ?: $firstId;
         if (
             $sequenceUnitId
             && $this->getDriverParam('addIdToHierarchyTitle', true)
