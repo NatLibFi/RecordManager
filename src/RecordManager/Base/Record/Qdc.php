@@ -34,6 +34,8 @@ use RecordManager\Base\Http\ClientManager as HttpClientManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
+use function in_array;
+
 /**
  * Qdc record class
  *
@@ -72,6 +74,13 @@ class Qdc extends AbstractRecord
      * @var string
      */
     protected $recordNs = 'http://www.openarchives.org/OAI/2.0/oai_dc/';
+
+    /**
+     * Type fields which should be excluded when defining format.
+     *
+     * @var array
+     */
+    protected $excludedFormatTypes = [];
 
     /**
      * Constructor
@@ -328,7 +337,28 @@ class Qdc extends AbstractRecord
      */
     public function getFormat()
     {
-        return $this->doc->type ? trim((string)$this->doc->type) : 'Unknown';
+        $param = $this->getDriverParam('preferredFormatTypes', '');
+        $preferredTypes = $param ? explode(',', $param) : [];
+        $collectedTypes = [];
+        $first = '';
+        foreach ($this->doc->type ?? [] as $node) {
+            if ($value = trim((string)$node)) {
+                $typeAttr = trim((string)($node->attributes()->type ?? '')) ?: 'no_type';
+                if (!in_array($typeAttr, $this->excludedFormatTypes) && !($collectedTypes[$typeAttr] ?? '')) {
+                    $collectedTypes[$typeAttr] = $value;
+                    $first = $first ?: $typeAttr;
+                }
+            }
+        }
+        if ($collectedTypes) {
+            foreach ($preferredTypes as $pref) {
+                if ($collectedTypes[$pref] ?? '') {
+                    return $collectedTypes[$pref];
+                }
+            }
+            return $collectedTypes[$first];
+        }
+        return 'Unknown';
     }
 
     /**
