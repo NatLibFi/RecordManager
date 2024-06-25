@@ -147,21 +147,10 @@ class Lido extends AbstractRecord
         $data['record_format'] = 'lido';
         $title = $this->getTitle(false);
         $data['title'] = $data['title_short'] = $data['title_full'] = $title;
-        // Create sort title from the title that may have been split above:
         $data['title_sort'] = $this->metadataUtils->createSortTitle($title);
         $data['title_alt'] = $this->getAltTitles();
 
-        $description = $this->getDescription();
-        if ($description) {
-            if (
-                !empty($data['description'])
-                && !str_starts_with($description, $data['description'])
-            ) {
-                $data['description'] .= " -- $description";
-            } else {
-                $data['description'] = $description;
-            }
-        }
+        $data['description'] = $this->getDescription();
 
         $data['format'] = $this->getObjectWorkType();
         $data['identifier'] = $this->getIdentifier();

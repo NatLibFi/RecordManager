@@ -64,6 +64,7 @@ class LidoTest extends RecordTestBase
             'title_sort' => 'luonnonsuojelusäädökset toimittanut raimo luhtanen'
                 . ' säädökset',
             'title_alt' => [],
+            'description' => '',
             'format' => 'Kirja',
             'identifier' => '26054',
             'institution' => 'Test Institution',
@@ -179,6 +180,7 @@ class LidoTest extends RecordTestBase
             'title_alt' => [
                 'Säädökset',
             ],
+            'description' => '',
             'format' => 'Kirja',
             'identifier' => '26054',
             'institution' => 'Test Institution',
