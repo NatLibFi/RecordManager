@@ -936,68 +936,6 @@ class MetadataUtils
     }
 
     /**
-     * Split title to main title and description. Tries to find the first sentence
-     * break where the title can be split.
-     *
-     * @param string $title Title to split
-     *
-     * @return null|string Null if title was not split, otherwise the initial
-     * title part
-     */
-    public function splitTitle($title)
-    {
-        $i = 0;
-        $parenLevel = 0;
-        $bracketLevel = 0;
-        // Make sure the title has single spaces for whitespace
-        $title = preg_replace('/\s+/', ' ', $title);
-        $titleWords = explode(' ', $title);
-        foreach ($titleWords as $word) {
-            ++$i;
-            $parenLevel += substr_count($word, '(');
-            $parenLevel -= substr_count($word, ')');
-            $bracketLevel += substr_count($word, '[');
-            $bracketLevel -= substr_count($word, ']');
-            if ($parenLevel == 0 && $bracketLevel == 0) {
-                // Try to avoid splitting at short words or the very beginning
-                if (
-                    substr($word, -1) == '.' && strlen($word) > 2
-                    && ($i > 1 || strlen($word) > 4)
-                ) {
-                    // Verify that the word is strippable (not abbreviation etc.)
-                    $leadStripped = $this->stripLeadingPunctuation(
-                        $word
-                    );
-                    $stripped = $this->stripTrailingPunctuation(
-                        $leadStripped
-                    );
-                    $nextFirst = isset($titleWords[$i])
-                        ? substr($titleWords[$i], 0, 1)
-                        : '';
-                    // 1.) There has to be something following this word.
-                    // 2.) The trailing period must be strippable or end with a year.
-                    // 3.) Next word has to start with a capital or digit
-                    // 4.) Not something like 12-p.
-                    // 5.) Not initials like A.N.
-                    if (
-                        $nextFirst
-                        && ($leadStripped != $stripped
-                        || preg_match('/^\d{4}\.$/', $word))
-                        && (is_numeric($nextFirst) || !ctype_lower($nextFirst))
-                        && !preg_match('/.+\-\w{1,2}\.$/', $word)
-                        && !preg_match('/^\w\.\w\.$/', $word) // initials
-                    ) {
-                        return $this->stripTrailingPunctuation(
-                            implode(' ', array_splice($titleWords, 0, $i))
-                        );
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
      * Determine if a record is a hidden component part
      *
      * @param array          $settings       Data source settings
