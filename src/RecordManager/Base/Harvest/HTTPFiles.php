@@ -180,23 +180,19 @@ class HTTPFiles extends AbstractBase
      */
     protected function retrieveFileList()
     {
-        $request = $this->httpClientManager->createClient(
-            $this->baseURL,
-            \HTTP_Request2::METHOD_GET
-        );
-
-        $urlStr = $request->getURL()->getURL();
-        $this->infoMsg("Sending request: $urlStr");
+        $client = $this->httpService->createClient($this->baseURL);
+        $url = $this->baseURL;
+        $this->infoMsg("Sending request: $url");
 
         // Perform request and throw an exception on error:
         $response = null;
         for ($try = 1; $try <= 5; $try++) {
             try {
-                $response = $request->send();
+                $response = $client->get($url);
             } catch (\Exception $e) {
                 if ($try < 5) {
                     $this->warningMsg(
-                        "Request '$urlStr' failed (" . $e->getMessage()
+                        "Request '$url' failed (" . $e->getMessage()
                         . '), retrying in 30 seconds...'
                     );
                     sleep(30);
@@ -205,25 +201,22 @@ class HTTPFiles extends AbstractBase
                 throw HttpRequestException::fromException($e);
             }
             if ($try < 5) {
-                $code = $response->getStatus();
+                $code = $response->getStatusCode();
                 if ($code >= 300) {
-                    $this->warningMsg(
-                        "Request '$urlStr' failed ($code), "
-                        . 'retrying in 30 seconds...'
-                    );
+                    $this->warningMsg("Request '$url' failed ($code), retrying in 30 seconds...");
                     sleep(30);
                     continue;
                 }
             }
             break;
         }
-        $code = null === $response ? 999 : $response->getStatus();
+        $code = null === $response ? 999 : $response->getStatusCode();
         if ($code >= 300) {
-            $this->fatalMsg("Request '$urlStr' failed: $code");
+            $this->fatalMsg("Request '$url' failed: $code");
             throw new HttpRequestException("Request failed: $code", $code);
         }
 
-        $responseStr = $response->getBody();
+        $responseStr = (string)$response->getBody();
 
         $matches = [];
         preg_match_all(
@@ -263,23 +256,19 @@ class HTTPFiles extends AbstractBase
      */
     protected function retrieveFile($filename)
     {
-        $request = $this->httpClientManager->createClient(
-            $this->baseURL . $filename,
-            \HTTP_Request2::METHOD_GET
-        );
-
-        $urlStr = $request->getURL()->getURL();
-        $this->infoMsg("Sending request: $urlStr");
+        $url = $this->baseURL . $filename;
+        $request = $this->httpService->createClient($url);
+        $this->infoMsg("Sending request: $url");
 
         // Perform request and throw an exception on error:
         $response = null;
         for ($try = 1; $try <= 5; $try++) {
             try {
-                $response = $request->send();
+                $response = $request->get($url);
             } catch (\Exception $e) {
                 if ($try < 5) {
                     $this->warningMsg(
-                        "Request '$urlStr' failed (" . $e->getMessage()
+                        "Request '$url' failed (" . $e->getMessage()
                         . '), retrying in 30 seconds...'
                     );
                     sleep(30);
@@ -288,11 +277,10 @@ class HTTPFiles extends AbstractBase
                 throw HttpRequestException::fromException($e);
             }
             if ($try < 5) {
-                $code = $response->getStatus();
+                $code = $response->getStatusCode();
                 if ($code >= 300) {
                     $this->warningMsg(
-                        "Request '$urlStr' failed ($code), retrying in "
-                        . '30 seconds...'
+                        "Request '$url' failed ($code), retrying in 30 seconds..."
                     );
                     sleep(30);
                     continue;
@@ -300,13 +288,13 @@ class HTTPFiles extends AbstractBase
             }
             break;
         }
-        $code = null === $response ? 999 : $response->getStatus();
+        $code = null === $response ? 999 : $response->getStatusCode();
         if ($code >= 300) {
-            $this->fatalMsg("Request '$urlStr' failed: $code");
+            $this->fatalMsg("Request '$url' failed: $code");
             throw new HttpRequestException("Request failed: $code", $code);
         }
 
-        return $response->getBody();
+        return (string)$response->getBody();
     }
 
     /**

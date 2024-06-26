@@ -30,7 +30,7 @@
 namespace RecordManager\Base\Harvest;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Http\ClientManager as HttpClientManager;
+use RecordManager\Base\Http\HttpService as HttpService;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -64,11 +64,11 @@ abstract class AbstractBase
     protected $log;
 
     /**
-     * HTTP client manager
+     * HTTP aervice
      *
-     * @var HttpClientManager
+     * @var HttpService
      */
-    protected $httpClientManager;
+    protected $httpService;
 
     /**
      * Metadata utilities
@@ -204,13 +204,12 @@ abstract class AbstractBase
     /**
      * Constructor.
      *
-     * @param array             $config           Main configuration
-     * @param array             $dataSourceConfig Data source configuration
-     * @param Database          $db               Database
-     * @param Logger            $logger           The Logger object used for logging
-     *                                            messages
-     * @param HttpClientManager $httpManager      HTTP client manager
-     * @param MetadataUtils     $metadataUtils    Metadata utilities
+     * @param array         $config           Main configuration
+     * @param array         $dataSourceConfig Data source configuration
+     * @param Database      $db               Database
+     * @param Logger        $logger           The Logger object used for logging messages
+     * @param HttpService   $httpService      HTTP service
+     * @param MetadataUtils $metadataUtils    Metadata utilities
      *
      * @throws \Exception
      */
@@ -219,14 +218,14 @@ abstract class AbstractBase
         array $dataSourceConfig,
         Database $db,
         Logger $logger,
-        HttpClientManager $httpManager,
+        HttpService $httpService,
         MetadataUtils $metadataUtils
     ) {
         $this->config = $config;
         $this->dataSourceConfig = $dataSourceConfig;
         $this->db = $db;
         $this->log = $logger;
-        $this->httpClientManager = $httpManager;
+        $this->httpService = $httpService;
         $this->metadataUtils = $metadataUtils;
     }
 

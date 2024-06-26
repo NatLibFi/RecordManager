@@ -29,9 +29,10 @@
 
 namespace RecordManager\Base\Enrichment;
 
+use GuzzleHttp\Client;
 use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Exception\HttpRequestException;
-use RecordManager\Base\Http\ClientManager as HttpClientManager;
+use RecordManager\Base\Http\HttpService;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
@@ -80,11 +81,11 @@ abstract class AbstractEnrichment
     protected $maxCacheAge;
 
     /**
-     * HTTP Request
+     * HTTP client
      *
-     * @var ?\HTTP_Request2
+     * @var ?Client
      */
-    protected $request = null;
+    protected ?Client $httpClient = null;
 
     /**
      * Maximum number of HTTP request attempts
@@ -101,12 +102,15 @@ abstract class AbstractEnrichment
     protected $retryWait;
 
     /**
-     * HTTP_Request2 options
+     * HTTP options
      *
      * @var array
      */
     protected $httpOptions = [
         'follow_redirects' => true,
+        'headers' => [
+            'Connection' => 'Keep-Alive',
+        ],
     ];
 
     /**
@@ -131,11 +135,11 @@ abstract class AbstractEnrichment
     protected $recordPluginManager;
 
     /**
-     * HTTP client manager
+     * HTTP service
      *
-     * @var HttpClientManager
+     * @var HttpService
      */
-    protected $httpClientManager;
+    protected $httpService;
 
     /**
      * Metadata utilities
@@ -152,7 +156,7 @@ abstract class AbstractEnrichment
      *                                                 cache)
      * @param Logger              $logger              Logger
      * @param RecordPluginManager $recordPluginManager Record plugin manager
-     * @param HttpClientManager   $httpManager         HTTP client manager
+     * @param HttpService         $httpService         HTTP service
      * @param MetadataUtils       $metadataUtils       Metadata utilities
      */
     public function __construct(
@@ -160,14 +164,14 @@ abstract class AbstractEnrichment
         Database $db,
         Logger $logger,
         RecordPluginManager $recordPluginManager,
-        HttpClientManager $httpManager,
+        HttpService $httpService,
         MetadataUtils $metadataUtils
     ) {
         $this->config = $config;
         $this->db = $db;
         $this->logger = $logger;
         $this->recordPluginManager = $recordPluginManager;
-        $this->httpClientManager = $httpManager;
+        $this->httpService = $httpService;
         $this->metadataUtils = $metadataUtils;
 
         $this->init();
@@ -190,11 +194,11 @@ abstract class AbstractEnrichment
     /**
      * A helper function that retrieves external metadata and caches it
      *
-     * @param string   $url          URL to fetch
-     * @param string   $id           ID of the entity to fetch
-     * @param string[] $headers      Optional headers to add to the request
-     * @param array    $ignoreErrors Error codes to ignore
-     * @param bool     $useCache     Whether to use cache for the request
+     * @param string $url          URL to fetch
+     * @param string $id           ID of the entity to fetch
+     * @param array  $headers      Optional headers to add to the request
+     * @param array  $ignoreErrors Error codes to ignore
+     * @param bool   $useCache     Whether to use cache for the request
      *
      * @return string Metadata (typically XML)
      * @throws \Exception
@@ -228,24 +232,17 @@ abstract class AbstractEnrichment
         $retryWait = $this->retryWait;
         $response = null;
         for ($try = 1; $try <= $this->maxTries; $try++) {
-            if (null === $this->request) {
-                $this->request = $this->httpClientManager->createClient(
+            if (null === $this->httpClient) {
+                $this->httpClient = $this->httpService->createClient(
                     $url,
-                    \HTTP_Request2::METHOD_GET,
                     $this->httpOptions
                 );
-                $this->request->setHeader('Connection', 'Keep-Alive');
-            } else {
-                $this->request->setUrl($url);
-            }
-            if ($headers) {
-                $this->request->setHeader($headers);
             }
 
             $duration = 0;
             try {
                 $startTime = microtime(true);
-                $response = $this->request->send();
+                $response = $this->httpClient->get($url);
                 $duration = microtime(true) - $startTime;
             } catch (\Exception $e) {
                 if ($try < $this->maxTries) {
@@ -258,14 +255,14 @@ abstract class AbstractEnrichment
                         "HTTP request for '$url' failed (" . $e->getMessage()
                             . "), retrying in {$retryWait} seconds (retry $try)..."
                     );
-                    $this->request = null;
+                    $this->httpClient = null;
                     sleep($retryWait);
                     continue;
                 }
                 throw HttpRequestException::fromException($e);
             }
             if ($try < $this->maxTries) {
-                $code = $response->getStatus();
+                $code = $response->getStatusCode();
                 if (
                     $code >= 300 && $code != 404 && !in_array($code, $ignoreErrors)
                 ) {
@@ -274,7 +271,7 @@ abstract class AbstractEnrichment
                         "HTTP request for '$url' failed ($code), retrying "
                             . "in {$this->retryWait} seconds (retry $try)..."
                     );
-                    $this->request = null;
+                    $this->httpClient = null;
                     sleep($this->retryWait);
                     continue;
                 }
@@ -306,7 +303,7 @@ abstract class AbstractEnrichment
             break;
         }
 
-        $code = null === $response ? 999 : $response->getStatus();
+        $code = null === $response ? 999 : $response->getStatusCode();
         if ($code >= 300 && $code != 404 && !in_array($code, $ignoreErrors)) {
             throw new HttpRequestException(
                 "Enrichment failed to fetch '$url': $code",
@@ -314,7 +311,7 @@ abstract class AbstractEnrichment
             );
         }
 
-        $data = $code < 300 ? $response->getBody() : '';
+        $data = $code < 300 ? (string)$response->getBody() : '';
 
         if ($useCache) {
             $this->db->saveUriCache(

@@ -228,14 +228,22 @@ store_message_level = -1
 
 
 ; The following section contains parameters passed to the HTTP client.
-; See https://pear.php.net/manual/en/package.http.http-request2.config.php for
-; documentation on the valid parameters.
+; See https://docs.guzzlephp.org/en/latest/request-options.html for documentation on
+; additional parameters.
 [HTTP]
 ; By default redirects (HTTP status 302) are not followed to avoid silent redirect
 ; for each request, but they can be enabled by uncommenting the setting below:
-;follow_redirects = true
-;adapter = "HTTP_Request2_Adapter_Curl"
-;ssl_verify_peer = false
+;allow_redirects = true
+; Handler to use. Available options are Curl (default) and Stream.
+;handler = "Curl"
+; Whether to verify the server certificate (normally left enabled):
+;verify = true
+; Whether to enable TCP keep-alive (required for some slow servers to avoid the
+; connection getting closed or hung until timeout). Default is false. Only available
+; with the Curl adapter.
+;tcp_keepalive = false
+; TCP keep-alive interval (default is 60 seconds):
+;tcp_keepalive_interval = 60
 ; Socks proxy:
 ;proxy = "socks5://localhost:1099"
 ; Hosts for which proxy is disabled

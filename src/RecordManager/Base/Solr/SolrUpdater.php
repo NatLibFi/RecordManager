@@ -29,10 +29,11 @@
 
 namespace RecordManager\Base\Solr;
 
+use GuzzleHttp\Client;
 use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
 use RecordManager\Base\Exception\HttpRequestException;
-use RecordManager\Base\Http\ClientManager as HttpClientManager;
+use RecordManager\Base\Http\HttpService as HttpService;
 use RecordManager\Base\Record\AbstractRecord;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Settings\Ini;
@@ -138,11 +139,11 @@ class SolrUpdater
     protected $enrichmentPluginManager;
 
     /**
-     * HTTP client manager
+     * HTTP service
      *
-     * @var HttpClientManager
+     * @var HttpService
      */
-    protected $httpClientManager;
+    protected $httpService;
 
     /**
      * Metadata utilities
@@ -287,9 +288,9 @@ class SolrUpdater
     /**
      * HTTP Client
      *
-     * @var \HTTP_Request2
+     * @var Client
      */
-    protected $request = null;
+    protected ?Client $httpClient = null;
 
     /**
      * Fields to merge when processing deduplicated records
@@ -608,7 +609,7 @@ class SolrUpdater
      * @param Logger                  $log               Logger
      * @param RecordPluginManager     $recordPM          Record plugin manager
      * @param EnrichmentPluginManager $enrichmentPM      Enrichment plugin manager
-     * @param HttpClientManager       $httpManager       HTTP client manager
+     * @param HttpService             $httpService       HTTP service
      * @param Ini                     $configReader      Configuration reader
      * @param FieldMapper             $fieldMapper       Field mapper
      * @param MetadataUtils           $metadataUtils     Metadata utilities
@@ -625,7 +626,7 @@ class SolrUpdater
         Logger $log,
         RecordPluginManager $recordPM,
         EnrichmentPluginManager $enrichmentPM,
-        HttpClientManager $httpManager,
+        HttpService $httpService,
         Ini $configReader,
         FieldMapper $fieldMapper,
         MetadataUtils $metadataUtils,
@@ -636,7 +637,7 @@ class SolrUpdater
         $this->log = $log;
         $this->recordPluginManager = $recordPM;
         $this->enrichmentPluginManager = $enrichmentPM;
-        $this->httpClientManager = $httpManager;
+        $this->httpService = $httpService;
         $this->configReader = $configReader;
         $this->fieldMapper = $fieldMapper;
         $this->metadataUtils = $metadataUtils;
@@ -1478,7 +1479,7 @@ class SolrUpdater
         if (null === $query) {
             $query = '*:*';
         }
-        $request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
+        $client = $this->initSolrRequest();
         $baseUrl = $this->config['Solr']['search_url']
             . '?q=' . urlencode($query)
             . '&sort=id+asc&wt=json&fl=id,record_format&rows=1000';
@@ -1493,17 +1494,16 @@ class SolrUpdater
         $cursorMark = '*';
         while ($cursorMark && $cursorMark !== $lastCursorMark) {
             $url = $baseUrl . '&cursorMark=' . urlencode($cursorMark);
-            $request->setUrl($url);
-            $response = $request->send();
-            if ($response->getStatus() != 200) {
+            $response = $client->get($url);
+            if ($response->getStatusCode() != 200) {
                 $this->log->logInfo(
                     'SolrCheck',
                     "Could not scroll cursor mark (url $url), status code "
-                        . $response->getStatus()
+                        . $response->getStatusCode()
                 );
                 throw new \Exception('Solr request failed');
             }
-            $json = json_decode($response->getBody(), true);
+            $json = json_decode((string)$response->getBody(), true);
             $records = $json['response']['docs'];
 
             foreach ($records as $record) {
@@ -1643,17 +1643,18 @@ class SolrUpdater
      */
     public function solrRequest($body, $timeout = null)
     {
-        if (null === $this->request) {
-            $this->request
-                = $this->initSolrRequest(\HTTP_Request2::METHOD_POST, $timeout);
+        if (null === $this->httpClient) {
+            $this->httpClient = $this->initSolrRequest($timeout);
         }
 
         if (!$this->waitForClusterStateOk()) {
             throw new \Exception('Failed to check that the cluster state is ok');
         }
 
-        $this->request->setHeader('Content-Type', 'application/json');
-        $this->request->setBody($body);
+        $params = [
+            'headers' => ['Content-Type' => 'application/json'],
+            'body' => $body,
+        ];
 
         $response = null;
         $maxTries = $this->maxUpdateTries;
@@ -1665,7 +1666,7 @@ class SolrUpdater
                         'Failed to check that the cluster state is ok'
                     );
                 }
-                $response = $this->request->send();
+                $response = $this->httpClient->post($this->config['Solr']['update_url'], $params);
             } catch (\Exception $e) {
                 if ($try < $maxTries) {
                     $this->log->logWarning(
@@ -1679,14 +1680,14 @@ class SolrUpdater
                 throw HttpRequestException::fromException($e);
             }
             if ($try < $maxTries) {
-                $code = $response->getStatus();
+                $code = $response->getStatusCode();
                 if ($code >= 300) {
                     $this->log->logWarning(
                         'solrRequest',
                         "Solr server request failed ($code), retrying in "
                             . "{$this->updateRetryWait} seconds..."
                             . 'Beginning of response: '
-                            . substr($response->getBody(), 0, 1000)
+                            . substr((string)$response->getBody(), 0, 1000)
                     );
                     sleep($this->updateRetryWait);
                     continue;
@@ -1694,13 +1695,13 @@ class SolrUpdater
             }
             break;
         }
-        $code = null === $response ? 999 : $response->getStatus();
+        $code = null === $response ? 999 : $response->getStatusCode();
         if ($code >= 300) {
             throw new HttpRequestException(
                 "Solr server request failed ($code). URL:\n"
                 . $this->config['Solr']['update_url']
                 . "\nRequest:\n$body\n\nResponse:\n"
-                . (null !== $response ? $response->getBody() : ''),
+                . (null !== $response ? (string)$response->getBody() : ''),
                 $code
             );
         }
@@ -2764,36 +2765,33 @@ class SolrUpdater
     /**
      * Initialize a Solr request object
      *
-     * @param string $method  HTTP method
-     * @param int    $timeout Timeout in seconds (optional)
+     * @param int $timeout Timeout in seconds (optional)
      *
-     * @return \HTTP_Request2
+     * @return Client
      */
-    protected function initSolrRequest($method, $timeout = null)
+    protected function initSolrRequest($timeout = null): Client
     {
-        $request = $this->httpClientManager->createClient(
-            $this->config['Solr']['update_url'],
-            $method
-        );
-        if ($timeout !== null) {
-            $request->setConfig('timeout', $timeout);
-        }
-        $request->setHeader('Connection', 'Keep-Alive');
         // At least some combinations of PHP + curl cause both Transfer-Encoding and
-        // Content-Length to be set in certain cases. Set follow_redirects to true to
+        // Content-Length to be set in certain cases. Set allow_redirects to true to
         // invoke the PHP workaround in the curl adapter.
-        $request->setConfig('follow_redirects', true);
+        $options = [
+            'headers' => ['Connection' => 'Keep-Alive'],
+            'allow_redirects' => true,
+        ];
         if (
-            isset($this->config['Solr']['username'])
-            && isset($this->config['Solr']['password'])
+            ($username = $this->config['Solr']['username'] ?? null)
+            && ($password = $this->config['Solr']['password'] ?? null)
         ) {
-            $request->setAuth(
-                $this->config['Solr']['username'],
-                $this->config['Solr']['password'],
-                \HTTP_Request2::AUTH_BASIC
-            );
+            $options['auth'] = [$username, $password];
         }
-        return $request;
+
+        if (null !== $timeout) {
+            $options['timeout'] = $timeout;
+        }
+        return $this->httpService->createClient(
+            $this->config['Solr']['update_url'],
+            $options
+        );
     }
 
     /**
@@ -2849,12 +2847,11 @@ class SolrUpdater
             return $this->clusterState;
         }
         $this->lastClusterStateCheck = time();
-        $request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
+        $client = $this->initSolrRequest();
         $url = $this->config['Solr']['admin_url'] . '/zookeeper'
             . '?wt=json&detail=true&path=%2Fclusterstate.json&view=graph';
-        $request->setUrl($url);
         try {
-            $response = $request->send();
+            $response = $client->get($url);
         } catch (\Exception $e) {
             $this->log->logError(
                 'checkClusterState',
@@ -2864,7 +2861,7 @@ class SolrUpdater
             return 'error';
         }
 
-        $code = $response->getStatus();
+        $code = $response->getStatusCode();
         if (200 !== $code) {
             $this->log->logError(
                 'checkClusterState',
@@ -2873,12 +2870,12 @@ class SolrUpdater
             $this->clusterState = 'error';
             return 'error';
         }
-        $state = json_decode($response->getBody(), true);
+        $state = json_decode((string)$response->getBody(), true);
         if (null === $state) {
             $this->log->logError(
                 'checkClusterState',
                 'Unable to decode zookeeper status from response: '
-                    . $response->getBody()
+                    . (string)$response->getBody()
             );
             $this->clusterState = 'error';
             return 'error';

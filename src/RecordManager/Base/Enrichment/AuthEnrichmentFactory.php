@@ -75,7 +75,7 @@ class AuthEnrichmentFactory implements \Laminas\ServiceManager\Factory\FactoryIn
             $container->get(\RecordManager\Base\Database\AbstractDatabase::class),
             $container->get(\RecordManager\Base\Utils\Logger::class),
             $container->get(\RecordManager\Base\Record\PluginManager::class),
-            $container->get(\RecordManager\Base\Http\ClientManager::class),
+            $container->get(\RecordManager\Base\Http\HttpService::class),
             $container->get(\RecordManager\Base\Utils\MetadataUtils::class),
             $container
                 ->get(\RecordManager\Base\Database\AbstractAuthorityDatabase::class)

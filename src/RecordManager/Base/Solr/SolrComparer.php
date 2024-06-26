@@ -239,21 +239,20 @@ class SolrComparer extends SolrUpdater
             throw new \Exception('search_url not set in ini file Solr section');
         }
 
-        $this->request = $this->initSolrRequest(\HTTP_Request2::METHOD_GET);
+        $this->httpClient = $this->initSolrRequest();
         $url .= '?q=id:"' . urlencode(addcslashes($record['id'], '"')) . '"&wt=json';
-        $this->request->setUrl($url);
 
-        $response = $this->request->send();
-        if ($response->getStatus() != 200) {
+        $response = $this->httpClient->get($url);
+        if ($response->getStatusCode() != 200) {
             $this->log->logInfo(
                 'compareWithSolrRecord',
                 "Could not fetch record (url $url), status code "
-                    . $response->getStatus()
+                    . $response->getStatusCode()
             );
             return;
         }
 
-        $solrResponse = json_decode($response->getBody(), true);
+        $solrResponse = json_decode((string)$response->getBody(), true);
         $solrRecord = $solrResponse['response']['docs'][0]
             ?? [];
 
