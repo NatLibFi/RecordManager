@@ -30,7 +30,7 @@
 namespace RecordManagerTest\Base\Solr;
 
 use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
-use RecordManager\Base\Http\ClientManager as HttpClientManager;
+use RecordManager\Base\Http\HttpService as HttpService;
 use RecordManager\Base\Record\Marc\FormatCalculator;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Settings\Ini;
@@ -427,7 +427,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
             $logger,
             $recordPM,
             $this->createMock(EnrichmentPluginManager::class),
-            $this->createMock(HttpClientManager::class),
+            $this->createMock(HttpService::class),
             $this->createMock(Ini::class),
             $fieldMapper,
             $metadataUtils,

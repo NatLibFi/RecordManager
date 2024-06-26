@@ -1,7 +1,7 @@
 <?php
 
 /**
- * HTTP client manager factory
+ * HTTP service factory
  *
  * PHP version 8
  *
@@ -35,7 +35,7 @@ use Psr\Container\ContainerExceptionInterface as ContainerException;
 use Psr\Container\ContainerInterface;
 
 /**
- * HTTP client manager factory
+ * HTTP service factory
  *
  * @category DataManagement
  * @package  RecordManager
@@ -43,7 +43,7 @@ use Psr\Container\ContainerInterface;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class ClientManagerFactory implements \Laminas\ServiceManager\Factory\FactoryInterface
+class HttpServiceFactory implements \Laminas\ServiceManager\Factory\FactoryInterface
 {
     /**
      * Create an object

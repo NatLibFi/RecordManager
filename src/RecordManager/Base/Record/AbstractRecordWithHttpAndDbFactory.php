@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Record factory for records with HTTP client manager
+ * Record factory for records with HTTP service
  *
  * PHP version 8
  *
@@ -35,7 +35,7 @@ use Psr\Container\ContainerExceptionInterface as ContainerException;
 use Psr\Container\ContainerInterface;
 
 /**
- * Record factory for records with HTTP client manager and database
+ * Record factory for records with HTTP service and database
  *
  * @category DataManagement
  * @package  RecordManager
@@ -75,7 +75,7 @@ class AbstractRecordWithHttpAndDbFactory implements \Laminas\ServiceManager\Fact
             $configReader->get('datasources.ini'),
             $container->get(\RecordManager\Base\Utils\Logger::class),
             $container->get(\RecordManager\Base\Utils\MetadataUtils::class),
-            $container->get(\RecordManager\Base\Http\ClientManager::class),
+            $container->get(\RecordManager\Base\Http\HttpService::class),
             $container->get(\RecordManager\Base\Database\AbstractDatabase::class)
         );
     }

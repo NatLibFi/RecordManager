@@ -54,7 +54,7 @@ class QdcTest extends RecordTestBase
             'qdc1.xml',
             [],
             'Base',
-            [$this->createMock(\RecordManager\Base\Http\ClientManager::class)]
+            [$this->createMock(\RecordManager\Base\Http\HttpService::class)]
         );
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
@@ -221,7 +221,7 @@ class QdcTest extends RecordTestBase
                     ],
                 ],
                 'Base',
-                [$this->createMock(\RecordManager\Base\Http\ClientManager::class)]
+                [$this->createMock(\RecordManager\Base\Http\HttpService::class)]
             );
             $fields = $record->toSolrArray();
             $this->assertEquals($format, $fields['format']);

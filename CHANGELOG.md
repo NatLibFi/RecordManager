@@ -5,6 +5,15 @@ Notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 3.0.0 - TBD
+
+Anything marked with [**BC**] is known to affect backward compatibility with previous versions.
+
+### Changed
+
+- [**BC**] The HTTP client library has been changed from HTTP_Request2 to Guzzle. This has required some changes to how the HTTP client is used. See e.g. src/RecordManager/Base/Harvest/SierraApi.php for usage examples. This also affects the settings in HTTP section of recordmanager.ini. Only the most commonly used legacy settings are automatically mapped to Guzzle's equivalents.
+
+
 ## 2.3.0 - 2024-06-24
 
 Anything marked with [**BC**] is known to affect backward compatibility with previous versions.

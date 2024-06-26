@@ -54,7 +54,7 @@ class LrmiTest extends RecordTestBase
             'lrmi1.xml',
             [],
             'Base',
-            [$this->createMock(\RecordManager\Base\Http\ClientManager::class)]
+            [$this->createMock(\RecordManager\Base\Http\HttpService::class)]
         );
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);

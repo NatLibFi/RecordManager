@@ -33,6 +33,7 @@
 
 namespace RecordManager\Base\Harvest;
 
+use GuzzleHttp\Exception\GuzzleException;
 use RecordManager\Base\Exception\HttpRequestException;
 
 use function call_user_func;
@@ -389,50 +390,43 @@ class OaiPmh extends AbstractBase
      *
      * @return \DOMDocument Response as DOM
      * @throws \Exception
-     * @throws \HTTP_Request2_LogicException
+     * @throws GuzzleException
      */
     protected function sendRequest($verb, $params = [])
     {
         // Set up the request:
-        $request = $this->httpClientManager->createClient(
-            $this->baseURL,
-            \HTTP_Request2::METHOD_GET
-        );
-
-        // Load request parameters:
-        $url = $request->getURL();
+        $client = $this->httpService->createClient($this->baseURL);
         $params['verb'] = $verb;
-        $url->setQueryVariables(array_merge($url->getQueryVariables(), $params));
+        $url = $this->httpService->appendQueryParams($this->baseURL, $params);
 
-        $urlStr = $url->getURL();
         if ($this->debugLog) {
             file_put_contents(
                 $this->debugLog,
-                date('Y-m-d H:i:s') . ' [' . getmypid() . "] Request:\n$urlStr\n",
+                date('Y-m-d H:i:s') . ' [' . getmypid() . "] Request:\n$url\n",
                 FILE_APPEND
             );
         }
 
         // Perform request and throw an exception on error:
         for ($try = 1; $try <= $this->maxTries; $try++) {
-            $this->infoMsg("Sending request: $urlStr");
+            $this->infoMsg("Sending request: $url");
             try {
-                $response = $request->send();
-                $code = $response->getStatus();
+                $response = $client->get($url);
+                $code = $response->getStatusCode();
                 if ($code >= 300) {
                     if ($try < $this->maxTries) {
                         $this->warningMsg(
-                            "Request '$urlStr' failed ($code), retrying in "
+                            "Request '$url' failed ($code), retrying in "
                             . "{$this->retryWait} seconds..."
                         );
                         sleep($this->retryWait);
                         continue;
                     }
-                    $this->fatalMsg("Request '$urlStr' failed: $code");
+                    $this->fatalMsg("Request '$url' failed: $code");
                     throw new HttpRequestException("Request failed: $code", $code);
                 }
 
-                $responseStr = $response->getBody();
+                $responseStr = (string)$response->getBody();
                 if ($this->debugLog) {
                     file_put_contents(
                         $this->debugLog,
@@ -451,7 +445,7 @@ class OaiPmh extends AbstractBase
             } catch (\Exception $e) {
                 if ($try < $this->maxTries) {
                     $this->warningMsg(
-                        "Request '$urlStr' failed (" . $e->getMessage()
+                        "Request '$url' failed (" . $e->getMessage()
                         . "), retrying in {$this->retryWait} seconds..."
                     );
                     sleep($this->retryWait);

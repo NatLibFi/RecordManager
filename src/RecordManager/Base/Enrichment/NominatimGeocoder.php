@@ -392,8 +392,7 @@ class NominatimGeocoder extends AbstractEnrichment
         $response = $this->getExternalData(
             $url,
             'nominatim ' . md5($url),
-            [],
-            [500]
+            ignoreErrors: [500]
         );
         $places = json_decode($response, true);
         if (null === $places) {

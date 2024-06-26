@@ -30,7 +30,7 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Http\ClientManager as HttpClientManager;
+use RecordManager\Base\Http\HttpService as HttpService;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -60,11 +60,11 @@ class Dc extends AbstractRecord
     protected $doc = null;
 
     /**
-     * HTTP client manager for FullTextTrait
+     * HTTP service for FullTextTrait
      *
-     * @var HttpClientManager
+     * @var HttpService
      */
-    protected $httpClientManager;
+    protected $httpService;
 
     /**
      * Database for FullTextTrait
@@ -83,23 +83,23 @@ class Dc extends AbstractRecord
     /**
      * Constructor
      *
-     * @param array             $config           Main configuration
-     * @param array             $dataSourceConfig Data source settings
-     * @param Logger            $logger           Logger
-     * @param MetadataUtils     $metadataUtils    Metadata utilities
-     * @param HttpClientManager $httpManager      HTTP client manager
-     * @param ?Database         $db               Database
+     * @param array         $config           Main configuration
+     * @param array         $dataSourceConfig Data source settings
+     * @param Logger        $logger           Logger
+     * @param MetadataUtils $metadataUtils    Metadata utilities
+     * @param HttpService   $httpService      HTTP service
+     * @param ?Database     $db               Database
      */
     public function __construct(
         $config,
         $dataSourceConfig,
         Logger $logger,
         MetadataUtils $metadataUtils,
-        HttpClientManager $httpManager,
+        HttpService $httpService,
         Database $db = null
     ) {
         parent::__construct($config, $dataSourceConfig, $logger, $metadataUtils);
-        $this->httpClientManager = $httpManager;
+        $this->httpService = $httpService;
         $this->db = $db;
     }
 

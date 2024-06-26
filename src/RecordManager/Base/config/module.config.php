@@ -177,7 +177,7 @@ return [
             \RecordManager\Base\Harvest\Sfx::class => \RecordManager\Base\Harvest\AbstractBaseFactory::class,
             \RecordManager\Base\Harvest\SierraApi::class => \RecordManager\Base\Harvest\AbstractBaseFactory::class,
             \RecordManager\Base\Harvest\PluginManager::class => \RecordManager\Base\ServiceManager\AbstractPluginManagerFactory::class,
-            \RecordManager\Base\Http\ClientManager::class => \RecordManager\Base\Http\ClientManagerFactory::class,
+            \RecordManager\Base\Http\HttpService::class => \RecordManager\Base\Http\HttpServiceFactory::class,
             \RecordManager\Base\Record\Marc\FormatCalculator::class => InvokableFactory::class,
             \RecordManager\Base\Record\PluginManager::class => \RecordManager\Base\ServiceManager\AbstractPluginManagerFactory::class,
             \RecordManager\Base\Settings\Ini::class => InvokableFactory::class,

@@ -32,6 +32,7 @@
     },
     "require": {
         "cash/lrucache": "1.0.0",
+        "guzzlehttp/guzzle": "^7.8",
         "laminas/laminas-mvc": "3.6.1",
         "laminas/laminas-router": "3.11.1",
         "laminas/laminas-servicemanager": "3.20.0",
@@ -41,7 +42,6 @@
         "mongodb/mongodb": "1.15.0",
         "ocramius/proxy-manager": "2.14.1",
         "pcrov/jsonreader": "1.0.2",
-        "pear/http_request2": "2.5.1",
         "phayes/geophp": "1.2",
         "pietercolpaert/hardf": "0.3.1",
         "symfony/console": "5.4.23",
