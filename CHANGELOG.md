@@ -11,7 +11,7 @@ Anything marked with [**BC**] is known to affect backward compatibility with pre
 
 ### Changed
 
-- [**BC**] The HTTP client library has been changed from Pear\HTTP_Reques2 to Guzzle. This has required some changes to how the HTTP client is used. See e.g. src/RecordManager/Base/Harvest/SierraApi.php for usage examples. This also affects the settings in HTTP section of recordmanager.ini. Only the most commonly used legacy settings are automatically mapped to Guzzle's equivalents.
+- [**BC**] The HTTP client library has been changed from HTTP_Request2 to Guzzle. This has required some changes to how the HTTP client is used. See e.g. src/RecordManager/Base/Harvest/SierraApi.php for usage examples. This also affects the settings in HTTP section of recordmanager.ini. Only the most commonly used legacy settings are automatically mapped to Guzzle's equivalents.
 
 
 ## 2.3.0 - 2024-06-24
