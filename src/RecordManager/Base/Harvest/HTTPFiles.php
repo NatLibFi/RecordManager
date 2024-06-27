@@ -257,7 +257,7 @@ class HTTPFiles extends AbstractBase
     protected function retrieveFile($filename)
     {
         $url = $this->baseURL . $filename;
-        $request = $this->httpService->createClient($url);
+        $request = $this->httpService->createClient($url, ['auth' => $this->httpAuth]);
         $this->infoMsg("Sending request: $url");
 
         // Perform request and throw an exception on error:

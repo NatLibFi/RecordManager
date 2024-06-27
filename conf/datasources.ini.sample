@@ -41,6 +41,12 @@
 ;
 ; RecordManager settings:
 ; type                  Harvester type (HTTPFiles, OAI-PMH (default), SFX, SierraApi)
+; url                   Harvesting URL
+; username              Username for HTTP authentication (OAI-PMH, HTTPFiled)
+; password              Password for HTTP authentication (OAI-PMH, HTTPFiled)
+; authType              Authentication type for HTTP authentication (OAI-PMH, HTTPFiled).
+;                       Allowed options are "basic" (default), "digest" and "ntlm".
+;                       Digest and NTLM authentication require the Curl adapter to be used (see HTTP section in recordmanager.ini).
 ; institution           The institution code mapped to the source (required)
 ; recordXPath           xpath expression used when loading records from a file to identify a single record (optional, e.g. //record)
 ; format                Record format in RecordManager
@@ -165,6 +171,8 @@
 ;[arc]
 ;institution = MyInst
 ;url = http://oai-pmh.ead-server/request
+;username = "user"
+;password = "secret"
 ;metadataPrefix = ead
 ;recordSplitterClass = "\RecordManager\Base\Splitter\Ead"
 ;format = ead

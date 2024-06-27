@@ -395,7 +395,7 @@ class OaiPmh extends AbstractBase
     protected function sendRequest($verb, $params = [])
     {
         // Set up the request:
-        $client = $this->httpService->createClient($this->baseURL);
+        $client = $this->httpService->createClient($this->baseURL, ['auth' => $this->httpAuth]);
         $params['verb'] = $verb;
         $url = $this->httpService->appendQueryParams($this->baseURL, $params);
 

@@ -99,6 +99,13 @@ abstract class AbstractBase
     protected $baseURL = null;
 
     /**
+     * HTTP authentication settings
+     *
+     * @var ?array
+     */
+    protected $httpAuth = null;
+
+    /**
      * Source ID
      *
      * @var string
@@ -254,6 +261,11 @@ abstract class AbstractBase
             throw new \Exception('Missing base URL');
         }
         $this->baseURL = $settings['url'];
+
+        if (($username = $settings['username']) && ($password = $settings['password'])) {
+            $type = $settings['authType'] ?? 'basic';
+            $this->httpAuth = [$username, $password, $type];
+        }
 
         if (!empty($settings['preTransformation'])) {
             foreach ((array)$settings['preTransformation'] as $transformation) {
