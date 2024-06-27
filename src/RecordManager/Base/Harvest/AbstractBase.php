@@ -262,7 +262,7 @@ abstract class AbstractBase
         }
         $this->baseURL = $settings['url'];
 
-        if (($username = $settings['username']) && ($password = $settings['password'])) {
+        if (($username = $settings['username'] ?? null) && ($password = $settings['password'] ?? null)) {
             $type = $settings['authType'] ?? 'basic';
             $this->httpAuth = [$username, $password, $type];
         }
