@@ -71,7 +71,7 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
      *
      * @return array
      */
-    public function getQueryConversionData(): array
+    public static function getQueryConversionData(): array
     {
         return [
             'no params' => [

@@ -99,7 +99,7 @@ trait XmlRecordTrait
                 . $this->getId() . "' to XML"
             );
         }
-        return $xml;
+        return (string)$xml;
     }
 
     /**

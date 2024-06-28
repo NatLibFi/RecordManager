@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<phpunit bootstrap="bootstrap.php" backupGlobals="false" convertDeprecationsToExceptions="false">
-  <coverage includeUncoveredFiles="true">
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" bootstrap="bootstrap.php" backupGlobals="false" xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd" cacheDirectory=".phpunit.cache">
+  <source>
     <include>
       <directory suffix=".php">../src</directory>
     </include>
-  </coverage>
+  </source>
 </phpunit>

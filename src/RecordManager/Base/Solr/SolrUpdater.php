@@ -1149,7 +1149,6 @@ class SolrUpdater
             function ($record) use (
                 $sourceId,
                 $delete,
-                &$mergedComponents,
                 $dedupRecord,
                 &$result,
                 &$members
@@ -2312,6 +2311,7 @@ class SolrUpdater
                     continue;
                 }
                 if (is_array($datavalue)) {
+                    /** @psalm-suppress NoValue */
                     $values = array_map(
                         function ($s) {
                             return str_replace('/', ' ', $s);

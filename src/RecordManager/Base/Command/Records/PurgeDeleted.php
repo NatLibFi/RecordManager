@@ -32,6 +32,7 @@ namespace RecordManager\Base\Command\Records;
 use RecordManager\Base\Command\AbstractBase;
 use RecordManager\Base\Utils\PerformanceCounter;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -97,7 +98,7 @@ class PurgeDeleted extends AbstractBase
                 false
             );
 
-            if (!$questionHelper->ask($input, $output, $question)) {
+            if (($questionHelper instanceof QuestionHelper) && !$questionHelper->ask($input, $output, $question)) {
                 return Command::SUCCESS;
             }
         }

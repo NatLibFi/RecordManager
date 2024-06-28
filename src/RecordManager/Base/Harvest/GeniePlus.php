@@ -726,7 +726,7 @@ class GeniePlus extends AbstractBase
         if (false === $xmlString) {
             throw new \Exception("Problem converting MARC record $id to XML string");
         }
-        return $xmlString;
+        return (string)$xmlString;
     }
 
     /**

@@ -145,7 +145,7 @@ class Ead extends AbstractRecord
                 . $this->getId() . "' to XML"
             );
         }
-        return $xml;
+        return (string)$xml;
     }
 
     /**

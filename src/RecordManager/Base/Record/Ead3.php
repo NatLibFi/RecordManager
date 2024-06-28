@@ -111,7 +111,7 @@ class Ead3 extends Ead
                 . $this->getId() . "' to XML"
             );
         }
-        return $xml;
+        return (string)$xml;
     }
 
     /**

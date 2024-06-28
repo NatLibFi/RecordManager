@@ -27,5 +27,6 @@ reports
 transformations/*.properties
 transformations/*.xsl
 vendor
+tests/.phpunit.cache
 tests/.phpunit.result.cache
 

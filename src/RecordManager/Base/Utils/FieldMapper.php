@@ -259,7 +259,7 @@ class FieldMapper
                             $count
                         );
                         if ($count > 0) {
-                            $newValues[] = $newValue;
+                            $newValues[] = (string)$newValue;
                             $matches = true;
                         } else {
                             // No matches, stop the loop
@@ -281,7 +281,7 @@ class FieldMapper
                         if (!$all) {
                             return $newValue;
                         }
-                        $newValues[] = $newValue;
+                        $newValues[] = (string)$newValue;
                     }
                 }
             }

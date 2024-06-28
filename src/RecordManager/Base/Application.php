@@ -49,7 +49,7 @@ class Application extends ConsoleApplication
      *
      * @return InputDefinition An InputDefinition instance
      */
-    protected function getDefaultInputDefinition()
+    protected function getDefaultInputDefinition(): InputDefinition
     {
         $result = parent::getDefaultInputDefinition();
         $result->addOption(

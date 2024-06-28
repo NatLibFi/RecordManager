@@ -99,8 +99,9 @@ if (!is_dir($cacheDir)) {
     mkdir($cacheDir);
 }
 
-$config = new PhpCsFixer\Config();
-return $config->setCacheFile($cacheDir . '/.code.cache')
+return (new PhpCsFixer\Config())
+    ->setParallelConfig(PhpCsFixer\Runner\Parallel\ParallelConfigFactory::detect())
+    ->setCacheFile($cacheDir . '/.code.cache')
     ->setRiskyAllowed(true)
     ->setRules($rules)
     ->setFinder($finder);
