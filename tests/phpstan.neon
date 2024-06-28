@@ -9,5 +9,6 @@ parameters:
     parallel:
         processTimeout: 600.0
     level: 6
-    checkMissingIterableValueType: false
-    checkGenericClassInNonGenericObjectType: false
+    ignoreErrors:
+        - identifier: missingType.iterableValue
+        - identifier: missingType.generics

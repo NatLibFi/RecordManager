@@ -139,6 +139,8 @@ class Delete extends AbstractBase
         }
         $currentSource = '';
 
+        // phpcs:ignore
+        /** @var array<int, array> */
         $sections = [];
         $lines = [];
         foreach ($contents as $line) {

@@ -333,7 +333,6 @@ class FieldMapper
             $value = trim($parts[1]);
             if (substr($key, -2) == '[]') {
                 $key = substr($key, 0, -2);
-                // @phpstan-ignore-next-line
                 if (is_string($mappings[$key] ?? null)) {
                     throw new \Exception("$key already defined as a single value in $filename line $lineno: $line");
                 }

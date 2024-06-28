@@ -90,9 +90,11 @@ class Ead3 extends Ead
      */
     public function setData($data)
     {
-        // phpcs:ignore
-        /** @var \SimpleXMLElement */
-        $this->doc = $this->metadataUtils->loadXML($data);
+        $errors = '';
+        $this->doc = $this->metadataUtils->loadSimpleXML($data, errors: $errors);
+        if (false === $this->doc) {
+            throw new \Exception($errors);
+        }
 
         $this->recordNodes = $this->doc->xpath('archdesc | archdesc/dsc//*[@level]');
         $this->recordCount = count($this->recordNodes);
