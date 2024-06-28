@@ -90,6 +90,7 @@ class Ead3 extends Ead
      */
     public function setData($data)
     {
+        // phpcs:ignore
         /** @var \SimpleXMLElement */
         $this->doc = $this->metadataUtils->loadXML($data);
 

@@ -2311,6 +2311,7 @@ class SolrUpdater
                     continue;
                 }
                 if (is_array($datavalue)) {
+                    // phpcs:ignore
                     /** @psalm-suppress NoValue */
                     $values = array_map(
                         function ($s) {
