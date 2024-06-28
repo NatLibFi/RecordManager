@@ -66,7 +66,6 @@ class LidoTest extends RecordTestBase
             'title_alt' => [],
             'description' => '',
             'format' => 'Kirja',
-            'identifier' => '26054',
             'institution' => 'Test Institution',
             'author' => [
                 'Designer, Test',
@@ -182,7 +181,6 @@ class LidoTest extends RecordTestBase
             ],
             'description' => '',
             'format' => 'Kirja',
-            'identifier' => '26054',
             'institution' => 'Test Institution',
             'author' => [
                 'Designer, Test',

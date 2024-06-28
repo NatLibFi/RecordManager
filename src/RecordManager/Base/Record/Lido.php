@@ -153,7 +153,6 @@ class Lido extends AbstractRecord
         $data['description'] = $this->getDescription();
 
         $data['format'] = $this->getObjectWorkType();
-        $data['identifier'] = $this->getIdentifier();
         $data['institution'] = $this->getLegalBodyName();
 
         $data['author'] = $this->getAuthors();
