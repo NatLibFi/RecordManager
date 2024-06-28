@@ -255,7 +255,7 @@ class OaiPmhProvider extends AbstractBase
             $metadataPrefix = $params[1];
             $from = $params[2];
             $until = $params[3];
-            $position = $params[4];
+            $position = (int)$params[4];
         } else {
             $set = $this->getParam('set');
             $metadataPrefix = $this->getParam('metadataPrefix');
@@ -302,7 +302,7 @@ class OaiPmhProvider extends AbstractBase
 
         $options = ['sort' => ['updated' => 1]];
         if ($position) {
-            $options['skip'] = (int)$position;
+            $options['skip'] = $position;
         }
         $maxRecords = $this->config['OAI-PMH']['result_limit'];
         $count = 0;

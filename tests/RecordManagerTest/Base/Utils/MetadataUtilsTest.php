@@ -136,7 +136,7 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
      *
      * @return array
      */
-    public function stripPunctuationProvider(): array
+    public static function stripPunctuationProvider(): array
     {
         return [
             ['123', '.123',],
@@ -246,7 +246,7 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
      *
      * @return array
      */
-    public function hasTrailingPunctuationProvider(): array
+    public static function hasTrailingPunctuationProvider(): array
     {
         return [
             [true, '123.'],
@@ -378,7 +378,7 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
      *
      * @return array
      */
-    public function createSortTitleProvider(): array
+    public static function createSortTitleProvider(): array
     {
         return [
             ['', '', true],

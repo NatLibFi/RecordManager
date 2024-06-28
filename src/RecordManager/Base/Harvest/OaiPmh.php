@@ -508,7 +508,7 @@ class OaiPmh extends AbstractBase
     protected function extractIDFromDom($record)
     {
         // Normalize to string:
-        $id = $this->getSingleNode($record, 'identifier')->nodeValue;
+        $id = $this->getSingleNode($record, 'identifier')->nodeValue ?? '';
 
         // Strip prefix if found:
         if (substr($id, 0, strlen($this->idPrefix)) == $this->idPrefix) {

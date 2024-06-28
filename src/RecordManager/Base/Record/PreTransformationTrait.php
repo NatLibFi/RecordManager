@@ -54,7 +54,7 @@ trait PreTransformationTrait
      */
     protected function pretransform($data, $source)
     {
-        $settings = &$this->dataSourceConfig[$source];
+        $settings = $this->dataSourceConfig[$source];
         // Shortcut
         if (empty($settings['preTransformation'])) {
             return $data;

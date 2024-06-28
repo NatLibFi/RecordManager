@@ -49,7 +49,7 @@ class LineBasedMarcFormatterTest extends \PHPUnit\Framework\TestCase
      *
      * @return array
      */
-    public function getConversionTests(): array
+    public static function getConversionTests(): array
     {
         $genieConfig = [
             [

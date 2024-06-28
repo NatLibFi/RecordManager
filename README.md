@@ -8,7 +8,7 @@ For a stable version, see the stable branch.
 
 ## General Installation
 
-- Minimum supported PHP version is 8.0.
+- Minimum supported PHP version is 8.1.
 - Composer is required for dependencies. Run `composer install` (or `php /path/to/composer.phar install`) in the directory where RecordManager is installed.
 - The following PHP extensions are required: xml, xslt, mbstring, intl
 

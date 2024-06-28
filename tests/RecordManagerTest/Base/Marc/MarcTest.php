@@ -50,7 +50,7 @@ class MarcTest extends \PHPUnit\Framework\TestCase
      *
      * @return array
      */
-    public function getTestGetFieldsSubfieldsBySpecs(): array
+    public static function getTestGetFieldsSubfieldsBySpecs(): array
     {
         return [
             [

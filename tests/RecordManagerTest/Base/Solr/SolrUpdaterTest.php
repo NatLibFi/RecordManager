@@ -154,7 +154,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
      *
      * @return array
      */
-    public function processSingleRecordProvider(): array
+    public static function processSingleRecordProvider(): array
     {
         return [
             'copy non-existent field' => [

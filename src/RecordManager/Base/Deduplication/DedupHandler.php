@@ -1351,6 +1351,8 @@ class DedupHandler implements DedupHandlerInterface
             }
         );
 
+        // phpcs:ignore
+        /** @psalm-suppress RedundantCondition */
         if (0 === $marked) {
             // Make sure the components part don't remain deduplicated with anything
             foreach ($components1 as $component) {

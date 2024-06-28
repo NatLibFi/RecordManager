@@ -259,7 +259,7 @@ class FieldMapper
                             $count
                         );
                         if ($count > 0) {
-                            $newValues[] = $newValue;
+                            $newValues[] = (string)$newValue;
                             $matches = true;
                         } else {
                             // No matches, stop the loop
@@ -281,7 +281,7 @@ class FieldMapper
                         if (!$all) {
                             return $newValue;
                         }
-                        $newValues[] = $newValue;
+                        $newValues[] = (string)$newValue;
                     }
                 }
             }
@@ -333,7 +333,6 @@ class FieldMapper
             $value = trim($parts[1]);
             if (substr($key, -2) == '[]') {
                 $key = substr($key, 0, -2);
-                // @phpstan-ignore-next-line
                 if (is_string($mappings[$key] ?? null)) {
                     throw new \Exception("$key already defined as a single value in $filename line $lineno: $line");
                 }

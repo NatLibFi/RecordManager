@@ -429,7 +429,7 @@ abstract class AbstractBase
      */
     protected function isModified($record)
     {
-        $status = substr($record->leader, 5, 1);
+        $status = substr((string)$record->leader, 5, 1);
         return $status != 'd';
     }
 

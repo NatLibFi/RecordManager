@@ -90,14 +90,13 @@ class Ead3 extends Ead
      */
     public function setData($data)
     {
-        $this->doc = $this->metadataUtils->loadXML($data);
+        $this->doc = $this->metadataUtils->loadSimpleXML($data);
 
         $this->recordNodes = $this->doc->xpath('archdesc | archdesc/dsc//*[@level]');
         $this->recordCount = count($this->recordNodes);
         $this->currentPos = 0;
 
-        $this->agency
-            = (string)($this->doc->control->maintenanceagency->agencycode ?? '');
+        $this->agency = (string)($this->doc->control->maintenanceagency->agencycode ?? '');
 
         foreach ($this->doc->archdesc->did->unitid ?? [] as $i) {
             $attr = $i->attributes();

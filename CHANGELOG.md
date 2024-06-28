@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 3.0.0 - TBD
 
+**N.B. This version bumps the minimum PHP version to 8.1**
+
 Anything marked with [**BC**] is known to affect backward compatibility with previous versions.
 
 ### Changed
@@ -16,6 +18,7 @@ Anything marked with [**BC**] is known to affect backward compatibility with pre
 ### Removed
 
 - [**BC**] Support for splitting titles of LIDO records has been dropped.
+- [**BC**] Updated all dependencies including PHPUnit 10. Some tests may require changes.
 
 
 ## 2.3.0 - 2024-06-24

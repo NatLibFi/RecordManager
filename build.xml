@@ -35,44 +35,65 @@
         <mkdir dir="${builddir}/reports/coverage"/>
       </then>
     </if>
-    <exec command="XDEBUG_MODE=coverage ${basedir}/vendor/bin/phpunit -c ${basedir}/tests/phpunit.xml --coverage-clover ${builddir}/reports/coverage/clover.xml --coverage-html ${builddir}/reports/coverage/ ${basedir}/tests ${phpunit_extra_params}" passthru="true" checkreturn="true" />
+    <exec executable="${basedir}/vendor/bin/phpunit" passthru="true" checkreturn="true">
+      <arg line="-c ${basedir}/tests/phpunit.xml --coverage-clover ${builddir}/reports/coverage/clover.xml --coverage-html ${builddir}/reports/coverage/ ${basedir}/tests ${phpunit_extra_params}" />
+      <env name="XDEBUG_MODE" value="coverage" />
+    </exec>
   </target>
   <target name="phpunitfast" description="Run tests">
-    <exec command="${basedir}/vendor/bin/phpunit -c ${basedir}/tests/phpunit.xml ${basedir}/tests ${phpunit_extra_params}" passthru="true" checkreturn="true" />
+    <exec executable="${basedir}/vendor/bin/phpunit" passthru="true" checkreturn="true" >
+      <arg line="-c ${basedir}/tests/phpunit.xml ${basedir}/tests ${phpunit_extra_params}" />
+    </exec>
   </target>
 
   <!-- PHP CodeSniffer -->
   <target name="phpcbf">
-    <exec command="${basedir}/vendor/bin/phpcbf --standard=${basedir}/tests/phpcs.xml" escape="false" passthru="true" checkreturn="true" />
+    <exec executable="${basedir}/vendor/bin/phpcbf" escape="false" passthru="true" checkreturn="true">
+      <arg line="--standard=${basedir}/tests/phpcs.xml" />
+    </exec>
   </target>
   <target name="phpcs">
-    <exec command="${basedir}/vendor/bin/phpcs -s --standard=${basedir}/tests/phpcs.xml" escape="false" passthru="true" checkreturn="true" />
+    <exec executable="${basedir}/vendor/bin/phpcs" escape="false" passthru="true" checkreturn="true">
+      <arg line="-s --standard=${basedir}/tests/phpcs.xml" />
+    </exec>
   </target>
 
   <!-- php-cs-fixer (first task applies fixes, second task simply checks if they are needed) -->
   <target name="php-cs-fixer">
-    <exec command="${basedir}/vendor/bin/php-cs-fixer fix --config=${basedir}/tests/recordmanager.php-cs-fixer.php -vvv" passthru="true" escape="false" />
+    <exec executable="${basedir}/vendor/bin/php-cs-fixer" passthru="true" escape="false">
+      <arg line="fix --config=${basedir}/tests/recordmanager.php-cs-fixer.php -vvv" />
+    </exec>
   </target>
   <target name="php-cs-fixer-dryrun">
-    <exec command="${basedir}/vendor/bin/php-cs-fixer fix --config=${basedir}/tests/recordmanager.php-cs-fixer.php --dry-run -vvv --diff" passthru="true" escape="false" checkreturn="true" />
+    <exec executable="${basedir}/vendor/bin/php-cs-fixer" passthru="true" escape="false" checkreturn="true">
+      <arg line="fix --config=${basedir}/tests/recordmanager.php-cs-fixer.php --dry-run -vvv --diff" />
+    </exec>
   </target>
 
   <!-- Report rule violations with PHPMD (mess detector) -->
   <target name="phpmd">
     <echo>Make sure you have phpmd installed in path. It's not installed by default due to its dependencies.</echo>
-    <exec command="phpmd ${srcdir} html ${basedir}/tests/phpmd.xml --reportfile ${basedir}/reports/phpmd.html" />
+    <exec executable="phpmd">
+      <arg line="${srcdir} html ${basedir}/tests/phpmd.xml --reportfile ${basedir}/reports/phpmd.html" />
+    </exec>
   </target>
 
   <!-- Psalm -->
   <target name="psalm">
-    <exec command="${basedir}/vendor/bin/psalm --diff" escape="false" passthru="true" checkreturn="true" />
+    <exec executable="${basedir}/vendor/bin/psalm" escape="false" passthru="true" checkreturn="true">
+      <arg line="--diff" />
+    </exec>
   </target>
   <target name="psalm-info">
-    <exec command="${basedir}/vendor/bin/psalm --diff --show-info=true" escape="false" passthru="true" checkreturn="true" />
+    <exec executable="${basedir}/vendor/bin/psalm" escape="false" passthru="true" checkreturn="true">
+      <arg line="--diff --show-info=true" />
+    </exec>
   </target>
 
   <!-- Phpstan -->
   <target name="phpstan-console">
-    <exec command="${basedir}/vendor/bin/phpstan.phar --configuration=${basedir}/tests/phpstan.neon --memory-limit=2G analyse" escape="false" passthru="true" checkreturn="true" />
+    <exec executable="${basedir}/vendor/bin/phpstan.phar" escape="false" passthru="true" checkreturn="true">
+      <arg line="--configuration=${basedir}/tests/phpstan.neon --memory-limit=2G analyse" />
+    </exec>
   </target>
 </project>

@@ -150,6 +150,7 @@ class Ead extends AbstractBase
     public function setData($data)
     {
         $this->doc = $this->metadataUtils->loadSimpleXML($data);
+
         $this->recordNodes = $this->doc->xpath('archdesc | archdesc/dsc//*[@level]');
         $this->recordCount = count($this->recordNodes);
         $this->currentPos = 0;

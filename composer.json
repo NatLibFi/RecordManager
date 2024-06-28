@@ -10,7 +10,7 @@
     "license": "GPL-2.0",
     "config": {
         "platform": {
-            "php": "8.0"
+            "php": "8.1"
         },
         "allow-plugins": {
             "composer/package-versions-deprecated": true,
@@ -33,29 +33,28 @@
     "require": {
         "cash/lrucache": "1.0.0",
         "guzzlehttp/guzzle": "^7.8",
-        "laminas/laminas-mvc": "3.6.1",
-        "laminas/laminas-router": "3.11.1",
-        "laminas/laminas-servicemanager": "3.20.0",
-        "laminas/laminas-xml": "1.5.0",
-        "league/mime-type-detection": "1.11.0",
+        "laminas/laminas-mvc": "3.7.0",
+        "laminas/laminas-router": "3.13.0",
+        "laminas/laminas-servicemanager": "3.22.1",
+        "laminas/laminas-xml": "1.6.0",
+        "league/mime-type-detection": "1.15.0",
         "ml/json-ld": "1.2.1",
-        "mongodb/mongodb": "1.15.0",
-        "ocramius/proxy-manager": "2.14.1",
-        "pcrov/jsonreader": "1.0.2",
+        "mongodb/mongodb": "1.16.1",
+        "pcrov/jsonreader": "1.0.3",
         "phayes/geophp": "1.2",
-        "pietercolpaert/hardf": "0.3.1",
-        "symfony/console": "5.4.23",
-        "symfony/lock": "5.4.22",
-        "vufind-org/vufind-marc": "1.0.2",
+        "pietercolpaert/hardf": "0.4.0",
+        "symfony/console": "6.4.8",
+        "symfony/lock": "6.4.8",
+        "vufind-org/vufind-marc": "1.1.0",
         "wikimedia/composer-merge-plugin": "2.1.0"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "3.22.0",
-        "phing/phing": "2.17.4",
-        "phpstan/phpstan": "1.10.10",
-        "phpunit/phpunit": "9.6.8",
-        "squizlabs/php_codesniffer": "3.7.2",
-        "vimeo/psalm": "5.11.0"
+        "friendsofphp/php-cs-fixer": "3.59.3",
+        "phing/phing": "3.0.0",
+        "phpstan/phpstan": "1.11.5",
+        "phpunit/phpunit": "10.5.24",
+        "squizlabs/php_codesniffer": "3.10.1",
+        "vimeo/psalm": "5.25.0"
     },
     "scripts": {
         "qa": "phing qa-tasks"
