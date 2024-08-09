@@ -199,7 +199,10 @@
 ;type = sierra
 ;sierraApiKey = "[api_key]"
 ;sierraApiSecret = "[api_secret]"
-;sierraApiVersion = 5
+;sierraApiVersion = 6
+; Sierra API endpoint can be bibs for bibliographic records (default) or authorities
+; for authority records
+;sierraApiEndpoint = bibs
 ;url = https://kirjtuo1.helmet.fi/iii/sierra-api
 ;batchSize = 100
 ;; Support for asking for non-suppressed records exists with the setting below, but as

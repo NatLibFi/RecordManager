@@ -131,9 +131,19 @@ class SierraApi extends AbstractBase
     /**
      * Fields to request from Sierra
      *
+     * @var array
+     */
+    protected $harvestFields = [
+        'bibs' => 'default,locations,fixedFields,varFields,catalogDate',
+        'authorities' => 'default,varFields,createdDate',
+    ];
+
+    /**
+     * Sierra API endpoint to use
+     *
      * @var string
      */
-    protected $harvestFields = 'default,locations,fixedFields,varFields,catalogDate';
+    protected $endpoint = 'bibs';
 
     /**
      * Initialize harvesting
@@ -166,6 +176,7 @@ class SierraApi extends AbstractBase
         );
         $this->apiVersion = 'v' . ($settings['sierraApiVersion'] ?? '6');
         $this->keepExisting852Fields = $settings['keepExisting852Fields'] ?? false;
+        $this->endpoint = $settings['sierraApiEndpoint'] ?? 'bibs';
     }
 
     /**
@@ -195,7 +206,7 @@ class SierraApi extends AbstractBase
         $apiParams = [
             'limit' => $this->batchSize,
             'offset' => $this->startPosition,
-            'fields' => $this->harvestFields,
+            'fields' => $this->harvestFields[$this->endpoint] ?? '',
         ];
         if (null !== $this->suppressedRecords) {
             $apiParams['suppressed'] = $this->suppressedRecords ? 'true' : 'false';
@@ -215,7 +226,7 @@ class SierraApi extends AbstractBase
 
         // Keep harvesting as long as a records are received:
         do {
-            $response = $this->sendRequest([$this->apiVersion, 'bibs'], $apiParams);
+            $response = $this->sendRequest([$this->apiVersion, $this->endpoint], $apiParams);
             $count = $this->processResponse((string)$response->getBody());
             $this->reportResults();
             $apiParams['offset'] += $apiParams['limit'];
@@ -237,8 +248,7 @@ class SierraApi extends AbstractBase
 
             // Keep harvesting as long as a records are received:
             do {
-                $response
-                    = $this->sendRequest([$this->apiVersion, 'bibs'], $apiParams);
+                $response = $this->sendRequest([$this->apiVersion, $this->endpoint], $apiParams);
                 $count = $this->processResponse((string)$response->getBody());
                 $this->reportResults();
                 $apiParams['offset'] += $apiParams['limit'];
@@ -274,7 +284,7 @@ class SierraApi extends AbstractBase
             $apiParams['suppressed'] = $this->suppressedRecords ? 'true' : 'false';
         }
 
-        $response = $this->sendRequest([$this->apiVersion, 'bibs'], $apiParams);
+        $response = $this->sendRequest([$this->apiVersion, $this->endpoint], $apiParams);
         $this->processResponse((string)$response->getBody());
         $this->reportResults();
     }
