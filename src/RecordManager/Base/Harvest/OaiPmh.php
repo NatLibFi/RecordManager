@@ -8,7 +8,7 @@
  * PHP version 8
  *
  * Copyright (c) Demian Katz 2010.
- * Copyright (c) The National Library of Finland 2011-2021.
+ * Copyright (c) The National Library of Finland 2011-2024.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -395,7 +395,10 @@ class OaiPmh extends AbstractBase
     protected function sendRequest($verb, $params = [])
     {
         // Set up the request:
-        $client = $this->httpService->createClient($this->baseURL, ['auth' => $this->httpAuth]);
+        $client = $this->httpService->createClient(
+            $this->baseURL,
+            ['auth' => $this->httpAuth, 'headers' => $this->httpHeaders]
+        );
         $params['verb'] = $verb;
         $url = $this->httpService->appendQueryParams($this->baseURL, $params);
 

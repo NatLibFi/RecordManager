@@ -387,9 +387,8 @@ class GeniePlus extends AbstractBase
         }
 
         $client = $this->httpService->createClient($apiUrl, $this->httpOptions);
-        $headers = [
-            'Accept' => 'application/json',
-        ];
+        $headers = $this->httpHeaders;
+        $headers['Accept'] = 'application/json';
         $url = $this->httpService->appendQueryParams($apiUrl, $params);
 
         if (null === $this->accessToken) {
@@ -497,8 +496,9 @@ class GeniePlus extends AbstractBase
     {
         // Set up the request:
         $apiUrl = $this->baseURL . '/_oauth/token';
-        $client = $this->httpService->createClient($apiUrl);
-        $headers = ['Accept' => 'application/json'];
+        $client = $this->httpService->createClient($apiUrl, $this->httpOptions);
+        $headers = $this->httpHeaders;
+        $headers['Accept'] = 'application/json';
         $params = [
             'client_id' => $this->oauthId,
             'grant_type' => 'password',

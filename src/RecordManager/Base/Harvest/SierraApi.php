@@ -337,9 +337,8 @@ class SierraApi extends AbstractBase
         }
 
         $client = $this->httpService->createClient($apiUrl, $this->httpOptions);
-        $headers = [
-            'Accept' => 'application/json',
-        ];
+        $headers = $this->httpHeaders;
+        $headers['Accept'] = 'application/json';
         $url = $this->httpService->appendQueryParams($apiUrl, $params);
 
         if (null === $this->accessToken) {
@@ -463,10 +462,9 @@ class SierraApi extends AbstractBase
         // Set up the request:
         $apiUrl = $this->baseURL . '/' . $this->apiVersion . '/token';
         $client = $this->httpService->createClient($apiUrl);
-        $headers = [
-            'Accept' => 'application/json',
-            'Authorization' => 'Basic ' . base64_encode("{$this->apiKey}:{$this->apiSecret}"),
-        ];
+        $headers = $this->httpHeaders;
+        $headers['Accept'] = 'application/json';
+        $headers['Authorization'] = 'Basic ' . base64_encode("{$this->apiKey}:{$this->apiSecret}");
 
         // Perform request and throw an exception on error:
         for ($try = 1; $try <= $this->maxTries; $try++) {

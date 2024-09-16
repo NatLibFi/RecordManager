@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (c) The National Library of Finland 2011-2023.
+ * Copyright (c) The National Library of Finland 2011-2024.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -104,6 +104,13 @@ abstract class AbstractBase
      * @var ?array
      */
     protected $httpAuth = null;
+
+    /**
+     * HTTP headers to send with each request
+     *
+     * @var array
+     */
+    protected $httpHeaders = [];
 
     /**
      * Source ID
@@ -266,6 +273,8 @@ abstract class AbstractBase
             $type = $settings['authType'] ?? 'basic';
             $this->httpAuth = [$username, $password, $type];
         }
+
+        $this->httpHeaders = (array)($settings['headers'] ?? []);
 
         if (!empty($settings['preTransformation'])) {
             foreach ((array)$settings['preTransformation'] as $transformation) {

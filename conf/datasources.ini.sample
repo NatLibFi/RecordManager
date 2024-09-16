@@ -42,11 +42,12 @@
 ; RecordManager settings:
 ; type                  Harvester type (HTTPFiles, OAI-PMH (default), SFX, SierraApi)
 ; url                   Harvesting URL
-; username              Username for HTTP authentication (OAI-PMH, HTTPFiled)
-; password              Password for HTTP authentication (OAI-PMH, HTTPFiled)
-; authType              Authentication type for HTTP authentication (OAI-PMH, HTTPFiled).
+; username              Username for HTTP authentication (OAI-PMH, HTTPFiles)
+; password              Password for HTTP authentication (OAI-PMH, HTTPFiles)
+; authType              Authentication type for HTTP authentication (OAI-PMH, HTTPFiles).
 ;                       Allowed options are "basic" (default), "digest" and "ntlm".
 ;                       Digest and NTLM authentication require the Curl adapter to be used (see HTTP section in recordmanager.ini).
+; headers               Array of HTTP headers to send with each request
 ; institution           The institution code mapped to the source (required)
 ; recordXPath           xpath expression used when loading records from a file to identify a single record (optional, e.g. //record)
 ; format                Record format in RecordManager
@@ -260,3 +261,10 @@
 ;metadataPrefix = oai_doaj
 ;format = doaj
 ;institution = DOAJ
+
+; Sample configuration with an API key in X-API-Key header
+;[priv]
+;url = ...
+;headers['X-API-Key'] = 'xyzzy'
+;metadataPrefix = marc21
+;format = marc
