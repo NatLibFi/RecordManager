@@ -757,6 +757,7 @@ class MarcTest extends RecordTestBase
                 [
                     'source_id' => '__unit_test_no_source__',
                     'linking_id' => '(FI-NL)961827',
+                    'deleted' => false,
                 ],
                 [
                     'projection' => ['_id' => 1],
@@ -769,6 +770,7 @@ class MarcTest extends RecordTestBase
                 [
                     'source_id' => '__unit_test_no_source__',
                     'linking_id' => '961827',
+                    'deleted' => false,
                 ],
                 [
                     'projection' => ['_id' => 1],
@@ -781,6 +783,7 @@ class MarcTest extends RecordTestBase
                 [
                     'source_id' => '__unit_test_no_source__',
                     'linking_id' => '(FI-NL)xyzzy',
+                    'deleted' => false,
                 ],
                 [
                     'projection' => ['_id' => 1],

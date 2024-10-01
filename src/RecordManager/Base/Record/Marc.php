@@ -286,6 +286,7 @@ class Marc extends AbstractRecord
                             [
                                 'source_id' => $this->source,
                                 'linking_id' => $linkingId,
+                                'deleted' => false,
                             ],
                             ['projection' => ['_id' => 1]]
                         );
@@ -295,6 +296,7 @@ class Marc extends AbstractRecord
                                 [
                                     'source_id' => $this->source,
                                     'linking_id' => $targetId,
+                                    'deleted' => false,
                                 ],
                                 ['projection' => ['_id' => 1]]
                             );
