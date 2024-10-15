@@ -36,13 +36,13 @@
       </then>
     </if>
     <exec executable="${basedir}/vendor/bin/phpunit" passthru="true" checkreturn="true">
-      <arg line="-c ${basedir}/tests/phpunit.xml --coverage-clover ${builddir}/reports/coverage/clover.xml --coverage-html ${builddir}/reports/coverage/ ${basedir}/tests ${phpunit_extra_params}" />
+      <arg line="-c ${basedir}/tests/phpunit.xml --display-deprecations --coverage-clover ${builddir}/reports/coverage/clover.xml --coverage-html ${builddir}/reports/coverage/ ${basedir}/tests ${phpunit_extra_params}" />
       <env name="XDEBUG_MODE" value="coverage" />
     </exec>
   </target>
   <target name="phpunitfast" description="Run tests">
     <exec executable="${basedir}/vendor/bin/phpunit" passthru="true" checkreturn="true" >
-      <arg line="-c ${basedir}/tests/phpunit.xml ${basedir}/tests ${phpunit_extra_params}" />
+      <arg line="-c ${basedir}/tests/phpunit.xml --display-deprecations ${basedir}/tests ${phpunit_extra_params}" />
     </exec>
   </target>
 
