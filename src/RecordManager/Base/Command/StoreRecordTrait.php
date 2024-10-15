@@ -254,6 +254,7 @@ trait StoreRecordTrait
                             [
                                 'source_id' => ['$in' => $hostSourceIds],
                                 'linking_id' => ['$in' => (array)$hostIDs],
+                                'deleted' => false,
                             ],
                             ['update_needed' => true]
                         );
