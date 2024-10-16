@@ -67,7 +67,7 @@ counts = false
 [PDO]
 ; PDO connection string for a MySQL/MariaDB database. Use localhost to connect via
 ; unix socket.
-;connection = "mysql:host=localhost;dbname=recman;charset=UTF8"
+;connection = "mysql:host=localhost;dbname=recman;charset=UTF8MB4"
 ; User name
 ;username = "recman"
 ; Password
