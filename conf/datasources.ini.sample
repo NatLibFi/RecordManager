@@ -145,7 +145,7 @@
 
 ; Sample Koha configuration
 ;[koha]
-;url = https://koha.address/cgi-bin/koha/opac/oai.pl
+;url = https://koha.address/cgi-bin/koha/oai.pl
 ;metadataPrefix = marc21
 ;institution = SampleInstitution
 ;format = marc
