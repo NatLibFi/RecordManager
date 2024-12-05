@@ -11,7 +11,7 @@ jobs:
       VUFIND_LOCAL_DIR: $GITHUB_WORKSPACE/local
     strategy:
       matrix:
-        php-version: ['8.1', '8.2', '8.3', '8.3-no-mongo']
+        php-version: ['8.1', '8.2', '8.3', '8.4', '8.4-no-mongo']
         include:
           - php-version: 8.1
             phing_tasks: "qa-tasks"
@@ -22,7 +22,10 @@ jobs:
           - php-version: 8.3
             phing_tasks: "qa-tasks"
             php-extensions: intl, xsl, mongodb
-          - php-version: 8.3-no-mongo
+          - php-version: 8.4
+            phing_tasks: "qa-tasks"
+            php-extensions: intl, xsl, mongodb
+          - php-version: 8.4-no-mongo
             phing_tasks: "qa-tasks"
             php-extensions: intl, xsl
 
@@ -65,4 +68,4 @@ jobs:
         run: composer install
 
       - name: Run tests
-        run: vendor/bin/phing ${{ matrix.phing_tasks }}
+        run: PHP_CS_FIXER_IGNORE_ENV=1 vendor/bin/phing ${{ matrix.phing_tasks }}
