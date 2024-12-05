@@ -66,7 +66,7 @@ class WorkerPoolManagerFactory implements \Laminas\ServiceManager\Factory\Factor
     public function __invoke(
         ContainerInterface $container,
         $requestedName,
-        array $options = null
+        ?array $options = null
     ) {
         return new $requestedName(
             $container->get(\RecordManager\Base\Utils\Logger::class)

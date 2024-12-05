@@ -66,7 +66,7 @@ class FieldMapperFactory implements \Laminas\ServiceManager\Factory\FactoryInter
     public function __invoke(
         ContainerInterface $container,
         $requestedName,
-        array $options = null
+        ?array $options = null
     ) {
         $configReader = $container->get(\RecordManager\Base\Settings\Ini::class);
         $config = $configReader->get('recordmanager.ini');

@@ -257,8 +257,7 @@ abstract class AbstractDatabase implements DatabaseInterface
             $lastId = null;
             foreach ($records as $record) {
                 if (!isset($record['_id'])) {
-                    throw new
-                        \Exception('Cannot iterate records without _id column');
+                    throw new \Exception('Cannot iterate records without _id column');
                 }
                 $lastId = $record['_id'];
                 if ($callback($record, $params) === false) {

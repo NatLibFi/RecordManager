@@ -66,7 +66,7 @@ class AbstractRecordFactory implements \Laminas\ServiceManager\Factory\FactoryIn
     public function __invoke(
         ContainerInterface $container,
         $requestedName,
-        array $options = null
+        ?array $options = null
     ) {
         $configReader = $container->get(\RecordManager\Base\Settings\Ini::class);
 

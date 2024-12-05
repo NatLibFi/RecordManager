@@ -66,7 +66,7 @@ class AbstractBaseFactory implements \Laminas\ServiceManager\Factory\FactoryInte
     public function __invoke(
         ContainerInterface $container,
         $requestedName,
-        array $options = null
+        ?array $options = null
     ) {
         return new $requestedName(
             $container->get(\RecordManager\Base\Utils\MetadataUtils::class)

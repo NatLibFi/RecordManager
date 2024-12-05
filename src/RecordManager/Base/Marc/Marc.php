@@ -390,12 +390,12 @@ class Marc extends \VuFind\Marc\MarcReader
     /**
      * Filter fields
      *
-     * @param callable $callback Callback that should return false for each field to
+     * @param ?callable $callback Callback that should return false for each field to
      * be deleted or true for each field to be kept (like array_filter)
      *
      * @return void
      */
-    public function filterFields(callable $callback = null): void
+    public function filterFields(?callable $callback = null): void
     {
         $this->data['fields'] = array_filter($this->data['fields'], $callback);
         $this->resultCache = [];

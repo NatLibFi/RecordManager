@@ -156,7 +156,7 @@ class Ead extends AbstractRecord
      *
      * @return array<string, mixed>
      */
-    public function toSolrArray(Database $db = null)
+    public function toSolrArray(?Database $db = null)
     {
         $data = [];
 

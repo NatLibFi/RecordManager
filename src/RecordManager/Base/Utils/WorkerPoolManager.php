@@ -161,7 +161,7 @@ class WorkerPoolManager
         $processes,
         $maxQueue,
         callable $runMethod,
-        callable $initMethod = null
+        ?callable $initMethod = null
     ) {
         if (isset($this->workerPoolRunMethods[$poolId])) {
             // Already initialized
