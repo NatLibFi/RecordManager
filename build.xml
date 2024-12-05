@@ -21,6 +21,12 @@
     <phingcall target="phpstan-console"/>
   </target>
 
+  <!-- Fix PHP Tasks -->
+  <target name="fix-php" description="quality assurance php tasks">
+    <phingcall target="php-cs-fixer"/>
+    <phingcall target="phpcbf"/>
+  </target>
+
   <!-- PHPUnit -->
   <target name="phpunit" description="Run tests with coverage reports">
     <if>
@@ -81,12 +87,14 @@
   <!-- Psalm -->
   <target name="psalm">
     <exec executable="${basedir}/vendor/bin/psalm" escape="false" passthru="true" checkreturn="true">
-      <arg line="--diff" />
+      <!-- threads=1 is a workaround for "Fatal error: Maximum execution time of 0 seconds exceeded" with macOS-->
+      <arg line="--threads=1 --diff" />
     </exec>
   </target>
   <target name="psalm-info">
     <exec executable="${basedir}/vendor/bin/psalm" escape="false" passthru="true" checkreturn="true">
-      <arg line="--diff --show-info=true" />
+      <!-- threads=1 is a workaround for "Fatal error: Maximum execution time of 0 seconds exceeded" with macOS-->
+      <arg line="--threads=1 --diff --show-info=true" />
     </exec>
   </target>
 

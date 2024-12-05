@@ -37,6 +37,7 @@ use RecordManager\Base\Utils\MetadataUtils;
 
 use function count;
 use function in_array;
+use function sprintf;
 use function strlen;
 
 /**

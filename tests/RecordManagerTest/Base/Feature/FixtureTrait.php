@@ -33,6 +33,8 @@ namespace RecordManagerTest\Base\Feature;
 
 use RuntimeException;
 
+use function sprintf;
+
 /**
  * Trait adding functionality for loading fixtures.
  *

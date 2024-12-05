@@ -30,6 +30,7 @@
 namespace RecordManager\Base\Utils;
 
 use function floatval;
+use function sprintf;
 
 /**
  * Dewey Call Number Class

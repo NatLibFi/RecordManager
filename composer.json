@@ -33,30 +33,31 @@
     "require": {
         "cash/lrucache": "1.0.0",
         "guzzlehttp/guzzle": "^7.8",
-        "laminas/laminas-mvc": "3.7.0",
-        "laminas/laminas-router": "3.13.0",
-        "laminas/laminas-servicemanager": "3.22.1",
-        "laminas/laminas-xml": "1.6.0",
-        "league/mime-type-detection": "1.15.0",
+        "laminas/laminas-mvc": "3.8.0",
+        "laminas/laminas-router": "3.14.0",
+        "laminas/laminas-servicemanager": "3.23.0",
+        "laminas/laminas-xml": "1.7.0",
+        "league/mime-type-detection": "1.16.0",
         "ml/json-ld": "1.2.1",
-        "mongodb/mongodb": "1.16.1",
+        "mongodb/mongodb": "1.20.0",
         "pcrov/jsonreader": "1.0.3",
         "phayes/geophp": "1.2",
-        "pietercolpaert/hardf": "0.4.0",
-        "symfony/console": "6.4.8",
-        "symfony/lock": "6.4.8",
+        "pietercolpaert/hardf": "0.5.0",
+        "symfony/console": "6.4.15",
+        "symfony/lock": "6.4.13",
         "vufind-org/vufind-marc": "1.1.0",
         "wikimedia/composer-merge-plugin": "2.1.0"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "3.59.3",
-        "phing/phing": "3.0.0",
-        "phpstan/phpstan": "1.11.5",
-        "phpunit/phpunit": "10.5.24",
-        "squizlabs/php_codesniffer": "3.10.1",
-        "vimeo/psalm": "5.25.0"
+        "friendsofphp/php-cs-fixer": "3.65.0",
+        "phing/phing": "3.0.1",
+        "phpstan/phpstan": "1.12.12",
+        "phpunit/phpunit": "10.5.38",
+        "squizlabs/php_codesniffer": "3.11.1",
+        "vimeo/psalm": "5.26.1"
     },
     "scripts": {
+        "fix": "phing fix-php",
         "qa": "phing qa-tasks"
     },
     "extra": {

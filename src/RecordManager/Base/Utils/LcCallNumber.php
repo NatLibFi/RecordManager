@@ -104,11 +104,11 @@ class LcCallNumber extends AbstractCallNumber
             $matches
         );
         if ($found) {
-            $this->classification = isset($matches[0]) ? trim($matches[0]) : '';
-            $this->letters = isset($matches[1]) ? trim($matches[1]) : '';
-            $this->digits = isset($matches[2]) ? trim($matches[2]) : '';
-            $this->decimal = isset($matches[3]) ? trim($matches[3]) : '';
-            $rest = isset($matches[4]) ? trim($matches[4]) : '';
+            $this->classification = trim($matches[0]);
+            $this->letters = trim($matches[1]);
+            $this->digits = trim($matches[2]);
+            $this->decimal = trim($matches[3]);
+            $rest = trim($matches[4]);
         }
 
         $this->cutter = '';
