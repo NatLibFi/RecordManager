@@ -97,6 +97,9 @@ class LidoTest extends RecordTestBase
             'issn' => [
                 '0357-5284',
             ],
+            'related_isbn_isn_mv' => [
+                '9789517186346',
+            ],
             'allfields' => [
                 'knp-247394',
                 'Kirja',
@@ -211,6 +214,9 @@ class LidoTest extends RecordTestBase
             ],
             'issn' => [
                 '0357-5284',
+            ],
+            'related_isbn_isn_mv' => [
+                '9789517186346',
             ],
             'allfields' => [
                 'knp-247394',

@@ -50,6 +50,20 @@
             </subject>
           </subjectSet>
         </subjectWrap>
+        <relatedWorksWrap>
+          <relatedWorkSet>
+            <relatedWork>
+              <displayObject label="Julkaistu teoksessa">Narinkka 2001 - H&#xE4;&#xE4;t, 2001, Helsinki, s. 86</displayObject>
+              <object>
+                <objectID type="URI">URN:ISSN:0355-9106</objectID>
+                <objectID type="URI">URN:ISBN:951-718-634-7</objectID>
+              </object>
+            </relatedWork>
+            <relatedWorkRelType>
+              <term>is reproduced in</term>
+            </relatedWorkRelType>
+          </relatedWorkSet>
+        </relatedWorksWrap>
       </objectRelationWrap>
       <eventWrap>
         <eventSet>

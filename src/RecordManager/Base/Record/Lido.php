@@ -86,14 +86,20 @@ class Lido extends AbstractRecord
     protected $secondaryAuthorEvents = [];
 
     /**
-     * Related work relation types reflecting the terminology in the particular LIDO
-     * records.
+     * Related work relation types for collections.
      *
      * @var array
      */
     protected $relatedWorkRelationTypes = [
         'Collection', 'belongs to collection', 'collection',
     ];
+
+    /**
+     * Related work relation types for related ISBNs.
+     *
+     * @var array
+     */
+    protected $relatedISBNRelationTypes = ['is reproduced in'];
 
     /**
      * Description types to exclude from title
@@ -185,6 +191,7 @@ class Lido extends AbstractRecord
         $data['ctrlnum'] = $this->getRecordInfoIDs();
         $data['isbn'] = $this->getISBNs();
         $data['issn'] = $this->getISSNs();
+        $data['related_isbn_isn_mv'] = $this->getRelatedISBNs();
 
         $this->getHierarchyFields($data);
 
@@ -357,11 +364,7 @@ class Lido extends AbstractRecord
         $arr = [];
         foreach ($this->getIdentifiersByType(['isbn'], []) as $identifier) {
             $identifier = str_replace('-', '', trim($identifier));
-            if (!preg_match('{^([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
-                continue;
-            }
-            $isbn = $this->metadataUtils->normalizeISBN($matches[1]);
-            if ($isbn) {
+            if ($isbn = $this->checkISBN($identifier)) {
                 $arr[] = $isbn;
             } else {
                 $this->storeWarning("Invalid ISBN '$identifier'");
@@ -369,6 +372,25 @@ class Lido extends AbstractRecord
         }
 
         return array_unique($arr);
+    }
+
+    /**
+     * Get related ISBNs
+     *
+     * @return array
+     */
+    public function getRelatedISBNs()
+    {
+        $results = [];
+        foreach ($this->getRelatedWorkSetNodes($this->relatedISBNRelationTypes) as $set) {
+            foreach ($set->relatedWork->object->objectID ?? [] as $identifier) {
+                $identifier = str_replace('-', '', trim($identifier));
+                if ($isbn = $this->checkISBN($identifier)) {
+                    $results[] = $isbn;
+                }
+            }
+        }
+        return $results;
     }
 
     /**
@@ -1542,5 +1564,20 @@ class Lido extends AbstractRecord
                     = trim($this->getIdentifier() . ' ' . $data['title']);
             }
         }
+    }
+
+    /**
+     * Check if identifier is a valid ISBN
+     *
+     * @param string $identifier Identifier to check
+     *
+     * @return string Normalized ISBN or empty string
+     */
+    protected function checkISBN($identifier = ''): string
+    {
+        if (!preg_match('{^(URN:ISBN:)?([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
+            return '';
+        }
+        return $this->metadataUtils->normalizeISBN($matches[2]);
     }
 }
