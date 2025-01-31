@@ -127,7 +127,7 @@ class Ead3 extends Ead
 
         $doc = $this->doc;
         $data['record_format'] = 'ead3';
-        $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
+        $data['ctrlnum'] = $this->getOldIdentifier();
         $data['fullrecord'] = $this->metadataUtils->trimXMLWhitespace($doc->asXML());
         $data['allfields'] = $this->getAllFields($doc);
         $data['description'] = $this->getDescription();
@@ -505,6 +505,22 @@ class Ead3 extends Ead
     protected function getUnitId()
     {
         return (string)($this->doc->did->unitid ?? '');
+    }
+
+    /**
+     * Get old identifier for the record.
+     *
+     * @return string
+     */
+    protected function getOldIdentifier(): string
+    {
+        $idLabel = $this->getDriverParam('oldIdLabel', 'Old id');
+        foreach ($this->doc->did->unitid ?? [] as $unitid) {
+            if (($id = trim((string)$unitid)) && ($idLabel === (string)$unitid->attributes()->label)) {
+                return $id;
+            }
+        }
+        return '';
     }
 
     /**
