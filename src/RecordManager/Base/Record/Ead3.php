@@ -127,7 +127,7 @@ class Ead3 extends Ead
 
         $doc = $this->doc;
         $data['record_format'] = 'ead3';
-        $data['ctrlnum'] = $this->getOldIdentifier();
+        $data['ctrlnum'] = $this->getOldIdentifier() ?: (string)$this->doc->attributes()->{'id'};
         $data['fullrecord'] = $this->metadataUtils->trimXMLWhitespace($doc->asXML());
         $data['allfields'] = $this->getAllFields($doc);
         $data['description'] = $this->getDescription();
@@ -520,7 +520,7 @@ class Ead3 extends Ead
                 return $id;
             }
         }
-        return (string)$this->doc->attributes()->{'id'};
+        return '';
     }
 
     /**
