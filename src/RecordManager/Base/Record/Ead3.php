@@ -520,7 +520,7 @@ class Ead3 extends Ead
                 return $id;
             }
         }
-        return '';
+        return (string)$this->doc->attributes()->{'id'};
     }
 
     /**
