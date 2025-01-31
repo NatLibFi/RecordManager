@@ -32,6 +32,7 @@ namespace RecordManager\Base\Record;
 use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Marc\Marc as MarcHandler;
 use RecordManager\Base\Record\Marc\FormatCalculator;
+use RecordManager\Base\Solr\Fields\SolrFields;
 use RecordManager\Base\Utils\DeweyCallNumber;
 use RecordManager\Base\Utils\LcCallNumber;
 use RecordManager\Base\Utils\Logger;
@@ -316,7 +317,7 @@ class Marc extends AbstractRecord
                 }
             }
         }
-
+        $data[SolrFields::LINKING_ID_STR_MV] = $this->getLinkingIDs();
         // building
         $data['building'] = $this->getBuilding();
 
@@ -1455,8 +1456,9 @@ class Marc extends AbstractRecord
         }
 
         if ($koha) {
-            // Verify that 001 exists
-            if ('' === $this->record->getControlField('001')) {
+            // Verify that 001 exists or override existing 001 field with 999
+            $override001 = $this->getDriverParam('override001With999', false);
+            if ('' === $this->record->getControlField('001') || $override001) {
                 if ($id = $this->getFieldSubfields('999', ['c'])) {
                     $this->record->deleteFields('001');
                     $this->record->addField('001', '', '', $id);

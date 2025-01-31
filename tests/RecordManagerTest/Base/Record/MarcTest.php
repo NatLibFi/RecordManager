@@ -210,6 +210,12 @@ class MarcTest extends RecordTestBase
                 'https://dx.doi.org/doi4',
             ],
             'illustrated' => 'Not Illustrated',
+            'linking_id_str_mv' => [
+                '123',
+                'FCC005246184',
+                '378890',
+                '401416',
+            ],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -369,6 +375,11 @@ class MarcTest extends RecordTestBase
             'era_facet' => [],
             'url' => [],
             'illustrated' => 'Not Illustrated',
+            'linking_id_str_mv' => [
+                '1234',
+                '1558192',
+                'FCC002608043',
+            ],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -543,6 +554,12 @@ class MarcTest extends RecordTestBase
             'era_facet' => [],
             'url' => [],
             'illustrated' => 'Not Illustrated',
+            'linking_id_str_mv' => [
+                '107786',
+                '(FI-Piki)Ppro837_107786',
+                '(PIKI)Ppro837_107786',
+                '(FI-MELINDA)000963219',
+            ],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -739,9 +756,103 @@ class MarcTest extends RecordTestBase
                 '123456',
                 '234567',
             ],
+            'linking_id_str_mv' => [
+                '016234029',
+                'FCC016234029',
+                '(OCoLC)123456',
+                'ocn234567',
+            ],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
+    }
+
+    /**
+     * Dataprovider for testLinkingIdField
+     *
+     * @return array
+     */
+    public static function getTestLinkingIdFieldData()
+    {
+        return [
+            'datasource with id in 001' => [
+                'marc4.xml',
+                [
+                    '__unit_test_no_source__' => [
+                        'driverParams' => [
+                            'kohaNormalization=true',
+                        ],
+                    ],
+                ],
+                [
+                    '123',
+                ],
+            ],
+            'koha datasource with id in 999' => [
+                'marc5.xml',
+                [
+                    '__unit_test_no_source__' => [
+                        'driverParams' => [
+                            'idIn999=true',
+                            '003InLinkingID=true',
+                            'kohaNormalization=true',
+                        ],
+                    ],
+                ],
+                [
+                    '(FI-MELINDA)010101',
+                ],
+            ],
+            'koha datasource with id in 999 and 001' => [
+                'marc6.xml',
+                [
+                    '__unit_test_no_source__' => [
+                        'driverParams' => [
+                            'idIn999=true',
+                            '003InLinkingID=true',
+                            'kohaNormalization=true',
+                        ],
+                    ],
+                ],
+                [
+                    '(FI-MELINDA)123',
+                ],
+            ],
+            'koha datasource with id in 999 and 001 and override' => [
+                'marc6.xml',
+                [
+                    '__unit_test_no_source__' => [
+                        'driverParams' => [
+                            'idIn999=true',
+                            '003InLinkingID=true',
+                            'kohaNormalization=true',
+                            'override001With999=true',
+                        ],
+                    ],
+                ],
+                [
+                    '(FI-MELINDA)010101',
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Test linking_id_str_mv field
+     *
+     * @param string $path     Marc record path
+     * @param array  $dsConfig Datasource config
+     * @param array  $expected Expected results
+     *
+     * @return       void
+     * @dataProvider getTestLinkingIdFieldData
+     */
+    public function testLinkingIdField(string $path, array $dsConfig, array $expected): void
+    {
+        $record = $this->createMarcRecord(Marc::class, $path, $dsConfig);
+        $record->normalize();
+        $fields = $record->toSolrArray();
+        $this->assertEquals($expected, $fields['linking_id_str_mv']);
     }
 
     /**
