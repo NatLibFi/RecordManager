@@ -127,7 +127,7 @@ class Ead3 extends Ead
 
         $doc = $this->doc;
         $data['record_format'] = 'ead3';
-        $data['ctrlnum'] = $this->getOldIdentifier() ?: (string)$this->doc->attributes()->{'id'};
+        $data['ctrlnum'] = $this->getOldIdentifier();
         $data['fullrecord'] = $this->metadataUtils->trimXMLWhitespace($doc->asXML());
         $data['allfields'] = $this->getAllFields($doc);
         $data['description'] = $this->getDescription();
@@ -517,7 +517,7 @@ class Ead3 extends Ead
         $idLabel = $this->getDriverParam('oldIdLabel', 'Old id');
         foreach ($this->doc->did->unitid ?? [] as $unitid) {
             if (($id = trim((string)$unitid)) && ($idLabel === (string)$unitid->attributes()->label)) {
-                return $id;
+                return "($idLabel)" . $id;
             }
         }
         return '';
