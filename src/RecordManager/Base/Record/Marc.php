@@ -32,7 +32,6 @@ namespace RecordManager\Base\Record;
 use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Marc\Marc as MarcHandler;
 use RecordManager\Base\Record\Marc\FormatCalculator;
-use RecordManager\Base\Solr\Fields\SolrFields;
 use RecordManager\Base\Utils\DeweyCallNumber;
 use RecordManager\Base\Utils\LcCallNumber;
 use RecordManager\Base\Utils\Logger;
@@ -317,7 +316,7 @@ class Marc extends AbstractRecord
                 }
             }
         }
-        $data[SolrFields::LINKING_ID_STR_MV] = $this->getLinkingIDs();
+        $data['linking_id_str_mv'] = $this->getLinkingIDs();
         // building
         $data['building'] = $this->getBuilding();
 
@@ -618,13 +617,14 @@ class Marc extends AbstractRecord
      */
     public function getLinkingIDs()
     {
-        $id = $this->record->getControlField('001');
-        if ('' === $id && $this->getDriverParam('idIn999', false)) {
-            // Koha style ID fallback
-            $id = $this->getFieldSubfield('999', 'c');
+        $results = [];
+        if ($id = $this->record->getControlField('001')) {
+            $results[] = $this->createLinkingId($id);
         }
-        $id = $this->createLinkingId($id);
-        $results = [$id];
+        if ($this->getDriverParam('idIn999', false) && $id = $this->getFieldSubfield('999', 'c')) {
+            // Koha style ID fallback
+            $results[] = $this->createLinkingId($id);
+        }
 
         $cns = $this->getFieldsSubfields(
             [
@@ -635,7 +635,7 @@ class Marc extends AbstractRecord
             $results = [...$results, ...$cns];
         }
 
-        return $results;
+        return array_unique(array_filter($results));
     }
 
     /**
@@ -1456,9 +1456,8 @@ class Marc extends AbstractRecord
         }
 
         if ($koha) {
-            // Verify that 001 exists or override existing 001 field with 999
-            $override001 = $this->getDriverParam('override001With999', false);
-            if ('' === $this->record->getControlField('001') || $override001) {
+            // Verify that 001 exists
+            if ('' === $this->record->getControlField('001')) {
                 if ($id = $this->getFieldSubfields('999', ['c'])) {
                     $this->record->deleteFields('001');
                     $this->record->addField('001', '', '', $id);

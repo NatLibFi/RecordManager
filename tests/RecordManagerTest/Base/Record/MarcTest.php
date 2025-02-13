@@ -816,21 +816,6 @@ class MarcTest extends RecordTestBase
                 ],
                 [
                     '(FI-MELINDA)123',
-                ],
-            ],
-            'koha datasource with id in 999 and 001 and override' => [
-                'marc6.xml',
-                [
-                    '__unit_test_no_source__' => [
-                        'driverParams' => [
-                            'idIn999=true',
-                            '003InLinkingID=true',
-                            'kohaNormalization=true',
-                            'override001With999=true',
-                        ],
-                    ],
-                ],
-                [
                     '(FI-MELINDA)010101',
                 ],
             ],
