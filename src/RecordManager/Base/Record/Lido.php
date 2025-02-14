@@ -378,13 +378,13 @@ class Lido extends AbstractRecord
      *
      * @return array
      */
-    public function getRelatedISBNs()
+    public function getRelatedISBNs(): array
     {
         $results = [];
         foreach ($this->getRelatedWorkSetNodes($this->relatedISBNRelationTypes) as $set) {
             foreach ($set->relatedWork->object->objectID ?? [] as $identifier) {
                 if ($isbn = $this->checkISBN((string)$identifier)) {
-                    // Include both original ISBN and normalized ISBN-13
+                    // Include ISBNs in original format and in ISBN-13 format
                     $results[] = $isbn;
                     if ($normalized = $this->metadataUtils->normalizeISBN($isbn)) {
                         $results[] = $normalized;
@@ -1573,7 +1573,7 @@ class Lido extends AbstractRecord
      *
      * @param string $identifier Identifier to check
      *
-     * @return string ISBN without dashes or namespaces, or empty string
+     * @return string ISBN without dashes and namespaces, or empty string
      */
     protected function checkISBN($identifier = ''): string
     {
