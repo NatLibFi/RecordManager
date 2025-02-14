@@ -363,8 +363,7 @@ class Lido extends AbstractRecord
     {
         $arr = [];
         foreach ($this->getIdentifiersByType(['isbn'], []) as $identifier) {
-            $identifier = str_replace('-', '', trim($identifier));
-            if ($isbn = $this->checkISBN($identifier)) {
+            if ($isbn = $this->metadataUtils->normalizeISBN($this->checkISBN((string)$identifier))) {
                 $arr[] = $isbn;
             } else {
                 $this->storeWarning("Invalid ISBN '$identifier'");
@@ -384,13 +383,16 @@ class Lido extends AbstractRecord
         $results = [];
         foreach ($this->getRelatedWorkSetNodes($this->relatedISBNRelationTypes) as $set) {
             foreach ($set->relatedWork->object->objectID ?? [] as $identifier) {
-                $identifier = str_replace('-', '', trim($identifier));
-                if ($isbn = $this->checkISBN($identifier)) {
+                if ($isbn = $this->checkISBN((string)$identifier)) {
+                    // Include both original ISBN and normalized ISBN-13
                     $results[] = $isbn;
+                    if ($normalized = $this->metadataUtils->normalizeISBN($isbn)) {
+                        $results[] = $normalized;
+                    }
                 }
             }
         }
-        return $results;
+        return array_unique($results);
     }
 
     /**
@@ -1571,13 +1573,14 @@ class Lido extends AbstractRecord
      *
      * @param string $identifier Identifier to check
      *
-     * @return string Normalized ISBN or empty string
+     * @return string ISBN without dashes or namespaces, or empty string
      */
     protected function checkISBN($identifier = ''): string
     {
-        if (!preg_match('{^(URN:ISBN:)?([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
-            return '';
+        $identifier = str_replace('-', '', trim($identifier));
+        if (preg_match('{^(URN:ISBN:)?([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
+            return $matches[2];
         }
-        return $this->metadataUtils->normalizeISBN($matches[2]);
+        return '';
     }
 }

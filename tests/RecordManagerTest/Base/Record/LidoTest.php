@@ -98,6 +98,7 @@ class LidoTest extends RecordTestBase
                 '0357-5284',
             ],
             'related_isbn_isn_mv' => [
+                '9517186347',
                 '9789517186346',
             ],
             'allfields' => [
@@ -216,6 +217,7 @@ class LidoTest extends RecordTestBase
                 '0357-5284',
             ],
             'related_isbn_isn_mv' => [
+                '9517186347',
                 '9789517186346',
             ],
             'allfields' => [
