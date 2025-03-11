@@ -635,7 +635,7 @@ class Marc extends AbstractRecord
             $results = [...$results, ...$cns];
         }
 
-        return array_unique(array_filter($results));
+        return array_values(array_unique(array_filter($results)));
     }
 
     /**
