@@ -36,8 +36,5 @@
     ],
     "institution": "Test",
     "first_indexed": "1970-01-01T00:00:00Z",
-    "last_indexed": "1970-01-01T00:00:00Z",
-    "linking_id_str_mv": [
-        "123"
-    ]
+    "last_indexed": "1970-01-01T00:00:00Z"
 }

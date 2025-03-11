@@ -316,7 +316,7 @@ class Marc extends AbstractRecord
                 }
             }
         }
-        $data['linking_id_str_mv'] = $this->getLinkingIDs();
+
         // building
         $data['building'] = $this->getBuilding();
 
@@ -617,14 +617,13 @@ class Marc extends AbstractRecord
      */
     public function getLinkingIDs()
     {
-        $results = [];
-        if ($id = $this->record->getControlField('001')) {
-            $results[] = $this->createLinkingId($id);
-        }
-        if ($this->getDriverParam('idIn999', false) && $id = $this->getFieldSubfield('999', 'c')) {
+        $id = $this->record->getControlField('001');
+        if ('' === $id && $this->getDriverParam('idIn999', false)) {
             // Koha style ID fallback
-            $results[] = $this->createLinkingId($id);
+            $id = $this->getFieldSubfield('999', 'c');
         }
+        $id = $this->createLinkingId($id);
+        $results = [$id];
 
         $cns = $this->getFieldsSubfields(
             [
@@ -635,7 +634,7 @@ class Marc extends AbstractRecord
             $results = [...$results, ...$cns];
         }
 
-        return array_values(array_unique(array_filter($results)));
+        return $results;
     }
 
     /**
