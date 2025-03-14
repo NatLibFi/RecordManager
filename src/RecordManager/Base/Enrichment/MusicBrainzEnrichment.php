@@ -29,6 +29,8 @@
 
 namespace RecordManager\Base\Enrichment;
 
+use function in_array;
+
 /**
  * MusicBrainzEnrichment Class
  *
@@ -42,6 +44,41 @@ namespace RecordManager\Base\Enrichment;
  */
 class MusicBrainzEnrichment extends AbstractEnrichment
 {
+    /**
+     * International standard recording code
+     *
+     * @var string
+     */
+    protected const ISRC = 'isrc';
+
+    /**
+     * Catalog number
+     *
+     * @var string
+     */
+    protected const CATNO = 'catno';
+
+    /**
+     * Barcode
+     *
+     * @var string
+     */
+    protected const BARCODE = 'barcode';
+
+    /**
+     * Release group id
+     *
+     * @var string
+     */
+    protected const RGID = 'rgid';
+
+    /**
+     * Release id
+     *
+     * @var string
+     */
+    protected const REID = 'reid';
+
     /**
      * MusicBrainz API base url
      *
@@ -87,48 +124,41 @@ class MusicBrainzEnrichment extends AbstractEnrichment
 
         $mbIds = [];
         foreach ($record->getMusicIds() as $identifier) {
-            $id = $this->sanitizeId($identifier['id']);
             $type = $this->sanitizeId($identifier['type']);
+            $newIds = [];
             switch ($type) {
                 case 'isrc':
+                    $id = $this->sanitizeId($identifier['id']);
+                    $newIds = $this->getFromRecordingIndex(self::ISRC, $id);
                     break;
-                case 'upc':
-                case 'ismn':
                 case 'ian':
-                    $type = 'catno';
+                case 'upc':
+                    $id = $this->sanitizeId($identifier['id']);
+                    $newIds = $this->getFromReleaseIndex(self::BARCODE, $id);
+                    break;
+                case 'ismn':
+                    $id = $this->sanitizeId($identifier['id']);
+                    $newIds = $this->getFromReleaseIndex(self::CATNO, $id, $solrArray['title_short']);
                     break;
                 case 'musicb':
-                    $type = 'reid';
+                    // Do no sanitize mbid, as it is sensitive search
+                    $newIds = $this->getFromReleaseIndex(self::REID, $identifier['id']);
                     break;
                 default:
                     continue 2;
             }
-            $query = "$type:\"" . addcslashes($id, '"\\') . '"';
-            if ('catno' === $type) {
-                $query .= ' AND releaseaccent:"'
-                    . addcslashes($solrArray['title_short'], '"\\')
-                    . '"';
-            }
-            $newIds = $this->getMBIDs($query);
             $mbIds = [...$mbIds, ...$newIds];
         }
-
         $shortTitle = $record->getShortTitle();
-
         foreach ($record->getPublisherNumbers() as $number) {
             $id = $this->sanitizeId($number['id']);
             $source = $this->sanitizeId($number['source']);
             $newIds = [];
             if ($id && $source) {
-                $query = 'catno:"' . addcslashes("$source $id", '"\\') . '"';
-                $newIds = $this->getMBIDs($query);
+                $newIds = $this->getFromReleaseIndex(self::CATNO, $source . ' ' . $id);
             }
             if (!$newIds && $id) {
-                $query = 'catno:"' . addcslashes($id, '"\\')
-                    . '" AND releaseaccent:"'
-                    . addcslashes($shortTitle, '"\\')
-                    . '"';
-                $newIds = $this->getMBIDs($query);
+                $newIds = $this->getFromReleaseIndex(self::CATNO, $id, $shortTitle);
             }
             if ($newIds) {
                 $mbIds = [...$mbIds, ...$newIds];
@@ -154,40 +184,96 @@ class MusicBrainzEnrichment extends AbstractEnrichment
     }
 
     /**
-     * Get MusicBrainz identifiers with a standard identifier
+     * Get MusicBrainz ids from recording index
      *
-     * @param string $query     Query
-     * @param bool   $skipGroup Whether to skip checking release group
+     * @param string $type Type for the search
+     * @param string $id   Id to search for
      *
-     * @return array<int, string>
+     * @return array
      */
-    protected function getMBIDs($query, $skipGroup = false)
+    protected function getFromRecordingIndex(string $type, string $id): array
     {
-        $results = [];
+        $query = "$type:\"" . addcslashes($id, '"\\') . '"';
+        $params = [
+            'query' => $query,
+            'fmt' => 'json',
+        ];
+        $url = $this->baseURL . '/ws/2/recording?' . http_build_query($params);
+        return $this->getMBIDs($url, $query);
+    }
 
-        // Search for a release
+    /**
+     * Get MusicBrainz ids from release index
+     *
+     * @param string $type          Type for the search
+     * @param string $id            Id to search for
+     * @param string $releaseAccent Short version of the title to look for
+     *
+     * @return array
+     */
+    protected function getFromReleaseIndex(string $type, string $id, string $releaseAccent = ''): array
+    {
+        $searchFor = in_array($type, [self::RGID, self::REID]) ? urlencode($id) : addcslashes($id, '"\\');
+        $query = "$type:\"$searchFor\"";
+
+        if (self::CATNO === $type && $releaseAccent) {
+            $query .= ' AND releaseaccent:"' . addcslashes($releaseAccent, '"\\') . '"';
+        }
         $params = [
             'query' => $query,
             'fmt' => 'json',
         ];
         $url = $this->baseURL . '/ws/2/release?' . http_build_query($params);
-        $data = $this->getExternalData($url, $query);
-        if ($data) {
+        return $this->getMBIDs($url, $query, $type === self::RGID);
+    }
+
+    /**
+     * Get MusicBrainz identifiers with a standard identifier
+     *
+     * @param string $url       Url for the search
+     * @param string $query     Query used as id for the search
+     * @param bool   $skipGroup Whether to skip checking release group
+     *
+     * @return array<int, string>
+     */
+    protected function getMBIDs(string $url, string $query, bool $skipGroup = false)
+    {
+        $results = [];
+
+        if ($data = $this->getExternalData($url, $query)) {
             $data = json_decode($data, true);
-            foreach ($data['releases'] as $release) {
-                if (!$skipGroup && ($rgid = $release['release-group']['id'])) {
-                    $url = $this->baseURL . '/ws/2/release/?query=rgid:'
-                        . urlencode($rgid) . '&fmt=json';
-                    $rgData = $this->getExternalData($url, "rgid:$rgid");
-                    if ($rgData) {
-                        $rgData = json_decode($rgData, true);
-                        foreach ($rgData['releases'] as $rgRelease) {
-                            $results[] = $rgRelease['id'];
-                        }
-                    }
-                } else {
-                    $results[] = $release['id'];
+            if (isset($data['recordings'])) {
+                foreach ($data['recordings'] as $recording) {
+                    $result = $this->handleReleases($recording, $skipGroup);
+                    $results = [...$results, ...$result];
                 }
+            } else {
+                $result = $this->handleReleases($data, $skipGroup);
+                $results = [...$results, ...$result];
+            }
+        }
+
+        return $results;
+    }
+
+    /**
+     * Helper function to handle releases found and returns their ids
+     *
+     * @param array $data      Contains releases
+     * @param bool  $skipGroup Whether to skip checking release group
+     *
+     * @return array
+     */
+    protected function handleReleases(array $data, bool $skipGroup): array
+    {
+        $results = [];
+        foreach ($data['releases'] ?? [] as $release) {
+            if (!$skipGroup && ($rgid = $release['release-group']['id'])) {
+                if ($rgData = $this->getFromReleaseIndex(self::RGID, $rgid)) {
+                    $results = [...$results, ...$rgData];
+                }
+            } else {
+                $results[] = $release['id'];
             }
         }
         return $results;

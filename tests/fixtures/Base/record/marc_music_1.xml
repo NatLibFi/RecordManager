@@ -1,0 +1,17 @@
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+<record>
+  <leader>01195cjm a22004094i 4500</leader>
+  <controlfield tag="001">123</controlfield>
+  <controlfield tag="003">FI-MELINDA</controlfield>
+  <controlfield tag="005">20160322194428.0</controlfield>
+  <datafield tag="024" ind1="0" ind2=" ">
+    <subfield code="a">SEAEO0712060</subfield>
+  </datafield>
+  <controlfield tag="008">140327s2013    fi            000 0 fin d</controlfield>
+  <datafield tag="773" ind1=" " ind2=" ">
+    <subfield code="i">Test string</subfield>
+    <subfield code="w">961827</subfield>
+    <subfield code="t">Test parent string</subfield>
+  </datafield>
+</record>
+</collection>
