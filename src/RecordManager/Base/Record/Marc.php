@@ -1530,18 +1530,23 @@ class Marc extends AbstractRecord
     /**
      * Get publisher numbers (for enrichment)
      *
+     * @param ?string $includeInd1 Give indicator value, for which to return numbers
+     *
      * @return array
      */
-    public function getPublisherNumbers(): array
+    public function getPublisherNumbers(?string $includeInd1 = null): array
     {
         $result = [];
         foreach ($this->record->getFields('028') as $field028) {
-            $ind1 = $this->record->getIndicator($field028, 1);
-            if ($ind1 === '0') {
-                $id = $this->record->getSubfield($field028, 'a');
-                $source = $this->record->getSubfield($field028, 'b');
-                $result[] = compact('id', 'source');
+            if ($includeInd1 !== null) {
+                $fieldInd1 = $this->record->getIndicator($field028, 1);
+                if ($fieldInd1 !== $includeInd1) {
+                    continue;
+                }
             }
+            $id = $this->record->getSubfield($field028, 'a');
+            $source = $this->record->getSubfield($field028, 'b');
+            $result[] = compact('id', 'source');
         }
         return $result;
     }
