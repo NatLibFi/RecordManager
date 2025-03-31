@@ -4,8 +4,19 @@
   <controlfield tag="001">123</controlfield>
   <controlfield tag="003">FI-MELINDA</controlfield>
   <controlfield tag="005">20160322194428.0</controlfield>
-  <datafield tag="024" ind1="0" ind2=" ">
-    <subfield code="a">SEAEO0712060</subfield>
+  <datafield tag="024" ind1="8" ind2=" ">
+    <subfield code="a">A1288986</subfield>
+  </datafield>
+  <datafield tag="028" ind1="0" ind2="1">
+    <subfield code="a">TEMPSCD02</subfield>
+  </datafield>
+  <datafield tag="028" ind1="0" ind2="1">
+    <subfield code="a">tempscd 02</subfield>
+    <subfield code="b">temps</subfield>
+  </datafield>
+  <datafield tag="245" ind1="1" ind2="0">
+    <subfield code="a">ANI /</subfield>
+    <subfield code="c">Sirkka Hirsjärvi, Pirkko Remes, Paula Sajavaara.</subfield>
   </datafield>
   <controlfield tag="008">140327s2013    fi            000 0 fin d</controlfield>
   <datafield tag="773" ind1=" " ind2=" ">

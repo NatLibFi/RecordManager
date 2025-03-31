@@ -1536,9 +1536,12 @@ class Marc extends AbstractRecord
     {
         $result = [];
         foreach ($this->record->getFields('028') as $field028) {
-            $id = $this->record->getSubfield($field028, 'a');
-            $source = $this->record->getSubfield($field028, 'b');
-            $result[] = compact('id', 'source');
+            $ind1 = $this->record->getIndicator($field028, 1);
+            if ($ind1 === '0') {
+                $id = $this->record->getSubfield($field028, 'a');
+                $source = $this->record->getSubfield($field028, 'b');
+                $result[] = compact('id', 'source');
+            }
         }
         return $result;
     }

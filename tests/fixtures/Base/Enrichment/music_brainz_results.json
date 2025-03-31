@@ -1,0 +1,51 @@
+{
+    "barcode:\"044006722320\"": {
+        "_id": "barcode:\"044006722320\"",
+        "data": {
+            "releases": [
+                {
+                    "id": "5a323542-6431-48c2-89ed-f0cef6f17b85"
+                },
+                {
+                    "id": "b3eb127e-75ec-4167-93aa-7c1cfcfa52d6"
+                },
+                {
+                    "id": "cba9c83f-4017-42eb-89ce-6110fd0dc10c"
+                },
+                {
+                    "id": "093baef2-31e5-408b-979e-e90ba8f2394f"
+                }
+            ]
+        }
+    },
+    "barcode:\"4029759178200\"": {
+        "_id": "barcode:\"4029759178200\"",
+        "data": {
+            "releases": [
+                {
+                    "id": "b2022feb-88fe-4e4a-94cc-1f0eae644b9b"
+                }
+            ]
+        }
+    },
+    "reid:\"cba9c83f-4017-42eb-89ce-6110fd0dc10c\"": {
+        "_id": "reid:\"cba9c83f-4017-42eb-89ce-6110fd0dc10c\"",
+        "data": {
+            "releases": [
+                {
+                    "id": "cba9c83f-4017-42eb-89ce-6110fd0dc10c"
+                }
+            ]
+        }
+    },
+    "catno:\"TEMPSCD02\" AND releaseaccent:\"ANI\"": {
+        "_id": "catno:\"TEMPSCD02\" AND releaseaccent:\"ANI\"",
+        "data": {
+            "releases": [
+                {
+                    "id": "065e298f-a73f-4399-89b9-e2bb36606931"
+                }
+            ]
+        }
+    }
+}
