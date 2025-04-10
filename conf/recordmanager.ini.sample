@@ -260,6 +260,8 @@ disable_proxy_hosts[] = "::1"
 ; MARCXML - MARCXML
 ; ISO2709 - ISO 2709 with MARCXML for too long records
 ;solr_serialization = JSON
+; The following section can be used to override the default linking id fields
+;linking_id_fields = "762,765,767"
 
 [ForwardRecord]
 ; The following settings can be used to override the default relator codes that

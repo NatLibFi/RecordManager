@@ -168,6 +168,16 @@ class Marc extends AbstractRecord
     ];
 
     /**
+     * Fields containing linking ids
+     *
+     * @var array
+     */
+    protected array $linkingIdFields = [
+        '760', '762', '765', '767', '770', '772', '773', '774',
+        '775', '776', '777', '780', '785', '786', '787',
+    ];
+
+    /**
      * MARC record creation callback
      *
      * @var callable
@@ -208,6 +218,12 @@ class Marc extends AbstractRecord
             $this->primaryAuthorRelators = explode(
                 ',',
                 $config['MarcRecord']['primary_author_relators']
+            );
+        }
+        if (isset($config['MarcRecord']['linking_id_fields'])) {
+            $this->linkingIdFields = explode(
+                ',',
+                $config['MarcRecord']['linking_id_fields']
             );
         }
     }
@@ -269,12 +285,7 @@ class Marc extends AbstractRecord
             'record_format' => 'marc',
         ];
 
-        // Try to find matches for IDs in link fields
-        $fields = [
-            '760', '762', '765', '767', '770', '772', '773', '774',
-            '775', '776', '777', '780', '785', '786', '787',
-        ];
-        foreach ($fields as $code) {
+        foreach ($this->linkingIdFields as $code) {
             foreach ($this->record->getFields($code) as $fieldIdx => $marcfield) {
                 foreach ($this->record->getSubfields($marcfield, 'w') as $subfieldIdx => $marcsubfield) {
                     $targetId = $marcsubfield;
