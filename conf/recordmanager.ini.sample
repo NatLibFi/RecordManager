@@ -262,7 +262,7 @@ disable_proxy_hosts[] = "::1"
 ;solr_serialization = JSON
 ; The following section can be used to override the default linking id fields.
 ; Fields included will be transformed into either id or datasource.id format if applicable
-;linking_id_fields = "762,765,767"
+;linking_id_fields =  "760,762,765,767,770,772,773,774,775,776,777,780,785,786,787"
 
 [ForwardRecord]
 ; The following settings can be used to override the default relator codes that
