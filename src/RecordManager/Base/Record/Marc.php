@@ -221,9 +221,11 @@ class Marc extends AbstractRecord
             );
         }
         if (isset($config['MarcRecord']['linking_id_fields'])) {
-            $this->linkingIdFields = explode(
-                ',',
-                $config['MarcRecord']['linking_id_fields']
+            $this->linkingIdFields = array_filter(
+                explode(
+                    ',',
+                    $config['MarcRecord']['linking_id_fields']
+                )
             );
         }
     }

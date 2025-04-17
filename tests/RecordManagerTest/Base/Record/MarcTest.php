@@ -29,6 +29,7 @@
 
 namespace RecordManagerTest\Base\Record;
 
+use Generator;
 use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Record\Marc;
 
@@ -745,11 +746,70 @@ class MarcTest extends RecordTestBase
     }
 
     /**
+     * Test marc linking data provider
+     *
+     * @return Generator
+     */
+    public static function getTestMarcLinkingData(): Generator
+    {
+        yield 'setting commented' => [
+            [
+                '__unit_test_no_source__.4112121',
+                '__unit_test_no_source__.xyzzy',
+            ],
+            [
+                '__unit_test_no_source__.4132317',
+                '__unit_test_no_source__.xyzzy',
+            ],
+            [],
+        ];
+
+        yield 'default setting' => [
+            [
+                '__unit_test_no_source__.4112121',
+                '__unit_test_no_source__.xyzzy',
+            ],
+            [
+                '__unit_test_no_source__.4132317',
+                '__unit_test_no_source__.xyzzy',
+            ],
+            [
+                'MarcRecord' => [
+                    'linking_id_fields' => '760,762,765,767,770,772,773,774,775,776,777,780,785,786,787',
+                ],
+            ],
+        ];
+
+        yield 'setting set to empty string' => [
+            [
+                '961827',
+                'xyzzy',
+            ],
+            [
+                '961827',
+                'xyzzy',
+            ],
+            [
+                'MarcRecord' => [
+                    'linking_id_fields' => '',
+                ],
+            ],
+            0,
+        ];
+    }
+
+    /**
      * Test MARC Record linking
      *
-     * @return void
+     * @param array $firstExpects  First expected links
+     * @param array $secondExpects Second expected links
+     * @param array $conf          Main configuration
+     * @param int   $searchCount   Record db search expect
+     *
+     * @return       void
+     * @dataProvider getTestMarcLinkingData
      */
-    public function testMarcLinking()
+    public function testMarcLinking(array $firstExpects, array $secondExpects, array $conf, int $searchCount = 5)
     {
         $db = $this->createMock(Database::class);
         $map = [
@@ -791,19 +851,19 @@ class MarcTest extends RecordTestBase
                 null,
             ],
         ];
-        $db->expects($this->exactly(5))
+        $db->expects($this->exactly($searchCount))
             ->method('findRecord')
             ->will($this->returnValueMap($map));
 
-        $record = $this->createMarcRecord(Marc::class, 'marc_links.xml');
+        $record = $this->createMarcRecord(Marc::class, 'marc_links.xml', config: $conf);
         $record->toSolrArray($db);
         $marc = new \VuFind\Marc\MarcReader($record->serialize());
         $marc776 = $marc->getFields('776');
         $this->assertCount(2, $marc776);
         $w = $marc->getSubfield($marc776[0], 'w');
-        $this->assertEquals('__unit_test_no_source__.4112121', $w);
+        $this->assertEquals($firstExpects[0], $w);
         $w = $marc->getSubfield($marc776[1], 'w');
-        $this->assertEquals('__unit_test_no_source__.xyzzy', $w);
+        $this->assertEquals($firstExpects[1], $w);
 
         $record = $this->createMarcRecord(
             Marc::class,
@@ -812,16 +872,17 @@ class MarcTest extends RecordTestBase
                 '__unit_test_no_source__' => [
                     'driverParams' => ['003InLinkingID=true'],
                 ],
-            ]
+            ],
+            config: $conf
         );
         $record->toSolrArray($db);
         $marc = new \VuFind\Marc\MarcReader($record->serialize());
         $marc776 = $marc->getFields('776');
         $this->assertCount(2, $marc776);
         $w = $marc->getSubfield($marc776[0], 'w');
-        $this->assertEquals('__unit_test_no_source__.4132317', $w);
+        $this->assertEquals($secondExpects[0], $w);
         $w = $marc->getSubfield($marc776[1], 'w');
-        $this->assertEquals('__unit_test_no_source__.xyzzy', $w);
+        $this->assertEquals($secondExpects[1], $w);
     }
 
     /**

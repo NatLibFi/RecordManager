@@ -56,6 +56,7 @@ trait CreateSampleRecordTrait
      * @param array  $dsConfig          Datasource config
      * @param string $module            Module name
      * @param array  $constructorParams Additional constructor params
+     * @param array  $config            Main configuration file
      *
      * @return \RecordManager\Base\Record\AbstractRecord
      */
@@ -64,14 +65,16 @@ trait CreateSampleRecordTrait
         string $sample,
         array $dsConfig = [],
         string $module = 'Base',
-        array $constructorParams = []
+        array $constructorParams = [],
+        array $config = []
     ) {
         $recordString = $this->getFixture("record/$sample", $module);
         return $this->createRecordFromString(
             $recordString,
             $class,
             $dsConfig,
-            $constructorParams
+            $constructorParams,
+            $config
         );
     }
 
@@ -82,6 +85,7 @@ trait CreateSampleRecordTrait
      * @param string $class             Record class
      * @param array  $dsConfig          Datasource config
      * @param array  $constructorParams Additional constructor params
+     * @param array  $config            Main configuration file
      *
      * @return \RecordManager\Base\Record\AbstractRecord
      */
@@ -89,21 +93,22 @@ trait CreateSampleRecordTrait
         string $recordString,
         string $class,
         array $dsConfig = [],
-        array $constructorParams = []
+        array $constructorParams = [],
+        array $config = []
     ) {
         $logger = $this->createMock(Logger::class);
-        $config = [
+        $metadataConfig = [
             'Site' => [
                 'articles' => 'articles.lst',
             ],
         ];
         $metadataUtils = new \RecordManager\Base\Utils\MetadataUtils(
             $this->getFixtureDir() . 'config/recorddrivertest',
-            $config,
+            $metadataConfig,
             $logger
         );
         $record = new $class(
-            [],
+            $config,
             $dsConfig,
             $logger,
             $metadataUtils,
@@ -126,6 +131,7 @@ trait CreateSampleRecordTrait
      * @param array  $dsConfig          Datasource config
      * @param string $module            Module name
      * @param array  $constructorParams Additional constructor params
+     * @param array  $config            Main configuration file
      *
      * @return \RecordManager\Base\Record\AbstractRecord
      */
@@ -134,7 +140,8 @@ trait CreateSampleRecordTrait
         string $sample,
         array $dsConfig = [],
         string $module = 'Base',
-        array $constructorParams = []
+        array $constructorParams = [],
+        array $config = []
     ) {
         $baseParams = [
             function ($data) {
@@ -148,6 +155,7 @@ trait CreateSampleRecordTrait
             $dsConfig,
             $module,
             array_merge($baseParams, $constructorParams),
+            $config
         );
     }
 }
