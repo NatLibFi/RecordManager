@@ -1927,8 +1927,9 @@ class SolrUpdater
         $warnings = [];
 
         $hasComponentParts = false;
+        $hasHost = isset($record['host_record_id']);
         $components = null;
-        if (!isset($record['host_record_id'])) {
+        if (!$hasHost || ($settings['mergeMultiLevelParts'] ?? false)) {
             // Fetch info whether component parts exist and need to be merged
             if (empty($record['linking_id'])) {
                 if ($this->db) {
@@ -2118,7 +2119,8 @@ class SolrUpdater
                 }
             }
         }
-        if ($hasComponentParts) {
+        // Add isHierarchy information only to the record with no host record
+        if ($hasComponentParts && !$hasHost) {
             if ($this->isHierarchyIdField) {
                 $data[$this->isHierarchyIdField]
                     = $this->createSolrId($record['_id']);
