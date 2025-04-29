@@ -29,6 +29,8 @@
 
 namespace RecordManagerTest\Base\Solr;
 
+use RecordManager\Base\Database\DatabaseInterface;
+use RecordManager\Base\Database\MongoDatabase;
 use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
 use RecordManager\Base\Http\HttpService as HttpService;
 use RecordManager\Base\Record\Marc\FormatCalculator;
@@ -147,6 +149,72 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(143225, mb_strlen($record['fullrecord'], 'UTF-8'));
         $this->assertEquals(30, mb_strlen($record['title_short'], 'UTF-8'));
         $this->assertEquals(40, mb_strlen($record['title_sort'], 'UTF-8'));
+    }
+
+    /**
+     * Test merged component
+     *
+     * @return void
+     */
+    public function testMergedComponents(): void
+    {
+        $record = $this->createMarcRecord(
+            \RecordManager\Base\Record\Marc::class,
+            'marc-broken.xml'
+        );
+
+        $date = strtotime('2020-10-20 13:01:00');
+        $dbRecord = [
+            '_id' => $record->getID(),
+            'oai_id' => '',
+            'linking_id' => $record->getLinkingIDs(),
+            'source_id' => 'test',
+            'deleted' => false,
+            'created' => $date,
+            'updated' => $date,
+            'date' => $date,
+            'format' => 'marc',
+            'original_data' => $record->serialize(),
+            'normalized_data' => null,
+            'host_record_id' => 'test.1',
+        ];
+
+        $params = [
+            'host_record_id' => [
+                '$in' => array_values((array)$dbRecord['linking_id']),
+            ],
+            'deleted' => false,
+            'suppressed' => ['$in' => [null, false]],
+            'source_id' => 'test',
+        ];
+        $records = [
+            [
+                '_id' => 'test.2',
+            ],
+            [
+                '_id' => 'test.3',
+            ],
+        ];
+        $recordMap = [
+            [$params, [], $records[0]],
+        ];
+        $dsOverride = [
+            'test' => [
+                'mergeMultiLevelParts' => true,
+                'componentParts' => 'merge_all',
+            ],
+        ];
+        $database = $this->getMockBuilder(MongoDatabase::class)->disableOriginalConstructor()->getMock();
+        $database->expects($this->exactly(1))->method('findRecord')->willReturnMap($recordMap);
+        $database->expects($this->exactly(1))->method('findRecords')->willReturn($records);
+        $solrUpdater = $this->getSolrUpdater(
+            dsConfigOverrides: $dsOverride,
+            database: $database
+        );
+
+        $result = $solrUpdater->processSingleRecord($dbRecord);
+        $record = $result['records'][0];
+        $this->assertEquals(0, $result['mergedComponents']);
     }
 
     /**
@@ -385,12 +453,15 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
     /**
      * Create SolrUpdater
      *
-     * @param array $dsConfigOverrides Data source config overrides
+     * @param array              $dsConfigOverrides Data source config overrides
+     * @param ?DatabaseInterface $database          Database mock object
      *
      * @return SolrUpdater
      */
-    protected function getSolrUpdater(array $dsConfigOverrides = []): SolrUpdater
-    {
+    protected function getSolrUpdater(
+        array $dsConfigOverrides = [],
+        ?DatabaseInterface $database = null
+    ): SolrUpdater {
         $dsConfig = array_merge_recursive(
             $this->dataSourceConfig,
             $dsConfigOverrides
@@ -423,7 +494,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
         $solrUpdater = new SolrUpdater(
             $this->config,
             $dsConfig,
-            null,
+            $database,
             $logger,
             $recordPM,
             $this->createMock(EnrichmentPluginManager::class),
