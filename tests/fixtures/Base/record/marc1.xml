@@ -125,6 +125,10 @@
     <subfield code="a">Sajavaara, Paula.</subfield>
     <subfield code="0">(TEST)3</subfield>
   </datafield>
+  <datafield tag="710" ind1="1" ind2=" ">
+    <subfield code="a">Example Distributor</subfield>
+    <subfield code="e">distributor</subfield>
+  </datafield>
   <datafield tag="852" ind1="8" ind2=" ">
     <subfield code="a">E</subfield>
     <subfield code="b">150</subfield>

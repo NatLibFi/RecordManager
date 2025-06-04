@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2011-2023.
+ * Copyright (C) The National Library of Finland 2011-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -69,6 +69,13 @@ class Marc extends AbstractRecord
     protected $primaryAuthorRelators = [
         'adp', 'aut', 'cmp', 'cre', 'dub', 'inv',
     ];
+
+    /**
+     * Author relators that are not considered for indexing
+     *
+     * @var array
+     */
+    protected $hiddenAuthorRelators = [];
 
     /**
      * Strings in field 300 that signify that the work is illustrated.
@@ -214,19 +221,14 @@ class Marc extends AbstractRecord
         $this->createRecordCallback = $recordCallback;
         $this->formatCalculator = $formatCalculator;
 
-        if (isset($config['MarcRecord']['primary_author_relators'])) {
-            $this->primaryAuthorRelators = explode(
-                ',',
-                $config['MarcRecord']['primary_author_relators']
-            );
+        if ($relators = $config['MarcRecord']['primary_author_relators'] ?? null) {
+            $this->primaryAuthorRelators = explode(',', $relators);
         }
-        if (isset($config['MarcRecord']['linking_id_fields'])) {
-            $this->linkingIdFields = array_filter(
-                explode(
-                    ',',
-                    $config['MarcRecord']['linking_id_fields']
-                )
-            );
+        if ($relators = $config['MarcRecord']['hidden_author_relators'] ?? null) {
+            $this->hiddenAuthorRelators = explode(',', $relators);
+        }
+        if (null !== ($fields = $config['MarcRecord']['linking_id_fields'] ?? null)) {
+            $this->linkingIdFields = array_filter(explode(',', $fields));
         }
     }
 
@@ -1210,6 +1212,14 @@ class Marc extends AbstractRecord
         foreach ($authorFields as $tag => $subfields) {
             $tag = (string)$tag;
             foreach ($this->record->getFields($tag) as $field) {
+                $fieldRelators = $this->normalizeRelators(
+                    $this->getSubfieldsArray($field, ['4', 'e'])
+                );
+
+                if ($this->hiddenAuthorRelators && array_intersect($this->hiddenAuthorRelators, $fieldRelators)) {
+                    continue;
+                }
+
                 // Check for analytical entries to be processed later:
                 if (
                     in_array($tag, ['700', '710', '711'])
@@ -2269,6 +2279,10 @@ class Marc extends AbstractRecord
                 $fieldRelators = $this->normalizeRelators(
                     $this->getSubfieldsArray($field, ['4', 'e'])
                 );
+
+                if ($this->hiddenAuthorRelators && array_intersect($this->hiddenAuthorRelators, $fieldRelators)) {
+                    continue;
+                }
 
                 $match = empty($relators);
                 if (!$match) {

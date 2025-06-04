@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2020-2023.
+ * Copyright (C) The National Library of Finland 2020-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -98,6 +98,8 @@ class MarcTest extends RecordTestBase
                 'tutkimus',
                 'Remes, Pirkko',
                 'Sajavaara, Paula',
+                'Example Distributor',
+                'distributor',
                 'urn:doi:doi2',
                 'urn:doif:not-doi',
                 'http://doi.org/doi%3a3',
@@ -130,8 +132,12 @@ class MarcTest extends RecordTestBase
                 '',
                 '',
             ],
-            'author_corporate' => [],
-            'author_corporate_role' => [],
+            'author_corporate' => [
+                'Example Distributor',
+            ],
+            'author_corporate_role' => [
+                'distributor',
+            ],
             'author_additional' => [],
             'title' => 'Tutki ja kirjoita',
             'title_sub' => '',
@@ -231,6 +237,10 @@ class MarcTest extends RecordTestBase
                     [
                         'type' => 'author',
                         'value' => 'Sajavaara, Paula.',
+                    ],
+                    [
+                        'type' => 'author',
+                        'value' => 'Example Distributor',
                     ],
                 ],
                 'authorsAltScript' => [],
@@ -803,13 +813,13 @@ class MarcTest extends RecordTestBase
      *
      * @param array $firstExpects  First expected links
      * @param array $secondExpects Second expected links
-     * @param array $conf          Main configuration
+     * @param array $config        Main configuration
      * @param int   $searchCount   Record db search expect
      *
      * @return       void
      * @dataProvider getTestMarcLinkingData
      */
-    public function testMarcLinking(array $firstExpects, array $secondExpects, array $conf, int $searchCount = 5)
+    public function testMarcLinking(array $firstExpects, array $secondExpects, array $config, int $searchCount = 5)
     {
         $db = $this->createMock(Database::class);
         $map = [
@@ -855,7 +865,7 @@ class MarcTest extends RecordTestBase
             ->method('findRecord')
             ->will($this->returnValueMap($map));
 
-        $record = $this->createMarcRecord(Marc::class, 'marc_links.xml', config: $conf);
+        $record = $this->createMarcRecord(Marc::class, 'marc_links.xml', config: $config);
         $record->toSolrArray($db);
         $marc = new \VuFind\Marc\MarcReader($record->serialize());
         $marc776 = $marc->getFields('776');
@@ -873,7 +883,7 @@ class MarcTest extends RecordTestBase
                     'driverParams' => ['003InLinkingID=true'],
                 ],
             ],
-            config: $conf
+            config: $config
         );
         $record->toSolrArray($db);
         $marc = new \VuFind\Marc\MarcReader($record->serialize());
@@ -991,5 +1001,217 @@ class MarcTest extends RecordTestBase
             ],
         ];
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
+    }
+
+    /**
+     * Test hidden author relator
+     *
+     * @return void
+     */
+    public function testHiddenRelator()
+    {
+        $config = [
+            'MarcRecord' => [
+                'hidden_author_relators' => 'distributor',
+            ],
+        ];
+        $record = $this->createMarcRecord(Marc::class, 'marc1.xml', config: $config);
+        $fields = $record->toSolrArray();
+        unset($fields['fullrecord']);
+
+        $expected = [
+            'record_format' => 'marc',
+            'building' => [
+                '150',
+                '150',
+            ],
+            'lccn' => '',
+            'ctrlnum' => [
+                'FCC005246184',
+                '378890',
+                '401416',
+            ],
+            'allfields' => [
+                'Hirsjärvi, Sirkka',
+                'Tutki ja kirjoita',
+                'Sirkka Hirsjärvi, Pirkko Remes, Paula Sajavaara',
+                '17. uud. p.',
+                'Helsinki',
+                'Tammi',
+                '2345 [2013?]',
+                'teksti',
+                'txt',
+                'rdacontent',
+                'käytettävissä ilman laitetta',
+                'n',
+                'rdamedia',
+                'nide',
+                'nc',
+                'rdacarrier',
+                '18. p. 2013',
+                'Summary field',
+                'oppaat',
+                'ft: kirjoittaminen',
+                'apurahat',
+                'tutkimusrahoitus',
+                'tutkimuspolitiikka',
+                'opinnäytteet',
+                'tiedonhaku',
+                'kielioppaat',
+                'tutkimustyö',
+                'tutkimus',
+                'Remes, Pirkko',
+                'Sajavaara, Paula',
+                'Example Distributor',
+                'distributor',
+                'urn:doi:doi2',
+                'urn:doif:not-doi',
+                'http://doi.org/doi%3a3',
+                'https://dx.doi.org/doi4',
+            ],
+            'language' => [
+                'fin',
+                'fin',
+            ],
+            'format' => ['Book'],
+            'author' => [
+                'Hirsjärvi, Sirkka',
+            ],
+            'author_variant' => [
+                's h sh',
+            ],
+            'author_role' => [
+                '',
+            ],
+            'author_sort' => 'Hirsjärvi, Sirkka',
+            'author2' => [
+                'Remes, Pirkko',
+                'Sajavaara, Paula',
+            ],
+            'author2_variant' => [
+               'p r pr',
+               'p s ps',
+            ],
+            'author2_role' => [
+                '',
+                '',
+            ],
+            'author_corporate' => [],
+            'author_corporate_role' => [],
+            'author_additional' => [],
+            'title' => 'Tutki ja kirjoita',
+            'title_sub' => '',
+            'title_short' => 'Tutki ja kirjoita',
+            'title_full' => 'Tutki ja kirjoita / Sirkka Hirsjärvi, Pirkko Remes,'
+                . ' Paula Sajavaara',
+            'title_alt' => [],
+            'title_old' => [],
+            'title_new' => [],
+            'title_sort' => 'tutki ja kirjoita sirkka hirsjärvi pirkko remes'
+                . ' paula sajavaara',
+            'series' => [],
+            'publisher' => [
+                'Tammi',
+            ],
+            'publishDateSort' => '2013',
+            'publishDate' => [
+                '2013',
+            ],
+            'physical' => [],
+            'dateSpan' => [],
+            'edition' => '17. uud. p.',
+            'contents' => [],
+            'isbn' => [
+                '9789513148362',
+            ],
+            'issn' => [],
+            'doi_str_mv' => [
+                'doi1',
+                'doi2',
+                'doi:3',
+                'doi4',
+            ],
+            'callnumber-first' => 'QC861.2',
+            'callnumber-raw' => [
+                '38.04',
+                '38.03',
+                'QC861.2 .B36',
+            ],
+            'callnumber-subject' => 'QC',
+            'callnumber-label' => 'QC861',
+            'callnumber-sort' => 'QC 3861.2 B236',
+            'topic' => [
+                'oppaat',
+                'ft: kirjoittaminen',
+                'apurahat',
+                'tutkimusrahoitus',
+                'tutkimuspolitiikka',
+                'opinnäytteet',
+                'tiedonhaku',
+                'kielioppaat',
+                'tutkimustyö',
+                'tutkimus',
+            ],
+            'genre' => [],
+            'geographic' => [],
+            'era' => [],
+            'topic_facet' => [
+                'oppaat',
+                'ft: kirjoittaminen',
+                'apurahat',
+                'tutkimusrahoitus',
+                'tutkimuspolitiikka',
+                'opinnäytteet',
+                'tiedonhaku',
+                'kielioppaat',
+                'tutkimustyö',
+                'tutkimus',
+            ],
+            'genre_facet' => [],
+            'geographic_facet' => [],
+            'era_facet' => [],
+            'url' => [
+                'urn:doi:doi2',
+                'urn:doif:not-doi',
+                'http://doi.org/doi%3a3',
+                'https://dx.doi.org/doi4',
+            ],
+            'illustrated' => 'Not Illustrated',
+        ];
+
+        $this->compareArray($expected, $fields, 'toSolrArray');
+
+        $keys = $record->getWorkIdentificationData();
+
+        $expected = [
+            [
+                'authors' => [
+                    [
+                        'type' => 'author',
+                        'value' => 'Hirsjärvi, Sirkka.',
+                    ],
+                    [
+                        'type' => 'author',
+                        'value' => 'Remes, Pirkko.',
+                    ],
+                    [
+                        'type' => 'author',
+                        'value' => 'Sajavaara, Paula.',
+                    ],
+                ],
+                'authorsAltScript' => [],
+                'titles' => [
+                    [
+                        'type' => 'title',
+                        'value' => 'Tutki ja kirjoita /',
+                    ],
+                ],
+                'titlesAltScript' => [],
+            ],
+        ];
+
+        $this->compareArray($expected, $keys, 'getWorkIdentificationData');
+
+        $this->assertEquals(['(FOO)2345'], $record->getUniqueIDs());
     }
 }
