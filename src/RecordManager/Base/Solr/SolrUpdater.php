@@ -1982,16 +1982,7 @@ class SolrUpdater
         }
 
         if ($hasComponentParts && null !== $components) {
-            $changeDate = null;
-            $mergedComponents += $metadataRecord->mergeComponentParts(
-                $components,
-                $changeDate
-            );
-            // Use latest date as the host record date
-            // @phpstan-ignore-next-line
-            if (null !== $changeDate && $changeDate > $record['date']) {
-                $record['date'] = $changeDate;
-            }
+            $this->mergeComponentParts($metadataRecord, $record, $mergedComponents, $components, $source);
         }
         if (isset($settings['solrTransformationXSLT'])) {
             $params = [
@@ -2162,6 +2153,36 @@ class SolrUpdater
         $this->enrich($source, $settings, $metadataRecord, $data, 'final');
 
         return $data;
+    }
+
+    /**
+     * Merge component parts to record
+     *
+     * @param AbstractRecord $metadataRecord   Record to merge component parts to
+     * @param array          $record           Database record
+     * @param int            $mergedComponents Amount of merged components
+     * @param \Traversable   $components       Component parts to merge
+     * @param string         $source           Source ID
+     *
+     * @return int Amount of merged component parts
+     */
+    protected function mergeComponentParts(
+        AbstractRecord $metadataRecord,
+        array &$record,
+        int $mergedComponents,
+        \Traversable $components,
+        string $source
+    ): int {
+        $changeDate = null;
+        $mergedComponents += $metadataRecord->mergeComponentParts(
+            $components,
+            $changeDate
+        );
+        // Use latest date as the host record date
+        if (null !== $changeDate && $changeDate > $record['date']) {
+            $record['date'] = $changeDate;
+        }
+        return $mergedComponents;
     }
 
     /**

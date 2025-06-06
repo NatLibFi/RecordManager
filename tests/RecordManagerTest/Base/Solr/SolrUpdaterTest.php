@@ -29,6 +29,7 @@
 
 namespace RecordManagerTest\Base\Solr;
 
+use ArrayIterator;
 use RecordManager\Base\Database\DatabaseInterface;
 use RecordManager\Base\Database\MongoDatabase;
 use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
@@ -187,14 +188,14 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
             'suppressed' => ['$in' => [null, false]],
             'source_id' => 'test',
         ];
-        $records = [
+        $records = new ArrayIterator([
             [
                 '_id' => 'test.2',
             ],
             [
                 '_id' => 'test.3',
             ],
-        ];
+        ]);
         $recordMap = [
             [$params, [], $records[0]],
         ];
