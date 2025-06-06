@@ -1982,7 +1982,12 @@ class SolrUpdater
         }
 
         if ($hasComponentParts && null !== $components) {
-            $this->mergeComponentParts($metadataRecord, $record, $mergedComponents, $components, $source);
+            $mergedComponents += $this->mergeComponentParts(
+                $metadataRecord,
+                $record,
+                $components,
+                $source
+            );
         }
         if (isset($settings['solrTransformationXSLT'])) {
             $params = [
@@ -2158,23 +2163,21 @@ class SolrUpdater
     /**
      * Merge component parts to record
      *
-     * @param AbstractRecord $metadataRecord   Record to merge component parts to
-     * @param array          $record           Database record
-     * @param int            $mergedComponents Amount of merged components
-     * @param \Traversable   $components       Component parts to merge
-     * @param string         $source           Source ID
+     * @param AbstractRecord $metadataRecord Record to merge component parts to
+     * @param array          $record         Database record
+     * @param \Traversable   $components     Component parts to merge
+     * @param string         $source         Source ID
      *
      * @return int Amount of merged component parts
      */
     protected function mergeComponentParts(
         AbstractRecord $metadataRecord,
         array &$record,
-        int $mergedComponents,
         \Traversable $components,
         string $source
     ): int {
         $changeDate = null;
-        $mergedComponents += $metadataRecord->mergeComponentParts(
+        $mergedComponents = $metadataRecord->mergeComponentParts(
             $components,
             $changeDate
         );
