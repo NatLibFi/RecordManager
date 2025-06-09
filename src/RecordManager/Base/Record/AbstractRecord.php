@@ -226,34 +226,6 @@ abstract class AbstractRecord
     }
 
     /**
-     * Get component part metadata for embedding to host record
-     *
-     * @return array
-     */
-    public function getComponentPartMetadata(): array
-    {
-        return [];
-    }
-
-    /**
-     * Merge component parts to this record
-     *
-     * @param \Traversable $componentParts Component parts to be merged
-     * @param mixed        $changeDate     Latest database timestamp for the
-     *                                     component part set
-     * @param ?callable    $callback       Callback for processing component part data
-     *
-     * @return int
-     */
-    public function mergeComponentPartsExtended(
-        \Traversable $componentParts,
-        mixed &$changeDate,
-        ?callable $callback = null
-    ): int {
-        return 0;
-    }
-
-    /**
      * Merge component parts to this record
      *
      * @param \Traversable $componentParts Component parts to be merged
