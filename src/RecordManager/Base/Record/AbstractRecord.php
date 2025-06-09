@@ -241,11 +241,11 @@ abstract class AbstractRecord
      * @param \Traversable $componentParts Component parts to be merged
      * @param mixed        $changeDate     Latest database timestamp for the
      *                                     component part set
-     * @param ?callable    $callback       Callback for processing component part fields
+     * @param ?callable    $callback       Callback for processing component part data
      *
      * @return int
      */
-    public function mergeComponentPartsCallback(
+    public function mergeComponentPartsExtended(
         \Traversable $componentParts,
         mixed &$changeDate,
         ?callable $callback = null
