@@ -1693,6 +1693,34 @@ class Marc extends AbstractRecord
     }
 
     /**
+     * Create data from a component values.
+     * Returns component part as a field for Marc.
+     *
+     * @param array $data Component part data
+     *
+     * @return array Array containing values to merge
+     */
+    protected function createComponentPartEntry(array $data): array
+    {
+        $newField = [
+            'subfields' => [
+                ['a' => $data['_id']],
+            ],
+        ];
+        if ($data['title']) {
+            $newField['subfields'][] = ['b' => $data['title']];
+        }
+        if ($data['authors']) {
+            $newField['subfields'][] = ['c' => array_shift($data['authors'])];
+            foreach ($data['authors'] as $author) {
+                $newField['subfields'][] = ['d' => $author];
+            }
+        }
+
+        return $newField;
+    }
+
+    /**
      * Get alternate titles
      *
      * @return array

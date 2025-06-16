@@ -596,4 +596,17 @@ abstract class AbstractRecord
         }
         return '';
     }
+
+    /**
+     * Create data from values obtained from a component part.
+     * Each record format handles component parts differently.
+     *
+     * @param array $data Component part data
+     *
+     * @return array Array containing values to merge
+     */
+    protected function createComponentPartEntry(array $data): array
+    {
+        return [];
+    }
 }
