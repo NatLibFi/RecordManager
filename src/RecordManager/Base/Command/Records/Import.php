@@ -143,9 +143,7 @@ class Import extends AbstractBase
                     "No records imported -- skipping marking records deleted in '$source'"
                 );
             } else {
-                $this->logger->logInfo('import', "Marking unseen records deleted in '$source'");
-                $markedCount = $this->markUnseenRecordsDeleted($source, $dateThreshold);
-                $this->logger->logInfo('import', "Deleted $markedCount records");
+                $this->markUnseenRecordsDeleted($source, $dateThreshold);
             }
         }
 

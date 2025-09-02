@@ -405,15 +405,17 @@ trait StoreRecordTrait
      * @param string $source        Record source
      * @param int    $dateThreshold Date threshold for deletion
      *
-     * @return int Record count
+     * @return void
      */
     protected function markUnseenRecordsDeleted(
         string $source,
         int $dateThreshold
-    ): int {
+    ): void {
         $count = 0;
         $classParts = explode('\\', static::class);
         $funcName = strtolower(end($classParts));
+        $this->logger->logInfo($funcName, "Marking unseen records deleted in '$source'");
+
         $this->db->iterateRecords(
             [
                 'source_id' => $source,
@@ -440,6 +442,6 @@ trait StoreRecordTrait
                 }
             }
         );
-        return $count;
+        $this->logger->logInfo($funcName, "Deleted $count records");
     }
 }

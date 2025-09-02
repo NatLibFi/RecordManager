@@ -334,9 +334,7 @@ class Harvest extends AbstractBase
                                 . ' records deleted'
                         );
                     } else {
-                        $this->logger->logInfo('harvest', 'Marking unseen records deleted');
-                        $markedCount = $this->markUnseenRecordsDeleted($source, $dateThreshold);
-                        $this->logger->logInfo('harvest', "Deleted $markedCount records");
+                        $this->markUnseenRecordsDeleted($source, $dateThreshold);
 
                         // Deduplication will update timestamps from deferred
                         // update with markRecordDeleted, but handle non-dedup
@@ -414,9 +412,7 @@ class Harvest extends AbstractBase
                         $dateThreshold = time();
                         $harvester->listIdentifiers([$this, 'markRecordSeen']);
 
-                        $this->logger->logInfo('harvest', 'Marking unseen records deleted');
-                        $markedCount = $this->markUnseenRecordsDeleted($source, $dateThreshold);
-                        $this->logger->logInfo('harvest', "Deleted $markedCount records");
+                        $this->markUnseenRecordsDeleted($source, $dateThreshold);
 
                         $state = [
                             '_id' => "Last Deletion Processing Time $source",
