@@ -396,4 +396,50 @@ trait StoreRecordTrait
         );
         return $count;
     }
+
+    /**
+     * Set deleted all records that were not "seen" during harvest
+     *
+     * Uses the 'date' field that only gets updated when a record is received.
+     *
+     * @param string $source        Record source
+     * @param int    $dateThreshold Date threshold for deletion
+     *
+     * @return int Record count
+     */
+    protected function markUnseenRecordsDeleted(
+        string $source,
+        int $dateThreshold
+    ): int {
+        $count = 0;
+        $classParts = explode('\\', static::class);
+        $funcName = strtolower(end($classParts));
+        $this->db->iterateRecords(
+            [
+                'source_id' => $source,
+                'deleted' => false,
+                'date' => [
+                    '$lt' =>
+                        $this->db->getTimestamp($dateThreshold),
+                ],
+            ],
+            [],
+            function ($record) use (&$count, $source, $dateThreshold, $funcName) {
+                if (!empty($record['oai_id'])) {
+                    $this->deleteByOaiId(
+                        $source,
+                        $record['oai_id'],
+                        $dateThreshold
+                    );
+                } else {
+                    $this->markRecordDeleted($record);
+                }
+
+                if (++$count % 1000 == 0) {
+                    $this->logger->logInfo($funcName, "Deleted $count records");
+                }
+            }
+        );
+        return $count;
+    }
 }

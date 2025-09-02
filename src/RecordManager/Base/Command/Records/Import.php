@@ -37,6 +37,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 use function array_slice;
+use function in_array;
 use function strlen;
 
 /**
@@ -75,6 +76,12 @@ class Import extends AbstractBase
                 null,
                 InputOption::VALUE_NONE,
                 'Mark the imported records deleted'
+            )->addOption(
+                'delete-unseen',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Set to true to mark deleted the records that were not in the imported file. Set to force to mark the'
+                . ' records deleted even if no records were imported.'
             );
     }
 
@@ -91,6 +98,9 @@ class Import extends AbstractBase
         $source = $input->getArgument('source');
         $files = $input->getArgument('file');
         $delete = $input->getOption('delete');
+        $deleteUnseen = $input->getOption('delete-unseen');
+
+        $dateThreshold = time();
 
         if (!($settings = $this->dataSourceConfig[$source] ?? null)) {
             $this->logger->logFatal(
@@ -125,6 +135,20 @@ class Import extends AbstractBase
         }
 
         $this->logger->logInfo('import', "Total $count records loaded");
+
+        if (in_array($deleteUnseen, ['true', 'force'])) {
+            if ($count === 0 && 'force' !== $deleteUnseen) {
+                $this->logger->logInfo(
+                    'import',
+                    "No records imported -- skipping marking records deleted in '$source'"
+                );
+            } else {
+                $this->logger->logInfo('import', "Marking unseen records deleted in '$source'");
+                $markedCount = $this->markUnseenRecordsDeleted($source, $dateThreshold);
+                $this->logger->logInfo('import', "Deleted $markedCount records");
+            }
+        }
+
         return Command::SUCCESS;
     }
 
