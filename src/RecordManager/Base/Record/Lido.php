@@ -789,7 +789,8 @@ class Lido extends AbstractRecord
                         $this->metadataUtils->stripTrailingPunctuation(
                             (string)$placeNode->displayPlace,
                             '.'
-                        )
+                        ),
+                        ', \n\r\t\v\0'
                     );
                     if ($str) {
                         $results[] = $str;
@@ -922,7 +923,8 @@ class Lido extends AbstractRecord
                         $this->metadataUtils->stripTrailingPunctuation(
                             (string)$place->displayPlace,
                             '.'
-                        )
+                        ),
+                        ', \n\r\t\v\0'
                     );
                     if ('' !== $str) {
                         $results[] = $str;
