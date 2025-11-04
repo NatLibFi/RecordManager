@@ -433,6 +433,26 @@ class Lido extends AbstractRecord
     }
 
     /**
+     * Get author identifiers
+     *
+     * @return array<int, string>
+     */
+    public function getAuthorIds(): array
+    {
+        return [];
+    }
+
+    /**
+     * Get secondary author identifiers
+     *
+     * @return array<int, string>
+     */
+    public function getSecondaryAuthorIds(): array
+    {
+        return [];
+    }
+
+    /**
      * Return subject identifiers associated with object.
      *
      * @param string[] $exclude List of subject types to exclude (defaults to
