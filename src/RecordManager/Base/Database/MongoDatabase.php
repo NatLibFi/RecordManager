@@ -686,7 +686,7 @@ class MongoDatabase extends AbstractDatabase
         if ($filter) {
             array_walk_recursive(
                 $filter,
-                function (&$value) {
+                function (&$value): void {
                     if ($value instanceof Regex) {
                         $value = new \MongoDB\BSON\Regex((string)$value);
                     }

@@ -113,10 +113,7 @@ class FormatCalculator
                 // If it is 'Document', 'Interactive multimedia', 'Combination',
                 // 'Unknown', 'Other', it could be a book; otherwise, it is not a book:
                 $fileType = $this->get008Value($marc008, 26);
-                if (in_array($fileType, ['d', 'i', 'm', 'u', 'z'])) {
-                    return false;
-                }
-                return true;
+                return !in_array($fileType, ['d', 'i', 'm', 'u', 'z']);
             case 'e':   // Cartographic material
             case 'f':   // Manuscript cartographic material
             case 'g':   // Projected medium
@@ -533,10 +530,7 @@ class FormatCalculator
         }
         // The 711 could possibly have more than one entry, although probably
         // unlikely
-        if ($record->getField('711')) {
-            return true;
-        }
-        return false;
+        return (bool)$record->getField('711');
     }
 
     /**
@@ -572,12 +566,7 @@ class FormatCalculator
         if ($recordType === 'm') {
             return true;
         }
-
-        if ($this->isOnlineAccordingTo338($record)) {
-            return true;
-        }
-
-        return false;
+        return $this->isOnlineAccordingTo338($record);
     }
 
     /**

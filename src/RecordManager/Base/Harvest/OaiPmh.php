@@ -369,7 +369,7 @@ class OaiPmh extends AbstractBase
      *
      * @param string $date Date (ISO-8601 or YYYY-MM-DD HH:MM:SS)
      *
-     * @return integer     Unix timestamp (or false if $date invalid)
+     * @return int|false Unix timestamp (or false if $date invalid)
      */
     protected function normalizeDate($date)
     {
@@ -506,7 +506,7 @@ class OaiPmh extends AbstractBase
      *
      * @param \DOMElement $record XML record header
      *
-     * @return string The ID value
+     * @return ?string The ID value
      */
     protected function extractIDFromDom($record)
     {

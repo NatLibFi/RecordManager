@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## 3.0.0 - TBD
 
-**N.B. This version bumps the minimum PHP version to 8.1**
+**N.B. This version bumps the minimum PHP version to 8.2**
 
 Anything marked with [**BC**] is known to affect backward compatibility with previous versions.
 

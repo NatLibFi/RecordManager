@@ -282,11 +282,7 @@ class Harvest extends AbstractBase
 
                 $dateThreshold = null;
                 if ($reharvest) {
-                    if (is_string($reharvest)) {
-                        $dateThreshold = strtotime($reharvest);
-                    } else {
-                        $dateThreshold = time();
-                    }
+                    $dateThreshold = is_string($reharvest) ? strtotime($reharvest) : time();
                     $this->logger->logInfo(
                         'harvest',
                         "[$source] Reharvest date threshold: "
@@ -296,7 +292,7 @@ class Harvest extends AbstractBase
 
                 $type = ($settings['type'] ?? null) ?: 'OAI-PMH';
                 $harvester = $this->harvesterPluginManager->get($type);
-                $harvester->init($source, $this->verbose, $reharvest ? true : false);
+                $harvester->init($source, $this->verbose, (bool)$reharvest);
 
                 if ($singleId) {
                     $harvester->harvestSingle([$this, 'storeRecord'], $singleId);

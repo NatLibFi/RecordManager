@@ -80,9 +80,8 @@ class LineBasedMarcFormatterTest extends \PHPUnit\Framework\TestCase
      *                            during conversion
      *
      * @return void
-     *
-     * @dataProvider getConversionTests
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('getConversionTests')]
     public function testConversion(
         string $fixtureName,
         ?array $configs = null,

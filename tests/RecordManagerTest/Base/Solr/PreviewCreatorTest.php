@@ -94,7 +94,7 @@ class PreviewCreatorTest extends \PHPUnit\Framework\TestCase
         $recordPM = $this->createMock(RecordPluginManager::class);
         $recordPM->expects($this->once())
             ->method('get')
-            ->will($this->returnValue($marc));
+            ->willReturn($marc);
         $preview = $this->getPreviewCreator($recordPM);
 
         $timestamp = time();

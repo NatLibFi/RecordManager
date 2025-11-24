@@ -3,8 +3,7 @@
   <property name="tmp" value="/tmp" />
   <property name="package"  value="${phing.project.name}" override="true" />
   <property name="builddir" value="${tmp}/build/${phing.project.name}" override="true" />
-  <property name="basedir"  value="${project.basedir}" override="true" />
-  <property name="srcdir"   value="${basedir}/src/RecordManager" override="true" />
+  <property name="srcdir"   value="${project.basedir}" override="true" />
   <property name="phpunit_extra_params" value="" />
 
   <!-- Main Target -->
@@ -19,10 +18,13 @@
     <phingcall target="php-cs-fixer-dryrun"/>
     <phingcall target="psalm"/>
     <phingcall target="phpstan-console"/>
+    <phingcall target="rector-console"/>
   </target>
 
   <!-- Fix PHP Tasks -->
   <target name="fix-php" description="quality assurance php tasks">
+    <!-- Rector may introduce style issues, so run it first -->
+    <phingcall target="rector"/>
     <phingcall target="php-cs-fixer"/>
     <phingcall target="phpcbf"/>
   </target>
@@ -41,38 +43,81 @@
         <mkdir dir="${builddir}/reports/coverage"/>
       </then>
     </if>
-    <exec executable="${basedir}/vendor/bin/phpunit" passthru="true" checkreturn="true">
-      <arg line="-c ${basedir}/tests/phpunit.xml --display-deprecations --coverage-clover ${builddir}/reports/coverage/clover.xml --coverage-html ${builddir}/reports/coverage/ ${basedir}/tests ${phpunit_extra_params}" />
+    <exec executable="${srcdir}/vendor/bin/phpunit" passthru="true" checkreturn="true">
+      <arg line="-c ${srcdir}/tests/phpunit.xml --display-all-issues --coverage-clover ${builddir}/reports/coverage/clover.xml --coverage-html ${builddir}/reports/coverage/ ${srcdir}/tests ${phpunit_extra_params}" />
       <env name="XDEBUG_MODE" value="coverage" />
     </exec>
   </target>
   <target name="phpunitfast" description="Run tests">
-    <exec executable="${basedir}/vendor/bin/phpunit" passthru="true" checkreturn="true" >
-      <arg line="-c ${basedir}/tests/phpunit.xml --display-deprecations ${basedir}/tests ${phpunit_extra_params}" />
+    <exec executable="${srcdir}/vendor/bin/phpunit" passthru="true" checkreturn="true" >
+      <arg line="-c ${srcdir}/tests/phpunit.xml --display-all-issues ${srcdir}/tests ${phpunit_extra_params}" />
     </exec>
   </target>
 
   <!-- PHP CodeSniffer -->
   <target name="phpcbf">
-    <exec executable="${basedir}/vendor/bin/phpcbf" escape="false" passthru="true" checkreturn="true">
-      <arg line="--standard=${basedir}/tests/phpcs.xml" />
+    <!-- Run phpcs first to find any problems (faster than phpcbf): -->
+    <exec executable="${srcdir}/vendor/bin/phpcs" escape="false" returnProperty="phpcs_retval" outputProperty="phpcs_output">
+      <arg line="--cache=${srcdir}/tests/phpcs.cache.json --standard=${srcdir}/tests/phpcs.xml" />
+    </exec>
+    <if>
+      <not><equals arg1="${phpcs_retval}" arg2="0" /></not>
+      <then>
+        <echo msg="Trying to fix the following issues: " />
+        <echo msg="${phpcs_output}" />
+        <!-- Extract file names from phpcs output: -->
+        <property name="phpcbf_filelist" value="${phpcs_output}">
+          <filterchain>
+            <linecontainsregexp>
+              <regexp pattern="^FILE: (.*)" />
+            </linecontainsregexp>
+            <striplinebreaks />
+            <replaceregexp>
+              <regexp pattern="FILE: " replace=" " />
+            </replaceregexp>
+          </filterchain>
+        </property>
+        <!-- Finally, run phpcbf: -->
+        <exec executable="${srcdir}/vendor/bin/phpcbf" escape="false" passthru="true">
+          <arg line="--standard=${srcdir}/tests/phpcs.xml ${phpcbf_filelist}" />
+        </exec>
+      </then>
+    </if>
+  </target>
+
+
+  <target name="phpcbf">
+    <exec executable="${srcdir}/vendor/bin/phpcbf" escape="false" passthru="true" checkreturn="true">
+      <arg line="--standard=${srcdir}/tests/phpcs.xml" />
     </exec>
   </target>
   <target name="phpcs">
-    <exec executable="${basedir}/vendor/bin/phpcs" escape="false" passthru="true" checkreturn="true">
-      <arg line="-s --standard=${basedir}/tests/phpcs.xml" />
+    <exec executable="${srcdir}/vendor/bin/phpcs" escape="false" passthru="true" checkreturn="true">
+      <arg line="-s --standard=${srcdir}/tests/phpcs.xml" />
     </exec>
   </target>
 
   <!-- php-cs-fixer (first task applies fixes, second task simply checks if they are needed) -->
   <target name="php-cs-fixer">
-    <exec executable="${basedir}/vendor/bin/php-cs-fixer" passthru="true" escape="false">
-      <arg line="fix --config=${basedir}/tests/recordmanager.php-cs-fixer.php -vvv" />
+    <exec executable="${srcdir}/vendor/bin/php-cs-fixer" passthru="true" escape="false">
+      <arg line="fix --config=${srcdir}/tests/recordmanager.php-cs-fixer.php -vvv" />
     </exec>
   </target>
   <target name="php-cs-fixer-dryrun">
-    <exec executable="${basedir}/vendor/bin/php-cs-fixer" passthru="true" escape="false" checkreturn="true">
-      <arg line="fix --config=${basedir}/tests/recordmanager.php-cs-fixer.php --dry-run -vvv --diff" />
+    <exec executable="${srcdir}/vendor/bin/php-cs-fixer" passthru="true" escape="false" checkreturn="true">
+      <arg line="fix --config=${srcdir}/tests/recordmanager.php-cs-fixer.php --dry-run -vvv --diff" />
+    </exec>
+  </target>
+
+  <!-- Rector -->
+  <target name="rector-console">
+    <exec executable="${srcdir}/vendor/bin/rector" escape="false" passthru="true" checkreturn="true">
+      <arg line="--config=${srcdir}/tests/rector.php --dry-run" />
+    </exec>
+  </target>
+  <target name="rector">
+    <exec executable="${srcdir}/vendor/bin/rector" escape="false" passthru="true" checkreturn="true">
+      <arg line="--config=${srcdir}/tests/rector.php" />
     </exec>
   </target>
 
@@ -80,19 +125,19 @@
   <target name="phpmd">
     <echo>Make sure you have phpmd installed in path. It's not installed by default due to its dependencies.</echo>
     <exec executable="phpmd">
-      <arg line="${srcdir} html ${basedir}/tests/phpmd.xml --reportfile ${basedir}/reports/phpmd.html" />
+      <arg line="${srcdir}/src html ${srcdir}/tests/phpmd.xml --reportfile ${srcdir}/reports/phpmd.html" />
     </exec>
   </target>
 
   <!-- Psalm -->
   <target name="psalm">
-    <exec executable="${basedir}/vendor/bin/psalm" escape="false" passthru="true" checkreturn="true">
+    <exec executable="${srcdir}/vendor/bin/psalm" escape="false" passthru="true" checkreturn="true">
       <!-- threads=1 is a workaround for "Fatal error: Maximum execution time of 0 seconds exceeded" with macOS-->
       <arg line="--threads=1 --diff" />
     </exec>
   </target>
   <target name="psalm-info">
-    <exec executable="${basedir}/vendor/bin/psalm" escape="false" passthru="true" checkreturn="true">
+    <exec executable="${srcdir}/vendor/bin/psalm" escape="false" passthru="true" checkreturn="true">
       <!-- threads=1 is a workaround for "Fatal error: Maximum execution time of 0 seconds exceeded" with macOS-->
       <arg line="--threads=1 --diff --show-info=true" />
     </exec>
@@ -100,8 +145,8 @@
 
   <!-- Phpstan -->
   <target name="phpstan-console">
-    <exec executable="${basedir}/vendor/bin/phpstan.phar" escape="false" passthru="true" checkreturn="true">
-      <arg line="--configuration=${basedir}/tests/phpstan.neon --memory-limit=2G analyse" />
+    <exec executable="${srcdir}/vendor/bin/phpstan.phar" escape="false" passthru="true" checkreturn="true">
+      <arg line="--configuration=${srcdir}/tests/phpstan.neon --memory-limit=2G analyse" />
     </exec>
   </target>
 </project>

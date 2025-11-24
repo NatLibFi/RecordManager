@@ -128,7 +128,7 @@ class MarkForUpdate extends AbstractBase
         $this->db->iterateRecords(
             $params,
             [],
-            function ($record) use (&$count, $pc) {
+            function ($record) use (&$count, $pc): void {
                 $this->db->updateRecord(
                     $record['_id'],
                     [

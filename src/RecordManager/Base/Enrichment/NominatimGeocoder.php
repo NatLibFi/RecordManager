@@ -301,8 +301,10 @@ class NominatimGeocoder extends AbstractEnrichment
                         || $poly->contains($center)
                     ) {
                         if (!isset($solrArray[$this->solrField])) {
+                            // @phpstan-ignore-next-line
                             $solrArray[$this->solrField] = $wkts;
                         } else {
+                            // @phpstan-ignore-next-line
                             $solrArray[$this->solrField] = [
                                 ...(array)$solrArray[$this->solrField],
                                 ...$wkts,
@@ -312,6 +314,7 @@ class NominatimGeocoder extends AbstractEnrichment
                     // Set new center coordinates only if the field is in use and has
                     // no previous value
                     if ($cf && !isset($solrArray[$cf])) {
+                        // @phpstan-ignore-next-line
                         $solrArray[$cf]
                             = $geocoded[0]['lon'] . ' ' . $geocoded[0]['lat'];
                     }
@@ -486,7 +489,7 @@ class NominatimGeocoder extends AbstractEnrichment
      * @param string $shape1 First shape
      * @param string $shape2 Second shape
      *
-     * @return string
+     * @return ?string
      */
     protected function mergeShapes($shape1, $shape2)
     {

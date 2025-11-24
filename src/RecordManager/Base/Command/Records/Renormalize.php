@@ -193,11 +193,7 @@ class Renormalize extends AbstractBase
                 }
 
                 $record['original_data'] = $originalData;
-                if ($normalizedData == $originalData) {
-                    $record['normalized_data'] = '';
-                } else {
-                    $record['normalized_data'] = $normalizedData;
-                }
+                $record['normalized_data'] = $normalizedData == $originalData ? '' : $normalizedData;
                 $record['linking_id'] = $metadataRecord->getLinkingIDs();
                 if ($hostIDs) {
                     $record['host_record_id'] = $hostIDs;

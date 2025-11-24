@@ -600,11 +600,7 @@ class MetadataUtils
         // (e.g. string "Smith, A.")
         if (substr($str, -1) == '.' && substr($str, -3, 1) != ' ') {
             $p = strrpos($str, ' ');
-            if ($p > 0) {
-                $lastWord = substr($str, $p + 1, -1);
-            } else {
-                $lastWord = substr($str, 0, -1);
-            }
+            $lastWord = $p > 0 ? substr($str, $p + 1, -1) : substr($str, 0, -1);
             if (
                 !is_numeric($lastWord)
                 && !isset($this->abbreviations[mb_strtolower($lastWord, 'UTF-8')])
@@ -711,14 +707,13 @@ class MetadataUtils
     }
 
     /**
-     * Case-insensitive array_unique
+     * Case-insensitive counterpart for array_unique
      *
      * @param array $array Array
      *
      * @return array
      */
-    // @codingStandardsIgnoreStart
-    public function array_iunique($array)
+    public function arrayUniqueCaseInsensitive($array)
     {
         // This one handles UTF-8 properly, but mb_strtolower is SLOW
         $map = [];
@@ -817,7 +812,7 @@ class MetadataUtils
      */
     public function trimXMLWhitespace($xml)
     {
-        return preg_replace('~\s*(<([^>]*)>[^<]*</\2>|<[^>]*>)\s*~', '$1', $xml);
+        return preg_replace('~\s*(<([^>]*)>[^<]*</\2>|<[^>]*>)\s*~', '$1', $xml) ?? '';
     }
 
     /**
@@ -827,7 +822,7 @@ class MetadataUtils
      * @param bool  $normalized Whether to return the original (false) or
      *                          normalized (true) record
      *
-     * @return string Metadata as a string
+     * @return string|false Metadata as a string
      */
     public function getRecordData(&$record, $normalized)
     {
@@ -927,7 +922,7 @@ class MetadataUtils
     {
         array_walk(
             $array,
-            function (&$val, $key, $chars) {
+            function (&$val, $key, $chars): void {
                 $val = trim($val, $chars);
             },
             $chars
@@ -1263,7 +1258,7 @@ class MetadataUtils
         }
         array_walk(
             $lines,
-            function (&$value) {
+            function (&$value): void {
                 $start = 0;
                 $end = null;
                 if (str_starts_with($value, "'")) {

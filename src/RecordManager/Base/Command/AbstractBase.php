@@ -144,7 +144,7 @@ abstract class AbstractBase extends \Symfony\Component\Console\Command\Command
         MetadataUtils $metadataUtils
     ) {
         $name = null;
-        if (empty($this->defaultName)) {
+        if (empty(self::getDefaultName())) {
             $className = get_class($this);
             $parts = explode('\\', $className);
             $name = strtolower(

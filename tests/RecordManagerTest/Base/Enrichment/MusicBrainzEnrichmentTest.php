@@ -91,9 +91,9 @@ class MusicBrainzEnrichmentTest extends RecordTestBase
      * @param string $recordPath Path for the record fixture
      * @param array  $expected   Expected results
      *
-     * @return       void
-     * @dataProvider getTestEnrichmentData
+     * @return void
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('getTestEnrichmentData')]
     public function testEnrichment(string $recordPath, array $expected): void
     {
         $record = self::createMarcRecord(

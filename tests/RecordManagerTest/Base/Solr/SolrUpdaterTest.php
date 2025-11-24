@@ -182,7 +182,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
 
         $params = [
             'host_record_id' => [
-                '$in' => array_values((array)$dbRecord['linking_id']),
+                '$in' => array_values($dbRecord['linking_id']),
             ],
             'deleted' => false,
             'suppressed' => ['$in' => [null, false]],
@@ -409,10 +409,9 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
      * @param array $rules    Field processing rules
      * @param array $expected Expected results
      *
-     * @dataProvider processSingleRecordProvider
-     *
      * @return void
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('processSingleRecordProvider')]
     public function testFieldProcessingRules(array $rules, array $expected): void
     {
         $solrUpdater = $this->getSolrUpdater(
@@ -486,7 +485,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
         $recordPM = $this->createMock(RecordPluginManager::class);
         $recordPM->expects($this->once())
             ->method('get')
-            ->will($this->returnValue($record));
+            ->willReturn($record);
         $fieldMapper = new FieldMapper(
             $this->getFixtureDir() . 'config/basic',
             [],

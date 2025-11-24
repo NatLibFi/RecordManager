@@ -174,7 +174,7 @@ class Qdc extends AbstractRecord
         foreach ($doc->title as $title) {
             if (
                 !isset($data['title'])
-                && $title->attributes()->{'type'} !== 'alternative'
+                && (string)($title->attributes()->{'type'}) !== 'alternative'
             ) {
                 $data['title'] = $data['title_full'] = trim((string)$title);
                 $titleParts = explode(' : ', $data['title']);
@@ -534,11 +534,7 @@ class Qdc extends AbstractRecord
                 $identifier,
                 $matches
             );
-            if ($found) {
-                $result[] = urldecode($matches[2]);
-            } else {
-                $result[] = $identifier;
-            }
+            $result[] = $found ? urldecode($matches[2]) : $identifier;
         }
         return $result;
     }

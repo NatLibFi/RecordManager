@@ -12,3 +12,4 @@ parameters:
     ignoreErrors:
         - identifier: missingType.iterableValue
         - identifier: missingType.generics
+        - '#PHPDoc tag @SuppressWarnings#'

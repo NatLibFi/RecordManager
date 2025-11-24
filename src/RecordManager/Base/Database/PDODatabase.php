@@ -150,7 +150,8 @@ class PDODatabase extends AbstractDatabase
      */
     public function getUnixTime($timestamp): int
     {
-        return strtotime($timestamp);
+        $result = strtotime($timestamp);
+        return false === $result ? 0 : $result;
     }
 
     /**
@@ -942,7 +943,7 @@ class PDODatabase extends AbstractDatabase
             $findMethod,
             $filter,
             [],
-            function ($oldRecord) use ($collection, $fields, $remove) {
+            function ($oldRecord) use ($collection, $fields, $remove): void {
                 $record = array_replace($oldRecord, $fields);
                 foreach (array_keys($remove) as $key) {
                     if (isset($record[$key])) {
@@ -1088,11 +1089,7 @@ class PDODatabase extends AbstractDatabase
                             = $this->mapFieldToQuery($collection, $field, '=?');
                         $params[] = reset($values);
                     }
-                    if (count($whereParts) > 1) {
-                        $where[] = '(' . implode(' ', $whereParts) . ')';
-                    } else {
-                        $where[] = reset($whereParts);
-                    }
+                    $where[] = count($whereParts) > 1 ? '(' . implode(' ', $whereParts) . ')' : reset($whereParts);
                 }
                 if (isset($value['$ne'])) {
                     $values = (array)$value['$ne'];

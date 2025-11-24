@@ -588,7 +588,7 @@ class DedupHandler implements DedupHandlerInterface
                         function ($dedupRecord) use (
                             &$bestMatchRecords,
                             &$bestDedupId
-                        ) {
+                        ): void {
                             $cnt = count($dedupRecord['ids']);
                             $dedupId = (string)$dedupRecord['_id'];
                             if (
@@ -1426,7 +1426,7 @@ class DedupHandler implements DedupHandlerInterface
                 'suppressed' => ['$in' => [null, false]],
             ],
             [],
-            function ($component) use (&$components) {
+            function ($component) use (&$components): void {
                 $components[$this->metadataUtils->createIdSortKey($component['_id'])]
                     = $component;
             }
@@ -1482,6 +1482,7 @@ class DedupHandler implements DedupHandlerInterface
         }
         $positions[] = mb_strpos($title, ' / ', encoding: 'UTF-8') ?: 255;
         $positions[] = mb_strpos($title, ' - ', encoding: 'UTF-8') ?: 255;
+        // @phpstan-ignore-next-line
         $positions = array_filter($positions);
         $max = $positions ? min($positions) : 255;
         return $this->metadataUtils->stripPunctuation(mb_substr($title, 0, $max, 'UTF-8'));

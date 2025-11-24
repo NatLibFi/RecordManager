@@ -894,8 +894,6 @@ class Export extends AbstractBase
                 $currentNode->addAttribute($attr, $value);
             }
         }
-        // See https://github.com/phpstan/phpstan/issues/8236
-        // @phpstan-ignore-next-line
         $currentNode[0] = $nodeValue;
     }
 

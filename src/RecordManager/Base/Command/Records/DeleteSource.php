@@ -122,7 +122,7 @@ class DeleteSource extends AbstractBase
         $this->db->iterateRecords(
             $params,
             [],
-            function ($record) use (&$count, $pc, $sourceId, $dedupHandler) {
+            function ($record) use (&$count, $pc, $sourceId, $dedupHandler): void {
                 if (isset($record['dedup_id'])) {
                     $dedupHandler->removeFromDedupRecord(
                         $record['dedup_id'],

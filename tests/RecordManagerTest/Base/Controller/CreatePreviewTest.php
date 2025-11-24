@@ -116,10 +116,10 @@ class CreatePreviewTest extends \PHPUnit\Framework\TestCase
         $recordPM->expects($this->once())
             ->method('has')
             ->with('marc')
-            ->will($this->returnValue(true));
+            ->willReturn(true);
         $recordPM->expects($this->once())
             ->method('get')
-            ->will($this->returnValue($marc));
+            ->willReturn($marc);
         return new CreatePreview(
             [],
             $this->dataSourceConfig,

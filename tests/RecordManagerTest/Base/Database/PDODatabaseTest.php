@@ -238,10 +238,9 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
      * @param string $expectedSql    Expected SQL query
      * @param array  $expectedParams Expected SQL query params
      *
-     * @dataProvider getQueryConversionData
-     *
      * @return void
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('getQueryConversionData')]
     public function testQueryConversion(
         array $filter,
         array $options,
@@ -267,11 +266,11 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
             ->getMock();
         $database->expects($this->once())
             ->method('dbQuery')
-            ->will($this->returnCallback($checkQuery));
+            ->willReturnCallback($checkQuery);
         $database->expects($this->any())
             ->method('getMainFields')
             ->with('record')
-            ->will($this->returnValue($this->recordFields));
+            ->willReturn($this->recordFields);
 
         $database->findRecords($filter, $options);
     }

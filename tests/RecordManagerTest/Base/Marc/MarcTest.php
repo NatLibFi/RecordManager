@@ -125,10 +125,9 @@ class MarcTest extends \PHPUnit\Framework\TestCase
      * @param bool  $firstOnly      Whether to only first field
      * @param bool  $splitSubfields Whether to split subfields
      *
-     * @dataProvider getTestGetFieldsSubfieldsBySpecs
-     *
      * @return void
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('getTestGetFieldsSubfieldsBySpecs')]
     public function testGetFieldsSubfieldsBySpecs(
         array $expected,
         array $specs,

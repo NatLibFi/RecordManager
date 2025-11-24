@@ -153,7 +153,7 @@ class PurgeDeleted extends AbstractBase
         $this->db->iterateRecords(
             $params,
             [],
-            function ($record) use (&$count, &$total, $pc) {
+            function ($record) use (&$count, &$total, $pc): void {
                 ++$total;
                 if ($record['deleted']) {
                     ++$count;
@@ -201,7 +201,7 @@ class PurgeDeleted extends AbstractBase
         $this->db->iterateDedups(
             $params,
             [],
-            function ($record) use (&$count, &$total, $pc) {
+            function ($record) use (&$count, &$total, $pc): void {
                 ++$total;
                 if ($record['deleted']) {
                     $this->db->deleteDedup($record['_id']);

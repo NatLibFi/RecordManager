@@ -2323,11 +2323,7 @@ class Marc extends AbstractRecord
                         ->stripTrailingPunctuation(trim(implode(' ', $fuller)));
                 }
 
-                if ($fieldRelators) {
-                    $result['relators'][] = reset($fieldRelators);
-                } else {
-                    $result['relators'][] = '';
-                }
+                $result['relators'][] = $fieldRelators ? reset($fieldRelators) : '';
                 if ($authId = $this->record->getSubfield($field, '0')) {
                     $result['ids'][] = $authId;
                     if ($role = $this->record->getSubfield($field, 'e')) {

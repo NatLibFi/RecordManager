@@ -859,11 +859,7 @@ class SolrUpdater
             }
 
             // Take the last indexing date now and store it when done
-            if (!$sourceId && !$singleId && null === $fromDate) {
-                $lastIndexingDate = time();
-            } else {
-                $lastIndexingDate = null;
-            }
+            $lastIndexingDate = !$sourceId && !$singleId && null === $fromDate ? time() : null;
 
             // Init worker pools before accessing the database:
             $this->initWorkerPools();
@@ -1240,14 +1236,14 @@ class SolrUpdater
                         );
                     } else {
                         $merged[$fieldkey] = array_values(
-                            $this->metadataUtils->array_iunique($merged[$fieldkey])
+                            $this->metadataUtils->arrayUniqueCaseInsensitive($merged[$fieldkey])
                         );
                     }
                 }
             }
             if (isset($merged['allfields'])) {
                 $merged['allfields'] = array_values(
-                    $this->metadataUtils->array_iunique($merged['allfields'])
+                    $this->metadataUtils->arrayUniqueCaseInsensitive($merged['allfields'])
                 );
             } else {
                 $this->log->logWarning(
@@ -1385,7 +1381,7 @@ class SolrUpdater
         $this->db->iterateRecords(
             $params,
             [],
-            function ($record) use (&$values, &$count, $mapped, $field) {
+            function ($record) use (&$values, &$count, $mapped, $field): void {
                 $source = $record['source_id'];
                 if (!isset($this->settings[$source])) {
                     // Try to reload data source settings as they might have been
@@ -1510,11 +1506,7 @@ class SolrUpdater
                 $id = $record['id'];
                 $format = $record['record_format'] ?? $record['recordtype'];
                 $merged = 'merged' === $format;
-                if ($merged) {
-                    $dbRecord = $this->db->getDedup($id);
-                } else {
-                    $dbRecord = $this->db->getRecord($id);
-                }
+                $dbRecord = $merged ? $this->db->getDedup($id) : $this->db->getRecord($id);
                 if (!$dbRecord || !empty($dbRecord['deleted'])) {
                     if ($reportOnly) {
                         $msg = 'Found orphan ' . ($merged ? 'merged' : 'single')
@@ -2337,6 +2329,7 @@ class SolrUpdater
                 if ($datavalue === '') {
                     continue;
                 }
+                // @phpstan-ignore-next-line
                 if (is_array($datavalue)) {
                     // phpcs:ignore
                     /** @psalm-suppress NoValue */
@@ -2381,7 +2374,7 @@ class SolrUpdater
                     $all[] = $field;
                 }
             }
-            $data['allfields'] = $this->metadataUtils->array_iunique($all);
+            $data['allfields'] = $this->metadataUtils->arrayUniqueCaseInsensitive($all);
         }
 
         $data['first_indexed']
@@ -2550,23 +2543,23 @@ class SolrUpdater
             }
             $dst = $rule['dst'];
             if (in_array($rule['op'], [self::RULE_COPY, self::RULE_MOVE])) {
-                if (!isset($data[$dst])) {
-                    $data[$dst] = $newValues;
-                } else {
-                    $data[$dst] = [
-                        ...(array)$data[$dst],
-                        ...(array)$newValues,
-                    ];
-                }
+                // @phpstan-ignore-next-line
+                $data[$dst] = !isset($data[$dst]) ? $newValues : [
+                    ...(array)$data[$dst],
+                    ...(array)$newValues,
+                ];
             }
             if (in_array($rule['op'], [self::RULE_DELETE, self::RULE_MOVE])) {
                 // If we have a match rule and multiple values, only remove matching values:
                 if ($match && is_array($srcValues)) {
+                    // @phpstan-ignore-next-line
                     $data[$src] = array_diff($data[$src], $srcValues);
                     if (!$data[$src]) {
+                        // @phpstan-ignore-next-line
                         unset($data[$src]);
                     }
                 } else {
+                    // @phpstan-ignore-next-line
                     unset($data[$src]);
                 }
             }
@@ -2621,9 +2614,11 @@ class SolrUpdater
                             }
                         }
                     } else {
+                        // @phpstan-ignore-next-line
                         $data[$field] = $institutionCode . '/' . $data[$field];
                     }
                 } elseif ('building' === $field) {
+                    // @phpstan-ignore-next-line
                     $data[$field] = [$institutionCode];
                 }
             }
@@ -2651,7 +2646,7 @@ class SolrUpdater
             $fields = array_intersect_key($record['solr'], $this->scoredFields);
             array_walk_recursive(
                 $fields,
-                function ($field) use (&$fieldCount, &$uppercase) {
+                function ($field) use (&$fieldCount, &$uppercase): void {
                     ++$fieldCount;
 
                     $upper = preg_match_all('/[\p{Lu}]/u', $field);
@@ -2784,8 +2779,10 @@ class SolrUpdater
                 continue;
             }
             if (empty($child[$copyField])) {
+                // @phpstan-ignore-next-line
                 $child[$copyField] = (array)$parent[$copyField];
             } else {
+                // @phpstan-ignore-next-line
                 $child[$copyField] = [
                     ...(array)$child[$copyField],
                     ...(array)$parent[$copyField],
@@ -3304,7 +3301,8 @@ class SolrUpdater
     {
         if (null !== $fromDate) {
             if ($fromDate) {
-                return strtotime($fromDate);
+                $time = strtotime($fromDate);
+                return false === $time ? null : $time;
             }
         } else {
             if (!$lastUpdateKey) {

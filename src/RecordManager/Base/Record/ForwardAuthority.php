@@ -31,6 +31,7 @@ namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
 
+use function assert;
 use function is_array;
 
 /**
@@ -331,6 +332,8 @@ class ForwardAuthority extends AbstractRecord
     {
         $nodes = (array)$this->doc->children();
         $node = reset($nodes);
-        return is_array($node) ? reset($node) : $node;
+        $result = is_array($node) ? reset($node) : $node;
+        assert($result instanceof \SimpleXMLElement);
+        return $result;
     }
 }

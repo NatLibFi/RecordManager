@@ -20,6 +20,7 @@ conf/*.lst
 .php_cs_cache
 .psalm_cache
 .phpstan_cache
+.rector
 *.log
 mappings/*.map
 mappings/*.php
@@ -29,4 +30,4 @@ transformations/*.xsl
 vendor
 tests/.phpunit.cache
 tests/.phpunit.result.cache
-
+tests/phpcs.cache.json

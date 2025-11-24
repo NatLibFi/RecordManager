@@ -1124,8 +1124,8 @@ class Lido extends AbstractRecord
         }
 
         if (empty($noprocess)) {
-            $startDate = $startDate . '-01-01T00:00:00Z';
-            $endDate = $endDate . '-12-31T23:59:59Z';
+            $startDate .= '-01-01T00:00:00Z';
+            $endDate .= '-12-31T23:59:59Z';
         }
 
         // Trying to index dates into the future? I don't think so...

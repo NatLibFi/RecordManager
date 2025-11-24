@@ -816,9 +816,9 @@ class MarcTest extends RecordTestBase
      * @param array $config        Main configuration
      * @param int   $searchCount   Record db search expect
      *
-     * @return       void
-     * @dataProvider getTestMarcLinkingData
+     * @return void
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('getTestMarcLinkingData')]
     public function testMarcLinking(array $firstExpects, array $secondExpects, array $config, int $searchCount = 5)
     {
         $db = $this->createMock(Database::class);
@@ -863,7 +863,7 @@ class MarcTest extends RecordTestBase
         ];
         $db->expects($this->exactly($searchCount))
             ->method('findRecord')
-            ->will($this->returnValueMap($map));
+            ->willReturnMap($map);
 
         $record = $this->createMarcRecord(Marc::class, 'marc_links.xml', config: $config);
         $record->toSolrArray($db);

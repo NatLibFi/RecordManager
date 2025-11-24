@@ -33,6 +33,7 @@ use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
+use function assert;
 use function in_array;
 use function is_array;
 
@@ -281,7 +282,9 @@ class Forward extends AbstractRecord
     {
         $nodes = (array)$this->doc->children();
         $node = reset($nodes);
-        return is_array($node) ? reset($node) : $node;
+        $result = is_array($node) ? reset($node) : $node;
+        assert($result instanceof \SimpleXMLElement);
+        return $result;
     }
 
     /**

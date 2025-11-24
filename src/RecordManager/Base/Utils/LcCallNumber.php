@@ -142,10 +142,7 @@ class LcCallNumber extends AbstractCallNumber
         if (!$this->letters || !$this->digits) {
             return false;
         }
-        if (in_array($this->letters[0], ['I', 'O', 'W', 'X', 'Y'])) {
-            return false;
-        }
-        return true;
+        return !in_array($this->letters[0], ['I', 'O', 'W', 'X', 'Y']);
     }
 
     /**
@@ -209,6 +206,7 @@ class LcCallNumber extends AbstractCallNumber
                     "$mappingFile not available. Install it to use the categories."
                 );
             }
+            // @phpstan-ignore-next-line
             $mapping = include $mappingFile;
         }
 

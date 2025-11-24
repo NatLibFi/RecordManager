@@ -11,11 +11,8 @@ jobs:
       VUFIND_LOCAL_DIR: $GITHUB_WORKSPACE/local
     strategy:
       matrix:
-        php-version: ['8.1', '8.2', '8.3', '8.4', '8.4-no-mongo']
+        php-version: ['8.2', '8.3', '8.4', '8.4-no-mongo']
         include:
-          - php-version: 8.1
-            phing_tasks: "qa-tasks"
-            php-extensions: intl, xsl, mongodb
           - php-version: 8.2
             phing_tasks: "qa-tasks"
             php-extensions: intl, xsl, mongodb
@@ -63,6 +60,20 @@ jobs:
           path: .phpstan_cache
           key: "php-${{ matrix.php-version }}-phpstan-${{ github.sha }}"
           restore-keys: "php-${{ matrix.php-version }}-phpstan-"
+
+      - name: Cache PHP_CodeSniffer data
+        uses: actions/cache@v4
+        with:
+          path: tests/phpcs.cache.json
+          key: "php-${{ matrix.php-version }}-phpcs-${{ github.sha }}"
+          restore-keys: "php-${{ matrix.php-version }}-phpcs-"
+
+      - name: Cache rector data
+        uses: actions/cache@v4
+        with:
+          path: .rector
+          key: "php-${{ matrix.php-version }}-rector-${{ github.sha }}"
+          restore-keys: "php-${{ matrix.php-version }}-rector-"
 
       - name: Install composer dependencies
         run: composer install

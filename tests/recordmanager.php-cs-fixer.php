@@ -32,8 +32,8 @@ $finder->in(__DIR__ . '/../src');
 $finder->in(__DIR__ . '/../tests');
 
 $rules = [
-    '@PHP80Migration' => true,
-    '@PHPUnit84Migration:risky' => true,
+    '@PHP8x2Migration' => true,
+    '@PHPUnit10x0Migration:risky' => true,
     '@PSR12' => true,
     'align_multiline_comment' => true,
     'binary_operator_spaces' => [
@@ -42,6 +42,7 @@ $rules = [
     ],
     'cast_spaces' => ['space' => 'none'],
     'class_attributes_separation' => ['elements' => ['method' => 'one', 'property' => 'one']],
+    'class_reference_name_casing' => true,
     'concat_space' => ['spacing' => 'one'],
     'ereg_to_preg' => true,
     'get_class_to_class_keyword' => true,
@@ -71,8 +72,8 @@ $rules = [
     'no_php4_constructor' => true,
     'no_singleline_whitespace_before_semicolons' => true,
     'no_spaces_around_offset' => true,
-    'no_unneeded_control_parentheses' => true,
     'no_unneeded_braces' => true,
+    'no_unneeded_control_parentheses' => true,
     'no_unneeded_final_method' => true,
     'no_unreachable_default_argument_value' => true,
     'no_unused_imports' => true,

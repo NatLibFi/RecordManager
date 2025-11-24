@@ -104,7 +104,7 @@ class ImportRdf extends AbstractBase
             &$subjectUri,
             &$count,
             $quiet
-        ) {
+        ): void {
             if (isset($error)) {
                 throw $error;
             } elseif (isset($triple)) {
@@ -130,11 +130,9 @@ class ImportRdf extends AbstractBase
                     $graph = $doc->getGraph();
                 } else {
                     $graphName = $triple['graph'] ?? '';
-                    if ($doc->containsGraph($graphName)) {
-                        $graph = $doc->getGraph($graphName);
-                    } else {
-                        $graph = $doc->createGraph($graphName);
-                    }
+                    $graph = $doc->containsGraph($graphName)
+                        ? $doc->getGraph($graphName)
+                        : $doc->createGraph($graphName);
                 }
 
                 if ($graph->containsNode($triple['subject'])) {
@@ -165,11 +163,9 @@ class ImportRdf extends AbstractBase
                     Util::isBlank($object) || Util::isPrefixedName($object)
                     || Util::isIRI($object)
                 ) {
-                    if ($graph->containsNode($object)) {
-                        $objNode = $graph->getNode($object);
-                    } else {
-                        $objNode = $graph->createNode($object, true);
-                    }
+                    $objNode = $graph->containsNode($object)
+                        ? $graph->getNode($object)
+                        : $graph->createNode($object, true);
                 } else {
                     throw new \Exception("Invalid type to serialize: $object");
                 }

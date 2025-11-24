@@ -184,6 +184,7 @@ class FieldMapper
                             $newValues[] = $replacement;
                         }
                     }
+                    // @phpstan-ignore-next-line
                     $data[$field] = array_values(
                         array_filter(
                             array_unique($newValues),
@@ -193,19 +194,24 @@ class FieldMapper
                         )
                     );
                 } else {
+                    // @phpstan-ignore-next-line
                     $data[$field] = $this->mapValue($data[$field], $mappingFile);
                 }
                 if ([] === $data[$field] || '' === $data[$field]) {
                     if (isset($mappingFile[0]['map']['##mappedempty'])) {
+                        // @phpstan-ignore-next-line
                         $data[$field] = $mappingFile[0]['map']['##mappedempty'];
                     } elseif (isset($mappingFile[0]['map']['##mappedemptyarray'])) {
+                        // @phpstan-ignore-next-line
                         $data[$field]
                             = [$mappingFile[0]['map']['##mappedemptyarray']];
                     }
                 }
             } elseif (isset($mappingFile[0]['map']['##empty'])) {
+                // @phpstan-ignore-next-line
                 $data[$field] = $mappingFile[0]['map']['##empty'];
             } elseif (isset($mappingFile[0]['map']['##emptyarray'])) {
+                // @phpstan-ignore-next-line
                 $data[$field] = [$mappingFile[0]['map']['##emptyarray']];
             }
         }
@@ -219,7 +225,7 @@ class FieldMapper
      * @param array $mappingFile Mapping file
      * @param int   $index       Mapping index for sub-entry mappings
      *
-     * @return string|array<int, string>
+     * @return string|array<int, string>|null
      */
     protected function mapValue($value, $mappingFile, $index = 0)
     {

@@ -30,6 +30,7 @@
 
 namespace RecordManager\Base\Utils;
 
+use function assert;
 use function count;
 use function intval;
 use function strlen;
@@ -108,6 +109,7 @@ class LineBasedMarcFormatter
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n"
             . '<collection><record></record></collection>'
         );
+        assert($xml instanceof \SimpleXMLElement);
         $record = $xml->record[0];
 
         // Determine subfield format:
@@ -202,6 +204,6 @@ class LineBasedMarcFormatter
             $record->asXML(),
             -1,
             $this->badChars
-        );
+        ) ?? '';
     }
 }

@@ -307,7 +307,7 @@ class OaiPmhProvider extends AbstractBase
         $maxRecords = $this->config['OAI-PMH']['result_limit'];
         $count = 0;
         $listElementSent = false;
-        $sendListElement = function () use (&$listElementSent, $verb) {
+        $sendListElement = function () use (&$listElementSent, $verb): void {
             if (!$listElementSent) {
                 echo <<<EOT
                       <$verb>
@@ -534,7 +534,7 @@ class OaiPmhProvider extends AbstractBase
      * @param string $datestr              OAI-PMH timestamp
      * @param string $timePartForShortDate Time part to use for a date without time
      *
-     * @return int A timestamp
+     * @return int|false A timestamp
      */
     protected function fromOaiDate($datestr, $timePartForShortDate)
     {
@@ -619,11 +619,7 @@ class OaiPmhProvider extends AbstractBase
      */
     protected function getRequestParameters()
     {
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $params = file_get_contents('php://input');
-        } else {
-            $params = $_SERVER['QUERY_STRING'];
-        }
+        $params = $_SERVER['REQUEST_METHOD'] == 'POST' ? file_get_contents('php://input') : $_SERVER['QUERY_STRING'];
         return explode('&', $params);
     }
 

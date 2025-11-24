@@ -160,10 +160,9 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
      * @param string  $str         String to process
      * @param ?string $punctuation Punctuation regexp to override default
      *
-     * @dataProvider stripPunctuationProvider
-     *
      * @return void
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('stripPunctuationProvider')]
     public function testStripPunctuation(
         string $expected,
         string $str,
@@ -264,10 +263,9 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
      * @param bool   $expected Expected result
      * @param string $str      String to process
      *
-     * @dataProvider hasTrailingPunctuationProvider
-     *
      * @return void
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('hasTrailingPunctuationProvider')]
     public function testHasTrailingPunctuation(
         bool $expected,
         string $str
@@ -399,9 +397,8 @@ class MetadataUtilsTest extends \PHPUnit\Framework\TestCase
      * @param bool   $stripArticle Whether to strip any article from the beginning
      *
      * @return void
-     *
-     * @dataProvider createSortTitleProvider
      */
+    #[\PHPUnit\Framework\Attributes\DataProvider('createSortTitleProvider')]
     public function testCreateSortTitle(
         string $title,
         string $expected,

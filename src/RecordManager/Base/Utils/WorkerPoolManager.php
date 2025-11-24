@@ -34,7 +34,6 @@ use function call_user_func_array;
 use function count;
 use function func_get_args;
 use function function_exists;
-use function is_callable;
 use function strlen;
 
 /**
@@ -131,12 +130,10 @@ class WorkerPoolManager
     public function destroyWorkerPools(): void
     {
         // Destroy any worker pools
-        if (!empty($this->workerPools)) {
-            foreach ($this->workerPools as $workers) {
-                foreach ($workers as $worker) {
-                    socket_close($worker['socket']);
-                    posix_kill($worker['pid'], SIGHUP);
-                }
+        foreach ($this->workerPools as $workers) {
+            foreach ($workers as $worker) {
+                socket_close($worker['socket']);
+                posix_kill($worker['pid'], SIGHUP);
             }
         }
         $this->workerPools = [];
@@ -203,12 +200,10 @@ class WorkerPoolManager
                     'active' => false,
                 ];
             } else {
-                if (is_callable('cli_set_process_title')) {
-                    // This doesn't work with macOS, so suppress warnings.
-                    @cli_set_process_title(
-                        "RecordManager $poolId worker for $parentPid"
-                    );
-                }
+                // This doesn't work with macOS, so suppress warnings.
+                @cli_set_process_title(
+                    "RecordManager $poolId worker for $parentPid"
+                );
                 try {
                     socket_close($parentSocket);
                     if (null !== $initMethod) {

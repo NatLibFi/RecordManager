@@ -81,7 +81,7 @@ trait PreviewCreatorTrait
             $recordPM = $this->createMock(RecordPluginManager::class);
             $recordPM->expects($this->once())
                 ->method('get')
-                ->will($this->returnValue($record));
+                ->willReturn($record);
         }
 
         $fieldMapper = new FieldMapper(

@@ -69,7 +69,7 @@ abstract class AbstractCallNumber
      *
      * @param string $str String
      *
-     * @return string
+     * @return ?string
      */
     protected function createSortableString($str)
     {

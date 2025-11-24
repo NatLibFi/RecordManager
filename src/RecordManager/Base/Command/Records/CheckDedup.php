@@ -170,7 +170,7 @@ class CheckDedup extends AbstractBase
         $this->db->iterateRecords(
             $params,
             ['projection' => ['_id' => 1]],
-            function (array $recordId) use (&$count, &$fixed, $pc) {
+            function (array $recordId) use (&$count, &$fixed, $pc): void {
                 $record = $this->db->getRecord($recordId['_id']);
                 $result = $this->dedupHandler->checkRecordLinks($record);
                 if ($result) {

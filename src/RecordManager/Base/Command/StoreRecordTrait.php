@@ -386,7 +386,7 @@ trait StoreRecordTrait
         $this->db->iterateRecords(
             $params,
             [],
-            function ($record) use (&$count, $oaiID) {
+            function ($record) use (&$count, $oaiID): void {
                 $this->logger->writelnDebug(
                     "Delete by oai_id $oaiID: {$record['_id']}"
                 );
@@ -426,7 +426,7 @@ trait StoreRecordTrait
                 ],
             ],
             [],
-            function ($record) use (&$count, $source, $dateThreshold, $funcName) {
+            function ($record) use (&$count, $source, $dateThreshold, $funcName): void {
                 if (!empty($record['oai_id'])) {
                     $this->deleteByOaiId(
                         $source,
