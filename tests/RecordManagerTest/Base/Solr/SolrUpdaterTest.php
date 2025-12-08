@@ -474,6 +474,11 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
                 ],
             ],
         ];
+        $this->config['Solr']['enrichment'] = [
+            'LidoSkosmosEnrichment',
+            'LidoAuthEnrichment',
+            'EadOnkiLightEnrichment,start',
+        ];
         $solrUpdater = $this->getSolrUpdater(
             $dsOverride,
         );

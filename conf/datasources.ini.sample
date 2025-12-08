@@ -112,7 +112,7 @@
 ; authority[<type>]     Map to authority index sources where <type> is authority record type
 ;                       (corporateBody, person) or * for any;
 ; authority_id_regex[<type>] Regex for filtering allowed authority ids
-;                            (used when indexing authority ids and when enriching biblio records with MarcAuthEnrichment)
+;                            (used when indexing authority ids and when enriching biblio records with AuthEnrichment)
 ; fullTextXPaths        XPath expression denoting full text fields
 ; fullTextUrlXPaths     XPath expression denoting fields that contain URLs to full text content (plain text only at the moment)
 
@@ -162,7 +162,7 @@
 ;driverParams[] = "idIn999=true"
 ;driverParams[] = "003InLinkingID=true"
 ;driverParams[] = "kohaNormalization=true"
-;enrichments[] = MarcAuthEnrichment,final
+;enrichments[] = AuthEnrichment,final
 
 ; Sample DSpace configuration
 ;[dspace]
