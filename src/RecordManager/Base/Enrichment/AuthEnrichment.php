@@ -52,7 +52,7 @@ use RecordManager\Base\Utils\MetadataUtils;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-abstract class AuthEnrichment extends AbstractEnrichment
+class AuthEnrichment extends AbstractEnrichment
 {
     use \RecordManager\Base\Record\CreateRecordTrait;
 
@@ -93,6 +93,48 @@ abstract class AuthEnrichment extends AbstractEnrichment
             $metadataUtils
         );
         $this->authorityDb = $authorityDb;
+    }
+
+    /**
+     * Enrich the record and return any additions in solrArray
+     *
+     * @param string $sourceId  Source ID
+     * @param object $record    Metadata Record
+     * @param array  $solrArray Metadata to be sent to Solr
+     *
+     * @throws \Exception
+     * @return void
+     */
+    public function enrich($sourceId, $record, &$solrArray)
+    {
+        if ($record instanceof \RecordManager\Base\Record\Marc) {
+            $this->enrichMarcRecord($sourceId, $record, $solrArray);
+        }
+    }
+
+    /**
+     * Enrich the Marc record and save any additions in solrArray
+     *
+     * @param string $sourceId  Source ID
+     * @param object $record    Metadata Record
+     * @param array  $solrArray Metadata to be sent to Solr
+     *
+     * @throws \Exception
+     * @return void
+     */
+    public function enrichMarcRecord($sourceId, $record, &$solrArray): void
+    {
+        foreach ($solrArray['author2_id_str_mv'] ?? [] as $id) {
+            $this->enrichField(
+                $sourceId,
+                $record,
+                $solrArray,
+                $id,
+                'author_variant',
+                'author_variant',
+                true
+            );
+        }
     }
 
     /**

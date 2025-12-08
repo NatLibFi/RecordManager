@@ -32,7 +32,9 @@ namespace RecordManagerTest\Base\Solr;
 use ArrayIterator;
 use RecordManager\Base\Database\DatabaseInterface;
 use RecordManager\Base\Database\MongoDatabase;
+use RecordManager\Base\Enrichment\AuthEnrichment;
 use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
+use RecordManager\Base\Enrichment\SkosmosEnrichment;
 use RecordManager\Base\Http\HttpService as HttpService;
 use RecordManager\Base\Record\Marc\FormatCalculator;
 use RecordManager\Base\Record\PluginManager as RecordPluginManager;
@@ -43,6 +45,7 @@ use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\WorkerPoolManager;
 use RecordManagerTest\Base\Feature\FixtureTrait;
 use RecordManagerTest\Base\Record\CreateSampleRecordTrait;
+use ReflectionClass;
 
 /**
  * Tests for SolrUpdater
@@ -451,6 +454,55 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Test enrichments using legacy names and new names.
+     *
+     * @return void
+     */
+    public function testLegacyEnrichments(): void
+    {
+        $dsOverride = [
+            'test' => [
+                'enrichments' => [
+                    'MarcOnkiLightEnrichment',
+                    'LidoOnkiLightEnrichment',
+                    'Ead3SkosmosEnrichment',
+                    'EadSkosmosEnrichment',
+                    'OnkiLightEnrichment',
+                    'MarcAuthEnrichment',
+                    'SomeAuthEnrichment,final',
+                    'BrokenEnrichment',
+                ],
+            ],
+        ];
+        $solrUpdater = $this->getSolrUpdater(
+            $dsOverride,
+        );
+        $record = $this->createMarcRecord(
+            \RecordManager\Base\Record\Marc::class,
+            'marc-broken.xml'
+        );
+
+        $date = strtotime('2020-10-20 13:01:00');
+        $dbRecord = [
+            '_id' => $record->getID(),
+            'oai_id' => '',
+            'linking_id' => $record->getLinkingIDs(),
+            'source_id' => 'test',
+            'deleted' => false,
+            'created' => $date,
+            'updated' => $date,
+            'date' => $date,
+            'format' => 'marc',
+            'original_data' => $record->serialize(),
+            'normalized_data' => null,
+        ];
+        $solrUpdater->processSingleRecord($dbRecord);
+        $reflectionClass = new ReflectionClass($solrUpdater);
+        $enrichments = array_keys($reflectionClass->getProperty('enrichments')->getValue($solrUpdater));
+        $this->assertEquals(['SkosmosEnrichment', 'AuthEnrichment'], $enrichments);
+    }
+
+    /**
      * Create SolrUpdater
      *
      * @param array              $dsConfigOverrides Data source config overrides
@@ -491,13 +543,19 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
             [],
             $this->dataSourceConfig
         );
+        $enrichmentMap = [
+            ['SkosmosEnrichment', $this->createMock(SkosmosEnrichment::class)],
+            ['AuthEnrichment', $this->createMock(AuthEnrichment::class)],
+        ];
+        $enrichmentPluginManager = $this->createMock(EnrichmentPluginManager::class);
+        $enrichmentPluginManager->expects($this->any())->method('get')->willReturnMap($enrichmentMap);
         $solrUpdater = new SolrUpdater(
             $this->config,
             $dsConfig,
             $database,
             $logger,
             $recordPM,
-            $this->createMock(EnrichmentPluginManager::class),
+            $enrichmentPluginManager,
             $this->createMock(HttpService::class),
             $this->createMock(Ini::class),
             $fieldMapper,

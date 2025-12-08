@@ -3106,23 +3106,61 @@ class SolrUpdater
         /** @psalm-var list<string> $dsEnrichments */
         $dsEnrichments = (array)($settings['enrichments'] ?? []);
         $enrichments = array_unique(
-            [
-                ...$globalEnrichments,
-                ...$dsEnrichments,
-            ]
+            array_map(
+                /**
+                 * Bc support: map all instances of recordOnkiLightEnrichment and recordSkosmosEnrichment to
+                 * use SkosmosEnrichment instead and recordAuthEnrichment instances
+                 * to use AuthEnrichment instead.
+                 *
+                 * This will help to map all instances under the same key.
+                 */
+                function ($enrichment) {
+                    $exploded = explode(',', $enrichment, 2);
+                    $enrichmentName = $exploded[0];
+                    $enrichmentStage = $exploded[1] ?? '';
+                    if (!$enrichment[0]) {
+                        return [];
+                    }
+                    if (
+                        str_ends_with($enrichmentName, 'OnkiLightEnrichment')
+                        || str_ends_with($enrichmentName, 'SkosmosEnrichment')
+                    ) {
+                        return [
+                            'name' => 'SkosmosEnrichment',
+                            'stage' => $enrichmentStage,
+                        ];
+                    }
+                    if (str_ends_with($enrichmentName, 'AuthEnrichment')) {
+                        return [
+                            'name' => 'AuthEnrichment',
+                            'stage' => $enrichmentStage,
+                        ];
+                    }
+                    return [
+                        'name' => $enrichmentName,
+                        'stage' => $enrichmentStage,
+                    ];
+                },
+                [
+                    ...$globalEnrichments,
+                    ...$dsEnrichments,
+                ]
+            ),
+            SORT_REGULAR
         );
-        foreach ($enrichments as $enrichmentSettings) {
-            $parts = explode(',', $enrichmentSettings);
-            $enrichment = $parts[0];
-            $enrichmentStage = $parts[1] ?? '';
-            if ($stage !== $enrichmentStage) {
+        foreach ($enrichments as $enrichment) {
+            if (!$enrichment || $stage !== $enrichment['stage']) {
                 continue;
             }
-            if (!isset($this->enrichments[$enrichment])) {
-                $this->enrichments[$enrichment]
-                    = $this->enrichmentPluginManager->get($enrichment);
+            $enrichmentName = $enrichment['name'];
+            if (!isset($this->enrichments[$enrichmentName])) {
+                if ($enrichmentService = $this->enrichmentPluginManager->get($enrichmentName)) {
+                    $this->enrichments[$enrichmentName] = $enrichmentService;
+                } else {
+                    continue;
+                }
             }
-            $this->enrichments[$enrichment]->enrich($source, $record, $data);
+            $this->enrichments[$enrichmentName]->enrich($source, $record, $data);
         }
     }
 

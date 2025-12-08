@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2014-2023.
+ * Copyright (C) The National Library of Finland 2014-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -24,6 +24,7 @@
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
+ * @author   Juha Luoma <juha.luoma@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
@@ -48,6 +49,7 @@ use function is_callable;
  * @package  RecordManager
  * @author   Ere Maijala <ere.maijala@helsinki.fi>
  * @author   Samuli Sillanpää <samuli.sillanpaa@helsinki.fi>
+ * @author   Juha Luoma <juha.luoma@helsinki.fi>
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
@@ -156,6 +158,73 @@ class SkosmosEnrichment extends AbstractEnrichment
     protected $excludedLocationMatches = [];
 
     /**
+     * Default fields to enrich. Key is the method in driver and value is array
+     * - pref, preferred field in solr
+     * - alt, alternative field in solr
+     * - check, check field for existing values
+     *
+     * @var array<string, array>
+     */
+    protected $ead3Fields = [
+        'getRawTopicIds' => [
+            'pref' => 'topic_add_txt_mv',
+            'alt' => 'topic_alt_txt_mv',
+            'check' => 'topic',
+        ],
+        'getRawGeographicTopicIds' => [
+            'pref' => 'geographic_add_txt_mv',
+            'alt' => 'geographic_alt_txt_mv',
+            'check' => 'geographic',
+        ],
+        'getCorporateAuthorIds' => [
+            'pref' => 'author_corporate',
+            'alt' => 'author_variant',
+            'check' => 'author_corporate',
+        ],
+        'getAuthorIds' => [
+            'pref' => 'author',
+            'alt' => 'author_variant',
+            'check' => 'author',
+        ],
+        'getSecondaryAuthorIds' => [
+            'pref' => 'author2',
+            'alt' => 'author2_variant',
+            'check' => 'author2',
+        ],
+    ];
+
+    /**
+     * Default fields to enrich. Key is the method in driver and value is array
+     * - pref, preferred field in solr
+     * - alt, alternative field in solr
+     * - check, check field for existing values
+     *
+     * @var array<string, array>
+     */
+    protected $lidoFields = [
+        'getRawTopicIds' => [
+            'pref' => 'topic_add_txt_mv',
+            'alt' => 'topic_alt_txt_mv',
+            'check' => 'topic',
+        ],
+        'getRawGeographicTopicIds' => [
+            'pref' => 'geographic_add_txt_mv',
+            'alt' => 'geographic_alt_txt_mv',
+            'check' => 'geographic',
+        ],
+        'getAuthorIds' => [
+            'pref' => 'author',
+            'alt' => 'author_variant',
+            'check' => 'author',
+        ],
+        'getSecondaryAuthorIds' => [
+            'pref' => 'author2',
+            'alt' => 'author2_variant',
+            'check' => 'author2',
+        ],
+    ];
+
+    /**
      * Initialize settings
      *
      * @return void
@@ -221,7 +290,59 @@ class SkosmosEnrichment extends AbstractEnrichment
      */
     public function enrich($sourceId, $record, &$solrArray)
     {
-        foreach ($this->defaultFields as $method => $spec) {
+        // Detect if record is an authority record or not as they have different enrichments.
+        if (str_ends_with($record::class, 'Authority')) {
+            $this->enrichAuthorityRecord($sourceId, $record, $solrArray);
+        } else {
+            $this->enrichRecord($sourceId, $record, $solrArray);
+        }
+    }
+
+    /**
+     * Enrich the authority record and save any additions in solrArray
+     *
+     * @param string $sourceId  Source ID
+     * @param object $record    Metadata Record
+     * @param array  $solrArray Metadata to be sent to Solr
+     *
+     * @throws \Exception
+     * @return void
+     */
+    protected function enrichAuthorityRecord($sourceId, $record, &$solrArray): void
+    {
+        foreach ($record->getOccupationIds() as $id) {
+            $this->enrichField(
+                $sourceId,
+                $record,
+                $solrArray,
+                $id,
+                'occupation_str_mv',
+                '',
+                '',
+                true
+            );
+        }
+    }
+
+    /**
+     * Enrich the record and save any additions in solrArray
+     *
+     * @param string $sourceId  Source ID
+     * @param object $record    Metadata Record
+     * @param array  $solrArray Metadata to be sent to Solr
+     *
+     * @throws \Exception
+     * @return void
+     */
+    protected function enrichRecord($sourceId, $record, &$solrArray): void
+    {
+        $enrichFieldSpecs = $this->defaultFields;
+        if ($record instanceof \RecordManager\Base\Record\Lido) {
+            $enrichFieldSpecs = $this->lidoFields;
+        } elseif ($record instanceof \RecordManager\Base\Record\Ead3) {
+            $enrichFieldSpecs = $this->ead3Fields;
+        }
+        foreach ($enrichFieldSpecs as $method => $spec) {
             if (!is_callable([$record, $method])) {
                 continue;
             }
