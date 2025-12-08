@@ -158,7 +158,7 @@ class SkosmosEnrichment extends AbstractEnrichment
     protected $excludedLocationMatches = [];
 
     /**
-     * Default fields to enrich. Key is the method in driver and value is array
+     * Default fields for ead3 to enrich. Key is the method in driver and value is array
      * - pref, preferred field in solr
      * - alt, alternative field in solr
      * - check, check field for existing values
@@ -194,7 +194,7 @@ class SkosmosEnrichment extends AbstractEnrichment
     ];
 
     /**
-     * Default fields to enrich. Key is the method in driver and value is array
+     * Default fields for lido to enrich. Key is the method in driver and value is array
      * - pref, preferred field in solr
      * - alt, alternative field in solr
      * - check, check field for existing values
