@@ -444,33 +444,39 @@ abstract class AbstractRecord
      *
      * @return bool
      */
-    public function getSuppressed()
+    public function getSuppressed(): bool
     {
         $filters = $this->dataSourceConfig[$this->source]['suppressOnField'] ?? [];
-        if ($filters) {
-            $solrFields = $this->toSolrArray();
-            foreach ($filters as $field => $filter) {
-                if (!isset($solrFields[$field])) {
-                    continue;
+        $regExFilters = $this->dataSourceConfig[$this->source]['suppressOnFieldRegEx'] ?? [];
+        if (!$filters && !$regExFilters) {
+            return false;
+        }
+
+        $solrFields = $this->toSolrArray();
+        foreach ($filters as $field => $filter) {
+            if (!isset($solrFields[$field])) {
+                continue;
+            }
+            foreach ((array)$solrFields[$field] as $value) {
+                if (in_array($value, explode('|', $filter))) {
+                    return true;
                 }
-                foreach ((array)$solrFields[$field] as $value) {
-                    if (
-                        str_starts_with($value, '/')
-                        && str_ends_with($value, '/')
-                    ) {
-                        $res = preg_match($filter, $value);
-                        if (false === $res) {
-                            $this->logger->logError(
-                                'getSuppressed',
-                                "Failed to parse filter regexp: $filter"
-                            );
-                        }
-                    } else {
-                        $res = in_array($value, explode('|', $filter));
-                    }
-                    if ($res) {
-                        return true;
-                    }
+            }
+        }
+        foreach ($regExFilters as $field => $filter) {
+            if (!isset($solrFields[$field])) {
+                continue;
+            }
+            foreach ((array)$solrFields[$field] as $value) {
+                $res = preg_match($filter, $value);
+                if (false === $res) {
+                    $this->logger->logError(
+                        'getSuppressed',
+                        "Failed to parse filter regex: $filter"
+                    );
+                }
+                if ($res) {
+                    return true;
                 }
             }
         }

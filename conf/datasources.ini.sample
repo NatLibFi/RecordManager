@@ -86,6 +86,14 @@
 ; extraFields[]         An array of extra fields added to each record from this data source when sending records to Solr.
 ;                       Use format fieldname:contents, e.g.
 ;                         extraFields[] = sector_str_mv:library
+; suppressOnField[]     A field-specific array of field contents that cause a record to be suppressed. A pipe character
+;                       can be used to separate multiple values.
+;                       Example:
+;                         suppressOnField['building'] = "STORAGE|STAFF"
+; suppressOnFieldRegEx[] A field-specific array of regular expressions that, when matching field contents, cause a
+;                       record to be suppressed.
+;                       Example:
+;                         suppressOnFieldRegEx['building'] = "/(storage|staff)/i"
 ; fieldRules[]          An array of rules for changing fields before they're sent to Solr. Allows deleting, copying and moving of fields.
 ;                       Rules are processed in order before processing mappings and converting hierarchical facets.
 ;                       The following rules are available:

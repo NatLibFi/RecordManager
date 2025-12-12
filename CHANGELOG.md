@@ -25,6 +25,7 @@ Anything marked with [**BC**] is known to affect backward compatibility with pre
 - Added support for deleting unseen records after import.
 - Added support for defining additional HTTP options for Solr index requests. This could be useful e.g. when using SSL with self-signed certificates.
 - When multi-process support is enabled (i.e. record_workers and/or solr_update_workers set in recordmanager.ini), a few additional worker processes are initialized on startup to take the place of any worker that stops unexpectedly (typically due to an issue with a PHP or one of its extensions causing a segmentation fault).
+- Regular expression support for suppressOnField setting did not work properly. A new suppressOnFieldRegEx was introduced to make this option explicit.
 
 ### Changed
 
