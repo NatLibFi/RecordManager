@@ -774,16 +774,18 @@ class MetadataUtils
      *
      * @param string $date Date to validate
      *
-     * @return boolean|int False if invalid, resulting time otherwise
+     * @return bool|int False if invalid, resulting time otherwise
      */
     public function validateISO8601Date($date)
     {
-        $found = $date
-            && preg_match(
-                '/^(\-?\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/',
-                $date,
-                $parts
-            );
+        if ('' === $date) {
+            return false;
+        }
+        $found = preg_match(
+            '/^(\-?\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})Z$/',
+            $date,
+            $parts
+        );
         if (!$found) {
             return false;
         }
