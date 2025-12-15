@@ -83,8 +83,6 @@ class SkosmosEnrichmentTest extends RecordTestBase
             'enrichmentFixture' => 'Enrichment/skosmos_results.json',
             'config' => [],
             'expected' => [
-                // Marc class doesn't have getAuthorIds() method, so enrichment won't occur
-                // Author field remains unchanged from the MARC record
                 'author' => ['Test Author'],
             ],
         ];
@@ -103,7 +101,7 @@ class SkosmosEnrichmentTest extends RecordTestBase
             'enrichmentFixture' => null,
             'config' => [],
             'expected' => [
-                'topic_add_txt_mv' => [],
+                'topic_add_txt_mv' => null,
             ],
         ];
         yield 'exact match enrichment' => [
@@ -162,7 +160,7 @@ class SkosmosEnrichmentTest extends RecordTestBase
             'enrichmentFixture' => 'Enrichment/skosmos_results.json',
             'config' => [],
             'expected' => [
-                'topic_add_txt_mv' => [],
+                'topic_add_txt_mv' => null,
             ],
         ];
         yield 'Forward without enrichment methods' => [
@@ -170,7 +168,7 @@ class SkosmosEnrichmentTest extends RecordTestBase
             'enrichmentFixture' => 'Enrichment/skosmos_results.json',
             'config' => [],
             'expected' => [
-                'topic_add_txt_mv' => [],
+                'topic_add_txt_mv' => null,
             ],
         ];
     }
@@ -238,15 +236,7 @@ class SkosmosEnrichmentTest extends RecordTestBase
         $enricher->enrich('test', $record, $fields);
 
         foreach ($expected as $field => $values) {
-            if ($values === 'notEmpty') {
-                $this->assertNotEmpty($fields[$field] ?? []);
-            } elseif ($values === 'isEmpty') {
-                $this->assertEmpty($fields[$field] ?? []);
-            } elseif (is_array($values)) {
-                $this->assertEquals($values, $fields[$field] ?? []);
-            } else {
-                $this->assertEquals($values, $fields[$field] ?? null);
-            }
+            $this->assertEquals($values, $fields[$field] ?? null);
         }
     }
 
