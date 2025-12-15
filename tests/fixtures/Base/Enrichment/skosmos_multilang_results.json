@@ -1,0 +1,28 @@
+{
+    "http://www.yso.fi/onto/yso/p33333": {
+        "_id": "http://www.yso.fi/onto/yso/p33333",
+        "data": {
+            "@context": {
+                "skos": "http://www.w3.org/2004/02/skos/core#",
+                "uri": "@id",
+                "type": "@type",
+                "lang": "@language",
+                "value": "@value",
+                "graph": "@graph",
+                "prefLabel": "skos:prefLabel"
+            },
+            "graph": [
+                {
+                    "uri": "http://www.yso.fi/onto/yso/p33333",
+                    "type": "skos:Concept",
+                    "prefLabel": [
+                        {"lang": "en", "value": "Multilingual Topic English"},
+                        {"lang": "fi", "value": "Monikielinen aihe suomeksi"},
+                        {"lang": "sv", "value": "Flerspråkigt ämne på svenska"},
+                        {"lang": "de", "value": "Mehrsprachiges Thema auf Deutsch"}
+                    ]
+                }
+            ]
+        }
+    }
+}

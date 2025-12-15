@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<c level="item">
+    <control>
+        <recordid>ead3-test-001</recordid>
+    </control>
+    <did>
+        <unittitle>Test EAD3 Document with Skosmos Subject</unittitle>
+        <unitid>ead3-test-001</unitid>
+        <repository>
+            <corpname>
+                <part>Test Repository</part>
+            </corpname>
+        </repository>
+    </did>
+    <controlaccess>
+        <subject identifier="http://www.yso.fi/onto/yso/p12345">
+            <part>Test Subject</part>
+        </subject>
+    </controlaccess>
+    <scopecontent>
+        <p>This is a test EAD3 document for Skosmos enrichment testing.</p>
+    </scopecontent>
+</c>

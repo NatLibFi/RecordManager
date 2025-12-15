@@ -1,0 +1,15 @@
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+<record>
+  <leader>01195cam a22004094i 4500</leader>
+  <controlfield tag="001">skosmos_test_3</controlfield>
+  <controlfield tag="005">20251215000000.0</controlfield>
+  <controlfield tag="008">251215s2025    fi            000 0 fin d</controlfield>
+  <datafield tag="100" ind1="1" ind2=" ">
+    <subfield code="a">Test Author</subfield>
+    <subfield code="0">http://www.yso.fi/onto/yso/p99999</subfield>
+  </datafield>
+  <datafield tag="245" ind1="1" ind2="0">
+    <subfield code="a">Test Title for Author Enrichment</subfield>
+  </datafield>
+</record>
+</collection>

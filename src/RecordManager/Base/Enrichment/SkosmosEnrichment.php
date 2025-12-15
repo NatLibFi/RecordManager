@@ -145,37 +145,6 @@ class SkosmosEnrichment extends AbstractEnrichment
             'alt' => 'geographic_alt_txt_mv',
             'check' => 'geographic',
         ],
-    ];
-
-    /**
-     * An associative array of property matches that causes the location data of a
-     * node to be ignored.
-     *
-     * Key is property type and value is an array of property id's.
-     *
-     * @var array
-     */
-    protected $excludedLocationMatches = [];
-
-    /**
-     * Default fields for ead3 to enrich. Key is the method in driver and value is array
-     * - pref, preferred field in solr
-     * - alt, alternative field in solr
-     * - check, check field for existing values
-     *
-     * @var array<string, array>
-     */
-    protected $ead3Fields = [
-        'getRawTopicIds' => [
-            'pref' => 'topic_add_txt_mv',
-            'alt' => 'topic_alt_txt_mv',
-            'check' => 'topic',
-        ],
-        'getRawGeographicTopicIds' => [
-            'pref' => 'geographic_add_txt_mv',
-            'alt' => 'geographic_alt_txt_mv',
-            'check' => 'geographic',
-        ],
         'getCorporateAuthorIds' => [
             'pref' => 'author_corporate',
             'alt' => 'author_variant',
@@ -194,35 +163,14 @@ class SkosmosEnrichment extends AbstractEnrichment
     ];
 
     /**
-     * Default fields for lido to enrich. Key is the method in driver and value is array
-     * - pref, preferred field in solr
-     * - alt, alternative field in solr
-     * - check, check field for existing values
+     * An associative array of property matches that causes the location data of a
+     * node to be ignored.
      *
-     * @var array<string, array>
+     * Key is property type and value is an array of property id's.
+     *
+     * @var array
      */
-    protected $lidoFields = [
-        'getRawTopicIds' => [
-            'pref' => 'topic_add_txt_mv',
-            'alt' => 'topic_alt_txt_mv',
-            'check' => 'topic',
-        ],
-        'getRawGeographicTopicIds' => [
-            'pref' => 'geographic_add_txt_mv',
-            'alt' => 'geographic_alt_txt_mv',
-            'check' => 'geographic',
-        ],
-        'getAuthorIds' => [
-            'pref' => 'author',
-            'alt' => 'author_variant',
-            'check' => 'author',
-        ],
-        'getSecondaryAuthorIds' => [
-            'pref' => 'author2',
-            'alt' => 'author2_variant',
-            'check' => 'author2',
-        ],
-    ];
+    protected $excludedLocationMatches = [];
 
     /**
      * Initialize settings
@@ -336,13 +284,7 @@ class SkosmosEnrichment extends AbstractEnrichment
      */
     protected function enrichRecord($sourceId, $record, &$solrArray): void
     {
-        $enrichFieldSpecs = $this->defaultFields;
-        if ($record instanceof \RecordManager\Base\Record\Lido) {
-            $enrichFieldSpecs = $this->lidoFields;
-        } elseif ($record instanceof \RecordManager\Base\Record\Ead3) {
-            $enrichFieldSpecs = $this->ead3Fields;
-        }
-        foreach ($enrichFieldSpecs as $method => $spec) {
+        foreach ($this->defaultFields as $method => $spec) {
             if (!is_callable([$record, $method])) {
                 continue;
             }
@@ -528,7 +470,6 @@ class SkosmosEnrichment extends AbstractEnrichment
             if (!$this->isConceptNode($node)) {
                 continue;
             }
-
             if ($node->getId() === $id) {
                 if ($locs = $this->processLocationWgs84($node, $recordId)) {
                     $result['locations'] = [

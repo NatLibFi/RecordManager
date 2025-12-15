@@ -1,0 +1,14 @@
+{
+    "http://www.yso.fi/onto/yso/p94426": {
+        "_id": "http://www.yso.fi/onto/yso/p94426",
+        "data": {
+            "prefLabel": {
+                "en": "Helsinki",
+                "fi": "Helsinki",
+                "sv": "Helsingfors"
+            },
+            "latitude": "60.1699",
+            "longitude": "24.9384"
+        }
+    }
+}

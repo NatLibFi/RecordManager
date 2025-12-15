@@ -1,0 +1,14 @@
+{
+    "http://www.yso.fi/onto/yso/p99999": {
+        "_id": "http://www.yso.fi/onto/yso/p99999",
+        "data": {
+            "prefLabel": {
+                "en": "Enriched Author Name",
+                "fi": "Rikastettu tekijän nimi"
+            },
+            "altLabel": {
+                "en": "Author Variant"
+            }
+        }
+    }
+}

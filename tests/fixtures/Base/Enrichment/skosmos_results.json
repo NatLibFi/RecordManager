@@ -1,0 +1,84 @@
+{
+    "http://www.yso.fi/onto/yso/p12345": {
+        "_id": "http://www.yso.fi/onto/yso/p12345",
+        "data": {
+            "@context": {
+                "skos": "http://www.w3.org/2004/02/skos/core#",
+                "uri": "@id",
+                "type": "@type",
+                "lang": "@language",
+                "value": "@value",
+                "graph": "@graph",
+                "prefLabel": "skos:prefLabel",
+                "altLabel": "skos:altLabel"
+            },
+            "graph": [
+                {
+                    "uri": "http://www.yso.fi/onto/yso/p12345",
+                    "type": "skos:Concept",
+                    "prefLabel": [
+                        {"lang": "en", "value": "Enhanced Topic"},
+                        {"lang": "sv", "value": "Förbättrat ämne"}
+                    ],
+                    "altLabel": [
+                        {"lang": "en", "value": "Alternative Topic"}
+                    ]
+                }
+            ]
+        }
+    },
+    "http://www.yso.fi/onto/yso/p94426": {
+        "_id": "http://www.yso.fi/onto/yso/p94426",
+        "data": {
+            "@context": {
+                "skos": "http://www.w3.org/2004/02/skos/core#",
+                "wgs84": "http://www.w3.org/2003/01/geo/wgs84_pos#",
+                "uri": "@id",
+                "type": "@type",
+                "lang": "@language",
+                "value": "@value",
+                "graph": "@graph",
+                "prefLabel": "skos:prefLabel"
+            },
+            "graph": [
+                {
+                    "uri": "http://www.yso.fi/onto/yso/p94426",
+                    "type": "skos:Concept",
+                    "prefLabel": [
+                        {"lang": "en", "value": "Helsinki"},
+                        {"lang": "sv", "value": "Helsingfors"}
+                    ],
+                    "wgs84:lat": "60.1699",
+                    "wgs84:long": "24.9384"
+                }
+            ]
+        }
+    },
+    "http://www.yso.fi/onto/yso/p99999": {
+        "_id": "http://www.yso.fi/onto/yso/p99999",
+        "data": {
+            "@context": {
+                "skos": "http://www.w3.org/2004/02/skos/core#",
+                "uri": "@id",
+                "type": "@type",
+                "lang": "@language",
+                "value": "@value",
+                "graph": "@graph",
+                "prefLabel": "skos:prefLabel",
+                "altLabel": "skos:altLabel"
+            },
+            "graph": [
+                {
+                    "uri": "http://www.yso.fi/onto/yso/p99999",
+                    "type": "skos:Concept",
+                    "prefLabel": [
+                        {"lang": "en", "value": "Enriched Author Name"}
+                    ],
+                    "altLabel": [
+                        {"lang": "en", "value": "Author Variant"}
+                    ]
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "http://www.yso.fi/onto/yso/p44444": {
+        "_id": "http://www.yso.fi/onto/yso/p44444",
+        "data": {
+            "@context": {
+                "skos": "http://www.w3.org/2004/02/skos/core#",
+                "wgs84": "http://www.w3.org/2003/01/geo/wgs84_pos#",
+                "uri": "@id",
+                "type": "@type",
+                "lang": "@language",
+                "value": "@value",
+                "graph": "@graph",
+                "prefLabel": "skos:prefLabel"
+            },
+            "graph": [
+                {
+                    "uri": "http://www.yso.fi/onto/yso/p44444",
+                    "type": "skos:Concept",
+                    "prefLabel": [
+                        {"lang": "en", "value": "Excluded Location"}
+                    ],
+                    "wgs84:lat": "61.4978",
+                    "wgs84:long": "23.7610"
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lidoWrap xmlns="http://www.lido-schema.org">
+  <lido>
+    <lidoRecID type="local">lido-test-001</lidoRecID>
+    <descriptiveMetadata>
+      <objectIdentificationWrap>
+        <titleWrap>
+          <titleSet>
+            <appellationValue>Test LIDO Document with Skosmos Subject</appellationValue>
+          </titleSet>
+        </titleWrap>
+        <repositoryWrap>
+          <repositorySet>
+            <repositoryName>
+              <legalBodyName>
+                <appellationValue>Test Museum</appellationValue>
+              </legalBodyName>
+            </repositoryName>
+          </repositorySet>
+        </repositoryWrap>
+      </objectIdentificationWrap>
+      <objectRelationWrap>
+        <subjectWrap>
+          <subjectSet>
+            <subject>
+              <subjectConcept>
+                <conceptID type="uri">http://www.yso.fi/onto/yso/p12345</conceptID>
+                <term>Test Subject</term>
+              </subjectConcept>
+            </subject>
+          </subjectSet>
+        </subjectWrap>
+      </objectRelationWrap>
+    </descriptiveMetadata>
+    <administrativeMetadata>
+      <recordWrap>
+        <recordID type="local">lido-test-001</recordID>
+        <recordType>
+          <term>Archive</term>
+        </recordType>
+      </recordWrap>
+    </administrativeMetadata>
+  </lido>
+</lidoWrap>

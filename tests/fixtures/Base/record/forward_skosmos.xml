@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<ExchangeSet schemaLocation="http://project-forward.eu/schemas/EN15907-forward http://forward.cineca.it/schema/EN15907-forward-v1.0.xsd">
+  <CinematographicWork>
+    <Identifier scheme="TEST" IDTypeName="test_id">forward-test-001</Identifier>
+    <RecordSource>
+      <SourceName>Test Archive</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Test Forward Document</TitleText>
+      <TitleRelationship>original</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Test Forward Document</IdentifyingTitle>
+    <Subject>
+      <SubjectTerm>Test Subject</SubjectTerm>
+    </Subject>
+  </CinematographicWork>
+</ExchangeSet>

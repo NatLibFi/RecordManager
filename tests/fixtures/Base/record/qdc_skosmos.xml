@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<qualifieddc xmlns="http://www.bl.uk/namespaces/oai_dcq/" 
+    xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title>Test QDC Document</dc:title>
+    <dc:subject>Test Subject</dc:subject>
+    <dc:description>This is a test QDC document for Skosmos enrichment testing.</dc:description>
+    <dc:type>Text</dc:type>
+    <dc:identifier>qdc-test-001</dc:identifier>
+</qualifieddc>

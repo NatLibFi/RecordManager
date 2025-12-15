@@ -1,0 +1,25 @@
+{
+    "http://www.yso.fi/onto/yso/p11111": {
+        "_id": "http://www.yso.fi/onto/yso/p11111",
+        "data": {
+            "@context": {
+                "skos": "http://www.w3.org/2004/02/skos/core#",
+                "uri": "@id",
+                "type": "@type",
+                "lang": "@language",
+                "value": "@value",
+                "graph": "@graph",
+                "prefLabel": "skos:prefLabel"
+            },
+            "graph": [
+                {
+                    "uri": "http://www.yso.fi/onto/yso/p11111",
+                    "type": "skos:Concept",
+                    "prefLabel": [
+                        {"lang": "en", "value": "Test Occupation"}
+                    ]
+                }
+            ]
+        }
+    }
+}
