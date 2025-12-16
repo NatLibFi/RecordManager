@@ -31,6 +31,7 @@ namespace RecordManager\Base\Solr;
 
 use GuzzleHttp\Client;
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Enrichment\EnrichmentMapping;
 use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
 use RecordManager\Base\Exception\HttpRequestException;
 use RecordManager\Base\Http\HttpService as HttpService;
@@ -3107,39 +3108,12 @@ class SolrUpdater
         $dsEnrichments = (array)($settings['enrichments'] ?? []);
         $enrichments = array_unique(
             array_map(
-                /**
-                 * Bc support: map all instances of recordOnkiLightEnrichment and recordSkosmosEnrichment to
-                 * use SkosmosEnrichment instead and recordAuthEnrichment instances
-                 * to use AuthEnrichment instead.
-                 *
-                 * This will help to map all instances under the same key.
-                 */
                 function ($enrichment) {
+
                     $exploded = explode(',', $enrichment, 2);
-                    $enrichmentName = $exploded[0];
-                    $enrichmentStage = $exploded[1] ?? '';
-                    if (!$enrichment[0]) {
-                        return [];
-                    }
-                    if (
-                        str_ends_with($enrichmentName, 'OnkiLightEnrichment')
-                        || str_ends_with($enrichmentName, 'SkosmosEnrichment')
-                    ) {
-                        return [
-                            'name' => 'SkosmosEnrichment',
-                            'stage' => $enrichmentStage,
-                        ];
-                    }
-                    if (str_ends_with($enrichmentName, 'AuthEnrichment')) {
-                        return [
-                            'name' => 'AuthEnrichment',
-                            'stage' => $enrichmentStage,
-                        ];
-                    }
-                    return [
-                        'name' => $enrichmentName,
-                        'stage' => $enrichmentStage,
-                    ];
+                    $name = EnrichmentMapping::fromString($exploded[0]);
+                    $stage = $exploded[1] ?? '';
+                    return compact('name', 'stage');
                 },
                 [
                     ...$globalEnrichments,
@@ -3149,7 +3123,7 @@ class SolrUpdater
             SORT_REGULAR
         );
         foreach ($enrichments as $enrichment) {
-            if (!$enrichment || $stage !== $enrichment['stage']) {
+            if ($stage !== $enrichment['stage']) {
                 continue;
             }
             $enrichmentName = $enrichment['name'];

@@ -74,14 +74,14 @@ class SkosmosEnrichment extends AbstractEnrichment
      *
      * @var string
      */
-    protected $apiBaseURL;
+    protected string $apiBaseURL;
 
     /**
      * List of allowed URL prefixes to try to fetch
      *
      * @var array
      */
-    protected $urlPrefixAllowedList;
+    protected array $urlPrefixAllowedList;
 
     /**
      * List of URI prefixes for which to process other vocabularies with
@@ -89,52 +89,52 @@ class SkosmosEnrichment extends AbstractEnrichment
      *
      * @var array
      */
-    protected $uriPrefixExactMatches;
+    protected array $uriPrefixExactMatches;
 
     /**
      * Solr field to use for the location data
      *
      * @var string
      */
-    protected $solrLocationField = '';
+    protected string $solrLocationField = '';
 
     /**
      * Solr field to use for the center coordinates of locations
      *
      * @var string
      */
-    protected $solrCenterField = '';
+    protected string $solrCenterField = '';
 
     /**
      * Languages to allow
      *
      * @var array
      */
-    protected $languages = [];
+    protected array $languages = [];
 
     /**
      * Cache for recent records
      *
      * @var ?\cash\LRUCache
      */
-    protected $recordCache = null;
+    protected ?\cash\LRUCache $recordCache = null;
 
     /**
      * Cache for recent enrichment results
      *
      * @var ?\cash\LRUCache
      */
-    protected $enrichmentCache = null;
+    protected ?\cash\LRUCache $enrichmentCache = null;
 
     /**
-     * Default fields to enrich. Key is the method in driver and value is array
+     * Enrichment specifications. Key is the method in driver and value is array
      * - pref, preferred field in solr
      * - alt, alternative field in solr
      * - check, check field for existing values
      *
      * @var array<string, array>
      */
-    protected $defaultFields = [
+    protected array $enrichmentSpecs = [
         'getRawTopicIds' => [
             'pref' => 'topic_add_txt_mv',
             'alt' => 'topic_alt_txt_mv',
@@ -170,7 +170,7 @@ class SkosmosEnrichment extends AbstractEnrichment
      *
      * @var array
      */
-    protected $excludedLocationMatches = [];
+    protected array $excludedLocationMatches = [];
 
     /**
      * Initialize settings
@@ -213,7 +213,6 @@ class SkosmosEnrichment extends AbstractEnrichment
         if ($cacheSize = $settings['enrichment_cache_size'] ?? 10000) {
             $this->enrichmentCache = new \cash\LRUCache((int)$cacheSize);
         }
-
         foreach ((array)($settings['excluded_location_matches'] ?? []) as $type => $file) {
             $listFile = RECMAN_BASE_PATH . "/conf/$file";
             $ids = file($listFile, FILE_IGNORE_NEW_LINES);
@@ -284,7 +283,7 @@ class SkosmosEnrichment extends AbstractEnrichment
      */
     protected function enrichRecord($sourceId, $record, &$solrArray): void
     {
-        foreach ($this->defaultFields as $method => $spec) {
+        foreach ($this->enrichmentSpecs as $method => $spec) {
             if (!is_callable([$record, $method])) {
                 continue;
             }

@@ -107,8 +107,16 @@ class AuthEnrichment extends AbstractEnrichment
      */
     public function enrich($sourceId, $record, &$solrArray)
     {
-        if ($record instanceof \RecordManager\Base\Record\Marc) {
-            $this->enrichMarcRecord($sourceId, $record, $solrArray);
+        foreach ($solrArray['author2_id_str_mv'] ?? [] as $id) {
+            $this->enrichField(
+                $sourceId,
+                $record,
+                $solrArray,
+                $id,
+                'author_variant',
+                'author_variant',
+                true
+            );
         }
     }
 
@@ -124,17 +132,6 @@ class AuthEnrichment extends AbstractEnrichment
      */
     public function enrichMarcRecord($sourceId, $record, &$solrArray): void
     {
-        foreach ($solrArray['author2_id_str_mv'] ?? [] as $id) {
-            $this->enrichField(
-                $sourceId,
-                $record,
-                $solrArray,
-                $id,
-                'author_variant',
-                'author_variant',
-                true
-            );
-        }
     }
 
     /**
