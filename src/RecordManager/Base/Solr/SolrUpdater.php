@@ -31,7 +31,6 @@ namespace RecordManager\Base\Solr;
 
 use GuzzleHttp\Client;
 use RecordManager\Base\Database\DatabaseInterface as Database;
-use RecordManager\Base\Enrichment\EnrichmentMapping;
 use RecordManager\Base\Enrichment\PluginManager as EnrichmentPluginManager;
 use RecordManager\Base\Exception\HttpRequestException;
 use RecordManager\Base\Http\HttpService as HttpService;
@@ -3141,7 +3140,14 @@ class SolrUpdater
                 function ($enrichment) {
 
                     $exploded = explode(',', $enrichment, 2);
-                    $name = EnrichmentMapping::fromString($exploded[0]);
+                    $name = strtolower($exploded[0]);
+                    // Legacy support for old enrichment names in configuration
+                    $name = match (true) {
+                        str_ends_with($name, 'skosmosenrichment') => 'SkosmosEnrichment',
+                        str_ends_with($name, 'onkilightenrichment') => 'SkosmosEnrichment',
+                        str_ends_with($name, 'authenrichment') => 'AuthEnrichment',
+                        default => $exploded[0],
+                    };
                     $stage = $exploded[1] ?? '';
                     return compact('name', 'stage');
                 },
