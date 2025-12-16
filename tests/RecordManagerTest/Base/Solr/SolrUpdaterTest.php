@@ -42,6 +42,7 @@ use RecordManager\Base\Settings\Ini;
 use RecordManager\Base\Solr\SolrUpdater;
 use RecordManager\Base\Utils\FieldMapper;
 use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\MetadataUtils;
 use RecordManager\Base\Utils\WorkerPoolManager;
 use RecordManagerTest\Base\Feature\FixtureTrait;
 use RecordManagerTest\Base\Record\CreateSampleRecordTrait;
@@ -504,7 +505,7 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
         $solrUpdater->processSingleRecord($dbRecord);
         $reflectionClass = new ReflectionClass($solrUpdater);
         $enrichments = array_keys($reflectionClass->getProperty('enrichments')->getValue($solrUpdater));
-        $this->assertEquals(['SkosmosEnrichment', 'AuthEnrichment'], $enrichments);
+        $this->assertEquals([SkosmosEnrichment::class, AuthEnrichment::class], $enrichments);
     }
 
     /**
@@ -548,12 +549,48 @@ class SolrUpdaterTest extends \PHPUnit\Framework\TestCase
             [],
             $this->dataSourceConfig
         );
-        $enrichmentMap = [
-            ['SkosmosEnrichment', $this->createMock(SkosmosEnrichment::class)],
-            ['AuthEnrichment', $this->createMock(AuthEnrichment::class)],
+        $enrichmentTable = [
+            'AuthEnrichment' => \RecordManager\Base\Enrichment\AuthEnrichment::class,
+            'MusicBrainzEnrichment' => \RecordManager\Base\Enrichment\MusicBrainzEnrichment::class,
+            'NominatimGeocoder' => \RecordManager\Base\Enrichment\NominatimGeocoder::class,
+            'SkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+
+            // Legacy aliases:
+            'EadOnkiLightEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+            'Ead3OnkiLightEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+            'LidoOnkiLightEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+            'LrmiOnkiLightEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+            'MarcAuthOnkiLightEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+            'MarcOnkiLightEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+            'OnkiLightEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+            'EadSkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+            'Ead3SkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+            'LidoSkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+            'LrmiSkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+            'MarcAuthSkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+            'MarcSkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+
+            'MarcAuthEnrichment' => \RecordManager\Base\Enrichment\AuthEnrichment::class,
         ];
         $enrichmentPluginManager = $this->createMock(EnrichmentPluginManager::class);
-        $enrichmentPluginManager->expects($this->any())->method('get')->willReturnMap($enrichmentMap);
+        $enrichmentPluginManager->expects($this->any())->method('get')->willReturnCallback(
+            function ($name, $options = null) use ($enrichmentTable) {
+                return new $enrichmentTable[$name](
+                    [],
+                    $this->createMock(DatabaseInterface::class),
+                    $this->createMock(Logger::class),
+                    $this->createMock(RecordPluginManager::class),
+                    $this->createMock(HttpService::class),
+                    $this->createMock(MetadataUtils::class),
+                    $this->createMock(DatabaseInterface::class)
+                );
+            }
+        );
+        $enrichmentPluginManager->expects($this->any())->method('has')->willReturnCallback(
+            function ($name) use ($enrichmentTable) {
+                return isset($enrichmentTable[$name]);
+            }
+        );
         $solrUpdater = new SolrUpdater(
             $this->config,
             $dsConfig,

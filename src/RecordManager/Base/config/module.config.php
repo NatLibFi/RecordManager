@@ -79,6 +79,23 @@ return [
                     'MusicBrainzEnrichment' => \RecordManager\Base\Enrichment\MusicBrainzEnrichment::class,
                     'NominatimGeocoder' => \RecordManager\Base\Enrichment\NominatimGeocoder::class,
                     'SkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+
+                    // Legacy aliases:
+                    'EadOnkiLightEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+                    'Ead3OnkiLightEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+                    'LidoOnkiLightEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+                    'LrmiOnkiLightEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+                    'MarcAuthOnkiLightEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+                    'MarcOnkiLightEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+                    'OnkiLightEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+                    'EadSkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+                    'Ead3SkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+                    'LidoSkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+                    'LrmiSkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+                    'MarcAuthSkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+                    'MarcSkosmosEnrichment' => \RecordManager\Base\Enrichment\SkosmosEnrichment::class,
+
+                    'MarcAuthEnrichment' => \RecordManager\Base\Enrichment\AuthEnrichment::class,
                 ],
             ],
             'harvest' => [

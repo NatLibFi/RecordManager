@@ -3137,23 +3137,16 @@ class SolrUpdater
         $dsEnrichments = (array)($settings['enrichments'] ?? []);
         $enrichments = array_unique(
             array_map(
-                function ($enrichment) {
+                function ($enrichment) use ($stage) {
                     $exploded = explode(',', $enrichment, 2);
-                    $name = strtolower($exploded[0]);
-                    // Legacy support for old enrichment names in configuration
-                    $name = match (true) {
-                        str_ends_with($name, 'skosmosenrichment') => 'SkosmosEnrichment',
-                        str_ends_with($name, 'onkilightenrichment') => 'SkosmosEnrichment',
-                        str_ends_with($name, 'authenrichment') => 'AuthEnrichment',
-                        default => $exploded[0],
-                    };
+                    $name = $exploded[0];
                     $stage = $exploded[1] ?? '';
                     return compact('name', 'stage');
                 },
                 [
-                    ...$globalEnrichments,
-                    ...$dsEnrichments,
-                ]
+                        ...$globalEnrichments,
+                        ...$dsEnrichments,
+                    ]
             ),
             SORT_REGULAR
         );
@@ -3162,14 +3155,15 @@ class SolrUpdater
                 continue;
             }
             $enrichmentName = $enrichment['name'];
-            if (!isset($this->enrichments[$enrichmentName])) {
-                if ($enrichmentService = $this->enrichmentPluginManager->get($enrichmentName)) {
-                    $this->enrichments[$enrichmentName] = $enrichmentService;
-                } else {
-                    continue;
-                }
+            if (!$this->enrichmentPluginManager->has($enrichmentName)) {
+                continue;
             }
-            $this->enrichments[$enrichmentName]->enrich($source, $record, $data);
+            $enrichmentService = $this->enrichmentPluginManager->get($enrichmentName);
+            $enrichmentServiceName = $enrichmentService::class;
+            if (!isset($this->enrichments[$enrichmentServiceName])) {
+                $this->enrichments[$enrichmentServiceName] = $enrichmentService;
+            }
+            $this->enrichments[$enrichmentServiceName]->enrich($source, $record, $data);
         }
     }
 
