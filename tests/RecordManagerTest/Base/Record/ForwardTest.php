@@ -55,8 +55,13 @@ class ForwardTest extends RecordTestBase
 
         $expected = [
             'record_format' => 'forward',
-            'ctrlnum' => 'elonet_elokuva_1511500',
+            'ctrlnum' => [
+                'elonet_elokuva_1511500',
+            ],
             'publishDate' => '2011',
+            'publishDateRange' => [
+                '2011',
+            ],
             'title' => 'Le Havre',
             'title_alt' => [
                 0 => 'Mannen från Le Havre',

@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2011-2021.
+ * Copyright (C) The National Library of Finland 2011-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -123,51 +123,33 @@ class Ead3 extends Ead
      */
     public function toSolrArray(?Database $db = null)
     {
-        $data = [];
+        $data = parent::toSolrArray($db);
 
         $doc = $this->doc;
-        $data['record_format'] = 'ead3';
         $data['ctrlnum'] = $this->getOldIdentifier();
-        $data['fullrecord'] = $this->metadataUtils->trimXMLWhitespace($doc->asXML());
-        $data['allfields'] = $this->getAllFields($doc);
+        $data['title_sub'] = $this->getTitleSub();
+        $data['title_short'] = $this->getShortTitle();
+        $data['title'] = $this->getTitleField();
+        $data['title_full'] = $this->getFullTitle();
+        $data['title_sort'] = $this->getTitleSort();
         $data['description'] = $this->getDescription();
         $data['author'] = $this->getAuthors();
-        $data['author_sort'] = reset($data['author']);
+        $data['author_sort'] = $this->getAuthorSort($data['author']);
         $data['author_corporate'] = $this->getCorporateAuthors();
-        $data['geographic'] = $data['geographic_facet']
-            = $this->getGeographicTopics();
-        $data['topic'] = $data['topic_facet'] = $this->getTopics();
+        $data['geographic'] = $this->getGeographicTopics();
+        $data['geographic_facet'] = $this->getGeographicFacets();
+        $data['topic'] = $this->getTopics();
+        $data['topic_facet'] = $this->getTopicFacets();
         $data['format'] = $this->getFormat();
         $data['institution'] = $this->getInstitution();
         $data['series'] = $this->getSeries();
-        $data['title_sub'] = $this->getSubtitle();
-        $data['title_short'] = $this->getTitle();
-        $data['title'] = '';
-        // Ini handling returns true as '1':
-        $prependTitle = $this->getDriverParam('prependTitleWithSubtitle', '1');
-        if (
-            '1' === $prependTitle
-            || ('children' === $prependTitle && $this->doc->{'add-data'}->{'parent'})
-        ) {
-            if (
-                !empty($data['title_sub'])
-                && $data['title_sub'] != $data['title_short']
-            ) {
-                $data['title'] = $data['title_sub'] . ' ';
-            }
-        }
-        $data['title'] .= $data['title_short'];
-        $data['title_full'] = $data['title_sort'] = $data['title'];
-        $data['title_sort'] = mb_strtolower(
-            $this->metadataUtils->stripPunctuation($data['title_sort']),
-            'UTF-8'
-        );
-
         $data['language'] = $this->getLanguages();
         $data['physical'] = $this->getPhysicalExtent();
-        $data['thumbnail'] = $this->getThumbnail();
+        $data['thumbnail'] = $this->getThumbnailUrl();
+        $data['fullrecord'] = $this->getFullRecord();
+        $data['allfields'] = $this->getAllFields($doc);
 
-        $this->getHierarchyFields($data);
+        $this->addHierarchyFields($data);
 
         return $data;
     }
@@ -267,6 +249,26 @@ class Ead3 extends Ead
     }
 
     /**
+     * Get short title
+     *
+     * @return string
+     */
+    public function getShortTitle(): string
+    {
+        return $this->getTitle();
+    }
+
+    /**
+     * Get record format.
+     *
+     * @return string
+     */
+    protected function getRecordFormat(): string
+    {
+        return 'ead3';
+    }
+
+    /**
      * Get topic identifiers.
      *
      * @return array
@@ -281,7 +283,7 @@ class Ead3 extends Ead
      *
      * @return string
      */
-    protected function getDescription()
+    protected function getDescription(): string
     {
         if (!empty($this->doc->scopecontent)) {
             if (!empty($this->doc->scopecontent->p)) {
@@ -386,9 +388,22 @@ class Ead3 extends Ead
      *
      * @return array
      */
-    protected function getTopics()
+    protected function getTopics(): array
     {
-        return $this->getTopicTermsFromNode('subject');
+        if (isset($this->resultCache[__METHOD__])) {
+            return $this->resultCache[__METHOD__];
+        }
+        return $this->resultCache[__METHOD__] = $this->getTopicTermsFromNode('subject');
+    }
+
+    /**
+     * Get topic facet fields
+     *
+     * @return array<int, string> Topics
+     */
+    protected function getTopicFacets(): array
+    {
+        return $this->getTopics();
     }
 
     /**
@@ -398,7 +413,20 @@ class Ead3 extends Ead
      */
     protected function getGeographicTopics()
     {
-        return $this->getTopicTermsFromNode('geogname');
+        if (isset($this->resultCache[__METHOD__])) {
+            return $this->resultCache[__METHOD__];
+        }
+        return $this->resultCache[__METHOD__] = $this->getTopicTermsFromNode('geogname');
+    }
+
+    /**
+     * Get geographic facets.
+     *
+     * @return array
+     */
+    protected function getGeographicFacets(): array
+    {
+        return $this->getGeographicTopics();
     }
 
     /**
@@ -434,7 +462,7 @@ class Ead3 extends Ead
      *
      * @return string
      */
-    protected function getInstitution()
+    protected function getInstitution(): string
     {
         return (string)($this->doc->did->repository->corpname->part ?? '');
     }
@@ -475,11 +503,11 @@ class Ead3 extends Ead
     }
 
     /**
-     * Get thumbnail
+     * Get thumbnail URL.
      *
      * @return string
      */
-    protected function getThumbnail()
+    protected function getThumbnailUrl(): string
     {
         foreach ([$this->doc->did ?? [], $this->doc->did->daoset ?? []] as $root) {
             foreach ($root as $set) {
@@ -524,13 +552,13 @@ class Ead3 extends Ead
     }
 
     /**
-     * Get hierarchy fields. Must be called after title is present in the array.
+     * Add hierarchy fields. Must be called after title is present in the array.
      *
      * @param array $data Reference to the target array
      *
      * @return void
      */
-    protected function getHierarchyFields(array &$data): void
+    protected function addHierarchyFields(array &$data): void
     {
         $data['hierarchytype'] = 'Default';
         $sequenceUnitId = $firstId = '';
@@ -600,5 +628,80 @@ class Ead3 extends Ead
             }
         }
         return $allFields;
+    }
+
+    /**
+     * Get full record.
+     *
+     * @return string
+     */
+    protected function getFullRecord(): string
+    {
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
+    }
+
+    /**
+     * Get author sort field.
+     *
+     * @param array $authors Primary authors
+     *
+     * @return string
+     */
+    protected function getAuthorSort(array $authors): string
+    {
+        return $authors[0] ?? '';
+    }
+
+    /**
+     * Get title field.
+     *
+     * @return string
+     */
+    protected function getTitleField(): string
+    {
+        if (isset($this->resultCache[__METHOD__])) {
+            return $this->resultCache[__METHOD__];
+        }
+
+        $titleSub = $this->getTitleSub();
+        $shortTitle = $this->getShortTitle();
+
+        $title = '';
+        // Ini handling returns true as '1':
+        $prependTitle = $this->getDriverParam('prependTitleWithSubtitle', '1');
+        if (
+            '1' === $prependTitle
+            || ('children' === $prependTitle && $this->doc->{'add-data'}->{'parent'})
+        ) {
+            if (
+                '' !== $titleSub
+                && $titleSub !== $shortTitle
+            ) {
+                $title = $titleSub . ' ';
+            }
+        }
+        $title .= $shortTitle;
+
+        return $this->resultCache[__METHOD__] = $title;
+    }
+
+    /**
+     * Get full title.
+     *
+     * @return string
+     */
+    protected function getFullTitle(): string
+    {
+        return $this->getTitleField();
+    }
+
+    /**
+     * Get sort title.
+     *
+     * @return string
+     */
+    protected function getTitleSort(): string
+    {
+        return mb_strtolower($this->metadataUtils->stripPunctuation($this->getTitle()), 'UTF-8');
     }
 }

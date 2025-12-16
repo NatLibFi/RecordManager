@@ -257,6 +257,12 @@ disable_proxy_hosts[] = "127.0.0.1"
 disable_proxy_hosts[] = "localhost"
 disable_proxy_hosts[] = "::1"
 
+; Sometimes relator codes are represented as part of a full URI; this section
+; specifies URI prefixes that should be stripped off of the fronts of codes.
+[Relators]
+strip_prefixes[] = 'https://id.loc.gov/vocabulary/relators/'
+strip_prefixes[] = 'http://id.loc.gov/vocabulary/relators/'
+
 [MarcRecord]
 ; The following setting can be used to override the default RDA relator codes that
 ; are used to classify authors between primary and secondary

@@ -15,6 +15,9 @@
       <subfield code="a">Tutki ja kirjoita /</subfield>
       <subfield code="c">Sirkka Hirsjärvi, Pirkko Remes, Paula Sajavaara.</subfield>
     </datafield>
+    <datafield tag="264" ind1=" " ind2="1">
+      <subfield code="c">2013</subfield>
+    </datafield>
     <datafield tag="852" ind1="8" ind2=" ">
       <subfield code="a">E</subfield>
       <subfield code="b">150</subfield>

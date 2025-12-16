@@ -63,28 +63,28 @@ class DeweyCallNumber extends AbstractCallNumber
     /**
      * Digits
      *
-     * @var string
+     * @var ?string
      */
     protected $digits = null;
 
     /**
      * Decimal Part
      *
-     * @var string
+     * @var ?string
      */
     protected $decimal = null;
 
     /**
      * Cutter
      *
-     * @var string
+     * @var ?string
      */
     protected $cutter = null;
 
     /**
      * Suffix
      *
-     * @var string
+     * @var ?string
      */
     protected $suffix = null;
 
@@ -182,9 +182,41 @@ class DeweyCallNumber extends AbstractCallNumber
             if ($result) {
                 $result .= ' ';
             }
-            $result .= $this->createSortableString($this->suffix);
+            $result .= $this->createSortableString($this->getAlphanumericSuffix());
         }
 
         return $result;
+    }
+
+    /**
+     * Get class digits
+     *
+     * @return ?string
+     */
+    public function getClassDigits(): ?string
+    {
+        return $this->digits;
+    }
+
+    /**
+     * Get class decimal part
+     *
+     * @return ?string
+     */
+    public function getClassDecimal(): ?string
+    {
+        return $this->decimal;
+    }
+
+    /**
+     * Return the suffix with any non-alphanumeric character stripped.
+     *
+     * @return ?string
+     */
+    protected function getAlphanumericSuffix(): ?string
+    {
+        return null !== $this->suffix
+            ? preg_replace("/\W+/", '', $this->suffix)
+            : null;
     }
 }

@@ -98,10 +98,10 @@ class Marc extends \VuFind\Marc\MarcReader
      *   required subfields (e.g. ['t'])
      * ]
      *
-     * @param array   $fieldspecs     Fields to get
-     * @param boolean $firstOnly      Return only first matching field
-     * @param boolean $splitSubfields Whether to split subfields to separate array
-     *                                items
+     * @param array  $fieldspecs     Fields to get
+     * @param bool   $firstOnly      Return only first matching field
+     * @param bool   $splitSubfields Whether to split subfields to separate array items
+     * @param string $delimiter      Subfield delimiter (when $splitSubfields is false)
      *
      * @return array Subfields
      *
@@ -110,11 +110,13 @@ class Marc extends \VuFind\Marc\MarcReader
     public function getFieldsSubfieldsBySpecs(
         array $fieldspecs,
         bool $firstOnly = false,
-        bool $splitSubfields = false
+        bool $splitSubfields = false,
+        string $delimiter = ' ',
     ): array {
         $key = __METHOD__ . '-' . json_encode($fieldspecs) . '-'
             . ($firstOnly ? '1' : '0')
-            . ($splitSubfields ? '1' : '0');
+            . ($splitSubfields ? '1' : '0')
+            . $delimiter;
         if (isset($this->resultCache[$key])) {
             return $this->resultCache[$key];
         }
@@ -155,20 +157,17 @@ class Marc extends \VuFind\Marc\MarcReader
                                 }
                             }
                         } else {
-                            $fieldContents = '';
+                            $fieldContents = [];
                             foreach ($field['subfields'] as $subfield) {
                                 // Cast to string so that in_array works properly
                                 // with PHP 7.4:
                                 $code = (string)key($subfield);
                                 if (in_array($code, $codes)) {
-                                    if ($fieldContents) {
-                                        $fieldContents .= ' ';
-                                    }
-                                    $fieldContents .= current($subfield);
+                                    $fieldContents[] = current($subfield);
                                 }
                             }
                             if ($fieldContents) {
-                                $data[] = $fieldContents;
+                                $data[] = implode($delimiter, $fieldContents);
                             }
                         }
                     } else {
@@ -182,7 +181,7 @@ class Marc extends \VuFind\Marc\MarcReader
                         if ($splitSubfields) {
                             $data = [...$data, ...$fieldContents];
                         } else {
-                            $data[] = implode(' ', $fieldContents);
+                            $data[] = implode($delimiter, $fieldContents);
                         }
                     }
                 }
@@ -193,7 +192,7 @@ class Marc extends \VuFind\Marc\MarcReader
                         $tag,
                         $this->getInternalSubfield($field, '6'),
                         $codes,
-                        $splitSubfields ? null : ' '
+                        $splitSubfields ? null : $delimiter
                     );
                     if ($linkedFields) {
                         $data = [...$data, ...$linkedFields];

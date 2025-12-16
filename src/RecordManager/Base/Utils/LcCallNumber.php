@@ -97,38 +97,39 @@ class LcCallNumber extends AbstractCallNumber
     {
         $callnumber = trim($callnumber);
 
-        $rest = '';
-        $found = preg_match(
-            '/^([a-zA-Z]+) *(?:(\d+)(\.\d+)?)?(.*)$/',
-            $callnumber,
-            $matches
-        );
-        if ($found) {
-            $this->classification = trim($matches[0]);
-            $this->letters = trim($matches[1]);
-            $this->digits = trim($matches[2]);
-            $this->decimal = trim($matches[3]);
-            $rest = trim($matches[4]);
-        }
-
-        $this->cutter = '';
-        if ($rest) {
-            preg_match(
-                '/(\\.?[A-Za-z]\\d+|^\\.[A-Za-z]| \\.[A-Za-z])/',
-                $rest,
-                $parts,
-                PREG_OFFSET_CAPTURE
+        if ('' !== $callnumber) {
+            $rest = '';
+            $found = preg_match(
+                '/^([a-zA-Z]+) *(?:(\d+)(\.\d+)?)?(.*)$/',
+                $callnumber,
+                $matches
             );
-            if (isset($parts[1])) {
-                $this->suffix = trim(substr($rest, 0, $parts[1][1]));
-                $this->cutter = trim(substr($rest, $parts[1][1]));
-            } else {
-                $this->suffix = trim($rest);
+            if ($found) {
+                $this->classification = trim($matches[0]);
+                $this->letters = trim($matches[1]);
+                $this->digits = trim($matches[2]);
+                $this->decimal = trim($matches[3]);
+                $rest = trim($matches[4]);
             }
-            if ($this->classification) {
-                $this->classification .= ' ';
+
+            if ($rest) {
+                preg_match(
+                    '/(\\.?[A-Za-z]\\d+|^\\.[A-Za-z]| \\.[A-Za-z])/',
+                    $rest,
+                    $parts,
+                    PREG_OFFSET_CAPTURE
+                );
+                if (isset($parts[1])) {
+                    $this->suffix = trim(substr($rest, 0, $parts[1][1]));
+                    $this->cutter = trim(substr($rest, $parts[1][1]));
+                } else {
+                    $this->suffix = trim($rest);
+                }
+                if ($this->classification) {
+                    $this->classification .= ' ';
+                }
+                $this->classification .= $this->suffix;
             }
-            $this->classification .= $this->suffix;
         }
     }
 
@@ -231,5 +232,35 @@ class LcCallNumber extends AbstractCallNumber
             }
         }
         return $cache[$cacheKey] = '';
+    }
+
+    /**
+     * Get class letters
+     *
+     * @return string
+     */
+    public function getClassLetters(): string
+    {
+        return $this->letters;
+    }
+
+    /**
+     * Get class digits
+     *
+     * @return string
+     */
+    public function getClassDigits(): string
+    {
+        return $this->digits;
+    }
+
+    /**
+     * Get class decimal part
+     *
+     * @return string
+     */
+    public function getClassDecimal(): string
+    {
+        return $this->decimal;
     }
 }

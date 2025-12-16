@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2011-2020.
+ * Copyright (C) The National Library of Finland 2011-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -30,8 +30,6 @@
 
 namespace RecordManager\Base\Record;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-
 use function in_array;
 
 /**
@@ -54,25 +52,6 @@ class Lrmi extends Qdc
      * @var array
      */
     protected $ignoredAllfields = [];
-
-    /**
-     * Return fields to be indexed in Solr
-     *
-     * @param ?Database $db Database connection. Omit to avoid database lookups for related records.
-     *
-     * @return array<string, mixed>
-     */
-    public function toSolrArray(?Database $db = null)
-    {
-        $data = parent::toSolrArray();
-        $data['record_format'] = 'lrmi';
-        $data['title'] = $data['title_full'] = $data['title_short']
-            = $this->getTitle();
-        $data['title_sort'] = $this->getTitle(true);
-        $data['language'] = $this->getLanguages();
-
-        return $data;
-    }
 
     /**
      * Return title
@@ -113,16 +92,6 @@ class Lrmi extends Qdc
     }
 
     /**
-     * Get topics.
-     *
-     * @return array
-     */
-    public function getTopics()
-    {
-        return $this->getTopicData(false);
-    }
-
-    /**
      * Get all topic identifiers (for enrichment)
      *
      * @return array
@@ -133,22 +102,52 @@ class Lrmi extends Qdc
     }
 
     /**
-     * Get primary authors
+     * Get record format.
+     *
+     * @return string
+     */
+    protected function getRecordFormat(): string
+    {
+        return 'lrmi';
+    }
+
+    /**
+     * Get topics.
      *
      * @return array
      */
-    protected function getPrimaryAuthors()
+    protected function getTopics(): array
+    {
+        return $this->getTopicData(false);
+    }
+
+    /**
+     * Get topics facet fields.
+     *
+     * @return array
+     */
+    protected function getTopicFacets(): array
+    {
+        return $this->getTopicData(false);
+    }
+
+    /**
+     * Get primary authors.
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthors(): array
     {
         $authors = $this->getSecondaryAuthors();
         return [$authors[0] ?? ''];
     }
 
     /**
-     * Get secondary authors
+     * Get secondary authors.
      *
      * @return array
      */
-    protected function getSecondaryAuthors()
+    protected function getSecondaryAuthors(): array
     {
         $result = [];
         foreach ($this->doc->author ?? [] as $author) {
@@ -162,11 +161,11 @@ class Lrmi extends Qdc
     }
 
     /**
-     * Get corporate authors
+     * Get corporate authors.
      *
      * @return array
      */
-    protected function getCorporateAuthors()
+    protected function getCorporateAuthors(): array
     {
         $result = [];
         foreach ($this->doc->author ?? [] as $author) {
@@ -200,7 +199,7 @@ class Lrmi extends Qdc
             } else {
                 $id = (string)($subject->identifier ?? '');
 
-                if (preg_match('/(http|https):\/\/(.+)/', $id, $matches)) {
+                if ('' !== $id && preg_match('/(http|https):\/\/(.+)/', $id, $matches)) {
                     $result[] = 'http://' . $matches[2];
                 }
             }

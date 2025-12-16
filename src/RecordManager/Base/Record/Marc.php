@@ -179,10 +179,7 @@ class Marc extends AbstractRecord
      *
      * @var array
      */
-    protected array $linkingIdFields = [
-        '760', '762', '765', '767', '770', '772', '773', '774',
-        '775', '776', '777', '780', '785', '786', '787',
-    ];
+    protected array $linkingIdFields = [];
 
     /**
      * MARC record creation callback
@@ -285,326 +282,62 @@ class Marc extends AbstractRecord
      */
     public function toSolrArray(?Database $db = null)
     {
-        $data = [
-            'record_format' => 'marc',
-        ];
+        $this->processLinkingFields($db);
 
-        foreach ($this->linkingIdFields as $code) {
-            foreach ($this->record->getFields($code) as $fieldIdx => $marcfield) {
-                foreach ($this->record->getSubfields($marcfield, 'w') as $subfieldIdx => $marcsubfield) {
-                    $targetId = $marcsubfield;
-                    $targetRecord = null;
-                    if ($db) {
-                        $linkingId = $this->createLinkingId($targetId);
-                        $targetRecord = $db->findRecord(
-                            [
-                                'source_id' => $this->source,
-                                'linking_id' => $linkingId,
-                                'deleted' => false,
-                            ],
-                            ['projection' => ['_id' => 1]]
-                        );
-                        // Try with the original id if no exact match
-                        if (!$targetRecord && $targetId !== $linkingId) {
-                            $targetRecord = $db->findRecord(
-                                [
-                                    'source_id' => $this->source,
-                                    'linking_id' => $targetId,
-                                    'deleted' => false,
-                                ],
-                                ['projection' => ['_id' => 1]]
-                            );
-                        }
-                    }
-                    if ($targetRecord) {
-                        $targetId = $targetRecord['_id'];
-                    } elseif ($this->idPrefix) {
-                        $targetId = $this->idPrefix . '.' . $targetId;
-                    }
-                    $this->record->updateFieldSubfield(
-                        $code,
-                        $fieldIdx,
-                        'w',
-                        $subfieldIdx,
-                        $targetId
-                    );
-                }
-            }
-        }
+        $data = parent::toSolrArray($db);
 
-        // building
         $data['building'] = $this->getBuilding();
-
-        // Location coordinates
-        if ($geoField = $this->getDriverParam('geoField', $this->defaultGeoField)) {
-            if ($geoLocations = $this->getGeographicLocations()) {
-                $data[(string)$geoField] = $geoLocations;
-                $centerField = $this->getDriverParam(
-                    'geoCenterField',
-                    $this->defaultGeoCenterField
-                );
-                if ($centerField) {
-                    $centers = [];
-                    foreach ($geoLocations as $geoLocation) {
-                        $centers[] = $this->metadataUtils
-                            ->getCenterCoordinates($geoLocation);
-                    }
-                    $data[$centerField] = $centers;
-                }
-                $displayField = $this->getDriverParam(
-                    'geoDisplayField',
-                    $this->defaultGeoDisplayField
-                );
-                if ($displayField) {
-                    $display = [];
-                    foreach ($geoLocations as $geoLocation) {
-                        $display[] = $this->metadataUtils
-                            ->getGeoDisplayField($geoLocation);
-                    }
-                    $data[$displayField] = $display;
-                }
-            }
-        }
-
-        // lccn
-        if ($lccn = trim($this->getFieldSubfields('010', ['a']))) {
-            $data['lccn'] = $lccn;
-        }
-        $data['ctrlnum'] = $this->getFieldsSubfields(
-            [[MarcHandler::GET_NORMAL, '035', ['a']]]
-        );
+        $this->addGeographicLocationFields($data);
+        $data['lccn'] = $this->getLCCN();
+        $data['ctrlnum'] = $this->getControlNumbers();
         $data['fullrecord'] = $this->getFullRecord();
         $data['allfields'] = $this->getAllFields();
-
-        // language
         $data['language'] = $this->getLanguages();
-
         $data['format'] = $this->getFormat();
-
-        $primaryAuthors = $this->getPrimaryAuthors();
-        $data['author'] = $primaryAuthors['names'];
-        if ($variants = $this->getAuthorVariants($primaryAuthors)) {
-            $data['author_variant'] = $variants;
-        }
-        $data['author_role'] = $primaryAuthors['relators'];
-        if (isset($primaryAuthors['names'][0])) {
-            $data['author_sort'] = $primaryAuthors['names'][0];
-        }
-
-        $secondaryAuthors = $this->getSecondaryAuthors();
-        $data['author2'] = $secondaryAuthors['names'];
-        if ($variants = $this->getAuthorVariants($secondaryAuthors)) {
-            $data['author2_variant'] = $variants;
-        }
-        $data['author2_role'] = $secondaryAuthors['relators'];
-        if (!isset($data['author_sort']) && isset($secondaryAuthors['names'][0])) {
-            $data['author_sort'] = $secondaryAuthors['names'][0];
-        }
-
-        $corporateAuthors = $this->getCorporateAuthors();
-        $data['author_corporate'] = $corporateAuthors['names'];
-        $data['author_corporate_role'] = $corporateAuthors['relators'];
-        $data['author_additional'] = $this->getFieldsSubfields(
-            [
-                [MarcHandler::GET_BOTH, '505', ['r']],
-            ],
-            true
-        );
-
+        $this->addAuthorFields($data);
         $data['title'] = $this->getTitle();
-        $titleSub = $this->getFieldSubfields(
-            '245',
-            ['b', 'n', 'p']
-        );
-        if ($titleSub) {
-            $data['title_sub'] = $titleSub;
-        }
-        $data['title_short'] = $this->getShortTitle();
-        $data['title_full'] = $this->getFullTitle();
+        $data['title_sub'] = $this->getTitleSub();
+        $data['title_short'] = $this->getShortTitle(true);
+        $data['title_full'] = $this->getFullTitle(true);
         $data['title_alt'] = $this->getAltTitles();
-        $data['title_old'] = $this->getFieldsSubfields(
-            [
-                [MarcHandler::GET_BOTH, '780', ['a', 's', 't']],
-            ]
-        );
-        $data['title_new'] = $this->getFieldsSubfields(
-            [
-                [MarcHandler::GET_BOTH, '785', ['a', 's', 't']],
-            ]
-        );
+        $data['title_old'] = $this->getOldTitles();
+        $data['title_new'] = $this->getNewTitles();
         $data['title_sort'] = $this->getTitle(true);
-
-        if (!$data['title_short']) {
-            $data['title_short'] = $this->getFieldSubfields('240', ['a', 'n', 'p']);
-            $data['title_full'] = $this->getFieldSubfields('240');
-        }
-
         $data['series'] = $this->getSeries();
-
-        $data['publisher'] = $this->getFieldsSubfields(
-            [
-                [MarcHandler::GET_BOTH, '260', ['b']],
-            ],
-            false,
-            true
-        );
-        if (!$data['publisher']) {
-            $fields = $this->record->getFields('264');
-            foreach ($fields as $field) {
-                if ($this->record->getIndicator($field, 2) == '1') {
-                    $data['publisher'] = [
-                        $this->metadataUtils->stripTrailingPunctuation(
-                            $this->record->getSubfield($field, 'b')
-                        ),
-                    ];
-                    break;
-                }
-            }
-        }
-        $publicationYear = $this->getPublicationYear();
-        if ($publicationYear) {
-            $data['publishDateSort'] = $publicationYear;
-            $data['publishDate'] = [$publicationYear];
-        }
-        $data['physical'] = $this->getFieldsSubfields(
-            [
-                [MarcHandler::GET_BOTH, '300', ['a', 'b', 'c', 'e', 'f', 'g']],
-                [MarcHandler::GET_BOTH, '530', ['a', 'b', 'c', 'd']],
-            ]
-        );
-        $data['dateSpan'] = $this->getFieldsSubfields(
-            [[MarcHandler::GET_BOTH, '362', ['a']]]
-        );
-        $data['edition'] = $this->getFieldSubfields('250', ['a']);
-        $data['contents'] = $this->getFieldsSubfields(
-            [
-                [MarcHandler::GET_BOTH, '505', ['a']],
-                [MarcHandler::GET_BOTH, '505', ['t']],
-            ]
-        );
-
-        foreach ($this->isbnFields as $fieldSpec) {
-            foreach ($this->getFieldsSubfields($fieldSpec['selector'], false, true, true) as $isbn) {
-                if ($normalized = $this->metadataUtils->normalizeISBN($isbn)) {
-                    $data['isbn'][] = $normalized;
-                } elseif ('normal' === $fieldSpec['type']) {
-                    $this->storeWarning("Invalid ISBN '$isbn'");
-                }
-            }
-        }
-
-        foreach ($this->issnFields as $fieldSpec) {
-            // phpcs:ignore
-            /** @psalm-suppress DuplicateArrayKey,InvalidOperand */
-            $data['issn'] = [
-                ...($data['issn'] ?? []),
-                ...$this->getFieldsSubfields($fieldSpec['selector']),
-            ];
-        }
-
+        $data['series2'] = $this->getSeries2();
+        $data['publisher'] = $this->getPublishers();
+        $data['publishDateSort'] = $this->getPublicationYear();
+        $data['publishDate'] = $this->getPublicationYears();
+        $data['publishDateRange'] = $this->getPublicationDateRanges();
+        $data['physical'] = $this->getPhysicalDescriptions();
+        $data['dateSpan'] = $this->getDateSpans();
+        $data['edition'] = $this->getEdition();
+        $data['contents'] = $this->getContents();
+        $data['isbn'] = $this->getISBNFields();
+        $data['issn'] = $this->getISSNFields();
         $data['doi_str_mv'] = $this->getDOIs();
-
-        $cn = $this->getFirstFieldSubfields(
-            [
-                [MarcHandler::GET_NORMAL, '099', ['a']],
-                [MarcHandler::GET_NORMAL, '090', ['a']],
-                [MarcHandler::GET_NORMAL, '050', ['a']],
-            ]
-        );
-        if ($cn) {
-            $data['callnumber-first'] = $cn;
-        }
-        $value = $this->getFirstFieldSubfields(
-            [
-                [MarcHandler::GET_NORMAL, '090', ['a']],
-                [MarcHandler::GET_NORMAL, '050', ['a']],
-            ]
-        );
-        if ($value) {
-            if (preg_match('/^([A-Z]+)/', strtoupper($value), $matches)) {
-                $data['callnumber-subject'] = $matches[1];
-            }
-
-            [$preDotPart] = explode('.', $value, 2);
-            $data['callnumber-label'] = strtoupper($preDotPart);
-        }
-        $data['callnumber-raw'] = array_map(
-            'strtoupper',
-            $this->getFieldsSubfields(
-                [
-                    [MarcHandler::GET_NORMAL, '080', ['a', 'b']],
-                    [MarcHandler::GET_NORMAL, '084', ['a', 'b']],
-                    [MarcHandler::GET_NORMAL, '050', ['a', 'b']],
-                ]
-            )
-        );
-        $useHILCC = $this->getDriverParam('useHILCC', false);
-        $sortKey = '';
-        foreach ($data['callnumber-raw'] as $callnumber) {
-            $cn = new LcCallNumber($callnumber);
-            // Store sort key even from an invalid CN in case we don't find a valid
-            // one:
-            if ('' === $sortKey) {
-                $sortKey = $cn->getSortKey();
-            }
-            if (!$cn->isValid()) {
-                continue;
-            }
-            if (empty($data['callnumber-sort'])) {
-                $data['callnumber-sort'] = $cn->getSortKey();
-            }
-            if ($useHILCC && $category = $cn->getCategory()) {
-                $data['category_str_mv'][] = $category;
-            }
-        }
-        if (empty($data['callnumber-sort']) && $sortKey) {
-            $data['callnumber-sort'] = $sortKey;
-        }
-
+        $data['callnumber-first'] = $this->getCallNumberFirst();
+        $data['callnumber-subject'] = $this->getCallNumberSubject();
+        $data['callnumber-raw'] = $this->getCallNumbersRaw();
+        $data['callnumber-label'] = $this->getCallNumberLabels();
+        $this->augmentCallNumberFields($data);
         $data['topic'] = $this->getTopics();
-        $data['genre'] = $this->getGenres();
-        $data['geographic'] = $this->getGeographicTopics();
-        $data['era'] = $this->getEras();
-
         $data['topic_facet'] = $this->getTopicFacets();
+        $data['topic_browse'] = $this->getTopicsForBrowse();
+        $data['genre'] = $this->getGenres();
         $data['genre_facet'] = $this->getGenreFacets();
+        $data['geographic'] = $this->getGeographicTopics();
         $data['geographic_facet'] = $this->getGeographicFacets();
+        $data['era'] = $this->getEras();
         $data['era_facet'] = $this->getEraFacets();
-
-        $data['url'] = $this->getFieldsSubfields(
-            [
-                [MarcHandler::GET_NORMAL, '856', ['u']],
-            ]
-        );
-
+        $data['url'] = $this->getUrls();
         $data['illustrated'] = $this->getIllustrated();
-
-        $deweyFields = $this->getFieldsSubfields(
-            [
-                [MarcHandler::GET_NORMAL, '082', ['a']],
-                [MarcHandler::GET_NORMAL, '083', ['a']],
-            ]
-        );
-        foreach ($deweyFields as $field) {
-            $deweyCallNumber = new DeweyCallNumber($field);
-            $data['dewey-hundreds'] = $deweyCallNumber->getNumber(100);
-            $data['dewey-tens'] = $deweyCallNumber->getNumber(10);
-            $data['dewey-ones'] = $deweyCallNumber->getNumber(1);
-            $data['dewey-full'] = $deweyCallNumber->getSearchString();
-            if (empty($data['dewey-sort'])) {
-                $data['dewey-sort'] = $deweyCallNumber->getSortKey();
-            }
-            $data['dewey-raw'] = $field;
-        }
-
-        if ($res = $this->getOclcNumbers()) {
-            $data['oclc_num'] = $res;
-        }
+        $this->addDeweyFields($data);
+        $data['oclc_num'] = $this->getOclcNumbers();
+        $data['uuid_str_mv'] = $this->getUUIDs();
 
         // Get warnings from the MARC handler last:
-        foreach ($this->record->getWarnings() as $warning) {
-            $this->storeWarning($warning);
-        }
+        $this->storeWarnings($this->record->getWarnings());
 
         return $data;
     }
@@ -717,7 +450,7 @@ class Marc extends AbstractRecord
     public function getVolume()
     {
         $field773g = $this->getFieldSubfields('773', ['g']);
-        if (!$field773g) {
+        if ('' === $field773g) {
             return '';
         }
 
@@ -737,7 +470,7 @@ class Marc extends AbstractRecord
     public function getIssue()
     {
         $field773g = $this->getFieldSubfields('773', ['g']);
-        if (!$field773g) {
+        if ('' === $field773g) {
             return '';
         }
 
@@ -760,7 +493,7 @@ class Marc extends AbstractRecord
     public function getStartPage()
     {
         $field773g = $this->getFieldSubfields('773', ['g']);
-        if (!$field773g) {
+        if ('' === $field773g) {
             return '';
         }
 
@@ -1000,6 +733,26 @@ class Marc extends AbstractRecord
     }
 
     /**
+     * Return UUIDs.
+     *
+     * @return array
+     */
+    public function getUUIDs(): array
+    {
+        $result = [];
+        foreach ($this->record->getFields('024') as $field024) {
+            if (
+                '7' !== $this->record->getIndicator($field024, 1)
+                || strcasecmp('uuid', $this->record->getSubfield($field024, '2')) !== 0
+            ) {
+                continue;
+            }
+            $result[] = $this->record->getSubfield($field024, 'a');
+        }
+        return $result;
+    }
+
+    /**
      * Dedup: Return (unique) ISBNs in ISBN-13 format without dashes
      *
      * @return array
@@ -1080,31 +833,12 @@ class Marc extends AbstractRecord
      */
     public function getPublicationYear()
     {
-        $field = $this->record->getField('260');
-        if ($field) {
-            $year = $this->extractYear($this->record->getSubfield($field, 'c'));
-            if ($year) {
-                return $year;
-            }
-        }
-        $fields = $this->record->getFields('264');
-        foreach ($fields as $field) {
-            if ($this->record->getIndicator($field, 2) == '1') {
-                $year = $this->extractYear($this->record->getSubfield($field, 'c'));
-                if ($year) {
-                    return $year;
-                }
-            }
-        }
-        $field008 = $this->record->getControlField('008');
-        if (!$field008) {
+        $years = $this->getPublicationYears();
+        if (!$years) {
             return '';
         }
-        $year = substr($field008, 7, 4);
-        if ($year && $year != '0000' && $year != '9999') {
-            return $this->extractYear($year);
-        }
-        return '';
+        // Extract year from a potentially more granular date:
+        return $this->extractYear($years[0]);
     }
 
     /**
@@ -1117,7 +851,7 @@ class Marc extends AbstractRecord
         $field = $this->record->getField('300');
         if ($field) {
             $extent = $this->record->getSubfield($field, 'a');
-            if ($extent && preg_match('/(\d+)/', $extent, $matches)) {
+            if ('' !== $extent && preg_match('/(\d+)/', $extent, $matches)) {
                 return $matches[1];
             }
         }
@@ -1577,14 +1311,199 @@ class Marc extends AbstractRecord
     /**
      * Get short title
      *
+     * @param bool $allowUniformTitle Return uniform title if title does not exist
+     *
      * @return string
      */
-    public function getShortTitle(): string
+    public function getShortTitle(bool $allowUniformTitle = false): string
     {
         $title = $this->getFieldSubfields('245', ['a'], false);
+        if ($allowUniformTitle && '' === $title) {
+            $title = $this->getFieldSubfields('240', ['a', 'n', 'p']);
+        }
         // Try to clean up the title but return original if it only contains
         // punctuation:
         return $this->metadataUtils->stripTrailingPunctuation($title, '', true);
+    }
+
+    /**
+     * Return publication years
+     *
+     * @return array
+     */
+    protected function getPublicationYears(): array
+    {
+        $result = [];
+
+        // First check old-style 260c date:
+        $field = $this->record->getField('260');
+        if ($field) {
+            if ('' !== ($year = $this->extractYear($this->record->getSubfield($field, 'c')))) {
+                $result[] = $year;
+            }
+        }
+
+        // Now track down relevant RDA-style 264c dates; we only care about
+        // copyright and publication dates (and ignore copyright dates if
+        // publication dates are present).
+        $publicationYears = [];
+        $copyrightYears = [];
+        $fields = $this->record->getFields('264');
+        foreach ($fields as $field) {
+            if ('' === $year = $this->extractYear($this->record->getSubfield($field, 'c'))) {
+                continue;
+            }
+            $ind2 = $this->record->getIndicator($field, 2);
+            if ('1' === $ind2) {
+                $publicationYears[] = $year;
+            } elseif ('4' === $ind2) {
+                $copyrightYears[] = $year;
+            }
+        }
+
+        if ($publicationYears) {
+            $result = [
+                ...$result,
+                ...$publicationYears,
+            ];
+        } elseif ($copyrightYears) {
+            $result = [
+                ...$result,
+                ...$copyrightYears,
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get publication date range.
+     *
+     * @return array
+     */
+    protected function getPublicationDateRanges(): array
+    {
+        return $this->getPublicationYears();
+    }
+
+    /**
+     * Get record format.
+     *
+     * @return string
+     */
+    protected function getRecordFormat(): string
+    {
+        return 'marc';
+    }
+
+    /**
+     * Update any linking fields according to use the prefixed identifiers.
+     *
+     * @param ?Database $db Database connection. Omit to avoid database lookups for related records.
+     *
+     * @return void
+     */
+    protected function processLinkingFields(?Database $db): void
+    {
+        foreach ($this->linkingIdFields as $code) {
+            foreach ($this->record->getFields($code) as $fieldIdx => $marcfield) {
+                foreach ($this->record->getSubfields($marcfield, 'w') as $subfieldIdx => $marcsubfield) {
+                    $targetId = $marcsubfield;
+                    $targetRecord = null;
+                    if ($db) {
+                        $linkingId = $this->createLinkingId($targetId);
+                        $targetRecord = $db->findRecord(
+                            [
+                                'source_id' => $this->source,
+                                'linking_id' => $linkingId,
+                                'deleted' => false,
+                            ],
+                            ['projection' => ['_id' => 1]]
+                        );
+                        // Try with the original id if no exact match
+                        if (!$targetRecord && $targetId !== $linkingId) {
+                            $targetRecord = $db->findRecord(
+                                [
+                                    'source_id' => $this->source,
+                                    'linking_id' => $targetId,
+                                    'deleted' => false,
+                                ],
+                                ['projection' => ['_id' => 1]]
+                            );
+                        }
+                    }
+                    if ($targetRecord) {
+                        $targetId = $targetRecord['_id'];
+                    } elseif ($this->idPrefix) {
+                        $targetId = $this->idPrefix . '.' . $targetId;
+                    }
+                    $this->record->updateFieldSubfield(
+                        $code,
+                        $fieldIdx,
+                        'w',
+                        $subfieldIdx,
+                        $targetId
+                    );
+                }
+            }
+        }
+    }
+
+    /**
+     * Get LCCN.
+     *
+     * @return string
+     */
+    protected function getLCCN(): string
+    {
+        return trim($this->getFieldSubfields('010', ['a']));
+    }
+
+    /**
+     * Get control numbers.
+     *
+     * @return array
+     */
+    protected function getControlNumbers(): array
+    {
+        return $this->getFieldsSubfields(
+            [[MarcHandler::GET_NORMAL, '035', ['a']]]
+        );
+    }
+
+    /**
+     * Get full title
+     *
+     * @param bool $allowUniformTitle Return uniform title if title does not exist
+     *
+     * @return string
+     */
+    protected function getFullTitle(bool $allowUniformTitle = false): string
+    {
+        $title = $this->getFieldSubfields(
+            '245',
+            ['a', 'b', 'c', 'f', 'g', 'h', 'k', 'n', 'p', 's'],
+            false
+        );
+        if ($allowUniformTitle && '' === $title) {
+            $title = $this->getFieldSubfields('240', ['a', 'd', 'f', 'g', 'h', 'k', 'n', 'o', 'p', 'r', 's']);
+        }
+        // Try to clean up the title but return original if it only contains
+        // punctuation:
+        return $this->metadataUtils->stripTrailingPunctuation($title, '', true);
+    }
+
+    /**
+     * Get subtitle
+     *
+     * @return string
+     */
+    protected function getTitleSub(): string
+    {
+        return $this->getFieldSubfields(
+            '245',
+            ['b', 'n', 'p']
+        );
     }
 
     /**
@@ -1693,7 +1612,7 @@ class Marc extends AbstractRecord
     }
 
     /**
-     * Get alternate titles
+     * Get alternate titles.
      *
      * @return array
      */
@@ -1716,6 +1635,48 @@ class Marc extends AbstractRecord
                     ]
                 )
             )
+        );
+    }
+
+    /**
+     * Get old titles
+     *
+     * @return array
+     */
+    protected function getOldTitles(): array
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_BOTH, '780', ['a', 's', 't']],
+            ]
+        );
+    }
+
+    /**
+     * Get new titles
+     *
+     * @return array
+     */
+    protected function getNewTitles(): array
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_BOTH, '785', ['a', 's', 't']],
+            ]
+        );
+    }
+
+    /**
+     * Get URLs
+     *
+     * @return array
+     */
+    protected function getUrls(): array
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_NORMAL, '856', ['u']],
+            ]
         );
     }
 
@@ -1779,20 +1740,94 @@ class Marc extends AbstractRecord
     }
 
     /**
-     * Get full title
+     * Get physical descriptions.
+     *
+     * @return array
+     */
+    protected function getPhysicalDescriptions(): array
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_BOTH, '300', ['a', 'b', 'c', 'e', 'f', 'g']],
+                [MarcHandler::GET_BOTH, '530', ['a', 'b', 'c', 'd']],
+            ]
+        );
+    }
+
+    /**
+     * Get date spans.
+     *
+     * @return array
+     */
+    protected function getDateSpans(): array
+    {
+        return $this->getFieldsSubfields(
+            [[MarcHandler::GET_BOTH, '362', ['a']]]
+        );
+    }
+
+    /**
+     * Get edition.
      *
      * @return string
      */
-    protected function getFullTitle(): string
+    protected function getEdition(): string
     {
-        $title = $this->getFieldSubfields(
-            '245',
-            ['a', 'b', 'c', 'f', 'g', 'h', 'k', 'n', 'p', 's'],
-            false
+        return $this->getFieldSubfields('250', ['a']);
+    }
+
+    /**
+     * Get contents.
+     *
+     * @return array
+     */
+    protected function getContents(): array
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_BOTH, '505', ['a']],
+                [MarcHandler::GET_BOTH, '505', ['t']],
+            ]
         );
-        // Try to clean up the title but return original if it only contains
-        // punctuation:
-        return $this->metadataUtils->stripTrailingPunctuation($title, '', true);
+    }
+
+    /**
+     * Get ISBNs based on isbnFields.
+     *
+     * @return array
+     */
+    protected function getISBNFields(): array
+    {
+        $result = [];
+        foreach ($this->isbnFields as $fieldSpec) {
+            foreach ($this->getFieldsSubfields($fieldSpec['selector'], false, true, true) as $isbn) {
+                if ($normalized = $this->metadataUtils->normalizeISBN($isbn)) {
+                    $result[] = $normalized;
+                } elseif ('normal' === $fieldSpec['type']) {
+                    $this->storeWarning("Invalid ISBN '$isbn'");
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Get ISSNs based on issnFields.
+     *
+     * @return array
+     */
+    protected function getISSNFields(): array
+    {
+        $result = [];
+        foreach ($this->issnFields as $fieldSpec) {
+            // phpcs:ignore
+            /** @psalm-suppress DuplicateArrayKey,InvalidOperand */
+            $result = [
+                ...$result,
+                ...$this->getFieldsSubfields($fieldSpec['selector']),
+            ];
+        }
+        return $result;
     }
 
     /**
@@ -2007,12 +2042,11 @@ class Marc extends AbstractRecord
     /**
      * Return an array of fields according to the fieldspecs.
      *
-     * @param array   $fieldspecs               Fields to get
-     * @param boolean $firstOnly                Return only first matching field
-     * @param boolean $stripTrailingPunctuation Whether to strip trailing punctuation
-     *                                          from the results
-     * @param boolean $splitSubfields           Whether to split subfields to
-     *                                          separate array items
+     * @param array  $fieldspecs               Fields to get
+     * @param bool   $firstOnly                Return only first matching field
+     * @param bool   $stripTrailingPunctuation Whether to strip trailing punctuation from the results
+     * @param bool   $splitSubfields           Whether to split subfields to separate array items
+     * @param string $delimiter                Subfield delimiter (when $splitSubfields is false)
      *
      * @return array<int, string> Subfields
      */
@@ -2020,12 +2054,14 @@ class Marc extends AbstractRecord
         array $fieldspecs,
         bool $firstOnly = false,
         bool $stripTrailingPunctuation = true,
-        bool $splitSubfields = false
+        bool $splitSubfields = false,
+        string $delimiter = ' ',
     ): array {
         $result = $this->record->getFieldsSubfieldsBySpecs(
             $fieldspecs,
             $firstOnly,
-            $splitSubfields
+            $splitSubfields,
+            $delimiter
         );
         if ($result && $stripTrailingPunctuation) {
             $result = array_map(
@@ -2038,11 +2074,13 @@ class Marc extends AbstractRecord
     }
 
     /**
-     * Get all non-specific topics
+     * Get all non-specific topics with a delimiter (used indirectly)
+     *
+     * @param string $delimiter Subfield delimiter
      *
      * @return array<int, string>
      */
-    protected function getTopics()
+    protected function getTopicsWithDelimiter($delimiter)
     {
         return $this->getFieldsSubfields(
             [
@@ -2065,50 +2103,25 @@ class Marc extends AbstractRecord
                 [MarcHandler::GET_BOTH, '650', [
                     'a', 'b', 'c', 'd', 'e', 'v', 'x', 'y', 'z',
                 ]],
-            ]
+                [MarcHandler::GET_BOTH, '653', [
+                    'a',
+                ]],
+                [MarcHandler::GET_BOTH, '656', [
+                    'a', 'k', 'v', 'x', 'y', 'z',
+                ]],
+            ],
+            delimiter: $delimiter
         );
     }
 
     /**
-     * Get all genre topics
+     * Get all non-specific topics
      *
      * @return array<int, string>
      */
-    protected function getGenres()
+    protected function getTopics(): array
     {
-        return $this->getFieldsSubfields(
-            [
-                [MarcHandler::GET_BOTH, '655', ['a', 'b', 'c', 'v', 'x', 'y', 'z']],
-            ]
-        );
-    }
-
-    /**
-     * Get all geographic topics
-     *
-     * @return array<int, string>
-     */
-    protected function getGeographicTopics()
-    {
-        return $this->getFieldsSubfields(
-            [
-                [MarcHandler::GET_BOTH, '651', ['a', 'e', 'v', 'x', 'y', 'z']],
-            ]
-        );
-    }
-
-    /**
-     * Get all era topics
-     *
-     * @return array<int, string>
-     */
-    protected function getEras()
-    {
-        return $this->getFieldsSubfields(
-            [
-                [MarcHandler::GET_BOTH, '648', ['a', 'v', 'x', 'y', 'z']],
-            ]
-        );
+        return $this->getTopicsWithDelimiter(' ');
     }
 
     /**
@@ -2133,6 +2146,30 @@ class Marc extends AbstractRecord
             false,
             true,
             true
+        );
+    }
+
+    /**
+     * Get all non-specific topics for browse
+     *
+     * @return array<int, string>
+     */
+    protected function getTopicsForBrowse()
+    {
+        return $this->getTopicsWithDelimiter("\u{2002}");
+    }
+
+    /**
+     * Get all genre topics
+     *
+     * @return array<int, string>
+     */
+    protected function getGenres()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_BOTH, '655', ['a', 'b', 'c', 'v', 'x', 'y', 'z']],
+            ]
         );
     }
 
@@ -2164,6 +2201,20 @@ class Marc extends AbstractRecord
     }
 
     /**
+     * Get all geographic topics
+     *
+     * @return array<int, string>
+     */
+    protected function getGeographicTopics()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_BOTH, '651', ['a', 'e', 'v', 'x', 'y', 'z']],
+            ]
+        );
+    }
+
+    /**
      * Get geographic facet fields
      *
      * @return array<int, string> Topics
@@ -2185,6 +2236,20 @@ class Marc extends AbstractRecord
             false,
             true,
             true
+        );
+    }
+
+    /**
+     * Get all era topics
+     *
+     * @return array<int, string>
+     */
+    protected function getEras()
+    {
+        return $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_BOTH, '648', ['a', 'v', 'x', 'y', 'z']],
+            ]
         );
     }
 
@@ -2349,7 +2414,7 @@ class Marc extends AbstractRecord
      *
      * @return array
      */
-    protected function getPrimaryAuthors()
+    protected function getPrimaryAuthors(): array
     {
         $fieldSpecs = [
             '100' => ['a', 'b', 'c', 'q', 'd'],
@@ -2367,7 +2432,7 @@ class Marc extends AbstractRecord
      *
      * @return array
      */
-    protected function getSecondaryAuthors()
+    protected function getSecondaryAuthors(): array
     {
         $fieldSpecs = [
             '100' => ['a', 'b', 'c', 'q', 'd'],
@@ -2387,7 +2452,7 @@ class Marc extends AbstractRecord
      *
      * @return array
      */
-    protected function getCorporateAuthors()
+    protected function getCorporateAuthors(): array
     {
         $fieldSpecs = [
             '110' => ['a', 'b'],
@@ -2430,6 +2495,9 @@ class Marc extends AbstractRecord
      */
     protected function extractYear($field)
     {
+        if ('' === $field) {
+            return '';
+        }
         // First look for a year in brackets
         if (preg_match('/\[(.+)\]/', $field, $matches)) {
             if (preg_match('/(\d{4})/', $matches[1], $matches)) {
@@ -2568,13 +2636,303 @@ class Marc extends AbstractRecord
         return $this->getFieldsSubfields(
             [
                 [MarcHandler::GET_BOTH, '440', ['a']],
-                [MarcHandler::GET_BOTH, '490', ['a']],
                 [MarcHandler::GET_BOTH, '800', [
                     'a', 'b', 'c', 'd', 'f', 'p', 'q', 't',
                 ]],
                 [MarcHandler::GET_BOTH, '830', ['a', 'p']],
             ]
         );
+    }
+
+    /**
+     * Get secondary series information
+     *
+     * @return array
+     */
+    protected function getSeries2(): array
+    {
+        return array_values(
+            array_diff(
+                $this->getFieldsSubfields([[MarcHandler::GET_BOTH, '490', ['a']]]),
+                $this->getSeries()
+            )
+        );
+    }
+
+    /**
+     * Get publishers.
+     *
+     * @return array
+     */
+    protected function getPublishers(): array
+    {
+        $publishers = $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_BOTH, '260', ['b']],
+            ],
+            false,
+            true
+        );
+        if (!$publishers) {
+            $fields = $this->record->getFields('264');
+            foreach ($fields as $field) {
+                if ($this->record->getIndicator($field, 2) == '1') {
+                    $publishers[] = $this->metadataUtils->stripTrailingPunctuation(
+                        $this->record->getSubfield($field, 'b')
+                    );
+                }
+            }
+        }
+        return $publishers;
+    }
+
+    /**
+     * Get first character of the call number.
+     *
+     * @return string
+     */
+    protected function getCallNumberFirst(): string
+    {
+        $cn = $this->getFirstFieldSubfields(
+            [
+                [MarcHandler::GET_NORMAL, '099', ['a']],
+                [MarcHandler::GET_NORMAL, '090', ['a']],
+                [MarcHandler::GET_NORMAL, '050', ['a']],
+            ]
+        );
+        return substr($cn, 0, 1);
+    }
+
+    /**
+     * Get call number subject.
+     *
+     * @return string
+     */
+    protected function getCallNumberSubject(): string
+    {
+        $value = $this->getFirstFieldSubfields(
+            [
+                [MarcHandler::GET_NORMAL, '090', ['a']],
+                [MarcHandler::GET_NORMAL, '050', ['a']],
+            ]
+        );
+        if ('' !== $value && preg_match('/^([A-Z]+)/', strtoupper($value), $matches)) {
+            return $matches[1];
+        }
+        return '';
+    }
+
+    /**
+     * Get raw call numbers.
+     *
+     * @return array
+     */
+    protected function getCallNumbersRaw(): array
+    {
+        return array_map(
+            'strtoupper',
+            $this->getFieldsSubfields(
+                [
+                    [MarcHandler::GET_NORMAL, '080', ['a', 'b']],
+                    [MarcHandler::GET_NORMAL, '084', ['a', 'b']],
+                    [MarcHandler::GET_NORMAL, '050', ['a', 'b']],
+                ]
+            )
+        );
+    }
+
+    /**
+     * Augment call number fields with additional data.
+     *
+     * @param array $data Data array to manipulate
+     *
+     * @return void
+     */
+    protected function augmentCallNumberFields(array &$data): void
+    {
+        $useHILCC = $this->getDriverParam('useHILCC', false);
+        $sortKey = '';
+        foreach ($data['callnumber-raw'] as $callnumber) {
+            $cn = new LcCallNumber($callnumber);
+            // Store sort key even from an invalid CN in case we don't find a valid
+            // one:
+            if ('' === $sortKey) {
+                $sortKey = $cn->getSortKey();
+            }
+            if (!$cn->isValid()) {
+                continue;
+            }
+            if (empty($data['callnumber-sort'])) {
+                $data['callnumber-sort'] = $cn->getSortKey();
+            }
+            if ($useHILCC && $category = $cn->getCategory()) {
+                $data['category_str_mv'][] = $category;
+            }
+        }
+        if (empty($data['callnumber-sort']) && $sortKey) {
+            $data['callnumber-sort'] = $sortKey;
+        }
+    }
+
+    /**
+     * Add geographic location fields.
+     *
+     * @param array $data Data array to manipulate
+     *
+     * @return void
+     */
+    protected function addGeographicLocationFields(array &$data): void
+    {
+        if ($geoField = $this->getDriverParam('geoField', $this->defaultGeoField)) {
+            if ($geoLocations = $this->getGeographicLocations()) {
+                $data[(string)$geoField] = $geoLocations;
+                $centerField = $this->getDriverParam('geoCenterField', $this->defaultGeoCenterField);
+                if ($centerField) {
+                    $centers = [];
+                    foreach ($geoLocations as $geoLocation) {
+                        $centers[] = $this->metadataUtils->getCenterCoordinates($geoLocation);
+                    }
+                    $data[$centerField] = $centers;
+                }
+                $displayField = $this->getDriverParam('geoDisplayField', $this->defaultGeoDisplayField);
+                if ($displayField) {
+                    $display = [];
+                    foreach ($geoLocations as $geoLocation) {
+                        $display[] = $this->metadataUtils->getGeoDisplayField($geoLocation);
+                    }
+                    $data[$displayField] = $display;
+                }
+            }
+        }
+    }
+
+    /**
+     * Add author fields.
+     *
+     * @param array $data Data array to manipulate
+     *
+     * @return void
+     */
+    protected function addAuthorFields(array &$data): void
+    {
+        $primaryAuthors = $this->getPrimaryAuthors();
+        $data['author'] = $primaryAuthors['names'];
+        if ($variants = $this->getAuthorVariants($primaryAuthors)) {
+            $data['author_variant'] = $variants;
+        }
+        $data['author_role'] = $primaryAuthors['relators'];
+        if (isset($primaryAuthors['names'][0])) {
+            $data['author_sort'] = $primaryAuthors['names'][0];
+        }
+
+        $secondaryAuthors = $this->getSecondaryAuthors();
+        $data['author2'] = $secondaryAuthors['names'];
+        if ($variants = $this->getAuthorVariants($secondaryAuthors)) {
+            $data['author2_variant'] = $variants;
+        }
+        $data['author2_role'] = $secondaryAuthors['relators'];
+        if (!isset($data['author_sort']) && isset($secondaryAuthors['names'][0])) {
+            $data['author_sort'] = $secondaryAuthors['names'][0];
+        }
+
+        $corporateAuthors = $this->getCorporateAuthors();
+        $data['author_corporate'] = $corporateAuthors['names'];
+        $data['author_corporate_role'] = $corporateAuthors['relators'];
+        $data['author_additional'] = $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_BOTH, '505', ['r']],
+            ],
+            true
+        );
+    }
+
+    /**
+     * Add Dewey fields.
+     *
+     * @param array $data Data array to manipulate
+     *
+     * @return void
+     */
+    protected function addDeweyFields(array &$data): void
+    {
+        $deweyFields = $this->getFieldsSubfields(
+            [
+                [MarcHandler::GET_NORMAL, '082', ['a']],
+                [MarcHandler::GET_NORMAL, '083', ['a']],
+            ]
+        );
+        foreach ($deweyFields as $field) {
+            $deweyCallNumber = new DeweyCallNumber($field);
+            $data['dewey-hundreds'] = $deweyCallNumber->getNumber(100);
+            $data['dewey-tens'] = $deweyCallNumber->getNumber(10);
+            $data['dewey-ones'] = $deweyCallNumber->getNumber(1);
+            $data['dewey-full'] = $deweyCallNumber->getSearchString();
+            if (empty($data['dewey-sort'])) {
+                $data['dewey-sort'] = $deweyCallNumber->getSortKey();
+            }
+            $data['dewey-raw'] = $field;
+        }
+    }
+
+    /**
+     * Extract the call number labels from a record.
+     *
+     * Parameter fieldSpecs might include 952e for FOLIO, in which case we do not know the type of call number
+     * (also sometimes call numbers are in the wrong MARC field for their type).
+     * If LCC: classLetters, classLetters + classDigits, classLetters + classDigits + classDecimal
+     * If Dewey: classDigits, classDigits + classDecimal
+     * Otherwise: everything up until the dot (or everything if there is no dot)
+     *
+     * @param ?array $fieldSpecs Tag list for call number fields, or null for defaults
+     *
+     * @return array
+     */
+    protected function getCallNumberLabels(?array $fieldSpecs = null): array
+    {
+        $fieldSpecs ??= [
+            [MarcHandler::GET_NORMAL, '050', ['a']],
+            [MarcHandler::GET_NORMAL, '082', ['a']],
+            [MarcHandler::GET_NORMAL, '083', ['a']],
+            [MarcHandler::GET_NORMAL, '090', ['a']],
+        ];
+
+        $result = [];
+        foreach ($this->getFieldsSubfields($fieldSpecs) as $field) {
+            $cnUp = mb_strtoupper(trim($field), 'UTF-8');
+            $lcc = new LcCallNumber($cnUp);
+            $dewey = new DeweyCallNumber($cnUp);
+            $other = str_contains($cnUp, ':') || (!str_contains($cnUp, '.') && mb_strlen($cnUp, 'UTF-8') > 10);
+            $isLcc = !$other && $lcc->isValid();
+            $isDewey = !$other && $dewey->isValid();
+            if ($isLcc) {
+                $result[] = $lcc->getClassLetters();
+                $result[] = $lcc->getClassLetters() . $lcc->getClassDigits();
+                if ('' !== ($decimal = $lcc->getClassDecimal())) {
+                    $result[] = $lcc->getClassLetters() . $lcc->getClassDigits() . $decimal;
+                }
+            } elseif ($isDewey) {
+                $result[] = $dewey->getClassDigits();
+                $classDecimal = $dewey->getClassDecimal();
+                if ('' != $classDecimal) {
+                    $limit = min(5, mb_strlen($classDecimal, 'UTF-8') - 1);
+                    for ($i = 1; $i < $limit; $i++) {
+                        $result[] = $dewey->getClassDigits() . mb_substr($classDecimal, 0, $i + 1);
+                    }
+                }
+            } else {
+                // NOTE: we could add other classifications like SuDoc here (and add related MARC fields to fieldSpec)
+                $dotPos = strpos($cnUp, '.');
+                if (false === $dotPos) {
+                    $result[] = $cnUp;
+                    continue;
+                }
+                if (0 === $dotPos) {
+                    continue;
+                }
+                $result[] = trim(mb_substr($cnUp, 0, $dotPos));
+            }
+        }
+        return $result;
     }
 
     /**

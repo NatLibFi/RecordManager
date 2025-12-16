@@ -129,6 +129,6 @@ class DeweyCallNumberTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('320', $dewey->getNumber(10));
         $this->assertEquals('300', $dewey->getNumber(100));
         $this->assertEquals('322.44.F816V.11974', $dewey->getSearchString());
-        $this->assertEquals('3322.44 F816 V.11 41974', $dewey->getSortKey());
+        $this->assertEquals('3322.44 F816 V511974', $dewey->getSortKey());
     }
 }

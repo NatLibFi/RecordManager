@@ -72,6 +72,7 @@ class LidoTest extends RecordTestBase
                 'Luhtanen, Raimo',
             ],
             'author_sort' => 'Designer, Test',
+            'author2' => [],
             'topic_facet' => [
                 'retkeily',
                 'ulkoilu',
@@ -97,10 +98,8 @@ class LidoTest extends RecordTestBase
             'issn' => [
                 '0357-5284',
             ],
-            'related_isbn_isn_mv' => [
-                '9517186347',
-                '9789517186346',
-            ],
+            'url' => [],
+            'thumbnail' => '',
             'allfields' => [
                 'knp-247394',
                 'Kirja',
@@ -191,6 +190,7 @@ class LidoTest extends RecordTestBase
                 'Luhtanen, Raimo',
             ],
             'author_sort' => 'Designer, Test',
+            'author2' => [],
             'topic_facet' => [
                 'retkeily',
                 'ulkoilu',
@@ -216,10 +216,8 @@ class LidoTest extends RecordTestBase
             'issn' => [
                 '0357-5284',
             ],
-            'related_isbn_isn_mv' => [
-                '9517186347',
-                '9789517186346',
-            ],
+            'url' => [],
+            'thumbnail' => '',
             'allfields' => [
                 'knp-247394',
                 'Kirja',

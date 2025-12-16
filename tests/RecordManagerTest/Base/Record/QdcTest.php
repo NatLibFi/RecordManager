@@ -43,7 +43,7 @@ use RecordManager\Base\Record\Qdc;
 class QdcTest extends RecordTestBase
 {
     /**
-     * Test QQDC record handling
+     * Test QDC record handling
      *
      * @return void
      */
@@ -61,7 +61,9 @@ class QdcTest extends RecordTestBase
 
         $expected = [
             'record_format' => 'qdc',
-            'ctrlnum' => '10138_331330',
+            'ctrlnum' => [
+                '10138_331330',
+            ],
             'allfields' => [
                 'Urine : The potential, value chain and its sustainable management',
                 'Viskari, Eeva-Liisa',
@@ -83,9 +85,8 @@ class QdcTest extends RecordTestBase
                 'okm_type',
                 'okm_type_2',
                 'other_type',
-                'Eeva-Liisa Viskari, Suvi Lehtoranta, Riikka Malila. Urine : The'
-                    . ' potential, value chain and its sustainable management. '
-                    . 'Sanitation Value Chain (2021) 5, 1, pages 10-12. '
+                'Eeva-Liisa Viskari, Suvi Lehtoranta, Riikka Malila. Urine : The potential, value chain and its'
+                    . ' sustainable management. Sanitation Value Chain (2021) 5, 1, pages 10-12. '
                     . 'https://doi.org/10.34416/svc.00029',
                 '2432-5058',
                 'http://hdl.handle.net/10138/331330',
@@ -109,19 +110,19 @@ class QdcTest extends RecordTestBase
             'author2' => [],
             'author_corporate' => [],
             'author_sort' => 'Viskari, Eeva-Liisa',
-            'title_full' => 'Urine : The potential, value chain and its sustainable'
-                    . ' management',
-            'title' => 'Urine : The potential, value chain and its sustainable'
-                    . ' management',
+            'title_full' => 'Urine : The potential, value chain and its sustainable management',
+            'title' => 'Urine : The potential, value chain and its sustainable management',
             'title_short' => 'Urine',
-            'title_sub' => 'The potential, value chain and its sustainabl'
-                    . 'e management',
-            'title_sort' => 'urine the potential value chain and its sustainable'
-                    . ' management',
+            'title_sub' => 'The potential, value chain and its sustainable management',
+            'title_sort' => 'urine the potential value chain and its sustainable management',
+            'title_alt' => [],
             'publisher' => [
                 'Sanitation Project, Research Institute for Humanity and Nature',
             ],
             'publishDate' => '2021',
+            'publishDateRange' => [
+                '2021',
+            ],
             'isbn' => [],
             'issn' => [
                 '2432-5058',
@@ -160,6 +161,7 @@ class QdcTest extends RecordTestBase
             'contents' => [],
             'description' => '',
             'series' => [],
+            'fulltext' => '',
           ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');

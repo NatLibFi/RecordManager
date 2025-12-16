@@ -3,11 +3,12 @@
     "building": [
         "150"
     ],
-    "fullrecord": "{\"leader\":\"00000cam a22000004i 4500\",\"fields\":[{\"001\":\"123\"},{\"005\":\"20160322194428.0\"},{\"008\":\"140327s2013    fi            000 0 fin d\"},{\"020\":{\"ind1\":\" \",\"ind2\":\" \",\"subfields\":[{\"a\":\"978-951-31-4836-2\"}]}},{\"100\":{\"ind1\":\"1\",\"ind2\":\" \",\"subfields\":[{\"a\":\"Hirsjärvi, Sirkka.\"},{\"0\":\"(TEST)1\"}]}},{\"245\":{\"ind1\":\"1\",\"ind2\":\"0\",\"subfields\":[{\"a\":\"Tutki ja kirjoita \\/\"},{\"c\":\"Sirkka Hirsjärvi, Pirkko Remes, Paula Sajavaara.\"}]}},{\"852\":{\"ind1\":\"8\",\"ind2\":\" \",\"subfields\":[{\"a\":\"E\"},{\"b\":\"150\"},{\"h\":\"38 Hir\"},{\"z\":\"18. p. 2013\"},{\"9\":\"Test\"}]}}]}",
+    "fullrecord": "{\"leader\":\"00000cam a22000004i 4500\",\"fields\":[{\"001\":\"123\"},{\"005\":\"20160322194428.0\"},{\"008\":\"140327s2013    fi            000 0 fin d\"},{\"020\":{\"ind1\":\" \",\"ind2\":\" \",\"subfields\":[{\"a\":\"978-951-31-4836-2\"}]}},{\"100\":{\"ind1\":\"1\",\"ind2\":\" \",\"subfields\":[{\"a\":\"Hirsjärvi, Sirkka.\"},{\"0\":\"(TEST)1\"}]}},{\"245\":{\"ind1\":\"1\",\"ind2\":\"0\",\"subfields\":[{\"a\":\"Tutki ja kirjoita \\/\"},{\"c\":\"Sirkka Hirsjärvi, Pirkko Remes, Paula Sajavaara.\"}]}},{\"264\":{\"ind1\":\" \",\"ind2\":\"1\",\"subfields\":[{\"c\":\"2013\"}]}},{\"852\":{\"ind1\":\"8\",\"ind2\":\" \",\"subfields\":[{\"a\":\"E\"},{\"b\":\"150\"},{\"h\":\"38 Hir\"},{\"z\":\"18. p. 2013\"},{\"9\":\"Test\"}]}}]}",
     "allfields": [
         "Hirsj\u00e4rvi, Sirkka",
         "Tutki ja kirjoita",
-        "Sirkka Hirsj\u00e4rvi, Pirkko Remes, Paula Sajavaara"
+        "Sirkka Hirsj\u00e4rvi, Pirkko Remes, Paula Sajavaara",
+        "2013"
     ],
     "language": [
         "fin"
@@ -24,6 +25,9 @@
     "title_sort": "tutki ja kirjoita sirkka hirsj\u00e4rvi pirkko remes paula sajavaara",
     "publishDateSort": "2013",
     "publishDate": [
+        "2013"
+    ],
+    "publishDateRange": [
         "2013"
     ],
     "isbn": [

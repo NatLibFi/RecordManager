@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2011-2023.
+ * Copyright (C) The National Library of Finland 2011-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -60,6 +60,13 @@ class Doaj extends AbstractRecord
      * @var \SimpleXMLElement
      */
     protected $doc = null;
+
+    /**
+     * Record Document
+     *
+     * @var \SimpleXMLElement
+     */
+    protected $recordDoc = null;
 
     /**
      * HTTP service for FullTextTrait
@@ -153,68 +160,27 @@ class Doaj extends AbstractRecord
      */
     public function toSolrArray(?Database $db = null)
     {
-        $data = $this->getFullTextFields($this->doc);
+        $data = parent::toSolrArray($db);
 
-        $doc = $this->doc->children($this->recordNs);
-        $data['record_format'] = 'doaj';
-        $data['ctrlnum'] = $this->getID();
-        $data['fullrecord'] = $doc->asXML();
-
-        // allfields
-        $allFields = [];
-        foreach ($doc as $field) {
-            $allFields[] = $this->metadataUtils->stripTrailingPunctuation(
-                trim((string)$field)
-            );
-        }
-        $data['allfields'] = $allFields;
-
-        // language
-        $languages = [];
-        foreach (explode(' ', trim((string)$doc->language)) as $language) {
-            foreach (str_split($language, 3) as $code) {
-                $languages[] = $code;
-            }
-        }
-        $data['language'] = $this->metadataUtils
-            ->normalizeLanguageStrings($languages);
-
+        $this->recordDoc = $this->doc->children($this->recordNs);
+        $data['ctrlnum'] = $this->getControlNumbers();
+        $data['fullrecord'] = $this->getFullRecord();
+        $data['allfields'] = $this->getAllFields();
+        $data['language'] = $this->getLanguages();
         $data['format'] = $this->getFormat();
-
-        $getAuthor = function ($xml) {
-            return (string)($xml->author->name ?? '');
-        };
-        $data['author'] = array_filter(
-            array_values(
-                array_map($getAuthor, iterator_to_array($doc->authors))
-            )
-        );
-
-        $data['title'] = $data['title_full'] = $this->getTitle();
-        $titleParts = explode(' : ', $data['title'], 2);
-        $data['title_short'] = $titleParts[0];
-        if (isset($titleParts[1])) {
-            $data['title_sub'] = $titleParts[1];
-        }
+        $data['author'] = $this->getPrimaryAuthors();
+        $data['title'] = $this->getTitle();
+        $data['title_full'] = $this->getFullTitle();
+        $data['title_short'] = $this->getShortTitle($data['title']);
+        $data['title_sub'] = $this->getTitleSub($data['title']);
         $data['title_sort'] = $this->getTitle(true);
-
-        $data['publisher'] = [
-            $this->metadataUtils->stripTrailingPunctuation(
-                trim((string)$doc->publisher)
-            ),
-        ];
+        $data['publisher'] = $this->getPublishers();
         $data['publishDate'] = $this->getPublicationYear();
-
-        $getTopic = function ($xml) {
-            return (string)($xml->keyword ?? '');
-        };
-        $data['topic'] = $data['topic_facet'] = array_filter(
-            array_values(
-                array_map($getTopic, iterator_to_array($doc->keywords))
-            )
-        );
-
-        $data['url'] = $doc->fullTextUrl;
+        $data['publishDateRange'] = $this->getPublicationYears();
+        $data['topic'] = $this->getTopics();
+        $data['topic_facet'] = $this->getTopicFacets();
+        $data['url'] = $this->getUrls();
+        $data['fulltext'] = $this->getFullTextField($this->recordDoc);
 
         return $data;
     }
@@ -308,7 +274,7 @@ class Doaj extends AbstractRecord
     {
         $date = trim((string)$this->doc->children($this->recordNs)->publicationDate);
         $date = substr($date, 0, 4);
-        if (preg_match('{^(\d{4})$}', $date)) {
+        if ('' !== $date && preg_match('{^(\d{4})$}', $date)) {
             return $date;
         }
         return '';
@@ -325,12 +291,195 @@ class Doaj extends AbstractRecord
     }
 
     /**
+     * Get record format.
+     *
+     * @return string
+     */
+    protected function getRecordFormat(): string
+    {
+        return 'doaj';
+    }
+
+    /**
      * Get DOIs
      *
      * @return array
      */
     protected function getDOIs(): array
     {
+        return [];
+    }
+
+    /**
+     * Get control numbers.
+     *
+     * @return array
+     */
+    protected function getControlNumbers(): array
+    {
+        return [$this->getID()];
+    }
+
+    /**
+     * Get full record.
+     *
+     * @return string
+     */
+    protected function getFullRecord(): string
+    {
+        return (string)$this->doc->asXML();
+    }
+
+    /**
+     * Get an array of all fields relevant to allfields search.
+     *
+     * @return array
+     */
+    protected function getAllFields(): array
+    {
+        $result = [];
+        foreach ($this->recordDoc as $field) {
+            $result[] = $this->metadataUtils->stripTrailingPunctuation(trim((string)$field));
+        }
+        return $result;
+    }
+
+    /**
+     * Get languages.
+     *
+     * @return array
+     */
+    protected function getLanguages(): array
+    {
+        $result = [];
+        foreach (explode(' ', trim((string)$this->recordDoc->language)) as $language) {
+            foreach (str_split($language, 3) as $code) {
+                $result[] = $code;
+            }
+        }
+        return $this->metadataUtils->normalizeLanguageStrings($result);
+    }
+
+    /**
+     * Get primary authors.
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthors(): array
+    {
+        $getAuthor = function ($xml) {
+            return (string)($xml->author->name ?? '');
+        };
+        return array_filter(
+            array_values(
+                array_map($getAuthor, iterator_to_array($this->recordDoc->authors))
+            )
+        );
+    }
+
+    /**
+     * Get full title.
+     *
+     * @return string
+     */
+    protected function getFullTitle(): string
+    {
+        return $this->getTitle();
+    }
+
+    /**
+     * Get short title.
+     *
+     * @param string $fullTitle Full title
+     *
+     * @return string
+     */
+    protected function getShortTitle(string $fullTitle): string
+    {
+        $titleParts = explode(' : ', $fullTitle, 2);
+        return $titleParts[0];
+    }
+
+    /**
+     * Get subtitle.
+     *
+     * @param string $fullTitle Full title
+     *
+     * @return string
+     */
+    protected function getTitleSub(string $fullTitle): string
+    {
+        $titleParts = explode(' : ', $fullTitle, 2);
+        return $titleParts[1] ?? '';
+    }
+
+    /**
+     * Get publishers.
+     *
+     * @return array
+     */
+    protected function getPublishers(): array
+    {
+        return [
+            $this->metadataUtils->stripTrailingPunctuation(trim((string)$this->recordDoc->publisher)),
+        ];
+    }
+
+    /**
+     * Get topics.
+     *
+     * @return array
+     */
+    protected function getTopics(): array
+    {
+        if (isset($this->resultCache[__METHOD__])) {
+            return $this->resultCache[__METHOD__];
+        }
+        $getTopic = function ($xml) {
+            return (string)($xml->keyword ?? '');
+        };
+        return $this->resultCache[__METHOD__] = array_filter(
+            array_values(
+                array_map($getTopic, iterator_to_array($this->recordDoc->keywords))
+            )
+        );
+    }
+
+    /**
+     * Get topic facet fields.
+     *
+     * @return array
+     */
+    protected function getTopicFacets(): array
+    {
+        return $this->getTopics();
+    }
+
+    /**
+     * Return URLs associated with object
+     *
+     * @return array
+     */
+    protected function getUrls()
+    {
+        if ($url = (string)$this->recordDoc->fullTextUrl) {
+            return [$url];
+        }
+        return [];
+    }
+
+    /**
+     * Return publication years
+     *
+     * @return array
+     */
+    protected function getPublicationYears(): array
+    {
+        $date = trim((string)$this->doc->children($this->recordNs)->publicationDate);
+        $date = substr($date, 0, 4);
+        if (preg_match('{^(\d{4})$}', $date)) {
+            return [$date];
+        }
         return [];
     }
 }

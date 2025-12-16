@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2022.
+ * Copyright (C) The National Library of Finland 2022-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -225,6 +225,77 @@ class PDODatabaseTest extends \PHPUnit\Framework\TestCase
                 [
                     '',
                     'isbn',
+                ],
+            ],
+            'top-level $or and another param' => [
+                [
+                    'deleted' => false,
+                    '$or' => [
+                        [
+                            'source_id' => 'foo',
+                        ],
+                        [
+                            'source_id' => 'bar',
+                        ],
+                    ],
+                ],
+                [],
+                'select * from record where deleted=? AND (source_id=? OR source_id=?)',
+                [
+                    false,
+                    'foo',
+                    'bar',
+                ],
+            ],
+            'top-level $nor and another param' => [
+                [
+                    'deleted' => false,
+                    '$nor' => [
+                        [
+                            'source_id' => 'foo',
+                        ],
+                        [
+                            'source_id' => 'bar',
+                        ],
+                    ],
+                ],
+                [],
+                'select * from record where deleted=? AND NOT (source_id=? OR source_id=?)',
+                [
+                    false,
+                    'foo',
+                    'bar',
+                ],
+            ],
+            'top-level $or, $nor and another param' => [
+                [
+                    'deleted' => false,
+                    '$or' => [
+                        [
+                            'source_id' => 'first',
+                        ],
+                        [
+                            'source_id' => 'second',
+                        ],
+                    ],
+                    '$nor' => [
+                        [
+                            'source_id' => 'foo',
+                        ],
+                        [
+                            'source_id' => 'bar',
+                        ],
+                    ],
+                ],
+                [],
+                'select * from record where deleted=? AND (source_id=? OR source_id=?)'
+                    . ' AND NOT (source_id=? OR source_id=?)',
+                [
+                    false,
+                    'first',
+                    'second',
+                    'foo',
+                    'bar',
                 ],
             ],
         ];

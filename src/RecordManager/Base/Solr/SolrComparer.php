@@ -222,7 +222,7 @@ class SolrComparer extends SolrUpdater
         $ignoreFields = [
             'allfields', 'allfields_unstemmed', 'fulltext', 'fulltext_unstemmed',
             'spelling', 'spellingShingle', 'authorStr', 'author_facet',
-            'publisherStr', 'publishDateSort', 'topic_browse', 'hierarchy_browse',
+            'publisherStr', 'publishDateSort', 'hierarchy_browse',
             'first_indexed', 'last_indexed', '_version_',
             'fullrecord', 'title_full_unstemmed', 'title_fullStr',
             'author_additionalStr',

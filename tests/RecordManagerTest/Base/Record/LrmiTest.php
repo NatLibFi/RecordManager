@@ -61,7 +61,9 @@ class LrmiTest extends RecordTestBase
 
         $expected = [
             'record_format' => 'lrmi',
-            'ctrlnum' => '11',
+            'ctrlnum' => [
+                '11',
+            ],
             'allfields' => [
                 'oai:aoe.fi:11',
                 'Opetuksen ja oppimisen suunnittelu, Learning Design',
@@ -154,15 +156,17 @@ class LrmiTest extends RecordTestBase
             'title_full' => 'Opetuksen ja oppimisen suunnittelu, Learning Design',
             'title' => 'Opetuksen ja oppimisen suunnittelu, Learning Design',
             'title_short' => 'Opetuksen ja oppimisen suunnittelu, Learning Design',
+            'title_sub' => '',
             'title_alt' => [
                 'Planering av undevisning och lärande',
                 'Designing Learning Processes',
             ],
             'title_sort' => 'opetuksen ja oppimisen suunnittelu learning design',
-            'publisher' => [
-                '',
-            ],
+            'publisher' => [],
             'publishDate' => '2019',
+            'publishDateRange' => [
+                '2019',
+            ],
             'isbn' => [],
             'issn' => [],
             'doi_str_mv' => [],
@@ -198,6 +202,7 @@ class LrmiTest extends RecordTestBase
             'description' => 'Learning Design means planning teaching and student’s'
                 . ' goal-oriented learning...',
             'series' => [],
+            'fulltext' => '',
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');

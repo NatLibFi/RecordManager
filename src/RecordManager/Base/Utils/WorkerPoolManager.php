@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2017-2021.
+ * Copyright (C) The National Library of Finland 2017-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -71,7 +71,7 @@ class WorkerPoolManager
     /**
      * Worker pools
      *
-     * @var array
+     * @var array<string, array>
      */
     protected $workerPools = [];
 
@@ -145,17 +145,19 @@ class WorkerPoolManager
     /**
      * Create worker pool
      *
-     * @param string   $poolId     Worker pool id
-     * @param int      $processes  Number of worker processes
-     * @param int      $maxQueue   Maximum length of request queue
-     * @param callable $runMethod  Worker execution method
-     * @param callable $initMethod Worker initialization method
+     * @param string   $poolId         Worker pool id
+     * @param int      $processes      Number of worker processes
+     * @param int      $spareProcesses Number of spare worker processes
+     * @param int      $maxQueue       Maximum length of request queue
+     * @param callable $runMethod      Worker execution method
+     * @param callable $initMethod     Worker initialization method
      *
      * @return void
      */
     public function createWorkerPool(
         string $poolId,
         int $processes,
+        int $spareProcesses,
         int $maxQueue,
         callable $runMethod,
         ?callable $initMethod = null
@@ -175,7 +177,7 @@ class WorkerPoolManager
         }
         $this->maxPendingRequests = $maxQueue;
         $this->requestQueue[$poolId] = [];
-        for ($i = 0; $i < $processes; $i++) {
+        for ($i = 0; $i < $processes + $spareProcesses; $i++) {
             $socketPair = [];
             $domain = strtoupper(substr(PHP_OS, 0, 3)) == 'WIN' ? AF_INET : AF_UNIX;
             if (socket_create_pair($domain, SOCK_STREAM, 0, $socketPair) === false) {
@@ -198,12 +200,14 @@ class WorkerPoolManager
                     'pid' => $childPid,
                     'socket' => $parentSocket,
                     'active' => false,
+                    'payload' => null,
+                    'parked' => $i >= $processes, // Park the spare processes by default
                 ];
             } else {
+                // Don't inherit worker pools to avoid any issues e.g. on destruction:
+                $this->workerPools = [];
                 // This doesn't work with macOS, so suppress warnings.
-                @cli_set_process_title(
-                    "RecordManager $poolId worker for $parentPid"
-                );
+                @cli_set_process_title("RecordManager $poolId worker for $parentPid");
                 try {
                     socket_close($parentSocket);
                     if (null !== $initMethod) {
@@ -268,7 +272,7 @@ class WorkerPoolManager
     {
         $args = func_get_args();
         array_shift($args);
-        if (empty($this->workerPools[$poolId])) {
+        if (!$this->hasWorkerPool($poolId)) {
             if (!isset($this->workerPoolRunMethods[$poolId])) {
                 throw new \Exception("addRequest: Invalid worker pool $poolId");
             }
@@ -299,7 +303,7 @@ class WorkerPoolManager
      */
     public function handleRequests(string $poolId): void
     {
-        if (empty($this->workerPools[$poolId])) {
+        if (!$this->hasWorkerPool($poolId)) {
             return;
         }
         while ($this->requestQueue[$poolId]) {
@@ -307,8 +311,9 @@ class WorkerPoolManager
             $queueItem = array_shift($this->requestQueue[$poolId]);
             $handled = false;
             foreach ($this->workerPools[$poolId] as &$worker) {
-                if (!$worker['active']) {
+                if (!$worker['active'] && !$worker['parked']) {
                     $worker['active'] = true;
+                    $worker['payload'] = $queueItem;
                     $this->writeSocket($worker['socket'], $queueItem);
                     $handled = true;
                     break;
@@ -347,7 +352,7 @@ class WorkerPoolManager
     public function requestsActive(string $poolId): bool
     {
         $this->handleRequests($poolId);
-        if (empty($this->workerPools[$poolId])) {
+        if (!$this->hasWorkerPool($poolId)) {
             return false;
         }
         foreach ($this->workerPools[$poolId] as $worker) {
@@ -381,7 +386,7 @@ class WorkerPoolManager
      */
     public function checkForResults(string $poolId): bool
     {
-        if (!empty($this->workerPools[$poolId])) {
+        if ($this->hasWorkerPool($poolId)) {
             foreach ($this->workerPools[$poolId] as &$worker) {
                 if ($worker['active']) {
                     $result = $this->readSocket($worker['socket']);
@@ -391,6 +396,7 @@ class WorkerPoolManager
                         }
                         $this->results[$poolId][] = $result['r'];
                         $worker['active'] = false;
+                        $worker['payload'] = null;
                     }
                 }
             }
@@ -597,11 +603,13 @@ class WorkerPoolManager
                     $pid = pcntl_waitpid($worker['pid'], $status, WNOHANG);
                     if ($pid > 0) {
                         $worker['active'] = false;
-                        $worker['exitCode'] = pcntl_wexitstatus($status);
+                        $worker['exitCode'] = $status ? pcntl_wexitstatus($status) : $status;
                         $found = true;
                     }
                 }
+                unset($worker);
             }
+            unset($workers);
         } while ($found);
     }
 
@@ -613,20 +621,56 @@ class WorkerPoolManager
      */
     protected function checkForStoppedWorkers(): void
     {
-        if (empty($this->workerPools)) {
+        if (!$this->workerPools) {
             return;
         }
         pcntl_signal_dispatch();
-        foreach ($this->workerPools as $workers) {
-            foreach ($workers as $worker) {
+        foreach ($this->workerPools as $poolId => $workers) {
+            foreach ($workers as $i => $worker) {
                 if (isset($worker['exitCode'])) {
-                    throw new \Exception(
-                        "Worker {$worker['pid']} has stopped prematurely with exit"
-                        . " code {$worker['exitCode']}"
+                    $this->logger->logError(
+                        'WorkerPool',
+                        "Worker {$worker['pid']} in pool $poolId has stopped prematurely with exit code "
+                        . $worker['exitCode']
                     );
+                    if (!$worker['parked']) {
+                        // Check if we have a parked worker that could be used to handle the payload:
+                        if ($newWorker = $this->unparkWorker($poolId)) {
+                            // Re-queue any payload:
+                            if (null !== $worker['payload']) {
+                                array_unshift($this->requestQueue[$poolId], $worker['payload']);
+                            }
+                            $this->logger->logWarning(
+                                'WorkerPool',
+                                "Worker {$newWorker['pid']} unparked to replace worker {$worker['pid']}"
+                            );
+                        } else {
+                            throw new \Exception("No parked worker available to replace worker {$worker['pid']}");
+                        }
+                    }
+                    // Remove the old worker from the pool:
+                    unset($this->workerPools[$poolId][$i]);
                 }
             }
         }
+    }
+
+    /**
+     * Check for a parked worker and unpark it if available.
+     *
+     * @param string $poolId Worker pool
+     *
+     * @return ?array Worker information or null if no parked worker was available
+     */
+    protected function unparkWorker(string $poolId): ?array
+    {
+        foreach (array_keys($this->workerPools[$poolId] ?? []) as $i) {
+            if ($this->workerPools[$poolId][$i]['parked']) {
+                $this->workerPools[$poolId][$i]['parked'] = false;
+                return $this->workerPools[$poolId][$i];
+            }
+        }
+        return null;
     }
 
     /**

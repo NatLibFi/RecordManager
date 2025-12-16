@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2011-2019.
+ * Copyright (C) The National Library of Finland 2011-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -158,143 +158,33 @@ class Ead extends AbstractRecord
      */
     public function toSolrArray(?Database $db = null)
     {
-        $data = [];
+        $data = parent::toSolrArray($db);
 
         $doc = $this->doc;
-        $data['record_format'] = 'ead';
         $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
-        $data['fullrecord'] = $this->metadataUtils->trimXMLWhitespace($doc->asXML());
-        $data['allfields'] = $this->getAllFields($doc);
-
-        if ($doc->scopecontent) {
-            if ($doc->scopecontent->p) {
-                // Join all p-elements into a flat string.
-                $desc = [];
-                foreach ($doc->scopecontent->p as $p) {
-                    $desc[] = trim((string)$p);
-                }
-                $desc = implode('   /   ', $desc);
-            } else {
-                $desc = (string)$doc->scopecontent;
-            }
-            $data['description'] = $desc;
-        }
-
-        if ($names = $doc->xpath('controlaccess/persname')) {
-            foreach ($names as $name) {
-                if (trim((string)$name) !== '-') {
-                    $data['author'][] = trim((string)$name);
-                }
-            }
-        }
-        if (!empty($data['author'])) {
-            $data['author_sort'] = $data['author'][0];
-        }
-
-        if ($names = $doc->xpath('controlaccess/corpname')) {
-            foreach ($names as $name) {
-                $data['author_corporate'][] = trim((string)$name);
-            }
-        }
-
-        if (!empty($doc->did->origination->corpname)) {
-            $data['author_corporate'] = trim(
-                (string)$doc->did->origination->corpname
-            );
-        }
-        if (!empty($doc->did->origination->persname)) {
-            $data['author2'] = trim(
-                (string)$doc->did->origination->persname
-            );
-        }
-
-        $data = array_merge($data, $this->getGeographicData());
-
-        $data['topic'] = $data['topic_facet'] = $this->getTopics();
-
+        $data['title_sub'] = $this->getTitleSub();
+        $data['title_short'] = $this->getShortTitle();
+        $data['title'] = $this->getTitleField();
+        $data['title_full'] = $this->getFullTitle();
+        $data['title_sort'] = $this->getTitleSort();
+        $data['description'] = $this->getDescription();
+        $data['author'] = $this->getPrimaryAuthors();
+        $data['author2'] = $this->getSecondaryAuthors();
+        $data['author_sort'] = $this->getAuthorSort($data['author']);
+        $data['author_corporate'] = $this->getCorporateAuthors();
+        $data['topic'] = $this->getTopics();
+        $data['topic_facet'] = $this->getTopicFacets();
         $data['format'] = $this->getFormat();
-
-        if (isset($doc->did->repository)) {
-            $data['institution']
-                = (string)($doc->did->repository->corpname ?? $doc->did->repository);
-        }
-
+        $data['institution'] = $this->getInstitution();
         $data['series'] = $this->getSeries();
-        $data['title_sub'] = $this->getSubtitle();
-        $data['title_short'] = (string)$doc->did->unittitle;
-        $data['title'] = '';
-        // Ini handling returns true as '1':
-        $prependTitle = $this->getDriverParam('prependTitleWithSubtitle', '1');
-        if (
-            '1' === $prependTitle
-            || ('children' === $prependTitle && $this->doc->{'add-data'}->{'parent'})
-        ) {
-            if ($data['title_sub'] && $data['title_sub'] != $data['title_short']) {
-                $data['title'] = $data['title_sub'] . ' ';
-            }
-        }
-        $data['title'] .= $data['title_short'];
-        $data['title_full'] = $data['title_sort'] = $data['title'];
-        $data['title_sort'] = mb_strtolower(
-            $this->metadataUtils->stripPunctuation($data['title_sort']),
-            'UTF-8'
-        );
+        $data['language'] = $this->getLanguages();
+        $data['physical'] = $this->getPhysicalExtent();
+        $data['thumbnail'] = $this->getThumbnailUrl();
+        $data['allfields'] = $this->getAllFields($doc);
+        $data['fullrecord'] = $this->getFullRecord();
 
-        foreach ($doc->did->langmaterial ?? [] as $langmaterial) {
-            foreach ($langmaterial->language ?? [] as $lang) {
-                $l = $lang->attributes()->langcode ?? $lang;
-                $data['language'][] = $this->metadataUtils
-                    ->normalizeLanguageStrings($l);
-            }
-        }
-
-        if ($extents = $doc->did->xpath('physdesc/extent')) {
-            foreach ($extents as $extent) {
-                if (trim((string)$extent) !== '-') {
-                    $data['physical'][] = (string)$extent;
-                }
-            }
-        }
-
-        $nodes = isset($this->doc->did->daogrp)
-            ? $this->doc->did->daogrp->xpath('daoloc[@role="image_thumbnail"]')
-            : null;
-        if ($nodes) {
-            // store first thumbnail
-            $node = $nodes[0];
-            if (isset($node->attributes()->href)) {
-                $data['thumbnail'] = (string)$node->attributes()->href;
-            }
-        }
-
-        $data['hierarchytype'] = 'Default';
-        if ($this->doc->{'add-data'}->archive) {
-            $archiveAttr = $this->doc->{'add-data'}->archive->attributes();
-            $data['hierarchy_top_id'] = (string)$archiveAttr->{'id'};
-            $data['hierarchy_top_title'] = (string)$archiveAttr->title;
-            if ($archiveAttr->subtitle) {
-                $data['hierarchy_top_title'] .= ' : '
-                    . (string)$archiveAttr->subtitle;
-            }
-            $data['allfields'][] = $data['hierarchy_top_title'];
-            if ($archiveAttr->sequence) {
-                $data['hierarchy_sequence'] = (string)$archiveAttr->sequence;
-            }
-        }
-        if ($this->doc->{'add-data'}->{'parent'}) {
-            $data['hierarchy_parent_id']
-                = (string)$this->doc->{'add-data'}->{'parent'}->attributes()->{'id'};
-            $data['allfields'][] = $data['hierarchy_parent_title']
-                = (string)$this->doc->{'add-data'}->{'parent'}->attributes()->title;
-        } else {
-            $data['is_hierarchy_id'] = $data['hierarchy_top_id'] = $this->getID();
-            $data['is_hierarchy_title'] = $data['hierarchy_top_title']
-                = (string)$doc->did->unittitle;
-        }
-        if ($this->getDriverParam('addIdToHierarchyTitle', true)) {
-            $data['title_in_hierarchy']
-                = trim($this->getUnitId() . ' ' . $data['title']);
-        }
+        $this->addGeographicData($data);
+        $this->addHierarchyFields($data);
 
         return $data;
     }
@@ -348,13 +238,63 @@ class Ead extends AbstractRecord
     }
 
     /**
+     * Return record title
+     *
+     * @param bool $forFiling Whether the title is to be used in filing
+     *                        (e.g. sorting, non-filing characters should be removed)
+     *
+     * @return string
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function getTitle($forFiling = false)
+    {
+        $title = (string)($this->doc->did->unittitle ?? '');
+        if ($forFiling) {
+            $title = $this->metadataUtils->createSortTitle($title);
+        }
+
+        return $title;
+    }
+
+    /**
+     * Get short title
+     *
+     * @return string
+     */
+    public function getShortTitle(): string
+    {
+        return $this->getTitle();
+    }
+
+    /**
+     * Get record format.
+     *
+     * @return string
+     */
+    protected function getRecordFormat(): string
+    {
+        return 'ead';
+    }
+
+    /**
      * Get topics.
      *
      * @return array
      */
-    protected function getTopics()
+    protected function getTopics(): array
     {
         return $this->getTopicTerms(false);
+    }
+
+    /**
+     * Get topic facets.
+     *
+     * @return array
+     */
+    protected function getTopicFacets(): array
+    {
+        return $this->getTopics();
     }
 
     /**
@@ -400,7 +340,7 @@ class Ead extends AbstractRecord
      *
      * @return string
      */
-    protected function getSubtitle()
+    protected function getTitleSub()
     {
         $noSubtitleFormats = [
             $this->fondsType,
@@ -485,14 +425,17 @@ class Ead extends AbstractRecord
     }
 
     /**
-     * Get geographic data
-     * (geographic, geographic_facet, location_geo, center_coords)
+     * Add geographic data
      *
-     * @return array
+     * Fields geographic, geographic_facet, location_geo, center_coords
+     *
+     * @param array $data Data array
+     *
+     * @return void
      */
-    protected function getGeographicData()
+    protected function addGeographicData(array &$data): void
     {
-        $data = $names = $geoNames = [];
+        $names = $geoNames = [];
 
         foreach ($this->doc->controlaccess as $el) {
             foreach ($el->geogname as $name) {
@@ -543,6 +486,265 @@ class Ead extends AbstractRecord
         if (!empty($names)) {
             $data['geographic'] = $data['geographic_facet'] = $names;
         }
-        return $data;
+    }
+
+    /**
+     * Get full record.
+     *
+     * @return string
+     */
+    protected function getFullRecord(): string
+    {
+        return $this->metadataUtils->trimXMLWhitespace($this->doc->asXML());
+    }
+
+    /**
+     * Get description.
+     *
+     * @return string
+     */
+    protected function getDescription(): string
+    {
+        $desc = '';
+        if ($this->doc->scopecontent) {
+            if ($this->doc->scopecontent->p) {
+                // Join all p-elements into a flat string.
+                $desc = [];
+                foreach ($this->doc->scopecontent->p as $p) {
+                    $desc[] = trim((string)$p);
+                }
+                $desc = implode('   /   ', $desc);
+            } else {
+                $desc = (string)$this->doc->scopecontent;
+            }
+        }
+
+        return $desc;
+    }
+
+    /**
+     * Get primary authors.
+     *
+     * @return array
+     */
+    protected function getPrimaryAuthors(): array
+    {
+        $result = [];
+        if ($names = $this->doc->xpath('controlaccess/persname')) {
+            foreach ($names as $name) {
+                if (trim((string)$name) !== '-') {
+                    $result[] = trim((string)$name);
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Get secondary authors.
+     *
+     * @return array
+     */
+    protected function getSecondaryAuthors(): array
+    {
+        $result = [];
+        if (!empty($this->doc->did->origination->persname)) {
+            $result[] = trim((string)$this->doc->did->origination->persname);
+        }
+        return $result;
+    }
+
+    /**
+     * Get corporate authors
+     *
+     * @return array
+     */
+    protected function getCorporateAuthors(): array
+    {
+        $result = [];
+        if ($names = $this->doc->xpath('controlaccess/corpname')) {
+            foreach ($names as $name) {
+                $result[] = trim((string)$name);
+            }
+        }
+
+        if (!empty($this->doc->did->origination->corpname)) {
+            $result[] = trim((string)$this->doc->did->origination->corpname);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get author sort field.
+     *
+     * @param array $authors Primary authors
+     *
+     * @return string
+     */
+    protected function getAuthorSort(array $authors): string
+    {
+        return $authors[0] ?? '';
+    }
+
+    /**
+     * Get institution.
+     *
+     * @return string
+     */
+    protected function getInstitution(): string
+    {
+        if (isset($this->doc->did->repository)) {
+            return (string)($this->doc->did->repository->corpname ?? $this->doc->did->repository ?? '');
+        }
+        return '';
+    }
+
+    /**
+     * Get title field.
+     *
+     * @return string
+     */
+    protected function getTitleField(): string
+    {
+        if (isset($this->resultCache[__METHOD__])) {
+            return $this->resultCache[__METHOD__];
+        }
+
+        $titleSub = $this->getTitleSub();
+        $shortTitle = $this->getShortTitle();
+
+        $title = '';
+        // Ini handling returns true as '1':
+        $prependTitle = $this->getDriverParam('prependTitleWithSubtitle', '1');
+        if (
+            '1' === $prependTitle
+            || ('children' === $prependTitle && $this->doc->{'add-data'}->{'parent'})
+        ) {
+            if (
+                '' !== $titleSub
+                && $titleSub !== $shortTitle
+            ) {
+                $title = $titleSub . ' ';
+            }
+        }
+        $title .= $shortTitle;
+
+        return $this->resultCache[__METHOD__] = $title;
+    }
+
+    /**
+     * Get full title.
+     *
+     * @return string
+     */
+    protected function getFullTitle(): string
+    {
+        return $this->getTitleField();
+    }
+
+    /**
+     * Get sort title.
+     *
+     * @return string
+     */
+    protected function getTitleSort(): string
+    {
+        return mb_strtolower($this->metadataUtils->stripPunctuation($this->getTitle()), 'UTF-8');
+    }
+
+    /**
+     * Get languages
+     *
+     * @return array
+     */
+    protected function getLanguages()
+    {
+        $result = [];
+        foreach ($this->doc->did->langmaterial ?? [] as $langmaterial) {
+            foreach ($langmaterial->language ?? [] as $lang) {
+                $l = $lang->attributes()->langcode ?? $lang;
+                $result[] = $this->metadataUtils->normalizeLanguageStrings($l);
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Get physical extent
+     *
+     * @return array
+     */
+    protected function getPhysicalExtent()
+    {
+        $result = [];
+        if ($extents = $this->doc->did->xpath('physdesc/extent')) {
+            foreach ($extents as $extent) {
+                if (trim((string)$extent) !== '-') {
+                    $result[] = (string)$extent;
+                }
+            }
+        }
+        return $result;
+    }
+
+    /**
+     * Get thumbnail URL.
+     *
+     * @return string
+     */
+    protected function getThumbnailUrl(): string
+    {
+        $nodes = isset($this->doc->did->daogrp)
+            ? $this->doc->did->daogrp->xpath('daoloc[@role="image_thumbnail"]')
+            : null;
+        if ($nodes) {
+            // store first thumbnail
+            $node = $nodes[0];
+            if (isset($node->attributes()->href)) {
+                return (string)$node->attributes()->href;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Add hierarchy fields. Must be called after title is present in the array.
+     *
+     * @param array $data Reference to the target array
+     *
+     * @return void
+     */
+    protected function addHierarchyFields(array &$data): void
+    {
+        $data['hierarchytype'] = 'Default';
+        if ($this->doc->{'add-data'}->archive) {
+            $archiveAttr = $this->doc->{'add-data'}->archive->attributes();
+            $data['hierarchy_top_id'] = (string)$archiveAttr->{'id'};
+            $data['hierarchy_top_title'] = (string)$archiveAttr->title;
+            if ($archiveAttr->subtitle) {
+                $data['hierarchy_top_title'] .= ' : '
+                    . (string)$archiveAttr->subtitle;
+            }
+            $data['allfields'][] = $data['hierarchy_top_title'];
+            if ($archiveAttr->sequence) {
+                $data['hierarchy_sequence'] = (string)$archiveAttr->sequence;
+            }
+        }
+        if ($this->doc->{'add-data'}->{'parent'}) {
+            $data['hierarchy_parent_id']
+                = (string)$this->doc->{'add-data'}->{'parent'}->attributes()->{'id'};
+            $data['allfields'][] = $data['hierarchy_parent_title']
+                = (string)$this->doc->{'add-data'}->{'parent'}->attributes()->title;
+        } else {
+            $data['is_hierarchy_id'] = $data['hierarchy_top_id'] = $this->getID();
+            $data['is_hierarchy_title'] = $data['hierarchy_top_title']
+                = (string)$this->doc->did->unittitle;
+        }
+        if ($this->getDriverParam('addIdToHierarchyTitle', true)) {
+            $data['title_in_hierarchy']
+                = trim($this->getUnitId() . ' ' . $data['title']);
+        }
     }
 }

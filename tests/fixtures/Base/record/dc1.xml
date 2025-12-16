@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<dc schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/">
+  <title>Title : Sub</title>
+  <creator>Author, Primary</creator>
+  <subject>Topic</subject>
+  <subject>Testing</subject>
+  <subject>RecordManager</subject>
+  <description>Long description</description>
+  <description>https://localhost</description>
+  <publisher>Publisher</publisher>
+  <contributor>Author, Secondary</contributor>
+  <date>2025</date>
+  <type>Text</type>
+  <format>345 pages</format>
+  <identifier>12345</identifier>
+  <identifier>http://localhost/12345</identifier>
+  <source>RecordManager</source>
+  <language>eng</language>
+  <relation>http://localhost</relation>
+  <coverage>Finland</coverage>
+  <rights>http://localhost/cc0</rights>
+  <recordID>1234</recordID>
+</dc>

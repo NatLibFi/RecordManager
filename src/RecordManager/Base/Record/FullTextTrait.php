@@ -79,16 +79,14 @@ trait FullTextTrait
     protected static $requestsSize = [];
 
     /**
-     * Get full text fields for a given document
+     * Get full text field for a given document
      *
      * @param \SimpleXMLElement $doc Document
      *
-     * @return array
+     * @return string
      */
-    protected function getFullTextfields($doc)
+    protected function getFullTextField($doc): string
     {
-        $data = [];
-
         $fulltext = [];
         $xpaths = $this->getDriverParam('fullTextXpaths', []);
         foreach ((array)$xpaths as $xpath) {
@@ -101,7 +99,7 @@ trait FullTextTrait
         foreach ((array)$xpaths as $xpath) {
             foreach ($doc->xpath($xpath) as $field) {
                 $url = (string)$field;
-                if (preg_match('/^https?:\/\//', $url)) {
+                if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
                     try {
                         $fulltext[] = $this->getUrl($url);
                     } catch (\Exception $e) {
@@ -121,10 +119,10 @@ trait FullTextTrait
             // Try to handle hyphenated text properly. This is not perfect since
             // something like 'Etelä-Suomi' will become EteläSuomi
             $ft = preg_replace('/([^\s]+)-\s*[\n\r]+\s*/m', '\1', $ft);
-            $data['fulltext'] = $ft;
+            return $ft ?? '';
         }
 
-        return $data;
+        return '';
     }
 
     /**

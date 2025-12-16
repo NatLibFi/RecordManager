@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (c) The National Library of Finland 2020-2021.
+ * Copyright (c) The National Library of Finland 2020-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -1032,6 +1032,18 @@ class PDODatabase extends AbstractDatabase
                     $subQueryParams = array_merge($subQueryParams, $subPartParams);
                 }
                 $where[] = '(' . implode(' OR ', $subQueries) . ')';
+                $params = array_merge($params, $subQueryParams);
+                continue;
+            }
+            if ('$nor' === $field) {
+                $subQueries = [];
+                $subQueryParams = [];
+                foreach ($value as $subFilter) {
+                    [$subPartQuery, $subPartParams] = $this->filterToSQL($collection, $subFilter, 'AND');
+                    $subQueries[] = $subPartQuery;
+                    $subQueryParams = array_merge($subQueryParams, $subPartParams);
+                }
+                $where[] = 'NOT (' . implode(' OR ', $subQueries) . ')';
                 $params = array_merge($params, $subQueryParams);
                 continue;
             }

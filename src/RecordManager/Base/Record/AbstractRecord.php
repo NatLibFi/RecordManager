@@ -222,7 +222,9 @@ abstract class AbstractRecord
      */
     public function toSolrArray(?Database $db = null)
     {
-        return [];
+        return [
+            'record_format' => $this->getRecordFormat(),
+        ];
     }
 
     /**
@@ -442,33 +444,39 @@ abstract class AbstractRecord
      *
      * @return bool
      */
-    public function getSuppressed()
+    public function getSuppressed(): bool
     {
         $filters = $this->dataSourceConfig[$this->source]['suppressOnField'] ?? [];
-        if ($filters) {
-            $solrFields = $this->toSolrArray();
-            foreach ($filters as $field => $filter) {
-                if (!isset($solrFields[$field])) {
-                    continue;
+        $regExFilters = $this->dataSourceConfig[$this->source]['suppressOnFieldRegEx'] ?? [];
+        if (!$filters && !$regExFilters) {
+            return false;
+        }
+
+        $solrFields = $this->toSolrArray();
+        foreach ($filters as $field => $filter) {
+            if (!isset($solrFields[$field])) {
+                continue;
+            }
+            foreach ((array)$solrFields[$field] as $value) {
+                if (in_array($value, explode('|', $filter))) {
+                    return true;
                 }
-                foreach ((array)$solrFields[$field] as $value) {
-                    if (
-                        str_starts_with($value, '/')
-                        && str_ends_with($value, '/')
-                    ) {
-                        $res = preg_match($filter, $value);
-                        if (false === $res) {
-                            $this->logger->logError(
-                                'getSuppressed',
-                                "Failed to parse filter regexp: $filter"
-                            );
-                        }
-                    } else {
-                        $res = in_array($value, explode('|', $filter));
-                    }
-                    if ($res) {
-                        return true;
-                    }
+            }
+        }
+        foreach ($regExFilters as $field => $filter) {
+            if (!isset($solrFields[$field])) {
+                continue;
+            }
+            foreach ((array)$solrFields[$field] as $value) {
+                $res = preg_match($filter, $value);
+                if (false === $res) {
+                    $this->logger->logError(
+                        'getSuppressed',
+                        "Failed to parse filter regex: $filter"
+                    );
+                }
+                if ($res) {
+                    return true;
                 }
             }
         }
@@ -543,6 +551,13 @@ abstract class AbstractRecord
     }
 
     /**
+     * Get record format.
+     *
+     * @return string
+     */
+    abstract protected function getRecordFormat(): string;
+
+    /**
      * Return a parameter specified in driverParams[] of datasources.ini
      *
      * @param string $parameter Parameter name
@@ -580,6 +595,18 @@ abstract class AbstractRecord
     protected function storeWarning($msg)
     {
         $this->warnings[] = $msg;
+    }
+
+    /**
+     * Store warning messages about problems with the record
+     *
+     * @param array $msgs Messages
+     *
+     * @return void
+     */
+    protected function storeWarnings(array $msgs): void
+    {
+        $this->warnings = [...$this->warnings, ...$msgs];
     }
 
     /**
