@@ -64,6 +64,21 @@ class AuthEnrichment extends AbstractEnrichment
     protected $authorityDb;
 
     /**
+     * Enrichment specifications. Key is the array in solrArray and value contains following:
+     * - pref, preferred field in solr
+     * - check, check field for existing values
+     *
+     * @var array<string, array>
+     */
+    protected array $enrichmentSpecs = [
+        'author2_id_str_mv' => [
+            'pref' => 'author_variant',
+            'check' => 'author_variant',
+            'includeInAllFields' => true,
+        ],
+    ];
+
+    /**
      * Constructor
      *
      * @param array               $config              Main configuration
@@ -107,16 +122,21 @@ class AuthEnrichment extends AbstractEnrichment
      */
     public function enrich($sourceId, $record, &$solrArray)
     {
-        foreach ($solrArray['author2_id_str_mv'] ?? [] as $id) {
-            $this->enrichField(
-                $sourceId,
-                $record,
-                $solrArray,
-                $id,
-                'author_variant',
-                'author_variant',
-                true
-            );
+        foreach ($this->enrichmentSpecs as $key => $specs) {
+            if (empty($solrArray[$key])) {
+                continue;
+            }
+            foreach ($solrArray[$key] as $id) {
+                $this->enrichField(
+                    $sourceId,
+                    $record,
+                    $solrArray,
+                    $id,
+                    $specs['pref'],
+                    $specs['check'],
+                    $specs['includeInAllFields'] ?? false
+                );
+            }
         }
     }
 
