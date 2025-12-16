@@ -160,6 +160,12 @@ class SkosmosEnrichment extends AbstractEnrichment
             'alt' => 'author2_variant',
             'check' => 'author2',
         ],
+        'getOccupationIds' => [
+            'pref' => 'occupation_str_mv',
+            'alt' => '',
+            'check' => '',
+            'includeInAllFields' => true,
+        ],
     ];
 
     /**
@@ -226,52 +232,6 @@ class SkosmosEnrichment extends AbstractEnrichment
     }
 
     /**
-     * Enrich the record and return any additions in solrArray
-     *
-     * @param string $sourceId  Source ID
-     * @param object $record    Metadata Record
-     * @param array  $solrArray Metadata to be sent to Solr
-     *
-     * @throws \Exception
-     * @return void
-     */
-    public function enrich($sourceId, $record, &$solrArray)
-    {
-        // Detect if record is an authority record or not as they have different enrichments.
-        if (str_ends_with($record::class, 'Authority')) {
-            $this->enrichAuthorityRecord($sourceId, $record, $solrArray);
-        } else {
-            $this->enrichRecord($sourceId, $record, $solrArray);
-        }
-    }
-
-    /**
-     * Enrich the authority record and save any additions in solrArray
-     *
-     * @param string $sourceId  Source ID
-     * @param object $record    Metadata Record
-     * @param array  $solrArray Metadata to be sent to Solr
-     *
-     * @throws \Exception
-     * @return void
-     */
-    protected function enrichAuthorityRecord($sourceId, $record, &$solrArray): void
-    {
-        foreach ($record->getOccupationIds() as $id) {
-            $this->enrichField(
-                $sourceId,
-                $record,
-                $solrArray,
-                $id,
-                'occupation_str_mv',
-                '',
-                '',
-                true
-            );
-        }
-    }
-
-    /**
      * Enrich the record and save any additions in solrArray
      *
      * @param string $sourceId  Source ID
@@ -281,7 +241,7 @@ class SkosmosEnrichment extends AbstractEnrichment
      * @throws \Exception
      * @return void
      */
-    protected function enrichRecord($sourceId, $record, &$solrArray): void
+    public function enrich($sourceId, $record, &$solrArray): void
     {
         foreach ($this->enrichmentSpecs as $method => $spec) {
             if (!is_callable([$record, $method])) {
@@ -295,7 +255,8 @@ class SkosmosEnrichment extends AbstractEnrichment
                     $id,
                     $spec['pref'],
                     $spec['alt'],
-                    $spec['check']
+                    $spec['check'],
+                    $spec['includeInAllFields'] ?? false
                 );
             }
         }
