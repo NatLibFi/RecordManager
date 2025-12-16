@@ -3138,7 +3138,6 @@ class SolrUpdater
         $enrichments = array_unique(
             array_map(
                 function ($enrichment) {
-
                     $exploded = explode(',', $enrichment, 2);
                     $name = strtolower($exploded[0]);
                     // Legacy support for old enrichment names in configuration
