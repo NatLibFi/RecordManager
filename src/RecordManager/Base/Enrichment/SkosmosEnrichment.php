@@ -150,7 +150,7 @@ class SkosmosEnrichment extends AbstractEnrichment
             'alt' => 'author_variant',
             'check' => 'author_corporate',
         ],
-        'getAuthorIds' => [
+        'getPrimaryAuthorIds' => [
             'pref' => 'author',
             'alt' => 'author_variant',
             'check' => 'author',

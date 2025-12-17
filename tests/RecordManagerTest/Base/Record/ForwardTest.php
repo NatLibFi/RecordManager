@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2020.
+ * Copyright (C) The National Library of Finland 2020-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -58,7 +58,10 @@ class ForwardTest extends RecordTestBase
             'ctrlnum' => [
                 'elonet_elokuva_1511500',
             ],
-            'publishDate' => '2011',
+            'publishDate' => [
+                '2011',
+            ],
+            'publishDateSort' => '2011',
             'publishDateRange' => [
                 '2011',
             ],
@@ -1434,6 +1437,12 @@ class ForwardTest extends RecordTestBase
                 'Marcelin asuinkorttelit aiottiin purkaa kesken elokuvan kuvausten.'
                     . ' Talot purettiin heti kun elokuva oli kuvattu[...]',
             ],
+            'contents' => [
+                'Marcel Marx, entinen kirjailija, elää Ranskassa Le Havressa vaatimattomasti kengänkiillottajana'
+                    . ' vaimonsa Arlettyn kanssa[...]',
+            ],
+            'isbn' => [],
+            'issn' => [],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');

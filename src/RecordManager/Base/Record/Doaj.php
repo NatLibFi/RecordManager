@@ -152,40 +152,6 @@ class Doaj extends AbstractRecord
     }
 
     /**
-     * Return fields to be indexed in Solr
-     *
-     * @param ?Database $db Database connection. Omit to avoid database lookups for related records.
-     *
-     * @return array<string, mixed>
-     */
-    public function toSolrArray(?Database $db = null)
-    {
-        $data = parent::toSolrArray($db);
-
-        $this->recordDoc = $this->doc->children($this->recordNs);
-        $data['ctrlnum'] = $this->getControlNumbers();
-        $data['fullrecord'] = $this->getFullRecord();
-        $data['allfields'] = $this->getAllFields();
-        $data['language'] = $this->getLanguages();
-        $data['format'] = $this->getFormat();
-        $data['author'] = $this->getPrimaryAuthors();
-        $data['title'] = $this->getTitle();
-        $data['title_full'] = $this->getFullTitle();
-        $data['title_short'] = $this->getShortTitle($data['title']);
-        $data['title_sub'] = $this->getTitleSub($data['title']);
-        $data['title_sort'] = $this->getTitle(true);
-        $data['publisher'] = $this->getPublishers();
-        $data['publishDate'] = $this->getPublicationYear();
-        $data['publishDateRange'] = $this->getPublicationYears();
-        $data['topic'] = $this->getTopics();
-        $data['topic_facet'] = $this->getTopicFacets();
-        $data['url'] = $this->getUrls();
-        $data['fulltext'] = $this->getFullTextField($this->recordDoc);
-
-        return $data;
-    }
-
-    /**
      * Dedup: Return full title (for debugging purposes only)
      *
      * @return string
@@ -205,14 +171,18 @@ class Doaj extends AbstractRecord
      */
     public function getTitle($forFiling = false)
     {
+        $key = __METHOD__ . ($forFiling ? '1' : '0');
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
+        }
+
         $title = trim((string)$this->doc->children($this->recordNs)->title);
         if ($forFiling) {
             $title = $this->metadataUtils->createSortTitle($title);
         } else {
-            $title
-                = $this->metadataUtils->stripTrailingPunctuation($title, '', true);
+            $title = $this->metadataUtils->stripTrailingPunctuation($title, '', true);
         }
-        return $title;
+        return $this->resultCache[$key] = $title;
     }
 
     /**
@@ -223,36 +193,6 @@ class Doaj extends AbstractRecord
     public function getMainAuthor()
     {
         return trim((string)($this->doc->children($this->recordNs)->authors->author->name ?? ''));
-    }
-
-    /**
-     * Dedup: Return ISBNs in ISBN-13 format without dashes
-     *
-     * @return array
-     */
-    public function getISBNs()
-    {
-        return [];
-    }
-
-    /**
-     * Dedup: Return series ISSN
-     *
-     * @return string
-     */
-    public function getSeriesISSN()
-    {
-        return '';
-    }
-
-    /**
-     * Dedup: Return series numbering
-     *
-     * @return string
-     */
-    public function getSeriesNumbering()
-    {
-        return '';
     }
 
     /**
@@ -288,6 +228,28 @@ class Doaj extends AbstractRecord
     public function getPageCount()
     {
         return '';
+    }
+
+    /**
+     * Get ISBNs in ISBN-13 format without dashes.
+     *
+     * @return array
+     */
+    protected function getISBNs(): array
+    {
+        return [];
+    }
+
+    /**
+     * Do any pre-processing for the record before the conversion to Solr array.
+     *
+     * @param ?Database $db Database connection, if available
+     *
+     * @return void
+     */
+    protected function preProcessRecordForIndexing(?Database $db): void
+    {
+        $this->recordDoc = $this->doc->children($this->recordNs);
     }
 
     /**
@@ -390,26 +352,22 @@ class Doaj extends AbstractRecord
     /**
      * Get short title.
      *
-     * @param string $fullTitle Full title
-     *
      * @return string
      */
-    protected function getShortTitle(string $fullTitle): string
+    protected function getShortTitle(): string
     {
-        $titleParts = explode(' : ', $fullTitle, 2);
+        $titleParts = explode(' : ', $this->getFullTitle(), 2);
         return $titleParts[0];
     }
 
     /**
      * Get subtitle.
      *
-     * @param string $fullTitle Full title
-     *
      * @return string
      */
-    protected function getTitleSub(string $fullTitle): string
+    protected function getTitleSub(): string
     {
-        $titleParts = explode(' : ', $fullTitle, 2);
+        $titleParts = explode(' : ', $this->getFullTitle(), 2);
         return $titleParts[1] ?? '';
     }
 
@@ -469,7 +427,7 @@ class Doaj extends AbstractRecord
     }
 
     /**
-     * Return publication years
+     * Get publication years.
      *
      * @return array
      */
@@ -481,5 +439,15 @@ class Doaj extends AbstractRecord
             return [$date];
         }
         return [];
+    }
+
+    /**
+     * Get full text field for a given document
+     *
+     * @return string
+     */
+    protected function getFullTextField(): string
+    {
+        return $this->getFullTextFieldForDocument($this->recordDoc);
     }
 }

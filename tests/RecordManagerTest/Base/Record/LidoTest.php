@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2020-2022.
+ * Copyright (C) The National Library of Finland 2020-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -81,7 +81,6 @@ class LidoTest extends RecordTestBase
                 'retkeily',
                 'ulkoilu',
             ],
-            'material_str_mv' => [],
             'geographic_facet' => [],
             'geographic' => [],
             'era' => [],
@@ -119,6 +118,9 @@ class LidoTest extends RecordTestBase
                 'Test Institution',
                 '247394',
             ],
+            'publishDate' => [],
+            'publishDateRange' => [],
+            'publishDateSort' => '',
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
@@ -199,7 +201,6 @@ class LidoTest extends RecordTestBase
                 'retkeily',
                 'ulkoilu',
             ],
-            'material_str_mv' => [],
             'geographic_facet' => [],
             'geographic' => [],
             'era' => [],
@@ -237,6 +238,9 @@ class LidoTest extends RecordTestBase
                 'Test Institution',
                 '247394',
             ],
+            'publishDate' => [],
+            'publishDateRange' => [],
+            'publishDateSort' => '',
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');

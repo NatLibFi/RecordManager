@@ -115,46 +115,6 @@ class Ead3 extends Ead
     }
 
     /**
-     * Return fields to be indexed in Solr
-     *
-     * @param ?Database $db Database connection. Omit to avoid database lookups for related records.
-     *
-     * @return array<string, mixed>
-     */
-    public function toSolrArray(?Database $db = null)
-    {
-        $data = parent::toSolrArray($db);
-
-        $doc = $this->doc;
-        $data['ctrlnum'] = $this->getOldIdentifier();
-        $data['title_sub'] = $this->getTitleSub();
-        $data['title_short'] = $this->getShortTitle();
-        $data['title'] = $this->getTitleField();
-        $data['title_full'] = $this->getFullTitle();
-        $data['title_sort'] = $this->getTitleSort();
-        $data['description'] = $this->getDescription();
-        $data['author'] = $this->getAuthors();
-        $data['author_sort'] = $this->getAuthorSort($data['author']);
-        $data['author_corporate'] = $this->getCorporateAuthors();
-        $data['geographic'] = $this->getGeographicTopics();
-        $data['geographic_facet'] = $this->getGeographicFacets();
-        $data['topic'] = $this->getTopics();
-        $data['topic_facet'] = $this->getTopicFacets();
-        $data['format'] = $this->getFormat();
-        $data['institution'] = $this->getInstitution();
-        $data['series'] = $this->getSeries();
-        $data['language'] = $this->getLanguages();
-        $data['physical'] = $this->getPhysicalExtent();
-        $data['thumbnail'] = $this->getThumbnailUrl();
-        $data['fullrecord'] = $this->getFullRecord();
-        $data['allfields'] = $this->getAllFields($doc);
-
-        $this->addHierarchyFields($data);
-
-        return $data;
-    }
-
-    /**
      * Return format from predefined values
      *
      * @return string|array
@@ -194,7 +154,7 @@ class Ead3 extends Ead
      */
     public function getMainAuthor()
     {
-        $authors = $this->getAuthors();
+        $authors = $this->getPrimaryAuthors();
         return $authors[0] ?? '';
     }
 
@@ -219,11 +179,11 @@ class Ead3 extends Ead
     }
 
     /**
-     * Get author identifiers
+     * Get primary author identifiers
      *
      * @return array<int, string>
      */
-    public function getAuthorIds(): array
+    public function getPrimaryAuthorIds(): array
     {
         return [];
     }
@@ -256,6 +216,29 @@ class Ead3 extends Ead
     public function getShortTitle(): string
     {
         return $this->getTitle();
+    }
+
+    /**
+     * Get sort title.
+     *
+     * @return string
+     */
+    public function getTitleSort(): string
+    {
+        return mb_strtolower($this->metadataUtils->stripPunctuation($this->getTitleField()), 'UTF-8');
+    }
+
+    /**
+     * Do any post-processing for the record after the main conversion to Solr array.
+     *
+     * @param ?Database $db   Database connection, if available
+     * @param array     $data Array of Solr fields
+     *
+     * @return void
+     */
+    protected function postProcessRecordForIndexing(?Database $db, &$data): void
+    {
+        $this->addHierarchyFields($data);
     }
 
     /**
@@ -300,12 +283,16 @@ class Ead3 extends Ead
     }
 
     /**
-     * Get authors
+     * Get primary authors.
      *
      * @return array<int, string>
      */
-    protected function getAuthors(): array
+    protected function getPrimaryAuthors(): array
     {
+        if (isset($this->resultCache[__METHOD__])) {
+            return $this->resultCache[__METHOD__];
+        }
+
         $result = [];
         foreach ($this->getAuthorElements() as $name) {
             foreach ($name->part as $part) {
@@ -314,7 +301,7 @@ class Ead3 extends Ead
                 }
             }
         }
-        return $result;
+        return $this->resultCache[__METHOD__] = $result;
     }
 
     /**
@@ -487,11 +474,11 @@ class Ead3 extends Ead
     }
 
     /**
-     * Get physical extent
+     * Get physical descriptions.
      *
      * @return array
      */
-    protected function getPhysicalExtent()
+    protected function getPhysicalDescriptions(): array
     {
         $result = [];
         foreach ($this->doc->did->physdesc->extent ?? [] as $extent) {
@@ -610,12 +597,13 @@ class Ead3 extends Ead
     /**
      * Get all XML fields
      *
-     * @param \SimpleXMLElement $xml The XML document
+     * @param ?\SimpleXMLElement $xml XML fragment to process, or null to process whole document
      *
      * @return array<int, string>
      */
-    protected function getAllFields($xml)
+    protected function getAllFields($xml = null)
     {
+        $xml ??= $this->doc;
         $allFields = [];
         foreach ($xml->children() as $field) {
             $s = trim((string)$field);
@@ -643,12 +631,11 @@ class Ead3 extends Ead
     /**
      * Get author sort field.
      *
-     * @param array $authors Primary authors
-     *
      * @return string
      */
-    protected function getAuthorSort(array $authors): string
+    protected function getAuthorSort(): string
     {
+        $authors = $this->getPrimaryAuthors();
         return $authors[0] ?? '';
     }
 
@@ -693,15 +680,5 @@ class Ead3 extends Ead
     protected function getFullTitle(): string
     {
         return $this->getTitleField();
-    }
-
-    /**
-     * Get sort title.
-     *
-     * @return string
-     */
-    protected function getTitleSort(): string
-    {
-        return mb_strtolower($this->metadataUtils->stripPunctuation($this->getTitleField()), 'UTF-8');
     }
 }

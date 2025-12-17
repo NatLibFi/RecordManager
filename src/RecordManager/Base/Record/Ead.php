@@ -149,47 +149,6 @@ class Ead extends AbstractRecord
     }
 
     /**
-     * Return fields to be indexed in Solr
-     *
-     * @param Database $db Database connection. Omit to avoid database lookups for
-     *                     related records.
-     *
-     * @return array<string, mixed>
-     */
-    public function toSolrArray(?Database $db = null)
-    {
-        $data = parent::toSolrArray($db);
-
-        $doc = $this->doc;
-        $data['ctrlnum'] = (string)$this->doc->attributes()->{'id'};
-        $data['title_sub'] = $this->getTitleSub();
-        $data['title_short'] = $this->getShortTitle();
-        $data['title'] = $this->getTitleField();
-        $data['title_full'] = $this->getFullTitle();
-        $data['title_sort'] = $this->getTitleSort();
-        $data['description'] = $this->getDescription();
-        $data['author'] = $this->getPrimaryAuthors();
-        $data['author2'] = $this->getSecondaryAuthors();
-        $data['author_sort'] = $this->getAuthorSort($data['author']);
-        $data['author_corporate'] = $this->getCorporateAuthors();
-        $data['topic'] = $this->getTopics();
-        $data['topic_facet'] = $this->getTopicFacets();
-        $data['format'] = $this->getFormat();
-        $data['institution'] = $this->getInstitution();
-        $data['series'] = $this->getSeries();
-        $data['language'] = $this->getLanguages();
-        $data['physical'] = $this->getPhysicalExtent();
-        $data['thumbnail'] = $this->getThumbnailUrl();
-        $data['allfields'] = $this->getAllFields($doc);
-        $data['fullrecord'] = $this->getFullRecord();
-
-        $this->addGeographicData($data);
-        $this->addHierarchyFields($data);
-
-        return $data;
-    }
-
-    /**
      * Return format from predefined values
      *
      * @return string|array
@@ -249,12 +208,30 @@ class Ead extends AbstractRecord
      */
     public function getTitle($forFiling = false)
     {
-        $title = (string)($this->doc->did->unittitle ?? '');
-        if ($forFiling) {
-            $title = $this->metadataUtils->createSortTitle($title);
+        if (isset($this->resultCache[__METHOD__])) {
+            return $this->resultCache[__METHOD__];
         }
 
-        return $title;
+        $titleSub = $this->getTitleSub();
+        $shortTitle = $this->getShortTitle();
+
+        $title = '';
+        // Ini handling returns true as '1':
+        $prependTitle = $this->getDriverParam('prependTitleWithSubtitle', '1');
+        if (
+            '1' === $prependTitle
+            || ('children' === $prependTitle && $this->doc->{'add-data'}->{'parent'})
+        ) {
+            if (
+                '' !== $titleSub
+                && $titleSub !== $shortTitle
+            ) {
+                $title = $titleSub . ' ';
+            }
+        }
+        $title .= $shortTitle;
+
+        return $this->resultCache[__METHOD__] = $title;
     }
 
     /**
@@ -264,7 +241,31 @@ class Ead extends AbstractRecord
      */
     public function getShortTitle(): string
     {
-        return $this->getTitle();
+        return (string)($this->doc->did->unittitle ?? '');
+    }
+
+    /**
+     * Get sort title.
+     *
+     * @return string
+     */
+    public function getTitleSort(): string
+    {
+        return mb_strtolower($this->metadataUtils->stripPunctuation($this->getShortTitle()), 'UTF-8');
+    }
+
+    /**
+     * Do any post-processing for the record after the main conversion to Solr array.
+     *
+     * @param ?Database $db   Database connection, if available
+     * @param array     $data Array of Solr fields
+     *
+     * @return void
+     */
+    protected function postProcessRecordForIndexing(?Database $db, &$data): void
+    {
+        $this->addGeographicData($data);
+        $this->addHierarchyFields($data);
     }
 
     /**
@@ -404,12 +405,13 @@ class Ead extends AbstractRecord
     /**
      * Get all XML fields
      *
-     * @param \SimpleXMLElement $xml The XML document
+     * @param ?\SimpleXMLElement $xml XML fragment to process, or null to process whole document
      *
      * @return array<int, string>
      */
-    protected function getAllFields($xml)
+    protected function getAllFields($xml = null)
     {
+        $xml ??= $this->doc;
         $allFields = [];
         foreach ($xml->children() as $field) {
             $s = trim((string)$field);
@@ -529,6 +531,10 @@ class Ead extends AbstractRecord
      */
     protected function getPrimaryAuthors(): array
     {
+        if (isset($this->resultCache[__METHOD__])) {
+            return $this->resultCache[__METHOD__];
+        }
+
         $result = [];
         if ($names = $this->doc->xpath('controlaccess/persname')) {
             foreach ($names as $name) {
@@ -537,7 +543,7 @@ class Ead extends AbstractRecord
                 }
             }
         }
-        return $result;
+        return $this->resultCache[__METHOD__] = $result;
     }
 
     /**
@@ -578,12 +584,11 @@ class Ead extends AbstractRecord
     /**
      * Get author sort field.
      *
-     * @param array $authors Primary authors
-     *
      * @return string
      */
-    protected function getAuthorSort(array $authors): string
+    protected function getAuthorSort(): string
     {
+        $authors = $this->getPrimaryAuthors();
         return $authors[0] ?? '';
     }
 
@@ -598,59 +603,6 @@ class Ead extends AbstractRecord
             return (string)($this->doc->did->repository->corpname ?? $this->doc->did->repository ?? '');
         }
         return '';
-    }
-
-    /**
-     * Get title field.
-     *
-     * @return string
-     */
-    protected function getTitleField(): string
-    {
-        if (isset($this->resultCache[__METHOD__])) {
-            return $this->resultCache[__METHOD__];
-        }
-
-        $titleSub = $this->getTitleSub();
-        $shortTitle = $this->getShortTitle();
-
-        $title = '';
-        // Ini handling returns true as '1':
-        $prependTitle = $this->getDriverParam('prependTitleWithSubtitle', '1');
-        if (
-            '1' === $prependTitle
-            || ('children' === $prependTitle && $this->doc->{'add-data'}->{'parent'})
-        ) {
-            if (
-                '' !== $titleSub
-                && $titleSub !== $shortTitle
-            ) {
-                $title = $titleSub . ' ';
-            }
-        }
-        $title .= $shortTitle;
-
-        return $this->resultCache[__METHOD__] = $title;
-    }
-
-    /**
-     * Get full title.
-     *
-     * @return string
-     */
-    protected function getFullTitle(): string
-    {
-        return $this->getTitleField();
-    }
-
-    /**
-     * Get sort title.
-     *
-     * @return string
-     */
-    protected function getTitleSort(): string
-    {
-        return mb_strtolower($this->metadataUtils->stripPunctuation($this->getTitle()), 'UTF-8');
     }
 
     /**
@@ -671,11 +623,11 @@ class Ead extends AbstractRecord
     }
 
     /**
-     * Get physical extent
+     * Get physical descriptions.
      *
      * @return array
      */
-    protected function getPhysicalExtent()
+    protected function getPhysicalDescriptions(): array
     {
         $result = [];
         if ($extents = $this->doc->did->xpath('physdesc/extent')) {
@@ -746,5 +698,18 @@ class Ead extends AbstractRecord
             $data['title_in_hierarchy']
                 = trim($this->getUnitId() . ' ' . $data['title']);
         }
+    }
+
+    /**
+     * Get control numbers.
+     *
+     * @return array
+     */
+    protected function getControlNumbers(): array
+    {
+        if ($id = (string)$this->doc->attributes()->{'id'}) {
+            return [$id];
+        }
+        return [];
     }
 }

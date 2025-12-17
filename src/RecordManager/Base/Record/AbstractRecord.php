@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2011-2022.
+ * Copyright (C) The National Library of Finland 2011-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -34,6 +34,7 @@ use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
 use function in_array;
+use function is_callable;
 
 /**
  * Base class for record drivers
@@ -111,6 +112,103 @@ abstract class AbstractRecord
      * @var array
      */
     protected $resultCache = [];
+
+    /**
+     * Is this an authority record?
+     *
+     * @var bool
+     */
+    protected bool $isAuthorityRecord = false;
+
+    /**
+     * Specifications for building a Solr authority record.
+     *
+     * @var array
+     */
+    protected $solrAuthorityRecordSpecs = [
+        'allfields' => ['method' => 'getAllFields'],
+        'birth_date' => ['method' => 'getBirthDate'],
+        'birth_place' => ['method' => 'getBirthPlace'],
+        'country' => ['method' => 'getCountry'],
+        'death_date' => ['method' => 'getDeathDate'],
+        'death_place' => ['method' => 'getDeathPlace'],
+        'field_of_activity' => ['method' => 'getFieldsOfActivity'],
+        'fullrecord' => ['method' => 'getFullRecord'],
+        'heading' => ['method' => 'getHeading'],
+        'heading_keywords' => ['method' => 'getHeadingKeywords'],
+        'language' => ['method' => 'getHeadingLanguage'],
+        'occupation' => ['method' => 'getOccupations'],
+        'record_type' => ['method' => 'getRecordType'],
+        'related_place' => ['method' => 'getRelatedPlaces'],
+        'source' => ['method' => 'getRecordSource'],
+        'use_for' => ['method' => 'getUseForHeadings'],
+        'use_for_keywords' => ['method' => 'getUseForHeadingKeywords'],
+    ];
+
+    /**
+     * Specifications for building a Solr biblio record.
+     *
+     * @var array
+     */
+    protected $solrBiblioRecordSpecs = [
+        'allfields' => ['method' => 'getAllFields'],
+        'author' => ['method' => 'getPrimaryAuthors'],
+        'author_role' => ['method' => 'getPrimaryAuthorRoles'],
+        'author_sort' => ['method' => 'getAuthorSort'],
+        'author2' => ['method' => 'getSecondaryAuthors'],
+        'author2_role' => ['method' => 'getSecondaryAuthorRoles'],
+        'author_corporate' => ['method' => 'getCorporateAuthors'],
+        'author_corporate_role' => ['method' => 'getCorporateAuthorRoles'],
+        'building' => ['method' => 'getBuilding'],
+        'callnumber-first' => ['method' => 'getCallNumberFirst'],
+        'callnumber-label' => ['method' => 'getCallNumberLabels'],
+        'callnumber-raw' => ['method' => 'getCallNumbersRaw'],
+        'callnumber-subject' => ['method' => 'getCallNumberSubject'],
+        'collection' => ['method' => 'getCollection'],
+        'contents' => ['method' => 'getContents'],
+        'ctrlnum' => ['method' => 'getControlNumbers'],
+        'dateSpan' => ['method' => 'getDateSpans'],
+        'description' => ['method' => 'getDescription'],
+        'doi_str_mv' => ['method' => 'getDOIs'],
+        'edition' => ['method' => 'getEdition'],
+        'era_facet' => ['method' => 'getEraFacets'],
+        'era' => ['method' => 'getEras'],
+        'format' => ['method' => 'getFormat'],
+        'fullrecord' => ['method' => 'getFullRecord'],
+        'fulltext' => ['method' => 'getFullTextField'],
+        'genre_facet' => ['method' => 'getGenreFacets'],
+        'genre' => ['method' => 'getGenres'],
+        'geographic_facet' => ['method' => 'getGeographicFacets'],
+        'geographic' => ['method' => 'getGeographicTopics'],
+        'illustrated' => ['method' => 'getIllustrated'],
+        'institution' => ['method' => 'getInstitution'],
+        'isbn' => ['method' => 'getISBNs'],
+        'issn' => ['method' => 'getISSNs'],
+        'language' => ['method' => 'getLanguages'],
+        'lccn' => ['method' => 'getLCCN'],
+        'oclc_num' => ['method' => 'getOclcNumbers'],
+        'physical' => ['method' => 'getPhysicalDescriptions'],
+        'publishDate' => ['method' => 'getPublicationYears'],
+        'publishDateRange' => ['method' => 'getPublicationDateRanges'],
+        'publishDateSort' => ['method' => 'getPublicationYear'],
+        'publisher' => ['method' => 'getPublishers'],
+        'series' => ['method' => 'getSeries'],
+        'series2' => ['method' => 'getSeries2'],
+        'thumbnail' => ['method' => 'getThumbnailUrl'],
+        'title_alt' => ['method' => 'getAltTitles'],
+        'title_full' => ['method' => 'getFullTitle'],
+        'title_new' => ['method' => 'getNewTitles'],
+        'title_old' => ['method' => 'getOldTitles'],
+        'title_short' => ['method' => 'getShortTitle'],
+        'title_sort' => ['method' => 'getTitleSort'],
+        'title_sub' => ['method' => 'getTitleSub'],
+        'title' => ['method' => 'getTitle'],
+        'topic_browse' => ['method' => 'getTopicsForBrowse'],
+        'topic_facet' => ['method' => 'getTopicFacets'],
+        'topic' => ['method' => 'getTopics'],
+        'url' => ['method' => 'getUrls'],
+        'uuid_str_mv' => ['method' => 'getUUIDs'],
+    ];
 
     /**
      * Constructor
@@ -222,9 +320,22 @@ abstract class AbstractRecord
      */
     public function toSolrArray(?Database $db = null)
     {
-        return [
+        $this->preProcessRecordForIndexing($db);
+        $data = [
             'record_format' => $this->getRecordFormat(),
         ];
+        $specs = $this->isAuthorityRecord ? $this->solrAuthorityRecordSpecs : $this->solrBiblioRecordSpecs;
+        foreach ($specs as $field => $specs) {
+            if (($method = $specs['method'] ?? null) && is_callable([$this, $method])) {
+                if ($specs['useData'] ?? false) {
+                    $this->$method($data);
+                } else {
+                    $data[$field] = $this->$method();
+                }
+            }
+        }
+        $this->postProcessRecordForIndexing($db, $data);
+        return $data;
     }
 
     /**
@@ -254,6 +365,28 @@ abstract class AbstractRecord
     public function getTitle($forFiling = false)
     {
         return '';
+    }
+
+    /**
+     * Get record title for sorting.
+     *
+     * @return string
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function getTitleSort()
+    {
+        return $this->getTitle(true);
+    }
+
+    /**
+     * Get short title for enrichment.
+     *
+     * @return string
+     */
+    public function getShortTitleForEnrichment(): string
+    {
+        return $this->getTitle();
     }
 
     /**
@@ -347,41 +480,41 @@ abstract class AbstractRecord
     }
 
     /**
-     * Dedup: Return (unique) ISBNs in ISBN-13 format without dashes
+     * Get (unique) ISBNs in ISBN-13 format without dashes.
      *
      * @return array
      */
-    public function getISBNs()
+    public function getISBNsForDedup(): array
     {
-        return [];
+        return $this->getISBNs();
     }
 
     /**
-     * Dedup: Return ISSNs
+     * Dedup: Get ISSNs.
      *
      * @return array
      */
-    public function getISSNs()
+    public function getISSNsForDedup(): array
     {
-        return [];
+        return $this->getISSNs();
     }
 
     /**
-     * Dedup: Return series ISSN
+     * Dedup: Get series ISSN.
      *
      * @return string
      */
-    public function getSeriesISSN()
+    public function getSeriesISSNForDedup(): string
     {
         return '';
     }
 
     /**
-     * Dedup: Return series numbering
+     * Dedup: Get series numbering.
      *
      * @return string
      */
-    public function getSeriesNumbering()
+    public function getSeriesNumberingForDedup(): string
     {
         return '';
     }
@@ -551,6 +684,49 @@ abstract class AbstractRecord
     }
 
     /**
+     * Get (unique) ISBNs in ISBN-13 format without dashes.
+     *
+     * @return array
+     */
+    protected function getISBNs(): array
+    {
+        return [];
+    }
+
+    /**
+     * Get ISSNs.
+     *
+     * @return array
+     */
+    protected function getISSNs(): array
+    {
+        return [];
+    }
+
+    /**
+     * Do any pre-processing for the record before the conversion to Solr array.
+     *
+     * @param ?Database $db Database connection, if available
+     *
+     * @return void
+     */
+    protected function preProcessRecordForIndexing(?Database $db): void
+    {
+    }
+
+    /**
+     * Do any post-processing for the record after the main conversion to Solr array.
+     *
+     * @param ?Database $db   Database connection, if available
+     * @param array     $data Array of Solr fields
+     *
+     * @return void
+     */
+    protected function postProcessRecordForIndexing(?Database $db, &$data): void
+    {
+    }
+
+    /**
      * Get record format.
      *
      * @return string
@@ -622,5 +798,35 @@ abstract class AbstractRecord
             return $dateString;
         }
         return '';
+    }
+
+    /**
+     * Get publication years.
+     *
+     * @return array
+     */
+    protected function getPublicationYears(): array
+    {
+        return [];
+    }
+
+    /**
+     * Get publication date ranges.
+     *
+     * @return array
+     */
+    protected function getPublicationDateRanges(): array
+    {
+        return $this->getPublicationYears();
+    }
+
+    /**
+     * Get full title.
+     *
+     * @return string
+     */
+    protected function getFullTitle(): string
+    {
+        return $this->getTitle();
     }
 }

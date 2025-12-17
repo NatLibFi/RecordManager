@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2023.
+ * Copyright (C) The National Library of Finland 2023-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -119,7 +119,10 @@ class QdcTest extends RecordTestBase
             'publisher' => [
                 'Sanitation Project, Research Institute for Humanity and Nature',
             ],
-            'publishDate' => '2021',
+            'publishDate' => [
+                '2021',
+            ],
+            'publishDateSort' => '2021',
             'publishDateRange' => [
                 '2021',
             ],

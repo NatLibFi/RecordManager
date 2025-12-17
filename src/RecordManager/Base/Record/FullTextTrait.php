@@ -85,7 +85,7 @@ trait FullTextTrait
      *
      * @return string
      */
-    protected function getFullTextField($doc): string
+    protected function getFullTextFieldForDocument($doc): string
     {
         $fulltext = [];
         $xpaths = $this->getDriverParam('fullTextXpaths', []);

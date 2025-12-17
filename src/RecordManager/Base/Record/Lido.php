@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2011-2022.
+ * Copyright (C) The National Library of Finland 2011-2025.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -134,6 +134,17 @@ class Lido extends AbstractRecord
     protected $excludedLocationAppellationValueLabels = [];
 
     /**
+     * LIDO elements excluded from allfields.
+     *
+     * @var array
+     */
+    protected $excludeFromAllFields = [
+        'conceptID', 'eventType', 'legalBodyWeblink', 'linkResource',
+        'objectMeasurementsWrap', 'recordMetadataDate', 'recordType',
+        'resourceWrap', 'relatedWorksWrap', 'rightsType', 'roleActor',
+    ];
+
+    /**
      * Return record ID (local)
      *
      * @return string
@@ -141,48 +152,6 @@ class Lido extends AbstractRecord
     public function getID()
     {
         return (string)$this->doc->lido->lidoRecID;
-    }
-
-    /**
-     * Return fields to be indexed in Solr
-     *
-     * @param ?Database $db Database connection. Omit to avoid database lookups for related records.
-     *
-     * @return array<string, mixed>
-     */
-    public function toSolrArray(?Database $db = null)
-    {
-        $data = parent::toSolrArray($db);
-
-        $data['title'] = $this->getTitle(false);
-        $data['title_short'] = $this->getShortTitle();
-        $data['title_full'] = $this->getFullTitle();
-        $data['title_sort'] = $this->getTitle(true);
-        $data['title_alt'] = $this->getAltTitles();
-        $data['description'] = $this->getDescription();
-        $data['format'] = $this->getObjectWorkType();
-        $data['institution'] = $this->getLegalBodyName();
-        $data['author'] = $this->getAuthors();
-        $data['author_sort'] = $this->getAuthorSort($data['author']);
-        $data['author2'] = $this->getSecondaryAuthors();
-        $data['topic'] = $this->getTopics();
-        $data['topic_facet'] = $this->getTopics();
-        $data['material_str_mv'] = $this->getMaterials();
-        $data['era'] = $this->getEras();
-        $data['era_facet'] = $this->getEraFacets();
-        $data['geographic'] = $this->getGeographicTopics();
-        $data['geographic_facet'] = $this->getGeographicFacets();
-        $data['collection'] = $this->getCollection();
-        $data['url'] = $this->getURLs();
-        $data['thumbnail'] = $this->getThumbnailUrl();
-        $data['ctrlnum'] = $this->getControlNumbers();
-        $data['isbn'] = $this->getISBNs();
-        $data['issn'] = $this->getISSNs();
-        $data['allfields'] = $this->getAllFields($this->doc);
-
-        $this->addHierarchyFields($data);
-
-        return $data;
     }
 
     /**
@@ -264,7 +233,7 @@ class Lido extends AbstractRecord
      */
     public function getMainAuthor()
     {
-        $authors = $this->getAuthors();
+        $authors = $this->getPrimaryAuthors();
         return $authors ? $authors[0] : '';
     }
 
@@ -325,30 +294,11 @@ class Lido extends AbstractRecord
     }
 
     /**
-     * Dedup: Return ISBNs in ISBN-13 format without dashes
-     *
-     * @return array
-     */
-    public function getISBNs()
-    {
-        $arr = [];
-        foreach ($this->getIdentifiersByType(['isbn'], []) as $identifier) {
-            if ($isbn = $this->metadataUtils->normalizeISBN($this->checkISBN((string)$identifier))) {
-                $arr[] = $isbn;
-            } else {
-                $this->storeWarning("Invalid ISBN '$identifier'");
-            }
-        }
-
-        return array_unique($arr);
-    }
-
-    /**
      * Dedup: Return ISSNs
      *
      * @return array
      */
-    public function getISSNs()
+    public function getISSNs(): array
     {
         return $this->getIdentifiersByType(['issn'], []);
     }
@@ -374,11 +324,11 @@ class Lido extends AbstractRecord
     }
 
     /**
-     * Get author identifiers
+     * Get primary author identifiers
      *
      * @return array<int, string>
      */
-    public function getAuthorIds(): array
+    public function getPrimaryAuthorIds(): array
     {
         return [];
     }
@@ -411,6 +361,50 @@ class Lido extends AbstractRecord
     public function getFullTitle(): string
     {
         return $this->getTitle();
+    }
+
+    /**
+     * Get format.
+     *
+     * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
+     * #objectWorkTypeWrap
+     * @return string
+     */
+    public function getFormat()
+    {
+        return $this->getObjectWorkType();
+    }
+
+    /**
+     * Do any post-processing for the record after the main conversion to Solr array.
+     *
+     * @param ?Database $db   Database connection, if available
+     * @param array     $data Array of Solr fields
+     *
+     * @return void
+     */
+    protected function postProcessRecordForIndexing(?Database $db, &$data): void
+    {
+        $this->addHierarchyFields($data);
+    }
+
+    /**
+     * Get ISBNs in ISBN-13 format without dashes.
+     *
+     * @return array
+     */
+    protected function getISBNs(): array
+    {
+        $arr = [];
+        foreach ($this->getIdentifiersByType(['isbn'], []) as $identifier) {
+            if ($isbn = $this->metadataUtils->normalizeISBN($this->checkISBN((string)$identifier))) {
+                $arr[] = $isbn;
+            } else {
+                $this->storeWarning("Invalid ISBN '$identifier'");
+            }
+        }
+
+        return array_unique($arr);
     }
 
     /**
@@ -636,6 +630,16 @@ class Lido extends AbstractRecord
     }
 
     /**
+     * Get institution.
+     *
+     * @return string
+     */
+    protected function getInstitution(): string
+    {
+        return $this->getLegalBodyName();
+    }
+
+    /**
      * Return the legal body name.
      *
      * @link   http://www.lido-schema.org/schema/v1.0/lido-v1.0-schema-listing.html
@@ -715,7 +719,7 @@ class Lido extends AbstractRecord
      *
      * @return array
      */
-    protected function getURLs()
+    protected function getUrls()
     {
         $results = [];
         foreach ($this->getResourceSetNodes() as $set) {
@@ -734,15 +738,20 @@ class Lido extends AbstractRecord
     /**
      * Return names of actors associated with specified event
      *
-     * @param string|array $event        Event type(s) allowed (null = all types)
-     * @param string|array $role         Roles allowed (null = all roles)
-     * @param bool         $includeRoles Whether to include actor roles in the
-     *                                   results
+     * @param string|array|null $event        Event type(s) allowed (null = all types)
+     * @param string|array|null $role         Roles allowed (null = all roles)
+     * @param bool              $includeRoles Whether to include actor roles in the results
      *
      * @return array<int, string>
      */
     protected function getActors($event = null, $role = null, $includeRoles = false)
     {
+        $key = md5(__METHOD__ . ($event ? implode(',', (array)$event) : 'null') . '|'
+            . ($role ? implode(',', $role) : 'null') . '|' . ($includeRoles ? '1' : '0'));
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
+        }
+
         $result = [];
         foreach ($this->getEventNodes($event) as $eventNode) {
             foreach ($eventNode->eventActor as $actorNode) {
@@ -767,7 +776,7 @@ class Lido extends AbstractRecord
             }
         }
 
-        return $result;
+        return $this->resultCache[$key] = $result;
     }
 
     /**
@@ -999,21 +1008,16 @@ class Lido extends AbstractRecord
      *
      * A recursive method for fetching all relevant fields
      *
-     * @param \SimpleXMLElement $xml The XML document
+     * @param ?\SimpleXMLElement $xml XML fragment to process, or null to process whole document
      *
      * @return array<int, string>
      */
-    protected function getAllFields($xml)
+    protected function getAllFields($xml = null)
     {
-        $ignoredFields = [
-            'conceptID', 'eventType', 'legalBodyWeblink', 'linkResource',
-            'objectMeasurementsWrap', 'recordMetadataDate', 'recordType',
-            'resourceWrap', 'relatedWorksWrap', 'rightsType', 'roleActor',
-        ];
-
+        $xml ??= $this->doc;
         $allFields = [];
         foreach ($xml->children() as $tag => $field) {
-            if (in_array($tag, $ignoredFields)) {
+            if (in_array($tag, $this->excludeFromAllFields)) {
                 continue;
             }
             $s = trim((string)$field);
@@ -1328,17 +1332,17 @@ class Lido extends AbstractRecord
     }
 
     /**
-     * Get authors
+     * Get primary authors.
      *
      * @return array
      */
-    protected function getAuthors(): array
+    protected function getPrimaryAuthors(): array
     {
         return $this->getActors($this->getMainEvents());
     }
 
     /**
-     * Get secondary authors
+     * Get secondary authors.
      *
      * @return array
      */
@@ -1347,16 +1351,6 @@ class Lido extends AbstractRecord
         return $this->secondaryAuthorEvents
             ? $this->getActors($this->getSecondaryAuthorEvents())
             : [];
-    }
-
-    /**
-     * Get materials
-     *
-     * @return array
-     */
-    protected function getMaterials(): array
-    {
-        return $this->getEventMaterials($this->getMainEvents());
     }
 
     /**
@@ -1527,12 +1521,11 @@ class Lido extends AbstractRecord
     /**
      * Get author sort field.
      *
-     * @param array $authors Primary authors
-     *
      * @return string
      */
-    protected function getAuthorSort(array $authors): string
+    protected function getAuthorSort(): string
     {
+        $authors = $this->getPrimaryAuthors();
         return $authors[0] ?? '';
     }
 

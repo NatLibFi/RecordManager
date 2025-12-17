@@ -345,7 +345,7 @@ class DedupHandler implements DedupHandlerInterface
             unset($record['title_keys']);
         }
 
-        $keys = $metadataRecord->getISBNs();
+        $keys = $metadataRecord->getISBNsForDedup();
         $oldKeys = (array)($record['isbn_keys'] ?? []);
         if (count($oldKeys) !== count($keys) || array_diff($oldKeys, $keys)) {
             $record['isbn_keys'] = $keys;
@@ -863,8 +863,8 @@ class DedupHandler implements DedupHandlerInterface
         }
 
         // Check for common ISBN
-        $origISBNs = $this->filterIds($origRecord->getISBNs(), $origDbRecord);
-        $candidateISBNs = $this->filterIds($candidateRecord->getISBNs(), $candidateDbRecord);
+        $origISBNs = $this->filterIds($origRecord->getISBNsForDedup(), $origDbRecord);
+        $candidateISBNs = $this->filterIds($candidateRecord->getISBNsForDedup(), $candidateDbRecord);
         $isect = array_intersect($origISBNs, $candidateISBNs);
         if (!empty($isect)) {
             // Shared ISBN -> match
@@ -908,8 +908,8 @@ class DedupHandler implements DedupHandlerInterface
             return true;
         }
 
-        $origISSNs = $this->filterIds($origRecord->getISSNs(), $origDbRecord);
-        $candidateISSNs = $candidateRecord->getISSNs();
+        $origISSNs = $this->filterIds($origRecord->getISSNsForDedup(), $origDbRecord);
+        $candidateISSNs = $candidateRecord->getISSNsForDedup();
         $commonISSNs = array_intersect($origISSNs, $candidateISSNs);
         if (!empty($origISSNs) && !empty($candidateISSNs) && empty($commonISSNs)) {
             // Both have ISSNs but none match
@@ -952,11 +952,11 @@ class DedupHandler implements DedupHandlerInterface
             return false;
         }
 
-        if ($origRecord->getSeriesISSN() != $candidateRecord->getSeriesISSN()) {
+        if ($origRecord->getSeriesISSNForDedup() != $candidateRecord->getSeriesISSNForDedup()) {
             return false;
         }
-        $candidateNumbering = $candidateRecord->getSeriesNumbering();
-        if ($origRecord->getSeriesNumbering() != $candidateNumbering) {
+        $candidateNumbering = $candidateRecord->getSeriesNumberingForDedup();
+        if ($origRecord->getSeriesNumberingForDedup() != $candidateNumbering) {
             return false;
         }
 

@@ -29,7 +29,6 @@
 
 namespace RecordManager\Base\Record;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
@@ -145,52 +144,6 @@ class Forward extends AbstractRecord
             $id = ((string)$attributes['IDTypeName']) . '_' . $id;
         }
         return $id;
-    }
-
-    /**
-     * Return fields to be indexed in Solr
-     *
-     * @param ?Database $db Database connection. Omit to avoid database lookups for related records.
-     *
-     * @return array<string, mixed>
-     */
-    public function toSolrArray(?Database $db = null)
-    {
-        $data = parent::toSolrArray($db);
-
-        $data['ctrlnum'] = $this->getControlNumbers();
-        $data['fullrecord'] = $this->getFullRecord();
-        $data['publishDate'] = $this->getPublicationYear();
-        $data['publishDateRange'] = $this->getPublicationYears();
-        $data['title'] = $this->getTitle();
-        $data['title_full'] = $this->getFullTitle();
-        $data['title_short'] = $this->getShortTitle();
-        $data['title_sort'] = $this->getTitle(true);
-        $data['title_alt'] = $this->getAltTitles();
-        $data['description'] = $this->getDescription();
-        $data['topic'] = $this->getTopics();
-        $data['topic_facet'] = $this->getTopicFacets();
-        $data['url'] = $this->getUrls();
-        $data['thumbnail'] = $this->getThumbnailUrl();
-        $data['author'] = $this->getPrimaryAuthorNamesSorted();
-        // Support for author_variant is currently not implemented
-        $data['author_role'] = $this->getPrimaryAuthorRolesSorted();
-        $data['author_sort'] = $this->getAuthorSort($data['author']);
-        $data['author2'] = $this->getSecondaryAuthorNames();
-        // Support for author2_variant is currently not implemented
-        $data['author2_role'] = $this->getSecondaryAuthorRoles();
-        $data['author_corporate'] = $this->getCorporateAuthorNames();
-        $data['author_corporate_role'] = $this->getCorporateAuthorRoles();
-        $data['geographic'] = $this->getGeographicTopics();
-        $data['geographic_facet'] = $this->getGeographicFacets();
-        $data['genre'] = $this->getGenres();
-        $data['genre_facet'] = $this->getGenreFacets();
-        $data['url'] = $this->getUrls();
-        $data['format'] = $this->getFormat();
-        $data['publisher'] = $this->getPublishers();
-        $data['allfields'] = $this->getAllFields();
-
-        return $data;
     }
 
     /**
@@ -315,7 +268,7 @@ class Forward extends AbstractRecord
      */
     protected function getAuthorsByRelator($relators = [])
     {
-        $key = md5(__METHOD__ . json_encode($relators));
+        $key = md5(__METHOD__ . implode(',', $relators));
         if (isset($this->resultCache[$key])) {
             return $this->resultCache[$key];
         }
@@ -355,19 +308,9 @@ class Forward extends AbstractRecord
      *
      * @return array
      */
-    protected function getPrimaryAuthors(): array
+    protected function getPrimaryAuthorsUnsorted(): array
     {
         return $this->getAuthorsByRelator($this->primaryAuthorRelators);
-    }
-
-    /**
-     * Get secondary authors
-     *
-     * @return array
-     */
-    protected function getSecondaryAuthors(): array
-    {
-        return $this->getAuthorsByRelator($this->secondaryAuthorRelators);
     }
 
     /**
@@ -375,7 +318,7 @@ class Forward extends AbstractRecord
      *
      * @return array
      */
-    protected function getSecondaryAuthorNames(): array
+    protected function getSecondaryAuthors(): array
     {
         return $this->getAuthorsByRelator($this->secondaryAuthorRelators)['names'];
     }
@@ -397,16 +340,6 @@ class Forward extends AbstractRecord
      */
     protected function getCorporateAuthors(): array
     {
-        return $this->getAuthorsByRelator($this->corporateAuthorRelators);
-    }
-
-    /**
-     * Get corporate author names.
-     *
-     * @return array
-     */
-    protected function getCorporateAuthorNames(): array
-    {
         return $this->getAuthorsByRelator($this->corporateAuthorRelators)['names'];
     }
 
@@ -425,13 +358,13 @@ class Forward extends AbstractRecord
      *
      * @return array
      */
-    protected function getPrimaryAuthorsSorted()
+    protected function getPrimaryAuthorsSorted(): array
     {
         if (isset($this->resultCache[__METHOD__])) {
             return $this->resultCache[__METHOD__];
         }
 
-        $unsortedPrimaryAuthors = $this->getPrimaryAuthors();
+        $unsortedPrimaryAuthors = $this->getPrimaryAuthorsUnsorted();
         // Make sure directors are first of the primary authors
         $directors = $others = [
             'names' => [],
@@ -453,11 +386,11 @@ class Forward extends AbstractRecord
     }
 
     /**
-     * Get sorted primary author names.
+     * Get primary author names.
      *
      * @return array
      */
-    protected function getPrimaryAuthorNamesSorted(): array
+    protected function getPrimaryAuthors(): array
     {
         return $this->getPrimaryAuthorsSorted()['names'];
     }
@@ -467,7 +400,7 @@ class Forward extends AbstractRecord
      *
      * @return array
      */
-    protected function getPrimaryAuthorRolesSorted(): array
+    protected function getPrimaryAuthorRoles(): array
     {
         return $this->getPrimaryAuthorsSorted()['relators'];
     }
@@ -475,25 +408,25 @@ class Forward extends AbstractRecord
     /**
      * Get contents
      *
-     * @param string $language Optionally take only description in the given language
-     *
      * @return array<int, string>
      */
-    protected function getContents($language = null)
+    protected function getContents()
     {
         $results = [];
+        $primaryLanguageResults = [];
         foreach ($this->getMainElement()->ContentDescription as $description) {
-            if (null !== $language && (string)$description->Language !== $language) {
-                continue;
-            }
             if (
                 (string)$description->DescriptionType == 'Content description'
                 && !empty($description->DescriptionText)
             ) {
-                $results[] = (string)$description->DescriptionText;
+                $descriptionText = (string)$description->DescriptionText;
+                $results[] = $descriptionText;
+                if ((string)$description->Language === $this->primaryLanguage) {
+                    $primaryLanguageResults[] = $descriptionText;
+                }
             }
         }
-        return $results;
+        return $primaryLanguageResults ?: $results;
     }
 
     /**
@@ -639,7 +572,7 @@ class Forward extends AbstractRecord
         if (!$descriptions) {
             $descriptions = $this->getDescriptions();
         }
-        $contents = $this->getContents($this->primaryLanguage);
+        $contents = $this->getContents();
         if (!$contents) {
             $contents = $this->getContents();
         }
@@ -680,12 +613,11 @@ class Forward extends AbstractRecord
     /**
      * Get author sort field.
      *
-     * @param array $authors Primary authors
-     *
      * @return string
      */
-    protected function getAuthorSort(array $authors): string
+    protected function getAuthorSort(): string
     {
+        $authors = $this->getPrimaryAuthors();
         return $authors[0] ?? '';
     }
 
@@ -719,7 +651,7 @@ class Forward extends AbstractRecord
     }
 
     /**
-     * Return publication years
+     * Get publication years.
      *
      * @return array
      */

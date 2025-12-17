@@ -29,8 +29,6 @@
 
 namespace RecordManager\Base\Record;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-
 /**
  * Ese record class
  *
@@ -57,40 +55,6 @@ class Ese extends AbstractRecord
     }
 
     /**
-     * Return fields to be indexed in Solr
-     *
-     * @param ?Database $db Database connection. Omit to avoid database lookups for related records.
-     *
-     * @return array<string, mixed>
-     */
-    public function toSolrArray(?Database $db = null)
-    {
-        $data = parent::toSolrArray($db);
-
-        $data['ctrlnum'] = $this->getControlNumbers();
-        $data['fullrecord'] = $this->getFullRecord();
-        $data['allfields'] = $this->getAllFields();
-        $data['language'] = $this->getLanguages();
-        $data['format'] = $this->getFormat();
-        $data['author'] = $this->getPrimaryAuthors();
-        $data['author2'] = $this->getSecondaryAuthors();
-        $data['title'] = $this->getTitle();
-        $data['title_full'] = $this->getFullTitle();
-        $data['title_short'] = $this->getShortTitle($data['title']);
-        $data['title_sub'] = $this->getTitleSub($data['title']);
-        $data['title_sort'] = $this->getTitle(true);
-        $data['publisher'] = $this->getPublishers();
-        $data['publishDate'] = $this->getPublicationYear();
-        $data['publishDateRange'] = $this->getPublicationYears();
-        $data['isbn'] = $this->getISBNs();
-        $data['topic'] = $this->getTopics();
-        $data['topic_facet'] = $this->getTopicFacets();
-        $data['url'] = $this->getUrls();
-
-        return $data;
-    }
-
-    /**
      * Dedup: Return full title (for debugging purposes only)
      *
      * @return string
@@ -110,11 +74,16 @@ class Ese extends AbstractRecord
      */
     public function getTitle($forFiling = false)
     {
+        $key = __METHOD__ . ($forFiling ? '1' : '0');
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
+        }
+
         $title = trim((string)$this->doc->title);
         if ($forFiling) {
             $title = $this->metadataUtils->createSortTitle($title);
         }
-        return $title;
+        return $this->resultCache[$key] = $title;
     }
 
     /**
@@ -125,47 +94,6 @@ class Ese extends AbstractRecord
     public function getMainAuthor()
     {
         return (string)$this->doc->creator;
-    }
-
-    /**
-     * Dedup: Return ISBNs in ISBN-13 format without dashes
-     *
-     * @return array
-     */
-    public function getISBNs()
-    {
-        $arr = [];
-        foreach ($this->doc->identifier as $identifier) {
-            $identifier = str_replace('-', '', $identifier);
-            if (!preg_match('{([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
-                continue;
-            }
-            $isbn = $this->metadataUtils->normalizeISBN($matches[1]);
-            if ($isbn) {
-                $arr[] = $isbn;
-            }
-        }
-        return array_values(array_unique($arr));
-    }
-
-    /**
-     * Dedup: Return series ISSN
-     *
-     * @return string
-     */
-    public function getSeriesISSN()
-    {
-        return '';
-    }
-
-    /**
-     * Dedup: Return series numbering
-     *
-     * @return string
-     */
-    public function getSeriesNumbering()
-    {
-        return '';
     }
 
     /**
@@ -201,6 +129,27 @@ class Ese extends AbstractRecord
     public function getPageCount()
     {
         return '';
+    }
+
+    /**
+     * Get ISBNs in ISBN-13 format without dashes.
+     *
+     * @return array
+     */
+    protected function getISBNs(): array
+    {
+        $arr = [];
+        foreach ($this->doc->identifier as $identifier) {
+            $identifier = str_replace('-', '', $identifier);
+            if (!preg_match('{([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
+                continue;
+            }
+            $isbn = $this->metadataUtils->normalizeISBN($matches[1]);
+            if ($isbn) {
+                $arr[] = $isbn;
+            }
+        }
+        return array_values(array_unique($arr));
     }
 
     /**
@@ -315,26 +264,22 @@ class Ese extends AbstractRecord
     /**
      * Get short title.
      *
-     * @param string $fullTitle Full title
-     *
      * @return string
      */
-    protected function getShortTitle(string $fullTitle): string
+    protected function getShortTitle(): string
     {
-        $titleParts = explode(' : ', $fullTitle, 2);
+        $titleParts = explode(' : ', $this->getFullTitle(), 2);
         return $titleParts[0];
     }
 
     /**
      * Get subtitle.
      *
-     * @param string $fullTitle Full title
-     *
      * @return string
      */
-    protected function getTitleSub(string $fullTitle): string
+    protected function getTitleSub(): string
     {
-        $titleParts = explode(' : ', $fullTitle, 2);
+        $titleParts = explode(' : ', $this->getFullTitle(), 2);
         return $titleParts[1] ?? '';
     }
 
@@ -390,7 +335,7 @@ class Ese extends AbstractRecord
     }
 
     /**
-     * Return publication years
+     * Get publication years.
      *
      * @return array
      */

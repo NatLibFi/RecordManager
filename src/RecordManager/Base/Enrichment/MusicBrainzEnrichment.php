@@ -128,7 +128,7 @@ class MusicBrainzEnrichment extends AbstractEnrichment
 
         // Use publisher ids only if barcodes or musicbrainz id did not yield any results
         if (!$mbIds) {
-            $shortTitle = $record->getShortTitle();
+            $shortTitle = $record->getShortTitleForEnrichment();
             foreach ($record->getPublisherNumbers(['0']) as $number) {
                 if ($id = trim($number['id'])) {
                     $newIds = $this->getFromReleaseIndex(self::CATNO, $id, $shortTitle);

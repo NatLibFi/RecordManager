@@ -143,43 +143,6 @@ class Dc extends AbstractRecord
     }
 
     /**
-     * Return fields to be indexed in Solr
-     *
-     * @param ?Database $db Database connection. Omit to avoid database lookups for related records.
-     *
-     * @return array<string, mixed>
-     */
-    public function toSolrArray(?Database $db = null)
-    {
-        $data = parent::toSolrArray($db);
-
-        $data['ctrlnum'] = $this->getControlNumbers();
-        $data['fullrecord'] = $this->getFullRecord();
-        $data['allfields'] = $this->getAllFields();
-        $data['language'] = $this->getLanguages();
-        $data['format'] = $this->getFormat();
-        $data['author'] = $this->getPrimaryAuthors();
-        $data['author2'] = $this->getSecondaryAuthors();
-        $data['author_sort'] = $this->getAuthorSort($data['author']);
-        $data['title'] = $data['title_full'] = $this->getTitle();
-        $data['title_short'] = $this->getShortTitle($data['title']);
-        $data['title_sub'] = $this->getTitleSub($data['title']);
-        $data['title_sort'] = $this->getTitle(true);
-        $data['publisher'] = $this->getPublishers();
-        $data['publishDate'] = $this->getPublicationYear();
-        $data['publishDateRange'] = $this->getPublicationYears();
-        $data['isbn'] = $this->getISBNs();
-        $data['doi_str_mv'] = $this->getDOIs();
-        $data['topic'] = $this->getTopics();
-        $data['topic_facet'] = $this->getTopicFacets();
-        $data['url'] = $this->getUrls();
-        $data['contents'] = $this->getContents();
-        $data['fulltext'] = $this->getFullTextField($this->doc);
-
-        return $data;
-    }
-
-    /**
      * Dedup: Return full title (for debugging purposes only)
      *
      * @return string
@@ -199,14 +162,29 @@ class Dc extends AbstractRecord
      */
     public function getTitle($forFiling = false)
     {
+        $key = __METHOD__ . ($forFiling ? '1' : '0');
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
+        }
+
         $title = trim((string)$this->doc->title);
         if ($forFiling) {
             $title = $this->metadataUtils->createSortTitle($title);
         } else {
-            $title
-                = $this->metadataUtils->stripTrailingPunctuation($title, '', true);
+            $title = $this->metadataUtils->stripTrailingPunctuation($title, '', true);
         }
-        return $title;
+        return $this->resultCache[$key] = $title;
+    }
+
+    /**
+     * Get short title for enrichment.
+     *
+     * @return string
+     */
+    public function getShortTitleForEnrichment(): string
+    {
+        $titleParts = explode(' : ', $this->getTitle(), 2);
+        return $titleParts[0];
     }
 
     /**
@@ -217,47 +195,6 @@ class Dc extends AbstractRecord
     public function getMainAuthor()
     {
         return trim((string)$this->doc->creator);
-    }
-
-    /**
-     * Dedup: Return ISBNs in ISBN-13 format without dashes
-     *
-     * @return array
-     */
-    public function getISBNs()
-    {
-        $arr = [];
-        foreach ($this->doc->identifier as $identifier) {
-            $identifier = str_replace('-', '', trim($identifier));
-            if ('' === $identifier || !preg_match('{([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
-                continue;
-            }
-            $isbn = $this->metadataUtils->normalizeISBN($matches[1]);
-            if ($isbn) {
-                $arr[] = $isbn;
-            }
-        }
-        return array_values(array_unique($arr));
-    }
-
-    /**
-     * Dedup: Return series ISSN
-     *
-     * @return string
-     */
-    public function getSeriesISSN()
-    {
-        return '';
-    }
-
-    /**
-     * Dedup: Return series numbering
-     *
-     * @return string
-     */
-    public function getSeriesNumbering()
-    {
-        return '';
     }
 
     /**
@@ -294,6 +231,37 @@ class Dc extends AbstractRecord
     public function getPageCount()
     {
         return '';
+    }
+
+    /**
+     * Get ISBNs in ISBN-13 format without dashes.
+     *
+     * @return array
+     */
+    protected function getISBNs(): array
+    {
+        $arr = [];
+        foreach ($this->doc->identifier as $identifier) {
+            $identifier = str_replace('-', '', trim($identifier));
+            if ('' === $identifier || !preg_match('{([0-9]{9,12}[0-9xX])}', $identifier, $matches)) {
+                continue;
+            }
+            $isbn = $this->metadataUtils->normalizeISBN($matches[1]);
+            if ($isbn) {
+                $arr[] = $isbn;
+            }
+        }
+        return array_values(array_unique($arr));
+    }
+
+    /**
+     * Get full title.
+     *
+     * @return string
+     */
+    protected function getFullTitle(): string
+    {
+        return $this->getTitle();
     }
 
     /**
@@ -416,38 +384,33 @@ class Dc extends AbstractRecord
     /**
      * Get author sort field.
      *
-     * @param array $authors Primary authors
-     *
      * @return string
      */
-    protected function getAuthorSort(array $authors): string
+    protected function getAuthorSort(): string
     {
+        $authors = $this->getPrimaryAuthors();
         return $authors[0] ?? '';
     }
 
     /**
      * Get short title.
      *
-     * @param string $fullTitle Full title
-     *
      * @return string
      */
-    protected function getShortTitle(string $fullTitle): string
+    protected function getShortTitle(): string
     {
-        $titleParts = explode(' : ', $fullTitle, 2);
+        $titleParts = explode(' : ', $this->getFullTitle(), 2);
         return $titleParts[0];
     }
 
     /**
      * Get subtitle.
      *
-     * @param string $fullTitle Full title
-     *
      * @return string
      */
-    protected function getTitleSub(string $fullTitle): string
+    protected function getTitleSub(): string
     {
-        $titleParts = explode(' : ', $fullTitle, 2);
+        $titleParts = explode(' : ', $this->getFullTitle(), 2);
         return $titleParts[1] ?? '';
     }
 
@@ -533,7 +496,7 @@ class Dc extends AbstractRecord
     }
 
     /**
-     * Return publication years
+     * Get publication years.
      *
      * @return array
      */
@@ -547,5 +510,15 @@ class Dc extends AbstractRecord
             }
         }
         return $result;
+    }
+
+    /**
+     * Get full text field for a given document
+     *
+     * @return string
+     */
+    protected function getFullTextField(): string
+    {
+        return $this->getFullTextFieldForDocument($this->doc);
     }
 }

@@ -274,75 +274,6 @@ class Marc extends AbstractRecord
     }
 
     /**
-     * Return fields to be indexed in Solr
-     *
-     * @param ?Database $db Database connection. Omit to avoid database lookups for related records.
-     *
-     * @return array<string, mixed>
-     */
-    public function toSolrArray(?Database $db = null)
-    {
-        $this->processLinkingFields($db);
-
-        $data = parent::toSolrArray($db);
-
-        $data['building'] = $this->getBuilding();
-        $this->addGeographicLocationFields($data);
-        $data['lccn'] = $this->getLCCN();
-        $data['ctrlnum'] = $this->getControlNumbers();
-        $data['fullrecord'] = $this->getFullRecord();
-        $data['allfields'] = $this->getAllFields();
-        $data['language'] = $this->getLanguages();
-        $data['format'] = $this->getFormat();
-        $this->addAuthorFields($data);
-        $data['title'] = $this->getTitle();
-        $data['title_sub'] = $this->getTitleSub();
-        $data['title_short'] = $this->getShortTitle(true);
-        $data['title_full'] = $this->getFullTitle(true);
-        $data['title_alt'] = $this->getAltTitles();
-        $data['title_old'] = $this->getOldTitles();
-        $data['title_new'] = $this->getNewTitles();
-        $data['title_sort'] = $this->getTitle(true);
-        $data['series'] = $this->getSeries();
-        $data['series2'] = $this->getSeries2();
-        $data['publisher'] = $this->getPublishers();
-        $data['publishDateSort'] = $this->getPublicationYear();
-        $data['publishDate'] = $this->getPublicationYears();
-        $data['publishDateRange'] = $this->getPublicationDateRanges();
-        $data['physical'] = $this->getPhysicalDescriptions();
-        $data['dateSpan'] = $this->getDateSpans();
-        $data['edition'] = $this->getEdition();
-        $data['contents'] = $this->getContents();
-        $data['isbn'] = $this->getISBNFields();
-        $data['issn'] = $this->getISSNFields();
-        $data['doi_str_mv'] = $this->getDOIs();
-        $data['callnumber-first'] = $this->getCallNumberFirst();
-        $data['callnumber-subject'] = $this->getCallNumberSubject();
-        $data['callnumber-raw'] = $this->getCallNumbersRaw();
-        $data['callnumber-label'] = $this->getCallNumberLabels();
-        $this->augmentCallNumberFields($data);
-        $data['topic'] = $this->getTopics();
-        $data['topic_facet'] = $this->getTopicFacets();
-        $data['topic_browse'] = $this->getTopicsForBrowse();
-        $data['genre'] = $this->getGenres();
-        $data['genre_facet'] = $this->getGenreFacets();
-        $data['geographic'] = $this->getGeographicTopics();
-        $data['geographic_facet'] = $this->getGeographicFacets();
-        $data['era'] = $this->getEras();
-        $data['era_facet'] = $this->getEraFacets();
-        $data['url'] = $this->getUrls();
-        $data['illustrated'] = $this->getIllustrated();
-        $this->addDeweyFields($data);
-        $data['oclc_num'] = $this->getOclcNumbers();
-        $data['uuid_str_mv'] = $this->getUUIDs();
-
-        // Get warnings from the MARC handler last:
-        $this->storeWarnings($this->record->getWarnings());
-
-        return $data;
-    }
-
-    /**
      * Return record ID (local)
      *
      * @return string
@@ -623,7 +554,14 @@ class Marc extends AbstractRecord
      */
     public function getFullTitleForDebugging()
     {
-        return $this->getFullTitle();
+        $title = $this->getFieldSubfields(
+            '245',
+            ['a', 'b', 'c', 'f', 'g', 'h', 'k', 'n', 'p', 's'],
+            false
+        );
+        // Try to clean up the title but return original if it only contains
+        // punctuation:
+        return $this->metadataUtils->stripTrailingPunctuation($title, '', true);
     }
 
     /**
@@ -753,11 +691,11 @@ class Marc extends AbstractRecord
     }
 
     /**
-     * Dedup: Return (unique) ISBNs in ISBN-13 format without dashes
+     * Dedup: Get (unique) ISBNs in ISBN-13 format without dashes
      *
      * @return array
      */
-    public function getISBNs()
+    public function getISBNsForDedup(): array
     {
         $arr = [];
         $fields = $this->record->getFields('020');
@@ -778,11 +716,11 @@ class Marc extends AbstractRecord
     }
 
     /**
-     * Dedup: Return ISSNs
+     * Dedup: Get ISSNs.
      *
      * @return array
      */
-    public function getISSNs()
+    public function getISSNsForDedup(): array
     {
         $arr = [];
         $fields = $this->record->getFields('022');
@@ -797,21 +735,21 @@ class Marc extends AbstractRecord
     }
 
     /**
-     * Dedup: Return series ISSN
+     * Dedup: Get series ISSN.
      *
      * @return string
      */
-    public function getSeriesISSN()
+    public function getSeriesISSNForDedup(): string
     {
         return $this->getFieldSubfield('490', 'x');
     }
 
     /**
-     * Dedup: Return series numbering
+     * Dedup: Get series numbering.
      *
      * @return string
      */
-    public function getSeriesNumbering()
+    public function getSeriesNumberingForDedup(): string
     {
         return $this->getFieldSubfield('490', 'v');
     }
@@ -1311,14 +1249,12 @@ class Marc extends AbstractRecord
     /**
      * Get short title
      *
-     * @param bool $allowUniformTitle Return uniform title if title does not exist
-     *
      * @return string
      */
-    public function getShortTitle(bool $allowUniformTitle = false): string
+    public function getShortTitle(): string
     {
         $title = $this->getFieldSubfields('245', ['a'], false);
-        if ($allowUniformTitle && '' === $title) {
+        if ('' === $title) {
             $title = $this->getFieldSubfields('240', ['a', 'n', 'p']);
         }
         // Try to clean up the title but return original if it only contains
@@ -1327,7 +1263,51 @@ class Marc extends AbstractRecord
     }
 
     /**
-     * Return publication years
+     * Get short title for enrichment.
+     *
+     * @return string
+     */
+    public function getShortTitleForEnrichment(): string
+    {
+        $title = $this->getFieldSubfields('245', ['a'], false);
+        // Try to clean up the title but return original if it only contains
+        // punctuation:
+        return $this->metadataUtils->stripTrailingPunctuation($title, '', true);
+    }
+
+    /**
+     * Do any pre-processing for the record before the conversion to Solr array.
+     *
+     * @param ?Database $db Database connection, if available
+     *
+     * @return void
+     */
+    protected function preProcessRecordForIndexing(?Database $db): void
+    {
+        $this->processLinkingFields($db);
+    }
+
+    /**
+     * Do any post-processing for the record after the main conversion to Solr array.
+     *
+     * @param ?Database $db   Database connection, if available
+     * @param array     $data Array of Solr fields
+     *
+     * @return void
+     */
+    protected function postProcessRecordForIndexing(?Database $db, &$data): void
+    {
+        $this->addGeographicLocationFields($data);
+        $this->addAuthorFields($data);
+        $this->augmentCallNumberFields($data);
+        $this->addDeweyFields($data);
+
+        // Get warnings from the MARC handler last:
+        $this->storeWarnings($this->record->getWarnings());
+    }
+
+    /**
+     * Get publication years.
      *
      * @return array
      */
@@ -1474,18 +1454,16 @@ class Marc extends AbstractRecord
     /**
      * Get full title
      *
-     * @param bool $allowUniformTitle Return uniform title if title does not exist
-     *
      * @return string
      */
-    protected function getFullTitle(bool $allowUniformTitle = false): string
+    protected function getFullTitle(): string
     {
         $title = $this->getFieldSubfields(
             '245',
             ['a', 'b', 'c', 'f', 'g', 'h', 'k', 'n', 'p', 's'],
             false
         );
-        if ($allowUniformTitle && '' === $title) {
+        if ('' === $title) {
             $title = $this->getFieldSubfields('240', ['a', 'd', 'f', 'g', 'h', 'k', 'n', 'o', 'p', 'r', 's']);
         }
         // Try to clean up the title but return original if it only contains
@@ -1796,7 +1774,7 @@ class Marc extends AbstractRecord
      *
      * @return array
      */
-    protected function getISBNFields(): array
+    protected function getISBNs(): array
     {
         $result = [];
         foreach ($this->isbnFields as $fieldSpec) {
@@ -2752,7 +2730,7 @@ class Marc extends AbstractRecord
     {
         $useHILCC = $this->getDriverParam('useHILCC', false);
         $sortKey = '';
-        foreach ($data['callnumber-raw'] as $callnumber) {
+        foreach ($data['callnumber-raw'] ?? [] as $callnumber) {
             $cn = new LcCallNumber($callnumber);
             // Store sort key even from an invalid CN in case we don't find a valid
             // one:

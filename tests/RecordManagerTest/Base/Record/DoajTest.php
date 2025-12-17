@@ -95,7 +95,10 @@ class DoajTest extends RecordTestBase
             'publisher'  => [
                 'Verlag Krause und Pachernegg GmbH',
             ],
-            'publishDate' => '1998',
+            'publishDate' => [
+                '1998',
+            ],
+            'publishDateSort' => '1998',
             'publishDateRange' => [
                 '1998',
             ],
@@ -109,6 +112,9 @@ class DoajTest extends RecordTestBase
                 'http://www.kup.at/kup/pdf/648.pdf',
             ],
             'fulltext' => '',
+            'doi_str_mv' => [],
+            'isbn' => [],
+            'issn' => [],
         ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');

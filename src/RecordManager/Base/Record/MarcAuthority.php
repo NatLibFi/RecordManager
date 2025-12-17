@@ -29,8 +29,6 @@
 
 namespace RecordManager\Base\Record;
 
-use RecordManager\Base\Database\DatabaseInterface as Database;
-
 /**
  * Forward authority Record Class
  *
@@ -44,6 +42,13 @@ use RecordManager\Base\Database\DatabaseInterface as Database;
  */
 class MarcAuthority extends Marc
 {
+    /**
+     * Is this an authority record?
+     *
+     * @var bool
+     */
+    protected bool $isAuthorityRecord = true;
+
     /**
      * Delimiter for separating name related subfields.
      *
@@ -59,36 +64,6 @@ class MarcAuthority extends Marc
     public function getID()
     {
         return $this->getFieldSubfield('035', 'a');
-    }
-
-    /**
-     * Return fields to be indexed in Solr
-     *
-     * @param ?Database $db Database connection. Omit to avoid database lookups for related records.
-     *
-     * @return array<string, mixed>
-     */
-    public function toSolrArray(?Database $db = null)
-    {
-        $data = parent::toSolrArray($db);
-
-        $data['fullrecord'] = $this->getFullRecord();
-        $data['allfields'] = $this->getAllFields();
-        $data['source'] = $this->getRecordSource();
-        $data['heading'] = $this->getHeading();
-        $data['heading_keywords'] = $this->getHeadingKeywords();
-        $data['use_for'] = $this->getUseForHeadings();
-        $data['use_for_keywords'] = $this->getUseForHeadingKeywords();
-        $data['record_type'] = $this->getRecordType();
-        $data['birth_date'] = $this->getBirthDate();
-        $data['death_date'] = $this->getDeathDate();
-        $data['birth_place'] = $this->getBirthPlace();
-        $data['death_place'] = $this->getDeathPlace();
-        $data['country'] = $this->getCountry();
-        $data['field_of_activity'] = $this->getFieldsOfActivity();
-        $data['occupation'] = $this->getOccupations();
-
-        return $data;
     }
 
     /**

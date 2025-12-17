@@ -26,12 +26,14 @@ Anything marked with [**BC**] is known to affect backward compatibility with pre
 - Added support for defining additional HTTP options for Solr index requests. This could be useful e.g. when using SSL with self-signed certificates.
 - When multi-process support is enabled (i.e. record_workers and/or solr_update_workers set in recordmanager.ini), a few additional worker processes are initialized on startup to take the place of any worker that stops unexpectedly (typically due to an issue with a PHP or one of its extensions causing a segmentation fault).
 - Regular expression support for suppressOnField setting did not work properly. A new suppressOnFieldRegEx was introduced to make this option explicit.
+- Record classes can now implement methods preProcessRecordForIndexing and postProcessRecordForIndexing for additional preparation around toSolrArray method.
 
 ### Changed
 
 - [**BC**] The HTTP client library has been changed from HTTP_Request2 to Guzzle. This has required some changes to how the HTTP client is used. See e.g. src/RecordManager/Base/Harvest/SierraApi.php for usage examples. This also affects the settings in HTTP section of recordmanager.ini. Only the most commonly used legacy settings are automatically mapped to Guzzle's equivalents.
 - [**BC**] MARC: Subfields containing record identifiers for linking between records (subfield w in fields 760-787) are no longer updated to use the indexed record ID by default. Instead of the built-in list of fields there is now an option in recordmanager.ini (MarcRecord/linking_id_fields) that can be used to define the linking ID fields if this functionality is desired.
-- [**BC**] All Record classes must now implement the getRecordFormat method and call AbtractRecord's toSolrArray in their overridden toSolrArray methods.
+- [**BC**] Record classes have been unified to use a common set of methods for building the Solr array (see $solrAuthorityRecordSpecs and $solrBiblioRecordSpecs in AbstractRecord).
+- [**BC**] All Record classes must now implement the getRecordFormat method and call AbtractRecord's toSolrArray in any overridden toSolrArray methods.
 - [**BC**] FullTextTrait's getFullTextFields was renamed to getFullTextField and refactored to return the fulltext field contents instead of a full data array.
 - [**BC**] Several methods in Record classes have been renamed to improve unity between the classes and to better reflect their nature. Also typing of return values has been added in many places.
 - [**BC**] All format-specific Skosmos and authority enrichments have been consolidated to format-agnostic SkosmosEnrichment and AuthEnrichment.
