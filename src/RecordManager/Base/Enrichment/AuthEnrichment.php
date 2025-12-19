@@ -37,6 +37,8 @@ use RecordManager\Base\Record\PluginManager as RecordPluginManager;
 use RecordManager\Base\Utils\Logger;
 use RecordManager\Base\Utils\MetadataUtils;
 
+use function is_callable;
+
 /**
  * Enrich biblio records with authority record data.
  *
@@ -169,6 +171,9 @@ class AuthEnrichment extends AbstractEnrichment
         }
 
         $authRecord = $this->createRecordFromDbRecord($data);
+        if (!is_callable([$authRecord, 'getAlternativeNames'])) {
+            return;
+        }
         if ($altNames = $authRecord->getAlternativeNames()) {
             $solrArray[$solrField]
                 = array_merge($solrArray[$solrField] ?? [], $altNames);

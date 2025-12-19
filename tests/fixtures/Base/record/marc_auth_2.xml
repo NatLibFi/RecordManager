@@ -1,0 +1,17 @@
+<collection xmlns="http://www.loc.gov/MARC21/slim">
+<record>
+  <leader>00000nam a2200000 i 4500</leader>
+  <controlfield tag="001">marc_auth_test_1</controlfield>
+  <controlfield tag="005">20251215000000.0</controlfield>
+  <controlfield tag="008">251215s2025    fi            000 0 eng d</controlfield>
+  <datafield tag="100" ind1="1" ind2=" ">
+    <subfield code="0">(FIN11)authority_001</subfield>
+  </datafield>
+  <datafield tag="245" ind1="1" ind2="0">
+    <subfield code="a">Test Book Title</subfield>
+  </datafield>
+  <datafield tag="700" ind1="1" ind2=" ">
+    <subfield code="0">(FIN11)authority_001</subfield>
+  </datafield>
+</record>
+</collection>

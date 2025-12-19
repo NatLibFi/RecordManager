@@ -1,0 +1,1174 @@
+<?xml version="1.0"?>
+<ExchangeSet xmlns="http://project-forward.eu/schemas/EN15907-forward" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://project-forward.eu/schemas/EN15907-forward http://forward.cineca.it/schema/EN15907-forward-v1.0.xsd">
+  <CinematographicAgent>
+    <AgentIdentifier>
+      <AgentIDType>01</AgentIDType>
+      <IDTypeName>elonet_henkilo</IDTypeName>
+      <IDValue>Kangaroo_0001</IDValue>
+    </AgentIdentifier>
+    <RecordSource>
+      <SourceName>Kookaburra_0026</SourceName>
+    </RecordSource>
+    <RecordSource>
+      <SourceName>Uusitalo: Jussien viisi vuosikymment&#xE4;. SKF 10. HS 6.12.2002. Emu_0027</SourceName>
+    </RecordSource>
+    <CAgentName>
+      <AgentNameType>04</AgentNameType>
+      <PersonName>Cassowary_0019</PersonName>
+      <PersonNameInverted>FairyPenguin_0058, SugarGlider_0025</PersonNameInverted>
+      <NamesBeforeKey>Quokka_0020</NamesBeforeKey>
+      <AgentNameId type="ISNI">Koala_0002</AgentNameId>
+    </CAgentName>
+    <CAgentName>
+      <AgentNameType henkilo-muu_nimi-tyyppi="oikea nimi">00</AgentNameType>
+      <PersonName>Goanna_0007</PersonName>
+      <PersonNameInverted>FairyPenguin_0058, Quokka_0020</PersonNameInverted>
+    </CAgentName>
+    <BiographicalNote henkilo-biografia-tyyppi="palkinnot">Jussi-palkinnot 1951 parhaasta ohjauksesta sek&#xE4; k&#xE4;sikirjoituksesta (yhdess&#xE4; FrilledLizard_0028 kanssa) elokuvasta Radio tekee murron.&#xD;
+Jussi-palkinto 1954 parhaasta ohjauksesta elokuvassa Sininen viikko.&#xD;
+Jussi-palkinto 1955 parhaasta ohjauksesta elokuvissa Is&#xE4;n vanha ja uusi sek&#xE4; Hilman p&#xE4;iv&#xE4;t.&#xD;
+Jussi-palkinto 1957 parhaasta ohjauksesta elokuvassa Elokuu.&#xD;
+Jussi-palkinto 1959 parhaasta k&#xE4;sikirjoituksesta elokuvassa Punainen viiva.&#xD;
+Jussi-palkinto 1962 parhaasta k&#xE4;sikirjoituksesta (yhdess&#xE4; Wombat_0014 kanssa) elokuvassa Kaasua, komisario Palmu!.&#xD;
+Ylim&#xE4;&#xE4;r&#xE4;inen valtionpalkinto 1987 (50 000 mk).&#xD;
+BlueTongueSkink_0029 -mitali 1995.&#xD;
+SeaDragon_0010&#xE4;n elokuvajuhlilla 2003 merkitt&#xE4;v&#xE4;st&#xE4; ty&#xF6;st&#xE4; elokuvakulttuurin puolesta (1500e, rahoittajana Canal+).&#xD;
+Elokuvataiteen valtionpalkinto 2008.&#xD;
+Betoni-Jussi 2011 (perustelu: hieno ja merkitt&#xE4;v&#xE4; ura).</BiographicalNote>
+    <ProfessionalAffiliation henkilo-kokoonpano-tyyppi="ty&#xF6;ryhm&#xE4;">
+      <Affiliation>Dingo_0018</Affiliation>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_kokoonpano</IDTypeName>
+        <IDValue>Wombat_0003</IDValue>
+      </AgentIdentifier>
+    </ProfessionalAffiliation>
+    <AgentDate>
+      <AgentDateEventType>51</AgentDateEventType>
+      <DateText>01.01.1900</DateText>
+      <LocationName>Keuruu</LocationName>
+    </AgentDate>
+    <AgentDate>
+      <AgentDateEventType>52</AgentDateEventType>
+      <DateText>01.01.1900</DateText>
+      <LocationName>Vantaa</LocationName>
+    </AgentDate>
+    <AgentPlace>
+      <LocationName>Suomi</LocationName>
+    </AgentPlace>
+  </CinematographicAgent>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">Wallaby_0004</Identifier>
+    <RecordSource>
+      <SourceName>Cockatoo_0030</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Emu_0001.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvakoko="Platypus_0005">1</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Emu_0001.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Emu_0001.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">Wallaby_0004</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">Echidna_0006</Identifier>
+    <RecordSource>
+      <SourceName>Lyrebird_0031</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>FrilledLizard_0002.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvakoko="Dingo_0007">2</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>FrilledLizard_0002.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/FrilledLizard_0002.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">Echidna_0006</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">Cassowary_0008</Identifier>
+    <RecordSource>
+      <SourceName>FairyPenguin_0032</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>BlueTongueSkink_0003.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvakoko="Quokka_0009">3</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>BlueTongueSkink_0003.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/BlueTongueSkink_0003.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">Cassowary_0008</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">61357</Identifier>
+    <RecordSource>
+      <SourceName>Goanna_0033</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Cockatoo_0004.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Lyrebird_0005 ja kirjailija Iki-Echidna_0017 kotona BlueTongueSkink_0003." kuva-kuvakoko="Bilby_0010">14</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Cockatoo_0004.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Numbat_0011</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Numbat_0011</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Bandicoot_0012</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Bandicoot_0012</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Numbat_0011" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Cockatoo_0004.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">61357</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">61358</Identifier>
+    <RecordSource>
+      <SourceName>TreeKangaroo_0034</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Lyrebird_0005.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Talvikuvausta &quot;Korpiloukon pihalla&quot; Cockatoo_0004&#xE4;. Vas. valoheittimien v&#xE4;liss&#xE4; ohjaaja Cassowary_0019, piharakennukseen menossa Emu_0001 roolissa." kuva-kuvakoko="TasmanianDevil_0013">20</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Lyrebird_0005.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Numbat_0011</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Numbat_0011</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>SugarGlider_0014</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>SugarGlider_0014</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Numbat_0011" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Lyrebird_0005.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">61358</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">72517</Identifier>
+    <RecordSource>
+      <SourceName>RockWallaby_0035</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>FairyPenguin_0006.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Ty&#xF6;kuva, keskell&#xE4; Cassowary_0019 antaa ohjeita." kuva-kuvakoko="Kookaburra_0015">48</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>FairyPenguin_0006.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Emu_0016</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Emu_0016</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Emu_0016" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/FairyPenguin_0006.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">72517</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">72518</Identifier>
+    <RecordSource>
+      <SourceName>SeaDragon_0036</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Goanna_0007.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Lyrebird_0005 ja k&#xE4;sikirjoittaja Wallaby_0015." kuva-kuvakoko="FrilledLizard_0017">49</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Goanna_0007.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Emu_0016</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Emu_0016</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>BlueTongueSkink_0018</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>BlueTongueSkink_0018</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Emu_0016" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Goanna_0007.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">72518</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">Cockatoo_0019</Identifier>
+    <RecordSource>
+      <SourceName>LeatherbackTurtle_0037</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>TreeKangaroo_0008.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Lyrebird_0005, valtiovarainministeri V&#xE4;in&#xF6; Tanneria esitt&#xE4;v&#xE4; Koala_0013 ja presidentti Bandicoot_0023&#xE4; esitt&#xE4;v&#xE4; LeatherbackTurtle_0011." kuva-kuvakoko="Lyrebird_0020">52</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>TreeKangaroo_0008.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>FairyPenguin_0021</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>FairyPenguin_0021</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Goanna_0022</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Goanna_0022</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>TreeKangaroo_0023</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>TreeKangaroo_0023</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/FairyPenguin_0021" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/TreeKangaroo_0008.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">Cockatoo_0019</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">RockWallaby_0024</Identifier>
+    <RecordSource>
+      <SourceName>Kangaroo_0038</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>RockWallaby_0009.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="RockWallaby_0009 ja ohjaaja Cassowary_0019, keskell&#xE4; TasmanianDevil_0024." kuva-kuvakoko="SeaDragon_0025">54</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>RockWallaby_0009.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>LeatherbackTurtle_0026</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>LeatherbackTurtle_0026</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0027</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0027</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Koala_0028</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Koala_0028</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/LeatherbackTurtle_0026" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/RockWallaby_0009.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">RockWallaby_0024</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">74914</Identifier>
+    <RecordSource>
+      <SourceName>Koala_0039</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>SeaDragon_0010.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="ohjaus; k&#xE4;sikirjoitus Cassowary_0019, kuva Kangaroo_0012" kuva-kuvakoko="Wombat_0029">59</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>SeaDragon_0010.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Wallaby_0030</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Wallaby_0030</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Platypus_0031</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Platypus_0031</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Wallaby_0030" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/SeaDragon_0010.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">74914</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">74917</Identifier>
+    <RecordSource>
+      <SourceName>Wombat_0040</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>LeatherbackTurtle_0011.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="ohjaus; k&#xE4;sikirjoitus Cassowary_0019, apulaisohjaaja  Platypus_0016, kuva Kangaroo_0012" kuva-kuvakoko="Echidna_0032">62</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>LeatherbackTurtle_0011.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Wallaby_0030</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Wallaby_0030</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Platypus_0031</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Platypus_0031</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Dingo_0033</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Dingo_0033</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Wallaby_0030" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/LeatherbackTurtle_0011.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">74917</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">74919</Identifier>
+    <RecordSource>
+      <SourceName>Wallaby_0041</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Kangaroo_0012.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="ohjaus; k&#xE4;sikirjoitus Cassowary_0019, apulaisohjaaja  Platypus_0016, kuva Kangaroo_0012" kuva-kuvakoko="Cassowary_0034">64</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Kangaroo_0012.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Wallaby_0030</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Wallaby_0030</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Dingo_0033</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Dingo_0033</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Platypus_0031</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Platypus_0031</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Wallaby_0030" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Kangaroo_0012.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">74919</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">Quokka_0035</Identifier>
+    <RecordSource>
+      <SourceName>Platypus_0042</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Koala_0013.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Lyrebird_0005 sek&#xE4; n&#xE4;yttelij&#xE4;t lukuharjoituksessa." kuva-kuvakoko="Bilby_0036">69</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Koala_0013.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Numbat_0037</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Numbat_0037</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Numbat_0037" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Koala_0013.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">Quokka_0035</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">Bandicoot_0038</Identifier>
+    <RecordSource>
+      <SourceName>Echidna_0043</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Wombat_0014.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Numbat_0022 ja TreeKangaroo_0008&#xE4;rven kirkolla." kuva-kuvakoko="TasmanianDevil_0039">70</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Wombat_0014.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Numbat_0037</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Numbat_0037</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>SugarGlider_0040</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>SugarGlider_0040</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Numbat_0037" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Wombat_0014.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">Bandicoot_0038</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">Kookaburra_0041</Identifier>
+    <RecordSource>
+      <SourceName>Dingo_0044</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Wallaby_0015.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="FairyPenguin_0006, kuvaus Bilby_0021" kuva-kuvakoko="Emu_0042">83</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Wallaby_0015.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>FrilledLizard_0043</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>FrilledLizard_0043</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0027</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0027</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/FrilledLizard_0043" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Wallaby_0015.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">Kookaburra_0041</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">BlueTongueSkink_0044</Identifier>
+    <RecordSource>
+      <SourceName>Cassowary_0045</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Platypus_0016.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Lyrebird_0005" kuva-kuvakoko="Cockatoo_0045">85</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Platypus_0016.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Lyrebird_0046</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Lyrebird_0046</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Lyrebird_0046" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Platypus_0016.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">BlueTongueSkink_0044</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">31064</Identifier>
+    <RecordSource>
+      <SourceName>Quokka_0046</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Echidna_0017.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Lyrebird_0005 &#x201D;Mietteiss&#xE4;&#x201D;-luomus." kuva-kuvakoko="FairyPenguin_0047">110</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Echidna_0017.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Goanna_0048</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Goanna_0048</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Goanna_0048" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Echidna_0017.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">31064</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">TreeKangaroo_0049</Identifier>
+    <RecordSource>
+      <SourceName>Bilby_0047</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Dingo_0018.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="FrilledLizard_0002 &#x201D;Mietteiss&#xE4;&#x201D;-patsaalla Nurmij&#xE4;rvell&#xE4;." kuva-kuvakoko="RockWallaby_0050">111</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Dingo_0018.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Goanna_0048</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Goanna_0048</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Goanna_0048" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Dingo_0018.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">TreeKangaroo_0049</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">66506</Identifier>
+    <RecordSource>
+      <SourceName>Numbat_0048</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Cassowary_0019.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Edess&#xE4; Cassowary_0019, kameran takana kuvaaja Bilby_0021." kuva-kuvakoko="SeaDragon_0051">112</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Cassowary_0019.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>LeatherbackTurtle_0052</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>LeatherbackTurtle_0052</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0027</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0027</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/LeatherbackTurtle_0052" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Cassowary_0019.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">66506</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">Kangaroo_0053</Identifier>
+    <RecordSource>
+      <SourceName>Bandicoot_0049</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Quokka_0020.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Lyrebird_0005 paistohommissa." kuva-kuvakoko="Koala_0054">117</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Quokka_0020.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>LeatherbackTurtle_0052</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>LeatherbackTurtle_0052</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/LeatherbackTurtle_0052" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Quokka_0020.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">Kangaroo_0053</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">Wombat_0055</Identifier>
+    <RecordSource>
+      <SourceName>TasmanianDevil_0050</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Bilby_0021.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Cassowary_0019 ohjaamassa." kuva-kuvakoko="Wallaby_0056">155</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Bilby_0021.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Platypus_0057</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Platypus_0057</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Platypus_0057" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Bilby_0021.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">Wombat_0055</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">Echidna_0058</Identifier>
+    <RecordSource>
+      <SourceName>SugarGlider_0051</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Numbat_0022.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Cassowary_0019 ohjaamassa, oikealla kuvaaja Kangaroo_0012." kuva-kuvakoko="Dingo_0059">156</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Numbat_0022.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Platypus_0057</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Platypus_0057</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Platypus_0031</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Platypus_0031</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Platypus_0057" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Numbat_0022.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">Echidna_0058</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">Cassowary_0060</Identifier>
+    <RecordSource>
+      <SourceName>Kookaburra_0052</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Bandicoot_0023.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Cassowary_0019" kuva-kuvakoko="Quokka_0061">158</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Bandicoot_0023.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Platypus_0057</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Platypus_0057</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Platypus_0057" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Bandicoot_0023.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">Cassowary_0060</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">71563</Identifier>
+    <RecordSource>
+      <SourceName>Emu_0053</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>TasmanianDevil_0024.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Cassowary_0019, Kangaroo_0012" kuva-kuvakoko="Bilby_0062">160</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>TasmanianDevil_0024.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Platypus_0057</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>Platypus_0057</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Platypus_0031</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Platypus_0031</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/Platypus_0057" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/TasmanianDevil_0024.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">71563</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">Numbat_0063</Identifier>
+    <RecordSource>
+      <SourceName>FrilledLizard_0054</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>SugarGlider_0025.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Lyrebird_0005" kuva-kuvakoko="Bandicoot_0064">177</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>SugarGlider_0025.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>TasmanianDevil_0065</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>TasmanianDevil_0065</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/TasmanianDevil_0065" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/SugarGlider_0025.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">Numbat_0063</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+  <CinematographicWork>
+    <Identifier scheme="KAVI" IDTypeName="elonet_materiaali_kuva">SugarGlider_0066</Identifier>
+    <RecordSource>
+      <SourceName>BlueTongueSkink_0055</SourceName>
+    </RecordSource>
+    <Title>
+      <TitleText>Kookaburra_0026.jpg</TitleText>
+      <PartDesignation>
+        <Value kuva-kuvatyyppi="V" kuva-kuvateksti="Lyrebird_0005" kuva-kuvakoko="Kookaburra_0067">178</Value>
+      </PartDesignation>
+      <TitleRelationship>unspecified</TitleRelationship>
+    </Title>
+    <IdentifyingTitle>Kookaburra_0026.jpg</IdentifyingTitle>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>TasmanianDevil_0065</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_elokuva</IDTypeName>
+        <IDValue>TasmanianDevil_0065</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <HasAgent>
+      <Activity>A99</Activity>
+      <AgentName>Kangaroo_0001</AgentName>
+      <AgentIdentifier>
+        <AgentIDType>01</AgentIDType>
+        <IDTypeName>elonet_henkilo</IDTypeName>
+        <IDValue>Kangaroo_0001</IDValue>
+      </AgentIdentifier>
+    </HasAgent>
+    <ProductionEvent>
+      <ProductionEventType elokuva-elonet-url="http://www.elonet.fi/fi/elokuva/TasmanianDevil_0065" elokuva-elonet-materiaali-kuva-url="http://www.elonet.fi/tenho/media/Kookaburra_0026.jpg" finna-kayttooikeus="Luvanvarainen k&#xE4;ytt&#xF6; / ei tiedossa">DESCRIPTION</ProductionEventType>
+    </ProductionEvent>
+    <Manifestation>
+      <Identifier scheme="KAVI">SugarGlider_0066</Identifier>
+    </Manifestation>
+  </CinematographicWork>
+</ExchangeSet>

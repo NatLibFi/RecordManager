@@ -85,6 +85,15 @@ class AuthEnrichmentTest extends RecordTestBase
                 'author2' => ['Secondary Author With Missing Authority'],
             ],
         ];
+        yield 'no get alternative names method' => [
+            'fixture' => 'marc_auth_2.xml',
+            'authorityRecords' => [
+                '(FIN11)authority_002' => 'forward_authority_1.xml',
+            ],
+            'config' => [],
+            'authorIds' => ['(FIN11)authority_002'],
+            'expected' => [],
+        ];
     }
 
     /**
@@ -117,7 +126,9 @@ class AuthEnrichmentTest extends RecordTestBase
 
         $enricher = $this->getAuthEnricher($authorityRecords, $config);
         $enricher->enrich('test', $record, $fields);
-
+        if (!$expected) {
+            $this->assertArrayNotHasKey('author_variant', $fields, 'author_variant field should not be present.');
+        }
         foreach ($expected as $key => $value) {
             $this->assertEquals($value, $fields[$key] ?? null, "Field '$key' did not match expected value.");
         }
@@ -147,17 +158,30 @@ class AuthEnrichmentTest extends RecordTestBase
         // Mock authority database records
         $authorityDbRecords = [];
         foreach ($authorityRecords as $id => $filename) {
-            $authorityRecord = $this->createMarcRecord(
-                \RecordManager\Base\Record\MarcAuthority::class,
-                $filename,
-                []
-            );
+            $authorityRecord = null;
+            $format = '';
+            if (str_contains($filename, 'forward_authority')) {
+                $authorityRecord = $this->createRecord(
+                    \RecordManager\Base\Record\ForwardAuthority::class,
+                    $filename,
+                    []
+                );
+                $format = 'forwardAuthority';
+            } else {
+                $authorityRecord = $this->createMarcRecord(
+                    \RecordManager\Base\Record\MarcAuthority::class,
+                    $filename,
+                    []
+                );
+                $format = 'marc';
+            }
+
             $authorityDbRecords[$id] = [
                 '_id' => $id,
                 'source_id' => 'test',
                 'oai_id' => $id,
                 'deleted' => false,
-                'format' => 'marc',
+                'format' => $format,
                 'original_data' => $authorityRecord->serialize(),
                 'normalized_data' => $authorityRecord->serialize(),
             ];
@@ -181,11 +205,17 @@ class AuthEnrichmentTest extends RecordTestBase
                 if ($format === 'marc') {
                     return $this->createMarcRecord(
                         \RecordManager\Base\Record\MarcAuthority::class,
-                        'marc_authority_1.xml',  // Dummy, will be replaced
+                        'marc_authority_1.xml',
+                        []
+                    );
+                } elseif ($format === 'forwardAuthority') {
+                    return $this->createRecord(
+                        \RecordManager\Base\Record\ForwardAuthority::class,
+                        'forward_authority_1.xml',
                         []
                     );
                 }
-                return null;
+                throw new \Exception("Unknown format requested in test: $format");
             });
 
         $enricher = $this->getMockBuilder(AuthEnrichment::class)
