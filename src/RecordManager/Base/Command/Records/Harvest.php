@@ -179,6 +179,16 @@ class Harvest extends AbstractBase
                 'Harvest a single record by its identifier. Depending on harvesting'
                 . ' method this can be e.g. an OAI-PMH identifier.',
             )->addOption(
+                'id-file',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Process only the records whose IDs are listed in the provided text file'
+            )->addOption(
+                'id-file-prefix',
+                null,
+                InputOption::VALUE_REQUIRED,
+                'Source prefix to add to each line read from file when using <info>--id-file</info>'
+            )->addOption(
                 'reharvest',
                 null,
                 InputOption::VALUE_OPTIONAL,
@@ -223,6 +233,8 @@ class Harvest extends AbstractBase
         $harvestUntilDate = $input->getOption('until');
         $startPosition = $input->getOption('start-position');
         $singleId = $input->getOption('single');
+        $idFile = $input->getOption('id-file');
+        $idFilePrefix = $input->getOption('id-file-prefix');
         $reharvest = $input->getOption('reharvest');
         // Default is false, so null means reharvest with no value:
         if (null === $reharvest) {
@@ -244,6 +256,10 @@ class Harvest extends AbstractBase
             );
         }
 
+        if ($singleId && $idFile) {
+            throw new \Exception('--single and --id-file options are incompatible');
+        }
+
         if ($singleId && count($sourceList) !== 1) {
             $this->logger->logFatal(
                 'harvest',
@@ -251,6 +267,16 @@ class Harvest extends AbstractBase
             );
             throw new \Exception(
                 'A single source with --source parameter is required to use --single'
+            );
+        }
+
+        if ($idFile && count($sourceList) !== 1) {
+            $this->logger->logFatal(
+                'harvest',
+                'A single source with --source parameter is required to use --id-file'
+            );
+            throw new \Exception(
+                'A single source with --source parameter is required to use --id-file'
             );
         }
 
@@ -297,6 +323,16 @@ class Harvest extends AbstractBase
                 if ($singleId) {
                     $harvester->harvestSingle([$this, 'storeRecord'], $singleId);
                     continue;
+                }
+
+                if ($idFile) {
+                    foreach (file($idFile) as $nextId) {
+                        $nextIdTrimmed = trim($nextId);
+                        if ($nextIdTrimmed) {
+                            $nextIdFormatted = ($idFilePrefix ?? '') . $nextIdTrimmed;
+                            $harvester->harvestSingle([$this, 'storeRecord'], $nextIdFormatted);
+                        }
+                    }
                 }
 
                 if ($startPosition) {

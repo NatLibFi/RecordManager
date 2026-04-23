@@ -11,6 +11,7 @@
     autoloader="tests/psalm-autoload.php"
     findUnusedBaselineEntry="true"
     findUnusedCode="false"
+    ensureOverrideAttribute="false"
     phpVersion="8.2"
 >
     <projectFiles>

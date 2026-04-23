@@ -858,6 +858,9 @@ class Marc extends AbstractRecord
      */
     public function getWorkIdentificationData()
     {
+        if (isset($this->resultCache[__METHOD__])) {
+            return $this->resultCache[__METHOD__];
+        }
         $authorFields = [
             '100' => ['a', 'b'],
             '110' => ['a', 'b'],
@@ -1005,6 +1008,7 @@ class Marc extends AbstractRecord
         }
 
         if (!$titles) {
+            $this->resultCache[__METHOD__] = [];
             return [];
         }
 
@@ -1051,6 +1055,7 @@ class Marc extends AbstractRecord
             }
         }
 
+        $this->resultCache[__METHOD__] = $result;
         return $result;
     }
 

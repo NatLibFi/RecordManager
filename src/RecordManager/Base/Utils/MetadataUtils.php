@@ -472,6 +472,8 @@ class MetadataUtils
      * @param string $a2 LastName FirstName
      *
      * @return bool
+     *
+     * @psalm-suppress InvalidArrayOffset
      */
     public function authorMatch($a1, $a2)
     {

@@ -470,7 +470,7 @@ class Forward extends AbstractRecord
      */
     protected function getGenreFacets()
     {
-        return [];
+        return $this->getGenres();
     }
 
     /**
