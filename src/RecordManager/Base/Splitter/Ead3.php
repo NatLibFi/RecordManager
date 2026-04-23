@@ -251,7 +251,7 @@ class Ead3 extends Ead
 
         $absolute = $addData->addChild('archive');
         $absolute->addAttribute('id', $this->archiveId);
-        $absolute->addAttribute('title', $this->archiveTitle);
+        $this->addTitleAttributes($absolute, $this->getArchiveTitles());
         $absolute->addAttribute(
             'sequence',
             str_pad((string)$this->currentPos, 7, '0', STR_PAD_LEFT)
@@ -282,28 +282,11 @@ class Ead3 extends Ead
                 }
             }
 
-            $parentTitle = (string)$parentDid->unittitle;
-
-            if (!$parentTitle) {
-                $parentTitle
-                    = (string)$parentDid->unittitle->attributes()->label;
-
-                if (!$parentTitle) {
-                    $parentTitle = $parentID;
-                }
-            }
-
-            if ($this->prependParentTitleWithUnitId) {
-                if ($pid = $this->getParentUnitId($parentDid)) {
-                    $parentTitle = $pid . ' ' . $parentTitle;
-                }
-            }
-
             $parentNode = $original->xpath('parent::*[@level]');
 
             $parent = $addData->addChild('parent');
             $parent->addAttribute('id', $parentID);
-            $parent->addAttribute('title', $parentTitle);
+            $this->addTitleAttributes($parent, $this->getParentTitles($parentDid, $parentID));
             if ($parentNode) {
                 // Add a new parent-node to parent record addData
                 $level = (string)$parentNode[0]->attributes()->level;
@@ -311,7 +294,7 @@ class Ead3 extends Ead
                 if (in_array($level, ['series', 'subseries'])) {
                     $parent = $originalAddData->addChild('parent');
                     $parent->addAttribute('id', $parentID);
-                    $parent->addAttribute('title', $parentTitle);
+                    $this->addTitleAttributes($parent, $this->getParentTitles($parentDid, $parentID));
                     $parent->addAttribute('level', $level);
                 }
             }
@@ -331,9 +314,52 @@ class Ead3 extends Ead
             if ($this->currentPos > 1) {
                 $parent = $addData->addChild('parent');
                 $parent->addAttribute('id', $this->archiveId);
-                $parent->addAttribute('title', $this->archiveTitle);
+                $this->addTitleAttributes($parent, $this->getArchiveTitles());
                 $parent->addAttribute('level', 'archive');
             }
         }
+    }
+
+    /**
+     * Add title attributes to the element
+     *
+     * @param \SimpleXMLElement $element Element
+     * @param array             $titles  Title values
+     *
+     * @return void
+     */
+    protected function addTitleAttributes(\SimpleXMLElement $element, array $titles): void
+    {
+        $element->addAttribute('title', $titles['title']);
+    }
+
+    /**
+     * Get Parent titles as an array
+     *
+     * @param \SimpleXMLElement $parentDid Parent did element
+     * @param string            $parentID  Parent ID to use as fallback
+     *
+     * @return array
+     */
+    protected function getParentTitles(\SimpleXMLElement $parentDid, string $parentID): array
+    {
+
+        $parentTitle
+            = trim((string)($parentDid->unittitle ?? ''))
+            ?: trim((string)($parentDid->unittitle->attributes()->label ?? $parentID));
+        if ($this->prependParentTitleWithUnitId && ($pid = $this->getParentUnitId($parentDid))) {
+            $parentTitle = $pid . ' ' . $parentTitle;
+        }
+        return ['title' => $parentTitle];
+    }
+
+    /**
+     * Get Archive titles as an array
+     *
+     * @return array
+     */
+    protected function getArchiveTitles(): array
+    {
+        return ['title' => $this->archiveTitle];
     }
 }

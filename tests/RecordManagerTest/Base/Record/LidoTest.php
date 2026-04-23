@@ -55,15 +55,11 @@ class LidoTest extends RecordTestBase
 
         $expected = [
             'record_format' => 'lido',
-            'title_full' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen;'
-                . ' Säädökset',
-            'title_short' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen;'
-                . ' Säädökset',
-            'title' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen;'
-                . ' Säädökset',
-            'title_sort' => 'luonnonsuojelusäädökset toimittanut raimo luhtanen'
-                . ' säädökset',
-            'title_alt' => [],
+            'title_full' => 'English Title; English Alt Title',
+            'title_short' => 'English Title; English Alt Title',
+            'title' => 'English Title; English Alt Title',
+            'title_sort' => 'english title english alt title',
+            'title_alt' => ['Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset'],
             'description' => '',
             'format' => 'Kirja',
             'institution' => 'Test Institution',
@@ -104,6 +100,8 @@ class LidoTest extends RecordTestBase
                 'Kirja',
                 'Säädökset',
                 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+                'English Title',
+                'English Alt Title',
                 'Test Institution',
                 '26054',
                 '9518593736',
@@ -142,6 +140,10 @@ class LidoTest extends RecordTestBase
                 'titles' => [
                     [
                         'type' => 'title',
+                        'value' => 'English Title; English Alt Title',
+                    ],
+                    [
+                        'type' => 'title',
                         'value' => 'Luonnonsuojelusäädökset / toimittanut Raimo'
                         . ' Luhtanen; Säädökset',
                     ],
@@ -168,6 +170,7 @@ class LidoTest extends RecordTestBase
                     'driverParams' => [
                         'mergeTitleValues=false',
                         'mergeTitleSets=false',
+                        'defaultDisplayLanguage=fi',
                     ],
                 ],
             ]
@@ -183,6 +186,7 @@ class LidoTest extends RecordTestBase
             'title_sort' => 'luonnonsuojelusäädökset toimittanut raimo luhtanen',
             'title_alt' => [
                 'Säädökset',
+                'English Title',
             ],
             'description' => '',
             'format' => 'Kirja',
@@ -224,6 +228,8 @@ class LidoTest extends RecordTestBase
                 'Kirja',
                 'Säädökset',
                 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+                'English Title',
+                'English Alt Title',
                 'Test Institution',
                 '26054',
                 '9518593736',
@@ -268,6 +274,10 @@ class LidoTest extends RecordTestBase
                     [
                         'type' => 'title',
                         'value' => 'Säädökset',
+                    ],
+                                        [
+                        'type' => 'title',
+                        'value' => 'English Title',
                     ],
                 ],
                 'titlesAltScript' => [],
@@ -339,6 +349,97 @@ class LidoTest extends RecordTestBase
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
+    }
+
+    /**
+     * Test getTitles
+     *
+     * @return void
+     */
+    public function testGetTitles()
+    {
+        $record = $this->createRecord(Lido::class, 'lido1.xml');
+        $reflection = new \ReflectionObject($record);
+        $getTitles = $reflection->getMethod('getTitles');
+
+        $this->assertEquals(
+            [
+                'preferred' => 'English Title; English Alt Title',
+                'alternate' => ['Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset'],
+            ],
+            $getTitles->invokeArgs($record, [])
+        );
+        $this->assertEquals(
+            [
+                'preferred' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen; Säädökset',
+                'alternate' => [],
+            ],
+            $getTitles->invokeArgs($record, ['fi'])
+        );
+        $record = $this->createRecord(
+            Lido::class,
+            'lido1.xml',
+            [
+                '__unit_test_no_source__' => [
+                    'driverParams' => [
+                        'mergeTitleValues=false',
+                    ],
+                ],
+            ]
+        );
+        $this->assertEquals(
+            [
+                'preferred' => 'English Title',
+                'alternate' => [
+                    'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+                    'English Alt Title',
+                ],
+            ],
+            $getTitles->invokeArgs($record, [])
+        );
+        $this->assertEquals(
+            [
+                'preferred' => 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
+                'alternate' => [
+                    'Säädökset',
+                ],
+            ],
+            $getTitles->invokeArgs($record, ['fi'])
+        );
+    }
+
+    /**
+     * Test LIDO hierarchy handling
+     *
+     * @return void
+     */
+    public function testLidoHierarchies()
+    {
+        $record = $this->createRecord(
+            Lido::class,
+            'lido_hierarchy.xml',
+            [
+                '__unit_test_no_source__' => [
+                    'driverParams' => [
+                        'indexHierarchies=true',
+                        'addIdToHierarchyTitle=true',
+                        'defaultDisplayLanguage=fi',
+                    ],
+                ],
+            ]
+        );
+        $fields = $record->toSolrArray();
+
+        $this->assertEquals('testit-200', $fields['hierarchy_top_id']);
+        $this->assertEquals('Yksikkötestikokoelma; Kaikki testit kautta aikojen', $fields['hierarchy_top_title']);
+        $this->assertEquals('testit-404', $fields['hierarchy_parent_id']);
+        $this->assertEquals('Puuttuvien testien kokoelma', $fields['hierarchy_parent_title']);
+        $this->assertEquals('testi-000000418', $fields['hierarchy_sequence']);
+        $this->assertEquals('testi-418 Testi joka puuttui', $fields['title_in_hierarchy']);
+        $this->assertContains('Yksikkötestikokoelma; Kaikki testit kautta aikojen', $fields['allfields']);
+        $this->assertContains('Puuttuvien testien kokoelma', $fields['allfields']);
+        $this->assertContains('testi-418 Testi joka puuttui', $fields['allfields']);
+        $this->assertEquals('Testiarkisto', $fields['collection']);
     }
 
     /**

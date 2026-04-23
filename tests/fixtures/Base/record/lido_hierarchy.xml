@@ -1,0 +1,155 @@
+<?xml version="1.0"?>
+<lidoWrap schemaLocation="http://www.lido-schema.org http://www.lido-schema.org/schema/v1.0/lido-v1.0.xsd">
+  <lido>
+    <lidoRecID type="Test">knp-247394</lidoRecID>
+    <descriptiveMetadata lang="fi">
+      <objectClassificationWrap>
+        <objectWorkTypeWrap>
+          <objectWorkType>
+            <term>Testi</term>
+          </objectWorkType>
+        </objectWorkTypeWrap>
+      </objectClassificationWrap>
+      <objectIdentificationWrap>
+        <titleWrap>
+          <titleSet>
+            <appellationValue lang="fi" pref="preferred">Testi joka puuttui</appellationValue>
+            <appellationValue lang="en" pref="preferred">The test that was missing</appellationValue>
+          </titleSet>
+        </titleWrap>
+        <inscriptionsWrap/>
+        <repositoryWrap>
+          <repositorySet>
+            <repositoryName>
+              <legalBodyName>
+                <appellationValue>Test Institution</appellationValue>
+              </legalBodyName>
+            </repositoryName>
+            <workID type="numero">testi-418</workID>
+          </repositorySet>
+        </repositoryWrap>
+      </objectIdentificationWrap>
+      <objectRelationWrap>
+        <subjectWrap>
+          <subjectSet>
+            <subject>
+              <subjectConcept>
+                <term>yksikkötestit</term>
+              </subjectConcept>
+            </subject>
+          </subjectSet>
+        </subjectWrap>
+        <relatedWorksWrap>
+          <relatedWorkSet>
+            <relatedWork>
+              <displayObject label="Julkaistu teoksessa">Testit kautta aikojen</displayObject>
+            </relatedWork>
+            <relatedWorkRelType>
+              <term>is reproduced in</term>
+            </relatedWorkRelType>
+          </relatedWorkSet>
+          <relatedWorkSet>
+            <relatedWork>
+              <displayObject lang="fi">Testiarkisto</displayObject>
+              <displayObject lang="en">Test Archive</displayObject>
+            </relatedWork>
+            <relatedWorkRelType>
+              <term lang="en">Collection</term>
+              <term lanf="fi">Kokoelma</term>
+            </relatedWorkRelType>
+          </relatedWorkSet>
+          <relatedWorkSet>
+            <relatedWork>
+              <displayObject lang="fi">Yksikk&#xF6;testikokoelma</displayObject>
+              <displayObject lang="en">Unit Test Collection</displayObject>
+            </relatedWork>
+            <relatedWorkRelType>
+              <term>Alakokoelma</term>
+            </relatedWorkRelType>
+          </relatedWorkSet>
+          <relatedWorkSet>
+            <relatedWork>
+              <displayObject>Yksikk&#xF6;testikokoelma; Kaikki testit kautta aikojen</displayObject>
+              <object>
+                <objectWebResource/>
+                <objectID type="local identifier">testit-200</objectID>
+                <objectType>
+                  <conceptID type="URI">http://terminology.lido-schema.org/lido01053</conceptID>
+                  <term>collection</term>
+                </objectType>
+                <objectNote type="objectWorkType">Hankintaer&#xE4;</objectNote>
+              </object>
+            </relatedWork>
+            <relatedWorkRelType>
+              <conceptID type=""/>
+              <term>is part of</term>
+            </relatedWorkRelType>
+          </relatedWorkSet>
+          <relatedWorkSet>
+            <relatedWork>
+              <displayObject>Puuttuvien testien kokoelma</displayObject>
+              <object>
+                <objectWebResource/>
+                <objectID type="local identifier">testit-404</objectID>
+                <objectType>
+                  <conceptID type="URI"/>
+                  <term>parent</term>
+                </objectType>
+                <objectNote type="objectWorkType">Hankintaer&#xE4; (lapsi)</objectNote>
+              </object>
+            </relatedWork>
+            <relatedWorkRelType>
+              <conceptID type=""/>
+              <term>is part of</term>
+            </relatedWorkRelType>
+          </relatedWorkSet>
+        </relatedWorksWrap>
+      </objectRelationWrap>
+      <eventWrap>
+        <eventSet>
+          <event>
+            <eventID type=""/>
+            <eventType>
+              <term>creation</term>
+            </eventType>
+            <eventActor>
+              <actorInRole>
+                <actor>
+                  <actorID type=""/>
+                  <nameActorSet>
+                    <appellationValue>Anni M. K&#xF6;rn&#xE4;</appellationValue>
+                  </nameActorSet>
+                </actor>
+                <roleActor>
+                  <term>Kirjoittajat</term>
+                </roleActor>
+              </actorInRole>
+            </eventActor>
+          </event>
+        </eventSet>
+      </eventWrap>
+    </descriptiveMetadata>
+    <administrativeMetadata lang="fi">
+      <recordWrap>
+        <recordInfoSet>
+          <recordInfoID type="knp">M011-320623</recordInfoID>
+        </recordInfoSet>
+      </recordWrap>
+      <rightsWorkWrap>
+        <rightsWorkSet>
+          <rightsHolder>
+            <legalBodyName>
+              <appellationValue>Test Institution</appellationValue>
+            </legalBodyName>
+          </rightsHolder>
+        </rightsWorkSet>
+      </rightsWorkWrap>
+      <recordWrap>
+        <recordID type="local">247394</recordID>
+        <recordType>
+          <term lang="en">Item</term>
+        </recordType>
+      </recordWrap>
+    </administrativeMetadata>
+  </lido>
+</lidoWrap>

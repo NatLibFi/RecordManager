@@ -66,6 +66,9 @@ class QdcTest extends RecordTestBase
             ],
             'allfields' => [
                 'Urine : The potential, value chain and its sustainable management',
+                'Is that even a real title',
+                'Ei',
+                'Joo',
                 'Viskari, Eeva-Liisa',
                 'Lehtoranta, Suvi',
                 'Malila, Riikka',
@@ -115,7 +118,11 @@ class QdcTest extends RecordTestBase
             'title_short' => 'Urine',
             'title_sub' => 'The potential, value chain and its sustainable management',
             'title_sort' => 'urine the potential value chain and its sustainable management',
-            'title_alt' => [],
+            'title_alt' => [
+                'Is that even a real title',
+                'Ei',
+                'Joo',
+            ],
             'publisher' => [
                 'Sanitation Project, Research Institute for Humanity and Nature',
             ],
@@ -231,5 +238,38 @@ class QdcTest extends RecordTestBase
             $fields = $record->toSolrArray();
             $this->assertEquals($format, $fields['format']);
         }
+    }
+
+    /**
+     * Test getTitleByLanguage
+     *
+     * @return void
+     */
+    public function testGetTitleByLanguage()
+    {
+        $record = $this->createRecord(
+            Qdc::class,
+            'qdc1.xml',
+            [],
+            'Base',
+            [$this->createMock(\RecordManager\Base\Http\HttpService::class)]
+        );
+        $reflection = new \ReflectionObject($record);
+        $getTitleByLanguage = $reflection->getMethod('getTitleByLanguage');
+
+        $this->assertEquals(
+            'Urine : The potential, value chain and its sustainable management',
+            $getTitleByLanguage->invokeArgs($record, [])
+        );
+
+        $this->assertEquals(
+            'Joo',
+            $getTitleByLanguage->invokeArgs($record, [false, 'fi'])
+        );
+
+        $this->assertEquals(
+            '',
+            $getTitleByLanguage->invokeArgs($record, [false, 'sv'])
+        );
     }
 }

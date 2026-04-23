@@ -131,6 +131,18 @@ class MetadataUtils
     protected $lowercaseLanguageStrings = true;
 
     /**
+     * Language code mappings
+     *
+     * @var array
+     */
+    protected $languageCodeMappings = [
+        'fi' => ['fi','fin'],
+        'sv' => ['sv','swe'],
+        'en' => ['en', 'en-gb', 'eng'],
+        'se' => ['se', 'sme'],
+    ];
+
+    /**
      * Normalization character folding table
      *
      * @var array
@@ -1066,6 +1078,24 @@ class MetadataUtils
             $languages = strtolower($languages);
         }
         return $languages;
+    }
+
+    /**
+     * Normalize language code.
+     *
+     * @param string $language Language code
+     *
+     * @return string
+     */
+    public function normalizeLanguageCode($language)
+    {
+        $lang = trim(strtolower($language));
+        foreach ($this->languageCodeMappings as $key => $values) {
+            if (in_array($lang, $values)) {
+                return $key;
+            }
+        }
+        return $lang;
     }
 
     /**

@@ -148,6 +148,15 @@ class Lido extends AbstractRecord
     ];
 
     /**
+     * Hiearchy fields included in allfields.
+     *
+     * @var array
+     */
+    protected $hierarchyFieldsInAllFields = [
+        'is_hierarchy_title', 'hierarchy_parent_title', 'hierarchy_top_title', 'title_in_hierarchy',
+    ];
+
+    /**
      * Set record data
      *
      * @param string $source    Source ID
@@ -417,6 +426,8 @@ class Lido extends AbstractRecord
      */
     protected function postProcessRecordForIndexing(?Database $db, &$data): void
     {
+        // Additional titles should be added before adding hierarchy fields
+        $this->addAdditionalTitles($data);
         $this->addHierarchyFields($data);
     }
 
@@ -484,13 +495,16 @@ class Lido extends AbstractRecord
     /**
      * Return record titles
      *
+     * @param ?string $language Only include titles in specific language (for downstream usage)
+     *
      * @return array Associative array with keys 'preferred' (string) and
      * 'alternate' (array)
      */
-    protected function getTitles()
+    protected function getTitles(?string $language = null)
     {
         $key = __METHOD__ . '/'
-            . implode(';', $this->descriptionTypesExcludedFromTitle);
+            . implode(';', $this->descriptionTypesExcludedFromTitle)
+            . ($language ?? '');
         if (isset($this->resultCache[$key])) {
             return $this->resultCache[$key];
         }
@@ -499,7 +513,7 @@ class Lido extends AbstractRecord
         $formatInTitle = $this->getDriverParam('allowTitleToMatchFormat', false);
         $preferredTitles = [];
         $alternateTitles = [];
-        $defaultLanguage = $this->getDefaultLanguage();
+        $defaultLanguage = $language ? $language : $this->getDefaultLanguage();
         foreach (
             $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
             ->titleWrap->titleSet ?? [] as $set
@@ -510,12 +524,15 @@ class Lido extends AbstractRecord
                 if (!($title = trim((string)$appellationValue))) {
                     continue;
                 }
+                $titleLang =
+                    $this->metadataUtils->normalizeLanguageCode(
+                        $this->getInheritedXmlAttribute($appellationValue, 'lang')
+                    );
+                if ($language && $titleLang !== $language) {
+                    continue;
+                }
+                $titleLang = $titleLang ?: $defaultLanguage;
                 $preference = mb_strtolower((string)($appellationValue->attributes()->pref ?? 'preferred'), 'UTF-8');
-                $titleLang = $this->getInheritedXmlAttribute(
-                    $appellationValue,
-                    'lang',
-                    $defaultLanguage
-                );
                 if (in_array($preference, $this->preferredTitleTypes)) {
                     $preferredParts[$titleLang][] = $title;
                 } else {
@@ -534,7 +551,6 @@ class Lido extends AbstractRecord
                 $alternateTitles[$lang][] = implode('; ', $parts);
             }
         }
-
         // Merge repeated titleSets if configured:
         if ($mergeSets) {
             foreach (array_keys($preferredTitles) as $lang) {
@@ -548,14 +564,13 @@ class Lido extends AbstractRecord
                 ];
             }
         }
-
         if (isset($preferredTitles[$defaultLanguage])) {
             $preferred = array_shift($preferredTitles[$defaultLanguage]);
+        } elseif (isset($alternateTitles[$defaultLanguage])) {
+            $preferred = array_shift($alternateTitles[$defaultLanguage]);
         } elseif ($preferredTitles) {
             reset($preferredTitles);
             $preferred = array_shift($preferredTitles[key($preferredTitles)]);
-        } elseif (isset($alternateTitles[$defaultLanguage])) {
-            $preferred = array_shift($alternateTitles[$defaultLanguage]);
         } elseif ($alternateTitles) {
             reset($alternateTitles);
             $preferred = array_shift($alternateTitles[key($alternateTitles)]);
@@ -587,7 +602,14 @@ class Lido extends AbstractRecord
             );
             foreach ($nodes as $set) {
                 if ($value = trim((string)($set->descriptiveNoteValue ?? ''))) {
-                    $descriptionWrapDescriptions[] = $value;
+                    if (
+                        $language === null
+                        || $language === $this->metadataUtils->normalizeLanguageCode(
+                            $set->descriptiveNoteValue->attributes()->lang ?? ''
+                        )
+                    ) {
+                        $descriptionWrapDescriptions[] = $value;
+                    }
                 }
             }
             if ($descriptionWrapDescriptions) {
@@ -1513,17 +1535,11 @@ class Lido extends AbstractRecord
                     $this->getIdentifier()
                 );
                 // Add title field if needed:
-                if ($this->getDriverParam('addIdToHierarchyTitle', true)) {
-                    $data['title_in_hierarchy']
-                        = trim($this->getIdentifier() . ' ' . $data['title']);
-                }
+                $this->addHierarchyTitles($data);
             }
         }
-
         // Include hierarchy titles from relatedWorksWrap in allfields:
-        foreach (
-            ['is_hierarchy_title', 'hierarchy_parent_title', 'hierarchy_top_title', 'title_in_hierarchy'] as $field
-        ) {
+        foreach ($this->hierarchyFieldsInAllFields as $field) {
             // phpcs:ignore
             /** @psalm-var list<string> */
             $titles = (array)($data[$field] ?? []);
@@ -1532,6 +1548,31 @@ class Lido extends AbstractRecord
                 ...$titles,
             ];
         }
+    }
+
+    /**
+     * Add hierarchy titles.
+     *
+     * @param array $data Reference to the target array
+     *
+     * @return void
+     */
+    protected function addHierarchyTitles(array &$data): void
+    {
+        if ($this->getDriverParam('addIdToHierarchyTitle', true)) {
+            $data['title_in_hierarchy'] = trim($this->getIdentifier() . ' ' . $data['title']);
+        }
+    }
+
+    /**
+     * Add additional titles (for downstream usage).
+     *
+     * @param array $data Reference to the target array
+     *
+     * @return void
+     */
+    protected function addAdditionalTitles(array &$data): void
+    {
     }
 
     /**

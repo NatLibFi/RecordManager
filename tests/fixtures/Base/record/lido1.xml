@@ -13,8 +13,10 @@
       <objectIdentificationWrap>
         <titleWrap>
           <titleSet>
-            <appellationValue pref="alternate">S&#xE4;&#xE4;d&#xF6;kset</appellationValue>
-            <appellationValue pref="preferred">Luonnonsuojelus&#xE4;&#xE4;d&#xF6;kset / toimittanut Raimo Luhtanen</appellationValue>
+            <appellationValue lang="fi" pref="alternate">S&#xE4;&#xE4;d&#xF6;kset</appellationValue>
+            <appellationValue lang="fi" pref="preferred">Luonnonsuojelus&#xE4;&#xE4;d&#xF6;kset / toimittanut Raimo Luhtanen</appellationValue>
+            <appellationValue lang="en" pref="preferred">English Title</appellationValue>
+            <appellationValue lang="en" pref="alternate">English Alt Title</appellationValue>
           </titleSet>
         </titleWrap>
         <inscriptionsWrap/>

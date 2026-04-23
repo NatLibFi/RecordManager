@@ -1,0 +1,147 @@
+<?xml version="1.0"?>
+<c02 level="file">
+  <did>
+    <didnote encodinganalog="ahaa:AI46">Yksityisaineisto</didnote>
+    <repository encodinganalog="ahaa:AI42">
+      <corpname identifier="102268433">
+        <part lang="fin">SKS:n arkisto, Hallituskatu 1, HKI</part>
+      </corpname>
+    </repository>
+    <daoset>
+      <dao label="1" identifier="242790411" href="http://128.214.12.166/s_24537_0001.tif" linktitle="Tiedosto 1"/>
+      <dao label="2" identifier="242790416" href="http://128.214.12.166/s_24537_0002.tif" linktitle="Tiedosto 2"/>
+      <dao label="3" identifier="242790421" href="http://128.214.12.166/s_24537_0003.tif" linktitle="Tiedosto 3"/>
+      <dao label="4" identifier="242790426" href="http://128.214.12.166/s_24537_0004.tif" linktitle="Tiedosto 4"/>
+      <dao label="5" identifier="242790431" href="http://128.214.12.166/s_24537_0005.tif" linktitle="Tiedosto 5"/>
+      <dao label="" identifier="" href="http://128.214.12.166/actuallyishouldappear.tif" linktitle="Very good filename"/>
+      <descriptivenote>
+        <p>242790397</p>
+      </descriptivenote>
+    </daoset>
+    <unitdate label="Ajallinen kattavuus" normal="1881-uu-uu/1881-uu-uu">xx.xx.1881-xx.xx.1881</unitdate>
+    <unittitle label="Sundvall Gustaf Edvard S 1:a) 1" normal="Sundvall Gustaf Edvard S 1:a) 1" lang="fin">Sundvall Gustaf Edvard S 1:a) 1</unittitle>
+    <unittitle label="Sundvall Gustaf Edvard S 1:a) 1" normal="Sundvall Gustaf Edvard S 1:a) 1" lang="swe">Sundvall Gustaf Edvard S 1:a) 1 swe</unittitle>
+    <unitid label="J&#xE4;rjestysnumero">1</unitid>
+    <unitid label="Tekninen" identifier="238612737"/>
+    <unitid label="Muu tunniste">s/sundvall_gustaf_edvard/001/00001/00005</unitid>
+    <unitid label="Analoginen">SKS KRA S Sundvall Gustaf Edvard 1: a) 1</unitid>
+    <unitid label="Vanha tekninen">KRA-K-103174062</unitid>
+    <unitid label="Viivakoodi">A1576669851fpriz</unitid>
+    <langmaterial>
+      <language langcode="fin">Suomi</language>
+    </langmaterial>
+    <physdesc lang="swe">Aineistotyyppi: Text 5 Styck</physdesc>
+    <physdesc lang="eng">Aineistotyyppi: Text 5 Pieces</physdesc>
+    <physdesc lang="fin">Aineistotyyppi: Teksti, j&#xE4;rjestetty 5 Kappaletta</physdesc>
+  </did>
+  <relations>
+    <relation relationtype="cpfrelation" href="EAC_228204328" arcrole="Luovuttaja">
+      <relationentry localtype="Ensisijainen nimi" lang="fin">Sundvall, Gustaf Edvard</relationentry>
+    </relation>
+    <relation relationtype="cpfrelation" href="EAC_228204328" arcrole="Kirjoittaja">
+      <relationentry localtype="Ensisijainen nimi" lang="fin">Sundvall, Gustaf Edvard</relationentry>
+    </relation>
+    <relation relationtype="cpfrelation" href="EAC_228204328" arcrole="Ker&#xE4;&#xE4;j&#xE4;">
+      <relationentry localtype="Ensisijainen nimi" lang="fin">Sundvall, Gustaf Edvard</relationentry>
+    </relation>
+    <relation relationtype="cpfrelation" href="EAC_228598319" arcrole="Luovuttaja">
+      <relationentry localtype="Ensisijainen nimi" lang="fin">Ingman, Anders Wilhelm</relationentry>
+    </relation>
+    <relation relationtype="cpfrelation" href="EAC_228204328" arcrole="Kokoelmanmuodostaja">
+      <relationentry localtype="Ensisijainen nimi" lang="fin">Sundvall, Gustaf Edvard</relationentry>
+    </relation>
+  </relations>
+  <controlaccess>
+    <genreform encodinganalog="ahaa:AI08">
+      <part lang="fin">Teksti</part>
+      <part lang="swe">Text</part>
+      <part lang="eng">Text</part>
+    </genreform>
+    <geogname relator="Alueellinen kattavuus" lang="eng" source="YSO" identifier="http://www.yso.fi/onto/yso/p105341">
+      <part>Luvia</part>
+    </geogname>
+    <geogname relator="Alueellinen kattavuus" lang="fin" source="YSO" identifier="http://www.yso.fi/onto/yso/p105341">
+      <part>Luvia</part>
+    </geogname>
+    <geogname relator="Alueellinen kattavuus" lang="swe" source="YSO" identifier="http://www.yso.fi/onto/yso/p105341">
+      <part>Luvia</part>
+    </geogname>
+    <subject relator="aihe" source="KOKO" identifier="http://www.yso.fi/onto/koko/p9995" lang="eng">
+      <part>folk tales</part>
+    </subject>
+    <subject relator="aihe" source="KOKO" identifier="http://www.yso.fi/onto/koko/p9995" lang="fin">
+      <part>kansansadut</part>
+    </subject>
+    <subject relator="aihe" source="KOKO" identifier="http://www.yso.fi/onto/koko/p9995" lang="swe">
+      <part>folksagor</part>
+    </subject>
+    <subject relator="aihe" source="KOKO" identifier="http://www.yso.fi/onto/koko/p16542" lang="eng">
+      <part>fairy tales</part>
+    </subject>
+    <subject relator="aihe" source="KOKO" identifier="http://www.yso.fi/onto/koko/p16542" lang="fin">
+      <part>sadut</part>
+    </subject>
+    <subject relator="aihe" source="KOKO" identifier="http://www.yso.fi/onto/koko/p16542" lang="swe">
+      <part>sagor</part>
+    </subject>
+    <subject relator="asiasana" source="KOKO" identifier="http://www.yso.fi/onto/koko/p74073" lang="eng">
+      <part>folklore collectors</part>
+    </subject>
+    <subject relator="asiasana" source="KOKO" identifier="http://www.yso.fi/onto/koko/p74073" lang="fin">
+      <part>perinteenker&#xE4;&#xE4;j&#xE4;t</part>
+    </subject>
+    <subject relator="asiasana" source="KOKO" identifier="http://www.yso.fi/onto/koko/p74073" lang="swe">
+      <part>traditionsinsamlare</part>
+    </subject>
+    <name localtype="http://www.rdaregistry.info/Elements/u/#P60401" relator="Luovuttaja" identifier="EAC_228204328">
+      <part localtype="Ensisijainen nimi" lang="fin">Sundvall, Gustaf Edvard</part>
+      <part localtype="Varianttinimi" lang="fin">Sundwall, Gustaf Edvard</part>
+    </name>
+    <name localtype="http://www.rdaregistry.info/Elements/u/#P60434" relator="Kirjoittaja" identifier="EAC_228204328">
+      <part localtype="Ensisijainen nimi" lang="fin">Sundvall, Gustaf Edvard</part>
+      <part localtype="Varianttinimi" lang="fin">Sundwall, Gustaf Edvard</part>
+    </name>
+    <name localtype="http://www.rdaregistry.info/Elements/w/#P10055" relator="Ker&#xE4;&#xE4;j&#xE4;" identifier="EAC_228204328">
+      <part localtype="Ensisijainen nimi" lang="fin">Sundvall, Gustaf Edvard</part>
+      <part localtype="Varianttinimi" lang="fin">Sundwall, Gustaf Edvard</part>
+    </name>
+    <name localtype="http://www.rdaregistry.info/Elements/u/#P60401" relator="Luovuttaja" identifier="EAC_228598319">
+      <part localtype="Ensisijainen nimi" lang="fin">Ingman, Anders Wilhelm</part>
+      <part localtype="Varianttinimi" lang="fin">Ingman, A.W.</part>
+    </name>
+    <name localtype="http://www.rdaregistry.info/Elements/u/#P60066" relator="Kokoelmanmuodostaja" identifier="EAC_228204328">
+      <part localtype="Ensisijainen nimi" lang="fin">Sundvall, Gustaf Edvard</part>
+      <part localtype="Varianttinimi" lang="fin">Sundwall, Gustaf Edvard</part>
+    </name>
+  </controlaccess>
+  <scopecontent>
+    <head>Tietosis&#xE4;lt&#xF6;</head>
+    <p lang="fin">G. E. Sundvallin tallentama murresatu Luvialta.</p>
+  </scopecontent>
+  <altformavail encodinganalog="isadg:3.5.2">
+    <altformavail id="242790397">
+      <list>
+        <defitem>
+          <label>Tietopalvelun tarjoamispaikka</label>
+          <item>SKS:n arkisto, Hallituskatu 1, HKI</item>
+        </defitem>
+        <defitem>
+          <label>Tekninen tyyppi</label>
+          <item>Digitaalinen</item>
+        </defitem>
+        <defitem>
+          <label>Alkuper&#xE4;isyys</label>
+          <item>Kopio</item>
+        </defitem>
+        <defitem>
+          <label>Digitaalisen aineiston tiedostomuoto</label>
+          <item>TIFF - Tagged Image File Format</item>
+        </defitem>
+      </list>
+    </altformavail>
+  </altformavail>
+  <add-data identifier="237990354_238612737">
+    <archive id="237990354" title="Gustaf Edvard Sundvallin kokoelma" sequence="0000003"/>
+    <parent id="237990354_238008149" title="Tekstit/Gustaf Edvard Sundvallin kokoelma" level="series"/>
+  </add-data>
+</c02>

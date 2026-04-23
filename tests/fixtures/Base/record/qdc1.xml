@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 <qualifieddc schemaLocation="http://purl.org/dc/terms/ http://dublincore.org/schemas/xmls/qdc/2006/01/06/dcterms.xsd http://purl.org/dc/elements/1.1/ http://dublincore.org/schemas/xmls/qdc/2006/01/06/dc.xsd">
-  <title lang="fi">Urine : The potential, value chain and its sustainable management</title>
+  <title lang="en">Urine : The potential, value chain and its sustainable management</title>
+  <title lang="en" type="alternative">Is that even a real title</title>
+  <title lang="fi" type="alternative">Ei</title>
+  <title lang="fi">Joo</title>
   <creator>Viskari, Eeva-Liisa</creator>
   <creator>Lehtoranta, Suvi</creator>
   <creator>Malila, Riikka</creator>

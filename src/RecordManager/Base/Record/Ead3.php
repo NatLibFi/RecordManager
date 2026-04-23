@@ -230,14 +230,38 @@ class Ead3 extends Ead
      */
     public function getTitle($forFiling = false): string
     {
-        if (isset($this->resultCache[__METHOD__])) {
-            return $this->resultCache[__METHOD__];
+        return $this->getTitleByLanguage($forFiling);
+    }
+
+    /**
+     * Get title by language
+     *
+     * @param bool    $forFiling Whether the title is to be used in filing
+     *                           (e.g. sorting, non-filing characters
+     *                           should be removed)
+     * @param ?string $language  Return title with specific language code (for downstream usage).
+     *                           Otherwise returns first title.
+     *
+     * @return string
+     */
+    protected function getTitleByLanguage($forFiling = false, ?string $language = null): string
+    {
+        $key = __METHOD__ . ($forFiling ? '1' : '0') . ($language ?? '');
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
         }
-
+        $title = $titleLang = '';
+        foreach ($this->doc->did->unittitle ?? [] as $unittitle) {
+            if ($this->metadataUtils->normalizeLanguageCode($unittitle->attributes()->lang ?? '') === $language) {
+                $titleLang = (string)$unittitle;
+                break;
+            }
+        }
+        if ($language && !$titleLang) {
+            return '';
+        }
+        $shortTitle = $language ? $titleLang : $this->getShortTitle();
         $titleSub = $this->getTitleSub();
-        $shortTitle = $this->getShortTitle();
-
-        $title = '';
         // Ini handling returns true as '1':
         $prependTitle = $this->getDriverParam('prependTitleWithSubtitle', '1');
         if (
@@ -257,7 +281,7 @@ class Ead3 extends Ead
             $title = $this->metadataUtils->createSortTitle($title);
         }
 
-        return $this->resultCache[__METHOD__] = $title;
+        return $this->resultCache[$key] = $title;
     }
 
     /**
@@ -270,6 +294,8 @@ class Ead3 extends Ead
      */
     protected function postProcessRecordForIndexing(?Database $db, &$data): void
     {
+        // Additional titles should be added before adding hierarchy fields
+        $this->addAdditionalTitles($data);
         $this->addHierarchyFields($data);
     }
 
@@ -617,13 +643,35 @@ class Ead3 extends Ead
                 = (string)($this->doc->did->unittitle ?? '');
         }
         $sequenceUnitId = $sequenceUnitId ?: $firstId;
-        if (
-            $sequenceUnitId
-            && $this->getDriverParam('addIdToHierarchyTitle', true)
-        ) {
-            $data['title_in_hierarchy']
-                = trim("$sequenceUnitId " . $data['title']);
+        if ($sequenceUnitId) {
+            $this->addHierarchyTitles($data, $sequenceUnitId);
         }
+    }
+
+    /**
+     * Add hierarchy titles.
+     *
+     * @param array  $data           Reference to the target array
+     * @param string $sequenceUnitId Id to be added
+     *
+     * @return void
+     */
+    protected function addHierarchyTitles(array &$data, string $sequenceUnitId): void
+    {
+        if ($this->getDriverParam('addIdToHierarchyTitle', true)) {
+            $data['title_in_hierarchy'] = trim("$sequenceUnitId " . $data['title']);
+        }
+    }
+
+    /**
+     * Add additional titles (for downstream usage).
+     *
+     * @param array $data Reference to the target array
+     *
+     * @return void
+     */
+    protected function addAdditionalTitles(array &$data): void
+    {
     }
 
     /**

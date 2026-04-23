@@ -63,11 +63,7 @@ class Lrmi extends Qdc
      */
     public function getTitle($forFiling = false)
     {
-        $title = (string)$this->doc->title;
-        if ($forFiling) {
-            $title = $this->metadataUtils->createSortTitle($title);
-        }
-        return $title;
+        return $this->getTitleByLanguage($forFiling);
     }
 
     /**
@@ -99,6 +95,37 @@ class Lrmi extends Qdc
     public function getRawTopicIds(): array
     {
         return $this->getTopicData(true);
+    }
+
+    /**
+     * Return record title by language
+     *
+     * @param bool    $forFiling Whether the title is to be used in filing
+     *                           (e.g. sorting, non-filing characters should be removed)
+     * @param ?string $language  Return title with specific language code (for downstream usage).
+     *                           Otherwise returns first title.
+     *
+     * @return string
+     */
+    protected function getTitleByLanguage($forFiling = false, ?string $language = null): string
+    {
+        $key = __METHOD__ . ($forFiling ? '1' : '0') . ($language ?? '');
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
+        }
+        $titleFirst = $titleLang = '';
+        foreach ($this->doc->title as $t) {
+            $titleFirst = $titleFirst ?: trim((string)$t);
+            if ($language && $this->metadataUtils->normalizeLanguageCode($t->attributes()->lang ?? '') === $language) {
+                $titleLang = trim((string)$t);
+                break;
+            }
+        }
+        $title = $language ? $titleLang : $titleFirst;
+        if ($forFiling) {
+            $title = $this->metadataUtils->createSortTitle($title);
+        }
+        return $this->resultCache[$key] = $title;
     }
 
     /**

@@ -164,27 +164,7 @@ class Qdc extends AbstractRecord
      */
     public function getTitle($forFiling = false)
     {
-        $key = __METHOD__ . ($forFiling ? '1' : '0');
-        if (isset($this->resultCache[$key])) {
-            return $this->resultCache[$key];
-        }
-
-        $preferred = null;
-        $default = '';
-        foreach ($this->doc->title as $title) {
-            if ('' === $default) {
-                $default = (string)$title;
-            }
-            if ((string)($title->attributes()->{'type'}) !== 'alternative') {
-                $preferred = (string)$title;
-                break;
-            }
-        }
-        $result = $forFiling
-            ? $this->metadataUtils->createSortTitle($preferred ?? $default)
-            : $this->metadataUtils->stripTrailingPunctuation($preferred ?? $default);
-
-        return $this->resultCache[$key] = $result;
+        return $this->getTitleByLanguage($forFiling);
     }
 
     /**
@@ -292,6 +272,47 @@ class Qdc extends AbstractRecord
     public function getSeries()
     {
         return [];
+    }
+
+    /**
+     * Return record title by language
+     *
+     * @param bool    $forFiling Whether the title is to be used in filing
+     *                           (e.g. sorting, non-filing characters should be removed)
+     * @param ?string $language  Return title with specific language code (for downstream usage).
+     *                           Otherwise returns first preferred title.
+     *
+     * @return string
+     */
+    protected function getTitleByLanguage($forFiling = false, ?string $language = null): string
+    {
+        $key = __METHOD__ . ($forFiling ? '1' : '0') . ($language ?? '');
+        if (isset($this->resultCache[$key])) {
+            return $this->resultCache[$key];
+        }
+
+        $preferred = null;
+        $default = '';
+        foreach ($this->doc->title as $title) {
+            if (
+                $language
+                && $this->metadataUtils->normalizeLanguageCode($title->attributes()->lang ?? '') !== $language
+            ) {
+                continue;
+            }
+            if ('' === $default) {
+                $default = trim((string)$title);
+            }
+            if ((string)($title->attributes()->{'type'}) !== 'alternative') {
+                $preferred = trim((string)$title);
+                break;
+            }
+        }
+        $result = $forFiling
+            ? $this->metadataUtils->createSortTitle($preferred ?? $default)
+            : $this->metadataUtils->stripTrailingPunctuation($preferred ?? $default);
+
+        return $this->resultCache[$key] = $result;
     }
 
     /**

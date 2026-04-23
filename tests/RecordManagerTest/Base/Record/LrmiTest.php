@@ -66,9 +66,9 @@ class LrmiTest extends RecordTestBase
             ],
             'allfields' => [
                 'oai:aoe.fi:11',
+                'Designing Learning Processes',
                 'Opetuksen ja oppimisen suunnittelu, Learning Design',
                 'Planering av undevisning och lärande',
-                'Designing Learning Processes',
                 '2019-12-17T08:51:19Z',
                 'Learning Design – opetuksen ja oppimisen suunnittelu tarkoittaa'
                 . ' sekä opettajan opetuksen suunnittelua ja valmistelua...',
@@ -153,15 +153,15 @@ class LrmiTest extends RecordTestBase
             ],
             'author_corporate' => [],
             'author_sort' => 'Koli, Hanne',
-            'title_full' => 'Opetuksen ja oppimisen suunnittelu, Learning Design',
-            'title' => 'Opetuksen ja oppimisen suunnittelu, Learning Design',
-            'title_short' => 'Opetuksen ja oppimisen suunnittelu, Learning Design',
+            'title_full' => 'Designing Learning Processes',
+            'title' => 'Designing Learning Processes',
+            'title_short' => 'Designing Learning Processes',
             'title_sub' => '',
             'title_alt' => [
+                'Opetuksen ja oppimisen suunnittelu, Learning Design',
                 'Planering av undevisning och lärande',
-                'Designing Learning Processes',
             ],
-            'title_sort' => 'opetuksen ja oppimisen suunnittelu learning design',
+            'title_sort' => 'designing learning processes',
             'publisher' => [],
             'publishDate' => [
                 '2019',
@@ -226,12 +226,12 @@ class LrmiTest extends RecordTestBase
                     [
                         'type' => 'title',
                         'value'
-                            => 'opetuksen ja oppimisen suunnittelu learning design',
+                            => 'designing learning processes',
                     ],
                     [
                         'type' => 'title',
                         'value'
-                            => 'Opetuksen ja oppimisen suunnittelu, Learning Design',
+                            => 'Designing Learning Processes',
                     ],
                 ],
                 'titlesAltScript' => [
@@ -240,5 +240,38 @@ class LrmiTest extends RecordTestBase
         ];
 
         $this->compareArray($expected, $keys, 'getWorkIdentificationData');
+    }
+
+    /**
+     * Test getTitleByLanguage
+     *
+     * @return void
+     */
+    public function testGetTitleByLanguage()
+    {
+        $record = $this->createRecord(
+            Lrmi::class,
+            'lrmi1.xml',
+            [],
+            'Base',
+            [$this->createMock(\RecordManager\Base\Http\HttpService::class)]
+        );
+        $reflection = new \ReflectionObject($record);
+        $getTitleByLanguage = $reflection->getMethod('getTitleByLanguage');
+
+        $this->assertEquals(
+            'Designing Learning Processes',
+            $getTitleByLanguage->invokeArgs($record, [])
+        );
+
+        $this->assertEquals(
+            'Opetuksen ja oppimisen suunnittelu, Learning Design',
+            $getTitleByLanguage->invokeArgs($record, [false, 'fi'])
+        );
+
+        $this->assertEquals(
+            '',
+            $getTitleByLanguage->invokeArgs($record, [false, 'se'])
+        );
     }
 }
