@@ -49,7 +49,22 @@ class LidoTest extends RecordTestBase
      */
     public function testLido1()
     {
-        $record = $this->createRecord(Lido::class, 'lido1.xml');
+        $record = $this->createRecord(
+            Lido::class,
+            'lido1.xml',
+            [],
+            'Base',
+            [],
+            [
+                'Metadata Language Code Mappings' => [
+                    'fin' => 'fi',
+                    'swe' => 'sv',
+                    'en-gb' => 'en',
+                    'eng' => 'en',
+                    'sme' => 'se',
+                ],
+            ],
+        );
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
 
@@ -173,7 +188,18 @@ class LidoTest extends RecordTestBase
                         'defaultDisplayLanguage=fi',
                     ],
                 ],
-            ]
+            ],
+            'Base',
+            [],
+            [
+                'Metadata Language Code Mappings' => [
+                    'fin' => 'fi',
+                    'swe' => 'sv',
+                    'en-gb' => 'en',
+                    'eng' => 'en',
+                    'sme' => 'se',
+                ],
+            ],
         );
         $fields = $record->toSolrArray();
         unset($fields['fullrecord']);
@@ -358,7 +384,22 @@ class LidoTest extends RecordTestBase
      */
     public function testGetTitles()
     {
-        $record = $this->createRecord(Lido::class, 'lido1.xml');
+        $record = $this->createRecord(
+            Lido::class,
+            'lido1.xml',
+            [],
+            'Base',
+            [],
+            [
+                'Metadata Language Code Mappings' => [
+                    'fin' => 'fi',
+                    'swe' => 'sv',
+                    'en-gb' => 'en',
+                    'eng' => 'en',
+                    'sme' => 'se',
+                ],
+            ],
+        );
         $reflection = new \ReflectionObject($record);
         $getTitles = $reflection->getMethod('getTitles');
 
@@ -385,7 +426,18 @@ class LidoTest extends RecordTestBase
                         'mergeTitleValues=false',
                     ],
                 ],
-            ]
+            ],
+            'Base',
+            [],
+            [
+                'Metadata Language Code Mappings' => [
+                    'fin' => 'fi',
+                    'swe' => 'sv',
+                    'en-gb' => 'en',
+                    'eng' => 'en',
+                    'sme' => 'se',
+                ],
+            ],
         );
         $this->assertEquals(
             [

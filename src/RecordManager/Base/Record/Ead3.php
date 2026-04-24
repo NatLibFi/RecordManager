@@ -261,7 +261,7 @@ class Ead3 extends Ead
             return '';
         }
         $shortTitle = $language ? $titleLang : $this->getShortTitle();
-        $titleSub = $this->getTitleSub();
+        $titleSub = $this->getTitleSubByLanguage($language);
         // Ini handling returns true as '1':
         $prependTitle = $this->getDriverParam('prependTitleWithSubtitle', '1');
         if (
@@ -282,6 +282,19 @@ class Ead3 extends Ead
         }
 
         return $this->resultCache[$key] = $title;
+    }
+
+    /**
+     * Return subtitle by language
+     *
+     * @param ?string $language Return subtitle with specific language code (for downstream usage).
+     *
+     * @return string
+     */
+    protected function getTitleSubByLanguage($language = null): string
+    {
+        // Subtitle is currently not language specific
+        return $this->getTitleSub();
     }
 
     /**

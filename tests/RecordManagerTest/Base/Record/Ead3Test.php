@@ -237,7 +237,22 @@ class Ead3Test extends RecordTestBase
      */
     public function testGetTitleByLanguage()
     {
-        $record = $this->createRecord(Ead3::class, 'sks.xml');
+        $record = $this->createRecord(
+            Ead3::class,
+            'sks.xml',
+            [],
+            'Base',
+            [],
+            [
+                'Metadata Language Code Mappings' => [
+                    'fin' => 'fi',
+                    'swe' => 'sv',
+                    'en-gb' => 'en',
+                    'eng' => 'en',
+                    'sme' => 'se',
+                ],
+            ],
+        );
         $reflection = new \ReflectionObject($record);
         $getTitleByLanguage = $reflection->getMethod('getTitleByLanguage');
 

@@ -135,12 +135,7 @@ class MetadataUtils
      *
      * @var array
      */
-    protected $languageCodeMappings = [
-        'fi' => ['fi','fin'],
-        'sv' => ['sv','swe'],
-        'en' => ['en', 'en-gb', 'eng'],
-        'se' => ['se', 'sme'],
-    ];
+    protected $languageCodeMappings = [];
 
     /**
      * Normalization character folding table
@@ -258,6 +253,8 @@ class MetadataUtils
                 }
             }
         }
+
+        $this->languageCodeMappings = $config['Metadata Language Code Mappings'] ?? [];
     }
 
     /**
@@ -472,8 +469,6 @@ class MetadataUtils
      * @param string $a2 LastName FirstName
      *
      * @return bool
-     *
-     * @psalm-suppress InvalidArrayOffset
      */
     public function authorMatch($a1, $a2)
     {
@@ -1092,12 +1087,7 @@ class MetadataUtils
     public function normalizeLanguageCode(string $language): string
     {
         $lang = trim(strtolower($language));
-        foreach ($this->languageCodeMappings as $key => $values) {
-            if (in_array($lang, $values)) {
-                return $key;
-            }
-        }
-        return $lang;
+        return $this->languageCodeMappings[$lang] ?? $lang;
     }
 
     /**

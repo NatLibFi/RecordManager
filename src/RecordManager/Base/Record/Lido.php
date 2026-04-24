@@ -551,6 +551,7 @@ class Lido extends AbstractRecord
                 $alternateTitles[$lang][] = implode('; ', $parts);
             }
         }
+
         // Merge repeated titleSets if configured:
         if ($mergeSets) {
             foreach (array_keys($preferredTitles) as $lang) {
@@ -564,6 +565,7 @@ class Lido extends AbstractRecord
                 ];
             }
         }
+
         if (isset($preferredTitles[$defaultLanguage])) {
             $preferred = array_shift($preferredTitles[$defaultLanguage]);
         } elseif (isset($alternateTitles[$defaultLanguage])) {
