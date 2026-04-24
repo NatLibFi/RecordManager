@@ -1559,6 +1559,7 @@ class Lido extends AbstractRecord
      */
     protected function addHierarchyTitles(array &$data): void
     {
+        // Note: title_in_hierarchy is only needed if it differs from title.
         if ($this->getDriverParam('addIdToHierarchyTitle', true)) {
             $data['title_in_hierarchy'] = trim($this->getIdentifier() . ' ' . $data['title']);
         }
