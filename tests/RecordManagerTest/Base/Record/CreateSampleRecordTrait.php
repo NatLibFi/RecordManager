@@ -97,11 +97,14 @@ trait CreateSampleRecordTrait
         array $config = []
     ) {
         $logger = $this->createMock(Logger::class);
-        $metadataConfig = [
-            'Site' => [
-                'articles' => 'articles.lst',
-            ],
-        ];
+        $metadataConfig = array_merge(
+            $config,
+            [
+                'Site' => [
+                    'articles' => 'articles.lst',
+                ],
+            ]
+        );
         $metadataUtils = new \RecordManager\Base\Utils\MetadataUtils(
             $this->getFixtureDir() . 'config/recorddrivertest',
             $metadataConfig,
