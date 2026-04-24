@@ -296,6 +296,15 @@ dewey-ones = dewey_ones.map
 ;language = language_codes.map
 ;media_type_str_mv = media_type_default.map
 
+; The following section contains mappings from metadata language codes
+; to normalized ISO 639-1 language codes
+[Metadata Language Code Mappings]
+fin = fi
+swe = sv
+en-gb = en
+eng = en
+sme = se
+
 [NominatimGeocoder]
 ; Please see http://wiki.openstreetmap.org/wiki/Nominatim_usage_policy before using
 ; Nominatim at http://nominatim.openstreetmap.org/search.php. Preferably use a local
