@@ -1089,7 +1089,7 @@ class MetadataUtils
      *
      * @return string
      */
-    public function normalizeLanguageCode($language)
+    public function normalizeLanguageCode(string $language): string
     {
         $lang = trim(strtolower($language));
         foreach ($this->languageCodeMappings as $key => $values) {
