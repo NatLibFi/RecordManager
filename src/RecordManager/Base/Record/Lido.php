@@ -148,7 +148,7 @@ class Lido extends AbstractRecord
     ];
 
     /**
-     * Hiearchy fields included in allfields.
+     * Hierarchy fields included in allfields.
      *
      * @var array
      */
