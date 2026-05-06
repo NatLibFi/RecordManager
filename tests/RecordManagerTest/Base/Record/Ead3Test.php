@@ -52,7 +52,7 @@ class Ead3Test extends RecordTestBase
         return [
             'addIdToHierarchyTitle=true' => [
                 'true',
-                '1 1 Sundvall Gustaf Edvard S 1:a) 1',
+                ['1 1 Sundvall Gustaf Edvard S 1:a) 1'],
             ],
             'addIdToHierarchyTitle=false' => [
                 'false',
@@ -70,7 +70,7 @@ class Ead3Test extends RecordTestBase
      * @return void
      */
     #[\PHPUnit\Framework\Attributes\DataProvider('sksProvider')]
-    public function testSKS(string $addIdToHierarchyTitle, ?string $expectedTitleInHierarchy): void
+    public function testSKS(string $addIdToHierarchyTitle, ?array $expectedTitleInHierarchy): void
     {
         $fields = $this->createRecord(
             Ead3::class,

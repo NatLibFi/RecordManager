@@ -673,7 +673,7 @@ class Ead3 extends Ead
     {
         // Note: title_in_hierarchy is only needed if it differs from title.
         if ($this->getDriverParam('addIdToHierarchyTitle', true)) {
-            $data['title_in_hierarchy'] = trim("$sequenceUnitId " . $data['title']);
+            $data['title_in_hierarchy'] = [trim("$sequenceUnitId " . $data['title'])];
         }
     }
 
