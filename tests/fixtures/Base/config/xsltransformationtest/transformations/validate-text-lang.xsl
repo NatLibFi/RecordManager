@@ -1,0 +1,52 @@
+<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:output method="xml" indent="no"/>
+
+  <xsl:template name="validatetextlang">
+    <xsl:param name="lang"/>
+
+    <xsl:variable name="chars" select="'abcdefghijklmnopqrstuvwxyz'"/>
+    <xsl:choose>
+
+      <xsl:when test="string-length($lang) = 2">
+        <xsl:choose>
+          <xsl:when test="contains($chars, substring($lang,1,1)) and contains($chars, substring($lang,2,1))">
+            <xsl:value-of select="$lang"/>
+          </xsl:when>
+          <xsl:otherwise>
+            <xsl:value-of select="'fin'"/>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:when>
+
+      <xsl:when test="string-length($lang) = 3">
+        <xsl:choose>
+          <xsl:when test="contains($chars, substring($lang,1,1)) and contains($chars, substring($lang,2,1)) and contains($chars, substring($lang,3,1))">
+       	    <xsl:value-of select="$lang"/>
+          </xsl:when>
+          <xsl:otherwise>
+       	    <xsl:value-of select="'fin'"/>
+          </xsl:otherwise>
+        </xsl:choose>
+      </xsl:when>
+
+      <xsl:when test="$lang='English'">
+        <xsl:value-of select="'eng'"/>
+      </xsl:when>
+
+      <xsl:when test="$lang='German'">
+        <xsl:value-of select="'deu'"/>
+      </xsl:when>
+
+      <xsl:when test="$lang='Swedish'">
+        <xsl:value-of select="'swe'"/>
+      </xsl:when>
+ 
+      <xsl:otherwise>
+        <xsl:value-of select="$lang"/>
+      </xsl:otherwise>
+
+    </xsl:choose>
+
+  </xsl:template>
+
+</xsl:stylesheet>
