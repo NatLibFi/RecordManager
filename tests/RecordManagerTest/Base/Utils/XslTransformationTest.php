@@ -52,7 +52,7 @@ class XslTransformationTest extends \PHPUnit\Framework\TestCase
      */
     public function testLido2EdmTransformationWithImage()
     {
-        $xslTransformation = $this->getXslTransformation("lido2edm_image.properties");
+        $xslTransformation = $this->getXslTransformation('lido2edm_image.properties');
         $lidoRecord = $this->getFixture('utils/XslTransformation/lido_image.xml');
         $expectedEdm = $this->getFixture('utils/XslTransformation/lido_image_edm.xml');
         $transformedEdm = $xslTransformation->transform($lidoRecord);
@@ -66,7 +66,7 @@ class XslTransformationTest extends \PHPUnit\Framework\TestCase
      */
     public function testLido2EdmTransformationWithVideo()
     {
-        $xslTransformation = $this->getXslTransformation("lido2edm_video.properties");
+        $xslTransformation = $this->getXslTransformation('lido2edm_video.properties');
         $lidoRecord = $this->getFixture('utils/XslTransformation/lido_video.xml');
         $expectedEdm = $this->getFixture('utils/XslTransformation/lido_video_edm.xml');
         $transformedEdm = $xslTransformation->transform($lidoRecord);
@@ -80,7 +80,7 @@ class XslTransformationTest extends \PHPUnit\Framework\TestCase
      */
     public function testLido2EdmTransformationWithText()
     {
-        $xslTransformation = $this->getXslTransformation("lido2edm_text.properties");
+        $xslTransformation = $this->getXslTransformation('lido2edm_text.properties');
         $lidoRecord = $this->getFixture('utils/XslTransformation/lido_text.xml');
         $expectedEdm = $this->getFixture('utils/XslTransformation/lido_text_edm.xml');
         $transformedEdm = $xslTransformation->transform($lidoRecord);
@@ -94,7 +94,7 @@ class XslTransformationTest extends \PHPUnit\Framework\TestCase
      */
     public function testLido2EdmTransformationWith3D()
     {
-        $xslTransformation = $this->getXslTransformation("lido2edm_3D.properties");
+        $xslTransformation = $this->getXslTransformation('lido2edm_3D.properties');
         $lidoRecord = $this->getFixture('utils/XslTransformation/lido_3D.xml');
         $expectedEdm = $this->getFixture('utils/XslTransformation/lido_3D_edm.xml');
         $transformedEdm = $xslTransformation->transform($lidoRecord);
@@ -105,7 +105,7 @@ class XslTransformationTest extends \PHPUnit\Framework\TestCase
      * Create XmlTransformation
      *
      * @param string $config Transformation config file name
-     * 
+     *
      * @return XslTransformation
      */
     protected function getXslTransformation(string $config)
