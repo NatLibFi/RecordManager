@@ -23,7 +23,7 @@
   <xsl:output method="xml" encoding="UTF-8" indent="yes" /> 
 
   <!-- To use this template, properties file must include following info: -->
-    <!-- Parameters: $museum, $provider, $data_provider, $default_type, sourceURL  -->
+    <!-- Parameters: $museum, $provider, $data_provider, $default_type, $sourceURL  -->
     <!-- PHP functions: str_replace, rawurlencode, mb_strtolower  -->
   
   <!-- Unique identifier -->
@@ -744,7 +744,6 @@
                   <xsl:value-of select="normalize-space(../lido:rightsResource/lido:creditLine)"/>
                 </dc:creator>
               </xsl:if>
-              <!--XXXXXXX-->
               <xsl:if test="normalize-space(../lido:rightsResource/lido:rightsHolder/lido:legalBodyName/lido:appellationValue) != ''">
                 <dc:rights>
                   <xsl:value-of select="normalize-space(../lido:rightsResource/lido:rightsHolder/lido:legalBodyName/lido:appellationValue)"/>
