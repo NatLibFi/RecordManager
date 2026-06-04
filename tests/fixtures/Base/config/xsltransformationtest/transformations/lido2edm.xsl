@@ -250,7 +250,7 @@
           <xsl:attribute name="xml:lang">
             <xsl:value-of select="'fi'"/>
           </xsl:attribute>
-            <xsl:value-of select="'Ei otsikkoa'"/>
+          <xsl:value-of select="'Ei otsikkoa'"/>
         </dc:title>
       </xsl:if>
 
