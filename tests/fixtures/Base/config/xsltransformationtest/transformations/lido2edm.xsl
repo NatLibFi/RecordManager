@@ -386,7 +386,7 @@
             </dcterms:medium>
           </xsl:for-each>
         </xsl:if>
-       </xsl:for-each>
+      </xsl:for-each>
 
       <!-- dcterms:spatial, eventPlace -->
       <xsl:for-each select="//lido:eventWrap/lido:eventSet/lido:event/lido:eventPlace/lido:displayPlace[normalize-space(.)!='']">
