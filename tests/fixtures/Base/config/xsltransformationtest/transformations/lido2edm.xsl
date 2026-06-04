@@ -143,7 +143,7 @@
             </xsl:call-template>
           </xsl:attribute>
           <xsl:value-of select="normalize-space(.)"/>
-      </dc:description>
+        </dc:description>
       </xsl:for-each>
 
       <!-- dc:description, eventMethod -->
