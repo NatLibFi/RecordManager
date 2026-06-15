@@ -47,6 +47,7 @@
         "symfony/console": "6.4.25",
         "symfony/lock": "6.4.37",
         "vufind-org/vufind-marc": "1.2.0",
+        "vufind-org/vufind-xml": "1.7.0",
         "wikimedia/composer-merge-plugin": "2.1.0"
     },
     "require-dev": {

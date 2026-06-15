@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c4c211f4022cf8bfede0afb8d626b7d3",
+    "content-hash": "ccf123110a96bccfbf7f4bf872fb4425",
     "packages": [
         {
             "name": "brick/varexporter",
@@ -3471,6 +3471,62 @@
                 "source": "https://github.com/vufind-org/vufind-marc/tree/v1.2.0"
             },
             "time": "2025-04-21T11:10:52+00:00"
+        },
+        {
+            "name": "vufind-org/vufind-xml",
+            "version": "1.7.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/vufind-org/vufind-xml.git",
+                "reference": "c59fa9e8cfbd18c1869388a8b288c777e5297364"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/vufind-org/vufind-xml/zipball/c59fa9e8cfbd18c1869388a8b288c777e5297364",
+                "reference": "c59fa9e8cfbd18c1869388a8b288c777e5297364",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.2"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "3.89.2",
+                "guzzlehttp/guzzle": "7.10.0",
+                "phing/phing": "3.1.2",
+                "phpmd/phpmd": "2.15.0",
+                "phpstan/phpstan": "2.1.32",
+                "phpunit/php-code-coverage": "^11",
+                "phpunit/phpunit": "11.5.50",
+                "rector/rector": "2.2.8",
+                "squizlabs/php_codesniffer": "4.0.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "VuFindXml\\": "src/VuFindXml"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0-only"
+            ],
+            "authors": [
+                {
+                    "name": "Ere Maijala",
+                    "email": "ere.maijala@helsinki.fi"
+                }
+            ],
+            "description": "Yet another XML parser, reader and writer for diverse records with and without namespaces.",
+            "keywords": [
+                "dom",
+                "parser",
+                "xml"
+            ],
+            "support": {
+                "issues": "https://github.com/vufind-org/vufind-xml/issues",
+                "source": "https://github.com/vufind-org/vufind-xml/tree/v1.7.0"
+            },
+            "time": "2026-05-08T13:26:26+00:00"
         },
         {
             "name": "vufind-org/vufindcode",

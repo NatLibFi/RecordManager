@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2011-2025.
+ * Copyright (C) The National Library of Finland 2011-2026.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -29,7 +29,6 @@
 
 namespace RecordManager\Base\Record;
 
-use DOMDocument;
 use RecordManager\Base\Database\DatabaseInterface as Database;
 
 use function in_array;
@@ -48,9 +47,16 @@ use function is_string;
  */
 class Lido extends AbstractRecord
 {
-    use XmlRecordTrait {
+    use XmlDocRecordTrait {
         setData as xmlRecordSetData;
     }
+
+    /**
+     * LIDO XML namespace.
+     *
+     * @var string
+     */
+    protected string $lidoNs = 'http://www.lido-schema.org';
 
     /**
      * Main event names reflecting the terminology in the particular LIDO records.
@@ -170,18 +176,31 @@ class Lido extends AbstractRecord
     public function setData($source, $oaiID, $data, $extraData)
     {
         $this->xmlRecordSetData($source, $oaiID, $data, $extraData);
+        $this->xmlDoc->setDefaultNamespace($this->lidoNs, 'lido');
 
         // Make sure we have a lidoWrap element as the root element as <lido> is also allowed in OAI-PMH:
-        if ($this->doc->getName() === 'lido') {
-            $schema = (string)($this->doc['schemaLocation']
-                ?? 'http://www.lido-schema.org http://www.lido-schema.org/schema/v1.1/lido-v1.1.xsd');
-            unset($this->doc['schemaLocation']);
-            $doc = new DOMDocument(encoding: 'UTF-8');
-            $lidoWrap = $doc->createElement('lidoWrap');
-            $lidoWrap->setAttribute('schemaLocation', $schema);
-            $lidoWrap->append($doc->importNode(dom_import_simplexml($this->doc), true));
-            $doc->appendChild($lidoWrap);
-            $this->doc = simplexml_import_dom($doc);
+        $rootName = $this->xmlDoc->name($this->xmlDoc->root(), true);
+        if (in_array($rootName, ['lido', '{}lido'])) {
+            $nodeArray = $this->xmlDoc->export();
+            $newRoot = $nodeArray;
+            $newRoot['data']['name'] = "{{$this->lidoNs}}lidoWrap";
+            $newRoot['data']['sub'] = [
+                $nodeArray['data'],
+            ];
+            // Detect any existing schemaLocation or use default:
+            $schemaLocation = $newRoot['data']['attrs']["{{$this->xsiNs}}schemaLocation"]
+                ?? $newRoot['data']['attrs']['schemaLocation']
+                ?? 'http://www.lido-schema.org http://www.lido-schema.org/schema/v1.1/lido-v1.1.xsd';
+            // Remove schemaLocation from lido element:
+            unset($newRoot['data']['sub'][0]['attrs']['schemaLocation']);
+            unset($newRoot['data']['sub'][0]['attrs']["{{$this->xsiNs}}schemaLocation"]);
+            // Verify that the root element has correct schemaLocation:
+            unset($newRoot['data']['attrs']['schemaLocation']);
+            $newRoot['data']['attrs']["{{$this->xsiNs}}schemaLocation"] = $schemaLocation;
+            if (!in_array($this->xsiNs, $newRoot['namespaces'])) {
+                $newRoot['namespaces]']['xsi'] = $this->xmlNs;
+            }
+            $this->xmlDoc->import($newRoot);
         }
     }
 
@@ -192,7 +211,7 @@ class Lido extends AbstractRecord
      */
     public function getID()
     {
-        return (string)$this->doc->lido->lidoRecID;
+        return $this->xmlDoc->firstValue(path: 'lido/lidoRecID') ?? '';
     }
 
     /**
@@ -225,22 +244,19 @@ class Lido extends AbstractRecord
         $locations = [];
         foreach ([$this->getMainEvents(), $this->getPlaceEvents()] as $event) {
             foreach ($this->getEventNodes($event) as $eventNode) {
-                foreach ($eventNode->eventPlace as $placeNode) {
+                foreach ($this->xmlDoc->all($eventNode, 'eventPlace') as $placeNode) {
                     // If there is already gml in the record,
                     // don't return anything for geocoding
-                    if (!empty($placeNode->gml)) {
+                    if ($this->xmlDoc->first($placeNode, 'gml')) {
                         return [];
                     }
-                    $hasValue = !empty(
-                        $placeNode->place->namePlaceSet->appellationValue
-                    );
-                    if ($hasValue) {
-                        $mainPlace = (string)$placeNode->place->namePlaceSet
-                            ->appellationValue;
-                        $subLocation = $this->getSubLocation(
-                            $placeNode->place
-                        );
-                        if ($mainPlace && !$subLocation) {
+                    $appellationValue
+                        = $this->xmlDoc->firstValue($placeNode, 'place/namePlaceSet/appellationValue') ?? '';
+                    if ('' !== $appellationValue) {
+                        $mainPlace = $appellationValue;
+                        $placeNode = $this->xmlDoc->first($placeNode, 'place');
+                        $subLocation = $placeNode ? $this->getSubLocation($placeNode) : '';
+                        if (!$subLocation) {
                             $locations = [
                                 ...$locations,
                                 ...explode('/', $mainPlace),
@@ -248,13 +264,13 @@ class Lido extends AbstractRecord
                         } else {
                             $locations[] = "$mainPlace $subLocation";
                         }
-                    } elseif (!empty($placeNode->displayPlace)) {
+                    } elseif ($displayPlace = $this->xmlDoc->firstValue($placeNode, 'displayPlace')) {
                         // Split multiple locations separated with a slash
                         $locations = [
                             ...$locations,
                             ...preg_split(
                                 '/[\/;]/',
-                                (string)$placeNode->displayPlace
+                                $displayPlace
                             ) ?: [],
                         ];
                     }
@@ -474,17 +490,12 @@ class Lido extends AbstractRecord
     protected function getTopicIDs($exclude = ['iconclass']): array
     {
         $result = [];
-        foreach ($this->getSubjectNodes($exclude) as $subject) {
-            foreach ($subject->subjectConcept as $concept) {
-                foreach ($concept->conceptID as $conceptID) {
-                    if ($id = trim((string)$conceptID)) {
-                        $type = mb_strtolower(
-                            (string)($conceptID['type'] ?? ''),
-                            'UTF-8'
-                        );
-                        if (in_array($type, $this->subjectConceptIDTypes)) {
-                            $result[] = $id;
-                        }
+        foreach ($this->getSubjectNodes($exclude) as $subjectNode) {
+            foreach ($this->xmlDoc->all($subjectNode, 'subjectConcept/conceptID') as $conceptID) {
+                if ($id = $this->xmlDoc->value($conceptID)) {
+                    $type = mb_strtolower($this->xmlDoc->attr($conceptID, 'type'), 'UTF-8');
+                    if (in_array($type, $this->subjectConceptIDTypes)) {
+                        $result[] = $id;
                     }
                 }
             }
@@ -495,16 +506,16 @@ class Lido extends AbstractRecord
     /**
      * Return record titles
      *
-     * @param ?string $language Only include titles in specific language (for downstream usage)
+     * @param ?string $languageFilter Only include titles in specific language (for downstream usage)
      *
      * @return array Associative array with keys 'preferred' (string) and
      * 'alternate' (array)
      */
-    protected function getTitles(?string $language = null)
+    protected function getTitles(?string $languageFilter = null)
     {
         $key = __METHOD__ . '/'
             . implode(';', $this->descriptionTypesExcludedFromTitle)
-            . ($language ?? '');
+            . ($languageFilter ?? '');
         if (isset($this->resultCache[$key])) {
             return $this->resultCache[$key];
         }
@@ -513,42 +524,43 @@ class Lido extends AbstractRecord
         $formatInTitle = $this->getDriverParam('allowTitleToMatchFormat', false);
         $preferredTitles = [];
         $alternateTitles = [];
-        $defaultLanguage = $language ? $language : $this->getDefaultLanguage();
-        foreach (
-            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
-            ->titleWrap->titleSet ?? [] as $set
-        ) {
-            $preferredParts = [];
-            $alternateParts = [];
-            foreach ($set->appellationValue as $appellationValue) {
-                if (!($title = trim((string)$appellationValue))) {
-                    continue;
-                }
-                $titleLang =
-                    $this->metadataUtils->normalizeLanguageCode(
-                        $this->getInheritedXmlAttribute($appellationValue, 'lang')
+        // If language filter is specified, use it as the default language for further processing below the following
+        // loop:
+        $defaultLanguage = $languageFilter ? $languageFilter : $this->getDefaultLanguage();
+        foreach ($this->xmlDoc->all(path: 'lido/descriptiveMetadata') as $descriptiveMetadata) {
+            $metadataLanguage = $this->getLangAttr($descriptiveMetadata);
+            foreach ($this->xmlDoc->all($descriptiveMetadata, 'objectIdentificationWrap/titleWrap/titleSet') as $set) {
+                $preferredParts = [];
+                $alternateParts = [];
+                foreach ($this->xmlDoc->all($set, 'appellationValue') as $appellationValue) {
+                    if ('' === ($title = $this->xmlDoc->value($appellationValue))) {
+                        continue;
+                    }
+                    $titleLang = $this->metadataUtils->normalizeLanguageCode(
+                        $this->getLangAttr($appellationValue) ?? $metadataLanguage ?? ''
                     );
-                if ($language && $titleLang !== $language) {
-                    continue;
+                    if ($languageFilter && $titleLang !== $languageFilter) {
+                        continue;
+                    }
+                    $titleLang = $titleLang ?: $defaultLanguage;
+                    $preference = mb_strtolower($this->xmlDoc->attr($appellationValue, 'pref') ?? 'preferred', 'UTF-8');
+                    if (in_array($preference, $this->preferredTitleTypes)) {
+                        $preferredParts[$titleLang][] = $title;
+                    } else {
+                        $alternateParts[$titleLang][] = $title;
+                    }
                 }
-                $titleLang = $titleLang ?: $defaultLanguage;
-                $preference = mb_strtolower((string)($appellationValue->attributes()->pref ?? 'preferred'), 'UTF-8');
-                if (in_array($preference, $this->preferredTitleTypes)) {
-                    $preferredParts[$titleLang][] = $title;
-                } else {
-                    $alternateParts[$titleLang][] = $title;
+                foreach ($preferredParts as $lang => $parts) {
+                    // Merge repeated parts in a single titleSet if configured:
+                    if ($mergeValues && isset($alternateParts[$lang])) {
+                        $parts = [...$parts, ...$alternateParts[$lang]];
+                        unset($alternateParts[$lang]);
+                    }
+                    $preferredTitles[$lang][] = implode('; ', $parts);
                 }
-            }
-            foreach ($preferredParts as $lang => $parts) {
-                // Merge repeated parts in a single titleSet if configured:
-                if ($mergeValues && isset($alternateParts[$lang])) {
-                    $parts = [...$parts, ...$alternateParts[$lang]];
-                    unset($alternateParts[$lang]);
+                foreach ($alternateParts as $lang => $parts) {
+                    $alternateTitles[$lang][] = implode('; ', $parts);
                 }
-                $preferredTitles[$lang][] = implode('; ', $parts);
-            }
-            foreach ($alternateParts as $lang => $parts) {
-                $alternateTitles[$lang][] = implode('; ', $parts);
             }
         }
 
@@ -599,19 +611,21 @@ class Lido extends AbstractRecord
         $workType = $this->getObjectWorkType();
         if (!$formatInTitle && strcasecmp($workType, $preferred) == 0) {
             $descriptionWrapDescriptions = [];
-            $nodes = $this->getObjectDescriptionSetNodes(
-                $this->descriptionTypesExcludedFromTitle
-            );
+            $nodes = $this->getObjectDescriptionSetNodes($this->descriptionTypesExcludedFromTitle);
             foreach ($nodes as $set) {
-                if ($value = trim((string)($set->descriptiveNoteValue ?? ''))) {
-                    if (
-                        $language === null
-                        || $language === $this->metadataUtils->normalizeLanguageCode(
-                            $set->descriptiveNoteValue->attributes()->lang ?? ''
-                        )
-                    ) {
-                        $descriptionWrapDescriptions[] = $value;
-                    }
+                if (!($descriptiveNoteValue = $this->xmlDoc->first($set, 'descriptiveNoteValue'))) {
+                    continue;
+                }
+                if ('' === ($value = $this->xmlDoc->value($descriptiveNoteValue))) {
+                    continue;
+                }
+                if (
+                    $languageFilter === null
+                    || $languageFilter === $this->metadataUtils->normalizeLanguageCode(
+                        $this->getLangAttr($descriptiveNoteValue) ?? ''
+                    )
+                ) {
+                    $descriptionWrapDescriptions[] = $value;
                 }
             }
             if ($descriptionWrapDescriptions) {
@@ -620,38 +634,6 @@ class Lido extends AbstractRecord
         }
 
         return $this->resultCache[$key] = compact('preferred', 'alternate');
-    }
-
-    /**
-     * Get an attribute for the node from the node itself or its nearest ancestor
-     *
-     * @param \SimpleXMLElement $node      Node
-     * @param string            $attribute Attribute to get
-     * @param string            $default   Default value for the attribute
-     * @param int               $levels    How many levels up to traverse
-     *
-     * @return string
-     *
-     * @psalm-suppress RedundantCondition
-     */
-    protected function getInheritedXmlAttribute(
-        \SimpleXMLElement $node,
-        string $attribute,
-        string $default = '',
-        int $levels = 255
-    ): string {
-        if (null !== ($value = $node[$attribute])) {
-            return (string)$value;
-        }
-        $domNode = dom_import_simplexml($node);
-        while (($domNode->parentNode instanceof \DOMElement) && --$levels >= 0) {
-            $domNode = $domNode->parentNode;
-            if ($domNode->hasAttribute($attribute)) {
-                $value = $domNode->getAttribute($attribute);
-                break;
-            }
-        }
-        return null === $value ? $default : $value;
     }
 
     /**
@@ -668,21 +650,19 @@ class Lido extends AbstractRecord
     /**
      * Get the last sublocation (partOfPlace) of a place
      *
-     * @param \SimpleXMLElement $place Place element
-     * @param bool              $isSub Is the current $place a sublocation
+     * @param array $place Place node
+     * @param bool  $isSub Is the current $place a sublocation
      *
      * @return string
      */
-    protected function getSubLocation($place, $isSub = false)
+    protected function getSubLocation(array $place, bool $isSub = false): string
     {
-        if (!empty($place->partOfPlace)) {
-            $result = $this->getSubLocation($place->partOfPlace, true);
-            if (!empty($result)) {
-                return $result;
-            }
+        if ('' !== ($result = $this->xmlDoc->firstValue($place, 'partOfPlace') ?? '')) {
+            return $result;
         }
-        return $isSub && isset($place->namePlaceSet->appellationValue)
-            ? (string)$place->namePlaceSet->appellationValue : '';
+        return $isSub
+            ? ($this->xmlDoc->firstValue($place, 'namePlaceSet/appellationValue') ?? '')
+            : '';
     }
 
     /**
@@ -704,19 +684,15 @@ class Lido extends AbstractRecord
      */
     protected function getLegalBodyName()
     {
-        foreach (
-            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
-            ->repositoryWrap->repositorySet ?? [] as $set
-        ) {
-            if (!empty($set->repositoryName->legalBodyName->appellationValue)) {
-                return (string)$set->repositoryName->legalBodyName
-                    ->appellationValue;
-            }
-        }
-
-        foreach ($this->doc->lido->administrativeMetadata->recordWrap->recordSource ?? [] as $source) {
-            if (!empty($source->legalBodyName->appellationValue)) {
-                return (string)$source->legalBodyName->appellationValue;
+        $paths = [
+            'lido/descriptiveMetadata/objectIdentificationWrap/repositoryWrap/repositorySet/repositoryName'
+                . '/legalBodyName/appellationValue',
+            'lido/administrativeMetadata/recordWrap/recordSource/legalBodyName/appellationValue',
+        ];
+        foreach ($paths as $path) {
+            // Return first non-empty value:
+            foreach ($this->xmlDoc->allValues(path: $path) as $name) {
+                return $name;
             }
         }
 
@@ -732,15 +708,9 @@ class Lido extends AbstractRecord
      */
     protected function getDescription()
     {
-        $description = [];
-        foreach (
-            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
-            ->objectDescriptionWrap->objectDescriptionSet ?? [] as $set
-        ) {
-            foreach ($set->descriptiveNoteValue as $descriptiveNoteValue) {
-                $description[] = trim((string)$descriptiveNoteValue);
-            }
-        }
+        $path = 'lido/descriptiveMetadata/objectIdentificationWrap/objectDescriptionWrap/objectDescriptionSet'
+            . '/descriptiveNoteValue';
+        $description = $this->xmlDoc->allValues(path: $path);
 
         if ($this->getTitle() == implode('; ', $description)) {
             // We have the description already in the title, don't repeat
@@ -759,13 +729,10 @@ class Lido extends AbstractRecord
      */
     protected function getObjectWorkType()
     {
-        foreach (
-            $this->doc->lido->descriptiveMetadata->objectClassificationWrap
-            ->objectWorkTypeWrap->objectWorkType ?? [] as $type
-        ) {
-            if (!empty($type->term)) {
-                return (string)$type->term;
-            }
+        $path = 'lido/descriptiveMetadata/objectClassificationWrap/objectWorkTypeWrap/objectWorkType/term';
+        // Return the first non-empty value (different from first value):
+        foreach ($this->xmlDoc->allValues(path: $path) as $value) {
+            return $value;
         }
         return '';
     }
@@ -777,18 +744,8 @@ class Lido extends AbstractRecord
      */
     protected function getUrls()
     {
-        $results = [];
-        foreach ($this->getResourceSetNodes() as $set) {
-            foreach ($set->resourceRepresentation as $node) {
-                if (!empty($node->linkResource)) {
-                    $link = trim((string)$node->linkResource);
-                    if (!empty($link)) {
-                        $results[] = $link;
-                    }
-                }
-            }
-        }
-        return $results;
+        $path = 'lido/administrativeMetadata/resourceWrap/resourceSet/resourceRepresentation/linkResource';
+        return $this->xmlDoc->allValues(path: $path);
     }
 
     /**
@@ -810,22 +767,19 @@ class Lido extends AbstractRecord
 
         $result = [];
         foreach ($this->getEventNodes($event) as $eventNode) {
-            foreach ($eventNode->eventActor as $actorNode) {
-                foreach ($actorNode->actorInRole as $roleNode) {
-                    if (isset($roleNode->actor->nameActorSet->appellationValue)) {
-                        $actorRole = $this->metadataUtils->normalizeRelator(
-                            (string)$roleNode->roleActor->term
-                        );
-                        if (empty($role) || in_array($actorRole, (array)$role)) {
-                            $value = (string)$roleNode->actor->nameActorSet
-                                ->appellationValue[0];
-                            $value = trim($value);
-                            if ($value) {
-                                if ($includeRoles && $actorRole) {
-                                    $value .= ", $actorRole";
-                                }
-                                $result[] = $value;
+            foreach ($this->xmlDoc->all($eventNode, 'eventActor/actorInRole') as $roleNode) {
+                $appellationValueNode = $this->xmlDoc->first($roleNode, 'actor/nameActorSet/appellationValue');
+                if ($appellationValueNode) {
+                    $actorRole = $this->metadataUtils->normalizeRelator(
+                        $this->xmlDoc->firstValue($roleNode, 'roleActor/term')
+                    );
+                    if (empty($role) || in_array($actorRole, (array)$role)) {
+                        $value = $this->xmlDoc->value($appellationValueNode);
+                        if ('' !== $value) {
+                            if ($includeRoles && $actorRole) {
+                                $value .= ", $actorRole";
                             }
+                            $result[] = $value;
                         }
                     }
                 }
@@ -846,18 +800,13 @@ class Lido extends AbstractRecord
     {
         $results = [];
         foreach ($this->getEventNodes($event) as $eventNode) {
-            foreach ($eventNode->eventPlace as $placeNode) {
-                if (!empty($placeNode->displayPlace)) {
-                    $str = trim(
-                        $this->metadataUtils->stripTrailingPunctuation(
-                            (string)$placeNode->displayPlace,
-                            '.'
-                        ),
-                        ', \n\r\t\v\0'
-                    );
-                    if ($str) {
-                        $results[] = $str;
-                    }
+            foreach ($this->xmlDoc->allValues($eventNode, 'eventPlace/displayPlace') as $displayPlace) {
+                $displayPlace = trim(
+                    $this->metadataUtils->stripTrailingPunctuation($displayPlace, '.'),
+                    ', \n\r\t\v\0'
+                );
+                if ('' !== $displayPlace) {
+                    $results[] = $displayPlace;
                 }
             }
         }
@@ -874,11 +823,8 @@ class Lido extends AbstractRecord
     protected function getEventDisplayDate($event = null)
     {
         foreach ($this->getEventNodes($event) as $eventNode) {
-            if (!empty($eventNode->eventDate->displayDate)) {
-                $str = trim((string)$eventNode->eventDate->displayDate);
-                if ('' !== $str) {
-                    return $str;
-                }
+            if ('' !== ($displayDate = $this->xmlDoc->firstValue($eventNode, 'eventDate/displayDate') ?? '')) {
+                return $displayDate;
             }
         }
         return '';
@@ -894,8 +840,8 @@ class Lido extends AbstractRecord
     protected function getRelatedWorkDisplayObject($relatedWorkRelType)
     {
         foreach ($this->getRelatedWorkSetNodes($relatedWorkRelType) as $set) {
-            if (!empty($set->relatedWork->displayObject)) {
-                return trim((string)$set->relatedWork->displayObject);
+            if ('' !== ($value = $this->xmlDoc->firstValue($set, 'relatedWork/displayObject') ?? '')) {
+                return $value;
             }
         }
         return '';
@@ -910,9 +856,9 @@ class Lido extends AbstractRecord
     protected function getLanguage()
     {
         $results = [];
-        foreach ($this->doc->descriptiveMetadata ?? [] as $node) {
-            if (!empty($node['lang'])) {
-                $results[] = (string)$node['lang'];
+        foreach ($this->xmlDoc->all(path: 'descriptiveMetadata') as $node) {
+            if ($lang = $this->getLangAttr($node)) {
+                $results[] = $lang;
             }
         }
         return $results;
@@ -932,13 +878,10 @@ class Lido extends AbstractRecord
     protected function getSubjectTerms($exclude = ['iconclass'])
     {
         $results = [];
-        foreach ($this->getSubjectNodes($exclude) as $subject) {
-            foreach ($subject->subjectConcept as $concept) {
-                foreach ($concept->term as $term) {
-                    $str = trim((string)$term);
-                    if ($str !== '') {
-                        $results[] = $str;
-                    }
+        foreach ($this->getSubjectNodes($exclude) as $subjectNode) {
+            foreach ($this->xmlDoc->allValues($subjectNode, 'subjectConcept/term') as $term) {
+                if ('' !== $term) {
+                    $results[] = $term;
                 }
             }
         }
@@ -953,18 +896,11 @@ class Lido extends AbstractRecord
     protected function getSubjectDisplayDates()
     {
         $results = [];
-        foreach ($this->getSubjectNodes() as $subject) {
-            foreach ($subject->subjectDate as $date) {
-                if (!empty($date->displayDate)) {
-                    $str = trim(
-                        $this->metadataUtils->stripTrailingPunctuation(
-                            (string)$date->displayDate,
-                            '.'
-                        )
-                    );
-                    if ('' !== $str) {
-                        $results[] = $str;
-                    }
+        foreach ($this->getSubjectNodes() as $subjectNode) {
+            foreach ($this->xmlDoc->allValues($subjectNode, 'subjectDate/displayDate') as $date) {
+                $date = $this->metadataUtils->stripTrailingPunctuation($date, '.');
+                if ('' !== $date) {
+                    $results[] = $date;
                 }
             }
         }
@@ -979,19 +915,14 @@ class Lido extends AbstractRecord
     protected function getSubjectDisplayPlaces()
     {
         $results = [];
-        foreach ($this->getSubjectNodes() as $subject) {
-            foreach ($subject->subjectPlace as $place) {
-                if (!empty($place->displayPlace)) {
-                    $str = trim(
-                        $this->metadataUtils->stripTrailingPunctuation(
-                            (string)$place->displayPlace,
-                            '.'
-                        ),
-                        ', \n\r\t\v\0'
-                    );
-                    if ('' !== $str) {
-                        $results[] = $str;
-                    }
+        foreach ($this->getSubjectNodes() as $subjectNode) {
+            foreach ($this->xmlDoc->allValues($subjectNode, 'subjectPlace/displayPlace') as $place) {
+                $place = trim(
+                    $this->metadataUtils->stripTrailingPunctuation($place, '.'),
+                    ', \n\r\t\v\0'
+                );
+                if ('' !== $place) {
+                    $results[] = $place;
                 }
             }
         }
@@ -1006,22 +937,15 @@ class Lido extends AbstractRecord
     protected function getSubjectPlaces()
     {
         $results = [];
-        foreach ($this->getSubjectNodes() as $subject) {
-            foreach ($subject->subjectPlace as $place) {
-                if (!empty($place->place->namePlaceSet)) {
-                    foreach ($place->place->namePlaceSet as $set) {
-                        if ($set->appellationValue) {
-                            $str = trim(
-                                $this->metadataUtils->stripTrailingPunctuation(
-                                    (string)$set->appellationValue,
-                                    '.'
-                                )
-                            );
-                            if ('' !== $str) {
-                                $results[] = $str;
-                            }
-                        }
-                    }
+        foreach ($this->getSubjectNodes() as $subjectNode) {
+            foreach (
+                $this->xmlDoc->allValues($subjectNode, 'subjectPlace/place/namePlaceSet/appellationValue') as $value
+            ) {
+                $value = trim(
+                    $this->metadataUtils->stripTrailingPunctuation($value, '.')
+                );
+                if ('' !== $value) {
+                    $results[] = $value;
                 }
             }
         }
@@ -1043,17 +967,15 @@ class Lido extends AbstractRecord
         $results = [];
         $displayTerms = [];
         foreach ($this->getEventNodes($eventType) as $event) {
-            foreach ($event->eventMaterialsTech as $eventMaterialsTech) {
-                foreach ($eventMaterialsTech->displayMaterialsTech as $displayMaterialsTech) {
-                    $displayTerms[] = trim((string)$displayMaterialsTech);
-                }
-                foreach ($eventMaterialsTech->materialsTech as $materialsTech) {
-                    foreach ($materialsTech->termMaterialsTech as $termMaterialsTech) {
-                        foreach ($termMaterialsTech->term as $term) {
-                            $results[] = (string)$term;
-                        }
-                    }
-                }
+            foreach ($this->xmlDoc->all($event, 'eventMaterialsTech') as $eventMaterialsTech) {
+                $displayTerms = [
+                    ...$displayTerms,
+                    ...$this->xmlDoc->allValues($eventMaterialsTech, 'displayMaterialsTech'),
+                ];
+                $results = [
+                    ...$results,
+                    ...$this->xmlDoc->allValues($eventMaterialsTech, 'materialsTech/termMaterialsTech/term'),
+                ];
             }
         }
         return $results ? $results : $displayTerms;
@@ -1064,26 +986,24 @@ class Lido extends AbstractRecord
      *
      * A recursive method for fetching all relevant fields
      *
-     * @param ?\SimpleXMLElement $xml XML fragment to process, or null to process whole document
+     * @param ?array $parentNode Parent node to process, or null to process the root node
      *
      * @return array<int, string>
      */
-    protected function getAllFields($xml = null)
+    protected function getAllFields(?array $parentNode = null)
     {
-        $xml ??= $this->doc;
         $allFields = [];
-        foreach ($xml->children() as $tag => $field) {
-            if (in_array($tag, $this->excludeFromAllFields)) {
+        foreach ($this->xmlDoc->all($parentNode) as $node) {
+            if (in_array($this->xmlDoc->localName($node), $this->excludeFromAllFields)) {
                 continue;
             }
-            $s = trim((string)$field);
-            if ($s) {
+            if ('' !== ($s = $this->xmlDoc->value($node))) {
                 $allFields[] = $s;
             }
-            $s = $this->getAllFields($field);
-            if ($s) {
-                $allFields = [...$allFields, ...$s];
-            }
+            $allFields = [
+                ...$allFields,
+                ...$this->getAllFields($node),
+            ];
         }
         return $allFields;
     }
@@ -1103,38 +1023,37 @@ class Lido extends AbstractRecord
      *
      * @param string|array $events Event type(s) allowed (null = all types)
      *
-     * @return \SimpleXMLElement[] Array of event nodes
+     * @return array Array of event nodes
      */
-    protected function getEventNodes($events = null)
+    protected function getEventNodes($events = null): array
     {
         if (is_string($events)) {
             $events = [$events => 0];
         }
         $eventList = [];
         $index = 0;
-        foreach ($this->doc->lido->descriptiveMetadata->eventWrap->eventSet ?? [] as $eventSetNode) {
-            foreach ($eventSetNode->event as $eventNode) {
-                if (null !== $events) {
-                    $eventTypes = [];
-                    if (!empty($eventNode->eventType->term)) {
-                        foreach ($eventNode->eventType->term as $term) {
-                            $eventTypes[] = mb_strtolower((string)$term, 'UTF-8');
-                        }
+        $path = 'lido/descriptiveMetadata/eventWrap/eventSet/event';
+        foreach ($this->xmlDoc->all(path: $path) as $eventNode) {
+            if (null !== $events) {
+                $eventTypes = [];
+                foreach ($this->xmlDoc->allValues($eventNode, 'eventType/term') as $term) {
+                    if ('' !== $term) {
+                        $eventTypes[] = mb_strtolower($term, 'UTF-8');
                     }
-                    $priority = null;
-                    foreach ($eventTypes as $eventType) {
-                        if (isset($events[$eventType])) {
-                            $priority = $events[$eventType];
-                            break;
-                        }
-                    }
-                    if (null !== $priority) {
-                        ++$index;
-                        $eventList["$priority/$index"] = $eventNode;
-                    }
-                } else {
-                    $eventList[] = $eventNode;
                 }
+                $priority = null;
+                foreach ($eventTypes as $eventType) {
+                    if (isset($events[$eventType])) {
+                        $priority = $events[$eventType];
+                        break;
+                    }
+                }
+                if (null !== $priority) {
+                    ++$index;
+                    $eventList["$priority/$index"] = $eventNode;
+                }
+            } else {
+                $eventList[] = $eventNode;
             }
         }
         ksort($eventList);
@@ -1142,44 +1061,24 @@ class Lido extends AbstractRecord
     }
 
     /**
-     * Get all subject sets
-     *
-     * @return array Array of subjectSet nodes
-     */
-    protected function getSubjectSetNodes()
-    {
-        $setList = [];
-        foreach (
-            $this->doc->lido->descriptiveMetadata->objectRelationWrap
-            ->subjectWrap->subjectSet ?? [] as $subjectSetNode
-        ) {
-            $setList[] = $subjectSetNode;
-        }
-        return $setList;
-    }
-
-    /**
-     * Get all subjects
+     * Get all subject nodes
      *
      * @param string|string[] $exclude Which subject types to exclude
      *
      * @return array Array of subjectSet nodes
      */
-    protected function getSubjectNodes($exclude = [])
+    protected function getSubjectNodes($exclude = []): array
     {
         $subjectList = [];
-        foreach ($this->getSubjectSetNodes() as $subjectSetNode) {
-            foreach ($subjectSetNode->subject as $subjectNode) {
-                if (
-                    empty($exclude)
-                    || empty($subjectNode['type'])
-                    || !in_array(
-                        mb_strtolower($subjectNode['type'], 'UTF-8'),
-                        $exclude
-                    )
-                ) {
-                    $subjectList[] = $subjectNode;
-                }
+        $path = 'lido/descriptiveMetadata/objectRelationWrap/subjectWrap/subjectSet/subject';
+        foreach ($this->xmlDoc->all(path: $path) as $subjectNode) {
+            $type = $this->xmlDoc->attr($subjectNode, 'type');
+            if (
+                empty($exclude)
+                || empty($type)
+                || !in_array(mb_strtolower($type, 'UTF-8'), $exclude)
+            ) {
+                $subjectList[] = $subjectNode;
             }
         }
         return $subjectList;
@@ -1195,17 +1094,13 @@ class Lido extends AbstractRecord
     protected function getObjectDescriptionSetNodes($exclude = [])
     {
         $setList = [];
-        foreach (
-            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
-            ->objectDescriptionWrap->objectDescriptionSet ?? [] as $objectSetNode
-        ) {
+        $path = 'lido/descriptiveMetadata/objectIdentificationWrap/objectDescriptionWrap/objectDescriptionSet';
+        foreach ($this->xmlDoc->all(path: $path) as $objectSetNode) {
+            $type = $this->xmlDoc->attr($objectSetNode, 'type') ?? '';
             if (
-                empty($exclude)
-                || empty($objectSetNode['type'])
-                || !in_array(
-                    mb_strtolower($objectSetNode['type'], 'UTF-8'),
-                    $exclude
-                )
+                !$exclude
+                || '' === $type
+                || !in_array(mb_strtolower($type, 'UTF-8'), $exclude)
             ) {
                 $setList[] = $objectSetNode;
             }
@@ -1220,23 +1115,16 @@ class Lido extends AbstractRecord
      *
      * @return array Array of relatedWorkSet nodes
      */
-    protected function getRelatedWorkSetNodes($relatedWorkRelType = [])
+    protected function getRelatedWorkSetNodes(array $relatedWorkRelType = []): array
     {
         $setList = [];
-        foreach (
-            $this->doc->lido->descriptiveMetadata->objectRelationWrap
-            ->relatedWorksWrap->relatedWorkSet ?? [] as $relatedWorkSetNode
-        ) {
-            $relType = trim(
-                mb_strtolower(
-                    $relatedWorkSetNode->relatedWorkRelType->term ?? '',
-                    'UTF-8'
-                )
+        $path = 'lido/descriptiveMetadata/objectRelationWrap/relatedWorksWrap/relatedWorkSet';
+        foreach ($this->xmlDoc->all(path: $path) as $relatedWorkSetNode) {
+            $relType = mb_strtolower(
+                $this->xmlDoc->firstValue($relatedWorkSetNode, 'relatedWorkRelType/term'),
+                'UTF-8'
             );
-            if (
-                empty($relatedWorkRelType)
-                || in_array($relType, $relatedWorkRelType)
-            ) {
+            if (!$relatedWorkRelType || in_array($relType, $relatedWorkRelType)) {
                 $setList[] = $relatedWorkSetNode;
             }
         }
@@ -1246,15 +1134,11 @@ class Lido extends AbstractRecord
     /**
      * Get resource sets
      *
-     * @return \SimpleXMLElement[] Array of resourceSet nodes
+     * @return array Array of resourceSet nodes
      */
-    protected function getResourceSetNodes()
+    protected function getResourceSetNodes(): array
     {
-        $setList = [];
-        foreach ($this->doc->lido->administrativeMetadata->resourceWrap->resourceSet ?? [] as $resourceSetNode) {
-            $setList[] = $resourceSetNode;
-        }
-        return $setList;
+        return $this->xmlDoc->all(path: 'lido/administrativeMetadata/resourceWrap/resourceSet');
     }
 
     /**
@@ -1265,14 +1149,10 @@ class Lido extends AbstractRecord
     protected function getControlNumbers()
     {
         $ids = [];
-        foreach ($this->doc->lido->administrativeMetadata->recordWrap->recordInfoSet ?? [] as $set) {
-            if (isset($set->recordInfoID)) {
-                $info = $set->recordInfoID;
-                $attributes = $info->attributes();
-                if (isset($attributes->type)) {
-                    $type = (string)$attributes->type;
-                    $ids[] = "($type)" . (string)$info;
-                }
+        $path = 'lido/administrativeMetadata/recordWrap/recordInfoSet/recordInfoID';
+        foreach ($this->xmlDoc->all(path: $path) as $recordInfoID) {
+            if (null !== ($type = $this->xmlDoc->attr($recordInfoID, 'type'))) {
+                $ids[] = "($type)" . $this->xmlDoc->value($recordInfoID);
             }
         }
         return $ids;
@@ -1291,20 +1171,17 @@ class Lido extends AbstractRecord
         array $exclude = []
     ): array {
         $result = [];
-        foreach ($this->doc->lido->descriptiveMetadata as $dmd) {
-            foreach ($dmd->objectIdentificationWrap->repositoryWrap->repositorySet ?? [] as $set) {
-                foreach ($set->workID as $workId) {
-                    $type = trim($workId['type'] ?? '');
-                    if ($include && !in_array($type, $include)) {
-                        continue;
-                    }
-                    if ($type && $exclude && !in_array($type, $include)) {
-                        continue;
-                    }
-                    if ($identifier = trim($workId)) {
-                        $result[] = $identifier;
-                    }
-                }
+        $path = 'lido/descriptiveMetadata/objectIdentificationWrap/repositoryWrap/repositorySet/workID';
+        foreach ($this->xmlDoc->all(path: $path) as $workId) {
+            $type = $this->xmlDoc->attr($workId, 'type');
+            if ($include && !in_array($type, $include)) {
+                continue;
+            }
+            if ($type && $exclude && !in_array($type, $include)) {
+                continue;
+            }
+            if ('' !== ($identifier = $this->xmlDoc->value($workId))) {
+                $result[] = $identifier;
             }
         }
         return $result;
@@ -1318,39 +1195,35 @@ class Lido extends AbstractRecord
     protected function getRepositoryLocations(): array
     {
         $result = [];
-        foreach (
-            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap->repositoryWrap->repositorySet
-            ?? [] as $set
-        ) {
-            $type = mb_strtolower((string)($set->attributes()->type ?? ''), 'UTF-8');
-            if ($this->repositoryLocationTypes && !in_array($type, $this->repositoryLocationTypes)) {
-                continue;
-            }
-            foreach ($set->repositoryLocation->namePlaceSet ?? [] as $nameSet) {
-                foreach ($nameSet->appellationValue ?? [] as $place) {
-                    if (
-                        $place
-                        && !in_array((string)$place->attributes()->label, $this->excludedLocationAppellationValueLabels)
-                    ) {
-                        $result[] = trim((string)$place);
-                    }
+        $path = 'lido/descriptiveMetadata/objectIdentificationWrap/repositoryWrap/repositorySet';
+        foreach ($this->xmlDoc->all(path: $path) as $set) {
+            if ($this->repositoryLocationTypes) {
+                $type = mb_strtolower($this->xmlDoc->attr($set, 'type') ?? '', 'UTF-8');
+                if (!in_array($type, $this->repositoryLocationTypes)) {
+                    continue;
                 }
             }
-            foreach ($set->repositoryLocation ?? [] as $location) {
-                foreach ($location->partOfPlace ?? [] as $part) {
-                    while ($part->namePlaceSet) {
-                        if ($partName = $part->namePlaceSet->appellationValue ?? null) {
-                            if (
-                                !in_array(
-                                    (string)$partName->attributes()->label,
-                                    $this->excludedLocationAppellationValueLabels
-                                )
-                            ) {
-                                $result[] = trim((string)$partName);
-                            }
+            foreach ($this->xmlDoc->all($set, 'repositoryLocation/namePlaceSet/appellationValue') as $place) {
+                if (
+                    '' !== ($value = $this->xmlDoc->value($place))
+                    && !in_array($this->xmlDoc->attr($place, 'label'), $this->excludedLocationAppellationValueLabels)
+                ) {
+                    $result[] = $value;
+                }
+            }
+            foreach ($this->xmlDoc->all($set, 'repositoryLocation/partOfPlace') as $part) {
+                while ($namePlaceSet = $this->xmlDoc->first($part, 'namePlaceSet')) {
+                    if ($appellationValue = $this->xmlDoc->first($namePlaceSet, 'appellationValue')) {
+                        if (
+                            !in_array(
+                                $this->xmlDoc->attr($appellationValue, 'label'),
+                                $this->excludedLocationAppellationValueLabels
+                            )
+                        ) {
+                            $result[] = $this->xmlDoc->value($appellationValue);
                         }
-                        $part = $part->partOfPlace;
                     }
+                    $part = $this->xmlDoc->first($part, 'partOfPlace');
                 }
             }
         }
@@ -1460,21 +1333,8 @@ class Lido extends AbstractRecord
      */
     protected function getIdentifier()
     {
-        $nodeExists = !empty(
-            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap
-                ->repositoryWrap->repositorySet
-        );
-        if (!$nodeExists) {
-            return '';
-        }
-        foreach (
-            $this->doc->lido->descriptiveMetadata->objectIdentificationWrap->repositoryWrap->repositorySet as $set
-        ) {
-            if (!empty($set->workID)) {
-                return (string)$set->workID;
-            }
-        }
-        return '';
+        $path = 'lido/descriptiveMetadata/objectIdentificationWrap/repositoryWrap/repositorySet/workID';
+        return $this->xmlDoc->firstValue(path: $path) ?? '';
     }
 
     /**
@@ -1488,23 +1348,21 @@ class Lido extends AbstractRecord
     {
         if ($this->getDriverParam('indexHierarchies', false)) {
             foreach ($this->getRelatedWorkSetNodes(['is part of']) as $set) {
-                if (!($relatedWork = $set->relatedWork)) {
+                if (!($relatedWork = $this->xmlDoc->first($set, 'relatedWork'))) {
                     continue;
                 }
-                $relatedId = (string)($relatedWork->object->objectID ?? '');
-                if (!$relatedId) {
-                    $this->logger
-                        ->logDebug('Lido', 'Related record ID missing', true);
+                $relatedId = $this->xmlDoc->firstValue($relatedWork, 'object/objectID') ?? '';
+                if ('' === $relatedId) {
+                    $this->logger->logDebug('Lido', 'Related record ID missing', true);
                     continue;
                 }
-                $relatedTitle = (string)($relatedWork->displayObject ?? '');
+                $relatedTitle = $this->xmlDoc->firstValue($relatedWork, 'displayObject') ?? '';
                 if (!$relatedTitle) {
-                    $this->logger
-                        ->logDebug('Lido', 'Related record title missing', true);
+                    $this->logger->logDebug('Lido', 'Related record title missing', true);
                     continue;
                 }
 
-                $type = (string)($relatedWork->object->objectType->term ?? '');
+                $type = $this->xmlDoc->firstValue($relatedWork, 'object/objectType/term');
                 if ('collection' === $type) {
                     $data['hierarchy_top_id'] = $relatedId;
                     $data['hierarchy_top_title'] = $relatedTitle;

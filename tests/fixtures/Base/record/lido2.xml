@@ -16,9 +16,9 @@
             <appellationValue>Kitchen tool</appellationValue>
             <appellationValue>Scissors</appellationValue>
           </titleSet>
-          <titleSet lang="fi">
-            <appellationValue pref="alternate">Sakset</appellationValue>
-            <appellationValue pref="preferred">Keittiövälineet</appellationValue>
+          <titleSet>
+            <appellationValue pref="alternate" lang="fi">Sakset</appellationValue>
+            <appellationValue pref="preferred" lang="fi">Keittiövälineet</appellationValue>
           </titleSet>
         </titleWrap>
         <inscriptionsWrap/>
