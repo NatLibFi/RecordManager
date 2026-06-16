@@ -8,7 +8,7 @@ For a stable version, see the stable branch.
 
 ## General Installation
 
-- Minimum supported PHP version is 8.1.
+- Minimum supported PHP version is 8.2.
 - Composer is required for dependencies. Run `composer install` (or `php /path/to/composer.phar install`) in the directory where RecordManager is installed.
 - The following PHP extensions are required: xml, xslt, mbstring, intl
 
@@ -46,11 +46,11 @@ These are quick instructions on how to set up RecordManager. Please refer to the
 
     E.g. remi repos include a package for mongodb:
 
-      yum install php81-php-pecl-mongodb
+      yum install php82-php-pecl-mongodb
 
     Webtatic too:
 
-      yum install php81w-pecl-mongodb
+      yum install php82w-pecl-mongodb
 
     If there's no package available, use pecl to install mongodb:
 
