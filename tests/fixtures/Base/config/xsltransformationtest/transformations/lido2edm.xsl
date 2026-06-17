@@ -24,7 +24,7 @@
   <xsl:strip-space elements="*"/>
 
   <!-- To use this template, properties file must include following info: -->
-    <!-- Parameters: $museum, $provider, $data_provider, $default_type, $sourceURL  -->
+    <!-- Parameters: $museum, $provider, $data_provider, $default_type, $externalView, $sourceURL  -->
     <!-- PHP functions: str_replace, rawurlencode, mb_strtolower  -->
   
   <!-- Unique identifier -->
