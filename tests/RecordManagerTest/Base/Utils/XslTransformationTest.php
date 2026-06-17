@@ -102,6 +102,20 @@ class XslTransformationTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
+     * Test LIDO-EDM transformation with incomplete data
+     *
+     * @return void
+     */
+    public function testLido2EdmTransformationWithIncompleteData()
+    {
+        $xslTransformation = $this->getXslTransformation('lido2edm_incomplete.properties');
+        $lidoRecord = $this->getFixture('utils/XslTransformation/lido_incomplete.xml');
+        $expectedEdm = $this->getFixture('utils/XslTransformation/lido_incomplete_edm.xml');
+        $transformedEdm = $xslTransformation->transform($lidoRecord);
+        $this->assertSame($expectedEdm, $transformedEdm);
+    }
+
+    /**
      * Create XmlTransformation
      *
      * @param string $config Transformation config file name

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:edm="http://www.europeana.eu/schemas/edm/" xmlns:ore="http://www.openarchives.org/ore/terms/" xmlns:lido="http://www.lido-schema.org" xmlns:ns5="http://www.openarchives.org/OAI/2.0/" xmlns:gml="http://www.opengis.net/gml" xmlns:skos="http://www.w3.org/2004/02/skos/core#" xmlns:wgs84_pos="http://www.w3.org/2003/01/geo/wgs84_pos#" xmlns:svcs="http://rdfs.org/sioc/services#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:php="http://php.net/xsl">
+  <edm:ProvidedCHO rdf:about="#testimuseo-K1554">
+    <dc:title xml:lang="fi">Ei otsikkoa</dc:title>
+    <dc:type rdf:resource="http://www.wikidata.org/entity/Q18593264"/>
+    <edm:type>IMAGE</edm:type>
+  </edm:ProvidedCHO>
+  <edm:WebResource rdf:about="https://kissarepo/images/download?id=k1554_1&amp;size=large">
+    <edm:rights rdf:resource="http://creativecommons.org/licenses/by/4.0/"/>
+  </edm:WebResource>
+  <edm:WebResource rdf:about="https://kissarepo/images/download?id=k1554_2&amp;size=original">
+    <edm:rights rdf:resource=""/>
+  </edm:WebResource>
+  <ore:Aggregation rdf:about="#testimuseo-K1554:aggregation">
+    <edm:aggregatedCHO rdf:resource="#testimuseo-K1554"/>
+    <edm:dataProvider xml:lang="en">Test Museum</edm:dataProvider>
+    <edm:isShownAt rdf:resource="https://finna.fi/Record/testmuseum.testimuseo-K1554?lng=en-gb"/>
+    <edm:isShownBy rdf:resource="https://kissarepo/images/download?id=k1554_1&amp;size=large"/>
+    <edm:hasView rdf:resource="https://kissarepo/images/download?id=k1554_2&amp;size=original"/>
+    <edm:object rdf:resource="https://kissarepo/images/download?id=k1554_1&amp;size=large"/>
+    <edm:provider xml:lang="en">National Library of Finland</edm:provider>
+    <edm:rights rdf:resource="http://creativecommons.org/licenses/by/4.0/"/>
+  </ore:Aggregation>
+</rdf:RDF>

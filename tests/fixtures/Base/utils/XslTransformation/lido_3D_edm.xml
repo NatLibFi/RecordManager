@@ -8,6 +8,7 @@
     <dc:description xml:lang="fi">fotogrammetria</dc:description>
     <dc:identifier>K1554</dc:identifier>
     <dc:language>fin</dc:language>
+    <dc:language>swe</dc:language>
     <dc:subject xml:lang="fi">kissat</dc:subject>
     <dc:subject rdf:resource="http://www.yso.fi/onto/yso/p16142"/>
     <dc:subject rdf:resource="https://iconclass.org/48C5"/>

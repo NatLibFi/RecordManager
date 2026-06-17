@@ -7,26 +7,12 @@
     <xsl:variable name="chars" select="'abcdefghijklmnopqrstuvwxyz'"/>
     <xsl:choose>
 
-      <xsl:when test="string-length($lang) = 2">
-        <xsl:choose>
-          <xsl:when test="(contains($chars, substring($lang,1,1))) and (contains($chars, substring($lang,2,1)))">
-            <xsl:value-of select="$lang"/>
-          </xsl:when>
-          <xsl:otherwise>
-            <xsl:value-of select="'fi'"/>
-          </xsl:otherwise>
-        </xsl:choose>
+      <xsl:when test="(string-length($lang) = 2) and (contains($chars, substring($lang,1,1))) and (contains($chars, substring($lang,2,1)))">
+        <xsl:value-of select="$lang"/>
       </xsl:when>
 
-      <xsl:when test="string-length($lang) = 3">
-        <xsl:choose>
-          <xsl:when test="(contains($chars, substring($lang,1,1))) and (contains($chars, substring($lang,2,1))) and (contains($chars, substring($lang,3,1)))">
-       	    <xsl:value-of select="$lang"/>
-          </xsl:when>
-          <xsl:otherwise>
-       	    <xsl:value-of select="'fi'"/>
-          </xsl:otherwise>
-        </xsl:choose>
+      <xsl:when test="(string-length($lang) = 3) and (contains($chars, substring($lang,1,1))) and (contains($chars, substring($lang,2,1))) and (contains($chars, substring($lang,3,1)))">
+        <xsl:value-of select="$lang"/>
       </xsl:when>
  
       <xsl:otherwise>
