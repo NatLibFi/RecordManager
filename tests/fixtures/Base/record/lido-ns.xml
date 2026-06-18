@@ -4,8 +4,8 @@
     <finna:id>FOO</finna:id>
     <lido:lidoRecID lido:source="Deutsches Dokumentationszentrum für Kunstgeschichte - Bildarchiv Foto Marburg" lido:type="local">DE-Mb112/lido-obj00154983</lido:lidoRecID>
     <lido:category>
-      <lido:conceptID lido:type="URI">http://www.cidoc-crm.org/crm-concepts/E22</lido:conceptID>
-      <lido:term xml:lang="en">Man-Made Object</lido:term>
+      <lido:conceptID lido:type="URI">http://terminology.lido-schema.org/lido00096</lido:conceptID>
+      <lido:term xml:lang="en">Human-made object</lido:term>
     </lido:category>
     <lido:descriptiveMetadata xml:lang="en">
       <lido:objectClassificationWrap>
