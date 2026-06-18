@@ -815,14 +815,14 @@
 
       <!-- edm:isShownAt, link to an external web page where the object is displayed. -->
       <!-- externalView and sourceURL parameters are configured for each dataset in properties file. -->
-      <!-- sourceURL defines the preferred Finna view to be used in isShownAt if not overridden by another external view -->
+      <!-- sourceURL defines the preferred VuFind instance to be used in isShownAt if not overridden by another external view -->
       <!-- With externalView value 'none', no link is added. -->
       <xsl:if test="$externalView != 'none'">
-        <xsl:variable name="finnaView" select="concat($sourceURL, '/Record/', $museum, '.', $recordID, '?lng=en-gb')"/>
+        <xsl:variable name="vufindRecordUrl" select="concat($sourceURL, '/Record/', $museum, '.', $recordID, '?lng=en-gb')"/>
         <edm:isShownAt> 
           <xsl:attribute name="rdf:resource"> 
             <xsl:choose>
-              <!-- With value 'Sketchfab', use Sketchfab link, or generate a link to the preferred Finna view as fallback -->
+              <!-- With value 'Sketchfab', use Sketchfab link, or generate a link to the preferred VuFind instance as fallback -->
               <xsl:when test="$externalView = 'Sketchfab'">
                 <xsl:variable name="SketchfabLink" select="//lido:administrativeMetadata/lido:resourceWrap/lido:resourceSet/lido:resourceRepresentation[@lido:type='provided_3D']/lido:linkResource[contains(., 'sketchfab')]"/>
                 <xsl:choose>
@@ -830,12 +830,12 @@
                     <xsl:value-of select="$SketchfabLink"/>
                   </xsl:when>
                   <xsl:otherwise>
-                    <xsl:value-of select="$finnaView"/>
+                    <xsl:value-of select="$vufindRecordUrl"/>
                   </xsl:otherwise>
                 </xsl:choose>
               </xsl:when>
               <xsl:when test="$externalView = 'objectWebResource'">
-                <!-- With value "objectWebResource", use a link in objectWebResource, or generate a link to the preferred Finna view as fallback -->
+                <!-- With value "objectWebResource", use a link in objectWebResource, or generate a link to the preferred VuFind instance as fallback -->
                 <xsl:variable name="objectWebResourceEn" select="normalize-space(//lido:descriptiveMetadata/lido:objectRelationWrap/lido:relatedWorksWrap/lido:relatedWorkSet/lido:relatedWork/lido:object/lido:objectWebResource[(@xml:lang='en') and (text())])"/>
                 <xsl:variable name="anyObjectWebResource" select="normalize-space(//lido:descriptiveMetadata/lido:objectRelationWrap/lido:relatedWorksWrap/lido:relatedWorkSet/lido:relatedWork/lido:object/lido:objectWebResource[text()])"/>
                 <xsl:choose>
@@ -846,13 +846,13 @@
                     <xsl:value-of select="$anyObjectWebResource"/>
                   </xsl:when>
                   <xsl:otherwise>
-                    <xsl:value-of select="$finnaView"/>
+                    <xsl:value-of select="$vufindRecordUrl"/>
                   </xsl:otherwise>
                 </xsl:choose>
               </xsl:when>
               <xsl:otherwise>
-              <!-- With any other value, generate a link to the configured Finna view -->
-                <xsl:value-of select="$finnaView"/> 
+              <!-- With any other value, generate a link to the configured VuFind instance -->
+                <xsl:value-of select="$vufindRecordUrl"/> 
               </xsl:otherwise>
             </xsl:choose>
           </xsl:attribute>
