@@ -180,6 +180,7 @@ class GeniePlus extends AbstractBase
      * @var array
      */
     protected $httpOptions = [
+        'http_errors' => false,
         'timeout' => 600,
     ];
 
@@ -401,11 +402,7 @@ class GeniePlus extends AbstractBase
         for ($try = 1; $try <= $maxTries; $try++) {
             $this->infoMsg("Sending request: $url");
             try {
-                try {
-                    $response = $client->get($url, compact('headers'));
-                } catch (\GuzzleHttp\Exception\BadResponseException $e) {
-                    $response = $e->getResponse();
-                }
+                $response = $client->get($url, compact('headers'));
                 $code = $response->getStatusCode();
                 if ($code == 404) {
                     return $response;
