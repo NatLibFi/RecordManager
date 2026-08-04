@@ -33,7 +33,7 @@
     "require": {
         "php": ">=8.2.27",
         "cash/lrucache": "1.0.0",
-        "guzzlehttp/guzzle": "7.15.1",
+        "guzzlehttp/guzzle": "7.15.2",
         "laminas/laminas-mvc": "3.8.0",
         "laminas/laminas-router": "3.18.0",
         "laminas/laminas-servicemanager": "3.23.0",
