@@ -55,7 +55,7 @@
         "phpstan/phpstan": "2.2.2",
         "phpunit/phpunit": "11.5.55",
         "rector/rector": "2.4.5",
-        "squizlabs/php_codesniffer": "4.0.1",
+        "squizlabs/php_codesniffer": "4.0.2",
         "vimeo/psalm": "6.16.1"
     },
     "scripts": {
