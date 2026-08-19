@@ -495,6 +495,39 @@ class LidoTest extends RecordTestBase
     }
 
     /**
+     * Test namespace handling.
+     *
+     * @return void
+     */
+    public function testNamespaces(): void
+    {
+        $record = $this->createRecord(
+            Lido::class,
+            'lido_ns.xml',
+            [],
+            'Base',
+            [],
+        );
+        $reflection = new \ReflectionObject($record);
+        $getTitles = $reflection->getMethod('getTitles');
+
+        $this->assertEquals(
+            [
+                'preferred' => 'The story of the image: Cat On Grass',
+                'alternate' => [],
+            ],
+            $getTitles->invokeArgs($record, ['en'])
+        );
+        $this->assertEquals(
+            [
+                'preferred' => 'Kissa nurmikolla -kuvan tarina',
+                'alternate' => [],
+            ],
+            $getTitles->invokeArgs($record, ['fi'])
+        );
+    }
+
+    /**
      * Data provider for testLidoRootElementHandling
      *
      * @return \Iterator

@@ -188,17 +188,17 @@ class Lido extends AbstractRecord
                 $nodeArray['data'],
             ];
             // Detect any existing schemaLocation or use default:
-            $schemaLocation = $newRoot['data']['attrs']["{{$this->xsiNs}}schemaLocation"]
+            $schemaLocation = $newRoot['data']['attrs']["{{$this->nsXsi}}schemaLocation"]
                 ?? $newRoot['data']['attrs']['schemaLocation']
                 ?? 'http://www.lido-schema.org http://www.lido-schema.org/schema/v1.1/lido-v1.1.xsd';
             // Remove schemaLocation from lido element:
             unset($newRoot['data']['sub'][0]['attrs']['schemaLocation']);
-            unset($newRoot['data']['sub'][0]['attrs']["{{$this->xsiNs}}schemaLocation"]);
+            unset($newRoot['data']['sub'][0]['attrs']["{{$this->nsXsi}}schemaLocation"]);
             // Verify that the root element has correct schemaLocation:
             unset($newRoot['data']['attrs']['schemaLocation']);
-            $newRoot['data']['attrs']["{{$this->xsiNs}}schemaLocation"] = $schemaLocation;
-            if (!in_array($this->xsiNs, $newRoot['namespaces'])) {
-                $newRoot['namespaces]']['xsi'] = $this->xmlNs;
+            $newRoot['data']['attrs']["{{$this->nsXsi}}schemaLocation"] = $schemaLocation;
+            if (!in_array($this->nsXsi, $newRoot['namespaces'])) {
+                $newRoot['namespaces]']['xsi'] = $this->nsXmlns;
             }
             $this->xmlDoc->import($newRoot);
         }

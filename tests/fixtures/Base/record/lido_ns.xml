@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<lido:lidoWrap xmlns:lido="http://www.lido-schema.org" xmlns:gml="http://www.opengis.net/gml">
+  <lido:lido>
+    <lido:lidoRecID lido:type="item">testimuseo-K1554</lido:lidoRecID>
+    <lido:descriptiveMetadata xml:lang="fi">
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet lido:type="title">
+            <lido:appellationValue xml:lang="fi" lido:pref="preferred">Kissa nurmikolla -kuvan tarina</lido:appellationValue>
+            <lido:appellationValue xml:lang="en" lido:pref="preferred">The story of the image: Cat On Grass</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+      </lido:objectIdentificationWrap>
+    </lido:descriptiveMetadata>
+  </lido:lido>
+</lido:lidoWrap>

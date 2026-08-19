@@ -52,14 +52,21 @@ trait XmlDocRecordTrait
      *
      * @var string
      */
-    protected string $xmlNs = 'http://www.w3.org/2000/xmlns/';
+    protected string $nsXml = 'http://www.w3.org/XML/1998/namespace';
+
+    /**
+     * The XMLNS namespace.
+     *
+     * @var string
+     */
+    protected string $nsXmlns = 'http://www.w3.org/2000/xmlns/';
 
     /**
      * XML schema instance namespace.
      *
      * @var string
      */
-    protected string $xsiNs = 'http://www.w3.org/2001/XMLSchema-instance';
+    protected string $nsXsi = 'http://www.w3.org/2001/XMLSchema-instance';
 
     /**
      * XML Document
@@ -151,6 +158,6 @@ trait XmlDocRecordTrait
     protected function getLangAttr(array $node): ?string
     {
         $xml = $this->xmlDoc ?? new XmlDoc();
-        return $xml->attr($node, '{{$this->xmlNs}}lang') ?? $xml->attr($node, 'lang');
+        return $xml->attr($node, "{{$this->nsXml}}lang") ?? $xml->attr($node, 'lang');
     }
 }
