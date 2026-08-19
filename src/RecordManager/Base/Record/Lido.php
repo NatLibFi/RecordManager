@@ -254,8 +254,8 @@ class Lido extends AbstractRecord
                         = $this->xmlDoc->firstValue($placeNode, 'place/namePlaceSet/appellationValue') ?? '';
                     if ('' !== $appellationValue) {
                         $mainPlace = $appellationValue;
-                        $placeNode = $this->xmlDoc->first($placeNode, 'place');
-                        $subLocation = $placeNode ? $this->getSubLocation($placeNode) : '';
+                        $subPlaceNode = $this->xmlDoc->first($placeNode, 'place');
+                        $subLocation = $subPlaceNode ? $this->getSubLocation($subPlaceNode) : '';
                         if (!$subLocation) {
                             $locations = [
                                 ...$locations,
@@ -657,8 +657,10 @@ class Lido extends AbstractRecord
      */
     protected function getSubLocation(array $place, bool $isSub = false): string
     {
-        if ('' !== ($result = $this->xmlDoc->firstValue($place, 'partOfPlace') ?? '')) {
-            return $result;
+        if ($partOfPlaceNode = $this->xmlDoc->first($place, 'partOfPlace')) {
+            if ('' !== ($result = $this->getSubLocation($partOfPlaceNode, true))) {
+                return $result;
+            }
         }
         return $isSub
             ? ($this->xmlDoc->firstValue($place, 'namePlaceSet/appellationValue') ?? '')
@@ -752,15 +754,15 @@ class Lido extends AbstractRecord
      * Return names of actors associated with specified event
      *
      * @param string|array|null $event        Event type(s) allowed (null = all types)
-     * @param string|array|null $role         Roles allowed (null = all roles)
+     * @param string|array|null $rolesAllowed Roles allowed (null = all roles)
      * @param bool              $includeRoles Whether to include actor roles in the results
      *
      * @return array<int, string>
      */
-    protected function getActors($event = null, $role = null, $includeRoles = false)
+    protected function getActors($event = null, $rolesAllowed = null, $includeRoles = false)
     {
         $key = md5(__METHOD__ . ($event ? implode(',', (array)$event) : 'null') . '|'
-            . ($role ? implode(',', (array)$role) : 'null') . '|' . ($includeRoles ? '1' : '0'));
+            . ($rolesAllowed ? implode(',', (array)$rolesAllowed) : 'null') . '|' . ($includeRoles ? '1' : '0'));
         if (isset($this->resultCache[$key])) {
             return $this->resultCache[$key];
         }
@@ -768,19 +770,16 @@ class Lido extends AbstractRecord
         $result = [];
         foreach ($this->getEventNodes($event) as $eventNode) {
             foreach ($this->xmlDoc->all($eventNode, 'eventActor/actorInRole') as $roleNode) {
-                $appellationValueNode = $this->xmlDoc->first($roleNode, 'actor/nameActorSet/appellationValue');
-                if ($appellationValueNode) {
+                $appellationValue = $this->xmlDoc->firstValue($roleNode, 'actor/nameActorSet/appellationValue') ?? '';
+                if ('' !== $appellationValue) {
                     $actorRole = $this->metadataUtils->normalizeRelator(
                         $this->xmlDoc->firstValue($roleNode, 'roleActor/term')
                     );
-                    if (empty($role) || in_array($actorRole, (array)$role)) {
-                        $value = $this->xmlDoc->value($appellationValueNode);
-                        if ('' !== $value) {
-                            if ($includeRoles && $actorRole) {
-                                $value .= ", $actorRole";
-                            }
-                            $result[] = $value;
+                    if (empty($rolesAllowed) || in_array($actorRole, (array)$rolesAllowed)) {
+                        if ($includeRoles && $actorRole) {
+                            $appellationValue .= ", $actorRole";
                         }
+                        $result[] = $appellationValue;
                     }
                 }
             }
@@ -1334,7 +1333,8 @@ class Lido extends AbstractRecord
     protected function getIdentifier()
     {
         $path = 'lido/descriptiveMetadata/objectIdentificationWrap/repositoryWrap/repositorySet/workID';
-        return $this->xmlDoc->firstValue(path: $path) ?? '';
+        // Return first non-empty value:
+        return $this->xmlDoc->allValues(path: $path)[0] ?? '';
     }
 
     /**
