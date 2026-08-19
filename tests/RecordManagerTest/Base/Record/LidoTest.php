@@ -572,6 +572,22 @@ class LidoTest extends RecordTestBase
                 </lido:lidoWrap>
                 XML,
         ];
+        yield 'lido 1.1 with lidoWrap including namespaces' => [
+            <<<XML
+                <lido:lidoWrap $nsPart$schema11>
+                    <lido:lido>
+                        <lido:lidoRecID type="ITEM">123</lido:lidoRecID>
+                    </lido:lido>
+                </lido:lidoWrap>
+                XML,
+            <<<XML
+                <lido:lidoWrap $nsPart$schema11>
+                    <lido:lido>
+                        <lido:lidoRecID lido:type="ITEM">123</lido:lidoRecID>
+                    </lido:lido>
+                </lido:lidoWrap>
+                XML,
+        ];
         yield 'lido 1.0 without lidoWrap' => [
             <<<XML
                 <lido $schema10>
