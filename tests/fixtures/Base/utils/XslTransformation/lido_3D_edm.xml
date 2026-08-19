@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:edm="http://www.europeana.eu/schemas/edm/" xmlns:ore="http://www.openarchives.org/ore/terms/" xmlns:lido="http://www.lido-schema.org" xmlns:ns5="http://www.openarchives.org/OAI/2.0/" xmlns:gml="http://www.opengis.net/gml" xmlns:skos="http://www.w3.org/2004/02/skos/core#" xmlns:wgs84_pos="http://www.w3.org/2003/01/geo/wgs84_pos#" xmlns:svcs="http://rdfs.org/sioc/services#" xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:php="http://php.net/xsl">
+  <edm:ProvidedCHO rdf:about="#testimuseo-K1554">
+    <dc:creator>Karvinen, Osku</dc:creator>
+    <dc:description xml:lang="fi">mustavalkoinen kissa nukkuu nurmikolla</dc:description>
+    <dc:description xml:lang="en">black and white cat sleeping on grass</dc:description>
+    <dc:description xml:lang="en">Photographing was done while the cat was sleeping because the cat refused to co-operate</dc:description>
+    <dc:description xml:lang="fi">fotogrammetria</dc:description>
+    <dc:identifier>K1554</dc:identifier>
+    <dc:language>fin</dc:language>
+    <dc:language>swe</dc:language>
+    <dc:subject xml:lang="fi">kissat</dc:subject>
+    <dc:subject rdf:resource="http://www.yso.fi/onto/yso/p16142"/>
+    <dc:subject rdf:resource="https://iconclass.org/48C5"/>
+    <dc:subject>Hänen Majesteettinsa Kissa Kissanen</dc:subject>
+    <dc:title xml:lang="fi">Kissa nurmikolla -3D-malli</dc:title>
+    <dc:type rdf:resource="http://www.wikidata.org/entity/Q4464732"/>
+    <dc:type xml:lang="fi">Fotogrammetrinen malli</dc:type>
+    <dc:type xml:lang="fi">100 valokuva</dc:type>
+    <dcterms:created xml:lang="fi">valmistusaika 2009</dcterms:created>
+    <dcterms:extent xml:lang="fi">6 x 6 cm</dcterms:extent>
+    <dcterms:extent xml:lang="en">6 x 6 cm</dcterms:extent>
+    <dcterms:isPartOf xml:lang="fi">Kissakuvakokoelma</dcterms:isPartOf>
+    <dcterms:isPartOf xml:lang="en">Cat image collection</dcterms:isPartOf>
+    <dcterms:isPartOf xml:lang="fi">Kissat kautta aikojen - Helsinki Cat Exhibition</dcterms:isPartOf>
+    <dcterms:medium xml:lang="fi">negatiivi</dcterms:medium>
+    <dcterms:spatial xml:lang="fi">kuvauspaikka Kissakuja 1, Helsinki</dcterms:spatial>
+    <dcterms:spatial xml:lang="fi">aiheen paikka Kissakujan nurmikko</dcterms:spatial>
+    <dcterms:temporal xml:lang="fi">1.11.2022–31.2.2023</dcterms:temporal>
+    <edm:type>3D</edm:type>
+  </edm:ProvidedCHO>
+  <edm:WebResource rdf:about="https://kissarepo/images/download?id=k1554_1&amp;size=master">
+    <edm:rights rdf:resource="http://creativecommons.org/licenses/by/4.0/"/>
+  </edm:WebResource>
+  <edm:WebResource rdf:about="https://kissarepo/images/download?id=k1554_2&amp;size=large">
+    <edm:rights rdf:resource="http://creativecommons.org/licenses/by/4.0/"/>
+  </edm:WebResource>
+  <edm:WebResource rdf:about="https://sketchfab.com/oembed?url=https%3A%2F%2Fsketchfab.com%2F3d-models%2Fk1554_3&amp;format=json">
+    <dc:creator>Testimuseo / Karvinen, Osku</dc:creator>
+    <dc:rights>Testimuseo</dc:rights>
+    <edm:intendedUsage rdf:resource="http://data.europeana.eu/vocabulary/usageArea/Education"/>
+    <edm:rights rdf:resource="http://creativecommons.org/licenses/by/4.0/"/>
+    <svcs:has_service rdf:resource="https://sketchfab.com/oembed"/>
+  </edm:WebResource>
+  <edm:WebResource rdf:about="https://kissarepo/images/download?id=k1554_3&amp;size=original&amp;format=glb">
+    <dc:creator>Testimuseo / Karvinen, Osku</dc:creator>
+    <dc:rights>Testimuseo</dc:rights>
+    <dc:type rdf:resource="http://data.europeana.eu/vocabulary/modelType/3DMesh"/>
+    <edm:intendedUsage rdf:resource="http://data.europeana.eu/vocabulary/usageArea/Education"/>
+    <edm:polygonCount>21069</edm:polygonCount>
+    <edm:rights rdf:resource="http://creativecommons.org/licenses/by/4.0/"/>
+    <edm:vertexCount>60000</edm:vertexCount>
+  </edm:WebResource>
+  <ore:Aggregation rdf:about="#testimuseo-K1554:aggregation">
+    <edm:aggregatedCHO rdf:resource="#testimuseo-K1554"/>
+    <edm:dataProvider xml:lang="en">Test Museum</edm:dataProvider>
+    <edm:isShownAt rdf:resource="https://sketchfab.com/3d-models/k1554_3"/>
+    <edm:isShownBy rdf:resource="https://sketchfab.com/oembed?url=https%3A%2F%2Fsketchfab.com%2F3d-models%2Fk1554_3&amp;format=json"/>
+    <edm:hasView rdf:resource="https://kissarepo/images/download?id=k1554_1&amp;size=master"/>
+    <edm:hasView rdf:resource="https://kissarepo/images/download?id=k1554_2&amp;size=large"/>
+    <edm:hasView rdf:resource="https://kissarepo/images/download?id=k1554_3&amp;size=original&amp;format=glb"/>
+    <edm:object rdf:resource="https://kissarepo/images/download?id=k1554_1&amp;size=master"/>
+    <edm:provider xml:lang="en">National Library of Finland</edm:provider>
+    <edm:rights rdf:resource="http://creativecommons.org/licenses/by/4.0/"/>
+  </ore:Aggregation>
+  <svcs:Service rdf:about="https://sketchfab.com/oembed">
+    <dcterms:conformsTo rdf:resource="https://oembed.com/"/>
+    <rdfs:label xml:lang="en">Sketchfab</rdfs:label>
+  </svcs:Service>
+</rdf:RDF>

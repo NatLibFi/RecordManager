@@ -5,7 +5,7 @@
  *
  * PHP version 8
  *
- * Copyright (c) Villanova University 2022.
+ * Copyright (c) Villanova University 2022-2026.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -180,6 +180,7 @@ class GeniePlus extends AbstractBase
      * @var array
      */
     protected $httpOptions = [
+        'http_errors' => false,
         'timeout' => 600,
     ];
 

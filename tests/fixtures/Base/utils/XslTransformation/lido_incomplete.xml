@@ -1,0 +1,222 @@
+<?xml version="1.0"?>
+<lido:lidoWrap xmlns:lido="http://www.lido-schema.org" xmlns:gml="http://www.opengis.net/gml">
+  <lido:lido>
+    <lido:lidoRecID lido:type="item">testimuseo-K1554</lido:lidoRecID>
+    <lido:descriptiveMetadata xml:lang="fi">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType>
+            <lido:term>    </lido:term>
+          </lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+        <lido:classificationWrap>
+          <lido:classification>
+            <lido:term xml:lang="fi">  </lido:term>
+          </lido:classification>
+          <lido:classification>
+            <lido:term xml:lang="fi">    </lido:term>
+          </lido:classification>
+          <lido:classification>
+            <lido:term xml:lang="fi">   </lido:term>
+          </lido:classification>
+          <lido:classification lido:type="language">
+            <lido:term>   </lido:term>
+          </lido:classification>
+        </lido:classificationWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet lido:type="title">
+            <lido:appellationValue xml:lang="fi" lido:pref="preferred">     </lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+        <lido:repositoryWrap>
+          <lido:repositorySet>
+            <lido:repositoryName>
+              <lido:legalBodyName>
+                <lido:appellationValue>   </lido:appellationValue>
+              </lido:legalBodyName>
+            </lido:repositoryName>
+            <lido:workID>   </lido:workID>
+          </lido:repositorySet>
+        </lido:repositoryWrap>
+        <lido:objectDescriptionWrap>
+          <lido:objectDescriptionSet>
+            <lido:descriptiveNoteValue xml:lang="fi"> </lido:descriptiveNoteValue>
+            <lido:descriptiveNoteValue xml:lang="en"></lido:descriptiveNoteValue>
+        </lido:objectDescriptionSet>
+        </lido:objectDescriptionWrap>
+        <lido:objectMeasurementsWrap>
+          <lido:objectMeasurementsSet>
+            <lido:displayObjectMeasurements xml:lang="fi">   </lido:displayObjectMeasurements>
+            <lido:displayObjectMeasurements xml:lang="en">  </lido:displayObjectMeasurements>
+          </lido:objectMeasurementsSet>
+        </lido:objectMeasurementsWrap>
+      </lido:objectIdentificationWrap>
+      <lido:eventWrap>
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType>
+              <lido:term>valmistus</lido:term>
+              <lido:term xml:lang="en">Creation</lido:term>
+            </lido:eventType>
+            <lido:eventActor>
+              <lido:actorInRole>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>  </lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+                <lido:roleActor>
+                  <lido:term xml:lang="fi">  </lido:term>
+                </lido:roleActor>
+              </lido:actorInRole>
+            </lido:eventActor>
+            <lido:eventDate>
+              <lido:displayDate xml:lang="fi">    </lido:displayDate>
+            </lido:eventDate>
+            <lido:eventPlace>
+              <lido:displayPlace>  </lido:displayPlace>
+            </lido:eventPlace>
+            <lido:eventMethod>
+              <lido:term>  </lido:term>
+            </lido:eventMethod>
+            <lido:eventMaterialsTech>
+              <lido:displayMaterialsTech>  </lido:displayMaterialsTech>
+              <lido:materialsTech>
+                <lido:termMaterialsTech>
+                  <lido:term xml:lang="fi">  </lido:term>
+                  <lido:term xml:lang="en">  </lido:term>
+                </lido:termMaterialsTech>
+              </lido:materialsTech>
+            </lido:eventMaterialsTech>
+            <lido:eventDescriptionSet>
+              <lido:descriptiveNoteValue xml:lang="en">   </lido:descriptiveNoteValue>
+            </lido:eventDescriptionSet>
+          </lido:event>
+        </lido:eventSet>
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType>
+              <lido:term>   </lido:term>
+            </lido:eventType>
+            <lido:eventName>
+              <lido:appellationValue>   </lido:appellationValue>
+            </lido:eventName>
+            <lido:eventDate>
+              <lido:displayDate xml:lang="fi">  </lido:displayDate>
+            </lido:eventDate>
+          </lido:event>
+        </lido:eventSet>
+      </lido:eventWrap>
+      <lido:objectRelationWrap>
+        <lido:subjectWrap>
+          <lido:subjectSet>
+            <lido:subject>
+              <lido:subjectConcept>
+                <lido:conceptID lido:source="sanaston nimi">Yleinen suomalainen asiasanasto</lido:conceptID>
+                <lido:term xml:lang="fi">  </lido:term>
+              </lido:subjectConcept>
+            <lido:subjectConcept>
+                <lido:conceptID lido:source="YSO">  </lido:conceptID>
+                <lido:term xml:lang="fi">   </lido:term>
+              </lido:subjectConcept>
+            </lido:subject>
+          </lido:subjectSet>
+          <lido:subjectSet>
+            <lido:subject>
+              <lido:subjectConcept>
+                <lido:conceptID lido:source="ic">  </lido:conceptID>
+                <lido:term xml:lang="fi">   </lido:term>
+              </lido:subjectConcept>
+            </lido:subject>
+          </lido:subjectSet>
+          <lido:subjectSet>
+            <lido:subject>
+              <lido:subjectActor>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>   </lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+              </lido:subjectActor>
+              <lido:subjectPlace>
+                <lido:displayPlace>   </lido:displayPlace>
+              </lido:subjectPlace>
+            </lido:subject>
+          </lido:subjectSet>
+        </lido:subjectWrap>
+        <lido:relatedWorksWrap>
+          <lido:relatedWorkSet>
+            <lido:relatedWork>
+              <lido:displayObject xml:lang="fi">   </lido:displayObject>
+              <lido:displayObject xml:lang="en">   </lido:displayObject>
+            </lido:relatedWork>
+            <lido:relatedWorkRelType>
+              <lido:term>Kokoelma</lido:term>
+            </lido:relatedWorkRelType>
+          </lido:relatedWorkSet>
+        </lido:relatedWorksWrap>
+      </lido:objectRelationWrap>
+    </lido:descriptiveMetadata>
+    <lido:administrativeMetadata xml:lang="fi">
+      <lido:recordWrap>
+        <lido:recordID lido:type="item">K1554</lido:recordID>
+        <lido:recordType>
+          <lido:term>item</lido:term>
+        </lido:recordType>
+        <lido:recordSource>
+          <lido:legalBodyName>
+            <lido:appellationValue>   </lido:appellationValue>
+          </lido:legalBodyName>
+        </lido:recordSource>
+        <lido:recordRights>
+          <lido:rightsType>
+            <lido:conceptID lido:type="copyright">  </lido:conceptID>
+            <lido:term>  </lido:term>
+          </lido:rightsType>
+        </lido:recordRights>
+      </lido:recordWrap>
+      <lido:resourceWrap>
+        <lido:resourceSet>
+          <lido:resourceID lido:type="ID">  </lido:resourceID>
+          <lido:resourceDescription lido:type="displayLink">   </lido:resourceDescription>
+          <lido:resourceRepresentation lido:type="image_thumb">
+            <lido:linkResource>   </lido:linkResource>
+          </lido:resourceRepresentation>
+          <lido:resourceRepresentation lido:type="image_large">
+            <lido:linkResource lido:formatResource="image/jpeg">https://kissarepo/images/download?id=k1554_1&amp;size=large</lido:linkResource>
+          </lido:resourceRepresentation>
+          <lido:resourceRepresentation lido:type="image_master">
+            <lido:linkResource lido:formatResource="image/jpeg">   </lido:linkResource>
+          </lido:resourceRepresentation>
+          <lido:rightsResource>
+            <lido:rightsType>
+              <lido:conceptID lido:type="copyright">CC BY 4.0</lido:conceptID>
+              <lido:term xml:lang="fi">Tiedostoa voi k&#xE4;ytt&#xE4;&#xE4; vapaasti my&#xF6;s kaupallisesti.</lido:term>
+            </lido:rightsType>
+          </lido:rightsResource>
+        </lido:resourceSet>
+        <lido:resourceSet>
+          <lido:resourceID lido:type="ID">  </lido:resourceID>
+          <lido:resourceDescription lido:type="displayLink">  </lido:resourceDescription>
+          <lido:resourceRepresentation lido:type="image_thumb">
+            <lido:linkResource>  </lido:linkResource>
+          </lido:resourceRepresentation>
+          <lido:resourceRepresentation lido:type="image_large">
+            <lido:linkResource lido:formatResource="image/jpeg">  </lido:linkResource>
+          </lido:resourceRepresentation>
+          <lido:resourceRepresentation lido:type="image_original">
+            <lido:linkResource lido:formatResource="image/tif">https://kissarepo/images/download?id=k1554_2&amp;size=original</lido:linkResource>
+          </lido:resourceRepresentation>
+          <lido:rightsResource>
+            <lido:rightsType>
+              <lido:conceptID lido:type="copyright">  </lido:conceptID>
+              <lido:term xml:lang="fi">  </lido:term>
+            </lido:rightsType>
+          </lido:rightsResource>
+        </lido:resourceSet>
+      </lido:resourceWrap>
+    </lido:administrativeMetadata>
+  </lido:lido>
+</lido:lidoWrap>

@@ -1,0 +1,264 @@
+<?xml version="1.0"?>
+<lido:lidoWrap xmlns:lido="http://www.lido-schema.org" xmlns:gml="http://www.opengis.net/gml">
+  <lido:lido>
+    <lido:lidoRecID lido:type="item">testimuseo-K1554</lido:lidoRecID>
+    <lido:descriptiveMetadata xml:lang="fi">
+      <lido:objectClassificationWrap>
+        <lido:objectWorkTypeWrap>
+          <lido:objectWorkType>
+            <lido:term>malli</lido:term>
+          </lido:objectWorkType>
+        </lido:objectWorkTypeWrap>
+        <lido:classificationWrap>
+          <lido:classification>
+            <lido:term xml:lang="">Fotogrammetrinen malli</lido:term>
+          </lido:classification>
+          <lido:classification>
+            <lido:term>100 valokuva</lido:term>
+          </lido:classification>
+          <lido:classification>
+            <lido:term xml:lang="fi">12345</lido:term>
+          </lido:classification>
+          <lido:classification lido:type="language">
+            <lido:term>fin</lido:term>
+          </lido:classification>
+          <lido:classification lido:type="language">
+            <lido:term>Swedish</lido:term>
+          </lido:classification>
+        </lido:classificationWrap>
+      </lido:objectClassificationWrap>
+      <lido:objectIdentificationWrap>
+        <lido:titleWrap>
+          <lido:titleSet lido:type="title">
+            <lido:appellationValue xml:lang="unvalidlang" lido:pref="preferred">Kissa nurmikolla -3D-malli</lido:appellationValue>
+          </lido:titleSet>
+        </lido:titleWrap>
+        <lido:repositoryWrap>
+          <lido:repositorySet>
+            <lido:repositoryName>
+              <lido:legalBodyName>
+                <lido:appellationValue>Testimuseo</lido:appellationValue>
+              </lido:legalBodyName>
+            </lido:repositoryName>
+            <lido:workID>K1554</lido:workID>
+          </lido:repositorySet>
+        </lido:repositoryWrap>
+        <lido:objectDescriptionWrap>
+          <lido:objectDescriptionSet>
+            <lido:descriptiveNoteValue xml:lang="f">mustavalkoinen kissa nukkuu nurmikolla</lido:descriptiveNoteValue>
+            <lido:descriptiveNoteValue xml:lang="en">black and white cat sleeping on grass</lido:descriptiveNoteValue>
+        </lido:objectDescriptionSet>
+        </lido:objectDescriptionWrap>
+        <lido:objectMeasurementsWrap>
+          <lido:objectMeasurementsSet>
+            <lido:displayObjectMeasurements xml:lang="fi">6 x 6 cm</lido:displayObjectMeasurements>
+            <lido:displayObjectMeasurements xml:lang="en">6 x 6 cm</lido:displayObjectMeasurements>
+          </lido:objectMeasurementsSet>
+        </lido:objectMeasurementsWrap>
+      </lido:objectIdentificationWrap>
+      <lido:eventWrap>
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType>
+              <lido:term>valmistus</lido:term>
+              <lido:term xml:lang="en">Creation</lido:term>
+            </lido:eventType>
+            <lido:eventActor>
+              <lido:actorInRole>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>Karvinen, Osku</lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+                <lido:roleActor>
+                  <lido:term xml:lang="fi">kuvaaja</lido:term>
+                </lido:roleActor>
+              </lido:actorInRole>
+            </lido:eventActor>
+            <lido:eventDate>
+              <lido:displayDate xml:lang="fi">valmistusaika 2009</lido:displayDate>
+            </lido:eventDate>
+            <lido:eventPlace>
+              <lido:displayPlace>kuvauspaikka Kissakuja 1, Helsinki</lido:displayPlace>
+            </lido:eventPlace>
+            <lido:eventMethod>
+              <lido:term>fotogrammetria</lido:term>
+            </lido:eventMethod>
+            <lido:eventMaterialsTech>
+              <lido:displayMaterialsTech>negatiivi</lido:displayMaterialsTech>
+              <lido:materialsTech>
+                <lido:termMaterialsTech>
+                  <lido:term xml:lang="fi">negatiivi</lido:term>
+                  <lido:term xml:lang="en">negative</lido:term>
+                </lido:termMaterialsTech>
+              </lido:materialsTech>
+            </lido:eventMaterialsTech>
+            <lido:eventDescriptionSet>
+              <lido:descriptiveNoteValue xml:lang="en">Photographing was done while the cat was sleeping because the cat refused to co-operate</lido:descriptiveNoteValue>
+            </lido:eventDescriptionSet>
+          </lido:event>
+        </lido:eventSet>
+        <lido:eventSet>
+          <lido:event>
+            <lido:eventType>
+              <lido:term>n&#xE4;yttely</lido:term>
+            </lido:eventType>
+            <lido:eventName>
+              <lido:appellationValue>Kissat kautta aikojen - Helsinki Cat Exhibition</lido:appellationValue>
+            </lido:eventName>
+            <lido:eventDate>
+              <lido:displayDate xml:lang="fi">1.11.2022–31.2.2023</lido:displayDate>
+            </lido:eventDate>
+          </lido:event>
+        </lido:eventSet>
+      </lido:eventWrap>
+      <lido:objectRelationWrap>
+        <lido:subjectWrap>
+          <lido:subjectSet>
+            <lido:subject>
+              <lido:subjectConcept>
+                <lido:conceptID lido:source="sanaston nimi">Yleinen suomalainen asiasanasto</lido:conceptID>
+                <lido:term xml:lang="fi">kissat</lido:term>
+              </lido:subjectConcept>
+            <lido:subjectConcept>
+                <lido:conceptID lido:source="YSO">http://www.yso.fi/onto/yso/p16142</lido:conceptID>
+                <lido:term xml:lang="fi">nurmikot</lido:term>
+              </lido:subjectConcept>
+            </lido:subject>
+          </lido:subjectSet>
+          <lido:subjectSet>
+            <lido:subject>
+              <lido:subjectConcept>
+                <lido:conceptID lido:source="ic">http://iconclass.org/48C5</lido:conceptID>
+                <lido:term xml:lang="fi">maalaustaide, piirrostaide ja taidegrafiikka</lido:term>
+              </lido:subjectConcept>
+            </lido:subject>
+          </lido:subjectSet>
+          <lido:subjectSet>
+            <lido:subject>
+              <lido:subjectActor>
+                <lido:actor>
+                  <lido:nameActorSet>
+                    <lido:appellationValue>Hänen Majesteettinsa Kissa Kissanen</lido:appellationValue>
+                  </lido:nameActorSet>
+                </lido:actor>
+              </lido:subjectActor>
+              <lido:subjectPlace>
+                <lido:displayPlace>aiheen paikka Kissakujan nurmikko</lido:displayPlace>
+              </lido:subjectPlace>
+            </lido:subject>
+          </lido:subjectSet>
+        </lido:subjectWrap>
+        <lido:relatedWorksWrap>
+          <lido:relatedWorkSet>
+            <lido:relatedWork>
+              <lido:displayObject xml:lang="fi">Kissakuvakokoelma</lido:displayObject>
+              <lido:displayObject xml:lang="en">Cat image collection</lido:displayObject>
+            </lido:relatedWork>
+            <lido:relatedWorkRelType>
+              <lido:term>Kokoelma</lido:term>
+            </lido:relatedWorkRelType>
+          </lido:relatedWorkSet>
+        </lido:relatedWorksWrap>
+      </lido:objectRelationWrap>
+    </lido:descriptiveMetadata>
+    <lido:administrativeMetadata xml:lang="fi">
+      <lido:recordWrap>
+        <lido:recordID lido:type="item">K1554</lido:recordID>
+        <lido:recordType>
+          <lido:term>item</lido:term>
+        </lido:recordType>
+        <lido:recordSource>
+          <lido:legalBodyName>
+            <lido:appellationValue>Testimuseo</lido:appellationValue>
+          </lido:legalBodyName>
+        </lido:recordSource>
+        <lido:recordRights>
+          <lido:rightsType>
+            <lido:conceptID lido:type="copyright">CC0</lido:conceptID>
+            <lido:term>julkinen</lido:term>
+          </lido:rightsType>
+        </lido:recordRights>
+      </lido:recordWrap>
+      <lido:resourceWrap>
+        <lido:resourceSet>
+          <lido:resourceID lido:type="ID">K1554_1</lido:resourceID>
+          <lido:resourceDescription lido:type="displayLink">K1554_1.jpg</lido:resourceDescription>
+          <lido:resourceRepresentation lido:type="image_thumb">
+            <lido:linkResource>https://kissarepo/images/download?id=k1554_1&amp;size=thumb</lido:linkResource>
+          </lido:resourceRepresentation>
+          <lido:resourceRepresentation lido:type="image_large">
+            <lido:linkResource lido:formatResource="image/jpeg">https://kissarepo/images/download?id=k1554_1&amp;size=large</lido:linkResource>
+          </lido:resourceRepresentation>
+          <lido:resourceRepresentation lido:type="image_master">
+            <lido:linkResource lido:formatResource="image/jpeg">https://kissarepo/images/download?id=k1554_1&amp;size=master</lido:linkResource>
+          </lido:resourceRepresentation>
+          <lido:rightsResource>
+            <lido:rightsType>
+              <lido:conceptID lido:type="copyright">CC BY 4.0</lido:conceptID>
+              <lido:term xml:lang="fi">Tiedostoa voi k&#xE4;ytt&#xE4;&#xE4; vapaasti my&#xF6;s kaupallisesti.</lido:term>
+            </lido:rightsType>
+          </lido:rightsResource>
+        </lido:resourceSet>
+        <lido:resourceSet>
+          <lido:resourceID lido:type="ID">K1554_2</lido:resourceID>
+          <lido:resourceDescription lido:type="displayLink">K1554_2.jpg</lido:resourceDescription>
+          <lido:resourceRepresentation lido:type="image_thumb">
+            <lido:linkResource >https://kissarepo/images/download?id=k1554_2&amp;size=thumb</lido:linkResource>
+          </lido:resourceRepresentation>
+          <lido:resourceRepresentation lido:type="image_large">
+            <lido:linkResource lido:formatResource="image/jpeg">https://kissarepo/images/download?id=k1554_2&amp;size=large</lido:linkResource>
+          </lido:resourceRepresentation>
+          <lido:resourceRepresentation lido:type="image_original">
+            <lido:linkResource lido:formatResource="image/tif">https://kissarepo/images/download?id=k1554_2&amp;size=original</lido:linkResource>
+          </lido:resourceRepresentation>
+          <lido:rightsResource>
+            <lido:rightsType>
+              <lido:conceptID lido:type="copyright">CC BY 4.0</lido:conceptID>
+              <lido:term xml:lang="fi">Tiedostoa voi k&#xE4;ytt&#xE4;&#xE4; vapaasti my&#xF6;s kaupallisesti.</lido:term>
+            </lido:rightsType>
+          </lido:rightsResource>
+        </lido:resourceSet>
+        <lido:resourceSet>
+          <lido:resourceID lido:type="ID">K1554_3</lido:resourceID>
+          <lido:resourceDescription lido:type="displayLink">Avaa Sketchfabissa</lido:resourceDescription>
+          <lido:resourceRepresentation lido:type="preview_3D">
+            <lido:linkResource lido:formatResource="glb">https://kissarepo/images/download?id=k1554_3&amp;size=original&amp;format=glb</lido:linkResource>
+            <lido:resourceMeasurementsSet>
+              <lido:measurementType lang="fi">koko</lido:measurementType>
+              <lido:measurementType lang="en">size</lido:measurementType>
+              <lido:measurementUnit lang="fi">verteksit</lido:measurementUnit>
+              <lido:measurementUnit lang="en">vertices</lido:measurementUnit>
+              <lido:measurementValue>60000</lido:measurementValue>
+            </lido:resourceMeasurementsSet>
+            <lido:resourceMeasurementsSet>
+              <lido:measurementType lang="fi">koko</lido:measurementType>
+              <lido:measurementType lang="en">size</lido:measurementType>
+              <lido:measurementUnit lang="fi">polygonit</lido:measurementUnit>
+              <lido:measurementUnit lang="en">polygons</lido:measurementUnit>
+              <lido:measurementValue>21069</lido:measurementValue>
+            </lido:resourceMeasurementsSet>
+          </lido:resourceRepresentation>
+          <lido:resourceRepresentation lido:type="provided_3D">
+            <lido:linkResource lido:formatResource="text/html">https://sketchfab.com/3d-models/k1554_3</lido:linkResource>
+          </lido:resourceRepresentation>
+          <lido:resourceType>
+            <lido:term>3D Mesh</lido:term>
+          </lido:resourceType>
+          <lido:rightsResource>
+            <lido:rightsType>
+              <lido:conceptID lido:type="copyright">CC BY 4.0</lido:conceptID>
+              <lido:term xml:lang="fi">Tiedostoa voi k&#xE4;ytt&#xE4;&#xE4; vapaasti my&#xF6;s kaupallisesti.</lido:term>
+            </lido:rightsType>
+            <lido:rightsHolder>
+              <lido:legalBodyName>
+                <lido:appellationValue>Testimuseo</lido:appellationValue>
+              </lido:legalBodyName>
+            </lido:rightsHolder>
+            <lido:creditLine>Testimuseo / Karvinen, Osku</lido:creditLine>
+          </lido:rightsResource>
+        </lido:resourceSet>
+      </lido:resourceWrap>
+    </lido:administrativeMetadata>
+  </lido:lido>
+</lido:lidoWrap>

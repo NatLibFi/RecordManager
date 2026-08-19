@@ -595,7 +595,7 @@ class MetadataUtils
             if (null === $str) {
                 // Possibly invalid UTF-8, log and return:
                 $this->logger->logError(
-                    'stripLeadingPunctuation',
+                    'stripTrailingPunctuation',
                     "Failed to replace punctuation for '$originalStr': "
                     . preg_last_error_msg()
                 );
