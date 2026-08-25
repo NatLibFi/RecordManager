@@ -139,7 +139,13 @@ trait XmlDocRecordTrait
             throw new \Exception('Document not set');
         }
         try {
-            return $this->xmlDoc->toXML();
+            // Ensure that the default namespace doesn't get applied to a record that's missing namespaces:
+            $this->xmlDoc->setDefaultNamespace(null);
+            $result = $this->xmlDoc->toXML();
+            if (null !== $this->defaultNamespace) {
+                $this->xmlDoc->setDefaultNamespace($this->defaultNamespace, $this->defaultNamespacePrefix);
+            }
+            return $result;
         } catch (\Exception $e) {
             throw new \Exception(
                 "Could not serialize record '{$this->source}."
