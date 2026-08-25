@@ -200,6 +200,7 @@ class Lido extends AbstractRecord
             if (!in_array($this->nsXsi, $newRoot['namespaces'])) {
                 $newRoot['namespaces]']['xsi'] = $this->nsXmlns;
             }
+            $newRoot['namespaces']['lido'] ??= $this->lidoNs;
             $this->xmlDoc->import($newRoot);
         }
     }

@@ -534,12 +534,10 @@ class LidoTest extends RecordTestBase
      */
     public static function lidoRootElementProvider(): \Iterator
     {
+        $xsiPart = 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:';
+        $nsLidoPart = 'xmlns:lido="http://www.lido-schema.org" ' . $xsiPart;
         $schema10 = 'schemaLocation="http://www.lido-schema.org http://www.lido-schema.org/schema/v1.0/lido-v1.0.xsd"';
         $schema11 = 'schemaLocation="http://www.lido-schema.org http://www.lido-schema.org/schema/v1.1/lido-v1.1.xsd"';
-        $xsiPart = 'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:';
-        $nsLidoPart = 'xmlns:lido="http://www.lido-schema.org"'
-            . ' xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:';
-        $ns1Part = 'xmlns:ns1="http://www.lido-schema.org" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:';
         yield 'lido 1.0 with lidoWrap' => [
             <<<XML
                 <lidoWrap $schema10>
@@ -579,14 +577,14 @@ class LidoTest extends RecordTestBase
             <<<XML
                 <lido:lidoWrap $nsLidoPart$schema11>
                     <lido:lido>
-                        <lido:lidoRecID type="ITEM">123</lido:lidoRecID>
+                        <lido:lidoRecID lido:type="ITEM">123</lido:lidoRecID>
                     </lido:lido>
                 </lido:lidoWrap>
                 XML,
             <<<XML
                 <lido:lidoWrap $nsLidoPart$schema11>
                     <lido:lido>
-                        <lido:lidoRecID type="ITEM">123</lido:lidoRecID>
+                        <lido:lidoRecID lido:type="ITEM">123</lido:lidoRecID>
                     </lido:lido>
                 </lido:lidoWrap>
                 XML,
@@ -598,11 +596,11 @@ class LidoTest extends RecordTestBase
                 </lido>
                 XML,
             <<<XML
-                <ns1:lidoWrap $ns1Part$schema10>
+                <lido:lidoWrap $nsLidoPart$schema10>
                     <lido>
                         <lidoRecID type="ITEM">123</lidoRecID>
                     </lido>
-                </ns1:lidoWrap>
+                </lido:lidoWrap>
                 XML,
         ];
         yield 'lido 1.1 without lidoWrap' => [
@@ -612,11 +610,11 @@ class LidoTest extends RecordTestBase
                 </lido>
                 XML,
             <<<XML
-                <ns1:lidoWrap $ns1Part$schema11>
+                <lido:lidoWrap $nsLidoPart$schema11>
                     <lido>
                         <lidoRecID type="ITEM">123</lidoRecID>
                     </lido>
-                </ns1:lidoWrap>
+                </lido:lidoWrap>
                 XML,
         ];
         yield 'unspecified lido version without lidoWrap' => [
@@ -626,11 +624,11 @@ class LidoTest extends RecordTestBase
                 </lido>
                 XML,
             <<<XML
-                <ns1:lidoWrap $ns1Part$schema11>
+                <lido:lidoWrap $nsLidoPart$schema11>
                     <lido>
                         <lidoRecID type="ITEM">123</lidoRecID>
                     </lido>
-                </ns1:lidoWrap>
+                </lido:lidoWrap>
                 XML,
         ];
     }
