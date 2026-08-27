@@ -137,14 +137,12 @@
   <!-- Psalm -->
   <target name="psalm">
     <exec executable="${srcdir}/vendor/bin/psalm" escape="false" passthru="true" checkreturn="true">
-      <!-- threads=1 is a workaround for "Fatal error: Maximum execution time of 0 seconds exceeded" with macOS-->
-      <arg line="--threads=1 --diff" />
+      <arg line="--diff --force-jit" />
     </exec>
   </target>
   <target name="psalm-info">
     <exec executable="${srcdir}/vendor/bin/psalm" escape="false" passthru="true" checkreturn="true">
-      <!-- threads=1 is a workaround for "Fatal error: Maximum execution time of 0 seconds exceeded" with macOS-->
-      <arg line="--threads=1 --diff --show-info=true" />
+      <arg line="--diff --force-jit --show-info=true" />
     </exec>
   </target>
 
