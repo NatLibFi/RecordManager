@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 4.0.0 - TBD
+
+This release changes the XML handling in record classes to use the VuFindXml library. The storage format for XML records has changed, and while this version can read records written into RecordManager's database using older versions, older versions will not be able to read records written by this version.
+
+Anything marked with [**BC**] is known to affect backward compatibility with previous versions.
+
+### Changed
+
+- [**BC**] LIDO: XML handling changed to VuFindXml.
+
+
 ## 3.0.0 - 2026-06-09
 
 **N.B. This version bumps the minimum PHP version to 8.2**
