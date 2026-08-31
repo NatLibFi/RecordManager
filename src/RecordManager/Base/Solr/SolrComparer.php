@@ -223,10 +223,9 @@ class SolrComparer extends SolrUpdater
             'allfields', 'allfields_unstemmed', 'fulltext', 'fulltext_unstemmed',
             'spelling', 'spellingShingle', 'authorStr', 'author_facet',
             'publisherStr', 'publishDateSort', 'hierarchy_browse',
-            'first_indexed', 'last_indexed', '_version_', 'catalog_date',
+            'first_indexed', 'last_indexed', '_version_',
             'fullrecord', 'title_full_unstemmed', 'title_fullStr',
-            'title_txtP', 'container_title_str_mv', 'author_additionalStr',
-            'callnumber-search', 'series_key_str_mv', 'series_order_str',
+            'title_txtP', 'callnumber-search', 'author_additionalStr',
         ];
 
         if (isset($this->config['Solr']['ignore_in_comparison'])) {
