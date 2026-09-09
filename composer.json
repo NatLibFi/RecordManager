@@ -40,7 +40,7 @@
         "laminas/laminas-xml": "1.8.0",
         "league/mime-type-detection": "1.16.0",
         "sweetrdf/json-ld": "1.4.3",
-        "mongodb/mongodb": "2.3.0",
+        "mongodb/mongodb": "2.4.1",
         "pcrov/jsonreader": "1.0.4",
         "phayes/geophp": "1.2",
         "pietercolpaert/hardf": "0.6.2",
