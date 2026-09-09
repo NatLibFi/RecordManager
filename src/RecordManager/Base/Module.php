@@ -29,6 +29,9 @@
 
 namespace RecordManager\Base;
 
+use Laminas\ServiceManager\ServiceManager;
+use RecordManager\Base\ModuleManager\ModuleInterface;
+
 /**
  * RecordManager base module
  *
@@ -38,15 +41,26 @@ namespace RecordManager\Base;
  * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
  * @link     https://github.com/NatLibFi/RecordManager
  */
-class Module
+class Module implements ModuleInterface
 {
     /**
-     * Get module configuration
+     * Get module configuration.
      *
      * @return array
      */
-    public function getConfig()
+    public function getConfig(): array
     {
         return include __DIR__ . '/config/module.config.php';
+    }
+
+    /**
+     * Initialize the module.
+     *
+     * @param ServiceManager $serviceManager Service manager
+     *
+     * @return void
+     */
+    public function initialize(ServiceManager $serviceManager)
+    {
     }
 }
