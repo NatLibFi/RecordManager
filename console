@@ -59,10 +59,9 @@ $_SERVER['argc'] = count($remainingArgs);
 
 define('RECMAN_BASE_PATH', $basepath ?: getenv('RECMAN_BASE_PATH') ?: __DIR__);
 
-$app = Laminas\Mvc\Application::init(require 'conf/application.config.php');
-$sm = $app->getServiceManager();
+$serviceManager = require __DIR__ . '/conf/application.php';
 if ($overrides) {
-    $configReader = $sm->get(\RecordManager\Base\Settings\Ini::class);
+    $configReader = $serviceManager->get(\RecordManager\Base\Settings\Ini::class);
     $configReader->addOverrides('recordmanager.ini', $overrides);
 }
-return $sm->get(\RecordManager\Base\ConsoleRunner::class)->run();
+return $serviceManager->get(\RecordManager\Base\ConsoleRunner::class)->run();
