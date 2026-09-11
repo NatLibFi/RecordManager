@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<lido:lidoWrap xmlns:lido="http://www.lido-schema.org" xmlns:gml="http://www.opengis.net/gml">
+<lido:lidoWrap xmlns:lido="http://www.lido-schema.org" xmlns:gml="http://www.opengis.net/gml" xmlns:skos="http://www.w3.org/2004/02/skos/core#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
   <lido:lido>
     <lido:lidoRecID lido:type="item">testimuseo-K1554</lido:lidoRecID>
     <lido:descriptiveMetadata xml:lang="fi">
@@ -11,6 +11,18 @@
           </lido:titleSet>
         </lido:titleWrap>
       </lido:objectIdentificationWrap>
+      <lido:objectRelationWrap>
+        <lido:subjectWrap>
+          <lido:subjectSet>
+            <lido:subject>
+              <lido:subjectConcept>
+                <skos:Concept rdf:about="http://www.yso.fi/onto/yso/p19378"/>
+                <lido:term>kissa</lido:term>
+              </lido:subjectConcept>
+            </lido:subject>
+          </lido:subjectSet>
+        </lido:subjectWrap>
+      </lido:objectRelationWrap>
     </lido:descriptiveMetadata>
   </lido:lido>
 </lido:lidoWrap>
