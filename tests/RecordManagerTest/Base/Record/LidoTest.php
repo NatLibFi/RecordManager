@@ -101,6 +101,7 @@ class LidoTest extends RecordTestBase
                 '(knp)M011-320623',
             ],
             'isbn' => [
+                '9789517718721',
                 '9789518593730',
                 '9789518593731',
                 '9789518593732',
@@ -112,6 +113,8 @@ class LidoTest extends RecordTestBase
             'thumbnail' => '',
             'allfields' => [
                 'knp-247394',
+                '12345678',
+                'URN:ISBN:951-771-872-1',
                 'Kirja',
                 'Säädökset',
                 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
@@ -240,6 +243,7 @@ class LidoTest extends RecordTestBase
                 '(knp)M011-320623',
             ],
             'isbn' => [
+                '9789517718721',
                 '9789518593730',
                 '9789518593731',
                 '9789518593732',
@@ -251,6 +255,8 @@ class LidoTest extends RecordTestBase
             'thumbnail' => '',
             'allfields' => [
                 'knp-247394',
+                '12345678',
+                'URN:ISBN:951-771-872-1',
                 'Kirja',
                 'Säädökset',
                 'Luonnonsuojelusäädökset / toimittanut Raimo Luhtanen',
@@ -524,6 +530,10 @@ class LidoTest extends RecordTestBase
                 'alternate' => [],
             ],
             $getTitles->invokeArgs($record, ['fi'])
+        );
+        $this->assertEquals(
+            ['http://www.yso.fi/onto/yso/p19378'],
+            $reflection->getMethod('getTopicIDs')->invokeArgs($record, [])
         );
     }
 

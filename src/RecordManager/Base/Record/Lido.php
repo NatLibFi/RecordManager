@@ -59,6 +59,20 @@ class Lido extends AbstractRecord
     protected string $lidoNs = 'http://www.lido-schema.org';
 
     /**
+     * SKOS namespace.
+     *
+     * @var string
+     */
+    protected string $skosNs = 'http://www.w3.org/2004/02/skos/core#';
+
+    /**
+     * RDF namespace.
+     *
+     * @var string
+     */
+    protected string $rdfNs = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+
+    /**
      * Main event names reflecting the terminology in the particular LIDO records.
      *
      * Key is event type, value is priority (smaller more important).
@@ -456,7 +470,11 @@ class Lido extends AbstractRecord
     protected function getISBNs(): array
     {
         $arr = [];
-        foreach ($this->getIdentifiersByType(['isbn'], []) as $identifier) {
+        $isbns = [
+            ...$this->xmlDoc->allValues(path: 'lido/objectPublishedID'),
+            ...$this->getIdentifiersByType(['isbn'], []),
+        ];
+        foreach ($isbns as $identifier) {
             if ($isbn = $this->metadataUtils->normalizeISBN($this->checkISBN((string)$identifier))) {
                 $arr[] = $isbn;
             } else {
@@ -492,14 +510,9 @@ class Lido extends AbstractRecord
     {
         $result = [];
         foreach ($this->getSubjectNodes($exclude) as $subjectNode) {
-            foreach ($this->xmlDoc->all($subjectNode, 'subjectConcept/conceptID') as $conceptID) {
-                if (
-                    ($id = $this->xmlDoc->value($conceptID))
-                    && ($type = $this->xmlDoc->attr($conceptID, 'type'))
-                ) {
-                    if (in_array(mb_strtolower($type, 'UTF-8'), $this->subjectConceptIDTypes)) {
-                        $result[] = $id;
-                    }
+            foreach ($this->xmlDoc->all($subjectNode, 'subjectConcept') as $concept) {
+                if ('' !== $id = $this->getFirstConceptIdentifier($concept, $this->subjectConceptIDTypes)) {
+                    $result[] = $id;
                 }
             }
         }
@@ -1540,5 +1553,49 @@ class Lido extends AbstractRecord
         // thumbnail field is not multivalued, so just store take the first one:
         $urls = $this->getUrls();
         return $urls[0] ?? '';
+    }
+
+    /**
+     * Get first conceptID identifier or skos:Concept URI of a node
+     *
+     * @param array $parentNode   The node that contains conceptID and skos:Concept nodes
+     * @param array $allowedTypes Allowed conceptID types
+     *
+     * @return string
+     */
+    protected function getFirstConceptIdentifier(array $parentNode, array $allowedTypes = []): string
+    {
+        foreach ($this->xmlDoc->all($parentNode, 'conceptID') as $conceptID) {
+            if ($id = $this->xmlDoc->value($conceptID)) {
+                $type = mb_strtolower($this->xmlDoc->attr($conceptID, 'type') ?? '', 'UTF-8');
+                if (!$allowedTypes || in_array($type, $allowedTypes)) {
+                    return $id;
+                }
+            }
+        }
+        return $this->getSkosConceptURI($parentNode);
+    }
+
+    /**
+     * Get a skos:Concept URI from a node.
+     *
+     * @param array $node Node
+     *
+     * @return string
+     */
+    protected function getSkosConceptURI(array $node): string
+    {
+        $skosConcepts = [
+            ...$this->xmlDoc->all($node, "{{$this->skosNs}}Concept"),
+            ...$this->xmlDoc->all($node, 'Concept'),
+        ];
+        foreach ($skosConcepts as $skosConcept) {
+            $uri = $this->xmlDoc->attr($skosConcept, "{{$this->rdfNs}}about")
+                ?? $this->xmlDoc->attr($skosConcept, 'about');
+            if (null !== $uri) {
+                return $uri;
+            }
+        }
+        return '';
     }
 }

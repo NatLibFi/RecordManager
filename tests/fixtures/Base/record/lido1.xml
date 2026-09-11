@@ -2,6 +2,8 @@
 <lidoWrap schemaLocation="http://www.lido-schema.org http://www.lido-schema.org/schema/v1.0/lido-v1.0.xsd">
   <lido>
     <lidoRecID type="Test">knp-247394</lidoRecID>
+    <objectPublishedID type="URI" label="not isbn">12345678</objectPublishedID>
+    <objectPublishedID type="URI" label="isbn">URN:ISBN:951-771-872-1</objectPublishedID>    
     <descriptiveMetadata lang="fi">
       <objectClassificationWrap>
         <objectWorkTypeWrap>
