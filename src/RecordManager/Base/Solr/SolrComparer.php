@@ -225,7 +225,7 @@ class SolrComparer extends SolrUpdater
             'publisherStr', 'publishDateSort', 'hierarchy_browse',
             'first_indexed', 'last_indexed', '_version_',
             'fullrecord', 'title_full_unstemmed', 'title_fullStr',
-            'author_additionalStr',
+            'title_txtP', 'callnumber-search', 'author_additionalStr',
         ];
 
         if (isset($this->config['Solr']['ignore_in_comparison'])) {
@@ -295,7 +295,7 @@ class SolrComparer extends SolrUpdater
             }
         }
         if ($differences) {
-            $msg = "Record {$record['id']} would be changed: " . PHP_EOL
+            $msg = "Record {$record['id']} would be changed:" . PHP_EOL
                 . $differences . PHP_EOL;
             if (!$logFile) {
                 $this->log->writeConsole($msg);
