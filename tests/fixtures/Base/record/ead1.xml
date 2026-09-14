@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<c level="item">
+  <did>
+    <unittitle>Suomi p&#xE4;iv&#xE4; "Finland Day" New Yorkin maailmann&#xE4;yttelyss&#xE4;.</unittitle>
+    <unitid identifier="m198">USA_1287</unitid>
+    <unitdate>1940</unitdate>
+    <physdesc>
+      <extent>172 vedosta</extent>
+    </physdesc>
+    <physloc>Siirtolaisuusinstituutin arkisto. H&#xE4;meenkatu 13, 20500 Turku</physloc>
+    <langmaterial>
+      <language>fin</language>
+      <language>eng</language>
+    </langmaterial>
+    <origination>
+      <persname>Haapaniemi, Fred</persname>
+      <ref>
+        <date>1912-1966</date>
+      </ref>
+    </origination>
+    <repository>
+      <corpname>Siirtolaisuusinstituutti</corpname>
+    </repository>
+    <daogrp>
+      <daodesc>
+        <p>Sivu 1</p>
+      </daodesc>
+      <daoloc linktype="locator" role="image_full" href="https://siiri2.utu.fi/content/USA_1287.jpg"/>
+    </daogrp>
+  </did>
+  <scopecontent>
+    <p>Suomi p&#xE4;iv&#xE4; "Finland Day" New Yorkin maailmann&#xE4;yttelyss&#xE4; kes&#xE4;kuussa 1940.</p>
+  </scopecontent>
+  <controlaccess/>
+  <controlaccess>
+    <genreform>Image/Photo</genreform>
+  </controlaccess>
+  <controlaccess>
+    <geogname>Yhdysvallat</geogname>
+  </controlaccess>
+  <controlaccess>
+    <geogname>
+      <geographiccoordinates coordinatesystem="WGS84">40.71278, -74.00611</geographiccoordinates>
+      <part>New York (kaupunki)</part>
+    </geogname>
+  </controlaccess>
+  <controlaccess>
+    <subject>muuttoliike</subject>
+    <subject>siirtolaisuus</subject>
+    <subject>siirtolaiset</subject>
+    <subject>ulkosuomalaiset</subject>
+    <subject>amerikansuomalaiset</subject>
+    <subject>tapahtumat</subject>
+    <subject>maailmann&#xE4;yttelyt</subject>
+  </controlaccess>
+  <userestrict>
+    <p>CC BY 4.0</p>
+  </userestrict>
+  <add-data identifier="239_m198">
+    <archive id="239" title="Haapaniemi, Fred (arkisto)" sequence="0000003"/>
+    <parent id="239" title="Haapaniemi, Fred (arkisto)"/>
+  </add-data>
+</c>
