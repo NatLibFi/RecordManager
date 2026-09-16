@@ -155,7 +155,7 @@ class EadTest extends RecordTestBase
                 'tapahtumat',
                 'maailmannäyttelyt',
             ],
-          ];
+        ];
 
         $this->compareArray($expected, $fields, 'toSolrArray');
     }
