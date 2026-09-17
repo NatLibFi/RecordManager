@@ -24,17 +24,7 @@
       <PersonName>Goanna_0007</PersonName>
       <PersonNameInverted>FairyPenguin_0058, Quokka_0020</PersonNameInverted>
     </CAgentName>
-    <BiographicalNote henkilo-biografia-tyyppi="palkinnot">Jussi-palkinnot 1951 parhaasta ohjauksesta sek&#xE4; k&#xE4;sikirjoituksesta (yhdess&#xE4; FrilledLizard_0028 kanssa) elokuvasta Radio tekee murron.&#xD;
-Jussi-palkinto 1954 parhaasta ohjauksesta elokuvassa Sininen viikko.&#xD;
-Jussi-palkinto 1955 parhaasta ohjauksesta elokuvissa Is&#xE4;n vanha ja uusi sek&#xE4; Hilman p&#xE4;iv&#xE4;t.&#xD;
-Jussi-palkinto 1957 parhaasta ohjauksesta elokuvassa Elokuu.&#xD;
-Jussi-palkinto 1959 parhaasta k&#xE4;sikirjoituksesta elokuvassa Punainen viiva.&#xD;
-Jussi-palkinto 1962 parhaasta k&#xE4;sikirjoituksesta (yhdess&#xE4; Wombat_0014 kanssa) elokuvassa Kaasua, komisario Palmu!.&#xD;
-Ylim&#xE4;&#xE4;r&#xE4;inen valtionpalkinto 1987 (50 000 mk).&#xD;
-BlueTongueSkink_0029 -mitali 1995.&#xD;
-SeaDragon_0010&#xE4;n elokuvajuhlilla 2003 merkitt&#xE4;v&#xE4;st&#xE4; ty&#xF6;st&#xE4; elokuvakulttuurin puolesta (1500e, rahoittajana Canal+).&#xD;
-Elokuvataiteen valtionpalkinto 2008.&#xD;
-Betoni-Jussi 2011 (perustelu: hieno ja merkitt&#xE4;v&#xE4; ura).</BiographicalNote>
+    <BiographicalNote henkilo-biografia-tyyppi="palkinnot">Jussi-palkinnot 1951 parhaasta ohjauksesta sek&#xE4; k&#xE4;sikirjoituksesta (yhdess&#xE4; FrilledLizard_0028 kanssa) elokuvasta Radio tekee murron.</BiographicalNote>
     <ProfessionalAffiliation henkilo-kokoonpano-tyyppi="ty&#xF6;ryhm&#xE4;">
       <Affiliation>Dingo_0018</Affiliation>
       <AgentIdentifier>
@@ -50,7 +40,7 @@ Betoni-Jussi 2011 (perustelu: hieno ja merkitt&#xE4;v&#xE4; ura).</BiographicalN
     </AgentDate>
     <AgentDate>
       <AgentDateEventType>52</AgentDateEventType>
-      <DateText>01.01.1900</DateText>
+      <DateText>01.01.1901</DateText>
       <LocationName>Vantaa</LocationName>
     </AgentDate>
     <AgentPlace>
