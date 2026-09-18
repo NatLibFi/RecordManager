@@ -33,12 +33,9 @@ try {
     ob_start();
 
     define('RECMAN_BASE_PATH', getenv('RECMAN_BASE_PATH') ?: __DIR__);
-    $app = \Laminas\Mvc\Application::init(
-        include RECMAN_BASE_PATH . '/conf/application.config.php'
-    );
-    $sm = $app->getServiceManager();
+    $serviceManager = require __DIR__ . '/conf/application.php';
 
-    $configReader = $sm->get(\RecordManager\Base\Settings\Ini::class);
+    $configReader = $serviceManager->get(\RecordManager\Base\Settings\Ini::class);
     $dataSourceConfig = $configReader->get('datasources.ini');
     if (!isset($dataSourceConfig['_preview'])) {
         $configReader->addOverrides(
@@ -70,7 +67,7 @@ try {
         );
     }
 
-    $createPreview = $sm->get(\RecordManager\Base\Controller\CreatePreview::class);
+    $createPreview = $serviceManager->get(\RecordManager\Base\Controller\CreatePreview::class);
 
     $func = $_REQUEST['func'] ?? '';
     if ($func === 'get_sources') {

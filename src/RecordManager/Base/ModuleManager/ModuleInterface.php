@@ -1,10 +1,11 @@
 <?php
+
 /**
- * OAI-PMH Provider Front-End
+ * Module interface.
  *
  * PHP version 8
  *
- * Copyright (C) The National Library of Finland 2021-2026.
+ * Copyright (C) The National Library of Finland 2026.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
@@ -26,12 +27,34 @@
  * @link     https://github.com/NatLibFi/RecordManager
  */
 
-/**
- * OAI-PMH Provider Front-End
- */
-require_once __DIR__ . '/vendor/autoload.php';
+namespace RecordManager\Base\ModuleManager;
 
-define('RECMAN_BASE_PATH', getenv('RECMAN_BASE_PATH') ?: __DIR__);
-$serviceManager = require __DIR__ . '/conf/application.php';
-$provider = $serviceManager->get(\RecordManager\Base\Controller\OaiPmhProvider::class);
-$provider->launch();
+use Laminas\ServiceManager\ServiceManager;
+
+/**
+ * Module interface.
+ *
+ * @category DataManagement
+ * @package  RecordManager
+ * @author   Ere Maijala <ere.maijala@helsinki.fi>
+ * @license  http://opensource.org/licenses/gpl-2.0.php GNU General Public License
+ * @link     https://github.com/NatLibFi/RecordManager
+ */
+interface ModuleInterface
+{
+    /**
+     * Get module configuration.
+     *
+     * @return array
+     */
+    public function getConfig(): array;
+
+    /**
+     * Initialize the module.
+     *
+     * @param ServiceManager $serviceManager Service manager
+     *
+     * @return void
+     */
+    public function initialize(ServiceManager $serviceManager);
+}
