@@ -77,7 +77,7 @@ class ModuleManager
      */
     public function initialize(): void
     {
-        if ($this->loadedModules) {
+        if (!$this->modules || $this->loadedModules) {
             return;
         }
         $this->loadedModules = [];
