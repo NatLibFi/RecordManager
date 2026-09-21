@@ -15,7 +15,7 @@ Anything marked with [**BC**] is known to affect backward compatibility with pre
 ### Changed
 
 - [**BC**] LIDO: XML handling changed to VuFindXml.
-- [**BC**] Laminas Module Manager has been replaced with a simple custom module manager. The Module class of any custom module must now implement the \RecordManager\Base\ModuleManager\ModuleInterface interface. The initialize method can be left empty, but it must exist.
+- [**BC**] Laminas Module Manager has been replaced with a simple custom module manager. The Module class of any custom module must now implement the \RecordManager\Base\ModuleManager\ModuleInterface interface. The initialize method can be left empty, but it must exist. The bootstrapping code has been moved from config/application.php to config/container.php.
 
 
 ## 3.0.0 - 2026-06-09
