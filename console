@@ -59,7 +59,7 @@ $_SERVER['argc'] = count($remainingArgs);
 
 define('RECMAN_BASE_PATH', $basepath ?: getenv('RECMAN_BASE_PATH') ?: __DIR__);
 
-$serviceManager = require __DIR__ . '/conf/application.php';
+$serviceManager = require __DIR__ . '/conf/container.php';
 if ($overrides) {
     $configReader = $serviceManager->get(\RecordManager\Base\Settings\Ini::class);
     $configReader->addOverrides('recordmanager.ini', $overrides);

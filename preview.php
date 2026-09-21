@@ -33,7 +33,7 @@ try {
     ob_start();
 
     define('RECMAN_BASE_PATH', getenv('RECMAN_BASE_PATH') ?: __DIR__);
-    $serviceManager = require __DIR__ . '/conf/application.php';
+    $serviceManager = require __DIR__ . '/conf/container.php';
 
     $configReader = $serviceManager->get(\RecordManager\Base\Settings\Ini::class);
     $dataSourceConfig = $configReader->get('datasources.ini');

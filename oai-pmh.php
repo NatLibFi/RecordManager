@@ -32,6 +32,6 @@
 require_once __DIR__ . '/vendor/autoload.php';
 
 define('RECMAN_BASE_PATH', getenv('RECMAN_BASE_PATH') ?: __DIR__);
-$serviceManager = require __DIR__ . '/conf/application.php';
+$serviceManager = require __DIR__ . '/conf/container.php';
 $provider = $serviceManager->get(\RecordManager\Base\Controller\OaiPmhProvider::class);
 $provider->launch();
