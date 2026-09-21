@@ -60,7 +60,7 @@ class Module implements ModuleInterface
      *
      * @return void
      */
-    public function initialize(ServiceManager $serviceManager)
+    public function initialize(ServiceManager $serviceManager): void
     {
     }
 }
