@@ -72,7 +72,7 @@ class ModuleManagerFactory implements \Laminas\ServiceManager\Factory\FactoryInt
 
         return new $requestedName(
             $container,
-            $configuration['modules']
+            $configuration['modules'] ?? []
         );
     }
 }
