@@ -30,6 +30,8 @@
 namespace RecordManager\Base\Record;
 
 use RecordManager\Base\Database\DatabaseInterface as Database;
+use RecordManager\Base\Utils\Logger;
+use RecordManager\Base\Utils\MetadataUtils;
 
 use function in_array;
 use function is_string;
@@ -175,6 +177,44 @@ class Lido extends AbstractRecord
     protected $hierarchyFieldsInAllFields = [
         'is_hierarchy_title', 'hierarchy_parent_title', 'hierarchy_top_title', 'title_in_hierarchy',
     ];
+
+    /**
+     * LIDO thumbnail image types
+     *
+     * @see http://terminology.lido-schema.org/lido00451
+     * @var array
+     */
+    protected array $thumbnailImageTypes = [
+        'preview image',
+        'image overview',
+        'image preview',
+        'image_medium',
+        'thumbnail',
+        'vorschau bild',
+        'bildvorschau',
+        'miniaturbild',
+        'vorschaubild',
+    ];
+
+    /**
+     * Constructor
+     *
+     * @param array            $config           Main configuration
+     * @param array            $dataSourceConfig Data source settings
+     * @param Logger           $logger           Logger
+     * @param MetadataUtils    $metadataUtils    Metadata utilities
+     */
+    public function __construct(
+        array $config,
+        array $dataSourceConfig,
+        Logger $logger,
+        MetadataUtils $metadataUtils
+    ) {
+        parent::__construct($config, $dataSourceConfig, $logger, $metadataUtils);
+        if ($thumbnailTypeLabels = $config['LidoRecord']['thumbnail_type_labels'] ?? '') {
+            $this->thumbnailImageTypes = explode(',', $thumbnailTypeLabels);
+        }
+    }
 
     /**
      * Set record data
@@ -1551,8 +1591,18 @@ class Lido extends AbstractRecord
     protected function getThumbnailUrl(): string
     {
         // thumbnail field is not multivalued, so just store take the first one:
-        $urls = $this->getUrls();
-        return $urls[0] ?? '';
+        foreach ($this->getResourceSetNodes() as $set) {
+            foreach ($this->xmlDoc->all($set, 'resourceRepresentation') as $node) {
+                $urlType = mb_strtolower($this->xmlDoc->attr($node, 'type'));
+                if (!in_array($urlType, $this->thumbnailImageTypes)) {
+                    continue;
+                }
+                if ($url = $this->xmlDoc->firstValue($node, 'linkResource')) {
+                    return $url;
+                }
+            }
+        }
+        return '';
     }
 
     /**
