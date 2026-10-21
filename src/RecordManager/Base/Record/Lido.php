@@ -199,10 +199,10 @@ class Lido extends AbstractRecord
     /**
      * Constructor
      *
-     * @param array            $config           Main configuration
-     * @param array            $dataSourceConfig Data source settings
-     * @param Logger           $logger           Logger
-     * @param MetadataUtils    $metadataUtils    Metadata utilities
+     * @param array         $config           Main configuration
+     * @param array         $dataSourceConfig Data source settings
+     * @param Logger        $logger           Logger
+     * @param MetadataUtils $metadataUtils    Metadata utilities
      */
     public function __construct(
         array $config,
