@@ -33,6 +33,7 @@ namespace RecordManager\Base\Utils;
 use function assert;
 use function count;
 use function intval;
+use function is_string;
 use function strlen;
 
 /**
@@ -105,6 +106,8 @@ class LineBasedMarcFormatter
      */
     public function convertLineBasedMarcToXml(string $metadata): string
     {
+        $this->badChars = 0;
+
         $xml = simplexml_load_string(
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n\n"
             . '<collection><record></record></collection>'
@@ -138,6 +141,7 @@ class LineBasedMarcFormatter
                     $line = substr($line, 0, strlen($line) - 1);
                 }
             }
+            $line = $this->stripIllegalChars($line);
             if (!$line) {
                 continue;
             }
@@ -186,7 +190,7 @@ class LineBasedMarcFormatter
                 while ($subs) {
                     $code = array_shift($subs);
                     $value = array_shift($subs);
-                    if ('' === $value) {
+                    if ('' === $code || '' === $value) {
                         continue;
                     }
                     $subfield = $field->addChild(
@@ -197,13 +201,31 @@ class LineBasedMarcFormatter
                 }
             }
         }
-        // Strip illegal characters from XML, and save a count for reference:
-        return preg_replace(
+        $result = $record->asXML();
+        return is_string($result) ? $result : '';
+    }
+
+    /**
+     * Strip illegal characters from XML.
+     *
+     * @param string $str String to clean up.
+     *
+     * @return string
+     */
+    protected function stripIllegalChars(string $str): string
+    {
+        $badChars = 0;
+        $str = preg_replace(
             '/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u',
             '',
-            $record->asXML(),
+            $str,
             -1,
-            $this->badChars
+            $badChars
         ) ?? '';
+
+        // Increase the counter for reference:
+        $this->badChars += $badChars;
+
+        return $str;
     }
 }
