@@ -1,0 +1,98 @@
+<?xml version="1.0"?>
+<lidoWrap schemaLocation="http://www.lido-schema.org http://www.lido-schema.org/schema/v1.0/lido-v1.0.xsd">
+  <lido>
+    <lidoRecID type="Test">12345</lidoRecID>
+    <descriptiveMetadata lang="en">
+      <objectClassificationWrap>
+        <objectWorkTypeWrap>
+          <objectWorkType>
+            <term>Kirja</term>
+          </objectWorkType>
+        </objectWorkTypeWrap>
+      </objectClassificationWrap>
+      <objectIdentificationWrap>
+        <titleWrap>
+          <titleSet>
+            <appellationValue>Kitchen tool</appellationValue>
+            <appellationValue>Scissors</appellationValue>
+          </titleSet>
+          <titleSet>
+            <appellationValue pref="alternate" lang="fi">Sakset</appellationValue>
+            <appellationValue pref="preferred" lang="fi">Keittiövälineet</appellationValue>
+          </titleSet>
+        </titleWrap>
+        <inscriptionsWrap/>
+      </objectIdentificationWrap>
+    </descriptiveMetadata>
+    <administrativeMetadata lang="en">
+      <rightsWorkWrap>
+        <rightsWorkSet>
+          <rightsHolder>
+            <legalBodyName>
+              <appellationValue>Maaseudun Sivistysliito</appellationValue>
+            </legalBodyName>
+          </rightsHolder>
+        </rightsWorkSet>
+      </rightsWorkWrap>
+      <recordWrap>
+        <recordID type="local">10754</recordID>
+        <recordType>
+          <term lang="en">Audiovisual</term>
+        </recordType>
+      </recordWrap>
+      <resourceWrap>
+        <resourceSet>
+          <resourceID type="url">urn:msl:10</resourceID>
+          <rightsResource>
+            <rightsType>
+              <conceptID type="Copyright">InC</conceptID>
+              <term lang="en">Copyright text for resource</term>
+            </rightsType>
+            <rightsHolder>
+              <legalBodyName>
+                <appellationValue/>
+              </legalBodyName>
+            </rightsHolder>
+          </rightsResource>
+          <resourceRepresentation type="preview_video">
+            <linkResource formatResource="text/html">http://link.to.a/video123</linkResource>
+          </resourceRepresentation>
+        </resourceSet>
+        <resourceSet>
+          <resourceID type="url">urn:msl:7</resourceID>
+          <rightsResource>
+            <rightsType>
+              <conceptID type="Copyright">InC</conceptID>
+              <term lang="en">Copyright text for resource</term>
+            </rightsType>
+            <rightsHolder>
+              <legalBodyName>
+                <appellationValue/>
+              </legalBodyName>
+            </rightsHolder>
+          </rightsResource>
+          <resourceRepresentation type="preview_audio">
+            <linkResource formatResource="wav">http://link.to.an/audio123</linkResource>
+          </resourceRepresentation>
+        </resourceSet>
+        <resourceSet>
+          <resourceID type="url">urn:msl:7</resourceID>
+          <rightsResource>
+            <rightsType>
+              <conceptID type="Copyright">InC</conceptID>
+              <term lang="en">Copyright text for resource</term>
+            </rightsType>
+            <rightsHolder>
+              <legalBodyName>
+                <appellationValue/>
+              </legalBodyName>
+            </rightsHolder>
+          </rightsResource>
+          <resourceRepresentation type="%%type%%">
+            <linkResource formatResource="jpg">%%url%%</linkResource>
+          </resourceRepresentation>
+        </resourceSet>
+      </resourceWrap>
+    </administrativeMetadata>
+  </lido>
+</lidoWrap>

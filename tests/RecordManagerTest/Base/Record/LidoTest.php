@@ -658,4 +658,93 @@ class LidoTest extends RecordTestBase
         $record = $this->createRecordFromString($prolog . $input, Lido::class);
         $this->assertXmlStringEqualsXmlString($prolog . $expected, $record->toXML());
     }
+
+    /**
+     * LIDO thumbnail data provider
+     *
+     * @return \Iterator
+     */
+    public static function lidoThumbnailDataProvider(): \Iterator
+    {
+        yield 'Type Preview image' => [
+            'Preview image',
+            'http://url.it/1',
+            'http://url.it/1',
+        ];
+        yield 'Type image overview' => [
+            'image overview',
+            'http://url.it/2',
+            'http://url.it/2',
+        ];
+        yield 'Type Image preview' => [
+            'Image preview',
+            'http://url.it/3',
+            'http://url.it/3',
+        ];
+        yield 'Type image_medium' => [
+            'image_medium',
+            'http://url.it/4',
+            'http://url.it/4',
+        ];
+        yield 'Type thumbnail' => [
+            'thumbnail',
+            'http://url.it/5',
+            'http://url.it/5',
+        ];
+        yield 'Type image_large' => [
+            'image_large',
+            'http://url.it/6',
+            '',
+        ];
+        yield 'Type custom image_thumb' => [
+            'image_thumb',
+            'http://url.it/7',
+            'http://url.it/7',
+            [
+                'LidoRecord' => [
+                    'thumbnail_type_labels' => 'image_thumb,image_very_small',
+                ],
+            ],
+        ];
+        yield 'Type custom image_very_small' => [
+            'image_very_small',
+            'http://url.it/8',
+            'http://url.it/8',
+            [
+                'LidoRecord' => [
+                    'thumbnail_type_labels' => 'image_thumb,image_very_small',
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Test LIDO thumbnail indexing
+     *
+     * @param string $type     ResourceRepresentation type
+     * @param string $url      LinkResource url
+     * @param string $expected Expected result
+     * @param array  $config   Main config
+     *
+     * @return void
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('lidoThumbnailDataProvider')]
+    public function testLidoThumbnailIndexing(
+        string $type,
+        string $url,
+        string $expected,
+        array $config = []
+    ) {
+        $fixture = $this->getFixture('record/lido4.xml');
+        $fixture = str_replace(['%%type%%', '%%url%%'], [$type, $url], $fixture);
+
+        $record = $this->createRecordFromString(
+            $fixture,
+            Lido::class,
+            config: $config
+        );
+
+        $data = $record->toSolrArray();
+        $this->assertEquals($expected, $data['thumbnail']);
+    }
 }
